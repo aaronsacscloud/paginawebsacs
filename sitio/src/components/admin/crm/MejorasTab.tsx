@@ -19,6 +19,7 @@ const mesDe = (d?: string | null) => String(d || '').slice(0, 7);
 // un vistazo y se distingue una capacitación de una personalización sin leer.
 const CATS: Record<string, { label: string; bg: string; fg: string }> = {
   capacitacion:    { label: 'capacitación',    bg: '#FEF6E7', fg: '#9a6a10' },
+  pendiente:       { label: 'pendiente',       bg: '#f4f4f6', fg: '#6B7280' },
   personalizacion: { label: 'personalización', bg: '#EEECFE', fg: '#5B4BD6' },
   plugin:          { label: 'plugin',          bg: '#E3EDFD', fg: '#2C5FC4' },
   modulo:          { label: 'módulo',          bg: '#EAF8F2', fg: '#1E8A63' },
@@ -287,9 +288,9 @@ export default function MejorasTab() {
   return (
     <div style={S.wrap}>
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Mejoras e ideas</h2>
+        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
-          Lo que se ha entregado en todas las cuentas y lo que está sobre la mesa sin cerrar.
+          Todo el trabajo con clientes: mejoras, capacitaciones, videos y pendientes.
         </div>
       </div>
 

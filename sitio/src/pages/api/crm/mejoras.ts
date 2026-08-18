@@ -19,7 +19,7 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
 export const ESTADOS_MEJORA = ['idea', 'cotizada', 'en_proceso', 'entregada', 'descartada'] as const;
-const CATEGORIAS = ['personalizacion', 'plugin', 'ajuste', 'modulo', 'capacitacion', 'otro'];
+const CATEGORIAS = ['personalizacion', 'plugin', 'ajuste', 'modulo', 'capacitacion', 'pendiente', 'otro'];
 
 // Lo prometido que ya venció. Las cuentas no se pierden por lo que no
 // prometiste: se pierden por lo que prometiste y no llegó. Solo cuentan las

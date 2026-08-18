@@ -134,7 +134,7 @@ const NAV_SECTIONS = [
   {
     label: 'Acompañamiento',
     items: [
-      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'mejoras' },
+      { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
   },

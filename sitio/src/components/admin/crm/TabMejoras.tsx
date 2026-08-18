@@ -23,6 +23,7 @@ const ESTADOS: Record<string, { label: string; punto: string; tag?: string; tagB
 // recorre de un vistazo sin leer palabra por palabra.
 const CATS_COLOR: Record<string, { label: string; bg: string; fg: string }> = {
   capacitacion:    { label: 'capacitación',    bg: '#FEF6E7', fg: '#9a6a10' },
+  pendiente:       { label: 'pendiente',       bg: '#f4f4f6', fg: '#6B7280' },
   personalizacion: { label: 'personalización', bg: '#EEECFE', fg: '#5B4BD6' },
   plugin:          { label: 'plugin',          bg: '#E3EDFD', fg: '#2C5FC4' },
   modulo:          { label: 'módulo',          bg: '#EAF8F2', fg: '#1E8A63' },
@@ -51,6 +52,7 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
+  const [verTodo, setVerTodo] = useState(false);
 
   const cargar = () => fetch('/api/crm/mejoras?company_id=' + companyId)
     .then(r => r.json()).then(j => { setRows(j.data || []); setVencidas(j.vencidas || []); }).catch(() => setRows([]));
@@ -89,18 +91,31 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
 
   if (rows === null) return <div style={{ ...S.card, color: '#999', fontSize: '0.82rem' }}>Cargando mejoras…</div>;
 
-  // Las capacitaciones se sacan de las dos listas de arriba y viven en la
-  // suya: no son algo que se le "entregue" al sistema del cliente, son algo
-  // que se le enseñó a su gente. Mezclarlas inflaba el conteo de mejoras.
-  const capacitaciones = rows.filter(m => m.categoria === 'capacitacion');
-  const otras = rows.filter(m => m.categoria !== 'capacitacion');
-  const entregadas = otras.filter(m => m.estado === 'entregada');
-  const enCurso = otras.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
-  const ideas = otras.filter(m => m.estado === 'idea');
+  // Se agrupa por lo que hay que HACER, no por qué tipo de cosa es: que un
+  // video y una personalización sean distintos le importa al sistema, no a
+  // quien tiene que cerrarlos hoy. El tipo se conserva adentro, con su color.
+  const abierto = (m: any) => m.estado === 'cotizada' || m.estado === 'en_proceso';
+  const porFecha = (a: any, b: any) => String(a.fecha_compromiso || '9999').localeCompare(String(b.fecha_compromiso || '9999'));
+
+  const ideas = rows.filter(m => m.estado === 'idea');
+  const entregadas = rows.filter(m => m.estado === 'entregada');
+  const grupos = [
+    { k: 'obra', l: 'Mejoras y personalizaciones', filas: rows.filter(m => abierto(m) && ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria)).sort(porFecha) },
+    { k: 'video', l: 'Videos por enviar', filas: rows.filter(m => abierto(m) && m.categoria === 'capacitacion' && modoDe(m) === 'video').sort(porFecha) },
+    { k: 'cap', l: 'Capacitaciones programadas', filas: rows.filter(m => abierto(m) && m.categoria === 'capacitacion' && modoDe(m) !== 'video').sort(porFecha) },
+    { k: 'pend', l: 'Otros pendientes', filas: rows.filter(m => abierto(m) && ['pendiente', 'otro'].includes(m.categoria)).sort(porFecha) },
+  ].filter(g => g.filas.length);
+  const porHacer = grupos.reduce((a, g) => a + g.filas.length, 0);
+
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const estaSemana = rows.filter(m => abierto(m) && m.fecha_compromiso && m.fecha_compromiso <= en7).length;
+
   const potencial = ideas.reduce((a, m) => a + Number(m.valor || 0), 0);
   const cobrado = entregadas.reduce((a, m) => a + (m.cortesia ? 0 : Number(m.valor || 0)), 0);
   const anio = new Date().getFullYear();
-  const esteAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio))).length;
+  const delAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio)));
+  const esteAnio = delAnio.length;
 
   const Renglon = ({ m }: any) => {
     const e = ESTADOS[m.estado] || ESTADOS.idea;
@@ -112,11 +127,12 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
             {m.titulo}
             <span style={{ fontSize: '0.57rem', fontWeight: 800, background: cat(m.categoria).bg, color: cat(m.categoria).fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{cat(m.categoria).label}</span>
             {e.tag && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: e.tagBg, color: e.tagTx, borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{e.tag}</span>}
+            {m.modulo && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#f6f5f9', color: '#6b6b74', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{m.modulo}</span>}
             {m.visible_cliente === false && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#F4F4F6', color: '#6B7280', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>interna</span>}
           </div>
           {m.descripcion && <div style={{ fontSize: '0.74rem', color: '#71717a', lineHeight: 1.5, marginTop: 2 }}>{m.descripcion}</div>}
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 5 }}>
-            {m.fecha_entrega && <>Entregada {fmtDate(m.fecha_entrega)}</>}
+            {m.fecha_entrega && <>{m.categoria === 'capacitacion' ? (modoDe(m) === 'video' ? 'Enviado' : 'Impartida') : 'Entregada'} {fmtDate(m.fecha_entrega)}</>}
             {!m.fecha_entrega && m.fecha_compromiso && <>Comprometida para el {fmtDate(m.fecha_compromiso)}</>}
             {m.bookings?.fecha && <> · salió de la <b style={{ color: '#5B4BD6' }}>junta del {fmtDate(m.bookings.fecha)}</b></>}
             {m.quotes?.numero && <> · cobrada en <b style={{ color: '#5B4BD6' }}>{m.quotes.numero}</b></>}
@@ -124,7 +140,11 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
             {m.estado === 'idea' && <button style={S.btnAzul} onClick={() => cotizar(m)}>Cotizar esta idea</button>}
-            {m.estado !== 'entregada' && <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>Marcar entregada</button>}
+            {m.estado !== 'entregada' && (
+              <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>
+                {m.categoria === 'capacitacion' ? (modoDe(m) === 'video' ? 'Marcar enviado' : 'Marcar impartida') : m.categoria === 'pendiente' ? 'Marcar hecho' : 'Marcar entregada'}
+              </button>
+            )}
             {m.estado === 'idea' && <button style={S.btnG} onClick={() => cambiarEstado(m, 'en_proceso')}>En proceso</button>}
             <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
             <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
@@ -161,24 +181,44 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
       )}
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        {[['Entregadas este año', esteAnio], ['Cobrado en mejoras', money(cobrado)], ['Ideas abiertas', ideas.length], ['Potencial', '~' + money(potencial)]].map(([l, v]: any) => (
-          <div key={l} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', minWidth: 130, flex: 1 }}>
-            <div style={{ fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase' }}>{l}</div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: 2 }}>{v}</div>
+        {[
+          ['Por hacer', String(porHacer), estaSemana ? `${estaSemana} vencen esta semana` : 'nada urgente', porHacer ? '#9a6a10' : '#1a1a1a'],
+          ['Entregado este año', String(esteAnio), delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'sin entregas', '#1a1a1a'],
+          ['Cobrado', money(cobrado), `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`, '#1E8A63'],
+          ['Sobre la mesa', '~' + money(potencial), `${ideas.length} ideas sin cerrar`, '#2C5FC4'],
+        ].map(([l, v, sub, col]: any) => (
+          <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '13px 15px', minWidth: 140, flex: 1 }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>{l}</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: 4, letterSpacing: '-.02em', color: col }}>{v}</div>
+            <div style={{ fontSize: '0.66rem', color: '#8a8a8a', marginTop: 3 }}>{sub}</div>
           </div>
         ))}
       </div>
 
+      {/* ── Por hacer ── */}
       <div style={S.card}>
         <div style={S.h}>
-          Entregadas
-          <button style={{ ...S.btn, marginLeft: 'auto' }} onClick={() => setEditando({ estado: 'entregada', categoria: 'personalizacion' })}>+ Agregar mejora</button>
+          Por hacer
+          <span style={S.nota}>{porHacer ? `${porHacer} · lo más próximo primero` : ''}</span>
+          <button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>
         </div>
-        {entregadas.length === 0 && enCurso.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>Todavía no hay mejoras registradas para esta cuenta.</div>}
-        {entregadas.map(m => <Renglon key={m.id} m={m} />)}
-        {enCurso.map(m => <Renglon key={m.id} m={m} />)}
+        {porHacer === 0 && (
+          <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>
+            Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí.
+          </div>
+        )}
+        {grupos.map(g => (
+          <div key={g.k}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 4px' }}>
+              {g.l} · {g.filas.length}
+            </div>
+            {g.filas.map((m: any) => <Renglon key={m.id} m={m} />)}
+          </div>
+        ))}
       </div>
 
+      {/* Las ideas van aparte: no son trabajo comprometido, son dinero sobre la
+          mesa. Mezclarlas con lo pendiente haría que la lista nunca se vacíe. */}
       <div style={S.cardA}>
         <div style={S.h}>
           Ideas por vender
@@ -189,58 +229,25 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
         {ideas.map(m => <Renglon key={m.id} m={m} />)}
       </div>
 
-      {/* Capacitaciones: lo que se le ENSEÑÓ a la gente del cliente, ya sea en
-          una junta o mandándole el video de eso que preguntó. Va aquí y no en
-          Reuniones porque lo que importa es el seguimiento del tema, no la
-          sesión: un mismo tema puede tocarse en tres juntas. */}
-      <div style={{ ...S.card, borderColor: '#f5e2b8' }}>
+      {/* Lo entregado se resume al año: el histórico completo se lee una vez y
+          su lugar natural es el reporte. */}
+      <div style={{ ...S.card, borderColor: '#eeeef1' }}>
         <div style={S.h}>
-          Capacitaciones
-          <span style={S.nota}>{capacitaciones.length ? `${capacitaciones.filter(m => m.estado === 'entregada').length} impartidas de ${capacitaciones.length}` : ''}</span>
-          <button style={S.btn} onClick={() => setEditando({ estado: 'entregada', categoria: 'capacitacion', visible_cliente: true })}>+ Agregar capacitación</button>
+          Ya entregado
+          <span style={S.nota}>{verTodo ? `${entregadas.length} en total` : `este año · ${esteAnio}`}</span>
+          {entregadas.length > esteAnio && (
+            <button style={S.btnG} onClick={() => setVerTodo(v => !v)}>{verTodo ? 'Solo este año' : `Ver todo (${entregadas.length})`}</button>
+          )}
         </div>
-        {capacitaciones.length === 0 && (
-          <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>
-            Lo que le enseñaste en una junta y los videos que le mandaste por lo que preguntó. Así se ve de un vistazo
-            qué ya sabe usar y qué se le ha repetido.
-          </div>
-        )}
-        {capacitaciones.map(m => {
-          const { texto: etq, hecha: impartida } = etiquetaCap(m);
-          const modo = MODOS[modoDe(m)];
-          return (
-            <div key={m.id} style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start' }}>
-              <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: impartida ? '#4FBF95' : '#F0B84E', marginTop: 6 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
-                  {m.titulo}
-                  <span style={{ fontSize: '0.57rem', fontWeight: 800, background: impartida ? '#EAF8F2' : '#FEF6E7', color: impartida ? '#1E8A63' : '#9a6a10', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>
-                    {modo.label.replace(/^En una |^En la /, '')} · {etq}
-                  </span>
-                  {m.modulo && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{m.modulo}</span>}
-                </div>
-                {m.descripcion && <div style={{ fontSize: '0.74rem', color: '#71717a', lineHeight: 1.5, marginTop: 2 }}>{m.descripcion}</div>}
-                <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 5 }}>
-                  {m.fecha_entrega ? <>{modoDe(m) === 'video' ? 'Enviada' : 'Impartida'} {fmtDate(m.fecha_entrega)}</> : m.fecha_compromiso ? <>Para el {fmtDate(m.fecha_compromiso)}</> : 'Sin fecha'}
-                  {m.bookings?.fecha && <> · <b style={{ color: '#5B4BD6' }}>junta del {fmtDate(m.bookings.fecha)}</b></>}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
-                  {m.url && <a href={m.url} target="_blank" rel="noreferrer" style={{ ...S.btnAzul, textDecoration: 'none' }}>Ver el video</a>}
-                  {!impartida && <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>{modoDe(m) === 'video' ? 'Marcar enviada' : 'Marcar impartida'}</button>}
-                  <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
-                  <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {entregadas.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>Todavía no se le ha entregado nada a este cliente.</div>}
+        {(verTodo ? entregadas : delAnio).map(m => <Renglon key={m.id} m={m} />)}
       </div>
 
       <div style={{ ...S.card, background: '#faf8ff', borderColor: '#e6ddfa' }}>
         <div style={S.h}>Reporte ejecutivo del periodo</div>
         <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 10 }}>
-          Eliges el rango y sale qué se le entregó, qué módulos nuevos arrancó y qué se le capacitó. Lo redacta la IA
-          con los datos reales de la cuenta.
+          Junta todo lo de arriba —entregas, capacitaciones, videos y pendientes— con lo que SACS ya sabe de la cuenta:
+          qué módulos empezó a usar y cómo cambió su operación.
         </div>
         <button style={S.btn} onClick={() => setReporte(true)}>Generar reporte</button>
       </div>
@@ -263,13 +270,16 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
   // Una capacitación no se cobra ni se "entrega": se imparte o se manda. El
   // formulario cambia de palabras para no pedir datos que no existen.
   const esCap = f.categoria === 'capacitacion';
+  // Un pendiente suelto —"mándale el catálogo"— no tiene precio ni cotización:
+  // pedirle un monto es preguntar algo que nunca se va a contestar.
+  const esPend = f.categoria === 'pendiente';
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 460, maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{m.id ? 'Editar' : esCap ? 'Nueva capacitación' : esEntregada ? 'Nueva mejora' : 'Nueva idea'}</h3>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{m.id ? 'Editar' : esCap ? 'Nueva capacitación' : esPend ? 'Nuevo pendiente' : f.estado === 'idea' ? 'Nueva idea' : 'Nueva mejora'}</h3>
           <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
         </div>
         <div style={{ padding: '14px 17px 17px' }}>
@@ -313,7 +323,9 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
             <div><div style={S.lbl}>Estado</div>
               <select value={f.estado} onChange={e => set('estado', e.target.value)} style={S.input}>
-                {esCap
+                {esPend
+                  ? [['en_proceso', 'Pendiente'], ['entregada', 'Hecho'], ['descartada', 'Cancelado']].map(([k, v]) => <option key={k} value={k}>{v}</option>)
+                  : esCap
                   ? [['entregada', (f.modo === 'video' ? 'Enviada' : 'Impartida')], ['en_proceso', (f.modo === 'video' ? 'Pendiente de enviar' : 'Pendiente')], ['descartada', 'Cancelada']].map(([k, v]) => <option key={k} value={k}>{v}</option>)
                   : Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select></div>
@@ -323,10 +335,10 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
               </select></div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: esCap ? '1fr' : '1fr 1fr', gap: 9, marginBottom: 10 }}>
-            {!esCap && <div><div style={S.lbl}>{esEntregada ? 'Cuánto se cobró' : 'Cuánto podría valer'}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: (esCap || esPend) ? '1fr' : '1fr 1fr', gap: 9, marginBottom: 10 }}>
+            {!esCap && !esPend && <div><div style={S.lbl}>{esEntregada ? 'Cuánto se cobró' : 'Cuánto podría valer'}</div>
               <input type="number" value={f.valor || ''} onChange={e => set('valor', e.target.value)} placeholder="0" style={S.input} disabled={f.cortesia} /></div>}
-            <div><div style={S.lbl}>{esCap ? (esEntregada ? (f.modo === 'video' ? 'Cuándo se envió' : 'Cuándo se dio') : 'Para cuándo') : esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
+            <div><div style={S.lbl}>{esCap ? (esEntregada ? (f.modo === 'video' ? 'Cuándo se envió' : 'Cuándo se dio') : 'Para cuándo') : esPend ? (esEntregada ? 'Cuándo se hizo' : 'Para cuándo') : esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
               <input type="date" value={(esEntregada ? f.fecha_entrega : f.fecha_compromiso) || ''}
                 onChange={e => set(esEntregada ? 'fecha_entrega' : 'fecha_compromiso', e.target.value)} style={S.input} /></div>
           </div>
@@ -340,7 +352,7 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
             </select>
           </div>
 
-          {!esCap && (
+          {!esCap && !esPend && (
             <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', marginBottom: 7, cursor: 'pointer' }}>
               <input type="checkbox" checked={!!f.cortesia} onChange={e => set('cortesia', e.target.checked)} />
               Fue sin costo (cortesía)

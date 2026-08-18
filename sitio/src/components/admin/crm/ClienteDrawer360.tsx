@@ -212,7 +212,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
                 <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>
-                  Mejoras
+                  Consultoría
                   {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
