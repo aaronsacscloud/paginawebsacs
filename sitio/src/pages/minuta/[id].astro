@@ -305,14 +305,19 @@ const titulo = `Minuta ${tipo} · ${cliente}`;
         {sigResto && <div class="d">{sigResto}</div>}
       </div>}
 
+      {/* El nombre va una sola vez de cada lado: la rúbrica ya dice quién
+          firma, así que debajo de la línea va la casa, no otra vez la persona.
+          Y si el invitado se llama igual que la cuenta, tampoco se repite. */}
       <div class="firmas">
         <div>
           <div class="ff">{marca.firma}</div>
-          <div class="fl">{marca.firma || marca.nombre}<small>{marca.nombre}</small></div>
+          <div class="fl">{marca.firma ? marca.nombre : (marca.nombre || '—')}</div>
         </div>
         <div>
           <div class="ff">&nbsp;</div>
-          <div class="fl">{b.invitee_nombre || '—'}<small>{cliente}</small></div>
+          <div class="fl">{b.invitee_nombre || cliente}
+            {b.invitee_nombre && b.invitee_nombre.trim().toLowerCase() !== cliente.trim().toLowerCase() && <small>{cliente}</small>}
+          </div>
         </div>
       </div>
 
