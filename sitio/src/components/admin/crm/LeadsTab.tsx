@@ -6,7 +6,7 @@
 // gente de etapa.
 import { useEffect, useMemo, useState } from 'react';
 import PipelineTab from './PipelineTab';
-import ContactProfile from './ContactProfile';
+import LeadDrawer from './LeadDrawer';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -264,7 +264,7 @@ export default function LeadsTab() {
         </div>
       </>)}
 
-      {verContacto && <ContactProfile contactId={verContacto} onClose={() => { setVerContacto(null); cargar(); }} />}
+      {verContacto && <LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar} />}
       {nuevo && <NuevoLead onCerrar={() => setNuevo(false)} onListo={() => { setNuevo(false); cargar(); }} />}
     </div>
   );

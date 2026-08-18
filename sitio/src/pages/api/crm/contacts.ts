@@ -80,6 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
       lifecycle_stage,
       fuente: body.fuente || null,
       fuente_detalle: body.fuente_detalle || null,
+      propiedades: body.propiedades || {},
       utm_source: body.utm_source || null,
       utm_medium: body.utm_medium || null,
       utm_campaign: body.utm_campaign || null,
