@@ -12,6 +12,7 @@
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
 
@@ -21,22 +22,50 @@ const desc =
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
-  <!-- ── Portada ── -->
+  <!-- ── Portada: foto grande + alto contraste ── -->
   <header class="hero">
+    <div class="hero-bg">
+      <img
+        src="/images/pos-boutique-atencion.webp"
+        alt="Vendedora cobrando en una boutique con el punto de venta de SACS"
+        width="1600" height="1000" fetchpriority="high" decoding="async"
+      />
+      <div class="hero-veil"></div>
+    </div>
+
     <div class="hero-inner">
       <p class="hero-eyebrow">SACS · Suite Moda</p>
-      <h1 class="hero-title">El sistema que entiende<br /><span>tallas, colores y temporadas</span></h1>
+      <h1 class="hero-title">
+        Tu tienda no vende<br /><span>productos.</span> Vende<br /><span>tallas y colores.</span>
+      </h1>
       <p class="hero-sub">
-        Todo lo que una boutique necesita, hecho para cómo trabaja una boutique. Sin adaptar
-        un sistema de abarrotes a tu inventario.
+        El sistema para boutiques y marcas de moda. Matriz de tallas, curvas de compra,
+        consignación a departamentales y todas tus sucursales en una pantalla.
       </p>
       <div class="hero-cta">
-        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
         <a href="/contacto" class="btn-pri">Agenda una demo</a>
+        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
-      <p class="hero-note">9 funcionalidades pensadas para moda · Sin permanencia</p>
+      <div class="hero-datos">
+        <div><b>+3,000</b><span>marcas activas</span></div>
+        <div><b>24 SKU</b><span>de un modelo, en un paso</span></div>
+        <div><b>9</b><span>funciones hechas para moda</span></div>
+      </div>
     </div>
   </header>
+
+  <!-- ── Manifiesto: aqui se demuestra que entendemos el giro ── -->
+  <SuiteManifiesto
+    intro="Sabemos cómo se vende la ropa"
+    frases={[
+      'La <b>M</b> se acabó el primer fin de semana.',
+      'La <b>XXL</b> lleva dos temporadas colgada.',
+      '"¿Tendrás esta en <b>chica</b>?" — y hay que llamar a la otra tienda.',
+      'Dejaste 40 vestidos en una <b>departamental</b> y nadie sabe cuántos se vendieron.',
+      'Compraste parejo de todas las tallas porque <b>así se ha hecho siempre</b>.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto. Nosotros llevamos años construyendo para tiendas de ropa, y cada pantalla que sigue está hecha con esa lógica."
+  />
 
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll
@@ -51,40 +80,57 @@ const desc =
 
 <style>
   .hero {
-    background: linear-gradient(180deg, #F8FAFC 0%, #fff 100%);
-    border-bottom: 1px solid #F1F5F9;
-    padding: 96px 24px 80px;
+    position: relative; min-height: 92vh; display: flex; align-items: flex-end;
+    padding: 0 24px 88px; overflow: hidden; background: #0A0A0B;
   }
-  .hero-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+  .hero-bg { position: absolute; inset: 0; }
+  .hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+  /* Velo en degradado: la foto manda arriba, el texto se lee abajo. Sin esto,
+     el titulo blanco compite con la ropa clara del fondo. */
+  .hero-veil {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,10,11,.35) 0%, rgba(10,10,11,.72) 46%, rgba(10,10,11,.96) 100%);
+  }
+  .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
   .hero-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
-    color: #2563EB; margin: 0 0 18px;
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 20px;
   }
   .hero-title {
-    font-size: clamp(34px, 6vw, 68px); font-weight: 800; letter-spacing: -2px;
-    line-height: 1.03; margin: 0 0 22px; color: #0F172A;
+    font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
+    line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
   }
   .hero-title span {
-    background: linear-gradient(90deg, #2563EB, #7C3AED);
+    background: linear-gradient(90deg, #60A5FA, #A78BFA);
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .hero-sub {
-    font-size: clamp(16px, 2vw, 20px); line-height: 1.6; color: #64748B;
-    max-width: 60ch; margin: 0 auto 32px;
+    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
+    max-width: 56ch; margin: 0 0 34px;
   }
-  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
   .btn-pri, .btn-sec {
     display: inline-flex; align-items: center; justify-content: center;
-    height: 52px; padding: 0 28px; border-radius: 12px;
-    font-size: 15.5px; font-weight: 700; text-decoration: none; transition: all .16s ease;
+    height: 54px; padding: 0 30px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
   }
-  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,.28); }
+  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 6px 22px rgba(37,99,235,.42); }
   .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
-  .btn-sec { background: #fff; color: #0F172A; border: 1.5px solid #E5E7EB; }
-  .btn-sec:hover { border-color: #CBD5E1; }
-  .hero-note { margin: 22px 0 0; font-size: 13px; color: #94A3B8; font-weight: 600; }
+  .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
+  .btn-sec:hover { background: rgba(255,255,255,.17); }
+  .hero-datos {
+    display: flex; gap: 44px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
+  }
+  .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
+  .hero-datos b {
+    font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #fff; letter-spacing: -.6px;
+  }
+  .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
   @media (max-width: 900px) {
-    .hero { padding: 64px 18px 56px; }
+    .hero { min-height: 88vh; padding: 0 18px 56px; }
+    .hero-datos { gap: 24px; }
+    .hero-cta { margin-bottom: 34px; }
   }
 </style>

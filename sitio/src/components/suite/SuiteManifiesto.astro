@@ -1,0 +1,80 @@
+---
+/**
+ * Seccion de texto cinetico: frases que se encienden conforme el visitante baja.
+ *
+ * Para que sirve: es la parte donde se demuestra que ENTENDEMOS el giro. No
+ * vende funcionalidades, nombra dolores con las palabras exactas del dueño de
+ * la tienda. Va antes del recorrido de producto: primero que se sienta
+ * entendido, despues que vea la herramienta.
+ *
+ * Alto contraste a proposito (fondo negro): corta el ritmo de la pagina y
+ * obliga a leer. Es el unico bloque oscuro del recorrido.
+ */
+interface Props {
+  intro: string;
+  frases: string[];
+  cierre: string;
+}
+const { intro, frases, cierre } = Astro.props;
+---
+
+<section class="mf">
+  <div class="mf-inner">
+    <p class="mf-intro">{intro}</p>
+    <div class="mf-frases">
+      {frases.map((f, i) => (
+        <p class="mf-frase" data-frase={i} set:html={f} />
+      ))}
+    </div>
+    <p class="mf-cierre">{cierre}</p>
+  </div>
+</section>
+
+<style>
+  .mf { background: #0A0A0B; color: #fff; padding: 140px 24px; }
+  .mf-inner { max-width: 900px; margin: 0 auto; }
+  .mf-intro {
+    font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #3B82F6; margin: 0 0 56px;
+  }
+  .mf-frases { display: grid; gap: 40px; }
+  .mf-frase {
+    margin: 0; font-size: clamp(26px, 4.4vw, 46px); font-weight: 700;
+    letter-spacing: -1.2px; line-height: 1.18; color: #2A2A2E;
+    transition: color .5s ease, transform .5s ease;
+  }
+  .mf-frase.on { color: #fff; transform: translateX(6px); }
+  /* La palabra clave se queda encendida siempre: es el ancla visual de la frase. */
+  .mf-frase :global(b) { color: #3B82F6; font-weight: 800; }
+  .mf-cierre {
+    margin: 72px 0 0; padding-top: 40px; border-top: 1px solid #1F1F23;
+    font-size: clamp(17px, 2.2vw, 22px); line-height: 1.55; color: #A1A1AA; max-width: 62ch;
+  }
+
+  @media (max-width: 900px) {
+    .mf { padding: 80px 20px; }
+    .mf-frases { gap: 28px; }
+    .mf-frase { color: #fff; }   /* en movil no se atenua: se lee de corrido */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mf-frase { transition: none; color: #fff; transform: none; }
+  }
+</style>
+
+<script>
+  {
+    const frases = document.querySelectorAll<HTMLElement>('.mf-frase[data-frase]');
+    if (frases.length && window.matchMedia('(min-width: 901px)').matches) {
+      const obs = new IntersectionObserver(
+        (entradas) => {
+          entradas.forEach((e) => e.target.classList.toggle('on', e.isIntersecting));
+        },
+        // Franja central: la frase se enciende cuando esta en el medio de la
+        // pantalla, no al asomarse. Asi solo hay una o dos encendidas a la vez
+        // y el ojo sabe donde esta.
+        { rootMargin: '-38% 0px -38% 0px' },
+      );
+      frases.forEach((f) => obs.observe(f));
+    }
+  }
+</script>
