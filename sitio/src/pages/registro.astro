@@ -1191,6 +1191,20 @@ export const prerender = false;
           }
         } catch {}
 
+        // OpenAI: registro completado, con el valor del plan.
+        // Se dispara AQUI —dentro del data.success— y no en el layout, porque el
+        // pixel sitewide solo debe inicializar; el evento va donde la accion pasa.
+        try {
+          if (typeof (window as any).oaiq !== 'undefined') {
+            const planPreciosOai: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
+            (window as any).oaiq('measure', 'registration_completed', {
+              type: 'customer_action',
+              amount: planPreciosOai[selectedPlan] || 0,
+              currency: 'MXN',
+            });
+          }
+        } catch {}
+
         // Lleva el subdominio creado a /bienvenida para mostrar el acceso real.
         const q = new URLSearchParams();
         if (data.account_id) q.set('cuenta', data.account_id);

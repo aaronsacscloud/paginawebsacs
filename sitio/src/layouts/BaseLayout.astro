@@ -101,6 +101,15 @@ const allSchemas = structuredData
     }(window, document, 'ttq');
     </script>
 
+    <!-- OpenAI Pixel (oaiq) — atribución de campañas de marketing con OpenAI.
+         Va en el <head> de TODAS las páginas porque este layout es la base.
+         El evento de conversión NO va aquí: vive donde la accion ocurre
+         (ver registro.astro), como pide la propia documentación de OpenAI. -->
+    <script is:inline>
+    !function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");
+    oaiq("init",{pixelId:"4qhBC3DP4VjKjFCHqmYbsS",debug:false});
+    </script>
+
     <!-- Partner attribution strip hydration -->
     <script is:inline>
     (function() {
