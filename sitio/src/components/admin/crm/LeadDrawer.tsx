@@ -42,6 +42,11 @@ const D = {
   chip: (bg: string, fg: string) => ({ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', fontWeight: 700, background: bg, color: fg, borderRadius: 20, padding: '3px 10px' }) as const,
 };
 
+// El mismo catálogo de puestos que en la ficha del cliente. En texto libre, el
+// mismo puesto acaba como "Dueño", "dueño" y "propietario", y después no se
+// puede filtrar ni saber con quién se está hablando.
+const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro'];
+
 const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
   lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
@@ -56,6 +61,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [registrando, setRegistrando] = useState(false);
 
   const cargar = () => fetch(`/api/crm/contacts/${contactId}`).then(r => r.json())
     .then(j => { if (j.error) setErr(j.error); else setC(j); }).catch(() => setErr('No se pudo cargar el lead.'));
@@ -211,6 +217,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
                       const u = `${window.location.origin}/agendar/demo?email=${encodeURIComponent(c.email || '')}&nombre=${encodeURIComponent(c.nombre || '')}`;
                       navigator.clipboard?.writeText(u); flash('Link de agenda copiado');
                     }}>Mandar link de agenda</button>
+                    {/* Muchas demos ya ocurrieron cuando alguien se acuerda de
+                        apuntarlas. Registrarla después vale igual: la ruta
+                        avanza y deja de pedir algo que ya pasó. */}
+                    <button style={D.btnA} onClick={() => setRegistrando(true)}>Registrar una que ya pasó</button>
                   </div>
                 </div>
 
@@ -270,8 +280,78 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             </div>
           )}
         </div>
+        {registrando && (
+          <ReunionPasada c={c} onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); flash('Reunión registrada'); cargar(); }} />
+        )}
       </div>
     </>
+  );
+}
+
+/* Registrar una reunión que YA ocurrió: la que se acordó por WhatsApp, se dio,
+ * y nadie alcanzó a agendar en el sistema. */
+function ReunionPasada({ c, onCerrar, onListo }: any) {
+  const [tipos, setTipos] = useState<any[]>([]);
+  const [tipoId, setTipoId] = useState('');
+  const [fecha, setFecha] = useState(hoy());
+  const [hora, setHora] = useState('10:00');
+  const [asunto, setAsunto] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/scheduling/event-types?activo=true').then(r => r.json())
+      .then(j => { const l = Array.isArray(j) ? j : (j?.data || []); setTipos(l); if (l[0]) setTipoId(l[0].id); })
+      .catch(() => {});
+  }, []);
+
+  async function guardar() {
+    if (!tipoId) { setError('No hay tipos de reunión activos.'); return; }
+    setBusy(true); setError('');
+    const r = await fetch('/api/scheduling/reuniones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type_id: tipoId, fecha, hora_inicio: hora, asunto: asunto || null,
+        contact_id: c.id, company_id: c.company_id || null,
+        invitee_nombre: [c.nombre, c.apellido].filter(Boolean).join(' '), invitee_email: c.email || null,
+        estado: 'asistio',
+      }),
+    }).then(x => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo registrar.'); return; }
+    onListo();
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 962, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 400 }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Registrar reunión que ya pasó</h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px' }}>
+          <div style={D.fl}>Tipo</div>
+          <select style={D.fi} value={tipoId} onChange={e => setTipoId(e.target.value)}>
+            {tipos.map((t: any) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+          </select>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
+            <div><div style={D.fl}>Cuándo fue</div><input type="date" style={D.fi} value={fecha} max={hoy()} onChange={e => setFecha(e.target.value)} /></div>
+            <div><div style={D.fl}>Hora</div><input type="time" style={D.fi} value={hora} onChange={e => setHora(e.target.value)} /></div>
+          </div>
+          <div style={{ marginTop: 9 }}><div style={D.fl}>De qué se habló</div>
+            <input style={D.fi} value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Demo del punto de venta" /></div>
+          <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 7, lineHeight: 1.45 }}>
+            Queda marcada como <b>se presentó</b> y la ruta avanza. Después puedes levantar su minuta desde Reuniones.
+          </div>
+          {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 9 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button style={{ ...D.btnP, opacity: busy ? .6 : 1 }} disabled={busy} onClick={guardar}>{busy ? 'Guardando…' : 'Registrar'}</button>
+            <button style={D.btnA} onClick={onCerrar}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -394,7 +474,13 @@ function Campos({ c, guardar, guardando }: any) {
           <div><div style={D.fl}>WhatsApp</div><input style={D.fi} value={v('whatsapp')} onChange={e => set('whatsapp', e.target.value)} /></div>
           <div><div style={D.fl}>Teléfono</div><input style={D.fi} value={v('telefono')} onChange={e => set('telefono', e.target.value)} /></div>
         </div>
-        <div style={{ marginTop: 9 }}><div style={D.fl}>Puesto</div><input style={D.fi} value={v('puesto')} onChange={e => set('puesto', e.target.value)} placeholder="Dueño, gerente…" /></div>
+        <div style={{ marginTop: 9 }}>
+          <div style={D.fl}>Puesto</div>
+          <select style={D.fi} value={v('rol') || v('puesto') || ''} onChange={e => { set('rol', e.target.value); set('puesto', e.target.value); }}>
+            <option value="">— sin definir —</option>
+            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
       </div>
 
       <div style={D.cardM}>

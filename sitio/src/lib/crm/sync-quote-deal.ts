@@ -79,19 +79,49 @@ export async function ensureContactForQuote(quote: any): Promise<string | null> 
   }
   if (existing?.id) {
     await supabase.from('quotes').update({ contact_id: existing.id }).eq('id', quote.id);
+    // Si el contacto ya existía sin empresa y la cotización sí la trae, se liga:
+    // sin eso, al pagar no hay a qué cuenta mandar al cliente.
+    if (quote.company_id) {
+      await supabase.from('contacts').update({ company_id: quote.company_id })
+        .eq('id', existing.id).is('company_id', null);
+    }
     return existing.id;
   }
 
-  // Create new contact
+  // ── Nombre y apellido, no "el campo contacto tal cual" ──
+  // En una cotización, "contacto" a veces trae el teléfono o el correo porque
+  // quien la capturó lo puso ahí. Guardarlo como nombre deja fichas llamadas
+  // "+52 33 1324 4547", que es exactamente lo que pasó.
+  const crudo = String(quote.contacto || '').trim();
+  const pareceNombre = /[a-záéíóúñ]{2,}/i.test(crudo) && !/@/.test(crudo) && (crudo.replace(/\D/g, '').length < 7);
+  const partes = pareceNombre ? crudo.split(/\s+/) : [];
+  const nombre = pareceNombre ? partes[0] : (quote.empresa || 'Contacto');
+  const apellido = pareceNombre && partes.length > 1 ? partes.slice(1).join(' ') : null;
+
+  // La empresa de la cotización se LIGA: es el dato que después convierte al
+  // lead en cliente sin volver a capturar nada.
+  let companyId = quote.company_id || null;
+  if (!companyId && quote.empresa) {
+    const { data: co } = await supabase.from('companies').select('id').ilike('nombre', quote.empresa.trim()).limit(1).maybeSingle();
+    if (co?.id) companyId = co.id;
+    else {
+      const { data: nueva } = await supabase.from('companies')
+        .insert({ nombre: quote.empresa.trim(), estado_cuenta: 'prospecto' }).select('id').single();
+      companyId = nueva?.id || null;
+    }
+  }
+
   const { data: created } = await supabase
     .from('contacts')
     .insert({
-      nombre: quote.contacto || quote.empresa || 'Contacto',
+      nombre, apellido,
       email: email || null,
       whatsapp: whatsapp || null,
+      company_id: companyId,
       lifecycle_stage: 'oportunidad',
       tipo: 'lead',
       fuente: 'cotizacion',
+      propiedades: { origen_cuenta: 'cotizacion' },
     })
     .select('id')
     .single();
