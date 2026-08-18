@@ -13,6 +13,7 @@ export interface SuiteSeccion {
   texto: string;
   bullets?: string[];
   visual: string;
+  testimonio?: { cita: string; autor: string };
 }
 
 /* Helpers de los mocks: se arman con HTML/CSS inline para que no dependan de
@@ -101,6 +102,11 @@ export const seccionesRopa: SuiteSeccion[] = [
           </div>
         </div>`).join('')}
     </div>`,
+    testimonio: {
+      cita:
+        'Dejabamos producto en tres departamentales y cada corte era un pleito de Excel. Ahora se que se vendio y cuanto me deben sin llamar a nadie.',
+      autor: 'Espacio para testimonial — marca con presencia en departamentales',
+    },
   },
   {
     id: 'temporadas',
@@ -176,6 +182,11 @@ export const seccionesRopa: SuiteSeccion[] = [
                 :(q>0?'<span style="background:#ECFDF5;color:#047857;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">TOMAR</span>':'')}
         </div>`).join('')}
     </div>`,
+    testimonio: {
+      cita:
+        'Antes le hablabamos por WhatsApp a la otra tienda para preguntar si habia la talla. Se perdian ventas nada mas por la flojera de preguntar.',
+      autor: 'Espacio para testimonial — boutique con 4 sucursales',
+    },
   },
   {
     id: 'looks',
@@ -223,6 +234,11 @@ export const seccionesRopa: SuiteSeccion[] = [
           <span style="font-size:11px;font-weight:800;color:${c==='#94A3B8'?'#94A3B8':'#2563EB'};">${a}</span>
         </div>`).join('')}
     </div>`,
+    testimonio: {
+      cita:
+        'Comprabamos parejo de todas las tallas. Terminabamos con puras XXL colgadas y sin M, que es la que de verdad se vende.',
+      autor: 'Espacio para testimonial — marca de moda femenina',
+    },
   },
   {
     id: 'clientas',

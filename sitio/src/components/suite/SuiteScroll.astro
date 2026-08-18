@@ -22,6 +22,8 @@ export interface SuiteSeccion {
   bullets?: string[];
   /** Mock de UI en HTML (se pinta dentro del panel). */
   visual: string;
+  /** Testimonial que acompaña a ESTA funcionalidad (opcional). */
+  testimonio?: { cita: string; autor: string };
 }
 
 interface Props {
@@ -88,7 +90,12 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
               {s.bullets.map((b) => <li>{b}</li>)}
             </ul>
           )}
-          <slot name={`extra-${s.id}`} />
+          {s.testimonio && (
+            <figure class="suite-quote">
+              <blockquote>{s.testimonio.cita}</blockquote>
+              <figcaption>{s.testimonio.autor}</figcaption>
+            </figure>
+          )}
         </article>
       ))}
     </div>
@@ -187,6 +194,15 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-bullets li {
     position: relative; padding-left: 22px; font-size: 14.5px; color: #334155; line-height: 1.5;
   }
+  .suite-quote {
+    margin: 26px 0 0; border-left: 3px solid #2563EB; background: #F8FAFC;
+    border-radius: 0 14px 14px 0; padding: 18px 22px;
+  }
+  .suite-quote blockquote {
+    margin: 0 0 10px; font-size: 15.5px; line-height: 1.6; color: #0F172A; font-weight: 500;
+  }
+  .suite-quote figcaption { font-size: 12.5px; color: #94A3B8; font-weight: 600; }
+
   .suite-bullets li::before {
     content: ''; position: absolute; left: 0; top: 8px; width: 7px; height: 7px;
     border-radius: 50%; background: #2563EB;
