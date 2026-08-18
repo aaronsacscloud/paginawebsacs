@@ -6,6 +6,9 @@ import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../../lib/atribucion-marketing';
+import { notificar } from '../../../lib/crm/notificaciones';
+import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 export const prerender = false;
 
@@ -106,6 +109,23 @@ async function sendEmail(to: string, subject: string, html: string) {
   } catch {}
 }
 
+/**
+ * Qué tan caliente llega. Agendar una demo es la señal más fuerte que da el
+ * sitio, así que arranca alto; lo demás afina. Nunca BAJA el puntaje que ya
+ * tenía el contacto: un lead que ya venía calificado no se degrada por volver
+ * a agendar con menos datos.
+ */
+function puntajeDeDemo(d: { whatsapp?: any; empresa?: any; giro?: any; sucursales?: any }): number {
+  let p = 40;
+  if (d.whatsapp) p += 10;
+  if (d.empresa) p += 10;
+  if (d.giro) p += 5;
+  const suc = parseInt(String(d.sucursales || '')) || 0;
+  if (suc >= 5) p += 20;
+  else if (suc >= 2) p += 10;
+  return Math.min(p, 100);
+}
+
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = h * 60 + m + minutes;
@@ -157,6 +177,13 @@ export const POST: APIRoute = async ({ request }) => {
   // Resolve partner attribution: prefer body field, fallback a cookie/?ref
   const { getReferrerFromBody } = await import('../../../lib/attribution');
   const referrerPartnerId = await getReferrerFromBody(request, ref_partner_id);
+
+  // De dónde venía: body (el widget ya resolvió el caso del iframe) → cookie
+  // sacs_attr → utm_* sueltos. Ver src/lib/atribucion-marketing.ts.
+  const atribucion = resolverAtribucion(request, body);
+  const utm = columnasUtm(atribucion);
+  const bloqueAttr = bloqueAtribucion(atribucion, request);
+  const puntaje = puntajeDeDemo({ whatsapp, empresa, giro, sucursales });
 
   if (!event_type_slug || !fecha || !hora_inicio || !nombre || !email) {
     return new Response(
@@ -255,7 +282,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: existingContact } = await supabase
     .from('contacts')
-    .select('id, lifecycle_stage, referrer_partner_id')
+    .select('id, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, propiedades, lead_score, visitor_id, fuente_detalle')
     .eq('email', email)
     .limit(1)
     .single();
@@ -272,6 +299,36 @@ export const POST: APIRoute = async ({ request }) => {
       updates.referrer_partner_id = referrerPartnerId;
       updates.fuente = 'partner-link';
     }
+
+    // Enriquecer: SOLO lo que venía vacío. Quien ya agendó una vez suele
+    // volver con menos datos (el formulario recuerda poco), y pisar el giro o
+    // el whatsapp buenos con un campo en blanco es peor que no actualizar.
+    if (!existingContact.whatsapp && whatsapp) updates.whatsapp = whatsapp;
+    if (!existingContact.giro && giro) updates.giro = giro;
+    if (!existingContact.sucursales_interes && sucursales) {
+      const n = parseInt(String(sucursales));
+      if (Number.isFinite(n)) updates.sucursales_interes = n;
+    }
+    if (!existingContact.utm_source && utm.utm_source) {
+      updates.utm_source = utm.utm_source;
+      updates.utm_medium = utm.utm_medium;
+      updates.utm_campaign = utm.utm_campaign;
+    }
+    if (!existingContact.visitor_id && atribucion?.vid) updates.visitor_id = atribucion.vid;
+    if (!existingContact.fuente_detalle && bloqueAttr.primer_toque?.landing) {
+      updates.fuente_detalle = bloqueAttr.primer_toque.landing;
+    }
+    // La atribución completa se conserva la PRIMERA vez que se conoce: es el
+    // origen del lead, no el de su última visita.
+    const propsPrev = (existingContact.propiedades && typeof existingContact.propiedades === 'object')
+      ? existingContact.propiedades as Record<string, any>
+      : {};
+    if (!propsPrev.atribucion && (bloqueAttr.primer_toque || bloqueAttr.ultimo_toque)) {
+      updates.propiedades = { ...propsPrev, atribucion: bloqueAttr };
+    }
+    const puntajePrev = Number(existingContact.lead_score) || 0;
+    if (puntaje > puntajePrev) updates.lead_score = puntaje;
+
     if (Object.keys(updates).length > 0) {
       await supabase.from('contacts').update(updates).eq('id', contact_id);
     }
@@ -285,12 +342,17 @@ export const POST: APIRoute = async ({ request }) => {
         tipo: 'lead',
         lifecycle_stage: 'lead_calificado',
         fuente: referrerPartnerId ? 'partner-link' : 'booking-page',
-        utm_source: utm_source || null,
-        utm_medium: utm_medium || null,
-        utm_campaign: utm_campaign || null,
+        fuente_detalle: bloqueAttr.primer_toque?.landing || null,
+        utm_source: utm.utm_source,
+        utm_medium: utm.utm_medium,
+        utm_campaign: utm.utm_campaign,
         giro: giro || null,
         sucursales_interes: parseInt(String(sucursales)) || null,
         referrer_partner_id: referrerPartnerId,
+        visitor_id: atribucion?.vid || null,
+        page_count: atribucion?.n || null,
+        lead_score: puntaje,
+        propiedades: { atribucion: bloqueAttr },
       })
       .select('id')
       .single();
@@ -384,9 +446,13 @@ export const POST: APIRoute = async ({ request }) => {
       estado: 'confirmada',
       token_cancelar,
       token_reagendar,
-      utm_source: utm_source || null,
-      utm_medium: utm_medium || null,
-      utm_campaign: utm_campaign || null,
+      utm_source: utm.utm_source,
+      utm_medium: utm.utm_medium,
+      utm_campaign: utm.utm_campaign,
+      // Sin esto la reunión no se ligaba a la empresa aunque el contacto sí:
+      // el tab Reuniones y la ficha del cliente perdían las demos públicas.
+      company_id,
+      atribucion: bloqueAttr,
       referrer_partner_id: referrerPartnerId,
     })
     .select()
@@ -750,6 +816,43 @@ export const POST: APIRoute = async ({ request }) => {
     automatico: true,
   });
 
+  // 12a. Avisar en la campana del CRM.
+  //
+  // Hasta ahora agendar una demo solo mandaba correo al host: si esa cuenta no
+  // se revisaba, la demo existía en la base y en el calendario pero nadie del
+  // equipo se enteraba. La campana ya es donde se mira lo que pasó solo.
+  try {
+    const origenLead = origenDe(origenDeRegistro({
+      utm_source: utm.utm_source,
+      fuente: referrerPartnerId ? 'partner-link' : 'booking-page',
+    }));
+    const detalles = [
+      `${fecha} ${hora_inicio}`,
+      giro || null,
+      sucursales ? `${sucursales} sucursales` : null,
+      email,
+    ].filter(Boolean).join(' · ');
+
+    await notificar({
+      clave: `demo_agendada:${booking.id}`,
+      tipo: 'demo_agendada',
+      nivel: 'info',
+      titulo: `Demo agendada — ${empresa || nombre} (${resumenAtribucion(atribucion)})`,
+      detalle: detalles,
+      company_id,
+      destino: 'reuniones',
+      metadata: {
+        booking_id: booking.id,
+        contact_id,
+        deal_id,
+        event_type: eventType.slug,
+        origen: origenLead.v || null,
+        origen_label: origenLead.l,
+        atribucion: bloqueAttr,
+      },
+    });
+  } catch { /* avisar es efecto secundario: nunca tumba la reserva */ }
+
   // 12b. Auto-enroll in automations triggered by 'demo_agendada'
   try {
     const { data: activeAutomations } = await supabase
@@ -844,9 +947,11 @@ export const POST: APIRoute = async ({ request }) => {
           estado: 'confirmada',
           token_cancelar: recurToken,
           token_reagendar: generateToken(),
-          utm_source: utm_source || null,
-          utm_medium: utm_medium || null,
-          utm_campaign: utm_campaign || null,
+          utm_source: utm.utm_source,
+          utm_medium: utm.utm_medium,
+          utm_campaign: utm.utm_campaign,
+          company_id,
+          atribucion: bloqueAttr,
           referrer_partner_id: referrerPartnerId,
         })
         .select('id, fecha, hora_inicio')

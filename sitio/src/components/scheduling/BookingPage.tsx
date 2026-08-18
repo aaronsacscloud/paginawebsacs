@@ -513,6 +513,17 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
     setFormError(null);
 
     try {
+      // Atribución de marketing: la cookie sacs_attr que dejó BaseLayout.
+      // Aquí adentro no sirve leer location.search — el agendador corre dentro
+      // de un <iframe> en /contacto y la query del padre no llega. La cookie sí
+      // (mismo origen), y el servidor la revalida por si acaso.
+      let atribucion: any = null;
+      try {
+        const m = document.cookie.match(/(?:^|;\s*)sacs_attr=([^;]+)/);
+        if (m) atribucion = JSON.parse(decodeURIComponent(m[1]));
+      } catch { /* la atribución nunca puede tumbar la reserva */ }
+      const toque = atribucion?.p?.s || atribucion?.p?.rf ? atribucion.p : (atribucion?.u || atribucion?.p);
+
       // Atribución partner: query ?ref= primero, luego cookie sacs_ref
       let refPartnerId: string | null = null;
       try {
@@ -543,6 +554,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           answers: Object.entries(formData.answers).filter(([,v]) => v).map(([qid, valor]) => ({ question_id: qid, valor })),
           ...(recurrenceEnabled ? { recurrence: { frequency: recurrenceFrequency, count: recurrenceCount } } : {}),
           ref_partner_id: refPartnerId,
+          atribucion,
+          utm_source: toque?.s || null,
+          utm_medium: toque?.m || null,
+          utm_campaign: toque?.c || null,
         }),
       });
 

@@ -149,6 +149,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                           <a
                             href={waDemoGiro(sector.label, sector.description)}
                             class="sp-cta-demo"
+                            data-giro-contexto="menu"
                             target="_blank"
                             rel="noopener noreferrer"
                             data-giro={sector.label}
@@ -251,6 +252,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                       <a
                         href={waDemoGiro(sector.label, sector.description)}
                         class="mobile-sector-wa"
+                        data-giro-contexto="menu-movil"
                         target="_blank"
                         rel="noopener noreferrer"
                         data-giro={sector.label}
@@ -1734,18 +1736,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     sectorPanels.forEach((p) => p.classList.toggle('active', p.dataset.panelIdx === idx));
   }
 
-  // ─── CTA de demo por giro: tracking (mismo evento que la barra de WhatsApp) ───
-  document.querySelectorAll<HTMLAnchorElement>('a[data-giro]').forEach((el) => {
-    el.addEventListener('click', () => {
-      try {
-        const giro = el.dataset.giro || '';
-        if (typeof ttq !== 'undefined') {
-          ttq.track('Contact', { content_id: 'whatsapp-giro', content_name: `demo-giro-${giro}`, content_type: 'product' });
-        }
-        (window as any).sacsOai?.('custom', { type: 'custom' }, { custom_event_name: 'mandowhatsapp' });
-      } catch {}
-    });
-  });
+  // El clic en los CTA de giro (data-giro) lo maneja BaseLayout para todo el
+  // sitio: tracking + registro del intento. Aquí no se duplica.
 
   sectorRows.forEach((row) => {
     row.addEventListener('mouseenter', () => {

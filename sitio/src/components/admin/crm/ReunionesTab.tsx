@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 /* ═══ Reuniones (VENTAS) — listado operativo de TODAS las reuniones ═══
  * Las del founder y las de partners, segmentadas y ligadas al CRM real:
@@ -9,6 +10,34 @@ import { useIsMobile } from '../../../lib/ui/mobile';
  * aparte en Sistema → Agenda. */
 
 type Segmento = 'hoy' | 'semana' | 'proximas' | 'pasadas' | 'todas';
+
+/**
+ * De dónde venía quien agendó ESTA reunión.
+ *
+ * Solo aplica a las que se agendaron desde el sitio: las que capturó el equipo
+ * (origen 'crm') no tienen canal que mostrar y pintarles "Página de agenda"
+ * sería ruido. La atribución la escribe /api/scheduling/book.
+ */
+function origenDeReunion(b: any): { l: string; color: string; campana?: string } | null {
+  if (b?.origen === 'crm') return null;
+  const o = origenDe(origenDeRegistro({ utm_source: b?.utm_source, fuente: 'booking-page' }));
+  if (!o.v) return null;
+  return { l: o.l, color: o.color, campana: b?.atribucion?.primer_toque?.campana || undefined };
+}
+
+function ChipOrigen({ b }: { b: any }) {
+  const o = origenDeReunion(b);
+  if (!o) return null;
+  return (
+    <div style={{ fontSize: '0.68rem', color: '#8a8a8a', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}
+         title={o.campana ? `Campaña: ${o.campana}` : undefined}>
+      <span style={{ width: 7, height: 7, borderRadius: 99, background: o.color, flexShrink: 0 }} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {o.l}{o.campana ? ` · ${o.campana}` : ''}
+      </span>
+    </div>
+  );
+}
 
 const ESTADOS: Record<string, { label: string; bg: string; color: string }> = {
   pendiente:  { label: 'Pendiente',  bg: '#FEF3C7', color: '#92400E' },
@@ -262,6 +291,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
                 <div onClick={() => clickable && abrirInvitado(b)} style={{ cursor: clickable ? 'pointer' : 'default', minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <span style={{ fontWeight: 700, fontSize: '0.92rem', color: clickable ? '#1D4ED8' : '#333' }}>{b.invitee_nombre || '—'}{clickable ? ' ›' : ''}</span>
                   <span style={{ fontSize: '0.75rem', color: '#999' }}>{b.invitado_company_nombre || b.invitee_empresa || b.invitee_email || ''}</span>
+                  <ChipOrigen b={b} />
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
                   {ti && <span style={{ ...S.badge, background: ti.bg, color: ti.color }}>{ti.label}</span>}
@@ -293,6 +323,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
                         <div onClick={() => clickable && abrirInvitado(b)} style={{ cursor: clickable ? 'pointer' : 'default' }} title={clickable ? 'Abrir expediente' : undefined}>
                           <span style={{ fontWeight: 700, color: clickable ? '#1D4ED8' : '#333', textDecoration: clickable ? 'underline' : 'none', textUnderlineOffset: 3 }}>{b.invitee_nombre || '—'}</span>
                           <div style={{ fontSize: '0.7rem', color: '#999' }}>{b.invitado_company_nombre || b.invitee_empresa || b.invitee_email || ''}</div>
+                          <ChipOrigen b={b} />
                         </div>
                       </td>
                       <td style={S.td}>{ti ? <span style={{ ...S.badge, background: ti.bg, color: ti.color }}>{ti.label}</span> : <span style={{ color: '#ccc' }}>—</span>}

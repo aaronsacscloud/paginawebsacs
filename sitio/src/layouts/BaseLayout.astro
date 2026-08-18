@@ -564,31 +564,95 @@ const allSchemas = structuredData
       }
     </script>
 
-    <!-- TikTok: track CTA clicks globally + UTM persistence -->
+    <!-- Atribución de marketing (cookie sacs_attr) + tracking de CTAs -->
     <script is:inline>
-    try {
-      // ─── Persist UTMs across pages ───
-      var params = new URLSearchParams(window.location.search);
-      var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','ttclid'];
-      var hasUtm = false;
-      utmKeys.forEach(function(k) {
-        var v = params.get(k);
-        if (v) { sessionStorage.setItem(k, v); hasUtm = true; }
-      });
+    (function () {
+      // De dónde venía quien está leyendo esto. Se guarda en COOKIE, no en
+      // sessionStorage: el que ve el anuncio hoy y agenda mañana llegaba al
+      // CRM como "tráfico directo" y la campaña que lo pagó se perdía.
+      // El servidor lo lee en src/lib/atribucion-marketing.ts.
+      var COOKIE = 'sacs_attr', DIAS = 90, MAX = 200;
+      var CLICK_IDS = ['gclid', 'fbclid', 'ttclid', 'msclkid'];
+      var UTM = { utm_source: 's', utm_medium: 'm', utm_campaign: 'c', utm_content: 'co', utm_term: 't' };
 
-      // Append stored UTMs to /prueba-gratis and /registro links
-      document.addEventListener('click', function(e) {
+      function corta(v) { return v ? String(v).slice(0, MAX) : ''; }
+
+      function leer() {
+        try {
+          var m = document.cookie.match(/(?:^|;\s*)sacs_attr=([^;]+)/);
+          return m ? JSON.parse(decodeURIComponent(m[1])) : null;
+        } catch (e) { return null; }
+      }
+
+      function guardar(a) {
+        try {
+          var exp = new Date(Date.now() + DIAS * 86400000).toUTCString();
+          document.cookie = COOKIE + '=' + encodeURIComponent(JSON.stringify(a)) +
+            ';Path=/;Expires=' + exp + ';SameSite=Lax' +
+            (location.protocol === 'https:' ? ';Secure' : '');
+        } catch (e) {}
+      }
+
+      var params = new URLSearchParams(window.location.search);
+      var landing = location.pathname + location.search;
+      var ref = document.referrer || '';
+
+      // El agendador vive dentro de un <iframe> en /contacto y ahí la query
+      // string del padre NO llega. El referrer del iframe SÍ es la URL del
+      // padre completa, con sus utm: de ahí se recupera.
+      if (window.top !== window.self && ref.indexOf(location.origin) === 0) {
+        try {
+          var padre = new URL(ref);
+          params = padre.searchParams;
+          landing = padre.pathname + padre.search;
+          ref = '';
+        } catch (e) {}
+      }
+
+      var externo = (ref && ref.indexOf(location.origin) !== 0) ? ref : '';
+      var toque = {}, identificable = false;
+
+      for (var k in UTM) {
+        var v = params.get(k);
+        if (v) { toque[UTM[k]] = corta(v); identificable = true; }
+      }
+      var cl = {};
+      for (var i = 0; i < CLICK_IDS.length; i++) {
+        var cv = params.get(CLICK_IDS[i]);
+        if (cv) { cl[CLICK_IDS[i]] = corta(cv); identificable = true; }
+      }
+      if (Object.keys(cl).length) toque.cl = cl;
+      if (externo) { toque.rf = corta(externo); identificable = true; }
+      toque.lp = corta(landing);
+      toque.ts = Date.now();
+
+      var a = leer() || { v: 1 };
+      if (!a.vid) a.vid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      a.n = (a.n || 0) + 1;
+      // El PRIMER toque no se pisa nunca: es cómo nos conoció.
+      if (!a.p) a.p = toque;
+      if (identificable || !a.u) a.u = toque;
+      guardar(a);
+
+      // Compatibilidad: /prueba-gratis y /registro siguen leyendo sessionStorage.
+      try {
+        var o = a.u || a.p || {};
+        var ss = { utm_source: o.s, utm_medium: o.m, utm_campaign: o.c, utm_content: o.co, utm_term: o.t, ttclid: (o.cl || {}).ttclid };
+        for (var sk in ss) if (ss[sk]) sessionStorage.setItem(sk, ss[sk]);
+      } catch (e) {}
+
+      // ─── Tracking de CTAs + UTMs en los links de conversión ───
+      var utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ttclid'];
+      document.addEventListener('click', function (e) {
         var el = e.target;
         while (el && el !== document) {
           if (el.tagName === 'A' && el.href) {
-            // ─── Track "Prueba gratis" clicks ───
             if (el.href.indexOf('/prueba-gratis') > -1) {
               if (typeof ttq !== 'undefined') {
                 ttq.track('ClickButton', { content_id: 'prueba-gratis', content_name: 'cta-prueba-7-dias', content_type: 'product' });
               }
-              // Append UTMs
               var stored = new URLSearchParams();
-              utmKeys.forEach(function(k) {
+              utmKeys.forEach(function (k) {
                 var sv = sessionStorage.getItem(k);
                 if (sv) stored.set(k, sv);
               });
@@ -597,18 +661,34 @@ const allSchemas = structuredData
                 el.href = el.href + (el.href.indexOf('?') > -1 ? '&' : '?') + qs;
               }
             }
-            // ─── Track "Agenda demo" clicks ───
             if (el.href.indexOf('/contacto') > -1) {
               if (typeof ttq !== 'undefined') {
                 ttq.track('ClickButton', { content_id: 'agenda-demo', content_name: 'agenda-demo', content_type: 'product' });
               }
+            }
+            // ─── CTA de demo por WhatsApp (menú de giros, /giros, fichas) ───
+            // El link va DIRECTO a wa.me: la conversión nunca depende de que
+            // esta telemetría funcione. data-giro lo pone quien pinta el CTA.
+            if (el.dataset && el.dataset.giro) {
+              var giro = el.dataset.giro;
+              if (typeof ttq !== 'undefined') {
+                ttq.track('Contact', { content_id: 'whatsapp-giro', content_name: 'demo-giro-' + giro, content_type: 'product' });
+              }
+              if (window.sacsOai) window.sacsOai('custom', { type: 'custom' }, { custom_event_name: 'mandowhatsapp' });
+              try {
+                var payload = JSON.stringify({ giro: giro, contexto: el.dataset.giroContexto || '' });
+                var enviado = navigator.sendBeacon && navigator.sendBeacon('/api/wa-intento', new Blob([payload], { type: 'application/json' }));
+                if (!enviado) {
+                  fetch('/api/wa-intento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function () {});
+                }
+              } catch (err) {}
             }
             break;
           }
           el = el.parentElement;
         }
       });
-    } catch(e) {}
+    })();
     </script>
   </body>
 </html>

@@ -251,6 +251,8 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
 
                 <PruebaGratis c={c} guardar={guardar} flash={flash} />
 
+                <DeDondeLlego c={c} />
+
                 <div style={D.cardM}>
                   <div style={D.h}>Lo último<span style={D.hr}>ver todo en Actividad</span></div>
                   {(c.activities || []).slice(0, 4).map((a: any) => (
@@ -480,6 +482,51 @@ function PruebaGratis({ c, guardar, flash }: any) {
 }
 
 /* Los campos, agrupados por PARA QUÉ sirven: para llamarle, o para venderle. */
+/**
+ * De dónde llegó este lead.
+ *
+ * El origen ya se pintaba como una etiqueta suelta ("Página de agenda"), que
+ * es de dónde LLENÓ el formulario, no de dónde VENÍA. La atribución completa
+ * se guarda desde que agenda (propiedades.atribucion) y esto la muestra: la
+ * campaña que lo trajo, la página donde cayó y con qué dispositivo.
+ */
+function DeDondeLlego({ c }: any) {
+  const a = c?.propiedades?.atribucion;
+  const o = origenDe(origenDeRegistro(c));
+  const p = a?.primer_toque, u = a?.ultimo_toque;
+  const hayCampana = !!(p?.fuente || p?.campana || p?.referrer);
+
+  const fila = (l: string, v: any) => v ? (
+    <div style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #f5f4f8', fontSize: '0.75rem' }}>
+      <span style={{ color: '#a5a2af', flexShrink: 0, minWidth: 92 }}>{l}</span>
+      <span style={{ color: '#3f3b4d', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }} title={String(v)}>{String(v)}</span>
+    </div>
+  ) : null;
+
+  return (
+    <div style={D.cardM}>
+      <div style={D.h}>De dónde llegó{a?.paginas_vistas ? <span style={D.hr}>{a.paginas_vistas} páginas vistas</span> : null}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 99, background: o.color, flexShrink: 0 }} />
+        <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{o.l}</span>
+      </div>
+      {!hayCampana && (
+        <div style={{ fontSize: '0.72rem', color: '#a5a2af', lineHeight: 1.5, paddingTop: 4 }}>
+          Llegó sin campaña identificable (tráfico directo o referrer oculto).
+        </div>
+      )}
+      {fila('Campaña', p?.campana)}
+      {fila('Medio', p?.medio)}
+      {fila('Contenido', p?.contenido)}
+      {fila('Cayó en', p?.landing)}
+      {fila('Referido de', p?.referrer)}
+      {u && (u.fuente !== p?.fuente || u.campana !== p?.campana) && fila('Volvió por', [u.fuente, u.campana].filter(Boolean).join(' · '))}
+      {fila('Dispositivo', [a?.dispositivo, a?.navegador].filter(Boolean).join(' · '))}
+      {c.lead_score ? fila('Puntaje', `${c.lead_score}/100`) : null}
+    </div>
+  );
+}
+
 function Campos({ c, guardar, guardando }: any) {
   const [f, setF] = useState<any>({});
   const giros = useGiros();
