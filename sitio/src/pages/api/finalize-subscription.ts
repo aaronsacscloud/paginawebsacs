@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { supabase } from '../../lib/supabase';
+import { medirConversionEnSegundoPlano } from '../../lib/openai-conversions';
 import { provisionAccount, generateUniqueAccountId, isValidAccountId } from '../../lib/register';
 import { normalizeEmail } from '../../lib/gifts';
 import { syncCrmForSubscription, sendTikTokEvent } from './create-subscription';
@@ -173,6 +174,17 @@ export const POST: APIRoute = async ({ request }) => {
       empresa, nombre, email, whatsapp, giro, sucursales,
       planId, billingPeriod, planValue,
       customerId, subscriptionId: subscription.id,
+    });
+
+    // OpenAI Conversions API: la cuenta se PROVISIONÓ de verdad.
+    // Se mide aquí y no solo en el navegador porque si el usuario cierra la
+    // pestaña justo al terminar el pago, el pixel nunca dispara — y esa es
+    // precisamente la conversión más valiosa del embudo.
+    // El id sale de la suscripción de Stripe: estable y único por registro.
+    medirConversionEnSegundoPlano({
+      id: `sub-${subscription.id}`,
+      tipo: 'registration_completed',
+      sourceUrl: 'https://www.sacscloud.com/registro',
     });
 
     return json({ success: true, subscriptionId: subscription.id, account_id: provisionedAccountId, provision_pending: false, status: subscription.status }, 200);

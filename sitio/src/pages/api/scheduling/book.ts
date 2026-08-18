@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
+import { medirConversionEnSegundoPlano } from '../../../lib/openai-conversions';
 import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
@@ -401,6 +402,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
     return new Response(JSON.stringify({ error: bookErr.message }), { status: 500 });
   }
+
+  // OpenAI Conversions API: la demo quedó CONFIRMADA en base.
+  // El id es el de la reserva —no un aleatorio— para que si el pixel del
+  // navegador reporta la misma cita, OpenAI las una en vez de contarlas dos veces.
+  medirConversionEnSegundoPlano({
+    id: `booking-${booking.id}`,
+    tipo: 'appointment_scheduled',
+    sourceUrl: 'https://www.sacscloud.com/agendar',
+  });
 
   // 8. Save booking answers
   if (answers && Array.isArray(answers) && answers.length > 0) {
