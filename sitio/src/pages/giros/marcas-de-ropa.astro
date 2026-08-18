@@ -1,144 +1,126 @@
 ---
+/**
+ * Suite para Tiendas de Ropa.
+ *
+ * Formato "suite": una sola pagina donde el panel se queda fijo y va cambiando
+ * mientras el visitante baja. Sustituye a la version anterior de bloques
+ * genericos (POS personalizable / multi-sucursal), que decia lo mismo que
+ * cualquier otro giro.
+ *
+ * Regla de contenido: todo ejemplo es de ROPA. Tallas, colores, temporadas y
+ * prendas con nombre. Ver src/data/suite-ropa.ts.
+ */
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import GiroHero from '../../components/giros/GiroHero.astro';
-import GiroFeatures from '../../components/giros/GiroFeatures.astro';
-import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
-import GiroStats from '../../components/giros/GiroStats.astro';
-import GiroTestimonial from '../../components/giros/GiroTestimonial.astro';
-import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
+import { seccionesRopa } from '../../data/suite-ropa';
 
-const features = [
-  {
-    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
-    title: 'POS personalizable',
-    description: 'Configura tu pantalla de venta por colección, temporada o marca. Cobra en segundos con la interfaz más intuitiva del mercado.',
-  },
-  {
-    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/><path d="M9 6v12"/></svg>`,
-    title: 'Tallas, colores y variantes',
-    description: 'Gestiona cada SKU con atributos de talla, color y temporada. Lleva el control exacto de lo que tienes en cada sucursal.',
-  },
-  {
-    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/><path d="M12 12v10M2 7l10 5 10-5"/></svg>`,
-    title: 'Devoluciones y cambios',
-    description: 'Procesa cambios de talla y devoluciones en cualquier sucursal con unos cuantos taps. Sin fricciones para tu cliente.',
-  },
-  {
-    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
-    title: 'Multi-sucursal',
-    description: 'Opera todas tus tiendas desde un solo dashboard. Visibilidad total de ventas, inventario y equipo en tiempo real.',
-  },
-];
-
-const stats = [
-  { value: '+3,000', label: 'Marcas activas en México y Latam' },
-  { value: '99.9%', label: 'Uptime garantizado' },
-  { value: '+45%', label: 'Incremento en fidelización' },
-  { value: '30 días', label: 'Implementación completa' },
-];
-
-const faqs = [
-  {
-    question: '¿SACS maneja variantes de talla y color?',
-    answer: 'Sí. Puedes crear productos con múltiples variantes de talla, color, material y cualquier atributo personalizado. Cada variante tiene su propio SKU, código de barras e inventario independiente por sucursal.',
-  },
-  {
-    question: '¿Puedo conectar mi tienda en línea?',
-    answer: 'SACS incluye comercio electrónico integrado, o puedes conectar tu tienda existente en Shopify, WooCommerce u otra plataforma. El inventario se sincroniza en tiempo real entre todos tus canales de venta.',
-  },
-  {
-    question: '¿Cómo funciona la gestión de inventario multi-sucursal?',
-    answer: 'Todo tu inventario se sincroniza automáticamente entre sucursales y canales. Puedes transferir mercancía entre tiendas, recibir alertas de reabasto y generar órdenes de compra a proveedores directamente desde la plataforma.',
-  },
-  {
-    question: '¿Puedo procesar devoluciones y cambios de talla?',
-    answer: 'Sí. Los cambios y devoluciones se procesan en cualquier sucursal, sin importar dónde se hizo la compra original. El inventario se ajusta automáticamente y el historial del cliente se actualiza en tiempo real.',
-  },
-  {
-    question: '¿Qué reportes puedo ver?',
-    answer: 'Tienes acceso a reportes de ventas por producto, marca, categoría, sucursal y periodo. También reportes de inventario como rotación, merma, costo de mercancía vendida (COGS) y márgenes de utilidad.',
-  },
-  {
-    question: '¿Cuánto tiempo toma implementar SACS?',
-    answer: 'La mayoría de marcas de ropa están operando en menos de 30 días. Incluimos migración de datos, capacitación de equipo y soporte dedicado durante la implementación sin costo adicional.',
-  },
-];
+const titulo = 'Suite para Tiendas de Ropa';
+const desc =
+  'El sistema para boutiques y marcas de moda: matriz de tallas y colores, curvas de compra, consignación a departamentales y control de todas tus sucursales.';
 ---
 
-<BaseLayout
-  title="SACS para Marcas de Ropa — Punto de Venta y Gestión de Inventario"
-  description="Software de punto de venta diseñado para marcas de ropa, boutiques y apparel retail. Gestiona inventario por talla y color, vende en tienda y en línea, fideliza clientes."
->
-  <GiroHero
-    eyebrow="SACS para Marcas de Ropa"
-    title="El punto de venta diseñado para tu marca de ropa."
-    subtitle="Gestiona inventario por talla y color, vende en tienda y en línea, y fideliza a tus clientes. Todo desde una sola plataforma."
-    primaryCTA={{ label: 'Empieza gratis', href: '/prueba-gratis' }}
-    secondaryCTA={{ label: 'Agenda una demo', href: '/contacto' }}
-    image="/images/hero-sacs-store.webp"
-    imageAlt="Persona usando SACS en tablet en su tienda de ropa"
-  />
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <!-- ── Portada ── -->
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">SACS · Suite Moda</p>
+      <h1 class="hero-title">El sistema que entiende<br /><span>tallas, colores y temporadas</span></h1>
+      <p class="hero-sub">
+        Todo lo que una boutique necesita, hecho para cómo trabaja una boutique. Sin adaptar
+        un sistema de abarrotes a tu inventario.
+      </p>
+      <div class="hero-cta">
+        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
+        <a href="/contacto" class="btn-pri">Agenda una demo</a>
+      </div>
+      <p class="hero-note">9 funcionalidades pensadas para moda · Sin permanencia</p>
+    </div>
+  </header>
 
-  <GiroFeatures features={features} />
+  <!-- ── Recorrido de funcionalidades ── -->
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Todo tu negocio de ropa, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de ropa real: tallas que se agotan, colores que nadie compra y prendas paradas de la temporada pasada."
+    secciones={seccionesRopa}
+  >
+    <!-- Testimoniales intercalados: caen dentro del recorrido, no al final,
+         para que la prueba social llegue junto al beneficio que la sostiene. -->
+    <div slot="extra-consignacion" class="quote">
+      <blockquote>
+        Dejábamos producto en tres departamentales y cada corte era un pleito de Excel.
+        Ahora sé qué se vendió y cuánto me deben sin llamar a nadie.
+      </blockquote>
+      <cite><b>Espacio para testimonial</b> — marca de ropa con presencia en departamentales</cite>
+    </div>
 
-  <GiroSplitSection
-    title="Inventario que se mueve contigo"
-    description="Olvídate de contar a mano o depender de Excel. SACS sincroniza tu inventario entre todas tus sucursales y canales de venta en tiempo real."
-    points={[
-      'Sincronización automática entre sucursales y bodegas',
-      'Alertas inteligentes cuando es hora de reabastecer',
-      'Órdenes de compra a proveedores en minutos',
-      'Conteo de inventario con cámara del celular',
-      'Transferencias de mercancía entre tiendas',
-    ]}
-    image="/images/screen-pos.webp"
-    imageAlt="Dashboard de inventario SACS mostrando productos por talla y color"
-    imageSide="left"
-  />
+    <div slot="extra-sucursales" class="quote">
+      <blockquote>
+        Antes le hablábamos por WhatsApp a la otra tienda para preguntar si había la talla.
+        Se perdían ventas nada más por la flojera de preguntar.
+      </blockquote>
+      <cite><b>Espacio para testimonial</b> — boutique con 4 sucursales</cite>
+    </div>
 
-  <GiroSplitSection
-    title="Vende en todos los canales"
-    description="Tu tienda física, tu tienda en línea y tus redes sociales conectados. Un solo inventario, una sola plataforma."
-    points={[
-      'Tienda en línea integrada con tu POS',
-      'Venta por WhatsApp Commerce',
-      'Publica en Instagram Shopping y Google',
-      'Compra en línea, recoge en tienda (BOPIS)',
-      'Pedidos y envíos desde un solo lugar',
-    ]}
-    image="/images/screen-ecommerce.webp"
-    imageAlt="Tienda en línea SACS sincronizada con punto de venta"
-    imageSide="right"
-  />
+    <div slot="extra-reabasto" class="quote">
+      <blockquote>
+        Comprábamos parejo de todas las tallas. Terminábamos con puras XXL colgadas
+        y sin M, que es la que de verdad se vende.
+      </blockquote>
+      <cite><b>Espacio para testimonial</b> — marca de moda femenina</cite>
+    </div>
+  </SuiteScroll>
 
-  <GiroSplitSection
-    title="Conoce a tus clientes, hazlos volver"
-    description="Cada venta construye el perfil de tu cliente. Usa esa información para crear experiencias personalizadas que generan lealtad."
-    points={[
-      'Perfiles de cliente con historial de compras completo',
-      'Programa de lealtad con puntos y recompensas',
-      'Campañas automáticas por email y SMS',
-      'Descuentos personalizados por segmento',
-      'Seguimiento de clientes VIP y frecuentes',
-    ]}
-    image="/images/fideliza-loyalty.webp"
-    imageAlt="CRM de clientes SACS con programa de lealtad"
-    imageSide="left"
-  />
-
-  <GiroStats stats={stats} />
-
-  <GiroTestimonial
-    quote="Pasamos de 1 a 42 sucursales con SACS. La visibilidad total del inventario entre tiendas y el programa de lealtad nos permitieron crecer sin perder el control. Hoy nuestro customer lifetime value creció más de 300%."
-    name="La Bella Pandita"
-    role="Directora General"
-    company="La Bella Pandita"
-    stat="+300%"
-    statLabel="Customer Lifetime Value"
-  />
-
-  <GiroFAQ faqs={faqs} />
-
-  <FinalCTA locale="es" />
+  <FinalCTA />
 </BaseLayout>
+
+<style>
+  .hero {
+    background: linear-gradient(180deg, #F8FAFC 0%, #fff 100%);
+    border-bottom: 1px solid #F1F5F9;
+    padding: 96px 24px 80px;
+  }
+  .hero-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+  .hero-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+    color: #2563EB; margin: 0 0 18px;
+  }
+  .hero-title {
+    font-size: clamp(34px, 6vw, 68px); font-weight: 800; letter-spacing: -2px;
+    line-height: 1.03; margin: 0 0 22px; color: #0F172A;
+  }
+  .hero-title span {
+    background: linear-gradient(90deg, #2563EB, #7C3AED);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 20px); line-height: 1.6; color: #64748B;
+    max-width: 60ch; margin: 0 auto 32px;
+  }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-pri, .btn-sec {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 52px; padding: 0 28px; border-radius: 12px;
+    font-size: 15.5px; font-weight: 700; text-decoration: none; transition: all .16s ease;
+  }
+  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,.28); }
+  .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
+  .btn-sec { background: #fff; color: #0F172A; border: 1.5px solid #E5E7EB; }
+  .btn-sec:hover { border-color: #CBD5E1; }
+  .hero-note { margin: 22px 0 0; font-size: 13px; color: #94A3B8; font-weight: 600; }
+
+  .quote {
+    margin-top: 26px; border-left: 3px solid #2563EB;
+    background: #F8FAFC; border-radius: 0 14px 14px 0; padding: 18px 22px;
+  }
+  .quote blockquote {
+    margin: 0 0 10px; font-size: 15.5px; line-height: 1.6; color: #0F172A; font-weight: 500;
+  }
+  .quote cite { font-style: normal; font-size: 12.5px; color: #94A3B8; font-weight: 600; }
+  .quote cite b { color: #64748B; }
+
+  @media (max-width: 900px) {
+    .hero { padding: 64px 18px 56px; }
+  }
+</style>

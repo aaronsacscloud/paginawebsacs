@@ -1,0 +1,247 @@
+---
+/**
+ * SuiteScroll — recorrido de funcionalidades con panel PEGAJOSO.
+ *
+ * El patron: la columna izquierda se queda fija mientras la derecha se
+ * desplaza; al entrar cada seccion, el panel cambia. Es el formato que usa
+ * Square para explicar producto: una sola pagina, sin pestañas que tocar, y el
+ * usuario entiende el alcance mientras baja.
+ *
+ * Por que IntersectionObserver y no calcular scroll a mano: el calculo por
+ * offsets se rompe con imagenes que cargan tarde, barras que aparecen y zoom
+ * del navegador. El observer no.
+ *
+ * Accesibilidad: si el visitante pidio menos animacion
+ * (prefers-reduced-motion), no se anima nada — solo cambia el contenido.
+ */
+export interface SuiteSeccion {
+  id: string;
+  tag: string;
+  titulo: string;
+  texto: string;
+  bullets?: string[];
+  /** Mock de UI en HTML (se pinta dentro del panel). */
+  visual: string;
+}
+
+interface Props {
+  eyebrow: string;
+  titulo: string;
+  intro?: string;
+  secciones: SuiteSeccion[];
+}
+const { eyebrow, titulo, intro, secciones } = Astro.props;
+---
+
+<!-- Sub-nav de la suite: misma jerarquia que las paginas de producto
+     (pestañas arriba), pero las pestañas son las funcionalidades del giro.
+     Se marca sola conforme el visitante baja. -->
+<nav class="suite-nav" aria-label="Funcionalidades">
+  <div class="suite-nav-inner">
+    <span class="suite-nav-label">{eyebrow}</span>
+    <div class="suite-nav-tabs">
+      {secciones.map((s, i) => (
+        <a href={`#${s.id}`} class:list={['suite-tab', { on: i === 0 }]} data-tab={s.id}>{s.tag}</a>
+      ))}
+    </div>
+  </div>
+</nav>
+
+<section class="suite" id="suite">
+  <div class="suite-head">
+    <p class="suite-eyebrow">{eyebrow}</p>
+    <h2 class="suite-title">{titulo}</h2>
+    {intro && <p class="suite-intro">{intro}</p>}
+  </div>
+
+  <div class="suite-grid">
+    <!-- Panel pegajoso -->
+    <div class="suite-sticky">
+      <div class="suite-panel">
+        <div class="suite-panel-bar">
+          <span></span><span></span><span></span>
+          <em class="suite-panel-url">app.sacscloud.com</em>
+        </div>
+        <div class="suite-panel-body">
+          {secciones.map((s, i) => (
+            <div class:list={['suite-visual', { on: i === 0 }]} data-visual={s.id} set:html={s.visual} />
+          ))}
+        </div>
+      </div>
+      <ol class="suite-dots" aria-hidden="true">
+        {secciones.map((s, i) => (
+          <li class:list={['suite-dot', { on: i === 0 }]} data-dot={s.id}></li>
+        ))}
+      </ol>
+    </div>
+
+    <!-- Pasos -->
+    <div class="suite-steps">
+      {secciones.map((s, i) => (
+        <article class="suite-step" data-step={s.id} id={s.id}>
+          <span class="suite-num">{String(i + 1).padStart(2, '0')}</span>
+          <p class="suite-tag">{s.tag}</p>
+          <h3 class="suite-step-title">{s.titulo}</h3>
+          <p class="suite-text">{s.texto}</p>
+          {s.bullets && (
+            <ul class="suite-bullets">
+              {s.bullets.map((b) => <li>{b}</li>)}
+            </ul>
+          )}
+          <slot name={`extra-${s.id}`} />
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .suite-nav {
+    position: sticky; top: 71px; z-index: 90; background: #fff;
+    border-top: 1px solid rgba(0,0,0,.06); border-bottom: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 1px 4px rgba(0,0,0,.03);
+  }
+  .suite-nav-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 60px;
+    display: flex; align-items: center; gap: 22px;
+  }
+  .suite-nav-label {
+    font-size: 14.5px; font-weight: 800; color: #0F172A; flex-shrink: 0;
+  }
+  .suite-nav-tabs {
+    display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  }
+  .suite-nav-tabs::-webkit-scrollbar { display: none; }
+  .suite-tab {
+    flex-shrink: 0; padding: 8px 13px; border-radius: 8px; font-size: 13.5px;
+    font-weight: 600; color: #64748B; text-decoration: none; white-space: nowrap;
+    transition: all .15s ease;
+  }
+  .suite-tab:hover { background: #F8FAFC; color: #0F172A; }
+  .suite-tab.on { background: #EFF6FF; color: #2563EB; font-weight: 700; }
+
+  .suite {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 96px 24px 40px;
+  }
+  .suite-head { max-width: 720px; margin-bottom: 56px; }
+  .suite-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: #2563EB; margin: 0 0 12px;
+  }
+  .suite-title {
+    font-size: clamp(30px, 4.6vw, 52px); font-weight: 800; letter-spacing: -1.4px;
+    line-height: 1.06; margin: 0 0 16px; color: #0F172A;
+  }
+  .suite-intro { font-size: 18px; line-height: 1.6; color: #64748B; margin: 0; max-width: 62ch; }
+
+  .suite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+
+  /* ── panel pegajoso ── */
+  .suite-sticky { position: sticky; top: 148px; }
+  .suite-panel {
+    background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .10);
+  }
+  .suite-panel-bar {
+    height: 34px; background: #F8FAFC; border-bottom: 1px solid #EEF1F5;
+    display: flex; align-items: center; gap: 6px; padding: 0 12px;
+  }
+  .suite-panel-bar span { width: 9px; height: 9px; border-radius: 50%; background: #E2E8F0; }
+  .suite-panel-url {
+    margin-left: 10px; font-style: normal; font-size: 10.5px; font-weight: 600; color: #94A3B8;
+  }
+  .suite-panel-body { position: relative; min-height: 380px; }
+  .suite-visual {
+    position: absolute; inset: 0; padding: 18px;
+    opacity: 0; transform: translateY(10px); pointer-events: none;
+    transition: opacity .38s ease, transform .38s ease;
+  }
+  .suite-visual.on { opacity: 1; transform: none; pointer-events: auto; }
+
+  .suite-dots { display: flex; gap: 7px; justify-content: center; margin: 18px 0 0; padding: 0; list-style: none; }
+  .suite-dot { width: 6px; height: 6px; border-radius: 50%; background: #E2E8F0; transition: all .3s ease; }
+  .suite-dot.on { background: #2563EB; width: 20px; border-radius: 3px; }
+
+  /* ── pasos ── */
+  .suite-step {
+    scroll-margin-top: 150px;
+    min-height: 78vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 24px 0; opacity: .38; transition: opacity .4s ease;
+  }
+  .suite-step.on { opacity: 1; }
+  .suite-num {
+    font-size: 12px; font-weight: 800; color: #CBD5E1; letter-spacing: .08em; margin-bottom: 10px;
+  }
+  .suite-tag {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #2563EB; margin: 0 0 8px;
+  }
+  .suite-step-title {
+    font-size: clamp(23px, 2.7vw, 32px); font-weight: 800; letter-spacing: -.7px;
+    line-height: 1.15; margin: 0 0 14px; color: #0F172A;
+  }
+  .suite-text { font-size: 16.5px; line-height: 1.65; color: #475569; margin: 0 0 16px; max-width: 52ch; }
+  .suite-bullets { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+  .suite-bullets li {
+    position: relative; padding-left: 22px; font-size: 14.5px; color: #334155; line-height: 1.5;
+  }
+  .suite-bullets li::before {
+    content: ''; position: absolute; left: 0; top: 8px; width: 7px; height: 7px;
+    border-radius: 50%; background: #2563EB;
+  }
+
+  @media (max-width: 900px) {
+    .suite { padding: 64px 18px 24px; }
+    .suite-grid { grid-template-columns: 1fr; gap: 0; }
+    .suite-sticky { position: sticky; top: 120px; z-index: 2; margin-bottom: 22px; }
+    .suite-panel-body { min-height: 250px; }
+    .suite-step { min-height: auto; padding: 30px 0; opacity: 1; }
+    .suite-dots { margin-top: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .suite-visual { transition: none; }
+    .suite-step { transition: none; opacity: 1; }
+  }
+</style>
+
+<script>
+  {
+    const pasos = document.querySelectorAll<HTMLElement>('.suite-step[data-step]');
+    const visuales = document.querySelectorAll<HTMLElement>('.suite-visual[data-visual]');
+    const puntos = document.querySelectorAll<HTMLElement>('.suite-dot[data-dot]');
+
+    if (pasos.length) {
+      const tabs = document.querySelectorAll<HTMLElement>('.suite-tab[data-tab]');
+      const activar = (id: string) => {
+        tabs.forEach((t) => t.classList.toggle('on', t.dataset.tab === id));
+        pasos.forEach((p) => p.classList.toggle('on', p.dataset.step === id));
+        visuales.forEach((v) => v.classList.toggle('on', v.dataset.visual === id));
+        puntos.forEach((d) => d.classList.toggle('on', d.dataset.dot === id));
+      };
+
+      // Se activa el paso cuyo centro esta mas cerca del centro de la pantalla.
+      // Una sola franja estrecha fallaba en pasos cortos y al llegar al final de
+      // la pagina: el ultimo nunca se activaba.
+      const obs = new IntersectionObserver(
+        () => {
+          const medio = window.innerHeight / 2;
+          let mejor: HTMLElement | null = null;
+          let dist = Infinity;
+          pasos.forEach((p) => {
+            const r = p.getBoundingClientRect();
+            const d = Math.abs(r.top + r.height / 2 - medio);
+            if (d < dist) { dist = d; mejor = p; }
+          });
+          if (mejor && mejor.dataset.step) activar(mejor.dataset.step);
+        },
+        { threshold: [0, 0.25, 0.5, 0.75, 1], rootMargin: '-10% 0px -10% 0px' },
+      );
+      pasos.forEach((p) => obs.observe(p));
+
+      activar(pasos[0].dataset.step || '');
+    }
+  }
+</script>
