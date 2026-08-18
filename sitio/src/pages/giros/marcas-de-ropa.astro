@@ -27,14 +27,14 @@ const desc =
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
-  <!-- ── Portada: foto grande + alto contraste ── -->
+  <!-- ── Portada: el sistema ES el fondo ──
+       Antes la foto de la boutique era el fondo y el punto de venta iba flotando
+       encima. Eran dos protagonistas peleandose el mismo espacio y la portada se
+       saturaba. Ahora manda una sola imagen —la nuestra— y el texto vive sobre
+       la zona oscura de la izquierda. -->
   <header class="hero">
-    <div class="hero-bg">
-      <img
-        src="/images/hero-moda-boutique.webp"
-        alt="Vendedora atendiendo en una boutique junto a la terminal de punto de venta de SACS"
-        width="1920" height="1280" fetchpriority="high" decoding="async"
-      />
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-pos"><PosMock /></div>
       <div class="hero-veil"></div>
     </div>
 
@@ -53,12 +53,6 @@ const desc =
         <a href="/contacto" class="btn-pri">Agenda una demo</a>
         <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
-      <!-- El sistema aparece encima de la escena, y es el NUESTRO: la pantalla
-           que la vendedora usa todos los dias. Antes habia aqui una reticula de
-           numeros sueltos que no se entendia sin contexto. Se oculta en movil,
-           donde no cabe sin taparle la cara a la foto. -->
-      <div class="hero-pos" aria-hidden="true"><PosMock /></div>
-
       <div class="hero-datos">
         <div><b>+3,000</b><span>marcas activas</span></div>
         <div><b>24 SKU</b><span>de un modelo, en un paso</span></div>
@@ -132,17 +126,25 @@ const desc =
     position: relative; min-height: 92vh; display: flex; align-items: flex-end;
     padding: 136px 24px 88px; overflow: hidden; background: #0A0A0B;
   }
-  .hero-bg { position: absolute; inset: 0; }
-  .hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 56% 38%; }
+  .hero-bg { position: absolute; inset: 0; overflow: hidden; }
+  /* Halo azul de ambiente: sin el, sobre negro plano la pantalla se recorta
+     como una calcomania pegada. */
+  .hero-bg::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(80% 70% at 76% 46%, rgba(37,99,235,.2) 0%, rgba(10,10,11,0) 62%);
+  }
   /* Velo DIRECCIONAL, en dos capas. Un velo parejo apagaba toda la foto y
      mataba el contraste que pide la portada. Aqui se oscurece el lado izquierdo
      (donde va el texto) y se deja brillar el derecho, que es justo donde estan
      la terminal y los percheros. La capa vertical solo asienta el pie. */
+  /* El velo ya no oscurece una foto: separa el texto de la interfaz. Opaco a la
+     izquierda y abierto del todo a la derecha, donde la pantalla tiene que
+     verse nitida y con sus colores reales. */
   .hero-veil {
-    position: absolute; inset: 0;
-    background:
-      linear-gradient(90deg, rgba(8,8,10,.94) 0%, rgba(8,8,10,.86) 26%, rgba(8,8,10,.55) 52%, rgba(8,8,10,.12) 76%, rgba(8,8,10,0) 100%),
-      linear-gradient(180deg, rgba(8,8,10,.55) 0%, rgba(8,8,10,.12) 34%, rgba(8,8,10,.30) 72%, rgba(8,8,10,.78) 100%);
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg,
+      rgba(8,8,10,.97) 0%, rgba(8,8,10,.95) 28%, rgba(8,8,10,.62) 45%,
+      rgba(8,8,10,.16) 57%, rgba(8,8,10,0) 68%);
   }
   .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
   .hero-eyebrow {
@@ -181,18 +183,31 @@ const desc =
   .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
   /* El punto de venta se dibuja a 980 px y se escala: asi se ve nitido en
-     cualquier pantalla y no depende de una captura que envejece. */
+     cualquier pantalla y no depende de una captura que envejece.
+     Sangra por la derecha a proposito: una pantalla completa y centrada se lee
+     como captura de manual; recortada por el borde se lee como ventana a algo
+     mas grande. */
   .hero-pos {
-    position: absolute; right: -78px; top: 50%;
-    transform: translateY(-50%) scale(.58); transform-origin: right center;
-    filter: drop-shadow(0 30px 60px rgba(0,0,0,.6));
-    opacity: 0; animation: posEntra .9s cubic-bezier(.16,1,.3,1) .35s forwards;
+    position: absolute; right: -13%; top: 50%;
+    transform: translateY(-46%) scale(.86); transform-origin: right center;
+    filter: drop-shadow(0 40px 90px rgba(0,0,0,.65));
+    opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
+    /* El borde izquierdo se funde con el fondo. Sin esto la interfaz corta en
+       seco a media pantalla y se ve como una calcomania pegada encima del
+       titulo; con el degradado parece que la pantalla emerge de la oscuridad. */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
   }
   @keyframes posEntra {
-    from { opacity: 0; transform: translateY(-50%) scale(.56) translateX(26px); }
-    to   { opacity: 1; transform: translateY(-50%) scale(.58); }
+    from { opacity: 0; transform: translateY(-46%) scale(.84) translateX(34px); }
+    to   { opacity: 1; transform: translateY(-46%) scale(.86); }
   }
-  @media (min-width: 1500px) { .hero-pos { transform: translateY(-50%) scale(.66); right: -40px; } }
+  @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
+  /* Entre 1181 y 1440 el titulo ocupa casi la mitad: la pantalla se corre mas
+     a la derecha y se achica para no montarse encima. */
+  @media (max-width: 1440px) {
+    .hero-pos { right: -26%; transform: translateY(-46%) scale(.78); }
+  }
   /* Con el POS a la derecha el parrafo tiene que ser mas corto o se mete
      debajo del marco. */
   @media (min-width: 1181px) {
@@ -201,7 +216,12 @@ const desc =
        "productos. Vende" se metia debajo del marco del punto de venta. */
     .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
   }
-  @media (max-width: 1180px) { .hero-pos { display: none; } }
+  /* En pantalla angosta la interfaz no se lee: se asoma un pedazo, muy tenue,
+     como textura. Ahi el texto manda solo. */
+  @media (max-width: 1180px) {
+    .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
+  }
+  @media (max-width: 760px) { .hero-pos { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     .hero-pos { opacity: 1; animation: none; }
   }
