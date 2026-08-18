@@ -474,7 +474,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               {contact.puesto && (
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{contact.puesto}</span>
               )}
-              {contact.puesto && <span style={{ fontSize: '0.75rem', color: '#e2e8f0' }}>\u00B7</span>}
+              {contact.puesto && <span style={{ fontSize: '0.75rem', color: '#e2e8f0' }}>·</span>}
               {/* Lifecycle badge */}
               <span style={{
                 fontSize: '0.6875rem', fontWeight: 700,
@@ -562,7 +562,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#94a3b8'; }}
           >
-            \u2715
+            ✕
           </button>
         </div>
       </header>
@@ -1011,7 +1011,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                             fontSize: '0.6875rem', fontWeight: 600, color: '#4B7BE5',
                             cursor: 'pointer',
                           }}>
-                            Ver deal \u2192
+                            Ver deal →
                           </span>
                         </div>
                       </div>
@@ -1072,7 +1072,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                           fontSize: '0.6875rem', fontWeight: 600, color: '#4B7BE5',
                           marginTop: 8, textAlign: 'right' as const,
                         }}>
-                          Ver cotizacion \u2192
+                          Ver cotización →
                         </div>
                       </a>
                     );
@@ -1386,7 +1386,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                                 {LIFECYCLE_STAGES.find(s => s.id === a.metadata.old_stage)?.label || a.metadata.old_stage}
                               </span>
                             )}
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>\u2192</span>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>→</span>
                             {a.metadata.new_stage && (
                               <span style={{
                                 fontSize: '0.6875rem', fontWeight: 700,
@@ -1589,7 +1589,7 @@ function CollapsibleSection({ title, open, onToggle, children }: {
           transition: 'transform 0.2s ease',
           display: 'inline-block',
         }}>
-          \u25BC
+          ▾
         </span>
       </button>
       {open && (
