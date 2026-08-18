@@ -136,9 +136,9 @@ export const seccionesRopa: SuiteSeccion[] = [
     tag: 'Mostrador',
     titulo: '"No me quedó la talla"',
     texto:
-      'La frase que más escuchas. El cambio se resuelve en segundos, sin ticket físico, aunque lo hayan comprado en otra sucursal y aunque hoy atienda otra vendedora.',
+      'La frase que más escuchas. El cambio se resuelve en segundos, sin ticket físico, aunque lo haya comprado en otra sucursal, aunque lo haya pedido en línea y aunque hoy atienda otra vendedora.',
     bullets: [
-      'Buscas por teléfono del cliente y aparece lo que se llevó',
+      'Buscas por teléfono de la clienta y aparece lo que se llevó, del canal que sea',
       'Cambio de M a L del mismo modelo, con la diferencia si aplica',
       'Si no hay su talla aquí, ves en qué sucursal sí y la apartas',
     ],
@@ -186,6 +186,39 @@ export const seccionesRopa: SuiteSeccion[] = [
       cita:
         'Antes le hablabamos por WhatsApp a la otra tienda para preguntar si habia la talla. Se perdian ventas nada mas por la flojera de preguntar.',
       autor: 'Espacio para testimonial — boutique con 4 sucursales',
+    },
+  },
+  {
+    id: 'omnicanal',
+    tag: 'Omnicanalidad',
+    titulo: 'Un solo inventario: piso, en línea y WhatsApp',
+    texto:
+      'Tu tienda física y tu tienda en línea dejan de ser dos negocios distintos. La misma prenda, la misma talla y la misma existencia en el mostrador, en tu ecommerce, en los marketplaces y en el chat. Se vende donde se venda, y se descuenta una sola vez.',
+    bullets: [
+      'Se va la última S en el mostrador y desaparece del ecommerce en ese momento',
+      'Compra en línea y recoge en tienda, o se la mandas desde la sucursal que sí la tiene',
+      'Mercado Libre, Shopify, TikTok Shop y tu propia tienda, con un mismo catálogo',
+    ],
+    visual: `<div style="${est.wrap}">
+      <p style="${est.h}">Blusa satinada negra · talla S · hoy</p>
+      ${[['Piso de venta','Sucursal Centro',12,'#2563EB'],['Tienda en línea','Tu ecommerce',7,'#7C3AED'],['Marketplaces','ML · TikTok Shop',5,'#EA580C'],['WhatsApp','Catálogo y chat',3,'#059669']]
+        .map(([n,s,q,c]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
+            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div>
+          </div>
+          <span style="font-size:13px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">${q} pz</span>
+        </div>`).join('')}
+      <div style="border:1.5px solid #3B82F6;background:#F7FBFF;border-radius:11px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="font-size:11.5px;font-weight:800;color:#1D4ED8;">Existencia única · los 4 canales</span>
+        <span style="font-size:15px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">4</span>
+      </div>
+    </div>`,
+    testimonio: {
+      cita:
+        'Teniamos la tienda en linea por un lado y el punto de venta por otro. Vendiamos en la web cosas que ya no existian y quedabamos mal con la clienta.',
+      autor: 'Espacio para testimonial — marca con ecommerce propio',
     },
   },
   {
@@ -266,5 +299,41 @@ export const seccionesRopa: SuiteSeccion[] = [
         <div style="font-size:11.5px;color:#065F46;margin-top:3px;">3 prendas nuevas en S, negro. Avisar por WhatsApp.</div>
       </div>
     </div>`,
+  },
+  {
+    id: 'agentes',
+    tag: 'Agentes de IA',
+    titulo: 'Agentes de IA que tú programas',
+    texto:
+      'No es un chatbot cerrado que te vendemos ya hecho. Tú defines qué vigila cada agente, cada cuándo lo hace y hasta dónde puede actuar: revisar las tallas críticas cada mañana, contestar el WhatsApp de la clienta, armar el pedido al proveedor o avisarte cuando una colección se está quedando parada.',
+    bullets: [
+      'La instrucción se escribe en español; no hay que programar nada',
+      'Trabajan sobre tus datos reales: tu inventario, tus ventas, tus clientas',
+      'Tú decides si el agente solo te avisa o si ya ejecuta la acción',
+    ],
+    visual: `<div style="${est.wrap}">
+      <p style="${est.h}">Tus agentes · activos</p>
+      ${[
+        ['Vigía de tallas','Cada mañana, 8:00','Avisa','Jean recto M: quedan 4, se agota en 6 días'],
+        ['Asesora de WhatsApp','En cuanto escriben','Ejecuta','Respondió 23 mensajes · 6 apartados creados'],
+        ['Compradora','Lunes, 9:00','Solo propone','Pedido sugerido a 3 proveedores, listo para tu OK'],
+      ].map(([n,c,m,r]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:12px;padding:12px 13px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+          <span style="width:26px;height:26px;border-radius:8px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">IA</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
+            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${c}</div>
+          </div>
+          <span style="background:${m==='Ejecuta'?'#ECFDF5':'#EFF6FF'};color:${m==='Ejecuta'?'#047857':'#2563EB'};border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
+        </div>
+        <div style="font-size:11px;color:#475569;font-weight:600;line-height:1.45;">${r}</div>
+      </div>`).join('')}
+      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">Los configuras tú, con tus reglas y tus límites</p>
+    </div>`,
+    testimonio: {
+      cita:
+        'Espacio para testimonial — marca que automatizo su resurtido y la atencion por WhatsApp con agentes.',
+      autor: 'Espacio para testimonial — cadena de moda multisucursal',
+    },
   },
 ];
