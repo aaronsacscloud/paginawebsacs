@@ -556,6 +556,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
       const result = await res.json();
       setBookingResult(result);
       trackEvent('form_submitted', { date: selectedDate, time: selectedTime, booking_id: result.id });
+      // OpenAI: demo agendada por el agendador propio (/agendar), no por Calendly.
+      // Se mide en los DOS caminos: si solo se midiera Calendly, las reservas
+      // hechas aqui no existirian para las campanas.
+      (window as any).sacsOai?.('appointment_scheduled', { type: 'customer_action' });
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       setStep(4);

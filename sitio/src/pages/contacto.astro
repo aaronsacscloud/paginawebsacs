@@ -867,6 +867,8 @@ try {
         if (typeof ttq !== 'undefined') {
           ttq.track('Schedule', { content_id: 'demo', content_name: 'demo-calendly' });
         }
+        // OpenAI: demo agendada desde el Calendly incrustado.
+        (window as any).sacsOai?.('appointment_scheduled', { type: 'customer_action' });
       }
     });
 

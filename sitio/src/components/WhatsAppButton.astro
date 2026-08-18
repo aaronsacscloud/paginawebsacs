@@ -243,6 +243,9 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
           if (typeof ttq !== 'undefined') {
             ttq.track('Contact', { content_id: 'whatsapp-bar', content_name: 'whatsapp-chat-bar', content_type: 'product' });
           }
+          // OpenAI: clic al chat de WhatsApp. Es evento CUSTOM, no uno del
+          // catalogo, asi que lleva el nombre en el cuarto argumento.
+          (window as any).sacsOai?.('custom', { type: 'custom' }, { custom_event_name: 'mandowhatsapp' });
         } catch {}
       });
     });
