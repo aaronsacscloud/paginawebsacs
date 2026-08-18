@@ -124,13 +124,16 @@ const NAV_SECTIONS = [
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
+      // Cobrar es parte de facturar, no del acompañamiento: va pegado a Pagos
+      // porque son el mismo trabajo —el dinero que entra— visto desde los dos
+      // lados: lo que ya llegó y lo que falta por llegar.
+      { id: 'cobranza' as Tab, label: 'Cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
     ],
   },
   {
     label: 'Acompañamiento',
     items: [
-      { id: 'cobranza' as Tab, label: 'Cobranza', icon: 'pagos' },
       { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
