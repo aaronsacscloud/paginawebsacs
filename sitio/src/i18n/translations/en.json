@@ -159,9 +159,9 @@
     "close": "Close"
   },
   "whatsapp": {
-    "tooltip": "Try 7 days free",
+    "tooltip": "Book a demo",
     "aria": "Contact via WhatsApp",
-    "message": "Hi! I want to try Sacs free for 7 days. I was looking at:"
+    "message": "Hi! I'd like to schedule a demo with an advisor to learn more about Sacscloud. I was looking at:"
   },
   "faq": {
     "title": "Frequently asked questions",
