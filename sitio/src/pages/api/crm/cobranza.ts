@@ -24,13 +24,26 @@ const num = (x: any) => Number(x || 0);
 const dias = (f: string) => Math.floor((Date.parse(hoy()) - Date.parse(String(f).slice(0, 10))) / 86400000);
 
 export const GET: APIRoute = async () => {
-  const [subsQ, compQ, cobrosQ, pagosQ] = await Promise.all([
+  const mes1 = hoy().slice(0, 8) + '01';
+  const [subsQ, compQ, cobrosQ, pagosQ, cotsQ, abonosQ, cancelQ] = await Promise.all([
     supabase.from('subscriptions')
       .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
       .in('estado', ['activa', 'pendiente_pago']),
     supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, ultima_venta_at').is('archived_at', null),
     supabase.from('cobros_programados').select('*').neq('estado', 'cancelada').order('numero'),
-    supabase.from('payments').select('monto, fecha, subscription_id').gte('fecha', hoy().slice(0, 8) + '01').neq('estado', 'reembolsado'),
+    // El detalle del mes, no solo la suma: un KPI que nadie puede abrir es un
+    // número que hay que creer. Aquí se ve de quién salió cada peso.
+    supabase.from('payments').select('id, monto, fecha, metodo, referencia, subscription_id, quote_id, company_id')
+      .gte('fecha', mes1).neq('estado', 'reembolsado').order('fecha', { ascending: false }),
+    // Cobranza NO es solo suscripciones: una cotización aceptada sin pagar —o
+    // pagada a medias— es dinero comprometido que nadie está persiguiendo.
+    supabase.from('quotes').select('id, numero, empresa, contacto, email, total, estado, company_id, aceptado_fecha, vigencia, created_at, link_pago, cobranza_estado, cobranza_promesa, cobranza_nota')
+      .in('estado', ['accepted', 'sent']).order('created_at', { ascending: false }),
+    supabase.from('payments').select('quote_id, monto').not('quote_id', 'is', null).neq('estado', 'reembolsado'),
+    // Lo que se fue este mes y por qué: sin el motivo, la baja es un número que
+    // no enseña nada.
+    supabase.from('subscriptions').select('id, company_id, nombre_plan, ciclo, precio, arr, mrr, razon_cancelacion, cancelada_at')
+      .eq('estado', 'cancelada').gte('cancelada_at', mes1),
   ]);
 
   const empresas = Object.fromEntries((compQ.data || []).map((c: any) => [c.id, c]));
@@ -99,6 +112,70 @@ export const GET: APIRoute = async () => {
   const recuperado = (pagosQ.data || []).reduce((a: number, p: any) => a + num(p.monto), 0);
   const conPlan = filas.filter((f: any) => f.plan_pagos.length);
 
+  // ── Cotizaciones por cobrar ───────────────────────────────────────────────
+  // Solo las que ya son un compromiso: aceptada sin pagar, o pagada a medias.
+  // Una cotización enviada sin respuesta es pipeline, no cobranza.
+  const abonado: Record<string, number> = {};
+  (abonosQ.data || []).forEach((p: any) => { abonado[p.quote_id] = (abonado[p.quote_id] || 0) + num(p.monto); });
+  const cotizaciones = (cotsQ.data || []).map((q: any) => {
+    const pagado = abonado[q.id] || 0;
+    const saldo = Math.round(num(q.total) - pagado);
+    const desde = String(q.aceptado_fecha || q.vigencia || q.created_at).slice(0, 10);
+    const co = empresas[q.company_id] || {};
+    return {
+      id: q.id, tipo: 'cotizacion', company_id: q.company_id || null,
+      cliente: co.nombre_comercial || co.nombre || q.empresa || 'Sin cliente ligado',
+      cuenta: co.sacs_account || null,
+      plan: `${q.numero} · ${q.estado === 'accepted' ? 'aceptada' : 'enviada'}`,
+      ciclo: 'cotizacion', vence: desde, dias: dias(desde),
+      deuda: saldo, precio: Math.round(num(q.total)), pagado: Math.round(pagado),
+      detalle: pagado > 0 ? `abonó ${Math.round(pagado).toLocaleString('es-MX')} de ${Math.round(num(q.total)).toLocaleString('es-MX')}` : '',
+      link: q.link_pago || null,
+      gestion: q.cobranza_estado || 'sin_contactar', promesa: q.cobranza_promesa, nota: q.cobranza_nota,
+      dias_sin_venta: co.dias_sin_venta ?? null,
+      senal: co.dias_sin_venta == null ? null : co.dias_sin_venta <= 2 ? 'vendiendo' : co.dias_sin_venta <= 10 ? 'tibia' : 'sin vender',
+      plan_pagos: [], exhibicion_id: null,
+    };
+  }).filter((q: any) => q.deuda > 0 && (q.pagado > 0 || String(q.plan).includes('aceptada')));
+
+  // ── El detalle del mes ────────────────────────────────────────────────────
+  const planPorSub: Record<string, any> = {};
+  filas.forEach((f: any) => { planPorSub[f.id] = f; });
+  const nombreCot: Record<string, any> = {};
+  (cotsQ.data || []).forEach((q: any) => { nombreCot[q.id] = q; });
+  const recuperado_detalle = (pagosQ.data || []).map((p: any) => {
+    const sub = planPorSub[p.subscription_id];
+    const cot = nombreCot[p.quote_id];
+    const co = empresas[p.company_id] || (sub ? { nombre: sub.cliente } : {});
+    return {
+      id: p.id, fecha: String(p.fecha).slice(0, 10), monto: Math.round(num(p.monto)),
+      metodo: p.metodo || '—', referencia: p.referencia || null,
+      cliente: sub?.cliente || co.nombre_comercial || co.nombre || cot?.empresa || 'Sin cliente',
+      company_id: p.company_id || sub?.company_id || null,
+      concepto: sub?.plan || (cot ? `Cotización ${cot.numero}` : p.quote_id ? 'Cotización' : 'Pago suelto'),
+      tipo: p.subscription_id ? 'suscripcion' : p.quote_id ? 'cotizacion' : 'otro',
+    };
+  });
+
+  // ── Bajas del mes ─────────────────────────────────────────────────────────
+  const canceladas = (cancelQ.data || []).map((s: any) => {
+    const co = empresas[s.company_id] || {};
+    return {
+      id: s.id, company_id: s.company_id,
+      cliente: co.nombre_comercial || co.nombre || 'Cuenta',
+      plan: s.nombre_plan, ciclo: s.ciclo,
+      fecha: String(s.cancelada_at || '').slice(0, 10),
+      arr: Math.round(num(s.arr) || (s.ciclo === 'mensual' ? num(s.mrr) * 12 : num(s.precio))),
+      motivo: String(s.razon_cancelacion || '').trim() || 'sin motivo registrado',
+    };
+  }).sort((a: any, b: any) => String(b.fecha).localeCompare(String(a.fecha)));
+  const porMotivo: Record<string, { motivo: string; n: number; arr: number }> = {};
+  canceladas.forEach((c: any) => {
+    const k = c.motivo.toLowerCase().slice(0, 60);
+    porMotivo[k] = porMotivo[k] || { motivo: c.motivo, n: 0, arr: 0 };
+    porMotivo[k].n++; porMotivo[k].arr += c.arr;
+  });
+
   return json({
     kpis: {
       por_cobrar: suma(vencidas), cuentas: vencidas.length,
@@ -108,8 +185,12 @@ export const GET: APIRoute = async () => {
       planes: conPlan.length,
       exhibiciones_pendientes: conPlan.reduce((a: number, f: any) => a + f.plan_pagos.filter((x: any) => x.estado === 'pendiente').length, 0),
       recuperado: Math.round(recuperado),
-      promesas: vencidas.filter((f: any) => f.gestion === 'promesa').length,
-      promesas_monto: suma(vencidas.filter((f: any) => f.gestion === 'promesa')),
+      promesas: [...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa').length,
+      promesas_monto: suma([...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa')),
+      cotizaciones: suma(cotizaciones), cotizaciones_n: cotizaciones.length,
+      canceladas: canceladas.length,
+      canceladas_arr: canceladas.reduce((a: number, c: any) => a + c.arr, 0),
+      mes: hoy().slice(0, 7),
     },
     tramos: [
       { k: '+90 días', a: 91, b: 99999, monto: suma(tramo(91, 99999)), n: tramo(91, 99999).length },
@@ -122,6 +203,14 @@ export const GET: APIRoute = async () => {
     mensuales: vencidas.filter((f: any) => f.ciclo === 'mensual').sort((a: any, b: any) => b.dias - a.dias),
     por_vencer: porVencer.sort((a: any, b: any) => a.dias - b.dias),
     con_plan: conPlan,
+    cotizaciones: cotizaciones.sort((a: any, b: any) => b.dias - a.dias),
+    // Las promesas cruzan tipos: es lo que alguien se comprometió a pagar,
+    // venga de una suscripción o de una cotización.
+    promesas: [...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa')
+      .sort((a: any, b: any) => String(a.promesa || '').localeCompare(String(b.promesa || ''))),
+    recuperado_detalle,
+    canceladas,
+    canceladas_motivos: Object.values(porMotivo).sort((a: any, b: any) => b.arr - a.arr),
   });
 };
 
@@ -175,12 +264,18 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   const subId = String(b?.subscription_id || '');
-  if (!subId) return json({ error: 'Falta la suscripción.' }, 400);
+  const quoteId = String(b?.quote_id || '');
+  if (!subId && !quoteId) return json({ error: 'Falta la suscripción o la cotización.' }, 400);
   const p: any = { cobranza_at: new Date().toISOString() };
   if (['sin_contactar', 'contactado', 'promesa', 'negociando', 'incobrable', 'plan_pagos'].includes(b?.estado)) p.cobranza_estado = b.estado;
   if ('promesa' in b) p.cobranza_promesa = b.promesa || null;
   if ('nota' in b) p.cobranza_nota = String(b.nota || '').slice(0, 500) || null;
-  const { error } = await supabase.from('subscriptions').update(p).eq('id', subId);
+  // La misma gestión sirve para las dos: una cotización aceptada sin pagar se
+  // persigue igual que una mensualidad, y la promesa tiene que quedar donde
+  // vive la deuda.
+  const { error } = quoteId
+    ? await supabase.from('quotes').update(p).eq('id', quoteId)
+    : await supabase.from('subscriptions').update(p).eq('id', subId);
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true });
 };

@@ -55,10 +55,15 @@ const seg = (on: boolean) => ({
 
 export default function CobranzaTab() {
   const [d, setD] = useState<any>(null);
-  const [vista, setVista] = useState<'vencidas' | 'plan' | 'porvencer'>('vencidas');
+  // Las vistas mandan, como en Cotizaciones: una barra de pestañas con su
+  // conteo en vez de dos tablas fijas. Anual y mensual no son secciones, son
+  // dos filtros más — y faltaba el tercero, que es lo cotizado.
+  const [vista, setVista] = useState<string>('todas');
   const [abierta, setAbierta] = useState<string | null>(null);   // fila con el plan desplegado
   const [gestion, setGestion] = useState<any>(null);
   const [partir, setPartir] = useState<any>(null);
+  const [cancelar, setCancelar] = useState<any>(null);
+  const [panel, setPanel] = useState<'' | 'recuperado' | 'bajas'>('');
   const [cliente, setCliente] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
 
@@ -70,19 +75,41 @@ export default function CobranzaTab() {
   if (d.error) return <div style={{ ...S.wrap, color: '#C0554E', fontSize: '0.85rem' }}>No se pudo cargar la cobranza.</div>;
 
   const k = d.kpis;
+  const cots = d.cotizaciones || [];
+  const promesas = d.promesas || [];
+  const todas = [...d.anuales, ...d.mensuales, ...cots].sort((a: any, b: any) => b.dias - a.dias);
 
-  const Fila = ({ f, mensual }: any) => {
+  // Cada vista trae su lista, su explicación y su conteo. La explicación no es
+  // adorno: "anualidades" y "recurrencia" se cobran distinto y la frase es lo
+  // que evita tratarlas igual.
+  const VISTAS: { id: string; label: string; filas: any[]; nota: string }[] = [
+    { id: 'todas', label: 'Todas', filas: todas, nota: 'Todo lo vencido, de lo más viejo a lo más nuevo. Lo viejo es lo que menos se cobra solo.' },
+    { id: 'anualidades', label: 'Anualidades', filas: d.anuales, nota: 'Un solo cobro grande al año. Si el cliente no puede de golpe, se parte en exhibiciones desde aquí.' },
+    { id: 'recurrencia', label: 'Recurrencia', filas: d.mensuales, nota: 'Aquí la deuda se acumula mes con mes: lo que importa no es el precio del plan, es cuántos meses lleva sin pagar.' },
+    { id: 'cotizaciones', label: 'Cotizaciones', filas: cots, nota: 'Aceptadas sin pagar o pagadas a medias. Ya dijeron que sí: es cobranza, no pipeline.' },
+    { id: 'parcialidades', label: 'En parcialidades', filas: d.con_plan, nota: 'Anualidades que se están cobrando en exhibiciones. Cada una vence sola y se cobra sola.' },
+    { id: 'promesas', label: 'Promesas', filas: promesas, nota: 'Se comprometieron a una fecha. El día que llega, la cuenta vuelve a subir en la lista.' },
+    { id: 'porvencer', label: 'Por vencer', filas: d.por_vencer, nota: 'Todavía no deben nada. Cobrar antes del vencimiento es lo más barato que existe.' },
+  ];
+  const activa = VISTAS.find(v => v.id === vista) || VISTAS[0];
+
+  const Fila = ({ f }: any) => {
     const g = GESTION[f.gestion] || GESTION.sin_contactar;
     const se = f.senal ? SENAL[f.senal] : null;
     const abierto = abierta === f.id;
+    const esCot = f.tipo === 'cotizacion';
+    const mensual = f.ciclo === 'mensual';
     return (
       <>
         <tr>
           <td style={S.td}>
-            <div style={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => setCliente(f.company_id)}>{f.cliente}</div>
+            <div style={{ fontWeight: 700, cursor: f.company_id ? 'pointer' : 'default' }} onClick={() => f.company_id && setCliente(f.company_id)}>{f.cliente}</div>
             {f.cuenta && <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{f.cuenta}</div>}
           </td>
-          <td style={S.td}>{f.plan}</td>
+          <td style={S.td}>
+            {f.plan}
+            <div style={{ fontSize: '0.62rem', color: '#b3b1bb' }}>{esCot ? 'cotización' : mensual ? 'recurrencia' : 'anualidad'}</div>
+          </td>
           <td style={S.td}>{fmtDate(f.vence)}</td>
           <td style={{ ...S.td, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: f.dias > 90 ? '#C0554E' : f.dias > 7 ? '#9a6a10' : '#5B4BD6' }}>{f.dias}</td>
           <td style={S.td}>
@@ -98,11 +125,16 @@ export default function CobranzaTab() {
           <td style={S.td}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               <button style={{ ...S.mini, ...S.mp }} onClick={() => setGestion({ ...f, modo: 'pago' })}>Registrar pago</button>
-              {f.plan_pagos.length > 0
+              {esCot && <a style={S.mini} href={`/cotizacion/${f.id}`} target="_blank" rel="noreferrer">Ver cotización</a>}
+              {!esCot && (f.plan_pagos.length > 0
                 ? <button style={S.mini} onClick={() => setAbierta(abierto ? null : f.id)}>{abierto ? 'Ocultar plan' : 'Ver plan'}</button>
-                : !mensual && <button style={S.mini} onClick={() => setPartir(f)}>Partir en pagos</button>}
+                : !mensual && <button style={S.mini} onClick={() => setPartir(f)}>Partir en pagos</button>)}
               {f.link && <a style={{ ...S.mini, ...S.mv }} href={f.link} target="_blank" rel="noreferrer">Link de cobro</a>}
               <button style={S.mini} onClick={() => setGestion({ ...f, modo: 'gestion' })}>Gestión</button>
+              {/* Dar de baja se hace DONDE se ve que ya no va a pagar, no en otra
+                  pantalla. Exige motivo: una baja sin razón no se puede sumar
+                  después ni contestar "por qué se nos van". */}
+              {!esCot && <button style={{ ...S.mini, color: '#C0554E', borderColor: '#f2d7d4' }} onClick={() => setCancelar(f)}>Dar de baja</button>}
             </div>
           </td>
         </tr>
@@ -139,13 +171,13 @@ export default function CobranzaTab() {
     );
   };
 
-  const Tabla = ({ filas, mensual }: any) => (
+  const Tabla = ({ filas }: any) => (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             <th style={{ ...S.th, minWidth: 150 }}>Cliente</th>
-            <th style={{ ...S.th, minWidth: 140 }}>Plan</th>
+            <th style={{ ...S.th, minWidth: 140 }}>Concepto</th>
             <th style={{ ...S.th, width: 110 }}>Venció</th>
             <th style={{ ...S.th, width: 50 }}>Días</th>
             <th style={{ ...S.th, width: 120 }}>Debe</th>
@@ -156,58 +188,59 @@ export default function CobranzaTab() {
         </thead>
         <tbody>
           {filas.length === 0 && <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={8}>Nada por cobrar aquí.</td></tr>}
-          {filas.map((f: any) => <Fila key={f.id} f={f} mensual={mensual} />)}
+          {filas.map((f: any) => <Fila key={f.id} f={f} />)}
         </tbody>
       </table>
+    </div>
+  );
+
+  const Kpi = ({ label, valor, color, sub, onClick }: any) => (
+    <div onClick={onClick}
+      style={{ ...S.card, marginBottom: 0, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
+      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.08)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
+      <div style={S.kl}>{label}</div>
+      <div style={{ ...S.kv, color: color || '#1a1a1a' }}>{valor}</div>
+      <div style={S.ks}>{sub}{onClick ? <span style={{ color: '#9B8CFA', fontWeight: 700 }}> · ver</span> : null}</div>
     </div>
   );
 
   return (
     <div style={S.wrap}>
       <style>{`
-        .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:12px; }
+        .cob-6 { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:11px; }
         .cob-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
-        @media (max-width: 1100px) { .cob-5, .cob-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-        @media (max-width: 620px)  { .cob-5, .cob-4 { grid-template-columns:1fr; } }
+        @media (max-width: 1250px) { .cob-6 { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+        @media (max-width: 1100px) { .cob-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 780px)  { .cob-6 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 620px)  { .cob-6, .cob-4 { grid-template-columns:1fr; } }
       `}</style>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
-          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>Solo lo pendiente de cobro: a quién, desde cuándo y con qué</div>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' }}>
-            {([['vencidas', 'Vencidas'], ['plan', 'En parcialidades'], ['porvencer', 'Por vencer']] as const).map(([v, l]) => (
-              <button key={v} onClick={() => setVista(v)} style={seg(vista === v)}>{l}</button>
-            ))}
-          </span>
+      <div style={{ marginBottom: 14 }}>
+        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
+        <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
+          Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
         </div>
       </div>
 
       {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
-      <div className="cob-5" style={{ marginBottom: 14 }}>
-        <div style={{ ...S.card, marginBottom: 0 }}>
-          <div style={S.kl}>Por cobrar hoy</div><div style={{ ...S.kv, color: '#C0554E' }}>{money(k.por_cobrar)}</div>
-          <div style={S.ks}>{k.cuentas} suscripciones vencidas</div>
-        </div>
-        <div style={{ ...S.card, marginBottom: 0 }}>
-          <div style={S.kl}>Atraso promedio</div><div style={S.kv}>{k.atraso_prom} <span style={{ fontSize: '0.8rem', color: '#b3afbd', fontWeight: 600 }}>días</span></div>
-          <div style={S.ks}>la más vieja: {k.atraso_max} días</div>
-        </div>
-        <div style={{ ...S.card, marginBottom: 0 }}>
-          <div style={S.kl}>En parcialidades</div><div style={{ ...S.kv, color: '#5B4BD6' }}>{money(k.en_parcialidades)}</div>
-          <div style={S.ks}>{k.planes} planes · {k.exhibiciones_pendientes} pagos por vencer</div>
-        </div>
-        <div style={{ ...S.card, marginBottom: 0 }}>
-          <div style={S.kl}>Recuperado este mes</div><div style={{ ...S.kv, color: '#1E8A63' }}>{money(k.recuperado)}</div>
-          <div style={S.ks}>lo cobrado desde el día 1</div>
-        </div>
-        <div style={{ ...S.card, marginBottom: 0 }}>
-          <div style={S.kl}>Promesas de pago</div><div style={{ ...S.kv, color: '#9a6a10' }}>{k.promesas}</div>
-          <div style={S.ks}>{money(k.promesas_monto)} comprometidos</div>
-        </div>
+      {/* Las tarjetas del MES se abren: un número que nadie puede desarmar es un
+          número que hay que creer. */}
+      <div className="cob-6" style={{ marginBottom: 14 }}>
+        <Kpi label="Por cobrar hoy" valor={money(k.por_cobrar)} color="#C0554E"
+          sub={`${k.cuentas} suscripciones vencidas`} onClick={() => setVista('todas')} />
+        <Kpi label="Cotizaciones por cobrar" valor={money(k.cotizaciones)} color="#2C5FC4"
+          sub={`${k.cotizaciones_n} aceptadas o a medias`} onClick={() => setVista('cotizaciones')} />
+        <Kpi label="En parcialidades" valor={money(k.en_parcialidades)} color="#5B4BD6"
+          sub={`${k.planes} planes · ${k.exhibiciones_pendientes} pagos por vencer`} onClick={() => setVista('parcialidades')} />
+        <Kpi label="Cobrado este mes" valor={money(k.recuperado)} color="#1E8A63"
+          sub={`${(d.recuperado_detalle || []).length} pagos desde el día 1`} onClick={() => setPanel('recuperado')} />
+        <Kpi label="Promesas de pago" valor={k.promesas} color="#9a6a10"
+          sub={`${money(k.promesas_monto)} comprometidos`} onClick={() => setVista('promesas')} />
+        <Kpi label="Bajas del mes" valor={k.canceladas} color={k.canceladas ? '#C0554E' : '#1a1a1a'}
+          sub={k.canceladas ? `${money(k.canceladas_arr)} de ARR perdido` : 'ninguna, por ahora'}
+          onClick={k.canceladas ? () => setPanel('bajas') : undefined} />
       </div>
 
       {/* Los tramos son el lenguaje de la cobranza: a 7 días se cobra con un
@@ -225,38 +258,218 @@ export default function CobranzaTab() {
         })}
       </div>
 
-      {vista === 'vencidas' && (<>
-        <div style={S.card}>
-          <div style={S.h}>Anuales<span style={S.hr}>{d.anuales.length} vencidas</span></div>
-          <div style={S.hd}>Un solo cobro grande al año. Si el cliente no puede de golpe, se parte en exhibiciones desde aquí.</div>
-          <Tabla filas={d.anuales} />
-        </div>
-        <div style={S.card}>
-          <div style={S.h}>Mensuales<span style={S.hr}>{d.mensuales.length} vencidas</span></div>
-          <div style={S.hd}>Aquí la deuda se acumula mes con mes: lo que importa no es el precio del plan, es cuántos meses lleva sin pagar.</div>
-          <Tabla filas={d.mensuales} mensual />
-        </div>
-      </>)}
+      {/* Pestañas al estilo de Cotizaciones: la activa se marca con fondo, no
+          solo con la línea, y el conteo va en pastilla pegado al texto. */}
+      <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid #eceaf2', marginBottom: 14, overflowX: 'auto' }}>
+        {VISTAS.map(v => {
+          const on = v.id === activa.id;
+          const n = v.filas.length;
+          return (
+            <button key={v.id} onClick={() => setVista(v.id)} style={{
+              padding: '9px 14px', background: on ? 'rgba(244,168,205,.28)' : 'transparent',
+              borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
+              borderBottom: on ? '2px solid #d9538e' : '2px solid transparent',
+              color: on ? '#9c3d70' : '#6b6b74', fontWeight: on ? 800 : 500,
+              fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+            }}>
+              {v.label}
+              <span style={{
+                marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                background: on ? '#fff' : '#f3f3f6', color: on ? '#9c3d70' : n === 0 ? '#c4c4cc' : '#8a8a92',
+                borderRadius: 20, padding: '2px 8px',
+              }}>{n}</span>
+            </button>
+          );
+        })}
+      </div>
 
-      {vista === 'plan' && (
-        <div style={S.card}>
-          <div style={S.h}>Planes de pago vivos<span style={S.hr}>{d.con_plan.length}</span></div>
-          <div style={S.hd}>Anualidades que se están cobrando en exhibiciones. Cada una vence sola y se cobra sola.</div>
-          <Tabla filas={d.con_plan} />
-        </div>
-      )}
+      <div style={S.card}>
+        <div style={S.h}>{activa.label}<span style={S.hr}>{money(activa.filas.reduce((a: number, f: any) => a + Number(f.deuda || 0), 0))} en {activa.filas.length}</span></div>
+        <div style={S.hd}>{activa.nota}</div>
+        <Tabla filas={activa.filas} />
+      </div>
 
-      {vista === 'porvencer' && (
-        <div style={S.card}>
-          <div style={S.h}>Por vencer<span style={S.hr}>próximos 30 días · {d.por_vencer.length}</span></div>
-          <div style={S.hd}>Todavía no deben nada. Cobrar antes del vencimiento es lo más barato que existe.</div>
-          <Tabla filas={d.por_vencer} />
-        </div>
-      )}
-
+      {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
+      {panel === 'bajas' && <Bajas filas={d.canceladas || []} motivos={d.canceladas_motivos || []} arr={k.canceladas_arr} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
+      {cancelar && <DarDeBaja f={cancelar} onCerrar={() => setCancelar(null)} onListo={(t: string) => { setCancelar(null); flash(t); cargar(); }} />}
       {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={cargar} />}
+    </div>
+  );
+}
+
+/* ─── El detalle del mes ───
+ * De dónde salió cada peso de "cobrado este mes". Sin esto el KPI es un número
+ * que no se puede auditar ni contra el banco ni contra el cliente. */
+function DetalleMes({ filas, total, onCerrar, onCliente }: any) {
+  const [tipo, setTipo] = useState<'todos' | 'suscripcion' | 'cotizacion'>('todos');
+  const lista = tipo === 'todos' ? filas : filas.filter((f: any) => f.tipo === tipo);
+  const suma = lista.reduce((a: number, f: any) => a + Number(f.monto || 0), 0);
+  const mes = new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+  return (
+    <Modal titulo={`Cobrado en ${mes}`} nota={`${money(total)} en ${filas.length} pagos`} onCerrar={onCerrar} ancho={620}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 11, flexWrap: 'wrap' }}>
+        {([['todos', 'Todos'], ['suscripcion', 'Suscripciones'], ['cotizacion', 'Cotizaciones']] as const).map(([id, l]) => (
+          <button key={id} onClick={() => setTipo(id)} style={{
+            ...S.mini, background: tipo === id ? 'rgba(244,168,205,.28)' : '#fff',
+            color: tipo === id ? '#9c3d70' : '#555', borderColor: tipo === id ? '#f3c9dd' : '#e2e4e9',
+          }}>{l} <b>{id === 'todos' ? filas.length : filas.filter((f: any) => f.tipo === id).length}</b></button>
+        ))}
+        <span style={{ marginLeft: 'auto', fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63' }}>{money(suma)}</span>
+      </div>
+      <div style={{ maxHeight: '52vh', overflowY: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>
+            <th style={{ ...S.th, width: 78 }}>Fecha</th>
+            <th style={S.th}>Cliente</th>
+            <th style={S.th}>Concepto</th>
+            <th style={{ ...S.th, width: 96 }}>Cómo</th>
+            <th style={{ ...S.th, width: 92, textAlign: 'right' as const }}>Monto</th>
+          </tr></thead>
+          <tbody>
+            {lista.length === 0 && <tr><td colSpan={5} style={{ ...S.td, color: '#c9c7d0' }}>Nada aquí todavía.</td></tr>}
+            {lista.map((f: any) => (
+              <tr key={f.id}>
+                <td style={{ ...S.td, color: '#8a8a92' }}>{fmtCorta(f.fecha)}</td>
+                <td style={{ ...S.td, fontWeight: 700, cursor: f.company_id ? 'pointer' : 'default' }} onClick={() => f.company_id && onCliente(f.company_id)}>{f.cliente}</td>
+                <td style={{ ...S.td, color: '#6b6b74' }}>{f.concepto}</td>
+                <td style={{ ...S.td, color: '#8a8a92' }}>{f.metodo}</td>
+                <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800, color: '#1E8A63' }}>{money(f.monto)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  );
+}
+
+/* ─── Bajas del mes ───
+ * El motivo agrupado primero: "se fueron 3" no dice nada; "3 por precio" sí. */
+function Bajas({ filas, motivos, arr, onCerrar, onCliente }: any) {
+  const mes = new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+  return (
+    <Modal titulo={`Bajas de ${mes}`} nota={`${filas.length} · ${money(arr)} de ARR`} onCerrar={onCerrar} ancho={620}>
+      <div style={{ marginBottom: 13 }}>
+        <div style={S.fl}>Por qué se fueron</div>
+        {motivos.map((m: any, i: number) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '6px 0', borderTop: i ? '1px solid #f4f3f7' : 'none', fontSize: '0.79rem' }}>
+            <span style={{ flex: 1 }}>{m.motivo}</span>
+            <span style={{ color: '#8a8a92' }}>{m.n}</span>
+            <b style={{ width: 92, textAlign: 'right' as const, color: '#C0554E' }}>{money(m.arr)}</b>
+          </div>
+        ))}
+      </div>
+      <div style={{ maxHeight: '46vh', overflowY: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>
+            <th style={{ ...S.th, width: 78 }}>Fecha</th>
+            <th style={S.th}>Cliente</th>
+            <th style={S.th}>Plan</th>
+            <th style={{ ...S.th, width: 96, textAlign: 'right' as const }}>ARR</th>
+          </tr></thead>
+          <tbody>
+            {filas.map((f: any) => (
+              <tr key={f.id}>
+                <td style={{ ...S.td, color: '#8a8a92' }}>{fmtCorta(f.fecha)}</td>
+                <td style={{ ...S.td, fontWeight: 700, cursor: 'pointer' }} onClick={() => f.company_id && onCliente(f.company_id)}>
+                  {f.cliente}
+                  <div style={{ fontSize: '0.67rem', color: '#a5a2af', fontWeight: 400 }}>{f.motivo}</div>
+                </td>
+                <td style={{ ...S.td, color: '#6b6b74' }}>{f.plan}<div style={{ fontSize: '0.65rem', color: '#b3b1bb' }}>{f.ciclo}</div></td>
+                <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800, color: '#C0554E' }}>{money(f.arr)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Modal>
+  );
+}
+
+/* ─── Dar de baja ───
+ * El motivo es obligatorio del lado del servidor y aquí también: es lo único
+ * que después contesta "por qué se nos van". */
+const MOTIVOS_BAJA = [
+  'Precio · le salió caro',
+  'Cerró o pausó el negocio',
+  'Se fue con la competencia',
+  'No lo usaba',
+  'Le faltaban funciones',
+  'Mal servicio o soporte',
+  'Solo lo necesitaba por un tiempo',
+];
+
+function DarDeBaja({ f, onCerrar, onListo }: any) {
+  const [motivo, setMotivo] = useState(MOTIVOS_BAJA[0]);
+  const [detalle, setDetalle] = useState('');
+  const [cuando, setCuando] = useState<'ya' | 'alvencer'>('ya');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function guardar() {
+    setBusy(true); setError('');
+    const razon = detalle.trim() ? `${motivo} — ${detalle.trim()}` : motivo;
+    const body: any = cuando === 'ya'
+      ? { id: f.id, estado: 'cancelada', razon_cancelacion: razon }
+      // "Al vencer" no cancela hoy: el cliente ya pagó su periodo y tiene
+      // derecho a usarlo. Se marca para no renovar y el ARR cae cuando toca.
+      : { id: f.id, cancela_al_vencer: true, razon_cancelacion: razon };
+    const r = await fetch('/api/crm/arr/subscriptions', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(x => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo dar de baja.'); return; }
+    onListo(cuando === 'ya' ? 'Suscripción cancelada' : 'Marcada para no renovar');
+  }
+
+  return (
+    <Modal titulo="Dar de baja" nota={f.cliente} onCerrar={onCerrar} ancho={420}>
+      <div style={{ fontSize: '0.78rem', color: '#6b6b74', marginBottom: 12 }}>
+        <b>{f.plan}</b> · {f.ciclo === 'mensual' ? 'recurrencia mensual' : 'anualidad'}<br />
+        Debe {money(f.deuda)} desde hace {f.dias} días.
+      </div>
+      <div style={S.fl}>Cuándo</div>
+      <select style={S.fi} value={cuando} onChange={e => setCuando(e.target.value as any)}>
+        <option value="ya">Ahora · deja de contar en el ARR hoy</option>
+        <option value="alvencer">Al vencer · no se renueva, sigue hasta su fecha</option>
+      </select>
+      <div style={{ marginTop: 9 }}><div style={S.fl}>Por qué se va</div>
+        <select style={S.fi} value={motivo} onChange={e => setMotivo(e.target.value)}>
+          {MOTIVOS_BAJA.map(m => <option key={m} value={m}>{m}</option>)}
+        </select></div>
+      <div style={{ marginTop: 9 }}><div style={S.fl}>Con sus palabras</div>
+        <textarea style={{ ...S.fi, resize: 'vertical' }} rows={2} value={detalle} onChange={e => setDetalle(e.target.value)}
+          placeholder="Lo que dijo textual. Es lo que sirve dentro de seis meses." /></div>
+      <div style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.45, marginTop: 9 }}>
+        La baja queda con su motivo y aparece en “Bajas del mes”, agrupada por razón.
+      </div>
+      {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 10 }}>{error}</div>}
+      <div style={{ display: 'flex', gap: 8, marginTop: 13 }}>
+        <button style={{ ...S.btnP, background: '#C0554E', opacity: busy ? .6 : 1 }} disabled={busy} onClick={guardar}>
+          {busy ? 'Guardando…' : cuando === 'ya' ? 'Dar de baja' : 'Marcar para no renovar'}
+        </button>
+        <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>
+      </div>
+    </Modal>
+  );
+}
+
+/* Envoltura común de los paneles: el encabezado lila del sistema y el clic
+ * fuera para cerrar, sin repetir 40 líneas por modal. */
+function Modal({ titulo, nota, ancho = 460, onCerrar, children }: any) {
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 963, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: ancho, maxWidth: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1, textTransform: 'capitalize' }}>{titulo}</h3>
+          {nota && <span style={{ fontSize: '0.72rem', color: '#7a6fc9' }}>{nota}</span>}
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px', overflowY: 'auto' }}>{children}</div>
+      </div>
     </div>
   );
 }
@@ -276,13 +489,22 @@ function Gestion({ f, onCerrar, onListo }: any) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  const esCot = f.tipo === 'cotizacion';
+
   async function guardar() {
     setBusy(true); setError('');
     if (esPago) {
-      // El mismo endpoint que usa Suscripciones: recalcula la próxima factura,
-      // el ARR y deja el comprobante. Duplicar esa lógica aquí sería la forma
-      // segura de que un día los dos caminos dejen de coincidir.
-      const r = await fetch('/api/crm/arr/register-payment', {
+      // Cada dinero por su camino: el abono de una cotización se guarda como
+      // pago de esa cotización —así cuadra el "lleva X de Y"—; el de una
+      // suscripción pasa por el endpoint que recalcula próxima factura y ARR.
+      // Duplicar cualquiera de los dos aquí sería la forma segura de que un día
+      // dejen de coincidir.
+      const r = esCot
+        ? await fetch('/api/revenue/payments', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quote_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia }),
+          }).then(x => x.json()).catch(() => null)
+        : await fetch('/api/crm/arr/register-payment', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription_id: f.id, company_id: f.company_id, monto: Number(monto), fecha, metodo, referencia }),
       }).then(x => x.json()).catch(() => null);
@@ -297,7 +519,10 @@ function Gestion({ f, onCerrar, onListo }: any) {
     }
     await fetch('/api/crm/cobranza', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription_id: f.id, estado, promesa: estado === 'promesa' ? promesa : null, nota }),
+      body: JSON.stringify({
+        ...(esCot ? { quote_id: f.id } : { subscription_id: f.id }),
+        estado, promesa: estado === 'promesa' ? promesa : null, nota,
+      }),
     }).catch(() => {});
     setBusy(false); onListo('Gestión guardada');
   }

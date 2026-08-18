@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { supabase } from '../../lib/supabase';
 import { medirConversionEnSegundoPlano } from '../../lib/openai-conversions';
+import { capturarEnServidor } from '../../lib/posthog';
 import { provisionAccount, generateUniqueAccountId, isValidAccountId } from '../../lib/register';
 import { normalizeEmail } from '../../lib/gifts';
 import { syncCrmForSubscription, sendTikTokEvent } from './create-subscription';
@@ -185,6 +186,13 @@ export const POST: APIRoute = async ({ request }) => {
       id: `sub-${subscription.id}`,
       tipo: 'registration_completed',
       sourceUrl: 'https://www.sacscloud.com/registro',
+    });
+
+    // PostHog: la conversion que de verdad vale. Identificada por correo para
+    // unirla con la navegacion anonima anterior de esa misma persona.
+    void capturarEnServidor('cuenta_creada', email, {
+      subscription_id: subscription.id,
+      account_id: provisionedAccountId,
     });
 
     return json({ success: true, subscriptionId: subscription.id, account_id: provisionedAccountId, provision_pending: false, status: subscription.status }, 200);

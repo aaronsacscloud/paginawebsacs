@@ -39,6 +39,9 @@ export const POST: APIRoute = async ({ request }) => {
   // Insert payment — schema accepts quote_id (added in migration-2026-04-payments-receipts.sql)
   const payload: any = {
     quote_id: body.quote_id || null,
+    // La empresa viaja cuando quien registra el abono ya sabe de quién es (p.ej.
+    // Cobranza): sin ella, el pago no se puede agrupar por cliente después.
+    company_id: body.company_id || null,
     fecha: body.fecha,
     monto: Number(body.monto || 0),
     metodo: body.metodo,

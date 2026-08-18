@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
 import { medirConversionEnSegundoPlano } from '../../../lib/openai-conversions';
+import { capturarEnServidor } from '../../../lib/posthog';
 import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
@@ -476,6 +477,17 @@ export const POST: APIRoute = async ({ request }) => {
     id: `booking-${booking.id}`,
     tipo: 'appointment_scheduled',
     sourceUrl: 'https://www.sacscloud.com/agendar',
+  });
+
+  // PostHog: el final del embudo. Se identifica por CORREO a proposito — asi
+  // esta conversion se pega a toda la navegacion anonima previa de la misma
+  // persona y se puede ver por donde entro y que leyo antes de agendar.
+  // El agendador vive en un iframe, asi que desde el navegador no hay forma de
+  // saber que la cita quedo: tiene que medirse aqui.
+  void capturarEnServidor('demo_agendada', email, {
+    booking_id: booking.id,
+    tipo_evento: event_type_slug,
+    fecha,
   });
 
   // 8. Save booking answers

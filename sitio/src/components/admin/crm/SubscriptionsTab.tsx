@@ -155,6 +155,11 @@ export default function SubscriptionsTab() {
     } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   }
+  // Bajas del mes con su motivo. Es la contraparte del ARR: sin ella el número
+  // sube y baja sin que nadie pueda decir por qué se fue el que se fue.
+  const [bajas, setBajas] = useState<any>(null);
+  useEffect(() => { fetch('/api/crm/arr/bajas').then(r => r.json()).then(setBajas).catch(() => {}); }, []);
+
   useEffect(() => { load(); }, []);
 
   // Pendientes "stale": pendiente_pago con +60 días vencidas y 0 pagos → seguro
@@ -272,6 +277,25 @@ export default function SubscriptionsTab() {
           <div style={S.kLabel}>ARR en riesgo</div>
           <div style={{ ...S.kValue, color: (riesgo?.arr_en_riesgo || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{fmt(riesgo?.arr_en_riesgo)}</div>
           <div style={S.kSub}>{(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)} clientes sin vender ≥3 días</div>
+        </div>
+        <div style={kpiCard}>
+          <div style={S.kLabel}>Bajas este mes</div>
+          <div style={{ ...S.kValue, color: (bajas?.n || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{bajas?.n ?? '—'}</div>
+          <div style={S.kSub}>
+            {(bajas?.n || 0) > 0
+              ? <>{fmt(bajas.arr)} de ARR · {bajas.motivos.slice(0, 2).map((m: any) => `${m.n} ${m.motivo.toLowerCase().split(' · ')[0].split(' — ')[0]}`).join(', ')}</>
+              : 'ninguna cancelación registrada'}
+          </div>
+          {(bajas?.motivos?.length || 0) > 0 && (
+            <div style={{ marginTop: 7, borderTop: '1px solid #f4f3f7', paddingTop: 6 }}>
+              {bajas.motivos.slice(0, 4).map((m: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, fontSize: '0.7rem', color: '#6b6b74', padding: '2px 0' }}>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.motivo}</span>
+                  <b style={{ color: '#C0554E' }}>{fmt(m.arr)}</b>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div style={kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
