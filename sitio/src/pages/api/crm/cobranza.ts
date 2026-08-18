@@ -26,7 +26,7 @@ const dias = (f: string) => Math.floor((Date.parse(hoy()) - Date.parse(String(f)
 export const GET: APIRoute = async () => {
   const [subsQ, compQ, cobrosQ, pagosQ] = await Promise.all([
     supabase.from('subscriptions')
-      .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota')
+      .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
       .in('estado', ['activa', 'pendiente_pago']),
     supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, ultima_venta_at').is('archived_at', null),
     supabase.from('cobros_programados').select('*').neq('estado', 'cancelada').order('numero'),
@@ -58,13 +58,19 @@ export const GET: APIRoute = async () => {
       } else {
         vence = String(s.proxima_factura).slice(0, 10);
         const d = dias(vence);
+        const favor = num(s.saldo_favor);
         if (s.ciclo === 'mensual' && d > 0) {
-          const meses = Math.floor(d / 30) + 1;
-          deuda = precio * meses;
+          // Los periodos se cuentan mes a mes desde la fecha vencida, no con
+          // una división entre 30: un mes no dura 30 días y el redondeo cobraba
+          // de más en unos casos y de menos en otros.
+          let meses = 0; const f = new Date(vence + 'T12:00:00');
+          while (f.toISOString().slice(0, 10) <= hoy() && meses < 120) { meses++; f.setMonth(f.getMonth() + 1); }
+          deuda = Math.max(0, precio * meses - favor);
           detalle = meses > 1 ? `${meses} meses × ${Math.round(precio).toLocaleString('es-MX')}` : '1 mes';
+          if (favor > 0) detalle += ` · menos ${Math.round(favor).toLocaleString('es-MX')} a favor`;
         } else {
-          deuda = precio;
-          detalle = '';
+          deuda = Math.max(0, precio - favor);
+          detalle = favor > 0 ? `menos ${Math.round(favor).toLocaleString('es-MX')} a favor` : '';
         }
       }
 

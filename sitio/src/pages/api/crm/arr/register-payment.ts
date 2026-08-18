@@ -26,6 +26,12 @@ function addCiclo(fecha: string, ciclo: 'mensual' | 'anual'): string {
   else d.setUTCMonth(d.getUTCMonth() + 1);
   return d.toISOString().slice(0, 10);
 }
+/** Varios ciclos de golpe: un abono grande puede cubrir tres meses vencidos. */
+function addCiclos(fecha: string, ciclo: 'mensual' | 'anual', n: number): string {
+  let f = fecha;
+  for (let i = 0; i < Math.max(1, n); i++) f = addCiclo(f, ciclo);
+  return f;
+}
 
 // Fase 5 — normaliza el tipo de pago a un set estándar (para agrupar "por tipo" con
 // confianza). No hay CHECK en BD; se normaliza aquí al escribir.
@@ -161,7 +167,38 @@ export const POST: APIRoute = async ({ request }) => {
     const cicloEfectivo: 'mensual' | 'anual' = (sub.ciclo_siguiente === 'anual' || sub.ciclo_siguiente === 'mensual') ? sub.ciclo_siguiente : sub.ciclo;
     const precioEfectivo = sub.precio_siguiente != null ? Number(sub.precio_siguiente) : Number(sub.precio);
     const promoverCiclo = cicloEfectivo !== sub.ciclo || precioEfectivo !== Number(sub.precio);
-    const base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
+    // ── Cuánto de la deuda cubre este pago ──
+    //
+    // Antes la fecha se recorría UN ciclo desde el día del pago cuando la
+    // suscripción venía vencida. Con eso, un abono de $1,269 sobre nueve meses
+    // de atraso mandaba la próxima factura al futuro y los $6,831 restantes
+    // desaparecían de la cobranza: el cliente quedaba al corriente sin haber
+    // pagado.
+    //
+    // Ahora se cuenta desde la fecha ORIGINAL y se avanzan solo los periodos
+    // que el dinero alcanza a cubrir. Lo que sobra queda como saldo a favor y
+    // se descuenta del siguiente, en vez de regalarse.
+    const precioPeriodo = Number(sub.monto_proximo ?? sub.precio) || 0;
+    const vencida = !!(sub.proxima_factura && sub.proxima_factura < fecha && sub.ciclo !== 'vitalicia');
+    let base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
+    let ciclosCubiertos = 1;
+    let saldoNuevo = Number(sub.saldo_favor || 0);
+
+    if (vencida && precioPeriodo > 0) {
+      const disponible = monto + saldoNuevo;
+      // Con tolerancia de un peso: un abono de $899.50 sobre $900 es el periodo
+      // pagado, no un cliente que quedó debiendo cincuenta centavos.
+      ciclosCubiertos = Math.floor((disponible + 1) / precioPeriodo);
+      saldoNuevo = r2(disponible - ciclosCubiertos * precioPeriodo);
+      base = sub.proxima_factura;                       // desde donde se quedó
+      if (ciclosCubiertos < 1) {
+        // No alcanza ni para un periodo: la fecha NO se mueve y el abono queda
+        // a cuenta. Es lo que hace que la deuda baje sin desaparecer.
+        ciclosCubiertos = 0;
+      }
+    } else {
+      saldoNuevo = 0;
+    }
     // La próxima fecha se calcula automática (+1 ciclo), pero el admin puede
     // DECIDIRLA al registrar el pago (nueva_proxima_factura, YYYY-MM-DD > fecha).
     const overrideProxima = (typeof body.nueva_proxima_factura === 'string'
@@ -170,7 +207,9 @@ export const POST: APIRoute = async ({ request }) => {
     const updSub: any = {
       estado: 'activa',
       // Vitalicia = pago único: se activa pero NO tiene próxima factura (no renueva).
-      proxima_factura: sub.ciclo === 'vitalicia' ? null : (overrideProxima || addCiclo(base, cicloEfectivo)),
+      proxima_factura: sub.ciclo === 'vitalicia' ? null
+        : (overrideProxima || (ciclosCubiertos === 0 ? sub.proxima_factura : addCiclos(base, cicloEfectivo, ciclosCubiertos))),
+      saldo_favor: saldoNuevo,
       pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
       total_pagado: r2(Number(sub.total_pagado || 0) + monto),
       // Pagar renueva: si tenía cancelación "al vencer" pendiente, el pago la
