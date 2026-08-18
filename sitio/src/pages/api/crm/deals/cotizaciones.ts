@@ -80,14 +80,21 @@ export const POST: APIRoute = async ({ request }) => {
   // hoy — desplazaría el mes en todo reporte.
   const cerrada = quote.pagado_fecha || quote.rechazado_fecha || (etapa === 'cerrada_perdida' ? quote.vigencia : null);
 
-  const r = await syncQuoteToDeal(quoteId, {
-    targetStage: etapa as any,
-    valor_total: Math.round(Number(quote.total || 0)),
-    trigger: 'alta_manual_desde_ficha',
-    closed_at: cerrada ? new Date(cerrada).toISOString() : undefined,
-    motivo_perdida: quote.estado === 'expired' ? 'Venció sin respuesta' : quote.estado === 'rejected' ? 'Rechazada por el cliente' : undefined,
-  });
-  if (!r.dealId) return json({ error: 'No se pudo crear la oportunidad de esa cotización.' }, 500);
+  let r: any;
+  try {
+    r = await syncQuoteToDeal(quoteId, {
+      targetStage: etapa as any,
+      valor_total: Math.round(Number(quote.total || 0)),
+      trigger: 'alta_manual_desde_ficha',
+      closed_at: cerrada ? new Date(cerrada).toISOString() : undefined,
+      motivo_perdida: quote.estado === 'expired' ? 'Venció sin respuesta' : quote.estado === 'rejected' ? 'Rechazada por el cliente' : undefined,
+    });
+  } catch (e: any) {
+    // El motivo real, no "no se pudo": el primer intento falló por una
+    // restricción de catálogo y sin el mensaje no había por dónde empezar.
+    return json({ error: String(e?.message || e) }, 500);
+  }
+  if (!r?.dealId) return json({ error: 'No se pudo crear la oportunidad de esa cotización.' }, 500);
 
   // Una cotización PAGADA cierra el círculo: cliente, suscripción o pago único.
   // Sin esto la oportunidad nace ganada pero no deja nada detrás.

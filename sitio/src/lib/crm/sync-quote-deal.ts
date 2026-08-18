@@ -61,6 +61,13 @@ export function etapaParaEstado(estado: string): DealStage | null {
   }
 }
 
+/** El nombre comercial del plan → la clave del catálogo, o nulo. */
+export function normalizaPlan(v: any): string | null {
+  const t = String(v || '').toLowerCase();
+  for (const k of ['vende', 'controla', 'fideliza', 'automatiza']) if (t.includes(k)) return k;
+  return null;
+}
+
 export async function ensureContactForQuote(quote: any): Promise<string | null> {
   if (quote.contact_id) return quote.contact_id;
   const email = (quote.email || '').trim().toLowerCase();
@@ -389,14 +396,31 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     if (ctx.motivo_perdida) insertPayload.motivo_perdida = ctx.motivo_perdida;
   }
 
+  // `plan` tiene CHECK de catálogo (vende/controla/fideliza/automatiza) y en la
+  // cotización es texto libre —"Plan Controla Anual"—. Se normaliza a la clave
+  // o se deja en nulo: un nombre comercial rompía el insert entero.
+  insertPayload.plan = normalizaPlan(insertPayload.plan);
+
   // Las columnas v2/v3 (items, mrr, categoria…) pueden no existir si el SQL no
   // corrió: se reintenta sin ellas antes que perder la oportunidad entera.
-  let { data: deal } = await supabase.from('deals').insert(insertPayload).select().single();
+  let { data: deal, error: e1 } = await supabase.from('deals').insert(insertPayload).select().single();
   if (!deal) {
-    const { items: _i, mrr: _m, valor_unico: _vu, tipo_ingreso: _ti, categoria: _c, origen: _o, ...basico } = insertPayload;
-    ({ data: deal } = await supabase.from('deals').insert(basico).select().single());
+    // El segundo intento suelta también los campos con CHECK de catálogo. Una
+    // restricción vieja se comía la oportunidad completa y en silencio: así fue
+    // como COT-78900 —$16,900 ya cobrados— no existió en el CRM, porque
+    // `billing_period: 'unico'` no estaba permitido todavía.
+    const { items: _i, mrr: _m, valor_unico: _vu, tipo_ingreso: _ti, categoria: _c, origen: _o,
+      billing_period: _bp, plan: _p, ...basico } = insertPayload;
+    const r2 = await supabase.from('deals').insert(basico).select().single();
+    deal = r2.data;
+    if (!deal) {
+      console.error('[createDealFromQuote] no se pudo insertar la oportunidad', {
+        quote: quote.numero, primero: e1?.message, segundo: r2.error?.message,
+      });
+      // El motivo viaja hacia arriba: "no se pudo" sin causa no se puede arreglar.
+      throw new Error(`No se pudo crear la oportunidad de ${quote.numero || 'la cotización'}: ${r2.error?.message || e1?.message || 'error desconocido'}`);
+    }
   }
-  if (!deal) return null;
 
   // Back-reference on quote
   await supabase.from('quotes').update({ deal_id: deal.id }).eq('id', quote.id);
