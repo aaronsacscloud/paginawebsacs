@@ -197,11 +197,13 @@ export const GET: APIRoute = async () => {
       canceladas_arr: canceladas.reduce((a: number, c: any) => a + c.arr, 0),
       mes: hoy().slice(0, 7),
     },
+    // De lo más fresco a lo más viejo: se lee como una línea de tiempo, y lo que
+    // duele —el +90— queda al final, que es donde el ojo se detiene.
     tramos: [
-      { k: '+90 días', a: 91, b: 99999, monto: suma(tramo(91, 99999)), n: tramo(91, 99999).length },
-      { k: '31 a 90', a: 31, b: 90, monto: suma(tramo(31, 90)), n: tramo(31, 90).length },
-      { k: '8 a 30 días', a: 8, b: 30, monto: suma(tramo(8, 30)), n: tramo(8, 30).length },
       { k: '1 a 7 días', a: 1, b: 7, monto: suma(tramo(1, 7)), n: tramo(1, 7).length },
+      { k: '8 a 30 días', a: 8, b: 30, monto: suma(tramo(8, 30)), n: tramo(8, 30).length },
+      { k: '31 a 90', a: 31, b: 90, monto: suma(tramo(31, 90)), n: tramo(31, 90).length },
+      { k: '+90 días', a: 91, b: 99999, monto: suma(tramo(91, 99999)), n: tramo(91, 99999).length },
     ],
     // La más vieja primero: es la que más cuesta y la que menos se cobra sola.
     anuales: vencidas.filter((f: any) => f.ciclo === 'anual').sort((a: any, b: any) => b.dias - a.dias),

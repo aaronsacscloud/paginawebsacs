@@ -64,6 +64,7 @@ export default function CobranzaTab() {
   const [partir, setPartir] = useState<any>(null);
   const [cancelar, setCancelar] = useState<any>(null);
   const [panel, setPanel] = useState<'' | 'recuperado' | 'bajas'>('');
+  const [tramo, setTramo] = useState<any>(null);
   const [cliente, setCliente] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
 
@@ -253,13 +254,20 @@ export default function CobranzaTab() {
       {/* Los tramos son el lenguaje de la cobranza: a 7 días se cobra con un
           recordatorio; a 90 ya es una negociación. */}
       <div className="cob-4" style={{ marginBottom: 14 }}>
-        {d.tramos.map((t: any, i: number) => {
-          const col = i === 0 ? ['#FEF0EF', '#f7c9c5', '#C0554E'] : i === 1 ? ['#fff6f5', '#f7d9d6', '#C0554E'] : i === 2 ? ['#FEF6E7', '#f5e2b8', '#9a6a10'] : ['#EEECFE', '#ddd6fb', '#5B4BD6'];
+        {d.tramos.map((t: any) => {
+          // El color sale del tramo, no de su posición: si mañana se reordenan,
+          // el rojo tiene que seguir siendo el de +90 días.
+          const col = t.a >= 91 ? ['#FEF0EF', '#f7c9c5', '#C0554E']
+            : t.a >= 31 ? ['#fff6f5', '#f7d9d6', '#C0554E']
+              : t.a >= 8 ? ['#FEF6E7', '#f5e2b8', '#9a6a10'] : ['#EEECFE', '#ddd6fb', '#5B4BD6'];
           return (
-            <div key={t.k} style={{ background: col[0], border: `1px solid ${col[1]}`, borderRadius: 10, padding: '10px 13px' }}>
+            <div key={t.k} onClick={() => t.n > 0 && setTramo(t)}
+              style={{ background: col[0], border: `1px solid ${col[1]}`, borderRadius: 10, padding: '10px 13px', cursor: t.n > 0 ? 'pointer' : 'default' }}>
               <div style={{ fontSize: '0.58rem', fontWeight: 800, color: col[2], textTransform: 'uppercase', letterSpacing: '.06em' }}>{t.k}</div>
               <div style={{ fontSize: '1.05rem', fontWeight: 800, color: col[2], marginTop: 3 }}>{money(t.monto)}</div>
-              <div style={{ fontSize: '0.64rem', color: col[2], marginTop: 1 }}>{t.n} {t.n === 1 ? 'cuenta' : 'cuentas'}</div>
+              <div style={{ fontSize: '0.64rem', color: col[2], marginTop: 1 }}>
+                {t.n} {t.n === 1 ? 'cuenta' : 'cuentas'}{t.n > 0 ? ' · ver' : ''}
+              </div>
             </div>
           );
         })}
@@ -296,6 +304,39 @@ export default function CobranzaTab() {
         <Tabla filas={activa.filas} />
       </div>
 
+      {tramo && (
+        <Modal titulo={`Atraso de ${tramo.k.replace('+', 'más de ')}`} nota={`${money(tramo.monto)} en ${tramo.n}`} ancho={620} onCerrar={() => setTramo(null)}>
+          <div style={{ fontSize: '0.76rem', color: '#8a8590', lineHeight: 1.5, marginBottom: 10 }}>
+            Las suscripciones vencidas de ese tramo, de la más vieja a la más nueva. Da clic en una para abrir su ficha.
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={S.th}>Cliente</th>
+              <th style={S.th}>Concepto</th>
+              <th style={{ ...S.th, width: 92 }}>Venció</th>
+              <th style={{ ...S.th, width: 64 }}>Atraso</th>
+              <th style={{ ...S.th, width: 92, textAlign: 'right' as const }}>Debe</th>
+            </tr></thead>
+            <tbody>
+              {[...d.anuales, ...d.mensuales]
+                .filter((f: any) => f.dias >= tramo.a && f.dias <= tramo.b)
+                .sort((a: any, b: any) => b.dias - a.dias)
+                .map((f: any) => (
+                  <tr key={f.id}>
+                    <td style={{ ...S.td, fontWeight: 700, cursor: 'pointer' }} onClick={() => { setTramo(null); setCliente(f.company_id); }}>
+                      {f.cliente}
+                      {f.detalle && <div style={{ fontSize: '0.66rem', color: '#a5a2af', fontWeight: 400 }}>{f.detalle}</div>}
+                    </td>
+                    <td style={{ ...S.td, color: '#6b6b74' }}>{f.plan}</td>
+                    <td style={{ ...S.td, color: '#8a8a92' }}>{fmtCorta(f.vence)}</td>
+                    <td style={{ ...S.td, fontWeight: 800, color: f.dias > 90 ? '#C0554E' : f.dias > 7 ? '#9a6a10' : '#5B4BD6' }}>{f.dias} d</td>
+                    <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800 }}>{money(f.deuda)}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </Modal>
+      )}
       {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {panel === 'bajas' && <Bajas filas={d.canceladas || []} motivos={d.canceladas_motivos || []} arr={k.canceladas_arr} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
