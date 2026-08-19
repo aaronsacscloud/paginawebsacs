@@ -54,7 +54,14 @@ export const GET: APIRoute = async () => {
   const empresas = Object.fromEntries((compQ.data || []).map((c: any) => [c.id, c]));
   const cobros = cobrosQ.data || [];
   const porSub: Record<string, any[]> = {};
-  cobros.forEach((c: any) => { (porSub[c.subscription_id] = porSub[c.subscription_id] || []).push(c); });
+  // Un plan de pagos cuelga de una suscripción o de una cotización: partir en
+  // exhibiciones una venta de una sola vez es igual de común que partir una
+  // anualidad, y hasta ahora esas parcialidades no aparecían en ningún lado.
+  const porCot: Record<string, any[]> = {};
+  cobros.forEach((c: any) => {
+    if (c.subscription_id) (porSub[c.subscription_id] = porSub[c.subscription_id] || []).push(c);
+    else if (c.quote_id) (porCot[c.quote_id] = porCot[c.quote_id] || []).push(c);
+  });
 
   const filas = (subsQ.data || [])
     .filter((s: any) => s.ciclo !== 'vitalicia' && s.proxima_factura)
@@ -115,7 +122,7 @@ export const GET: APIRoute = async () => {
   const suma = (a: any[]) => Math.round(a.reduce((x: number, f: any) => x + f.deuda, 0));
 
   const recuperado = (pagosQ.data || []).reduce((a: number, p: any) => a + num(p.monto), 0);
-  const conPlan = filas.filter((f: any) => f.plan_pagos.length);
+  const conPlanSubs = filas.filter((f: any) => f.plan_pagos.length);
 
   // ── Cotizaciones por cobrar ───────────────────────────────────────────────
   // Solo las que ya son un compromiso: aceptada sin pagar, o pagada a medias.
@@ -124,9 +131,24 @@ export const GET: APIRoute = async () => {
   (abonosQ.data || []).forEach((p: any) => { abonado[p.quote_id] = (abonado[p.quote_id] || 0) + num(p.monto); });
   const cotizaciones = (cotsQ.data || []).map((q: any) => {
     const pagado = abonado[q.id] || 0;
-    const saldo = Math.round(num(q.total) - pagado);
-    const desde = String(q.aceptado_fecha || q.vigencia || q.created_at).slice(0, 10);
+    let saldo = Math.round(num(q.total) - pagado);
+    let desde = String(q.aceptado_fecha || q.vigencia || q.created_at).slice(0, 10);
     const co = empresas[q.company_id] || {};
+    const plan = (porCot[q.id] || []).sort((a: any, b: any) => a.numero - b.numero);
+    let detallePlan = '';
+    let exhibicion: any = null;
+    if (plan.length) {
+      // Con plan, lo exigible es la exhibición vencida más vieja —no el saldo
+      // completo—: reclamar el total de algo que ya se acordó partir es la forma
+      // más rápida de perder la conversación.
+      const pend = plan.filter((x: any) => x.estado === 'pendiente');
+      exhibicion = pend.find((x: any) => String(x.fecha) < hoy()) || pend[0] || null;
+      if (exhibicion) {
+        saldo = Math.round(num(exhibicion.monto));
+        desde = String(exhibicion.fecha).slice(0, 10);
+        detallePlan = `exhibición ${exhibicion.numero} de ${exhibicion.total}`;
+      } else { saldo = 0; detallePlan = 'plan liquidado'; }
+    }
     return {
       id: q.id, tipo: 'cotizacion', company_id: q.company_id || null,
       cliente: co.nombre_comercial || co.nombre || q.empresa || 'Sin cliente ligado',
@@ -134,14 +156,23 @@ export const GET: APIRoute = async () => {
       plan: `${q.numero} · ${q.estado === 'accepted' ? 'aceptada' : 'enviada'}`,
       ciclo: 'cotizacion', vence: desde, dias: dias(desde),
       deuda: saldo, precio: Math.round(num(q.total)), pagado: Math.round(pagado),
-      detalle: pagado > 0 ? `abonó ${Math.round(pagado).toLocaleString('es-MX')} de ${Math.round(num(q.total)).toLocaleString('es-MX')}` : '',
+      detalle: detallePlan || (pagado > 0 ? `abonó ${Math.round(pagado).toLocaleString('es-MX')} de ${Math.round(num(q.total)).toLocaleString('es-MX')}` : ''),
       link: q.link_pago || null,
       gestion: q.cobranza_estado || 'sin_contactar', promesa: q.cobranza_promesa, nota: q.cobranza_nota,
       dias_sin_venta: co.dias_sin_venta ?? null,
       senal: co.dias_sin_venta == null ? null : co.dias_sin_venta <= 2 ? 'vendiendo' : co.dias_sin_venta <= 10 ? 'tibia' : 'sin vender',
-      plan_pagos: [], exhibicion_id: null,
+      plan_pagos: plan.map((x: any) => ({ id: x.id, numero: x.numero, total: x.total, fecha: x.fecha, monto: Math.round(num(x.monto)), estado: x.estado, link: x.link_pago })),
+      exhibicion_id: exhibicion?.id || null,
     };
-  }).filter((q: any) => q.deuda > 0 && (q.pagado > 0 || String(q.plan).includes('aceptada')));
+  }).filter((q: any) => q.deuda > 0 && (q.pagado > 0 || q.plan_pagos.length > 0 || String(q.plan).includes('aceptada')));
+
+  // Parcialidades vivas de los dos mundos, en una sola lista: la anualidad
+  // partida y la cotización partida se cobran igual —exhibición por exhibición—
+  // y separarlas obligaría a mirar en dos lados el mismo trabajo.
+  const conPlan = [...conPlanSubs, ...cotizaciones.filter((c: any) => c.plan_pagos.length)];
+  // Y las que se están pagando de a poco sin plan: no hay fechas acordadas, así
+  // que no son un plan, pero tampoco son una deuda de un solo golpe.
+  const sinPlan = cotizaciones.filter((c: any) => !c.plan_pagos.length && c.pagado > 0);
 
   // ── El detalle del mes ────────────────────────────────────────────────────
   const planPorSub: Record<string, any> = {};
@@ -189,6 +220,9 @@ export const GET: APIRoute = async () => {
       en_parcialidades: Math.round(conPlan.reduce((a: number, f: any) => a + f.plan_pagos.filter((x: any) => x.estado === 'pendiente').reduce((y: number, x: any) => y + x.monto, 0), 0)),
       planes: conPlan.length,
       exhibiciones_pendientes: conPlan.reduce((a: number, f: any) => a + f.plan_pagos.filter((x: any) => x.estado === 'pendiente').length, 0),
+      // Cotizaciones que se están pagando de a poco SIN plan formal: son
+      // parcialidades de hecho, y solo se ven si se nombran.
+      abonos_sueltos: sinPlan.length,
       recuperado: Math.round(recuperado),
       promesas: [...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa').length,
       promesas_monto: suma([...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa')),
@@ -210,6 +244,7 @@ export const GET: APIRoute = async () => {
     mensuales: vencidas.filter((f: any) => f.ciclo === 'mensual').sort((a: any, b: any) => b.dias - a.dias),
     por_vencer: porVencer.sort((a: any, b: any) => a.dias - b.dias),
     con_plan: conPlan,
+    abonos_sueltos: sinPlan,
     cotizaciones: cotizaciones.sort((a: any, b: any) => b.dias - a.dias),
     // Las promesas cruzan tipos: es lo que alguien se comprometió a pagar,
     // venga de una suscripción o de una cotización.
@@ -225,16 +260,30 @@ export const GET: APIRoute = async () => {
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
   const subId = String(b?.subscription_id || '');
+  const quoteId = String(b?.quote_id || '');
   const n = Math.max(2, Math.min(24, Number(b?.exhibiciones) || 0));
   const inicio = String(b?.primera || '').slice(0, 10);
   const cada = b?.cada === 'quincena' ? 15 : 30;
   const montos: number[] = Array.isArray(b?.montos) ? b.montos.map(Number) : [];
-  if (!subId || !n || !inicio) return json({ error: 'Falta la suscripción, el número de exhibiciones o la primera fecha.' }, 400);
+  if ((!subId && !quoteId) || !n || !inicio) return json({ error: 'Falta la suscripción o cotización, el número de exhibiciones o la primera fecha.' }, 400);
 
-  const { data: sub } = await supabase.from('subscriptions').select('id, company_id, monto_proximo, precio, ciclo').eq('id', subId).maybeSingle();
-  if (!sub) return json({ error: 'Esa suscripción ya no existe.' }, 404);
+  // El origen puede ser una anualidad o una cotización. Lo único que cambia es
+  // de dónde sale el total y a qué columna se cuelga el plan.
+  let companyId: string | null = null, totalBase = 0;
+  if (quoteId) {
+    const { data: q } = await supabase.from('quotes').select('id, company_id, total').eq('id', quoteId).maybeSingle();
+    if (!q) return json({ error: 'Esa cotización ya no existe.' }, 404);
+    // Lo ya abonado no se vuelve a partir: se parte lo que falta.
+    const { data: pagos } = await supabase.from('payments').select('monto').eq('quote_id', quoteId).neq('estado', 'reembolsado');
+    const ya = (pagos || []).reduce((a: number, p: any) => a + num(p.monto), 0);
+    companyId = q.company_id; totalBase = num(q.total) - ya;
+  } else {
+    const { data: sub } = await supabase.from('subscriptions').select('id, company_id, monto_proximo, precio, ciclo').eq('id', subId).maybeSingle();
+    if (!sub) return json({ error: 'Esa suscripción ya no existe.' }, 404);
+    companyId = sub.company_id; totalBase = num(sub.monto_proximo ?? sub.precio);
+  }
 
-  const total = num(b?.total) || num(sub.monto_proximo ?? sub.precio);
+  const total = num(b?.total) || totalBase;
   // Reparto igual con el sobrante en la PRIMERA: si se deja en la última, el
   // cliente ve un pago distinto justo al final y llama a preguntar por qué.
   const base = Math.floor(total / n);
@@ -242,7 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
     const f = new Date(inicio + 'T12:00:00');
     f.setDate(f.getDate() + cada * i);
     return {
-      subscription_id: subId, company_id: sub.company_id,
+      subscription_id: subId || null, quote_id: quoteId || null, company_id: companyId,
       numero: i + 1, total: n, fecha: f.toISOString().slice(0, 10),
       monto: montos[i] != null ? montos[i] : (i === 0 ? total - base * (n - 1) : base),
       estado: 'pendiente',
@@ -251,10 +300,13 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Un plan nuevo reemplaza al anterior: dos planes vivos sobre la misma
   // suscripción harían que la deuda se cuente dos veces.
-  await supabase.from('cobros_programados').delete().eq('subscription_id', subId).eq('estado', 'pendiente');
+  const viejo = supabase.from('cobros_programados').delete().eq('estado', 'pendiente');
+  await (quoteId ? viejo.eq('quote_id', quoteId) : viejo.eq('subscription_id', subId));
   const { data, error } = await supabase.from('cobros_programados').insert(filas).select();
   if (error) return json({ error: error.message }, 500);
-  await supabase.from('subscriptions').update({ cobranza_estado: 'plan_pagos', cobranza_at: new Date().toISOString() }).eq('id', subId);
+  const marca = { cobranza_estado: 'plan_pagos', cobranza_at: new Date().toISOString() };
+  if (quoteId) await supabase.from('quotes').update(marca).eq('id', quoteId);
+  else await supabase.from('subscriptions').update(marca).eq('id', subId);
   return json({ ok: true, plan: data }, 201);
 };
 

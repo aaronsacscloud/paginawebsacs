@@ -88,7 +88,7 @@ export default function CobranzaTab() {
     { id: 'anualidades', label: 'Anualidades', filas: d.anuales, nota: 'Un solo cobro grande al año. Si el cliente no puede de golpe, se parte en exhibiciones desde aquí.' },
     { id: 'recurrencia', label: 'Recurrencia', filas: d.mensuales, nota: 'Aquí la deuda se acumula mes con mes: lo que importa no es el precio del plan, es cuántos meses lleva sin pagar.' },
     { id: 'cotizaciones', label: 'Cotizaciones', filas: cots, nota: 'Aceptadas sin pagar o pagadas a medias. Ya dijeron que sí: es cobranza, no pipeline.' },
-    { id: 'parcialidades', label: 'En parcialidades', filas: d.con_plan, nota: 'Anualidades que se están cobrando en exhibiciones. Cada una vence sola y se cobra sola.' },
+    { id: 'parcialidades', label: 'En parcialidades', filas: [...(d.con_plan || []), ...(d.abonos_sueltos || [])], nota: 'Anualidades y cotizaciones que se están cobrando de a poco. Con plan, cada exhibición vence sola y se cobra sola; las que llevan abonos sin fechas acordadas se pueden formalizar con “Partir en pagos”.' },
     { id: 'promesas', label: 'Promesas', filas: promesas, nota: 'Se comprometieron a una fecha. El día que llega, la cuenta vuelve a subir en la lista.' },
     { id: 'porvencer', label: 'Por vencer', filas: d.por_vencer, nota: 'Todavía no deben nada. Cobrar antes del vencimiento es lo más barato que existe.' },
   ];
@@ -133,9 +133,12 @@ export default function CobranzaTab() {
             <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap' }}>
               <button style={{ ...S.mini, ...S.mp }} onClick={() => setGestion({ ...f, modo: 'pago' })}>Registrar pago</button>
               {esCot && <a style={S.mini} href={`/cotizacion/${f.id}`} target="_blank" rel="noreferrer">Ver cotización</a>}
-              {!esCot && (f.plan_pagos.length > 0
+              {/* Partir en exhibiciones vale para los dos: una anualidad y una
+                  venta de una sola vez se parten igual. Solo la mensual no —ahí
+                  el problema son los meses acumulados, no el monto. */}
+              {f.plan_pagos.length > 0
                 ? <button style={S.mini} onClick={() => setAbierta(abierto ? null : f.id)}>{abierto ? 'Ocultar plan' : 'Ver plan'}</button>
-                : !mensual && <button style={S.mini} onClick={() => setPartir(f)}>Partir en pagos</button>)}
+                : !mensual && <button style={S.mini} onClick={() => setPartir(f)}>Partir en pagos</button>}
               {f.link && <a style={{ ...S.mini, ...S.mv }} href={f.link} target="_blank" rel="noreferrer">Link de cobro</a>}
               <button style={S.mini} onClick={() => setGestion({ ...f, modo: 'gestion' })}>Gestión</button>
               {/* Dar de baja se hace DONDE se ve que ya no va a pagar, no en otra
@@ -241,7 +244,8 @@ export default function CobranzaTab() {
         <Kpi label="Cotizaciones por cobrar" valor={money(k.cotizaciones)} color="#2C5FC4"
           sub={`${k.cotizaciones_n} aceptadas o a medias`} onClick={() => setVista('cotizaciones')} />
         <Kpi label="En parcialidades" valor={money(k.en_parcialidades)} color="#5B4BD6"
-          sub={`${k.planes} planes · ${k.exhibiciones_pendientes} pagos por vencer`} onClick={() => setVista('parcialidades')} />
+          sub={`${k.planes} planes · ${k.exhibiciones_pendientes} pagos${k.abonos_sueltos ? ` · ${k.abonos_sueltos} con abonos sin plan` : ''}`}
+          onClick={() => setVista('parcialidades')} />
         <Kpi label="Cobrado este mes" valor={money(k.recuperado)} color="#1E8A63"
           sub={`${(d.recuperado_detalle || []).length} pagos desde el día 1`} onClick={() => setPanel('recuperado')} />
         <Kpi label="Promesas de pago" valor={k.promesas} color="#9a6a10"
@@ -646,7 +650,10 @@ function PartirEnPagos({ f, onCerrar, onListo }: any) {
     setBusy(true); setError('');
     const r = await fetch('/api/crm/cobranza', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription_id: f.id, exhibiciones: n, primera, cada, total: f.deuda }),
+      body: JSON.stringify({
+        ...(f.tipo === 'cotizacion' ? { quote_id: f.id } : { subscription_id: f.id }),
+        exhibiciones: n, primera, cada, total: f.deuda,
+      }),
     }).then(x => x.json()).catch(() => null);
     setBusy(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo crear el plan.'); return; }
@@ -689,7 +696,9 @@ function PartirEnPagos({ f, onCerrar, onListo }: any) {
           </div>
 
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.45, marginBottom: 11 }}>
-            La renovación no se mueve: sigue venciendo en su fecha. Esto solo parte cómo se cobra lo de este periodo.
+            {f.tipo === 'cotizacion'
+              ? 'La cotización no cambia de monto: esto solo parte cómo se cobra lo que falta. Lo ya abonado no se vuelve a partir.'
+              : 'La renovación no se mueve: sigue venciendo en su fecha. Esto solo parte cómo se cobra lo de este periodo.'}
           </div>
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
