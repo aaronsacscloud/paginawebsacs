@@ -1,0 +1,213 @@
+---
+/**
+ * SuiteFormal — las dos preguntas que una empresa formal hace antes de agendar:
+ * "¿factura?" y "¿cuánto cuesta?".
+ *
+ * Las dos son eliminatorias y ninguna estaba en la pagina. El silencio sobre el
+ * precio no se lee como discrecion: se lee como "es carisimo" o como "me van a
+ * amarrar". Y si no ve la palabra CFDI, asume que no facturamos.
+ *
+ * Todo lo que se afirma aqui sale de src/data/plans.ts, incluidas las notas de
+ * "desde Controla" y "en Automatiza". Prometer de mas en esta seccion es la
+ * forma mas rapida de que la demo termine mal.
+ *
+ * Direccion de arte: bloque claro entre dos oscuros, y el material es el
+ * comprobante — pero limpio y actual, no el papel viejo con sellos de la
+ * seccion de los dos caminos. Ahi eran documentos del cajon; aqui es lo que el
+ * sistema emite hoy.
+ */
+const facturacion = [
+  { t: 'CFDI desde el punto de venta', n: '' },
+  { t: 'Factura global a público en general', n: '' },
+  { t: 'Cancelación de facturas', n: '' },
+  { t: 'Facturación automática al cerrar la venta', n: 'desde Controla' },
+  { t: 'Complementos de pago y notas de crédito', n: 'desde Controla' },
+  { t: 'Portal de autofacturación para tus clientes', n: 'desde Fideliza' },
+];
+---
+
+<section class="fm">
+  <div class="fm-inner">
+
+    <header class="fm-head">
+      <p class="fm-eyebrow">Lo que pregunta el contador</p>
+      <h2>Factura sin salir de la venta.</h2>
+      <p class="fm-sub">
+        La clienta pide factura en el mostrador y se emite ahí mismo, con la venta abierta.
+        Nadie tiene que anotar el RFC en una libreta para capturarlo en la noche.
+      </p>
+    </header>
+
+    <div class="fm-cols">
+      <!-- Lo que emite -->
+      <div class="fm-lista">
+        {facturacion.map((f) => (
+          <div class="fm-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 12.5l5 5L20 6.5"></path>
+            </svg>
+            <span>{f.t}</span>
+            {f.n && <em>{f.n}</em>}
+          </div>
+        ))}
+        <p class="fm-conta">
+          Y sale hacia tu contabilidad: SACS se conecta con tu ERP y tu despacho por API
+          y más de 600 apps <em>(en Automatiza)</em>.
+        </p>
+      </div>
+
+      <!-- El comprobante -->
+      <div class="fm-doc" aria-hidden="true">
+        <div class="fm-doc-cab">
+          <span>CFDI · Ingreso</span>
+          <span class="fm-doc-ok">Timbrado</span>
+        </div>
+        <dl class="fm-doc-campos">
+          <div><dt>Receptor</dt><dd>MARIANA R.</dd></div>
+          <div><dt>Uso</dt><dd>G03 · Gastos en general</dd></div>
+          <div><dt>Forma de pago</dt><dd>04 · Tarjeta de crédito</dd></div>
+        </dl>
+        <div class="fm-doc-tot">
+          <div><span>Subtotal</span><b>$1,887.07</b></div>
+          <div><span>IVA 16%</span><b>$301.93</b></div>
+          <div class="fm-doc-total"><span>Total</span><b>$2,189.00</b></div>
+        </div>
+        <p class="fm-doc-pie">Emitida desde la caja · 12 seg después del cobro</p>
+      </div>
+    </div>
+
+    <!-- El precio -->
+    <div class="fm-precio">
+      <div class="fm-precio-txt">
+        <p class="fm-precio-rot">Y lo que cuesta</p>
+        <p class="fm-precio-cifra">
+          <b>$900</b><span>al mes, por sucursal</span>
+        </p>
+        <p class="fm-precio-nota">
+          Es el plan <b>Controla</b>, el que usa una cadena: inventario, compras, multisucursal
+          y facturación automática. Hay uno más chico para una sola tienda y dos más grandes
+          con fidelización y automatizaciones.
+        </p>
+      </div>
+
+      <ul class="fm-precio-datos">
+        <li><b>Usuarios ilimitados</b><span>No pagas por cajera nueva ni por rotación</span></li>
+        <li><b>Sin contrato forzoso</b><span>Mensual o anual, tú decides</span></li>
+        <li><b>Implementación acompañada</b><span>La migración la hacemos nosotros</span></li>
+      </ul>
+
+      <a class="fm-precio-link" href="/planes">Ver los cuatro planes y qué trae cada uno →</a>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  /* Bloque claro entre dos oscuros: además de contrastar, el tema —papeleo y
+     dinero— pide luz, no penumbra. */
+  .fm { background: #F2EFE9; color: #1A1815; padding: 96px 24px 104px; }
+  .fm-inner { max-width: 1200px; margin: 0 auto; }
+
+  .fm-head { max-width: 660px; margin-bottom: 44px; }
+  .fm-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #8A8071; margin: 0 0 16px;
+  }
+  .fm-head h2 {
+    font-size: clamp(28px, 4.2vw, 46px); font-weight: 800; letter-spacing: -1.6px;
+    line-height: 1.06; margin: 0 0 16px;
+  }
+  .fm-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #4A443B; }
+
+  .fm-cols { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: start; }
+
+  /* ── Lo que emite ── */
+  .fm-item {
+    display: flex; align-items: baseline; gap: 12px; padding: 14px 0;
+    border-bottom: 1px solid #DED8CC;
+  }
+  .fm-item svg { width: 17px; height: 17px; color: #2F6B4F; flex-shrink: 0; align-self: center; }
+  .fm-item span { flex: 1; font-size: 16px; color: #1A1815; }
+  /* La nota de plan no es letra chica escondida: va en su sitio y se lee. */
+  .fm-item em {
+    font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
+    color: #8A8071; background: #E4DFD4; border-radius: 999px; padding: 4px 10px; white-space: nowrap;
+  }
+  .fm-conta { margin: 22px 0 0; font-size: 15px; line-height: 1.65; color: #4A443B; }
+  .fm-conta em { font-style: normal; color: #8A8071; font-weight: 600; }
+
+  /* ── Comprobante ── */
+  .fm-doc {
+    background: #fff; border: 1px solid #DED8CC; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 18px 40px rgba(26,24,21,.08);
+  }
+  .fm-doc-cab {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 18px; border-bottom: 1px solid #EDE8DE; background: #FBFAF7;
+    font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #6B6459;
+  }
+  .fm-doc-ok {
+    color: #2F6B4F; background: rgba(47,107,79,.1); border-radius: 999px;
+    padding: 4px 11px; letter-spacing: .06em;
+  }
+  .fm-doc-campos { margin: 0; padding: 6px 18px; }
+  .fm-doc-campos > div {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    padding: 12px 0; border-bottom: 1px solid #F2EEE6;
+  }
+  .fm-doc-campos dt { font-size: 12.5px; color: #8A8071; font-weight: 600; margin: 0; }
+  .fm-doc-campos dd { margin: 0; font-size: 14px; font-weight: 600; color: #1A1815; text-align: right; }
+
+  .fm-doc-tot { padding: 14px 18px 4px; }
+  .fm-doc-tot > div {
+    display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0;
+    font-size: 14px; color: #4A443B;
+  }
+  .fm-doc-tot b { font-weight: 700; color: #1A1815; font-variant-numeric: tabular-nums; }
+  .fm-doc-total {
+    border-top: 1px solid #DED8CC; margin-top: 8px; padding-top: 14px !important;
+  }
+  .fm-doc-total span { font-weight: 700; color: #1A1815; }
+  .fm-doc-total b { font-size: 21px; }
+  .fm-doc-pie {
+    margin: 0; padding: 14px 18px 18px; font-size: 12px; color: #8A8071; font-weight: 600;
+  }
+
+  /* ── Precio ── */
+  .fm-precio {
+    margin-top: 64px; padding-top: 44px; border-top: 2px solid #1A1815;
+    display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: start;
+  }
+  .fm-precio-rot {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #8A8071; margin: 0 0 18px;
+  }
+  .fm-precio-cifra { margin: 0 0 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .fm-precio-cifra b {
+    font-size: clamp(46px, 6.4vw, 76px); font-weight: 800; letter-spacing: -3px; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .fm-precio-cifra span { font-size: 17px; color: #4A443B; font-weight: 600; }
+  .fm-precio-nota { margin: 0; font-size: 15.5px; line-height: 1.65; color: #4A443B; max-width: 52ch; }
+  .fm-precio-nota b { font-weight: 700; color: #1A1815; }
+
+  .fm-precio-datos { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .fm-precio-datos li { border-left: 2px solid #C9C0B0; padding-left: 16px; }
+  .fm-precio-datos b { display: block; font-size: 15.5px; font-weight: 700; margin-bottom: 3px; }
+  .fm-precio-datos span { font-size: 14px; color: #6B6459; }
+
+  .fm-precio-link {
+    grid-column: 1 / -1; margin-top: 10px; font-size: 16px; font-weight: 700;
+    color: #1A1815; text-decoration: none;
+    box-shadow: inset 0 -2px 0 #1A1815; padding-bottom: 2px; justify-self: start;
+  }
+  .fm-precio-link:hover { color: #4B7BE5; box-shadow: inset 0 -2px 0 #4B7BE5; text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .fm { padding: 70px 18px 78px; }
+    .fm-cols { grid-template-columns: 1fr; gap: 36px; }
+    .fm-precio { grid-template-columns: 1fr; gap: 30px; margin-top: 48px; padding-top: 34px; }
+    .fm-item { flex-wrap: wrap; gap: 8px 12px; }
+    .fm-item span { flex: 1 1 70%; font-size: 15px; }
+  }
+</style>
