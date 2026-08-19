@@ -1,0 +1,173 @@
+---
+/**
+ * SuiteCasos — momentos reales del giro, con foto y explicación.
+ *
+ * Sustituye al perchero de producto donde el producto no aporta nada. La
+ * diferencia: el perchero enseña QUÉ vendes; esto enseña CUÁNDO te sirve el
+ * sistema. Un dueño se reconoce antes en una escena de su tienda un martes por
+ * la tarde que en una foto de catálogo.
+ *
+ * Sigue el patrón que ya usa el sitio en la sección de fidelización: lista de
+ * casos a la izquierda, uno abierto a la vez, y la escena a la derecha
+ * cambiando con la selección. Se abre solo el primero; los demás se despliegan
+ * al tocarlos, para que el bloque no se vuelva una pared de texto.
+ *
+ * Regla de las fotos: escena real, gente trabajando, sin poses de banco de
+ * imágenes y sin pantallas legibles — una captura falsa dentro de una foto se
+ * nota y tira la credibilidad de todo el bloque.
+ */
+export interface CasoUso {
+  id: string;
+  /** El momento, en las palabras del dueño. */
+  titulo: string;
+  /** Qué pasa hoy y qué cambia. Dos o tres líneas, no más. */
+  texto: string;
+  /** El dato duro que remata, si lo hay. */
+  remate?: string;
+  img: string;
+  alt: string;
+}
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  sub?: string;
+  casos: CasoUso[];
+}
+const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
+---
+
+<section class="cs">
+  <div class="cs-inner">
+
+    <header class="cs-head">
+      <p class="cs-eyebrow">{eyebrow}</p>
+      <h2>{titulo}</h2>
+      {sub && <p class="cs-sub">{sub}</p>}
+    </header>
+
+    <div class="cs-cuerpo">
+      <!-- La lista: uno abierto a la vez -->
+      <div class="cs-lista" role="tablist" aria-label="Casos de uso">
+        {casos.map((c, i) => (
+          <div class:list={['cs-caso', { on: i === 0 }]} data-caso={c.id}>
+            <button
+              class="cs-boton"
+              role="tab"
+              id={`tab-${c.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-controls={`panel-${c.id}`}
+              data-abre={c.id}
+            >
+              <span>{c.titulo}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" class="cs-mas"></path>
+              </svg>
+            </button>
+            <div class="cs-detalle" id={`panel-${c.id}`} role="tabpanel" aria-labelledby={`tab-${c.id}`}>
+              <p>{c.texto}</p>
+              {c.remate && <p class="cs-remate">{c.remate}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <!-- La escena -->
+      <div class="cs-escena">
+        {casos.map((c, i) => (
+          <figure class:list={['cs-foto', { on: i === 0 }]} data-foto={c.id}>
+            <img src={c.img} alt={c.alt} loading="lazy" decoding="async" width="1200" height="800" />
+          </figure>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .cs { background: #FAFAF8; color: #1A1A1A; padding: 104px 24px 112px; }
+  .cs-inner { max-width: 1200px; margin: 0 auto; }
+
+  .cs-head { max-width: 700px; margin-bottom: 52px; }
+  .cs-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #4B7BE5; margin: 0 0 16px;
+  }
+  .cs-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; margin: 0 0 16px;
+  }
+  .cs-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #4A4A4A; }
+
+  .cs-cuerpo { display: grid; grid-template-columns: 1fr 1.15fr; gap: 56px; align-items: start; }
+
+  /* ── La lista ── */
+  .cs-caso { border-top: 1px solid rgba(0,0,0,.1); }
+  .cs-caso:last-child { border-bottom: 1px solid rgba(0,0,0,.1); }
+  .cs-boton {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    background: none; border: none; cursor: pointer; padding: 22px 0; text-align: left;
+    font-family: inherit; color: #1A1A1A;
+  }
+  .cs-boton span {
+    font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: -.4px; line-height: 1.3;
+  }
+  .cs-boton svg { width: 20px; height: 20px; color: #8C8C8C; flex-shrink: 0; transition: transform .3s ease, color .3s ease; }
+  .cs-caso.on .cs-boton svg { transform: rotate(45deg); color: #4B7BE5; }
+  .cs-boton:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; border-radius: 4px; }
+
+  .cs-detalle {
+    max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height .4s ease, opacity .3s ease, padding-bottom .4s ease;
+  }
+  .cs-caso.on .cs-detalle { max-height: 300px; opacity: 1; padding-bottom: 24px; }
+  .cs-detalle p { margin: 0; font-size: 16px; line-height: 1.7; color: #4A4A4A; max-width: 52ch; }
+  .cs-remate {
+    margin-top: 14px !important; font-weight: 700; color: #1A1A1A !important;
+    border-left: 2px solid #4B7BE5; padding-left: 14px;
+  }
+
+  /* ── La escena ── */
+  .cs-escena {
+    position: relative; border-radius: 20px; overflow: hidden;
+    aspect-ratio: 3 / 2; background: #EDEDE9;
+    box-shadow: 0 20px 50px rgba(15,23,42,.12);
+  }
+  .cs-foto { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .5s ease; }
+  .cs-foto.on { opacity: 1; }
+  .cs-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  @media (max-width: 900px) {
+    .cs { padding: 74px 18px 82px; }
+    /* En vertical la escena va arriba: se ve primero la foto y luego se lee. */
+    .cs-cuerpo { grid-template-columns: 1fr; gap: 28px; }
+    .cs-escena { order: -1; }
+    .cs-boton { padding: 18px 0; }
+    .cs-detalle p { font-size: 15.5px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cs-detalle, .cs-foto, .cs-boton svg { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector('.cs');
+    if (bloque) {
+      const botones = Array.from(bloque.querySelectorAll<HTMLElement>('[data-abre]'));
+      const casos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-caso]'));
+      const fotos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-foto]'));
+
+      const abrir = (id: string) => {
+        casos.forEach((c) => c.classList.toggle('on', c.dataset.caso === id));
+        fotos.forEach((f) => f.classList.toggle('on', f.dataset.foto === id));
+        botones.forEach((b) =>
+          b.setAttribute('aria-selected', b.dataset.abre === id ? 'true' : 'false'));
+      };
+
+      botones.forEach((b) => {
+        b.addEventListener('click', () => abrir(b.dataset.abre || ''));
+      });
+    }
+  }
+</script>
