@@ -61,6 +61,17 @@ let partnerAssigned: any = null;
 const items = Array.isArray(quote.items) ? quote.items : [];
 const template = quote.template || 'modern';
 
+// Parcialidades acordadas de ESTA cotización. Si existen, el cliente ve las
+// fechas en el documento —no en un correo aparte— y son las mismas que después
+// alimentan la cobranza del mes.
+let exhibiciones: any[] = [];
+try {
+  const { data } = await supabase.from('cobros_programados')
+    .select('numero, total, fecha, monto, estado')
+    .eq('quote_id', quote.id).neq('estado', 'cancelada').order('numero');
+  exhibiciones = data || [];
+} catch { /* sin plan: la cotización se ve igual */ }
+
 // Parse meta from notas for logo_url
 const notasSep = '\n---META---\n';
 const notasIdx = (quote.notas || '').indexOf(notasSep);
@@ -1352,6 +1363,22 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
          ═══════════════════════════════════════════════ */}
     {hasCondiciones && (
     <section class="quote-tab-panel" data-tab="condiciones">
+    <!-- Formas de pago: solo cuando hay exhibiciones acordadas -->
+    {exhibiciones.length > 0 && (
+      <div class="quote-pagos">
+        <div class="quote-pagos-title">Formas de pago</div>
+        <div class="quote-pagos-nota">Este monto se cobra en {exhibiciones.length} exhibiciones, en estas fechas:</div>
+        {exhibiciones.map((e: any) => (
+          <div class="quote-pago-row">
+            <span class="quote-pago-n">{e.numero} de {e.total}</span>
+            <span class="quote-pago-f">{fmtDate(e.fecha)}</span>
+            <span class="quote-pago-m">{fmt(Number(e.monto || 0))} {quote.moneda}</span>
+            {e.estado === 'pagada' && <span class="quote-pago-ok">pagada</span>}
+          </div>
+        ))}
+      </div>
+    )}
+
     <!-- Conditions -->
     {showCondiciones && quote.condiciones && (
       <div class="quote-conditions">
@@ -2913,6 +2940,81 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-interactiva .paquete-tab { border-width: 2px; border-radius: 14px; padding: 18px 18px; transition: transform .12s ease, box-shadow .12s ease; }
 .quote-interactiva .paquete-tab:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(16,24,40,.10); }
 .quote-interactiva .paquete-tab[data-active] { box-shadow: 0 10px 26px rgba(124,58,237,.20); border-color: #7C3AED !important; background: #7C3AED !important; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Re-vestido de la plantilla MODERNA con el lenguaje del estado de cuenta.
+   Mismo papel, misma escala y los mismos colores del sistema, para que las
+   dos hojas que recibe un cliente —cotización y estado de cuenta— se vean
+   de la misma empresa. Todo va bajo .quote-modern: las plantillas dark,
+   classic y ejecutiva no se tocan.
+   ═══════════════════════════════════════════════════════════════════════ */
+.quote-modern .quote-container {
+  position: relative;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16,24,40,.06), 0 14px 36px rgba(16,24,40,.10);
+}
+/* La cinta de marca: morado → azul → rosa, la misma de la minuta. */
+.quote-modern .quote-container::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; z-index: 3;
+  background: linear-gradient(90deg, #9B8CFA 0%, #7DA6F5 55%, rgba(244,168,205,.9) 100%);
+}
+.quote-modern .quote-header { padding: 26px 30px 20px; border-bottom: 1px solid #f0eff3; background: #fcfbfe; }
+.quote-modern .quote-logo { flex-direction: column; align-items: flex-start; gap: 3px; }
+.quote-modern .quote-logo-text { font-size: 1.3rem; font-weight: 800; letter-spacing: -.01em; }
+/* El "chip" azul se vuelve la firma rosa, igual que en la minuta. */
+.quote-modern .quote-logo-tag {
+  background: none; padding: 0; border-radius: 0;
+  font-size: .55rem; font-weight: 800; color: #9c3d70; letter-spacing: .11em;
+}
+.quote-modern .quote-number { font-size: 1rem; font-weight: 800; color: #3f3b4d; }
+.quote-modern .quote-date { font-size: .7rem; color: #6b7280; }
+
+.quote-modern .quote-client { padding: 15px 30px; border-bottom: 1px solid #f0eff3; }
+.quote-modern .quote-client-label { font-size: .55rem; font-weight: 800; letter-spacing: .1em; color: #a5a2af; }
+.quote-modern .quote-client-name { font-size: 1rem; font-weight: 800; margin-top: 4px; }
+.quote-modern .quote-client-detail { font-size: .74rem; color: #6b7280; }
+
+/* Conceptos: renglones, no cuadrícula. El detalle en gris bajo el nombre y el
+   monto a la derecha — se lee en móvil sin correr la tabla de lado. */
+.quote-modern .quote-table th {
+  background: none; border-top: none; border-bottom: 1px solid #f0eff3;
+  font-size: .55rem; font-weight: 800; letter-spacing: .1em; color: #b3b1bb; padding: 10px 30px;
+}
+.quote-modern .quote-table td { padding: 13px 30px; font-size: .81rem; color: #4c4a57; border-bottom: 1px solid #f5f4f8; }
+.quote-modern .quote-table td strong { font-weight: 700; }
+
+.quote-modern .quote-totals { padding: 16px 30px 4px; }
+.quote-modern .quote-total-row { font-size: .78rem; color: #6b7280; padding: 5px 0; }
+/* El total es el ancla del documento: bloque lila, como el adeudo del estado
+   de cuenta. En verde diría "pagado", que es justo lo que todavía no pasa. */
+.quote-modern .quote-total-row.quote-total-final {
+  border: none; margin-top: 10px; padding: 15px 17px; border-radius: 12px;
+  background: linear-gradient(135deg, #EEECFE, rgba(244,168,205,.22));
+  color: #3f2fb8; font-size: 1.25rem; align-items: baseline;
+}
+.quote-modern .quote-total-row.quote-total-final span:first-child { font-size: .6rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #5B4BD6; }
+.quote-modern .quote-total-row.quote-discount { color: #1E8A63; }
+
+/* Formas de pago */
+.quote-pagos { padding: 16px 30px; border-top: 1px solid #f0eff3; }
+.quote-pagos-title { font-size: .55rem; font-weight: 800; color: #a5a2af; text-transform: uppercase; letter-spacing: .1em; }
+.quote-pagos-nota { font-size: .76rem; color: #6b7280; margin: 5px 0 8px; }
+.quote-pago-row { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-top: 1px solid #f5f4f8; font-size: .8rem; }
+.quote-pago-n { font-weight: 700; width: 84px; }
+.quote-pago-f { color: #6b7280; flex: 1; }
+.quote-pago-m { font-weight: 800; }
+.quote-pago-ok { font-size: .56rem; font-weight: 800; background: #EAF8F2; color: #1E8A63; border-radius: 20px; padding: 2px 7px; }
+
+.quote-modern .quote-conditions { padding: 16px 30px; border-top: 1px solid #f0eff3; }
+.quote-modern .quote-conditions-title { font-size: .55rem; letter-spacing: .1em; color: #a5a2af; font-weight: 800; }
+.quote-modern .quote-conditions-text { font-size: .76rem; color: #6b7280; line-height: 1.7; }
+
+@media (max-width: 560px) {
+  .quote-modern .quote-header, .quote-modern .quote-client,
+  .quote-modern .quote-table th, .quote-modern .quote-table td,
+  .quote-modern .quote-totals, .quote-modern .quote-conditions, .quote-pagos { padding-left: 18px; padding-right: 18px; }
+}
 
 </style>
 

@@ -2888,7 +2888,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 {(qf.mostrar_timer !== false) && (
                   <div className="rh-warn" style={{ margin: '0 32px 14px', background: '#fff6ed', border: '1px solid #fde3c7', borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#b45309' }}>
-                      {(() => { const d = daysUntil(qf.vigencia); return d === null ? 'Vigencia por definir' : d < 0 ? 'Vigencia vencida' : d === 0 ? 'Vence hoy' : `Faltan ${d} día${d === 1 ? '' : 's'}`; })()}
+                      {/* daysUntil devuelve Infinity cuando no hay fecha —no null—,
+                          y por eso la vista previa decía "Faltan Infinity días". */}
+                      {(() => {
+                        const d = daysUntil(qf.vigencia);
+                        if (!Number.isFinite(d)) return 'Vigencia por definir';
+                        const n = Math.ceil(d);
+                        return n < 0 ? 'Vigencia vencida' : n === 0 ? 'Vence hoy' : `Faltan ${n} día${n === 1 ? '' : 's'}`;
+                      })()}
                     </span>
                     <span style={{ fontSize: '0.5625rem', color: '#c88a4a' }}>· cuenta regresiva en vivo para el cliente</span>
                   </div>
