@@ -182,7 +182,9 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-panel-url {
     margin-left: 10px; font-style: normal; font-size: 10.5px; font-weight: 600; color: #94A3B8;
   }
-  .suite-panel-body { position: relative; min-height: 380px; }
+  /* Alto suficiente para el mock mas grande. Con menos, el ultimo renglon del
+     look y el total quedaban recortados por el overflow del panel. */
+  .suite-panel-body { position: relative; min-height: 430px; }
   .suite-visual {
     position: absolute; inset: 0; padding: 18px;
     opacity: 0; transform: translateY(10px); pointer-events: none;
@@ -235,7 +237,10 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
     .suite { padding: 64px 18px 24px; }
     .suite-grid { grid-template-columns: 1fr; gap: 0; }
     .suite-sticky { position: sticky; top: 120px; z-index: 2; margin-bottom: 22px; }
-    .suite-panel-body { min-height: 250px; }
+    /* En movil el panel es lo primero que se ve de cada paso: si corta el mock,
+       el paso pierde justo la parte que lo explica. */
+    .suite-panel-body { min-height: 420px; }
+    .suite-escenario { padding: 16px 14px 20px; border-radius: 20px; }
     .suite-step { min-height: auto; padding: 30px 0; opacity: 1; }
     .suite-dots { margin-top: 12px; }
   }

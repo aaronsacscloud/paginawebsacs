@@ -249,16 +249,23 @@ export const seccionesRopa: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Look sugerido al cobrar</p>
-      ${[['Blusa satinada negra','$899','en el ticket'],['Pantalón sastre camel','$1,290','sugerido'],['Cinturón piel','$450','sugerido']]
-        .map(([n,p,t]:any)=>`<div style="display:flex;align-items:center;gap:11px;border:1px solid #EEF1F5;border-radius:11px;padding:10px 12px;margin-bottom:7px;">
-          <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#F1F5F9,#E2E8F0);"></div>
-          <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-          <div style="font-size:10px;color:${t==='sugerido'?'#2563EB':'#94A3B8'};font-weight:700;">${t}</div></div>
-          <span style="font-size:12.5px;font-weight:800;color:#0F172A;">${p}</span>
+      ${[['Blusa satinada negra','$899','en el ticket','/images/prod-blusa-negra.webp'],
+         ['Pantalón sastre camel','$1,290','sugerido','/images/prod-pantalon-camel.webp'],
+         ['Cinturón piel','$450','sugerido','/images/prod-cinturon-piel.webp']]
+        .map(([n,p,t,img]:any)=>`<div style="display:flex;align-items:center;gap:13px;border:1px solid ${t==='sugerido'?'#DBE7FB':'#EEF1F5'};background:${t==='sugerido'?'#FAFCFF':'#fff'};border-radius:13px;padding:10px 13px;margin-bottom:9px;">
+          <span style="width:58px;height:58px;border-radius:11px;overflow:hidden;flex-shrink:0;background:linear-gradient(160deg,#F1F3F8,#E3E8F2);box-shadow:inset 0 0 0 1px rgba(15,23,42,.06);">
+            <img src="${img}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#0F172A;line-height:1.3;">${n}</div>
+            <div style="font-size:10.5px;color:${t==='sugerido'?'#2563EB':'#94A3B8'};font-weight:700;margin-top:3px;">${t==='sugerido'?'+ SUGERIDO POR EL SISTEMA':'EN EL TICKET'}</div>
+          </div>
+          <span style="font-size:13.5px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">${p}</span>
         </div>`).join('')}
-      <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:700;color:#047857;">Look completo −15%</span>
-        <span style="font-size:14px;font-weight:800;color:#0F172A;">$2,241</span></div>
+      <div style="border-top:1px dashed #E5E7EB;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;font-weight:800;color:#047857;">Look completo −15%</span>
+        <span style="font-size:16px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">$2,241</span>
+      </div>
     </div>`,
   },
   {
@@ -309,9 +316,14 @@ export const seccionesRopa: SuiteSeccion[] = [
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">
         ${['Talla S','Negro','Camel','Blusas','Sastre'].map(t=>`<span style="background:#EFF6FF;color:#2563EB;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700;">${t}</span>`).join('')}
       </div>
-      <div style="background:#F0FDF9;border:1px solid #A7F3D0;border-radius:11px;padding:11px 13px;">
-        <div style="font-size:11.5px;font-weight:800;color:#047857;">Llegó su talla</div>
-        <div style="font-size:11.5px;color:#065F46;margin-top:3px;">3 prendas nuevas en S, negro. Avisar por WhatsApp.</div>
+      <div style="background:#F0FDF9;border:1px solid #A7F3D0;border-radius:13px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
+        <span style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#E3E8F2;">
+          <img src="/images/prod-blusa-negra.webp" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+        </span>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:#047857;">Llegó su talla</div>
+          <div style="font-size:11.5px;color:#065F46;margin-top:3px;">3 prendas nuevas en S, negro. Avisar por WhatsApp.</div>
+        </div>
       </div>
     </div>`,
   },
