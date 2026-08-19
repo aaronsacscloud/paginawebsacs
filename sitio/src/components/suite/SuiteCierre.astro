@@ -71,8 +71,10 @@ const { foto, alt, titulo, sub, encuadre = '60% 35%' } = Astro.props;
   .cierre-pie { font-size: 13px; color: #71717A; margin: 0; font-weight: 600; }
 
   @media (max-width: 760px) {
-    .cierre { min-height: 540px; }
-    .cierre-inner { padding: 64px 18px; }
+    .cierre { min-height: 560px; }
+    /* Padding superior mayor que la barra fija (71 px): el bloque centra su
+       contenido y el titulo terminaba tapado por el nav al llegar a el. */
+    .cierre-inner { padding: 104px 18px 64px; }
     .cierre-pri, .cierre-sec { width: 100%; }
   }
   @media (prefers-reduced-motion: reduce) {

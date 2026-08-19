@@ -36,7 +36,7 @@
           Blusa negra M — ¿quedan?<br />
           Vestido S … <s>¿en Satélite?</s>
         </div>
-        <p class="cort-pie cort-pie-a">Dos llamadas, una libreta<br />y la clienta esperando.</p>
+        <p class="cort-pie cort-pie-a">Dos llamadas<br />y la clienta esperando.</p>
       </div>
     </div>
 
@@ -170,13 +170,29 @@
 
   @media (max-width: 900px) {
     .cort-bloque { padding: 64px 18px 76px; }
-    .cort { height: 520px; }
+    .cort { height: 560px; }
     .cort-panel-a { left: 5%; max-width: 44%; bottom: 5%; }
     .cort-panel-d { right: 4%; width: 46%; bottom: 5%; }
     .cort-fila { padding: 10px 12px; gap: 8px; }
     .cort-fila b { font-size: 12px; }
     .cort-fila i { display: none; }
     .cort-pie { font-size: 12px; }
+  }
+
+  /* En un telefono cada mitad mide ~180 px: la libreta y el ticket de tres
+     renglones quedaban encimados e ilegibles, y encima tapaban las dos caras,
+     que es lo unico que de verdad tiene que verse aqui. Se quedan las caras,
+     las etiquetas y una frase por lado. */
+  @media (max-width: 640px) {
+    .cort { height: 480px; }
+    .cort-libreta, .cort-pos { display: none; }
+    .cort-panel { bottom: 6%; }
+    .cort-panel-a { max-width: 42%; }
+    .cort-panel-d { width: 42%; }
+    .cort-pie { margin: 0; font-size: 12.5px; line-height: 1.4; }
+    .cort-etq { top: 16px; font-size: 9.5px; padding: 6px 11px; letter-spacing: .12em; }
+    .cort-etq-a { left: 14px; }
+    .cort-etq-d { right: 14px; }
   }
 </style>
 
