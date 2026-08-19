@@ -528,7 +528,19 @@ export default function CrmDashboard() {
       </div>
 
       {/* ─── Main Content ─── */}
-      <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 64 : 0, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0 }}>
+      {/* El menú es `position: fixed`, así que el contenido se recorre con
+          marginLeft. Con maxWidth al 100% el bloque medía el ancho COMPLETO de
+          la pantalla y luego se empujaba: sobraban 220 px por la derecha y las
+          tarjetas y los botones de la tabla salían cortados. El ancho tiene que
+          descontar el menú. */}
+      <div style={{
+        flex: 1, minWidth: 0,
+        width: isMobile ? '100%' : `calc(100% - ${mainMarginLeft}px)`,
+        maxWidth: isMobile ? '100%' : `calc(100% - ${mainMarginLeft}px)`,
+        marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease',
+        display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden',
+        paddingTop: isMobile ? 64 : 0, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
+      }}>
         {/* Content */}
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
