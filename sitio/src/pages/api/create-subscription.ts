@@ -783,7 +783,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // TikTok server-side: CompletePayment (no aplica en gift: cargo $0)
-    const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
+    const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2800 };
     const planValue = gift ? GIFT_PLAN_VALUE_MXN : (planPrices[planId] || 0);
     const ua = request.headers.get('user-agent') || '';
     if (!gift) sendTikTokEvent(email, whatsapp || '', planId, planValue, ip, ua).catch(() => {});

@@ -49,7 +49,7 @@ let STAGES: { id: string; label: string; prob: number; color: string }[] = [
   { id: 'cerrada_perdida', label: 'Cerrada perdida', prob: 0, color: '#999' },
 ];
 
-const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
+const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2800 };
 
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const fmtDate = (d: string | null) => {

@@ -111,7 +111,7 @@ export function modulosFueraDePlan(
 }
 
 /** Precio de lista anual, para poner número al upsell. */
-export const ARR_PLAN: Record<string, number> = { vende: 6000, controla: 9000, fideliza: 14000, automatiza: 59000 };
+export const ARR_PLAN: Record<string, number> = { vende: 6000, controla: 9000, fideliza: 14000, automatiza: 28000 };
 
 /** Plan mínimo que cubriría TODOS los módulos que hoy usa fuera de su plan. */
 export function planQueLoCubre(fuera: ModuloFuera[], cat: CatalogoPlanes): string | null {

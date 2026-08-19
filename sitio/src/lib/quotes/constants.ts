@@ -7,7 +7,7 @@ export const PLAN_PRICES: Record<string, number> = {
   vende: 600,
   controla: 900,
   fideliza: 1400,
-  automatiza: 5900,
+  automatiza: 2800,
   personalizada: 0,      // precio a la medida (se define en la cotización)
   soporte_premium: 0,    // póliza de soporte: precio según alcance
 };

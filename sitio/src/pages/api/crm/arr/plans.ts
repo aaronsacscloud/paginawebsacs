@@ -11,7 +11,7 @@ const FALLBACK = [
   { slug: 'vende', nombre: 'Plan Vende', precio_mensual: 600, precio_anual: 6000, a_la_medida: false, categoria: 'plan', orden: 1 },
   { slug: 'controla', nombre: 'Plan Controla', precio_mensual: 900, precio_anual: 9000, a_la_medida: false, categoria: 'plan', orden: 2 },
   { slug: 'fideliza', nombre: 'Plan Fideliza', precio_mensual: 1400, precio_anual: 14000, a_la_medida: false, categoria: 'plan', orden: 3 },
-  { slug: 'automatiza', nombre: 'Plan Automatiza', precio_mensual: 5900, precio_anual: 59000, a_la_medida: false, categoria: 'plan', orden: 4 },
+  { slug: 'automatiza', nombre: 'Plan Automatiza', precio_mensual: 2800, precio_anual: 28000, a_la_medida: false, categoria: 'plan', orden: 4 },
   { slug: 'personalizada', nombre: 'Licencia personalizada', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 5 },
   { slug: 'soporte_premium', nombre: 'Soporte premium', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 6 },
   { slug: 'vitalicia_legacy', nombre: 'Licencia Vitalicia Legacy', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 7 },

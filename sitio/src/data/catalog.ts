@@ -45,8 +45,8 @@ export const PLANS: Plan[] = [
   {
     id: 'automatiza',
     nombre: 'Automatiza',
-    precio_mensual: 5900,
-    precio_anual: 59000,
+    precio_mensual: 2800,
+    precio_anual: 28000,
     sucursales_min: 1,
     descripcion: 'Fideliza + AXO IA + automatizaciones + integraciones ilimitadas',
     features: ['Todo Fideliza', 'AXO copiloto IA', 'Automatizaciones sin código', 'Integraciones ilimitadas', 'Workflows personalizados', 'Reportes predictivos', 'Soporte prioritario'],
