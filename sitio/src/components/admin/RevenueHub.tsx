@@ -302,6 +302,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [qShowFilterPopover, setQShowFilterPopover] = useState(false);
     const [qFilters, setQFilters] = useState<Array<{ field: string; op: string; value: any }>>([]);
     const [qMenuRow, setQMenuRow] = useState<string | null>(null);
+    // El menú se ancla con position FIXED y las coordenadas del botón. En
+    // absolute lo recortaba el contenedor de la tabla: con una sola fila —o con
+    // la última de la lista— se veía cortado a la mitad.
+    const [qMenuPos, setQMenuPos] = useState<{ x: number; y: number; arriba: boolean }>({ x: 0, y: 0, arriba: false });
     // Eliminar una cotización pide MOTIVO: es un documento que se le mandó al
     // cliente con folio y precio, y borrarlo sin explicación es lo que después
     // impide saber por qué se le cotizó dos veces.
@@ -378,8 +382,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         const target = e.target as HTMLElement;
         if (!target.closest('[data-q-menu]') && !target.closest('button[title="Más acciones"]')) setQMenuRow(null);
       };
+      // Un menú fijo se queda flotando si la página se mueve debajo: se cierra.
+      const cerrarScroll = () => setQMenuRow(null);
       document.addEventListener('mousedown', close);
-      return () => document.removeEventListener('mousedown', close);
+      window.addEventListener('scroll', cerrarScroll, true);
+      window.addEventListener('resize', cerrarScroll);
+      return () => {
+        document.removeEventListener('mousedown', close);
+        window.removeEventListener('scroll', cerrarScroll, true);
+        window.removeEventListener('resize', cerrarScroll);
+      };
     }, []);
 
     // Ensure items is always an array
@@ -1473,9 +1485,26 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: `${rowPad.split(' ')[0]} 12px ${rowPad.split(' ')[0]} 2px`, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
                         <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4, padding: '4px 9px' }}>Ver</a>
 
-                        <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          if (qMenuRow === q.id) { setQMenuRow(null); return; }
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          // Si no cabe hacia abajo, se abre hacia arriba: con la
+                          // última fila de la lista el menú quedaba fuera de la
+                          // pantalla y no se alcanzaba a leer.
+                          const alto = 330;
+                          const arriba = r.bottom + alto > window.innerHeight && r.top > alto;
+                          setQMenuPos({ x: Math.max(8, window.innerWidth - r.right), y: arriba ? window.innerHeight - r.top + 6 : r.bottom + 6, arriba });
+                          setQMenuRow(q.id);
+                        }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
-                          <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
+                          <div data-q-menu style={{
+                            position: 'fixed' as const, right: qMenuPos.x,
+                            ...(qMenuPos.arriba ? { bottom: qMenuPos.y } : { top: qMenuPos.y }),
+                            maxHeight: '70vh', overflowY: 'auto' as const,
+                            background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 220,
+                            boxShadow: '0 12px 40px rgba(16,24,40,0.16)', zIndex: 1000, textAlign: 'left' as const,
+                          }}>
                             <button onClick={() => { setVerActividad(q.id); setQMenuRow(null); }}
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 3, justifyContent: 'flex-start', border: `1px solid ${M.violetaAgua}`, background: M.violetaAgua, padding: '9px 10px', display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-start', fontWeight: 800, color: M.violetaHondo }}>
                               Ver actividad y pagos
