@@ -59,6 +59,7 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   <div class="suite-grid">
     <!-- Panel pegajoso -->
     <div class="suite-sticky">
+      <div class="suite-escenario">
       <div class="suite-panel">
         <div class="suite-panel-bar">
           <span></span><span></span><span></span>
@@ -69,6 +70,7 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
             <div class:list={['suite-visual', { on: i === 0 }]} data-visual={s.id} set:html={s.visual} />
           ))}
         </div>
+      </div>
       </div>
       <ol class="suite-dots" aria-hidden="true">
         {secciones.map((s, i) => (
@@ -150,9 +152,27 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
 
   /* ── panel pegajoso ── */
   .suite-sticky { position: sticky; top: 148px; }
+  /* Escenario: la pantalla estaba suelta sobre blanco y se veia liviana, como
+     un recorte. Ahora se apoya en un plano con su propio halo, que le da peso y
+     la separa del fondo de la pagina. */
+  .suite-escenario {
+    position: relative; padding: 30px 26px 34px; border-radius: 26px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(75,123,229,.13) 0%, rgba(75,123,229,0) 58%),
+      linear-gradient(160deg, #F3F5FA 0%, #E9EDF6 100%);
+    border: 1px solid rgba(15,23,42,.06);
+  }
+  /* Reflejo bajo la pantalla: la asienta sobre el plano en vez de dejarla
+     flotando. */
+  .suite-escenario::after {
+    content: ""; position: absolute; left: 12%; right: 12%; bottom: 16px; height: 22px;
+    background: radial-gradient(60% 100% at 50% 0%, rgba(15,23,42,.16) 0%, rgba(15,23,42,0) 72%);
+    filter: blur(3px); pointer-events: none;
+  }
   .suite-panel {
+    position: relative; z-index: 1;
     background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 18px 50px rgba(15, 23, 42, .10);
+    box-shadow: 0 26px 60px rgba(15, 23, 42, .18), 0 3px 10px rgba(15,23,42,.06);
   }
   .suite-panel-bar {
     height: 34px; background: #F8FAFC; border-bottom: 1px solid #EEF1F5;

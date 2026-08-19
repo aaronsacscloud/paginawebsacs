@@ -197,7 +197,14 @@ export const POST: APIRoute = async ({ request }) => {
         ciclosCubiertos = 0;
       }
     } else {
-      saldoNuevo = 0;
+      // Al corriente: el saldo a favor SÍ se aplica. Antes se ponía en cero, o
+      // sea que el crédito de una unificación de fechas —o de un pago de más—
+      // se borraba en el siguiente cobro en vez de descontarse.
+      //
+      // Solo avanza un periodo aunque el dinero alcance para más: quien paga
+      // dos años por adelantado deja el sobrante como saldo, y ese saldo sí se
+      // ocupa la próxima vez. Lo que no puede pasar es que el dinero se pierda.
+      saldoNuevo = precioPeriodo > 0 ? r2(Math.max(0, monto + saldoNuevo - precioPeriodo)) : 0;
     }
     // La próxima fecha se calcula automática (+1 ciclo), pero el admin puede
     // DECIDIRLA al registrar el pago (nueva_proxima_factura, YYYY-MM-DD > fecha).

@@ -1237,6 +1237,18 @@ const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
   const [archivosSub, setArchivosSub] = useState<any>(null);
+  // Licencias que se cobran en fechas distintas y se podrían juntar. No es una
+  // fusión: cada licencia sigue viva con su precio, solo cambia CUÁNDO se cobra.
+  const [unificables, setUnificables] = useState<any[]>([]);
+  const [unificar, setUnificar] = useState<any>(null);
+  useEffect(() => {
+    if (!companyId) return;
+    let vivo = true;
+    fetch('/api/crm/arr/unificar?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (vivo) setUnificables((j.grupos || []).filter((g: any) => g.unificable)); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [companyId, subs]);
   // El menú se ancla con position FIXED y coordenadas del botón: la tabla vive
   // dentro de un contenedor con desplazamiento horizontal, y eso recorta
   // cualquier panel absoluto — por eso solo se veía la primera opción.
@@ -1473,6 +1485,10 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
           <div style={{ ...D.hM, marginBottom: 0 }}>Suscripciones del cliente</div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <button style={D.btnAzul} title="Elegir qué suscripciones entran y generar el estado de cuenta" onClick={() => setEdoCuenta('ver')}>Estado de cuenta</button>
+            {unificables.length > 0 && (
+              <button style={D.btnAzul} title="Juntar las licencias en una sola fecha de cobro"
+                onClick={() => setUnificar(unificables[0])}>Unificar fechas</button>
+            )}
             {principal?.whatsapp && <button style={D.btnAzul} title="Elegir qué entra y mandarlo por WhatsApp" onClick={() => setEdoCuenta('wa')}>Enviar por WhatsApp</button>}
             <button style={D.btnAzul}
               title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
@@ -1480,6 +1496,16 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
             <button style={D.btn} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
           </div>
         </div>
+
+        {unificables.map((g: any) => (
+          <div key={g.ciclo} style={{ background: '#EEECFE', border: '1px solid #ddd6fb', borderRadius: 10, padding: '9px 12px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '0.78rem', color: '#5B4BD6', lineHeight: 1.5, flex: 1, minWidth: 220 }}>
+              <b>{g.subs.length} licencias {g.ciclo === 'mensual' ? 'mensuales' : 'anuales'} con {g.anclas.length} fechas distintas.</b>{' '}
+              Se pueden juntar en un solo cobro: lo que ya pagó de más se le abona.
+            </div>
+            <button style={{ ...D.btnAzul, fontSize: '0.76rem' }} onClick={() => setUnificar(g)}>Unificar fechas</button>
+          </div>
+        ))}
 
         {mpHallado && (
           <div style={{ background: '#FAFAF8', border: '1px solid #e6e3dc', borderRadius: 10, padding: 12, marginBottom: 12 }}>
@@ -1733,6 +1759,11 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
             </div>
           )}
         </div>
+      )}
+      {unificar && (
+        <UnificarFechas grupo={unificar} companyId={companyId}
+          onCerrar={() => setUnificar(null)}
+          onListo={(t: string) => { setUnificar(null); flash(t); reload(); }} />
       )}
       {edoCuenta && (
         <EstadoCuentaModal
@@ -2606,6 +2637,148 @@ function ElegirCotizacionModal({ companyId, busyId, onUsar, onDesdeCero, onClose
         <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button style={D.btnG} onClick={onDesdeCero}>No está cotizada · crear desde cero</button>
           <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══ Unificar fechas de cobro ═══
+ * Junta las licencias del cliente en una sola fecha SIN fusionar nada: cada una
+ * sigue viva, con su precio y su ARR. Lo único que cambia es cuándo se cobra.
+ *
+ * La cuenta va por días: lo que ya pagó y todavía no usa se le abona (crédito),
+ * y lo que le falta para llegar a la fecha elegida se le cobra (puente). Sin el
+ * crédito se le estaría cobrando dos veces el mismo periodo. */
+function UnificarFechas({ grupo, companyId, onCerrar, onListo }: any) {
+  const [ids, setIds] = useState<string[]>(grupo.subs.map((s: any) => s.id));
+  const [ancla, setAncla] = useState<string>(grupo.anclas[0]);
+  const [prev, setPrev] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  // La simulación se pide al servidor: la cuenta de días vive en un solo lugar
+  // y así lo que se ve es exactamente lo que se va a aplicar.
+  useEffect(() => {
+    if (ids.length < 2 || !ancla) { setPrev(null); return; }
+    let vivo = true;
+    setError('');
+    fetch('/api/crm/arr/unificar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId, ids, ancla, dry: true }),
+    }).then(r => r.json()).then(j => {
+      if (!vivo) return;
+      if (j?.error) { setError(j.error); setPrev(null); } else setPrev(j);
+    }).catch(() => { if (vivo) setPrev(null); });
+    return () => { vivo = false; };
+  }, [ids.join(','), ancla]);
+
+  async function aplicar() {
+    setBusy(true); setError('');
+    const j = await fetch('/api/crm/arr/unificar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId, ids, ancla, dry: false }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (!j || j.error) { setError(j?.error || 'No se pudo unificar.'); return; }
+    onListo(`Fechas unificadas al ${fmtDate(ancla)}`);
+  }
+
+  const toggle = (id: string) => setIds(v => v.includes(id) ? v.filter(x => x !== id) : [...v, id]);
+  const elegidas = grupo.subs.filter((s: any) => ids.includes(s.id));
+  const opciones = Array.from(new Set(elegidas.map((s: any) => s.proxima_factura))).sort() as string[];
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 968, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 580, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Unificar fechas de cobro</h3>
+          <span style={{ fontSize: '0.72rem', color: '#7a6fc9' }}>{grupo.subs.length} licencias {grupo.ciclo === 'mensual' ? 'mensuales' : 'anuales'}</span>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
+          <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 12 }}>
+            No se cancela ni se fusiona nada: el cliente conserva sus licencias y sus sucursales, y el ARR queda igual.
+            Lo único que cambia es la fecha en la que se cobran.
+          </div>
+
+          <div style={D.lbl}>Cuáles se juntan</div>
+          {grupo.subs.map((s: any) => (
+            <label key={s.id} style={{ display: 'flex', gap: 9, alignItems: 'center', padding: '7px 0', borderTop: '1px solid #f4f3f7', cursor: 'pointer' }}>
+              <input type="checkbox" checked={ids.includes(s.id)} onChange={() => toggle(s.id)} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: '0.81rem', fontWeight: 700 }}>{s.nombre_plan}</span>
+              <span style={{ fontSize: '0.78rem', color: '#6b6b74' }}>{money(s.precio)}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8a8590', width: 96, textAlign: 'right' }}>{fmtDate(s.proxima_factura)}</span>
+            </label>
+          ))}
+
+          <div style={{ ...D.lbl, marginTop: 14 }}>¿En qué fecha quedan todas?</div>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 8 }}>
+            {opciones.map((f, i) => (
+              <button key={f} onClick={() => setAncla(f)}
+                style={{ ...D.btnG, fontSize: '0.76rem', background: ancla === f ? '#EEECFE' : '#fff', color: ancla === f ? '#5B4BD6' : '#4a4a52', borderColor: ancla === f ? '#ddd6fb' : '#e2e0e8', fontWeight: ancla === f ? 800 : 600 }}>
+                {fmtDate(f)}
+                <span style={{ fontSize: '0.66rem', fontWeight: 500, color: '#a5a2af' }}> · {i === 0 ? 'la más próxima' : i === opciones.length - 1 ? 'la más lejana' : 'intermedia'}</span>
+              </button>
+            ))}
+          </div>
+          <input type="date" value={ancla} onChange={e => setAncla(e.target.value)} style={{ ...D.inputM, marginBottom: 12 }} />
+
+          {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '9px 11px', fontSize: '0.76rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
+
+          {prev && (<>
+            <div style={{ border: '1px solid #eeecf3', borderRadius: 10, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={D.th}>Licencia</th>
+                  <th style={{ ...D.th, textAlign: 'right' }}>Precio</th>
+                  <th style={D.th}>Cubierta hasta</th>
+                  <th style={{ ...D.th, textAlign: 'right' }}>Días</th>
+                  <th style={{ ...D.th, textAlign: 'right' }}>Ajuste</th>
+                </tr></thead>
+                <tbody>
+                  {prev.detalle.map((x: any) => (
+                    <tr key={x.id}>
+                      <td style={{ ...D.td, fontWeight: 700 }}>{x.nombre_plan}</td>
+                      <td style={{ ...D.td, textAlign: 'right' }}>{money(x.precio)}</td>
+                      <td style={{ ...D.td, color: '#8a8590' }}>{fmtDate(x.proxima_factura)}</td>
+                      <td style={{ ...D.td, textAlign: 'right', color: x.dias > 0 ? '#1E8A63' : x.dias < 0 ? '#9a6a10' : '#b3b1bb' }}>{x.dias}</td>
+                      <td style={{ ...D.td, textAlign: 'right', fontWeight: 700, color: x.credito ? '#1E8A63' : x.puente ? '#9a6a10' : '#b3b1bb' }}>
+                        {x.credito ? '−' + money(x.credito) : x.puente ? '+' + money(x.puente) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ background: '#EAF8F2', border: '1px solid #cdeadd', borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#1E8A63', textTransform: 'uppercase', letterSpacing: '.06em' }}>A cobrar el {fmtDate(ancla)}</div>
+                <div style={{ marginLeft: 'auto', fontSize: '1.35rem', fontWeight: 800, color: '#1E8A63', letterSpacing: '-.02em' }}>{money(prev.a_pagar)}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: '#2f7a5f', marginTop: 4, lineHeight: 1.5 }}>
+                {money(prev.total_periodo)} del periodo
+                {prev.puente > 0 ? ` + ${money(prev.puente)} de los días que faltan` : ''}
+                {prev.credito > 0 ? ` − ${money(prev.credito)} que ya tenía pagados` : ''}.
+                {' '}El ARR sigue en {money(prev.arr)}.
+              </div>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#a5a2af', lineHeight: 1.5, marginTop: 9 }}>
+              El crédito queda como saldo a favor de cada licencia y se descuenta al registrar su cobro. Nada se
+              devuelve en efectivo, y ninguna licencia se da de baja.
+            </div>
+          </>)}
+        </div>
+
+        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button style={{ ...D.btn, opacity: busy || !prev ? .6 : 1 }} disabled={busy || !prev} onClick={aplicar}>
+            {busy ? 'Unificando…' : 'Unificar fechas'}
+          </button>
+          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cancelar</button>
         </div>
       </div>
     </div>
