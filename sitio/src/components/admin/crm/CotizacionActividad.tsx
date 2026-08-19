@@ -60,6 +60,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
   const [ep, setEp] = useState<any>({});
   const [cobrando, setCobrando] = useState(false);
   const [editFechaPago, setEditFechaPago] = useState(false);
+  const [menuEdo, setMenuEdo] = useState(false);
 
   const cargar = () => fetch(`/api/revenue/quotes/actividad?id=${quoteId}`).then(r => r.json()).then(setD).catch(() => {});
   useEffect(() => { cargar(); }, [quoteId]);
@@ -292,7 +293,52 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
           <div style={P.card}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ ...P.h, marginBottom: 0, flex: 1 }}>Pagos y abonos</div>
-              <button style={P.btnA} onClick={() => setNuevoAbono({ fecha: hoy(), monto: d.saldo > 0 ? d.saldo : '', metodo: 'transferencia', referencia: '' })}>+ Abono</button>
+              {/* Un solo botón para cobrar: el abono se registra desde aquí y,
+                  si hay plan, el formulario pregunta a qué parcialidad va. Tener
+                  el mismo botón repetido en cada renglón solo obligaba a
+                  elegir dos veces lo mismo. */}
+              <button style={P.btnA} onClick={() => {
+                const pend = (d.plan_pagos || []).filter((x: any) => !x.pagada);
+                const toca = pend.find((x: any) => x.vencida) || pend[0] || null;
+                const falta = toca ? Math.max(0, Number(toca.monto || 0) - Number(toca.cubierto || 0)) : 0;
+                setNuevoAbono({
+                  fecha: hoy(),
+                  monto: toca ? String(Math.round(falta)) : (d.saldo > 0 ? d.saldo : ''),
+                  metodo: 'transferencia', referencia: '',
+                  concepto: toca?.concepto || '', vence: toca?.fecha || '',
+                });
+              }}>+ Abono</button>
+              {/* El estado de cuenta se manda; por eso es un icono y no un
+                  botón que compita. Con plan de pagos deja elegir cuál mandar. */}
+              <div style={{ position: 'relative' }}>
+                <button title="Mandar el estado de cuenta" style={{ ...P.btnG, padding: '5px 9px', lineHeight: 0, color: '#5B4BD6', borderColor: '#ddd6fb' }}
+                  onClick={() => {
+                    const pend = (d.plan_pagos || []).filter((x: any) => !x.pagada);
+                    if (pend.length <= 1) { window.open(`/estado-cuenta/cotizacion/${d.quote.id}`, '_blank'); return; }
+                    setMenuEdo(v => !v);
+                  }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                    <path d="M14 3v5h5M9 13h6M9 17h4" />
+                  </svg>
+                </button>
+                {menuEdo && (
+                  <div style={{ position: 'absolute', right: 0, top: 32, background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, minWidth: 230, zIndex: 40 }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em', padding: '4px 8px' }}>Qué mandar</div>
+                    <button style={{ ...P.btnG, width: '100%', justifyContent: 'flex-start', textAlign: 'left', marginBottom: 4, padding: '7px 9px' }}
+                      onClick={() => { setMenuEdo(false); window.open(`/estado-cuenta/cotizacion/${d.quote.id}`, '_blank'); }}>
+                      Todo el saldo · {money(d.saldo)}
+                    </button>
+                    {(d.plan_pagos || []).map((x: any, ix: number) => x.pagada ? null : (
+                      <button key={x.id || ix} style={{ ...P.btnG, width: '100%', justifyContent: 'flex-start', textAlign: 'left', marginBottom: 4, padding: '7px 9px' }}
+                        onClick={() => { setMenuEdo(false); window.open(`/estado-cuenta/cotizacion/${d.quote.id}?exh=${ix + 1}`, '_blank'); }}>
+                        {x.concepto} · {money(Number(x.monto || 0) - Number(x.cubierto || 0))}
+                        <span style={{ color: x.vencida ? '#b93333' : '#999', marginLeft: 6, fontWeight: 400 }}>{fDate(x.fecha)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* La fecha de pago SIEMPRE editable: el pago casi nunca se captura
@@ -309,9 +355,29 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
             {nuevoAbono && (<>
               {/* De qué parcialidad viene el abono: sin decirlo, el formulario
                   aparece con un monto ya escrito y nadie sabe por qué. */}
-              {nuevoAbono.concepto && (
-                <div style={{ fontSize: '0.73rem', color: '#5B4BD6', background: '#faf8ff', border: '1px solid #ece7fa', borderRadius: 8, padding: '6px 9px', marginTop: 8 }}>
-                  Cobrando <b>{nuevoAbono.concepto}</b>{nuevoAbono.vence ? ` · vencía el ${fDate(nuevoAbono.vence)}` : ''}
+              {/* Con plan de pagos, lo primero es a QUÉ parcialidad se abona:
+                  el monto se llena solo y el abono deja de ser un número suelto
+                  que después nadie sabe a qué correspondía. */}
+              {(d.plan_pagos || []).some((x: any) => !x.pagada) && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#777', fontWeight: 700 }}>Abona a</span>
+                  <select value={nuevoAbono.concepto || ''} style={{ ...P.input, flex: '1 1 200px' }}
+                    onChange={e => {
+                      const x = (d.plan_pagos || []).find((p: any) => p.concepto === e.target.value && !p.pagada);
+                      if (!x) { setNuevoAbono({ ...nuevoAbono, concepto: '', vence: '' }); return; }
+                      const falta = Math.max(0, Number(x.monto || 0) - Number(x.cubierto || 0));
+                      setNuevoAbono({ ...nuevoAbono, concepto: x.concepto, vence: x.fecha, monto: String(Math.round(falta)) });
+                    }}>
+                    {(d.plan_pagos || []).filter((x: any) => !x.pagada).map((x: any, ix: number) => (
+                      <option key={x.id || ix} value={x.concepto}>
+                        {x.concepto} · {money(Number(x.monto || 0) - Number(x.cubierto || 0))} · {fDate(x.fecha)}{x.vencida ? ' · vencida' : ''}
+                      </option>
+                    ))}
+                    <option value="">Otro monto (no va a una parcialidad)</option>
+                  </select>
+                  {nuevoAbono.vence && (
+                    <span style={{ fontSize: '0.71rem', color: '#8a8590' }}>vencía el {fDate(nuevoAbono.vence)}</span>
+                  )}
                 </div>
               )}
               <div style={{ ...P.fila, flexWrap: 'wrap' }}>
@@ -346,36 +412,9 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                         <span style={{ flex: 1, minWidth: 0, color: '#444' }}>{x.concepto}</span>
                         <b style={{ whiteSpace: 'nowrap', color: x.pagada ? '#1A8F7A' : x.vencida ? '#b93333' : '#1a1a1a' }}>{money(x.monto)}</b>
                       </div>
-                      {!x.pagada && (
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, paddingLeft: 119 }}>
-                          {x.cubierto > 0 && (
-                            <span style={{ fontSize: '0.7rem', color: '#a06600', marginRight: 'auto' }}>
-                              abonado {money(x.cubierto)} · falta {money(falta)}
-                            </span>
-                          )}
-                          {/* El estado de cuenta va como icono: es un documento
-                              que se manda, no una acción que compite con la de
-                              cobrar. Y cobrar una parcialidad es registrar un
-                              abono —la misma gestión—, así que lleva el mismo
-                              nombre que el botón de arriba. */}
-                          <a href={`/estado-cuenta/cotizacion/${d.quote.id}?exh=${ix + 1}`} target="_blank" rel="noreferrer"
-                            title="Abrir el estado de cuenta de esta parcialidad, para mandárselo al cliente"
-                            style={{ ...P.btnG, marginLeft: x.cubierto > 0 ? 0 : 'auto', padding: '4px 8px', lineHeight: 0, textDecoration: 'none', color: '#5B4BD6', borderColor: '#ddd6fb' }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-                              <path d="M14 3v5h5M9 13h6M9 17h4" />
-                            </svg>
-                          </a>
-                          <button title={`Registrar el abono de ${x.concepto}`}
-                            style={{ ...P.btnG, padding: '4px 9px', fontSize: '0.72rem', whiteSpace: 'nowrap', color: '#2563eb', borderColor: '#cdd9f7' }}
-                            onClick={() => setNuevoAbono({
-                              fecha: new Date().toISOString().slice(0, 10),
-                              monto: String(Math.round(falta)),
-                              metodo: 'transferencia', referencia: '',
-                              concepto: x.concepto, vence: x.fecha,
-                            })}>
-                            + Abono
-                          </button>
+                      {!x.pagada && x.cubierto > 0 && (
+                        <div style={{ fontSize: '0.7rem', color: '#a06600', marginTop: 4, paddingLeft: 119 }}>
+                          abonado {money(x.cubierto)} · falta {money(falta)}
                         </div>
                       )}
                     </div>
