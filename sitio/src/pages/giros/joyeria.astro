@@ -78,7 +78,7 @@ const desc =
     <div class="hero-inner">
       <p class="hero-eyebrow">SACS · Suite Joyería</p>
       <h1 class="hero-title">
-        Tu vitrina no vende<br /><span>piezas.</span> Vende<br /><span>gramos.</span>
+        Tu vitrina no vende<br /><span class="apaga">piezas.</span> Vende<br /><span>gramos.</span>
       </h1>
       <p class="hero-sub">
         El sistema para joyerías. Tu precio del gramo de fino, el factor por quilataje que usa
@@ -90,11 +90,12 @@ const desc =
         <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
 
+      <!-- Nada de cifras: la franja de más abajo ya las da. Esto es lo que
+           solo el hero puede decir: de qué está hecho el giro. -->
       <div class="hero-datos">
-        <div><b>+3,000</b><span>negocios activos</span></div>
-        <div><b>3</b><span>quilatajes con su propio factor</span></div>
-        <div><b>1 precio</b><span>del gramo para toda la casa</span></div>
-        <div><b>0</b><span>precios que se mueven solos</span></div>
+        <div><b>Precio por gramo</b><span>con tu colchón, no con el spot</span></div>
+        <div><b>Factor por quilataje</b><span>10K .445 · 14K .620 · 18K .780</span></div>
+        <div><b>Costo histórico</b><span>lo que pagaste no se mueve nunca</span></div>
       </div>
     </div>
   </header>
@@ -167,7 +168,7 @@ detrás de"
     datos={[
       { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
       { n: 3, rotulo: 'QUILATAJES, CADA UNO CON SU FACTOR' },
-      { n: 5, pos: ' días', rotulo: 'PARA ARRANCAR, SIN CERRAR' },
+      { n: 1, pos: ' semana', rotulo: 'PARA CAMBIARTE, SIN CERRAR UN DÍA' },
     ]}
   />
 
@@ -234,8 +235,8 @@ detrás de"
   .hero-veil {
     position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(90deg,
-      rgba(8,8,10,.97) 0%, rgba(8,8,10,.95) 28%, rgba(8,8,10,.62) 45%,
-      rgba(8,8,10,.16) 57%, rgba(8,8,10,0) 68%);
+      rgba(8,8,10,.96) 0%, rgba(8,8,10,.9) 26%, rgba(8,8,10,.5) 44%,
+      rgba(8,8,10,.1) 56%, rgba(8,8,10,0) 66%);
   }
   .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
   .hero-eyebrow {
@@ -247,6 +248,7 @@ detrás de"
     line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
   }
   .hero-title span { color: #4B7BE5; }
+  .hero-title span.apaga { color: #6B6B78; }
   .hero-sub {
     font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
     max-width: 56ch; margin: 0 0 34px;
@@ -262,12 +264,13 @@ detrás de"
   .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
   .btn-sec:hover { background: rgba(255,255,255,.17); }
   .hero-datos {
-    display: flex; gap: 44px; flex-wrap: wrap;
+    display: flex; gap: 30px; flex-wrap: wrap; max-width: 660px;
     border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
   }
+  .hero-datos > div { flex: 1 1 180px; }
   .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
   .hero-datos b {
-    font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #fff; letter-spacing: -.6px;
+    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; color: #fff; letter-spacing: -.4px;
   }
   .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
@@ -286,7 +289,7 @@ detrás de"
     to   { opacity: 1; transform: translateY(-46%) scale(.86); }
   }
   @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  @media (max-width: 1440px) { .hero-pos { right: -26%; transform: translateY(-46%) scale(.78); } }
+  @media (max-width: 1440px) { .hero-pos { right: -10%; transform: translateY(-50%) scale(.72); } }
   @media (min-width: 1181px) {
     .hero-sub { max-width: 44ch; }
     .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
@@ -294,7 +297,18 @@ detrás de"
   @media (max-width: 1180px) {
     .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
   }
-  @media (max-width: 760px) { .hero-pos { display: none; } }
+  @media (max-width: 760px) {
+    /* Igual que en calzado: el punto de venta asoma al pie en lugar de
+       desaparecer, y salen los apuntes que repiten el subtítulo. */
+    .hero-pos {
+      right: auto; left: 50%; top: auto; bottom: 0;
+      transform: translateX(-50%) scale(.34); transform-origin: bottom center;
+      opacity: .95; animation: none;
+    }
+    .hero-veil {
+      background: linear-gradient(180deg, rgba(8,8,10,.98) 0%, rgba(8,8,10,.97) 62%, rgba(8,8,10,.86) 76%, rgba(8,8,10,.2) 100%);
+    }
+  }
 
   @media (max-width: 900px) {
     .hero { min-height: 88vh; padding: 104px 18px 56px; }
@@ -306,4 +320,8 @@ detrás de"
   @media (prefers-reduced-motion: reduce) {
     .hero-pos { opacity: 1; animation: none; }
   }
+
+  /* Al final a propósito: la regla de 900 px que viene antes vuelve a poner la
+     franja en rejilla. */
+  @media (max-width: 760px) { .hero-datos { display: none; } }
 </style>
