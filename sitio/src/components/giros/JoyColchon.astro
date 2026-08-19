@@ -1,0 +1,354 @@
+---
+/**
+ * JoyColchon — el complemento propio de joyerías.
+ *
+ * Fuera de una joyería esto no significa nada. El joyero NO reprecia con el
+ * spot del día: fija un precio interno del gramo de fino —el colchón— por
+ * encima del mercado, y lo mueve cuando él decide. Ese solo hecho ya separa a
+ * quien conoce el gremio de quien no.
+ *
+ * Aquí el visitante mueve su colchón y ve tres cosas al mismo tiempo: cuánto se
+ * separa del spot, cuántas piezas del catálogo habría que repreciar y reetiquetar,
+ * y cuánto dinero está en juego en esa decisión. Es exactamente la operación que
+ * hoy hace con una hoja de cálculo un domingo.
+ *
+ * Todo lo que se afirma existe en la Suite Joyería de SACS: precio del fino,
+ * factor por quilataje con merma, costo histórico inmutable, repricing con
+ * simulación y reetiquetado, y apartados con precio congelado.
+ * Ver: sacs3/documentacion/PLAN_PRECIO_DINAMICO_JOYERIA_V2.md
+ */
+interface Metal {
+  nombre: string;
+  /** Etiqueta de pureza tal como se captura. */
+  pureza: string;
+  /** Factor comercial: MAYOR que la pureza teórica porque absorbe merma y aleación. */
+  factor: number;
+  /** Pureza teórica, para poder mostrar la diferencia. */
+  teorico: number;
+  piezas: number;
+}
+interface Props {
+  /** Spot de referencia del gramo de oro fino, en pesos. Va fechado a propósito:
+      publicar el precio del oro sin fecha envejece en un día. */
+  spot?: number;
+  colchonInicial?: number;
+  metales?: Metal[];
+  apartadosCongelados?: number;
+  fijos?: { nombre: string; razon: string; piezas: number }[];
+}
+const {
+  spot = 2678,
+  colchonInicial = 2900,
+  metales = [
+    { nombre: 'Oro 10K', pureza: '10k', factor: 0.445, teorico: 0.4167, piezas: 212 },
+    { nombre: 'Oro 14K', pureza: '14k', factor: 0.620, teorico: 0.5833, piezas: 386 },
+    { nombre: 'Oro 18K', pureza: '18k', factor: 0.78, teorico: 0.750, piezas: 94 },
+  ],
+  apartadosCongelados = 23,
+  /* Lo que convive en la misma vitrina y NO se mueve con el oro. Es el detalle
+     que separa a quien conoce el giro: cualquiera anima un control del oro;
+     saber que el reloj de marca no se reprecia es otra cosa. */
+  fijos = [
+    { nombre: 'Reloj de marca', razon: 'precio de lista de la marca', piezas: 38 },
+    { nombre: 'Plata de fantasía', razon: 'se cuesta por pieza, no por gramo', piezas: 164 },
+  ],
+} = Astro.props;
+
+const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
+---
+
+<section class="jc" data-metales={JSON.stringify(metales)} data-spot={String(spot)} data-piezas={String(totalPiezas)}>
+  <div class="jc-inner">
+
+    <header class="jc-head">
+      <p class="jc-eyebrow">La decisión del domingo</p>
+      <h2>Tu colchón del fino, <span>no el spot del día</span>.</h2>
+      <p class="jc-sub">
+        Tú no repreciás cada mañana porque el oro se movió. Fijas tu precio del gramo por
+        arriba del mercado y lo mueves cuando decides. Mueve el colchón aquí abajo y mira
+        qué se te viene encima cada vez que lo tocas.
+      </p>
+    </header>
+
+    <div class="jc-cuerpo">
+      <!-- El control -->
+      <div class="jc-mando">
+        <div class="jc-spot">
+          <span>Spot del gramo de oro fino · lectura del 16 jul</span>
+          <b>${spot.toLocaleString('es-MX')}</b>
+        </div>
+
+        <label class="jc-label" for="jcColchon">
+          <span>Tu colchón</span>
+          <b id="jcColchonVal">${colchonInicial.toLocaleString('es-MX')}</b>
+        </label>
+        <input
+          type="range" id="jcColchon" class="jc-rango"
+          min={Math.round(spot * 0.9)} max={Math.round(spot * 1.45)} step="10"
+          value={colchonInicial}
+          aria-label="Precio de tu colchón por gramo de fino"
+        />
+        <p class="jc-separacion">
+          <b id="jcSep">+11%</b> sobre el spot
+        </p>
+
+        <!-- El factor por quilataje: lo que un genérico no entiende -->
+        <div class="jc-factores">
+          <p class="jc-factores-rot">Tu precio por gramo, por quilataje</p>
+          {metales.map((m, i) => (
+            <div class="jc-metal">
+              <div class="jc-metal-id">
+                <b>{m.nombre}</b>
+                <span>factor {m.factor} · teórico {m.teorico}</span>
+              </div>
+              <span class="jc-metal-precio" id={`jm-${i}`}>$0</span>
+            </div>
+          ))}
+          <p class="jc-nota-factor">
+            El factor es tuyo y va por arriba del teórico: absorbe merma y aleación. Cada casa
+            usa el suyo — por eso no viene cableado.
+          </p>
+        </div>
+      </div>
+
+      <!-- Lo que desata mover el colchón -->
+      <div class="jc-efecto">
+        <p class="jc-efecto-rot">Si aplicas este colchón</p>
+
+        <div class="jc-fila">
+          <b id="jcPiezas">0</b>
+          <span>piezas a repreciar y reetiquetar</span>
+        </div>
+
+        <div class="jc-juego">
+          <span>Dinero en juego</span>
+          <b id="jcJuego">$0</b>
+        </div>
+
+        <div class="jc-congelado">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+            <path d="M8 10V7a4 4 0 018 0v3"></path>
+          </svg>
+          <p>
+            <b>{apartadosCongelados} apartados quedan con su precio congelado.</b>
+            Lo que ya pactaste no se mueve aunque el oro suba — y no entra en la
+            actualización masiva.
+          </p>
+        </div>
+
+        <div class="jc-fijos">
+          <p class="jc-fijos-rot">No se mueven, y está bien</p>
+          {fijos.map((f) => (
+            <div class="jc-fijo">
+              <div>
+                <b>{f.nombre}</b>
+                <span>{f.razon}</span>
+              </div>
+              <em>{f.piezas} piezas</em>
+            </div>
+          ))}
+        </div>
+
+        <p class="jc-pie">
+          El costo con el que compraste ese metal tampoco se mueve: el histórico es inmutable
+          y es el que manda para tu margen real, no el precio de hoy.
+        </p>
+
+        <a class="jc-cta" href="/contacto" id="jcCta">Ver mi catálogo repreciado antes de aplicar</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .jc { background: #0B0A08; padding: 100px 24px 110px; }
+  .jc-inner { max-width: 1200px; margin: 0 auto; }
+
+  .jc-head { max-width: 720px; margin-bottom: 50px; }
+  .jc-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #C9A227; margin: 0 0 16px;
+  }
+  .jc-head h2 {
+    font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
+    line-height: 1.06; color: #fff; margin: 0 0 16px;
+  }
+  .jc-head h2 span { color: #E3C05C; }
+  .jc-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A9A498; }
+
+  .jc-cuerpo { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: start; }
+
+  /* ── El control ── */
+  .jc-mando {
+    border: 1px solid #26231C; border-radius: 18px; padding: 26px; background: #12100C;
+  }
+  .jc-spot {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+    padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid #221F18;
+  }
+  .jc-spot span { font-size: 13.5px; color: #8A8578; }
+  .jc-spot b { font-size: 17px; font-weight: 700; color: #C9C3B4; font-variant-numeric: tabular-nums; }
+
+  .jc-label { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .jc-label span { font-size: 15px; color: #A9A498; }
+  .jc-label b {
+    font-size: 30px; font-weight: 800; color: #E3C05C; letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .jc-rango {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px;
+    background: #2A261D; outline: none; cursor: pointer;
+  }
+  .jc-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; border: 5px solid #C9A227; cursor: grab;
+  }
+  .jc-rango::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid #C9A227; cursor: grab;
+  }
+  .jc-rango:focus-visible { outline: 2px solid #C9A227; outline-offset: 6px; }
+  .jc-separacion { margin: 12px 0 24px; font-size: 13.5px; color: #8A8578; }
+  .jc-separacion b { color: #E3C05C; font-weight: 800; }
+
+  .jc-factores { border-top: 1px solid #221F18; padding-top: 20px; }
+  .jc-factores-rot {
+    margin: 0 0 14px; font-size: 11.5px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #6E6A5E;
+  }
+  .jc-metal {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+    padding: 11px 0; border-bottom: 1px solid #1B1913;
+  }
+  .jc-metal-id b { display: block; font-size: 14.5px; font-weight: 700; color: #E8E3D6; }
+  .jc-metal-id span { font-size: 11.5px; color: #6E6A5E; font-variant-numeric: tabular-nums; }
+  .jc-metal-precio {
+    font-size: 17px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums;
+  }
+  .jc-nota-factor { margin: 16px 0 0; font-size: 13px; line-height: 1.6; color: #8A8578; }
+
+  /* ── El efecto ── */
+  .jc-efecto {
+    border: 1px solid #2E2718; border-radius: 18px; padding: 28px 26px 26px;
+    background: linear-gradient(165deg, rgba(201,162,39,.1), #12100C 62%);
+  }
+  .jc-efecto-rot {
+    margin: 0 0 18px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #B99A34;
+  }
+  .jc-fila { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  .jc-fila b {
+    font-size: clamp(38px, 4.6vw, 54px); font-weight: 800; color: #fff; line-height: 1;
+    letter-spacing: -2px; font-variant-numeric: tabular-nums;
+  }
+  .jc-fila span { font-size: 15px; color: #A9A498; }
+
+  .jc-juego {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+    padding: 16px 0; border-top: 1px solid #2A2418; border-bottom: 1px solid #2A2418;
+    margin-bottom: 20px;
+  }
+  .jc-juego span { font-size: 14px; color: #A9A498; }
+  .jc-juego b {
+    font-size: 24px; font-weight: 800; color: #E3C05C; font-variant-numeric: tabular-nums;
+  }
+
+  .jc-congelado {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(75,123,229,.08); border: 1px solid rgba(75,123,229,.28);
+    border-radius: 12px; padding: 14px 15px; margin-bottom: 18px;
+  }
+  .jc-congelado svg { width: 19px; height: 19px; color: #7FA6F5; flex-shrink: 0; margin-top: 1px; }
+  .jc-congelado p { margin: 0; font-size: 13.5px; line-height: 1.55; color: #A9A498; }
+  .jc-congelado b { color: #C7DAFB; font-weight: 700; }
+
+  /* Lo que la vitrina tiene y el oro no toca. En gris, deliberadamente
+     apagado: es un dato de oficio, no un argumento de venta. */
+  .jc-fijos { border-top: 1px solid #2A2418; padding-top: 16px; margin-bottom: 18px; }
+  .jc-fijos-rot {
+    margin: 0 0 12px; font-size: 11px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #6E6A5E;
+  }
+  .jc-fijo {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 8px 0;
+  }
+  .jc-fijo b { display: block; font-size: 13.5px; font-weight: 700; color: #9C9689; }
+  .jc-fijo span { font-size: 11.5px; color: #6E6A5E; }
+  .jc-fijo em { font-style: normal; font-size: 12.5px; color: #6E6A5E; font-variant-numeric: tabular-nums; }
+
+  .jc-pie { margin: 0 0 24px; font-size: 13.5px; line-height: 1.6; color: #8A8578; }
+
+  .jc-cta {
+    display: inline-flex; align-items: center; justify-content: center; width: 100%;
+    height: 52px; border-radius: 12px; background: #C9A227; color: #1A1508;
+    font-size: 15.5px; font-weight: 800; text-decoration: none;
+    transition: background .16s ease;
+  }
+  .jc-cta:hover { background: #E3C05C; text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .jc { padding: 70px 18px 78px; }
+    .jc-cuerpo { grid-template-columns: 1fr; gap: 22px; }
+    .jc-mando, .jc-efecto { padding: 20px 18px; }
+  }
+</style>
+
+<script>
+  {
+    const sec = document.querySelector<HTMLElement>('.jc');
+    if (sec) {
+      const metales: { nombre: string; factor: number; piezas: number }[] =
+        JSON.parse(sec.dataset.metales || '[]');
+      const spot = Number(sec.dataset.spot || 0);
+      const totalPiezas = Number(sec.dataset.piezas || 0);
+
+      const rango = document.getElementById('jcColchon') as HTMLInputElement;
+      const elVal = document.getElementById('jcColchonVal');
+      const elSep = document.getElementById('jcSep');
+      const elPiezas = document.getElementById('jcPiezas');
+      const elJuego = document.getElementById('jcJuego');
+      const cta = document.getElementById('jcCta') as HTMLAnchorElement;
+
+      const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+      /* Gramaje promedio por pieza del catálogo. Es un supuesto y por eso el
+         bloque habla de "dinero en juego" y no de una cifra exacta: el número
+         real sale del catálogo del cliente en la demo. */
+      const GRAMOS_PIEZA = 4.2;
+
+      const pintar = () => {
+        const colchon = Number(rango.value);
+        if (elVal) elVal.textContent = colchon.toLocaleString('es-MX');
+
+        const sep = ((colchon - spot) / spot) * 100;
+        if (elSep) elSep.textContent = (sep >= 0 ? '+' : '') + sep.toFixed(1) + '%';
+
+        // El precio por gramo de cada quilataje: fino × factor de la casa.
+        let juego = 0;
+        metales.forEach((m, i) => {
+          const porGramo = colchon * m.factor;
+          const el = document.getElementById('jm-' + i);
+          if (el) el.textContent = pesos(porGramo) + ' /g';
+          juego += porGramo * m.piezas * GRAMOS_PIEZA;
+        });
+
+        // Mover el colchón obliga a repreciar y reetiquetar TODO lo que cuelga
+        // de ese metal: por eso la decisión no es trivial.
+        if (elPiezas) elPiezas.textContent = totalPiezas.toLocaleString('es-MX');
+        if (elJuego) elJuego.textContent = pesos(juego);
+
+        if (cta) {
+          const u = new URL(cta.href, location.origin);
+          u.searchParams.set('estimado', String(Math.round(juego)));
+          cta.href = u.pathname + u.search;
+        }
+      };
+
+      rango.addEventListener('input', pintar);
+      rango.addEventListener('change', pintar);
+      pintar();
+    }
+  }
+</script>

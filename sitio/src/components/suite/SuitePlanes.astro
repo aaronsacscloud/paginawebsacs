@@ -23,8 +23,13 @@
  * aqui: se copian a proposito porque esta pagina cuenta los planes con el
  * lenguaje del giro y no la comparativa completa.
  */
-interface Props { suite?: string; }
-const { suite = 'Suite de Moda' } = Astro.props;
+interface Props {
+  suite?: string;
+  /** 'incluida' = viene dentro del plan desde Fideliza. 'complemento' = se
+      cotiza aparte, como la Suite Joyería. Decirlo mal es prometer de más. */
+  comoSeVende?: 'incluida' | 'complemento';
+}
+const { suite = 'Suite de Moda', comoSeVende = 'incluida' } = Astro.props;
 
 const planes = [
   {
@@ -104,13 +109,22 @@ const planes = [
 
     <header class="pl-head">
       <p class="pl-eyebrow">Y lo que cuesta</p>
-      <h2>La {suite} no se paga aparte.</h2>
-      <p class="pl-sub">
-        No es un módulo con precio propio ni una implementación a cotizar. Los planes son
-        acumulativos —cada uno trae todo el anterior— y a partir del tercero
-        <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
-        planificador— vive en el cuarto, y en la página se dice en cada punto donde aparece.
-      </p>
+      <h2>{comoSeVende === 'incluida' ? `La ${suite} no se paga aparte.` : `Los planes, y dónde entra la ${suite}.`}</h2>
+      {comoSeVende === 'incluida' ? (
+        <p class="pl-sub">
+          No es un módulo con precio propio ni una implementación a cotizar. Los planes son
+          acumulativos —cada uno trae todo el anterior— y a partir del tercero
+          <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
+          planificador— vive en el cuarto, y se dice en cada punto donde aparece.
+        </p>
+      ) : (
+        <p class="pl-sub">
+          Los planes son acumulativos: cada uno trae todo el anterior. La <b>{suite}</b> es
+          distinta — se cotiza como complemento sobre el plan que elijas, porque no es un
+          módulo estándar sino una forma completa de costear. Te la cotizamos con tu catálogo
+          en la mesa, no después.
+        </p>
+      )}
     </header>
 
     <ol class="pl-escalera">
@@ -129,7 +143,7 @@ const planes = [
             <p class="pl-anual">{p.anual} si pagas anual</p>
 
             {p.popular && <p class="pl-popular">El primero que trae la suite completa</p>}
-            {p.suite && <p class="pl-suite">{suite} incluida</p>}
+            {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para la ${suite}`}</p>}
           </div>
 
           <div class="pl-que">
