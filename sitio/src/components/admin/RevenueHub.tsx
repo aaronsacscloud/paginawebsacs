@@ -862,6 +862,36 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       return q.estado;
     };
 
+    // ── La próxima parcialidad pactada ──
+    // Las fechas del plan se capturan al cotizar y viven en el meta de la
+    // cotización. Aquí se leen para poder decir CUÁNDO toca el siguiente pago
+    // en vez de cuántos días le quedan a un precio que el cliente ya aceptó.
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    const abonadoPorQuote = new Map<string, number>((quotes || []).map((q: any) => [q.id, Number(q.abonado || 0)]));
+    const proximaParcialidad = (q: any): { fecha: string; numero: number; total: number; monto: number } | null => {
+      let meta: any = {};
+      try {
+        const sep = '\n---META---\n';
+        const i = String(q.notas || '').indexOf(sep);
+        if (i >= 0) meta = JSON.parse(String(q.notas).slice(i + sep.length));
+      } catch { /* sin meta legible: no hay plan */ }
+      const plan = Array.isArray(meta?.plan_pagos) ? [...meta.plan_pagos] : [];
+      if (!plan.length) return null;
+      plan.sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+      // El dinero abonado cubre las exhibiciones en orden de fecha: es la única
+      // regla que no inventa nada cuando no hay recibo por parcialidad.
+      let restante = Number(q.abonado || 0);
+      for (let i = 0; i < plan.length; i++) {
+        const monto = Number(plan[i].monto || 0);
+        const cubierto = Math.min(monto, Math.max(0, restante));
+        restante -= cubierto;
+        if (monto - cubierto > 0.01) {
+          return { fecha: String(plan[i].fecha || '').slice(0, 10), numero: i + 1, total: plan.length, monto: Math.round((monto - cubierto) * 100) / 100 };
+        }
+      }
+      return null;
+    };
+
     // Saved views (HubSpot-style presets)
     const savedViews = [
       { id: 'all', label: 'Todas' },
@@ -1446,12 +1476,31 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           con anticipo lleva pastilla roja y cifra verde — los
                           dos hechos son ciertos y ahora se ven juntos. */}
                       {qVisibleCols.has('abonado') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, textAlign: 'right' as const, fontWeight: Number(q.abonado || 0) >= Number(q.total || 0) - 0.01 && Number(q.abonado || 0) > 0 ? 800 : 700, color: Number(q.abonado || 0) > 0 ? M.verdeTinta : '#c9c7d0' }}>{Number(q.abonado || 0) > 0 ? fmt(q.abonado) : '—'}</td>}
-                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? M.rojoTinta : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
-                        {/* Solo el número: gris = sigue vigente, rojo = ya
-                            venció. El color hace el trabajo del texto y la
-                            columna deja de robar espacio. */}
-                        {q.vigencia ? (days === 0 ? 'Hoy' : `${Math.abs(days as number)} ${Math.abs(days as number) === 1 ? 'día' : 'días'}`) : '—'}
-                      </td>}
+                      {qVisibleCols.has('vigencia') && (() => {
+                        // La vigencia caduca el PRECIO de una propuesta. Una
+                        // cotización que el cliente ya aceptó —o que ya lleva
+                        // abonos— no está vencida por más que esa fecha pase:
+                        // lo que sigue viva es su cobranza. En ese caso la
+                        // columna muestra la próxima parcialidad, y solo se
+                        // pinta de rojo si ESA fecha ya pasó.
+                        const cerrada = q.estado === 'accepted' || q.estado === 'paid' || (abonadoPorQuote.get(q.id) || 0) > 0;
+                        const prox = cerrada ? proximaParcialidad(q) : null;
+                        if (cerrada) {
+                          const atrasada = !!prox && prox.fecha < hoyISO;
+                          return (
+                            <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: atrasada ? M.rojoTinta : '#8a8a8a', fontWeight: atrasada ? 700 : 400 }}>
+                              {prox
+                                ? <span title={`Parcialidad ${prox.numero} de ${prox.total}`}>{fmtDate(prox.fecha)}</span>
+                                : <span title="Aceptada: la vigencia del precio ya no aplica" style={{ color: '#c4c4cc' }}>—</span>}
+                            </td>
+                          );
+                        }
+                        return (
+                          <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? M.rojoTinta : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
+                            {q.vigencia ? (days === 0 ? 'Hoy' : `${Math.abs(days as number)} ${Math.abs(days as number) === 1 ? 'día' : 'días'}`) : '—'}
+                          </td>
+                        );
+                      })()}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
                           {/* La columna de ESTADO muestra el estado y nada más.

@@ -16,11 +16,24 @@ const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).s
 
 if (!quote) return Astro.redirect('/404');
 
-// Auto-expire: if vigencia passed and status is still sent/draft, mark as expired
-const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
+// Auto-expire: la vigencia caduca el PRECIO de una propuesta que nadie contestó.
+// Si el cliente ya abonó —aunque sea el anticipo de un plan de parcialidades—
+// la venta está cerrada y marcarla "vencida" la saca de la cobranza y la pinta
+// de rojo sin razón. Le pasó a COT-78902: pagó su anticipo el 11 y el 10 se
+// autovenció.
+const { count: abonosPrevios } = await supabase.from('payments')
+  .select('id', { count: 'exact', head: true }).eq('quote_id', id).neq('estado', 'reembolsado');
+const yaPago = (abonosPrevios || 0) > 0;
+const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date() && !yaPago;
 if (isExpired && quote.estado !== 'expired' && quote.estado !== 'accepted' && quote.estado !== 'paid') {
   await supabase.from('quotes').update({ estado: 'expired' }).eq('id', id);
   quote.estado = 'expired';
+}
+// Y si se venció ANTES de que llegara el abono, se devuelve a aceptada: el
+// dinero manda sobre la fecha.
+if (yaPago && quote.estado === 'expired') {
+  await supabase.from('quotes').update({ estado: 'accepted' }).eq('id', id);
+  quote.estado = 'accepted';
 }
 
 // Fetch bank account if linked

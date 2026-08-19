@@ -27,6 +27,7 @@
 // Las archivadas y las plantillas no existen para ningún número.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { planDeCotizacion } from '../../../../lib/quotes/plan';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -54,7 +55,7 @@ export const GET: APIRoute = async () => {
 
   const [{ data: quotes }, { data: pagos }, { data: exhibiciones }] = await Promise.all([
     supabase.from('quotes')
-      .select('id, numero, empresa, total, estado, created_at, aceptado_fecha, pagado_fecha, vigencia, company_id')
+      .select('id, numero, empresa, total, estado, created_at, aceptado_fecha, pagado_fecha, vigencia, company_id, notas')
       .not('estado', 'in', '(deleted,plantilla)').limit(2000),
     supabase.from('payments').select('id, quote_id, monto, fecha, metodo')
       .not('quote_id', 'is', null).neq('estado', 'reembolsado').limit(5000),
@@ -77,6 +78,17 @@ export const GET: APIRoute = async () => {
   for (const c of exhibiciones || []) {
     const l = planes.get(c.quote_id) || [];
     l.push(c); planes.set(c.quote_id, l);
+  }
+  // Y las parcialidades pactadas AL COTIZAR, que viven en el meta de la
+  // cotización. Son las que el vendedor captura en el editor; ignorarlas dejaba
+  // la proyección del mes en ceros aunque las fechas estuvieran acordadas.
+  for (const q of quotes || []) {
+    if (planes.has(q.id)) continue;
+    const p = planDeCotizacion(q, abonos.get(q.id)?.total || 0, hoy);
+    if (p.length) planes.set(q.id, p.map(x => ({
+      quote_id: q.id, numero: x.numero, total: x.total, fecha: x.fecha,
+      monto: x.monto > 0 ? x.monto : x.monto_original, estado: x.estado,
+    })));
   }
 
   const enMes = (f?: string | null, r = mes) => !!f && String(f).slice(0, 10) >= r.desde && String(f).slice(0, 10) < r.hasta;

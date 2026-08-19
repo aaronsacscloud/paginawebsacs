@@ -1,0 +1,178 @@
+---
+// Estado de cuenta de una COTIZACIÓN que se paga en parcialidades.
+//
+// El cliente ya aceptó y va abonando: lo que necesita —y lo que uno necesita
+// mandarle para cobrar— no es la cotización otra vez, es cuánto lleva, cuánto
+// falta y qué día toca cada pago. Mismo papel y mismos colores que el estado de
+// cuenta de suscripciones: son la misma conversación.
+//
+// ?exh=N resalta la exhibición que se está cobrando.
+import { supabase } from '../../../lib/supabase';
+import { planDeCotizacion } from '../../../lib/quotes/plan';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const exh = Number(Astro.url.searchParams.get('exh') || 0);
+
+const { data: q } = await supabase.from('quotes')
+  .select('id, numero, empresa, contacto, email, total, moneda, estado, created_at, aceptado_fecha, notas, link_pago, company_id')
+  .eq('id', id).maybeSingle();
+if (!q) return Astro.redirect('/404');
+
+const { data: pagos } = await supabase.from('payments')
+  .select('id, fecha, monto, metodo, numero_acuse')
+  .eq('quote_id', id).neq('estado', 'reembolsado').order('fecha');
+const abonado = (pagos || []).reduce((a: number, p: any) => a + Number(p.monto || 0), 0);
+const total = Number(q.total || 0);
+const saldo = Math.round((total - abonado) * 100) / 100;
+
+const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' })).toISOString().slice(0, 10);
+const plan = planDeCotizacion(q, abonado, hoy);
+const exigible = plan.find(x => x.estado === 'pendiente' && x.vencida) || plan.find(x => x.estado === 'pendiente') || null;
+
+const money = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function fecha(d?: string | null) {
+  if (!d) return '—';
+  const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '—';
+  return `${dd} de ${MESES[(m || 1) - 1]} de ${y}`;
+}
+const liquidada = saldo <= 0.5;
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Estado de cuenta · {q.numero} · {q.empresa}</title>
+  <style>
+    :root { --ink:#16181d; --muted:#6b7280; --faint:#a5a2af; --violeta:#9B8CFA; --tinta:#5B4BD6; --hondo:#3f2fb8; --rojo:#C0554E; --verde:#1E8A63; --line:#f0eff3; --bg:#eceef1; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.5; padding:26px 16px 60px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .toolbar { max-width:620px; margin:0 auto 14px; display:flex; gap:10px; justify-content:flex-end; }
+    .btn { display:inline-flex; align-items:center; height:40px; padding:0 16px; border-radius:10px; font-size:.83rem; font-weight:700; cursor:pointer; font-family:inherit; border:1px solid #e6e6ea; background:#fff; color:var(--ink); text-decoration:none; }
+    .btn-primary { background:var(--violeta); color:#fff; border-color:var(--violeta); }
+    .doc { max-width:620px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06),0 14px 36px rgba(16,24,40,.10); }
+    .band { height:4px; background:linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%); }
+    .head { padding:22px 26px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; border-bottom:1px solid var(--line); background:#fcfbfe; }
+    .marca { font-size:1.22rem; font-weight:800; letter-spacing:-.01em; }
+    .firma { font-size:.55rem; font-weight:800; color:#9c3d70; letter-spacing:.11em; text-transform:uppercase; margin-top:3px; }
+    .meta { text-align:right; font-size:.7rem; color:var(--muted); line-height:1.7; }
+    .meta b { color:#3f3b4d; }
+    .k { font-size:.56rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+    .para { padding:15px 26px; border-bottom:1px solid var(--line); }
+    .para .n { font-size:.95rem; font-weight:800; margin-top:4px; }
+    .para .c { font-size:.74rem; color:var(--muted); }
+    .hero { margin:16px 26px; border-radius:12px; padding:16px 18px; background:linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22)); }
+    .hero .k { color:var(--tinta); }
+    .hero .v { font-size:1.85rem; font-weight:800; color:var(--hondo); letter-spacing:-.02em; line-height:1.1; margin-top:4px; }
+    .hero .d { font-size:.75rem; color:var(--tinta); margin-top:5px; font-weight:600; }
+    .hero .venc { display:inline-block; background:#FEF0EF; color:var(--rojo); border-radius:20px; padding:2px 9px; font-size:.63rem; font-weight:800; margin-left:6px; }
+    .hero--ok { background:#EAF8F2; }
+    .hero--ok .k, .hero--ok .d, .hero--ok .v { color:var(--verde); }
+    .sec { padding:0 26px; }
+    .sec .k { margin:16px 0 9px; display:block; }
+    .fil { display:flex; align-items:baseline; gap:10px; padding:9px 0; border-top:1px solid #f5f4f8; font-size:.8rem; }
+    .fil:first-of-type { border-top:none; }
+    .fil .n { font-weight:700; width:104px; }
+    .fil .f { color:var(--muted); flex:1; }
+    .fil .m { font-weight:800; }
+    .tag { font-size:.55rem; font-weight:800; border-radius:20px; padding:2px 8px; }
+    .t-ok { background:#EAF8F2; color:var(--verde); }
+    .t-ven { background:#FEF0EF; color:var(--rojo); }
+    .t-pen { background:#f4f4f6; color:#6B7280; }
+    .fil--foco { background:#FBF9FF; border-radius:9px; padding:9px 10px; }
+    .cta { display:block; text-align:center; background:var(--violeta); color:#fff; border-radius:10px; padding:12px; font-size:.84rem; font-weight:800; margin:14px 26px 4px; text-decoration:none; }
+    .foot { padding:14px 26px 20px; border-top:1px solid var(--line); margin-top:16px; color:var(--muted); font-size:.71rem; line-height:1.7; }
+    .foot b { color:#3f3b4d; }
+    @media (max-width:560px) { .head,.para,.sec,.foot { padding-left:18px; padding-right:18px; } .hero,.cta { margin-left:18px; margin-right:18px; } }
+    @media print { body { background:#fff; padding:0; } .toolbar,.cta { display:none !important; } .doc { box-shadow:none; border-radius:0; max-width:none; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="copiar">Copiar liga</button>
+    <button class="btn btn-primary" onclick="window.print()">Descargar PDF</button>
+  </div>
+
+  <div class="doc">
+    <div class="band"></div>
+    <div class="head">
+      <div>
+        <div class="marca">SACSCloud</div>
+        <div class="firma">Estado de cuenta · {q.numero}</div>
+      </div>
+      <div class="meta">
+        {fecha(hoy)}<br />
+        <b>{q.empresa}</b>{q.contacto ? <><br />{q.contacto}</> : null}
+      </div>
+    </div>
+
+    <div class="para">
+      <span class="k">Su compra</span>
+      <div class="n">{money(total)} {q.moneda || 'MXN'}</div>
+      <div class="c">Cotización {q.numero}{q.aceptado_fecha ? ` · aceptada el ${fecha(q.aceptado_fecha)}` : ''}</div>
+    </div>
+
+    <div class={liquidada ? 'hero hero--ok' : 'hero'}>
+      <span class="k">{liquidada ? 'Liquidada' : 'Saldo por pagar'}</span>
+      <div class="v">{money(liquidada ? total : saldo)}</div>
+      <div class="d">
+        {liquidada
+          ? 'No hay nada pendiente. Gracias por su pago.'
+          : <>Lleva {money(abonado)} abonados de {money(total)}
+              {exigible ? <> · toca el {fecha(exigible.fecha)}</> : null}
+              {exigible?.vencida ? <span class="venc">pasó su fecha</span> : null}
+            </>}
+      </div>
+    </div>
+
+    {plan.length > 0 && (
+      <div class="sec">
+        <span class="k">Plan de pagos acordado</span>
+        {plan.map((x) => (
+          <div class={exh === x.numero ? 'fil fil--foco' : 'fil'}>
+            <span class="n">{x.concepto}</span>
+            <span class="f">{fecha(x.fecha)}</span>
+            <span class="m">{money(x.monto_original)}</span>
+            {x.estado === 'pagada'
+              ? <span class="tag t-ok">pagada</span>
+              : x.vencida ? <span class="tag t-ven">pendiente</span> : <span class="tag t-pen">por vencer</span>}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {(pagos || []).length > 0 && (
+      <div class="sec">
+        <span class="k">Pagos recibidos</span>
+        {(pagos || []).map((p: any) => (
+          <div class="fil">
+            <span class="n">{fecha(p.fecha)}</span>
+            <span class="f">{p.metodo || '—'}{p.numero_acuse ? ` · acuse ${p.numero_acuse}` : ''}</span>
+            <span class="m" style="color:#1E8A63">{money(p.monto)}</span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {!liquidada && q.link_pago && <a class="cta" href={q.link_pago} target="_blank" rel="noreferrer">Pagar {money(exigible?.monto || saldo)}</a>}
+
+    <div class="foot">
+      {liquidada
+        ? 'Su cuenta está al corriente. Cualquier duda, respóndanos por este mismo medio.'
+        : 'Los pagos se aplican en el orden de las fechas acordadas. Si necesita mover alguna fecha, escríbanos y lo vemos.'}<br />
+      <b>SACSCloud</b> · www.sacscloud.com
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('copiar')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText(window.location.href);
+    });
+  </script>
+</body>
+</html>

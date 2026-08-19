@@ -16,6 +16,7 @@
 //    la forma más rápida de perder la conversación.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { planDeCotizacion, exhibicionExigible } from '../../../lib/quotes/plan';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -42,8 +43,11 @@ export const GET: APIRoute = async () => {
       .gte('fecha', mes1).lt('fecha', mesFin).neq('estado', 'reembolsado').order('fecha', { ascending: false }),
     // Cobranza NO es solo suscripciones: una cotización aceptada sin pagar —o
     // pagada a medias— es dinero comprometido que nadie está persiguiendo.
-    supabase.from('quotes').select('id, numero, empresa, contacto, email, total, estado, company_id, aceptado_fecha, vigencia, created_at, link_pago, cobranza_estado, cobranza_promesa, cobranza_nota')
-      .in('estado', ['accepted', 'sent']).order('created_at', { ascending: false }),
+    supabase.from('quotes').select('id, numero, empresa, contacto, email, total, estado, company_id, aceptado_fecha, vigencia, created_at, link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, notas')
+      // 'expired' también entra: una cotización que ya recibió un abono no está
+      // vencida —la vigencia caduca el precio, no el cobro— y si se queda fuera
+      // desaparece de la cobranza justo cuando hay algo que cobrar.
+      .in('estado', ['accepted', 'sent', 'expired']).order('created_at', { ascending: false }),
     supabase.from('payments').select('quote_id, monto').not('quote_id', 'is', null).neq('estado', 'reembolsado'),
     // Lo que se fue este mes y por qué: sin el motivo, la baja es un número que
     // no enseña nada.
@@ -134,7 +138,16 @@ export const GET: APIRoute = async () => {
     let saldo = Math.round(num(q.total) - pagado);
     let desde = String(q.aceptado_fecha || q.vigencia || q.created_at).slice(0, 10);
     const co = empresas[q.company_id] || {};
-    const plan = (porCot[q.id] || []).sort((a: any, b: any) => a.numero - b.numero);
+    // Las fechas pactadas viven en el meta de la cotización; las de
+    // cobros_programados son las que se partieron desde aquí. Se leen las dos y
+    // manda la que exista: sin esto, las parcialidades acordadas al cotizar no
+    // aparecían en ninguna proyección.
+    const delMeta = planDeCotizacion(q, pagado, hoy()).map(x => ({
+      id: x.id, numero: x.numero, total: x.total, fecha: x.fecha,
+      monto: x.monto > 0 ? x.monto : x.monto_original, estado: x.estado, link_pago: null,
+    }));
+    const plan = ((porCot[q.id] || []).length ? (porCot[q.id] || []) : delMeta)
+      .slice().sort((a: any, b: any) => a.numero - b.numero);
     let detallePlan = '';
     let exhibicion: any = null;
     if (plan.length) {
@@ -153,7 +166,7 @@ export const GET: APIRoute = async () => {
       id: q.id, tipo: 'cotizacion', company_id: q.company_id || null,
       cliente: co.nombre_comercial || co.nombre || q.empresa || 'Sin cliente ligado',
       cuenta: co.sacs_account || null,
-      plan: `${q.numero} · ${q.estado === 'accepted' ? 'aceptada' : 'enviada'}`,
+      plan: `${q.numero} · ${q.estado === 'accepted' ? 'aceptada' : q.estado === 'expired' ? 'con abonos' : 'enviada'}`,
       ciclo: 'cotizacion', vence: desde, dias: dias(desde),
       deuda: saldo, precio: Math.round(num(q.total)), pagado: Math.round(pagado),
       detalle: detallePlan || (pagado > 0 ? `abonó ${Math.round(pagado).toLocaleString('es-MX')} de ${Math.round(num(q.total)).toLocaleString('es-MX')}` : ''),
@@ -165,6 +178,8 @@ export const GET: APIRoute = async () => {
       exhibicion_id: exhibicion?.id || null,
     };
   }).filter((q: any) => q.deuda > 0 && (q.pagado > 0 || q.plan_pagos.length > 0 || String(q.plan).includes('aceptada')));
+  // Nota: una 'expired' sin abonos ni plan no pasa este filtro — sigue siendo
+  // una propuesta que nadie contestó, no cobranza.
 
   // Parcialidades vivas de los dos mundos, en una sola lista: la anualidad
   // partida y la cotización partida se cobran igual —exhibición por exhibición—
