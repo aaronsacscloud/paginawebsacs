@@ -1,0 +1,368 @@
+---
+/**
+ * SuiteEnsamble — el cierre de la página de giro, en tres actos.
+ *
+ * Sustituye al cierre de foto + botón. Motivo: quien llega hasta abajo ya leyó
+ * once bloques y lo que le falta entender no es QUÉ hace SACS, sino que todo es
+ * UNA SOLA PIEZA — y que esa pieza viene con la forma de su giro. Eso se
+ * explica mal con viñetas y bien con movimiento.
+ *
+ * Los tres actos responden, en orden, las tres objeciones de quien está a punto
+ * de escribir:
+ *   1. "yo ya tengo sistema"  → las cuatro piezas sueltas, girando cada una por
+ *      su lado. Es el retrato de su operación de hoy.
+ *   2. "¿y eso se conecta?"   → las piezas convergen y encajan en un bloque.
+ *   3. "¿pero sirve para MI negocio?" → el bloque baja sobre una base con la
+ *      forma del giro. Ahí, EN el encaje, aparece el llamado.
+ *
+ * El CTA va DENTRO de la animación y no debajo a proposito: el momento de mayor
+ * conviccion dura dos segundos, justo cuando las piezas encajan. Con el boton
+ * tres pantallas mas abajo, ese momento se gasta en el scroll.
+ */
+import { t } from '../../i18n/utils';
+import type { Locale } from '../../i18n/config';
+
+interface Props {
+  /** Nombre del giro, tal como se dice en voz alta. */
+  giro?: string;
+  /** Lo que se le muestra en la sesión, en las palabras del cliente. */
+  suyo?: string;
+  locale?: Locale;
+}
+const {
+  giro = 'tu giro',
+  suyo = 'tus tallas, tus colores, tus sucursales',
+  locale = 'es',
+} = Astro.props;
+
+const WHATSAPP_NUMBER = '5215536634392';
+const MENSAJE_WA = t('whatsapp.message', locale);
+const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MENSAJE_WA)}`;
+---
+
+<section class="ens" id="ensamble">
+  <div class="ens-pin">
+    <canvas id="ensLienzo" aria-hidden="true"></canvas>
+    <div class="ens-velo" aria-hidden="true"></div>
+
+    <!-- Rótulos de las piezas: siguen a cada cubo mientras están sueltos. -->
+    <div class="ens-rotulos" aria-hidden="true">
+      <span class="ens-rot r-pos">Punto de venta</span>
+      <span class="ens-rot r-inv">Inventario</span>
+      <span class="ens-rot r-fid">Fidelización</span>
+      <span class="ens-rot r-giro">Suite de {giro}</span>
+    </div>
+
+    <div class="ens-texto" id="ensT1" aria-hidden="true">
+      <h3>Hoy tu operación vive en <span>pedazos</span>.</h3>
+      <p>La caja por un lado, el inventario en otro, los clientes en una libreta.</p>
+    </div>
+
+    <div class="ens-texto" id="ensT2" aria-hidden="true">
+      <h3>En SACS es <span>una sola pieza</span>.</h3>
+      <p>Lo que vendes descuenta existencia, acumula puntos y alimenta tu reporte. Sin exportar nada.</p>
+    </div>
+
+    <!-- El llamado. Sin aria-hidden: es contenido real y tiene que existir para
+         lectores de pantalla y para el buscador, se anime o no. -->
+    <div class="ens-cta" id="ensCta">
+      <h2>Y viene con la forma de <span>{giro}</span>.</h2>
+      <p>
+        En una sesión de 30 minutos te lo mostramos funcionando con <b>tu propio catálogo</b>:
+        {suyo}. No una demo genérica — la tuya.
+      </p>
+      <div class="ens-botones">
+        <a class="ens-btn ens-btn-demo" href="/contacto">Agenda una demo de 30 min</a>
+        <a class="ens-btn ens-btn-wa" href={enlaceWa} target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3M12 2a10 10 0 00-8.6 15L2 22l5.1-1.3A10 10 0 1012 2z"/></svg>
+          Escríbenos por WhatsApp
+        </a>
+      </div>
+      <p class="ens-pie">Sin compromiso · Te decimos si NO somos para ti</p>
+    </div>
+
+    <p class="ens-pista" id="ensPista" aria-hidden="true">Desliza para armarlo</p>
+  </div>
+</section>
+
+<style>
+  /* Cuatro pantallas de scroll: es lo que necesitan los tres actos sin que
+     ninguno se sienta apurado. */
+  .ens { height: 380vh; position: relative; background: #08080A; }
+  .ens-pin {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #ensLienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* El objeto vive en la mitad ALTA; la baja es del mensaje. Sin este velo el
+     texto se lee encima de los cubos y no se entiende ninguno de los dos. */
+  .ens-velo {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: linear-gradient(180deg, rgba(8,8,10,0) 38%, rgba(8,8,10,.74) 58%, rgba(8,8,10,.97) 76%);
+  }
+
+  .ens-rotulos { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .ens-rot {
+    position: absolute; transform: translate(-50%, -50%);
+    font-size: 12px; font-weight: 700; letter-spacing: .04em;
+    padding: 7px 13px; border-radius: 999px; white-space: nowrap;
+    background: rgba(10,10,14,.85); border: 1px solid; backdrop-filter: blur(6px);
+    opacity: 0; transition: opacity .45s ease;
+  }
+  .ens-rot.on { opacity: 1; }
+  .r-pos { border-color: rgba(75,123,229,.55); color: #8FB2F7; }
+  .r-inv { border-color: rgba(52,211,153,.5); color: #6EE7B7; }
+  .r-fid { border-color: rgba(232,168,56,.5); color: #F0C173; }
+  .r-giro { border-color: rgba(167,139,250,.55); color: #C4B2FC; }
+
+  .ens-texto {
+    position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%); z-index: 2;
+    text-align: center; width: min(760px, 88vw); pointer-events: none;
+    opacity: 0; transition: opacity .5s ease;
+  }
+  .ens-texto.on { opacity: 1; }
+  .ens-texto h3 {
+    font-size: clamp(26px, 4.4vw, 46px); font-weight: 800; letter-spacing: -1.6px;
+    line-height: 1.08; margin: 0 0 12px; color: #fff;
+  }
+  .ens-texto h3 span { color: #4B7BE5; }
+  .ens-texto p { margin: 0; color: #A1A1AA; font-size: clamp(15px, 1.8vw, 18px); }
+
+  .ens-cta {
+    position: absolute; left: 50%; bottom: 7%; transform: translate(-50%, 14px);
+    text-align: center; width: min(780px, 90vw); z-index: 3;
+    opacity: 0; transition: opacity .6s ease, transform .6s cubic-bezier(.16,1,.3,1);
+    pointer-events: none;
+  }
+  .ens-cta.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .ens-cta h2 {
+    font-size: clamp(26px, 4.2vw, 46px); font-weight: 800; letter-spacing: -1.6px;
+    line-height: 1.06; margin: 0 0 14px; color: #fff; text-wrap: balance;
+  }
+  .ens-cta h2 span { color: #4B7BE5; }
+  .ens-cta > p {
+    color: #A1A1AA; font-size: clamp(15px, 1.9vw, 19px); margin: 0 auto 28px;
+    max-width: 60ch; line-height: 1.55;
+  }
+  .ens-cta > p b { color: #E4E4E7; font-weight: 600; }
+
+  .ens-botones { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ens-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    height: 56px; padding: 0 30px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; text-decoration: none;
+    transition: transform .16s ease, background .16s ease;
+  }
+  .ens-btn-demo { background: #4B7BE5; color: #fff; box-shadow: 0 8px 26px rgba(75,123,229,.42); }
+  .ens-btn-demo:hover { background: #3C68CE; transform: translateY(-1px); text-decoration: none; }
+  .ens-btn-wa { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); }
+  .ens-btn-wa:hover { background: rgba(255,255,255,.17); text-decoration: none; }
+  .ens-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .ens-pie { margin: 22px 0 0; font-size: 13px; color: #6A6A76; font-weight: 600; }
+
+  .ens-pista {
+    position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 2;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #45454F;
+    margin: 0; transition: opacity .4s ease;
+  }
+
+  @media (max-width: 760px) {
+    /* Cuatro pantallas de scroll en un telefono se sienten eternas. */
+    .ens { height: 300vh; }
+    .ens-texto { bottom: 11%; }
+    .ens-cta { bottom: 6%; }
+    .ens-btn { width: 100%; }
+    .ens-rot { font-size: 10.5px; padding: 5px 10px; }
+    .ens-pista { display: none; }
+  }
+
+  /* Sin animación el bloque se vuelve un cierre normal: el llamado completo,
+     que es lo único imprescindible. */
+  @media (prefers-reduced-motion: reduce) {
+    .ens { height: auto; }
+    .ens-pin { position: relative; height: auto; padding: 96px 24px; display: block; }
+    #ensLienzo, .ens-velo, .ens-rotulos, .ens-texto, .ens-pista { display: none; }
+    .ens-cta {
+      position: relative; left: auto; bottom: auto; transform: none;
+      opacity: 1; pointer-events: auto; margin: 0 auto; transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { cargarThree, hayWebGL } from '../../lib/three-loader';
+
+  {
+    const bloque = document.getElementById('ensamble');
+    const lienzo = document.getElementById('ensLienzo') as HTMLCanvasElement | null;
+    const cta = document.getElementById('ensCta');
+    const pista = document.getElementById('ensPista');
+    const t1 = document.getElementById('ensT1');
+    const t2 = document.getElementById('ensT2');
+    const rotulos = Array.from(document.querySelectorAll<HTMLElement>('.ens-rot'));
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // El llamado se muestra SIEMPRE si no va a haber animación. Nunca puede
+    // quedar un cierre sin botones por un fallo de WebGL.
+    const soloCta = () => {
+      cta?.classList.add('on');
+      if (lienzo) lienzo.style.display = 'none';
+      if (pista) pista.style.display = 'none';
+    };
+
+    if (!bloque || !lienzo || menos || !hayWebGL()) {
+      soloCta();
+    } else {
+      new IntersectionObserver((es, obs) => {
+        if (!es[0].isIntersecting) return;
+        obs.disconnect();
+        cargarThree().then(arrancar).catch(soloCta);
+      }, { rootMargin: '900px 0px' }).observe(bloque);
+    }
+
+    function arrancar(THREE: any) {
+      const esc = new THREE.Scene();
+      const cam = new THREE.PerspectiveCamera(44, 1, 0.1, 140);
+      cam.position.set(0, 1.6, 16.5);
+      cam.lookAt(0, 0, 0);
+
+      const r = new THREE.WebGLRenderer({ canvas: lienzo!, antialias: true, alpha: true });
+      r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      esc.add(new THREE.AmbientLight(0x1b1e2b, 2.4));
+      const l1 = new THREE.PointLight(0x7FA6F5, 2.2, 90); l1.position.set(-10, 9, 11); esc.add(l1);
+      const l2 = new THREE.PointLight(0xA78BFA, 1.6, 90); l2.position.set(11, -4, 8); esc.add(l2);
+      const l3 = new THREE.PointLight(0xE8A838, 1.1, 80); l3.position.set(0, 10, -8); esc.add(l3);
+
+      // El orden es el de la frase que decimos en voz alta.
+      const MODULOS = [
+        { color: 0x4B7BE5, brillo: 0x0d1a33, lejos: [-4.6, 3.0, 2.2] },
+        { color: 0x34D399, brillo: 0x06301f, lejos: [4.8, 2.6, -1.8] },
+        { color: 0xE8A838, brillo: 0x3a2a08, lejos: [-4.2, -3.2, -2.4] },
+        { color: 0xA78BFA, brillo: 0x241a45, lejos: [4.4, -3.0, 2.0] },
+      ];
+      // Destino: un cubo 2x2 armado. Cada pieza tiene su cuarto.
+      const CERCA = [[-1.03, 1.03, 0], [1.03, 1.03, 0], [-1.03, -1.03, 0], [1.03, -1.03, 0]];
+
+      const grupo = new THREE.Group();
+      const geo = new THREE.BoxGeometry(2, 2, 2);
+      const filosGeo = new THREE.EdgesGeometry(geo);
+
+      const piezas = MODULOS.map((m, i) => {
+        const malla = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+          color: m.color, metalness: 0.5, roughness: 0.3,
+          emissive: m.brillo, emissiveIntensity: 1, transparent: true, opacity: 0.96,
+        }));
+        malla.add(new THREE.LineSegments(
+          filosGeo,
+          new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16 }),
+        ));
+        grupo.add(malla);
+        return { malla, lejos: m.lejos, cerca: CERCA[i], giro: (i + 1) * 0.34 };
+      });
+      esc.add(grupo);
+
+      // La base con la forma del giro: aparece al final y el bloque encaja.
+      const baseGeo = new THREE.BoxGeometry(5.4, 0.5, 5.4);
+      const base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({
+        color: 0x15151c, metalness: 0.7, roughness: 0.4, transparent: true, opacity: 0,
+      }));
+      const baseFilos = new THREE.LineSegments(
+        new THREE.EdgesGeometry(baseGeo),
+        new THREE.LineBasicMaterial({ color: 0x4B7BE5, transparent: true, opacity: 0 }),
+      );
+      base.add(baseFilos);
+      base.position.y = -1.1;
+      esc.add(base);
+
+      const medir = () => {
+        const a = lienzo!.clientWidth || window.innerWidth;
+        const b = lienzo!.clientHeight || window.innerHeight;
+        r.setSize(a, b, false);
+        cam.aspect = a / b;
+        // En pantalla angosta el ancho visible es la mitad: la cámara se aleja
+        // o las piezas sueltas se salen por los lados.
+        cam.position.z = a < 760 ? 23 : 16.5;
+        // En pantalla angosta las piezas sueltas ademas se juntan hacia el
+        // centro: con la dispersion de escritorio se salian por los lados.
+        disperso = a < 760 ? 0.62 : 1;
+        cam.updateProjectionMatrix();
+      };
+      medir();
+      window.addEventListener('resize', medir);
+
+      let disperso = 1;
+      const suave = (t: number) => t * t * (3 - 2 * t);
+      const franja = (p: number, a: number, b: number) => Math.min(1, Math.max(0, (p - a) / (b - a)));
+
+      let visible = true;
+      new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { threshold: 0.02 })
+        .observe(bloque!);
+
+      const avance = () => {
+        const rect = bloque!.getBoundingClientRect();
+        const total = rect.height - window.innerHeight;
+        return total <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / total));
+      };
+
+      const v3 = new THREE.Vector3();
+
+      const dibuja = (t: number) => {
+        requestAnimationFrame(dibuja);
+        if (!visible) return;
+
+        const p = avance();
+        const junta = suave(franja(p, 0.20, 0.62));   // acto 2: se juntan
+        const encaje = suave(franja(p, 0.68, 0.94));  // acto 3: encajan
+
+        piezas.forEach((z) => {
+          const lx = z.lejos[0] * disperso;
+          const ly = z.lejos[1] * disperso;
+          const lz = z.lejos[2] * disperso;
+          v3.set(
+            lx + (z.cerca[0] - lx) * junta,
+            ly + (z.cerca[1] - ly) * junta,
+            lz + (z.cerca[2] - lz) * junta,
+          );
+          v3.y -= encaje * 0.9;
+          z.malla.position.copy(v3);
+          // Cada pieza gira sola mientras está suelta; ya juntas giran como una.
+          const suelto = 1 - junta;
+          z.malla.rotation.x = Math.sin(t * 0.0004 + z.giro) * 0.5 * suelto;
+          z.malla.rotation.y = (t * 0.00022 + z.giro) * suelto;
+        });
+
+        grupo.rotation.y = -0.5 + p * 1.5;
+        grupo.rotation.x = 0.18 - encaje * 0.1;
+        grupo.position.y = 2.4 - junta * 0.15;
+
+        base.material.opacity = encaje * 0.9;
+        (baseFilos.material as any).opacity = encaje * 0.75;
+        base.position.y = -1.1 + encaje * 0.25;
+        base.rotation.y = grupo.rotation.y;
+
+        const mostrarRotulos = p > 0.04 && p < 0.42;
+        piezas.forEach((z, i) => {
+          const rot = rotulos[i];
+          if (!rot) return;
+          rot.classList.toggle('on', mostrarRotulos);
+          if (!mostrarRotulos) return;
+          v3.copy(z.malla.position);
+          v3.applyMatrix4(grupo.matrixWorld);
+          v3.project(cam);
+          rot.style.left = ((v3.x + 1) / 2 * 100) + '%';
+          rot.style.top = ((1 - v3.y) / 2 * 100 - 9) + '%';
+        });
+
+        t1?.classList.toggle('on', p > 0.03 && p < 0.30);
+        t2?.classList.toggle('on', p > 0.42 && p < 0.63);
+        cta?.classList.toggle('on', p > 0.72);
+        if (pista) pista.style.opacity = p > 0.06 ? '0' : '1';
+
+        r.render(esc, cam);
+      };
+      requestAnimationFrame(dibuja);
+    }
+  }
+</script>

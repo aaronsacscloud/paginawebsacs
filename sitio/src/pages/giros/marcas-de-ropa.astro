@@ -17,7 +17,7 @@ import SuiteCubo from '../../components/suite/SuiteCubo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteRack from '../../components/suite/SuiteRack.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
-import SuiteCierre from '../../components/suite/SuiteCierre.astro';
+import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
 import PosMock from '../../components/suite/PosMock.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
 
@@ -108,14 +108,10 @@ const desc =
     secciones={seccionesRopa}
   />
 
-  <!-- ── Cierre propio del giro, no el pie compartido ── -->
-  <SuiteCierre
-    foto="/images/suite-moda-probador.webp"
-    alt="Probador de una boutique con prendas y espejo"
-    titulo="Que tu tienda deje de <span>adivinar</span>."
-    sub="Te enseñamos la matriz de tallas con tu propio catálogo cargado, en 30 minutos. Físico, en línea y WhatsApp, con un solo inventario."
-    encuadre="62% 40%"
-  />
+  <!-- ── Cierre: las cuatro piezas se ensamblan y encajan con el giro ──
+       Sustituye al cierre de foto + boton. Quien llega hasta aqui ya leyo once
+       bloques: lo que le falta entender es que todo es una sola pieza. -->
+  <SuiteEnsamble giro="tu tienda de ropa" suyo="tus tallas, tus colores, tus sucursales" />
 </BaseLayout>
 
 <style>

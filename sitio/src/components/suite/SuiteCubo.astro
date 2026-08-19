@@ -165,39 +165,25 @@
 </style>
 
 <script>
+  import { cargarThree, hayWebGL } from '../../lib/three-loader';
+
   {
     const bloque = document.getElementById('cubo3d');
     const lienzo = document.getElementById('cuboLienzo') as HTMLCanvasElement | null;
     const plano = document.getElementById('cuboPlano');
     const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const hayWebGL = (() => {
-      try {
-        const c = document.createElement('canvas');
-        return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
-      } catch { return false; }
-    })();
-
-    if (bloque && lienzo && hayWebGL && !menos) {
-      // Three.js pesa 590 KB: se pide solo cuando el bloque ya viene en camino.
-      let pedido = false;
-      const cargar = () => {
-        if (pedido) return;
-        pedido = true;
-        const s = document.createElement('script');
-        s.src = '/lib/three.min.js';
-        s.onload = arrancar;
-        s.onerror = () => { /* se queda la matriz plana, que ya esta puesta */ };
-        document.head.appendChild(s);
-      };
-
-      new IntersectionObserver((es) => {
-        if (es[0].isIntersecting) cargar();
+    if (bloque && lienzo && hayWebGL() && !menos) {
+      // Three.js pesa 590 KB: se pide solo cuando el bloque ya viene en camino,
+      // y por el cargador compartido —el ensamble del cierre usa el mismo—
+      // para que no se baje dos veces.
+      new IntersectionObserver((es, obs) => {
+        if (!es[0].isIntersecting) return;
+        obs.disconnect();
+        cargarThree().then(arrancar).catch(() => { /* se queda la matriz plana */ });
       }, { rootMargin: '900px 0px' }).observe(bloque);
 
-      function arrancar() {
-        const THREE = (window as any).THREE;
-        if (!THREE) return;
+      function arrancar(THREE: any) {
         plano?.classList.add('oculto');
 
         const esc = new THREE.Scene();

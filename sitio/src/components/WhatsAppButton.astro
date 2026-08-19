@@ -272,7 +272,9 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
     });
 
     // Auto-hide when showcase featured cards are in view (to avoid covering their CTAs)
-    const watchTargets = document.querySelectorAll('.sq-featured-card');
+    // Tambien en el cierre de las paginas de giro: ahi el llamado ya trae su
+    // propio boton de WhatsApp y la barra flotante le tapaba el pie.
+    const watchTargets = document.querySelectorAll('.sq-featured-card, .ens-cta');
     if (bar && watchTargets.length > 0 && 'IntersectionObserver' in window) {
       const activeCards = new Set<Element>();
       const io = new IntersectionObserver((entries) => {
