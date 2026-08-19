@@ -1,0 +1,220 @@
+---
+/**
+ * SuiteMigracion — el bloqueador real de compra de una cadena.
+ *
+ * A quien tiene ocho tiendas operando no lo detiene si le gusta el producto: lo
+ * detiene "¿como cambio sin parar la operacion y que pasa con mi historico?".
+ * Si la pagina no lo responde, lo pospone — y posponer es el no mas comun.
+ *
+ * Por eso el bloque se dibuja como una SEMANA: cinco dias, y en cada uno la
+ * marca de que la tienda siguio abierta. La forma dice el argumento antes que
+ * el texto. Al final va el seguro de continuidad, que es la otra pregunta que
+ * nadie hace en voz alta: "¿y si se cae el internet un sabado?".
+ *
+ * Los dias son reales: si el cliente ve "1 dia" y tarda tres semanas, la
+ * promesa se vuelve en contra. Preferimos decir semana y media y cumplirla.
+ */
+const dias = [
+  {
+    dia: 'Día 1',
+    titulo: 'Tu catálogo, cargado',
+    detalle: 'Nos das tu archivo —o tu base actual— y lo subimos nosotros con tallas, colores y existencias.',
+  },
+  {
+    dia: 'Día 2',
+    titulo: 'Tu operación, configurada',
+    detalle: 'Sucursales, cajas, usuarios, permisos, impuestos y formas de pago quedan como ya trabajas.',
+  },
+  {
+    dia: 'Día 3',
+    titulo: 'Capacitación',
+    detalle: 'Dos horas con tu equipo. Cobrar se aprende en veinte minutos: hay rotación y el sistema lo asume.',
+  },
+  {
+    dia: 'Día 4',
+    titulo: 'Arranca una tienda',
+    detalle: 'La primera sucursal vende con SACS. El sistema viejo sigue en pie por si acaso.',
+  },
+  {
+    dia: 'Día 5',
+    titulo: 'Arrancan las demás',
+    detalle: 'Con la primera resuelta, las otras entran el mismo día. Tu histórico se conserva y se consulta.',
+  },
+];
+---
+
+<section class="mig">
+  <div class="mig-inner">
+
+    <header class="mig-head">
+      <p class="mig-eyebrow">La pregunta que nadie hace en la demo</p>
+      <h2>Cambiar de sistema <span>sin cerrar la tienda</span>.</h2>
+      <p class="mig-sub">
+        Tienes tiendas operando y no puedes darte el lujo de parar una semana. Así se hace,
+        y lo hacemos nosotros — no te dejamos un manual y suerte.
+      </p>
+    </header>
+
+    <ol class="mig-semana">
+      {dias.map((d) => (
+        <li class="mig-dia">
+          <div class="mig-dia-cab">
+            <span class="mig-num">{d.dia}</span>
+            <span class="mig-abierta">Abierta</span>
+          </div>
+          <h3>{d.titulo}</h3>
+          <p>{d.detalle}</p>
+        </li>
+      ))}
+    </ol>
+
+    <p class="mig-nota">
+      <b>Tu histórico no se tira.</b> Se migra lo que sirve —clientes, productos, existencias— y lo
+      demás queda consultable. Nunca te pedimos empezar de cero, porque nadie con cinco años de
+      ventas puede hacerlo.
+    </p>
+
+    <!-- El seguro de continuidad -->
+    <div class="mig-offline">
+      <div class="mig-offline-txt">
+        <p class="mig-offline-rot">Y el sábado que se cae el internet</p>
+        <h3>La caja no se detiene.</h3>
+        <p>
+          El punto de venta trabaja sin conexión: sigue cobrando, sigue descontando existencia y
+          sigue imprimiendo. Cuando vuelve la señal, todo sube solo y ordenado. Una cadena no
+          puede cerrar por el módem.
+        </p>
+      </div>
+
+      <div class="mig-caja" aria-hidden="true">
+        <div class="mig-caja-barra">
+          <span class="mig-senal">
+            <i></i><i></i><i></i>
+            Sin conexión
+          </span>
+          <span class="mig-caja-hora">14:36</span>
+        </div>
+        <div class="mig-caja-cuerpo">
+          <div class="mig-caja-linea"><b>Blusa satinada · Negro · M</b><span>$899.00</span></div>
+          <div class="mig-caja-linea"><b>Falda plisada · Vino · S</b><span>$1,190.00</span></div>
+          <div class="mig-caja-cobrar">
+            <span>COBRAR</span>
+            <b>$2,089.00</b>
+          </div>
+          <p class="mig-caja-pie">3 ventas guardadas · suben al volver la señal</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .mig { background: #0C0C11; padding: 100px 24px 110px; }
+  .mig-inner { max-width: 1200px; margin: 0 auto; }
+
+  .mig-head { max-width: 720px; margin-bottom: 46px; }
+  .mig-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .mig-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; color: #fff; margin: 0 0 16px;
+  }
+  .mig-head h2 span { color: #4B7BE5; }
+  .mig-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
+
+  /* ── La semana ── */
+  .mig-semana {
+    list-style: none; margin: 0 0 26px; padding: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    border: 1px solid #23232B; border-radius: 16px; overflow: hidden;
+  }
+  .mig-dia {
+    padding: 22px 20px 24px; border-left: 1px solid #1E1E26; background: #101016;
+  }
+  .mig-dia:first-child { border-left: none; }
+  .mig-dia-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+  .mig-num {
+    font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #6A6A76;
+  }
+  /* La marca se repite los cinco dias a proposito: la insistencia ES el mensaje. */
+  .mig-abierta {
+    font-size: 10px; font-weight: 800; letter-spacing: .06em; color: #34D399;
+    border: 1px solid rgba(52,211,153,.35); border-radius: 999px; padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .mig-dia h3 {
+    font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 9px; letter-spacing: -.3px;
+  }
+  .mig-dia p { margin: 0; font-size: 13.5px; line-height: 1.6; color: #9C9CA8; }
+
+  .mig-nota {
+    margin: 0 0 60px; font-size: 15.5px; line-height: 1.65; color: #A1A1AA; max-width: 76ch;
+  }
+  .mig-nota b { color: #E4E4E7; font-weight: 700; }
+
+  /* ── Continuidad ── */
+  .mig-offline {
+    display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center;
+    border-top: 1px solid #1E1E26; padding-top: 56px;
+  }
+  .mig-offline-rot {
+    font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+    color: #E8A838; margin: 0 0 14px;
+  }
+  .mig-offline-txt h3 {
+    font-size: clamp(24px, 3.2vw, 36px); font-weight: 800; color: #fff; margin: 0 0 16px;
+    letter-spacing: -1px; line-height: 1.1;
+  }
+  .mig-offline-txt p { margin: 0; font-size: 16px; line-height: 1.65; color: #A1A1AA; }
+
+  /* Mini caja: la prueba de que sigue cobrando sin señal. */
+  .mig-caja {
+    background: #fff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .mig-caja-barra {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #FEF6E7; border-bottom: 1px solid #F2E3C6; padding: 10px 14px;
+  }
+  .mig-senal {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 11.5px; font-weight: 800; color: #A6702A; letter-spacing: .02em;
+  }
+  .mig-senal i {
+    width: 3px; border-radius: 1px; background: #D9B372; margin-right: 1px;
+  }
+  .mig-senal i:nth-child(1) { height: 6px; }
+  .mig-senal i:nth-child(2) { height: 9px; }
+  .mig-senal i:nth-child(3) { height: 12px; background: #EADCC0; margin-right: 7px; }
+  .mig-caja-hora { font-size: 11.5px; font-weight: 700; color: #A6702A; font-variant-numeric: tabular-nums; }
+
+  .mig-caja-cuerpo { padding: 16px 16px 18px; }
+  .mig-caja-linea {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid #F1F5F9;
+  }
+  .mig-caja-linea b { font-size: 13px; font-weight: 600; color: #0F172A; }
+  .mig-caja-linea span { font-size: 13px; font-weight: 700; color: #0F172A; font-variant-numeric: tabular-nums; }
+  .mig-caja-cobrar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #2563EB; border-radius: 11px; padding: 14px 16px; margin-top: 14px; color: #fff;
+  }
+  .mig-caja-cobrar span { font-size: 14px; font-weight: 800; letter-spacing: .04em; }
+  .mig-caja-cobrar b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mig-caja-pie { margin: 12px 0 0; font-size: 11.5px; color: #94A3B8; font-weight: 600; text-align: center; }
+
+  @media (max-width: 900px) {
+    .mig { padding: 70px 18px 78px; }
+    /* Los cinco dias se apilan. La marca de "Abierta" sigue en cada uno, que es
+       lo unico que no puede perderse al cambiar de forma. */
+    .mig-semana { grid-template-columns: 1fr; }
+    .mig-dia { border-left: none; border-top: 1px solid #1E1E26; }
+    .mig-dia:first-child { border-top: none; }
+    .mig-nota { margin-bottom: 44px; }
+    .mig-offline { grid-template-columns: 1fr; gap: 32px; padding-top: 40px; }
+  }
+</style>

@@ -16,6 +16,8 @@ import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteCubo from '../../components/suite/SuiteCubo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
+import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
 import SuiteRack from '../../components/suite/SuiteRack.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
@@ -111,6 +113,12 @@ const desc =
     intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de ropa real: tallas que se agotan, colores que nadie compra y prendas paradas de la temporada pasada. Y todo funciona igual en el mostrador que en tu tienda en línea, porque es el mismo inventario."
     secciones={seccionesRopa}
   />
+
+  <!-- ── Lo que ve el dueño: comparativo de sucursales y candados ── -->
+  <SuiteDireccion />
+
+  <!-- ── El bloqueador real: como se cambia sin parar ── -->
+  <SuiteMigracion />
 
   <!-- ── Cierre: las cuatro piezas se ensamblan y encajan con el giro ──
        Sustituye al cierre de foto + boton. Quien llega hasta aqui ya leyo once

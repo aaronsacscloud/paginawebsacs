@@ -1,0 +1,239 @@
+---
+/**
+ * SuiteDireccion — el bloque para quien firma, no para quien cobra.
+ *
+ * Toda la pagina hasta aqui esta contada desde el mostrador: la vendedora, la
+ * clienta, el cambio de talla. Eso conecta, pero el dueño de una cadena no
+ * opera la caja. Sus preguntas son otras dos y ninguna estaba respondida:
+ * "¿que pasa en mis ocho tiendas si no estoy?" y "¿por donde se me va el
+ * dinero?".
+ *
+ * Por eso el bloque tiene dos mitades y en ese orden: primero el comparativo
+ * —que es lo que se mira— y despues los candados —que es lo que se teme—. La
+ * fuga en retail de moda no es el robo espectacular: son descuentos que se dan
+ * solos, cancelaciones despues del cobro y cortes que no cuadran.
+ *
+ * El tablero se dibuja en HTML y no es una captura: la sucursal con problema
+ * tiene que leerse en rojo de un vistazo, y una imagen de 900 px se ve borrosa
+ * y envejece con cada cambio del producto.
+ */
+interface Sucursal {
+  nombre: string;
+  venta: string;
+  /** Ancho de la barra, 0-100. Es proporcion de venta, no un adorno. */
+  barra: number;
+  ticket: string;
+  margen: string;
+  delta: string;
+  /** true = la que se esta cayendo. Solo una, si no el tablero pierde foco. */
+  alerta?: boolean;
+}
+
+const sucursales: Sucursal[] = [
+  { nombre: 'Polanco', venta: '$521,400', barra: 100, ticket: '$2,050', margen: '58%', delta: '+9%' },
+  { nombre: 'Centro', venta: '$412,800', barra: 79, ticket: '$1,340', margen: '54%', delta: '+4%' },
+  { nombre: 'Satélite', venta: '$386,200', barra: 74, ticket: '$1,180', margen: '51%', delta: '+1%' },
+  { nombre: 'León', venta: '$198,600', barra: 38, ticket: '$890', margen: '43%', delta: '−12%', alerta: true },
+];
+
+const candados = [
+  {
+    titulo: 'Descuentos con dueño',
+    regla: 'Arriba de 15% pide autorización',
+    detalle: 'La vendedora no decide sola cuánto regalar. El permiso llega a tu teléfono y queda con nombre, hora y motivo.',
+  },
+  {
+    titulo: 'Cancelaciones firmadas',
+    regla: 'Después del cobro, siempre firmada',
+    detalle: 'Cancelar una venta ya cobrada deja rastro: quién, cuándo y por qué. Es la fuga más común y la más silenciosa.',
+  },
+  {
+    titulo: 'El corte no perdona',
+    regla: 'Si no cuadra, no cierra',
+    detalle: 'El faltante se registra a nombre de quien cerró la caja, y tú lo ves el mismo día, no a fin de mes.',
+  },
+];
+---
+
+<section class="dir">
+  <div class="dir-inner">
+
+    <header class="dir-head">
+      <p class="dir-eyebrow">Para quien firma</p>
+      <h2>Lo que ves tú, <span>aunque no estés</span>.</h2>
+      <p class="dir-sub">
+        Tus ocho tiendas abren sin ti. La pregunta no es si venden — es cuál se está cayendo,
+        cuál se está comiendo el inventario de las otras y por dónde se te va el dinero.
+      </p>
+    </header>
+
+    <!-- Comparativo: lo que se mira -->
+    <div class="dir-tablero">
+      <div class="dir-tablero-cab">
+        <span>Comparativo de sucursales</span>
+        <span class="dir-per">Este mes · al corte de ayer</span>
+      </div>
+
+      <div class="dir-cols">
+        <span class="dir-col-suc">Sucursal</span>
+        <span>Venta</span>
+        <span>Ticket prom.</span>
+        <span>Margen</span>
+        <span>vs. mes ant.</span>
+      </div>
+
+      {sucursales.map((s) => (
+        <div class:list={['dir-reng', { mal: s.alerta }]}>
+          <span class="dir-suc">
+            <b>{s.nombre}</b>
+            <i style={`width:${s.barra}%`}></i>
+          </span>
+          <span class="dir-cifra" data-col="Venta">{s.venta}</span>
+          <span class="dir-cifra dir-suave" data-col="Ticket prom.">{s.ticket}</span>
+          <span class="dir-cifra dir-suave" data-col="Margen">{s.margen}</span>
+          <span class:list={['dir-delta', s.alerta ? 'baja' : 'sube']} data-col="vs. mes ant.">{s.delta}</span>
+        </div>
+      ))}
+
+      <div class="dir-aviso">
+        <span class="dir-aviso-pin"></span>
+        <p>
+          <b>León lleva tres semanas cayendo.</b> Vendió 12% menos y su margen bajó 6 puntos:
+          está saliendo demasiada prenda con descuento. Lo ves hoy, no en el reporte de fin de mes.
+        </p>
+      </div>
+    </div>
+
+    <!-- Candados: lo que se teme -->
+    <div class="dir-fuga">
+      <h3>Por dónde se va el dinero cuando no estás</h3>
+      <div class="dir-candados">
+        {candados.map((c) => (
+          <article class="dir-candado">
+            <div class="dir-candado-cab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+                <path d="M8 10V7a4 4 0 018 0v3"></path>
+              </svg>
+              <b>{c.titulo}</b>
+            </div>
+            <p class="dir-regla">{c.regla}</p>
+            <p class="dir-detalle">{c.detalle}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .dir { background: #0A0A0B; padding: 100px 24px 110px; }
+  .dir-inner { max-width: 1200px; margin: 0 auto; }
+
+  .dir-head { max-width: 740px; margin-bottom: 46px; }
+  .dir-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .dir-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; color: #fff; margin: 0 0 16px;
+  }
+  .dir-head h2 span { color: #4B7BE5; }
+  .dir-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
+
+  /* ── Tablero ── */
+  .dir-tablero {
+    border: 1px solid #23232B; border-radius: 18px; padding: 24px 26px 26px;
+    background: #101015; margin-bottom: 56px;
+  }
+  .dir-tablero-cab {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    flex-wrap: wrap; margin-bottom: 22px;
+  }
+  .dir-tablero-cab span:first-child { font-size: 16px; font-weight: 700; color: #fff; }
+  .dir-per { font-size: 12.5px; color: #6A6A76; font-weight: 600; }
+
+  .dir-cols, .dir-reng {
+    display: grid; grid-template-columns: 2.2fr 1fr 1fr .8fr .9fr; gap: 16px; align-items: center;
+  }
+  .dir-cols {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #5F5F6B; padding-bottom: 12px; border-bottom: 1px solid #1F1F27;
+  }
+  .dir-cols span:not(.dir-col-suc) { text-align: right; }
+
+  .dir-reng { padding: 16px 0; border-bottom: 1px solid #17171E; }
+  .dir-suc { display: block; }
+  .dir-suc b { display: block; font-size: 15.5px; font-weight: 600; color: #E4E4E7; margin-bottom: 8px; }
+  /* La barra es la venta: se compara de un vistazo sin leer las cifras. */
+  .dir-suc i {
+    display: block; height: 5px; border-radius: 3px; background: #2F4F8F; max-width: 100%;
+  }
+  .dir-reng.mal .dir-suc i { background: #7A3B3B; }
+  .dir-reng.mal .dir-suc b { color: #F0A9A9; }
+
+  .dir-cifra {
+    text-align: right; font-size: 15px; font-weight: 700; color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .dir-suave { color: #9C9CA8; font-weight: 600; font-size: 14px; }
+  .dir-delta {
+    text-align: right; font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .dir-delta.sube { color: #34D399; }
+  .dir-delta.baja { color: #F87171; }
+
+  .dir-aviso {
+    display: flex; gap: 13px; align-items: flex-start; margin-top: 22px;
+    border: 1px solid #3A2226; background: rgba(248,113,113,.06);
+    border-radius: 12px; padding: 15px 17px;
+  }
+  .dir-aviso-pin {
+    width: 9px; height: 9px; border-radius: 50%; background: #F87171; flex-shrink: 0; margin-top: 6px;
+  }
+  .dir-aviso p { margin: 0; font-size: 14.5px; line-height: 1.6; color: #A1A1AA; }
+  .dir-aviso b { color: #F0A9A9; font-weight: 700; }
+
+  /* ── Candados ── */
+  .dir-fuga h3 {
+    font-size: clamp(20px, 2.6vw, 27px); font-weight: 700; color: #fff; margin: 0 0 26px;
+    letter-spacing: -.6px;
+  }
+  .dir-candados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .dir-candado {
+    border: 1px solid #23232B; border-radius: 16px; padding: 22px; background: #101015;
+  }
+  .dir-candado-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .dir-candado-cab svg { width: 20px; height: 20px; color: #60A5FA; flex-shrink: 0; }
+  .dir-candado-cab b { font-size: 15.5px; font-weight: 700; color: #fff; }
+  .dir-regla {
+    margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #A8C4FA;
+    border-left: 2px solid rgba(75,123,229,.5); padding-left: 11px;
+  }
+  .dir-detalle { margin: 0; font-size: 14.5px; line-height: 1.6; color: #9C9CA8; }
+
+  @media (max-width: 900px) {
+    .dir { padding: 70px 18px 78px; }
+    .dir-tablero { padding: 18px 16px 20px; }
+    .dir-candados { grid-template-columns: 1fr; gap: 14px; }
+
+    /* El comparativo deja de ser rejilla: cada sucursal es una ficha con sus
+       cifras etiquetadas. Cinco columnas en un teléfono no se leen. */
+    .dir-cols { display: none; }
+    .dir-reng {
+      display: block; padding: 16px 0;
+    }
+    .dir-suc b { font-size: 16px; }
+    .dir-cifra, .dir-delta {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      text-align: right; padding: 6px 0; font-size: 14px;
+    }
+    .dir-cifra::before, .dir-delta::before {
+      content: attr(data-col);
+      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: #5F5F6B;
+    }
+  }
+</style>
