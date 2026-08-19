@@ -31,7 +31,7 @@ export const GET: APIRoute = async () => {
   // topa en el primer día del mes siguiente.
   const [aa, mm] = mes1.split('-').map(Number);
   const mesFin = new Date(Date.UTC(aa, mm, 1)).toISOString().slice(0, 10);
-  const [subsQ, compQ, cobrosQ, pagosQ, cotsQ, abonosQ, cancelQ] = await Promise.all([
+  const [subsQ, compQ, cobrosQ, pagosQ, cotsQ, abonosQ] = await Promise.all([
     supabase.from('subscriptions')
       .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
       .in('estado', ['activa', 'pendiente_pago']),
@@ -49,10 +49,6 @@ export const GET: APIRoute = async () => {
       // desaparece de la cobranza justo cuando hay algo que cobrar.
       .in('estado', ['accepted', 'sent', 'expired']).order('created_at', { ascending: false }),
     supabase.from('payments').select('quote_id, monto').not('quote_id', 'is', null).neq('estado', 'reembolsado'),
-    // Lo que se fue este mes y por qué: sin el motivo, la baja es un número que
-    // no enseña nada.
-    supabase.from('subscriptions').select('id, company_id, nombre_plan, ciclo, precio, arr, mrr, razon_cancelacion, cancelada_at')
-      .eq('estado', 'cancelada').gte('cancelada_at', mes1).lt('cancelada_at', mesFin),
   ]);
 
   const empresas = Object.fromEntries((compQ.data || []).map((c: any) => [c.id, c]));
@@ -122,7 +118,10 @@ export const GET: APIRoute = async () => {
 
   const vencidas = filas.filter((f: any) => f.dias > 0 && f.deuda > 0);
   const porVencer = filas.filter((f: any) => f.dias <= 0 && f.dias >= -30 && f.deuda > 0);
-  const tramo = (a: number, b: number) => vencidas.filter((f: any) => f.dias >= a && f.dias <= b);
+  // Los tramos miran todo lo vencido —suscripciones y parcialidades—, que es
+  // justo lo que el filtro de la pantalla necesita.
+  let tramoBase: any[] = [];
+  const tramo = (a: number, b: number) => tramoBase.filter((f: any) => f.dias >= a && f.dias <= b);
   const suma = (a: any[]) => Math.round(a.reduce((x: number, f: any) => x + f.deuda, 0));
 
   const recuperado = (pagosQ.data || []).reduce((a: number, p: any) => a + num(p.monto), 0);
@@ -208,28 +207,24 @@ export const GET: APIRoute = async () => {
     };
   });
 
-  // ── Bajas del mes ─────────────────────────────────────────────────────────
-  const canceladas = (cancelQ.data || []).map((s: any) => {
-    const co = empresas[s.company_id] || {};
-    return {
-      id: s.id, company_id: s.company_id,
-      cliente: co.nombre_comercial || co.nombre || 'Cuenta',
-      plan: s.nombre_plan, ciclo: s.ciclo,
-      fecha: String(s.cancelada_at || '').slice(0, 10),
-      arr: Math.round(num(s.arr) || (s.ciclo === 'mensual' ? num(s.mrr) * 12 : num(s.precio))),
-      motivo: String(s.razon_cancelacion || '').trim() || 'sin motivo registrado',
-    };
-  }).sort((a: any, b: any) => String(b.fecha).localeCompare(String(a.fecha)));
-  const porMotivo: Record<string, { motivo: string; n: number; arr: number }> = {};
-  canceladas.forEach((c: any) => {
-    const k = c.motivo.toLowerCase().slice(0, 60);
-    porMotivo[k] = porMotivo[k] || { motivo: c.motivo, n: 0, arr: 0 };
-    porMotivo[k].n++; porMotivo[k].arr += c.arr;
-  });
+  // ── Lo vencido, junto ──
+  // Suscripciones y parcialidades de cotización son el mismo dinero atrasado y
+  // se cobran el mismo día: separarlas obligaba a sumar de cabeza.
+  const vencidoTodo = [...vencidas, ...cotizaciones.filter((c: any) => c.dias > 0)];
+  // ── Lo que cae en lo que resta del mes ──
+  // Todavía no vence: es la lista de a quién cobrarle ANTES de que se atrase,
+  // que es lo más barato que hay en cobranza.
+  const venceMesSubs = filas.filter((f: any) => f.dias <= 0 && f.vence && String(f.vence) < mesFin && f.deuda > 0);
+  const venceMesCots = cotizaciones.filter((c: any) => c.dias <= 0 && c.vence && String(c.vence) < mesFin);
+  const venceMes = [...venceMesSubs, ...venceMesCots].sort((a: any, b: any) => String(a.vence).localeCompare(String(b.vence)));
 
+  tramoBase = vencidoTodo;
   return json({
     kpis: {
       por_cobrar: suma(vencidas), cuentas: vencidas.length,
+      vencido: suma(vencidoTodo), vencido_n: vencidoTodo.length,
+      vence_mes: suma(venceMes), vence_mes_n: venceMes.length,
+      vence_mes_parcialidades: venceMesCots.length,
       atraso_prom: vencidas.length ? Math.round(vencidas.reduce((a: number, f: any) => a + f.dias, 0) / vencidas.length) : 0,
       atraso_max: vencidas.length ? Math.max(...vencidas.map((f: any) => f.dias)) : 0,
       en_parcialidades: Math.round(conPlan.reduce((a: number, f: any) => a + f.plan_pagos.filter((x: any) => x.estado === 'pendiente').reduce((y: number, x: any) => y + x.monto, 0), 0)),
@@ -242,8 +237,6 @@ export const GET: APIRoute = async () => {
       promesas: [...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa').length,
       promesas_monto: suma([...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa')),
       cotizaciones: suma(cotizaciones), cotizaciones_n: cotizaciones.length,
-      canceladas: canceladas.length,
-      canceladas_arr: canceladas.reduce((a: number, c: any) => a + c.arr, 0),
       mes: hoy().slice(0, 7),
     },
     // De lo más fresco a lo más viejo: se lee como una línea de tiempo, y lo que
@@ -258,6 +251,8 @@ export const GET: APIRoute = async () => {
     anuales: vencidas.filter((f: any) => f.ciclo === 'anual').sort((a: any, b: any) => b.dias - a.dias),
     mensuales: vencidas.filter((f: any) => f.ciclo === 'mensual').sort((a: any, b: any) => b.dias - a.dias),
     por_vencer: porVencer.sort((a: any, b: any) => a.dias - b.dias),
+    vencido: vencidoTodo.sort((a: any, b: any) => b.dias - a.dias),
+    vence_mes: venceMes,
     con_plan: conPlan,
     abonos_sueltos: sinPlan,
     cotizaciones: cotizaciones.sort((a: any, b: any) => b.dias - a.dias),
@@ -266,8 +261,6 @@ export const GET: APIRoute = async () => {
     promesas: [...vencidas, ...cotizaciones].filter((f: any) => f.gestion === 'promesa')
       .sort((a: any, b: any) => String(a.promesa || '').localeCompare(String(b.promesa || ''))),
     recuperado_detalle,
-    canceladas,
-    canceladas_motivos: Object.values(porMotivo).sort((a: any, b: any) => b.arr - a.arr),
   });
 };
 

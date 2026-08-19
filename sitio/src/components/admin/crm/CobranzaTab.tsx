@@ -64,8 +64,12 @@ export default function CobranzaTab() {
   const [gestion, setGestion] = useState<any>(null);
   const [partir, setPartir] = useState<any>(null);
   const [cancelar, setCancelar] = useState<any>(null);
-  const [panel, setPanel] = useState<'' | 'recuperado' | 'bajas'>('');
-  const [tramo, setTramo] = useState<any>(null);
+  const [panel, setPanel] = useState<'' | 'recuperado'>('');
+  // Los tramos de atraso dejaron de ser cuatro cajas fijas y son un filtro: la
+  // pantalla arranca con la tabla a la vista y el dato sigue estando, a un clic.
+  const [tramoSel, setTramoSel] = useState<any>(null);
+  const [menuTramo, setMenuTramo] = useState(false);
+  const [busca, setBusca] = useState('');
   const [cliente, setCliente] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
 
@@ -85,15 +89,25 @@ export default function CobranzaTab() {
   // adorno: "anualidades" y "recurrencia" se cobran distinto y la frase es lo
   // que evita tratarlas igual.
   const VISTAS: { id: string; label: string; filas: any[]; nota: string }[] = [
-    { id: 'todas', label: 'Todas', filas: todas, nota: 'Todo lo vencido, de lo más viejo a lo más nuevo. Lo viejo es lo que menos se cobra solo.' },
+    { id: 'todas', label: 'Todas', filas: d.vencido || todas, nota: 'Todo lo vencido —suscripciones y parcialidades—, de lo más viejo a lo más nuevo. Lo viejo es lo que menos se cobra solo.' },
     { id: 'anualidades', label: 'Anualidades', filas: d.anuales, nota: 'Un solo cobro grande al año. Si el cliente no puede de golpe, se parte en exhibiciones desde aquí.' },
     { id: 'recurrencia', label: 'Recurrencia', filas: d.mensuales, nota: 'Aquí la deuda se acumula mes con mes: lo que importa no es el precio del plan, es cuántos meses lleva sin pagar.' },
-    { id: 'cotizaciones', label: 'Cotizaciones', filas: cots, nota: 'Aceptadas sin pagar o pagadas a medias. Ya dijeron que sí: es cobranza, no pipeline.' },
-    { id: 'parcialidades', label: 'En parcialidades', filas: [...(d.con_plan || []), ...(d.abonos_sueltos || [])], nota: 'Anualidades y cotizaciones que se están cobrando de a poco. Con plan, cada exhibición vence sola y se cobra sola; las que llevan abonos sin fechas acordadas se pueden formalizar con “Partir en pagos”.' },
-    { id: 'promesas', label: 'Promesas', filas: promesas, nota: 'Se comprometieron a una fecha. El día que llega, la cuenta vuelve a subir en la lista.' },
-    { id: 'porvencer', label: 'Por vencer', filas: d.por_vencer, nota: 'Todavía no deben nada. Cobrar antes del vencimiento es lo más barato que existe.' },
+    // Cotizaciones y parcialidades eran la misma lista: las cotizaciones que se
+    // cobran aquí son justo las que van en exhibiciones.
+    { id: 'parcialidades', label: 'En parcialidades', filas: [...(d.con_plan || []), ...(d.abonos_sueltos || [])], nota: 'Anualidades y cotizaciones que se cobran de a poco. Con plan, cada exhibición vence sola y se cobra sola; las que llevan abonos sin fechas acordadas se pueden formalizar con “Partir en pagos”.' },
+    { id: 'promesas', label: 'Promesas', filas: promesas, nota: 'No es un plan pactado: es alguien que ya se atrasó y se comprometió a una fecha. El día que llega, vuelve a subir en la lista.' },
+    { id: 'porvencer', label: 'Por vencer', filas: d.vence_mes || d.por_vencer, nota: 'Todavía no deben nada y vencen antes de fin de mes. Cobrar antes del vencimiento es lo más barato que existe.' },
   ];
   const activa = VISTAS.find(v => v.id === vista) || VISTAS[0];
+
+  // El filtro de atraso y el buscador se aplican sobre la vista activa.
+  const filtra = (fs: any[]) => fs.filter((f: any) => {
+    if (tramoSel && !(f.dias >= tramoSel.a && f.dias <= tramoSel.b)) return false;
+    if (!busca.trim()) return true;
+    const t = busca.toLowerCase();
+    return [f.cliente, f.cuenta, f.plan, f.detalle].some((x: any) => String(x || '').toLowerCase().includes(t));
+  });
+  const filas = filtra(activa.filas);
 
   const Fila = ({ f }: any) => {
     const g = GESTION[f.gestion] || GESTION.sin_contactar;
@@ -206,9 +220,9 @@ export default function CobranzaTab() {
     </div>
   );
 
-  const Kpi = ({ label, valor, color, sub, onClick }: any) => (
+  const Kpi = ({ label, valor, color, sub, onClick, franja }: any) => (
     <div onClick={onClick}
-      style={{ ...S.card, marginBottom: 0, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
+      style={{ ...S.card, marginBottom: 0, borderLeft: `3px solid ${franja || '#ddd'}`, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
       onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.08)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
       <div style={S.kl}>{label}</div>
@@ -220,12 +234,10 @@ export default function CobranzaTab() {
   return (
     <div style={S.wrap}>
       <style>{`
-        .cob-6 { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:11px; }
-        .cob-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
-        @media (max-width: 1250px) { .cob-6 { grid-template-columns:repeat(3, minmax(0,1fr)); } }
-        @media (max-width: 1100px) { .cob-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-        @media (max-width: 780px)  { .cob-6 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-        @media (max-width: 620px)  { .cob-6, .cob-4 { grid-template-columns:1fr; } }
+        .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:11px; }
+        @media (max-width: 1250px) { .cob-5 { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+        @media (max-width: 780px)  { .cob-5 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 620px)  { .cob-5 { grid-template-columns:1fr; } }
       `}</style>
 
       <div style={{ marginBottom: 14 }}>
@@ -239,43 +251,57 @@ export default function CobranzaTab() {
 
       {/* Las tarjetas del MES se abren: un número que nadie puede desarmar es un
           número que hay que creer. */}
-      <div className="cob-6" style={{ marginBottom: 14 }}>
-        <Kpi label="Por cobrar hoy" valor={money(k.por_cobrar)} color="#C0554E"
-          sub={`${k.cuentas} suscripciones vencidas`} onClick={() => setVista('todas')} />
-        <Kpi label="Cotizaciones por cobrar" valor={money(k.cotizaciones)} color="#2C5FC4"
-          sub={`${k.cotizaciones_n} aceptadas o a medias`} onClick={() => setVista('cotizaciones')} />
-        <Kpi label="En parcialidades" valor={money(k.en_parcialidades)} color="#5B4BD6"
-          sub={`${k.planes} planes · ${k.exhibiciones_pendientes} pagos${k.abonos_sueltos ? ` · ${k.abonos_sueltos} con abonos sin plan` : ''}`}
-          onClick={() => setVista('parcialidades')} />
-        <Kpi label="Cobrado este mes" valor={money(k.recuperado)} color="#1E8A63"
+      {/* Cinco tarjetas con el patrón de Cotizaciones: barra de color, rótulo,
+          número y una línea que explica. "Bajas del mes" se fue al tablero de
+          ARR —una baja no se cobra, es churn— y su lugar lo toma lo que vence
+          antes de fin de mes, que es lo único accionable que faltaba. */}
+      <div className="cob-5" style={{ marginBottom: 14 }}>
+        <Kpi label="Vencido" valor={money(k.vencido)} color="#C0554E" franja="#EF7A72"
+          sub={`${k.vencido_n} cobro${k.vencido_n === 1 ? '' : 's'}${k.atraso_max ? ` · el más viejo, ${k.atraso_max} días` : ''}`}
+          onClick={() => { setVista('todas'); setTramoSel(null); }} />
+        <Kpi label="Vence este mes" valor={money(k.vence_mes)} color="#1a1a1a" franja="#E8A838"
+          sub={`${k.vence_mes_n} cobro${k.vence_mes_n === 1 ? '' : 's'}${k.vence_mes_parcialidades ? ` · ${k.vence_mes_parcialidades} de parcialidades` : ' · sin parcialidades'}`}
+          onClick={() => setVista('porvencer')} />
+        <Kpi label="Cobrado este mes" valor={money(k.recuperado)} color="#1E8A63" franja="#4FBF95"
           sub={`${(d.recuperado_detalle || []).length} pagos desde el día 1`} onClick={() => setPanel('recuperado')} />
-        <Kpi label="Promesas de pago" valor={k.promesas} color="#9a6a10"
+        <Kpi label="En parcialidades" valor={money(k.en_parcialidades)} color="#5B4BD6" franja="#9B8CFA"
+          sub={`${k.planes} plan${k.planes === 1 ? '' : 'es'} · ${k.exhibiciones_pendientes} pago${k.exhibiciones_pendientes === 1 ? '' : 's'}${k.abonos_sueltos ? ` · ${k.abonos_sueltos} sin fechas` : ''}`}
+          onClick={() => setVista('parcialidades')} />
+        <Kpi label="Promesas de pago" valor={k.promesas} color="#9a6a10" franja="#9B8CFA"
           sub={`${money(k.promesas_monto)} comprometidos`} onClick={() => setVista('promesas')} />
-        <Kpi label="Bajas del mes" valor={k.canceladas} color={k.canceladas ? '#C0554E' : '#1a1a1a'}
-          sub={k.canceladas ? `${money(k.canceladas_arr)} de ARR perdido` : 'ninguna, por ahora'}
-          onClick={k.canceladas ? () => setPanel('bajas') : undefined} />
       </div>
 
-      {/* Los tramos son el lenguaje de la cobranza: a 7 días se cobra con un
-          recordatorio; a 90 ya es una negociación. */}
-      <div className="cob-4" style={{ marginBottom: 14 }}>
-        {d.tramos.map((t: any) => {
-          // El color sale del tramo, no de su posición: si mañana se reordenan,
-          // el rojo tiene que seguir siendo el de +90 días.
-          const col = t.a >= 91 ? ['#FEF0EF', '#f7c9c5', '#C0554E']
-            : t.a >= 31 ? ['#fff6f5', '#f7d9d6', '#C0554E']
-              : t.a >= 8 ? ['#FEF6E7', '#f5e2b8', '#9a6a10'] : ['#EEECFE', '#ddd6fb', '#5B4BD6'];
-          return (
-            <div key={t.k} onClick={() => t.n > 0 && setTramo(t)}
-              style={{ background: col[0], border: `1px solid ${col[1]}`, borderRadius: 10, padding: '10px 13px', cursor: t.n > 0 ? 'pointer' : 'default' }}>
-              <div style={{ fontSize: '0.58rem', fontWeight: 800, color: col[2], textTransform: 'uppercase', letterSpacing: '.06em' }}>{t.k}</div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: col[2], marginTop: 3 }}>{money(t.monto)}</div>
-              <div style={{ fontSize: '0.64rem', color: col[2], marginTop: 1 }}>
-                {t.n} {t.n === 1 ? 'cuenta' : 'cuentas'}{t.n > 0 ? ' · ver' : ''}
-              </div>
+      {/* Buscador y filtros, como en Cotizaciones. Los tramos de atraso viven
+          aquí adentro: cuatro cajas de colores fijas empujaban la tabla fuera
+          de la pantalla y el dato se consulta, no se mira todo el día. */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente, cuenta o concepto…"
+          style={{ ...S.fi, flex: '1 1 300px', maxWidth: 420, height: 36 }} />
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setMenuTramo(v => !v)}
+            style={{ ...S.mini, height: 36, padding: '0 14px', fontSize: '0.8rem',
+              background: tramoSel ? '#EEECFE' : '#fff', color: tramoSel ? '#5B4BD6' : '#555', borderColor: tramoSel ? '#ddd6fb' : '#e2e4e9' }}>
+            Atraso{tramoSel ? `: ${tramoSel.k}` : ''} ▾
+          </button>
+          {menuTramo && (
+            <div style={{ position: 'absolute', left: 0, top: 42, background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, width: 250, zIndex: 40 }}>
+              <button onClick={() => { setTramoSel(null); setMenuTramo(false); }}
+                style={{ ...S.mini, width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: 4, border: 'none', background: tramoSel ? 'transparent' : '#EEECFE', color: tramoSel ? '#444' : '#5B4BD6' }}>
+                <span>Todos</span><span style={{ color: '#999' }}>{money(k.vencido)} · {k.vencido_n}</span>
+              </button>
+              {d.tramos.map((t: any) => (
+                <button key={t.k} onClick={() => { setTramoSel(t); setVista('todas'); setMenuTramo(false); }}
+                  style={{ ...S.mini, width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: 4, border: 'none',
+                    background: tramoSel?.k === t.k ? '#EEECFE' : 'transparent', color: tramoSel?.k === t.k ? '#5B4BD6' : '#444' }}>
+                  <span>{t.k}</span><span style={{ color: '#999' }}>{money(t.monto)} · {t.n}</span>
+                </button>
+              ))}
             </div>
-          );
-        })}
+          )}
+        </div>
+        {tramoSel && (
+          <button onClick={() => setTramoSel(null)} style={{ ...S.mini, height: 36, padding: '0 12px', fontSize: '0.76rem', color: '#8a8a92' }}>Quitar filtro ✕</button>
+        )}
       </div>
 
       {/* Pestañas al estilo de Cotizaciones: la activa se marca con fondo, no
@@ -304,46 +330,12 @@ export default function CobranzaTab() {
       </div>
 
       <div style={S.card}>
-        <div style={S.h}>{activa.label}<span style={S.hr}>{money(activa.filas.reduce((a: number, f: any) => a + Number(f.deuda || 0), 0))} en {activa.filas.length}</span></div>
+        <div style={S.h}>{activa.label}<span style={S.hr}>{money(filas.reduce((a: number, f: any) => a + Number(f.deuda || 0), 0))} en {filas.length}{tramoSel || busca ? ` de ${activa.filas.length}` : ''}</span></div>
         <div style={S.hd}>{activa.nota}</div>
-        <Tabla filas={activa.filas} />
+        <Tabla filas={filas} />
       </div>
 
-      {tramo && (
-        <Modal titulo={`Atraso de ${tramo.k.replace('+', 'más de ')}`} nota={`${money(tramo.monto)} en ${tramo.n}`} ancho={620} onCerrar={() => setTramo(null)}>
-          <div style={{ fontSize: '0.76rem', color: '#8a8590', lineHeight: 1.5, marginBottom: 10 }}>
-            Las suscripciones vencidas de ese tramo, de la más vieja a la más nueva. Da clic en una para abrir su ficha.
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>
-              <th style={S.th}>Cliente</th>
-              <th style={S.th}>Concepto</th>
-              <th style={{ ...S.th, width: 92 }}>Venció</th>
-              <th style={{ ...S.th, width: 64 }}>Atraso</th>
-              <th style={{ ...S.th, width: 92, textAlign: 'right' as const }}>Debe</th>
-            </tr></thead>
-            <tbody>
-              {[...d.anuales, ...d.mensuales]
-                .filter((f: any) => f.dias >= tramo.a && f.dias <= tramo.b)
-                .sort((a: any, b: any) => b.dias - a.dias)
-                .map((f: any) => (
-                  <tr key={f.id}>
-                    <td style={{ ...S.td, fontWeight: 700, cursor: 'pointer' }} onClick={() => { setTramo(null); setCliente(f.company_id); }}>
-                      {f.cliente}
-                      {f.detalle && <div style={{ fontSize: '0.66rem', color: '#a5a2af', fontWeight: 400 }}>{f.detalle}</div>}
-                    </td>
-                    <td style={{ ...S.td, color: '#6b6b74' }}>{f.plan}</td>
-                    <td style={{ ...S.td, color: '#8a8a92' }}>{fmtCorta(f.vence)}</td>
-                    <td style={{ ...S.td, fontWeight: 800, color: f.dias > 90 ? '#C0554E' : f.dias > 7 ? '#9a6a10' : '#5B4BD6' }}>{f.dias} d</td>
-                    <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800 }}>{money(f.deuda)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </Modal>
-      )}
       {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
-      {panel === 'bajas' && <Bajas filas={d.canceladas || []} motivos={d.canceladas_motivos || []} arr={k.canceladas_arr} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
       {cancelar && <DarDeBaja f={cancelar} onCerrar={() => setCancelar(null)} onListo={(t: string) => { setCancelar(null); flash(t); cargar(); }} />}
@@ -389,49 +381,6 @@ function DetalleMes({ filas, total, onCerrar, onCliente }: any) {
                 <td style={{ ...S.td, color: '#6b6b74' }}>{f.concepto}</td>
                 <td style={{ ...S.td, color: '#8a8a92' }}>{f.metodo}</td>
                 <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800, color: '#1E8A63' }}>{money(f.monto)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Modal>
-  );
-}
-
-/* ─── Bajas del mes ───
- * El motivo agrupado primero: "se fueron 3" no dice nada; "3 por precio" sí. */
-function Bajas({ filas, motivos, arr, onCerrar, onCliente }: any) {
-  const mes = new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
-  return (
-    <Modal titulo={`Bajas de ${mes}`} nota={`${filas.length} · ${money(arr)} de ARR`} onCerrar={onCerrar} ancho={620}>
-      <div style={{ marginBottom: 13 }}>
-        <div style={S.fl}>Por qué se fueron</div>
-        {motivos.map((m: any, i: number) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '6px 0', borderTop: i ? '1px solid #f4f3f7' : 'none', fontSize: '0.79rem' }}>
-            <span style={{ flex: 1 }}>{m.motivo}</span>
-            <span style={{ color: '#8a8a92' }}>{m.n}</span>
-            <b style={{ width: 92, textAlign: 'right' as const, color: '#C0554E' }}>{money(m.arr)}</b>
-          </div>
-        ))}
-      </div>
-      <div style={{ maxHeight: '46vh', overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>
-            <th style={{ ...S.th, width: 78 }}>Fecha</th>
-            <th style={S.th}>Cliente</th>
-            <th style={S.th}>Plan</th>
-            <th style={{ ...S.th, width: 96, textAlign: 'right' as const }}>ARR</th>
-          </tr></thead>
-          <tbody>
-            {filas.map((f: any) => (
-              <tr key={f.id}>
-                <td style={{ ...S.td, color: '#8a8a92' }}>{fmtCorta(f.fecha)}</td>
-                <td style={{ ...S.td, fontWeight: 700, cursor: 'pointer' }} onClick={() => f.company_id && onCliente(f.company_id)}>
-                  {f.cliente}
-                  <div style={{ fontSize: '0.67rem', color: '#a5a2af', fontWeight: 400 }}>{f.motivo}</div>
-                </td>
-                <td style={{ ...S.td, color: '#6b6b74' }}>{f.plan}<div style={{ fontSize: '0.65rem', color: '#b3b1bb' }}>{f.ciclo}</div></td>
-                <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 800, color: '#C0554E' }}>{money(f.arr)}</td>
               </tr>
             ))}
           </tbody>
