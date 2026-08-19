@@ -14,33 +14,21 @@
  * Los dias son reales: si el cliente ve "1 dia" y tarda tres semanas, la
  * promesa se vuelve en contra. Preferimos decir semana y media y cumplirla.
  */
-const dias = [
-  {
-    dia: 'Día 1',
-    titulo: 'Tu catálogo, cargado',
-    detalle: 'Nos das tu archivo —o tu base actual— y lo subimos nosotros con tallas, colores y existencias.',
-  },
-  {
-    dia: 'Día 2',
-    titulo: 'Tu operación, configurada',
-    detalle: 'Sucursales, cajas, usuarios, permisos, impuestos y formas de pago quedan como ya trabajas.',
-  },
-  {
-    dia: 'Día 3',
-    titulo: 'Capacitación',
-    detalle: 'Dos horas con tu equipo. Cobrar se aprende en veinte minutos: hay rotación y el sistema lo asume.',
-  },
-  {
-    dia: 'Día 4',
-    titulo: 'Arranca una tienda',
-    detalle: 'La primera sucursal vende con SACS. El sistema viejo sigue en pie por si acaso.',
-  },
-  {
-    dia: 'Día 5',
-    titulo: 'Arrancan las demás',
-    detalle: 'Con la primera resuelta, las otras entran el mismo día. Tu histórico se conserva y se consulta.',
-  },
-];
+export interface MigDia { dia: string; titulo: string; detalle: string; }
+interface Props {
+  dias: MigDia[];
+  /** Ejemplo de ticket del giro para la caja sin conexión. */
+  lineas?: { n: string; p: string }[];
+  total?: string;
+}
+const {
+  dias,
+  lineas = [
+    { n: 'Blusa satinada · Negro · M', p: '$899.00' },
+    { n: 'Falda plisada · Vino · S', p: '$1,190.00' },
+  ],
+  total = '$2,089.00',
+} = Astro.props;
 ---
 
 <section class="mig">
@@ -95,11 +83,12 @@ const dias = [
           <span class="mig-caja-hora">14:36</span>
         </div>
         <div class="mig-caja-cuerpo">
-          <div class="mig-caja-linea"><b>Blusa satinada · Negro · M</b><span>$899.00</span></div>
-          <div class="mig-caja-linea"><b>Falda plisada · Vino · S</b><span>$1,190.00</span></div>
+          {lineas.map((l) => (
+            <div class="mig-caja-linea"><b>{l.n}</b><span>{l.p}</span></div>
+          ))}
           <div class="mig-caja-cobrar">
             <span>COBRAR</span>
-            <b>$2,089.00</b>
+            <b>{total}</b>
           </div>
           <p class="mig-caja-pie">3 ventas guardadas · suben al volver la señal</p>
         </div>

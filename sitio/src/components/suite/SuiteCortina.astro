@@ -14,12 +14,40 @@
  * segunda tienda. Si el visitante siente que se burlan de como trabaja hoy,
  * deja de leer.
  */
+export interface CortFila { que: string; donde: string; dato: string; }
+interface Props {
+  eyebrow?: string;
+  titulo?: string;
+  sub?: string;
+  fotoAntes: string;
+  fotoDespues: string;
+  altAntes?: string;
+  altDespues?: string;
+  /** Renglones manuscritos del "hoy". */
+  libreta?: string[];
+  pieAntes?: string;
+  filas: CortFila[];
+  pieDespues?: string;
+}
+const {
+  eyebrow = 'La misma pregunta, dos veces',
+  titulo = '“¿Tendrás esta en chica?”',
+  sub = 'Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.',
+  fotoAntes,
+  fotoDespues,
+  altAntes = 'Cómo se resuelve hoy',
+  altDespues = 'Cómo se resuelve con SACS',
+  libreta = ['Blusa negra M — ¿quedan?', 'Vestido S … ¿en Satélite?'],
+  pieAntes = 'Dos llamadas<br />y la clienta esperando.',
+  filas,
+  pieDespues = 'Tres segundos, sin llamarle a nadie.',
+} = Astro.props;
 ---
 
 <section class="cort-bloque">
   <div class="cort-head">
-    <p class="cort-eyebrow">La misma pregunta, dos veces</p>
-    <h2>“¿Tendrás esta en chica?”</h2>
+    <p class="cort-eyebrow">{eyebrow}</p>
+    <h2>{titulo}</h2>
     <p class="cort-sub">
       Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.
     </p>
@@ -28,30 +56,29 @@
   <div class="cort" id="cort">
     <!-- HOY -->
     <div class="cort-capa cort-antes">
-      <img src="/images/suite-moda-hoy.webp" alt="Vendedora buscando en su libreta si queda una talla" loading="lazy" decoding="async" />
+      <img src={fotoAntes} alt={altAntes} loading="lazy" decoding="async" />
       <div class="cort-velo cort-velo-a"></div>
       <span class="cort-etq cort-etq-a">Hoy</span>
       <div class="cort-panel cort-panel-a">
         <div class="cort-libreta" aria-hidden="true">
-          Blusa negra M — ¿quedan?<br />
-          Vestido S … <s>¿en Satélite?</s>
+          {libreta.map((l, k) => <Fragment>{k > 0 && <br />}{l}</Fragment>)}
         </div>
-        <p class="cort-pie cort-pie-a">Dos llamadas<br />y la clienta esperando.</p>
+        <p class="cort-pie cort-pie-a"><Fragment set:html={pieAntes} /></p>
       </div>
     </div>
 
     <!-- CON SACS -->
     <div class="cort-capa cort-despues" id="cortDespues">
-      <img src="/images/suite-moda-resuelto.webp" alt="Vendedora atendiendo tranquila con el sistema en pantalla" loading="lazy" decoding="async" />
+      <img src={fotoDespues} alt={altDespues} loading="lazy" decoding="async" />
       <div class="cort-velo cort-velo-d"></div>
       <span class="cort-etq cort-etq-d">Con SACS</span>
       <div class="cort-panel cort-panel-d">
         <div class="cort-pos">
-          <div class="cort-fila"><b>Blusa satinada negra · M</b><i>Centro</i><u>4</u></div>
-          <div class="cort-fila"><b>Vestido midi verde · S</b><i>Satélite</i><u>3</u></div>
-          <div class="cort-fila"><b>Vestido cruzado · M</b><i>Liverpool</i><u>31 vend.</u></div>
+          {filas.map((f) => (
+            <div class="cort-fila"><b>{f.que}</b><i>{f.donde}</i><u>{f.dato}</u></div>
+          ))}
         </div>
-        <p class="cort-pie cort-pie-d">Tres segundos, sin llamarle a nadie.</p>
+        <p class="cort-pie cort-pie-d">{pieDespues}</p>
       </div>
     </div>
 

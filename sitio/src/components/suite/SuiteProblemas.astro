@@ -27,7 +27,16 @@ interface Fila {
   medida: string;
   sacs: string;
 }
-interface Props { filas?: Fila[]; }
+export interface DocLinea { a: string; b: string; c?: string; tachado?: boolean; tenue?: boolean; }
+interface Props {
+  filas?: Fila[];
+  titulo?: string;
+  entrada?: string;
+  /** Documento 1: el reporte del sistema genérico. */
+  doc1?: { membrete: string; sub: string; cab: string[]; lineas: DocLinea[]; margen: string[]; sello: string; notas: string[] };
+  /** Documento 2: la cotización del desarrollo a la medida. */
+  doc2?: { membrete: string; sub: string; cab: string[]; lineas: DocLinea[]; margen: string[]; sello: string; notas: string[] };
+}
 
 const {
   filas = [
@@ -39,7 +48,47 @@ const {
     { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
     { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
   ],
+  titulo = 'Ya lo intentaste<br />de las dos formas.',
+  entrada = 'Casi toda marca de ropa que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos.',
+  doc1 = {
+    membrete: 'Sistema genérico', sub: 'Reporte de inventario',
+    cab: ['CÓDIGO', 'DESCRIPCIÓN', 'EXIST.'],
+    lineas: [
+      { a: 'SKU-0041', b: 'BLUSA SATINADA', c: '18' },
+      { a: '—', b: '—', c: '—', tenue: true },
+      { a: '—', b: '—', c: '—', tenue: true },
+    ],
+    margen: ['¿y las tallas?', '¿el negro M?'],
+    sello: 'NO APLICA<br />A MODA',
+    notas: [
+      'Te pide <b>un solo código</b>. Tus 24 combinaciones se vuelven esa fila.',
+      'Para saber si queda la M abres un <b>Excel aparte</b> que alguien mantiene a mano.',
+      'Te dice cuánto vendiste, <b>no qué talla dejaste de tener</b>.',
+      'Abres la segunda tienda y empiezas de cero.',
+    ],
+  },
+  doc2 = {
+    membrete: 'Desarrollo a la medida', sub: 'Propuesta · rev. 4',
+    cab: ['CONCEPTO', 'PLAZO'],
+    lineas: [
+      { a: 'ENTREGA COMPROMETIDA', b: '3 MESES' },
+      { a: 'ENTREGA REAL', b: '9 MESES', tachado: true },
+      { a: 'SOPORTE VIGENTE', b: 'NO' },
+    ],
+    margen: ['+ 3 adendas', 'no contesta'],
+    sello: 'SIN<br />SOPORTE',
+    notas: [
+      'Costó <b>más de lo cotizado</b> y llegó meses tarde.',
+      'Funciona… mientras <b>quien lo hizo conteste el teléfono</b>.',
+      'Cada cambio chico es <b>una cotización nueva</b>.',
+      'No trae app, ni tienda en línea, ni quién lo actualice. El día que falla, <b>para la tienda</b>.',
+    ],
+  },
 } = Astro.props;
+
+/* Los dos documentos comparten forma; se recorren en vez de escribirse dos
+   veces, que es lo que obligaba a tocar el marcado para cada giro. */
+const documentos = [doc1, doc2];
 ---
 
 <section class="pp">
@@ -47,66 +96,40 @@ const {
 
     <header class="pp-head">
       <p class="pp-kicker">Expediente</p>
-      <h2>Ya lo intentaste<br />de las dos formas.</h2>
-      <p class="pp-entrada">
-        Casi toda marca de ropa que llega con nosotros trae uno de estos dos documentos
-        en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos
-        distintos.
-      </p>
+      <h2 set:html={titulo} />
+      <p class="pp-entrada">{entrada}</p>
     </header>
 
     <div class="pp-hojas">
-      <!-- Documento I -->
-      <article class="pp-hoja">
-        <div class="pp-membrete">
-          <span>Sistema genérico</span>
-          <span>Reporte de inventario</span>
-        </div>
+      {documentos.map((d, k) => (
+        <article class="pp-hoja">
+          <div class="pp-membrete">
+            <span>{d.membrete}</span>
+            <span>{d.sub}</span>
+          </div>
 
-        <div class="pp-cuerpo">
-          <p class="pp-linea-doc"><i>CÓDIGO</i><i>DESCRIPCIÓN</i><i class="der">EXIST.</i></p>
-          <p class="pp-linea-doc pp-dato"><i>SKU-0041</i><i>BLUSA SATINADA</i><i class="der">18</i></p>
-          <p class="pp-linea-doc pp-vacio"><i>—</i><i>—</i><i class="der">—</i></p>
-          <p class="pp-linea-doc pp-vacio"><i>—</i><i>—</i><i class="der">—</i></p>
+          <div class:list={['pp-cuerpo', { 'pp-cuerpo-ancho': k === 1 }]}>
+            <p class="pp-linea-doc">{d.cab.map((c, i) => <i class={i === d.cab.length - 1 ? 'der' : ''}>{c}</i>)}</p>
+            {d.lineas.map((l) => (
+              <p class:list={['pp-linea-doc', { 'pp-dato': !l.tenue, 'pp-vacio': l.tenue, 'pp-tachado': l.tachado }]}>
+                <i>{l.a}</i><i>{l.b}</i>{l.c !== undefined && <i class="der">{l.c}</i>}
+              </p>
+            ))}
 
-          <p class="pp-margen">¿y las tallas?<br />¿el negro M?</p>
+            <p class:list={['pp-margen', { 'pp-margen-2': k === 1 }]}>
+              {d.margen.map((m, i) => <Fragment>{i > 0 && <br />}{m}</Fragment>)}
+            </p>
 
-          <div class="pp-sello pp-sello-rojo"><span>NO APLICA<br />A MODA</span></div>
-        </div>
+            <div class:list={['pp-sello', k === 1 ? 'pp-sello-ocre' : 'pp-sello-rojo']}>
+              <span set:html={d.sello} />
+            </div>
+          </div>
 
-        <ol class="pp-notas">
-          <li>Te pide <b>un solo código</b>. Tus 24 combinaciones se vuelven esa fila.</li>
-          <li>Para saber si queda la M abres un <b>Excel aparte</b> que alguien mantiene a mano.</li>
-          <li>Te dice cuánto vendiste, <b>no qué talla dejaste de tener</b>.</li>
-          <li>Abres la segunda tienda y empiezas de cero.</li>
-        </ol>
-      </article>
-
-      <!-- Documento II -->
-      <article class="pp-hoja">
-        <div class="pp-membrete">
-          <span>Desarrollo a la medida</span>
-          <span>Propuesta · rev. 4</span>
-        </div>
-
-        <div class="pp-cuerpo pp-cuerpo-ancho">
-          <p class="pp-linea-doc"><i>CONCEPTO</i><i class="der">PLAZO</i></p>
-          <p class="pp-linea-doc pp-dato"><i>ENTREGA COMPROMETIDA</i><i class="der">3 MESES</i></p>
-          <p class="pp-linea-doc pp-dato pp-tachado"><i>ENTREGA REAL</i><i class="der">9 MESES</i></p>
-          <p class="pp-linea-doc pp-dato"><i>SOPORTE VIGENTE</i><i class="der">NO</i></p>
-
-          <p class="pp-margen pp-margen-2">+ 3 adendas<br />no contesta</p>
-
-          <div class="pp-sello pp-sello-ocre"><span>SIN<br />SOPORTE</span></div>
-        </div>
-
-        <ol class="pp-notas">
-          <li>Costó <b>más de lo cotizado</b> y llegó meses tarde.</li>
-          <li>Funciona… mientras <b>quien lo hizo conteste el teléfono</b>.</li>
-          <li>Cada cambio chico es <b>una cotización nueva</b>.</li>
-          <li>No trae app, ni tienda en línea, ni quién lo actualice. El día que falla, <b>para la tienda</b>.</li>
-        </ol>
-      </article>
+          <ol class="pp-notas">
+            {d.notas.map((n) => <li set:html={n} />)}
+          </ol>
+        </article>
+      ))}
     </div>
 
     <!-- Cuadro comparativo, impreso -->

@@ -18,9 +18,38 @@
  * 3. El giro lo manda el SCROLL, no un temporizador: el objeto responde al
  *    visitante en vez de moverse solo. Se puede arrastrar con el dedo.
  */
+export interface CuboProps {
+  eyebrow?: string;
+  titulo?: string;
+  resalte?: string;
+  sub?: string;
+  /** Filas = valores del eje B (colores, presentaciones…), columnas = eje A. */
+  matriz?: number[][];
+  ejeA?: string[];
+  ejeB?: string[];
+  /** Cuántas capas de profundidad (sucursales). */
+  capas?: number;
+  leyendas?: [string, string, string];
+}
+const {
+  eyebrow = 'Una sola prenda',
+  titulo = 'Esto es lo que de verdad hay<br /> detrás de',
+  resalte = '“una blusa”',
+  sub = 'Seis tallas por cuatro colores, en tres sucursales. Setenta y dos casillas, cada una con su propia existencia. Las apagadas son las que ya no tienes — y las que tu clienta justo está pidiendo.',
+  matriz = [
+    [0, 8, 12, 9, 4, 0],
+    [3, 11, 14, 7, 2, 0],
+    [2, 5, 6, 3, 1, 0],
+    [1, 4, 7, 5, 2, 0],
+  ],
+  ejeA = ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  ejeB = ['Negro', 'Blanco', 'Vino', 'Camel'],
+  capas = 3,
+  leyendas = ['Con existencia', 'Última pieza', 'Agotado'],
+} = Astro.props as CuboProps;
 ---
 
-<section class="cubo-bloque" id="cubo3d">
+<section class="cubo-bloque" id="cubo3d" data-matriz={JSON.stringify(matriz)} data-capas={String(capas)}>
   <div class="cubo-pin">
     <canvas id="cuboLienzo" aria-hidden="true"></canvas>
     <div class="cubo-velo" aria-hidden="true"></div>
@@ -28,16 +57,11 @@
     <!-- Respaldo: se queda si no hay WebGL. Es la misma matriz, plana. -->
     <div class="cubo-plano" id="cuboPlano">
       <table>
-        <tr><th></th>{['XS','S','M','L','XL','XXL'].map((t) => <th>{t}</th>)}</tr>
-        {[
-          ['Negro', [0, 8, 12, 9, 4, 0]],
-          ['Blanco', [3, 11, 14, 7, 2, 0]],
-          ['Vino', [2, 5, 6, 3, 1, 0]],
-          ['Camel', [1, 4, 7, 5, 2, 0]],
-        ].map(([c, vals]: any) => (
+        <tr><th></th>{ejeA.map((t) => <th>{t}</th>)}</tr>
+        {ejeB.map((c, fila) => (
           <tr>
             <td class="c">{c}</td>
-            {vals.map((n: number) => (
+            {matriz[fila].map((n: number) => (
               <td class:list={['n', n === 0 ? 'cero' : n <= 3 ? 'bajo' : 'ok']}>{n}</td>
             ))}
           </tr>
@@ -46,17 +70,13 @@
     </div>
 
     <div class="cubo-txt">
-      <p class="cubo-eyebrow">Una sola prenda</p>
-      <h2>Esto es lo que de verdad hay<br /> detrás de <span>“una blusa”</span>.</h2>
-      <p class="cubo-sub">
-        Seis tallas por cuatro colores, en tres sucursales. Setenta y dos casillas, cada una
-        con su propia existencia. Las apagadas son las que ya no tienes — y las que tu clienta
-        justo está pidiendo.
-      </p>
+      <p class="cubo-eyebrow">{eyebrow}</p>
+      <h2><Fragment set:html={titulo} /> <span>{resalte}</span>.</h2>
+      <p class="cubo-sub">{sub}</p>
       <ul class="cubo-leyenda">
-        <li><i class="ok"></i>Con existencia</li>
-        <li><i class="bajo"></i>Última pieza</li>
-        <li><i class="cero"></i>Agotado</li>
+        <li><i class="ok"></i>{leyendas[0]}</li>
+        <li><i class="bajo"></i>{leyendas[1]}</li>
+        <li><i class="cero"></i>{leyendas[2]}</li>
       </ul>
     </div>
 
@@ -201,19 +221,17 @@
 
         // La misma matriz de la blusa satinada que vive en el recorrido. Al
         // alejarse de la sucursal principal queda menos pieza: por eso el -2.
-        const stock = [
-          [0, 8, 12, 9, 4, 0],
-          [3, 11, 14, 7, 2, 0],
-          [2, 5, 6, 3, 1, 0],
-          [1, 4, 7, 5, 2, 0],
-        ];
+        const stock: number[][] = JSON.parse(bloque!.dataset.matriz || '[]');
+        const capas = Number(bloque!.dataset.capas || 3);
+        const filas = stock.length;
+        const cols = stock[0]?.length || 0;
         const grupo = new THREE.Group();
         const geo = new THREE.BoxGeometry(0.82, 0.82, 0.82);
         const vivos: any[] = [];
 
-        for (let s = 0; s < 3; s++) {
-          for (let c = 0; c < 4; c++) {
-            for (let t = 0; t < 6; t++) {
+        for (let s = 0; s < capas; s++) {
+          for (let c = 0; c < filas; c++) {
+            for (let t = 0; t < cols; t++) {
               const n = Math.max(0, stock[c][t] - s * 2);
               const agotado = n === 0;
               const ultima = n > 0 && n <= 3;
@@ -226,14 +244,14 @@
                 transparent: true,
                 opacity: agotado ? 0.3 : 0.95,
               }));
-              m.position.set((t - 2.5) * 1.25, (1.5 - c) * 1.25, (1 - s) * 1.25);
+              m.position.set((t - (cols - 1) / 2) * 1.25, ((filas - 1) / 2 - c) * 1.25, ((capas - 1) / 2 - s) * 1.25);
               grupo.add(m);
               if (!agotado) vivos.push({ m, base: m.position.y, fase: (t + c + s) * 0.7 });
             }
           }
         }
         grupo.add(new THREE.LineSegments(
-          new THREE.EdgesGeometry(new THREE.BoxGeometry(8.4, 5.9, 4.4)),
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(cols * 1.25 + 0.6, filas * 1.25 + 0.6, capas * 1.25 + 0.6)),
           new THREE.LineBasicMaterial({ color: 0x4B7BE5, transparent: true, opacity: 0.26 }),
         ));
         esc.add(grupo);

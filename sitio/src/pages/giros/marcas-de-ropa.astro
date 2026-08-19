@@ -25,6 +25,7 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
 import PosMock from '../../components/suite/PosMock.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
+import { rackModa, cortinaModa, sucursalesModa, reglasModa, diasModa, cajaModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
@@ -86,7 +87,14 @@ const desc =
   <SuiteCubo />
 
   <!-- ── La comparación que hace el propio visitante ── -->
-  <SuiteCortina />
+  <SuiteCortina
+    fotoAntes={cortinaModa.fotoAntes}
+    fotoDespues={cortinaModa.fotoDespues}
+    altAntes={cortinaModa.altAntes}
+    altDespues={cortinaModa.altDespues}
+    libreta={cortinaModa.libreta}
+    filas={cortinaModa.filas}
+  />
 
   <!-- ── Por qué lo que ya probó no le sirvió ── -->
   <SuiteProblemas />
@@ -106,7 +114,7 @@ const desc =
   />
 
   <!-- ── El perchero: un modelo son muchas piezas ── -->
-  <SuiteRack />
+  <SuiteRack piezas={rackModa} />
 
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll
@@ -117,10 +125,10 @@ const desc =
   />
 
   <!-- ── Lo que ve el dueño: comparativo de sucursales y candados ── -->
-  <SuiteDireccion />
+  <SuiteDireccion sucursales={sucursalesModa} reglas={reglasModa} />
 
   <!-- ── El bloqueador real: como se cambia sin parar ── -->
-  <SuiteMigracion />
+  <SuiteMigracion dias={diasModa} lineas={cajaModa.lineas} total={cajaModa.total} />
 
   <!-- ── Lo eliminatorio para una empresa formal: la factura ── -->
   <SuiteFormal />

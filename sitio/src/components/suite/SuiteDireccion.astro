@@ -38,22 +38,25 @@ interface Sucursal {
   nota?: string;
 }
 
-const sucursales: Sucursal[] = [
-  { nombre: 'Polanco', venta: '$521,400', llena: 100, ticket: '$2,050', margen: '58%', delta: '+9%' },
-  { nombre: 'Centro', venta: '$412,800', llena: 79, ticket: '$1,340', margen: '54%', delta: '+4%' },
-  { nombre: 'Satélite', venta: '$386,200', llena: 74, ticket: '$1,180', margen: '51%', delta: '+1%' },
-  {
-    nombre: 'León', venta: '$198,600', llena: 38, ticket: '$890', margen: '43%', delta: '−12%',
-    alerta: true,
-    nota: 'Tres semanas cayendo. El margen bajó 6 puntos: está saliendo demasiada prenda con descuento.',
-  },
-];
-
-const reglas = [
-  { si: 'El descuento pasa de 15%', entonces: 'pide tu autorización', detalle: 'Llega a tu teléfono con nombre, hora y motivo. La vendedora no decide sola cuánto regalar.' },
-  { si: 'Se cancela una venta ya cobrada', entonces: 'queda firmada', detalle: 'Quién, cuándo y por qué. Es la fuga más común y la más silenciosa de todas.' },
-  { si: 'El corte de caja no cuadra', entonces: 'no cierra', detalle: 'El faltante se registra a nombre de quien cerró, y tú lo ves el mismo día — no a fin de mes.' },
-];
+export interface DirReglas { si: string; entonces: string; detalle: string; }
+interface Props {
+  titulo?: string;
+  resalte?: string;
+  sub?: string;
+  rotulo?: string;
+  sucursales: Sucursal[];
+  reglas: DirReglas[];
+  tituloReglas?: string;
+}
+const {
+  titulo = 'Lo que ves tú,',
+  resalte = 'aunque no estés',
+  sub = 'Tus tiendas abren sin ti. La pregunta no es si venden — es cuál se está cayendo, cuál se está comiendo el inventario de las otras y por dónde se te va el dinero.',
+  rotulo = 'Comparativo de sucursales',
+  sucursales,
+  reglas,
+  tituloReglas = 'Por dónde se va el dinero cuando no estás',
+} = Astro.props;
 ---
 
 <section class="dir">
@@ -61,16 +64,13 @@ const reglas = [
 
     <header class="dir-head">
       <p class="dir-eyebrow">Para quien firma</p>
-      <h2>Lo que ves tú, <span>aunque no estés</span>.</h2>
-      <p class="dir-sub">
-        Tus tiendas abren sin ti. La pregunta no es si venden — es cuál se está cayendo,
-        cuál se está comiendo el inventario de las otras y por dónde se te va el dinero.
-      </p>
+      <h2>{titulo} <span>{resalte}</span>.</h2>
+      <p class="dir-sub">{sub}</p>
     </header>
 
     <!-- Comparativo: la altura ES la venta -->
     <div class="dir-torre-rot">
-      <span>Comparativo de sucursales</span>
+      <span>{rotulo}</span>
       <span>Este mes · al corte de ayer</span>
     </div>
 
@@ -101,7 +101,7 @@ const reglas = [
 
     <!-- Candados: escritos como reglas del sistema -->
     <div class="dir-reglas">
-      <h3>Por dónde se va el dinero cuando no estás</h3>
+      <h3>{tituloReglas}</h3>
 
       {reglas.map((r) => (
         <div class="dir-regla">
