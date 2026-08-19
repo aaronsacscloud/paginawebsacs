@@ -16,10 +16,11 @@
 //    resto se cobre después.
 //  · COBRADO = dinero que ENTRÓ este mes, anticipos incluidos. Es lo único que
 //    se compara contra el banco.
-//  · POR COBRAR = lo exigible DENTRO del mes en curso: exhibiciones con fecha
-//    hasta fin de mes (incluidas las atrasadas) y saldos sin plan cuya vigencia
-//    ya pasó o vence este mes. Lo que toca en noviembre no se cobra hoy y no
-//    tiene por qué inflar el número de hoy.
+//  · POR COBRAR = lo exigible DENTRO del mes en curso, y SOLO donde hay una
+//    fecha acordada: las exhibiciones del plan de pagos. Un saldo ganado sin
+//    fechas no está vencido —la vigencia es la caducidad del PRECIO, no la de un
+//    pago— y contarlo como atrasado acusa al cliente de algo que nadie le pidió.
+//    Lo que toca en noviembre tampoco se cobra hoy: entra en su mes.
 //  · EN PAGO PARCIAL = cuánto se abonó, cuánto falta y CUÁNDO toca cada
 //    exhibición.
 //
@@ -115,9 +116,11 @@ export const GET: APIRoute = async () => {
   });
 
   // ── 4 · Por cobrar dentro del mes ──
-  // Con plan de pagos manda la fecha de cada exhibición; sin plan, la vigencia.
+  // Manda la fecha de cada exhibición acordada. Sin plan no hay fecha, y sin
+  // fecha nada está vencido.
   const finMes = mes.hasta;   // exclusivo
   const porCobrar: any[] = [];
+  const sinFechas: any[] = [];
   for (const q of qs) {
     const ab = abonos.get(q.id)?.total || 0;
     const saldo = r2(num(q.total) - ab);
@@ -125,14 +128,15 @@ export const GET: APIRoute = async () => {
     const cerrada = ab > 0 || String(q.estado) === 'accepted';
     if (!cerrada) continue;                     // sin un sí, no es cobranza
     const plan = (planes.get(q.id) || []).filter((x: any) => x.estado === 'pendiente');
-    if (plan.length) {
-      for (const x of plan) {
-        const f = String(x.fecha).slice(0, 10);
-        if (f < finMes) porCobrar.push({ quote: q, monto: num(x.monto), fecha: f, exhibicion: `${x.numero} de ${x.total}`, vencido: f < hoy });
-      }
-    } else {
-      const f = String(q.vigencia || q.aceptado_fecha || q.created_at).slice(0, 10);
-      if (f < finMes) porCobrar.push({ quote: q, monto: saldo, fecha: f, exhibicion: null, vencido: f < hoy });
+    if (!plan.length) {
+      // Ganada pero sin plan: hay saldo y no hay fecha. No se cuenta —ni como
+      // exigible ni como vencido—, se nombra aparte para poder acordarla.
+      sinFechas.push({ quote: q, saldo });
+      continue;
+    }
+    for (const x of plan) {
+      const f = String(x.fecha).slice(0, 10);
+      if (f < finMes) porCobrar.push({ quote: q, monto: num(x.monto), fecha: f, exhibicion: `${x.numero} de ${x.total}`, vencido: f < hoy });
     }
   }
   const porCobrarMonto = porCobrar.reduce((a, x) => a + x.monto, 0);
@@ -178,8 +182,13 @@ export const GET: APIRoute = async () => {
     },
     por_cobrar: {
       monto: r2(porCobrarMonto), vencido: r2(porCobrarVencido), n: porCobrar.length,
+      // Ganado con saldo y sin fechas acordadas: no es deuda vencida, es un
+      // plan que falta acordar.
+      sin_fechas: sinFechas.length,
+      sin_fechas_monto: r2(sinFechas.reduce((a, x) => a + x.saldo, 0)),
       detalle: porCobrar.map(x => ({ ...ficha(x.quote), monto: Math.round(x.monto), fecha: x.fecha, exhibicion: x.exhibicion, vencido: x.vencido }))
         .sort((a, b) => a.fecha.localeCompare(b.fecha)),
+      detalle_sin_fechas: sinFechas.map(x => ({ ...ficha(x.quote), monto: Math.round(x.saldo) })),
     },
     parcial: {
       falta: r2(parcialFalta), abonado: r2(parcialAbonado), n: parciales.length,

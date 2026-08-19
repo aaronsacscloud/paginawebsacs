@@ -1,11 +1,11 @@
 ---
 /**
- * SuiteFormal — las dos preguntas que una empresa formal hace antes de agendar:
- * "¿factura?" y "¿cuánto cuesta?".
+ * SuiteFormal — la pregunta del contador: "¿factura?".
  *
- * Las dos son eliminatorias y ninguna estaba en la pagina. El silencio sobre el
- * precio no se lee como discrecion: se lee como "es carisimo" o como "me van a
- * amarrar". Y si no ve la palabra CFDI, asume que no facturamos.
+ * Es eliminatoria: si una empresa formal no ve la palabra CFDI en la pagina,
+ * asume que no facturamos y ni pregunta. El precio vivia aqui y se mudo a
+ * SuitePlanes, porque explicar el modelo comercial —que la suite va DENTRO del
+ * plan— pedia su propio bloque.
  *
  * Todo lo que se afirma aqui sale de src/data/plans.ts, incluidas las notas de
  * "desde Controla" y "en Automatiza". Prometer de mas en esta seccion es la
@@ -74,29 +74,6 @@ const facturacion = [
         </div>
         <p class="fm-doc-pie">Emitida desde la caja · 12 seg después del cobro</p>
       </div>
-    </div>
-
-    <!-- El precio -->
-    <div class="fm-precio">
-      <div class="fm-precio-txt">
-        <p class="fm-precio-rot">Y lo que cuesta</p>
-        <p class="fm-precio-cifra">
-          <b>$900</b><span>al mes, por sucursal</span>
-        </p>
-        <p class="fm-precio-nota">
-          Es el plan <b>Controla</b>, el que usa una cadena: inventario, compras, multisucursal
-          y facturación automática. Hay uno más chico para una sola tienda y dos más grandes
-          con fidelización y automatizaciones.
-        </p>
-      </div>
-
-      <ul class="fm-precio-datos">
-        <li><b>Usuarios ilimitados</b><span>No pagas por cajera nueva ni por rotación</span></li>
-        <li><b>Sin contrato forzoso</b><span>Mensual o anual, tú decides</span></li>
-        <li><b>Implementación acompañada</b><span>La migración la hacemos nosotros</span></li>
-      </ul>
-
-      <a class="fm-precio-link" href="/planes">Ver los cuatro planes y qué trae cada uno →</a>
     </div>
 
   </div>
@@ -173,40 +150,9 @@ const facturacion = [
     margin: 0; padding: 14px 18px 18px; font-size: 12px; color: #8A8071; font-weight: 600;
   }
 
-  /* ── Precio ── */
-  .fm-precio {
-    margin-top: 64px; padding-top: 44px; border-top: 2px solid #1A1815;
-    display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: start;
-  }
-  .fm-precio-rot {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #8A8071; margin: 0 0 18px;
-  }
-  .fm-precio-cifra { margin: 0 0 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-  .fm-precio-cifra b {
-    font-size: clamp(46px, 6.4vw, 76px); font-weight: 800; letter-spacing: -3px; line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-  .fm-precio-cifra span { font-size: 17px; color: #4A443B; font-weight: 600; }
-  .fm-precio-nota { margin: 0; font-size: 15.5px; line-height: 1.65; color: #4A443B; max-width: 52ch; }
-  .fm-precio-nota b { font-weight: 700; color: #1A1815; }
-
-  .fm-precio-datos { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
-  .fm-precio-datos li { border-left: 2px solid #C9C0B0; padding-left: 16px; }
-  .fm-precio-datos b { display: block; font-size: 15.5px; font-weight: 700; margin-bottom: 3px; }
-  .fm-precio-datos span { font-size: 14px; color: #6B6459; }
-
-  .fm-precio-link {
-    grid-column: 1 / -1; margin-top: 10px; font-size: 16px; font-weight: 700;
-    color: #1A1815; text-decoration: none;
-    box-shadow: inset 0 -2px 0 #1A1815; padding-bottom: 2px; justify-self: start;
-  }
-  .fm-precio-link:hover { color: #4B7BE5; box-shadow: inset 0 -2px 0 #4B7BE5; text-decoration: none; }
-
   @media (max-width: 900px) {
     .fm { padding: 70px 18px 78px; }
     .fm-cols { grid-template-columns: 1fr; gap: 36px; }
-    .fm-precio { grid-template-columns: 1fr; gap: 30px; margin-top: 48px; padding-top: 34px; }
     .fm-item { flex-wrap: wrap; gap: 8px 12px; }
     .fm-item span { flex: 1 1 70%; font-size: 15px; }
   }

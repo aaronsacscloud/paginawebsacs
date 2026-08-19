@@ -1152,8 +1152,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     se cobra hoy y no tiene por qué inflar el número de hoy. */}
                 {card('Por cobrar este mes', fmt(k.por_cobrar.monto),
                   (k.por_cobrar.n || 0) === 0
-                    ? 'Nada exigible en lo que resta del mes'
-                    : <>{k.por_cobrar.n} cobro{k.por_cobrar.n === 1 ? '' : 's'}{k.por_cobrar.vencido > 0 ? <span style={{ color: M.rojoTinta, fontWeight: 800 }}> · {fmt(k.por_cobrar.vencido)} vencido</span> : ''} · <b style={{ color: M.violeta }}>ver</b></>,
+                    ? <>Sin exhibiciones con fecha en el mes{k.por_cobrar.sin_fechas ? <> · {k.por_cobrar.sin_fechas} ganada{k.por_cobrar.sin_fechas === 1 ? '' : 's'} sin fechas acordadas</> : ''} · <b style={{ color: M.violeta }}>ver</b></>
+                    : <>{k.por_cobrar.n} exhibici{k.por_cobrar.n === 1 ? 'ón' : 'ones'}{k.por_cobrar.vencido > 0 ? <span style={{ color: M.rojoTinta, fontWeight: 800 }}> · {fmt(k.por_cobrar.vencido)} pasado de fecha</span> : ''} · <b style={{ color: M.violeta }}>ver</b></>,
                   (k.por_cobrar.vencido || 0) > 0 ? M.rojoTinta : '#1a1a1a',
                   () => setPanelKpi('por_cobrar'), M.rojo)}
                 {card('En pago parcial', fmt(k.parcial.falta),
@@ -1171,7 +1171,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             cotizado: { t: 'Cotizado este mes', d: kpis.cotizado.detalle, nota: 'Todo lo generado en el mes, se haya cerrado o no.' },
             cerrado: { t: 'Cerrado este mes', d: kpis.cerrado.detalle, nota: 'Aceptadas o pagadas, fechadas por el pago registrado. Las parcialidades entran completas: la venta ya se cerró aunque el resto se cobre después.' },
             cobrado: { t: 'Cobrado este mes', d: kpis.cobrado.detalle, nota: 'Dinero que entró este mes, anticipos incluidos.' },
-            por_cobrar: { t: 'Por cobrar este mes', d: kpis.por_cobrar.detalle, nota: 'Solo lo exigible hasta fin de mes: exhibiciones con fecha en el mes (y las atrasadas) y saldos cuya vigencia ya pasó.' },
+            por_cobrar: {
+              t: 'Por cobrar este mes',
+              d: [...kpis.por_cobrar.detalle, ...(kpis.por_cobrar.detalle_sin_fechas || []).map((x: any) => ({ ...x, sin_fecha: true }))],
+              nota: 'Solo las exhibiciones con fecha acordada que caen hasta fin de mes, incluidas las que ya pasaron de su fecha. Lo ganado sin plan de pagos no está vencido —la vigencia caduca el precio, no un pago— y va aparte, al final.',
+            },
             parcial: { t: 'En pago parcial', d: kpis.parcial.detalle, nota: 'Lo abonado, lo que falta y cuándo toca cada exhibición.' },
           }[panelKpi];
           if (!P) return null;
@@ -1200,6 +1204,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         {x.fecha && <span style={{ fontSize: '0.73rem', color: x.vencido ? '#C0554E' : '#8a8a92' }}>{fecha(x.fecha)}</span>}
                         <b style={{ fontSize: '0.85rem' }}>{money(x.monto ?? x.saldo ?? x.total)}</b>
                       </div>
+                      {x.sin_fecha && (
+                        <div style={{ fontSize: '0.72rem', color: '#9a6a10', marginTop: 2 }}>
+                          Ganada, con saldo y sin fechas acordadas · no se cuenta como exigible
+                        </div>
+                      )}
                       {(x.abonado > 0 || x.exhibicion || x.anticipo || x.metodo) && (
                         <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 2 }}>
                           {x.exhibicion ? `exhibición ${x.exhibicion} · ` : ''}
