@@ -353,18 +353,28 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                               abonado {money(x.cubierto)} · falta {money(falta)}
                             </span>
                           )}
+                          {/* El estado de cuenta va como icono: es un documento
+                              que se manda, no una acción que compite con la de
+                              cobrar. Y cobrar una parcialidad es registrar un
+                              abono —la misma gestión—, así que lleva el mismo
+                              nombre que el botón de arriba. */}
                           <a href={`/estado-cuenta/cotizacion/${d.quote.id}?exh=${ix + 1}`} target="_blank" rel="noreferrer"
-                            style={{ ...P.btnG, marginLeft: x.cubierto > 0 ? 0 : 'auto', padding: '4px 9px', fontSize: '0.72rem', textDecoration: 'none', color: '#5B4BD6', borderColor: '#ddd6fb', whiteSpace: 'nowrap' }}>
-                            Estado de cuenta
+                            title="Abrir el estado de cuenta de esta parcialidad, para mandárselo al cliente"
+                            style={{ ...P.btnG, marginLeft: x.cubierto > 0 ? 0 : 'auto', padding: '4px 8px', lineHeight: 0, textDecoration: 'none', color: '#5B4BD6', borderColor: '#ddd6fb' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                              <path d="M14 3v5h5M9 13h6M9 17h4" />
+                            </svg>
                           </a>
-                          <button style={{ ...P.btnG, padding: '4px 9px', fontSize: '0.72rem', whiteSpace: 'nowrap' }}
+                          <button title={`Registrar el abono de ${x.concepto}`}
+                            style={{ ...P.btnG, padding: '4px 9px', fontSize: '0.72rem', whiteSpace: 'nowrap', color: '#2563eb', borderColor: '#cdd9f7' }}
                             onClick={() => setNuevoAbono({
                               fecha: new Date().toISOString().slice(0, 10),
                               monto: String(Math.round(falta)),
                               metodo: 'transferencia', referencia: '',
                               concepto: x.concepto, vence: x.fecha,
                             })}>
-                            Registrar pago
+                            + Abono
                           </button>
                         </div>
                       )}
