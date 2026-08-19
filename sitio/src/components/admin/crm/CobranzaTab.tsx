@@ -33,9 +33,12 @@ const SENAL: Record<string, { l: string; bg: string; fg: string }> = {
 const S = {
   wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
-  kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' } as const,
-  kv: { fontSize: '1.65rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', lineHeight: 1 } as const,
-  ks: { fontSize: '0.69rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.4 } as const,
+  // Misma escala que las tarjetas de Cotizaciones: rótulo de 10 px, número de
+  // 22 y una línea de 11. Con el número a 26 px las cinco no cabían y la última
+  // se salía de la pantalla.
+  kl: { fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '.08em' } as const,
+  kv: { fontSize: '1.375rem', fontWeight: 700, marginTop: 4, letterSpacing: '-.01em', lineHeight: 1.15 } as const,
+  ks: { fontSize: '0.6875rem', color: '#888', marginTop: 2, lineHeight: 1.45 } as const,
   h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 } as const,
   hr: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   hd: { fontSize: '0.72rem', color: '#8a8a8a', marginBottom: 12 } as const,
@@ -70,6 +73,21 @@ export default function CobranzaTab() {
   const [tramoSel, setTramoSel] = useState<any>(null);
   const [menuTramo, setMenuTramo] = useState(false);
   const [busca, setBusca] = useState('');
+  // El menú de la fila se ancla con position FIXED: dentro de la tabla lo
+  // recortaba el contenedor con desplazamiento y solo se veía la primera opción.
+  const [menuFila, setMenuFila] = useState<any>(null);
+  useEffect(() => {
+    if (!menuFila) return;
+    const cerrar = () => setMenuFila(null);
+    window.addEventListener('scroll', cerrar, true);
+    window.addEventListener('resize', cerrar);
+    document.addEventListener('mousedown', cerrar);
+    return () => {
+      window.removeEventListener('scroll', cerrar, true);
+      window.removeEventListener('resize', cerrar);
+      document.removeEventListener('mousedown', cerrar);
+    };
+  }, [menuFila]);
   const [cliente, setCliente] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
 
@@ -144,22 +162,20 @@ export default function CobranzaTab() {
             {f.promesa && <div style={{ fontSize: '0.65rem', color: String(f.promesa) < iso(new Date()) ? '#C0554E' : '#5B4BD6', marginTop: 3 }}>promete el {fmtCorta(f.promesa)}</div>}
           </td>
           <td style={S.td}>{se ? <span style={S.tag(se.bg, se.fg)}>{se.l}</span> : <span style={{ color: '#c9c7d0' }}>—</span>}</td>
-          <td style={S.td}>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap' }}>
+          <td style={{ ...S.td, textAlign: 'right' as const, whiteSpace: 'nowrap' as const }}>
+            {/* Una acción a la vista —cobrar, que es a lo que se entra— y el
+                resto en el menú, como en Cotizaciones. Seis botones por fila
+                obligaban a leer todos para encontrar uno. */}
+            <div style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>
               <button style={{ ...S.mini, ...S.mp }} onClick={() => setGestion({ ...f, modo: 'pago' })}>Registrar pago</button>
-              {esCot && <a style={S.mini} href={`/cotizacion/${f.id}`} target="_blank" rel="noreferrer">Ver cotización</a>}
-              {/* Partir en exhibiciones vale para los dos: una anualidad y una
-                  venta de una sola vez se parten igual. Solo la mensual no —ahí
-                  el problema son los meses acumulados, no el monto. */}
-              {f.plan_pagos.length > 0
-                ? <button style={S.mini} onClick={() => setAbierta(abierto ? null : f.id)}>{abierto ? 'Ocultar plan' : 'Ver plan'}</button>
-                : !mensual && <button style={S.mini} onClick={() => setPartir(f)}>Partir en pagos</button>}
-              {f.link && <a style={{ ...S.mini, ...S.mv }} href={f.link} target="_blank" rel="noreferrer">Link de cobro</a>}
-              <button style={S.mini} onClick={() => setGestion({ ...f, modo: 'gestion' })}>Gestión</button>
-              {/* Dar de baja se hace DONDE se ve que ya no va a pagar, no en otra
-                  pantalla. Exige motivo: una baja sin razón no se puede sumar
-                  después ni contestar "por qué se nos van". */}
-              {!esCot && <button style={{ ...S.mini, color: '#C0554E', borderColor: '#f2d7d4' }} onClick={() => setCancelar(f)}>Dar de baja</button>}
+              <button title="Más acciones" style={{ ...S.mini, padding: '4px 9px', fontWeight: 800 }}
+                onClick={e => {
+                  if (menuFila?.id === f.id) { setMenuFila(null); return; }
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  const alto = 250;
+                  const arriba = r.bottom + alto > window.innerHeight && r.top > alto;
+                  setMenuFila({ id: f.id, x: Math.max(8, window.innerWidth - r.right), y: arriba ? window.innerHeight - r.top + 6 : r.bottom + 6, arriba, f });
+                }}>⋮</button>
             </div>
           </td>
         </tr>
@@ -198,7 +214,7 @@ export default function CobranzaTab() {
 
   const Tabla = ({ filas }: any) => (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', minWidth: 1240, borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             <th style={{ ...S.th, minWidth: 150 }}>Cliente</th>
@@ -209,7 +225,7 @@ export default function CobranzaTab() {
             <th style={{ ...S.th, minWidth: 150 }}>Cómo se compone</th>
             <th style={{ ...S.th, minWidth: 120 }}>Gestión</th>
             <th style={{ ...S.th, minWidth: 96 }}>Señal</th>
-            <th style={{ ...S.th, minWidth: 380 }} />
+            <th style={{ ...S.th, minWidth: 170, textAlign: 'right' as const }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -222,7 +238,7 @@ export default function CobranzaTab() {
 
   const Kpi = ({ label, valor, color, sub, onClick, franja }: any) => (
     <div onClick={onClick}
-      style={{ ...S.card, marginBottom: 0, borderLeft: `3px solid ${franja || '#ddd'}`, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
+      style={{ ...S.card, marginBottom: 0, padding: '14px 16px', borderLeft: `3px solid ${franja || '#ddd'}`, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
       onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.08)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
       <div style={S.kl}>{label}</div>
@@ -234,7 +250,7 @@ export default function CobranzaTab() {
   return (
     <div style={S.wrap}>
       <style>{`
-        .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:11px; }
+        .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:10px; }
         @media (max-width: 1250px) { .cob-5 { grid-template-columns:repeat(3, minmax(0,1fr)); } }
         @media (max-width: 780px)  { .cob-5 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 620px)  { .cob-5 { grid-template-columns:1fr; } }
@@ -335,6 +351,31 @@ export default function CobranzaTab() {
         <Tabla filas={filas} />
       </div>
 
+      {menuFila && (() => {
+        const f = menuFila.f;
+        const esCot = f.tipo === 'cotizacion';
+        const mensual = f.ciclo === 'mensual';
+        const item = (label: string, onClick: () => void, color?: string) => (
+          <button onClick={() => { setMenuFila(null); onClick(); }}
+            style={{ ...S.mini, width: '100%', textAlign: 'left' as const, border: 'none', marginBottom: 3, padding: '8px 10px', color: color || '#444' }}>{label}</button>
+        );
+        return (
+          <div data-menu-fila onMouseDown={e => e.stopPropagation()} style={{
+            position: 'fixed', right: menuFila.x, ...(menuFila.arriba ? { bottom: menuFila.y } : { top: menuFila.y }),
+            background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 34px rgba(16,24,40,.16)',
+            padding: 6, minWidth: 210, zIndex: 980,
+          }}>
+            {item('Gestión y promesa', () => setGestion({ ...f, modo: 'gestion' }))}
+            {f.plan_pagos.length > 0 && item(abierta === f.id ? 'Ocultar plan de pagos' : 'Ver plan de pagos', () => setAbierta(abierta === f.id ? null : f.id))}
+            {f.plan_pagos.length === 0 && !mensual && item('Partir en pagos', () => setPartir(f))}
+            {esCot && item('Ver cotización', () => window.open(`/cotizacion/${f.id}`, '_blank'))}
+            {esCot && item('Estado de cuenta', () => window.open(`/estado-cuenta/cotizacion/${f.id}`, '_blank'))}
+            {f.link && item('Abrir link de cobro', () => window.open(f.link, '_blank'), '#1E8A63')}
+            {f.company_id && item('Abrir ficha del cliente', () => setCliente(f.company_id))}
+            {!esCot && item('Dar de baja', () => setCancelar(f), '#C0554E')}
+          </div>
+        );
+      })()}
       {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
