@@ -20,6 +20,11 @@
  * Los candados no son tarjetas: son REGLAS, escritas como se configuran en el
  * sistema —si pasa esto, entonces esto—. Es la forma que ya tiene el producto,
  * no una decoracion.
+ *
+ * Va en claro y no en oscuro a proposito. Un tablero de direccion se lee mejor
+ * sobre blanco —es donde vive un reporte— y ademas parte en dos la seccion
+ * oscura de la pagina justo cuando cambia el interlocutor: hasta aqui hablabamos
+ * con el mostrador; de aqui en adelante, con quien firma.
  */
 interface Sucursal {
   nombre: string;
@@ -114,64 +119,69 @@ const reglas = [
 </section>
 
 <style>
-  .dir { background: #0A0A0B; padding: 100px 24px 110px; }
+  /* Tono claro, mucho aire y sombras cortas: es donde vive un reporte. */
+  .dir { background: #FAFAF8; color: #1A1A1A; padding: 112px 24px 120px; }
   .dir-inner { max-width: 1200px; margin: 0 auto; }
 
-  .dir-head { max-width: 740px; margin-bottom: 44px; }
+  .dir-head { max-width: 760px; margin-bottom: 56px; }
   .dir-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 16px;
+    color: #4B7BE5; margin: 0 0 18px;
   }
   .dir-head h2 {
-    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
-    line-height: 1.05; color: #fff; margin: 0 0 16px;
+    font-size: clamp(30px, 4.6vw, 54px); font-weight: 800; letter-spacing: -1.9px;
+    line-height: 1.04; color: #1A1A1A; margin: 0 0 18px;
   }
   .dir-head h2 span { color: #4B7BE5; }
-  .dir-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
+  .dir-sub { color: #4A4A4A; font-size: clamp(16px, 1.8vw, 19px); margin: 0; line-height: 1.65; }
 
   .dir-torre-rot {
     display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
-    padding-bottom: 14px; border-bottom: 1px solid #1F1F27; margin-bottom: 16px;
+    padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,.09); margin-bottom: 20px;
   }
-  .dir-torre-rot span:first-child { font-size: 15px; font-weight: 700; color: #fff; }
-  .dir-torre-rot span:last-child { font-size: 12.5px; color: #6A6A76; font-weight: 600; }
+  .dir-torre-rot span:first-child { font-size: 15.5px; font-weight: 700; color: #1A1A1A; }
+  .dir-torre-rot span:last-child { font-size: 13px; color: #8C8C8C; font-weight: 600; }
 
   /* ── Las torres ──
      Cada sucursal es una columna y su relleno es la venta. La comparacion se
      hace con el ojo, antes de leer una cifra. */
-  .dir-torres { display: flex; gap: 12px; height: 440px; }
+  .dir-torres { display: flex; gap: 14px; height: 450px; }
   .dir-torre {
     position: relative; flex: 1; overflow: hidden; cursor: default;
-    border: 1px solid #22222A; border-radius: 16px; background: #0E0E13;
+    background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04);
     display: flex; flex-direction: column; justify-content: space-between;
-    padding: 20px 20px 22px;
-    transition: flex .5s cubic-bezier(.25,.46,.45,.94), border-color .3s ease;
+    padding: 24px 24px 26px;
+    transition: flex .5s cubic-bezier(.25,.46,.45,.94), box-shadow .3s ease, border-color .3s ease;
   }
-  .dir-torre:hover, .dir-torre:focus-visible { flex: 1.9; border-color: #35353F; outline: none; }
+  .dir-torre:hover, .dir-torre:focus-visible {
+    flex: 1.9; outline: none;
+    border-color: rgba(75,123,229,.35); box-shadow: 0 12px 34px rgba(15,23,42,.10);
+  }
   /* La que va mal viene abierta: es lo que hay que ver sin buscar. */
-  .dir-torre.mal { flex: 1.9; border-color: #4A2A2A; }
+  .dir-torre.mal { flex: 1.9; border-color: rgba(229,75,75,.35); }
 
   .dir-nivel {
     position: absolute; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(180deg, rgba(75,123,229,.26), rgba(75,123,229,.07));
+    background: linear-gradient(180deg, #EAF0FC, #F5F8FE);
     border-top: 2px solid #4B7BE5;
     transition: height .6s cubic-bezier(.25,.46,.45,.94);
   }
   .dir-torre.mal .dir-nivel {
-    background: linear-gradient(180deg, rgba(248,113,113,.22), rgba(248,113,113,.05));
-    border-top-color: #F87171;
+    background: linear-gradient(180deg, #FDEDED, #FEF7F7);
+    border-top-color: #E54B4B;
   }
 
   .dir-torre-arriba, .dir-torre-abajo { position: relative; z-index: 1; }
   .dir-torre-arriba { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-  .dir-torre-arriba b { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.2px; }
-  .dir-delta { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .dir-delta.sube { color: #34D399; }
-  .dir-delta.baja { color: #F87171; }
+  .dir-torre-arriba b { font-size: 17px; font-weight: 700; color: #1A1A1A; letter-spacing: -.2px; }
+  .dir-delta { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dir-delta.sube { color: #128B77; }
+  .dir-delta.baja { color: #D13B3B; }
 
   .dir-venta {
-    display: block; font-size: clamp(20px, 2.4vw, 27px); font-weight: 800; color: #fff;
-    letter-spacing: -1px; font-variant-numeric: tabular-nums;
+    display: block; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #1A1A1A;
+    letter-spacing: -1.2px; font-variant-numeric: tabular-nums;
   }
 
   /* El detalle vive plegado y sale al expandirse. */
@@ -181,62 +191,60 @@ const reglas = [
   }
   .dir-torre:hover .dir-detalle,
   .dir-torre:focus-visible .dir-detalle,
-  .dir-torre.mal .dir-detalle { max-height: 210px; opacity: 1; margin-top: 14px; }
+  .dir-torre.mal .dir-detalle { max-height: 220px; opacity: 1; margin-top: 16px; }
 
   .dir-detalle p {
     display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    margin: 0 0 8px; font-size: 13.5px;
+    margin: 0 0 9px; font-size: 14px;
   }
-  .dir-detalle i { font-style: normal; color: #71717A; }
-  .dir-detalle b { color: #E4E4E7; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dir-detalle i { font-style: normal; color: #8C8C8C; }
+  .dir-detalle b { color: #1A1A1A; font-weight: 700; font-variant-numeric: tabular-nums; }
   .dir-nota {
-    display: block !important; margin: 12px 0 0 !important; padding-top: 12px;
-    border-top: 1px solid #2E2024; font-size: 13px; line-height: 1.55; color: #F0A9A9;
+    display: block !important; margin: 14px 0 0 !important; padding-top: 14px;
+    border-top: 1px solid rgba(229,75,75,.25); font-size: 13.5px; line-height: 1.55; color: #A93636;
   }
 
-  .dir-pista {
-    margin: 14px 0 60px; font-size: 12.5px; color: #4A4A56; font-weight: 600;
-  }
+  .dir-pista { margin: 16px 0 76px; font-size: 13px; color: #A0A0A0; font-weight: 600; }
 
   /* ── Reglas ── */
   .dir-reglas h3 {
-    font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; color: #fff; margin: 0 0 26px;
-    letter-spacing: -.6px;
+    font-size: clamp(21px, 2.8vw, 30px); font-weight: 700; color: #1A1A1A; margin: 0 0 30px;
+    letter-spacing: -.7px;
   }
-  .dir-regla { padding: 20px 0; border-top: 1px solid #1C1C24; }
-  .dir-regla:last-child { border-bottom: 1px solid #1C1C24; }
+  .dir-regla { padding: 24px 0; border-top: 1px solid rgba(0,0,0,.09); }
+  .dir-regla:last-child { border-bottom: 1px solid rgba(0,0,0,.09); }
   .dir-condicion {
-    margin: 0 0 8px; font-size: clamp(16px, 2vw, 20px); color: #E4E4E7; line-height: 1.5;
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 10px; font-size: clamp(17px, 2vw, 21px); color: #1A1A1A; line-height: 1.5;
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;
   }
   /* Las palabras de la regla van en monoespaciada: se lee como una condicion
      configurada, que es exactamente lo que es. */
   .dir-kw {
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
     font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: #6A6A76;
+    color: #A0A0A0;
   }
-  .dir-kw-2 { color: #60A5FA; }
-  .dir-flecha { color: #3A3A46; font-size: 17px; }
-  .dir-condicion b { color: #fff; font-weight: 700; }
-  .dir-regla-detalle { margin: 0; font-size: 14.5px; line-height: 1.6; color: #8A8A96; max-width: 78ch; }
+  .dir-kw-2 { color: #4B7BE5; }
+  .dir-flecha { color: #C9C9C9; font-size: 18px; }
+  .dir-condicion b { color: #1A1A1A; font-weight: 800; }
+  .dir-regla-detalle { margin: 0; font-size: 15px; line-height: 1.65; color: #4A4A4A; max-width: 78ch; }
 
   @media (max-width: 900px) {
-    .dir { padding: 70px 18px 78px; }
+    .dir { padding: 76px 18px 84px; }
 
     /* En vertical la torre no cabe: cada sucursal pasa a ser una fila y el
        relleno se vuelve horizontal. Sigue midiendo lo mismo. */
-    .dir-torres { flex-direction: column; height: auto; gap: 10px; }
-    .dir-torre { flex: none !important; padding: 16px 16px 18px; }
+    .dir-torres { flex-direction: column; height: auto; gap: 12px; }
+    .dir-torre { flex: none !important; padding: 18px 18px 20px; }
     .dir-nivel {
       top: 0; right: auto; width: var(--ancho, 100%); height: 100% !important;
       border-top: none; border-right: 2px solid #4B7BE5;
     }
-    .dir-torre.mal .dir-nivel { border-right-color: #F87171; }
-    .dir-torre-abajo { margin-top: 10px; }
-    .dir-detalle { max-height: 210px; opacity: 1; margin-top: 12px; }
+    .dir-torre.mal .dir-nivel { border-right-color: #E54B4B; }
+    .dir-torre-abajo { margin-top: 12px; }
+    .dir-detalle { max-height: 220px; opacity: 1; margin-top: 14px; }
     .dir-pista { display: none; }
-    .dir-condicion { font-size: 16px; gap: 8px; }
+    .dir-condicion { font-size: 17px; gap: 8px; }
   }
 </style>
 
