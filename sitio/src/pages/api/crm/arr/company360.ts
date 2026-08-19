@@ -109,44 +109,9 @@ export const GET: APIRoute = async ({ url }) => {
     proxima_factura: activas.map(s => s.proxima_factura).filter(Boolean).sort()[0] || null,
   };
 
-  // ── Desde cuándo existe esta cuenta ──
-  //
-  // Manda lo que dice SACS (`cuenta_desde`: su primera venta o su primera
-  // sucursal, lo que sea más viejo), no el registro comercial. Es la diferencia
-  // entre "desde cuándo nos paga" y "desde cuándo opera": Live Shows figuraba
-  // con 8 meses porque su suscripción se cargó en dic-2025, cuando llevaba
-  // vendiendo desde feb-2024.
-  //
-  // El dato viene del caché que deja el cron nocturno. No cuesta una consulta a
-  // SACS por abrir la ficha.
-  const cuentaDesde = (co.data as any)?.actividad?.cuenta_desde || null;
-
-  // El registro comercial se conserva como respaldo: una cuenta recién ligada
-  // —o una sin ventas todavía— no tiene rastro en SACS del cual fecharse.
-  const candidatas = [
-    (co.data as any)?.fecha_inicio,
-    ...(subs.data || []).map((x: any) => x.fecha_inicio),
-    ...(pays.data || []).map((x: any) => x.fecha),
-  ].filter(Boolean).map((x: any) => String(x).slice(0, 10)).sort();
-  const clienteDesde = candidatas[0] || null;
-  const desde = cuentaDesde || clienteDesde;
-  const mesesCliente = desde
-    ? Math.max(0, Math.round((Date.now() - Date.parse(desde + 'T12:00:00')) / 2629800000))
-    : null;
-
   return new Response(JSON.stringify({
     company: co.data,
     resumen,
-    antiguedad: {
-      desde, meses: mesesCliente,
-      // De dónde salió la fecha, para poder discutir el número sin adivinar.
-      origen: cuentaDesde ? ((co.data as any)?.actividad?.cuenta_desde_origen || 'SACS') : 'registro comercial',
-      cliente_desde: clienteDesde,
-      // La última sucursal que abrió, con fecha: dice si la cuenta sigue
-      // creciendo. Todo del caché del cron, no de una consulta a SACS.
-      sucursal_reciente: (co.data as any)?.actividad?.sucursal_reciente || null,
-      sucursales_totales: (co.data as any)?.actividad?.sucursales_totales ?? null,
-    },
     subscriptions: subs.data || [],
     payments: pays.data || [],
     cobros_mp: cobrosMp,

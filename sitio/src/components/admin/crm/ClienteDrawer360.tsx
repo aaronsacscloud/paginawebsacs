@@ -240,7 +240,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && (<>
-                <TabSubs companyId={companyId} subs={subs} ant={data?.antiguedad} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
+                <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
                 <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
               </>)}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
@@ -1235,7 +1235,7 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
 const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada', cobro: 'manual', payer_email: '' };
 const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
+function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [archivosSub, setArchivosSub] = useState<any>(null);
   // Licencias que se cobran en fechas distintas y se podrían juntar. No es una
   // fusión: cada licencia sigue viva con su precio, solo cambia CUÁNDO se cobra.
@@ -1736,41 +1736,6 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
         </div>
       </div>
 
-      {/* La antigüedad va DEBAJO de las suscripciones: lo que se viene a ver
-          aquí es qué está pagando el cliente. La antigüedad es contexto, y de
-          ella solo importan dos datos —cuánto lleva y cuál fue la última
-          sucursal que abrió—, no la lista de las 60. */}
-      {ant?.meses != null && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, background: '#faf8ff', border: '1.5px solid #e6ddfa', borderRadius: 12, padding: '12px 16px', marginTop: 14, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>Antigüedad</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#5B4BD6', marginTop: 3, letterSpacing: '-.02em' }}>
-              {ant.meses >= 12 ? <>{(ant.meses / 12).toFixed(1).replace('.0', '')} <span style={{ fontSize: '0.78rem', color: '#b3afbd', fontWeight: 600 }}>años</span></>
-                : <>{ant.meses} <span style={{ fontSize: '0.78rem', color: '#b3afbd', fontWeight: 600 }}>{ant.meses === 1 ? 'mes' : 'meses'}</span></>}
-            </div>
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#6b6b74', lineHeight: 1.6 }}>
-            En SACS desde <b style={{ color: '#3f3b4d' }}>{fmtDate(ant.desde)}</b>
-            {/* De dónde salió la fecha: sin esto, un número que no cuadra con
-                lo que el cliente recuerda no se puede discutir. */}
-            <div style={{ color: '#a5a2af' }}>
-              {ant.origen === 'registro comercial'
-                ? 'Del registro comercial: esta cuenta todavía no deja rastro en SACS.'
-                : `Por su ${ant.origen}${ant.cliente_desde && ant.cliente_desde !== ant.desde ? ` · empezó a pagar el ${fmtDate(ant.cliente_desde)}` : ''}`}
-            </div>
-          </div>
-          {ant.sucursal_reciente?.creada && (
-            <div style={{ marginLeft: 'auto', textAlign: 'right' as const, minWidth: 170 }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>Última sucursal que abrió</div>
-              <div style={{ fontSize: '0.83rem', fontWeight: 700, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ant.sucursal_reciente.nombre}</div>
-              <div style={{ fontSize: '0.74rem', color: '#5B4BD6', fontWeight: 600 }}>
-                {fmtDate(ant.sucursal_reciente.creada)}
-                {ant.sucursales_totales ? <span style={{ color: '#b3afbd', fontWeight: 400 }}> · {ant.sucursales_totales} en la cuenta</span> : null}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       {unificar && (
         <UnificarFechas grupo={unificar} companyId={companyId} principalWa={principal?.whatsapp}
           onCerrar={() => setUnificar(null)}
