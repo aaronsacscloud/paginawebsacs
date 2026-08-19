@@ -2852,25 +2852,28 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </div>
             {/* Right: Preview */}
             <div className={`rh-quote-preview rh-prev-${qf.template || 'modern'}`} style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
-              <div className="rh-doc" style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+              {/* La vista previa se viste igual que el documento real: si aquí se
+                  ve de otra forma, se diseña a ciegas. */}
+              <div className="rh-doc" style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(16,24,40,.06), 0 14px 36px rgba(16,24,40,.10)', overflow: 'hidden' }}>
+                <div style={{ height: 4, background: 'linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)' }} />
                 {/* Preview Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '28px 32px 18px', borderBottom: '1px solid #f0f0f0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.5rem', fontWeight: 700 }}>Sacs</span>
-                    <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#4B7BE5', background: 'rgba(75,123,229,0.08)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Cotización</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '24px 30px 18px', borderBottom: '1px solid #f0eff3', background: '#fcfbfe' }}>
+                  <div>
+                    <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-.01em' }}>Sacs</div>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#9c3d70', textTransform: 'uppercase' as const, letterSpacing: '0.11em', marginTop: 3 }}>Cotización</div>
                   </div>
                   <div style={{ textAlign: 'right' as const }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 800 }}>{qf.numero || 'COT-XXX'}</div>
-                    <div style={{ fontSize: '0.6875rem', color: '#999' }}>Vigencia: {fmtDate(qf.vigencia)}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#3f3b4d' }}>{qf.numero || 'COT-XXX'}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>Vigencia: {fmtDate(qf.vigencia)}</div>
                   </div>
                 </div>
 
                 {/* Preview Client */}
-                <div style={{ padding: '16px 32px' }}>
-                  <div style={{ fontSize: '0.5rem', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 2 }}>Cotización para:</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a1a' }}>{qf.empresa || 'Empresa'}</div>
-                  {qf.contacto && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.contacto}</div>}
-                  {qf.email && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.email}</div>}
+                <div style={{ padding: '15px 30px', borderBottom: '1px solid #f0eff3' }}>
+                  <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>Cotización para</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#16181d', marginTop: 4 }}>{qf.empresa || 'Empresa'}</div>
+                  {qf.contacto && <div style={{ fontSize: '0.74rem', color: '#6b7280' }}>{qf.contacto}</div>}
+                  {qf.email && <div style={{ fontSize: '0.74rem', color: '#6b7280' }}>{qf.email}</div>}
                 </div>
 
                 {/* Encabezado de la plantilla Ejecutiva, también en la vista
@@ -2915,8 +2918,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     casilla y en la vista previa no pasaba nada, así que parecía
                     que el interruptor estaba muerto. */}
                 {(qf.mostrar_timer !== false) && (
-                  <div className="rh-warn" style={{ margin: '0 32px 14px', background: '#fff6ed', border: '1px solid #fde3c7', borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#b45309' }}>
+                  <div className="rh-warn" style={{ margin: '14px 30px 0', background: '#FEF6E7', border: '1px solid #f5e2b8', borderRadius: 10, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9a6a10' }}>
                       {/* daysUntil devuelve Infinity cuando no hay fecha —no null—,
                           y por eso la vista previa decía "Faltan Infinity días". */}
                       {(() => {
@@ -2926,7 +2929,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         return n < 0 ? 'Vigencia vencida' : n === 0 ? 'Vence hoy' : `Faltan ${n} día${n === 1 ? '' : 's'}`;
                       })()}
                     </span>
-                    <span style={{ fontSize: '0.5625rem', color: '#c88a4a' }}>· cuenta regresiva en vivo para el cliente</span>
+                    <span style={{ fontSize: '0.66rem', color: '#b08a4a' }}>· cuenta regresiva en vivo para el cliente</span>
                   </div>
                 )}
 
@@ -2984,13 +2987,18 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   </tbody>
                 </table>
 
-                {/* Preview Totals */}
-                <div style={{ padding: '16px 32px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>Subtotal</span><span>{fmt(itemsSubtotal)}</span></div>
-                  {parseFloat(qf.descuento_global) > 0 && <div className="rh-money" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#2AB5A0', marginBottom: 4 }}><span>Descuento</span><span>-{fmt(globalDisc)}</span></div>}
-                  {ivaMode !== 'sin' && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>{ivaMode === 'incluido' ? 'IVA incluido' : 'IVA (16%)'}</span><span>{fmt(ivaMonto)}</span></div>}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '2px solid #1a1a1a', paddingTop: 8, marginTop: 4 }}>
-                    <span>Total {ivaMode === 'incluido' ? '(IVA incl.)' : ''}</span><span className="rh-money" style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
+                {/* Preview Totals — el total es el ancla del documento y va en
+                    lila, como el adeudo del estado de cuenta. En verde diría
+                    "pagado", que es justo lo que todavía no pasa. */}
+                <div style={{ padding: '14px 30px 4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#6b7280', padding: '4px 0' }}><span>Subtotal</span><span>{fmt(itemsSubtotal)}</span></div>
+                  {parseFloat(qf.descuento_global) > 0 && <div className="rh-money" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#1E8A63', padding: '4px 0' }}><span>Descuento</span><span>-{fmt(globalDisc)}</span></div>}
+                  {ivaMode !== 'sin' && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#6b7280', padding: '4px 0' }}><span>{ivaMode === 'incluido' ? 'IVA incluido' : 'IVA (16%)'}</span><span>{fmt(ivaMonto)}</span></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10, padding: '15px 17px', borderRadius: 12, background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22))' }}>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#5B4BD6' }}>
+                      Inversión total {ivaMode === 'incluido' ? '· IVA incl.' : ''}
+                    </span>
+                    <span className="rh-money" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#3f2fb8', letterSpacing: '-.02em' }}>{fmt(grandTotal)} {qf.moneda}</span>
                   </div>
                 </div>
 
@@ -3067,7 +3075,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const pMonthlyPlans = pPlans.filter((i: any) => i.periodo === 'mensual');
                   return (
                     <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
-                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Resumen de pagos</div>
+                      <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 8 }}>Resumen de pagos</div>
                       <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, marginBottom: 6, fontSize: '0.625rem' }}>
                         <div style={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4, fontSize: '0.5rem' }}>Primer pago</div>
                         {pPlans.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>Plan {i.nombre} ({i.periodo})</span><span>{fmt(i.subtotal || 0)}</span></div>)}

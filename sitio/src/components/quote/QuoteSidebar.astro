@@ -352,4 +352,18 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
   }
 
   @media print { .qsb { display: none !important; } }
+
+  /* ── Acento del sistema en la plantilla moderna ──
+     El verde significa PAGADO en todo SACS; usarlo para marcar en qué pestaña
+     va el cliente decía lo que no es. La navegación y el botón que cierra la
+     venta van en el morado del CRM, con el destello rosa de la firma. */
+  .qsb--modern { border-radius: 14px; border-color: #eeecf3; box-shadow: 0 1px 3px rgba(16,24,40,.05); overflow: hidden; }
+  .qsb--modern .qsb-tab.qsb-tab--active { border-left-color: #9B8CFA; }
+  .qsb--modern .qsb-tab.qsb-tab--active .qsb-tab-num,
+  .qsb--modern .qsb-tab.qsb-tab--visited::before { color: #9B8CFA; }
+  .qsb--modern .qsb-cta--primary { background: #9B8CFA; border-radius: 10px; letter-spacing: .04em; }
+  .qsb--modern .qsb-cta--primary:hover { background: #7C6BF0; }
+  .qsb--modern .qsb-cta--muted { color: #5B4BD6; border-color: #ddd6fb; border-radius: 10px; background: #EEECFE; }
+  .qsb--modern .qsb-cta--disabled { border-radius: 10px; }
+
 </style>

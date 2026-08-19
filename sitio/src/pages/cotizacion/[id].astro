@@ -1705,7 +1705,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <canvas id="signature-canvas" class="quote-signature-canvas" width="500" height="150"></canvas>
         <div class="quote-signature-actions">
           <button class="quote-action-btn" id="btn-clear-sig">Limpiar</button>
-          <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
+          <button class="quote-action-btn quote-action-btn--primary" id="btn-accept-sig">Aceptar cotización</button>
         </div>
       </div>
       <div class="quote-reject-wrap no-print">
@@ -3015,6 +3015,24 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-modern .quote-table th, .quote-modern .quote-table td,
   .quote-modern .quote-totals, .quote-modern .quote-conditions, .quote-pagos { padding-left: 18px; padding-right: 18px; }
 }
+
+
+/* Botones que cierran la venta: en el morado del sistema, no en negro. El
+   negro era de otra paleta y el verde significa "pagado" — decir "aceptar" en
+   verde promete algo que todavía no pasó. */
+.quote-action-btn--primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.quote-modern .quote-action-btn--primary { background: #9B8CFA; color: #fff; border-color: #9B8CFA; border-radius: 10px; font-weight: 700; }
+.quote-modern .quote-action-btn--primary:hover { background: #7C6BF0; }
+.quote-modern .quote-modal-btn { background: #9B8CFA; border-radius: 10px; }
+.quote-modern .quote-modal-btn:hover { background: #7C6BF0; }
+.quote-modern .quote-signed-cta { background: #9B8CFA; border-radius: 10px; }
+.quote-modern .quote-signed-cta:hover { background: #7C6BF0; }
+.quote-modern .qph-btn-add { background: #9B8CFA; border-radius: 9px; }
+.quote-modern .qph-btn-add:hover { background: #7C6BF0; }
+.quote-modern .qph-bar-fill { background: #9B8CFA; }
+/* El destello rosa se reserva para lo que lleva la firma: el rótulo del
+   documento y el borde del bloque de aceptación. */
+.quote-modern .quote-action-btn { border-radius: 9px; }
 
 </style>
 
