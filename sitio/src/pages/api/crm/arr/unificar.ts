@@ -50,7 +50,15 @@ export const GET: APIRoute = async ({ url }) => {
   const grupos: Record<string, any[]> = {};
   subs.forEach((s: any) => { (grupos[s.ciclo] = grupos[s.ciclo] || []).push(s); });
 
+  // Propuestas que ya se le mandaron al cliente y siguen esperando su OK: sin
+  // esto se generaría una nueva cada vez que alguien abre la ficha.
+  const { data: props } = await supabase.from('unificaciones')
+    .select('id, ancla, ciclo, a_pagar, credito, estado, autorizada_at, created_at, detalle')
+    .eq('company_id', companyId).in('estado', ['propuesta', 'autorizada'])
+    .order('created_at', { ascending: false });
+
   return json({
+    propuestas: props || [],
     grupos: Object.entries(grupos).map(([ciclo, lista]) => ({
       ciclo,
       // Con una sola no hay nada que unificar; con fechas iguales, tampoco.
@@ -124,6 +132,20 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (dry) return json({ ok: true, simulacion: true, ...resumen });
 
+  // ── Propuesta ──
+  // Antes de mover una sola fecha se genera el documento que ve el cliente. Es
+  // la diferencia entre proponerle un cambio y hacérselo: el cobro cambia de
+  // monto y de fecha, y eso se acuerda, no se avisa.
+  if (b?.accion === 'propuesta') {
+    const { data, error } = await supabase.from('unificaciones').insert({
+      company_id: subs[0].company_id, ciclo, ancla, ids,
+      detalle, total_periodo: totalAnual, credito, puente, a_pagar: aPagar, arr: resumen.arr,
+      estado: 'propuesta',
+    }).select('id').single();
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, propuesta_id: data.id, url: `/propuesta/${data.id}`, ...resumen }, 201);
+  }
+
   // ── Aplicar ──
   // El crédito vive en saldo_favor: se consume solo al registrar el pago y no
   // hay que acordarse de revertir nada. El puente se suma a monto_proximo, que
@@ -153,6 +175,16 @@ export const POST: APIRoute = async ({ request }) => {
     metadata: { grupo, ancla, ciclo, detalle, credito, puente, a_pagar: aPagar },
     automatico: true,
   }).then(() => {}, () => {});
+
+  // La propuesta queda cerrada con la fecha en que se aplicó; las demás de esa
+  // cuenta se cancelan solas: dos propuestas vivas sobre las mismas licencias
+  // acabarían aplicándose dos veces.
+  const ahoraIso = new Date().toISOString();
+  if (b?.propuesta_id) {
+    await supabase.from('unificaciones').update({ estado: 'aplicada', aplicada_at: ahoraIso }).eq('id', b.propuesta_id);
+  }
+  await supabase.from('unificaciones').update({ estado: 'cancelada', cancelada_at: ahoraIso })
+    .eq('company_id', subs[0].company_id).in('estado', ['propuesta', 'autorizada']);
 
   return json({ ok: true, grupo, ...resumen });
 };

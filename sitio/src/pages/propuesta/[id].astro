@@ -1,0 +1,226 @@
+---
+// Propuesta de unificación de fechas de cobro — el documento que ve el CLIENTE.
+//
+// Se genera ANTES de tocar nada. El cobro le cambia de monto y de fecha: eso se
+// acuerda, no se avisa. Aquí ve qué licencias se juntan, qué días ya pagados se
+// le abonan, cuánto queda por pagar y cuándo, y lo autoriza con su nombre.
+//
+// Autorizar NO aplica nada: deja constancia. Aplicar sigue siendo un acto del
+// CRM porque implica cobrar, y separar las dos cosas es lo que permite mandar
+// esta liga sin miedo.
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const { data: p } = await supabase.from('unificaciones').select('*').eq('id', id).maybeSingle();
+if (!p) return Astro.redirect('/404');
+
+const { data: co } = await supabase.from('companies')
+  .select('nombre, nombre_comercial, sacs_account').eq('id', p.company_id).maybeSingle();
+const cliente = co?.nombre_comercial || co?.nombre || 'Cliente';
+
+const money = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function fecha(d?: string | null) {
+  if (!d) return '—';
+  const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '—';
+  return `${dd} de ${MESES[(m || 1) - 1]} de ${y}`;
+}
+const detalle: any[] = Array.isArray(p.detalle) ? p.detalle : [];
+const anual = p.ciclo !== 'mensual';
+const periodo = anual ? 'año' : 'mes';
+const conCredito = detalle.filter((x: any) => x.credito > 0);
+const conPuente = detalle.filter((x: any) => x.puente > 0);
+const vigente = p.estado === 'propuesta' || p.estado === 'autorizada';
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Propuesta de unificación · {cliente}</title>
+  <style>
+    :root { --ink:#16181d; --muted:#6b7280; --faint:#a5a2af; --violeta:#9B8CFA; --tinta:#5B4BD6; --hondo:#3f2fb8; --verde:#1E8A63; --ambar:#9a6a10; --line:#f0eff3; --bg:#eceef1; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.5; padding:26px 16px 60px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .num { font-variant-numeric:tabular-nums; }
+    .toolbar { max-width:640px; margin:0 auto 14px; display:flex; gap:10px; justify-content:flex-end; }
+    .btn { display:inline-flex; align-items:center; height:40px; padding:0 16px; border-radius:10px; font-size:.83rem; font-weight:700; cursor:pointer; font-family:inherit; border:1px solid #e6e6ea; background:#fff; color:var(--ink); text-decoration:none; }
+    .btn-primary { background:var(--violeta); color:#fff; border-color:var(--violeta); }
+    .doc { max-width:640px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06), 0 14px 36px rgba(16,24,40,.10); }
+    .head { padding:22px 26px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; border-bottom:1px solid var(--line); }
+    .marca { font-size:1.25rem; font-weight:800; letter-spacing:-.01em; }
+    .firma { font-size:.55rem; font-weight:800; color:#9c3d70; letter-spacing:.11em; text-transform:uppercase; margin-top:3px; }
+    .meta { text-align:right; font-size:.7rem; color:var(--muted); line-height:1.7; }
+    .meta b { color:#3f3b4d; }
+    .eyebrow { font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--tinta); }
+    .k { font-size:.57rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+    .para { padding:15px 26px; border-bottom:1px solid var(--line); }
+    .para .n { font-size:.95rem; font-weight:800; margin-top:4px; }
+    .para .c { font-size:.74rem; color:var(--muted); }
+    .intro { padding:16px 26px 0; font-size:.83rem; color:#4c4a57; line-height:1.7; }
+    .hero { margin:16px 26px; border-radius:12px; padding:16px 18px; background:linear-gradient(135deg,#EEECFE,#E3EDFD); }
+    .hero .k { color:var(--tinta); }
+    .hero .v { font-size:1.85rem; font-weight:800; color:var(--hondo); letter-spacing:-.02em; line-height:1.1; margin-top:4px; }
+    .hero .d { font-size:.75rem; color:var(--tinta); margin-top:5px; font-weight:600; }
+    .sec { padding:0 26px; }
+    .sec .k { margin:16px 0 9px; display:block; }
+    .pl { border:1px solid var(--line); border-radius:11px; padding:12px 14px; margin-bottom:9px; }
+    .pl .top { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .pl .nm { font-size:.87rem; font-weight:800; }
+    .pl .mo { margin-left:auto; font-size:.95rem; font-weight:800; }
+    .gr { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #f7f6fa; }
+    .gr .c { font-size:.54rem; font-weight:800; color:#b3b1bb; text-transform:uppercase; letter-spacing:.06em; }
+    .gr .v { font-size:.76rem; font-weight:700; margin-top:2px; }
+    .abono { background:#EAF8F2; border:1px solid #cdeadd; border-radius:12px; padding:13px 15px; margin:4px 26px 0; }
+    .abono .t { font-size:.8rem; font-weight:800; color:var(--verde); }
+    .abono .l { display:flex; font-size:.76rem; color:#2f6b52; padding:3px 0; }
+    .abono .l b { margin-left:auto; }
+    .tot { display:flex; align-items:baseline; margin-top:7px; padding-top:8px; border-top:1px solid #cdeadd; font-size:.84rem; font-weight:800; color:var(--verde); }
+    .tot b { margin-left:auto; }
+    .aut { margin:18px 26px 6px; border-radius:12px; border:1.5px solid #ddd6fb; background:#faf8ff; padding:15px 16px; }
+    .aut .t { font-size:.85rem; font-weight:800; color:var(--tinta); }
+    .aut .d { font-size:.76rem; color:#6b6b74; line-height:1.6; margin:4px 0 10px; }
+    .aut input { width:100%; padding:10px 12px; border:1.5px solid #e4dffb; border-radius:9px; font-size:.85rem; font-family:inherit; background:#fff; outline:none; }
+    .aut button { width:100%; margin-top:9px; border:none; border-radius:10px; padding:12px; background:var(--violeta); color:#fff; font-size:.86rem; font-weight:800; cursor:pointer; font-family:inherit; }
+    .ok { margin:18px 26px 6px; border-radius:12px; background:#EAF8F2; border:1px solid #cdeadd; padding:14px 16px; font-size:.82rem; color:var(--verde); font-weight:700; }
+    .ok span { display:block; font-weight:400; color:#2f6b52; font-size:.76rem; margin-top:3px; }
+    .foot { padding:14px 26px 20px; border-top:1px solid var(--line); margin-top:16px; color:var(--muted); font-size:.71rem; line-height:1.7; }
+    .foot b { color:#3f3b4d; }
+    @media (max-width:560px) { .head,.para,.sec,.foot,.intro { padding-left:18px; padding-right:18px; } .hero,.abono,.aut,.ok { margin-left:18px; margin-right:18px; } .gr { grid-template-columns:1fr 1fr; } }
+    @media print { body { background:#fff; padding:0; } .toolbar,.aut { display:none !important; } .doc { box-shadow:none; border-radius:0; max-width:none; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="copiar">Copiar liga</button>
+    <button class="btn btn-primary" onclick="window.print()">Descargar PDF</button>
+  </div>
+
+  <div class="doc">
+    <div class="head">
+      <div>
+        <div class="marca">SACSCloud</div>
+        <div class="firma">Propuesta de unificación de cobro</div>
+      </div>
+      <div class="meta">
+        {fecha(String(p.created_at).slice(0, 10))}<br />
+        <b>{cliente}</b>{co?.sacs_account ? <><br />Cuenta {co.sacs_account}</> : null}
+      </div>
+    </div>
+
+    <div class="intro">
+      Hoy sus {detalle.length} licencias se cobran en fechas distintas. Le proponemos juntarlas en una sola fecha
+      para que reciba <b>un solo cobro al {periodo}</b>. <b>No cambia nada de su servicio</b>: conserva las mismas
+      licencias, las mismas sucursales y el mismo precio; lo único que se mueve es cuándo se cobra.
+    </div>
+
+    <div class="hero">
+      <span class="k">A pagar el {fecha(p.ancla)}</span>
+      <div class="v num">{money(p.a_pagar)}</div>
+      <div class="d">
+        {money(p.total_periodo)} del {periodo} completo
+        {Number(p.puente) > 0 ? ` + ${money(p.puente)} de los días que faltan` : ''}
+        {Number(p.credito) > 0 ? ` − ${money(p.credito)} que usted ya tenía pagados` : ''}
+      </div>
+    </div>
+
+    <div class="sec">
+      <span class="k">Sus licencias</span>
+      {detalle.map((x: any) => (
+        <div class="pl">
+          <div class="top">
+            <span class="nm">{x.nombre_plan}</span>
+            <span class="mo num">{money(x.precio)}</span>
+          </div>
+          <div class="gr">
+            <div><div class="c">Se cobra hoy el</div><div class="v">{fecha(x.proxima_factura)}</div></div>
+            <div><div class="c">Pasaría al</div><div class="v">{fecha(p.ancla)}</div></div>
+            <div>
+              <div class="c">{x.credito > 0 ? 'Días a su favor' : x.puente > 0 ? 'Días que faltan' : 'Ajuste'}</div>
+              <div class="v" style={x.credito > 0 ? 'color:#1E8A63' : x.puente > 0 ? 'color:#9a6a10' : 'color:#b3b1bb'}>
+                {x.credito > 0 ? `${x.dias} días · −${money(x.credito)}` : x.puente > 0 ? `${Math.abs(x.dias)} días · +${money(x.puente)}` : 'ninguno'}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {conCredito.length > 0 && (
+      <div class="abono">
+        <div class="t">Lo que ya pagó y no había usado, se le abona</div>
+        {conCredito.map((x: any) => (
+          <div class="l">{x.nombre_plan} · {x.dias} días <b class="num">−{money(x.credito)}</b></div>
+        ))}
+        <div class="tot">Total a su favor <b class="num">−{money(p.credito)}</b></div>
+      </div>
+    )}
+
+    {conPuente.length > 0 && (
+      <div class="sec">
+        <span class="k">Días que se agregan</span>
+        <div style="font-size:.78rem;color:#6b7280;line-height:1.6">
+          Estas licencias se extienden hasta el {fecha(p.ancla)}; esos días se cobran a la misma tarifa, sin recargo:
+          {conPuente.map((x: any) => <span> <b>{x.nombre_plan}</b> ({Math.abs(x.dias)} días, {money(x.puente)}).</span>)}
+        </div>
+      </div>
+    )}
+
+    {p.estado === 'autorizada' || p.estado === 'aplicada' ? (
+      <div class="ok">
+        {p.estado === 'aplicada' ? 'Propuesta aplicada' : 'Propuesta autorizada'}
+        <span>
+          {p.autorizada_por ? `Autorizada por ${p.autorizada_por}` : 'Autorizada'}
+          {p.autorizada_at ? ` el ${fecha(String(p.autorizada_at).slice(0, 10))}` : ''}.
+          {p.estado === 'aplicada' ? ' Sus licencias ya quedaron con la misma fecha de cobro.' : ' En breve recibirá el cobro unificado.'}
+        </span>
+      </div>
+    ) : vigente ? (
+      <div class="aut" id="caja">
+        <div class="t">¿Lo autoriza?</div>
+        <div class="d">Escriba su nombre para dejar constancia. Con eso ajustamos las fechas y le enviamos un solo cobro.</div>
+        <input id="nombre" placeholder="Su nombre" />
+        <button id="autorizar">Autorizar la unificación</button>
+        <div id="err" style="font-size:.75rem;color:#C0554E;margin-top:8px;display:none"></div>
+      </div>
+    ) : (
+      <div class="ok" style="background:#f4f4f6;border-color:#e6e6ea;color:#6b7280">Esta propuesta ya no está vigente.<span>Pídanos una nueva y con gusto se la enviamos.</span></div>
+    )}
+
+    <div class="foot">
+      Su servicio no se interrumpe ni cambia de precio: el ajuste es solo de fechas. Cualquier duda, respóndanos por
+      este mismo medio.<br />
+      <b>SACSCloud</b> · www.sacscloud.com
+    </div>
+  </div>
+
+  <script define:vars={{ id }}>
+    document.getElementById('copiar')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText(window.location.href);
+    });
+    const btn = document.getElementById('autorizar');
+    btn?.addEventListener('click', async () => {
+      const nombre = (document.getElementById('nombre')).value.trim();
+      const err = document.getElementById('err');
+      err.style.display = 'none';
+      if (!nombre) { err.textContent = 'Escriba su nombre para autorizar.'; err.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      const r = await fetch('/api/crm/arr/unificar/autorizar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, nombre }),
+      }).then(x => x.json()).catch(() => null);
+      if (!r || r.error) {
+        err.textContent = r?.error || 'No se pudo registrar la autorización.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Autorizar la unificación';
+        return;
+      }
+      location.reload();
+    });
+  </script>
+</body>
+</html>

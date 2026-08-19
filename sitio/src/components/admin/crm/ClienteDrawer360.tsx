@@ -1245,7 +1245,14 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
     if (!companyId) return;
     let vivo = true;
     fetch('/api/crm/arr/unificar?company_id=' + companyId).then(r => r.json())
-      .then(j => { if (vivo) setUnificables((j.grupos || []).filter((g: any) => g.unificable)); })
+      .then(j => {
+        if (!vivo) return;
+        const props = j.propuestas || [];
+        setUnificables((j.grupos || []).filter((g: any) => g.unificable)
+          // La propuesta viva del ciclo viaja con su grupo: al abrir el modal se
+          // retoma en vez de generar otra.
+          .map((g: any) => ({ ...g, propuesta: props.find((x: any) => x.ciclo === g.ciclo) || null })));
+      })
       .catch(() => {});
     return () => { vivo = false; };
   }, [companyId, subs]);
@@ -1501,7 +1508,11 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
           <div key={g.ciclo} style={{ background: '#EEECFE', border: '1px solid #ddd6fb', borderRadius: 10, padding: '9px 12px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ fontSize: '0.78rem', color: '#5B4BD6', lineHeight: 1.5, flex: 1, minWidth: 220 }}>
               <b>{g.subs.length} licencias {g.ciclo === 'mensual' ? 'mensuales' : 'anuales'} con {g.anclas.length} fechas distintas.</b>{' '}
-              Se pueden juntar en un solo cobro: lo que ya pagó de más se le abona.
+              {g.propuesta
+                ? (g.propuesta.estado === 'autorizada'
+                  ? 'El cliente ya autorizó juntarlas: falta aplicarlo.'
+                  : 'Ya hay una propuesta enviada, esperando su autorización.')
+                : 'Se pueden juntar en un solo cobro: lo que ya pagó de más se le abona.'}
             </div>
             <button style={{ ...D.btnAzul, fontSize: '0.76rem' }} onClick={() => setUnificar(g)}>Unificar fechas</button>
           </div>
@@ -1761,7 +1772,7 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
         </div>
       )}
       {unificar && (
-        <UnificarFechas grupo={unificar} companyId={companyId}
+        <UnificarFechas grupo={unificar} companyId={companyId} principalWa={principal?.whatsapp}
           onCerrar={() => setUnificar(null)}
           onListo={(t: string) => { setUnificar(null); flash(t); reload(); }} />
       )}
@@ -2651,12 +2662,16 @@ function ElegirCotizacionModal({ companyId, busyId, onUsar, onDesdeCero, onClose
  * La cuenta va por días: lo que ya pagó y todavía no usa se le abona (crédito),
  * y lo que le falta para llegar a la fecha elegida se le cobra (puente). Sin el
  * crédito se le estaría cobrando dos veces el mismo periodo. */
-function UnificarFechas({ grupo, companyId, onCerrar, onListo }: any) {
+function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: any) {
   const [ids, setIds] = useState<string[]>(grupo.subs.map((s: any) => s.id));
-  const [ancla, setAncla] = useState<string>(grupo.anclas[0]);
+  const [ancla, setAncla] = useState<string>(grupo.propuesta?.ancla ? String(grupo.propuesta.ancla).slice(0, 10) : grupo.anclas[0]);
   const [prev, setPrev] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // La propuesta que ya se le mandó al cliente. Mientras exista, el botón de
+  // aplicar deja de ser el principal: primero se acuerda, luego se cobra.
+  const [propuesta, setPropuesta] = useState<any>(grupo.propuesta || null);
+  const liga = propuesta && typeof window !== 'undefined' ? `${window.location.origin}/propuesta/${propuesta.id}` : '';
 
   // La simulación se pide al servidor: la cuenta de días vive en un solo lugar
   // y así lo que se ve es exactamente lo que se va a aplicar.
@@ -2674,11 +2689,23 @@ function UnificarFechas({ grupo, companyId, onCerrar, onListo }: any) {
     return () => { vivo = false; };
   }, [ids.join(','), ancla]);
 
+  async function generar() {
+    setBusy(true); setError('');
+    const j = await fetch('/api/crm/arr/unificar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId, ids, ancla, dry: false, accion: 'propuesta' }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (!j || j.error) { setError(j?.error || 'No se pudo generar la propuesta.'); return; }
+    setPropuesta({ id: j.propuesta_id, estado: 'propuesta', ancla, a_pagar: j.a_pagar });
+    try { navigator.clipboard?.writeText(`${window.location.origin}/propuesta/${j.propuesta_id}`); } catch { /* la liga se ve abajo */ }
+  }
+
   async function aplicar() {
     setBusy(true); setError('');
     const j = await fetch('/api/crm/arr/unificar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_id: companyId, ids, ancla, dry: false }),
+      body: JSON.stringify({ company_id: companyId, ids, ancla, dry: false, propuesta_id: propuesta?.id || null }),
     }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (!j || j.error) { setError(j?.error || 'No se pudo unificar.'); return; }
@@ -2772,13 +2799,45 @@ function UnificarFechas({ grupo, companyId, onCerrar, onListo }: any) {
               devuelve en efectivo, y ninguna licencia se da de baja.
             </div>
           </>)}
+
+          {/* El documento del cliente va ANTES de mover nada: el cobro le cambia
+              de monto y de fecha, y eso se acuerda, no se avisa. */}
+          {propuesta && (
+            <div style={{ background: propuesta.estado === 'autorizada' ? '#EAF8F2' : '#f7f4ff', border: '1.5px solid ' + (propuesta.estado === 'autorizada' ? '#cdeadd' : '#e4dffb'), borderRadius: 10, padding: '11px 13px', marginTop: 12 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: propuesta.estado === 'autorizada' ? '#1E8A63' : '#5B4BD6' }}>
+                {propuesta.estado === 'autorizada'
+                  ? `El cliente autorizó${propuesta.autorizada_por ? ' · ' + propuesta.autorizada_por : ''}`
+                  : 'Propuesta lista para enviar'}
+              </div>
+              <div style={{ fontSize: '0.73rem', color: '#6b6b74', lineHeight: 1.5, margin: '3px 0 8px' }}>
+                {propuesta.estado === 'autorizada'
+                  ? 'Ya puedes aplicar la unificación y generar el cobro.'
+                  : 'Mándasela y aplica cuando te diga que sí. Mientras tanto no se movió ninguna fecha.'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#8a8590', wordBreak: 'break-all', marginBottom: 8 }}>{liga}</div>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                <a style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }} href={liga} target="_blank" rel="noreferrer">Ver documento</a>
+                <button style={{ ...D.btnG, fontSize: '0.76rem' }} onClick={() => { try { navigator.clipboard?.writeText(liga); } catch { /* ya está a la vista */ } }}>Copiar liga</button>
+                <a style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }} target="_blank" rel="noreferrer"
+                  href={`https://wa.me/${String(principalWa || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Le comparto la propuesta para juntar sus licencias en una sola fecha de cobro: ${liga}`)}`}>Enviar por WhatsApp</a>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button style={{ ...D.btn, opacity: busy || !prev ? .6 : 1 }} disabled={busy || !prev} onClick={aplicar}>
-            {busy ? 'Unificando…' : 'Unificar fechas'}
-          </button>
-          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cancelar</button>
+        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {!propuesta
+            ? <button style={{ ...D.btn, opacity: busy || !prev ? .6 : 1 }} disabled={busy || !prev} onClick={generar}>
+                {busy ? 'Generando…' : 'Generar propuesta para el cliente'}
+              </button>
+            : <button style={{ ...D.btn, opacity: busy ? .6 : 1, background: propuesta.estado === 'autorizada' ? '#1A8F7A' : '#9B8CFA' }} disabled={busy}
+                onClick={() => {
+                  if (propuesta.estado !== 'autorizada' && !confirm('El cliente todavía no ha autorizado esta propuesta.\n\n¿Aplicar de todas formas?')) return;
+                  aplicar();
+                }}>
+                {busy ? 'Unificando…' : 'Aplicar la unificación'}
+              </button>}
+          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cerrar</button>
         </div>
       </div>
     </div>
