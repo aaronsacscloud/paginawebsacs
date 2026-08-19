@@ -21,6 +21,7 @@ import SuiteCubo from '../../components/suite/SuiteCubo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import ZapCorridaCerrada from '../../components/giros/ZapCorridaCerrada.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
@@ -82,17 +83,20 @@ const desc =
       <p class="hero-sub">
         El sistema para zapaterías. Corrida completa con medios números, cambio de número en el
         mostrador, apartados por quincena y el pedido de temporada por remesas — con un mismo
-        inventario para tu piso, tu tienda en línea y tu WhatsApp.
+        inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces.
       </p>
       <div class="hero-cta">
         <a href="/contacto" class="btn-pri">Agenda una demo</a>
         <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
 
+      <!-- Nada de cifras aquí: la franja de más abajo ya las da, y repetirlas
+           a 800 px de distancia las gasta dos veces. Esto es lo que solo el
+           hero puede decir: de qué está hecho el giro. -->
       <div class="hero-datos">
-        <div><b>+3,000</b><span>negocios activos</span></div>
-        <div><b>1 inventario</b><span>piso, en línea y WhatsApp</span></div>
-        <div><b>Sin cerrar</b><span>la migración se hace en marcha</span></div>
+        <div><b>Medios números</b><span>el 23½ es un número, no un detalle</span></div>
+        <div><b>Modelo × color × número</b><span>así se arma cada corrida</span></div>
+        <div><b>Cambio en mostrador</b><span>aunque el par sea de otra sucursal</span></div>
       </div>
     </div>
   </header>
@@ -117,8 +121,8 @@ const desc =
     resalte="“un botín de dama”"
     sub="Once números con medios, por dos colores, en tres sucursales. Sesenta y seis casillas de un solo modelo. Las apagadas son las que rompen la corrida — y son justo las que te están pidiendo."
     matriz={[
-      [1, 2, 0, 0, 0, 0, 3, 4, 3, 2, 2],
-      [1, 1, 2, 0, 0, 1, 4, 5, 4, 2, 1],
+      [1, 2, 0, 0, 0, 0, 3, 4, 3, 2, 4],
+      [1, 1, 2, 0, 0, 1, 4, 5, 4, 2, 2],
     ]}
     ejeA={['22', '22½', '23', '23½', '24', '24½', '25', '25½', '26', '26½', '27']}
     ejeB={['Café', 'Negro']}
@@ -150,16 +154,19 @@ const desc =
     filas={documentosZapateria.filas}
   />
 
+  <!-- ── Salida: aquí es donde muere la objeción del sistema genérico ── -->
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una corrida." />
+
   <!-- ── Respiro fotográfico: la escala ── -->
   <SuiteCifras
     foto="/images/suite-zap-tienda.webp"
-    alt="Tienda insignia de calzado con muros iluminados y bancas de mármol"
+    alt="Interior de una zapatería grande con muros de calzado a ambos lados, bancas de probador y clientes atendidos"
     frase="Desde una zapatería hasta una cadena con bodega central."
     encuadre="center 40%"
     datos={[
       { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
       { n: 4, pos: ' canales', rotulo: 'CON UN SOLO INVENTARIO' },
-      { n: 5, pos: ' días', rotulo: 'PARA ARRANCAR, SIN CERRAR' },
+      { n: 1, pos: ' semana', rotulo: 'PARA CAMBIARTE, SIN CERRAR UN DÍA' },
     ]}
   />
 
@@ -170,6 +177,9 @@ const desc =
     sub="No son funciones: son los cuatro momentos del año en los que una zapatería gana o pierde dinero. Toca cada uno."
     casos={casosZapateria}
   />
+
+  <!-- ── Salida: el visitante acaba de reconocer su propio sábado ── -->
+  <SuiteSalida frase="Te lo mostramos con tus números y tus modelos, no con los de la demo." cta="Ver una demo con mi catálogo" />
 
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll
@@ -196,6 +206,9 @@ const desc =
   <SuiteFormal
     sub="El cliente pide factura por el par que acaba de comprar y se emite ahí mismo, con la venta abierta. Nadie anota el RFC en una libreta para capturarlo en la noche."
     receptor="JORGE C."
+    subtotal="$1,215.52"
+    iva="$194.48"
+    total="$1,410.00"
   />
 
   <!-- ── El modelo comercial ── -->
@@ -219,8 +232,8 @@ const desc =
   .hero-veil {
     position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(90deg,
-      rgba(8,8,10,.97) 0%, rgba(8,8,10,.95) 28%, rgba(8,8,10,.62) 45%,
-      rgba(8,8,10,.16) 57%, rgba(8,8,10,0) 68%);
+      rgba(8,8,10,.96) 0%, rgba(8,8,10,.9) 26%, rgba(8,8,10,.5) 44%,
+      rgba(8,8,10,.1) 56%, rgba(8,8,10,0) 66%);
   }
   .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
   .hero-eyebrow {
@@ -247,12 +260,13 @@ const desc =
   .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
   .btn-sec:hover { background: rgba(255,255,255,.17); }
   .hero-datos {
-    display: flex; gap: 44px; flex-wrap: wrap;
+    display: flex; gap: 30px; flex-wrap: wrap; max-width: 660px;
     border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
   }
+  .hero-datos > div { flex: 1 1 180px; }
   .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
   .hero-datos b {
-    font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #fff; letter-spacing: -.6px;
+    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; color: #fff; letter-spacing: -.4px;
   }
   .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
@@ -271,7 +285,7 @@ const desc =
     to   { opacity: 1; transform: translateY(-46%) scale(.86); }
   }
   @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  @media (max-width: 1440px) { .hero-pos { right: -26%; transform: translateY(-46%) scale(.78); } }
+  @media (max-width: 1440px) { .hero-pos { right: -10%; transform: translateY(-50%) scale(.72); } }
   @media (min-width: 1181px) {
     .hero-sub { max-width: 44ch; }
     .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }

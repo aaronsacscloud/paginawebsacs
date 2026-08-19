@@ -35,6 +35,8 @@ interface Sucursal {
   margen: string;
   delta: string;
   alerta?: boolean;
+  /** Meses de inventario: en calzado es lo que quita el sueño, no la venta. */
+  inventario?: string;
   nota?: string;
 }
 
@@ -90,6 +92,7 @@ const {
             <div class="dir-detalle">
               <p><i>Ticket promedio</i><b>{s.ticket}</b></p>
               <p><i>Margen</i><b>{s.margen}</b></p>
+              {s.inventario && <p><i>Meses de inventario</i><b>{s.inventario}</b></p>}
               {s.nota && <p class="dir-nota">{s.nota}</p>}
             </div>
           </div>
@@ -163,12 +166,12 @@ const {
 
   .dir-nivel {
     position: absolute; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(180deg, #EAF0FC, #F5F8FE);
-    border-top: 2px solid #4B7BE5;
+    background: linear-gradient(180deg, #D8E4FA, #EDF3FD);
+    border-top: 3px solid #4B7BE5;
     transition: height .6s cubic-bezier(.25,.46,.45,.94);
   }
   .dir-torre.mal .dir-nivel {
-    background: linear-gradient(180deg, #FDEDED, #FEF7F7);
+    background: linear-gradient(180deg, #FADCDC, #FDF0F0);
     border-top-color: #E54B4B;
   }
 
@@ -191,7 +194,7 @@ const {
   }
   .dir-torre:hover .dir-detalle,
   .dir-torre:focus-visible .dir-detalle,
-  .dir-torre.mal .dir-detalle { max-height: 220px; opacity: 1; margin-top: 16px; }
+  .dir-torre.mal .dir-detalle { max-height: 300px; opacity: 1; margin-top: 16px; }
 
   .dir-detalle p {
     display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
@@ -235,14 +238,17 @@ const {
     /* En vertical la torre no cabe: cada sucursal pasa a ser una fila y el
        relleno se vuelve horizontal. Sigue midiendo lo mismo. */
     .dir-torres { flex-direction: column; height: auto; gap: 12px; }
-    .dir-torre { flex: none !important; padding: 18px 18px 20px; }
+    .dir-torre { flex: none !important; padding: 18px 18px 26px; }
+    .dir-torre { border-left: 3px solid #4B7BE5; }
+    .dir-torre.mal { border-left-color: #E54B4B; }
     .dir-nivel {
-      top: 0; right: auto; width: var(--ancho, 100%); height: 100% !important;
-      border-top: none; border-right: 2px solid #4B7BE5;
+      top: auto; bottom: 0; left: 0; right: auto;
+      width: var(--ancho, 100%); height: 6px !important;
+      background: #4B7BE5; border-top: none; border-radius: 0 3px 3px 0;
     }
-    .dir-torre.mal .dir-nivel { border-right-color: #E54B4B; }
+    .dir-torre.mal .dir-nivel { background: #E54B4B; }
     .dir-torre-abajo { margin-top: 12px; }
-    .dir-detalle { max-height: 220px; opacity: 1; margin-top: 14px; }
+    .dir-detalle { max-height: 300px; opacity: 1; margin-top: 14px; }
     .dir-pista { display: none; }
     .dir-condicion { font-size: 17px; gap: 8px; }
   }

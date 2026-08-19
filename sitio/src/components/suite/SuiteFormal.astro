@@ -21,11 +21,18 @@ interface Props {
   sub?: string;
   /** Ejemplo del giro para el comprobante. */
   receptor?: string;
+  /** Los tres montos del comprobante. Deben ser los de la venta del hero. */
+  subtotal?: string;
+  iva?: string;
+  total?: string;
 }
 const {
   titulo = 'Factura sin salir de la venta.',
   sub = 'El cliente pide factura en el mostrador y se emite ahí mismo, con la venta abierta. Nadie tiene que anotar el RFC en una libreta para capturarlo en la noche.',
   receptor = 'MARIANA R.',
+  subtotal = '$1,887.07',
+  iva = '$301.93',
+  total = '$2,189.00',
 } = Astro.props;
 
 const facturacion = [
@@ -77,9 +84,9 @@ const facturacion = [
           <div><dt>Forma de pago</dt><dd>04 · Tarjeta de crédito</dd></div>
         </dl>
         <div class="fm-doc-tot">
-          <div><span>Subtotal</span><b>$1,887.07</b></div>
-          <div><span>IVA 16%</span><b>$301.93</b></div>
-          <div class="fm-doc-total"><span>Total</span><b>$2,189.00</b></div>
+          <div><span>Subtotal</span><b>{subtotal}</b></div>
+          <div><span>IVA 16%</span><b>{iva}</b></div>
+          <div class="fm-doc-total"><span>Total</span><b>{total}</b></div>
         </div>
         <p class="fm-doc-pie">Emitida desde la caja · 12 seg después del cobro</p>
       </div>

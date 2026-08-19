@@ -161,11 +161,14 @@ const {
   @media (max-width: 900px) {
     /* En movil el objeto va detras del texto y el bloque se acorta: tres
        pantallas de scroll en un telefono se sienten eternas. */
-    .cubo-bloque { height: 165vh; }
+    .cubo-bloque { height: 150vh; }
     /* En movil no hay lugar para poner el objeto al lado: se sube arriba, el
        texto baja y el velo pasa a ser vertical. Antes el titulo se leia encima
        de los cubos claros y no se entendia ninguno de los dos. */
-    .cubo-pin { align-items: flex-end; padding-bottom: 52px; }
+    .cubo-pin { align-items: flex-end; padding-bottom: 46px; }
+    /* El lienzo deja libre la mitad de abajo para el texto y no se mete
+       debajo del header pegajoso. */
+    #cuboLienzo { top: 56px; height: min(52svh, 400px); inset-block-end: auto; }
     .cubo-velo {
       background: linear-gradient(180deg, rgba(8,8,10,.2) 0%, rgba(8,8,10,.62) 38%, rgba(8,8,10,.94) 62%, rgba(8,8,10,.98) 100%);
     }

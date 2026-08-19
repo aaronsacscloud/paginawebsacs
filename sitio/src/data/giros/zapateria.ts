@@ -19,7 +19,6 @@
  * surtido libre, medios números, saldo, saldero, quincena, SAPICA, cambio de
  * número, escolar.
  */
-import type { RackPieza } from '../../components/suite/SuiteRack.astro';
 
 /* ── Recorrido de funcionalidades ── */
 const est = {
@@ -48,9 +47,10 @@ export const seccionesZapateria: SuiteSeccion[] = [
     texto:
       'Das de alta el modelo una vez y armas su corrida completa, con medios números. Dama del 22 al 27, caballero del 25 al 30, infantil del 14 al 21 — cada número con su propia existencia, y el color como tercer eje.',
     bullets: [
-      'Botín dama del 22 al 27 con medios, en dos colores = 22 existencias de un solo modelo',
+      'Los medios números no son un detalle: el 23½ vende igual que el 24 y se agota igual de rápido',
       'Ves que el 23½ y el 24 llevan dos semanas en cero mientras el 27 no se ha movido',
       'Y que ese modelo ya está roto: sin los números de en medio, lo que queda es saldo',
+      'El conteo se hace por número y por caja cerrada, desde el celular y sin cerrar la tienda',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín dama piel · pares por número</p>
@@ -79,7 +79,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Modelos con la corrida rota</p>
-      ${[['Botín dama café','faltan 23 a 24½','17 pares','$21,930'],['Mocasín caballero negro','faltan 27 a 28½','11 pares','$13,090'],['Sandalia dama tan','faltan 23 y 23½','9 pares','$7,110']]
+      ${[['Botín dama café','faltan 23 a 24½','17 pares','$11,900'],['Mocasín caballero negro','faltan 27 a 28½','11 pares','$8,360'],['Sandalia dama tan','faltan 23 y 23½','9 pares','$4,680']]
         .map(([n,f,p,m]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
@@ -89,8 +89,8 @@ export const seccionesZapateria: SuiteSeccion[] = [
           <span style="font-size:13px;font-weight:800;color:#B91C1C;font-variant-numeric:tabular-nums;">${m}</span>
         </div>`).join('')}
       <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:800;color:#0F172A;">Parado en modelos rotos</span>
-        <span style="font-size:15px;font-weight:800;color:#B91C1C;">$42,130</span>
+        <span style="font-size:12px;font-weight:800;color:#0F172A;">Parado en modelos rotos, a costo</span>
+        <span style="font-size:15px;font-weight:800;color:#B91C1C;">$24,940</span>
       </div>
     </div>`,
   },
@@ -173,11 +173,11 @@ export const seccionesZapateria: SuiteSeccion[] = [
     tag: 'Posventa',
     titulo: 'Le apretó el 26',
     texto:
-      'El cambio de número es la operación posventa que más se repite, y después de Reyes no para. Se resuelve en el mostrador aunque el par lo hayan comprado en otra sucursal y aunque el cliente llegue sin ticket.',
+      'El cambio de número es la operación posventa que más se repite, y después de Reyes no para. Se resuelve en el mostrador aunque el par lo hayan comprado en otra sucursal, y desde el plan Fideliza también cuando el cliente llega sin ticket.',
     bullets: [
       'Buscas por teléfono del cliente y aparece el par que se llevó',
       'Cambio de 26 a 26½ del mismo modelo, con la diferencia si aplica',
-      'Nota de crédito automática cuando no hay su número y prefiere el saldo',
+      'Vale a favor por el importe, para cuando entre su número',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de número · sin ticket</p>
@@ -219,7 +219,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
           </div>
           <div style="margin-top:7px;font-size:10.5px;font-weight:800;color:${col};">${e}</div>
         </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">El vencido regresa al piso solo · su 23 vuelve a estar en venta</p>
+      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">El vencido lo liberas de un clic · su 23 vuelve a estar en venta</p>
     </div>`,
   },
   {
@@ -255,11 +255,10 @@ export const seccionesZapateria: SuiteSeccion[] = [
     tag: 'Ticket promedio',
     titulo: 'El par ya está vendido; el ticket no',
     texto:
-      'Lo que sube el ticket es lo que va con el par: calcetín, plantilla, agujeta, grasa. El sistema se lo pone al vendedor en la pantalla de cobro, cuando el cliente ya dijo que sí.',
+      'Lo que sube el ticket es lo que va con el par: calcetín, plantilla, agujetas, grasa. El sistema se lo pone al vendedor en la pantalla de cobro, cuando el cliente ya dijo que sí.',
     bullets: [
       'Sugerencia automática al cobrar el par (Fideliza)',
       'Promociones combinadas: par + calcetín + plantilla',
-      'Y el reporte de qué combinaciones sí levantan el ticket',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Sugerido al cobrar</p>
@@ -272,6 +271,44 @@ export const seccionesZapateria: SuiteSeccion[] = [
       <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
         <span style="font-size:12px;font-weight:700;color:#047857;">Ticket del par solo: $1,290 · con complementos: $1,730</span>
       </div>
+    </div>`,
+  },
+  {
+    id: 'marca',
+    tag: 'Marca y proveedor',
+    titulo: '"¿Cómo me fue con Flexi este mes?"',
+    texto:
+      'Es la primera pregunta del dueño y casi ningún sistema la contesta. Cada modelo carga su marca y su proveedor, así que la venta, el margen y el desplazamiento se leen por marca — y la junta de compra deja de ser de memoria.',
+    bullets: [
+      'Venta, margen y desplazamiento por marca, por tienda y por temporada',
+      'Qué marca te deja el margen y cuál solo te deja inventario',
+      'Cuánto le compras a cada proveedor al año, para negociar con el dato en la mano',
+    ],
+    visual: `<div style="${est.wrap}">
+      <p style="${est.h}">Cómo va cada marca · agosto</p>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+        <tr style="color:#94A3B8;font-weight:700;text-align:left;">
+          <th style="padding:0 0 7px;font-weight:700;">Marca</th>
+          <th style="padding:0 0 7px;text-align:right;font-weight:700;">Venta</th>
+          <th style="padding:0 0 7px;text-align:right;font-weight:700;">Margen</th>
+          <th style="padding:0 0 7px;text-align:right;font-weight:700;">Desplazamiento</th>
+        </tr>
+        ${[['Flexi','$214,800','47%',82,'#047857'],['Andrea','$168,300','44%',71,'#047857'],['Quirelli','$96,400','41%',48,'#B45309'],['Marca propia','$52,100','58%',31,'#B91C1C']]
+          .map(([m,v,g,d,c]:any)=>`<tr style="border-top:1px solid #EEF1F5;">
+            <td style="padding:9px 0;font-weight:700;color:#0F172A;">${m}</td>
+            <td style="padding:9px 0;text-align:right;color:#334155;font-variant-numeric:tabular-nums;">${v}</td>
+            <td style="padding:9px 0;text-align:right;color:#334155;font-variant-numeric:tabular-nums;">${g}</td>
+            <td style="padding:9px 0;text-align:right;">
+              <span style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;">
+                <span style="display:inline-block;width:52px;height:5px;border-radius:3px;background:#EEF1F5;overflow:hidden;">
+                  <span style="display:block;width:${d}%;height:100%;background:${c};"></span>
+                </span>
+                <b style="color:${c};font-variant-numeric:tabular-nums;">${d}%</b>
+              </span>
+            </td>
+          </tr>`).join('')}
+      </table>
+      <p style="margin:11px 0 0;font-size:10.5px;color:#94A3B8;font-weight:600;">Desplazamiento = pares vendidos sobre pares comprados de la temporada.</p>
     </div>`,
   },
   {
@@ -331,7 +368,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     tag: 'Fidelización',
     titulo: 'Sabes qué número calza cada cliente',
     texto:
-      'En calzado el número no cambia. Saber que tu cliente usa 26 y compra botín cada temporada vale más que cualquier campaña masiva: le avisas cuando entra su número, no cuando entra la colección.',
+      'El pie de tu cliente ya no crece: es 26 cada temporada — y tú ya sabes en qué marcas le queda y en cuáles pide medio número más. Saber eso vale más que cualquier campaña masiva: le avisas cuando entra su número, no cuando entra la colección.',
     bullets: [
       'Ficha con su número, su horma y las marcas que se lleva',
       'Aviso por WhatsApp cuando entra su número, con campañas segmentadas (Fideliza) o disparado solo (Automatiza)',
@@ -368,7 +405,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
       <p style="${est.h}">Tus agentes · activos</p>
       ${[
         ['Vigía de corridas','Cada mañana, 8:00','Avisa','Botín café: si se va el 25, el modelo se rompe'],
-        ['Asesor de WhatsApp','En cuanto escriben','Ejecuta','Respondió 31 mensajes · 9 apartados creados'],
+        ['Asesor de WhatsApp','En cuanto escriben','Responde','Dice si hay el número y en qué sucursal está'],
         ['Comprador de temporada','Lunes, 9:00','Solo propone','Corrida escolar sugerida, lista para tu OK'],
       ].map(([n,c,m,r]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:12px;padding:12px 13px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
@@ -387,15 +424,6 @@ export const seccionesZapateria: SuiteSeccion[] = [
 ];
 
 /* ── Perchero: aquí son pares por número y horma ── */
-export const rackZapateria: RackPieza[] = [
-  { n: 'Botín piel', img: '/images/rack-zap-bota.webp', tallas: 9, colores: 2 },
-  { n: 'Tenis casual', img: '/images/rack-zap-tenis.webp', tallas: 10, colores: 3 },
-  { n: 'Mocasín caballero', img: '/images/rack-zap-mocasin.webp', tallas: 8, colores: 2 },
-  { n: 'Sandalia dama', img: '/images/rack-zap-sandalia.webp', tallas: 7, colores: 4 },
-  { n: 'Tacón vestir', img: '/images/rack-zap-tacon.webp', tallas: 7, colores: 3 },
-  { n: 'Escolar niño', img: '/images/rack-zap-escolar.webp', tallas: 11, colores: 1 },
-];
-
 export const cortinaZapateria = {
   eyebrow: 'La misma pregunta, dos veces',
   titulo: '“¿Me lo trae en el 25?”',
@@ -415,11 +443,11 @@ export const cortinaZapateria = {
 };
 
 export const sucursalesZapateria = [
-  { nombre: 'Centro', venta: '$418,900', llena: 100, ticket: '$1,240', margen: '38%', delta: '+7%' },
-  { nombre: 'Plaza Norte', venta: '$352,100', llena: 84, ticket: '$1,410', margen: '41%', delta: '+3%' },
-  { nombre: 'Galerías', venta: '$298,400', llena: 71, ticket: '$1,180', margen: '36%', delta: '+1%' },
+  { nombre: 'Centro', venta: '$418,900', llena: 100, ticket: '$1,240', margen: '46%', inventario: '3.1 meses', delta: '+7%' },
+  { nombre: 'Plaza Norte', venta: '$352,100', llena: 84, ticket: '$1,410', margen: '48%', inventario: '3.6 meses', delta: '+3%' },
+  { nombre: 'Galerías', venta: '$298,400', llena: 71, ticket: '$1,180', margen: '44%', inventario: '4.2 meses', delta: '+1%' },
   {
-    nombre: 'Sur', venta: '$164,200', llena: 39, ticket: '$720', margen: '27%', delta: '−15%',
+    nombre: 'Sur', venta: '$164,200', llena: 39, ticket: '$720', margen: '27%', inventario: '6.8 meses', delta: '−15%',
     alerta: true,
     nota: 'Se está vaciando de números medios: el 23½ y el 24 llevan tres semanas en cero, y lo que queda sale con descuento — por eso el margen cayó a 27%.',
   },
@@ -428,15 +456,15 @@ export const sucursalesZapateria = [
 export const reglasZapateria = [
   { si: 'El descuento pasa de 15%', entonces: 'pide tu autorización', detalle: 'En calzado el remate es la salida fácil: si cualquiera puede darlo, el margen se va sin que nadie lo decida.' },
   { si: 'Se cancela una venta ya cobrada', entonces: 'queda firmada', detalle: 'Quién, cuándo y por qué. Con apartados y anticipos de por medio, es donde más se pierde el rastro.' },
-  { si: 'El corte de caja no cuadra', entonces: 'no cierra', detalle: 'El faltante se registra a nombre de quien cerró, y tú lo ves el mismo día — no a fin de mes.' },
+  { si: 'Sale un par sin su pareja', entonces: 'no se cierra el corte', detalle: 'El par de muestra del aparador y el que quedó en el probador son las dos fuentes de descuadre en calzado. Quedan a nombre de quien cerró, el mismo día — no a fin de mes.' },
 ];
 
 export const diasZapateria = [
   { dia: 'Día 1', titulo: 'Tus corridas, cargadas', detalle: 'Nos das tu archivo o tu base actual y lo subimos nosotros: modelo, color, número y existencia, con medios.' },
-  { dia: 'Día 2', titulo: 'Tu operación, configurada', detalle: 'Sucursales, bodega, cajas, usuarios, permisos y formas de pago quedan como ya trabajas.' },
+  { dia: 'Día 2', titulo: 'Tu operación, configurada', detalle: 'Tus marcas y tus proveedores de León, la bodega que surte a las tiendas, quién puede dar descuento y hasta cuánto. Queda como ya trabajas.' },
   { dia: 'Día 3', titulo: 'Capacitación', detalle: 'Dos horas con tu equipo. Cobrar y consultar un número se aprende en veinte minutos.' },
-  { dia: 'Día 4', titulo: 'Arranca una tienda', detalle: 'La primera sucursal vende con SACS. El sistema viejo sigue en pie por si acaso.' },
-  { dia: 'Día 5', titulo: 'Arrancan las demás', detalle: 'Con la primera resuelta, las otras entran el mismo día. Tu histórico se conserva y se consulta.' },
+  { dia: 'Día 4', titulo: 'Arranca una tienda', detalle: 'La primera sucursal vende con SACS, con sus apartados vivos ya migrados: nadie llega a liquidar y se encuentra con que su papel no existe.' },
+  { dia: 'Día 5', titulo: 'Arrancan las demás', detalle: 'Con la primera resuelta, las otras entran el mismo día — y el traspaso de números entre tiendas ya corre desde el primer sábado.' },
 ];
 
 export const cajaZapateria = {
@@ -494,7 +522,7 @@ export const documentosZapateria = {
     { que: 'Curva de compra por sucursal', generico: 'No existe', tonoGenerico: 'no', medida: 'Casi nunca', tonoMedida: 'no', sacs: 'Incluida' },
     { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', tonoGenerico: 'medio', medida: 'Rara vez', tonoMedida: 'no', sacs: 'Uno solo' },
     { que: 'Agentes de IA que tú programas', generico: 'No existe', tonoGenerico: 'no', medida: 'No existe', tonoMedida: 'no', sacs: 'En Automatiza' },
-    { que: 'Tiempo para arrancar', generico: 'Días', tonoGenerico: 'ok', medida: '4 a 9 meses', tonoMedida: 'no', sacs: 'Días' },
+    { que: 'Tiempo para arrancar', generico: 'Días', tonoGenerico: 'ok', medida: 'Meses', tonoMedida: 'no', sacs: 'Días' },
     { que: 'Quién lo mantiene', generico: 'Su proveedor', tonoGenerico: 'medio', medida: 'Tú, si lo encuentras', tonoMedida: 'no', sacs: 'Nosotros, a diario' },
   ],
 };

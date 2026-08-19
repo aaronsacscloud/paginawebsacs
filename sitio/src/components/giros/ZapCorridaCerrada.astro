@@ -53,7 +53,7 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           {caja.map((n, i) => (
             <div class="cc-col">
               <div class="cc-barra-caja-wrap">
-                <div class="cc-barra cc-barra-caja" style={`height:${(n / 6) * 100}%`}>
+                <div class="cc-barra cc-barra-caja" id={`bc-${i}`} style={`height:${(n / Math.max(4, ...caja, ...venta)) * 100}%`}>
                   <b>{n}</b>
                 </div>
               </div>
@@ -70,7 +70,7 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           {venta.map((n, i) => (
             <div class="cc-col">
               <div class="cc-barra-caja-wrap">
-                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / 6) * 100}%`}>
+                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / Math.max(4, ...caja, ...venta)) * 100}%`}>
                   <b id={`bt-${i}`}>{n}</b>
                 </div>
                 {/* El sobrante se pinta encima de la barra del visitante */}
@@ -156,7 +156,7 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
   .cc-barras { display: flex; gap: 12px; align-items: flex-end; }
   .cc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
-  .cc-barra-caja-wrap { position: relative; width: 100%; height: 92px; display: flex; align-items: flex-end; }
+  .cc-barra-caja-wrap { position: relative; width: 100%; height: 128px; display: flex; align-items: flex-end; }
   .cc-fila-caja .cc-col { justify-content: flex-end; }
   .cc-barra {
     width: 100%; border-radius: 7px 7px 0 0; position: relative; min-height: 4px;
@@ -263,6 +263,13 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
 
       const pintar = () => {
         let sobran = 0;
+        // La escala sale del valor más alto que hay en pantalla, no de un tope
+        // fijo. Con un tope de 6 y valores de 0 a 4, las barras se quedaban
+        // aplastadas contra el piso y la comparación —que es todo el bloque—
+        // dejaba de verse. La pila más alta de cada columna es el mayor entre
+        // lo que manda el fabricante y lo que vende el visitante.
+        const valores = rangos.map((r) => Number(r.value));
+        const escala = Math.max(4, ...caja, ...valores);
 
         rangos.forEach((r) => {
           const i = Number(r.dataset.i);
@@ -275,14 +282,18 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           const barra = document.getElementById('bv-' + i);
           const texto = document.getElementById('bt-' + i);
           const sobra = document.getElementById('bs-' + i);
-          // Todo en la misma escala (0 a 6) para que las dos filas se comparen.
-          if (barra) barra.style.height = (v / 6) * 100 + '%';
+          // Las dos filas se miden contra la misma escala, o la comparación
+          // miente.
+          const barraCaja = document.getElementById('bc-' + i);
+          if (barraCaja) barraCaja.style.height = (caja[i] / escala) * 100 + '%';
+          if (barra) barra.style.height = (v / escala) * 100 + '%';
           if (texto) texto.textContent = String(v);
           // La franja roja se APILA sobre la barra verde: arranca donde la
           // venta termina. Dibujada desde el piso taparía la venta entera.
           if (sobra) {
-            sobra.style.height = (excedente / 6) * 100 + '%';
-            sobra.style.bottom = (v / 6) * 100 + '%';
+            sobra.style.height = (excedente / escala) * 100 + '%';
+            sobra.style.bottom = (v / escala) * 100 + '%';
+            sobra.style.display = excedente > 0 ? 'block' : 'none';
           }
         });
 

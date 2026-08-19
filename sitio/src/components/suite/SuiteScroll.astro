@@ -122,6 +122,11 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   }
   .suite-nav-tabs {
     display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+    /* El fundido del filo derecho avisa que hay más pestañas. Sin él, la
+       última se corta a media palabra y se lee como un defecto. */
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
+    scroll-padding-inline: 24px;
   }
   .suite-nav-tabs::-webkit-scrollbar { display: none; }
   .suite-tab {

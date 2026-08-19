@@ -1,0 +1,52 @@
+---
+/**
+ * SuiteSalida — la salida de en medio.
+ *
+ * La página tenía siete bloques entre el llamado del hero y el siguiente: al
+ * visitante que se convencía en el expediente o en los casos de uso no le
+ * quedaba dónde hacer clic y seguía bajando hasta enfriarse.
+ *
+ * Es a propósito una franja delgada y sin cifras: no compite con el bloque que
+ * acaba de terminar, solo recoge al que ya dijo que sí. La frase la pone quien
+ * la usa, y tiene que hablar del bloque anterior — un "¿listo para empezar?"
+ * genérico aquí no recoge a nadie.
+ */
+interface Props {
+  frase: string;
+  cta?: string;
+  href?: string;
+}
+const { frase, cta = 'Agenda una demo', href = '/contacto' } = Astro.props;
+---
+
+<section class="sal">
+  <div class="sal-inner">
+    <p>{frase}</p>
+    <a href={href} class="sal-cta">{cta}</a>
+  </div>
+</section>
+
+<style>
+  .sal { background: #F5F3EE; border-top: 1px solid rgba(0,0,0,.07); padding: 30px 24px; }
+  .sal-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap;
+  }
+  .sal p {
+    margin: 0; font-size: clamp(16px, 2vw, 21px); font-weight: 700; letter-spacing: -.5px;
+    color: #1A1A1A; max-width: 62ch; line-height: 1.35;
+  }
+  .sal-cta {
+    flex-shrink: 0; background: #4B7BE5; color: #fff; text-decoration: none;
+    font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 50px;
+    box-shadow: 0 4px 14px rgba(75,123,229,.3);
+    transition: transform .2s ease;
+  }
+  .sal-cta:hover { transform: scale(1.03); }
+  .sal-cta:focus-visible { outline: 2px solid #1A1A1A; outline-offset: 3px; }
+  @media (max-width: 700px) {
+    .sal-inner { flex-direction: column; align-items: flex-start; gap: 18px; }
+    .sal-cta { width: 100%; text-align: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sal-cta { transition: none; } }
+</style>

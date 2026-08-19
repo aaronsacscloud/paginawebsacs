@@ -17,7 +17,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
-import SuiteCubo from '../../components/suite/SuiteCubo.astro';
+import JoyGramo from '../../components/giros/JoyGramo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
@@ -112,9 +112,11 @@ const desc =
   />
 
   <!-- ── El momento fuerte: la corrida en 3D ── -->
-  <SuiteCubo
-    eyebrow="Un solo anillo"
-    titulo="Esto es lo que de verdad hay<br /> detrás de"
+  <!-- ── La animación propia de este giro: el gramo que se reparte.
+       El cubo de tallas × colores diría lo mismo en cualquier boutique;
+       el gramo solo significa algo donde la materia prima cotiza. ── -->
+  <JoyGramo />
+detrás de"
     resalte="“un anillo de oro”"
     sub="Ocho tallas por tres quilatajes, en tres sucursales. Y cada casilla pesa distinto: la talla 12 lleva un tercio más de oro que la 5. Mismo modelo, otro costo y otro precio."
     matriz={[

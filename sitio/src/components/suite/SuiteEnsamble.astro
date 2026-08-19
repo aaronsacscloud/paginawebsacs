@@ -88,7 +88,7 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
 <style>
   /* Cuatro pantallas de scroll: es lo que necesitan los tres actos sin que
      ninguno se sienta apurado. */
-  .ens { height: 380vh; position: relative; background: #08080A; }
+  .ens { height: 250vh; position: relative; background: #08080A; }
   .ens-pin {
     position: sticky; top: 0; height: 100vh; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
@@ -169,7 +169,7 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
 
   @media (max-width: 760px) {
     /* Cuatro pantallas de scroll en un telefono se sienten eternas. */
-    .ens { height: 300vh; }
+    .ens { height: 200vh; }
     .ens-texto { bottom: 11%; }
     .ens-cta { bottom: 7%; }
     .ens-cta h2 { margin-bottom: 20px; }
@@ -243,15 +243,15 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
 
       esc.add(new THREE.AmbientLight(0x1b1e2b, 2.4));
       const l1 = new THREE.PointLight(0x7FA6F5, 2.2, 90); l1.position.set(-10, 9, 11); esc.add(l1);
-      const l2 = new THREE.PointLight(0xA78BFA, 1.6, 90); l2.position.set(11, -4, 8); esc.add(l2);
+      const l2 = new THREE.PointLight(0x9FBEF9, 1.6, 90); l2.position.set(11, -4, 8); esc.add(l2);
       const l3 = new THREE.PointLight(0xE8A838, 1.1, 80); l3.position.set(0, 10, -8); esc.add(l3);
 
       // El orden es el de la frase que decimos en voz alta.
       const MODULOS = [
         { color: 0x4B7BE5, brillo: 0x0d1a33, lejos: [-4.6, 3.0, 2.2] },
-        { color: 0x34D399, brillo: 0x06301f, lejos: [4.8, 2.6, -1.8] },
+        { color: 0x7FA6F5, brillo: 0x14243f, lejos: [4.8, 2.6, -1.8] },
         { color: 0xE8A838, brillo: 0x3a2a08, lejos: [-4.2, -3.2, -2.4] },
-        { color: 0xA78BFA, brillo: 0x241a45, lejos: [4.4, -3.0, 2.0] },
+        { color: 0x2E56A8, brillo: 0x0a142b, lejos: [4.4, -3.0, 2.0] },
       ];
       // Destino: un cubo 2x2 armado. Cada pieza tiene su cuarto.
       const CERCA = [[-1.03, 1.03, 0], [1.03, 1.03, 0], [-1.03, -1.03, 0], [1.03, -1.03, 0]];
