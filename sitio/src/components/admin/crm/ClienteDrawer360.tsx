@@ -7,6 +7,7 @@ import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
+import Cargando, { Corazones } from './ui/Cargando';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -158,7 +159,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
     <>
       <div style={D.overlay} onClick={onClose} />
       <div style={isMobile ? { ...D.panel, width: '100%', height: '100dvh' } : D.panel}>
-        {!data && !err && <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando cliente…</div>}
+        {!data && !err && <Cargando texto="Cargando cliente…" alto={260} onReintentar={load} />}
         {err && <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={D.btnG} onClick={load}>Reintentar</button></div>}
         {data && co && (
           <>

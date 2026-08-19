@@ -2,56 +2,52 @@
 /**
  * SuiteDireccion — el bloque para quien firma, no para quien cobra.
  *
- * Toda la pagina hasta aqui esta contada desde el mostrador: la vendedora, la
- * clienta, el cambio de talla. Eso conecta, pero el dueño de una cadena no
- * opera la caja. Sus preguntas son otras dos y ninguna estaba respondida:
- * "¿que pasa en mis ocho tiendas si no estoy?" y "¿por donde se me va el
- * dinero?".
+ * Toda la pagina esta contada desde el mostrador, y el dueño de una cadena no
+ * opera la caja. Sus dos preguntas son otras: "¿que pasa en mis tiendas si no
+ * estoy?" y "¿por donde se me va el dinero?".
  *
- * Por eso el bloque tiene dos mitades y en ese orden: primero el comparativo
- * —que es lo que se mira— y despues los candados —que es lo que se teme—. La
- * fuga en retail de moda no es el robo espectacular: son descuentos que se dan
- * solos, cancelaciones despues del cobro y cortes que no cuadran.
+ * Sobre la direccion de arte: la primera version era una tabla oscura de cinco
+ * columnas con barritas — el tablero generico de cualquier landing de software.
+ * Esta version toma el lenguaje que ya usa el home, las tarjetas que se
+ * expanden y revelan (.xpand-card), y lo convierte en algo que ademas MIDE: la
+ * sucursal es una columna cuya altura llena ES su venta. Se comparan de un
+ * vistazo, sin leer un solo numero, y al pasar el cursor cada una suelta su
+ * detalle.
  *
- * El tablero se dibuja en HTML y no es una captura: la sucursal con problema
- * tiene que leerse en rojo de un vistazo, y una imagen de 900 px se ve borrosa
- * y envejece con cada cambio del producto.
+ * La que va mal no espera al hover: viene abierta desde el principio, porque es
+ * justo lo que el dueño necesita ver sin buscar.
+ *
+ * Los candados no son tarjetas: son REGLAS, escritas como se configuran en el
+ * sistema —si pasa esto, entonces esto—. Es la forma que ya tiene el producto,
+ * no una decoracion.
  */
 interface Sucursal {
   nombre: string;
   venta: string;
-  /** Ancho de la barra, 0-100. Es proporcion de venta, no un adorno. */
-  barra: number;
+  /** Proporcion de la venta, 0-100: es la altura que llena la columna. */
+  llena: number;
   ticket: string;
   margen: string;
   delta: string;
-  /** true = la que se esta cayendo. Solo una, si no el tablero pierde foco. */
   alerta?: boolean;
+  nota?: string;
 }
 
 const sucursales: Sucursal[] = [
-  { nombre: 'Polanco', venta: '$521,400', barra: 100, ticket: '$2,050', margen: '58%', delta: '+9%' },
-  { nombre: 'Centro', venta: '$412,800', barra: 79, ticket: '$1,340', margen: '54%', delta: '+4%' },
-  { nombre: 'Satélite', venta: '$386,200', barra: 74, ticket: '$1,180', margen: '51%', delta: '+1%' },
-  { nombre: 'León', venta: '$198,600', barra: 38, ticket: '$890', margen: '43%', delta: '−12%', alerta: true },
+  { nombre: 'Polanco', venta: '$521,400', llena: 100, ticket: '$2,050', margen: '58%', delta: '+9%' },
+  { nombre: 'Centro', venta: '$412,800', llena: 79, ticket: '$1,340', margen: '54%', delta: '+4%' },
+  { nombre: 'Satélite', venta: '$386,200', llena: 74, ticket: '$1,180', margen: '51%', delta: '+1%' },
+  {
+    nombre: 'León', venta: '$198,600', llena: 38, ticket: '$890', margen: '43%', delta: '−12%',
+    alerta: true,
+    nota: 'Tres semanas cayendo. El margen bajó 6 puntos: está saliendo demasiada prenda con descuento.',
+  },
 ];
 
-const candados = [
-  {
-    titulo: 'Descuentos con dueño',
-    regla: 'Arriba de 15% pide autorización',
-    detalle: 'La vendedora no decide sola cuánto regalar. El permiso llega a tu teléfono y queda con nombre, hora y motivo.',
-  },
-  {
-    titulo: 'Cancelaciones firmadas',
-    regla: 'Después del cobro, siempre firmada',
-    detalle: 'Cancelar una venta ya cobrada deja rastro: quién, cuándo y por qué. Es la fuga más común y la más silenciosa.',
-  },
-  {
-    titulo: 'El corte no perdona',
-    regla: 'Si no cuadra, no cierra',
-    detalle: 'El faltante se registra a nombre de quien cerró la caja, y tú lo ves el mismo día, no a fin de mes.',
-  },
+const reglas = [
+  { si: 'El descuento pasa de 15%', entonces: 'pide tu autorización', detalle: 'Llega a tu teléfono con nombre, hora y motivo. La vendedora no decide sola cuánto regalar.' },
+  { si: 'Se cancela una venta ya cobrada', entonces: 'queda firmada', detalle: 'Quién, cuándo y por qué. Es la fuga más común y la más silenciosa de todas.' },
+  { si: 'El corte de caja no cuadra', entonces: 'no cierra', detalle: 'El faltante se registra a nombre de quien cerró, y tú lo ves el mismo día — no a fin de mes.' },
 ];
 ---
 
@@ -62,66 +58,56 @@ const candados = [
       <p class="dir-eyebrow">Para quien firma</p>
       <h2>Lo que ves tú, <span>aunque no estés</span>.</h2>
       <p class="dir-sub">
-        Tus ocho tiendas abren sin ti. La pregunta no es si venden — es cuál se está cayendo,
+        Tus tiendas abren sin ti. La pregunta no es si venden — es cuál se está cayendo,
         cuál se está comiendo el inventario de las otras y por dónde se te va el dinero.
       </p>
     </header>
 
-    <!-- Comparativo: lo que se mira -->
-    <div class="dir-tablero">
-      <div class="dir-tablero-cab">
-        <span>Comparativo de sucursales</span>
-        <span class="dir-per">Este mes · al corte de ayer</span>
-      </div>
-
-      <div class="dir-cols">
-        <span class="dir-col-suc">Sucursal</span>
-        <span>Venta</span>
-        <span>Ticket prom.</span>
-        <span>Margen</span>
-        <span>vs. mes ant.</span>
-      </div>
-
-      {sucursales.map((s) => (
-        <div class:list={['dir-reng', { mal: s.alerta }]}>
-          <span class="dir-suc">
-            <b>{s.nombre}</b>
-            <i style={`width:${s.barra}%`}></i>
-          </span>
-          <span class="dir-cifra" data-col="Venta">{s.venta}</span>
-          <span class="dir-cifra dir-suave" data-col="Ticket prom.">{s.ticket}</span>
-          <span class="dir-cifra dir-suave" data-col="Margen">{s.margen}</span>
-          <span class:list={['dir-delta', s.alerta ? 'baja' : 'sube']} data-col="vs. mes ant.">{s.delta}</span>
-        </div>
-      ))}
-
-      <div class="dir-aviso">
-        <span class="dir-aviso-pin"></span>
-        <p>
-          <b>León lleva tres semanas cayendo.</b> Vendió 12% menos y su margen bajó 6 puntos:
-          está saliendo demasiada prenda con descuento. Lo ves hoy, no en el reporte de fin de mes.
-        </p>
-      </div>
+    <!-- Comparativo: la altura ES la venta -->
+    <div class="dir-torre-rot">
+      <span>Comparativo de sucursales</span>
+      <span>Este mes · al corte de ayer</span>
     </div>
 
-    <!-- Candados: lo que se teme -->
-    <div class="dir-fuga">
-      <h3>Por dónde se va el dinero cuando no estás</h3>
-      <div class="dir-candados">
-        {candados.map((c) => (
-          <article class="dir-candado">
-            <div class="dir-candado-cab">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                <rect x="4" y="10" width="16" height="11" rx="2"></rect>
-                <path d="M8 10V7a4 4 0 018 0v3"></path>
-              </svg>
-              <b>{c.titulo}</b>
+    <div class="dir-torres">
+      {sucursales.map((s) => (
+        <article class:list={['dir-torre', { mal: s.alerta }]} tabindex="0">
+          <div class="dir-nivel" style={`height:${s.llena}%`}></div>
+
+          <div class="dir-torre-arriba">
+            <b>{s.nombre}</b>
+            <span class:list={['dir-delta', s.alerta ? 'baja' : 'sube']}>{s.delta}</span>
+          </div>
+
+          <div class="dir-torre-abajo">
+            <span class="dir-venta">{s.venta}</span>
+
+            <div class="dir-detalle">
+              <p><i>Ticket promedio</i><b>{s.ticket}</b></p>
+              <p><i>Margen</i><b>{s.margen}</b></p>
+              {s.nota && <p class="dir-nota">{s.nota}</p>}
             </div>
-            <p class="dir-regla">{c.regla}</p>
-            <p class="dir-detalle">{c.detalle}</p>
-          </article>
-        ))}
-      </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <p class="dir-pista">Pasa el cursor por cada sucursal para ver su detalle</p>
+
+    <!-- Candados: escritos como reglas del sistema -->
+    <div class="dir-reglas">
+      <h3>Por dónde se va el dinero cuando no estás</h3>
+
+      {reglas.map((r) => (
+        <div class="dir-regla">
+          <p class="dir-condicion">
+            <span class="dir-kw">Si</span>{r.si}
+            <span class="dir-flecha" aria-hidden="true">→</span>
+            <span class="dir-kw dir-kw-2">entonces</span><b>{r.entonces}</b>
+          </p>
+          <p class="dir-regla-detalle">{r.detalle}</p>
+        </div>
+      ))}
     </div>
 
   </div>
@@ -131,7 +117,7 @@ const candados = [
   .dir { background: #0A0A0B; padding: 100px 24px 110px; }
   .dir-inner { max-width: 1200px; margin: 0 auto; }
 
-  .dir-head { max-width: 740px; margin-bottom: 46px; }
+  .dir-head { max-width: 740px; margin-bottom: 44px; }
   .dir-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
     color: #60A5FA; margin: 0 0 16px;
@@ -143,97 +129,131 @@ const candados = [
   .dir-head h2 span { color: #4B7BE5; }
   .dir-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
 
-  /* ── Tablero ── */
-  .dir-tablero {
-    border: 1px solid #23232B; border-radius: 18px; padding: 24px 26px 26px;
-    background: #101015; margin-bottom: 56px;
-  }
-  .dir-tablero-cab {
+  .dir-torre-rot {
     display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
-    flex-wrap: wrap; margin-bottom: 22px;
+    padding-bottom: 14px; border-bottom: 1px solid #1F1F27; margin-bottom: 16px;
   }
-  .dir-tablero-cab span:first-child { font-size: 16px; font-weight: 700; color: #fff; }
-  .dir-per { font-size: 12.5px; color: #6A6A76; font-weight: 600; }
+  .dir-torre-rot span:first-child { font-size: 15px; font-weight: 700; color: #fff; }
+  .dir-torre-rot span:last-child { font-size: 12.5px; color: #6A6A76; font-weight: 600; }
 
-  .dir-cols, .dir-reng {
-    display: grid; grid-template-columns: 2.2fr 1fr 1fr .8fr .9fr; gap: 16px; align-items: center;
+  /* ── Las torres ──
+     Cada sucursal es una columna y su relleno es la venta. La comparacion se
+     hace con el ojo, antes de leer una cifra. */
+  .dir-torres { display: flex; gap: 12px; height: 440px; }
+  .dir-torre {
+    position: relative; flex: 1; overflow: hidden; cursor: default;
+    border: 1px solid #22222A; border-radius: 16px; background: #0E0E13;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 20px 20px 22px;
+    transition: flex .5s cubic-bezier(.25,.46,.45,.94), border-color .3s ease;
   }
-  .dir-cols {
-    font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: #5F5F6B; padding-bottom: 12px; border-bottom: 1px solid #1F1F27;
-  }
-  .dir-cols span:not(.dir-col-suc) { text-align: right; }
+  .dir-torre:hover, .dir-torre:focus-visible { flex: 1.9; border-color: #35353F; outline: none; }
+  /* La que va mal viene abierta: es lo que hay que ver sin buscar. */
+  .dir-torre.mal { flex: 1.9; border-color: #4A2A2A; }
 
-  .dir-reng { padding: 16px 0; border-bottom: 1px solid #17171E; }
-  .dir-suc { display: block; }
-  .dir-suc b { display: block; font-size: 15.5px; font-weight: 600; color: #E4E4E7; margin-bottom: 8px; }
-  /* La barra es la venta: se compara de un vistazo sin leer las cifras. */
-  .dir-suc i {
-    display: block; height: 5px; border-radius: 3px; background: #2F4F8F; max-width: 100%;
+  .dir-nivel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(75,123,229,.26), rgba(75,123,229,.07));
+    border-top: 2px solid #4B7BE5;
+    transition: height .6s cubic-bezier(.25,.46,.45,.94);
   }
-  .dir-reng.mal .dir-suc i { background: #7A3B3B; }
-  .dir-reng.mal .dir-suc b { color: #F0A9A9; }
+  .dir-torre.mal .dir-nivel {
+    background: linear-gradient(180deg, rgba(248,113,113,.22), rgba(248,113,113,.05));
+    border-top-color: #F87171;
+  }
 
-  .dir-cifra {
-    text-align: right; font-size: 15px; font-weight: 700; color: #fff;
-    font-variant-numeric: tabular-nums;
-  }
-  .dir-suave { color: #9C9CA8; font-weight: 600; font-size: 14px; }
-  .dir-delta {
-    text-align: right; font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums;
-  }
+  .dir-torre-arriba, .dir-torre-abajo { position: relative; z-index: 1; }
+  .dir-torre-arriba { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .dir-torre-arriba b { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.2px; }
+  .dir-delta { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .dir-delta.sube { color: #34D399; }
   .dir-delta.baja { color: #F87171; }
 
-  .dir-aviso {
-    display: flex; gap: 13px; align-items: flex-start; margin-top: 22px;
-    border: 1px solid #3A2226; background: rgba(248,113,113,.06);
-    border-radius: 12px; padding: 15px 17px;
+  .dir-venta {
+    display: block; font-size: clamp(20px, 2.4vw, 27px); font-weight: 800; color: #fff;
+    letter-spacing: -1px; font-variant-numeric: tabular-nums;
   }
-  .dir-aviso-pin {
-    width: 9px; height: 9px; border-radius: 50%; background: #F87171; flex-shrink: 0; margin-top: 6px;
-  }
-  .dir-aviso p { margin: 0; font-size: 14.5px; line-height: 1.6; color: #A1A1AA; }
-  .dir-aviso b { color: #F0A9A9; font-weight: 700; }
 
-  /* ── Candados ── */
-  .dir-fuga h3 {
-    font-size: clamp(20px, 2.6vw, 27px); font-weight: 700; color: #fff; margin: 0 0 26px;
+  /* El detalle vive plegado y sale al expandirse. */
+  .dir-detalle {
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height .5s ease, opacity .35s ease, margin-top .5s ease;
+  }
+  .dir-torre:hover .dir-detalle,
+  .dir-torre:focus-visible .dir-detalle,
+  .dir-torre.mal .dir-detalle { max-height: 210px; opacity: 1; margin-top: 14px; }
+
+  .dir-detalle p {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    margin: 0 0 8px; font-size: 13.5px;
+  }
+  .dir-detalle i { font-style: normal; color: #71717A; }
+  .dir-detalle b { color: #E4E4E7; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dir-nota {
+    display: block !important; margin: 12px 0 0 !important; padding-top: 12px;
+    border-top: 1px solid #2E2024; font-size: 13px; line-height: 1.55; color: #F0A9A9;
+  }
+
+  .dir-pista {
+    margin: 14px 0 60px; font-size: 12.5px; color: #4A4A56; font-weight: 600;
+  }
+
+  /* ── Reglas ── */
+  .dir-reglas h3 {
+    font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; color: #fff; margin: 0 0 26px;
     letter-spacing: -.6px;
   }
-  .dir-candados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .dir-candado {
-    border: 1px solid #23232B; border-radius: 16px; padding: 22px; background: #101015;
+  .dir-regla { padding: 20px 0; border-top: 1px solid #1C1C24; }
+  .dir-regla:last-child { border-bottom: 1px solid #1C1C24; }
+  .dir-condicion {
+    margin: 0 0 8px; font-size: clamp(16px, 2vw, 20px); color: #E4E4E7; line-height: 1.5;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
   }
-  .dir-candado-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .dir-candado-cab svg { width: 20px; height: 20px; color: #60A5FA; flex-shrink: 0; }
-  .dir-candado-cab b { font-size: 15.5px; font-weight: 700; color: #fff; }
-  .dir-regla {
-    margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #A8C4FA;
-    border-left: 2px solid rgba(75,123,229,.5); padding-left: 11px;
+  /* Las palabras de la regla van en monoespaciada: se lee como una condicion
+     configurada, que es exactamente lo que es. */
+  .dir-kw {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #6A6A76;
   }
-  .dir-detalle { margin: 0; font-size: 14.5px; line-height: 1.6; color: #9C9CA8; }
+  .dir-kw-2 { color: #60A5FA; }
+  .dir-flecha { color: #3A3A46; font-size: 17px; }
+  .dir-condicion b { color: #fff; font-weight: 700; }
+  .dir-regla-detalle { margin: 0; font-size: 14.5px; line-height: 1.6; color: #8A8A96; max-width: 78ch; }
 
   @media (max-width: 900px) {
     .dir { padding: 70px 18px 78px; }
-    .dir-tablero { padding: 18px 16px 20px; }
-    .dir-candados { grid-template-columns: 1fr; gap: 14px; }
 
-    /* El comparativo deja de ser rejilla: cada sucursal es una ficha con sus
-       cifras etiquetadas. Cinco columnas en un teléfono no se leen. */
-    .dir-cols { display: none; }
-    .dir-reng {
-      display: block; padding: 16px 0;
+    /* En vertical la torre no cabe: cada sucursal pasa a ser una fila y el
+       relleno se vuelve horizontal. Sigue midiendo lo mismo. */
+    .dir-torres { flex-direction: column; height: auto; gap: 10px; }
+    .dir-torre { flex: none !important; padding: 16px 16px 18px; }
+    .dir-nivel {
+      top: 0; right: auto; width: var(--ancho, 100%); height: 100% !important;
+      border-top: none; border-right: 2px solid #4B7BE5;
     }
-    .dir-suc b { font-size: 16px; }
-    .dir-cifra, .dir-delta {
-      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-      text-align: right; padding: 6px 0; font-size: 14px;
-    }
-    .dir-cifra::before, .dir-delta::before {
-      content: attr(data-col);
-      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-      color: #5F5F6B;
-    }
+    .dir-torre.mal .dir-nivel { border-right-color: #F87171; }
+    .dir-torre-abajo { margin-top: 10px; }
+    .dir-detalle { max-height: 210px; opacity: 1; margin-top: 12px; }
+    .dir-pista { display: none; }
+    .dir-condicion { font-size: 16px; gap: 8px; }
   }
 </style>
+
+<script>
+  {
+    /* En móvil el relleno es horizontal: la altura en % que trae el marcado no
+       sirve, y el ancho se calcula del mismo dato. Se hace aquí y no en el
+       marcado para no duplicar el número en dos atributos. */
+    const aplicar = () => {
+      const angosto = window.matchMedia('(max-width: 900px)').matches;
+      document.querySelectorAll<HTMLElement>('.dir-nivel').forEach((n) => {
+        const pct = n.style.height || n.dataset.pct || '';
+        if (!n.dataset.pct && pct) n.dataset.pct = pct;
+        n.style.setProperty('--ancho', angosto ? (n.dataset.pct || '100%') : '100%');
+      });
+    };
+    aplicar();
+    window.addEventListener('resize', aplicar);
+  }
+</script>

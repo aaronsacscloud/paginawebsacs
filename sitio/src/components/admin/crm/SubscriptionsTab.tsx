@@ -5,6 +5,7 @@ import NuevaSuscripcionModal from './NuevaSuscripcionModal';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Sheet from './ui/Sheet';
 import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
+import Cargando, { Corazones } from './ui/Cargando';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -212,7 +213,7 @@ export default function SubscriptionsTab() {
   const vencidas = summary?.vencidas || [];
   const maxMes = Math.max(1, ...meses.map((m: any) => m.contratado + m.pendiente));
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando suscripciones…</div>;
+  if (loading) return <Cargando texto="Cargando suscripciones…" alto={240} />;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   // Filtros (cliente/plan/ciclo/estado + limpiar): inline en desktop, en un Sheet
@@ -956,7 +957,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
     <>
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 94 }} onClick={onClose} />
       <div style={{ ...S.drawer, ...(isMobile ? { width: '100%', maxWidth: '100%', padding: '14px 14px calc(20px + env(safe-area-inset-bottom))' } : {}) }}>
-        {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cargando cliente…</div> :
+        {loading ? <Cargando texto="Cargando cliente…" alto={160} /> :
         err ? <div style={{ padding: 40, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={S.btnSmall} onClick={load}>Reintentar</button></div> : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>

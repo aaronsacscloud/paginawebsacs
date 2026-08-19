@@ -66,6 +66,7 @@ function detalleVistas(meta: any): string {
   return lineas.join('\n');
 }
 import { calcQuoteTotals } from '../../lib/quotes/totals';
+import Cargando, { Corazones } from './crm/ui/Cargando';
 
 interface Client {
   id: string; empresa: string; contacto: string; email: string; whatsapp: string;
@@ -140,7 +141,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
   // ─── Dashboard ───
   const DashboardView = () => {
-    if (!dash) return <div style={S.empty}>Cargando...</div>;
+    if (!dash) return <Cargando texto="Cargando el tablero…" alto={220} />;
     const chartData = Object.entries(dash.monthlyRevenue || {}).map(([month, amount]) => ({
       month: month.slice(5),
       amount,

@@ -7,6 +7,7 @@
 // Gama: morado sólido = cobrado, morado claro = en proceso, azul = cotizado y
 // todavía en juego, gris = fuera. El color dice en qué punto está el dinero.
 import { useEffect, useState } from 'react';
+import Cargando, { Corazones } from './ui/Cargando';
 
 // ─── Gama ───
 // Morado #9B8CFA y azul cielo #7DA6F5 son los protagonistas y visten todo lo
@@ -360,7 +361,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
           </select>
         </div>
 
-        {cargando && !d && <div style={{ color: '#9c99a6', fontSize: '0.85rem', padding: 40, textAlign: 'center' }}>Cargando…</div>}
+        {cargando && !d && <Cargando texto="Armando el tablero…" alto={220} />}
 
         {d && (
           <>

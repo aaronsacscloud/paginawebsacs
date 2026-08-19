@@ -2,6 +2,10 @@
   "installCommand": "npm ci --include=dev",
   "crons": [
     {
+      "path": "/api/cron/tiktok-leads",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/scheduling/google/sync",
       "schedule": "*/30 * * * *"
     },

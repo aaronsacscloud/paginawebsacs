@@ -4,6 +4,7 @@
 // Es POR USUARIO, no por cuenta: si mañana entra otra consultora, sube su logo,
 // elige su color y sus documentos salen con su nombre sin tocar los de nadie.
 import { useEffect, useRef, useState } from 'react';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const D = {
   card: { background: '#fff', border: '1px solid #eeecf3', borderRadius: 14, boxShadow: '0 1px 2px rgba(16,24,40,.04)' } as React.CSSProperties,
@@ -58,7 +59,7 @@ export default function MarcaTab() {
     set('marca_logo_url', j.url);
   }
 
-  if (cargando) return <div style={{ padding: 24, color: '#9a97a5', fontSize: '0.85rem' }}>Cargando tu marca…</div>;
+  if (cargando) return <Cargando texto="Cargando tu marca…" alto={200} />;
 
   const acento = acentos.find(a => a.clave === (campos.marca_acento || 'rosa')) || acentos[0];
   const nombreVista = campos.marca_nombre || marca?.nombre || 'Tu marca';
@@ -149,8 +150,8 @@ export default function MarcaTab() {
           </div>
 
           <div style={{ padding: '12px 18px 15px', borderTop: '1px solid #f1eff5', display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>
-              {guardando ? 'Guardando…' : 'Guardar marca'}
+            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              {guardando ? <><Corazones size={9} color="#fff" /> Guardando…</> : 'Guardar marca'}
             </button>
             <button onClick={() => window.open('/minuta/ejemplo', '_blank')} style={D.btnG}>Ver ejemplo</button>
             <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#a09daa' }}>Cada usuario tiene la suya</span>

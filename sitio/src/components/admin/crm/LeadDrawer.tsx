@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -140,7 +141,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   const actual = paso === -1 ? ruta.length - 1 : paso;
 
   if (err) return (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24 }}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>{err}</div><button style={{ ...D.btnA, marginTop: 12 }} onClick={onClose}>Cerrar</button></div></>);
-  if (!c) return (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24, color: '#999', fontSize: '0.85rem' }}>Cargando…</div></>);
+  if (!c) return (<><div style={D.overlay} onClick={onClose} /><div style={D.panel}><Cargando texto="Cargando lead…" alto={240} /></div></>);
 
   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
   const tel = c.whatsapp || c.telefono;

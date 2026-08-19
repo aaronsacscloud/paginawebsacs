@@ -2,6 +2,9 @@ import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
 import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
+// OJO: 'attribution' (arriba) resuelve qué PARTNER refirió; 'atribucion-marketing'
+// resuelve qué CANAL trajo al lead. Son dos preguntas distintas y conviven.
+import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../lib/atribucion-marketing';
 import { createPruebaGratisBonus } from '../../lib/commissions/calculate';
 
 export const prerender = false;
@@ -138,11 +141,17 @@ export const POST: APIRoute = async ({ request }) => {
       // Resolve partner attribution (cookie sacs_ref or ?ref query)
       const referrerPartnerId = await getReferrerFromRequest(request);
 
+      // Canal de marketing (cookie sacs_attr). Sin esto, un lead que llegó por
+      // la landing de TikTok Ads entraba al CRM como "Sitio web" y la campaña
+      // que lo pagó se perdía: es lo que dejaba el reporte de origen en ceros.
+      const atribucion = resolverAtribucion(request, data);
+      const utm = columnasUtm(atribucion);
+
       // Check if contact already exists (by email)
       const email = data.email || `lead-${Date.now()}@noemail.com`;
       const { data: existingContact } = await supabase
         .from('contacts')
-        .select('id, referrer_partner_id')
+        .select('id, referrer_partner_id, utm_source, propiedades')
         .eq('email', email)
         .limit(1)
         .single();
@@ -164,6 +173,14 @@ export const POST: APIRoute = async ({ request }) => {
         if (referrerPartnerId && !existingContact.referrer_partner_id) {
           updates.referrer_partner_id = referrerPartnerId;
         }
+        // Misma regla para el canal: el PRIMER toque identificable es el que
+        // responde "qué canal me trae leads". Volver a llenar el formulario
+        // desde tráfico directo no puede borrar el anuncio que lo trajo.
+        if (utm.utm_source && !existingContact.utm_source) {
+          Object.assign(updates, utm);
+          updates.fuente_detalle = resumenAtribucion(atribucion);
+          updates.propiedades = { ...(existingContact.propiedades || {}), atribucion: bloqueAtribucion(atribucion, request) };
+        }
         await supabase.from('contacts').update(updates).eq('id', contactId);
       } else {
         // Create new
@@ -176,6 +193,9 @@ export const POST: APIRoute = async ({ request }) => {
             tipo: 'lead',
             lifecycle_stage,
             fuente: referrerPartnerId ? 'partner-link' : 'website-form',
+            fuente_detalle: resumenAtribucion(atribucion),
+            ...utm,
+            propiedades: { atribucion: bloqueAtribucion(atribucion, request) },
             lead_score: score,
             total_time_on_site: parseInt(data.totalTime) || 0,
             pages_visited: data.pagesVisited || null,
@@ -217,7 +237,7 @@ export const POST: APIRoute = async ({ request }) => {
           company_id,
           tipo: 'lead_created',
           titulo: `Lead desde formulario web: ${data.nombre || email}`,
-          metadata: { score, plan: data.plan, giro: data.giro, sucursales: data.sucursales },
+          metadata: { score, plan: data.plan, giro: data.giro, sucursales: data.sucursales, canal: resumenAtribucion(atribucion), ...utm },
           automatico: true,
         });
       }

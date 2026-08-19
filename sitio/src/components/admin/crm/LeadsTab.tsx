@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import PipelineTab from './PipelineTab';
 import LeadDrawer from './LeadDrawer';
+import ImportarTikTok from './ImportarTikTok';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -52,6 +53,7 @@ export default function LeadsTab() {
   const [origen, setOrigen] = useState('todo');
   const [verContacto, setVerContacto] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
+  const [importTikTok, setImportTikTok] = useState(false);
 
   function exportar() {
     const cols = ['Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Sin contacto (días)'];
@@ -114,6 +116,9 @@ export default function LeadsTab() {
               incluidos—: bajar "todos los leads" y filtrar en Excel es hacer
               dos veces el mismo trabajo. */}
           <button style={S.ico} title="Exportar lo que estás viendo" onClick={exportar}>⤓</button>
+          {/* El lead de un formulario instantáneo de TikTok nunca pasa por el
+              sitio: si se captura a mano, se pierde la campaña que lo pagó. */}
+          <button style={S.ico} title="Importar leads de TikTok Ads" onClick={() => setImportTikTok(true)}>⤒</button>
           <button style={S.btnA} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/contacto?ref=crm`); alert('Link de captura copiado.\n\nQuien lo llene cae directo en esta lista con su origen puesto.'); }}>
             Link de captura
           </button>
@@ -266,6 +271,7 @@ export default function LeadsTab() {
 
       {verContacto && <LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar} />}
       {nuevo && <NuevoLead onCerrar={() => setNuevo(false)} onListo={() => { setNuevo(false); cargar(); }} />}
+      {importTikTok && <ImportarTikTok onCerrar={() => setImportTikTok(false)} onListo={cargar} />}
     </div>
   );
 }

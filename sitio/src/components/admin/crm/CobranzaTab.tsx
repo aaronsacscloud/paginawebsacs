@@ -9,6 +9,7 @@
 // cuántos meses lleva sin pagar.
 import { useEffect, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
@@ -72,7 +73,7 @@ export default function CobranzaTab() {
   useEffect(() => { cargar(); }, []);
   const flash = (t: string) => { setMsg(t); setTimeout(() => setMsg(''), 2400); };
 
-  if (!d) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando cobranza…</div>;
+  if (!d) return <div style={S.wrap}><Cargando texto="Cargando cobranza…" onReintentar={cargar} /></div>;
   if (d.error) return <div style={{ ...S.wrap, color: '#C0554E', fontSize: '0.85rem' }}>No se pudo cargar la cobranza.</div>;
 
   const k = d.kpis;
@@ -622,7 +623,9 @@ function Gestion({ f, onCerrar, onListo }: any) {
           </>)}
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8, marginTop: 13 }}>
-            <button style={{ ...S.btnP, opacity: busy ? .6 : 1 }} disabled={busy} onClick={guardar}>{busy ? 'Guardando…' : esPago ? 'Registrar pago' : 'Guardar'}</button>
+            <button style={{ ...S.btnP, opacity: busy ? .6 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }} disabled={busy} onClick={guardar}>
+              {busy ? <><Corazones size={9} color="#fff" /> Guardando…</> : esPago ? 'Registrar pago' : 'Guardar'}
+            </button>
             <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>
           </div>
         </div>
@@ -702,7 +705,9 @@ function PartirEnPagos({ f, onCerrar, onListo }: any) {
           </div>
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button style={{ ...S.btnP, opacity: busy ? .6 : 1 }} disabled={busy} onClick={crear}>{busy ? 'Creando…' : 'Crear plan'}</button>
+            <button style={{ ...S.btnP, opacity: busy ? .6 : 1, display: 'inline-flex', alignItems: 'center', gap: 7 }} disabled={busy} onClick={crear}>
+              {busy ? <><Corazones size={9} color="#fff" /> Creando…</> : 'Crear plan'}
+            </button>
             <button style={{ ...S.mini, padding: '8px 14px' }} onClick={onCerrar}>Cancelar</button>
           </div>
         </div>

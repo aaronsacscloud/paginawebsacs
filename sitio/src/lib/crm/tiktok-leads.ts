@@ -95,8 +95,10 @@ export const normalizarLlave = (s: string): string =>
    no por posición: un panel en inglés y otro en español tienen que producir
    el mismo contacto.                                                       */
 const ALIAS: Record<keyof Omit<LeadTikTok, 'respuestas'>, string[]> = {
-  lead_id: ['lead_id', 'id', 'id_del_cliente_potencial', 'id_de_cliente_potencial', 'leadid', 'id_del_lead'],
-  creado: ['create_time', 'created_time', 'createtime', 'hora_de_creacion', 'fecha_de_creacion', 'creado', 'fecha'],
+  lead_id: ['lead_id', 'id', 'id_del_cliente_potencial', 'id_de_cliente_potencial', 'leadid', 'id_del_lead', 'tiktok_lead_id'],
+  // 'timestamp'/'marca_temporal' son los nombres que ponen Zapier y Google
+  // Forms cuando ellos crean la columna: es la hora en que llegó el lead.
+  creado: ['create_time', 'created_time', 'createtime', 'hora_de_creacion', 'fecha_de_creacion', 'creado', 'fecha', 'timestamp', 'marca_temporal', 'fecha_y_hora', 'fecha_de_envio'],
   campana: ['campaign_name', 'campaign', 'nombre_de_la_campana', 'campana'],
   campana_id: ['campaign_id', 'id_de_la_campana', 'id_de_campana'],
   grupo: ['adgroup_name', 'ad_group_name', 'nombre_del_grupo_de_anuncios', 'grupo_de_anuncios'],

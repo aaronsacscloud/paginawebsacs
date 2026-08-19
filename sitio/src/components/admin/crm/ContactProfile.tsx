@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import ExpansionSignalsBanner from './ExpansionSignalsBanner';
+import Cargando, { Corazones } from './ui/Cargando';
 
 // ─── Types ───
 interface Company {
@@ -411,7 +412,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             animation: 'spin 0.8s linear infinite', margin: '0 auto 12px',
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-          <span style={{ color: '#999', fontSize: '0.875rem' }}>Cargando contacto...</span>
+          <Cargando texto="Cargando contacto…" alto={120} />
         </div>
       </div>
     );

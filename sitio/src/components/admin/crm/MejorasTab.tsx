@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -248,7 +249,7 @@ export default function MejorasTab() {
     return Object.values(g).filter(x => x.cuentas.size >= 3).sort((a, b) => b.cuentas.size - a.cuentas.size);
   }, [rows]);
 
-  if (rows === null) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando mejoras…</div>;
+  if (rows === null) return <div style={S.wrap}><Cargando texto="Cargando consultoría…" /></div>;
 
   const renglon = (m: any, conCliente: boolean) => (
           <div key={m.id} onClick={() => setAbierto(m.company_id)}

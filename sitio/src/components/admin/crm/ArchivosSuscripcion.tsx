@@ -5,6 +5,7 @@
 // comparten: al cerrar y volver a abrir se piden de nuevo. Es a propósito, es
 // lo que evita que un contrato quede accesible con una URL eterna.
 import { useEffect, useRef, useState } from 'react';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const peso = (n: number) => n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 const fecha = (s: string) => new Date(s).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '');
@@ -73,7 +74,7 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
         </div>
 
         <div style={{ padding: '12px 18px', overflowY: 'auto', flex: 1 }}>
-          {cargando && <div style={{ padding: 20, textAlign: 'center', color: '#9c99a6', fontSize: '0.85rem' }}>Cargando…</div>}
+          {cargando && <Cargando texto="Cargando archivos…" alto={100} size={12} />}
           {!cargando && archivos.length === 0 && (
             <div style={{ padding: '18px 0', color: '#9c99a6', fontSize: '0.82rem' }}>Todavía no hay documentos. Sube el contrato firmado o cualquier anexo.</div>
           )}

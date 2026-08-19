@@ -10,6 +10,7 @@
 // un inversionista es peor que un hueco.
 import { useEffect, useMemo, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+import Cargando, { Corazones } from './ui/Cargando';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const corto = (n?: number | null) => {
@@ -62,7 +63,7 @@ export default function DashboardTab() {
   const preset = (k: '7' | '30' | '365') => { setRango(k); setDesde(hace(Number(k))); setHasta(iso(new Date())); };
 
   if (err) return <div style={{ ...S.wrap, color: '#C0554E', fontSize: '0.85rem' }}>{err}</div>;
-  if (!d) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando tablero…</div>;
+  if (!d) return <div style={S.wrap}><Cargando texto="Cargando tablero…" /></div>;
 
   const k = d.kpis, sal = d.salud, m = d.metas, cob = d.cobrar;
   const barra = (real: number, meta: number, color: string) => (
