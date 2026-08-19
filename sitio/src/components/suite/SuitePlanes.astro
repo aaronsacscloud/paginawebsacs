@@ -1,65 +1,99 @@
 ---
 /**
- * SuitePlanes — cómo se paga la Suite del giro.
+ * SuitePlanes — cómo se paga la Suite del giro, y qué trae cada plan.
  *
- * La duda que deja cualquier pagina de giro es "¿y esto cuanto cuesta aparte?".
- * La respuesta es que no cuesta aparte: la Suite viene DENTRO del plan a partir
- * de Fideliza. Si eso no se entiende de un vistazo, el visitante asume que es
- * un modulo extra con precio aparte y se guarda la pregunta para la llamada —
- * o no llama.
+ * Dos trabajos. El primero: dejar claro que la Suite no cuesta aparte — va
+ * DENTRO del plan a partir de Fideliza. El segundo: que el visitante entienda
+ * de verdad que incluye cada escalon, porque de eso depende que sepa cual
+ * pedir en la llamada.
  *
- * Por eso el bloque no es una lista de planes con palomitas: es una escalera
- * con una BANDA que abarca los dos ultimos y dice "Suite incluida". La forma
- * explica el modelo comercial antes que el texto. En movil la banda no cabe, y
- * ahi cada plan lleva su propia marca.
+ * Sobre la direccion de arte: la primera version eran cuatro tarjetas de precio
+ * con esquinas redondeadas, pastilla de "Mas popular" y borde azul en la
+ * destacada. Es el bloque de pricing de cualquier SaaS y encima obligaba a
+ * resumir cada plan en tres viñetas, que era justo lo contrario de dar
+ * claridad.
  *
- * Precios y servicios salen de src/data/plans.ts. Si cambian alli, hay que
- * cambiarlos aqui: se copian a proposito, porque esta pagina cuenta solo los
- * cuatro planes con el lenguaje del giro y no la comparativa completa.
+ * Esta version es una ESCALERA en filas: cada plan ocupa el ancho completo, con
+ * su numero de escalon, su precio y el detalle real de lo que suma agrupado por
+ * area. Los planes son acumulativos y el texto lo dice en cada peldaño ("todo
+ * lo de Controla, mas"). Sin tarjetas, sin sombras, sin gradientes: reglas
+ * finas y tipografia, que es lo que usa una tabla de precios impresa.
+ *
+ * Contenido y precios salen de src/data/plans.ts. Si cambian alli, cambian
+ * aqui: se copian a proposito porque esta pagina cuenta los planes con el
+ * lenguaje del giro y no la comparativa completa.
  */
-interface Props {
-  /** Nombre de la suite, en las palabras del giro. */
-  suite?: string;
-}
+interface Props { suite?: string; }
 const { suite = 'Suite de Moda' } = Astro.props;
 
 const planes = [
   {
-    id: 'vende',
+    n: '01',
     nombre: 'Vende',
+    para: 'Para tu primera tienda',
     precio: '$600',
     anual: '$500',
-    para: 'Tu primera tienda',
-    puntos: ['1 sucursal', 'Punto de venta y tienda en línea', 'Soporte 9 a 5'],
-    conSuite: false,
+    hereda: '',
+    areas: [
+      { a: 'Venta en tienda', i: 'Punto de venta con y sin internet · Cortes de caja y arqueos · Cambios, devoluciones y cancelaciones · Apartados y pedidos · Cotizaciones · Ventas a crédito · Listas de precios' },
+      { a: 'Venta en línea', i: 'Tienda en línea con el mismo inventario · Facebook, Instagram y WhatsApp · TikTok Shop · Productos visibles en ChatGPT' },
+      { a: 'Productos', i: 'Productos con variantes · Kits y compuestos · Etiquetas con código de barras' },
+      { a: 'Facturación', i: '20 folios incluidos' },
+    ],
+    servicio: '1 sucursal · Soporte 9 a 5 por chat y WhatsApp · Tickets en 30–90 min',
+    suite: false,
   },
   {
-    id: 'controla',
+    n: '02',
     nombre: 'Controla',
+    para: 'Para varias sucursales con orden',
     precio: '$900',
     anual: '$750',
-    para: 'Varias sucursales con orden',
-    puntos: ['Multisucursal', 'Compras, inventario y facturación automática', 'Migración gratis (3 días)'],
-    conSuite: false,
+    hereda: 'Vende',
+    areas: [
+      { a: 'Inventario multisucursal', i: 'Existencias en tiempo real · Gestión de CEDIS · Traspasos entre tiendas · Reabasto sugerido · Alertas de stock bajo o exceso' },
+      { a: 'Conteos y trazabilidad', i: 'Conteo físico desde el celular · Conteos cíclicos programados · Kardex y trazabilidad · Control de mermas' },
+      { a: 'Compras y gastos', i: 'Órdenes de compra y cuentas por pagar · Recepción contra orden · Control de gastos · Complementos de pago y notas de crédito' },
+      { a: 'Clientes y equipo', i: 'Directorio con historial de compras · Metas y comisiones por vendedor · Permisos por usuario y sucursal' },
+      { a: 'Reportes y auditoría', i: '50+ reportes y 20+ KPIs · ABC, sell-through y rotación · Costeo y utilidad por producto · Auditoría de movimientos' },
+    ],
+    servicio: 'Multisucursal · Reunión de introducción · Migración gratis (3 días)',
+    suite: false,
     popular: true,
   },
   {
-    id: 'fideliza',
+    n: '03',
     nombre: 'Fideliza y Multiplica',
+    para: 'Para que la clienta regrese',
     precio: '$1,400',
     anual: '$1,167',
-    para: 'Clientes que regresan',
-    puntos: ['Todo lo de Controla', 'Lealtad, portal de clientes y tarjetas de regalo', 'Migración gratis (1 día) · reunión mensual'],
-    conSuite: true,
+    hereda: 'Controla',
+    areas: [
+      { a: 'Clientes y CRM', i: 'Perfil 360° con historial omnicanal · Segmentación por comportamiento de compra · Notas y seguimientos' },
+      { a: 'Programa de lealtad', i: 'Monedero electrónico y puntos · Niveles y recompensas · Redención en tienda y en línea' },
+      { a: 'Portal y tarjetas de regalo', i: 'Portal de clientes con tu marca · Portal de autofacturación · Tarjetas de regalo físicas y digitales' },
+      { a: 'Marketing', i: 'Campañas de correo segmentadas (1,000 contactos) · Notificaciones y campañas por WhatsApp (200 activos)' },
+      { a: 'Membresías', i: 'Planes recurrentes · Cobro automático y renovación · Beneficios por nivel' },
+    ],
+    servicio: 'Reunión mensual · Tickets en 15–30 min · Migración gratis (1 día)',
+    suite: true,
   },
   {
-    id: 'automatiza',
+    n: '04',
     nombre: 'Automatiza',
+    para: 'Para que la operación corra sola',
     precio: '$5,900',
     anual: '$4,917',
-    para: 'Piloto automático con IA',
-    puntos: ['Todo lo de Fideliza', 'Agentes de IA y workflows a la medida', 'Soporte 24/7 · especialista dedicado'],
-    conSuite: true,
+    hereda: 'Fideliza',
+    areas: [
+      { a: 'Especialista de IA', i: 'Una persona real que diseña tus automatizaciones contigo · Sesión mensual de optimización · Onboarding completo' },
+      { a: 'AXO · copiloto', i: 'Le preguntas lo que sea de tu negocio y actúa · Detecta problemas antes de que pasen · Aprende de tu operación' },
+      { a: 'Workflows y alertas', i: 'Reglas de disparo → acción · Stock bajo genera la orden de compra sola · Avisos de anomalías y productos estancados' },
+      { a: 'Agentes y predicción', i: 'Orquesta Claude, GPT y Gemini · Agentes para reabasto, precios y campañas · Predicción de demanda' },
+      { a: 'Integraciones', i: 'Conecta con +600 apps: ERP, contabilidad, logística · API abierta · Tokens de IA incluidos' },
+    ],
+    servicio: 'Soporte 24/7 · Tickets en menos de 2 min · Migración gratis · Acceso anticipado a nuevas funciones',
+    suite: true,
   },
 ];
 ---
@@ -69,55 +103,56 @@ const planes = [
 
     <header class="pl-head">
       <p class="pl-eyebrow">Y lo que cuesta</p>
-      <h2>La {suite} no se paga aparte.<br /><span>Viene dentro del plan.</span></h2>
+      <h2>La {suite} no se paga aparte.</h2>
       <p class="pl-sub">
-        No es un módulo con precio propio ni una implementación a cotizar. A partir de
-        <b>Fideliza</b>, todo lo que viste en esta página ya está incluido en tu mensualidad.
+        No es un módulo con precio propio ni una implementación a cotizar. Los planes son
+        acumulativos —cada uno trae todo el anterior— y a partir del tercero,
+        <b>todo lo que viste en esta página ya está incluido</b>.
       </p>
     </header>
 
-    <!-- Agrupadores: es lo que explica el modelo de un vistazo -->
-    <div class="pl-bandas" aria-hidden="true">
-      <div class="pl-banda pl-banda-base"><span>Operación base</span></div>
-      <div class="pl-banda pl-banda-suite"><span>{suite} incluida</span></div>
-    </div>
-
-    <div class="pl-grid">
+    <ol class="pl-escalera">
       {planes.map((p) => (
-        <article class:list={['pl-plan', { con: p.conSuite }]}>
-          {p.popular && <span class="pl-popular">Más popular</span>}
+        <li class:list={['pl-peldano', { con: p.suite }]}>
+          {p.suite && <span class="pl-cinta" aria-hidden="true"></span>}
 
-          <h3>{p.nombre}</h3>
-          <p class="pl-para">{p.para}</p>
+          <div class="pl-id">
+            <span class="pl-n">{p.n}</span>
+            <h3>{p.nombre}</h3>
+            <p class="pl-para">{p.para}</p>
 
-          <p class="pl-precio">
-            <b>{p.precio}</b>
-            <span>/mes por sucursal</span>
-          </p>
-          <p class="pl-anual">{p.anual} si pagas anual</p>
-
-          {p.conSuite && (
-            <p class="pl-marca">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 12.5l5 5L20 6.5"></path>
-              </svg>
-              {suite} incluida
+            <p class="pl-precio">
+              <b>{p.precio}</b><span>/mes por sucursal</span>
             </p>
-          )}
+            <p class="pl-anual">{p.anual} si pagas anual</p>
 
-          <ul class="pl-puntos">
-            {p.puntos.map((x) => <li>{x}</li>)}
-          </ul>
-        </article>
+            {p.popular && <p class="pl-popular">El que más eligen las cadenas</p>}
+            {p.suite && <p class="pl-suite">{suite} incluida</p>}
+          </div>
+
+          <div class="pl-que">
+            {p.hereda
+              ? <p class="pl-hereda">Todo lo de <b>{p.hereda}</b>, y además:</p>
+              : <p class="pl-hereda">Con lo que se abre una tienda y se vende desde el primer día:</p>}
+
+            <dl class="pl-areas">
+              {p.areas.map((x) => (
+                <div>
+                  <dt>{x.a}</dt>
+                  <dd>{x.i}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <p class="pl-servicio">{p.servicio}</p>
+          </div>
+        </li>
       ))}
-    </div>
+    </ol>
 
     <div class="pl-pie">
-      <p class="pl-pie-datos">
-        <b>Usuarios ilimitados</b> en todos los planes · <b>Sin contrato forzoso</b> ·
-        La migración la hacemos nosotros
-      </p>
-      <a class="pl-link" href="/planes">Ver el comparativo completo de los cuatro planes →</a>
+      <p><b>Usuarios ilimitados</b> en todos los planes · <b>Sin contrato forzoso</b> · La migración la hacemos nosotros</p>
+      <a class="pl-link" href="/planes">Ver el comparativo completo →</a>
     </div>
 
   </div>
@@ -125,107 +160,107 @@ const planes = [
 
 <style>
   .pl { background: #0A0A0B; padding: 100px 24px 110px; }
-  .pl-inner { max-width: 1200px; margin: 0 auto; }
+  .pl-inner { max-width: 1180px; margin: 0 auto; }
 
-  .pl-head { max-width: 700px; margin-bottom: 40px; }
+  .pl-head { max-width: 720px; margin-bottom: 12px; }
   .pl-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
     color: #60A5FA; margin: 0 0 16px;
   }
   .pl-head h2 {
-    font-size: clamp(28px, 4.2vw, 46px); font-weight: 800; letter-spacing: -1.6px;
-    line-height: 1.08; color: #fff; margin: 0 0 16px;
+    font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
+    line-height: 1.06; color: #fff; margin: 0 0 16px;
   }
-  .pl-head h2 span { color: #4B7BE5; }
-  .pl-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A1A1AA; }
+  .pl-sub { margin: 0 0 44px; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A1A1AA; }
   .pl-sub b { color: #E4E4E7; font-weight: 700; }
 
-  /* ── Bandas de agrupación ──
-     Dos columnas que calzan con la rejilla de abajo: la primera cubre los dos
-     planes base y la segunda los dos que traen la suite. */
-  .pl-bandas { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 10px; }
-  .pl-banda {
-    border-radius: 10px 10px 0 0; padding: 9px 16px;
-    font-size: 11.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  /* ── La escalera ──
+     Filas, no tarjetas: cada plan ocupa el ancho y cabe el detalle real. La
+     separacion es una regla fina, como en una tabla impresa. */
+  .pl-escalera { list-style: none; margin: 0; padding: 0; border-top: 1px solid #26262E; }
+  .pl-peldano {
+    position: relative;
+    display: grid; grid-template-columns: 300px 1fr; gap: 56px;
+    padding: 38px 0 40px; border-bottom: 1px solid #1C1C24;
   }
-  .pl-banda-base { background: #17171E; color: #6A6A76; }
-  .pl-banda-suite {
-    background: linear-gradient(90deg, rgba(75,123,229,.24), rgba(75,123,229,.12));
-    color: #A8C4FA; box-shadow: inset 0 0 0 1px rgba(75,123,229,.35);
+  /* Los dos escalones con suite quedan cosidos por una cinta continua: se ve
+     que la suite empieza en uno y sigue hacia abajo, no que son dos casos
+     sueltos. */
+  .pl-peldano.con { padding-left: 26px; }
+  .pl-cinta {
+    position: absolute; left: 0; top: -1px; bottom: -1px; width: 3px; background: #4B7BE5;
   }
+  .pl-peldano.con:first-of-type .pl-cinta { border-radius: 2px 2px 0 0; }
 
-  .pl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-  .pl-plan {
-    position: relative; border: 1px solid #23232B; border-radius: 16px; padding: 24px 22px 26px;
-    background: #101015;
+  .pl-n {
+    display: block; font-size: 12px; font-weight: 800; letter-spacing: .16em; color: #4A4A56;
+    margin-bottom: 12px; font-variant-numeric: tabular-nums;
   }
-  /* Los planes con suite se separan del resto sin gritar: un borde de marca y
-     un fondo apenas azulado. */
-  .pl-plan.con {
-    border-color: rgba(75,123,229,.42);
-    background: linear-gradient(180deg, rgba(75,123,229,.09), #101015 60%);
+  .pl-id h3 {
+    font-size: clamp(21px, 2.4vw, 27px); font-weight: 700; color: #fff; margin: 0 0 6px;
+    letter-spacing: -.5px; line-height: 1.15;
   }
+  .pl-para { margin: 0 0 22px; font-size: 14px; color: #71717A; }
+
+  .pl-precio { margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .pl-precio b {
+    font-size: clamp(34px, 3.6vw, 44px); font-weight: 800; color: #fff; letter-spacing: -1.8px;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .pl-precio span { font-size: 12.5px; color: #8A8A96; font-weight: 600; }
+  .pl-anual { margin: 0; font-size: 12.5px; color: #6A6A76; }
 
   .pl-popular {
-    position: absolute; top: -10px; right: 18px;
-    font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-    background: #E4E4E7; color: #0A0A0B; border-radius: 999px; padding: 4px 10px;
+    margin: 18px 0 0; font-size: 12px; font-weight: 700; color: #A1A1AA;
+    border-left: 2px solid #3A3A46; padding-left: 11px;
+  }
+  .pl-suite {
+    margin: 18px 0 0; font-size: 13px; font-weight: 800; color: #A8C4FA;
+    letter-spacing: .02em; border-left: 2px solid #4B7BE5; padding-left: 11px;
   }
 
-  .pl-plan h3 {
-    font-size: 17px; font-weight: 700; color: #fff; margin: 0 0 5px; letter-spacing: -.3px;
-  }
-  .pl-para { margin: 0 0 20px; font-size: 13px; color: #6A6A76; font-weight: 600; }
+  /* ── Lo que suma ── */
+  .pl-hereda { margin: 0 0 20px; font-size: 14.5px; color: #8A8A96; }
+  .pl-hereda b { color: #E4E4E7; font-weight: 700; }
 
-  .pl-precio { margin: 0 0 3px; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-  .pl-precio b {
-    font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1.4px;
-    font-variant-numeric: tabular-nums;
+  .pl-areas { margin: 0; display: grid; gap: 14px; }
+  .pl-areas > div {
+    display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: baseline;
   }
-  .pl-precio span { font-size: 12px; color: #8A8A96; font-weight: 600; }
-  .pl-anual { margin: 0 0 18px; font-size: 12px; color: #6A6A76; }
+  .pl-areas dt {
+    font-size: 13px; font-weight: 700; color: #E4E4E7; letter-spacing: -.1px;
+  }
+  /* Un respiro a la derecha: sin el, la linea larga termina pegada al borde
+     del bloque y se lee apretada. */
+  .pl-areas dd { margin: 0; font-size: 14.5px; line-height: 1.6; color: #8A8A96; padding-right: 12px; }
 
-  .pl-marca {
-    display: flex; align-items: center; gap: 8px; margin: 0 0 18px;
-    font-size: 13px; font-weight: 700; color: #A8C4FA;
-    border: 1px solid rgba(75,123,229,.35); border-radius: 9px; padding: 9px 11px;
-    background: rgba(75,123,229,.1);
+  .pl-servicio {
+    margin: 22px 0 0; padding-top: 16px; border-top: 1px dashed #24242C;
+    font-size: 13px; color: #6A6A76; font-weight: 600;
   }
-  .pl-marca svg { width: 14px; height: 14px; flex-shrink: 0; }
-
-  .pl-puntos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .pl-puntos li {
-    position: relative; padding-left: 16px; font-size: 13.5px; line-height: 1.5; color: #9C9CA8;
-  }
-  .pl-puntos li::before {
-    content: ""; position: absolute; left: 0; top: 8px;
-    width: 5px; height: 5px; border-radius: 50%; background: #3A3A46;
-  }
-  .pl-plan.con .pl-puntos li::before { background: #4B7BE5; }
 
   .pl-pie {
     margin-top: 34px; display: flex; justify-content: space-between; align-items: baseline;
     gap: 24px; flex-wrap: wrap;
   }
-  .pl-pie-datos { margin: 0; font-size: 14.5px; color: #8A8A96; }
-  .pl-pie-datos b { color: #E4E4E7; font-weight: 700; }
+  .pl-pie p { margin: 0; font-size: 14.5px; color: #8A8A96; }
+  .pl-pie b { color: #E4E4E7; font-weight: 700; }
   .pl-link {
     font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; white-space: nowrap;
-    box-shadow: inset 0 -2px 0 rgba(255,255,255,.35); padding-bottom: 2px;
+    box-shadow: inset 0 -2px 0 rgba(255,255,255,.3); padding-bottom: 2px;
   }
   .pl-link:hover { color: #A8C4FA; box-shadow: inset 0 -2px 0 #4B7BE5; text-decoration: none; }
 
   @media (max-width: 1000px) {
-    .pl-grid { grid-template-columns: 1fr 1fr; }
-    /* Con dos columnas la banda ya no calza con los planes que agrupa: mentiria
-       sobre cuales incluyen la suite, asi que sale. Cada tarjeta lleva su marca. */
-    .pl-bandas { display: none; }
+    .pl-peldano { grid-template-columns: 1fr; gap: 26px; }
+    .pl-areas > div { grid-template-columns: 1fr; gap: 5px; }
+    .pl-areas dt { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #A8C4FA; }
   }
   @media (max-width: 620px) {
     .pl { padding: 70px 18px 78px; }
-    .pl-grid { grid-template-columns: 1fr; }
-    .pl-plan { padding: 20px 18px 22px; }
-    .pl-popular { right: 14px; }
+    .pl-peldano { padding: 30px 0 32px; }
+    .pl-peldano.con { padding-left: 18px; }
+    .pl-areas dd { font-size: 14px; }
     .pl-pie { flex-direction: column; gap: 16px; }
     .pl-link { white-space: normal; }
   }
