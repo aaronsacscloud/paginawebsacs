@@ -83,7 +83,13 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
     setBusy(true);
     const j = await fetch('/api/revenue/quotes/pagos', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quote_id: quoteId, ...nuevoAbono }),
+      // Solo lo que el endpoint espera: `concepto` y `vence` son ayuda visual
+      // del formulario, no campos del pago.
+      body: JSON.stringify({
+        quote_id: quoteId,
+        fecha: nuevoAbono.fecha, monto: nuevoAbono.monto,
+        metodo: nuevoAbono.metodo, referencia: nuevoAbono.referencia,
+      }),
     }).then(r => r.json()).catch(() => ({ error: 'No se pudo registrar' }));
     setBusy(false);
     if (j?.error) { alert(j.error); return; }
@@ -300,7 +306,14 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               </div>
             )}
 
-            {nuevoAbono && (
+            {nuevoAbono && (<>
+              {/* De qué parcialidad viene el abono: sin decirlo, el formulario
+                  aparece con un monto ya escrito y nadie sabe por qué. */}
+              {nuevoAbono.concepto && (
+                <div style={{ fontSize: '0.73rem', color: '#5B4BD6', background: '#faf8ff', border: '1px solid #ece7fa', borderRadius: 8, padding: '6px 9px', marginTop: 8 }}>
+                  Cobrando <b>{nuevoAbono.concepto}</b>{nuevoAbono.vence ? ` · vencía el ${fDate(nuevoAbono.vence)}` : ''}
+                </div>
+              )}
               <div style={{ ...P.fila, flexWrap: 'wrap' }}>
                 <input type="date" value={nuevoAbono.fecha} onChange={e => setNuevoAbono({ ...nuevoAbono, fecha: e.target.value })} style={{ ...P.input, flex: '0 0 140px' }} />
                 <input type="number" value={nuevoAbono.monto} onChange={e => setNuevoAbono({ ...nuevoAbono, monto: e.target.value })} placeholder="monto" style={{ ...P.input, flex: '0 0 110px' }} />
@@ -311,7 +324,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                 <button style={P.btn} disabled={busy} onClick={guardarAbono}>Guardar</button>
                 <button style={P.btnG} onClick={() => setNuevoAbono(null)}>✕</button>
               </div>
-            )}
+            </>)}
 
             {/* Plan de parcialidades: lo PACTADO contra lo que entró. Separarlo
                 de los abonos es lo que permite ver que falta un pago antes de
@@ -319,32 +332,45 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
             {(d.plan_pagos || []).length > 0 && (
               <div style={{ marginTop: 6, marginBottom: 4 }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#999', letterSpacing: '0.4px' }}>PLAN ACORDADO</div>
-                {d.plan_pagos.map((x: any, ix: number) => (
-                  <div key={x.id || ix} style={P.fila}>
-                    <span style={{ flex: '0 0 16px' }}>{x.pagada ? '✅' : x.vencida ? '⚠️' : '🕐'}</span>
-                    <span style={{ flex: '0 0 100px', color: x.vencida ? '#b93333' : '#666' }}>{fDate(x.fecha)}</span>
-                    <span style={{ flex: 1, color: '#666' }}>{x.concepto}</span>
-                    <b style={{ color: x.pagada ? '#1A8F7A' : x.vencida ? '#b93333' : '#1a1a1a' }}>{money(x.monto)}</b>
-                    {!x.pagada && x.cubierto > 0 && <span style={{ fontSize: '0.7rem', color: '#a06600' }}>abonado {money(x.cubierto)}</span>}
-                    {/* Cobrar ESTA parcialidad, desde donde se ve que venció.
-                        El estado de cuenta trae el folio, el saldo y las fechas
-                        que faltan: es lo que se le manda al cliente sin tener
-                        que escribirle el resumen a mano. */}
-                    {!x.pagada && (
-                      <span style={{ display: 'inline-flex', gap: 5 }}>
-                        <a href={`/estado-cuenta/cotizacion/${d.quote.id}?exh=${ix + 1}`} target="_blank" rel="noreferrer"
-                          style={{ ...P.btnG, padding: '3px 8px', textDecoration: 'none', color: '#5B4BD6', borderColor: '#ddd6fb' }}>
-                          Estado de cuenta
-                        </a>
-                        <button style={{ ...P.btnG, padding: '3px 8px' }} onClick={() => setNuevoAbono({
-                          fecha: new Date().toISOString().slice(0, 10),
-                          monto: String(Math.round(Number(x.monto || 0) - Number(x.cubierto || 0))),
-                          metodo: 'transferencia', referencia: '',
-                        })}>Registrar pago</button>
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {d.plan_pagos.map((x: any, ix: number) => {
+                  const falta = Math.max(0, Number(x.monto || 0) - Number(x.cubierto || 0));
+                  return (
+                    <div key={x.id || ix} style={{ padding: '9px 0', borderTop: '1px solid #f5f5f5' }}>
+                      {/* El renglón NO se comparte con los botones: con cuatro
+                          datos y dos acciones en la misma línea, el concepto y
+                          el monto se partían en dos pisos. Las acciones van
+                          debajo, alineadas a la derecha y en tamaño chico. */}
+                      <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', fontSize: '0.8rem' }}>
+                        <span style={{ flex: '0 0 14px', fontSize: '0.72rem' }}>{x.pagada ? '✅' : x.vencida ? '⚠️' : '🕐'}</span>
+                        <span style={{ flex: '0 0 96px', color: x.vencida ? '#b93333' : '#666' }}>{fDate(x.fecha)}</span>
+                        <span style={{ flex: 1, minWidth: 0, color: '#444' }}>{x.concepto}</span>
+                        <b style={{ whiteSpace: 'nowrap', color: x.pagada ? '#1A8F7A' : x.vencida ? '#b93333' : '#1a1a1a' }}>{money(x.monto)}</b>
+                      </div>
+                      {!x.pagada && (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, paddingLeft: 119 }}>
+                          {x.cubierto > 0 && (
+                            <span style={{ fontSize: '0.7rem', color: '#a06600', marginRight: 'auto' }}>
+                              abonado {money(x.cubierto)} · falta {money(falta)}
+                            </span>
+                          )}
+                          <a href={`/estado-cuenta/cotizacion/${d.quote.id}?exh=${ix + 1}`} target="_blank" rel="noreferrer"
+                            style={{ ...P.btnG, marginLeft: x.cubierto > 0 ? 0 : 'auto', padding: '4px 9px', fontSize: '0.72rem', textDecoration: 'none', color: '#5B4BD6', borderColor: '#ddd6fb', whiteSpace: 'nowrap' }}>
+                            Estado de cuenta
+                          </a>
+                          <button style={{ ...P.btnG, padding: '4px 9px', fontSize: '0.72rem', whiteSpace: 'nowrap' }}
+                            onClick={() => setNuevoAbono({
+                              fecha: new Date().toISOString().slice(0, 10),
+                              monto: String(Math.round(falta)),
+                              metodo: 'transferencia', referencia: '',
+                              concepto: x.concepto, vence: x.fecha,
+                            })}>
+                            Registrar pago
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
