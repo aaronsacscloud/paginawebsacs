@@ -306,6 +306,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // los ABONOS, y aquí solo hay cotizaciones. Calcularlos en el front daría un
     // "pendiente" que ignora los anticipos.
     const [kpis, setKpis] = useState<any>(null);
+    // Cada tarjeta se abre con la lista que forma su número: un KPI que no se
+    // puede desarmar termina en "¿de dónde salió esto?".
+    const [panelKpi, setPanelKpi] = useState<string>('');
     const cargarKpis = () => fetch('/api/revenue/quotes/kpis').then(r => r.json()).then(setKpis).catch(() => {});
     useEffect(() => { cargarKpis(); }, []);
 
@@ -1134,30 +1137,101 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             return (
               <>
                 {card('Cotizado este mes', fmt(k.cotizado.monto),
-                  <>{varTxt(k.cotizado.variacion)} vs. mes anterior · Mes anterior {fmt(k.cotizado.mes_anterior)}</>,
-                  '#1a1a1a', undefined, M.azul)}
-                {card('Pendiente de pago del mes', fmt(k.pendiente.monto),
-                  <>{k.pendiente.activas} activas{k.pendiente.con_parcial ? ` · ${k.pendiente.con_parcial} con pago parcial` : ''}</>,
-                  k.pendiente.monto > 0 ? '#1a1a1a' : M.verdeTinta,
-                  () => setQView('active'), M.violeta)}
-                {card('Pagado este mes', fmt(k.pagado.monto),
-                  <>{k.pagado.cotizaciones} cotizaci{k.pagado.cotizaciones === 1 ? 'ón' : 'ones'} con pagos este mes</>,
-                  M.verdeTinta, () => setQView('paid'), M.verde)}
-                {card('Cotizaciones activas del mes', String(k.activas.total),
-                  'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'), M.violeta)}
-                {/* Ventana de 7 días, no del mes: una cotización de marzo que
-                    vence el jueves es urgente HOY. Es el único número de la
-                    fila que dice a quién llamarle antes del viernes. */}
-                {card('Vencen esta semana', fmt(k.vencen?.monto || 0),
-                  (k.vencen?.total || 0) === 0
-                    ? 'Nada por vencer en 7 días'
-                    : <>{k.vencen.total} cotizaci{k.vencen.total === 1 ? 'ón' : 'ones'} enviada{k.vencen.total === 1 ? '' : 's'}{k.vencen.urgentes ? <span style={{ color: M.rojoTinta, fontWeight: 800 }}> · {k.vencen.urgentes} hoy o mañana</span> : ''}</>,
-                  (k.vencen?.total || 0) > 0 ? M.rojoTinta : '#1a1a1a',
-                  () => setQView('expiring'), M.rojo)}
+                  <>{varTxt(k.cotizado.variacion)} vs. mes anterior · {k.cotizado.cotizaciones} cotizaci{k.cotizado.cotizaciones === 1 ? 'ón' : 'ones'} · <b style={{ color: M.violeta }}>ver</b></>,
+                  '#1a1a1a', () => setPanelKpi('cotizado'), M.azul)}
+                {/* Cerrado se fecha por el PAGO REGISTRADO, no por la captura:
+                    marcar hoy como pagada una cotización cuyo pago fue en julio
+                    no la vuelve venta de agosto. */}
+                {card('Cerrado este mes', fmt(k.cerrado.monto),
+                  <>{k.cerrado.cotizaciones} aceptada{k.cerrado.cotizaciones === 1 ? '' : 's'} o pagada{k.cerrado.cotizaciones === 1 ? '' : 's'}{k.cerrado.con_anticipo ? ` · ${k.cerrado.con_anticipo} con anticipo` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
+                  M.violetaTinta, () => setPanelKpi('cerrado'), M.violeta)}
+                {card('Cobrado este mes', fmt(k.cobrado.monto),
+                  <>{k.cobrado.cotizaciones} cotizaci{k.cobrado.cotizaciones === 1 ? 'ón' : 'ones'}{k.cobrado.anticipos > 0 ? ` · ${fmt(k.cobrado.anticipos)} son anticipos` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
+                  M.verdeTinta, () => setPanelKpi('cobrado'), M.verde)}
+                {/* Solo lo exigible DENTRO del mes: lo que toca en noviembre no
+                    se cobra hoy y no tiene por qué inflar el número de hoy. */}
+                {card('Por cobrar este mes', fmt(k.por_cobrar.monto),
+                  (k.por_cobrar.n || 0) === 0
+                    ? 'Nada exigible en lo que resta del mes'
+                    : <>{k.por_cobrar.n} cobro{k.por_cobrar.n === 1 ? '' : 's'}{k.por_cobrar.vencido > 0 ? <span style={{ color: M.rojoTinta, fontWeight: 800 }}> · {fmt(k.por_cobrar.vencido)} vencido</span> : ''} · <b style={{ color: M.violeta }}>ver</b></>,
+                  (k.por_cobrar.vencido || 0) > 0 ? M.rojoTinta : '#1a1a1a',
+                  () => setPanelKpi('por_cobrar'), M.rojo)}
+                {card('En pago parcial', fmt(k.parcial.falta),
+                  <>{k.parcial.n} con anticipo · abonaron {fmt(k.parcial.abonado)}{k.parcial.con_plan ? ` · ${k.parcial.con_plan} con fechas` : ' · sin fechas acordadas'} · <b style={{ color: M.violeta }}>ver</b></>,
+                  M.violetaTinta, () => setPanelKpi('parcial'), M.violeta)}
               </>
             );
           })()}
         </div>
+
+        {/* El desglose de la tarjeta que se abrió. Vive aquí y no en cada
+            tarjeta para que las cinco compartan el mismo formato. */}
+        {panelKpi && kpis && (() => {
+          const P: any = {
+            cotizado: { t: 'Cotizado este mes', d: kpis.cotizado.detalle, nota: 'Todo lo generado en el mes, se haya cerrado o no.' },
+            cerrado: { t: 'Cerrado este mes', d: kpis.cerrado.detalle, nota: 'Aceptadas o pagadas, fechadas por el pago registrado. Las parcialidades entran completas: la venta ya se cerró aunque el resto se cobre después.' },
+            cobrado: { t: 'Cobrado este mes', d: kpis.cobrado.detalle, nota: 'Dinero que entró este mes, anticipos incluidos.' },
+            por_cobrar: { t: 'Por cobrar este mes', d: kpis.por_cobrar.detalle, nota: 'Solo lo exigible hasta fin de mes: exhibiciones con fecha en el mes (y las atrasadas) y saldos cuya vigencia ya pasó.' },
+            parcial: { t: 'En pago parcial', d: kpis.parcial.detalle, nota: 'Lo abonado, lo que falta y cuándo toca cada exhibición.' },
+          }[panelKpi];
+          if (!P) return null;
+          const money = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+          const fecha = (f: string) => f ? new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '—';
+          return (
+            <div onClick={e => { if (e.target === e.currentTarget) setPanelKpi(''); }}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 970, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 620, maxWidth: '100%', maxHeight: '86vh', display: 'flex', flexDirection: 'column' as const }}>
+                <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{P.t}</h3>
+                  <span style={{ fontSize: '0.72rem', color: '#7a6fc9' }}>{P.d.length} {P.d.length === 1 ? 'renglón' : 'renglones'}</span>
+                  <button onClick={() => setPanelKpi('')} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                </div>
+                <div style={{ padding: '13px 17px', overflowY: 'auto' as const }}>
+                  <div style={{ fontSize: '0.76rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 11 }}>{P.nota}</div>
+                  {P.d.length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Nada aquí todavía.</div>}
+                  {P.d.map((x: any, i: number) => (
+                    <div key={x.id + '' + i} style={{ padding: '9px 0', borderTop: i ? '1px solid #f4f3f7' : 'none' }}>
+                      <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', flexWrap: 'wrap' as const }}>
+                        <a href={x.numero && x.numero !== '—' ? `/cotizacion/${x.id}` : undefined} target="_blank" rel="noreferrer"
+                          style={{ fontSize: '0.83rem', fontWeight: 700, color: '#1a1a1a', textDecoration: 'none' }}>
+                          {x.numero || '—'}
+                        </a>
+                        <span style={{ fontSize: '0.8rem', color: '#4c4a57', flex: 1, minWidth: 120 }}>{x.empresa}</span>
+                        {x.fecha && <span style={{ fontSize: '0.73rem', color: x.vencido ? '#C0554E' : '#8a8a92' }}>{fecha(x.fecha)}</span>}
+                        <b style={{ fontSize: '0.85rem' }}>{money(x.monto ?? x.saldo ?? x.total)}</b>
+                      </div>
+                      {(x.abonado > 0 || x.exhibicion || x.anticipo || x.metodo) && (
+                        <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 2 }}>
+                          {x.exhibicion ? `exhibición ${x.exhibicion} · ` : ''}
+                          {x.anticipo ? 'anticipo · ' : ''}
+                          {x.metodo ? x.metodo + ' · ' : ''}
+                          {x.abonado > 0 ? `abonó ${money(x.abonado)} de ${money(x.total)}` : ''}
+                        </div>
+                      )}
+                      {Array.isArray(x.exhibiciones) && x.exhibiciones.length > 0 && (
+                        <div style={{ marginTop: 5, paddingLeft: 10, borderLeft: '2px solid #ece7fa' }}>
+                          {x.exhibiciones.map((e: any) => (
+                            <div key={e.numero} style={{ display: 'flex', gap: 8, fontSize: '0.73rem', color: '#5B4BD6', padding: '2px 0' }}>
+                              <span style={{ width: 74 }}>{e.numero} de {e.total}</span>
+                              <span style={{ width: 70 }}>{fecha(e.fecha)}</span>
+                              <b>{money(e.monto)}</b>
+                              <span style={{ marginLeft: 'auto', color: e.estado === 'pagada' ? '#1E8A63' : '#a5a2af' }}>{e.estado}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {Array.isArray(x.exhibiciones) && x.exhibiciones.length === 0 && (
+                        <div style={{ fontSize: '0.72rem', color: '#9a6a10', marginTop: 3 }}>
+                          Sin fechas acordadas · se pueden fijar con “Partir en pagos”, en Cobranza.
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ─── Saved views tabs ─── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 12, overflowX: 'auto' as const }}>
