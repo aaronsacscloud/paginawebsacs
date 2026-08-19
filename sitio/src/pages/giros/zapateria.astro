@@ -20,7 +20,7 @@ import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteCubo from '../../components/suite/SuiteCubo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
-import SuiteRack from '../../components/suite/SuiteRack.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import ZapCorridaCerrada from '../../components/giros/ZapCorridaCerrada.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
@@ -30,7 +30,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
 import PosMock from '../../components/suite/PosMock.astro';
 import {
-  seccionesZapateria, rackZapateria, cortinaZapateria, sucursalesZapateria,
+  seccionesZapateria, casosZapateria, cortinaZapateria, sucursalesZapateria,
   reglasZapateria, diasZapateria, cajaZapateria, documentosZapateria,
 } from '../../data/giros/zapateria';
 
@@ -163,17 +163,12 @@ const desc =
     ]}
   />
 
-  <!-- ── Un modelo son muchos pares ── -->
-  <SuiteRack
-    eyebrow="Un modelo no es un producto"
-    titulo="Cada modelo que exhibes son"
-    resalte="dieciséis, veintiuno, treinta"
-    piezas={rackZapateria}
-    ejeA="números"
-    ejeB="colores"
-    unidad="pares"
-    distintas="distintos"
-    remate="pares en el aparador"
+  <!-- ── Momentos reales, con su escena ── -->
+  <SuiteCasos
+    eyebrow="Un día en tu tienda"
+    titulo="Dónde te sirve, en horas concretas"
+    sub="No son funciones: son los cuatro momentos en los que una zapatería gana o pierde el día. Toca cada uno."
+    casos={casosZapateria}
   />
 
   <!-- ── Recorrido de funcionalidades ── -->

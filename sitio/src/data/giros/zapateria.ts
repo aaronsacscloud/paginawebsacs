@@ -498,3 +498,46 @@ export const documentosZapateria = {
     { que: 'Quién lo mantiene', generico: 'Su proveedor', tonoGenerico: 'medio', medida: 'Tú, si lo encuentras', tonoMedida: 'no', sacs: 'Nosotros, a diario' },
   ],
 };
+
+/* ── Momentos reales del giro, con su escena ──
+   Sustituye al perchero de producto: aquí no importa qué vendes, importa
+   cuándo te sirve el sistema. Cada caso es una hora concreta de un día
+   concreto, no una funcionalidad. */
+export const casosZapateria = [
+  {
+    id: 'mostrador',
+    titulo: 'Sábado, 1 p.m.: te piden el 24 y hay tres personas esperando',
+    texto:
+      'El vendedor consulta desde el mostrador si ese número existe, sin caminar a la bodega ni dejar al cliente parado. Si aquí no está, ve en qué sucursal sí y lo aparta en el momento.',
+    remate: 'Saber antes de caminar es lo que evita la venta perdida, no caminar más rápido.',
+    img: '/images/caso-zap-mostrador.webp',
+    alt: 'Vendedor consultando en una tablet mientras atiende a una clienta con un botín en la mano',
+  },
+  {
+    id: 'conteo',
+    titulo: 'Contar la bodega sin cerrar la tienda',
+    texto:
+      'El conteo se hace desde el celular, por estante y en cualquier momento, mientras la tienda vende. Los conteos cíclicos se programan y lo que no cuadra queda con nombre y fecha.',
+    remate: 'En calzado el faltante casi nunca es un robo: es un par que quedó en otra caja.',
+    img: '/images/caso-zap-conteo.webp',
+    alt: 'Empleada contando cajas de zapatos en la bodega con el celular en la mano',
+  },
+  {
+    id: 'recepcion',
+    titulo: 'Llegó la segunda remesa y trae menos de lo que dice la factura',
+    texto:
+      'La recepción se hace contra la orden de compra, par por par y número por número. Lo que llegó de más, lo que falta y lo que no pediste queda a la vista antes de firmar.',
+    remate: 'El proveedor de León manda en tres remesas: sin esto, a media temporada nadie sabe qué falta.',
+    img: '/images/caso-zap-recepcion.webp',
+    alt: 'Dos empleados recibiendo una caja de zapatos y verificando contra una tablet',
+  },
+  {
+    id: 'escolar',
+    titulo: 'Del 15 al 25 de agosto se juega el año',
+    texto:
+      'Durante el pico escolar el número se agota en horas. La reposición diaria por número te dice qué pedir hoy para no quedarte sin el 19 el día de la quincena.',
+    remate: 'Si el cliente no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
+    img: '/images/caso-zap-escolar.webp',
+    alt: 'Madre e hijo probándose calzado escolar con la ayuda de una vendedora',
+  },
+];
