@@ -1488,9 +1488,13 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       <div style={D.cardM}>
         {/* Encabezado con el destello morado y los botones en la escala del
             sistema: morado el que crea, contorno azul lo importante. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <div style={{ ...D.hM, marginBottom: 0 }}>Suscripciones del cliente</div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {/* El título arriba y las acciones en su propio renglón, arrancando en el
+            mismo borde que la tabla: con cuatro botones colgados del título, el
+            de crear se despegaba solo al segundo renglón y quedaba a media
+            altura. Así aguanta que se agreguen más. */}
+        <div style={{ ...D.hM, marginBottom: 9 }}>Suscripciones del cliente</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <button style={D.btnAzul} title="Elegir qué suscripciones entran y generar el estado de cuenta" onClick={() => setEdoCuenta('ver')}>Estado de cuenta</button>
             {unificables.length > 0 && (
               <button style={D.btnAzul} title="Juntar las licencias en una sola fecha de cobro"
@@ -1500,8 +1504,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
             <button style={D.btnAzul}
               title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
               disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : 'Buscar en Mercado Pago'}</button>
-            <button style={D.btn} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
           </div>
+          <button style={{ ...D.btn, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
         </div>
 
         {unificables.map((g: any) => (
