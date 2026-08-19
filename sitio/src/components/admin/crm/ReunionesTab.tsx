@@ -25,9 +25,18 @@ function origenDeReunion(b: any): { l: string; color: string; campana?: string }
   // fila sería repetir dónde llenó el formulario, que ya se sabe, y taparía
   // las pocas filas que sí traen la campaña que las pagó.
   if (!b?.utm_source && !referrer) return null;
-  const o = origenDe(origenDeRegistro({ utm_source: b?.utm_source, fuente: 'booking-page' }));
+  // SIN `fuente`, a propósito: con ella `origenDeRegistro` devolvía siempre
+  // 'agenda' (por DESDE_FUENTE), así que `o.v` nunca era vacío, el fallback
+  // 'Referido' era CÓDIGO MUERTO y una reunión con utm_source='newsletter'
+  // se pintaba "Página de agenda · promo" — justo el ruido que este chip
+  // existe para no poner.
+  const o = origenDe(origenDeRegistro({ utm_source: b?.utm_source }));
+  const crudo = String(b?.utm_source || '').trim();
   return {
-    l: o.v ? o.l : 'Referido',
+    // Canal reconocido → su nombre bonito. Canal no catalogado (newsletter,
+    // bing, un partner) → el utm_source tal cual, que dice más que "Referido".
+    // Solo referrer → "Referido".
+    l: o.v ? o.l : (crudo ? crudo.charAt(0).toUpperCase() + crudo.slice(1) : 'Referido'),
     color: o.color,
     campana: b?.atribucion?.primer_toque?.campana || undefined,
   };

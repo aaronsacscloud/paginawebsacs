@@ -700,9 +700,20 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
       toque.lp = corta(landing);
       toque.ts = Date.now();
 
-      var a = leer() || { v: 1 };
+      // Se valida el TIPO, no solo que haya algo. `leer()` solo se protege de
+      // JSON inválido; una cookie con JSON VÁLIDO pero no-objeto (`"x"`, `5`,
+      // `[]`) pasaba el `||` y, como este script es `is:inline` (modo sloppy),
+      // `a.vid = …` y `a.n = …` eran no-ops SILENCIOSOS y `guardar(a)` reescribía
+      // la misma basura con otros 90 días de vida: ese navegador no volvía a
+      // atribuir nada nunca, sin error y sin auto-repararse.
+      var a = leer();
+      if (!a || typeof a !== 'object' || Array.isArray(a)) a = { v: 1 };
       if (!a.vid) a.vid = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      a.n = (a.n || 0) + 1;
+      // Las páginas vistas NO se cuentan dentro de un iframe: el agendador de
+      // /contacto usa este mismo layout, así que el script corre en el padre y
+      // otra vez en el iframe y cada visita a /contacto sumaba 2. El contador
+      // salía inflado justo en la página que más pesa para calificar al lead.
+      if (window.top === window.self) a.n = (a.n || 0) + 1;
       // El PRIMER toque no se pisa nunca: es cómo nos conoció.
       if (!a.p) a.p = toque;
       if (identificable || !a.u) a.u = toque;

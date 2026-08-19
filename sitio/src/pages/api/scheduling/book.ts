@@ -153,7 +153,17 @@ const LIFECYCLE_ORDER = [
 ];
 
 export const POST: APIRoute = async ({ request }) => {
-  const body = await request.json();
+  // Sin catch, un body malformado (o un Content-Type equivocado) tiraba el
+  // endpoint con 500 en vez de decir que la petición venía mal.
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Cuerpo de la petición inválido.' }), { status: 400 });
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return new Response(JSON.stringify({ error: 'Cuerpo de la petición inválido.' }), { status: 400 });
+  }
 
   const {
     event_type_slug,
@@ -191,6 +201,25 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({ error: 'event_type_slug, fecha, hora_inicio, nombre, and email are required' }),
       { status: 400 },
     );
+  }
+
+  // Los campos venían solo comprobados por truthiness. Dos consecuencias reales:
+  // un `email` que no es texto llegaba a `.eq()` como "[object Object]", y un
+  // email como "x" creaba contacto, Oportunidad y reunión sin forma de avisarle
+  // a nadie. Sin tope de longitud, además, cabía un texto arbitrariamente largo
+  // en el correo al vendedor y en la ficha del CRM.
+  if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+    return new Response(JSON.stringify({ error: 'El correo no tiene un formato válido.' }), { status: 400 });
+  }
+  if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 200) {
+    return new Response(JSON.stringify({ error: 'El nombre es obligatorio.' }), { status: 400 });
+  }
+  if (notas != null && (typeof notas !== 'string' || notas.length > 5000)) {
+    return new Response(JSON.stringify({ error: 'Las notas son demasiado largas.' }), { status: 400 });
+  }
+  if (answers != null && (!Array.isArray(answers) || answers.length > 50 ||
+      answers.some((a: any) => typeof a?.valor === 'string' && a.valor.length > 2000))) {
+    return new Response(JSON.stringify({ error: 'Las respuestas del formulario no son válidas.' }), { status: 400 });
   }
 
   // 1. Load event type
@@ -358,7 +387,15 @@ export const POST: APIRoute = async ({ request }) => {
       .select('id')
       .single();
 
-    if (cErr) return new Response(JSON.stringify({ error: cErr.message }), { status: 500 });
+    if (cErr) {
+      // El mensaje crudo de Postgres nombra columnas y constraints: al log del
+      // servidor, no al navegador de un visitante anónimo.
+      console.error('[book] no se pudo crear el contacto:', cErr.message);
+      return new Response(
+        JSON.stringify({ error: 'No pudimos registrar tus datos. Intenta de nuevo en un momento.' }),
+        { status: 500 },
+      );
+    }
     contact_id = newContact.id;
     isNewContact = true;
   }
@@ -467,7 +504,20 @@ export const POST: APIRoute = async ({ request }) => {
         { status: 409 },
       );
     }
-    return new Response(JSON.stringify({ error: bookErr.message }), { status: 500 });
+    // La Oportunidad se creó ANTES que la reserva (paso 6 vs 7). Si la reserva
+    // falla y no se deshace, el CRM acumula Oportunidades en etapa
+    // `demo_agendada` sin ninguna reunión detrás: ensucian el embudo y el
+    // pronóstico de ventas. Se compensa aquí; si el borrado también falla, al
+    // menos queda el rastro en el log para limpiarlo a mano.
+    if (deal_id) {
+      const { error: delErr } = await supabase.from('deals').delete().eq('id', deal_id);
+      if (delErr) console.error('[book] quedó una Oportunidad huérfana ' + deal_id + ':', delErr.message);
+    }
+    console.error('[book] no se pudo crear la reserva:', bookErr.message);
+    return new Response(
+      JSON.stringify({ error: 'No pudimos confirmar tu horario. Intenta de nuevo en un momento.' }),
+      { status: 500 },
+    );
   }
 
   // OpenAI Conversions API: la demo quedó CONFIRMADA en base.
@@ -580,7 +630,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (answers && Array.isArray(answers) && answers.length > 0) {
         answersHtml = `
           <tr><td style="padding:16px 0 8px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Respuestas personalizadas</td></tr>
-          ${answers.map((a: { question_id: string; valor: string }) => `<tr><td style="padding:4px 0;font-size:0.875rem;color:#555;">${a.valor}</td></tr>`).join('')}
+          ${answers.map((a: { question_id: string; valor: string }) => `<tr><td style="padding:4px 0;font-size:0.875rem;color:#555;">${escapeHtml(a.valor)}</td></tr>`).join('')}
         `;
       }
 
@@ -640,7 +690,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     ${answersHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">${answersHtml}</table>` : ''}
 
-    ${notas ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr><td style="padding:0 0 4px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Notas del invitado</td></tr><tr><td style="padding:4px 0;font-size:0.875rem;color:#555;font-style:italic;">${notas}</td></tr></table>` : ''}
+    ${notas ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr><td style="padding:0 0 4px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Notas del invitado</td></tr><tr><td style="padding:4px 0;font-size:0.875rem;color:#555;font-style:italic;">${escapeHtml(notas)}</td></tr></table>` : ''}
   </td></tr>
   <tr><td style="background:#fafafa;padding:16px 24px;border-radius:0 0 12px 12px;text-align:center;">
     <a href="https://www.sacscloud.com/admin/crm?tab=agenda" style="display:inline-block;padding:12px 32px;background:#4B7BE5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Ver en CRM</a>

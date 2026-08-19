@@ -493,9 +493,26 @@ function PruebaGratis({ c, guardar, flash }: any) {
  */
 function DeDondeLlego({ c }: any) {
   const a = c?.propiedades?.atribucion;
-  const o = origenDe(origenDeRegistro(c));
+  const oBase = origenDe(origenDeRegistro(c));
+  // Mismo problema que en el chip de Reuniones: si el utm_source no está
+  // catalogado (newsletter, bing, un partner), `origenDeRegistro` cae al
+  // genérico por `fuente` y el encabezado dice "Página de agenda" tapando el
+  // canal real. Cuando eso pasa y sí hay un utm_source, se muestra tal cual.
+  const crudoUtm = String(c?.utm_source || '').trim();
+  const generico = !oBase.v || oBase.v === 'agenda' || oBase.v === 'sitio_web';
+  const o = generico && crudoUtm
+    ? { ...oBase, l: crudoUtm.charAt(0).toUpperCase() + crudoUtm.slice(1) }
+    : oBase;
   const p = a?.primer_toque, u = a?.ultimo_toque;
-  const hayCampana = !!(p?.fuente || p?.campana || p?.referrer);
+  // El encabezado sale de `c.utm_source`, que se escribió con toqueDeOrigen():
+  // el primer toque CON CANAL. Las filas leían el primer toque CRUDO, y con una
+  // 1ª visita directa + un anuncio después la tarjeta se contradecía sola:
+  // "TikTok" en grande y justo debajo "Llegó sin campaña identificable", con
+  // Campaña y Medio vacíos y la campaña real escondida en "Volvió por".
+  // `org` es el mismo toque que alimentó las columnas utm_*.
+  const conCanal = (t: any) => !!(t?.fuente || t?.campana || (t?.click_ids && Object.keys(t.click_ids).length));
+  const org = conCanal(p) ? p : (conCanal(u) ? u : p);
+  const hayCampana = !!(org?.fuente || org?.campana || org?.referrer);
 
   const fila = (l: string, v: any) => v ? (
     <div style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #f5f4f8', fontSize: '0.75rem' }}>
@@ -516,12 +533,12 @@ function DeDondeLlego({ c }: any) {
           Llegó sin campaña identificable (tráfico directo o referrer oculto).
         </div>
       )}
-      {fila('Campaña', p?.campana)}
-      {fila('Medio', p?.medio)}
-      {fila('Contenido', p?.contenido)}
-      {fila('Cayó en', p?.landing)}
-      {fila('Referido de', p?.referrer)}
-      {u && (u.fuente !== p?.fuente || u.campana !== p?.campana) && fila('Volvió por', [u.fuente, u.campana].filter(Boolean).join(' · '))}
+      {fila('Campaña', org?.campana)}
+      {fila('Medio', org?.medio)}
+      {fila('Contenido', org?.contenido)}
+      {fila('Cayó en', org?.landing)}
+      {fila('Referido de', org?.referrer)}
+      {u && u !== org && (u.fuente !== org?.fuente || u.campana !== org?.campana) && fila('Volvió por', [u.fuente, u.campana].filter(Boolean).join(' · '))}
       {fila('Dispositivo', [a?.dispositivo, a?.navegador].filter(Boolean).join(' · '))}
       {c.lead_score ? fila('Puntaje', `${c.lead_score}/100`) : null}
     </div>

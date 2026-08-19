@@ -124,18 +124,35 @@ export function resolverAtribucion(
   } catch { return null; }
 }
 
+/** ¿Este toque trae CANAL declarado (utm_source o un click id de anuncio)? */
+const conCanal = (t?: Toque): boolean =>
+  !!(t && (t.s || (t.cl && Object.keys(t.cl).length > 0)));
+
 /** ¿Este toque dice algo de dónde venía, o fue una visita a secas? */
-const identificable = (t?: Toque): boolean =>
-  !!(t && (t.s || t.rf || (t.cl && Object.keys(t.cl).length > 0)));
+const identificable = (t?: Toque): boolean => conCanal(t) || !!(t && t.rf);
 
 /**
- * El toque que define de dónde SALIÓ el lead: el PRIMERO IDENTIFICABLE.
+ * El toque que define de dónde SALIÓ el lead.
+ *
+ * En DOS niveles, y el orden importa:
+ *
+ *   1º  el primer toque con CANAL (utm_source o click id)
+ *   2º  si ninguno tiene canal, el primero con referrer
  *
  * No es simplemente `p`: si la primera visita fue directa (Google a veces no
  * manda referrer) y el anuncio de TikTok llegó después, `p` no tiene canal y
  * responder "directo" borraría la campaña que sí pagó el lead.
+ *
+ * Y tampoco basta con "el primero identificable" a secas —era el bug—: una
+ * llegada orgánica desde Google SÍ deja `rf`, así que ese toque ganaba y
+ * `columnasUtm()` devolvía los tres nulos, tapando el anuncio de TikTok que
+ * llegó después con utm_source/utm_campaign completos. El lead terminaba
+ * etiquetado "Página de agenda", exactamente lo que se quería eliminar. El
+ * referrer solo desempata cuando NINGÚN toque declara canal.
  */
 export const toqueDeOrigen = (a?: Atribucion | null): Toque | undefined => {
+  if (conCanal(a?.p)) return a!.p;
+  if (conCanal(a?.u)) return a!.u;
   if (identificable(a?.p)) return a!.p;
   if (identificable(a?.u)) return a!.u;
   return a?.p || a?.u;
