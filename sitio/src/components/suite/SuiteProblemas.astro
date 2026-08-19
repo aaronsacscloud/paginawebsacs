@@ -1,0 +1,320 @@
+---
+/**
+ * SuiteProblemas — "ya lo intentaste de las dos formas".
+ *
+ * Va entre el dolor de operación y el recorrido de producto, y su trabajo es
+ * desactivar la objeción que trae el visitante ANTES de que le enseñemos nada:
+ * "yo ya tengo sistema" o "a mí me lo hicieron a la medida".
+ *
+ * Los dos caminos que de verdad recorre este cliente son el POS genérico y el
+ * desarrollo por encargo. Los dos fallan por motivos distintos y hay que
+ * nombrarlos con precisión: el genérico no entiende el giro, y el a la medida
+ * envejece solo porque nadie lo mantiene.
+ *
+ * Regla de tono: no se habla mal de nadie. El genérico funciona —para
+ * abarrotes—, y quien pagó un desarrollo hizo lo que pudo con lo que había. Si
+ * el visitante siente que se burlan de su decisión, deja de leer y no vuelve.
+ *
+ * La tabla del final existe porque las dos columnas cuentan la historia pero no
+ * la cierran: hace falta una lectura de un vistazo, y ahí es donde el visitante
+ * decide si vale la pena la llamada.
+ */
+/** El tono lo declara el dato, no se adivina del texto: "No existe" es un no,
+    "Si la pagaste" es un a medias y "Días" es un sí, y ninguna regla automatica
+    sobre la cadena acierta en los tres casos. */
+type Tono = 'no' | 'medio' | 'ok';
+interface Fila {
+  que: string;
+  generico: string;
+  medida: string;
+  sacs: string;
+  tonoGenerico?: Tono;
+  tonoMedida?: Tono;
+}
+interface Props {
+  filas?: Fila[];
+}
+
+const {
+  filas = [
+    { que: 'Matriz de tallas × colores', generico: 'No existe', tonoGenerico: 'no', medida: 'Si la pagaste', tonoMedida: 'medio', sacs: 'Incluida' },
+    { que: 'Curva de compra por sucursal', generico: 'No existe', tonoGenerico: 'no', medida: 'Casi nunca', tonoMedida: 'no', sacs: 'Incluida' },
+    { que: 'Consignación a departamentales', generico: 'No existe', tonoGenerico: 'no', medida: 'A veces', tonoMedida: 'medio', sacs: 'Incluida' },
+    { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', tonoGenerico: 'medio', medida: 'Rara vez', tonoMedida: 'no', sacs: 'Uno solo' },
+    { que: 'Agentes de IA que tú programas', generico: 'No existe', tonoGenerico: 'no', medida: 'No existe', tonoMedida: 'no', sacs: 'Incluidos' },
+    { que: 'Tiempo para arrancar', generico: 'Días', tonoGenerico: 'ok', medida: '4 a 9 meses', tonoMedida: 'no', sacs: 'Días' },
+    { que: 'Quién lo mantiene', generico: 'Su proveedor', tonoGenerico: 'medio', medida: 'Tú, si lo encuentras', tonoMedida: 'no', sacs: 'Nosotros, a diario' },
+  ],
+} = Astro.props;
+---
+
+<section class="pb">
+  <div class="pb-inner">
+    <header class="pb-head">
+      <p class="pb-eyebrow">Antes de enseñarte nada</p>
+      <h2>Ya lo intentaste de las <span>dos formas</span>.</h2>
+      <p class="pb-sub">
+        Casi toda marca de ropa que llega con nosotros viene de uno de estos dos caminos.
+        Ninguno de los dos es una tontería — los dos fallan, pero por motivos distintos.
+      </p>
+    </header>
+
+    <div class="pb-caminos">
+      <!-- Camino 1 -->
+      <article class="pb-caso">
+        <div class="pb-caso-cab">
+          <span class="pb-num">01</span>
+          <div>
+            <h3>Un sistema genérico</h3>
+            <p>El mismo que usa la ferretería de al lado</p>
+          </div>
+        </div>
+
+        <!-- Síntoma dibujado: 24 prendas colapsadas en una sola línea. -->
+        <div class="pb-visual pb-visual-a" aria-hidden="true">
+          <div class="pb-fila-sis">
+            <span class="pb-sku">SKU-0041</span>
+            <b>Blusa satinada</b>
+            <span class="pb-cant">18 pz</span>
+          </div>
+          <p class="pb-visual-pie">
+            Una fila. Sin talla, sin color.<br />
+            Las 24 combinaciones viven en tu cabeza.
+          </p>
+        </div>
+
+        <ul class="pb-lista">
+          <li>Das de alta la blusa y te pide <b>un solo código</b>. Tus 24 combinaciones se vuelven una fila.</li>
+          <li>Para saber si queda la M abres un <b>Excel aparte</b>, que alguien tiene que actualizar.</li>
+          <li>El reporte te dice cuánto vendiste, <b>no qué talla dejaste de tener</b>.</li>
+          <li>Abres la segunda tienda y empiezas de cero.</li>
+        </ul>
+      </article>
+
+      <!-- Camino 2 -->
+      <article class="pb-caso">
+        <div class="pb-caso-cab">
+          <span class="pb-num">02</span>
+          <div>
+            <h3>Un desarrollo a la medida</h3>
+            <p>Hecho para ti… hace tres años</p>
+          </div>
+        </div>
+
+        <!-- Síntoma dibujado: la línea de tiempo del proyecto que se estira. -->
+        <div class="pb-visual pb-visual-b" aria-hidden="true">
+          <div class="pb-linea">
+            <span class="pb-hito"><i></i>Cotizado<br /><b>3 meses</b></span>
+            <span class="pb-hito pb-hito-mal"><i></i>Entregado<br /><b>9 meses</b></span>
+            <span class="pb-hito pb-hito-mal"><i></i>Hoy<br /><b>sin soporte</b></span>
+          </div>
+          <p class="pb-visual-pie">Lo que se cotizó y lo que pasó.</p>
+        </div>
+
+        <ul class="pb-lista">
+          <li>Costó <b>más de lo cotizado</b> y llegó meses tarde.</li>
+          <li>Funciona… mientras <b>quien lo hizo conteste el teléfono</b>.</li>
+          <li>Cada cambio chico es <b>una cotización nueva</b>.</li>
+          <li>No tiene app, ni tienda en línea, ni quién lo actualice. El día que falla, <b>para la tienda</b>.</li>
+        </ul>
+      </article>
+    </div>
+
+    <!-- Lectura de un vistazo -->
+    <div class="pb-tabla-caja">
+      <div class="pb-tabla-rot">
+        <h3>Lo que tu giro necesita, en los tres caminos</h3>
+      </div>
+      <div class="pb-scroll">
+        <table class="pb-tabla">
+          <thead>
+            <tr>
+              <th class="pb-th-que"></th>
+              <th>Genérico</th>
+              <th>A la medida</th>
+              <th class="pb-th-sacs">SACS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((f) => (
+              <tr>
+                <td class="pb-td-que">{f.que}</td>
+                <td class:list={['pb-td', f.tonoGenerico || 'no']} data-col="Genérico">{f.generico}</td>
+                <td class:list={['pb-td', f.tonoMedida || 'no']} data-col="A la medida">{f.medida}</td>
+                <td class="pb-td pb-td-sacs" data-col="SACS">{f.sacs}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="pb-cierre">
+        La diferencia no es que nosotros seamos más listos: es que <b>esa pieza ya está construida</b>
+        para tu giro y se mantiene todos los días. No la pagas tú sola — la pagan las más de 3,000
+        marcas que ya la usan.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pb { background: #0A0A0B; padding: 100px 24px 110px; }
+  .pb-inner { max-width: 1200px; margin: 0 auto; }
+
+  .pb-head { max-width: 720px; margin-bottom: 52px; }
+  .pb-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .pb-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; color: #fff; margin: 0 0 16px;
+  }
+  .pb-head h2 span { color: #4B7BE5; }
+  .pb-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
+
+  .pb-caminos { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 26px; }
+  .pb-caso {
+    border: 1px solid #24242C; border-radius: 20px; padding: 26px;
+    background: linear-gradient(165deg, #121218 0%, #0C0C11 100%);
+  }
+  .pb-caso-cab { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 22px; }
+  .pb-num {
+    font-size: 12px; font-weight: 800; color: #4B7BE5; letter-spacing: .08em;
+    border: 1px solid rgba(75,123,229,.35); border-radius: 8px; padding: 6px 10px;
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+  }
+  .pb-caso-cab h3 {
+    font-size: clamp(19px, 2.2vw, 24px); font-weight: 700; color: #fff; margin: 0 0 4px;
+    letter-spacing: -.4px;
+  }
+  .pb-caso-cab p { margin: 0; font-size: 13.5px; color: #71717A; }
+
+  /* ── Síntoma dibujado ── */
+  .pb-visual {
+    border-radius: 14px; padding: 18px; margin-bottom: 20px;
+    background: #08080B; border: 1px solid #1E1E26;
+  }
+  .pb-visual-pie {
+    margin: 14px 0 0; font-size: 12px; color: #6A6A76; line-height: 1.5; text-align: center;
+  }
+
+  .pb-fila-sis {
+    display: flex; align-items: center; gap: 12px;
+    background: #101016; border: 1px solid #24242E; border-radius: 10px; padding: 14px 15px;
+  }
+  .pb-sku {
+    font-size: 10.5px; font-weight: 700; color: #6A6A76; letter-spacing: .04em;
+    background: #17171E; border-radius: 5px; padding: 4px 8px;
+  }
+  .pb-fila-sis b { flex: 1; font-size: 14px; color: #D4D4D8; font-weight: 600; }
+  .pb-cant { font-size: 13px; font-weight: 700; color: #A1A1AA; font-variant-numeric: tabular-nums; }
+
+  .pb-linea { display: flex; align-items: flex-start; gap: 6px; }
+  .pb-hito {
+    flex: 1; text-align: center; font-size: 11px; color: #71717A; line-height: 1.5;
+    position: relative; padding-top: 20px;
+  }
+  .pb-hito i {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 11px; height: 11px; border-radius: 50%; background: #34D399;
+  }
+  .pb-hito::before {
+    content: ""; position: absolute; top: 5px; left: 50%; right: -50%; height: 1px; background: #26262E;
+  }
+  .pb-hito:last-child::before { display: none; }
+  .pb-hito b { display: block; color: #D4D4D8; font-size: 12.5px; font-weight: 700; margin-top: 2px; }
+  .pb-hito-mal i { background: #E8A838; }
+  .pb-hito-mal:last-child i { background: #F87171; }
+  .pb-hito-mal:last-child b { color: #F0A9A9; }
+
+  .pb-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 13px; }
+  .pb-lista li {
+    position: relative; padding-left: 26px; font-size: 14.5px; color: #A1A1AA; line-height: 1.55;
+  }
+  /* La cruz no es decoración: marca que cada renglón es algo que HOY no funciona. */
+  .pb-lista li::before {
+    content: "✕"; position: absolute; left: 0; top: 1px;
+    color: #7A3B3B; font-size: 12px; font-weight: 700;
+  }
+  .pb-lista b { color: #E4E4E7; font-weight: 600; }
+
+  /* ── Tabla ── */
+  .pb-tabla-caja {
+    border: 1px solid #24242C; border-radius: 20px; overflow: hidden;
+    background: linear-gradient(165deg, #121218 0%, #0C0C11 100%);
+  }
+  .pb-tabla-rot { padding: 24px 26px 4px; }
+  .pb-tabla-rot h3 {
+    font-size: clamp(17px, 2vw, 21px); font-weight: 700; color: #fff; margin: 0; letter-spacing: -.3px;
+  }
+  .pb-scroll { overflow-x: auto; padding: 18px 26px 4px; }
+  .pb-tabla { width: 100%; border-collapse: collapse; min-width: 620px; }
+  .pb-tabla th {
+    font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: #71717A; padding: 0 14px 14px; text-align: center; white-space: nowrap;
+  }
+  .pb-th-que { text-align: left !important; width: 42%; }
+  .pb-th-sacs { color: #7FA6F5 !important; }
+  .pb-tabla td { padding: 15px 14px; border-top: 1px solid #1C1C24; font-size: 14px; }
+  .pb-td-que { color: #D4D4D8; font-weight: 600; }
+  .pb-td { text-align: center; font-weight: 600; font-size: 13.5px; }
+  .pb-td.no { color: #6A6A76; }
+  .pb-td.medio { color: #C08F3E; }
+  .pb-td.ok { color: #6EE7B7; }
+  /* La columna nuestra se lee sola: fondo propio y color de marca. */
+  .pb-td-sacs {
+    color: #fff !important; font-weight: 700;
+    background: linear-gradient(90deg, rgba(75,123,229,.16), rgba(75,123,229,.1));
+    box-shadow: inset 1px 0 0 rgba(75,123,229,.3), inset -1px 0 0 rgba(75,123,229,.3);
+  }
+  tbody tr:last-child .pb-td-sacs { box-shadow: inset 1px 0 0 rgba(75,123,229,.3), inset -1px 0 0 rgba(75,123,229,.3), inset 0 -1px 0 rgba(75,123,229,.3); }
+
+  .pb-cierre {
+    margin: 6px 0 0; padding: 22px 26px 26px; font-size: 15px; color: #A1A1AA; line-height: 1.6;
+    max-width: 76ch;
+  }
+  .pb-cierre b { color: #E4E4E7; font-weight: 600; }
+
+  /* En un telefono una tabla de cuatro columnas se corta o se lee de lado.
+     Se rearma como tarjetas: la necesidad arriba y sus tres respuestas debajo,
+     cada una con su etiqueta. Mismo contenido, sin scroll lateral. */
+  @media (max-width: 720px) {
+    .pb-scroll { overflow-x: visible; }
+    .pb-tabla { min-width: 0; display: block; }
+    .pb-tabla thead { display: none; }
+    .pb-tabla tbody, .pb-tabla tr { display: block; }
+    .pb-tabla tr {
+      border: 1px solid #22222B; border-radius: 14px; padding: 14px 15px; margin-bottom: 12px;
+      background: #0E0E13;
+    }
+    .pb-tabla td { display: flex; border: none; padding: 0; }
+    .pb-td-que {
+      font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 10px;
+      padding-bottom: 10px !important; border-bottom: 1px solid #1E1E26 !important;
+    }
+    .pb-td {
+      justify-content: space-between; align-items: center; gap: 14px;
+      padding: 7px 0 !important; text-align: right; font-size: 13.5px;
+    }
+    .pb-td::before {
+      content: attr(data-col); color: #6A6A76; font-size: 12px; font-weight: 600;
+      letter-spacing: .02em; text-align: left;
+    }
+    .pb-td-sacs {
+      background: rgba(75,123,229,.14) !important; box-shadow: none !important;
+      border-radius: 9px; padding: 8px 11px !important; margin-top: 6px;
+    }
+    .pb-td-sacs::before { color: #7FA6F5; }
+    tbody tr:last-child .pb-td-sacs { box-shadow: none !important; }
+  }
+
+  @media (max-width: 900px) {
+    .pb { padding: 70px 18px 78px; }
+    .pb-caminos { grid-template-columns: 1fr; gap: 16px; }
+    .pb-caso { padding: 20px; }
+    .pb-scroll { padding: 16px 18px 4px; }
+    .pb-tabla-rot { padding: 20px 18px 2px; }
+    .pb-cierre { padding: 18px 18px 22px; font-size: 14.5px; }
+    .pb-lista li { font-size: 14px; }
+  }
+</style>
