@@ -2,28 +2,34 @@
 /**
  * SuiteRack — el perchero que corre de lado con el scroll.
  *
- * Es un respiro entre bloques: rompe el ritmo vertical de la pagina con un
- * movimiento lateral que es, literalmente, la metafora del giro. Cada prenda
- * lleva su ficha (modelo, color, tallas vivas), asi que el adorno tambien
- * informa.
+ * Es un respiro entre bloques y, sobre todo, es el argumento del giro dicho con
+ * la aritmetica en la mano: un modelo colgado NO es un producto, son sus tallas
+ * por sus colores. La version anterior mostraba diez modelos distintos como
+ * rectangulos de color, lo cual enseñaba variedad de catalogo — que es otra
+ * cosa — y ademas no se entendia que colgaba de ahi.
+ *
+ * Ahora cada percha trae la prenda de verdad y su cuenta: "6 tallas × 4 colores
+ * = 24 piezas". Al final de la tira va el total, que es el remate: seis modelos
+ * en la percha son ciento siete piezas que alguien tiene que contar.
  *
  * Va contra el scroll de la pagina, NO lo secuestra: el visitante nunca pierde
- * el control de su rueda. Un rack que atrapa el scroll es la forma mas rapida
- * de que alguien cierre la pestaña.
+ * el control de su rueda.
  */
 const prendas = [
-  { n: 'Blusa satinada', c: 'Negro', t: 'XS S M L', bg: 'linear-gradient(160deg,#2C2C34,#141418)' },
-  { n: 'Vestido midi', c: 'Verde olivo', t: 'S M L', bg: 'linear-gradient(160deg,#6B7A4B,#3E4A2A)' },
-  { n: 'Pantalón sastre', c: 'Camel', t: 'S M L XL', bg: 'linear-gradient(160deg,#C0996A,#8A6942)' },
-  { n: 'Saco lino', c: 'Beige', t: 'M L', bg: 'linear-gradient(160deg,#D6CBB4,#A79A7E)' },
-  { n: 'Jean recto', c: 'Azul medio', t: 'S M L XL', bg: 'linear-gradient(160deg,#4A6C99,#2C4160)' },
-  { n: 'Playera oversize', c: 'Blanco', t: 'S M L', bg: 'linear-gradient(160deg,#EFEFEF,#BFBFC4)' },
-  { n: 'Falda plisada', c: 'Vino', t: 'XS S M', bg: 'linear-gradient(160deg,#8A3A4C,#5A2431)' },
-  { n: 'Gabardina', c: 'Arena', t: 'M L XL', bg: 'linear-gradient(160deg,#CBB795,#96825F)' },
-  { n: 'Suéter punto', c: 'Gris jaspe', t: 'S M L', bg: 'linear-gradient(160deg,#9A9AA4,#63636D)' },
-  { n: 'Chaleco acolchado', c: 'Negro', t: 'M L XL', bg: 'linear-gradient(160deg,#33333B,#17171C)' },
+  { n: 'Vestido midi', img: '/images/rack-vestido.webp', tallas: 5, colores: 3 },
+  { n: 'Blusa satinada', img: '/images/rack-blusa.webp', tallas: 6, colores: 4 },
+  { n: 'Saco lino', img: '/images/rack-saco.webp', tallas: 4, colores: 2 },
+  { n: 'Jean recto', img: '/images/rack-jean.webp', tallas: 6, colores: 3 },
+  { n: 'Playera oversize', img: '/images/rack-playera.webp', tallas: 5, colores: 6 },
+  { n: 'Falda plisada', img: '/images/rack-falda.webp', tallas: 4, colores: 3 },
 ];
+
+/* La tira se recorre dos veces: con seis prendas no hay recorrido suficiente
+   para que el movimiento lateral se note en una pantalla ancha. */
+const tira = [...prendas, ...prendas];
+const totalPiezas = prendas.reduce((a, p) => a + p.tallas * p.colores, 0);
 ---
+
 
 <section class="rack-bloque" id="rackBloque">
   <div class="rack-head">
@@ -32,17 +38,26 @@ const prendas = [
   </div>
 
   <div class="rack">
-    <div class="rack-tubo"></div>
     <div class="rack-prendas" id="rackPrendas">
-      {prendas.map((p) => (
+      {tira.map((p, i) => (
         <div class="rack-prenda">
-          <div class="rack-gancho"></div>
-          <div class="rack-tela" style={`background:${p.bg}`}></div>
+          <img src={p.img} alt={p.n} loading="lazy" decoding="async" width="220" height="330" />
           <div class="rack-ficha">
-            <b>{p.n}</b>{p.c} · {p.t}
+            <b>{p.n}</b>
+            <span class="rack-cuenta">{p.tallas} tallas × {p.colores} colores</span>
+            <span class="rack-piezas">{p.tallas * p.colores} piezas</span>
           </div>
         </div>
       ))}
+
+      <!-- Remate de la tira: la suma es el argumento. -->
+      <div class="rack-prenda rack-total">
+        <div class="rack-total-caja">
+          <b>{totalPiezas}</b>
+          <span>piezas en la percha</span>
+          <em>de solo {prendas.length} modelos</em>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -64,23 +79,36 @@ const prendas = [
     color: #4B7BE5;
   }
 
-  .rack { position: relative; height: 340px; }
-  .rack-tubo {
-    position: absolute; top: 24px; left: 0; right: 0; height: 4px;
-    background: linear-gradient(90deg, #2E2E36, #7A7A88 20%, #7A7A88 80%, #2E2E36);
+  .rack { position: relative; height: 440px; }
+  .rack-prendas { display: flex; gap: 34px; padding: 0 40px; will-change: transform; align-items: flex-start; }
+  .rack-prenda { width: 210px; flex-shrink: 0; text-align: center; }
+  .rack-prenda img {
+    display: block; width: 100%; height: 280px; object-fit: cover; object-position: center;
+    border-radius: 4px;
+    /* La foto viene sobre fondo claro de estudio: sobre el negro del bloque hay
+       que apagarla un poco o parece un recorte pegado. */
+    filter: brightness(.94) contrast(1.04);
   }
-  .rack-prendas { display: flex; gap: 30px; padding: 0 40px; will-change: transform; }
-  .rack-prenda { width: 140px; flex-shrink: 0; text-align: center; }
-  .rack-gancho {
-    width: 26px; height: 26px; border: 2.5px solid #9A9AA8; border-bottom: none;
-    border-radius: 50% 50% 0 0; margin: 0 auto -2px;
+  .rack-ficha { margin-top: 15px; }
+  .rack-ficha b { display: block; font-size: 14px; color: #E4E4E7; font-weight: 600; margin-bottom: 5px; }
+  .rack-cuenta { display: block; font-size: 11.5px; color: #71717A; font-weight: 600; }
+  /* El numero es el argumento: se lee antes que el nombre del modelo. */
+  .rack-piezas {
+    display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 800;
+    color: #A8C4FA; border: 1px solid rgba(75,123,229,.4); border-radius: 999px;
+    padding: 4px 11px; letter-spacing: .02em;
   }
-  .rack-tela {
-    height: 196px; border-radius: 6px 6px 16px 16px;
-    box-shadow: inset 0 -34px 44px rgba(0,0,0,.34);
+
+  .rack-total { display: flex; align-items: center; justify-content: center; height: 280px; }
+  .rack-total-caja {
+    border-left: 1px solid #26262E; padding-left: 30px; text-align: left;
   }
-  .rack-ficha { margin-top: 13px; font-size: 11px; color: #71717A; font-weight: 600; }
-  .rack-ficha b { display: block; font-size: 12.5px; color: #E4E4E7; margin-bottom: 3px; font-weight: 600; }
+  .rack-total-caja b {
+    display: block; font-size: 62px; font-weight: 800; color: #fff; line-height: 1;
+    letter-spacing: -2.5px; font-variant-numeric: tabular-nums;
+  }
+  .rack-total-caja span { display: block; font-size: 15px; color: #A1A1AA; margin-top: 8px; font-weight: 600; }
+  .rack-total-caja em { display: block; font-style: normal; font-size: 13px; color: #6A6A76; margin-top: 4px; }
 
   .rack-pista {
     max-width: 1200px; margin: 34px auto 0; padding: 0 24px; height: 3px;
@@ -92,10 +120,17 @@ const prendas = [
 
   @media (max-width: 760px) {
     .rack-bloque { padding: 64px 0 52px; }
-    .rack { height: 280px; }
-    .rack-prenda { width: 108px; }
-    .rack-tela { height: 152px; }
+    .rack { height: 366px; }
+    .rack-prenda { width: 148px; }
+    .rack-prenda img { height: 196px; }
     .rack-prendas { gap: 20px; padding: 0 18px; }
+    .rack-ficha b { font-size: 12.5px; }
+    .rack-cuenta { font-size: 10.5px; }
+    .rack-piezas { font-size: 11px; padding: 3px 9px; }
+    .rack-total { height: 196px; }
+    .rack-total-caja { padding-left: 20px; }
+    .rack-total-caja b { font-size: 42px; }
+    .rack-total-caja span { font-size: 13px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
