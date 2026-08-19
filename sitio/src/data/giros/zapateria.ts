@@ -551,7 +551,7 @@ export const casosZapateria = [
       'La vendedora está hincada junto al probador con el pie del cliente en la mano — y ahí mismo ve si ese número existe, sin levantarse ni caminar a la bodega. Si aquí no está, ve en qué sucursal sí y lo aparta en el momento.',
     remate: 'Cada viaje a bodega en sábado son cuatro o cinco minutos con otros dos clientes esperando.',
     img: '/images/caso-zap-mostrador.webp',
-    alt: 'Vendedora hincada junto al banco del probador calzando a una clienta, con cuatro cajas abiertas en el piso',
+    alt: 'Vendedora hincada junto al banco del probador calzando a una clienta con calzador, con tres cajas abiertas en el piso',
   },
   {
     id: 'quincena',
@@ -578,6 +578,6 @@ export const casosZapateria = [
       'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco de deportes, y al niño se le mide el pie antes de traer caja. El número se agota en horas y la reposición diaria por número te dice qué pedir hoy.',
     remate: 'Si el cliente no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
     img: '/images/caso-zap-escolar.webp',
-    alt: 'Vendedora midiendo y calzando a un niño con zapato escolar negro, con el medidor de pie en el piso',
+    alt: 'Vendedora hincada calzando a un niño con zapato escolar negro, con la caja abierta y el tenis blanco del segundo par en el piso',
   },
 ];

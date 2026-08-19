@@ -1,0 +1,96 @@
+// POST /api/email/sendgrid-webhook — eventos de entrega de SendGrid.
+//
+// Es la única fuente fiable de lo que pasó DESPUÉS de que el correo salió:
+// entregado, rebotado, marcado como spam, dado de baja. El pixel y el
+// redirect propios miden lectura; esto mide entrega y reputación.
+//
+// Firma verificada (Ed25519) cuando hay clave pública configurada: sin ella
+// cualquiera podría inventar rebotes y suprimir a media cartera. Sin clave, se
+// aceptan eventos pero se registra la advertencia — mejor medir que no medir
+// mientras se configura, y el daño posible es acotado.
+//
+// SIEMPRE responde 200: SendGrid reintenta y desactiva webhooks que fallan.
+import type { APIRoute } from 'astro';
+import crypto from 'node:crypto';
+import { supabase } from '../../../lib/supabase';
+import { darDeBaja } from '../../../lib/email/bajas';
+
+export const prerender = false;
+const ok = () => new Response('OK', { status: 200 });
+
+/** Rebote duro / queja / baja → supresión. Rebote suave → solo se registra. */
+const A_SUPRESION: Record<string, 'rebote_duro' | 'rebote_suave' | 'queja' | 'baja' | 'dropped'> = {
+  bounce: 'rebote_duro',
+  dropped: 'dropped',
+  spamreport: 'queja',
+  unsubscribe: 'baja',
+  group_unsubscribe: 'baja',
+};
+
+function firmaValida(raw: string, sig: string | null, ts: string | null): boolean {
+  const pub = (import.meta.env.SENDGRID_WEBHOOK_KEY || '').trim();
+  if (!pub) return true;              // sin clave configurada: no se bloquea
+  if (!sig || !ts) return false;
+  try {
+    const verifier = crypto.createVerify('sha256');
+    verifier.update(ts + raw);
+    const key = crypto.createPublicKey({
+      key: Buffer.from(pub, 'base64'), format: 'der', type: 'spki',
+    });
+    return verifier.verify(key, Buffer.from(sig, 'base64'));
+  } catch { return false; }
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  const raw = await request.text().catch(() => '');
+  if (!firmaValida(raw, request.headers.get('x-twilio-email-event-webhook-signature'),
+                   request.headers.get('x-twilio-email-event-webhook-timestamp'))) {
+    return ok();
+  }
+
+  let eventos: any[] = [];
+  try { eventos = JSON.parse(raw); } catch { return ok(); }
+  if (!Array.isArray(eventos)) return ok();
+
+  for (const ev of eventos) {
+    const tenantId = ev.tenant || null;
+    const sendId = ev.send || null;
+    const email = String(ev.email || '').toLowerCase();
+    const tipo = String(ev.event || '');
+    const cuando = ev.timestamp ? new Date(ev.timestamp * 1000).toISOString() : new Date().toISOString();
+    if (!email) continue;
+
+    // Estado del envío. Los eventos llegan desordenados: no se degrada un
+    // estado avanzado (clicked) por uno anterior (delivered) que llega tarde.
+    if (sendId) {
+      const parche: Record<string, any> = {};
+      if (tipo === 'delivered') { parche.estado = 'delivered'; parche.delivered_at = cuando; }
+      else if (tipo === 'bounce' || tipo === 'blocked') {
+        parche.estado = 'bounced'; parche.bounced_at = cuando;
+        parche.bounce_type = ev.type || 'unknown'; parche.bounce_reason = String(ev.reason || '').slice(0, 400);
+      } else if (tipo === 'dropped') { parche.estado = 'bounced'; parche.bounced_at = cuando; parche.bounce_reason = 'dropped: ' + String(ev.reason || ''); }
+      else if (tipo === 'spamreport') { parche.estado = 'spam'; }
+      if (Object.keys(parche).length) {
+        await supabase.from('email_sends').update(parche).eq('id', sendId);
+      }
+    }
+
+    const motivo = A_SUPRESION[tipo];
+    if (motivo && tenantId) {
+      // Un rebote SUAVE no suprime a la primera: el buzón puede estar lleno
+      // hoy y libre mañana. Solo se suprime al tercero.
+      if (tipo === 'bounce' && String(ev.type || '').toLowerCase() === 'blocked') {
+        const { count } = await supabase.from('email_sends')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId).eq('email_to', email).eq('estado', 'bounced');
+        if ((count || 0) < 3) continue;
+      }
+      await darDeBaja({
+        tenantId, email, sendId, motivo,
+        origen: 'sendgrid:' + tipo,
+        detalle: String(ev.reason || ev.status || '').slice(0, 400),
+      });
+    }
+  }
+  return ok();
+};

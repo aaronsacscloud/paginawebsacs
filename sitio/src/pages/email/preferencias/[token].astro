@@ -1,0 +1,71 @@
+---
+// Centro de preferencias: la alternativa a la baja total.
+//
+// Existe porque "me llegan muchos" no es lo mismo que "no me interesa": sin
+// esta pantalla, la única salida es la baja definitiva y se pierde a un
+// suscriptor que solo quería menos ruido.
+import { verificar } from '../../../lib/email/token';
+import { darDeBaja, reactivar } from '../../../lib/email/bajas';
+import { tenantPorId } from '../../../lib/email/tenant';
+
+export const prerender = false;
+
+const { token } = Astro.params;
+const p = verificar(String(token || ''), ['baja', 'preferencias', 'envio']);
+const tenant = p ? await tenantPorId(p.t) : null;
+
+let mensaje = '';
+if (Astro.request.method === 'POST' && p) {
+  const form = await Astro.request.formData();
+  const opcion = String(form.get('opcion') || '');
+  if (opcion === 'pausa30') {
+    const hasta = new Date(Date.now() + 30 * 86400000).toISOString();
+    await darDeBaja({ tenantId: p.t, email: p.m, sendId: p.s || null, origen: 'preferencias', motivo: 'baja', pausarHasta: hasta });
+    mensaje = 'Listo: no te escribiremos durante 30 días. Después volverás a recibir lo de siempre.';
+  } else if (opcion === 'baja') {
+    await darDeBaja({ tenantId: p.t, email: p.m, sendId: p.s || null, origen: 'preferencias' });
+    mensaje = 'Listo, te diste de baja de los correos de marketing.';
+  } else if (opcion === 'reactivar') {
+    await reactivar(p.t, p.m);
+    mensaje = 'Listo, vuelves a estar suscrito.';
+  }
+}
+const marca = tenant?.nombre || 'este remitente';
+---
+<html lang="es"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Preferencias de correo</title>
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F7F6FA;color:#221E33;
+       font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:24px}
+  .c{background:#fff;border:1px solid #E7E3F0;border-radius:16px;padding:30px;max-width:480px;width:100%;
+     box-shadow:0 8px 30px rgba(34,30,51,.07)}
+  h1{font-size:1.25rem;margin:0 0 6px}
+  .sub{color:#6F6982;font-size:.9rem;margin-bottom:20px}
+  form{display:flex;flex-direction:column;gap:10px}
+  button{border:1px solid #E7E3F0;border-radius:11px;padding:14px 16px;background:#fff;color:#221E33;
+         font-size:.92rem;cursor:pointer;font-family:inherit;text-align:left;width:100%}
+  button:hover{border-color:#C3B8FA;background:#FAF9FF}
+  button:focus-visible{outline:3px solid #C3B8FA;outline-offset:2px}
+  button b{display:block;font-size:.95rem;margin-bottom:2px}
+  button span{color:#6F6982;font-size:.82rem}
+  .ok{background:#EAF8F2;color:#1E8A63;border-radius:11px;padding:14px;font-weight:600;font-size:.9rem;margin-bottom:16px}
+  @media (prefers-color-scheme:dark){
+    body{background:#16131F;color:#ECE9F6}.c{background:#201C2E;border-color:#322D45}
+    .sub,button span{color:#9B94AD}button{background:#282237;color:#ECE9F6;border-color:#322D45}
+    button:hover{background:#2F2842;border-color:#A99AF5}.ok{background:#1D2E28;color:#4CC79A}
+  }
+</style></head>
+<body><div class="c">
+{!p ? (<><h1>Este enlace no es válido</h1><div class="sub">Puede que esté incompleto o que ya no funcione.</div></>) : (<>
+  <h1>Tus preferencias de correo</h1>
+  <div class="sub">{p.m} · correos de {marca}</div>
+  {mensaje && <div class="ok">{mensaje}</div>}
+  <form method="POST">
+    <button name="opcion" value="pausa30" type="submit"><b>Pausar 30 días</b><span>Un descanso, sin perder la suscripción.</span></button>
+    <button name="opcion" value="baja" type="submit"><b>Cancelar la suscripción</b><span>No recibirás más correos de marketing.</span></button>
+    <button name="opcion" value="reactivar" type="submit"><b>Volver a recibir todo</b><span>Si te diste de baja por error.</span></button>
+  </form>
+</>)}
+</div></body></html>

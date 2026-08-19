@@ -60,7 +60,8 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
             >
               <span>{c.titulo}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" class="cs-mas"></path>
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14" class="cs-mas"></path>
               </svg>
             </button>
             <div class="cs-detalle" id={`panel-${c.id}`} role="region" aria-labelledby={`tab-${c.id}`} hidden={i !== 0}>
@@ -114,8 +115,12 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
   .cs-boton span {
     font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: -.4px; line-height: 1.3;
   }
-  .cs-boton svg { width: 20px; height: 20px; color: #8C8C8C; flex-shrink: 0; transition: transform .3s ease, color .3s ease; }
-  .cs-caso.on .cs-boton svg { transform: rotate(45deg); color: #4B7BE5; }
+  .cs-boton svg { width: 20px; height: 20px; color: #8C8C8C; flex-shrink: 0; transition: color .3s ease; }
+  .cs-mas { transition: opacity .25s ease; }
+  .cs-caso.on .cs-mas { opacity: 0; }
+  /* El aspa se lee "cerrar"; abierto tiene que ser un menos. Se esconde el
+     trazo vertical en vez de girar el signo. */
+  .cs-caso.on .cs-boton svg { color: #4B7BE5; }
   .cs-boton:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; border-radius: 4px; }
 
   /* 0fr → 1fr: el detalle se abre a su altura real, la mida lo que la mida.

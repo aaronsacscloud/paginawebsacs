@@ -163,9 +163,13 @@ const {
     transition: height .3s cubic-bezier(.25,.46,.45,.94);
   }
   .cc-barra b {
-    font-size: 12px; font-weight: 800; color: #fff; margin-top: -20px;
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: 5px; font-size: 12px; font-weight: 800; color: #fff;
     font-variant-numeric: tabular-nums;
   }
+  /* Cuando hay sobrante, el número de la venta se sube por encima del rayado
+     —el script calcula cuánto—: dentro del rojo no se lee, y son justo las
+     columnas que hay que leer. */
   .cc-barra-caja { background: linear-gradient(180deg, #3A4A6B, #253248); border-top: 2px solid #7FA6F5; }
   .cc-barra-venta { background: linear-gradient(180deg, #1F4D3D, #122E25); border-top: 2px solid #34D399; }
 
@@ -185,13 +189,15 @@ const {
     background: #26262E; outline: none; cursor: pointer;
   }
   .cc-rango::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: #fff; border: 4px solid #34D399; cursor: grab;
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #E8A838; border: 3px solid #0C0C10; cursor: grab;
+    box-shadow: 0 0 0 3px rgba(232,168,56,.28);
   }
   .cc-rango::-moz-range-thumb {
-    width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 4px solid #34D399; cursor: grab;
+    width: 20px; height: 20px; border-radius: 50%; background: #E8A838;
+    border: 3px solid #0C0C10; cursor: grab; box-shadow: 0 0 0 3px rgba(232,168,56,.28);
   }
-  .cc-rango:focus-visible { outline: 2px solid #34D399; outline-offset: 4px; }
+  .cc-rango:focus-visible { outline: 2px solid #E8A838; outline-offset: 4px; }
 
   /* ── Resultado ── */
   .cc-resultado { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
@@ -293,6 +299,11 @@ const {
             sobra.style.height = (excedente / escala) * 100 + '%';
             sobra.style.bottom = (v / escala) * 100 + '%';
             sobra.style.display = excedente > 0 ? 'block' : 'none';
+            // La etiqueta salta por encima del rayado, no se queda debajo.
+            if (texto) {
+              const alto = sobra.parentElement?.clientHeight || 0;
+              texto.style.marginBottom = ((excedente / escala) * alto + 5) + 'px';
+            }
           }
         });
 

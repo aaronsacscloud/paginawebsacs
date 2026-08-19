@@ -218,10 +218,10 @@ const {
         const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
         r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        esc.add(new THREE.AmbientLight(0x1a1d2a, 2.2));
-        const l1 = new THREE.PointLight(0x7FA6F5, 2.0, 80); l1.position.set(-10, 9, 10); esc.add(l1);
-        const l2 = new THREE.PointLight(0xA78BFA, 1.7, 80); l2.position.set(10, -4, 8); esc.add(l2);
-        const l3 = new THREE.PointLight(0xE8A838, 1.0, 70); l3.position.set(0, 10, -7); esc.add(l3);
+        esc.add(new THREE.AmbientLight(0x2b2b33, 2.6));
+        const l1 = new THREE.PointLight(0xE6EDFB, 1.6, 90); l1.position.set(-10, 9, 12); esc.add(l1);
+        const l2 = new THREE.PointLight(0xC9D6F2, 1.1, 90); l2.position.set(11, -4, 9); esc.add(l2);
+        const l3 = new THREE.PointLight(0x9BB6EE, 0.7, 80); l3.position.set(0, 10, -8); esc.add(l3);
 
         // La misma matriz de la blusa satinada que vive en el recorrido. Al
         // alejarse de la sucursal principal queda menos pieza: por eso el -2.
@@ -241,10 +241,10 @@ const {
               const ultima = n > 0 && n <= 3;
               const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
                 color: agotado ? 0x24242c : ultima ? 0xE8A838 : 0x34D399,
-                metalness: agotado ? 0.2 : 0.55,
-                roughness: agotado ? 0.85 : 0.28,
-                emissive: agotado ? 0x000000 : ultima ? 0x3a2a08 : 0x06301f,
-                emissiveIntensity: 0.9,
+                metalness: agotado ? 0.1 : 0.12,
+                roughness: agotado ? 0.9 : 0.66,
+                emissive: agotado ? 0x000000 : ultima ? 0x4a3208 : 0x0a3f26,
+                emissiveIntensity: 0.55,
                 transparent: true,
                 opacity: agotado ? 0.3 : 0.95,
               }));
@@ -266,21 +266,32 @@ const {
           r.setSize(a, b, false);
           cam.aspect = a / b;
           const angosto = a < 900;
-          // En pantalla angosta el ancho visible es la mitad que el alto: a 22
-          // el cubo se salia por los lados, por eso la camara se va mas lejos.
-          // En pantallas medianas la camara se aleja un poco: el objeto queda
-          // mas chico y cabe recostado a la derecha sin rozar el titulo.
-          cam.position.z = angosto ? 30 : (a < 1320 ? 19 : 16);
+          // La retícula del giro puede ser de seis columnas o de once: con una
+          // distancia fija, la de once se salía del encuadre y se cortaba en la
+          // orilla. La cámara se aleja en proporción a lo ancha que sea.
+          const base = angosto ? 30 : (a < 1320 ? 19 : 16);
+          cam.position.z = base * (1 + Math.max(0, cols - 6) * 0.055);
           cam.lookAt(0, 0, 0);
-          // En escritorio el cubo se recuesta contra la ORILLA DERECHA y la
-          // mitad izquierda queda libre para el texto. El desplazamiento no
-          // puede ser fijo: se calcula del ancho que de verdad ve la camara,
-          // porque ese ancho cambia con el aspecto de la pantalla. Se le deja
-          // de aire su media diagonal (4.13) para que al girar no se corte.
           const medioAlto = cam.position.z * Math.tan((42 / 2) * Math.PI / 180);
           const medioAncho = medioAlto * cam.aspect;
-          grupo.position.x = angosto ? 0 : Math.max(3.6, Math.min(medioAncho - 4.7, 8));
-          grupo.position.y = angosto ? 2.6 : 0;
+
+          // Al girar, lo que puede asomar es la media DIAGONAL de la retícula,
+          // no su medio ancho. Ese es el radio que tiene que caber.
+          const radio = Math.hypot(cols * 1.25, capas * 1.25) / 2 + 0.6;
+
+          if (angosto) {
+            grupo.position.x = 0;
+            grupo.position.y = 2.6;
+            grupo.scale.setScalar(Math.min(1, (medioAncho - 0.4) / radio));
+          } else {
+            // En escritorio se recuesta contra la orilla derecha y deja libre
+            // la mitad izquierda para el texto. Se le da el 46% del ancho
+            // visible y se encoge lo necesario para caber ahí entero.
+            const disponible = medioAncho * 0.42;
+            grupo.position.x = medioAncho - disponible - 0.5;
+            grupo.position.y = 0;
+            grupo.scale.setScalar(Math.min(1, disponible / radio));
+          }
           cam.updateProjectionMatrix();
         };
         medir();

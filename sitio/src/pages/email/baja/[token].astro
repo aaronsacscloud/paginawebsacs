@@ -1,0 +1,67 @@
+---
+// Página pública de baja. GET confirma, POST ejecuta.
+//
+// La separación no es ceremonia: los escáneres de seguridad corporativos
+// abren con GET todos los links de un correo. Si el GET ejecutara, los
+// contactos B2B se darían de baja solos el día que se les entrega el correo.
+import { verificar } from '../../../lib/email/token';
+import { darDeBaja } from '../../../lib/email/bajas';
+import { tenantPorId } from '../../../lib/email/tenant';
+
+export const prerender = false;
+
+const { token } = Astro.params;
+const p = verificar(String(token || ''), ['baja', 'preferencias', 'envio']);
+const tenant = p ? await tenantPorId(p.t) : null;
+
+let hecho = false;
+if (Astro.request.method === 'POST' && p) {
+  await darDeBaja({ tenantId: p.t, email: p.m, sendId: p.s || null, origen: 'pagina-publica' });
+  hecho = true;
+}
+const marca = tenant?.nombre || 'este remitente';
+---
+<html lang="es"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cancelar suscripción</title>
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F7F6FA;color:#221E33;
+       font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:24px}
+  .c{background:#fff;border:1px solid #E7E3F0;border-radius:16px;padding:32px;max-width:460px;width:100%;
+     box-shadow:0 8px 30px rgba(34,30,51,.07);text-align:center}
+  h1{font-size:1.3rem;margin:0 0 8px}
+  p{color:#6F6982;line-height:1.6;font-size:.94rem;margin:8px 0}
+  b{color:#221E33}
+  button{border:none;border-radius:10px;padding:12px 22px;background:#5B4BD6;color:#fff;font-size:.92rem;
+         font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;width:100%}
+  button:focus-visible{outline:3px solid #C3B8FA;outline-offset:2px}
+  a{color:#4536B8;font-size:.85rem;display:inline-block;margin-top:14px}
+  .ok{background:#EAF8F2;color:#1E8A63;border-radius:10px;padding:12px;font-weight:600;font-size:.9rem}
+  @media (prefers-color-scheme:dark){
+    body{background:#16131F;color:#ECE9F6}.c{background:#201C2E;border-color:#322D45}
+    p{color:#9B94AD}b{color:#ECE9F6}.ok{background:#1D2E28;color:#4CC79A}
+  }
+</style></head>
+<body><div class="c">
+{!p ? (
+  <>
+    <h1>Este enlace no es válido</h1>
+    <p>Puede que esté incompleto o que ya no funcione. Si quieres dejar de recibir correos, responde a cualquiera de ellos y lo hacemos manualmente.</p>
+  </>
+) : hecho ? (
+  <>
+    <h1>Listo, te diste de baja</h1>
+    <div class="ok">No volverás a recibir correos de marketing de {marca}.</div>
+    <p>Seguirás recibiendo lo estrictamente necesario de tu cuenta (facturas, avisos de servicio), porque eso no es marketing.</p>
+    <a href={`/email/preferencias/${token}`}>¿Preferías solo recibir menos? Ajusta tus preferencias</a>
+  </>
+) : (
+  <>
+    <h1>¿Cancelar tu suscripción?</h1>
+    <p>Dejarás de recibir correos de marketing de <b>{marca}</b> en <b>{p.m}</b>.</p>
+    <form method="POST"><button type="submit">Sí, cancelar suscripción</button></form>
+    <a href={`/email/preferencias/${token}`}>Prefiero solo recibir menos correos</a>
+  </>
+)}
+</div></body></html>
