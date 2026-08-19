@@ -2,319 +2,311 @@
 /**
  * SuiteProblemas — "ya lo intentaste de las dos formas".
  *
- * Va entre el dolor de operación y el recorrido de producto, y su trabajo es
- * desactivar la objeción que trae el visitante ANTES de que le enseñemos nada:
- * "yo ya tengo sistema" o "a mí me lo hicieron a la medida".
+ * Desactiva la objecion que el visitante trae ANTES de que le enseñemos nada:
+ * "yo ya tengo sistema" o "a mi me lo hicieron a la medida".
  *
- * Los dos caminos que de verdad recorre este cliente son el POS genérico y el
- * desarrollo por encargo. Los dos fallan por motivos distintos y hay que
- * nombrarlos con precisión: el genérico no entiende el giro, y el a la medida
- * envejece solo porque nadie lo mantiene.
+ * Sobre la direccion de arte: la primera version eran tarjetas oscuras con
+ * acento azul, viñetas y una tabla comparativa de tres columnas — la plantilla
+ * exacta de cualquier pagina de software, indistinguible de cien mas. Esta
+ * version se construye con el material del giro: papeleria. Los dos caminos son
+ * DOCUMENTOS —una hoja de inventario impresa y una cotizacion de desarrollo—
+ * con sus sellos, sus anotaciones al margen y su tinta corrida. Es un inserto
+ * de papel dentro de una pagina oscura, y por eso corta el ritmo sin parecerse
+ * a nada mas del sitio.
  *
- * Regla de tono: no se habla mal de nadie. El genérico funciona —para
- * abarrotes—, y quien pagó un desarrollo hizo lo que pudo con lo que había. Si
- * el visitante siente que se burlan de su decisión, deja de leer y no vuelve.
+ * Nada de gradientes, sombras difusas ni esquinas redondeadas: el papel no hace
+ * eso. Serif para el titular, monoespaciada para los datos, y el color solo
+ * donde habria tinta de sello.
  *
- * La tabla del final existe porque las dos columnas cuentan la historia pero no
- * la cierran: hace falta una lectura de un vistazo, y ahí es donde el visitante
- * decide si vale la pena la llamada.
+ * Regla de tono: no se habla mal de nadie. El generico funciona —para
+ * abarrotes—, y quien pago un desarrollo hizo lo que pudo con lo que habia.
  */
-/** El tono lo declara el dato, no se adivina del texto: "No existe" es un no,
-    "Si la pagaste" es un a medias y "Días" es un sí, y ninguna regla automatica
-    sobre la cadena acierta en los tres casos. */
-type Tono = 'no' | 'medio' | 'ok';
 interface Fila {
   que: string;
   generico: string;
   medida: string;
   sacs: string;
-  tonoGenerico?: Tono;
-  tonoMedida?: Tono;
 }
-interface Props {
-  filas?: Fila[];
-}
+interface Props { filas?: Fila[]; }
 
 const {
   filas = [
-    { que: 'Matriz de tallas × colores', generico: 'No existe', tonoGenerico: 'no', medida: 'Si la pagaste', tonoMedida: 'medio', sacs: 'Incluida' },
-    { que: 'Curva de compra por sucursal', generico: 'No existe', tonoGenerico: 'no', medida: 'Casi nunca', tonoMedida: 'no', sacs: 'Incluida' },
-    { que: 'Consignación a departamentales', generico: 'No existe', tonoGenerico: 'no', medida: 'A veces', tonoMedida: 'medio', sacs: 'Incluida' },
-    { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', tonoGenerico: 'medio', medida: 'Rara vez', tonoMedida: 'no', sacs: 'Uno solo' },
-    { que: 'Agentes de IA que tú programas', generico: 'No existe', tonoGenerico: 'no', medida: 'No existe', tonoMedida: 'no', sacs: 'Incluidos' },
-    { que: 'Tiempo para arrancar', generico: 'Días', tonoGenerico: 'ok', medida: '4 a 9 meses', tonoMedida: 'no', sacs: 'Días' },
-    { que: 'Quién lo mantiene', generico: 'Su proveedor', tonoGenerico: 'medio', medida: 'Tú, si lo encuentras', tonoMedida: 'no', sacs: 'Nosotros, a diario' },
+    { que: 'Matriz de tallas × colores', generico: 'No existe', medida: 'Si la pagaste', sacs: 'Incluida' },
+    { que: 'Curva de compra por sucursal', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluida' },
+    { que: 'Consignación a departamentales', generico: 'No existe', medida: 'A veces', sacs: 'Incluida' },
+    { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+    { que: 'Agentes de IA que tú programas', generico: 'No existe', medida: 'No existe', sacs: 'Incluidos' },
+    { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+    { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
   ],
 } = Astro.props;
 ---
 
-<section class="pb">
-  <div class="pb-inner">
-    <header class="pb-head">
-      <p class="pb-eyebrow">Antes de enseñarte nada</p>
-      <h2>Ya lo intentaste de las <span>dos formas</span>.</h2>
-      <p class="pb-sub">
-        Casi toda marca de ropa que llega con nosotros viene de uno de estos dos caminos.
-        Ninguno de los dos es una tontería — los dos fallan, pero por motivos distintos.
+<section class="pp">
+  <div class="pp-inner">
+
+    <header class="pp-head">
+      <p class="pp-kicker">Expediente</p>
+      <h2>Ya lo intentaste<br />de las dos formas.</h2>
+      <p class="pp-entrada">
+        Casi toda marca de ropa que llega con nosotros trae uno de estos dos documentos
+        en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos
+        distintos.
       </p>
     </header>
 
-    <div class="pb-caminos">
-      <!-- Camino 1 -->
-      <article class="pb-caso">
-        <div class="pb-caso-cab">
-          <span class="pb-num">01</span>
-          <div>
-            <h3>Un sistema genérico</h3>
-            <p>El mismo que usa la ferretería de al lado</p>
-          </div>
+    <div class="pp-hojas">
+      <!-- Documento I -->
+      <article class="pp-hoja">
+        <div class="pp-membrete">
+          <span>Sistema genérico</span>
+          <span>Reporte de inventario</span>
         </div>
 
-        <!-- Síntoma dibujado: 24 prendas colapsadas en una sola línea. -->
-        <div class="pb-visual pb-visual-a" aria-hidden="true">
-          <div class="pb-fila-sis">
-            <span class="pb-sku">SKU-0041</span>
-            <b>Blusa satinada</b>
-            <span class="pb-cant">18 pz</span>
-          </div>
-          <p class="pb-visual-pie">
-            Una fila. Sin talla, sin color.<br />
-            Las 24 combinaciones viven en tu cabeza.
-          </p>
+        <div class="pp-cuerpo">
+          <p class="pp-linea-doc"><i>CÓDIGO</i><i>DESCRIPCIÓN</i><i class="der">EXIST.</i></p>
+          <p class="pp-linea-doc pp-dato"><i>SKU-0041</i><i>BLUSA SATINADA</i><i class="der">18</i></p>
+          <p class="pp-linea-doc pp-vacio"><i>—</i><i>—</i><i class="der">—</i></p>
+          <p class="pp-linea-doc pp-vacio"><i>—</i><i>—</i><i class="der">—</i></p>
+
+          <p class="pp-margen">¿y las tallas?<br />¿el negro M?</p>
+
+          <div class="pp-sello pp-sello-rojo"><span>NO APLICA<br />A MODA</span></div>
         </div>
 
-        <ul class="pb-lista">
-          <li>Das de alta la blusa y te pide <b>un solo código</b>. Tus 24 combinaciones se vuelven una fila.</li>
-          <li>Para saber si queda la M abres un <b>Excel aparte</b>, que alguien tiene que actualizar.</li>
-          <li>El reporte te dice cuánto vendiste, <b>no qué talla dejaste de tener</b>.</li>
+        <ol class="pp-notas">
+          <li>Te pide <b>un solo código</b>. Tus 24 combinaciones se vuelven esa fila.</li>
+          <li>Para saber si queda la M abres un <b>Excel aparte</b> que alguien mantiene a mano.</li>
+          <li>Te dice cuánto vendiste, <b>no qué talla dejaste de tener</b>.</li>
           <li>Abres la segunda tienda y empiezas de cero.</li>
-        </ul>
+        </ol>
       </article>
 
-      <!-- Camino 2 -->
-      <article class="pb-caso">
-        <div class="pb-caso-cab">
-          <span class="pb-num">02</span>
-          <div>
-            <h3>Un desarrollo a la medida</h3>
-            <p>Hecho para ti… hace tres años</p>
-          </div>
+      <!-- Documento II -->
+      <article class="pp-hoja">
+        <div class="pp-membrete">
+          <span>Desarrollo a la medida</span>
+          <span>Propuesta · rev. 4</span>
         </div>
 
-        <!-- Síntoma dibujado: la línea de tiempo del proyecto que se estira. -->
-        <div class="pb-visual pb-visual-b" aria-hidden="true">
-          <div class="pb-linea">
-            <span class="pb-hito"><i></i>Cotizado<br /><b>3 meses</b></span>
-            <span class="pb-hito pb-hito-mal"><i></i>Entregado<br /><b>9 meses</b></span>
-            <span class="pb-hito pb-hito-mal"><i></i>Hoy<br /><b>sin soporte</b></span>
-          </div>
-          <p class="pb-visual-pie">Lo que se cotizó y lo que pasó.</p>
+        <div class="pp-cuerpo pp-cuerpo-ancho">
+          <p class="pp-linea-doc"><i>CONCEPTO</i><i class="der">PLAZO</i></p>
+          <p class="pp-linea-doc pp-dato"><i>ENTREGA COMPROMETIDA</i><i class="der">3 MESES</i></p>
+          <p class="pp-linea-doc pp-dato pp-tachado"><i>ENTREGA REAL</i><i class="der">9 MESES</i></p>
+          <p class="pp-linea-doc pp-dato"><i>SOPORTE VIGENTE</i><i class="der">NO</i></p>
+
+          <p class="pp-margen pp-margen-2">+ 3 adendas<br />no contesta</p>
+
+          <div class="pp-sello pp-sello-ocre"><span>SIN<br />SOPORTE</span></div>
         </div>
 
-        <ul class="pb-lista">
+        <ol class="pp-notas">
           <li>Costó <b>más de lo cotizado</b> y llegó meses tarde.</li>
           <li>Funciona… mientras <b>quien lo hizo conteste el teléfono</b>.</li>
           <li>Cada cambio chico es <b>una cotización nueva</b>.</li>
-          <li>No tiene app, ni tienda en línea, ni quién lo actualice. El día que falla, <b>para la tienda</b>.</li>
-        </ul>
+          <li>No trae app, ni tienda en línea, ni quién lo actualice. El día que falla, <b>para la tienda</b>.</li>
+        </ol>
       </article>
     </div>
 
-    <!-- Lectura de un vistazo -->
-    <div class="pb-tabla-caja">
-      <div class="pb-tabla-rot">
-        <h3>Lo que tu giro necesita, en los tres caminos</h3>
+    <!-- Cuadro comparativo, impreso -->
+    <div class="pp-cuadro">
+      <p class="pp-cuadro-rot">Lo que tu giro necesita · los tres caminos</p>
+
+      <div class="pp-cab">
+        <span class="pp-cab-que">Necesidad</span>
+        <span>Genérico</span>
+        <span>A la medida</span>
+        <span class="pp-cab-sacs">SACS</span>
       </div>
-      <div class="pb-scroll">
-        <table class="pb-tabla">
-          <thead>
-            <tr>
-              <th class="pb-th-que"></th>
-              <th>Genérico</th>
-              <th>A la medida</th>
-              <th class="pb-th-sacs">SACS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => (
-              <tr>
-                <td class="pb-td-que">{f.que}</td>
-                <td class:list={['pb-td', f.tonoGenerico || 'no']} data-col="Genérico">{f.generico}</td>
-                <td class:list={['pb-td', f.tonoMedida || 'no']} data-col="A la medida">{f.medida}</td>
-                <td class="pb-td pb-td-sacs" data-col="SACS">{f.sacs}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p class="pb-cierre">
-        La diferencia no es que nosotros seamos más listos: es que <b>esa pieza ya está construida</b>
-        para tu giro y se mantiene todos los días. No la pagas tú sola — la pagan las más de 3,000
-        marcas que ya la usan.
+
+      {filas.map((f) => (
+        <div class="pp-reng">
+          <span class="pp-que">{f.que}</span>
+          <span class="pp-val" data-col="Genérico">{f.generico}</span>
+          <span class="pp-val" data-col="A la medida">{f.medida}</span>
+          <span class="pp-val pp-val-sacs" data-col="SACS">{f.sacs}</span>
+        </div>
+      ))}
+
+      <p class="pp-pie">
+        No es que seamos más listos. Es que <b>esa pieza ya está construida</b> para tu giro y se
+        mantiene todos los días — y no la pagas tú sola: la pagan las más de 3,000 marcas que ya
+        la usan.
       </p>
     </div>
+
   </div>
 </section>
 
 <style>
-  .pb { background: #0A0A0B; padding: 100px 24px 110px; }
-  .pb-inner { max-width: 1200px; margin: 0 auto; }
+  /* Papel dentro de una página oscura: el bloque entero es un inserto. */
+  .pp {
+    background: #E8E2D6;
+    color: #1A1815;
+    padding: 96px 24px 104px;
+    /* Grano: dos capas de rayas casi invisibles. Sin esto el crema se ve como
+       un fondo plano de plantilla. */
+    background-image:
+      repeating-linear-gradient(0deg, rgba(26,24,21,.035) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(26,24,21,.02) 0 1px, transparent 1px 4px);
+  }
+  .pp-inner { max-width: 1180px; margin: 0 auto; }
 
-  .pb-head { max-width: 720px; margin-bottom: 52px; }
-  .pb-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 16px;
+  /* ── Encabezado editorial ── */
+  .pp-head {
+    display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: end;
+    padding-bottom: 30px; margin-bottom: 46px;
+    border-bottom: 2px solid #1A1815;
   }
-  .pb-head h2 {
-    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
-    line-height: 1.05; color: #fff; margin: 0 0 16px;
+  .pp-kicker {
+    grid-column: 1 / -1; margin: 0 0 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; letter-spacing: .28em; text-transform: uppercase; color: #8A8071;
   }
-  .pb-head h2 span { color: #4B7BE5; }
-  .pb-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; line-height: 1.6; }
+  .pp-head h2 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(34px, 5.4vw, 62px); font-weight: 400; line-height: 1.02;
+    letter-spacing: -.02em;
+  }
+  .pp-entrada { margin: 0; font-size: 16px; line-height: 1.65; color: #4A443B; max-width: 46ch; }
 
-  .pb-caminos { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 26px; }
-  .pb-caso {
-    border: 1px solid #24242C; border-radius: 20px; padding: 26px;
-    background: linear-gradient(165deg, #121218 0%, #0C0C11 100%);
-  }
-  .pb-caso-cab { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 22px; }
-  .pb-num {
-    font-size: 12px; font-weight: 800; color: #4B7BE5; letter-spacing: .08em;
-    border: 1px solid rgba(75,123,229,.35); border-radius: 8px; padding: 6px 10px;
-    font-variant-numeric: tabular-nums; flex-shrink: 0;
-  }
-  .pb-caso-cab h3 {
-    font-size: clamp(19px, 2.2vw, 24px); font-weight: 700; color: #fff; margin: 0 0 4px;
-    letter-spacing: -.4px;
-  }
-  .pb-caso-cab p { margin: 0; font-size: 13.5px; color: #71717A; }
+  /* ── Los dos documentos ── */
+  .pp-hojas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 76px; }
 
-  /* ── Síntoma dibujado ── */
-  .pb-visual {
-    border-radius: 14px; padding: 18px; margin-bottom: 20px;
-    background: #08080B; border: 1px solid #1E1E26;
+  .pp-membrete {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #6B6459;
+    border-bottom: 1px solid #1A1815; padding-bottom: 9px;
   }
-  .pb-visual-pie {
-    margin: 14px 0 0; font-size: 12px; color: #6A6A76; line-height: 1.5; text-align: center;
+  .pp-membrete span:first-child { color: #1A1815; font-weight: 700; }
+
+  /* La hoja: blanco de impresión sobre el crema. */
+  .pp-cuerpo {
+    position: relative; background: #FBF9F4; border: 1px solid #CFC7B8; border-top: none;
+    /* La franja de abajo se reserva para el sello y la anotacion: son tinta
+       encima del documento y no deben caer sobre los renglones. */
+    padding: 22px 22px 104px; overflow: hidden;
+    box-shadow: 3px 3px 0 rgba(26,24,21,.07);
+    /* Las dos hojas miden lo mismo aunque una traiga un renglon menos: si no,
+       las notas de cada columna arrancan a distinta altura y el bloque se ve
+       desalineado. */
+    min-height: 232px;
+  }
+  .pp-linea-doc {
+    display: flex; gap: 14px; margin: 0 0 9px; padding-bottom: 8px;
+    border-bottom: 1px dotted #D6CEC0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; letter-spacing: .04em; color: #8A8071;
+  }
+  .pp-linea-doc i { font-style: normal; flex: 1; }
+  .pp-linea-doc i:first-child { flex: 0 0 96px; }
+  /* El segundo documento tiene conceptos largos: su primera columna es ancha
+     para que el plazo no se parta en dos renglones. */
+  .pp-cuerpo-ancho .pp-linea-doc i:first-child { flex: 1 1 auto; }
+  .pp-cuerpo-ancho .pp-linea-doc i.der { flex: 0 0 86px; }
+  .pp-linea-doc i.der { flex: 0 0 62px; text-align: right; }
+  .pp-dato { color: #1A1815; font-size: 12.5px; font-weight: 600; }
+  .pp-vacio { color: #C9C0B0; }
+  .pp-tachado i { text-decoration: line-through; text-decoration-color: #B23A2E; }
+
+  /* Anotación al margen, a mano sobre el documento. */
+  .pp-margen {
+    position: absolute; right: 18px; top: 78px; margin: 0;
+    font-family: "Bradley Hand", "Segoe Script", "Comic Sans MS", cursive;
+    font-size: 16px; line-height: 1.45; color: #2E5FA8; transform: rotate(-6deg);
+    text-align: right;
+  }
+  /* En la cotizacion la anotacion baja: arriba chocaba con el renglon tachado
+     y las dos tintas se leian encimadas. */
+  .pp-margen-2 { top: auto; bottom: 24px; right: 18px; color: #B23A2E; transform: rotate(-4deg); }
+
+  /* Sello de tinta: borde grueso, rotado, tinta un poco comida. */
+  .pp-sello {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%) rotate(-9deg);
+    border: 3px solid currentColor; padding: 7px 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 15px; font-weight: 700; letter-spacing: .1em; line-height: 1.15;
+    text-align: center; opacity: .72;
+  }
+  .pp-sello-rojo { color: #B23A2E; }
+  .pp-sello-ocre { color: #A6702A; }
+
+  .pp-notas { list-style: none; margin: 22px 0 0; padding: 0; counter-reset: n; }
+  .pp-notas li {
+    counter-increment: n; position: relative; padding-left: 30px; margin-bottom: 14px;
+    font-size: 15px; line-height: 1.6; color: #4A443B;
+  }
+  .pp-notas li::before {
+    content: counter(n, decimal-leading-zero);
+    position: absolute; left: 0; top: 2px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; color: #A39781; letter-spacing: .06em;
+  }
+  .pp-notas b { color: #1A1815; font-weight: 700; }
+
+  /* ── Cuadro comparativo impreso ── */
+  .pp-cuadro { border-top: 2px solid #1A1815; padding-top: 30px; }
+  .pp-cuadro-rot {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: #8A8071;
+    margin: 0 0 22px;
   }
 
-  .pb-fila-sis {
-    display: flex; align-items: center; gap: 12px;
-    background: #101016; border: 1px solid #24242E; border-radius: 10px; padding: 14px 15px;
+  .pp-cab, .pp-reng {
+    display: grid; grid-template-columns: 2.1fr 1fr 1fr 1.15fr; gap: 18px; align-items: center;
   }
-  .pb-sku {
-    font-size: 10.5px; font-weight: 700; color: #6A6A76; letter-spacing: .04em;
-    background: #17171E; border-radius: 5px; padding: 4px 8px;
+  .pp-cab {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #8A8071;
+    padding-bottom: 12px; border-bottom: 1px solid #1A1815;
   }
-  .pb-fila-sis b { flex: 1; font-size: 14px; color: #D4D4D8; font-weight: 600; }
-  .pb-cant { font-size: 13px; font-weight: 700; color: #A1A1AA; font-variant-numeric: tabular-nums; }
+  .pp-cab span:not(.pp-cab-que) { text-align: center; }
+  .pp-cab-sacs { color: #1A1815; font-weight: 700; }
 
-  .pb-linea { display: flex; align-items: flex-start; gap: 6px; }
-  .pb-hito {
-    flex: 1; text-align: center; font-size: 11px; color: #71717A; line-height: 1.5;
-    position: relative; padding-top: 20px;
+  .pp-reng { padding: 14px 0; border-bottom: 1px solid #D6CEC0; }
+  .pp-que { font-size: 15px; color: #1A1815; }
+  .pp-val {
+    text-align: center; font-size: 13.5px; color: #7C7466;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
   }
-  .pb-hito i {
-    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-    width: 11px; height: 11px; border-radius: 50%; background: #34D399;
+  /* La columna nuestra se marca como se marcaría en papel: en negro y subrayada
+     con tinta, sin fondos de color. */
+  .pp-val-sacs {
+    color: #1A1815; font-weight: 700; font-family: inherit; font-size: 15px;
+    box-shadow: inset 0 -7px 0 rgba(47,107,79,.22);
   }
-  .pb-hito::before {
-    content: ""; position: absolute; top: 5px; left: 50%; right: -50%; height: 1px; background: #26262E;
-  }
-  .pb-hito:last-child::before { display: none; }
-  .pb-hito b { display: block; color: #D4D4D8; font-size: 12.5px; font-weight: 700; margin-top: 2px; }
-  .pb-hito-mal i { background: #E8A838; }
-  .pb-hito-mal:last-child i { background: #F87171; }
-  .pb-hito-mal:last-child b { color: #F0A9A9; }
 
-  .pb-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 13px; }
-  .pb-lista li {
-    position: relative; padding-left: 26px; font-size: 14.5px; color: #A1A1AA; line-height: 1.55;
+  .pp-pie {
+    margin: 26px 0 0; font-size: 15.5px; line-height: 1.65; color: #4A443B; max-width: 74ch;
   }
-  /* La cruz no es decoración: marca que cada renglón es algo que HOY no funciona. */
-  .pb-lista li::before {
-    content: "✕"; position: absolute; left: 0; top: 1px;
-    color: #7A3B3B; font-size: 12px; font-weight: 700;
-  }
-  .pb-lista b { color: #E4E4E7; font-weight: 600; }
-
-  /* ── Tabla ── */
-  .pb-tabla-caja {
-    border: 1px solid #24242C; border-radius: 20px; overflow: hidden;
-    background: linear-gradient(165deg, #121218 0%, #0C0C11 100%);
-  }
-  .pb-tabla-rot { padding: 24px 26px 4px; }
-  .pb-tabla-rot h3 {
-    font-size: clamp(17px, 2vw, 21px); font-weight: 700; color: #fff; margin: 0; letter-spacing: -.3px;
-  }
-  .pb-scroll { overflow-x: auto; padding: 18px 26px 4px; }
-  .pb-tabla { width: 100%; border-collapse: collapse; min-width: 620px; }
-  .pb-tabla th {
-    font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-    color: #71717A; padding: 0 14px 14px; text-align: center; white-space: nowrap;
-  }
-  .pb-th-que { text-align: left !important; width: 42%; }
-  .pb-th-sacs { color: #7FA6F5 !important; }
-  .pb-tabla td { padding: 15px 14px; border-top: 1px solid #1C1C24; font-size: 14px; }
-  .pb-td-que { color: #D4D4D8; font-weight: 600; }
-  .pb-td { text-align: center; font-weight: 600; font-size: 13.5px; }
-  .pb-td.no { color: #6A6A76; }
-  .pb-td.medio { color: #C08F3E; }
-  .pb-td.ok { color: #6EE7B7; }
-  /* La columna nuestra se lee sola: fondo propio y color de marca. */
-  .pb-td-sacs {
-    color: #fff !important; font-weight: 700;
-    background: linear-gradient(90deg, rgba(75,123,229,.16), rgba(75,123,229,.1));
-    box-shadow: inset 1px 0 0 rgba(75,123,229,.3), inset -1px 0 0 rgba(75,123,229,.3);
-  }
-  tbody tr:last-child .pb-td-sacs { box-shadow: inset 1px 0 0 rgba(75,123,229,.3), inset -1px 0 0 rgba(75,123,229,.3), inset 0 -1px 0 rgba(75,123,229,.3); }
-
-  .pb-cierre {
-    margin: 6px 0 0; padding: 22px 26px 26px; font-size: 15px; color: #A1A1AA; line-height: 1.6;
-    max-width: 76ch;
-  }
-  .pb-cierre b { color: #E4E4E7; font-weight: 600; }
-
-  /* En un telefono una tabla de cuatro columnas se corta o se lee de lado.
-     Se rearma como tarjetas: la necesidad arriba y sus tres respuestas debajo,
-     cada una con su etiqueta. Mismo contenido, sin scroll lateral. */
-  @media (max-width: 720px) {
-    .pb-scroll { overflow-x: visible; }
-    .pb-tabla { min-width: 0; display: block; }
-    .pb-tabla thead { display: none; }
-    .pb-tabla tbody, .pb-tabla tr { display: block; }
-    .pb-tabla tr {
-      border: 1px solid #22222B; border-radius: 14px; padding: 14px 15px; margin-bottom: 12px;
-      background: #0E0E13;
-    }
-    .pb-tabla td { display: flex; border: none; padding: 0; }
-    .pb-td-que {
-      font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 10px;
-      padding-bottom: 10px !important; border-bottom: 1px solid #1E1E26 !important;
-    }
-    .pb-td {
-      justify-content: space-between; align-items: center; gap: 14px;
-      padding: 7px 0 !important; text-align: right; font-size: 13.5px;
-    }
-    .pb-td::before {
-      content: attr(data-col); color: #6A6A76; font-size: 12px; font-weight: 600;
-      letter-spacing: .02em; text-align: left;
-    }
-    .pb-td-sacs {
-      background: rgba(75,123,229,.14) !important; box-shadow: none !important;
-      border-radius: 9px; padding: 8px 11px !important; margin-top: 6px;
-    }
-    .pb-td-sacs::before { color: #7FA6F5; }
-    tbody tr:last-child .pb-td-sacs { box-shadow: none !important; }
-  }
+  .pp-pie b { color: #1A1815; font-weight: 700; }
 
   @media (max-width: 900px) {
-    .pb { padding: 70px 18px 78px; }
-    .pb-caminos { grid-template-columns: 1fr; gap: 16px; }
-    .pb-caso { padding: 20px; }
-    .pb-scroll { padding: 16px 18px 4px; }
-    .pb-tabla-rot { padding: 20px 18px 2px; }
-    .pb-cierre { padding: 18px 18px 22px; font-size: 14.5px; }
-    .pb-lista li { font-size: 14px; }
+    .pp { padding: 66px 18px 74px; }
+    .pp-head { grid-template-columns: 1fr; gap: 20px; align-items: start; }
+    .pp-hojas { grid-template-columns: 1fr; gap: 44px; margin-bottom: 56px; }
+    .pp-margen { font-size: 14px; top: 74px; right: 12px; }
+    /* La regla de arriba tambien alcanzaba a la segunda anotacion y la subia
+       encima del renglon tachado: aqui recupera su sitio en la franja de tinta. */
+    .pp-margen-2 { top: auto; bottom: 20px; right: 12px; }
+
+    /* El cuadro deja de ser rejilla: cada necesidad es un renglón con sus tres
+       lecturas debajo. Cuatro columnas en un teléfono se leen de lado. */
+    .pp-cab { display: none; }
+    .pp-reng { display: block; padding: 16px 0; }
+    .pp-que { display: block; font-weight: 700; margin-bottom: 10px; font-size: 15.5px; }
+    .pp-val {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      text-align: right; padding: 5px 0; font-size: 13px;
+    }
+    .pp-val::before {
+      content: attr(data-col);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #A39781;
+    }
+    .pp-val-sacs { font-size: 14.5px; box-shadow: inset 0 -8px 0 rgba(47,107,79,.22); }
   }
 </style>
