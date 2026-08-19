@@ -16,6 +16,18 @@
  * seccion de los dos caminos. Ahi eran documentos del cajon; aqui es lo que el
  * sistema emite hoy.
  */
+interface Props {
+  titulo?: string;
+  sub?: string;
+  /** Ejemplo del giro para el comprobante. */
+  receptor?: string;
+}
+const {
+  titulo = 'Factura sin salir de la venta.',
+  sub = 'El cliente pide factura en el mostrador y se emite ahí mismo, con la venta abierta. Nadie tiene que anotar el RFC en una libreta para capturarlo en la noche.',
+  receptor = 'MARIANA R.',
+} = Astro.props;
+
 const facturacion = [
   { t: 'CFDI desde el punto de venta', n: '' },
   { t: 'Factura global a público en general', n: '' },
@@ -31,11 +43,8 @@ const facturacion = [
 
     <header class="fm-head">
       <p class="fm-eyebrow">Lo que pregunta el contador</p>
-      <h2>Factura sin salir de la venta.</h2>
-      <p class="fm-sub">
-        La clienta pide factura en el mostrador y se emite ahí mismo, con la venta abierta.
-        Nadie tiene que anotar el RFC en una libreta para capturarlo en la noche.
-      </p>
+      <h2>{titulo}</h2>
+      <p class="fm-sub">{sub}</p>
     </header>
 
     <div class="fm-cols">
@@ -63,7 +72,7 @@ const facturacion = [
           <span class="fm-doc-ok">Timbrado</span>
         </div>
         <dl class="fm-doc-campos">
-          <div><dt>Receptor</dt><dd>MARIANA R.</dd></div>
+          <div><dt>Receptor</dt><dd>{receptor}</dd></div>
           <div><dt>Uso</dt><dd>G03 · Gastos en general</dd></div>
           <div><dt>Forma de pago</dt><dd>04 · Tarjeta de crédito</dd></div>
         </dl>

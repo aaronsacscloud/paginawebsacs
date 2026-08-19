@@ -59,7 +59,6 @@ const planes = [
     ],
     servicio: 'Multisucursal · Reunión de introducción · Migración gratis (3 días)',
     suite: false,
-    popular: true,
   },
   {
     n: '03',
@@ -77,6 +76,7 @@ const planes = [
     ],
     servicio: 'Reunión mensual · Tickets en 15–30 min · Migración gratis (1 día)',
     suite: true,
+    popular: true,
   },
   {
     n: '04',
@@ -107,8 +107,9 @@ const planes = [
       <h2>La {suite} no se paga aparte.</h2>
       <p class="pl-sub">
         No es un módulo con precio propio ni una implementación a cotizar. Los planes son
-        acumulativos —cada uno trae todo el anterior— y a partir del tercero,
-        <b>todo lo que viste en esta página ya está incluido</b>.
+        acumulativos —cada uno trae todo el anterior— y a partir del tercero
+        <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
+        planificador— vive en el cuarto, y en la página se dice en cada punto donde aparece.
       </p>
     </header>
 
@@ -127,7 +128,7 @@ const planes = [
             </p>
             <p class="pl-anual">{p.anual} si pagas anual</p>
 
-            {p.popular && <p class="pl-popular">El que más eligen las cadenas</p>}
+            {p.popular && <p class="pl-popular">El primero que trae la suite completa</p>}
             {p.suite && <p class="pl-suite">{suite} incluida</p>}
           </div>
 

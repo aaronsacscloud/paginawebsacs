@@ -32,6 +32,8 @@ interface Props {
   ejeA?: string;
   ejeB?: string;
   unidad?: string;
+  /** Concordancia del titular: "distintas" para piezas, "distintos" para pares. */
+  distintas?: string;
   /** Texto del remate: "107 piezas en la percha". */
   remate?: string;
 }
@@ -43,6 +45,7 @@ const {
   ejeA = 'tallas',
   ejeB = 'colores',
   unidad = 'piezas',
+  distintas = 'distintas',
   remate = 'piezas en la percha',
 } = Astro.props;
 
@@ -58,7 +61,7 @@ const totalPiezas = prendas.reduce((a, p) => a + p.tallas * p.colores, 0);
 <section class="rack-bloque" id="rackBloque">
   <div class="rack-head">
     <p class="rack-eyebrow">{eyebrow}</p>
-    <h2>{titulo} <span>{resalte}</span> {unidad} distintas.</h2>
+    <h2>{titulo} <span>{resalte}</span> {unidad} {distintas}.</h2>
   </div>
 
   <div class="rack">
@@ -68,7 +71,7 @@ const totalPiezas = prendas.reduce((a, p) => a + p.tallas * p.colores, 0);
           <img src={p.img} alt={p.n} loading="lazy" decoding="async" width="220" height="330" />
           <div class="rack-ficha">
             <b>{p.n}</b>
-            <span class="rack-cuenta">{p.tallas} {ejeA} × {p.colores} {ejeB}</span>
+            <span class="rack-cuenta">{p.tallas} {ejeA} × {p.colores} {p.colores === 1 ? ejeB.replace(/e?s$/, '') : ejeB}</span>
             <span class="rack-piezas">{p.tallas * p.colores} {unidad}</span>
           </div>
         </div>

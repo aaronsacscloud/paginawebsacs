@@ -20,6 +20,14 @@ try {
     bookingQuestions = q || [];
   }
 } catch {}
+
+/* La calculadora de las páginas de giro manda su resultado en ?estimado. Si no
+   se lee aquí, el visitante pone su número, llega a agendar y el dato se
+   pierde justo cuando más sirve: es lo único que ya sabemos de su negocio. */
+const estimadoRaw = Astro.url.searchParams.get('estimado');
+const estimadoNum = estimadoRaw ? Number(estimadoRaw.replace(/[^0-9]/g, '')) : 0;
+const estimado = estimadoNum > 0 ? '$' + estimadoNum.toLocaleString('es-MX') : '';
+const urlAgenda = estimado ? `/agendar/demo?estimado=${estimadoNum}` : '/agendar/demo';
 ---
 
 <BaseLayout
@@ -96,7 +104,17 @@ try {
       </div>
     </div>
     <div class="ct-hero-cal" id="demo">
-      <iframe src="/agendar/demo" width="100%" height="800" frameborder="0" style="border:none;border-radius:16px;min-height:800px;"></iframe>
+      {estimado && (
+        <div class="estimado-aviso">
+          <p>
+            <b>Traes un estimado de {estimado} al año</b> en inventario atrapado. Agenda abajo y
+            lo revisamos con tu catálogo real en la sesión — normalmente la cifra cambia, para
+            arriba o para abajo, en cuanto vemos tus números.
+          </p>
+        </div>
+      )}
+
+      <iframe src={urlAgenda} width="100%" height="800" frameborder="0" style="border:none;border-radius:16px;min-height:800px;"></iframe>
     </div>
   </div>
 </section>
@@ -246,6 +264,20 @@ try {
     </a>
   </div>
 </section>
+
+<style>
+  /* Aviso del estimado que llega desde la calculadora de una página de giro. */
+  .estimado-aviso {
+    max-width: 900px; margin: 0 auto 24px; padding: 18px 22px;
+    background: #F3F7FF; border: 1px solid #C7DAFB; border-radius: 14px;
+  }
+  .estimado-aviso p { margin: 0; font-size: 15.5px; line-height: 1.6; color: #1F2937; }
+  .estimado-aviso b { color: #1D4ED8; font-weight: 700; }
+  @media (max-width: 700px) {
+    .estimado-aviso { padding: 15px 16px; }
+    .estimado-aviso p { font-size: 14.5px; }
+  }
+</style>
 
 </BaseLayout>
 

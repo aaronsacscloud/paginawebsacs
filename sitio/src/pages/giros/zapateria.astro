@@ -1,4 +1,314 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Suite para Zapaterías.
+ *
+ * Misma estructura que la de moda, contenido 100% del giro. Lo que cambia el
+ * argumento entero: aquí la unidad es el PAR y la variante es el NÚMERO. El
+ * dolor propio es la CORRIDA ROTA —te quedas con los extremos cuando se venden
+ * los números de en medio—, que no existe en ningún otro giro. Ojo: un "par
+ * descabalado" es un par disparejo; lo que se rompe aquí es la corrida.
+ *
+ * Bloque nuevo de esta página: la calculadora de dinero parado. Hasta aquí la
+ * página le dice al visitante que pierde dinero; ahí se lo cuenta con el tamaño
+ * de su propio negocio.
+ *
+ * Todo el contenido vive en src/data/giros/zapateria.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteCubo from '../../components/suite/SuiteCubo.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteRack from '../../components/suite/SuiteRack.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCalculadora from '../../components/suite/SuiteCalculadora.astro';
+import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
+import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
+import SuiteFormal from '../../components/suite/SuiteFormal.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
+import PosMock from '../../components/suite/PosMock.astro';
+import {
+  seccionesZapateria, rackZapateria, cortinaZapateria, sucursalesZapateria,
+  reglasZapateria, diasZapateria, cajaZapateria, documentosZapateria,
+} from '../../data/giros/zapateria';
+
+const titulo = 'Suite para Zapaterías';
+const desc =
+  'El sistema para zapaterías: corrida completa con medios números, cambio de número sin ticket, apartados por quincena y pedido de temporada por remesas.';
 ---
-<ComingSoon giro="Zapatería" title="Zapatería" description="Punto de venta para zapaterías. Gestiona calzado por talla, modelo y temporada." color="#F97316" />
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <!-- ── Portada: el sistema es el fondo ── -->
+  <header class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-pos">
+        <PosMock
+          cajero="Ramiro"
+          caja="Caja Centro"
+          cliente="JORGE C."
+          puntos="2,140 pts"
+          tiles={[
+            { t: 'Botín piel', c: '#8A6242' },
+            { t: 'Tenis casual', c: '#94A3B8' },
+            { t: 'Mocasín caballero', c: '#3F3F46' },
+            { t: 'Sandalia dama', c: '#C09A6B' },
+            { t: 'Zapatilla vestir', c: '#4B4B55' },
+            { t: 'Escolar infantil', c: '#2C2C34' },
+            { t: 'Bota industrial', c: '#6B4E32' },
+            { t: 'Calcetín', c: '#7C8AA0' },
+            { t: 'Plantilla', c: '#93A3B8' },
+            { t: 'Grasa y agujetas', c: '#A0784F' },
+          ]}
+          lineas={[
+            { nombre: 'Botín dama piel café', detalle: 'Número 24½', cant: 1, precio: '1,290.00' },
+            { nombre: 'Calcetín invisible', detalle: 'Paquete de 3', cant: 1, precio: '120.00' },
+          ]}
+          subtotal="$1,215.52"
+          iva="$194.48"
+          total="$1,410.00"
+          articulos="2 ARTÍCULOS · 1 PAR"
+        />
+      </div>
+      <div class="hero-veil"></div>
+    </div>
+
+    <div class="hero-inner">
+      <p class="hero-eyebrow">SACS · Suite Calzado</p>
+      <h1 class="hero-title">
+        Tu tienda no vende<br /><span>modelos.</span> Vende<br /><span>números.</span>
+      </h1>
+      <p class="hero-sub">
+        El sistema para zapaterías. Corrida completa con medios números, cambio de número en el
+        mostrador, apartados por quincena y el pedido de temporada por remesas — con un mismo
+        inventario para tu piso, tu tienda en línea y tu WhatsApp.
+      </p>
+      <div class="hero-cta">
+        <a href="/contacto" class="btn-pri">Agenda una demo</a>
+        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
+      </div>
+
+      <div class="hero-datos">
+        <div><b>+3,000</b><span>negocios activos</span></div>
+        <div><b>22</b><span>existencias de un solo modelo</span></div>
+        <div><b>1 inventario</b><span>piso, en línea y WhatsApp</span></div>
+        <div><b>13</b><span>funciones hechas para calzado</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Aquí se demuestra que entendemos el giro ── -->
+  <SuiteManifiesto
+    intro="Sabemos cómo se vende el calzado"
+    frases={[
+      'El <b>23½</b> se acabó el primer fin de semana.',
+      'Del <b>27</b> te quedan seis pares desde la temporada pasada.',
+      '"¿Me lo trae en el 24?" — y alguien camina a la <b>bodega</b> a ver.',
+      'Ese modelo ya está roto: sin los números de en medio, <b>eso ya es saldo</b>.',
+      'Le apretó el 26 y <b>lo compró en la otra tienda</b>.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto, y uno de ropa tampoco: aquí la unidad es el par, el SKU es modelo × color × número, y los medios números no son un detalle. Un modelo con la corrida rota es dinero muerto aunque el reporte diga que tienes diecisiete pares. Cada pantalla que sigue está hecha con esa lógica."
+  />
+
+  <!-- ── El momento fuerte: la corrida en 3D ── -->
+  <SuiteCubo
+    eyebrow="Un solo modelo"
+    titulo="Esto es lo que de verdad hay<br /> detrás de"
+    resalte="“un botín de dama”"
+    sub="Once números con medios, por dos colores, en tres sucursales. Sesenta y seis casillas de un solo modelo. Las apagadas son las que rompen la corrida — y son justo las que te están pidiendo."
+    matriz={[
+      [1, 2, 0, 0, 0, 0, 3, 4, 3, 2, 2],
+      [1, 1, 2, 0, 0, 1, 4, 5, 4, 2, 1],
+    ]}
+    ejeA={['22', '22½', '23', '23½', '24', '24½', '25', '25½', '26', '26½', '27']}
+    ejeB={['Café', 'Negro']}
+    capas={3}
+    leyendas={['Con pares', 'Último par', 'Agotado']}
+  />
+
+  <!-- ── La comparación que hace el propio visitante ── -->
+  <SuiteCortina
+    eyebrow={cortinaZapateria.eyebrow}
+    titulo={cortinaZapateria.titulo}
+    sub={cortinaZapateria.sub}
+    fotoAntes={cortinaZapateria.fotoAntes}
+    fotoDespues={cortinaZapateria.fotoDespues}
+    altAntes={cortinaZapateria.altAntes}
+    altDespues={cortinaZapateria.altDespues}
+    libreta={cortinaZapateria.libreta}
+    pieAntes={cortinaZapateria.pieAntes}
+    filas={cortinaZapateria.filas}
+    pieDespues={cortinaZapateria.pieDespues}
+  />
+
+  <!-- ── Por qué no le sirvió lo que ya probó ── -->
+  <SuiteProblemas
+    titulo={documentosZapateria.titulo}
+    entrada={documentosZapateria.entrada}
+    doc1={documentosZapateria.doc1}
+    doc2={documentosZapateria.doc2}
+    filas={documentosZapateria.filas}
+  />
+
+  <!-- ── Respiro fotográfico: la escala ── -->
+  <SuiteCifras
+    foto="/images/suite-zap-tienda.webp"
+    alt="Tienda insignia de calzado con muros iluminados y bancas de mármol"
+    frase="Desde una zapatería hasta una cadena con bodega central."
+    encuadre="center 40%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
+      { n: 22, pos: ' SKU', rotulo: 'DE UN MODELO, EN UN PASO' },
+      { n: 11, rotulo: 'NÚMEROS CON MEDIOS, DEL 22 AL 27' },
+      { n: 4, pos: ' canales', rotulo: 'UN SOLO INVENTARIO' },
+    ]}
+  />
+
+  <!-- ── Un modelo son muchos pares ── -->
+  <SuiteRack
+    eyebrow="Un modelo no es un producto"
+    titulo="Cada modelo que exhibes son"
+    resalte="dieciséis, veintiuno, treinta"
+    piezas={rackZapateria}
+    ejeA="números"
+    ejeB="colores"
+    unidad="pares"
+    distintas="distintos"
+    remate="pares en el aparador"
+  />
+
+  <!-- ── Recorrido de funcionalidades ── -->
+  <SuiteScroll
+    eyebrow="Suite Calzado"
+    titulo="Todo tu negocio de calzado, físico y digital, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una zapatería real: números que se agotan, modelos que se rompen y pares parados desde la temporada pasada. Y todo funciona igual en el mostrador que en tu tienda en línea, porque es el mismo inventario."
+    secciones={seccionesZapateria}
+  />
+
+  <!-- ── Bloque nuevo: ponle número a lo que ya sabes ── -->
+  <SuiteCalculadora
+    titulo="¿Cuánto tienes parado en modelos con la corrida rota?"
+    sub="Todo modelo al que se le acabaron los números de en medio deja de venderse a precio: termina con el saldero, a precio plano y sin importar el modelo. Mueve los controles con el tamaño de tu tienda."
+    controles={[
+      { id: 'modelos', etiqueta: 'Modelos distintos en tu catálogo', min: 20, max: 400, paso: 10, valor: 120, sufijo: ' modelos' },
+      { id: 'pares', etiqueta: 'Pares que te quedan por modelo roto', min: 2, max: 30, paso: 1, valor: 9, sufijo: ' pares' },
+      { id: 'precio', etiqueta: 'Precio promedio del par', min: 300, max: 3500, paso: 50, valor: 1100, prefijo: '$' },
+      { id: 'pct', etiqueta: 'Modelos que se te rompen al año', min: 5, max: 60, paso: 1, valor: 22, sufijo: '%' },
+    ]}
+    resultadoRotulo="Valor de venta atrapado en modelos rotos, al año"
+    mermaMargen={0.55}
+    mermaRotulo="Lo que dejas de ganar cuando va al saldero"
+    supuesto="Se calcula como: modelos × pares que sobran × precio del par × el porcentaje que se rompe al año. El segundo renglón asume que ese par sale al saldero con 55% menos, que es lo normal del giro. Mueve los controles si en tu tienda pasa distinto."
+  />
+
+  <!-- ── Lo que ve el dueño ── -->
+  <SuiteDireccion
+    sub="Tus tiendas abren sin ti. La pregunta no es si venden — es cuál se está quedando sin los números que sí salen, y por dónde se te va el margen en remates."
+    sucursales={sucursalesZapateria}
+    reglas={reglasZapateria}
+  />
+
+  <!-- ── Cómo se cambia sin parar ── -->
+  <SuiteMigracion dias={diasZapateria} lineas={cajaZapateria.lineas} total={cajaZapateria.total} />
+
+  <!-- ── La factura ── -->
+  <SuiteFormal
+    sub="El cliente pide factura por el par que acaba de comprar y se emite ahí mismo, con la venta abierta. Nadie anota el RFC en una libreta para capturarlo en la noche."
+    receptor="JORGE C."
+  />
+
+  <!-- ── El modelo comercial ── -->
+  <SuitePlanes suite="Suite Calzado" />
+
+  <!-- ── Cierre ── -->
+  <SuiteEnsamble giro="tu zapatería" suyo="tus corridas, tus números, tus sucursales" />
+</BaseLayout>
+
+<style>
+  /* El nav es fixed (71px): sin padding-top el título queda debajo de la barra. */
+  .hero {
+    position: relative; min-height: 92vh; display: flex; align-items: flex-end;
+    padding: 136px 24px 88px; overflow: hidden; background: #0A0A0B;
+  }
+  .hero-bg { position: absolute; inset: 0; overflow: hidden; }
+  .hero-bg::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(80% 70% at 76% 46%, rgba(37,99,235,.2) 0%, rgba(10,10,11,0) 62%);
+  }
+  .hero-veil {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg,
+      rgba(8,8,10,.97) 0%, rgba(8,8,10,.95) 28%, rgba(8,8,10,.62) 45%,
+      rgba(8,8,10,.16) 57%, rgba(8,8,10,0) 68%);
+  }
+  .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .hero-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 20px;
+  }
+  .hero-title {
+    font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
+    line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
+  }
+  .hero-title span { color: #4B7BE5; }
+  .hero-sub {
+    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
+    max-width: 56ch; margin: 0 0 34px;
+  }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
+  .btn-pri, .btn-sec {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 54px; padding: 0 30px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
+  }
+  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 6px 22px rgba(37,99,235,.42); }
+  .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
+  .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
+  .btn-sec:hover { background: rgba(255,255,255,.17); }
+  .hero-datos {
+    display: flex; gap: 44px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
+  }
+  .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
+  .hero-datos b {
+    font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #fff; letter-spacing: -.6px;
+  }
+  .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
+
+  /* El punto de venta se dibuja a 980 px y se escala: nítido en cualquier
+     pantalla y sin depender de una captura que envejece. */
+  .hero-pos {
+    position: absolute; right: -13%; top: 50%;
+    transform: translateY(-46%) scale(.86); transform-origin: right center;
+    filter: drop-shadow(0 40px 90px rgba(0,0,0,.65));
+    opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
+  }
+  @keyframes posEntra {
+    from { opacity: 0; transform: translateY(-46%) scale(.84) translateX(34px); }
+    to   { opacity: 1; transform: translateY(-46%) scale(.86); }
+  }
+  @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
+  @media (max-width: 1440px) { .hero-pos { right: -26%; transform: translateY(-46%) scale(.78); } }
+  @media (min-width: 1181px) {
+    .hero-sub { max-width: 44ch; }
+    .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
+  }
+  @media (max-width: 1180px) {
+    .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
+  }
+  @media (max-width: 760px) { .hero-pos { display: none; } }
+
+  @media (max-width: 900px) {
+    .hero { min-height: 88vh; padding: 104px 18px 56px; }
+    .hero-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; }
+    .hero-datos b { font-size: 21px; }
+    .hero-datos span { font-size: 12px; }
+    .hero-cta { margin-bottom: 34px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-pos { opacity: 1; animation: none; }
+  }
+</style>

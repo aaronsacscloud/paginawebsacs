@@ -1,0 +1,259 @@
+---
+/**
+ * SuiteCalculadora — el dolor del giro, con SUS números.
+ *
+ * Es la mejora nueva de la página de zapatería y queda disponible para los
+ * demás giros cambiando las etiquetas y la fórmula.
+ *
+ * Por qué convierte mejor que un bloque de texto: hasta aquí la página le ha
+ * dicho al visitante que pierde dinero. Esto se lo CUENTA con su tamaño de
+ * negocio. Mover tres controles y ver una cifra propia hace algo que ningún
+ * párrafo hace — y deja la conversación abierta en el único lugar donde
+ * podemos cerrarla: "esto es una estimación, en la demo lo calculamos con tu
+ * inventario real".
+ *
+ * Regla de honestidad, y es la que sostiene el bloque: el porcentaje que se usa
+ * se muestra siempre y se puede mover. Una calculadora que esconde su supuesto
+ * es un truco de ventas, y el visitante lo huele.
+ */
+export interface CalcControl {
+  id: string;
+  etiqueta: string;
+  min: number;
+  max: number;
+  paso: number;
+  valor: number;
+  /** Cómo se escribe el valor: "120 modelos", "$1,290". */
+  sufijo?: string;
+  prefijo?: string;
+}
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  sub: string;
+  controles: CalcControl[];
+  /** Etiqueta del resultado grande. */
+  resultadoRotulo: string;
+  /** Qué parte de ese valor se pierde de verdad al rematar. 0-1. */
+  mermaMargen?: number;
+  mermaRotulo?: string;
+  /** Frase que explica de dónde sale la cifra. Se ve siempre. */
+  supuesto: string;
+  cta?: string;
+  nota?: string;
+}
+const {
+  eyebrow = 'Ponle número a lo que ya sabes',
+  titulo,
+  sub,
+  controles,
+  resultadoRotulo,
+  mermaMargen = 0.35,
+  mermaRotulo = 'Lo que dejas de ganar si sale en remate',
+  supuesto,
+  cta = 'Que lo calculemos con tu inventario real',
+  nota = 'Es una estimación con promedios del giro. En la demo lo corremos con tus datos.',
+} = Astro.props;
+---
+
+<section class="calc" data-merma={String(mermaMargen)}>
+  <div class="calc-inner">
+
+    <header class="calc-head">
+      <p class="calc-eyebrow">{eyebrow}</p>
+      <h2>{titulo}</h2>
+      <p class="calc-sub">{sub}</p>
+    </header>
+
+    <div class="calc-cuerpo">
+      <!-- Controles -->
+      <div class="calc-controles">
+        {controles.map((c) => (
+          <div class="calc-control">
+            <label for={`calc-${c.id}`}>
+              <span>{c.etiqueta}</span>
+              <b id={`val-${c.id}`}>{c.prefijo || ''}{c.valor.toLocaleString('es-MX')}{c.sufijo || ''}</b>
+            </label>
+            <input
+              type="range"
+              id={`calc-${c.id}`}
+              class="calc-rango"
+              min={c.min}
+              max={c.max}
+              step={c.paso}
+              value={c.valor}
+              data-id={c.id}
+              data-prefijo={c.prefijo || ''}
+              data-sufijo={c.sufijo || ''}
+            />
+            <div class="calc-limites"><span>{c.prefijo || ''}{c.min.toLocaleString('es-MX')}</span><span>{c.prefijo || ''}{c.max.toLocaleString('es-MX')}</span></div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Resultado -->
+      <div class="calc-marcador">
+        <p class="calc-rotulo">{resultadoRotulo}</p>
+        <p class="calc-cifra" id="calcCifra" aria-live="polite">$0</p>
+
+        <p class="calc-merma">
+          <span>{mermaRotulo}</span>
+          <b id="calcMerma" aria-live="polite">$0</b>
+        </p>
+        <p class="calc-supuesto">{supuesto}</p>
+
+        <a class="calc-cta" href="/contacto">{cta}</a>
+        <p class="calc-nota">{nota}</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .calc { background: #0C0C11; padding: 100px 24px 110px; }
+  .calc-inner { max-width: 1200px; margin: 0 auto; }
+
+  .calc-head { max-width: 700px; margin-bottom: 48px; }
+  .calc-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #E8A838; margin: 0 0 16px;
+  }
+  .calc-head h2 {
+    font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
+    line-height: 1.06; color: #fff; margin: 0 0 16px;
+  }
+  .calc-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A1A1AA; }
+
+  .calc-cuerpo { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+
+  /* ── Controles ── */
+  .calc-controles { display: grid; gap: 34px; padding-top: 8px; }
+  .calc-control label {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    margin-bottom: 14px;
+  }
+  .calc-control label span { font-size: 15px; color: #A1A1AA; }
+  .calc-control label b {
+    font-size: 20px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums;
+    letter-spacing: -.5px;
+  }
+
+  .calc-rango {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px;
+    background: #26262E; outline: none; cursor: pointer;
+  }
+  .calc-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; border: 5px solid #E8A838; cursor: grab;
+    box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  }
+  .calc-rango::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid #E8A838;
+    cursor: grab; box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  }
+  .calc-rango:focus-visible { outline: 2px solid #E8A838; outline-offset: 6px; }
+  .calc-limites {
+    display: flex; justify-content: space-between; margin-top: 9px;
+    font-size: 11.5px; color: #5F5F6B; font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Marcador ── */
+  .calc-marcador {
+    border: 1px solid #2A2018; border-radius: 20px; padding: 34px 34px 30px;
+    background: linear-gradient(165deg, rgba(232,168,56,.09), #101015 62%);
+  }
+  .calc-rotulo {
+    margin: 0 0 12px; font-size: 12.5px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #C08F3E;
+  }
+  .calc-cifra {
+    margin: 0 0 22px; font-size: clamp(44px, 6.4vw, 76px); font-weight: 800; color: #fff;
+    letter-spacing: -3px; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  /* El segundo renglón es el que hace honesta la cifra grande: el valor de
+     venta atrapado no es lo que pierdes, es lo que dejas de ganar al rematarlo. */
+  .calc-merma {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+    margin: 0 0 22px; padding: 14px 0 0; border-top: 1px solid #2A2018;
+  }
+  .calc-merma span { font-size: 13.5px; color: #9C9CA8; }
+  .calc-merma b {
+    font-size: 21px; font-weight: 800; color: #E8A838; font-variant-numeric: tabular-nums;
+  }
+  .calc-supuesto {
+    margin: 0 0 28px; font-size: 14px; line-height: 1.6; color: #9C9CA8;
+    padding-left: 13px; border-left: 2px solid #3A2E1C;
+  }
+
+  .calc-cta {
+    display: inline-flex; align-items: center; justify-content: center; width: 100%;
+    height: 54px; padding: 0 26px; border-radius: 12px; text-align: center;
+    background: #4B7BE5; color: #fff; font-size: 15.5px; font-weight: 700; text-decoration: none;
+    transition: background .16s ease, transform .16s ease;
+  }
+  .calc-cta:hover { background: #3C68CE; transform: translateY(-1px); text-decoration: none; }
+  .calc-nota { margin: 14px 0 0; font-size: 12.5px; color: #6A6A76; text-align: center; }
+
+  @media (max-width: 900px) {
+    .calc { padding: 70px 18px 78px; }
+    .calc-cuerpo { grid-template-columns: 1fr; gap: 40px; }
+    .calc-marcador { padding: 26px 22px 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .calc-cta { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const seccion = document.querySelector<HTMLElement>('.calc');
+    const cifraEl = document.getElementById('calcCifra');
+    const mermaEl = document.getElementById('calcMerma');
+    const ctaEl = seccion?.querySelector<HTMLAnchorElement>('.calc-cta');
+
+    if (seccion && cifraEl && mermaEl) {
+      const rangos = Array.from(seccion.querySelectorAll<HTMLInputElement>('.calc-rango'));
+      const MERMA = Number(seccion.dataset.merma || '0.35');
+
+      const dinero = (n: number) =>
+        '$' + Math.round(n).toLocaleString('es-MX');
+
+      /* El cálculo es el producto de los controles por el porcentaje que se
+         declara en el último. Se hace genérico a propósito: cada giro define
+         qué multiplica sin tocar este archivo. */
+      const calcular = () => {
+        let total = 1;
+        rangos.forEach((r) => {
+          const v = Number(r.value);
+          const esPct = (r.dataset.sufijo || '').includes('%');
+          total *= esPct ? v / 100 : v;
+
+          const salida = document.getElementById('val-' + r.dataset.id);
+          if (salida) {
+            salida.textContent =
+              (r.dataset.prefijo || '') + v.toLocaleString('es-MX') + (r.dataset.sufijo || '');
+          }
+        });
+
+        cifraEl.textContent = dinero(total);
+        mermaEl.textContent = dinero(total * MERMA);
+
+        /* La cifra viaja al formulario: es el único momento de la página en que
+           el visitante ya puso su propio número, y llegar a la demo con él vale
+           más que cualquier campo prellenado. */
+        if (ctaEl) {
+          const u = new URL(ctaEl.href, location.origin);
+          u.searchParams.set('estimado', String(Math.round(total)));
+          ctaEl.href = u.pathname + u.search;
+        }
+      };
+
+      rangos.forEach((r) => {
+        r.addEventListener('input', calcular);
+        r.addEventListener('change', calcular);
+      });
+      calcular();
+    }
+  }
+</script>
