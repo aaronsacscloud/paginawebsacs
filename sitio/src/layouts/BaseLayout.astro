@@ -708,6 +708,15 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
       // atribuir nada nunca, sin error y sin auto-repararse.
       var a = leer();
       if (!a || typeof a !== 'object' || Array.isArray(a)) a = { v: 1 };
+      // El guard de arriba valida el nivel de arriba; el contenido también puede
+      // venir corrupto y con las mismas consecuencias. `{"p":"x","n":"abc"}` pasa
+      // como objeto, pero `a.p` queda como texto (el servidor lo descarta, así
+      // que ese navegador se queda SIN primer toque para siempre) y `a.n` empieza
+      // a concatenar: "abc1", "abc11"… la cookie crece un byte por página vista.
+      if (a.p && typeof a.p !== 'object') delete a.p;
+      if (a.u && typeof a.u !== 'object') delete a.u;
+      if (typeof a.n !== 'number' || !isFinite(a.n)) a.n = 0;
+      if (a.vid && typeof a.vid !== 'string') delete a.vid;
       if (!a.vid) a.vid = Math.random().toString(36).slice(2) + Date.now().toString(36);
       // Las páginas vistas NO se cuentan dentro de un iframe: el agendador de
       // /contacto usa este mismo layout, así que el script corre en el padre y

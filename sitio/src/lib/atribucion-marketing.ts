@@ -124,9 +124,23 @@ export function resolverAtribucion(
   } catch { return null; }
 }
 
+/**
+ * Un click id IDENTIFICA la plataforma por sí solo. Es el caso normal cuando la
+ * campaña no etiqueta UTMs: el anuncio manda `?ttclid=…` y nada más.
+ */
+const CANAL_POR_CLICK_ID: Record<string, string> = {
+  gclid: 'google', fbclid: 'facebook', ttclid: 'tiktok', msclkid: 'bing',
+};
+
+/** El canal que declara un toque: su utm_source, o el que delata su click id. */
+export const canalDeToque = (t?: Toque): string | null => {
+  if (t?.s) return t.s;
+  for (const k of Object.keys(t?.cl || {})) if (CANAL_POR_CLICK_ID[k]) return CANAL_POR_CLICK_ID[k];
+  return null;
+};
+
 /** ¿Este toque trae CANAL declarado (utm_source o un click id de anuncio)? */
-const conCanal = (t?: Toque): boolean =>
-  !!(t && (t.s || (t.cl && Object.keys(t.cl).length > 0)));
+const conCanal = (t?: Toque): boolean => !!canalDeToque(t);
 
 /** ¿Este toque dice algo de dónde venía, o fue una visita a secas? */
 const identificable = (t?: Toque): boolean => conCanal(t) || !!(t && t.rf);
@@ -166,7 +180,10 @@ export const toqueDeOrigen = (a?: Atribucion | null): Toque | undefined => {
 export function columnasUtm(a?: Atribucion | null) {
   const t = toqueDeOrigen(a);
   return {
-    utm_source: t?.s || null,
+    // `canalDeToque`, no `t.s` a secas: un anuncio que llega solo con `ttclid`
+    // (lo normal si la campaña no etiqueta UTMs) declara su canal igual de bien,
+    // y guardarlo como null tiraba justo la atribución de tráfico PAGADO.
+    utm_source: canalDeToque(t),
     utm_medium: t?.m || null,
     utm_campaign: t?.c || null,
   };
@@ -221,9 +238,15 @@ export function bloqueAtribucion(a: Atribucion | null, request?: Request) {
 export function resumenAtribucion(a?: Atribucion | null): string {
   const t = toqueDeOrigen(a);
   if (!t) return 'Tráfico directo';
-  const partes = [t.s, t.c].filter(Boolean) as string[];
-  if (!partes.length && t.rf) {
-    try { return `Referido de ${new URL(t.rf).hostname.replace(/^www\./, '')}`; } catch { return 'Referido'; }
+  const partes = [canalDeToque(t), t.c].filter(Boolean) as string[];
+  if (partes.length) return partes.join(' · ');
+
+  // El toque elegido no dice nada legible. Antes se respondía "Tráfico directo"
+  // aunque el OTRO toque tuviera referrer, y con eso se perdía lo poco que se
+  // sabía. Se busca referrer en el elegido y, si no, en el otro.
+  const refs = [t.rf, a?.p?.rf, a?.u?.rf].filter(Boolean) as string[];
+  for (const rf of refs) {
+    try { return `Referido de ${new URL(rf).hostname.replace(/^www\./, '')}`; } catch { /* sigue */ }
   }
-  return partes.join(' · ') || 'Tráfico directo';
+  return refs.length ? 'Referido' : 'Tráfico directo';
 }

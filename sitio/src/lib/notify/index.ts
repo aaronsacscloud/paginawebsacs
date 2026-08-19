@@ -19,6 +19,14 @@ export interface NotifyArgs {
 
 export type Template = (data: any) => { subject: string; html: string; text?: string };
 
+// Escapa para contexto HTML. Estas plantillas salen por correo HACIA AFUERA con
+// el membrete de SACS, y varios campos los escribe quien llena un formulario
+// público (nombre, empresa, mensaje). Sin esto, ese texto se renderiza como
+// marcado en la bandeja de quien recibe.
+const esc = (v: unknown): string =>
+  String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 const templates: Record<string, Template> = {
   quote_accepted_owner: (d) => ({
     subject: `✅ Cotización ${d.numero || ''} aceptada — ${d.empresa || ''}${d.partner ? ` (Partner: ${d.partner.nombre})` : ''}`,
@@ -590,7 +598,7 @@ const templates: Record<string, Template> = {
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
         <h2 style="font-size:1.25rem;margin:0 0 12px">Tu reunión se acerca</h2>
-        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + d.nombre : ''}, te recordamos tu <strong>${d.evento || 'reunión'}</strong> con SACS:</p>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + esc(d.nombre) : ''}, te recordamos tu <strong>${d.evento || 'reunión'}</strong> con SACS:</p>
         <div style="background:#fafafa;border:1px solid #e5e5e5;padding:16px;border-radius:8px;margin:16px 0;font-size:0.9rem;color:#333">
           <div>📅 <strong>${d.fecha || ''}</strong> a las <strong>${d.hora || ''}</strong> (hora CDMX)</div>
           ${d.duracion ? `<div>⏱ ${d.duracion} minutos</div>` : ''}
@@ -608,7 +616,7 @@ const templates: Record<string, Template> = {
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
         <h2 style="font-size:1.25rem;margin:0 0 12px">No pudimos verte hoy</h2>
-        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + d.nombre : ''}, teníamos agendada tu <strong>${d.evento || 'demo'}</strong> el ${d.fecha || ''} a las ${d.hora || ''} y no logramos coincidir. Sin problema — pasa hasta en las mejores agendas.</p>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + esc(d.nombre) : ''}, teníamos agendada tu <strong>${d.evento || 'demo'}</strong> el ${d.fecha || ''} a las ${d.hora || ''} y no logramos coincidir. Sin problema — pasa hasta en las mejores agendas.</p>
         ${d.reagendar_url ? `<a href="${d.reagendar_url}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Elegir nuevo horario</a>` : ''}
         <p style="color:#999;font-size:0.75rem;margin-top:24px">Elige el horario que mejor te acomode y listo, sin vueltas por WhatsApp.</p>
       </div>

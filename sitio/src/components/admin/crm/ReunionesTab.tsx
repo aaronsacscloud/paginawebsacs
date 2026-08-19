@@ -20,7 +20,9 @@ type Segmento = 'hoy' | 'semana' | 'proximas' | 'pasadas' | 'todas';
  */
 function origenDeReunion(b: any): { l: string; color: string; campana?: string } | null {
   if (b?.origen === 'crm') return null;
-  const referrer = b?.atribucion?.primer_toque?.referrer;
+  const primero = b?.atribucion?.primer_toque;
+  const ultimo = b?.atribucion?.ultimo_toque;
+  const referrer = primero?.referrer;
   // Sin canal identificable no se pinta nada. Poner "Página de agenda" en cada
   // fila sería repetir dónde llenó el formulario, que ya se sabe, y taparía
   // las pocas filas que sí traen la campaña que las pagó.
@@ -37,8 +39,18 @@ function origenDeReunion(b: any): { l: string; color: string; campana?: string }
     // bing, un partner) → el utm_source tal cual, que dice más que "Referido".
     // Solo referrer → "Referido".
     l: o.v ? o.l : (crudo ? crudo.charAt(0).toUpperCase() + crudo.slice(1) : 'Referido'),
-    color: o.color,
-    campana: b?.atribucion?.primer_toque?.campana || undefined,
+    // `origenDe('')` devuelve el gris casi blanco #e0dee6, que sobre fondo
+    // blanco deja el puntito invisible. Desde que se quita `fuente`, ese caso es
+    // frecuente (todo canal no catalogado y todo "Referido").
+    color: o.v ? o.color : '#8a8a92',
+    // La campaña tiene que salir del MISMO toque que la etiqueta. La etiqueta
+    // viene de `utm_source` (el toque con canal) y esto leía `primer_toque`
+    // crudo: con 1ª visita orgánica + anuncio después el chip decía "TikTok" y se
+    // comía `demo_agosto`; peor aún, podía mezclar el canal de un toque con la
+    // campaña del otro.
+    campana: (primero?.fuente && primero.fuente === b?.utm_source
+      ? primero?.campana
+      : (ultimo?.fuente === b?.utm_source ? ultimo?.campana : primero?.campana)) || undefined,
   };
 }
 

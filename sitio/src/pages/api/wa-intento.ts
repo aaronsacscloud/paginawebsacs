@@ -25,7 +25,9 @@ const ok = () => new Response(null, { status: 204 });
 // metía miles de filas en wa_intentos y otras tantas campanadas en el CRM (la
 // clave de dedupe solo colapsa claves IDÉNTICAS, y el `giro` lo manda el
 // cliente, así que basta variarlo). En memoria alcanza para frenar la ráfaga de
-// un origen; no pretende ser un WAF.
+// un origen; no pretende ser un WAF. Y en Vercel el mapa vive POR INSTANCIA,
+// así que el techo real es 30/min × instancias vivas: frena el `for` con curl
+// desde una máquina, no un ataque distribuido.
 const PORMINUTO_MAX = 30;
 const golpes = new Map<string, { minuto: number; n: number }>();
 function pasaTope(ip: string): boolean {
@@ -34,14 +36,27 @@ function pasaTope(ip: string): boolean {
   if (!b || b.minuto !== minuto) { golpes.set(ip, { minuto, n: 1 }); }
   else if (b.n >= PORMINUTO_MAX) { return false; }
   else { b.n++; }
-  if (golpes.size > 5000) for (const [k, v] of golpes) if (v.minuto !== minuto) golpes.delete(k);
+  // La purga tiene que ACOTAR de verdad. Borrar solo las entradas de minutos
+  // viejos no sirve si las 5000 son del minuto en curso: no libera nada y encima
+  // recorre el mapa entero en CADA petición. Se purga por minuto y, si aun así
+  // no baja, se vacía: perder el conteo de un minuto es mucho mejor que un mapa
+  // sin techo y un barrido O(n) por request.
+  if (golpes.size > 5000) {
+    for (const [k, v] of golpes) if (v.minuto !== minuto) golpes.delete(k);
+    if (golpes.size > 5000) golpes.clear();
+  }
   return true;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim()
-      || request.headers.get('x-real-ip') || 'sin-ip';
+    // `clientAddress` de Astro, no el header a mano: `x-forwarded-for` lo puede
+    // escribir el cliente, así que un abusador se saltaba el tope cambiándolo en
+    // cada petición. Es la fuente que ya usa el otro endpoint con tope del repo
+    // (api/partners/apply.ts).
+    const ip = clientAddress
+      || request.headers.get('x-forwarded-for')?.split(',')[0].trim()
+      || 'sin-ip';
     if (!pasaTope(ip)) return ok();   // 204 igual: es telemetría, no se le avisa al abusador
 
     const body = await request.json().catch(() => ({}));

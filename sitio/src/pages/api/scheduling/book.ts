@@ -73,13 +73,18 @@ async function appendBookingToSheet(data: {
 }
 
 function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  // TODOS escapados. Este correo va HACIA AFUERA, a la dirección que puso quien
+  // llenó el formulario, con el membrete y el dominio de envío de SACS: sin
+  // escapar, un `nombre` con HTML deja mandar un correo arbitrario con la
+  // apariencia de SACS a quien el atacante quiera. `reschedule.ts` y `cancel.ts`
+  // ya tenían esta misma función CON escapeHtml; aquí faltaba.
   return (text || '')
-    .replace(/\{\{nombre\}\}/g, data.nombre || '')
-    .replace(/\{\{empresa\}\}/g, data.empresa || '')
-    .replace(/\{\{fecha\}\}/g, data.fecha || '')
-    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{nombre\}\}/g, escapeHtml(data.nombre || ''))
+    .replace(/\{\{empresa\}\}/g, escapeHtml(data.empresa || ''))
+    .replace(/\{\{fecha\}\}/g, escapeHtml(data.fecha || ''))
+    .replace(/\{\{hora\}\}/g, escapeHtml(data.hora || ''))
     .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
-    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+    .replace(/\{\{meet_link\}\}/g, escapeHtml(data.meet_link || ''));
 }
 
 function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
@@ -170,7 +175,7 @@ export const POST: APIRoute = async ({ request }) => {
     fecha,
     hora_inicio,
     nombre,
-    email,
+    email: emailCrudo,
     whatsapp,
     empresa,
     giro,
@@ -184,6 +189,15 @@ export const POST: APIRoute = async ({ request }) => {
     recurrence,
     ref_partner_id,
   } = body;
+
+  // El correo se NORMALIZA una vez y todo lo de abajo hereda el normalizado.
+  // Antes se validaba con `.trim()` pero se guardaba y se buscaba CRUDO: " a@x.com "
+  // pasaba la validación, `.eq('email', email)` no encontraba al contacto
+  // existente y se creaba un duplicado, y Resend rechazaba el destinatario con
+  // espacios. Y como la búsqueda distinguía mayúsculas, "Juan@X.com" fallaba el
+  // lookup y luego violaría el índice `contacts_email_uniq on lower(email)` que
+  // este mismo flujo necesita.
+  const email = String(emailCrudo ?? '').trim().toLowerCase();
 
   // Resolve partner attribution: prefer body field, fallback a cookie/?ref
   const { getReferrerFromBody } = await import('../../../lib/attribution');
@@ -208,7 +222,8 @@ export const POST: APIRoute = async ({ request }) => {
   // email como "x" creaba contacto, Oportunidad y reunión sin forma de avisarle
   // a nadie. Sin tope de longitud, además, cabía un texto arbitrariamente largo
   // en el correo al vendedor y en la ficha del CRM.
-  if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+  // `email` ya es texto normalizado (línea de arriba), así que basta el formato.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return new Response(JSON.stringify({ error: 'El correo no tiene un formato válido.' }), { status: 400 });
   }
   if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 200) {
@@ -218,7 +233,10 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Las notas son demasiado largas.' }), { status: 400 });
   }
   if (answers != null && (!Array.isArray(answers) || answers.length > 50 ||
-      answers.some((a: any) => typeof a?.valor === 'string' && a.valor.length > 2000))) {
+      // OJO con la condición: comprobar `typeof valor === 'string' && length > N`
+      // deja pasar cualquier `valor` que NO sea texto (un objeto de 10 MB), o sea
+      // que el tope era opcional para quien quisiera saltárselo. Se exige texto.
+      answers.some((a: any) => typeof a?.valor !== 'string' || a.valor.length > 2000))) {
     return new Response(JSON.stringify({ error: 'Las respuestas del formulario no son válidas.' }), { status: 400 });
   }
 
@@ -497,21 +515,24 @@ export const POST: APIRoute = async ({ request }) => {
     .single();
 
   if (bookErr) {
-    // Handle duplicate booking (unique index violation)
+    // El borrado va PRIMERO, antes de cualquier `return`. La Oportunidad se crea
+    // en el paso 6 y la reserva en el 7, así que TODO fallo de la reserva la deja
+    // huérfana en etapa `demo_agendada` — incluido el 409 por horario duplicado,
+    // que además va a volverse el camino MÁS común en cuanto exista el índice
+    // único `bookings_slot_uniq` (hoy no existe: `bookings` solo tiene su llave
+    // primaria e índices no únicos, así que la rama del 23505 es letra muerta).
+    // Tenerlo después del `return` del 409 era arreglar el caso raro y dejar el
+    // frecuente.
+    if (deal_id) {
+      const { error: delErr } = await supabase.from('deals').delete().eq('id', deal_id);
+      if (delErr) console.error('[book] quedó una Oportunidad huérfana ' + deal_id + ':', delErr.message);
+    }
+
     if (bookErr.code === '23505') {
       return new Response(
         JSON.stringify({ error: 'Este horario ya fue reservado. Por favor selecciona otro.' }),
         { status: 409 },
       );
-    }
-    // La Oportunidad se creó ANTES que la reserva (paso 6 vs 7). Si la reserva
-    // falla y no se deshace, el CRM acumula Oportunidades en etapa
-    // `demo_agendada` sin ninguna reunión detrás: ensucian el embudo y el
-    // pronóstico de ventas. Se compensa aquí; si el borrado también falla, al
-    // menos queda el rastro en el log para limpiarlo a mano.
-    if (deal_id) {
-      const { error: delErr } = await supabase.from('deals').delete().eq('id', deal_id);
-      if (delErr) console.error('[book] quedó una Oportunidad huérfana ' + deal_id + ':', delErr.message);
     }
     console.error('[book] no se pudo crear la reserva:', bookErr.message);
     return new Response(
@@ -519,6 +540,7 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 500 },
     );
   }
+
 
   // OpenAI Conversions API: la demo quedó CONFIRMADA en base.
   // El id es el de la reserva —no un aleatorio— para que si el pixel del
