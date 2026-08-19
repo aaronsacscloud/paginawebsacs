@@ -79,7 +79,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Modelos con la corrida rota</p>
-      ${[['Botín dama café','faltan 23 a 24½','17 pares','$11,900'],['Mocasín caballero negro','faltan 27 a 28½','11 pares','$8,360'],['Sandalia dama tan','faltan 23 y 23½','9 pares','$4,680']]
+      ${[['Botín dama café','faltan 23 a 24½','17 pares','$10,200'],['Mocasín caballero negro','faltan 27 a 28½','11 pares','$7,040'],['Sandalia dama tan','faltan 23 y 23½','9 pares','$3,870']]
         .map(([n,f,p,m]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
@@ -90,7 +90,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
         </div>`).join('')}
       <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
         <span style="font-size:12px;font-weight:800;color:#0F172A;">Parado en modelos rotos, a costo</span>
-        <span style="font-size:15px;font-weight:800;color:#B91C1C;">$24,940</span>
+        <span style="font-size:15px;font-weight:800;color:#B91C1C;">$21,110</span>
       </div>
     </div>`,
   },
@@ -148,7 +148,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     tag: 'Temporada',
     titulo: 'Agosto se juega en dos quincenas',
     texto:
-      'El ciclo arranca la última semana de agosto, así que la venta se concentra del 15 al 25 — con dos crestas: la quincena del 15 y la del 30. Si te quedas sin 19 el 18 de agosto, ese cliente compró en otra parte y no vuelve hasta el año que entra.',
+      'El ciclo arranca la última semana de agosto, así que la venta se concentra del 15 al 30 — con dos crestas, la quincena del 15 y la del 30. Si te quedas sin 19 el 18 de agosto, ese cliente compró en otra parte. Y hay segunda vuelta en enero, cuando el zapato se rompe a medio ciclo escolar.',
     bullets: [
       'Reposición diaria por número mientras dura el pico',
       'El corte de qué sobró, para no repetir la compra el año siguiente',
@@ -160,7 +160,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
         ${[8,11,16,22,34,58,88,100,72,58,84,46].map((h,i)=>`<div style="flex:1;height:${h}%;border-radius:4px 4px 0 0;background:${h>70?'#2563EB':(h>35?'#7FA6F5':'#DBEAFE')};"></div>`).join('')}
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94A3B8;font-weight:700;margin-bottom:12px;">
-        <span>1 ago</span><span>pico: 15 al 25</span><span>31 ago</span>
+        <span>1 ago</span><span>pico: 15 al 30</span><span>31 ago</span>
       </div>
       <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:11px;padding:11px 13px;">
         <div style="font-size:11.5px;font-weight:800;color:#9A3412;">Repón el 18 y el 19 antes de la quincena</div>
@@ -178,6 +178,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
       'Buscas por teléfono del cliente y aparece el par que se llevó',
       'Cambio de 26 a 26½ del mismo modelo, con la diferencia si aplica',
       'Vale a favor por el importe, para cuando entre su número',
+      'El par que regresa despegado queda ligado a su marca y a su remesa, para el cargo al proveedor',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de número · sin ticket</p>
@@ -219,7 +220,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
           </div>
           <div style="margin-top:7px;font-size:10.5px;font-weight:800;color:${col};">${e}</div>
         </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">El vencido lo liberas de un clic · su 23 vuelve a estar en venta</p>
+      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">El vencido lo liberas de un clic · el par vuelve al piso y su abono queda en vale</p>
     </div>`,
   },
   {
@@ -280,12 +281,13 @@ export const seccionesZapateria: SuiteSeccion[] = [
     texto:
       'Es la primera pregunta del dueño y casi ningún sistema la contesta. Cada modelo carga su marca y su proveedor, así que la venta, el margen y el desplazamiento se leen por marca — y la junta de compra deja de ser de memoria.',
     bullets: [
-      'Venta, margen y desplazamiento por marca, por tienda y por temporada',
+      'Venta y margen por marca, por tienda y por temporada — y el desplazamiento de la temporada (en Automatiza)',
       'Qué marca te deja el margen y cuál solo te deja inventario',
       'Cuánto le compras a cada proveedor al año, para negociar con el dato en la mano',
+      'Y cuántos pares te regresa cada marca por defecto: la que te deja 47% y te devuelve tres de cada cien no te deja 47%',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Cómo va cada marca · agosto</p>
+      <p style="${est.h}">Tus marcas principales · agosto</p>
       <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
         <tr style="color:#94A3B8;font-weight:700;text-align:left;">
           <th style="padding:0 0 7px;font-weight:700;">Marca</th>
@@ -293,7 +295,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Margen</th>
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Desplazamiento</th>
         </tr>
-        ${[['Flexi','$214,800','47%',82,'#047857'],['Andrea','$168,300','44%',71,'#047857'],['Quirelli','$96,400','41%',48,'#B45309'],['Marca propia','$52,100','58%',31,'#B91C1C']]
+        ${[['Flexi','$214,800','47%',82,'#047857'],['Pakar','$168,300','44%',71,'#047857'],['Quirelli','$96,400','41%',48,'#B45309'],['Marca propia','$52,100','58%',31,'#B91C1C'],['Otras marcas','$702,000','43%',64,'#047857']]
           .map(([m,v,g,d,c]:any)=>`<tr style="border-top:1px solid #EEF1F5;">
             <td style="padding:9px 0;font-weight:700;color:#0F172A;">${m}</td>
             <td style="padding:9px 0;text-align:right;color:#334155;font-variant-numeric:tabular-nums;">${v}</td>
@@ -308,7 +310,16 @@ export const seccionesZapateria: SuiteSeccion[] = [
             </td>
           </tr>`).join('')}
       </table>
-      <p style="margin:11px 0 0;font-size:10.5px;color:#94A3B8;font-weight:600;">Desplazamiento = pares vendidos sobre pares comprados de la temporada.</p>
+      <div style="border-top:1px dashed #E5E7EB;margin-top:12px;padding-top:11px;">
+        <p style="${est.h}">Y por proveedor</p>
+        ${[['León · Calzado Mtz','3 marcas','$1.4M al año'],['Guanajuato · Distribuidora RG','2 marcas','$610K al año']]
+          .map(([n,m,v]:any)=>`<div style="display:flex;align-items:center;gap:10px;font-size:11.5px;margin-bottom:6px;">
+            <span style="flex:1;font-weight:700;color:#0F172A;">${n}</span>
+            <span style="color:#94A3B8;font-weight:600;">${m}</span>
+            <b style="color:#334155;font-variant-numeric:tabular-nums;">${v}</b>
+          </div>`).join('')}
+      </div>
+      <p style="margin:11px 0 0;font-size:10.5px;color:#94A3B8;font-weight:600;">Desplazamiento (sell-through): de cada 100 pares que compré de la temporada, cuántos ya vendí.</p>
     </div>`,
   },
   {
@@ -321,6 +332,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
       'Ves qué números le faltan a cada tienda y quién los tiene de sobra',
       'Nivelación entre tiendas para completar corridas en vez de saldar (en Automatiza)',
       'Cada sucursal con su existencia real, descontando lo apartado',
+      'Y quién vendió cada par: metas y comisión por vendedor y por sucursal',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Traspaso sugerido · esta semana</p>
@@ -343,22 +355,22 @@ export const seccionesZapateria: SuiteSeccion[] = [
       'El calzado se compra mirando y se confirma preguntando. Tu tienda en línea, tu WhatsApp y tu mostrador tienen que ver el mismo par disponible, o vendes dos veces el último 25.',
     bullets: [
       'Se va el último 25 en el mostrador y sale del ecommerce en el momento',
-      'Compra en línea y recoge en tienda, o se lo mandas desde la sucursal que lo tiene',
+      'Se lo mandas desde la sucursal que sí tiene su número, sin que él sepa de cuál salió',
       'TikTok Shop, Facebook, Instagram y tu tienda, con el mismo catálogo por número',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín piel café · número 25 · hoy</p>
-      ${[['Piso de venta','Sucursal Centro',6,'#2563EB'],['Tienda en línea','Tu ecommerce',3,'#7C3AED'],['Redes','TikTok Shop · Instagram',2,'#EA580C'],['WhatsApp','Catálogo y chat',1,'#059669']]
+      ${[['Piso de venta','Sucursal Centro',12,'#2563EB'],['Tienda en línea','Tu ecommerce',12,'#7C3AED'],['Redes','TikTok Shop · Instagram',12,'#EA580C'],['WhatsApp','Catálogo y chat',12,'#059669']]
         .map(([n,s,q,c]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
             <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div>
           </div>
-          <span style="font-size:13px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">${q} pares</span>
+          <span style="font-size:13px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">ve ${q} pares</span>
         </div>`).join('')}
       <div style="border:1.5px solid #3B82F6;background:#F7FBFF;border-radius:11px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span style="font-size:11.5px;font-weight:800;color:#1D4ED8;">Existencia única · los 4 canales</span>
+        <span style="font-size:11.5px;font-weight:800;color:#1D4ED8;">El mismo 12 · no cuatro inventarios</span>
         <span style="font-size:15px;font-weight:800;color:#0F172A;">12</span>
       </div>
     </div>`,
@@ -399,7 +411,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     bullets: [
       'La instrucción se escribe en español; no hay que programar nada (en Automatiza)',
       'Trabajan sobre tus datos: tus corridas, tu venta por número, tus clientes',
-      'Tú decides si el agente solo te avisa o si ya ejecuta',
+      'Tú decides si el agente te avisa, si responde o si solo te propone',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Tus agentes · activos</p>
@@ -414,7 +426,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
             <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
             <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${c}</div>
           </div>
-          <span style="background:${m==='Ejecuta'?'#ECFDF5':'#EFF6FF'};color:${m==='Ejecuta'?'#047857':'#2563EB'};border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
+          <span style="background:#EFF6FF;color:#2563EB;border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
         </div>
         <div style="font-size:11px;color:#475569;font-weight:600;line-height:1.45;">${r}</div>
       </div>`).join('')}
@@ -456,7 +468,7 @@ export const sucursalesZapateria = [
 export const reglasZapateria = [
   { si: 'El descuento pasa de 15%', entonces: 'pide tu autorización', detalle: 'En calzado el remate es la salida fácil: si cualquiera puede darlo, el margen se va sin que nadie lo decida.' },
   { si: 'Se cancela una venta ya cobrada', entonces: 'queda firmada', detalle: 'Quién, cuándo y por qué. Con apartados y anticipos de por medio, es donde más se pierde el rastro.' },
-  { si: 'Sale un par sin su pareja', entonces: 'no se cierra el corte', detalle: 'El par de muestra del aparador y el que quedó en el probador son las dos fuentes de descuadre en calzado. Quedan a nombre de quien cerró, el mismo día — no a fin de mes.' },
+  { si: 'Un par queda descabalado', entonces: 'no se cierra el corte', detalle: 'El pie que se queda en el aparador y el que se quedó en el probador son las dos fuentes de descuadre en calzado. Quedan a nombre de quien cerró, el mismo día — no a fin de mes.' },
 ];
 
 export const diasZapateria = [
@@ -561,11 +573,11 @@ export const casosZapateria = [
   },
   {
     id: 'escolar',
-    titulo: 'Del 20 de agosto al 5 de septiembre se juega el año',
+    titulo: 'Del 15 al 30 de agosto se juega el año',
     texto:
       'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco de deportes, y al niño se le mide el pie antes de traer caja. El número se agota en horas y la reposición diaria por número te dice qué pedir hoy.',
     remate: 'Si el cliente no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
     img: '/images/caso-zap-escolar.webp',
-    alt: 'Vendedora midiendo y calzando a un niño con zapato escolar negro, con el escalímetro en el piso',
+    alt: 'Vendedora midiendo y calzando a un niño con zapato escolar negro, con el medidor de pie en el piso',
   },
 ];
