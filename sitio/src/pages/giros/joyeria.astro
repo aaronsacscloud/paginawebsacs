@@ -21,6 +21,7 @@ import JoyGramo from '../../components/giros/JoyGramo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import JoyColchon from '../../components/giros/JoyColchon.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
@@ -154,6 +155,9 @@ detrás de"
     filas={documentosJoyeria.filas}
   />
 
+  <!-- Salida: aquí muere la objeción de los dos caminos que ya probó -->
+  <SuiteSalida frase="Si tu sistema no sabe qué es un factor por quilataje, no es cosa de configurarlo: no está hecho para joyería." />
+
   <!-- ── Respiro fotográfico: la escala ── -->
   <SuiteCifras
     foto="/images/suite-joy-tienda.webp"
@@ -170,10 +174,13 @@ detrás de"
   <!-- ── Momentos reales, con su escena ── -->
   <SuiteCasos
     eyebrow="Un día en tu joyería"
-    titulo="Dónde te sirve, en horas concretas"
+    titulo="Dónde te sirve, en momentos concretos"
     sub="No son funciones: son los cuatro momentos en los que una joyería gana o pierde dinero. Toca cada uno."
     casos={casosJoyeria}
   />
+
+  <!-- Salida: el visitante acaba de reconocer su propio mostrador -->
+  <SuiteSalida frase="Te lo mostramos con tu colchón, tus quilatajes y tus piezas — no con los de la demo." cta="Ver una demo con mi catálogo" />
 
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll

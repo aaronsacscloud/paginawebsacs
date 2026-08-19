@@ -1,7 +1,7 @@
 # Páginas de giro — qué lleva cada una y qué se acumula
 
-Cada giro lleva **los doce bloques base** y **uno propio que no se comparte con
-nadie**: algo que fuera de ese oficio no significaría nada. Un bloque que
+Cada giro lleva **los bloques base** y **dos cosas propias que no se comparten
+con nadie**: un bloque de argumento y su propia animación: algo que fuera de ese oficio no significaría nada. Un bloque que
 funciona igual en zapatería y en florería no cumple — eso es un bloque base
 disfrazado.
 
@@ -18,7 +18,8 @@ etiquetas sirve para otro negocio, está mal pensado.
 | `SuiteCortina` | Antes / después arrastrable, con las dos caras del mismo empleado |
 | `SuiteProblemas` | El expediente: sistema genérico vs. desarrollo a la medida, con sellos, y el cuadro de los tres caminos |
 | `SuiteCifras` | Franja fotográfica a sangre con cifras que se cuentan solas |
-| `SuiteRack` | La aritmética del giro: un modelo son N piezas |
+| `SuiteRack` | La aritmética del giro: un modelo son N piezas. **Opcional**: solo donde el producto suelto ES el argumento. Zapatería y joyería lo quitaron |
+| `SuiteSalida` | Franja delgada de salida. Va después del expediente y después de los casos: sin ella hay siete bloques sin dónde hacer clic |
 | `SuiteScroll` | El recorrido de funcionalidades con panel pegajoso |
 | `SuiteDireccion` | Para quien firma: comparativo de sucursales y las reglas contra la fuga |
 | `SuiteMigracion` | Cómo se cambia sin cerrar, y la caja sin conexión |
@@ -36,6 +37,19 @@ Viven en `src/components/giros/` y llevan el prefijo del giro, no `Suite*`.
 | Zapaterías | `ZapCorridaCerrada` — la docena 1-2-3-3-2-1 del fabricante contra la venta real por número | La corrida cerrada solo existe en calzado |
 | Joyerías | `JoyColchon` — tu precio del gramo de fino contra el spot, con lo que hay que reetiquetar y lo que NO se mueve | Solo aquí el costo es una materia prima con precio público que cambia a diario |
 
+### La animación también es del giro
+
+`SuiteCubo` (talla × color × sucursal) sirve donde la unidad es una casilla de
+una retícula. Donde no, se hace otra:
+
+| Giro | Animación | Qué cuenta |
+|---|---|---|
+| Marcas de ropa · Zapaterías | `SuiteCubo` | La retícula de existencias, con sus ejes |
+| Joyerías | `JoyGramo` | Un lingote se deshace en gramos y los gramos se reparten en 10K, 14K y 18K: se ve cuánto de cada pieza es oro fino y cuánto es liga |
+
+Dura **dos pantallas de scroll**, no tres, y termina de frente: si acaba de
+canto, lo que se armó no se lee.
+
 Todos mandan su resultado a `/contacto?estimado=`, que la página de agenda lee y
 muestra: es lo único que ya sabemos del visitante antes de la llamada.
 
@@ -47,7 +61,10 @@ muestra: es lo único que ya sabemos del visitante antes de la llamada.
 4. Componer la página con los bloques base + todos los complementos acumulados.
 5. Añadir el complemento propio del giro — uno que no sirva para ningún otro.
 6. QA propio: escritorio y móvil, consola limpia, sin desbordes.
-7. **Los tres referees**, todos con veto y **mínimo 9 de 10 cada uno**:
+7. **Los tres referees**, todos con veto y **mínimo 9 de 10 cada uno**. Se
+   lanzan en paralelo, con capturas frescas de escritorio, de móvil y de cada
+   bloque nuevo por separado — un referee que no ve el bloque lo califica por
+   código y lo dice:
    - **Oficio** — ¿alguien del gremio encontraría algo que delate desconocimiento?
    - **Calidad** — especificidad, verdad del producto, diseño no genérico, conversión, ejecución.
    - **Diseño y fotografía** — ¿las imágenes se ven reales y de buena calidad? ¿La escena
@@ -66,3 +83,23 @@ muestra: es lo único que ya sabemos del visitante antes de la llamada.
 - **No todas las suites vienen en el plan.** La de joyería es plugin y se cotiza aparte: `SuitePlanes` recibe `comoSeVende="complemento"`. Decirlo mal manda al prospecto a la demo esperando otra cosa.
 - **Si un módulo existe pero no está en `plans.ts`, no se publica.** Pasó con Reparaciones en joyería: sección escrita y borrada.
 - **Al clonar una página, los textos que viven en el .astro también son del giro.** Cambiar solo los imports de datos deja el hero, el manifiesto y el rack hablando del giro anterior.
+- **Las fotos se revisan al 300%, no en miniatura.** A tamaño de tarjeta todas
+  pasan. Al zoom aparecen las manos de tres dedos, las cajas imposibles y —el
+  caso peor— una caja de zapatos que por dentro tiene carpetas. Dos frases fijas
+  en cada prompt: *"all hands fully visible with exactly five clearly separated
+  fingers"* y el objeto del oficio descrito con todas sus letras.
+- **La foto tiene que cumplir lo que promete el título.** Si el titular dice que
+  hay tres personas esperando, la escena no puede ser una tienda vacía.
+- **Nada de tipografías de sistema.** `cursive`, `"Bradley Hand"`, `"Segoe
+  Script"` caen en Comic Sans en Windows y en una serif en Linux. Si se quiere
+  manuscrita, se aloja el woff2 (hay Caveat en `/fonts`).
+- **Un dato en una animación necesita su rótulo.** Tres anillos girando sin
+  decir cuál es 10K y cuál 18K son tres anillos bonitos y ningún argumento.
+- **Las escalas de una gráfica salen del dato, no de un tope inventado.** Con un
+  tope fijo de 6 y valores de 0 a 4, las barras se aplastan contra el piso y la
+  comparación deja de verse.
+- **Lo que se apila se apila.** Una franja de sobrante dibujada desde el piso
+  tapa la barra que debía complementar, y el bloque termina diciendo lo
+  contrario de lo que quiere decir.
+- **El dinero se cuenta a costo.** A precio de lista toda cifra de inventario
+  parado se infla al doble y el dueño la cuestiona en el acto.
