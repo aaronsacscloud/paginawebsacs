@@ -217,7 +217,16 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
       new IntersectionObserver((es, obs) => {
         if (!es[0].isIntersecting) return;
         obs.disconnect();
-        cargarThree().then(arrancar).catch(soloCta);
+        cargarThree().then(
+          (T) => {
+            // El arranque va en su propio try: si falla ARMAR la escena, el
+            // catch de la promesa lo confundia con "no se pudo cargar three" y
+            // apagaba el bloque sin dejar rastro de la causa real.
+            try { arrancar(T); }
+            catch (e) { console.error('[ensamble] no se pudo armar la escena', e); soloCta(); }
+          },
+          (e) => { console.error('[ensamble] no se pudo cargar three', e); soloCta(); },
+        );
       }, { rootMargin: '900px 0px' }).observe(bloque);
     }
 
@@ -276,6 +285,10 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
       base.position.y = -1.1;
       esc.add(base);
 
+      // Se declara ANTES de medir(), que es quien la escribe en el primer
+      // arranque. Declararla despues la dejaba en zona muerta temporal.
+      let disperso = 1;
+
       const medir = () => {
         const a = lienzo!.clientWidth || window.innerWidth;
         const b = lienzo!.clientHeight || window.innerHeight;
@@ -292,7 +305,6 @@ const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MEN
       medir();
       window.addEventListener('resize', medir);
 
-      let disperso = 1;
       const suave = (t: number) => t * t * (3 - 2 * t);
       const franja = (p: number, a: number, b: number) => Math.min(1, Math.max(0, (p - a) / (b - a)));
 
