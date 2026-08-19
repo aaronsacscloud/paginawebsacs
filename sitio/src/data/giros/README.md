@@ -33,6 +33,7 @@ Viven en `src/components/giros/` y llevan el prefijo del giro, no `Suite*`.
 |---|---|---|
 | Marcas de ropa | *(pendiente: le toca el suyo)* | |
 | Zapaterías | `ZapCorridaCerrada` — la docena 1-2-3-3-2-1 del fabricante contra la venta real por número | La corrida cerrada solo existe en calzado |
+| Joyerías | `JoyColchon` — tu precio del gramo de fino contra el spot, con lo que hay que reetiquetar y lo que NO se mueve | Solo aquí el costo es una materia prima con precio público que cambia a diario |
 
 Todos mandan su resultado a `/contacto?estimado=`, que la página de agenda lee y
 muestra: es lo único que ya sabemos del visitante antes de la llamada.
@@ -52,4 +53,7 @@ muestra: es lo único que ya sabemos del visitante antes de la llamada.
 - **Nada sin respaldo en `plans.ts`.** Si una función es de Automatiza, se dice "(en Automatiza)" ahí donde se vende. La suite viene desde Fideliza; lo que corre con IA, no.
 - **Cero estadísticas inventadas.** "Uno de cada cuatro tickets" sin fuente es una mentira con formato de dato.
 - **Los números tienen que cuadrar entre bloques.** Si una fila suma 17, el texto no puede decir 18, y el mismo producto no puede tener tres precios distintos en la misma página.
-- **El vocabulario es del piso, no del blog.** Número y no talla en calzado; corrida rota y no "par descabalado".
+- **El vocabulario es del piso, no del blog.** Número y no talla en calzado; corrida rota y no "par descabalado"; colchón y no "precio automático" en joyería.
+- **No todas las suites vienen en el plan.** La de joyería es plugin y se cotiza aparte: `SuitePlanes` recibe `comoSeVende="complemento"`. Decirlo mal manda al prospecto a la demo esperando otra cosa.
+- **Si un módulo existe pero no está en `plans.ts`, no se publica.** Pasó con Reparaciones en joyería: sección escrita y borrada.
+- **Al clonar una página, los textos que viven en el .astro también son del giro.** Cambiar solo los imports de datos deja el hero, el manifiesto y el rack hablando del giro anterior.
