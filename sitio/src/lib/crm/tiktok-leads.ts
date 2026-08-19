@@ -176,6 +176,16 @@ export function mapearLead(fila: Record<string, string>): LeadTikTok {
     else out.respuestas[encabezado.trim()] = v;
   }
 
+  // El lead_id es la LLAVE ANTI-DUPLICADO, así que se valida antes de creerle:
+  // los de TikTok son numéricos y largos (~19 dígitos). Una hoja con una
+  // columna "ID" que en realidad es el número de fila tomaría ese lugar, y al
+  // recrear la hoja los contadores volverían a 1 y el lead nuevo se vería como
+  // "ya importado". Lo que no pasa el filtro se conserva como respuesta.
+  if (out.lead_id && !/^\d{12,}$/.test(String(out.lead_id).trim())) {
+    out.respuestas['ID (no es un lead_id de TikTok)'] = String(out.lead_id);
+    out.lead_id = '';
+  }
+
   const partido = partirNombre(nombreCrudo);
   out.nombre = apellidoCrudo ? (nombreCrudo || partido.nombre) : partido.nombre;
   out.apellido = apellidoCrudo || partido.apellido;

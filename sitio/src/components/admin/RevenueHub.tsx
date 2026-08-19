@@ -277,6 +277,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   // ─── Quotes ───
   const QuotesView = () => {
     const [quotes, setQuotes] = useState<any[]>([]);
+    // Mientras no llega la PRIMERA respuesta, la tabla no está vacía: está
+    // cargando. Sin esta bandera la pantalla decía "Sin resultados" con las
+    // pestañas en cero, que se lee como "no hay nada" y no como "ya viene".
+    const [quotesCargando, setQuotesCargando] = useState(true);
     const [showDrawer, setShowDrawer] = useState(false);
     const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida en planes de pago. Soporte por chat SACS y WhatsApp incluido. Sin contratos de permanencia.' });
     const [qSearch, setQSearch] = useState('');
@@ -362,7 +366,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [extending, setExtending] = useState(false);
 
     useEffect(() => {
-      fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
+      fetch('/api/revenue/quotes').then(r => r.json())
+        .then(d => setQuotes(Array.isArray(d) ? d : []))
+        .catch(() => {})
+        .finally(() => setQuotesCargando(false));
     }, []);
 
     // Close row menu / popovers on outside click
@@ -1275,7 +1282,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   background: active ? '#fff' : '#f3f3f6',
                   color: active ? M.violetaTinta : n === 0 ? '#c4c4cc' : '#8a8a92',
                   borderRadius: 20, padding: '2px 8px',
-                }}>{n}</span>
+                }}>{quotesCargando ? '·' : n}</span>
               </button>
             );
           })}
@@ -1373,10 +1380,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </thead>
               <tbody>
                 {paginated.length === 0 && (
-                  <tr><td colSpan={Array.from(qVisibleCols).length + 1} style={{ ...S.td, textAlign: 'center' as const, color: '#aaa', padding: 48 }}>
-                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>∅</div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#666' }}>Sin resultados</div>
-                    <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: 4 }}>Prueba limpiar los filtros o ajustar la búsqueda.</div>
+                  <tr><td colSpan={Array.from(qVisibleCols).length + 1} style={{ ...S.td, textAlign: 'center' as const, color: '#aaa', padding: quotesCargando ? 12 : 48 }}>
+                    {quotesCargando ? <Cargando texto="Cargando cotizaciones…" alto={200} /> : (<>
+                      <div style={{ fontSize: '2rem', marginBottom: 8 }}>∅</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#666' }}>Sin resultados</div>
+                      <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: 4 }}>Prueba limpiar los filtros o ajustar la búsqueda.</div>
+                    </>)}
                   </td></tr>
                 )}
                 {paginated.map((q: any) => {

@@ -5,7 +5,7 @@
 // preguntas del formulario sin avisar; ver el cruce antes de escribir es la
 // diferencia entre detectar un mapeo raro y descubrirlo tres semanas después
 // con cuarenta leads mal capturados.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const S = {
   fondo: { position: 'fixed' as const, inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 963, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
@@ -35,6 +35,9 @@ export default function ImportarTikTok({ onCerrar, onListo }: { onCerrar: () => 
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
   const [hecho, setHecho] = useState<any>(null);
+  const [cfg, setCfg] = useState<any>(null);
+
+  useEffect(() => { fetch('/api/crm/leads/tiktok-config').then(r => r.json()).then(setCfg).catch(() => {}); }, []);
 
   async function llamar(dry_run: boolean) {
     setOcupado(true); setError('');
@@ -63,7 +66,7 @@ export default function ImportarTikTok({ onCerrar, onListo }: { onCerrar: () => 
         <div style={S.cab}>
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Importar leads de TikTok Ads</h3>
-            <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 2 }}>Formulario instantáneo · entra con su campaña y su anuncio</div>
+            <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 2 }}>Carga manual · lo automático corre cada 15 min desde la hoja</div>
           </div>
           <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
         </div>
@@ -71,10 +74,29 @@ export default function ImportarTikTok({ onCerrar, onListo }: { onCerrar: () => 
         <div style={S.cuerpo}>
           {!hecho && (
             <>
+              {cfg && (
+                <div style={{ ...S.nota, background: cfg.hoja_configurada ? '#EAF8F2' : '#FFF8EC', border: '1px solid ' + (cfg.hoja_configurada ? '#c5e8d8' : '#f5e3bf'), borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
+                  {cfg.hoja_configurada ? (
+                    <>
+                      <b>Entrada automática conectada.</b> {cfg.total_leads_tiktok} lead(s) de TikTok en el CRM
+                      {cfg.ultimo && <> · el último, {new Date(cfg.ultimo.cuando).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}
+                        {cfg.ultimo.campana ? ` (${cfg.ultimo.campana})` : ''}</>}.
+                    </>
+                  ) : (
+                    <>
+                      <b>Falta conectar la hoja.</b> Comparte tu hoja de Google —como <b>editor</b>— con{' '}
+                      <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4, fontSize: '0.7rem' }}>{cfg.correo_servicio || 'la cuenta de servicio (sin configurar)'}</code>{' '}
+                      y guarda su id en la variable <code style={{ background: '#fff', padding: '1px 5px', borderRadius: 4, fontSize: '0.7rem' }}>TIKTOK_LEADS_SHEET_ID</code>. Mientras tanto, puedes cargar los leads aquí a mano.
+                    </>
+                  )}
+                </div>
+              )}
               <div style={{ ...S.nota, background: '#faf8ff', border: '1px solid #eee6fd', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-                En TikTok Ads Manager: <b>Herramientas → Formularios instantáneos → Descargar clientes potenciales</b>.
-                Elige la descarga <b>por anuncio</b> (no solo por formulario): es la que trae campaña, grupo y anuncio,
-                y sin esas columnas no se puede saber qué anuncio pagó cada lead.
+                Los leads nuevos entran <b>solos</b> desde la hoja de Google conectada a TikTok (se revisa cada 15 minutos).
+                Esto es para el <b>histórico</b> —lo que ya estaba en TikTok antes de conectarla— o para meter algo a mano
+                si la hoja falla. En TikTok Ads Manager: <b>Herramientas → Formularios instantáneos → Descargar clientes
+                potenciales</b>, y elige la descarga <b>por anuncio</b>: es la que trae campaña, grupo y anuncio, y sin
+                esas columnas no se puede saber qué anuncio pagó cada lead.
               </div>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 4 }}>Pega el CSV completo (con su primera fila de encabezados)</div>
               <textarea value={csv} onChange={e => { setCsv(e.target.value); setPrev(null); }} style={S.area}
