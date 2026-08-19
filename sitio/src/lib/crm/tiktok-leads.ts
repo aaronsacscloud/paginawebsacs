@@ -34,6 +34,10 @@ export interface LeadTikTok {
   sucursales: number | null;
   /** Todo lo demás del formulario, tal cual lo preguntó marketing. */
   respuestas: Record<string, string>;
+  /** Llave de idempotencia: el lead_id si existe, si no una derivada del contacto. */
+  clave: string;
+  /** Lead de prueba que manda TikTok al probar el formulario. No es una persona. */
+  es_prueba: boolean;
 }
 
 /* ── CSV ──────────────────────────────────────────────────────────────────
@@ -192,22 +196,43 @@ export function mapearLead(fila: Record<string, string>): LeadTikTok {
   out.creado = aISO(out.creado);
   out.whatsapp = telefonoMeta(out.whatsapp);
   out.email = out.email ? String(out.email).toLowerCase().trim() : null;
-  const suc = parseInt(String(out.sucursales || '').replace(/\D/g, ''), 10);
-  out.sucursales = Number.isFinite(suc) && suc > 0 ? suc : null;
+  // Sucursales: el formulario ofrece RANGOS ("1", "2-3", "3-5"). Quitar todo
+  // lo que no sea dígito convertía "3-5" en TREINTA Y CINCO sucursales, y ese
+  // número acaba en la cotización. Se toma el primero del rango —el piso, que
+  // es lo que se puede afirmar— y el rango textual se conserva como respuesta.
+  const crudoSuc = String(out.sucursales || '').trim();
+  const primerNum = crudoSuc.match(/\d+/);
+  out.sucursales = primerNum ? Number(primerNum[0]) || null : null;
+  if (crudoSuc && /\D/.test(crudoSuc.replace(/^\s+|\s+$/g, ''))) out.respuestas['Sucursales (rango)'] = crudoSuc;
   out.lead_id = String(out.lead_id || '').trim();
 
   for (const k of ['campana', 'campana_id', 'grupo', 'grupo_id', 'anuncio', 'anuncio_id', 'formulario', 'formulario_id', 'empresa', 'giro']) {
     if (!out[k]) out[k] = null;
   }
+
+  // CLAVE de idempotencia. El lead_id es la buena, pero una hoja llenada por
+  // Zapier normalmente NO lo trae. Sin una clave estable el cron reprocesaría
+  // la hoja entera cada 15 minutos: encontraría al contacto por correo, lo
+  // trataría como "vuelve a dejar sus datos" y le clavaría una actividad nueva
+  // cada cuarto de hora hasta enterrar su historial.
+  out.clave = out.lead_id || (out.email || out.whatsapp ? `hoja:${out.email || out.whatsapp}` : '');
+
+  // Lead de PRUEBA de TikTok: cuando se prueba un formulario, TikTok manda una
+  // fila con datos dummy. No es una persona y no puede contaminar el conteo de
+  // leads ni el costo por lead de la campaña.
+  out.es_prueba = /test lead: dummy data|dummy data for/i.test(
+    [out.campana, out.anuncio, out.formulario, out.nombre, out.email].filter(Boolean).join(' '),
+  );
+
   return out as LeadTikTok;
 }
 
 /** CSV completo → leads. Ignora filas sin ningún dato de contacto. */
-export function leadsDesdeCSV(csv: string): { leads: LeadTikTok[]; encabezados: string[]; descartadas: number } {
+export function leadsDesdeCSV(csv: string): { leads: LeadTikTok[]; encabezados: string[]; descartadas: number; pruebas: number } {
   const filas = parsearCSV(csv);
-  if (filas.length < 2) return { leads: [], encabezados: filas[0] || [], descartadas: 0 };
+  if (filas.length < 2) return { leads: [], encabezados: filas[0] || [], descartadas: 0, pruebas: 0 };
   const encabezados = filas[0].map(h => h.trim());
-  let descartadas = 0;
+  let descartadas = 0, pruebas = 0;
   const leads: LeadTikTok[] = [];
 
   for (const f of filas.slice(1)) {
@@ -216,9 +241,10 @@ export function leadsDesdeCSV(csv: string): { leads: LeadTikTok[]; encabezados: 
     const lead = mapearLead(obj);
     // Sin correo NI teléfono no hay a quién contactar: es ruido del export.
     if (!lead.email && !lead.whatsapp) { descartadas++; continue; }
+    if (lead.es_prueba) { pruebas++; continue; }
     leads.push(lead);
   }
-  return { leads, encabezados, descartadas };
+  return { leads, encabezados, descartadas, pruebas };
 }
 
 /**

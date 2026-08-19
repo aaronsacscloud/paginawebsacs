@@ -154,9 +154,6 @@ export default function CobranzaTab() {
           <td style={{ ...S.td, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
             <b style={{ fontSize: '0.86rem', color: f.dias > 90 ? '#C0554E' : '#1a1a1a' }}>{money(f.deuda)}</b>
           </td>
-          <td style={{ ...S.td, fontSize: '0.72rem', color: '#8a8590', lineHeight: 1.45 }}>
-            {f.detalle || (f.pagado > 0 ? `lleva ${money(f.pagado)} pagados` : <span style={{ color: '#c9c7d0' }}>—</span>)}
-          </td>
           <td style={S.td}>
             <span style={S.tag(g.bg, g.fg)}>{g.l}</span>
             {f.promesa && <div style={{ fontSize: '0.65rem', color: String(f.promesa) < iso(new Date()) ? '#C0554E' : '#5B4BD6', marginTop: 3 }}>promete el {fmtCorta(f.promesa)}</div>}
@@ -181,7 +178,7 @@ export default function CobranzaTab() {
         </tr>
         {abierto && f.plan_pagos.length > 0 && (
           <tr>
-            <td colSpan={9} style={{ background: '#faf8ff', borderTop: '1px solid #ece7fa', padding: '11px 14px' }}>
+            <td colSpan={8} style={{ background: '#faf8ff', borderTop: '1px solid #ece7fa', padding: '11px 14px' }}>
               <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
                 Plan de pagos · {money(f.plan_pagos.reduce((a: number, x: any) => a + x.monto, 0))} en {f.plan_pagos.length} exhibiciones
               </div>
@@ -214,7 +211,7 @@ export default function CobranzaTab() {
 
   const Tabla = ({ filas }: any) => (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', minWidth: 900, borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             <th style={{ ...S.th, minWidth: 150 }}>Cliente</th>
@@ -222,14 +219,13 @@ export default function CobranzaTab() {
             <th style={{ ...S.th, minWidth: 104 }}>Venció</th>
             <th style={{ ...S.th, minWidth: 78 }}>Atraso</th>
             <th style={{ ...S.th, minWidth: 96 }}>Debe</th>
-            <th style={{ ...S.th, minWidth: 150 }}>Cómo se compone</th>
             <th style={{ ...S.th, minWidth: 120 }}>Gestión</th>
             <th style={{ ...S.th, minWidth: 96 }}>Señal</th>
             <th style={{ ...S.th, minWidth: 170, textAlign: 'right' as const }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filas.length === 0 && <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={9}>Nada por cobrar aquí.</td></tr>}
+          {filas.length === 0 && <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={8}>Nada por cobrar aquí.</td></tr>}
           {filas.map((f: any) => <Fila key={f.id} f={f} />)}
         </tbody>
       </table>
@@ -363,8 +359,19 @@ export default function CobranzaTab() {
           <div data-menu-fila onMouseDown={e => e.stopPropagation()} style={{
             position: 'fixed', right: menuFila.x, ...(menuFila.arriba ? { bottom: menuFila.y } : { top: menuFila.y }),
             background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 34px rgba(16,24,40,.16)',
-            padding: 6, minWidth: 210, zIndex: 980,
+            padding: 6, minWidth: 230, zIndex: 980,
           }}>
+            {/* De qué está hecha la deuda. Era una columna que casi siempre iba
+                vacía y le robaba ancho a la tabla; aquí se lee justo cuando se
+                va a hacer algo con esa cuenta. */}
+            <div style={{ padding: '7px 10px 8px', borderBottom: '1px solid #f4f3f7', marginBottom: 5 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800 }}>{f.cliente}</div>
+              <div style={{ fontSize: '0.71rem', color: '#8a8590', lineHeight: 1.5, marginTop: 2 }}>
+                {f.plan} · debe <b style={{ color: '#3f3b4d' }}>{money(f.deuda)}</b>
+                {f.detalle ? <><br />{f.detalle}</> : f.pagado > 0 ? <><br />lleva {money(f.pagado)} pagados</> : null}
+                {f.promesa ? <><br />promete el {fmtCorta(f.promesa)}</> : null}
+              </div>
+            </div>
             {item('Gestión y promesa', () => setGestion({ ...f, modo: 'gestion' }))}
             {f.plan_pagos.length > 0 && item(abierta === f.id ? 'Ocultar plan de pagos' : 'Ver plan de pagos', () => setAbierta(abierta === f.id ? null : f.id))}
             {f.plan_pagos.length === 0 && !mensual && item('Partir en pagos', () => setPartir(f))}
