@@ -8,9 +8,9 @@
  * los números de en medio—, que no existe en ningún otro giro. Ojo: un "par
  * descabalado" es un par disparejo; lo que se rompe aquí es la corrida.
  *
- * Bloque nuevo de esta página: la calculadora de dinero parado. Hasta aquí la
- * página le dice al visitante que pierde dinero; ahí se lo cuenta con el tamaño
- * de su propio negocio.
+ * Bloque propio de esta página: la corrida cerrada contra la venta real. No es
+ * reutilizable ni pretende serlo — fuera del calzado no significa nada. Cada
+ * giro tendrá el suyo.
  *
  * Todo el contenido vive en src/data/giros/zapateria.ts.
  */
@@ -22,7 +22,7 @@ import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteRack from '../../components/suite/SuiteRack.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
-import SuiteCalculadora from '../../components/suite/SuiteCalculadora.astro';
+import ZapCorridaCerrada from '../../components/giros/ZapCorridaCerrada.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
 import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
 import SuiteFormal from '../../components/suite/SuiteFormal.astro';
@@ -186,21 +186,8 @@ const desc =
     secciones={seccionesZapateria}
   />
 
-  <!-- ── Bloque nuevo: ponle número a lo que ya sabes ── -->
-  <SuiteCalculadora
-    titulo="¿Cuánto tienes parado en modelos con la corrida rota?"
-    sub="Todo modelo al que se le acabaron los números de en medio deja de venderse a precio: termina con el saldero, a precio plano y sin importar el modelo. Mueve los controles con el tamaño de tu tienda."
-    controles={[
-      { id: 'modelos', etiqueta: 'Modelos distintos en tu catálogo', min: 20, max: 400, paso: 10, valor: 120, sufijo: ' modelos' },
-      { id: 'pares', etiqueta: 'Pares que te quedan por modelo roto', min: 2, max: 30, paso: 1, valor: 9, sufijo: ' pares' },
-      { id: 'precio', etiqueta: 'Precio promedio del par', min: 300, max: 3500, paso: 50, valor: 1100, prefijo: '$' },
-      { id: 'pct', etiqueta: 'Modelos que se te rompen al año', min: 5, max: 60, paso: 1, valor: 22, sufijo: '%' },
-    ]}
-    resultadoRotulo="Valor de venta atrapado en modelos rotos, al año"
-    mermaMargen={0.55}
-    mermaRotulo="Lo que dejas de ganar cuando va al saldero"
-    supuesto="Se calcula como: modelos × pares que sobran × precio del par × el porcentaje que se rompe al año. El segundo renglón asume que ese par sale al saldero con 55% menos, que es lo normal del giro. Mueve los controles si en tu tienda pasa distinto."
-  />
+  <!-- ── El complemento propio de este giro: la corrida cerrada ── -->
+  <ZapCorridaCerrada />
 
   <!-- ── Lo que ve el dueño ── -->
   <SuiteDireccion

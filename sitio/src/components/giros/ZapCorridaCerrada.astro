@@ -1,0 +1,303 @@
+---
+/**
+ * ZapCorridaCerrada — el complemento propio de zapaterías.
+ *
+ * No es un bloque reutilizable: fuera del calzado no significa nada. La corrida
+ * cerrada existe solo aquí — el fabricante de León vende la docena repartida
+ * 1-2-3-3-2-1 sobre seis números, igual para todas las tiendas del país. Da
+ * igual que tu clientela sea de pie chico: te llega el 27 aunque no lo vendas.
+ *
+ * El visitante mueve su venta real por número y ve, docena por docena, cuántos
+ * pares nacen muertos. Es el pleito más viejo del giro —corrida cerrada contra
+ * surtido libre— y ningún dueño necesita que se lo expliquen: lo vive cada
+ * temporada. Verlo contado con sus números es lo que abre la conversación.
+ *
+ * El resultado viaja a /contacto como estimado, igual que en el resto del
+ * sitio, para que quien atienda la demo llegue sabiendo de qué tamaño es el
+ * problema.
+ */
+interface Props {
+  numeros?: string[];
+  /** La docena del fabricante. Debe sumar 12. */
+  caja?: number[];
+  /** Punto de partida de la venta del visitante, en la misma escala. */
+  venta?: number[];
+}
+const {
+  numeros = ['22', '23', '24', '25', '26', '27'],
+  caja = [1, 2, 3, 3, 2, 1],
+  venta = [1, 3, 4, 3, 1, 0],
+} = Astro.props;
+
+const totalCaja = caja.reduce((a, b) => a + b, 0);
+---
+
+<section class="cc" data-caja={JSON.stringify(caja)}>
+  <div class="cc-inner">
+
+    <header class="cc-head">
+      <p class="cc-eyebrow">El pleito de cada temporada</p>
+      <h2>La corrida cerrada contra <span>lo que tú vendes</span>.</h2>
+      <p class="cc-sub">
+        El fabricante arma la docena {caja.join('-')} y te la manda igual que a todas las tiendas
+        del país. Mueve abajo tu venta real por número y mira cuántos pares de cada docena
+        nacen muertos.
+      </p>
+    </header>
+
+    <div class="cc-tabla">
+      <!-- Fila del fabricante: fija -->
+      <div class="cc-fila cc-fila-caja">
+        <span class="cc-rot">La docena que te mandan</span>
+        <div class="cc-barras">
+          {caja.map((n, i) => (
+            <div class="cc-col">
+              <div class="cc-barra cc-barra-caja" style={`height:${(n / 3) * 100}%`}>
+                <b>{n}</b>
+              </div>
+              <span class="cc-num">{numeros[i]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Fila del visitante: se mueve -->
+      <div class="cc-fila cc-fila-venta">
+        <span class="cc-rot">Tu venta real por número</span>
+        <div class="cc-barras">
+          {venta.map((n, i) => (
+            <div class="cc-col">
+              <div class="cc-barra-caja-wrap">
+                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / 3) * 100}%`}>
+                  <b id={`bt-${i}`}>{n}</b>
+                </div>
+                {/* El sobrante se pinta encima de la barra del visitante */}
+                <div class="cc-sobra" id={`bs-${i}`}></div>
+              </div>
+              <input
+                type="range"
+                class="cc-rango"
+                id={`cc-${i}`}
+                min="0" max="6" step="1"
+                value={n}
+                data-i={i}
+                aria-label={`Pares del número ${numeros[i]} que vendes de cada docena`}
+              />
+              <span class="cc-num">{numeros[i]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="cc-resultado">
+      <div class="cc-dato">
+        <b id="ccPares">0</b>
+        <span>pares de cada docena que no vas a vender</span>
+      </div>
+
+      <div class="cc-controles">
+        <label>
+          <span>Docenas que compras al año</span>
+          <input type="range" id="ccDocenas" class="cc-rango cc-rango-ancho" min="10" max="600" step="10" value="180" />
+          <b id="ccDocenasVal">180</b>
+        </label>
+        <label>
+          <span>Precio promedio del par</span>
+          <input type="range" id="ccPrecio" class="cc-rango cc-rango-ancho" min="300" max="3500" step="50" value="1100" />
+          <b id="ccPrecioVal">$1,100</b>
+        </label>
+      </div>
+
+      <div class="cc-dinero">
+        <p class="cc-dinero-rot">Se queda en el rack cada año</p>
+        <p class="cc-dinero-cifra" id="ccDinero" aria-live="polite">$0</p>
+        <p class="cc-dinero-pie">
+          Y de ahí sale al saldero por menos de la mitad. Con tu venta por número a la mano,
+          la pelea por surtido libre se da con datos.
+        </p>
+        <a class="cc-cta" href="/contacto" id="ccCta">Ver mi curva real con mis ventas</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .cc { background: #0C0C11; padding: 100px 24px 110px; }
+  .cc-inner { max-width: 1200px; margin: 0 auto; }
+
+  .cc-head { max-width: 720px; margin-bottom: 50px; }
+  .cc-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #E8A838; margin: 0 0 16px;
+  }
+  .cc-head h2 {
+    font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
+    line-height: 1.06; color: #fff; margin: 0 0 16px;
+  }
+  .cc-head h2 span { color: #4B7BE5; }
+  .cc-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A1A1AA; }
+
+  /* ── Las dos filas enfrentadas ── */
+  .cc-tabla {
+    border: 1px solid #23232B; border-radius: 18px; padding: 26px 26px 22px; background: #101016;
+    margin-bottom: 26px;
+  }
+  .cc-fila + .cc-fila { margin-top: 28px; padding-top: 24px; border-top: 1px solid #1E1E26; }
+  .cc-rot {
+    display: block; font-size: 11.5px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #6A6A76; margin-bottom: 16px;
+  }
+  .cc-barras { display: flex; gap: 12px; align-items: flex-end; }
+  .cc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+  .cc-barra-caja-wrap { position: relative; width: 100%; height: 92px; display: flex; align-items: flex-end; }
+  .cc-fila-caja .cc-col { height: 116px; justify-content: flex-end; }
+  .cc-barra {
+    width: 100%; border-radius: 7px 7px 0 0; position: relative; min-height: 4px;
+    display: flex; align-items: flex-start; justify-content: center;
+    transition: height .3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .cc-barra b {
+    font-size: 12px; font-weight: 800; color: #fff; margin-top: -20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cc-barra-caja { background: linear-gradient(180deg, #3A4A6B, #253248); border-top: 2px solid #7FA6F5; }
+  .cc-barra-venta { background: linear-gradient(180deg, #1F4D3D, #122E25); border-top: 2px solid #34D399; }
+
+  /* Lo que sobra: se dibuja encima, en rojo, y es el argumento entero. */
+  .cc-sobra {
+    position: absolute; left: 0; right: 0; bottom: 0; border-radius: 7px 7px 0 0;
+    background: repeating-linear-gradient(45deg, rgba(248,113,113,.34) 0 6px, rgba(248,113,113,.13) 6px 12px);
+    border-top: 2px solid #F87171; pointer-events: none;
+    transition: height .3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .cc-num { font-size: 12px; font-weight: 700; color: #8A8A96; font-variant-numeric: tabular-nums; }
+
+  .cc-rango {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px;
+    background: #26262E; outline: none; cursor: pointer;
+  }
+  .cc-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; border: 4px solid #34D399; cursor: grab;
+  }
+  .cc-rango::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 4px solid #34D399; cursor: grab;
+  }
+  .cc-rango:focus-visible { outline: 2px solid #34D399; outline-offset: 4px; }
+
+  /* ── Resultado ── */
+  .cc-resultado { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
+  .cc-dato {
+    grid-column: 1 / -1; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    padding-bottom: 22px; border-bottom: 1px solid #1E1E26;
+  }
+  .cc-dato b {
+    font-size: clamp(40px, 5vw, 58px); font-weight: 800; color: #F87171; line-height: 1;
+    letter-spacing: -2px; font-variant-numeric: tabular-nums;
+  }
+  .cc-dato span { font-size: 16px; color: #A1A1AA; }
+
+  .cc-controles { display: grid; gap: 26px; padding-top: 8px; }
+  .cc-controles label { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: baseline; }
+  .cc-controles span { font-size: 14.5px; color: #A1A1AA; }
+  .cc-controles b { font-size: 18px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+  .cc-rango-ancho { grid-column: 1 / -1; height: 4px; }
+  .cc-rango-ancho::-webkit-slider-thumb { border-color: #E8A838; width: 20px; height: 20px; }
+  .cc-rango-ancho::-moz-range-thumb { border-color: #E8A838; width: 20px; height: 20px; }
+
+  .cc-dinero {
+    border: 1px solid #2A2018; border-radius: 18px; padding: 26px 26px 24px;
+    background: linear-gradient(165deg, rgba(232,168,56,.09), #101015 62%);
+  }
+  .cc-dinero-rot {
+    margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #C08F3E;
+  }
+  .cc-dinero-cifra {
+    margin: 0 0 14px; font-size: clamp(36px, 4.6vw, 54px); font-weight: 800; color: #fff;
+    letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .cc-dinero-pie { margin: 0 0 22px; font-size: 14px; line-height: 1.6; color: #9C9CA8; }
+  .cc-cta {
+    display: inline-flex; align-items: center; justify-content: center; width: 100%;
+    height: 52px; border-radius: 12px; background: #4B7BE5; color: #fff;
+    font-size: 15.5px; font-weight: 700; text-decoration: none;
+    transition: background .16s ease;
+  }
+  .cc-cta:hover { background: #3C68CE; text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .cc { padding: 70px 18px 78px; }
+    .cc-tabla { padding: 18px 14px 16px; }
+    .cc-barras { gap: 7px; }
+    .cc-resultado { grid-template-columns: 1fr; }
+    .cc-barra b { font-size: 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cc-barra, .cc-sobra { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const sec = document.querySelector<HTMLElement>('.cc');
+    if (sec) {
+      const caja: number[] = JSON.parse(sec.dataset.caja || '[]');
+      const rangos = Array.from(sec.querySelectorAll<HTMLInputElement>('.cc-rango[data-i]'));
+      const docenas = document.getElementById('ccDocenas') as HTMLInputElement;
+      const precio = document.getElementById('ccPrecio') as HTMLInputElement;
+      const elPares = document.getElementById('ccPares');
+      const elDinero = document.getElementById('ccDinero');
+      const cta = document.getElementById('ccCta') as HTMLAnchorElement;
+
+      const dinero = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+      const pintar = () => {
+        let sobran = 0;
+
+        rangos.forEach((r) => {
+          const i = Number(r.dataset.i);
+          const v = Number(r.value);
+          // Lo que el fabricante manda de más en ese número: nadie lo pidió y
+          // nadie lo va a comprar.
+          const excedente = Math.max(0, caja[i] - v);
+          sobran += excedente;
+
+          const barra = document.getElementById('bv-' + i);
+          const texto = document.getElementById('bt-' + i);
+          const sobra = document.getElementById('bs-' + i);
+          if (barra) barra.style.height = Math.min(100, (v / 3) * 100) + '%';
+          if (texto) texto.textContent = String(v);
+          // La franja roja mide el excedente en la misma escala que las barras.
+          if (sobra) sobra.style.height = (excedente / 3) * 100 + '%';
+        });
+
+        const nDoc = Number(docenas.value);
+        const nPre = Number(precio.value);
+        const total = sobran * nDoc * nPre;
+
+        if (elPares) elPares.textContent = String(sobran);
+        if (elDinero) elDinero.textContent = dinero(total);
+        const dv = document.getElementById('ccDocenasVal');
+        const pv = document.getElementById('ccPrecioVal');
+        if (dv) dv.textContent = nDoc.toLocaleString('es-MX');
+        if (pv) pv.textContent = '$' + nPre.toLocaleString('es-MX');
+
+        if (cta) {
+          const u = new URL(cta.href, location.origin);
+          u.searchParams.set('estimado', String(Math.round(total)));
+          cta.href = u.pathname + u.search;
+        }
+      };
+
+      [...rangos, docenas, precio].forEach((r) => {
+        r.addEventListener('input', pintar);
+        r.addEventListener('change', pintar);
+      });
+      pintar();
+    }
+  }
+</script>
