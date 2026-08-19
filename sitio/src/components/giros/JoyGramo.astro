@@ -1,0 +1,297 @@
+---
+/**
+ * JoyGramo — el gramo que se reparte, en 3D.
+ *
+ * Es el complemento de animación propio de joyería y no sirve en ningún otro
+ * giro: solo aquí la materia prima tiene precio público, se compra por gramo y
+ * cada pieza lleva una fracción distinta de ella. Un cubo de tallas × colores
+ * diría lo mismo en una boutique; esto no.
+ *
+ * Lo que cuenta, en dos pantallas de scroll: un lingote se deshace en gramos y
+ * los gramos se reparten en tres piezas —10K, 14K, 18K—. En cada una se ve
+ * cuánto de ese peso es oro fino (dorado, lo que sube con el spot) y cuánto es
+ * liga (gris, lo que no). Al final quedan las tres lado a lado: mismo peso,
+ * tres costos.
+ *
+ * Los factores son los reales del fino por quilataje: 10K .445, 14K .620,
+ * 18K .780. Son los mismos que usa el bloque del colchón; si aquí se inventan,
+ * un joyero lo ve en el primer vistazo.
+ */
+const KILATES = [
+  { k: '10K', factor: 0.445 },
+  { k: '14K', factor: 0.620 },
+  { k: '18K', factor: 0.780 },
+];
+---
+
+<section class="gr-bloque" id="joyGramo" data-factores={JSON.stringify(KILATES.map((x) => x.factor))}>
+  <div class="gr-pin">
+    <canvas id="grLienzo" aria-hidden="true"></canvas>
+    <div class="gr-velo" aria-hidden="true"></div>
+
+    <!-- Respaldo: si no hay WebGL esto se queda, y dice lo mismo. -->
+    <div class="gr-plano" id="grPlano">
+      <table>
+        <tr><th>Un gramo en</th><th>Oro fino</th><th>Liga</th></tr>
+        {KILATES.map((x) => (
+          <tr>
+            <td class="k">{x.k}</td>
+            <td class="f">{x.factor.toFixed(3)} g</td>
+            <td class="l">{(1 - x.factor).toFixed(3)} g</td>
+          </tr>
+        ))}
+      </table>
+      <p>Mismo peso en la báscula. Tres costos distintos.</p>
+    </div>
+
+    <div class="gr-txt">
+      <p class="gr-eyebrow">El gramo</p>
+      <h2>Todo lo que hay en tu vitrina<br /> empieza en <span>el mismo gramo</span>.</h2>
+      <p class="gr-sub">
+        El gramo de oro fino cuesta lo mismo para todos. Lo que cambia es cuánto
+        fino lleva cada pieza: 10K lleva .445, 14K .620, 18K .780. Por eso dos
+        anillos que pesan igual no cuestan igual — y por eso el precio no puede
+        salir de la cabeza de quien está en el mostrador.
+      </p>
+      <ul class="gr-leyenda">
+        <li><i class="fino"></i>Oro fino — sube y baja con el spot</li>
+        <li><i class="liga"></i>Liga — ni sube ni baja</li>
+      </ul>
+    </div>
+
+    <p class="gr-pista" id="grPista">Baja para repartir el gramo</p>
+  </div>
+</section>
+
+<style>
+  /* Dos pantallas, no tres: el objeto dice lo suyo y sale. */
+  .gr-bloque { height: 200vh; background: #08080A; position: relative; }
+  .gr-pin {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: flex; align-items: center;
+  }
+  #grLienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .gr-velo {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(8,8,10,.93) 0%, rgba(8,8,10,.82) 32%, rgba(8,8,10,.26) 58%, rgba(8,8,10,0) 78%);
+  }
+
+  .gr-txt { position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
+  .gr-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #E8A838; margin: 0 0 18px;
+  }
+  .gr-txt h2 {
+    font-size: clamp(30px, 5vw, 60px); font-weight: 800; letter-spacing: -2px;
+    line-height: 1.04; color: #fff; margin: 0 0 20px; max-width: 17ch;
+  }
+  .gr-txt h2 span { color: #E8A838; }
+  .gr-sub {
+    font-size: clamp(15px, 1.7vw, 19px); line-height: 1.6; color: #C6C6CE;
+    max-width: 46ch; margin: 0 0 28px;
+  }
+  .gr-leyenda {
+    list-style: none; padding: 0; margin: 0; display: flex; gap: 22px; flex-wrap: wrap;
+    font-size: 13px; color: #A1A1AA; font-weight: 600;
+  }
+  .gr-leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
+  .gr-leyenda i.fino { background: #E8A838; }
+  .gr-leyenda i.liga { background: #4A4A55; }
+
+  .gr-pista {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: #55555F;
+    margin: 0; z-index: 2; transition: opacity .4s ease;
+  }
+
+  .gr-plano {
+    position: absolute; right: 6%; top: 50%; transform: translateY(-50%); z-index: 1;
+    background: rgba(12,12,16,.86); border: 1px solid rgba(255,255,255,.13);
+    border-radius: 18px; padding: 20px 22px;
+  }
+  .gr-plano.oculto { display: none; }
+  .gr-plano table { border-collapse: separate; border-spacing: 6px; }
+  .gr-plano th { font-size: 11px; color: #8A8A94; font-weight: 700; text-align: left; }
+  .gr-plano td { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 7px; }
+  .gr-plano td.k { color: #E4E4E7; }
+  .gr-plano td.f { background: rgba(232,168,56,.75); color: #2A1B04; }
+  .gr-plano td.l { background: rgba(74,74,85,.6); color: #D4D4D8; }
+  .gr-plano p { margin: 12px 0 0; font-size: 12px; color: #8A8A94; max-width: 24ch; }
+
+  @media (max-width: 900px) {
+    .gr-bloque { height: 165vh; }
+    .gr-pin { align-items: flex-end; padding-bottom: 52px; }
+    .gr-velo {
+      background: linear-gradient(180deg, rgba(8,8,10,.2) 0%, rgba(8,8,10,.62) 38%, rgba(8,8,10,.94) 62%, rgba(8,8,10,.98) 100%);
+    }
+    .gr-plano { right: auto; left: 24px; top: auto; bottom: 30px; transform: none; padding: 14px; }
+    .gr-plano p { display: none; }
+    .gr-txt h2 { font-size: clamp(26px, 7vw, 40px); }
+    .gr-pista { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gr-bloque { height: auto; }
+    .gr-pin { position: relative; height: auto; padding: 90px 0; display: block; }
+    #grLienzo { display: none; }
+    .gr-plano { position: relative; right: auto; top: auto; transform: none; margin: 40px auto 0; width: max-content; max-width: 100%; }
+    .gr-pista { display: none; }
+  }
+</style>
+
+<script>
+  import { cargarThree, hayWebGL } from '../../lib/three-loader';
+
+  {
+    const bloque = document.getElementById('joyGramo');
+    const lienzo = document.getElementById('grLienzo') as HTMLCanvasElement | null;
+    const plano = document.getElementById('grPlano');
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (bloque && lienzo && hayWebGL() && !menos) {
+      new IntersectionObserver((es, obs) => {
+        if (!es[0].isIntersecting) return;
+        obs.disconnect();
+        cargarThree().then(arrancar).catch(() => { /* se queda la tabla plana */ });
+      }, { rootMargin: '900px 0px' }).observe(bloque);
+
+      function arrancar(THREE: any) {
+        plano?.classList.add('oculto');
+
+        const esc = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 160);
+        cam.position.set(0, 1.6, 17);
+        cam.lookAt(0, 0, 0);
+
+        const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
+        r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        esc.add(new THREE.AmbientLight(0x241d12, 2.4));
+        const l1 = new THREE.PointLight(0xFFD98A, 2.4, 90); l1.position.set(-9, 8, 12); esc.add(l1);
+        const l2 = new THREE.PointLight(0xE8A838, 1.9, 90); l2.position.set(11, -3, 9); esc.add(l2);
+        const l3 = new THREE.PointLight(0x7FA6F5, 0.9, 80); l3.position.set(0, 9, -8); esc.add(l3);
+
+        // Reparto: 90 gramos, 30 por pieza. Dentro de cada pieza, los primeros
+        // (factor × 30) son oro fino y el resto liga — así el anillo de 10K se
+        // ve dorado en menos de la mitad y el de 18K casi entero.
+        const factores: number[] = JSON.parse(bloque!.dataset.factores || '[]');
+        const PIEZAS = factores.length;
+        const POR_PIEZA = 30;
+        const TOTAL = PIEZAS * POR_PIEZA;
+
+        const grupo = new THREE.Group();
+        const geo = new THREE.BoxGeometry(0.34, 0.34, 0.34);
+        const oro = new THREE.MeshStandardMaterial({
+          color: 0xE8A838, metalness: 0.92, roughness: 0.22,
+          emissive: 0x3a2405, emissiveIntensity: 0.85,
+        });
+        const liga = new THREE.MeshStandardMaterial({
+          color: 0x4A4A55, metalness: 0.55, roughness: 0.62,
+          emissive: 0x0a0a0d, emissiveIntensity: 0.5,
+        });
+
+        // Posición de salida: todos apretados formando el lingote (6 × 3 × 5).
+        // Posición de llegada: tres anillos, uno por quilataje.
+        const gramos: any[] = [];
+        for (let i = 0; i < TOTAL; i++) {
+          const pieza = Math.floor(i / POR_PIEZA);
+          const dentro = i % POR_PIEZA;
+          const esFino = dentro < Math.round(factores[pieza] * POR_PIEZA);
+          const m = new THREE.Mesh(geo, esFino ? oro : liga);
+
+          const col = i % 6, fila = Math.floor(i / 6) % 3, capa = Math.floor(i / 18);
+          const desde = new THREE.Vector3(
+            (col - 2.5) * 0.38,
+            (1 - fila) * 0.38,
+            (capa - 2) * 0.38,
+          );
+
+          const ang = (dentro / POR_PIEZA) * Math.PI * 2;
+          const radio = 1.55;
+          const hasta = new THREE.Vector3(
+            (pieza - 1) * 4.6 + Math.cos(ang) * radio,
+            Math.sin(ang) * radio,
+            Math.sin(ang * 2) * 0.22,
+          );
+
+          m.position.copy(desde);
+          grupo.add(m);
+          gramos.push({ m, desde, hasta, giroFin: ang, fase: i * 0.35 });
+        }
+
+        // El bulto del lingote: se desvanece en cuanto empieza el reparto.
+        const lingote = new THREE.Mesh(
+          new THREE.BoxGeometry(2.5, 1.35, 2.1),
+          new THREE.MeshStandardMaterial({
+            color: 0xE8A838, metalness: 0.95, roughness: 0.18,
+            emissive: 0x2e1c04, emissiveIntensity: 0.9, transparent: true, opacity: 0.9,
+          }),
+        );
+        grupo.add(lingote);
+        esc.add(grupo);
+
+        const suave = (x: number) => x * x * (3 - 2 * x);
+
+        const medir = () => {
+          const a = lienzo!.clientWidth || window.innerWidth;
+          const b = lienzo!.clientHeight || window.innerHeight;
+          r.setSize(a, b, false);
+          cam.aspect = a / b;
+          const angosto = a < 900;
+          cam.position.z = angosto ? 26 : (a < 1320 ? 20 : 17);
+          cam.lookAt(0, 0, 0);
+          const medioAlto = cam.position.z * Math.tan((42 / 2) * Math.PI / 180);
+          const medioAncho = medioAlto * cam.aspect;
+          // Los tres anillos ocupan ~11 de ancho: se recuestan a la derecha
+          // dejándoles su mitad (5.5) de aire para que no se corten.
+          grupo.position.x = angosto ? 0 : Math.max(2.4, Math.min(medioAncho - 6.2, 6.4));
+          grupo.position.y = angosto ? 2.8 : 0;
+          grupo.scale.setScalar(angosto ? 0.92 : 1);
+          cam.updateProjectionMatrix();
+        };
+        medir();
+        window.addEventListener('resize', medir);
+
+        const pista = document.getElementById('grPista');
+        let visible = false;
+        new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { threshold: 0.02 }).observe(bloque!);
+
+        const avance = () => {
+          const rect = bloque!.getBoundingClientRect();
+          const total = rect.height - window.innerHeight;
+          return total <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / total));
+        };
+
+        const tmp = new THREE.Vector3();
+        const dibuja = (t: number) => {
+          requestAnimationFrame(dibuja);
+          if (!visible) return;
+
+          const p = avance();
+          if (pista) pista.style.opacity = p > 0.1 ? '0' : '1';
+
+          // El reparto ocurre en el primer 70% del bloque; el resto es el giro
+          // de las tres piezas ya formadas, para que se vean por todos lados.
+          const reparto = suave(Math.min(1, p / 0.7));
+          lingote.material.opacity = Math.max(0, 0.9 - reparto * 4);
+          lingote.visible = lingote.material.opacity > 0.01;
+
+          gramos.forEach((g) => {
+            tmp.copy(g.desde).lerp(g.hasta, reparto);
+            // Se abren en arco: sin esto los gramos viajan en línea recta y
+            // parece un corte, no un reparto.
+            tmp.y += Math.sin(reparto * Math.PI) * (1.6 + Math.sin(g.fase) * 0.9);
+            g.m.position.copy(tmp);
+            g.m.rotation.x = g.fase + t * 0.0004 + reparto * 3;
+            g.m.rotation.y = g.giroFin + reparto * 2;
+          });
+
+          grupo.rotation.y = -0.35 + p * Math.PI * 0.9;
+          grupo.rotation.x = 0.22 * (1 - p * 0.6);
+          r.render(esc, cam);
+        };
+        requestAnimationFrame(dibuja);
+      }
+    }
+  }
+</script>

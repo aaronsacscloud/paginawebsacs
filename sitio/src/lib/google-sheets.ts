@@ -39,10 +39,20 @@ const api = () => {
   return a ? google.sheets({ version: 'v4', auth: a }) : null;
 };
 
+/** Celda que Google devuelve como error de fórmula (#ERROR!, #VALUE!, …). */
+const ES_ERROR = /^#(ERROR|VALUE|N\/A|REF|NAME|NUM|DIV\/0)[!?]?/i;
+
 /**
  * Lee un rango como matriz. Devuelve [] si no hay credencial o la hoja está
  * vacía; NUNCA lanza por una hoja sin filas (un cron no puede tronar porque
  * hoy no llegó ningún lead).
+ *
+ * RESCATE DE CELDAS #ERROR!: un teléfono que llega como "+52 33 1042 8013"
+ * Google lo lee como FÓRMULA (empieza con "+") y la celda queda en #ERROR!.
+ * El texto original no se perdió: sigue ahí como fórmula. Cuando se detecta
+ * una celda en error se relee el rango pidiendo las fórmulas y se parcha solo
+ * esa celda. Sin esto, la mayoría de los leads entra al CRM sin teléfono —
+ * que es justo el dato con el que se les llama.
  */
 export async function leerRango(spreadsheetId: string, rango: string): Promise<string[][]> {
   const s = api();
@@ -52,7 +62,26 @@ export async function leerRango(spreadsheetId: string, rango: string): Promise<s
     valueRenderOption: 'UNFORMATTED_VALUE',
     dateTimeRenderOption: 'FORMATTED_STRING',
   });
-  return (r.data.values || []).map(f => (f || []).map(c => (c == null ? '' : String(c))));
+  const valores = (r.data.values || []).map(f => (f || []).map(c => (c == null ? '' : String(c))));
+
+  const hayError = valores.some(f => f.some(c => ES_ERROR.test(c)));
+  if (!hayError) return valores;
+
+  try {
+    const f = await s.spreadsheets.values.get({ spreadsheetId, range: rango, valueRenderOption: 'FORMULA' });
+    const formulas = (f.data.values || []).map(x => (x || []).map(c => (c == null ? '' : String(c))));
+    for (let i = 0; i < valores.length; i++) {
+      for (let j = 0; j < valores[i].length; j++) {
+        if (!ES_ERROR.test(valores[i][j])) continue;
+        const cruda = formulas[i]?.[j];
+        // Solo se acepta el rescate si NO parece una fórmula de verdad
+        // (=SUM(...)): ahí el error es real y meterlo sería peor que dejarlo.
+        if (cruda && !cruda.startsWith('=')) valores[i][j] = cruda;
+      }
+    }
+  } catch { /* si falla el rescate, se sigue con los valores normales */ }
+
+  return valores;
 }
 
 /** Nombre de la primera pestaña. Zapier suele llamarla "Hoja 1" o "Sheet1". */

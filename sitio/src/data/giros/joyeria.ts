@@ -20,7 +20,6 @@
  * Vocabulario del piso: fino, colchón, ley, quilataje, factor, merma, hechura,
  * rodinado, gramaje, apartado, empeño no (eso es otro negocio).
  */
-import type { RackPieza } from '../../components/suite/SuiteRack.astro';
 
 const est = {
   wrap: 'font-family:Inter,system-ui,sans-serif;',
@@ -205,15 +204,6 @@ export const seccionesJoyeria: SuiteSeccion[] = [
   },
 ];
 
-export const rackJoyeria: RackPieza[] = [
-  { n: 'Anillo solitario', img: '/images/rack-joy-anillo.webp', tallas: 8, colores: 3 },
-  { n: 'Cadena tejido', img: '/images/rack-joy-cadena.webp', tallas: 5, colores: 3 },
-  { n: 'Arete argolla', img: '/images/rack-joy-arete.webp', tallas: 4, colores: 2 },
-  { n: 'Pulsera eslabón', img: '/images/rack-joy-pulsera.webp', tallas: 4, colores: 2 },
-  { n: 'Dije corazón', img: '/images/rack-joy-dije.webp', tallas: 3, colores: 3 },
-  { n: 'Esclava grabada', img: '/images/rack-joy-esclava.webp', tallas: 4, colores: 2 },
-];
-
 export const cortinaJoyeria = {
   eyebrow: 'La misma pregunta, dos veces',
   titulo: '“¿En cuánto me la deja?”',
@@ -315,3 +305,45 @@ export const documentosJoyeria = {
     { que: 'Quién lo mantiene', generico: 'Su proveedor', tonoGenerico: 'medio', medida: 'Tú, cada vez', tonoMedida: 'no', sacs: 'Nosotros, a diario' },
   ],
 };
+
+/* ── Momentos reales del giro, con su escena ──
+   No son funciones: son las horas concretas en que una joyería gana o pierde
+   dinero. El peso, la etiqueta, el apartado y el cierre de vitrina. */
+export const casosJoyeria = [
+  {
+    id: 'pesar',
+    titulo: 'Entra un cliente y pregunta cuánto cuesta esa cadena',
+    texto:
+      'La pieza se pesa y el precio sale con tu colchón del gramo y el factor de su quilataje — el mismo para toda la casa, sin calculadora ni memoria. Y el peso que entra a la cuenta es el neto: la piedra no se cobra dos veces.',
+    remate: 'El precio no lo decide quien está en el mostrador ese día.',
+    img: '/images/caso-joy-pesar.webp',
+    alt: 'Joyera pesando una cadena de oro en una báscula sobre el mostrador',
+  },
+  {
+    id: 'etiquetar',
+    titulo: 'El oro subió y hay que reetiquetar cientos de piezas',
+    texto:
+      'Antes de aplicar el precio nuevo ves la simulación completa: qué sube, cuánto, qué queda bajo tu margen mínimo y cuánto dinero está en juego. Se imprime solo lo que cambió, con su código de barras.',
+    remate: 'Bajar precios no pasa solo: exige que tú lo autorices.',
+    img: '/images/caso-joy-etiquetar.webp',
+    alt: 'Empleada colocando etiquetas de precio a anillos de oro sobre una charola',
+  },
+  {
+    id: 'apartado',
+    titulo: 'El anillo apartado en marzo que se liquida en agosto',
+    texto:
+      'El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
+    remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
+    img: '/images/caso-joy-apartado.webp',
+    alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
+  },
+  {
+    id: 'vitrina',
+    titulo: 'Cerrar y contar la vitrina sin que se vaya la noche',
+    texto:
+      'La charola se cuenta desde el celular, sin cerrar y sin avisar. Si falta una pieza te enteras ese día, con el nombre de quién la movió por última vez.',
+    remate: 'Aquí una pieza que falta no es una merma: es el ticket promedio de la semana.',
+    img: '/images/caso-joy-vitrina.webp',
+    alt: 'Dos empleados contando piezas de joyería de una charola al cierre de la tienda',
+  },
+];

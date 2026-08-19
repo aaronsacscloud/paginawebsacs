@@ -47,14 +47,14 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
 
     <div class="cs-cuerpo">
       <!-- La lista: uno abierto a la vez -->
-      <div class="cs-lista" role="tablist" aria-label="Casos de uso">
+      <div class="cs-lista">
         {casos.map((c, i) => (
           <div class:list={['cs-caso', { on: i === 0 }]} data-caso={c.id}>
             <button
               class="cs-boton"
-              role="tab"
+              type="button"
               id={`tab-${c.id}`}
-              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-expanded={i === 0 ? 'true' : 'false'}
               aria-controls={`panel-${c.id}`}
               data-abre={c.id}
             >
@@ -63,9 +63,11 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
                 <path d="M12 5v14M5 12h14" class="cs-mas"></path>
               </svg>
             </button>
-            <div class="cs-detalle" id={`panel-${c.id}`} role="tabpanel" aria-labelledby={`tab-${c.id}`}>
-              <p>{c.texto}</p>
-              {c.remate && <p class="cs-remate">{c.remate}</p>}
+            <div class="cs-detalle" id={`panel-${c.id}`} role="region" aria-labelledby={`tab-${c.id}`} hidden={i !== 0}>
+              <div>
+                <p>{c.texto}</p>
+                {c.remate && <p class="cs-remate">{c.remate}</p>}
+              </div>
             </div>
           </div>
         ))}
@@ -116,11 +118,15 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
   .cs-caso.on .cs-boton svg { transform: rotate(45deg); color: #4B7BE5; }
   .cs-boton:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; border-radius: 4px; }
 
+  /* 0fr → 1fr: el detalle se abre a su altura real, la mida lo que la mida.
+     Con un max-height fijo el caso más largo se corta en pantalla angosta. */
   .cs-detalle {
-    max-height: 0; overflow: hidden; opacity: 0;
-    transition: max-height .4s ease, opacity .3s ease, padding-bottom .4s ease;
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows .4s ease, opacity .3s ease, padding-bottom .4s ease;
   }
-  .cs-caso.on .cs-detalle { max-height: 300px; opacity: 1; padding-bottom: 24px; }
+  .cs-detalle > div { overflow: hidden; }
+  .cs-detalle[hidden] { display: none; }
+  .cs-caso.on .cs-detalle { grid-template-rows: 1fr; opacity: 1; padding-bottom: 24px; }
   .cs-detalle p { margin: 0; font-size: 16px; line-height: 1.7; color: #4A4A4A; max-width: 52ch; }
   .cs-remate {
     margin-top: 14px !important; font-weight: 700; color: #1A1A1A !important;
@@ -159,10 +165,35 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
       const fotos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-foto]'));
 
       const abrir = (id: string) => {
-        casos.forEach((c) => c.classList.toggle('on', c.dataset.caso === id));
+        // Primero se devuelve al flujo el panel que va a abrir: un elemento en
+        // display:none no anima al aparecer, y el acordeón daría un brinco.
+        const destino = casos.find((c) => c.dataset.caso === id)
+          ?.querySelector<HTMLElement>('.cs-detalle');
+        if (destino) destino.hidden = false;
+
+        requestAnimationFrame(() => aplicar(id));
+      };
+
+      const aplicar = (id: string) => {
+        casos.forEach((c) => {
+          const abierto = c.dataset.caso === id;
+          c.classList.toggle('on', abierto);
+          const panel = c.querySelector<HTMLElement>('.cs-detalle');
+          // `hidden` de verdad: un panel cerrado que solo mide 0 lo sigue
+          // leyendo el lector de pantalla, y se oyen los cuatro textos
+          // seguidos sin saber cuál está abierto.
+          if (panel) {
+            if (abierto) {
+              panel.hidden = false;
+            } else {
+              // Se espera al final de la transición para no matar la animación.
+              setTimeout(() => { if (!c.classList.contains('on')) panel.hidden = true; }, 400);
+            }
+          }
+        });
         fotos.forEach((f) => f.classList.toggle('on', f.dataset.foto === id));
         botones.forEach((b) =>
-          b.setAttribute('aria-selected', b.dataset.abre === id ? 'true' : 'false'));
+          b.setAttribute('aria-expanded', b.dataset.abre === id ? 'true' : 'false'));
       };
 
       botones.forEach((b) => {

@@ -85,7 +85,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   // ── Filas pendientes ────────────────────────────────────────────────────
   const pendientes: any[] = [];
-  let yaMarcadas = 0, sinContacto = 0;
+  let yaMarcadas = 0, sinContacto = 0, pruebas = 0;
   for (let i = 1; i < filas.length; i++) {
     const f = filas[i];
     if (!f.some(c => String(c || '').trim())) continue;          // fila vacía
@@ -95,12 +95,15 @@ export const GET: APIRoute = async ({ url, request }) => {
     encabezados.forEach((h, j) => { obj[h] = f[j] ?? ''; });
     const lead: any = mapearLead(obj);
     if (!lead.email && !lead.whatsapp) { sinContacto++; continue; }
+    // TikTok manda una fila dummy cuando alguien prueba el formulario. No es
+    // una persona: si entra, infla el conteo y baja el costo por lead a mentira.
+    if (lead.es_prueba) { pruebas++; continue; }
     lead._fila = i + 1;                                          // fila real de la hoja (1-based)
     pendientes.push(lead);
   }
 
   if (!pendientes.length) {
-    return json({ ok: true, mensaje: 'Nada nuevo.', filas_datos: filas.length - 1, ya_marcadas: yaMarcadas, sin_contacto: sinContacto });
+    return json({ ok: true, mensaje: 'Nada nuevo.', filas_datos: filas.length - 1, ya_marcadas: yaMarcadas, sin_contacto: sinContacto, pruebas });
   }
 
   const r = await importarLeadsTikTok(pendientes, { dry_run, via: 'hoja' });
@@ -123,7 +126,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   return json({
     ok: true, dry_run,
-    hoja: { id: sheetId, pestana, columna_estado: colEstado, ya_marcadas: yaMarcadas, sin_contacto: sinContacto },
+    hoja: { id: sheetId, pestana, columna_estado: colEstado, ya_marcadas: yaMarcadas, sin_contacto: sinContacto, pruebas },
     ...r,
     marcado,
   });

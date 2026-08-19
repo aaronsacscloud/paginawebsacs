@@ -73,6 +73,14 @@ export default function CobranzaTab() {
   const [tramoSel, setTramoSel] = useState<any>(null);
   const [menuTramo, setMenuTramo] = useState(false);
   const [busca, setBusca] = useState('');
+  // El tablero vive detrás de un botón, no de una pestaña: se consulta una vez
+  // a la semana, no cada vez que se entra a cobrar.
+  const [tablero, setTablero] = useState<any>(null);
+  const [verTablero, setVerTablero] = useState(false);
+  useEffect(() => {
+    if (!verTablero || tablero) return;
+    fetch('/api/crm/cobranza/tablero').then(r => r.json()).then(setTablero).catch(() => setTablero({ error: true }));
+  }, [verTablero]);
   // El menú de la fila se ancla con position FIXED: dentro de la tabla lo
   // recortaba el contenedor con desplazamiento y solo se veía la primera opción.
   const [menuFila, setMenuFila] = useState<any>(null);
@@ -252,11 +260,15 @@ export default function CobranzaTab() {
         @media (max-width: 620px)  { .cob-5 { grid-template-columns:1fr; } }
       `}</style>
 
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
         <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
           Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
         </div>
+        </div>
+        <button style={{ ...S.mini, height: 36, padding: '0 14px', fontSize: '0.8rem', color: '#2C5FC4', borderColor: '#cdd9f7' }}
+          onClick={() => setVerTablero(true)}>Tablero de cobranza</button>
       </div>
 
       {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
@@ -383,6 +395,7 @@ export default function CobranzaTab() {
           </div>
         );
       })()}
+      {verTablero && <Tablero d={tablero} onCerrar={() => setVerTablero(false)} />}
       {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
@@ -433,6 +446,103 @@ function DetalleMes({ filas, total, onCerrar, onCliente }: any) {
             ))}
           </tbody>
         </table>
+      </div>
+    </Modal>
+  );
+}
+
+
+/* ─── Tablero de cobranza ───
+ * Qué tan rápido se cobra y qué tan sana está la cartera. Casi todo depende de
+ * datos que se empezaron a guardar HOY —la fecha que cada pago venía a cubrir,
+ * la bitácora de gestión y el desenlace de las promesas—, así que lo que
+ * todavía no tiene base se dice con todas sus letras en vez de inventar un
+ * promedio con dos datos. */
+function Tablero({ d, onCerrar }: any) {
+  if (!d) return <Modal titulo="Tablero de cobranza" onCerrar={onCerrar} ancho={880}><Cargando texto="Armando el tablero…" alto={220} /></Modal>;
+  if (d.error) return <Modal titulo="Tablero de cobranza" onCerrar={onCerrar} ancho={880}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>No se pudo cargar.</div></Modal>;
+
+  const kpi = (label: string, valor: any, sub: string, color?: string, pend?: boolean) => (
+    <div style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${pend ? '#f5e2b8' : (color || '#9B8CFA')}`, borderRadius: 10, padding: '12px 14px' }}>
+      <div style={{ ...S.kl, display: 'flex', alignItems: 'center', gap: 5 }}>
+        {label}{pend && <span style={{ fontSize: '0.52rem', background: '#FEF6E7', color: '#9a6a10', borderRadius: 20, padding: '1px 6px' }}>midiendo</span>}
+      </div>
+      <div style={{ ...S.kv, color: valor === '—' ? '#c9c7d0' : (color || '#1a1a1a') }}>{valor}</div>
+      <div style={S.ks}>{sub}</div>
+    </div>
+  );
+  const dias = (x: any) => (x?.dias == null ? '—' : `${x.dias} d`);
+  const maxMes = Math.max(1, ...(d.proyeccion || []).map((m: any) => m.total));
+
+  return (
+    <Modal titulo="Tablero de cobranza" nota={`al ${fmtCorta(d.hoy)}`} onCerrar={onCerrar} ancho={880}>
+      <div style={{ ...S.kl, marginBottom: 8 }}>Qué tan rápido se cobra</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
+        {kpi('Anualidades', dias(d.velocidad.anual), `${d.velocidad.anual.n} pago${d.velocidad.anual.n === 1 ? '' : 's'} medidos`, '#5B4BD6', d.velocidad.anual.dias == null)}
+        {kpi('Mensuales', dias(d.velocidad.mensual), `${d.velocidad.mensual.n} pago${d.velocidad.mensual.n === 1 ? '' : 's'} medidos`, '#5B4BD6', d.velocidad.mensual.dias == null)}
+        {kpi('Cotizaciones', dias(d.velocidad.cotizacion), `${d.velocidad.cotizacion.n} abono${d.velocidad.cotizacion.n === 1 ? '' : 's'} medidos`, '#2C5FC4', d.velocidad.cotizacion.dias == null)}
+        {kpi('Pagan a tiempo', d.velocidad.a_tiempo == null ? '—' : d.velocidad.a_tiempo + '%', 'el día o antes', '#1E8A63', d.velocidad.a_tiempo == null)}
+      </div>
+      <div style={{ fontSize: '0.72rem', color: '#a5a2af', marginTop: -8, marginBottom: 16, lineHeight: 1.5 }}>
+        Se mide desde que el pago guarda la fecha que venía a cubrir. Van {d.velocidad.total_medidos} pagos con fecha
+        y {d.velocidad.sin_medir} anteriores que no la tienen —esos no se pueden reconstruir hacia atrás.
+      </div>
+
+      <div style={{ ...S.kl, marginBottom: 8 }}>Salud de la cartera</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
+        {kpi('Cartera vencida', d.cartera.pct_vencido == null ? '—' : d.cartera.pct_vencido + '%', `${money(d.cartera.vencido)} sobre ${money(d.cartera.arr_activo)} de ARR`, '#C0554E')}
+        {kpi('Vencido por origen', money(d.cartera.vencido), `${money(d.cartera.vencido_subs)} suscripciones · ${money(d.cartera.vencido_cotizaciones)} parcialidades`, '#EF7A72')}
+        {kpi('Cobrado este mes', money(d.cartera.cobrado_mes), 'todo lo que entró desde el día 1', '#1E8A63')}
+      </div>
+
+      <div style={{ ...S.kl, marginBottom: 8 }}>Lo que entra los próximos meses</div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 130, marginBottom: 6 }}>
+        {(d.proyeccion || []).map((m: any) => (
+          <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end', alignItems: 'center', gap: 5 }}>
+            <b style={{ fontSize: '0.72rem' }}>{money(m.total)}</b>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end' }}>
+              {m.parcial > 0 && <div style={{ height: Math.round((m.parcial / maxMes) * 95), background: '#c9c2f7', borderRadius: '6px 6px 0 0' }} />}
+              <div style={{ height: Math.max(4, Math.round((m.subs / maxMes) * 95)), background: '#9B8CFA', borderRadius: m.parcial > 0 ? 0 : '6px 6px 0 0' }} />
+            </div>
+            <span style={{ fontSize: '0.66rem', color: '#8a8590' }}>{m.mes.slice(5)} · {m.n}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginBottom: 16 }}>
+        Morado sólido: renovaciones. Claro: parcialidades con fecha pactada. Es la caja que se puede prometer.
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <div style={{ ...S.kl, marginBottom: 8 }}>Promesas de pago</div>
+          {[['Vivas', `${d.promesas.vivas} · ${money(d.promesas.monto_vivo)}`],
+            ['Cumplidas', String(d.promesas.cumplidas)],
+            ['Rotas', String(d.promesas.rotas)],
+            ['Cumplimiento', d.promesas.cumplimiento == null ? '— · aún sin promesas cerradas' : d.promesas.cumplimiento + '%']]
+            .map(([a, b], i) => (
+              <div key={a} style={{ display: 'flex', fontSize: '0.79rem', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none' }}>
+                <span style={{ flex: 1, color: '#6b6b74' }}>{a}</span><b>{b}</b>
+              </div>
+            ))}
+        </div>
+        <div>
+          <div style={{ ...S.kl, marginBottom: 8 }}>Gestión registrada</div>
+          {(d.gestion.por_accion || []).length === 0
+            ? <div style={{ fontSize: '0.78rem', color: '#a5a2af', lineHeight: 1.55 }}>
+                Todavía no hay bitácora. Cada vez que uses “Gestión” en una fila queda registrado el contacto, y con eso
+                sale qué acción cobra más rápido y cuántos toques cuesta cada peso.
+              </div>
+            : (<>
+              {(d.gestion.por_accion || []).map((x: any, i: number) => (
+                <div key={x.tipo} style={{ display: 'flex', fontSize: '0.79rem', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none' }}>
+                  <span style={{ flex: 1, color: '#6b6b74' }}>{GESTION[x.tipo]?.l || x.tipo}</span><b>{x.n}</b>
+                </div>
+              ))}
+              <div style={{ fontSize: '0.73rem', color: '#a5a2af', marginTop: 6 }}>
+                {d.gestion.toques} contactos en {d.gestion.cuentas_tocadas} cuentas · {d.gestion.toques_por_cuenta} por cuenta
+              </div>
+            </>)}
+        </div>
       </div>
     </Modal>
   );

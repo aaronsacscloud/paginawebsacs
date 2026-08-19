@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
   const csv = String(body?.csv || '').trim();
   if (!csv) return json({ error: 'Falta el CSV. Descárgalo en TikTok Ads Manager → Herramientas → Formularios instantáneos → Descargar clientes potenciales.' }, 400);
 
-  const { leads, encabezados, descartadas } = leadsDesdeCSV(csv);
+  const { leads, encabezados, descartadas, pruebas } = leadsDesdeCSV(csv);
   if (!leads.length) {
     return json({
       error: 'No se reconoció ningún lead con correo o teléfono.',
@@ -40,6 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
   return json({
     ok: true, dry_run,
     filas_descartadas: descartadas,
+    pruebas_descartadas: pruebas,
     encabezados_leidos: encabezados,
     ...r,
   });

@@ -74,15 +74,15 @@ export async function importarLeadsTikTok(
   const emails = [...new Set(leads.map(l => l.email).filter(Boolean))] as string[];
   const hayTel = leads.some(l => l.whatsapp);
 
-  const porLeadId = new Map<string, any>();
+  const porLeadId = new Map<string, any>();   // indexado por clave (lead_id o derivada)
   const porEmail = new Map<string, any>();
   const porTel = new Map<string, any>();
 
   const { data: yaImportados } = await supabase
     .from('contacts').select(COLS).eq('fuente', 'tiktok-lead-form').limit(5000);
   for (const c of (yaImportados || [])) {
-    const id = (c as any)?.propiedades?.tiktok?.lead_id;
-    if (id) porLeadId.set(String(id), c);
+    const tk = (c as any)?.propiedades?.tiktok || {};
+    for (const k of [tk.clave, tk.lead_id]) if (k) porLeadId.set(String(k), c);
   }
   if (emails.length) {
     const { data } = await supabase.from('contacts').select(COLS).in('email', emails).limit(5000);
@@ -97,7 +97,7 @@ export async function importarLeadsTikTok(
 
   for (const l of leads) {
     const existente =
-      (l.lead_id && porLeadId.get(l.lead_id)) ||
+      (l.clave && porLeadId.get(l.clave)) ||
       (l.email && porEmail.get(l.email)) ||
       (l.whatsapp && porTel.get(ult10(l.whatsapp))) || null;
 
@@ -108,8 +108,11 @@ export async function importarLeadsTikTok(
       campana: l.campana, anuncio: l.anuncio,
     };
 
-    // Ya importado con el MISMO lead_id: no se toca nada.
-    if (existente && l.lead_id && existente.propiedades?.tiktok?.lead_id === l.lead_id) {
+    // Ya importado con la MISMA clave: no se toca nada. Es lo que hace que el
+    // cron pueda releer la hoja completa cada 15 min sin efectos secundarios.
+    const previo = existente?.propiedades?.tiktok;
+    const yaEstaba = !!previo && !!l.clave && (previo.clave === l.clave || previo.lead_id === l.clave);
+    if (existente && yaEstaba) {
       res.duplicados++;
       res.reporte.push({ ...base, accion: 'duplicado', motivo: 'Ya se había importado este mismo lead', contact_id: existente.id });
       continue;
@@ -117,6 +120,7 @@ export async function importarLeadsTikTok(
 
     const bloqueTikTok = {
       lead_id: l.lead_id || null,
+      clave: l.clave || null,
       campana: l.campana, campana_id: l.campana_id,
       grupo: l.grupo, grupo_id: l.grupo_id,
       anuncio: l.anuncio, anuncio_id: l.anuncio_id,
@@ -213,7 +217,7 @@ export async function importarLeadsTikTok(
     // El nuevo entra a los índices en memoria: si la hoja trae la misma
     // persona dos veces en el mismo lote, la segunda ya lo encuentra.
     const enMemoria = { id: nuevo.id, email: l.email, whatsapp: l.whatsapp, company_id, propiedades: { tiktok: bloqueTikTok } };
-    if (l.lead_id) porLeadId.set(l.lead_id, enMemoria);
+    if (l.clave) porLeadId.set(l.clave, enMemoria);
     if (l.email) porEmail.set(l.email, enMemoria);
     if (l.whatsapp) porTel.set(ult10(l.whatsapp), enMemoria);
 
@@ -225,7 +229,7 @@ export async function importarLeadsTikTok(
     });
     // La campana: un lead pagado que nadie ve el mismo día es la fuga cara.
     await notificar({
-      clave: l.lead_id ? `lead_tiktok:${l.lead_id}` : `lead_tiktok:${l.email || l.whatsapp}`,
+      clave: `lead_tiktok:${l.clave}`,
       tipo: 'lead_nuevo', nivel: 'alerta',
       titulo: `Lead de TikTok Ads: ${base.nombre || base.lead}`,
       detalle: resumenAnuncio(l), destino: 'leads',

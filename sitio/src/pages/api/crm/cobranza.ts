@@ -337,6 +337,10 @@ export const PUT: APIRoute = async ({ request }) => {
   if (['sin_contactar', 'contactado', 'promesa', 'negociando', 'incobrable', 'plan_pagos'].includes(b?.estado)) p.cobranza_estado = b.estado;
   if ('promesa' in b) p.cobranza_promesa = b.promesa || null;
   if ('nota' in b) p.cobranza_nota = String(b.nota || '').slice(0, 500) || null;
+  // Una promesa nueva reabre el marcador: si la anterior quedó rota o cumplida,
+  // el estado viejo mentiría sobre esta.
+  if (p.cobranza_estado === 'promesa' && p.cobranza_promesa) p.cobranza_promesa_estado = null;
+
   // La misma gestión sirve para las dos: una cotización aceptada sin pagar se
   // persigue igual que una mensualidad, y la promesa tiene que quedar donde
   // vive la deuda.
@@ -344,5 +348,22 @@ export const PUT: APIRoute = async ({ request }) => {
     ? await supabase.from('quotes').update(p).eq('id', quoteId)
     : await supabase.from('subscriptions').update(p).eq('id', subId);
   if (error) return json({ error: error.message }, 500);
+
+  // ── La bitácora ──
+  // Cada contacto con su fecha. Es lo único que después contesta qué acción
+  // cobra más rápido y cuántos toques cuesta cada peso; sin registrarlo, el
+  // tablero de cobranza nace vacío para siempre.
+  const dueno = quoteId
+    ? (await supabase.from('quotes').select('company_id').eq('id', quoteId).maybeSingle()).data?.company_id
+    : (await supabase.from('subscriptions').select('company_id').eq('id', subId).maybeSingle()).data?.company_id;
+  await supabase.from('cobranza_gestiones').insert({
+    company_id: dueno || null,
+    subscription_id: subId || null, quote_id: quoteId || null,
+    tipo: b?.estado || 'nota',
+    detalle: String(b?.nota || '').slice(0, 500) || null,
+    promesa_fecha: b?.estado === 'promesa' ? (b?.promesa || null) : null,
+    autor: String(b?.autor || '').slice(0, 80) || null,
+  }).then(() => {}, () => {});
+
   return json({ ok: true });
 };

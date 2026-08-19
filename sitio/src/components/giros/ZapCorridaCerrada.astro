@@ -52,8 +52,10 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
         <div class="cc-barras">
           {caja.map((n, i) => (
             <div class="cc-col">
-              <div class="cc-barra cc-barra-caja" style={`height:${(n / 3) * 100}%`}>
-                <b>{n}</b>
+              <div class="cc-barra-caja-wrap">
+                <div class="cc-barra cc-barra-caja" style={`height:${(n / 6) * 100}%`}>
+                  <b>{n}</b>
+                </div>
               </div>
               <span class="cc-num">{numeros[i]}</span>
             </div>
@@ -68,7 +70,7 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           {venta.map((n, i) => (
             <div class="cc-col">
               <div class="cc-barra-caja-wrap">
-                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / 3) * 100}%`}>
+                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / 6) * 100}%`}>
                   <b id={`bt-${i}`}>{n}</b>
                 </div>
                 {/* El sobrante se pinta encima de la barra del visitante */}
@@ -103,18 +105,20 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           <b id="ccDocenasVal">180</b>
         </label>
         <label>
-          <span>Precio promedio del par</span>
-          <input type="range" id="ccPrecio" class="cc-rango cc-rango-ancho" min="300" max="3500" step="50" value="1100" />
-          <b id="ccPrecioVal">$1,100</b>
+          <span>Costo promedio del par (lo que te cuesta, no lo que cobras)</span>
+          <input type="range" id="ccPrecio" class="cc-rango cc-rango-ancho" min="150" max="2000" step="25" value="700" />
+          <b id="ccPrecioVal">$700</b>
         </label>
       </div>
 
       <div class="cc-dinero">
-        <p class="cc-dinero-rot">Se queda en el rack cada año</p>
+        <p class="cc-dinero-rot">Tu dinero parado en pares que nadie pidió</p>
         <p class="cc-dinero-cifra" id="ccDinero" aria-live="polite">$0</p>
         <p class="cc-dinero-pie">
-          Y de ahí sale al saldero por menos de la mitad. Con tu venta por número a la mano,
-          la pelea por surtido libre se da con datos.
+          De ahí sale al saldero por menos de lo que costó. Y sí: el surtido libre se paga
+          —con sobreprecio por par o con un mínimo más alto de docenas—. Justo por eso hay
+          que llevar el número a la mesa: para saber cuánto sobreprecio te conviene pagar
+          y en qué números pedirlo.
         </p>
         <a class="cc-cta" href="/contacto" id="ccCta">Ver mi curva real con mis ventas</a>
       </div>
@@ -153,7 +157,7 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
   .cc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
   .cc-barra-caja-wrap { position: relative; width: 100%; height: 92px; display: flex; align-items: flex-end; }
-  .cc-fila-caja .cc-col { height: 116px; justify-content: flex-end; }
+  .cc-fila-caja .cc-col { justify-content: flex-end; }
   .cc-barra {
     width: 100%; border-radius: 7px 7px 0 0; position: relative; min-height: 4px;
     display: flex; align-items: flex-start; justify-content: center;
@@ -169,6 +173,8 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
   /* Lo que sobra: se dibuja encima, en rojo, y es el argumento entero. */
   .cc-sobra {
     position: absolute; left: 0; right: 0; bottom: 0; border-radius: 7px 7px 0 0;
+    /* El `bottom` lo pone el script: la franja arranca donde termina la barra
+       verde. Si se queda en 0 el rojo tapa la venta y el bloque miente. */
     background: repeating-linear-gradient(45deg, rgba(248,113,113,.34) 0 6px, rgba(248,113,113,.13) 6px 12px);
     border-top: 2px solid #F87171; pointer-events: none;
     transition: height .3s cubic-bezier(.25,.46,.45,.94);
@@ -269,14 +275,22 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           const barra = document.getElementById('bv-' + i);
           const texto = document.getElementById('bt-' + i);
           const sobra = document.getElementById('bs-' + i);
-          if (barra) barra.style.height = Math.min(100, (v / 3) * 100) + '%';
+          // Todo en la misma escala (0 a 6) para que las dos filas se comparen.
+          if (barra) barra.style.height = (v / 6) * 100 + '%';
           if (texto) texto.textContent = String(v);
-          // La franja roja mide el excedente en la misma escala que las barras.
-          if (sobra) sobra.style.height = (excedente / 3) * 100 + '%';
+          // La franja roja se APILA sobre la barra verde: arranca donde la
+          // venta termina. Dibujada desde el piso taparía la venta entera.
+          if (sobra) {
+            sobra.style.height = (excedente / 6) * 100 + '%';
+            sobra.style.bottom = (v / 6) * 100 + '%';
+          }
         });
 
         const nDoc = Number(docenas.value);
         const nPre = Number(precio.value);
+        // A costo, no a precio de lista: es el dinero que el dueño ya puso y
+        // que está parado. A precio de venta la cifra se infla al doble y el
+        // primer zapatero que la vea deja de creerle al bloque.
         const total = sobran * nDoc * nPre;
 
         if (elPares) elPares.textContent = String(sobran);
@@ -292,6 +306,18 @@ const totalCaja = caja.reduce((a, b) => a + b, 0);
           cta.href = u.pathname + u.search;
         }
       };
+
+      // La fila del visitante reparte UNA docena. Sin tope se pueden poner 36
+      // pares vendidos de una caja de 12 y la comparación deja de significar
+      // algo: lo que se mueve es la curva, no el volumen.
+      const TOPE = caja.reduce((a: number, b: number) => a + b, 0);
+      const topar = (r: HTMLInputElement) => {
+        const otros = rangos
+          .filter((x) => x !== r)
+          .reduce((a, x) => a + Number(x.value), 0);
+        if (otros + Number(r.value) > TOPE) r.value = String(Math.max(0, TOPE - otros));
+      };
+      rangos.forEach((r) => r.addEventListener('input', () => topar(r)));
 
       [...rangos, docenas, precio].forEach((r) => {
         r.addEventListener('input', pintar);

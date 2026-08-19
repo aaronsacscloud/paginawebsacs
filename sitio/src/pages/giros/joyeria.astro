@@ -20,7 +20,7 @@ import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteCubo from '../../components/suite/SuiteCubo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
-import SuiteRack from '../../components/suite/SuiteRack.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import JoyColchon from '../../components/giros/JoyColchon.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
@@ -30,7 +30,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
 import PosMock from '../../components/suite/PosMock.astro';
 import {
-  seccionesJoyeria, rackJoyeria, cortinaJoyeria, sucursalesJoyeria,
+  seccionesJoyeria, casosJoyeria, cortinaJoyeria, sucursalesJoyeria,
   reglasJoyeria, diasJoyeria, cajaJoyeria, documentosJoyeria,
 } from '../../data/giros/joyeria';
 
@@ -160,23 +160,17 @@ const desc =
     encuadre="center 40%"
     datos={[
       { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
-      { n: 24, pos: ' SKU', rotulo: 'DE UN MODELO, EN UN PASO' },
-      { n: 3, rotulo: 'QUILATAJES CON SU PROPIO FACTOR' },
-      { n: 4, pos: ' canales', rotulo: 'UN SOLO INVENTARIO' },
+      { n: 3, rotulo: 'QUILATAJES, CADA UNO CON SU FACTOR' },
+      { n: 5, pos: ' días', rotulo: 'PARA ARRANCAR, SIN CERRAR' },
     ]}
   />
 
-  <!-- ── Un modelo son muchos pares ── -->
-  <SuiteRack
-    eyebrow="Un modelo no es una pieza"
-    titulo="Cada modelo de la vitrina son"
-    resalte="ocho, doce, veinticuatro"
-    piezas={rackJoyeria}
-    ejeA="tallas"
-    ejeB="quilatajes"
-    unidad="piezas"
-    distintas="distintas"
-    remate="piezas en la vitrina"
+  <!-- ── Momentos reales, con su escena ── -->
+  <SuiteCasos
+    eyebrow="Un día en tu joyería"
+    titulo="Dónde te sirve, en horas concretas"
+    sub="No son funciones: son los cuatro momentos en los que una joyería gana o pierde dinero. Toca cada uno."
+    casos={casosJoyeria}
   />
 
   <!-- ── Recorrido de funcionalidades ── -->

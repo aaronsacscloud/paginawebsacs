@@ -69,16 +69,45 @@ export const POST: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   const quien = user?.nombre || user?.email || 'admin';
 
-  const { data: q } = await supabase.from('quotes').select('id, total, company_id, contact_id').eq('id', quoteId).maybeSingle();
+  const { data: q } = await supabase.from('quotes').select('id, total, company_id, contact_id, notas, vigencia, cobranza_promesa').eq('id', quoteId).maybeSingle();
   if (!q) return json({ error: 'No encontré esa cotización.' }, 404);
+
+  // ── A qué fecha corresponde este abono ──
+  // Si hay plan de parcialidades, la exhibición que toca; si no, la vigencia.
+  // Es lo que después permite decir cuántos días se tardó en cobrarse, que hacia
+  // atrás no se puede reconstruir.
+  let vencia: string | null = null;
+  try {
+    const { data: previos } = await supabase.from('payments').select('monto')
+      .eq('quote_id', quoteId).neq('estado', 'reembolsado');
+    const yaAbonado = (previos || []).reduce((a: number, p: any) => a + Number(p.monto || 0), 0);
+    const { planDeCotizacion, exhibicionExigible } = await import('../../../../lib/quotes/plan');
+    const plan = planDeCotizacion(q, yaAbonado, fecha);
+    vencia = exhibicionExigible(plan)?.fecha || (q.vigencia ? String(q.vigencia).slice(0, 10) : null);
+  } catch { /* sin plan legible: el abono se guarda igual */ }
+  const diasAtraso = vencia
+    ? Math.round((Date.parse(fecha + 'T12:00:00') - Date.parse(vencia + 'T12:00:00')) / 86400000)
+    : null;
 
   const { data: pago, error } = await supabase.from('payments').insert({
     quote_id: quoteId, fecha, monto, metodo: b.metodo || 'transferencia',
     referencia: b.referencia || null, estado: 'confirmado',
     notas: b.nota || null,
     company_id: q.company_id || null, contact_id: q.contact_id || null,
+    ...(vencia ? { vencia_el: vencia, dias_atraso: diasAtraso } : {}),
   }).select().maybeSingle();
   if (error) return json({ error: error.message }, 500);
+
+  // El pago cierra la promesa y queda en la bitácora: es lo que después dice
+  // qué tan rápido se cobra y qué acción funcionó.
+  if (q.cobranza_promesa) {
+    await supabase.from('quotes').update({ cobranza_promesa_estado: 'cumplida', cobranza_promesa: null }).eq('id', quoteId);
+  }
+  await supabase.from('cobranza_gestiones').insert({
+    company_id: q.company_id || null, quote_id: quoteId,
+    tipo: 'pago', detalle: `Abono de ${money(monto)}${vencia ? ` · vencía el ${vencia}` : ''}`,
+    monto, payment_id: pago?.id || null, autor: quien,
+  }).then(() => {}, () => {});
 
   const r = await recalcular(quoteId, quien, `abono de ${money(monto)} del ${fecha}`);
   return json({ ok: true, pago, ...r });

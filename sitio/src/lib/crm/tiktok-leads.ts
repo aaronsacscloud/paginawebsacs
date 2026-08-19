@@ -98,7 +98,7 @@ export const normalizarLlave = (s: string): string =>
    nombre entre versiones del panel. Por eso el mapeo es por lista de alias y
    no por posición: un panel en inglés y otro en español tienen que producir
    el mismo contacto.                                                       */
-const ALIAS: Record<keyof Omit<LeadTikTok, 'respuestas'>, string[]> = {
+const ALIAS: Record<keyof Omit<LeadTikTok, 'respuestas' | 'clave' | 'es_prueba'>, string[]> = {
   lead_id: ['lead_id', 'id', 'id_del_cliente_potencial', 'id_de_cliente_potencial', 'leadid', 'id_del_lead', 'tiktok_lead_id'],
   // 'timestamp'/'marca_temporal' son los nombres que ponen Zapier y Google
   // Forms cuando ellos crean la columna: es la hora en que llegó el lead.

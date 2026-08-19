@@ -287,6 +287,18 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
         font-style: normal;
         font-display: swap;
       }
+      /* Manuscrita real. Antes las anotaciones al margen pedían "Bradley Hand,
+         Segoe Script, Comic Sans" y el resultado dependía del sistema del
+         visitante: en Linux caía en una serif y en Windows en Comic Sans. Un
+         archivo propio quita la lotería. Solo se descarga en las páginas que
+         la usan: una @font-face sin uso no pesa nada. */
+      @font-face {
+        font-family: 'Caveat';
+        src: url('/fonts/Caveat-SemiBold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
       @font-face {
         font-family: 'Plus Jakarta Sans';
         src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2');

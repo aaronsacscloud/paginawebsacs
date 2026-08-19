@@ -140,6 +140,14 @@ export const POST: APIRoute = async ({ request }) => {
     const esperado = Number(sub.monto_proximo ?? sub.precio) || 0;
     const esParcial = body.subscription_id && esperado > 0 && monto < esperado * 0.99;
 
+    // La fecha que este pago viene a cubrir: la próxima factura vigente ANTES de
+    // recorrerla. Si la suscripción no tenía fecha (alta o vitalicia), no se
+    // inventa: se deja vacío y el tablero lo cuenta como "sin fecha pactada".
+    const vencia = sub.proxima_factura ? String(sub.proxima_factura).slice(0, 10) : null;
+    const diasAtraso = vencia
+      ? Math.round((Date.parse(fecha + 'T12:00:00') - Date.parse(vencia + 'T12:00:00')) / 86400000)
+      : null;
+
     const { data: pago, error: pe } = await supabase.from('payments').insert({
       fecha, monto: r2(monto),
       metodo: normMetodo(body.metodo),
@@ -148,6 +156,12 @@ export const POST: APIRoute = async ({ request }) => {
       numero_acuse: genAcuse(fecha), // recibo formal del pago
       company_id: sub.company_id, contact_id: sub.contact_id,
       subscription_id: sub.id, periodo_cubierto: periodo,
+      // ── Cuándo DEBÍA entrar este dinero ──
+      // La próxima factura se pisa en cada renovación, así que si no se guarda
+      // aquí, mañana ya no hay forma de saber cuánto se tardó en cobrar este
+      // periodo. Con estos dos campos el tablero de cobranza puede medir días
+      // de cobro y puntualidad hacia atrás.
+      ...(vencia ? { vencia_el: vencia, dias_atraso: diasAtraso } : {}),
       // Fase 4 — atribución RR: solo si hay partner (body o sub), para no romper el
       // insert mientras la columna partner_id no exista.
       ...((body.partner_id || sub.partner_id) ? { partner_id: body.partner_id || sub.partner_id } : {}),
@@ -231,6 +245,11 @@ export const POST: APIRoute = async ({ request }) => {
         ciclo: cicloEfectivo, precio: precioEfectivo, mrr: r2(mrrNuevo), arr: r2(mrrNuevo * 12),
         monto_proximo: precioEfectivo, ciclo_siguiente: null, precio_siguiente: null,
       });
+    }
+    // Un pago cierra la promesa: sin marcarla, el "cumplimiento de promesas"
+    // nunca sube y la cuenta seguiría apareciendo como comprometida.
+    if (sub.cobranza_promesa) {
+      Object.assign(updSub, { cobranza_promesa_estado: 'cumplida', cobranza_promesa: null, cobranza_estado: 'contactado' });
     }
     let subRes = await supabase.from('subscriptions').update(updSub).eq('id', sub.id).select('*').single();
     if (subRes.error && /column .* does not exist|schema cache/i.test(subRes.error.message || '')) {
