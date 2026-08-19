@@ -1151,7 +1151,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     marcar hoy como pagada una cotización cuyo pago fue en julio
                     no la vuelve venta de agosto. */}
                 {card('Cerrado este mes', fmt(k.cerrado.monto),
-                  <>{k.cerrado.cotizaciones} aceptada{k.cerrado.cotizaciones === 1 ? '' : 's'} o pagada{k.cerrado.cotizaciones === 1 ? '' : 's'}{k.cerrado.con_anticipo ? ` · ${k.cerrado.con_anticipo} con anticipo` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
+                  <>{fmt(k.cerrado.liquidado)} liquidado{k.cerrado.en_parcialidades > 0 ? ` · ${fmt(k.cerrado.en_parcialidades)} en parcialidades` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
                   M.violetaTinta, () => setPanelKpi('cerrado'), M.violeta)}
                 {card('Cobrado este mes', fmt(k.cobrado.monto),
                   <>{k.cobrado.cotizaciones} cotizaci{k.cobrado.cotizaciones === 1 ? 'ón' : 'ones'}{k.cobrado.anticipos > 0 ? ` · ${fmt(k.cobrado.anticipos)} son anticipos` : ''} · <b style={{ color: M.violeta }}>ver</b></>,
@@ -1164,9 +1164,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     : <>{k.por_cobrar.n} exhibici{k.por_cobrar.n === 1 ? 'ón' : 'ones'}{k.por_cobrar.vencido > 0 ? <span style={{ color: M.rojoTinta, fontWeight: 800 }}> · {fmt(k.por_cobrar.vencido)} pasado de fecha</span> : ''} · <b style={{ color: M.violeta }}>ver</b></>,
                   (k.por_cobrar.vencido || 0) > 0 ? M.rojoTinta : '#1a1a1a',
                   () => setPanelKpi('por_cobrar'), M.rojo)}
-                {card('En pago parcial', fmt(k.parcial.falta),
-                  <>{k.parcial.n} con anticipo · abonaron {fmt(k.parcial.abonado)}{k.parcial.con_plan ? ` · ${k.parcial.con_plan} con fechas` : ' · sin fechas acordadas'} · <b style={{ color: M.violeta }}>ver</b></>,
-                  M.violetaTinta, () => setPanelKpi('parcial'), M.violeta)}
+                {/* La única tarjeta de conversión, medida sobre las cotizaciones
+                    del propio mes: comparar contra otro mes mezclaría dos
+                    poblaciones distintas. */}
+                {card('Cierre del mes', k.cierre.pct === null ? '—' : k.cierre.pct + '%',
+                  k.cierre.pct === null
+                    ? 'Todavía no se cotiza nada este mes'
+                    : <>{k.cierre.cerradas} de {k.cierre.generadas} cotizadas · {k.cierre.pagadas} ya pagada{k.cierre.pagadas === 1 ? '' : 's'} ({k.cierre.pct_pagadas}%) · <b style={{ color: M.violeta }}>ver</b></>,
+                  (k.cierre.pct || 0) >= 50 ? M.verdeTinta : '#1a1a1a', () => setPanelKpi('cierre'), M.azul)}
               </>
             );
           })()}
@@ -1177,14 +1182,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         {panelKpi && kpis && (() => {
           const P: any = {
             cotizado: { t: 'Cotizado este mes', d: kpis.cotizado.detalle, nota: 'Todo lo generado en el mes, se haya cerrado o no.' },
-            cerrado: { t: 'Cerrado este mes', d: kpis.cerrado.detalle, nota: 'Aceptadas o pagadas, fechadas por el pago registrado. Las parcialidades entran completas: la venta ya se cerró aunque el resto se cobre después.' },
+            cerrado: { t: 'Cerrado este mes', d: kpis.cerrado.detalle, agrupado: true, nota: 'Aceptadas o pagadas, fechadas por el pago registrado. Se separan las liquidadas de las que van en parcialidades: la venta ya se cerró en las dos, pero solo una sigue teniendo cobranza detrás.' },
             cobrado: { t: 'Cobrado este mes', d: kpis.cobrado.detalle, nota: 'Dinero que entró este mes, anticipos incluidos.' },
             por_cobrar: {
               t: 'Por cobrar este mes',
               d: [...kpis.por_cobrar.detalle, ...(kpis.por_cobrar.detalle_sin_fechas || []).map((x: any) => ({ ...x, sin_fecha: true }))],
               nota: 'Solo las exhibiciones con fecha acordada que caen hasta fin de mes, incluidas las que ya pasaron de su fecha. Lo ganado sin plan de pagos no está vencido —la vigencia caduca el precio, no un pago— y va aparte, al final.',
             },
-            parcial: { t: 'En pago parcial', d: kpis.parcial.detalle, nota: 'Lo abonado, lo que falta y cuándo toca cada exhibición.' },
+            cierre: { t: 'Cierre del mes', d: kpis.cierre.detalle, agrupado: true, nota: 'Las cotizaciones generadas este mes, agrupadas por dónde quedaron: pagadas, cerradas sin liquidar y abiertas.' },
           }[panelKpi];
           if (!P) return null;
           const money = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -1202,7 +1207,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   <div style={{ fontSize: '0.76rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 11 }}>{P.nota}</div>
                   {P.d.length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Nada aquí todavía.</div>}
                   {P.d.map((x: any, i: number) => (
-                    <div key={x.id + '' + i} style={{ padding: '9px 0', borderTop: i ? '1px solid #f4f3f7' : 'none' }}>
+                    <div key={'g' + i} style={{ display: 'contents' }}>
+                    {P.agrupado && x.grupo && x.grupo !== P.d[i - 1]?.grupo && (
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.07em', margin: i ? '14px 0 2px' : '0 0 2px' }}>{x.grupo}</div>
+                    )}
+                    <div style={{ padding: '9px 0', borderTop: i ? '1px solid #f4f3f7' : 'none' }}>
                       <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', flexWrap: 'wrap' as const }}>
                         <a href={x.numero && x.numero !== '—' ? `/cotizacion/${x.id}` : undefined} target="_blank" rel="noreferrer"
                           style={{ fontSize: '0.83rem', fontWeight: 700, color: '#1a1a1a', textDecoration: 'none' }}>
@@ -1210,7 +1219,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         </a>
                         <span style={{ fontSize: '0.8rem', color: '#4c4a57', flex: 1, minWidth: 120 }}>{x.empresa}</span>
                         {x.fecha && <span style={{ fontSize: '0.73rem', color: x.vencido ? '#C0554E' : '#8a8a92' }}>{fecha(x.fecha)}</span>}
-                        <b style={{ fontSize: '0.85rem' }}>{money(x.monto ?? x.saldo ?? x.total)}</b>
+                        <b style={{ fontSize: '0.85rem' }}>{money(x.monto ?? x.total ?? x.saldo)}</b>
                       </div>
                       {x.sin_fecha && (
                         <div style={{ fontSize: '0.72rem', color: '#9a6a10', marginTop: 2 }}>
@@ -1242,6 +1251,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           Sin fechas acordadas · se pueden fijar con “Partir en pagos”, en Cobranza.
                         </div>
                       )}
+                    </div>
                     </div>
                   ))}
                 </div>

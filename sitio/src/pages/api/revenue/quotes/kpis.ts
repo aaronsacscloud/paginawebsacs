@@ -152,6 +152,18 @@ export const GET: APIRoute = async () => {
   const parcialFalta = parciales.reduce((a, x) => a + x.saldo, 0);
   const parcialAbonado = parciales.reduce((a, x) => a + x.ab, 0);
 
+  // ── 6 · Cierre ──
+  // De lo cotizado ESTE MES, cuánto ya se cerró y cuánto ya se pagó completo.
+  // Es la única tarjeta que habla de conversión, y se mide sobre las mismas
+  // cotizaciones: comparar contra el mes anterior mezclaría dos poblaciones.
+  const idsMes = new Set(delMes.map(q => q.id));
+  const cerradasDelMes = delMes.filter(q => {
+    const ab = abonos.get(q.id);
+    return !!ab || ['accepted', 'paid'].includes(String(q.estado));
+  });
+  const pagadasDelMes = delMes.filter(q => (abonos.get(q.id)?.total || 0) >= num(q.total) - 0.5);
+  const montoCerradoDelMes = cerradasDelMes.reduce((a, q) => a + num(q.total), 0);
+
   const variacion = (h: number, a: number) => (a > 0 ? Math.round(((h - a) / a) * 100) : null);
   const ficha = (q: any) => ({ id: q.id, numero: q.numero, empresa: q.empresa, total: Math.round(num(q.total)), estado: q.estado });
 
@@ -166,7 +178,17 @@ export const GET: APIRoute = async () => {
       monto: r2(cerrado), variacion: variacion(cerrado, cerradoPrev), mes_anterior: r2(cerradoPrev),
       cotizaciones: cerradas.length,
       con_anticipo: cerradas.filter(x => x.abonado > 0 && x.abonado < num(x.q.total) - 0.5).length,
-      detalle: cerradas.map(x => ({ ...ficha(x.q), fecha: x.cierre, abonado: Math.round(x.abonado), saldo: Math.round(num(x.q.total) - x.abonado) })),
+      // Cerrado no es una sola cosa: una liquidada ya no da trabajo y una en
+      // parcialidades sigue teniendo cobranza detrás. Se separan para poder
+      // mirar solo la que falta.
+      liquidado: r2(cerradas.filter(x => x.abonado >= num(x.q.total) - 0.5).reduce((a, x) => a + num(x.q.total), 0)),
+      en_parcialidades: r2(cerradas.filter(x => x.abonado < num(x.q.total) - 0.5).reduce((a, x) => a + num(x.q.total), 0)),
+      detalle: cerradas.map(x => ({
+        ...ficha(x.q), fecha: x.cierre,
+        abonado: Math.round(x.abonado), saldo: Math.round(num(x.q.total) - x.abonado),
+        grupo: x.abonado >= num(x.q.total) - 0.5 ? 'Liquidadas' : 'En parcialidades',
+        exhibiciones: (planes.get(x.q.id) || []).map((c: any) => ({ numero: c.numero, total: c.total, fecha: String(c.fecha).slice(0, 10), monto: Math.round(num(c.monto)), estado: c.estado })),
+      })).sort((a, b) => a.grupo.localeCompare(b.grupo) || String(b.fecha).localeCompare(String(a.fecha))),
     },
     cobrado: {
       monto: r2(cobrado), cotizaciones: new Set(pagosMes.map((p: any) => p.quote_id)).size,
@@ -189,6 +211,18 @@ export const GET: APIRoute = async () => {
       detalle: porCobrar.map(x => ({ ...ficha(x.quote), monto: Math.round(x.monto), fecha: x.fecha, exhibicion: x.exhibicion, vencido: x.vencido }))
         .sort((a, b) => a.fecha.localeCompare(b.fecha)),
       detalle_sin_fechas: sinFechas.map(x => ({ ...ficha(x.quote), monto: Math.round(x.saldo) })),
+    },
+    cierre: {
+      pct: delMes.length ? Math.round((cerradasDelMes.length / delMes.length) * 100) : null,
+      pct_pagadas: delMes.length ? Math.round((pagadasDelMes.length / delMes.length) * 100) : null,
+      cerradas: cerradasDelMes.length, pagadas: pagadasDelMes.length, generadas: delMes.length,
+      monto_cerrado: r2(montoCerradoDelMes), monto_generado: r2(cotizado),
+      detalle: delMes.map(q => {
+        const ab = abonos.get(q.id)?.total || 0;
+        const liq = ab >= num(q.total) - 0.5;
+        const cerr = ab > 0 || ['accepted', 'paid'].includes(String(q.estado));
+        return { ...ficha(q), fecha: String(q.created_at).slice(0, 10), abonado: Math.round(ab), grupo: liq ? 'Pagadas' : cerr ? 'Cerradas sin liquidar' : 'Abiertas' };
+      }).sort((a, b) => a.grupo.localeCompare(b.grupo)),
     },
     parcial: {
       falta: r2(parcialFalta), abonado: r2(parcialAbonado), n: parciales.length,
