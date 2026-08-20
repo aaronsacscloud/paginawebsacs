@@ -83,6 +83,11 @@ function baseUrl(): string {
   return (import.meta.env.PUBLIC_SITE_URL || 'https://www.sacscloud.com').replace(/\/$/, '');
 }
 
+/** El subdominio que recibe respuestas (MX apuntando al Inbound Parse). */
+function dominioRespuestas(): string {
+  return (import.meta.env.EMAIL_REPLY_DOMAIN || '').trim();
+}
+
 /** ¿Aplica la presión a esta categoría? Solo marketing. */
 const cuentaParaPresion = (c: Categoria) => c === 'marketing';
 
@@ -262,7 +267,15 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
     texto,
     fromEmail: t.from_email,
     fromNombre: t.from_nombre,
-    replyTo: t.reply_to,
+    // Reply-To con el token del envío: cuando el cliente contesta, su respuesta
+    // llega al Inbound Parse y el sistema sabe de QUÉ envío y de qué inquilino
+    // venía sin adivinar por el remitente (dos inquilinos pueden tener al mismo
+    // cliente). Si el subdominio de recepción no está configurado, se cae al
+    // reply_to normal: mejor que la respuesta llegue a un buzón humano a que se
+    // pierda en un dominio sin MX.
+    replyTo: dominioRespuestas()
+      ? `reply+${token}@${dominioRespuestas()}`
+      : t.reply_to,
     headers: headersBaja(base, token),
     asmGroupId: t.sendgrid_asm_group_id,
     customArgs: { tenant: t.id, send: send.id, categoria },

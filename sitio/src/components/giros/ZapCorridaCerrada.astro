@@ -1,21 +1,26 @@
 ---
 /**
- * ZapCorridaCerrada — el complemento propio de zapaterías.
+ * ZapCorridaCerrada — la docena del fabricante contra la venta real.
  *
- * No es un bloque reutilizable: fuera del calzado no significa nada. La corrida
- * cerrada existe solo aquí — el fabricante de León vende la docena repartida
- * 1-2-3-3-2-1 sobre seis números, igual para todas las tiendas del país. Da
- * igual que tu clientela sea de pie chico: te llega el 27 aunque no lo vendas.
+ * El bloque propio de zapatería: solo en calzado el proveedor te obliga a
+ * comprar una curva fija (1-2-3-3-2-1) que ninguna tienda vende así.
  *
- * El visitante mueve su venta real por número y ve, docena por docena, cuántos
- * pares nacen muertos. Es el pleito más viejo del giro —corrida cerrada contra
- * surtido libre— y ningún dueño necesita que se lo expliquen: lo vive cada
- * temporada. Verlo contado con sus números es lo que abre la conversación.
+ * Va dentro de `BloqueProducto`, que es el formato de las páginas de producto
+ * del sitio: texto y viñetas a un lado, la pieza a otro, sobre gris claro.
+ * Antes vivía en una sección negra propia y se veía como de otro sitio.
  *
- * El resultado viaja a /contacto como estimado, igual que en el resto del
- * sitio, para que quien atienda la demo llegue sabiendo de qué tamaño es el
- * problema.
+ * Reglas del oficio que sostienen los números y que no hay que romper:
+ * · La fila del visitante reparte UNA docena. Sin tope se pueden poner treinta
+ *   y seis pares vendidos de una caja de doce y la comparación deja de decir
+ *   nada: lo que se compara es la curva, no el volumen.
+ * · La escala sale del máximo real. Con un tope fijo las barras se aplastan.
+ * · El sobrante se APILA sobre la venta. Dibujado desde el piso, tapa la barra
+ *   que debía complementar y el bloque termina diciendo lo contrario.
+ * · El dinero se cuenta a COSTO. A precio de lista se infla al doble y el
+ *   primer zapatero que lo vea deja de creerle a la página.
  */
+import BloqueProducto from '../BloqueProducto.astro';
+
 interface Props {
   numeros?: string[];
   /** La docena del fabricante. Debe sumar 12. */
@@ -29,36 +34,36 @@ const {
   venta = [1, 2, 4, 4, 1, 0],
 } = Astro.props;
 
+const escalaInicial = Math.max(4, ...caja, ...venta);
 ---
 
-<section class="cc" data-caja={JSON.stringify(caja)}>
-  <div class="cc-inner">
-
-    <header class="cc-head">
-      <p class="cc-eyebrow">El pleito de cada temporada</p>
-      <h2>La corrida cerrada contra <span>lo que tú vendes</span>.</h2>
-      <p class="cc-sub">
-        El fabricante arma la docena {caja.join('-')} y te la manda igual que a todas las tiendas
-        del país. Mueve abajo tu venta real por número y mira cuántos pares de cada docena
-        nacen muertos.
-      </p>
-    </header>
+<BloqueProducto
+  encabezado="El pleito de cada temporada."
+  titulo="La corrida cerrada contra lo que tú vendes."
+  descripcion={`El fabricante arma la docena ${caja.join('-')} y te la manda igual que a todas las tiendas del país. Mueve tu venta real por número y mira cuántos pares de cada docena nacen muertos.`}
+  vinetas={[
+    { label: 'Tu curva, no la del proveedor', detail: 'Con tu venta por número a la mano, la pelea por surtido libre se da con datos y no de memoria.' },
+    { label: 'Y sí, el surtido libre se paga', detail: 'Con sobreprecio por par o con un mínimo más alto de docenas. Por eso hay que saber cuánto te conviene pagar y en qué números pedirlo.' },
+    { label: 'La cuenta va a costo', detail: 'Lo que ves es el dinero que ya pusiste y está parado, no el precio al que esperabas venderlo.' },
+  ]}
+>
+  <div class="cc" data-caja={JSON.stringify(caja)}>
 
     <div class="cc-tabla">
       <ul class="cc-clave" aria-hidden="true">
         <li><i class="v"></i>Lo que vendes</li>
-        <li><i class="r"></i>Lo que te sobra de cada docena</li>
-        <li><i class="c"></i>Lo que te manda el fabricante</li>
+        <li><i class="r"></i>Lo que te sobra</li>
+        <li><i class="c"></i>Lo que te mandan</li>
       </ul>
 
       <!-- Fila del fabricante: fija -->
-      <div class="cc-fila cc-fila-caja">
+      <div class="cc-fila">
         <span class="cc-rot">La docena que te mandan</span>
         <div class="cc-barras">
           {caja.map((n, i) => (
             <div class="cc-col">
-              <div class="cc-barra-caja-wrap">
-                <div class="cc-barra cc-barra-caja" id={`bc-${i}`} style={`height:${(n / Math.max(4, ...caja, ...venta)) * 100}%`}>
+              <div class="cc-wrap">
+                <div class="cc-barra cc-barra-caja" id={`bc-${i}`} style={`height:${(n / escalaInicial) * 100}%`}>
                   <b>{n}</b>
                 </div>
               </div>
@@ -69,25 +74,20 @@ const {
       </div>
 
       <!-- Fila del visitante: se mueve -->
-      <div class="cc-fila cc-fila-venta">
+      <div class="cc-fila">
         <span class="cc-rot">Tu venta real por número</span>
         <div class="cc-barras">
           {venta.map((n, i) => (
             <div class="cc-col">
-              <div class="cc-barra-caja-wrap">
-                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / Math.max(4, ...caja, ...venta)) * 100}%`}>
+              <div class="cc-wrap">
+                <div class="cc-barra cc-barra-venta" id={`bv-${i}`} style={`height:${(n / escalaInicial) * 100}%`}>
                   <b id={`bt-${i}`}>{n}</b>
                 </div>
-                {/* El sobrante se pinta encima de la barra del visitante */}
                 <div class="cc-sobra" id={`bs-${i}`}></div>
               </div>
               <input
-                type="range"
-                class="cc-rango"
-                id={`cc-${i}`}
-                min="0" max="6" step="1"
-                value={n}
-                data-i={i}
+                type="range" class="cc-rango" id={`cc-${i}`}
+                min="0" max="6" step="1" value={n} data-i={i}
                 aria-label={`Pares del número ${numeros[i]} que vendes de cada docena`}
               />
               <span class="cc-num">{numeros[i]}</span>
@@ -97,173 +97,139 @@ const {
       </div>
     </div>
 
-    <div class="cc-resultado">
-      <div class="cc-dato">
-        <b id="ccPares">0</b>
-        <span>pares de cada docena que no vas a vender</span>
-      </div>
+    <div class="cc-pie">
+      <p class="cc-dato"><b id="ccPares">0</b><span>pares de cada docena que no vas a vender</span></p>
 
       <div class="cc-controles">
         <label>
-          <span>Docenas que compras al año</span>
+          <span>Docenas al año</span>
           <input type="range" id="ccDocenas" class="cc-rango cc-rango-ancho" min="10" max="600" step="10" value="180" />
           <b id="ccDocenasVal">180</b>
         </label>
         <label>
-          <span>Costo promedio del par (lo que te cuesta, no lo que cobras)</span>
+          <span>Costo del par</span>
           <input type="range" id="ccPrecio" class="cc-rango cc-rango-ancho" min="150" max="2000" step="25" value="600" />
           <b id="ccPrecioVal">$600</b>
         </label>
       </div>
 
       <div class="cc-dinero">
-        <p class="cc-dinero-rot">Tu dinero parado en pares que nadie pidió</p>
-        <p class="cc-dinero-cifra" id="ccDinero" aria-live="polite">$0</p>
-        <p class="cc-dinero-pie">
-          De ahí sale al saldero por menos de lo que costó. Y sí: el surtido libre se paga
-          —con sobreprecio por par o con un mínimo más alto de docenas—. Justo por eso hay
-          que llevar el número a la mesa: para saber cuánto sobreprecio te conviene pagar
-          y en qué números pedirlo.
-        </p>
+        <span class="cc-dinero-rot">Tu dinero parado, a costo</span>
+        <b class="cc-dinero-n" id="ccDinero" aria-live="polite">$0</b>
         <a class="cc-cta" href="/contacto" id="ccCta">Ver mi curva real con mis ventas</a>
       </div>
     </div>
 
   </div>
-</section>
+</BloqueProducto>
 
 <style>
-  .cc { background: #0C0C11; padding: 100px 24px 110px; }
-  .cc-inner { max-width: 1200px; margin: 0 auto; }
+  .cc {
+    background: #fff; border-radius: 16px; padding: 26px 26px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 12px 32px rgba(15,23,42,.07);
+  }
 
-  .cc-head { max-width: 720px; margin-bottom: 50px; }
-  .cc-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #E8A838; margin: 0 0 16px;
-  }
-  .cc-head h2 {
-    font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
-    line-height: 1.06; color: #fff; margin: 0 0 16px;
-  }
-  .cc-head h2 span { color: #4B7BE5; }
-  .cc-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A1A1AA; }
-
-  /* ── Las dos filas enfrentadas ── */
-  .cc-tabla {
-    border: 1px solid #23232B; border-radius: 18px; padding: 26px 26px 22px; background: #101016;
-    margin-bottom: 26px;
-  }
-  .cc-fila + .cc-fila { margin-top: 28px; padding-top: 24px; border-top: 1px solid #1E1E26; }
-  .cc-rot {
-    display: block; font-size: 11.5px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: #6A6A76; margin-bottom: 16px;
-  }
   .cc-clave {
-    list-style: none; margin: 0 0 20px; padding: 0; display: flex; gap: 20px; flex-wrap: wrap;
-    font-size: 12px; font-weight: 600; color: #8A8A96;
+    list-style: none; margin: 0 0 20px; padding: 0; display: flex; gap: 18px; flex-wrap: wrap;
+    font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A);
   }
   .cc-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
-  .cc-clave i.v { background: #1F4D3D; border-top: 2px solid #34D399; }
-  .cc-clave i.r { background: rgba(248,113,113,.34); border-top: 2px solid #F87171; }
-  .cc-clave i.c { background: #3A4A6B; border-top: 2px solid #7FA6F5; }
+  .cc-clave i.v { background: #2AB5A0; }
+  .cc-clave i.r { background: repeating-linear-gradient(45deg, #E54B4B 0 3px, #F8B4B4 3px 6px); }
+  .cc-clave i.c { background: #C3D2EE; }
 
-  .cc-barras { display: flex; gap: 12px; align-items: flex-end; }
-  .cc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-
-  .cc-barra-caja-wrap { position: relative; width: 100%; height: 128px; display: flex; align-items: flex-end; }
-  .cc-fila-caja .cc-col { justify-content: flex-end; }
+  .cc-fila + .cc-fila { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,.07); }
+  .cc-rot {
+    display: block; font-size: 11px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C); margin-bottom: 14px;
+  }
+  .cc-barras { display: flex; gap: 10px; align-items: flex-end; }
+  .cc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .cc-wrap { position: relative; width: 100%; height: 104px; display: flex; align-items: flex-end; }
   .cc-barra {
-    width: 100%; border-radius: 7px 7px 0 0; position: relative; min-height: 4px;
-    display: flex; align-items: flex-start; justify-content: center;
+    position: relative; width: 100%; border-radius: 6px 6px 0 0; min-height: 3px;
     transition: height .3s cubic-bezier(.25,.46,.45,.94);
   }
   .cc-barra b {
-    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-    margin-bottom: 5px; font-size: 12px; font-weight: 800; color: #fff;
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 5px;
+    font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+  .cc-barra-caja { background: #C3D2EE; }
+  .cc-barra-venta { background: #2AB5A0; }
+  /* El sobrante se apila ENCIMA de la venta: el script pone su `bottom`. */
+  .cc-sobra {
+    position: absolute; left: 0; right: 0; bottom: 0; border-radius: 6px 6px 0 0;
+    background: repeating-linear-gradient(45deg, rgba(229,75,75,.55) 0 5px, rgba(229,75,75,.2) 5px 10px);
+    border-top: 2px solid #E54B4B; pointer-events: none;
+    transition: height .3s cubic-bezier(.25,.46,.45,.94), bottom .3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .cc-num {
+    font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A);
     font-variant-numeric: tabular-nums;
   }
-  /* Cuando hay sobrante, el número de la venta se sube por encima del rayado
-     —el script calcula cuánto—: dentro del rojo no se lee, y son justo las
-     columnas que hay que leer. */
-  .cc-barra-caja { background: linear-gradient(180deg, #3A4A6B, #253248); border-top: 2px solid #7FA6F5; }
-  .cc-barra-venta { background: linear-gradient(180deg, #1F4D3D, #122E25); border-top: 2px solid #34D399; }
-
-  /* Lo que sobra: se dibuja encima, en rojo, y es el argumento entero. */
-  .cc-sobra {
-    position: absolute; left: 0; right: 0; bottom: 0; border-radius: 7px 7px 0 0;
-    /* El `bottom` lo pone el script: la franja arranca donde termina la barra
-       verde. Si se queda en 0 el rojo tapa la venta y el bloque miente. */
-    background: repeating-linear-gradient(45deg, rgba(248,113,113,.34) 0 6px, rgba(248,113,113,.13) 6px 12px);
-    border-top: 2px solid #F87171; pointer-events: none;
-    transition: height .3s cubic-bezier(.25,.46,.45,.94);
-  }
-  .cc-num { font-size: 12px; font-weight: 700; color: #8A8A96; font-variant-numeric: tabular-nums; }
 
   .cc-rango {
     -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px;
-    background: #26262E; outline: none; cursor: pointer;
+    background: #E2E8F0; outline: none; cursor: pointer;
   }
   .cc-rango::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%;
-    background: #E8A838; border: 3px solid #0C0C10; cursor: grab;
-    box-shadow: 0 0 0 3px rgba(232,168,56,.28);
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: #4B7BE5; border: 3px solid #fff; cursor: grab;
+    box-shadow: 0 1px 4px rgba(15,23,42,.3);
   }
   .cc-rango::-moz-range-thumb {
-    width: 20px; height: 20px; border-radius: 50%; background: #E8A838;
-    border: 3px solid #0C0C10; cursor: grab; box-shadow: 0 0 0 3px rgba(232,168,56,.28);
+    width: 18px; height: 18px; border-radius: 50%; background: #4B7BE5; border: 3px solid #fff;
+    cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
   }
-  .cc-rango:focus-visible { outline: 2px solid #E8A838; outline-offset: 4px; }
+  .cc-rango:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; }
 
-  /* ── Resultado ── */
-  .cc-resultado { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
-  .cc-dato {
-    grid-column: 1 / -1; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
-    padding-bottom: 22px; border-bottom: 1px solid #1E1E26;
-  }
+  .cc-pie { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,.07); }
+  .cc-dato { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 18px; }
   .cc-dato b {
-    font-size: clamp(40px, 5vw, 58px); font-weight: 800; color: #F87171; line-height: 1;
-    letter-spacing: -2px; font-variant-numeric: tabular-nums;
+    font-size: 38px; font-weight: 800; color: #E54B4B; line-height: 1; letter-spacing: -1.4px;
+    font-variant-numeric: tabular-nums;
   }
-  .cc-dato span { font-size: 16px; color: #A1A1AA; }
+  .cc-dato span { font-size: 14px; color: var(--color-text-secondary, #4A4A4A); font-weight: 600; }
 
-  .cc-controles { display: grid; gap: 26px; padding-top: 8px; }
-  .cc-controles label { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: baseline; }
-  .cc-controles span { font-size: 14.5px; color: #A1A1AA; }
-  .cc-controles b { font-size: 18px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
-  .cc-rango-ancho { grid-column: 1 / -1; height: 4px; }
-  .cc-rango-ancho::-webkit-slider-thumb { border-color: #E8A838; width: 20px; height: 20px; }
-  .cc-rango-ancho::-moz-range-thumb { border-color: #E8A838; width: 20px; height: 20px; }
+  .cc-controles { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+  .cc-controles label { display: grid; gap: 6px; }
+  .cc-controles span {
+    font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A);
+  }
+  .cc-controles b {
+    font-size: 15px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
+    font-variant-numeric: tabular-nums;
+  }
 
   .cc-dinero {
-    border: 1px solid #2A2018; border-radius: 18px; padding: 26px 26px 24px;
-    background: linear-gradient(165deg, rgba(232,168,56,.09), #101015 62%);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: #F8FAFC; border: 1px solid rgba(0,0,0,.06); border-radius: 12px; padding: 16px 18px;
   }
   .cc-dinero-rot {
-    margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: #C08F3E;
+    font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
   }
-  .cc-dinero-cifra {
-    margin: 0 0 14px; font-size: clamp(36px, 4.6vw, 54px); font-weight: 800; color: #fff;
-    letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums;
+  .cc-dinero-n {
+    font-size: 26px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -1px; font-variant-numeric: tabular-nums; margin-right: auto;
   }
-  .cc-dinero-pie { margin: 0 0 22px; font-size: 14px; line-height: 1.6; color: #9C9CA8; }
   .cc-cta {
-    display: inline-flex; align-items: center; justify-content: center; width: 100%;
-    height: 52px; border-radius: 12px; background: #4B7BE5; color: #fff;
-    font-size: 15.5px; font-weight: 700; text-decoration: none;
-    transition: background .16s ease;
+    background: #4B7BE5; color: #fff; text-decoration: none; border-radius: 50px;
+    padding: 11px 22px; font-size: 14px; font-weight: 700; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(75,123,229,.3); transition: transform .2s ease;
   }
-  .cc-cta:hover { background: #3C68CE; text-decoration: none; }
+  .cc-cta:hover { transform: scale(1.03); text-decoration: none; }
 
-  @media (max-width: 900px) {
-    .cc { padding: 70px 18px 78px; }
-    .cc-tabla { padding: 18px 14px 16px; }
-    .cc-barras { gap: 7px; }
-    .cc-resultado { grid-template-columns: 1fr; }
-    .cc-barra b { font-size: 11px; }
+  @media (max-width: 700px) {
+    .cc { padding: 20px 18px 18px; }
+    .cc-controles { grid-template-columns: 1fr; }
+    .cc-wrap { height: 88px; }
+    .cc-dinero-n { margin-right: 0; }
+    .cc-cta { width: 100%; text-align: center; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cc-barra, .cc-sobra { transition: none; }
+    .cc-barra, .cc-sobra, .cc-cta { transition: none; }
   }
 </style>
 
@@ -283,38 +249,30 @@ const {
 
       const pintar = () => {
         let sobran = 0;
-        // La escala sale del valor más alto que hay en pantalla, no de un tope
-        // fijo. Con un tope de 6 y valores de 0 a 4, las barras se quedaban
-        // aplastadas contra el piso y la comparación —que es todo el bloque—
-        // dejaba de verse. La pila más alta de cada columna es el mayor entre
-        // lo que manda el fabricante y lo que vende el visitante.
         const valores = rangos.map((r) => Number(r.value));
+        // La escala sale del valor más alto que hay en pantalla, no de un tope
+        // fijo: con un tope alto las barras se aplastan contra el piso.
         const escala = Math.max(4, ...caja, ...valores);
 
         rangos.forEach((r) => {
           const i = Number(r.dataset.i);
           const v = Number(r.value);
-          // Lo que el fabricante manda de más en ese número: nadie lo pidió y
-          // nadie lo va a comprar.
           const excedente = Math.max(0, caja[i] - v);
           sobran += excedente;
 
           const barra = document.getElementById('bv-' + i);
+          const barraCaja = document.getElementById('bc-' + i);
           const texto = document.getElementById('bt-' + i);
           const sobra = document.getElementById('bs-' + i);
-          // Las dos filas se miden contra la misma escala, o la comparación
-          // miente.
-          const barraCaja = document.getElementById('bc-' + i);
+
           if (barraCaja) barraCaja.style.height = (caja[i] / escala) * 100 + '%';
           if (barra) barra.style.height = (v / escala) * 100 + '%';
           if (texto) texto.textContent = String(v);
-          // La franja roja se APILA sobre la barra verde: arranca donde la
-          // venta termina. Dibujada desde el piso taparía la venta entera.
           if (sobra) {
             sobra.style.height = (excedente / escala) * 100 + '%';
             sobra.style.bottom = (v / escala) * 100 + '%';
             sobra.style.display = excedente > 0 ? 'block' : 'none';
-            // La etiqueta salta por encima del rayado, no se queda debajo.
+            // La etiqueta salta por encima del rayado: dentro del rojo no se lee.
             if (texto) {
               const alto = sobra.parentElement?.clientHeight || 0;
               texto.style.marginBottom = ((excedente / escala) * alto + 5) + 'px';
@@ -324,9 +282,6 @@ const {
 
         const nDoc = Number(docenas.value);
         const nPre = Number(precio.value);
-        // A costo, no a precio de lista: es el dinero que el dueño ya puso y
-        // que está parado. A precio de venta la cifra se infla al doble y el
-        // primer zapatero que la vea deja de creerle al bloque.
         const total = sobran * nDoc * nPre;
 
         if (elPares) elPares.textContent = String(sobran);
@@ -337,20 +292,17 @@ const {
         if (pv) pv.textContent = '$' + nPre.toLocaleString('es-MX');
 
         if (cta) {
-          const u = new URL(cta.href, location.origin);
+          const u = new URL(cta.getAttribute('href') || '/contacto', location.origin);
           u.searchParams.set('estimado', String(Math.round(total)));
           cta.href = u.pathname + u.search;
         }
       };
 
-      // La fila del visitante reparte UNA docena. Sin tope se pueden poner 36
-      // pares vendidos de una caja de 12 y la comparación deja de significar
-      // algo: lo que se mueve es la curva, no el volumen.
-      const TOPE = caja.reduce((a: number, b: number) => a + b, 0);
+      // La fila del visitante reparte UNA docena: sin tope se pueden poner 36
+      // pares vendidos de una caja de 12 y la comparación deja de decir nada.
+      const TOPE = caja.reduce((a, b) => a + b, 0);
       const topar = (r: HTMLInputElement) => {
-        const otros = rangos
-          .filter((x) => x !== r)
-          .reduce((a, x) => a + Number(x.value), 0);
+        const otros = rangos.filter((x) => x !== r).reduce((a, x) => a + Number(x.value), 0);
         if (otros + Number(r.value) > TOPE) r.value = String(Math.max(0, TOPE - otros));
       };
       rangos.forEach((r) => r.addEventListener('input', () => topar(r)));

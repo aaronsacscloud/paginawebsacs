@@ -49,17 +49,23 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 ---
 
 <section class="nv" data-nivelacion={JSON.stringify(datos)}>
-  <div class="nv-inner">
-
-    <header class="nv-head">
+  <div class="nv-head-wrap">
+    <header class="nv-head container">
       <p class="nv-eyebrow">El lunes por la mañana</p>
-      <h2>La remesa que hoy <span>armas en un cuaderno</span>.</h2>
+      <h2>La remesa que hoy armas en un cuaderno.</h2>
       <p class="nv-sub">
         Contra el corte del fin de semana, que es cuando se rompe la corrida. Esto es
         {modelo.toLowerCase()} en tus cuatro tiendas: {totalExistencia} pares, los mismos antes y
         después. Aplica los traspasos uno por uno y mira qué corrida se cierra.
       </p>
     </header>
+  </div>
+
+  <!-- La pieza se apoya sobre la banda azul, igual que en las páginas de
+       producto: arriba respira blanco y abajo la banda la sostiene. -->
+  <div class="nv-visual">
+    <div class="nv-banda" aria-hidden="true"></div>
+    <div class="nv-inner container">
 
     <!-- ── La matriz: número × tienda ── -->
     <div class="nv-matriz">
@@ -179,93 +185,106 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       </p>
     </div>
 
+    </div>
   </div>
 </section>
 
 <style>
-  .nv { background: #0C0C10; color: #fff; padding: 104px 24px 112px; }
-  .nv-inner { max-width: 1200px; margin: 0 auto; }
+  .nv { background: #fff; color: var(--color-text-primary, #1a1a2e); padding: 76px 0 0; }
+  .nv-head-wrap { padding: 0 clamp(16px, 2vw, 32px); }
+  .nv-visual { position: relative; padding-bottom: clamp(40px, 5vw, 64px); }
+  /* La banda arranca a un cuarto de la altura: la pieza queda medio apoyada
+     sobre ella, que es lo que le da el aire de las páginas de producto. */
+  .nv-banda {
+    position: absolute; top: 22%; left: clamp(16px, 2vw, 32px); right: clamp(16px, 2vw, 32px); bottom: 0;
+    border-radius: 24px 24px 0 0;
+    background: linear-gradient(180deg, #2A5FD4 0%, #4B7BE5 55%, #6B9BF7 100%);
+  }
+  .nv-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
 
-  .nv-head { max-width: 760px; margin-bottom: 44px; }
+  .nv-head { margin-bottom: clamp(40px, 5vw, 60px); }
+  .nv-head h2, .nv-head .nv-sub { max-width: 760px; }
   .nv-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #E8A838; margin: 0 0 16px;
+    color: #4B7BE5; margin: 0 0 16px;
   }
   .nv-head h2 {
-    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
-    line-height: 1.05; margin: 0 0 16px; color: #fff;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
   }
-  .nv-head h2 span { color: #4B7BE5; }
-  .nv-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #A8A8B4; }
+  .nv-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); max-width: 62ch; }
 
   /* ── La matriz ── */
   .nv-matriz {
-    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 18px;
-    padding: 22px 24px 20px; margin-bottom: 30px;
+    background: #fff; border-radius: 18px; padding: 24px 26px 22px; margin-bottom: 26px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.12);
   }
   .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-  .nv-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
-  .nv-estado { font-size: 12px; font-weight: 700; color: #E8A838; }
+  .nv-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; color: var(--color-text-primary, #1a1a2e); }
+  .nv-estado { font-size: 12px; font-weight: 700; color: #4B7BE5; }
 
   .nv-tabla-envoltura { overflow-x: auto; }
   .nv-tabla { width: 100%; border-collapse: separate; border-spacing: 5px; min-width: 620px; }
   .nv-tabla th {
-    font-size: 11px; font-weight: 800; color: #8A8A96; padding-bottom: 4px; text-align: center;
+    font-size: 11px; font-weight: 800; color: var(--color-text-tertiary, #8C8C8C);
+    padding-bottom: 4px; text-align: center;
   }
-  .nv-th-tienda { text-align: left !important; font-size: 12px !important; color: #E4E4E7 !important; white-space: nowrap; padding-right: 10px; }
-  .nv-th-total { color: #55555F !important; }
+  .nv-th-tienda { text-align: left !important; font-size: 12.5px !important; color: var(--color-text-primary, #1a1a2e) !important; white-space: nowrap; padding-right: 10px; }
+  .nv-th-total { color: #C0C0C8 !important; }
   .nv-celda {
     width: 44px; height: 38px; text-align: center; border-radius: 9px;
-    background: rgba(52,211,153,.16); border: 1px solid rgba(52,211,153,.28);
+    background: #E6F7F3; border: 1px solid #B9E8DE;
     transition: background .45s ease, border-color .45s ease, transform .45s ease;
   }
-  .nv-celda b { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #A7F3D0; }
+  .nv-celda b { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #12796A; }
   /* Cero en un número que esa tienda SÍ vende: eso es el hueco que duele. */
-  .nv-celda.hueco { background: rgba(248,113,113,.2); border-color: rgba(248,113,113,.55); }
-  .nv-celda.hueco b { color: #FCA5A5; }
+  .nv-celda.hueco { background: #FDE7E7; border-color: #F3AEAE; }
+  .nv-celda.hueco b { color: #C22F2F; }
   /* Cero en un número que ahí no sale: no es hueco, es limpieza. */
-  .nv-celda.limpio { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.07); }
-  .nv-celda.limpio b { color: #3F3F49; }
-  .nv-celda.bajo { background: rgba(232,168,56,.18); border-color: rgba(232,168,56,.42); }
-  .nv-celda.bajo b { color: #FCD98A; }
+  .nv-celda.limpio { background: #F8FAFC; border-color: #EDF1F5; }
+  .nv-celda.limpio b { color: #C7CDD6; }
+  .nv-celda.bajo { background: #FDF3DF; border-color: #F2DCA8; }
+  .nv-celda.bajo b { color: #9A6B10; }
   .nv-celda.mov { transform: scale(1.09); box-shadow: 0 0 0 2px #4B7BE5; }
-  .nv-total { text-align: center; font-size: 12.5px; font-weight: 800; color: #6A6A76; font-variant-numeric: tabular-nums; }
+  .nv-total { text-align: center; font-size: 12.5px; font-weight: 800; color: #A0A6B0; font-variant-numeric: tabular-nums; }
 
   .nv-clave {
     list-style: none; margin: 16px 0 0; padding: 0; display: flex; gap: 20px; flex-wrap: wrap;
-    font-size: 11.5px; color: #8A8A96; font-weight: 600;
+    font-size: 11.5px; color: var(--color-text-secondary, #4A4A4A); font-weight: 600;
   }
   .nv-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
-  .nv-clave i.hueco { background: rgba(248,113,113,.5); border: 1px solid #F87171; }
-  .nv-clave i.limpio { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.2); }
+  .nv-clave i.hueco { background: #FDE7E7; border: 1px solid #E54B4B; }
+  .nv-clave i.limpio { background: #F8FAFC; border: 1px solid #DDE3EA; }
   .nv-clave i.mov { background: #4B7BE5; }
 
   /* ── Los traspasos ── */
   .nv-cuerpo { display: grid; grid-template-columns: 1.25fr 1fr; gap: 30px; align-items: start; }
   .nv-lista-rot {
     margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: #8A8A96;
+    text-transform: uppercase; color: rgba(255,255,255,.8);
   }
   .nv-tr {
-    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 14px;
-    padding: 18px 20px; margin-bottom: 12px; transition: opacity .3s ease, border-color .3s ease;
+    background: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 8px 22px rgba(15,23,42,.1);
+    transition: opacity .3s ease;
   }
-  .nv-tr.hecho { opacity: .42; border-color: rgba(75,123,229,.4); }
+  .nv-tr.hecho { opacity: .5; }
   .nv-tr-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
-  .nv-ruta { font-size: 15px; font-weight: 600; color: #A8A8B4; }
-  .nv-ruta b { color: #fff; font-weight: 800; }
+  .nv-ruta { font-size: 15px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A); }
+  .nv-ruta b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; }
   .nv-motivo {
     font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 4px 11px; white-space: nowrap;
-    background: rgba(75,123,229,.16); color: #93B4F7; border: 1px solid rgba(75,123,229,.34);
+    background: #EAF0FD; color: #2A5FD4; border: 1px solid #C9DAF8;
   }
-  .nv-motivo[data-motivo="Quiebre inminente"] { background: rgba(248,113,113,.14); color: #FCA5A5; border-color: rgba(248,113,113,.34); }
-  .nv-motivo[data-motivo="Excedente muerto"] { background: rgba(232,168,56,.14); color: #FCD98A; border-color: rgba(232,168,56,.34); }
-  .nv-remesa { margin: 0 0 10px; font-size: 12px; color: #6A6A76; font-weight: 700; }
+  .nv-motivo[data-motivo="Quiebre inminente"] { background: #FDE7E7; color: #C22F2F; border-color: #F3AEAE; }
+  .nv-motivo[data-motivo="Excedente muerto"] { background: #FDF3DF; color: #9A6B10; border-color: #F2DCA8; }
+  .nv-remesa { margin: 0 0 10px; font-size: 12px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 700; }
   .nv-items {
-    margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #fff;
+    margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
     font-variant-numeric: tabular-nums; letter-spacing: -.2px;
   }
-  .nv-nota { margin: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: #8A8A96; max-width: 54ch; }
+  .nv-nota { margin: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); max-width: 54ch; }
   .nv-aplicar {
     background: #4B7BE5; color: #fff; border: none; border-radius: 50px;
     padding: 10px 20px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
@@ -273,63 +292,66 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-aplicar:hover { transform: scale(1.03); }
   .nv-aplicar:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-  .nv-tr.hecho .nv-aplicar { background: rgba(255,255,255,.1); pointer-events: none; }
+  .nv-tr.hecho .nv-aplicar { background: #E2E8F0; color: #8C8C8C; pointer-events: none; }
   .nv-reiniciar {
-    background: none; border: 1px solid rgba(255,255,255,.2); color: #A8A8B4; border-radius: 50px;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 50px;
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
   /* ── El resultado ── */
   .nv-resultado {
-    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; padding: 24px 26px 26px;
+    background: #0F172A; border-radius: 18px; padding: 24px 26px 26px;
+    box-shadow: 0 18px 44px rgba(15,23,42,.28);
   }
   .nv-cifra-rot, .nv-dinero-rot {
     margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em;
-    text-transform: uppercase; color: #8A8A96;
+    text-transform: uppercase; color: #94A3B8;
   }
-  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: #4B7BE5; font-variant-numeric: tabular-nums; }
-  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: #6A6A76; }
-  .nv-dinero { padding-top: 20px; border-top: 1px solid rgba(255,255,255,.09); }
+  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: #7FA6F5; font-variant-numeric: tabular-nums; }
+  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: #94A3B8; }
+  .nv-dinero { padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); }
   .nv-dinero-n { margin: 0 0 14px; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1.6px; color: #34D399; font-variant-numeric: tabular-nums; }
   .nv-supuesto { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  .nv-supuesto span { font-size: 12px; font-weight: 700; color: #A8A8B4; }
+  .nv-supuesto span { font-size: 12px; font-weight: 700; color: #CBD5E1; }
   .nv-supuesto select {
-    background: #0C0C10; color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 9px;
+    background: #1E293B; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 9px;
     padding: 9px 11px; font-family: inherit; font-size: 13.5px; font-weight: 600;
   }
-  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: #6A6A76; }
+  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: #8595AB; }
 
-  .nv-feo { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.09); display: grid; gap: 14px; }
-  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: #F87171; letter-spacing: -.4px; }
-  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: #8A8A96; }
+  .nv-feo { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); display: grid; gap: 14px; }
+  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: #FCA5A5; letter-spacing: -.4px; }
+  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: #94A3B8; }
 
   .nv-cta {
-    display: block; margin-top: 22px; text-align: center; background: #fff; color: #0C0C10;
+    display: block; margin-top: 22px; text-align: center; background: #4B7BE5; color: #fff;
     text-decoration: none; border-radius: 50px; padding: 13px 22px; font-size: 14.5px; font-weight: 800;
     transition: transform .2s ease;
   }
   .nv-cta:hover { transform: scale(1.02); }
 
   /* ── De la sugerencia al piso ── */
-  .nv-pasos { margin-top: 44px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,.1); }
+  .nv-pasos { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,.28); }
   .nv-pasos-rot {
     margin: 0 0 18px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
-    text-transform: uppercase; color: #8A8A96;
+    text-transform: uppercase; color: rgba(255,255,255,.85);
   }
   .nv-pasos ol { list-style: none; margin: 0 0 18px; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; }
   .nv-pasos li {
-    display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 700; color: #D4D4DC;
-    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 50px; padding: 8px 16px 8px 8px;
+    display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    background: #fff; border-radius: 50px; padding: 8px 16px 8px 8px;
+    box-shadow: 0 2px 8px rgba(15,23,42,.12);
   }
   .nv-pasos li span {
-    width: 22px; height: 22px; border-radius: 50%; background: rgba(75,123,229,.2); color: #93B4F7;
+    width: 22px; height: 22px; border-radius: 50%; background: #EAF0FD; color: #2A5FD4;
     display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
   }
-  .nv-pasos-pie { margin: 0; font-size: 14px; line-height: 1.7; color: #8A8A96; max-width: 82ch; }
+  .nv-pasos-pie { margin: 0; font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.88); max-width: 82ch; }
   .nv-pasos-pie b { color: #fff; }
 
   @media (max-width: 980px) {
-    .nv { padding: 74px 18px 82px; }
+    .nv { padding: 56px 0 0; }
     .nv-cuerpo { grid-template-columns: 1fr; gap: 24px; }
     .nv-matriz { padding: 18px 16px 16px; }
   }
