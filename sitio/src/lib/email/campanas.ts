@@ -125,9 +125,13 @@ export async function materializar(t: Tenant, c: Campana): Promise<number> {
   //
   // Van primero, para que si algo del envío se rompe se rompa con nosotros.
   const semillas: string[] = ((t as any).semillas || []).filter(Boolean);
+  // Van AL FINAL a propósito. La deduplicación de abajo se queda con la primera
+  // aparición de cada correo: si una semilla es además destinataria real y
+  // fuera primero, ganaría la fila SIN contact_id y esa persona perdería su
+  // seguimiento —aperturas, clics, atribución— en toda la campaña.
   const conSemillas = [
-    ...semillas.map(e => ({ email: String(e).toLowerCase(), contact_id: null as string | null })),
     ...miembros,
+    ...semillas.map(e => ({ email: String(e).toLowerCase(), contact_id: null as string | null })),
   ];
 
   const vistos = new Set<string>();

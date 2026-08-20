@@ -87,6 +87,11 @@ es(clasificarOrigen({ ruta: '/blog/que-es-utm_source' }), 'directo', 'utm_ en el
   es(escalonCalentamiento('2026-08-20', 80, t('2026-08-22T10:00:00Z')), null, 'un límite bajo la termina antes');
   // Una fecha futura no puede abrir la llave de par en par.
   es(escalonCalentamiento('2026-12-01', 5000, t('2026-08-20T10:00:00Z')), 50, 'fecha futura: lo mínimo, no lo máximo');
+  // Si la fecha llega como timestamp completo, concatenar la hora daba NaN —y
+  // NaN se arrastraba hasta quitar el límite diario entero.
+  es(escalonCalentamiento('2026-08-22T00:00:00.000Z', 5000, t('2026-08-24T10:00:00Z')), 100, 'acepta el timestamp completo (día 2 = 100)');
+  es(Number.isFinite(Number(escalonCalentamiento('no-es-fecha', 5000, t('2026-08-24T10:00:00Z')))), true, 'una fecha ilegible nunca devuelve NaN');
+  es(escalonCalentamiento('no-es-fecha', 5000, t('2026-08-24T10:00:00Z')), 50, 'fecha ilegible: lo más conservador');
 }
 
 // ── cualesDetener ────────────────────────────────────────────────────────

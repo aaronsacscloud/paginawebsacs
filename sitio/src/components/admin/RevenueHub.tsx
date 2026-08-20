@@ -95,54 +95,161 @@ const inicialesYo = (n?: string | null) => {
 };
 
 
-// ── Configuración: el índice y la tarjeta de un ajuste ───────────────────────
-// Las secciones son EXACTAMENTE las del menú, en el mismo orden, más un bloque
-// final con lo que es de la persona y no de un módulo. Ese paralelismo es lo
-// que hace que al agregar una configuración nueva ya se sepa dónde va.
-const CFG_SECCIONES = [
-  { id: 'cuentas', grupo: 'Secciones del sistema', label: 'Cuentas', n: 5, sub: 'Lo que configura a Leads, Clientes, Oportunidades y Reuniones.' },
-  { id: 'facturacion', grupo: '', label: 'Facturación', n: 5, sub: 'Lo que configura a Cotizaciones, Pagos, Cobranza y Suscripciones.' },
-  { id: 'acompanamiento', grupo: '', label: 'Acompañamiento', n: 0, sub: 'Lo que configura a Consultoría y al Radar de ventas.' },
-  { id: 'automatizacion', grupo: '', label: 'Automatización', n: 0, sub: 'Lo que configura a Email, Outbound, Automatizaciones y Agentes IA.' },
-  { id: 'colaboradores', grupo: '', label: 'Colaboradores', n: 0, sub: 'Lo que configura a Partners, Comisiones y la revisión de contenido.' },
-  { id: 'mia', grupo: 'Esta cuenta', label: 'Mi perfil y mi marca', n: 2, sub: 'Quién eres dentro del CRM y cómo te ve un cliente en los documentos que le mandas.' },
-  { id: 'usuarios', grupo: '', label: 'Usuarios y permisos', n: 1, sub: 'Quién entra al CRM y qué secciones ve cada quien.' },
-];
+// ── Configuración y personalización ─────────────────────────────────────────
+// Una pantalla completa, no una pestaña más: se abre encima del CRM y se cierra
+// con la X, como la del sistema. A la izquierda los MISMOS grupos y módulos del
+// menú —así, cuando aparezca una configuración nueva, ya se sabe dónde va—; a
+// la derecha sus ajustes, cada uno con su valor actual a la vista para no tener
+// que abrirlo, y adentro el editor de siempre.
 
-function CfgGrupo({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#a49dbd', margin: '20px 0 9px' }}>{children}</div>;
-}
+type CfgItem = { id: string; ico: string; t: string; d: string; v?: string; mudado?: boolean; editor: React.ReactNode };
+type CfgMod = { id: string; nom: string; sub: string; items: CfgItem[] };
+type CfgGrupo = { g: string; mods: CfgMod[] };
 
-function CfgVacio({ children }: { children: React.ReactNode }) {
-  return <div style={{ border: '1px dashed #e6dff7', borderRadius: 14, padding: 18, fontSize: '0.79rem', color: '#6b7280', background: '#fdfcff', lineHeight: 1.6 }}>{children}</div>;
-}
+const CFG_ICONOS: Record<string, string> = {
+  yo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1" stroke-linecap="round"/></svg>',
+  llave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v4M15.5 12v3" stroke-linecap="round"/></svg>',
+  marca: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="9.5" r="5.5"/><path d="M9 14.5 8 22l4-2.2L16 22l-1-7.5" stroke-linejoin="round"/></svg>',
+  gente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21M17 8h5M19.5 5.5v5" stroke-linecap="round"/></svg>',
+  campos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 13h8M8 16.5h5" stroke-linecap="round"/></svg>',
+  pipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke-linejoin="round"/></svg>',
+  folio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke-linecap="round"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg>',
+  banco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M3 20h18M9 10v8M15 10v8" stroke-linecap="round"/></svg>',
+  tarjeta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h3" stroke-linecap="round"/></svg>',
+  tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 01-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 015.4-5.4z" stroke-linejoin="round"/></svg>',
+};
 
-/**
- * Un ajuste: renglón con su nombre y para qué sirve, y el editor de verdad
- * escondido hasta que se abre. La pantalla arranca siendo un índice legible en
- * vez de seis formularios encimados, que es lo que era antes.
- * `mudado` marca lo que vivía suelto en el menú y ahora vive aquí.
- */
-function Ajuste({ id, abierto, onToggle, titulo, desc, meta, mudado, children }: {
-  id: string; abierto: string; onToggle: (v: string) => void;
-  titulo: string; desc: string; meta?: string; mudado?: boolean; children: React.ReactNode;
-}) {
-  const on = abierto === id;
+function CfgFila({ it, ruta, onAbrir }: { it: CfgItem; ruta?: string; onAbrir: () => void }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #efedf6', borderRadius: 14, marginBottom: 10, overflow: 'hidden' }}>
-      <button onClick={() => onToggle(on ? '' : id)}
-        style={{ display: 'flex', gap: 14, alignItems: 'flex-start', width: '100%', textAlign: 'left', border: 'none', background: 'none', fontFamily: 'inherit', padding: '15px 17px', cursor: 'pointer' }}>
-        <span style={{ minWidth: 0, flex: 1 }}>
-          <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#241d43' }}>{titulo}</span>
-          {mudado && <span style={{ marginLeft: 8, fontSize: '0.52rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', background: '#FFF4E5', color: '#9a6a10', borderRadius: 20, padding: '2px 8px' }}>Antes en Ajustes</span>}
-          <span style={{ display: 'block', fontSize: '0.76rem', color: '#6b7280', lineHeight: 1.5, marginTop: 3, maxWidth: '64ch' }}>{desc}</span>
-          {meta && <span style={{ display: 'block', fontSize: '0.68rem', color: '#a49dbd', marginTop: 6 }}>{meta}</span>}
+    <button onClick={onAbrir}
+      style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', textAlign: 'left', padding: '16px 20px', background: '#fff', border: 'none', borderBottom: '1px solid #f6f4fb', cursor: 'pointer', fontFamily: 'inherit' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FBFAFF'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}>
+      <span style={{ width: 42, height: 42, borderRadius: 12, background: '#F3F0FE', color: '#7C6BF0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <span style={{ display: 'flex', width: 19, height: 19 }} dangerouslySetInnerHTML={{ __html: CFG_ICONOS[it.ico] || '' }} />
+      </span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: '0.91rem', fontWeight: 700, color: '#241d43' }}>
+          {it.t}
+          {it.mudado && <span style={{ marginLeft: 8, fontSize: '0.52rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', background: '#FFF4E5', color: '#9a6a10', borderRadius: 20, padding: '2px 8px', verticalAlign: 2 }}>Antes en Ajustes</span>}
         </span>
-        <span style={{ flexShrink: 0, border: '1px solid #e6dff7', borderRadius: 9, fontSize: '0.72rem', fontWeight: 700, color: on ? '#4C3BD0' : '#4b4560', background: on ? '#F3F0FE' : '#fff', padding: '7px 13px' }}>
-          {on ? 'Cerrar' : 'Abrir'}
+        <span style={{ display: 'block', fontSize: '0.77rem', color: '#8e88a8', marginTop: 2, lineHeight: 1.45, maxWidth: '66ch' }}>
+          {ruta && <b style={{ color: '#a49dbd', fontWeight: 700 }}>{ruta} — </b>}{it.d}
         </span>
-      </button>
-      {on && <div style={{ borderTop: '1px solid #f3f1fa', padding: '14px 17px 17px', background: '#fdfcff' }}>{children}</div>}
+      </span>
+      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        {it.v && <span style={{ fontSize: '0.73rem', color: '#a49dbd', fontWeight: 600 }}>{it.v}</span>}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9c4dc" strokeWidth="2" strokeLinecap="round"><polyline points="9 6 15 12 9 18" /></svg>
+      </span>
+    </button>
+  );
+}
+
+function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
+  mapa: CfgGrupo[]; mod: string; item: string; q: string;
+  onMod: (m: string) => void; onItem: (m: string, i: string) => void; onQ: (v: string) => void; onCerrar: () => void;
+}) {
+  const todos = mapa.flatMap(g => g.mods.map(m => ({ ...m, g: g.g })));
+  const actual = todos.find(m => m.id === mod) || todos[0];
+  const abierto = actual?.items.find(i => i.id === item) || null;
+  const busca = q.trim().toLowerCase();
+  const hits = busca
+    ? todos.flatMap(m => m.items.filter(i => `${i.t} ${i.d} ${m.nom}`.toLowerCase().includes(busca)).map(i => ({ i, m })))
+    : [];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div style={{ height: 4, flexShrink: 0, background: 'linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)' }} />
+
+      <header style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0 }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: '1.32rem', fontWeight: 800, letterSpacing: '-.02em', margin: 0, color: '#241d43' }}>Configuración y personalización</h1>
+          <p style={{ fontSize: '0.77rem', color: '#6b7280', margin: '3px 0 0' }}>Cada ajuste vive donde vive su módulo.</p>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #eae4f8', background: '#FBFAFF', borderRadius: 10, padding: '0 12px', height: 36, width: 240 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a49dbd" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input value={q} onChange={e => onQ(e.target.value)} placeholder="Buscar un ajuste…"
+              style={{ border: 'none', background: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '0.8rem', color: '#241d43', width: '100%' }} />
+          </div>
+          <button onClick={onCerrar} title="Cerrar" aria-label="Cerrar configuración"
+            style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #efedf6', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280' }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <div className="cfg-cuerpo" style={{ flex: 1, display: 'grid', gridTemplateColumns: '262px 1fr', minHeight: 0 }}>
+        {/* Riel: los grupos del menú, con sus módulos */}
+        <nav className="cfg-riel" style={{ borderRight: '1px solid #f0eef7', overflowY: 'auto', padding: '10px 0 30px', background: '#fdfcff' }}>
+          {mapa.map((g, gi) => (
+            <div key={g.g}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: '#b0a8c9', padding: gi === 0 ? '8px 22px 6px' : '16px 22px 6px' }}>{g.g}</div>
+              {g.mods.map(m => {
+                const on = m.id === actual?.id && !busca;
+                return (
+                  <button key={m.id} onClick={() => onMod(m.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 16px)', margin: '1px 8px',
+                      textAlign: 'left', border: 'none', background: on ? '#F0EDFE' : 'none', color: on ? '#4C3BD0' : '#4b4560',
+                      fontFamily: 'inherit', fontSize: '0.83rem', fontWeight: on ? 700 : 500, padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = '#f6f3fd'; }}
+                    onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+                    {m.nom}
+                    {m.items.length > 0 && <span style={{ marginLeft: 'auto', fontSize: '0.58rem', fontWeight: 800, color: on ? '#7C6BF0' : '#a49dbd' }}>{m.items.length}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Contenido */}
+        <main style={{ overflowY: 'auto', padding: '24px 30px 60px' }}>
+          {busca ? (
+            <>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>Resultados</h2>
+              <p style={{ fontSize: '0.81rem', color: '#6b7280', margin: '0 0 18px' }}>{hits.length} ajuste{hits.length === 1 ? '' : 's'} con “{q.trim()}”.</p>
+              {hits.length ? (
+                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', maxWidth: 900 }}>
+                  {hits.map(h => <CfgFila key={h.m.id + h.i.id} it={h.i} ruta={`${h.m.g} › ${h.m.nom}`} onAbrir={() => onItem(h.m.id, h.i.id)} />)}
+                </div>
+              ) : (
+                <div style={{ maxWidth: 900, border: '1px dashed #e6dff7', borderRadius: 16, padding: 24, background: '#fdfcff', color: '#6b7280', fontSize: '0.82rem' }}>
+                  Nada con ese nombre. Los ajustes se llaman como el módulo al que pertenecen.
+                </div>
+              )}
+            </>
+          ) : abierto ? (
+            <>
+              <button onClick={() => onMod(actual.id)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: 'none', background: 'none', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 700, color: '#7C6BF0', cursor: 'pointer', padding: 0, marginBottom: 12 }}>
+                ← {actual.nom}
+              </button>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>{abierto.t}</h2>
+              <p style={{ fontSize: '0.81rem', color: '#6b7280', margin: '0 0 18px', lineHeight: 1.55, maxWidth: '74ch' }}>{abierto.d}</p>
+              <div style={{ maxWidth: 980 }}>{abierto.editor}</div>
+            </>
+          ) : (
+            <>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>{actual?.nom}</h2>
+              <p style={{ fontSize: '0.81rem', color: '#6b7280', margin: '0 0 18px', lineHeight: 1.55, maxWidth: '74ch' }}>{actual?.sub}</p>
+              {actual?.items.length ? (
+                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', maxWidth: 900 }}>
+                  {actual.items.map(it => <CfgFila key={it.id} it={it} onAbrir={() => onItem(actual.id, it.id)} />)}
+                </div>
+              ) : (
+                <div style={{ maxWidth: 900, border: '1px dashed #e6dff7', borderRadius: 16, padding: 24, background: '#fdfcff', color: '#6b7280', fontSize: '0.82rem', lineHeight: 1.65 }}>
+                  <b style={{ color: '#241d43' }}>Todavía no hay nada que configurar aquí.</b><br />
+                  Cuando este módulo tenga un ajuste —un catálogo, un aviso, una plantilla— este es su lugar, y no una pantalla aparte.
+                </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
@@ -163,8 +270,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [bankForm, setBankForm] = useState<any>({});
   // Configuración: qué sección del sistema se está viendo y qué ajuste está
   // abierto. Arranca cerrado: la pantalla es un índice, no un formulario.
-  const [cfgSec, setCfgSec] = useState<string>('cuentas');
-  const [cfgAbierto, setCfgAbierto] = useState<string>('');
+  const [cfgMod, setCfgMod] = useState<string>('perfil');
+  const [cfgItem, setCfgItem] = useState<string>('');
+  const [cfgQ, setCfgQ] = useState<string>('');
   const [altaBanco, setAltaBanco] = useState<any>(null);
   const [recup, setRecup] = useState<any>(null);
   const [condicionesTpl, setCondicionesTpl] = useState<any[]>([]);
@@ -3375,319 +3483,285 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         {tab === 'cotizaciones' && (dashCot
           ? <CotizacionesDashboard onCerrar={() => setDashCot(false)} />
           : <QuotesView />)}
-        {tab === 'config' && (
-          <div>
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 4px' }}>Configuración</h1>
-            <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '0 0 20px', lineHeight: 1.55, maxWidth: '76ch' }}>
-              Cada ajuste vive colgado de la <b>sección del sistema</b> a la que pertenece, en el mismo orden del menú:
-              los campos del cliente en <b>Cuentas</b>, el folio en <b>Facturación</b>. Así, cuando se agregue una
-              configuración nueva, ya se sabe dónde va.
-            </p>
-
-            <div className="cfg-cols" style={{ display: 'grid', gridTemplateColumns: '224px 1fr', gap: 24, alignItems: 'start' }}>
-              {/* Índice: las mismas secciones del menú, en el mismo orden */}
-              <nav className="cfg-idx" style={{ background: '#fff', border: '1px solid #efedf6', borderRadius: 14, padding: 8, position: 'sticky', top: 16 }}>
-                {CFG_SECCIONES.map((sec, i) => (
-                  <div key={sec.id}>
-                    {sec.grupo && (
-                      <div style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', color: '#b0a8c9', padding: i === 0 ? '8px 12px 5px' : '14px 12px 5px' }}>{sec.grupo}</div>
-                    )}
-                    <button onClick={() => { setCfgSec(sec.id); setCfgAbierto(''); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none',
-                        background: cfgSec === sec.id ? '#F3F0FE' : 'none', color: cfgSec === sec.id ? '#4C3BD0' : '#4b4560',
-                        fontFamily: 'inherit', fontSize: '0.79rem', fontWeight: 700, padding: '9px 11px', borderRadius: 9, cursor: 'pointer',
-                      }}>
-                      {sec.label}
-                      <span style={{ marginLeft: 'auto', fontSize: '0.58rem', fontWeight: 800, color: cfgSec === sec.id ? '#7C6BF0' : '#a49dbd', background: cfgSec === sec.id ? '#fff' : '#f5f2fd', borderRadius: 20, padding: '1px 7px' }}>{sec.n}</span>
-                    </button>
-                  </div>
-                ))}
-              </nav>
-
-              <div style={{ minWidth: 0 }}>
-                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '2px 0 3px' }}>{CFG_SECCIONES.find(x => x.id === cfgSec)?.label}</h2>
-                <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '0 0 14px', lineHeight: 1.55 }}>{CFG_SECCIONES.find(x => x.id === cfgSec)?.sub}</p>
-
-                {/* ─────────── CUENTAS ─────────── */}
-                {cfgSec === 'cuentas' && (<>
-                  <CfgGrupo>Clientes</CfgGrupo>
-                  <Ajuste id="campos-cliente" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Campos personalizados del cliente"
-                    desc="Información interna de gestión —giro, subgiro, colaboradores, tipo de acompañamiento, origen—. Se captura en la ficha del cliente y aparece en Info general."
-                    meta="Se usan también como filtros en la lista de Clientes">
-                    <CamposConfig entidad="company" />
-                  </Ajuste>
-                  <Ajuste id="etapas-cliente" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Etapas del cliente" mudado
-                    desc="Las columnas por las que pasa una cuenta ya ganada.">
-                    <PipelinesConfig initialTipo="cliente" />
-                  </Ajuste>
-
-                  <CfgGrupo>Contactos</CfgGrupo>
-                  <Ajuste id="campos-contacto" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Campos personalizados del contacto"
-                    desc="Lo que se guarda de una persona, además de nombre, correo y teléfono.">
-                    <CamposConfig entidad="contact" />
-                  </Ajuste>
-
-                  <CfgGrupo>Leads</CfgGrupo>
-                  <Ajuste id="etapas-lead" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Etapas del lead" mudado
-                    desc="Las columnas del embudo de Leads y qué significa cada una.">
-                    <PipelinesConfig initialTipo="lead" />
-                  </Ajuste>
-
-                  <CfgGrupo>Oportunidades</CfgGrupo>
-                  <Ajuste id="etapas-oportunidad" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Etapas de la oportunidad" mudado
-                    desc="Cómo avanza una oportunidad hasta ganarse o perderse.">
-                    <PipelinesConfig initialTipo="oportunidad" />
-                  </Ajuste>
-                </>)}
-
-                {/* ─────────── FACTURACIÓN ─────────── */}
-                {cfgSec === 'facturacion' && (<>
-                  <CfgGrupo>Cotizaciones</CfgGrupo>
-                  <Ajuste id="folio" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Folio de cotizaciones"
-                    desc="El número con el que arranca la siguiente cotización. De ahí en adelante son consecutivos y no se repiten.">
+        {tab === 'config' && (() => {
+          /* El catálogo de ajustes: los MISMOS grupos y módulos del menú del
+             CRM. Cada renglón dice qué configura, cómo está hoy —el valor a la
+             derecha, para no tener que abrir— y trae adentro el editor que ya
+             existía. Los módulos sin ajustes no se esconden: dicen que este es
+             su lugar cuando lo haya, así el hueco es información. */
+          const MAPA: CfgGrupo[] = [
+            { g: 'General', mods: [
+              { id: 'perfil', nom: 'Mi perfil', sub: 'Tu nombre, tu correo y tu foto dentro del CRM.', items: [
+                { id: 'datos', ico: 'yo', t: 'Datos del usuario', v: yo?.nombre || undefined,
+                  d: 'Nombre completo, correo y foto. La foto se usa en el menú, en la actividad de cada cliente y como anfitrión de las reuniones.',
+                  editor: <MiPerfil onGuardado={() => { try { window.dispatchEvent(new Event('sacs-perfil')); } catch { /* noop */ } }} /> },
+                { id: 'pass', ico: 'llave', t: 'Contraseña', d: 'Cambia con qué entras al CRM.',
+                  editor: <a href="/admin/cambiar-password" style={{ ...S.btn, background: M.violeta, color: '#fff', textDecoration: 'none', display: 'inline-block' }}>Cambiar contraseña</a> },
+              ]},
+              { id: 'marca', nom: 'Mi marca', sub: 'Cómo te ve un cliente en los documentos que le mandas.', items: [
+                { id: 'marca', ico: 'marca', t: 'Marca de los documentos', mudado: true,
+                  d: 'Logo, nombre, línea, color de acento y firma con los que salen la minuta, el estado de cuenta y la cotización. Es de cada persona, no de la empresa.',
+                  editor: <MarcaTab /> },
+              ]},
+              { id: 'usuarios', nom: 'Usuarios y permisos', sub: 'Quién entra al CRM y qué ve cada quien.', items: [
+                { id: 'usuarios', ico: 'gente', t: 'Usuarios y permisos', 
+                  d: 'Alta de personas, rol de arranque y permiso por sección: edita, solo ve o no entra. Se revisa también en el servidor.',
+                  editor: <UsuariosPermisos /> },
+              ]},
+            ]},
+            { g: 'Cuentas', mods: [
+              { id: 'clientes', nom: 'Clientes', sub: 'Lo que se guarda de una cuenta y por dónde pasa.', items: [
+                { id: 'campos-cliente', ico: 'campos', t: 'Campos personalizados',
+                  d: 'Giro, subgiro, colaboradores, tipo de acompañamiento, origen. Se capturan en la ficha y sirven de filtro en la lista.',
+                  editor: <CamposConfig entidad="company" /> },
+                { id: 'etapas-cliente', ico: 'pipe', t: 'Etapas del cliente', v: 'Pipeline', mudado: true,
+                  d: 'Las columnas por las que pasa una cuenta ya ganada.',
+                  editor: <PipelinesConfig initialTipo="cliente" /> },
+              ]},
+              { id: 'contactos', nom: 'Contactos', sub: 'Lo que se guarda de una persona.', items: [
+                { id: 'campos-contacto', ico: 'campos', t: 'Campos personalizados',
+                  d: 'Lo que se guarda además de nombre, correo y teléfono.',
+                  editor: <CamposConfig entidad="contact" /> },
+              ]},
+              { id: 'leads', nom: 'Leads', sub: 'El embudo de lo que todavía no es cliente.', items: [
+                { id: 'etapas-lead', ico: 'pipe', t: 'Etapas del lead', v: 'Pipeline', mudado: true,
+                  d: 'Las columnas del embudo y qué significa cada una.',
+                  editor: <PipelinesConfig initialTipo="lead" /> },
+              ]},
+              { id: 'oportunidades', nom: 'Oportunidades', sub: 'Cómo avanza lo que se está vendiendo.', items: [
+                { id: 'etapas-op', ico: 'pipe', t: 'Etapas de la oportunidad', v: 'Pipeline', mudado: true,
+                  d: 'Hasta ganarse o perderse, y los motivos de pérdida.',
+                  editor: <PipelinesConfig initialTipo="oportunidad" /> },
+              ]},
+              { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [] },
+            ]},
+            { g: 'Facturación', mods: [
+              { id: 'cotizaciones', nom: 'Cotizaciones', sub: 'Cómo sale el documento que recibe un cliente.', items: [
+                { id: 'folio', ico: 'folio', t: 'Folio',
+                  d: 'El número con el que arranca la siguiente. De ahí en adelante son consecutivos y no se repiten.',
+                  editor: (<div>
 <div style={{ ...S.card, marginBottom: 24 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>Este número se usa como <b>folio inicial</b>. A partir de él, cada cotización nueva se numera de forma consecutiva y nunca se repite.</div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
-                    <div style={{ flex: 1 }}>
-                    <label style={S.label}>Siguiente numero de folio</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#999' }}>COT-</span>
-                    <input id="folio-input" type="number" min="1" placeholder="Ej. 100" defaultValue="" style={S.input} />
-                    </div>
-                    </div>
-                    <button onClick={async () => {
-                    const input = document.getElementById('folio-input') as HTMLInputElement;
-                    const val = parseInt(input?.value);
-                    if (!val || val < 1) { alert('Ingresa un numero valido'); return; }
-                    // Validar contra el folio más alto existente (no contra el conteo de filas)
-                    const res = await fetch('/api/revenue/quotes');
-                    const all = await res.json();
-                    let maxExisting = 0;
-                    if (Array.isArray(all)) {
-                    for (const q of all) {
-                    const m = String(q?.numero || '').match(/(\d+)\s*$/);
-                    if (m) maxExisting = Math.max(maxExisting, parseInt(m[1], 10));
-                    }
-                    }
-                    if (val <= maxExisting) { alert(`El folio más alto usado es COT-${String(maxExisting).padStart(3, '0')}. El siguiente debe ser mayor a ${maxExisting}.`); return; }
-                    // Guardamos offset = val-1 para mantener la convención (folioStart = offset + 1)
-                    localStorage.setItem('sacs_folio_offset', String(val - 1));
-                    alert(`Listo. La próxima cotización será COT-${String(val).padStart(3, '0')}. Las siguientes serán consecutivas.`);
-                    input.value = '';
-                    }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Guardar</button>
-                    </div>
-                    {typeof window !== 'undefined' && localStorage.getItem('sacs_folio_offset') && (
-                    <div style={{ fontSize: '0.6875rem', color: '#4B7BE5', marginTop: 8 }}>Offset configurado: +{localStorage.getItem('sacs_folio_offset')}</div>
-                    )}
-                    </div>
-                  </Ajuste>
-                  <Ajuste id="tyc" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Términos y condiciones"
-                    desc="Las plantillas que puede traer una cotización. Al elegir una, su texto queda copiado en el documento: cambiarla aquí no altera lo que un cliente ya recibió."
-                    meta={condicionesTpl.length ? `${condicionesTpl.length} plantilla${condicionesTpl.length === 1 ? '' : 's'}` : undefined}>
+                      <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>Este número se usa como <b>folio inicial</b>. A partir de él, cada cotización nueva se numera de forma consecutiva y nunca se repite.</div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
+                      <div style={{ flex: 1 }}>
+                      <label style={S.label}>Siguiente numero de folio</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#999' }}>COT-</span>
+                      <input id="folio-input" type="number" min="1" placeholder="Ej. 100" defaultValue="" style={S.input} />
+                      </div>
+                      </div>
+                      <button onClick={async () => {
+                      const input = document.getElementById('folio-input') as HTMLInputElement;
+                      const val = parseInt(input?.value);
+                      if (!val || val < 1) { alert('Ingresa un numero valido'); return; }
+                      // Validar contra el folio más alto existente (no contra el conteo de filas)
+                      const res = await fetch('/api/revenue/quotes');
+                      const all = await res.json();
+                      let maxExisting = 0;
+                      if (Array.isArray(all)) {
+                      for (const q of all) {
+                      const m = String(q?.numero || '').match(/(\d+)\s*$/);
+                      if (m) maxExisting = Math.max(maxExisting, parseInt(m[1], 10));
+                      }
+                      }
+                      if (val <= maxExisting) { alert(`El folio más alto usado es COT-${String(maxExisting).padStart(3, '0')}. El siguiente debe ser mayor a ${maxExisting}.`); return; }
+                      // Guardamos offset = val-1 para mantener la convención (folioStart = offset + 1)
+                      localStorage.setItem('sacs_folio_offset', String(val - 1));
+                      alert(`Listo. La próxima cotización será COT-${String(val).padStart(3, '0')}. Las siguientes serán consecutivas.`);
+                      input.value = '';
+                      }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Guardar</button>
+                      </div>
+                      {typeof window !== 'undefined' && localStorage.getItem('sacs_folio_offset') && (
+                      <div style={{ fontSize: '0.6875rem', color: '#4B7BE5', marginTop: 8 }}>Offset configurado: +{localStorage.getItem('sacs_folio_offset')}</div>
+                      )}
+                      </div>
+                  </div>) },
+                { id: 'tyc', ico: 'doc', t: 'Términos y condiciones',
+                  v: condicionesTpl.length ? `${condicionesTpl.length} plantilla${condicionesTpl.length === 1 ? '' : 's'}` : undefined,
+                  d: 'Las plantillas que puede traer. Al elegir una, su texto queda copiado: cambiarla aquí no altera lo que un cliente ya recibió.',
+                  editor: (<div>
 <div style={{ ...S.card, marginBottom: 24 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
-                    La marcada como <b>predeterminada</b> es la que trae una cotización nueva. Al elegir una plantilla, su texto
-                    queda <b>copiado</b> en la cotización: cambiarla aquí no altera lo que un cliente ya recibió.
-                    </div>
-                    {condicionesTpl.map((t: any) => (
-                    <div key={t.id} style={{ border: '1px solid #ececec', borderRadius: 9, padding: 10, marginBottom: 8 }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                    <input value={t.nombre} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, nombre: e.target.value } : x))}
-                    style={{ ...S.input, fontWeight: 700, maxWidth: 220 }} />
-                    {t.es_default
-                    ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Predeterminada</span>
-                    : <button onClick={async () => {
-                    await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, es_default: true }) });
-                    setCondicionesTpl(condicionesTpl.map((x: any) => ({ ...x, es_default: x.id === t.id })));
-                    }} style={S.btnSmall}>Hacer predeterminada</button>}
-                    <span style={{ flex: 1 }} />
-                    <button onClick={async () => {
-                    await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, nombre: t.nombre, texto: t.texto }) });
-                    alert('Plantilla guardada.');
-                    }} style={S.btnSmall}>Guardar</button>
-                    <button onClick={async () => {
-                    if (!confirm(`¿Quitar la plantilla "${t.nombre}"?\n\nLas cotizaciones que ya la usaron conservan su texto.`)) return;
-                    await fetch('/api/revenue/condiciones', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id }) });
-                    setCondicionesTpl(condicionesTpl.filter((x: any) => x.id !== t.id));
-                    }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Quitar</button>
-                    </div>
-                    <textarea value={t.texto} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, texto: e.target.value } : x))}
-                    style={{ ...S.input, height: 64, fontSize: '0.75rem', resize: 'vertical' as const }} />
-                    </div>
-                    ))}
-                    <button onClick={async () => {
-                    const r = await fetch('/api/revenue/condiciones', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: 'Nueva plantilla', texto: 'Escribe aquí los términos y condiciones.' }),
-                    }).then(x => x.json()).catch(() => null);
-                    if (r?.id) setCondicionesTpl([...condicionesTpl, r]);
-                    }} style={S.btnSmall}>+ Nueva plantilla</button>
-                    </div>
-                  </Ajuste>
-
-                  <CfgGrupo>Pagos</CfgGrupo>
-                  <Ajuste id="bancos" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Cuentas bancarias"
-                    desc="Los datos que se imprimen en la cotización para que el cliente transfiera."
-                    meta={bankAccounts.length ? `${bankAccounts.length} cuenta${bankAccounts.length === 1 ? '' : 's'}` : 'Sin cuentas'}>
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
+                      La marcada como <b>predeterminada</b> es la que trae una cotización nueva. Al elegir una plantilla, su texto
+                      queda <b>copiado</b> en la cotización: cambiarla aquí no altera lo que un cliente ya recibió.
+                      </div>
+                      {condicionesTpl.map((t: any) => (
+                      <div key={t.id} style={{ border: '1px solid #ececec', borderRadius: 9, padding: 10, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                      <input value={t.nombre} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, nombre: e.target.value } : x))}
+                      style={{ ...S.input, fontWeight: 700, maxWidth: 220 }} />
+                      {t.es_default
+                      ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Predeterminada</span>
+                      : <button onClick={async () => {
+                      await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, es_default: true }) });
+                      setCondicionesTpl(condicionesTpl.map((x: any) => ({ ...x, es_default: x.id === t.id })));
+                      }} style={S.btnSmall}>Hacer predeterminada</button>}
+                      <span style={{ flex: 1 }} />
+                      <button onClick={async () => {
+                      await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, nombre: t.nombre, texto: t.texto }) });
+                      alert('Plantilla guardada.');
+                      }} style={S.btnSmall}>Guardar</button>
+                      <button onClick={async () => {
+                      if (!confirm(`¿Quitar la plantilla "${t.nombre}"?\n\nLas cotizaciones que ya la usaron conservan su texto.`)) return;
+                      await fetch('/api/revenue/condiciones', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id }) });
+                      setCondicionesTpl(condicionesTpl.filter((x: any) => x.id !== t.id));
+                      }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Quitar</button>
+                      </div>
+                      <textarea value={t.texto} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, texto: e.target.value } : x))}
+                      style={{ ...S.input, height: 64, fontSize: '0.75rem', resize: 'vertical' as const }} />
+                      </div>
+                      ))}
+                      <button onClick={async () => {
+                      const r = await fetch('/api/revenue/condiciones', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ nombre: 'Nueva plantilla', texto: 'Escribe aquí los términos y condiciones.' }),
+                      }).then(x => x.json()).catch(() => null);
+                      if (r?.id) setCondicionesTpl([...condicionesTpl, r]);
+                      }} style={S.btnSmall}>+ Nueva plantilla</button>
+                      </div>
+                  </div>) },
+              ]},
+              { id: 'pagos', nom: 'Pagos', sub: 'Por dónde entra el dinero.', items: [
+                { id: 'bancos', ico: 'banco', t: 'Cuentas bancarias',
+                  v: bankAccounts.length ? `${bankAccounts.length} cuenta${bankAccounts.length === 1 ? '' : 's'}` : 'Sin cuentas',
+                  d: 'Los datos que se imprimen en la cotización para que el cliente transfiera.',
+                  editor: (<div>
 <div style={{ ...S.card, marginBottom: 16 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-                    <div><label style={S.label}>Alias</label><input value={bankForm.alias || ''} onChange={e => setBankForm({ ...bankForm, alias: e.target.value })} placeholder="Ej. BBVA pesos" style={S.input} /></div>
-                    <div><label style={S.label}>Banco</label><input value={bankForm.banco || ''} onChange={e => setBankForm({ ...bankForm, banco: e.target.value })} placeholder="Ej. BBVA" style={S.input} /></div>
-                    <div><label style={S.label}>Cuenta</label><input value={bankForm.cuenta || ''} onChange={e => setBankForm({ ...bankForm, cuenta: e.target.value })} placeholder="Número de cuenta" style={S.input} /></div>
-                    <div><label style={S.label}>CLABE</label><input value={bankForm.clabe || ''} onChange={e => setBankForm({ ...bankForm, clabe: e.target.value })} placeholder="18 dígitos" style={S.input} /></div>
-                    <div><label style={S.label}>RFC</label><input value={bankForm.rfc || ''} onChange={e => setBankForm({ ...bankForm, rfc: e.target.value })} placeholder="RFC" style={S.input} /></div>
-                    <div><label style={S.label}>Titular</label><input value={bankForm.titular || ''} onChange={e => setBankForm({ ...bankForm, titular: e.target.value })} placeholder="Nombre" style={S.input} /></div>
-                    <button onClick={async () => {
-                    if (!bankForm.banco) return;
-                    await fetch('/api/revenue/bank-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...bankForm, es_default: bankAccounts.length === 0 }) });
-                    setBankForm({});
-                    load();
-                    }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Agregar</button>
-                    </div>
-                    </div>
-                    <div style={S.card}>
-                    <table style={S.table}>
-                    <thead><tr>{['Banco', 'Cuenta', 'CLABE', 'RFC', 'Titular', 'Default', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-                    <tbody>
-                    {bankAccounts.length === 0 && <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center' as const, color: '#ccc', padding: 32 }}>Sin cuentas bancarias</td></tr>}
-                    {bankAccounts.map((ba: any) => (
-                    <tr key={ba.id}>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{ba.banco}</td>
-                    <td style={S.td}>{ba.cuenta}</td>
-                    <td style={S.td}>{ba.clabe}</td>
-                    <td style={S.td}>{ba.rfc}</td>
-                    <td style={S.td}>{ba.titular}</td>
-                    <td style={S.td}>{ba.es_default ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Default</span> : <button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id, es_default: true }) }); load(); }} style={S.btnSmall}>Hacer default</button>}</td>
-                    <td style={S.td}><button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id }) }); load(); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Eliminar</button></td>
-                    </tr>
-                    ))}
-                    </tbody>
-                    </table>
-                    </div>
-                  </Ajuste>
-                  <Ajuste id="mp" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Cobro con Mercado Pago" mudado
-                    desc="La cuenta con la que se generan las ligas de pago con tarjeta.">
-                    <PasarelaMercadoPago />
-                  </Ajuste>
-
-                  <CfgGrupo>Mantenimiento</CfgGrupo>
-                  <Ajuste id="recuperar" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Oportunidades que faltan"
-                    desc="Genera la oportunidad de las cotizaciones ya cobradas, vencidas o rechazadas que se quedaron sin ella. Correrlo dos veces no duplica nada."
-                    meta="Herramienta de una sola vez">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                      <div><label style={S.label}>Alias</label><input value={bankForm.alias || ''} onChange={e => setBankForm({ ...bankForm, alias: e.target.value })} placeholder="Ej. BBVA pesos" style={S.input} /></div>
+                      <div><label style={S.label}>Banco</label><input value={bankForm.banco || ''} onChange={e => setBankForm({ ...bankForm, banco: e.target.value })} placeholder="Ej. BBVA" style={S.input} /></div>
+                      <div><label style={S.label}>Cuenta</label><input value={bankForm.cuenta || ''} onChange={e => setBankForm({ ...bankForm, cuenta: e.target.value })} placeholder="Número de cuenta" style={S.input} /></div>
+                      <div><label style={S.label}>CLABE</label><input value={bankForm.clabe || ''} onChange={e => setBankForm({ ...bankForm, clabe: e.target.value })} placeholder="18 dígitos" style={S.input} /></div>
+                      <div><label style={S.label}>RFC</label><input value={bankForm.rfc || ''} onChange={e => setBankForm({ ...bankForm, rfc: e.target.value })} placeholder="RFC" style={S.input} /></div>
+                      <div><label style={S.label}>Titular</label><input value={bankForm.titular || ''} onChange={e => setBankForm({ ...bankForm, titular: e.target.value })} placeholder="Nombre" style={S.input} /></div>
+                      <button onClick={async () => {
+                      if (!bankForm.banco) return;
+                      await fetch('/api/revenue/bank-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...bankForm, es_default: bankAccounts.length === 0 }) });
+                      setBankForm({});
+                      load();
+                      }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Agregar</button>
+                      </div>
+                      </div>
+                      <div style={S.card}>
+                      <table style={S.table}>
+                      <thead><tr>{['Banco', 'Cuenta', 'CLABE', 'RFC', 'Titular', 'Default', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                      {bankAccounts.length === 0 && <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center' as const, color: '#ccc', padding: 32 }}>Sin cuentas bancarias</td></tr>}
+                      {bankAccounts.map((ba: any) => (
+                      <tr key={ba.id}>
+                      <td style={{ ...S.td, fontWeight: 700 }}>{ba.banco}</td>
+                      <td style={S.td}>{ba.cuenta}</td>
+                      <td style={S.td}>{ba.clabe}</td>
+                      <td style={S.td}>{ba.rfc}</td>
+                      <td style={S.td}>{ba.titular}</td>
+                      <td style={S.td}>{ba.es_default ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Default</span> : <button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id, es_default: true }) }); load(); }} style={S.btnSmall}>Hacer default</button>}</td>
+                      <td style={S.td}><button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id }) }); load(); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Eliminar</button></td>
+                      </tr>
+                      ))}
+                      </tbody>
+                      </table>
+                      </div>
+                  </div>) },
+                { id: 'mp', ico: 'tarjeta', t: 'Cobro con Mercado Pago', mudado: true,
+                  d: 'La cuenta con la que se generan las ligas de pago con tarjeta.',
+                  editor: <PasarelaMercadoPago /> },
+              ]},
+              { id: 'cobranza', nom: 'Cobranza', sub: 'Cuándo se considera tarde y a quién se le avisa.', items: [] },
+              { id: 'suscripciones', nom: 'Suscripciones · ARR', sub: 'Las licencias que se renuevan solas.', items: [
+                { id: 'recuperar', ico: 'tool', t: 'Oportunidades que faltan', v: 'Mantenimiento',
+                  d: 'Genera la oportunidad de las cotizaciones ya cobradas, vencidas o rechazadas que se quedaron sin ella. Correrlo dos veces no duplica nada.',
+                  editor: (<div>
 <div style={{ ...S.card, marginBottom: 24 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
-                    Genera la oportunidad de las cotizaciones que ya están <b>cobradas, vencidas o rechazadas</b> y se quedaron
-                    sin ella. Se crean ya cerradas y <b>con su fecha real</b> — una venta de julio no aparece como cerrada hoy.
-                    Solo se tocan las que tienen cliente ligado: sin empresa, la oportunidad no aparecería en ninguna ficha.
-                    Correrlo dos veces no duplica nada.
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
-                    <button onClick={async () => {
-                    const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: true }),
-                    }).then(x => x.json()).catch(() => null);
-                    setRecup(r);
-                    }} style={S.btnSmall}>Ver qué se recuperaría</button>
-                    <button onClick={async () => {
-                    if (!confirm('Se van a crear las oportunidades faltantes de las cotizaciones ya cobradas, vencidas y rechazadas.\n\n¿Continuar?')) return;
-                    const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: false }),
-                    }).then(x => x.json()).catch(() => null);
-                    setRecup(r);
-                    }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Recuperar ahora</button>
-                    </div>
-                    {recup && (
-                    <div style={{ marginTop: 12, fontSize: '0.76rem', lineHeight: 1.6 }}>
-                    {recup.cerradas > 0 && (
-                    <div style={{ marginBottom: 8, background: M.verdeAgua, border: '1px solid #cdeadd', borderRadius: 8, padding: '9px 11px', color: M.verdeTinta }}>
-                    <b>{recup.cerradas} cotización{recup.cerradas === 1 ? '' : 'es'} ya cobrada{recup.cerradas === 1 ? '' : 's'} se cerró como ganada.</b>{' '}
-                    {(recup.cerradas_detalle || []).map((x: any) => x.numero).join(' · ')} — con eso el lead pasa a cliente y nace su suscripción.
-                    </div>
-                    )}
-                    <b>{recup.dry ? 'Se recuperarían' : 'Se recuperaron'} {recup.recuperadas}</b>
-                    {' '}({recup.ganadas} ganadas · {recup.perdidas} perdidas)
-                    {(recup.detalle || []).length > 0 && (
-                    <div style={{ marginTop: 6, maxHeight: 160, overflowY: 'auto' as const, background: '#fafafa', borderRadius: 7, padding: 9 }}>
-                    {recup.detalle.map((x: any) => (
-                    <div key={x.numero} style={{ fontSize: '0.72rem', color: '#555' }}>
-                    {x.numero} · {x.empresa} · {fmt(x.total)} — {x.etapa === 'cerrada_ganada' ? 'ganada' : 'perdida'} el {String(x.closed_at || '').slice(0, 10)}
-                    </div>
-                    ))}
-                    </div>
-                    )}
-                    {(recup.sin_cliente_ligado || []).length > 0 && (
-                    <div style={{ marginTop: 10, background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '9px 11px', color: '#8a6212' }}>
-                    <b>{recup.sin_cliente_ligado.length} no se pueden recuperar todavía</b> porque no tienen cliente ligado.
-                    Lígalas desde la lista y su oportunidad nace sola:
-                    <div style={{ marginTop: 5, fontSize: '0.72rem' }}>
-                    {recup.sin_cliente_ligado.map((x: any) => `${x.numero} (${x.empresa || 'sin nombre'})`).join(' · ')}
-                    </div>
-                    </div>
-                    )}
-                    {(recup.fallidas || []).length > 0 && (
-                    <div style={{ marginTop: 8, color: '#b4302f', fontSize: '0.73rem' }}>
-                    Fallaron {recup.fallidas.length}: {recup.fallidas.map((f: any) => `${f.numero} (${f.motivo})`).join(' · ')}
-                    </div>
-                    )}
-                    </div>
-                    )}
-                    </div>
-                  </Ajuste>
-                </>)}
-
-                {/* ─────────── ACOMPAÑAMIENTO / AUTOMATIZACIÓN / COLABORADORES ─────────── */}
-                {cfgSec === 'acompanamiento' && (
-                  <CfgVacio>
-                    Consultoría y Radar de ventas todavía no tienen nada que configurar aquí: los tipos de acompañamiento
-                    viven como campo personalizado del cliente —en <b>Cuentas</b>— y los avisos de compromisos vencidos
-                    están fijos en el código. Cuando se vuelvan configurables, este es su lugar.
-                  </CfgVacio>
-                )}
-                {cfgSec === 'automatizacion' && (
-                  <CfgVacio>
-                    El remitente del correo, el dominio de envío y los disparadores de los agentes se configuran hoy
-                    <b> dentro de su propio módulo</b>: Email marketing, Outbound y Agentes IA. Se mudan aquí cuando dejen
-                    de ser parte del flujo de trabajo y pasen a ser ajustes de una sola vez.
-                  </CfgVacio>
-                )}
-                {cfgSec === 'colaboradores' && (
-                  <CfgVacio>
-                    La comisión se define por partner en su propia ficha y el contrato de invitación vive en el sitio
-                    público. Cuando haya un valor por defecto para toda la red, se configura aquí.
-                  </CfgVacio>
-                )}
-
-                {/* ─────────── MI PERFIL Y MI MARCA ─────────── */}
-                {cfgSec === 'mia' && (<>
-                  <CfgGrupo>Datos del usuario</CfgGrupo>
-                  <div style={{ background: '#fff', border: '1px solid #efedf6', borderRadius: 14, padding: 17, marginBottom: 10 }}>
-                    <MiPerfil onGuardado={() => { try { window.dispatchEvent(new Event('sacs-perfil')); } catch { /* noop */ } }} />
-                  </div>
-
-                  <CfgGrupo>Mi marca en los documentos</CfgGrupo>
-                  <Ajuste id="marca" abierto={cfgAbierto} onToggle={setCfgAbierto}
-                    titulo="Mi marca" mudado
-                    desc="Logo, nombre, línea, color de acento y firma con los que salen la minuta, el estado de cuenta y la cotización. Es de cada persona, no de la empresa.">
-                    <MarcaTab />
-                  </Ajuste>
-                </>)}
-
-                {/* ─────────── USUARIOS Y PERMISOS ─────────── */}
-                {cfgSec === 'usuarios' && <UsuariosPermisos />}
-              </div>
-            </div>
-          </div>
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
+                      Genera la oportunidad de las cotizaciones que ya están <b>cobradas, vencidas o rechazadas</b> y se quedaron
+                      sin ella. Se crean ya cerradas y <b>con su fecha real</b> — una venta de julio no aparece como cerrada hoy.
+                      Solo se tocan las que tienen cliente ligado: sin empresa, la oportunidad no aparecería en ninguna ficha.
+                      Correrlo dos veces no duplica nada.
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                      <button onClick={async () => {
+                      const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: true }),
+                      }).then(x => x.json()).catch(() => null);
+                      setRecup(r);
+                      }} style={S.btnSmall}>Ver qué se recuperaría</button>
+                      <button onClick={async () => {
+                      if (!confirm('Se van a crear las oportunidades faltantes de las cotizaciones ya cobradas, vencidas y rechazadas.\n\n¿Continuar?')) return;
+                      const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: false }),
+                      }).then(x => x.json()).catch(() => null);
+                      setRecup(r);
+                      }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Recuperar ahora</button>
+                      </div>
+                      {recup && (
+                      <div style={{ marginTop: 12, fontSize: '0.76rem', lineHeight: 1.6 }}>
+                      {recup.cerradas > 0 && (
+                      <div style={{ marginBottom: 8, background: M.verdeAgua, border: '1px solid #cdeadd', borderRadius: 8, padding: '9px 11px', color: M.verdeTinta }}>
+                      <b>{recup.cerradas} cotización{recup.cerradas === 1 ? '' : 'es'} ya cobrada{recup.cerradas === 1 ? '' : 's'} se cerró como ganada.</b>{' '}
+                      {(recup.cerradas_detalle || []).map((x: any) => x.numero).join(' · ')} — con eso el lead pasa a cliente y nace su suscripción.
+                      </div>
+                      )}
+                      <b>{recup.dry ? 'Se recuperarían' : 'Se recuperaron'} {recup.recuperadas}</b>
+                      {' '}({recup.ganadas} ganadas · {recup.perdidas} perdidas)
+                      {(recup.detalle || []).length > 0 && (
+                      <div style={{ marginTop: 6, maxHeight: 160, overflowY: 'auto' as const, background: '#fafafa', borderRadius: 7, padding: 9 }}>
+                      {recup.detalle.map((x: any) => (
+                      <div key={x.numero} style={{ fontSize: '0.72rem', color: '#555' }}>
+                      {x.numero} · {x.empresa} · {fmt(x.total)} — {x.etapa === 'cerrada_ganada' ? 'ganada' : 'perdida'} el {String(x.closed_at || '').slice(0, 10)}
+                      </div>
+                      ))}
+                      </div>
+                      )}
+                      {(recup.sin_cliente_ligado || []).length > 0 && (
+                      <div style={{ marginTop: 10, background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '9px 11px', color: '#8a6212' }}>
+                      <b>{recup.sin_cliente_ligado.length} no se pueden recuperar todavía</b> porque no tienen cliente ligado.
+                      Lígalas desde la lista y su oportunidad nace sola:
+                      <div style={{ marginTop: 5, fontSize: '0.72rem' }}>
+                      {recup.sin_cliente_ligado.map((x: any) => `${x.numero} (${x.empresa || 'sin nombre'})`).join(' · ')}
+                      </div>
+                      </div>
+                      )}
+                      {(recup.fallidas || []).length > 0 && (
+                      <div style={{ marginTop: 8, color: '#b4302f', fontSize: '0.73rem' }}>
+                      Fallaron {recup.fallidas.length}: {recup.fallidas.map((f: any) => `${f.numero} (${f.motivo})`).join(' · ')}
+                      </div>
+                      )}
+                      </div>
+                      )}
+                      </div>
+                  </div>) },
+              ]},
+            ]},
+            { g: 'Acompañamiento', mods: [
+              { id: 'consultoria', nom: 'Consultoría', sub: 'Los compromisos que se pactan con el cliente.', items: [] },
+              { id: 'radar', nom: 'Radar de ventas', sub: 'Qué cuentas se marcan como oportunidad.', items: [] },
+            ]},
+            { g: 'Automatización', mods: [
+              { id: 'email', nom: 'Email marketing', sub: 'Con qué cara salen los correos.', items: [] },
+              { id: 'outbound', nom: 'Outbound', sub: 'Los mensajes dentro de SACS3.', items: [] },
+              { id: 'agentes', nom: 'Agentes IA', sub: 'Qué corre solo y cada cuánto.', items: [] },
+            ]},
+            { g: 'Colaboradores', mods: [
+              { id: 'partners', nom: 'Partners', sub: 'La red que vende contigo.', items: [] },
+              { id: 'comisiones', nom: 'Comisiones', sub: 'Cuánto se paga y cuándo.', items: [] },
+            ]},
+          ];
+          return (
+            <CfgPantalla
+              mapa={MAPA} mod={cfgMod} item={cfgItem} q={cfgQ}
+              onMod={(m) => { setCfgMod(m); setCfgItem(''); setCfgQ(''); }}
+              onItem={(m, i) => { setCfgMod(m); setCfgItem(i); setCfgQ(''); }}
+              onQ={setCfgQ}
+              onCerrar={() => {
+                // Dentro del CRM el que manda es el menú: se le avisa y él
+                // decide a dónde volver. Suelto (RevenueHub solo), vuelve al
+                // tablero de cotizaciones.
+                try { window.dispatchEvent(new Event('sacs-cerrar-config')); } catch { /* noop */ }
+                setTab('dashboard');
+              }}
+            />
+          );
+        })()}
         )}
       </div>
     </div>

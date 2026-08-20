@@ -69,7 +69,14 @@ export function clasificarOrigen(v: { sendId?: string | null; ruta?: string; ref
  */
 export function escalonCalentamiento(inicio: string | null | undefined, limiteDiario: number | null | undefined, ahora = Date.now()): number | null {
   if (!inicio) return null;
-  const dia = Math.floor((ahora - Date.parse(inicio + 'T00:00:00Z')) / 86400000);
+  // Postgres devuelve `date` como 'YYYY-MM-DD', pero un cliente distinto puede
+  // entregar el timestamp completo. Concatenar 'T00:00:00Z' a eso da NaN, y NaN
+  // se arrastra hasta `!tope`, que es `true`: el límite diario desaparecía en
+  // silencio y el calentamiento hacía justo lo contrario de lo que promete.
+  const soloFecha = String(inicio).slice(0, 10);
+  const t0 = Date.parse(soloFecha + 'T00:00:00Z');
+  if (!Number.isFinite(t0)) return 50;   // fecha ilegible: lo más conservador
+  const dia = Math.floor((ahora - t0) / 86400000);
   if (dia < 0) return 50;
   const escalon = 50 * Math.pow(2, Math.floor(dia / 2));
   const tope = limiteDiario && limiteDiario > 0 ? limiteDiario : Infinity;

@@ -173,7 +173,8 @@ export async function excedePresion(t: Tenant, email: string, companyId?: string
 export async function excedeLimiteDiario(t: Tenant): Promise<boolean> {
   const rampa = escalonCalentamiento((t as any).calentamiento_inicio, t.limite_diario);
   const tope = rampa ?? t.limite_diario;
-  if (!tope || tope <= 0) return false;
+  // Explícito contra NaN: `!NaN` es true y eso quitaba el tope entero.
+  if (!Number.isFinite(Number(tope)) || Number(tope) <= 0) return false;
   const { count } = await supabase
     .from('email_sends')
     .select('id', { count: 'exact', head: true })
