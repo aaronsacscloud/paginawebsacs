@@ -152,7 +152,7 @@ export const POST: APIRoute = async ({ request }) => {
           : await supabase.from('contacts').select('id').eq('email', email).limit(1).maybeSingle()
               .then((r: any) => ({ data: r.data ? { contact_id: r.data.id } : null }));
         if (quien?.contact_id) {
-          await detenerRecorridos(quien.contact_id, motivo === 'queja' ? 'queja' : 'rebote', { soloSiParar: false });
+          await detenerRecorridos(quien.contact_id, motivo === 'queja' ? 'queja' : 'rebote', { soloSiParar: false, tenantId });
         }
       } catch (e) { console.warn('[sendgrid-webhook] detenerRecorridos:', e); }
 

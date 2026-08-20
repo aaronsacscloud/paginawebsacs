@@ -80,7 +80,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   await darDeBaja({ tenantId: t.id, email, contactId: c?.id || null, origen: 'arco:' + accion });
   hecho.push('Se le dejó de enviar correo de marketing');
   if (c?.id) {
-    const n = await detenerRecorridos(c.id, 'baja', { soloSiParar: false });
+    const n = await detenerRecorridos(c.id, 'baja', { soloSiParar: false, tenantId: t.id });
     if (n) hecho.push(`${n} recorrido(s) automático(s) detenidos`);
   }
 

@@ -75,3 +75,30 @@ export function escalonCalentamiento(inicio: string | null | undefined, limiteDi
   const tope = limiteDiario && limiteDiario > 0 ? limiteDiario : Infinity;
   return escalon >= tope ? null : escalon;
 }
+
+/**
+ * Cuáles recorridos se detienen.
+ *
+ * Dos filtros que se confunden fácil y que, mal puestos, dan los dos errores
+ * opuestos: apagarle a un partner los embudos de otro (si no se acota al
+ * inquilino), o seguir escribiéndole a quien ya contestó (si el interruptor
+ * `parar_si_responde` se lee al revés).
+ */
+export function cualesDetener(
+  activos: Array<{ id: string; automation_id: string }>,
+  embudos: Array<{ id: string; parar_si_responde?: boolean | null; tenant_id?: string | null }>,
+  op: { tenantId?: string | null; soloSiParar?: boolean } = {},
+): string[] {
+  const { tenantId = null, soloSiParar = true } = op;
+  const porId = new Map(embudos.map(a => [a.id, a]));
+  return activos.filter(e => {
+    const a = porId.get(e.automation_id);
+    // Un embudo que no se encuentra se trata como "sí detener": ante la duda,
+    // callarse. Callar de más cuesta un correo que no salió; hablar de más
+    // cuesta una queja de spam.
+    if (!a) return true;
+    if (tenantId && a.tenant_id && a.tenant_id !== tenantId) return false;
+    if (soloSiParar && a.parar_si_responde === false) return false;
+    return true;
+  }).map(e => e.id);
+}

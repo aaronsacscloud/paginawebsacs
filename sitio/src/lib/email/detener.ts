@@ -11,6 +11,7 @@
  * ficha se ve "se detuvo porque respondió" y no un hueco inexplicable.
  */
 import { supabase } from '../supabase';
+import { cualesDetener } from './puro';
 
 export type MotivoDetencion = 'respondio' | 'baja' | 'rebote' | 'queja' | 'manual';
 
@@ -32,28 +33,25 @@ const TEXTO: Record<MotivoDetencion, string> = {
 export async function detenerRecorridos(
   contactId: string,
   motivo: MotivoDetencion,
-  opciones: { soloSiParar?: boolean; detalle?: string } = {},
+  opciones: { soloSiParar?: boolean; detalle?: string; tenantId?: string | null } = {},
 ): Promise<number> {
   if (!contactId) return 0;
-  const { soloSiParar = true, detalle } = opciones;
+  const { soloSiParar = true, detalle, tenantId } = opciones;
 
   const { data: activos } = await supabase.from('automation_enrollments')
     .select('id, automation_id')
     .eq('contact_id', contactId).eq('estado', 'activo');
   if (!activos?.length) return 0;
 
-  let ids = activos.map((e: any) => e.id);
+  const autoIds = [...new Set(activos.map((e: any) => e.automation_id))];
+  const { data: autos } = await supabase.from('automations')
+    .select('id, parar_si_responde, tenant_id').in('id', autoIds);
 
-  if (soloSiParar) {
-    const autoIds = [...new Set(activos.map((e: any) => e.automation_id))];
-    const { data: autos } = await supabase.from('automations')
-      .select('id, parar_si_responde').in('id', autoIds);
-    // Un embudo que no se encuentra se trata como "sí parar": ante la duda,
-    // callarse. El costo de callar de más es un correo que no salió; el de
-    // hablar de más es una queja de spam.
-    const noParan = new Set((autos || []).filter((a: any) => a.parar_si_responde === false).map((a: any) => a.id));
-    ids = activos.filter((e: any) => !noParan.has(e.automation_id)).map((e: any) => e.id);
-  }
+  // La decisión vive en puro.ts para poder probarla: acotar al inquilino y
+  // respetar el interruptor por embudo son los dos filtros que, mal puestos,
+  // dan los errores opuestos —apagarle los embudos a otro inquilino, o seguir
+  // escribiéndole a quien ya contestó.
+  const ids = cualesDetener(activos as any, (autos || []) as any, { tenantId, soloSiParar });
   if (!ids.length) return 0;
 
   const razon = detalle ? `${TEXTO[motivo]} — ${detalle.slice(0, 120)}` : TEXTO[motivo];

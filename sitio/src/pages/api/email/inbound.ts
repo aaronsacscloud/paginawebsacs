@@ -205,7 +205,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       // subía el puntaje de intención y la secuencia seguía su curso encima de
       // un humano que ya estaba contestando.
       try {
-        const n = await detenerRecorridos(contactId, 'respondio', { detalle: (texto || asunto || '').slice(0, 100) });
+        const n = await detenerRecorridos(contactId, 'respondio', { tenantId, detalle: (texto || asunto || '').slice(0, 100) });
         if (n) console.log(`[inbound] ${n} recorrido(s) detenidos porque ${email} respondió`);
       } catch (e) { console.warn('[inbound] detenerRecorridos:', e); }
     }
@@ -219,7 +219,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       await darDeBaja({ tenantId, email, contactId, origen: 'respuesta-textual', detalle: texto.slice(0, 200) });
       // Una baja pedida con palabras para TODO, incluidos los embudos marcados
       // como "no detener": ahí no hay interruptor que valga.
-      if (contactId) { try { await detenerRecorridos(contactId, 'baja', { soloSiParar: false }); } catch {} }
+      if (contactId) { try { await detenerRecorridos(contactId, 'baja', { soloSiParar: false, tenantId }); } catch {} }
     }
     return ok();
   } catch {

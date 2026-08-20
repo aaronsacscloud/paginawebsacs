@@ -7,7 +7,7 @@
  *
  * Correr:  node --experimental-strip-types src/lib/email/puro.test.ts
  */
-import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, RUTA_INTERNA } from './puro.ts';
+import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, RUTA_INTERNA } from './puro.ts';
 
 let ok = 0;
 const fallas: string[] = [];
@@ -87,6 +87,34 @@ es(clasificarOrigen({ ruta: '/blog/que-es-utm_source' }), 'directo', 'utm_ en el
   es(escalonCalentamiento('2026-08-20', 80, t('2026-08-22T10:00:00Z')), null, 'un límite bajo la termina antes');
   // Una fecha futura no puede abrir la llave de par en par.
   es(escalonCalentamiento('2026-12-01', 5000, t('2026-08-20T10:00:00Z')), 50, 'fecha futura: lo mínimo, no lo máximo');
+}
+
+// ── cualesDetener ────────────────────────────────────────────────────────
+{
+  const T1 = 'inquilino-1', T2 = 'inquilino-2';
+  const insc = [
+    { id: 'e1', automation_id: 'a1' },   // de T1, con interruptor puesto
+    { id: 'e2', automation_id: 'a2' },   // de T1, con interruptor APAGADO
+    { id: 'e3', automation_id: 'a3' },   // de OTRO inquilino
+    { id: 'e4', automation_id: 'a9' },   // embudo que no aparece
+  ];
+  const emb = [
+    { id: 'a1', parar_si_responde: true, tenant_id: T1 },
+    { id: 'a2', parar_si_responde: false, tenant_id: T1 },
+    { id: 'a3', parar_si_responde: true, tenant_id: T2 },
+  ];
+
+  es(cualesDetener(insc, emb, { tenantId: T1 }), ['e1', 'e4'],
+     'respeta el interruptor y NO toca los embudos de otro inquilino');
+  es(cualesDetener(insc, emb, { tenantId: T1, soloSiParar: false }), ['e1', 'e2', 'e4'],
+     'una baja pedida a mano ignora el interruptor, pero sigue acotada al inquilino');
+  es(cualesDetener(insc, emb, {}).includes('e3'), true,
+     'sin inquilino no se filtra por inquilino');
+  es(cualesDetener(insc, emb, { tenantId: T1 }).includes('e3'), false,
+     'la respuesta de un partner no apaga los embudos de otro');
+  es(cualesDetener(insc, emb, { tenantId: T1 }).includes('e4'), true,
+     'ante un embudo desconocido, callarse: se detiene');
+  es(cualesDetener([], emb, { tenantId: T1 }), [], 'sin recorridos activos, nada que hacer');
 }
 
 console.log(`\n  ${ok} casos pasaron`);
