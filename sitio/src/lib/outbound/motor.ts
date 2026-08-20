@@ -206,6 +206,11 @@ async function llamarSacs(ruta: string, body: any): Promise<any> {
  */
 export async function publicarCampana(c: any, opts: { congelada?: boolean; reactivar?: boolean } = {}): Promise<{ cuentas: number }> {
   const congeladas: string[] = (opts.congelada && Array.isArray(c.materializada?.cuentas_lista)) ? c.materializada.cuentas_lista : [];
+  if (opts.congelada && !congeladas.length) {
+    // Degradar en silencio a una resolución fresca movería la audiencia de un
+    // modo "una sola vez" — exactamente lo que la congelación promete no hacer.
+    throw new Error('Esta campaña no tiene su audiencia congelada guardada (se activó con una versión vieja). Pásala a borrador y actívala de nuevo para congelarla.');
+  }
   const res = congeladas.length
     ? { cuentas: congeladas, companies: [], exclusiones: c.materializada?.exclusiones || {} } as any
     : await resolverAudiencia((c.audiencia || {}) as AudienciaDef);
