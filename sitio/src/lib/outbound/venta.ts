@@ -73,8 +73,9 @@ export async function pruebaSocial(tipo: 'modulo' | 'plugin' | 'giro', valor: st
   if (tipo === 'giro') {
     const { count } = await supabase.from('companies').select('*', { count: 'exact', head: true })
       .eq('giro', v).is('archived_at', null);
-    const total = PISO + (count || 0);
-    return { total, texto: `${total.toLocaleString('es-MX')} negocios de ${v.toLowerCase()} ya usan SACS` };
+    // El piso solo se suma si hay conteo real: nunca "40 negocios" cuando son 0.
+    const total = (count || 0) > 0 ? PISO + (count || 0) : 0;
+    return { total, texto: total ? `${total.toLocaleString('es-MX')} negocios de ${v.toLowerCase()} ya usan SACS` : '' };
   }
 
   // modulo / plugin: recorrer companies.uso_sacs en JS (no hay agregado SQL).
@@ -89,8 +90,8 @@ export async function pruebaSocial(tipo: 'modulo' | 'plugin' | 'giro', valor: st
       if (mods.some(m => m && m.modulo === v && m.usa)) reales++;
     }
   }
-  const total = PISO + reales;
-  return { total, texto: `${total.toLocaleString('es-MX')} negocios ya usan ${v}` };
+  const total = reales > 0 ? PISO + reales : 0;
+  return { total, texto: total ? `${total.toLocaleString('es-MX')} negocios ya usan ${v}` : '' };
 }
 
 // ── #3 Checkout: crea una preferencia de Mercado Pago REAL para una oferta ──
@@ -99,7 +100,7 @@ export async function pruebaSocial(tipo: 'modulo' | 'plugin' | 'giro', valor: st
 // registre el cobro en crm_cobros_mp para que un humano lo materialice
 // (patrón VincularMercadoPago) — NO se procesa tarjeta aquí.
 export async function crearPreferenciaOferta(params: {
-  companyId: string; campanaId: string; oferta: Oferta; origen: string; email?: string | null;
+  companyId: string; campanaId: string; oferta: Oferta; origen?: string; email?: string | null;
 }): Promise<{ link: string; monto: number; preference_id: string }> {
   const { conexionActiva, mpFetch } = await import('../pagos/mercadopago');
   const cx = await conexionActiva();
@@ -116,8 +117,8 @@ export async function crearPreferenciaOferta(params: {
       items: [{ title: precio.concepto, description: precio.desglose, quantity: 1, currency_id: 'MXN', unit_price: precio.monto }],
       external_reference: `outbound:${params.companyId}:${params.campanaId}`,
       payer: params.email ? { email: params.email } : undefined,
-      notification_url: params.origen + '/api/revenue/mercadopago-webhook',
-      back_urls: { success: params.origen + '/gracias', pending: params.origen + '/gracias', failure: params.origen + '/gracias' },
+      notification_url: (import.meta.env.PUBLIC_SITE_ORIGIN || 'https://www.sacscloud.com') + '/api/revenue/mercadopago-webhook',
+      back_urls: (() => { const o = import.meta.env.PUBLIC_SITE_ORIGIN || 'https://www.sacscloud.com'; return { success: o + '/gracias', pending: o + '/gracias', failure: o + '/gracias' }; })(),
       statement_descriptor: 'SACSCLOUD',
       expires: true,
       expiration_date_to: new Date(Date.now() + 7 * 86400000).toISOString(),

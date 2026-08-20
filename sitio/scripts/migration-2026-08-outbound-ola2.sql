@@ -61,3 +61,8 @@ alter table inapp_audiencias enable row level security;
 -- numérico (opción elegida, pulgar, texto del seguimiento condicional).
 alter table inapp_eventos add column if not exists driver text;
 alter table inapp_eventos add column if not exists respuesta text;
+
+-- Formatos agenda y compra en el CHECK de inapp_campanas (agregados post-DDL).
+alter table inapp_campanas drop constraint if exists inapp_campanas_formato_check;
+alter table inapp_campanas add constraint inapp_campanas_formato_check
+  check (formato in ('banner_superior','banner_cuadrado','modal','chat','tarjeta_inicio','badge_menu','encuesta','coachmark','agenda','compra'));
