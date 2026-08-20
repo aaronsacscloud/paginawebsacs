@@ -132,59 +132,46 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     // cobrado. Es la única vista que contesta "¿dónde se me está quedando?".
     fuga: () => {
       const f = d.fuga || {};
-      const pasos = [
-        { l: 'Cotizado', v: f.cotizado || 0, c: P_MEDIO, tipo: 'total' },
-        { l: 'Sin abrir', v: -(f.sin_abrir || 0), c: '#EF7A72', tipo: 'delta' },
-        { l: 'Sin respuesta', v: -(f.sin_respuesta || 0), c: '#EF7A72', tipo: 'delta' },
-        { l: 'Aceptado sin pagar', v: -(f.aceptado_sin_pagar || 0), c: '#E8A838', tipo: 'delta' },
-        { l: 'Cobrado', v: f.cobrado || 0, c: P, tipo: 'total' },
-      ];
-      // ── La cascada tiene que CUADRAR a la vista ──
-      // Cada barra flota donde termina la anterior y se une con una línea; el
-      // último tramo se cierra contra la base. Sin eso eran cinco barras
-      // sueltas de distintos tamaños y el ojo no podía sumarlas. Los pasos en
-      // cero se pintan como una raya en su nivel: decir "aquí no se perdió
-      // nada" vale, pero no puede parecer una barra.
-      const alto = 170;
-      const mx = Math.max(1, f.cotizado || 0);
-      const px = (v: number) => (Math.abs(v) / mx) * alto;
-      let acum = 0;
-      const geo = pasos.map((p, i) => {
-        if (i === 0) { acum = p.v; return { ...p, base: 0, h: px(p.v) }; }
-        if (i === pasos.length - 1) return { ...p, base: 0, h: px(p.v) };
-        const desde = acum; acum += p.v;
-        return { ...p, base: px(acum), h: Math.abs(px(desde) - px(acum)) };
-      });
+      const cot = f.cotizado || 0;
+      // ── De arriba abajo y de mayor a menor ──
+      // La cascada obligaba a leer en zigzag y a sumar de cabeza. Esto se lee
+      // como una lista: arriba el total, luego las fugas ordenadas por tamaño
+      // —cada una con su tajada del cotizado— y al final lo que entró.
+      const fugas = [
+        { l: 'Aceptado y sin pagar', v: f.aceptado_sin_pagar || 0, c: '#E8A838', pie: 'Ya dijeron que sí. Es cobranza, no venta.' },
+        { l: 'Enviado sin respuesta', v: f.sin_respuesta || 0, c: '#EF7A72', pie: 'La abrieron y no contestaron.' },
+        { l: 'Nunca la abrieron', v: f.sin_abrir || 0, c: '#EF7A72', pie: 'No llegó o no la vieron.' },
+      ].sort((a, b) => b.v - a.v);
+      const pct = (v: number) => (cot > 0 ? Math.round((v / cot) * 100) : 0);
+      const Fila = ({ l, v, c, pie, fuerte }: any) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid #f4f3f7' }}>
+          <div style={{ width: 168, flexShrink: 0 }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: fuerte ? 800 : 600 }}>{l}</div>
+            {pie && <div style={{ fontSize: '0.66rem', color: '#a5a2af', lineHeight: 1.35, marginTop: 1 }}>{pie}</div>}
+          </div>
+          <div style={{ flex: 1, minWidth: 60, height: 16, background: '#f5f4f8', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.max(v > 0 ? 2 : 0, pct(v))}%`, background: c, borderRadius: 8 }} />
+          </div>
+          <div style={{ width: 46, textAlign: 'right', fontSize: '0.72rem', color: '#a5a2af' }}>{pct(v)}%</div>
+          <div style={{ width: 96, textAlign: 'right', fontSize: '0.82rem', fontWeight: 800, color: fuerte ? '#1a1a1a' : '#3f3b4d' }}>{money(v)}</div>
+        </div>
+      );
       return (
-        <W id="fuga" titulo="Dónde se queda el dinero" cap="Del cotizado del mes a lo que de verdad entró. Cada caída es una fuga con su monto.">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-            {geo.map((p, i) => (
-              <div key={p.l} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {/* Monto arriba, siempre a la misma altura: si cada uno flota
-                    con su barra, la fila de cifras queda en escalera. */}
-                <div style={{ height: 22, fontSize: '0.72rem', fontWeight: 800, color: p.v < 0 ? NOCHE : '#3f3b4d', whiteSpace: 'nowrap' }}>
-                  {p.v < 0 ? '−' : ''}{money(Math.abs(p.v))}
-                </div>
-                <div style={{ position: 'relative', width: '100%', height: alto }}>
-                  {/* la línea que enlaza con el paso anterior */}
-                  {i > 0 && (
-                    <div style={{ position: 'absolute', left: 0, width: '50%', bottom: Math.round(p.base + p.h) - 1, height: 1, background: '#dcd9e6' }} />
-                  )}
-                  <div style={{
-                    position: 'absolute', left: '18%', width: '64%',
-                    bottom: Math.round(p.base), height: Math.max(p.h < 1 ? 2 : 6, Math.round(p.h)),
-                    background: p.h < 1 ? '#dcd9e6' : p.c, borderRadius: p.h < 1 ? 2 : 6,
-                  }} />
-                </div>
-                {/* Rótulo con altura fija a dos renglones: "Aceptado sin pagar"
-                    se partía y empujaba su columna. */}
-                <div style={{ height: 30, fontSize: '0.66rem', color: '#8a8590', textAlign: 'center', lineHeight: 1.25, paddingTop: 6 }}>{p.l}</div>
-              </div>
-            ))}
+        <W id="fuga" titulo="Dónde se queda el dinero" cap="De lo cotizado este mes: cuánto se quedó en el camino y cuánto entró. De mayor a menor.">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 9 }}>
+            <div style={{ width: 168, flexShrink: 0, fontSize: '0.62rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.07em' }}>Cotizado del mes</div>
+            <div style={{ flex: 1, minWidth: 60, height: 16, background: P_MEDIO, borderRadius: 8 }} />
+            <div style={{ width: 46, textAlign: 'right', fontSize: '0.72rem', color: '#a5a2af' }}>100%</div>
+            <div style={{ width: 96, textAlign: 'right', fontSize: '0.95rem', fontWeight: 800 }}>{money(cot)}</div>
+          </div>
+          {fugas.map(x => <Fila key={x.l} {...x} />)}
+          <div style={{ borderTop: '2px solid #edecf2', marginTop: 4 }}>
+            <Fila l="Entró de verdad" v={f.cobrado || 0} c={P} fuerte pie="Pagos recibidos este mes." />
           </div>
           <Nota>
-            De {money(f.cotizado)} cotizados en el mes entraron <b>{money(f.cobrado)}</b>.
-            {(f.aceptado_sin_pagar || 0) > 0 && <> La fuga más grande es lo <b>aceptado y sin pagar</b> ({money(f.aceptado_sin_pagar)}): eso no se arregla vendiendo más, se arregla cobrando.</>}
+            {(f.aceptado_sin_pagar || 0) > 0
+              ? <>La fuga más grande es lo <b>aceptado y sin pagar</b>: {money(f.aceptado_sin_pagar)}, el {pct(f.aceptado_sin_pagar)}% de lo cotizado. Eso no se arregla vendiendo más, se arregla cobrando.</>
+              : <>Este mes no quedó nada aceptado sin cobrar.</>}
           </Nota>
         </W>
       );

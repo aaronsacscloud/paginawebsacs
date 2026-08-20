@@ -1,0 +1,307 @@
+---
+/**
+ * SuiteProceso — cómo se implementa, paso a paso y con foto.
+ *
+ * Sustituye a la rejilla de cinco días. El proceso gustaba; el diseño no: cinco
+ * tarjetas de texto en fila no se distinguen de las de cualquier otra landing.
+ * Este bloque toma el gesto que ya usa el sitio en el recorrido de producto —la
+ * foto se queda quieta a un lado mientras los pasos pasan por el otro— y le
+ * pone a cada paso su propia escena.
+ *
+ * Es el mismo bloque para todos los giros. Lo que cambia es el contenido: lo
+ * que se carga el día 1 de una zapatería no es lo que se carga en una joyería,
+ * y hay giros donde un paso entero sobra o se agrega.
+ *
+ * Las tres formas de hacerlo —en tu tienda, por videollamada o tú solo— van
+ * siempre, porque es la primera pregunta después de "¿cuánto tarda?".
+ */
+export interface PasoProceso {
+  /** "Día 1", "Semana 1"… lo que aplique al giro. */
+  cuando: string;
+  titulo: string;
+  texto: string;
+  /** Lo propio del giro en este paso: qué se carga, qué se configura. */
+  detalle?: string;
+  img: string;
+  alt: string;
+}
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  resalte?: string;
+  sub?: string;
+  pasos: PasoProceso[];
+  /** El cierre: qué NO se pierde al cambiarse. */
+  remate?: string;
+  /** Ticket del giro para la caja sin conexión. */
+  lineas?: { n: string; p: string }[];
+  total?: string;
+}
+const {
+  eyebrow = 'La pregunta que nadie hace en la demo',
+  titulo,
+  resalte,
+  sub,
+  pasos,
+  remate,
+  lineas,
+  total,
+} = Astro.props;
+
+const MODOS = [
+  { t: 'En tu tienda', d: 'Vamos, cargamos y capacitamos ahí mismo.' },
+  { t: 'Por videollamada', d: 'Lo mismo, sin que nadie viaje.' },
+  { t: 'Tú solo', d: 'Subes tu archivo y la plataforma hace el resto.' },
+];
+---
+
+<section class="pr" id="proceso">
+  <div class="pr-inner">
+
+    <header class="pr-head">
+      <p class="pr-eyebrow">{eyebrow}</p>
+      <h2>{titulo} {resalte && <span>{resalte}</span>}</h2>
+      {sub && <p class="pr-sub">{sub}</p>}
+    </header>
+
+    <div class="pr-grid">
+      <!-- La escena, quieta -->
+      <div class="pr-panel">
+        <div class="pr-fotos">
+          {pasos.map((p, i) => (
+            <figure class:list={['pr-foto', { on: i === 0 }]} data-foto={String(i)}>
+              <img src={p.img} alt={p.alt} loading="lazy" decoding="async" width="1200" height="800" />
+            </figure>
+          ))}
+          <div class="pr-marca" aria-hidden="true">
+            <span class="pr-marca-n" id="prMarcaN">1</span>
+            <span class="pr-marca-t">de {pasos.length}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Los pasos, en movimiento -->
+      <ol class="pr-pasos">
+        {pasos.map((p, i) => (
+          <li class="pr-paso" data-paso={String(i)}>
+            <div class="pr-paso-cab">
+              <span class="pr-cuando">{p.cuando}</span>
+              <span class="pr-abierta">Abierta</span>
+            </div>
+            <h3>{p.titulo}</h3>
+            <p>{p.texto}</p>
+            {p.detalle && <p class="pr-detalle">{p.detalle}</p>}
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <!-- Las tres formas: es la pregunta que sigue a "¿cuánto tarda?" -->
+    <div class="pr-modos">
+      <p class="pr-modos-rot">Y se hace como te acomode</p>
+      <div class="pr-modos-fila">
+        {MODOS.map((m) => (
+          <div class="pr-modo">
+            <b>{m.t}</b>
+            <span>{m.d}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {remate && <p class="pr-remate" set:html={remate} />}
+
+    <!-- El seguro de continuidad. Venía del bloque anterior y se queda: es la
+         objeción que sale sola en cuanto alguien oye "en la nube". -->
+    {lineas && (
+      <div class="pr-offline">
+        <div class="pr-offline-txt">
+          <p class="pr-offline-rot">Y el sábado que se cae el internet</p>
+          <h3>La caja no se detiene.</h3>
+          <p>
+            El punto de venta trabaja sin conexión: sigue cobrando, sigue descontando existencia
+            y sigue imprimiendo. Cuando vuelve la señal, todo sube solo y ordenado. Una cadena
+            no puede cerrar por el módem.
+          </p>
+        </div>
+        <div class="pr-caja" aria-hidden="true">
+          <div class="pr-caja-barra">
+            <span class="pr-senal"><i></i><i></i><i></i></span>
+            <span class="pr-caja-est">Sin conexión · cobrando</span>
+            <span class="pr-caja-hora">14:36</span>
+          </div>
+          <div class="pr-caja-cuerpo">
+            {lineas.map((l) => (
+              <div class="pr-caja-linea"><span>{l.n}</span><b>{l.p}</b></div>
+            ))}
+            <div class="pr-caja-total"><span>Total</span><b>{total}</b></div>
+            <p class="pr-caja-pie">2 ventas en espera de subir · se envían solas</p>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  .pr { background: #0C0C10; color: #fff; padding: 104px 24px 112px; }
+  .pr-inner { max-width: 1200px; margin: 0 auto; }
+
+  .pr-head { max-width: 760px; margin-bottom: 56px; }
+  .pr-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .pr-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; margin: 0 0 16px;
+  }
+  .pr-head h2 span { color: #4B7BE5; }
+  .pr-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #A8A8B4; }
+
+  .pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+
+  /* ── La escena, pegajosa ── */
+  .pr-panel { position: sticky; top: 108px; }
+  .pr-fotos {
+    position: relative; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden;
+    background: #16161C; border: 1px solid rgba(255,255,255,.08);
+  }
+  .pr-foto { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .5s ease; }
+  .pr-foto.on { opacity: 1; }
+  .pr-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pr-marca {
+    position: absolute; left: 18px; bottom: 16px; display: flex; align-items: baseline; gap: 6px;
+    background: rgba(8,8,10,.72); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 7px 15px;
+  }
+  .pr-marca-n { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .pr-marca-t { font-size: 11.5px; color: #A1A1AA; font-weight: 600; }
+
+  /* ── Los pasos ── */
+  .pr-pasos { list-style: none; margin: 0; padding: 0; }
+  .pr-paso {
+    padding: 34px 0 38px; border-top: 1px solid rgba(255,255,255,.1);
+    opacity: .38; transition: opacity .4s ease;
+  }
+  .pr-paso:last-child { border-bottom: 1px solid rgba(255,255,255,.1); }
+  .pr-paso.on { opacity: 1; }
+  .pr-paso-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .pr-cuando {
+    font-size: 11.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    color: #8A8A96;
+  }
+  /* La tienda no cierra ni un día: por eso el sello va en TODOS los pasos. */
+  .pr-abierta {
+    font-size: 10.5px; font-weight: 800; color: #34D399;
+    border: 1px solid rgba(52,211,153,.42); border-radius: 999px; padding: 3px 10px;
+  }
+  .pr-paso h3 {
+    margin: 0 0 10px; font-size: clamp(19px, 2.2vw, 24px); font-weight: 800; letter-spacing: -.6px;
+  }
+  .pr-paso p { margin: 0; font-size: 16px; line-height: 1.65; color: #A8A8B4; max-width: 46ch; }
+  .pr-detalle {
+    margin-top: 12px !important; padding-left: 14px; border-left: 2px solid #4B7BE5;
+    color: #D4D4DC !important; font-size: 15px !important;
+  }
+
+  /* ── Las tres formas ── */
+  .pr-modos { margin-top: 72px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,.1); }
+  .pr-modos-rot {
+    margin: 0 0 20px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: #8A8A96;
+  }
+  .pr-modos-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .pr-modo {
+    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 14px;
+    padding: 20px 22px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .pr-modo b { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+  .pr-modo span { font-size: 14px; color: #A8A8B4; line-height: 1.5; }
+
+  .pr-remate {
+    margin: 34px 0 0; font-size: 15.5px; line-height: 1.7; color: #A8A8B4; max-width: 74ch;
+  }
+  .pr-remate :global(b) { color: #fff; }
+
+  /* ── La caja sin conexión ── */
+  .pr-offline {
+    margin-top: 48px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,.1);
+    display: grid; grid-template-columns: 1fr 380px; gap: 48px; align-items: center;
+  }
+  .pr-offline-rot {
+    margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: #E8A838;
+  }
+  .pr-offline h3 { margin: 0 0 12px; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; letter-spacing: -.9px; }
+  .pr-offline p { margin: 0; font-size: 16px; line-height: 1.65; color: #A8A8B4; max-width: 52ch; }
+
+  .pr-caja { background: #fff; color: #0F172A; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.4); }
+  .pr-caja-barra {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: #FEF3C7; border-bottom: 1px solid #FDE68A;
+  }
+  .pr-senal { display: inline-flex; align-items: flex-end; gap: 2px; }
+  .pr-senal i { width: 3px; background: #D97706; border-radius: 1px; opacity: .3; }
+  .pr-senal i:nth-child(1) { height: 5px; opacity: 1; }
+  .pr-senal i:nth-child(2) { height: 8px; }
+  .pr-senal i:nth-child(3) { height: 11px; }
+  .pr-caja-est { flex: 1; font-size: 11.5px; font-weight: 800; color: #92400E; }
+  .pr-caja-hora { font-size: 11.5px; font-weight: 700; color: #B45309; font-variant-numeric: tabular-nums; }
+  .pr-caja-cuerpo { padding: 16px 18px 18px; }
+  .pr-caja-linea {
+    display: flex; justify-content: space-between; gap: 14px; padding: 9px 0;
+    border-bottom: 1px solid #F1F5F9; font-size: 13px;
+  }
+  .pr-caja-linea b { font-variant-numeric: tabular-nums; }
+  .pr-caja-total {
+    display: flex; justify-content: space-between; padding-top: 12px; margin-top: 4px;
+    font-size: 16px; font-weight: 800;
+  }
+  .pr-caja-total b { font-variant-numeric: tabular-nums; }
+  .pr-caja-pie { margin: 12px 0 0; font-size: 11px; color: #94A3B8; font-weight: 600; }
+
+  @media (max-width: 980px) {
+    .pr { padding: 74px 18px 82px; }
+    .pr-grid { grid-template-columns: 1fr; gap: 26px; }
+    /* En vertical la foto se queda arriba, chica, mientras pasan los pasos. */
+    .pr-panel { position: sticky; top: 76px; z-index: 2; }
+    .pr-fotos { aspect-ratio: 16 / 9; }
+    .pr-paso { padding: 26px 0 28px; opacity: 1; }
+    .pr-modos-fila { grid-template-columns: 1fr; }
+    .pr-offline { grid-template-columns: 1fr; gap: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pr-foto, .pr-paso { transition: none; }
+    .pr-panel { position: relative; top: auto; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.getElementById('proceso');
+    if (bloque) {
+      const pasos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-paso]'));
+      const fotos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-foto]'));
+      const marca = document.getElementById('prMarcaN');
+
+      const marcar = (i: number) => {
+        pasos.forEach((p, k) => p.classList.toggle('on', k === i));
+        fotos.forEach((f, k) => f.classList.toggle('on', k === i));
+        if (marca) marca.textContent = String(i + 1);
+      };
+
+      // El paso activo es el que está más cerca del centro de la pantalla. Con
+      // un observer por umbral, dos pasos cortos se activaban a la vez y la
+      // foto parpadeaba entre los dos.
+      const observer = new IntersectionObserver((entradas) => {
+        entradas.forEach((e) => {
+          if (e.isIntersecting) marcar(pasos.indexOf(e.target as HTMLElement));
+        });
+      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+
+      pasos.forEach((p) => observer.observe(p));
+      marcar(0);
+    }
+  }
+</script>

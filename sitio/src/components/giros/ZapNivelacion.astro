@@ -1,0 +1,468 @@
+---
+/**
+ * ZapNivelacion — la remesa del lunes.
+ *
+ * Es el bloque que hace que un dueño de cadena de calzado levante el teléfono,
+ * porque es exactamente lo que lleva años haciendo en un cuaderno el lunes por
+ * la mañana, contra el corte del fin de semana.
+ *
+ * El tablero comparativo de sucursales deja la pregunta —cuál se está
+ * vaciando— y este la contesta: qué número sale de qué tienda, a cuál va, por
+ * qué, y qué corrida queda cerrada después.
+ *
+ * Lo que hay que respetar si se toca (viene del oficio, no del diseño):
+ *
+ * · Se mueve el par que SOBRA, no el número que falta. Igualar existencias
+ *   —que es lo que hace un sistema genérico— reparte la corrida rota entre las
+ *   cuatro tiendas y deja cuatro modelos muertos en lugar de uno.
+ * · Un cero en un número que esa tienda NO vende no es hueco: es limpieza. Por
+ *   eso la matriz pinta en rojo solo los ceros de números con venta.
+ * · La tienda que envía nunca decide qué envía: el par que sale de su piso es
+ *   comisión que su gerente no va a cobrar. Por eso "Se autoriza" es un paso.
+ * · El par sale del origen y queda EN TRÁNSITO; no entra al destino hasta que
+ *   se recibe. Si entra antes, el destino vende algo que va en la camioneta.
+ * · El dinero se cuenta contra el saldero y a costo, con el supuesto a la
+ *   vista y editable — y al lado, del mismo tamaño, lo que ya no se salva.
+ */
+
+interface Props {
+  datos: {
+    modelo: string;
+    semanas: number;
+    precio: number;
+    costo: number;
+    flete: number;
+    numeros: string[];
+    tiendas: { nombre: string; venta: number[]; existencia: number[] }[];
+    traspasos: { de: string; a: string; remesa: string; motivo: string; items: { n: string; pares: number }[]; nota: string }[];
+    saldo: { pares: number; detalle: string };
+    comprar: { pares: number; detalle: string; nota: string };
+    pasos: string[];
+  };
+}
+const { datos } = Astro.props;
+const { modelo, numeros, tiendas, traspasos, saldo, comprar, pasos } = datos;
+
+const paresDe = (t: { items: { pares: number }[] }) => t.items.reduce((a, i) => a + i.pares, 0);
+const totalMovido = traspasos.reduce((a, t) => a + paresDe(t), 0);
+const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) => x + y, 0), 0);
+---
+
+<section class="nv" data-nivelacion={JSON.stringify(datos)}>
+  <div class="nv-inner">
+
+    <header class="nv-head">
+      <p class="nv-eyebrow">El lunes por la mañana</p>
+      <h2>La remesa que hoy <span>armas en un cuaderno</span>.</h2>
+      <p class="nv-sub">
+        Contra el corte del fin de semana, que es cuando se rompe la corrida. Esto es
+        {modelo.toLowerCase()} en tus cuatro tiendas: {totalExistencia} pares, los mismos antes y
+        después. Aplica los traspasos uno por uno y mira qué corrida se cierra.
+      </p>
+    </header>
+
+    <!-- ── La matriz: número × tienda ── -->
+    <div class="nv-matriz">
+      <div class="nv-matriz-cab">
+        <span class="nv-modelo">{modelo}</span>
+        <span class="nv-estado" id="nvEstado">Como está hoy</span>
+      </div>
+
+      <div class="nv-tabla-envoltura">
+        <table class="nv-tabla">
+          <thead>
+            <tr>
+              <th class="nv-th-tienda"></th>
+              {numeros.map((n) => <th>{n}</th>)}
+              <th class="nv-th-total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiendas.map((t, fila) => (
+              <tr data-tienda={t.nombre}>
+                <th class="nv-th-tienda">{t.nombre}</th>
+                {numeros.map((n, col) => (
+                  <td class="nv-celda" data-fila={String(fila)} data-col={String(col)}>
+                    <b>{t.existencia[col]}</b>
+                  </td>
+                ))}
+                <td class="nv-total" data-total={String(fila)}>{t.existencia.reduce((a, b) => a + b, 0)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="nv-clave">
+        <li><i class="hueco"></i>Hueco: cero en un número que esa tienda sí vende</li>
+        <li><i class="limpio"></i>Cero en un número que ahí no sale — eso no es hueco</li>
+        <li><i class="mov"></i>Se movió en este paso</li>
+      </ul>
+    </div>
+
+    <!-- ── Los traspasos, uno por uno ── -->
+    <div class="nv-cuerpo">
+      <div class="nv-lista">
+        <p class="nv-lista-rot">Lo que propone el sistema · {traspasos.length} renglones, {totalMovido} pares</p>
+
+        {traspasos.map((t, i) => (
+          <article class="nv-tr" data-tr={String(i)}>
+            <div class="nv-tr-cab">
+              <span class="nv-ruta"><b>{t.de}</b> → <b>{t.a}</b></span>
+              <span class="nv-motivo" data-motivo={t.motivo}>{t.motivo}</span>
+            </div>
+            <p class="nv-remesa">{t.remesa} · {paresDe(t)} pares</p>
+            <p class="nv-items">{t.items.map((it) => `${it.n} ×${it.pares}`).join('  ·  ')}</p>
+            <p class="nv-nota">{t.nota}</p>
+            <button type="button" class="nv-aplicar" data-aplica={String(i)}>Autorizar y surtir</button>
+          </article>
+        ))}
+
+        <button type="button" class="nv-reiniciar" id="nvReiniciar" hidden>Volver a como está hoy</button>
+      </div>
+
+      <!-- ── El resultado ── -->
+      <aside class="nv-resultado">
+        <div class="nv-cifra">
+          <p class="nv-cifra-rot">Pares que hoy no se venderían donde están</p>
+          <p class="nv-cifra-n" id="nvPares">0</p>
+          <p class="nv-cifra-pie">de {totalMovido} que propone mover</p>
+        </div>
+
+        <div class="nv-dinero">
+          <p class="nv-dinero-rot">Margen que deja de irse al saldero</p>
+          <p class="nv-dinero-n" id="nvDinero" aria-live="polite">$0</p>
+
+          <label class="nv-supuesto">
+            <span>¿A cuánto sacas tu saldo?</span>
+            <select id="nvSaldo">
+              <option value="0.5" selected>A la mitad de lista</option>
+              <option value="0.465">A costo</option>
+              <option value="0.4">Al 40% — por debajo de costo</option>
+            </select>
+          </label>
+          <p class="nv-dinero-pie">
+            Calculado con la venta por número de la tienda que recibe. Solo cuentan los pares que
+            esa tienda alcanza a vender antes del rebaje, a su ritmo de hoy, y ya se descontó el
+            flete.
+          </p>
+        </div>
+
+        <!-- La columna fea va del mismo tamaño que la bonita, o el bloque miente -->
+        <div class="nv-feo">
+          <div>
+            <b>{saldo.pares} pares</b>
+            <span>ya no tienen rescate: ninguna tienda los alcanza a vender. {saldo.detalle}. Eso es saldo, y sale ahora — no en enero.</span>
+          </div>
+          <div>
+            <b>{comprar.pares} pares</b>
+            <span>hay que comprarlos: {comprar.detalle}. {comprar.nota}</span>
+          </div>
+        </div>
+
+        <a class="nv-cta" href="/contacto" id="nvCta">Ver mi remesa con mis tiendas</a>
+      </aside>
+    </div>
+
+    <!-- ── De la sugerencia al piso ── -->
+    <div class="nv-pasos">
+      <p class="nv-pasos-rot">Y así llega el par a piso</p>
+      <ol>
+        {pasos.map((p, i) => (
+          <li><span>{i + 1}</span>{p}</li>
+        ))}
+      </ol>
+      <p class="nv-pasos-pie">
+        El par sale del origen y queda <b>en tránsito</b>: no se vende, no se aparta y no aparece
+        en tu tienda en línea hasta que la otra tienda lo recibe contra el documento. Si entrara
+        antes, alguien vendería un par que va en la camioneta.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .nv { background: #0C0C10; color: #fff; padding: 104px 24px 112px; }
+  .nv-inner { max-width: 1200px; margin: 0 auto; }
+
+  .nv-head { max-width: 760px; margin-bottom: 44px; }
+  .nv-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #E8A838; margin: 0 0 16px;
+  }
+  .nv-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; margin: 0 0 16px; color: #fff;
+  }
+  .nv-head h2 span { color: #4B7BE5; }
+  .nv-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #A8A8B4; }
+
+  /* ── La matriz ── */
+  .nv-matriz {
+    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 18px;
+    padding: 22px 24px 20px; margin-bottom: 30px;
+  }
+  .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+  .nv-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
+  .nv-estado { font-size: 12px; font-weight: 700; color: #E8A838; }
+
+  .nv-tabla-envoltura { overflow-x: auto; }
+  .nv-tabla { width: 100%; border-collapse: separate; border-spacing: 5px; min-width: 620px; }
+  .nv-tabla th {
+    font-size: 11px; font-weight: 800; color: #8A8A96; padding-bottom: 4px; text-align: center;
+  }
+  .nv-th-tienda { text-align: left !important; font-size: 12px !important; color: #E4E4E7 !important; white-space: nowrap; padding-right: 10px; }
+  .nv-th-total { color: #55555F !important; }
+  .nv-celda {
+    width: 44px; height: 38px; text-align: center; border-radius: 9px;
+    background: rgba(52,211,153,.16); border: 1px solid rgba(52,211,153,.28);
+    transition: background .45s ease, border-color .45s ease, transform .45s ease;
+  }
+  .nv-celda b { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #A7F3D0; }
+  /* Cero en un número que esa tienda SÍ vende: eso es el hueco que duele. */
+  .nv-celda.hueco { background: rgba(248,113,113,.2); border-color: rgba(248,113,113,.55); }
+  .nv-celda.hueco b { color: #FCA5A5; }
+  /* Cero en un número que ahí no sale: no es hueco, es limpieza. */
+  .nv-celda.limpio { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.07); }
+  .nv-celda.limpio b { color: #3F3F49; }
+  .nv-celda.bajo { background: rgba(232,168,56,.18); border-color: rgba(232,168,56,.42); }
+  .nv-celda.bajo b { color: #FCD98A; }
+  .nv-celda.mov { transform: scale(1.09); box-shadow: 0 0 0 2px #4B7BE5; }
+  .nv-total { text-align: center; font-size: 12.5px; font-weight: 800; color: #6A6A76; font-variant-numeric: tabular-nums; }
+
+  .nv-clave {
+    list-style: none; margin: 16px 0 0; padding: 0; display: flex; gap: 20px; flex-wrap: wrap;
+    font-size: 11.5px; color: #8A8A96; font-weight: 600;
+  }
+  .nv-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
+  .nv-clave i.hueco { background: rgba(248,113,113,.5); border: 1px solid #F87171; }
+  .nv-clave i.limpio { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.2); }
+  .nv-clave i.mov { background: #4B7BE5; }
+
+  /* ── Los traspasos ── */
+  .nv-cuerpo { display: grid; grid-template-columns: 1.25fr 1fr; gap: 30px; align-items: start; }
+  .nv-lista-rot {
+    margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: #8A8A96;
+  }
+  .nv-tr {
+    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 12px; transition: opacity .3s ease, border-color .3s ease;
+  }
+  .nv-tr.hecho { opacity: .42; border-color: rgba(75,123,229,.4); }
+  .nv-tr-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .nv-ruta { font-size: 15px; font-weight: 600; color: #A8A8B4; }
+  .nv-ruta b { color: #fff; font-weight: 800; }
+  .nv-motivo {
+    font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 4px 11px; white-space: nowrap;
+    background: rgba(75,123,229,.16); color: #93B4F7; border: 1px solid rgba(75,123,229,.34);
+  }
+  .nv-motivo[data-motivo="Quiebre inminente"] { background: rgba(248,113,113,.14); color: #FCA5A5; border-color: rgba(248,113,113,.34); }
+  .nv-motivo[data-motivo="Excedente muerto"] { background: rgba(232,168,56,.14); color: #FCD98A; border-color: rgba(232,168,56,.34); }
+  .nv-remesa { margin: 0 0 10px; font-size: 12px; color: #6A6A76; font-weight: 700; }
+  .nv-items {
+    margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #fff;
+    font-variant-numeric: tabular-nums; letter-spacing: -.2px;
+  }
+  .nv-nota { margin: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: #8A8A96; max-width: 54ch; }
+  .nv-aplicar {
+    background: #4B7BE5; color: #fff; border: none; border-radius: 50px;
+    padding: 10px 20px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    transition: transform .2s ease;
+  }
+  .nv-aplicar:hover { transform: scale(1.03); }
+  .nv-aplicar:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .nv-tr.hecho .nv-aplicar { background: rgba(255,255,255,.1); pointer-events: none; }
+  .nv-reiniciar {
+    background: none; border: 1px solid rgba(255,255,255,.2); color: #A8A8B4; border-radius: 50px;
+    padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ── El resultado ── */
+  .nv-resultado {
+    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 18px; padding: 24px 26px 26px;
+  }
+  .nv-cifra-rot, .nv-dinero-rot {
+    margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: #8A8A96;
+  }
+  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: #4B7BE5; font-variant-numeric: tabular-nums; }
+  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: #6A6A76; }
+  .nv-dinero { padding-top: 20px; border-top: 1px solid rgba(255,255,255,.09); }
+  .nv-dinero-n { margin: 0 0 14px; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1.6px; color: #34D399; font-variant-numeric: tabular-nums; }
+  .nv-supuesto { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .nv-supuesto span { font-size: 12px; font-weight: 700; color: #A8A8B4; }
+  .nv-supuesto select {
+    background: #0C0C10; color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 9px;
+    padding: 9px 11px; font-family: inherit; font-size: 13.5px; font-weight: 600;
+  }
+  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: #6A6A76; }
+
+  .nv-feo { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.09); display: grid; gap: 14px; }
+  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: #F87171; letter-spacing: -.4px; }
+  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: #8A8A96; }
+
+  .nv-cta {
+    display: block; margin-top: 22px; text-align: center; background: #fff; color: #0C0C10;
+    text-decoration: none; border-radius: 50px; padding: 13px 22px; font-size: 14.5px; font-weight: 800;
+    transition: transform .2s ease;
+  }
+  .nv-cta:hover { transform: scale(1.02); }
+
+  /* ── De la sugerencia al piso ── */
+  .nv-pasos { margin-top: 44px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,.1); }
+  .nv-pasos-rot {
+    margin: 0 0 18px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: #8A8A96;
+  }
+  .nv-pasos ol { list-style: none; margin: 0 0 18px; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; }
+  .nv-pasos li {
+    display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 700; color: #D4D4DC;
+    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 50px; padding: 8px 16px 8px 8px;
+  }
+  .nv-pasos li span {
+    width: 22px; height: 22px; border-radius: 50%; background: rgba(75,123,229,.2); color: #93B4F7;
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+  }
+  .nv-pasos-pie { margin: 0; font-size: 14px; line-height: 1.7; color: #8A8A96; max-width: 82ch; }
+  .nv-pasos-pie b { color: #fff; }
+
+  @media (max-width: 980px) {
+    .nv { padding: 74px 18px 82px; }
+    .nv-cuerpo { grid-template-columns: 1fr; gap: 24px; }
+    .nv-matriz { padding: 18px 16px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nv-celda, .nv-tr, .nv-aplicar, .nv-cta { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector<HTMLElement>('.nv');
+    if (bloque) {
+      const datos = JSON.parse(bloque.dataset.nivelacion || '{}');
+      const { numeros, tiendas, traspasos, precio, costo, flete, semanas } = datos;
+
+      const idx = (nombre: string) => tiendas.findIndex((t: any) => t.nombre === nombre);
+      const meses = semanas / 4;
+
+      // Estado vivo: se parte de la existencia de hoy y cada traspaso la mueve.
+      let stock: number[][] = tiendas.map((t: any) => [...t.existencia]);
+      let aplicados = 0;
+
+      const celda = (f: number, c: number) =>
+        bloque.querySelector<HTMLElement>(`[data-fila="${f}"][data-col="${c}"]`);
+
+      const pintar = (movidas: string[] = []) => {
+        tiendas.forEach((t: any, f: number) => {
+          let total = 0;
+          numeros.forEach((_: string, c: number) => {
+            const n = stock[f][c];
+            total += n;
+            const el = celda(f, c);
+            if (!el) return;
+            const vende = t.venta[c] > 0;
+            // Un cero en un número que esa tienda no vende NO es un hueco.
+            el.className = 'nv-celda'
+              + (n === 0 ? (vende ? ' hueco' : ' limpio') : (vende && n <= t.venta[c] ? ' bajo' : ''))
+              + (movidas.includes(`${f}-${c}`) ? ' mov' : '');
+            const b = el.querySelector('b');
+            if (b) b.textContent = String(n);
+          });
+          const elTotal = bloque.querySelector<HTMLElement>(`[data-total="${f}"]`);
+          if (elTotal) elTotal.textContent = String(total);
+        });
+      };
+
+      const dinero = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+      const recalcular = () => {
+        // Un par cuenta como rescatado solo si de verdad sobraba en el origen y
+        // además cabe en el destino a su ritmo probado. Si el origen lo iba a
+        // vender, no es rescate: es venta trasladada.
+        let rescatados = 0;
+        for (let k = 0; k < aplicados; k++) {
+          const t = traspasos[k];
+          const o = idx(t.de), d = idx(t.a);
+          t.items.forEach((it: any) => {
+            const c = numeros.indexOf(it.n);
+            const sobraba = Math.max(0, tiendas[o].existencia[c] - tiendas[o].venta[c] * meses);
+            const cabe = Math.max(0, tiendas[d].venta[c] * meses - tiendas[d].existencia[c]);
+            rescatados += Math.min(it.pares, sobraba, cabe);
+          });
+        }
+
+        const pct = Number((document.getElementById('nvSaldo') as HTMLSelectElement)?.value || 0.5);
+        // La diferencia entre los dos caminos, no una ganancia inventada:
+        // venderlo a precio contra rematarlo, menos lo que cuesta moverlo.
+        const margenPrecio = precio - costo;
+        const margenSaldo = precio * pct - costo;
+        const total = rescatados * (margenPrecio - margenSaldo - flete);
+
+        const elPares = document.getElementById('nvPares');
+        const elDinero = document.getElementById('nvDinero');
+        if (elPares) elPares.textContent = String(rescatados);
+        if (elDinero) elDinero.textContent = dinero(Math.max(0, total));
+
+        const cta = document.getElementById('nvCta') as HTMLAnchorElement | null;
+        if (cta) {
+          const u = new URL(cta.getAttribute('href') || '/contacto', location.origin);
+          u.searchParams.set('estimado', String(Math.max(0, Math.round(total))));
+          cta.href = u.pathname + u.search;
+        }
+      };
+
+      const aplicar = (i: number) => {
+        if (i !== aplicados) return;
+        const t = traspasos[i];
+        const o = idx(t.de), d = idx(t.a);
+        const movidas: string[] = [];
+        t.items.forEach((it: any) => {
+          const c = numeros.indexOf(it.n);
+          stock[o][c] -= it.pares;
+          stock[d][c] += it.pares;
+          movidas.push(`${o}-${c}`, `${d}-${c}`);
+        });
+        aplicados++;
+        bloque.querySelector(`[data-tr="${i}"]`)?.classList.add('hecho');
+        pintar(movidas);
+        recalcular();
+
+        const estado = document.getElementById('nvEstado');
+        if (estado) {
+          estado.textContent = aplicados === traspasos.length
+            ? 'Después de la remesa · tres corridas cerradas de cuatro'
+            : `Después de ${aplicados} de ${traspasos.length} traspasos`;
+        }
+        const reiniciar = document.getElementById('nvReiniciar');
+        if (reiniciar) reiniciar.hidden = false;
+
+        // La marca del movimiento es un pulso, no un estado.
+        setTimeout(() => pintar(), 1400);
+      };
+
+      bloque.querySelectorAll<HTMLElement>('[data-aplica]').forEach((b) => {
+        b.addEventListener('click', () => aplicar(Number(b.dataset.aplica)));
+      });
+
+      document.getElementById('nvReiniciar')?.addEventListener('click', () => {
+        stock = tiendas.map((t: any) => [...t.existencia]);
+        aplicados = 0;
+        bloque.querySelectorAll('.nv-tr').forEach((el) => el.classList.remove('hecho'));
+        const estado = document.getElementById('nvEstado');
+        if (estado) estado.textContent = 'Como está hoy';
+        const reiniciar = document.getElementById('nvReiniciar');
+        if (reiniciar) reiniciar.hidden = true;
+        pintar();
+        recalcular();
+      });
+
+      document.getElementById('nvSaldo')?.addEventListener('change', recalcular);
+
+      pintar();
+      recalcular();
+    }
+  }
+</script>

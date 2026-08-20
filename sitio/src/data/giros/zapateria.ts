@@ -471,14 +471,51 @@ export const reglasZapateria = [
   { si: 'Un par queda descabalado', entonces: 'no se cierra el corte', detalle: 'El pie que se queda en el aparador y el que se quedó en el probador son las dos fuentes de descuadre en calzado. Quedan a nombre de quien cerró, el mismo día — no a fin de mes.' },
 ];
 
-export const diasZapateria = [
-  { dia: 'Día 1', titulo: 'Tus corridas, cargadas', detalle: 'Nos das tu archivo o tu base actual y lo subimos nosotros: modelo, color, número y existencia, con medios.' },
-  { dia: 'Día 2', titulo: 'Tu operación, configurada', detalle: 'Tus marcas y tus proveedores de León, la bodega que surte a las tiendas, quién puede dar descuento y hasta cuánto. Queda como ya trabajas.' },
-  { dia: 'Día 3', titulo: 'Capacitación', detalle: 'Dos horas con tu equipo. Cobrar y consultar un número se aprende en veinte minutos.' },
-  { dia: 'Día 4', titulo: 'Arranca una tienda', detalle: 'La primera sucursal vende con SACS, con sus apartados vivos ya migrados: nadie llega a liquidar y se encuentra con que su papel no existe.' },
-  { dia: 'Día 5', titulo: 'Arrancan las demás', detalle: 'Con la primera resuelta, las otras entran el mismo día — y el traspaso de números entre tiendas ya corre desde el primer sábado.' },
+/* ── Cómo se implementa. Los mismos cinco pasos de siempre, pero contados con
+   lo que de verdad se carga y se configura en una zapatería: la corrida con
+   medios, las marcas de León, los apartados vivos y el traspaso entre tiendas. */
+export const pasosZapateria = [
+  {
+    cuando: 'Día 1',
+    titulo: 'Tus corridas, cargadas',
+    texto: 'Nos das tu archivo o tu base actual y lo subimos nosotros. No capturas nada.',
+    detalle: 'Modelo, color y número con medios — no una lista de "productos". Y la existencia real de cada tienda y de la bodega.',
+    img: '/images/proc-zap-1.webp',
+    alt: 'Consultor con laptop y empleada revisando una lista de inventario junto a los anaqueles de cajas',
+  },
+  {
+    cuando: 'Día 2',
+    titulo: 'Tu operación, configurada',
+    texto: 'Queda como ya trabajas, no como el sistema quiere que trabajes.',
+    detalle: 'Tus marcas y tus proveedores de León, la bodega que surte a las tiendas, quién puede dar descuento y hasta cuánto.',
+    img: '/images/proc-zap-2.webp',
+    alt: 'Dueña de zapatería y consultor revisando documentos de proveedores en la oficina de la tienda',
+  },
+  {
+    cuando: 'Día 3',
+    titulo: 'Capacitación',
+    texto: 'Dos horas con tu equipo, antes de abrir. Cobrar y consultar un número se aprende en veinte minutos.',
+    detalle: 'Y se practica lo que de verdad se usa a diario: el cambio de número, el apartado con abonos y el corte.',
+    img: '/images/proc-zap-3.webp',
+    alt: 'Equipo de una zapatería en capacitación alrededor del mostrador antes de abrir',
+  },
+  {
+    cuando: 'Día 4',
+    titulo: 'Arranca una tienda',
+    texto: 'La primera sucursal vende con SACS. El sistema viejo sigue en pie por si acaso.',
+    detalle: 'Con sus apartados vivos ya migrados: nadie llega a liquidar y se encuentra con que su papel no existe.',
+    img: '/images/proc-zap-4.webp',
+    alt: 'Cajera cobrando en una zapatería con un compañero acompañando el primer día',
+  },
+  {
+    cuando: 'Día 5',
+    titulo: 'Arrancan las demás',
+    texto: 'Con la primera resuelta, las otras entran el mismo día.',
+    detalle: 'Y el traspaso de números entre tiendas ya corre desde el primer sábado, que es cuando se nota.',
+    img: '/images/proc-zap-5.webp',
+    alt: 'Dueña de una cadena de zapaterías revisando su tablet en el pasillo de una de sus tiendas',
+  },
 ];
-
 export const cajaZapateria = {
   lineas: [
     { n: 'Botín dama café · 24½', p: '$1,290.00' },
@@ -581,3 +618,121 @@ export const casosZapateria = [
     alt: 'Vendedora hincada revisando la punta del zapato escolar que el niño ya trae puesto, con la caja abierta y el tenis blanco del segundo par en el piso',
   },
 ];
+
+/* ── Las cuatro etapas del negocio, con lo que significan en una zapatería.
+   No son planes: son las cuatro cosas que la tienda hace todos los días. Cada
+   punto existe de verdad en el sistema — la referencia es src/data/plans.ts. */
+export const etapasZapateria = [
+  {
+    id: 'vender',
+    nombre: 'Vender',
+    resumen: 'El mostrador, la bodega y tus canales cobrando el mismo par, con un solo inventario.',
+    puntos: [
+      'Venta por número, con medios y por color',
+      'Cambio de número y devoluciones en el mostrador',
+      'Apartados con abonos por quincena',
+      'Ventas a crédito y cotizaciones',
+      'Listas de precios y precio por volumen',
+      'Tienda en línea con tu mismo inventario',
+      'WhatsApp, Instagram, Facebook y TikTok Shop',
+      'Ticket por WhatsApp, y la caja cobra sin internet',
+    ],
+  },
+  {
+    id: 'controlar',
+    nombre: 'Controlar',
+    resumen: 'La corrida, lo que compras a León y lo que de verdad te deja cada par.',
+    puntos: [
+      'Existencia por modelo, color y número en cada tienda',
+      'Traspasos entre sucursales y bodega central',
+      'Conteo físico desde el celular y conteos cíclicos',
+      'Kardex y trazabilidad de cada par',
+      'Órdenes de compra y recepción por remesa',
+      'Cuentas por pagar y control de gastos',
+      'Costeo y utilidad por par, no solo por venta',
+      'Mermas, pérdidas y alertas de stock',
+    ],
+  },
+  {
+    id: 'fidelizar',
+    nombre: 'Fidelizar',
+    resumen: 'El pie de tu cliente ya no crece: sabes su número y le avisas cuando entra.',
+    puntos: [
+      'Perfil del cliente con lo que compró y en qué número',
+      'Segmentación por lo que de verdad se lleva',
+      'Monedero, puntos y niveles de recompensa',
+      'Tarjetas de regalo físicas y digitales',
+      'Campañas por correo y por WhatsApp',
+      'Portal de clientes con tu marca',
+      'Membresías con cobro recurrente',
+      'Portal de autofacturación, sin que nadie capture RFC',
+    ],
+  },
+  {
+    id: 'administrar',
+    nombre: 'Administrar',
+    resumen: 'Tu equipo, tus permisos y los números con los que decides — sin estar en la tienda.',
+    puntos: [
+      'Metas y comisión por vendedor y por sucursal',
+      'Permisos por usuario, por tienda y por caja',
+      'Auditoría de movimientos: quién, cuándo y qué',
+      '50+ reportes y 20+ indicadores de tu operación',
+      'CFDI desde la caja y factura global',
+      'Complementos de pago y notas de crédito',
+      'Multi-sucursal en tiempo real, desde el celular',
+      'Conexión con tu ERP y tu despacho por API (en Automatiza)',
+    ],
+  },
+];
+
+/* ── La remesa del lunes: el bloque propio del giro.
+   Todo esto salió de la manera en que se nivela de verdad una cadena de
+   calzado. Lo que hay que respetar si algún día se toca:
+
+   · Se mueve el par que SOBRA, no el número que falta. Igualar existencias es
+     repartir la corrida rota entre las cuatro tiendas.
+   · Un cero en un número que esa tienda no vende NO es hueco: es limpieza.
+     Por eso `venta` existe: sin ella, la matriz miente.
+   · Nunca sale el último par de un número que sí rota en su tienda.
+   · El umbral es de seis pares por envío, salvo el viaje de regreso —que no
+     paga flete— y el par comprometido con un cliente, que va solo.
+   · Las cuentas se hacen a COSTO y contra el saldero, nunca a precio de lista. */
+export const nivelacionZapateria = {
+  modelo: 'Botín dama piel café',
+  semanas: 8,
+  precio: 1290,
+  costo: 600,
+  flete: 17,
+  numeros: ['22', '22½', '23', '23½', '24', '24½', '25', '25½', '26', '26½', '27'],
+  tiendas: [
+    { nombre: 'Centro',      venta: [0, 1, 2, 5, 6, 5, 4, 3, 2, 1, 0], existencia: [1, 2, 3, 2, 1, 2, 5, 4, 3, 2, 2] },
+    { nombre: 'Plaza Norte', venta: [0, 0, 1, 1, 1, 2, 4, 5, 4, 2, 1], existencia: [2, 3, 4, 6, 5, 3, 3, 4, 3, 2, 1] },
+    { nombre: 'Galerías',    venta: [0, 1, 2, 2, 2, 2, 2, 1, 1, 1, 0], existencia: [1, 2, 3, 7, 8, 4, 2, 1, 1, 2, 3] },
+    { nombre: 'Sur',         venta: [0, 0, 2, 5, 4, 3, 2, 1, 0, 0, 0], existencia: [3, 2, 1, 0, 0, 0, 1, 1, 2, 3, 4] },
+  ],
+  traspasos: [
+    {
+      de: 'Plaza Norte', a: 'Sur', remesa: 'Remesa del martes',
+      motivo: 'Cierra corrida',
+      items: [{ n: '23½', pares: 4 }, { n: '24', pares: 3 }, { n: '23', pares: 2 }],
+      nota: 'Sur no vende mal: no tiene qué vender. Le faltan tres números seguidos de su núcleo, justo donde hace doce de sus diecisiete pares al mes.',
+    },
+    {
+      de: 'Galerías', a: 'Centro', remesa: 'Misma remesa',
+      motivo: 'Quiebre inminente',
+      items: [{ n: '23½', pares: 3 }, { n: '24', pares: 4 }],
+      nota: 'A Centro le queda un par del 24 y vende seis al mes: cinco días. Galerías conserva sus cuatro y cuatro, que es su mes completo.',
+    },
+    {
+      de: 'Sur', a: 'Plaza Norte', remesa: 'Regresa en la misma camioneta',
+      motivo: 'Excedente muerto',
+      items: [{ n: '26', pares: 2 }, { n: '26½', pares: 2 }, { n: '27', pares: 1 }],
+      nota: 'Son cinco pares, por debajo del umbral de seis. Se autoriza igual porque es el viaje de regreso del primero: flete cero.',
+    },
+  ],
+  /* Lo que NO se salva. Un bloque que dice que todo se recupera es una
+     calculadora de ilusiones, y el dueño lo sabe. */
+  saldo: { pares: 21, detalle: '8 del 27, 7 del 22, 5 del 22½ y 1 del 26½' },
+  comprar: { pares: 38, detalle: '24½ ×15 · 24 ×12 · 25½ ×11', nota: 'No hay excedente de 24½ en toda la cadena: hay nueve pares y las cuatro tiendas venden doce al mes. Ese hueco se compra o no existe.' },
+  pasos: ['Se propone', 'Se autoriza', 'Se surte', 'Va en camino', 'Se recibe', 'Entra a piso'],
+};

@@ -1,0 +1,245 @@
+---
+/**
+ * SuiteIntegral — toda la operación, en un círculo.
+ *
+ * Sustituye al bloque de facturación, que resolvía una objeción chica y dejaba
+ * fuera la grande: el visitante llega hasta aquí creyendo que SACS es lo que
+ * le enseñamos —el mostrador y el inventario— y no que ahí adentro cabe el
+ * negocio entero, con sus sucursales, sus canales y su gente.
+ *
+ * Por qué un círculo y no una lista de planes: las etapas no son escalones de
+ * precio, son las cuatro cosas que un negocio hace todos los días y que no
+ * terminan nunca. Vender lleva a controlar, controlar permite fidelizar, y
+ * nada de eso se sostiene sin administrar. Puesto en fila parecería que uno
+ * sustituye al otro.
+ *
+ * El contenido es del giro: en una zapatería se vende por número y se controla
+ * la corrida; en una joyería se cotiza por gramo y se controla el fino. La
+ * forma se queda igual en todas.
+ */
+export interface EtapaIntegral {
+  id: string;
+  /** El verbo. Es lo que el negocio hace, no el nombre de un plan. */
+  nombre: string;
+  /** Una línea: qué resuelve esta etapa en este giro. */
+  resumen: string;
+  /** Las funciones, dichas en la lengua del giro. */
+  puntos: string[];
+}
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  resalte?: string;
+  sub?: string;
+  etapas: EtapaIntegral[];
+  centro?: string;
+  pie?: string;
+}
+const {
+  eyebrow = 'Todo lo demás que ya viene adentro',
+  titulo,
+  resalte,
+  sub,
+  etapas,
+  centro = 'Tu negocio',
+  pie,
+} = Astro.props;
+
+/* Cuatro arcos de 90°, con una muesca de 4° entre uno y otro para que se lean
+   como cuatro cosas y no como una rueda partida. El radio y el grosor se
+   calculan aquí para no repetir números mágicos en el marcado. */
+const R = 118;
+const GROSOR = 34;
+const CIRC = 2 * Math.PI * R;
+const HUECO = 5;
+const TRAMO = CIRC / etapas.length;
+const COLORES = ['#4B7BE5', '#2AB5A0', '#E8A838', '#8B7BE5'];
+---
+
+<section class="ig">
+  <div class="ig-inner">
+
+    <header class="ig-head">
+      <p class="ig-eyebrow">{eyebrow}</p>
+      <h2>{titulo} {resalte && <span>{resalte}</span>}</h2>
+      {sub && <p class="ig-sub">{sub}</p>}
+    </header>
+
+    <div class="ig-cuerpo">
+
+      <!-- La rueda -->
+      <div class="ig-rueda">
+        <svg viewBox="0 0 300 300" role="img" aria-label={`Las cuatro etapas: ${etapas.map((e) => e.nombre).join(', ')}`}>
+          <g transform="rotate(-90 150 150)">
+            {etapas.map((e, i) => (
+              <circle
+                class="ig-arco"
+                data-arco={e.id}
+                cx="150" cy="150" r={R}
+                fill="none"
+                stroke={COLORES[i % COLORES.length]}
+                stroke-width={GROSOR}
+                stroke-linecap="butt"
+                stroke-dasharray={`${TRAMO - HUECO} ${CIRC - TRAMO + HUECO}`}
+                stroke-dashoffset={-i * TRAMO}
+              />
+            ))}
+          </g>
+          <text class="ig-centro" x="150" y="145" text-anchor="middle">{centro}</text>
+          <text class="ig-centro-sub" x="150" y="167" text-anchor="middle">todos los días</text>
+        </svg>
+
+        <!-- Los botones van encima del SVG: un <circle> no es un control. -->
+        <div class="ig-botones">
+          {etapas.map((e, i) => (
+            <button
+              type="button"
+              class:list={['ig-boton', `ig-b${i}`, { on: i === 0 }]}
+              data-etapa={e.id}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+              style={`--c:${COLORES[i % COLORES.length]}`}
+            >
+              {e.nombre}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Lo que hay dentro de la etapa -->
+      <div class="ig-panel">
+        {etapas.map((e, i) => (
+          <div class:list={['ig-detalle', { on: i === 0 }]} data-detalle={e.id} style={`--c:${COLORES[i % COLORES.length]}`}>
+            <h3>{e.nombre}</h3>
+            <p class="ig-resumen">{e.resumen}</p>
+            <ul>
+              {e.puntos.map((p) => <li>{p}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+    </div>
+
+    {pie && <p class="ig-pie" set:html={pie} />}
+  </div>
+</section>
+
+<style>
+  .ig { background: #FAFAF8; color: #1A1A1A; padding: 104px 24px 112px; }
+  .ig-inner { max-width: 1200px; margin: 0 auto; }
+
+  .ig-head { max-width: 760px; margin-bottom: 56px; }
+  .ig-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #4B7BE5; margin: 0 0 16px;
+  }
+  .ig-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.05; margin: 0 0 16px;
+  }
+  .ig-head h2 span { color: #4B7BE5; }
+  .ig-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #4A4A4A; }
+
+  .ig-cuerpo { display: grid; grid-template-columns: 400px 1fr; gap: 64px; align-items: start; }
+
+  /* ── La rueda ── */
+  .ig-rueda { position: relative; }
+  .ig-rueda svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .ig-arco { opacity: .22; transition: opacity .35s ease, stroke-width .35s ease; }
+  .ig-arco.on { opacity: 1; }
+  .ig-centro {
+    font-size: 22px; font-weight: 800; fill: #1A1A1A; letter-spacing: -.6px;
+    font-family: inherit;
+  }
+  .ig-centro-sub { font-size: 12px; font-weight: 600; fill: #8C8C8C; font-family: inherit; }
+
+  /* Un botón por etapa, colocado sobre su arco. */
+  .ig-botones { position: absolute; inset: 0; }
+  .ig-boton {
+    position: absolute; transform: translate(-50%, -50%);
+    background: #fff; border: 1.5px solid rgba(0,0,0,.1); border-radius: 50px;
+    padding: 9px 18px; font-family: inherit; font-size: 14px; font-weight: 700;
+    color: #4A4A4A; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(15,23,42,.06);
+    transition: border-color .25s ease, color .25s ease, transform .25s ease;
+  }
+  .ig-boton:hover { transform: translate(-50%, -50%) scale(1.04); }
+  .ig-boton.on { border-color: var(--c); color: var(--c); box-shadow: 0 4px 14px rgba(15,23,42,.1); }
+  .ig-boton:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
+  /* Arriba, derecha, abajo, izquierda: el orden en que se lee el círculo. */
+  .ig-b0 { top: 4%; left: 50%; }
+  .ig-b1 { top: 50%; left: 100%; }
+  .ig-b2 { top: 96%; left: 50%; }
+  .ig-b3 { top: 50%; left: 0%; }
+
+  /* ── El panel ── */
+  .ig-panel { position: relative; min-height: 380px; }
+  .ig-detalle {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    transition: opacity .35s ease, transform .35s ease; transform: translateY(8px);
+  }
+  .ig-detalle.on { opacity: 1; pointer-events: auto; transform: none; position: relative; }
+  .ig-detalle h3 {
+    margin: 0 0 10px; font-size: clamp(24px, 3vw, 34px); font-weight: 800; letter-spacing: -1px;
+  }
+  .ig-resumen {
+    margin: 0 0 26px; font-size: 17px; line-height: 1.6; color: #4A4A4A; max-width: 52ch;
+    padding-left: 14px; border-left: 3px solid var(--c);
+  }
+  .ig-detalle ul {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px 28px;
+  }
+  .ig-detalle li {
+    position: relative; padding: 11px 0 11px 22px; font-size: 15px; line-height: 1.45;
+    color: #1A1A1A; border-bottom: 1px solid rgba(0,0,0,.07);
+  }
+  .ig-detalle li::before {
+    content: ""; position: absolute; left: 0; top: 18px;
+    width: 7px; height: 7px; border-radius: 2px; background: var(--c);
+  }
+
+  .ig-pie {
+    margin: 56px 0 0; padding-top: 28px; border-top: 1px solid rgba(0,0,0,.09);
+    font-size: 15.5px; line-height: 1.7; color: #4A4A4A; max-width: 78ch;
+  }
+  .ig-pie :global(b) { color: #1A1A1A; }
+
+  @media (max-width: 980px) {
+    .ig { padding: 74px 18px 82px; }
+    .ig-cuerpo { grid-template-columns: 1fr; gap: 44px; }
+    .ig-rueda { max-width: 340px; margin: 0 auto; }
+    .ig-boton { font-size: 12.5px; padding: 7px 13px; }
+    .ig-panel { min-height: 0; }
+    .ig-detalle { position: static; display: none; }
+    .ig-detalle.on { display: block; }
+    .ig-detalle ul { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ig-arco, .ig-detalle, .ig-boton { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector('.ig');
+    if (bloque) {
+      const botones = Array.from(bloque.querySelectorAll<HTMLElement>('[data-etapa]'));
+      const arcos = Array.from(bloque.querySelectorAll<SVGElement>('[data-arco]'));
+      const detalles = Array.from(bloque.querySelectorAll<HTMLElement>('[data-detalle]'));
+
+      const abrir = (id: string) => {
+        botones.forEach((b) => {
+          const on = b.dataset.etapa === id;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        arcos.forEach((a) => a.classList.toggle('on', a.getAttribute('data-arco') === id));
+        detalles.forEach((d) => d.classList.toggle('on', d.dataset.detalle === id));
+      };
+
+      botones.forEach((b) => b.addEventListener('click', () => abrir(b.dataset.etapa || '')));
+      abrir(botones[0]?.dataset.etapa || '');
+    }
+  }
+</script>
