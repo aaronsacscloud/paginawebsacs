@@ -42,8 +42,12 @@ export async function darDeBaja(b: Baja): Promise<{ ok: boolean; contactId: stri
   // Una pausa NUNCA puede degradar una supresión permanente. Sin esto, quien
   // había marcado spam o rebotado duro y luego tocaba "pausar 30 días" en el
   // centro de preferencias volvía a ser enviable al mes siguiente.
-  const PERMANENTES = ['queja', 'rebote_duro', 'dropped'];
-  if (b.pausarHasta && previa && PERMANENTES.includes(String(previa.motivo))) {
+  // Una pausa no puede degradar NADA que ya sea más fuerte, y eso incluye una
+  // baja: quien canceló la suscripción y luego toca "pausar 30 días" desde un
+  // correo viejo volvería a ser enviable al mes siguiente — es decir, recibiría
+  // marketing después de haberse dado de baja.
+  const NO_DEGRADABLES = ['queja', 'rebote_duro', 'dropped', 'baja'];
+  if (b.pausarHasta && previa && NO_DEGRADABLES.includes(String(previa.motivo))) {
     return { ok: true, contactId };
   }
 
@@ -60,17 +64,31 @@ export async function darDeBaja(b: Baja): Promise<{ ok: boolean; contactId: stri
   else await supabase.from('email_suppressions').insert(fila);
 
   if (b.sendId) {
-    await supabase.from('email_sends')
-      .update({ estado: 'unsubscribed', unsubscribed_at: new Date().toISOString() })
-      .eq('id', b.sendId);
+    // ⚠️ NO pisar un estado terminal. El webhook protege con cuidado el estado
+    // del envío y tres líneas después llamaba aquí, que lo sobrescribía sin
+    // condición: todo rebote duro y toda queja quedaban guardados como "baja".
+    // La cadena que eso rompía: `pausaSalud` cuenta estado='bounced' → siempre
+    // cero → el freno automático al 2% de rebotes NUNCA se disparaba, y el
+    // tablero reportaba 0 rebotes y 0 quejas justo mientras se quemaba el
+    // dominio. Solo se marca la baja si el envío no tiene ya algo peor.
+    const parche: Record<string, any> = { unsubscribed_at: new Date().toISOString() };
+    if (!b.motivo || b.motivo === 'baja') parche.estado = 'unsubscribed';
+    await supabase.from('email_sends').update(parche)
+      .eq('id', b.sendId).not('estado', 'in', '(spam,bounced)');
   }
 
   // Fuera de todos los embudos: seguir inscrito sería recibir el paso 3 de
   // una secuencia de la que la persona acaba de salir.
   if (contactId && !b.pausarHasta) {
-    await supabase.from('automation_enrollments')
-      .update({ estado: 'cancelado', unenrollment_reason: 'baja de correo', completed_at: new Date().toISOString() })
-      .eq('contact_id', contactId).eq('estado', 'activo');
+    // Acotado al inquilino: una baja en uno no puede apagar las inscripciones
+    // de otro. Se resuelven primero los embudos de este inquilino.
+    const { data: mios } = await supabase.from('automations').select('id').eq('tenant_id', b.tenantId);
+    const ids = (mios || []).map((a: any) => a.id);
+    if (ids.length) {
+      await supabase.from('automation_enrollments')
+        .update({ estado: 'cancelado', unenrollment_reason: 'baja de correo', completed_at: new Date().toISOString() })
+        .eq('contact_id', contactId).eq('estado', 'activo').in('automation_id', ids);
+    }
     await supabase.from('activities').insert({
       contact_id: contactId, tipo: 'email_unsubscribed', automatico: true,
       titulo: b.pausarHasta ? 'Pausó los correos' : 'Canceló la suscripción de correo',
@@ -80,10 +98,27 @@ export async function darDeBaja(b: Baja): Promise<{ ok: boolean; contactId: stri
   return { ok: true, contactId };
 }
 
-/** Volver a suscribir (el usuario se equivocó, o el panel lo restaura). */
-export async function reactivar(tenantId: string, email: string): Promise<void> {
-  await supabase.from('email_suppressions')
+/**
+ * Volver a suscribir.
+ *
+ * `incluirPermanentes` existe porque hay dos puertas con permisos distintos:
+ * el panel (founder, que ve el aviso de riesgo y decide) y la página pública
+ * de preferencias, a la que llega cualquiera con un link de baja reenviado.
+ * Desde la pública NO se puede revivir una queja de spam ni un rebote duro:
+ * el token no expira y viaja en cada correo entregado, así que sería la forma
+ * más fácil de reactivar a alguien que expresamente no quiere recibir.
+ */
+export async function reactivar(tenantId: string, email: string, incluirPermanentes = false): Promise<void> {
+  const e = String(email).trim().toLowerCase();
+  let q = supabase.from('email_suppressions')
     .update({ restaurado_at: new Date().toISOString() })
-    .eq('tenant_id', tenantId).eq('email', String(email).trim().toLowerCase())
-    .is('restaurado_at', null);
+    .eq('tenant_id', tenantId).eq('email', e).is('restaurado_at', null);
+  if (!incluirPermanentes) q = q.in('motivo', ['baja', 'pausa', 'sunset', 'manual']);
+  await q;
+
+  // La tabla vieja también: si no, la página dice "vuelves a estar suscrito"
+  // y el pipeline lo sigue bloqueando por el otro lado.
+  await supabase.from('email_unsubscribes')
+    .update({ resubscribed_at: new Date().toISOString() })
+    .eq('email', e).is('resubscribed_at', null);
 }

@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (!email) return json({ error: 'Falta el correo.' }, 400);
 
   if (body.accion === 'restaurar') {
-    await reactivar(t.id, email);
+    await reactivar(t.id, email, true);   // el panel muestra el aviso de riesgo
     // Y en SendGrid: sin esto seguiría descartándolo sin avisar.
     const key = (import.meta.env.SENDGRID_API_KEY || '').trim();
     const borrados: string[] = [];

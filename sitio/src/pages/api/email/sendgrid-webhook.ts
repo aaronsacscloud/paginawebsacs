@@ -61,11 +61,20 @@ export const POST: APIRoute = async ({ request }) => {
   // BITÁCORA. Se escribe SIEMPRE, pase o no la firma. Un webhook que se
   // descarta en silencio deja las métricas en cero sin que nadie sepa por qué
   // — y ese silencio cuesta días de diagnóstico. Aquí queda el rastro.
+  // La MUESTRA solo lleva correo cuando el evento es NUESTRO (trae `tenant`).
+  // Este webhook es de toda la cuenta de SendGrid, que comparte el producto:
+  // los demás eventos son de compradores de las tiendas de los clientes, y esa
+  // gente no tiene nada que hacer en la base del CRM comercial.
+  const muestra = eventos.slice(0, 3).map((e: any) => (
+    e?.tenant
+      ? { event: e.event, email: e.email, send: e.send || null }
+      : { event: e?.event, ajeno: true }
+  ));
   await supabase.from('email_webhook_log').insert({
     origen: 'sendgrid',
     firma_ok: firmaOk,
     eventos: eventos.length,
-    muestra: eventos.slice(0, 3).map((e: any) => ({ event: e.event, email: e.email, send: e.send || null })),
+    muestra,
     nota: firmaOk ? null : 'firma inválida o ausente: eventos descartados',
   }).then(() => {}, () => {});
 

@@ -51,6 +51,13 @@ export const POST: APIRoute = async ({ request, url }) => {
     return json({ lista: data }, 201);
   }
 
+  // La lista tiene dueño. Sin esto se podían inyectar miembros en la lista de
+  // otro inquilino con solo conocer su id — y esos destinatarios entrarían a su
+  // próxima campaña. El DELETE de abajo ya lo verificaba; faltaba esta mitad.
+  const { data: duena } = await supabase.from('email_lists')
+    .select('id').eq('id', body.list_id).eq('tenant_id', t.id).maybeSingle();
+  if (!duena) return json({ error: 'No existe esa lista.' }, 404);
+
   // Agregar miembros: contactos existentes, correos sueltos o un CSV.
   const entradas: Array<{ email: string; nombre?: string | null; contact_id?: string | null }> = [];
 

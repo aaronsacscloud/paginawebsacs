@@ -151,7 +151,15 @@ async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | nu
       // `neq` en PostgREST NO devuelve las filas con NULL (nada es distinto de
       // NULL en SQL). "Etapa no es Cliente" dejaba fuera a todo contacto sin
       // etapa, que suele ser justo el que se quiere alcanzar.
-      case 'no_es': q = q.or(`${c.campo}.neq.${v},${c.campo}.is.null`); break;
+      case 'no_es': {
+        // El valor se interpola en la cadena del `or`, así que una coma
+        // añadiría cláusulas arbitrarias y ampliaría la audiencia. Se escapa
+        // envolviendo en comillas dobles (la forma que PostgREST entiende
+        // para valores con comas) y neutralizando las comillas internas.
+        const seguro = `"${String(v ?? '').replace(/["\\]/g, '')}"`;
+        q = q.or(`${c.campo}.neq.${seguro},${c.campo}.is.null`);
+        break;
+      }
       case 'contiene': q = q.ilike(c.campo, `%${v}%`); break;
       case 'existe': q = q.not(c.campo, 'is', null); break;
       case 'no_existe': q = q.is(c.campo, null); break;

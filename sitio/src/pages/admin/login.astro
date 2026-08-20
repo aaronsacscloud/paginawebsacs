@@ -23,6 +23,8 @@ if (user) {
   <div class="auth-wrap">
     <!-- Panel de marca: el mensaje del día y quién firma esto. -->
     <aside class="auth-marca">
+      <canvas id="vuelo"></canvas>
+
       <div class="auth-brand">
         <span class="auth-dot"></span>
         <span>
@@ -33,11 +35,11 @@ if (user) {
 
       <div class="auth-msg">
         <p class="auth-saludo" id="saludo">Hola</p>
-        <h2 class="auth-frase">Marcha perfecta<br />para un presente de éxito.</h2>
-        <p class="auth-frase-sub">
-          Aquí vive lo que sostiene el negocio: tus cuentas, lo que cotizaste y
-          el dinero que entra. Un paso a la vez, todos los días.
-        </p>
+        <h2 class="auth-frase">El match perfecto para construir un presente de éxito</h2>
+        <ul class="auth-pilares">
+          <li>Análisis</li><li>Tecnología</li><li>IA</li><li>Conexión estratégica</li>
+        </ul>
+        <p class="auth-cita">“El verdadero éxito está en crecer mientras ayudas a otros a crecer.”</p>
       </div>
 
       <p class="auth-pie">Panel interno · Solo el equipo de SACS</p>
@@ -88,7 +90,14 @@ if (user) {
     }
     .auth-marca::before { width: 520px; height: 520px; top: -190px; right: -160px; background: radial-gradient(circle, rgba(255,255,255,.30), transparent 62%); }
     .auth-marca::after { width: 420px; height: 420px; bottom: -170px; left: -120px; background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%); }
-    .auth-marca > * { position: relative; z-index: 1; }
+    /* El diente de león en vuelo: vive entre los halos y el texto. */
+    #vuelo {
+      position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+      /* El texto vive a la izquierda: ahí el vuelo se desvanece para no pisarlo. */
+      -webkit-mask-image: linear-gradient(105deg, transparent 8%, rgba(0,0,0,.35) 30%, #000 52%);
+      mask-image: linear-gradient(105deg, transparent 8%, rgba(0,0,0,.35) 30%, #000 52%);
+    }
+    .auth-marca > *:not(#vuelo) { position: relative; z-index: 1; }
 
     .auth-brand { display: flex; align-items: center; gap: 11px; }
     .auth-dot { width: 34px; height: 34px; border-radius: 99px; background: rgba(255,255,255,.9); flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.14); }
@@ -99,8 +108,10 @@ if (user) {
     .auth-saludo { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 12px; }
     /* El color va explícito: la hoja global le pone tinta oscura a todos los
        h2, y una regla directa le gana a heredar el blanco del panel. */
-    .auth-frase { font-size: 2.15rem; line-height: 1.14; font-weight: 800; letter-spacing: -.025em; margin: 0; color: #fff; }
-    .auth-frase-sub { font-size: .92rem; line-height: 1.6; color: rgba(255,255,255,.84); margin: 16px 0 0; max-width: 30ch; }
+    .auth-frase { font-size: 2.05rem; line-height: 1.16; font-weight: 800; letter-spacing: -.025em; margin: 0; color: #fff; max-width: 15ch; text-transform: uppercase; }
+    .auth-pilares { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+    .auth-pilares li { font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 11px; border-radius: 20px; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.22); }
+    .auth-cita { margin: 20px 0 0; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.45); font-size: .92rem; line-height: 1.55; color: rgba(255,255,255,.9); font-style: italic; max-width: 34ch; }
     .auth-pie { font-size: .68rem; color: rgba(255,255,255,.66); margin: 0; letter-spacing: .02em; }
 
     /* ── Formulario ── */
@@ -127,10 +138,18 @@ if (user) {
     /* En el teléfono el panel se vuelve una cinta arriba: el mensaje se lee
        igual y el formulario no queda debajo del fold. */
     @media (max-width: 900px) {
+      /* En el teléfono el texto ocupa todo el ancho: el vuelo se desvanece
+         hacia abajo en vez de hacia la izquierda y se queda en la franja de
+         arriba. Con la máscara diagonal, la flor le pasaba por encima al
+         titular. */
+      #vuelo {
+        -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 62%);
+        mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 62%);
+      }
       .auth-wrap { grid-template-columns: 1fr; }
-      .auth-marca { padding: 26px 24px 28px; gap: 22px; }
-      .auth-frase { font-size: 1.5rem; }
-      .auth-frase-sub { font-size: .84rem; max-width: none; }
+      .auth-marca { padding: 26px 24px 30px; gap: 20px; min-height: 62vh; }
+      .auth-frase { font-size: 1.42rem; max-width: none; }
+      .auth-cita { font-size: .82rem; }
       .auth-pie { display: none; }
       .auth-lado { padding: 26px 20px 44px; align-items: flex-start; }
       .auth-card { box-shadow: 0 1px 3px rgba(40,20,90,.06), 0 10px 26px rgba(40,20,90,.10); }
@@ -141,8 +160,159 @@ if (user) {
     // El saludo se arma en el navegador: el servidor corre en UTC y a las 9 de
     // la noche de México habría dicho "buenos días".
     const h = new Date().getHours();
-    const s = document.getElementById('saludo');
-    if (s) s.textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const saludoEl = document.getElementById('saludo');
+    if (saludoEl) saludoEl.textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+
+    // ── El diente de león en vuelo ──────────────────────────────────────────
+    // La expansión, dibujada: una flor que suelta sus semillas y las manda a
+    // crecer lejos. Todo en un canvas de unas cien líneas, sin librerías: un
+    // motor 3D son cientos de kilobytes en la primera pantalla del día y a
+    // este tamaño no se notaría la diferencia.
+    //
+    // El volumen sale de dos cosas. Cada vilano es un disco que gira sobre su
+    // eje: al proyectarlo, la componente vertical se aplasta con el coseno de
+    // su inclinación —de canto se ve como una raya, de frente como un círculo—.
+    // Y cada semilla viaja en profundidad: lo cercano crece y se aclara, lo
+    // lejano se achica hasta desaparecer y vuelve a nacer en la flor.
+    (function dienteDeLeon() {
+      const cv = document.getElementById('vuelo');
+      if (!cv || !cv.getContext) return;
+      const ctx = cv.getContext('2d');
+      const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let W = 0, H = 0, DPR = 1, flores = [], semillas = [], t0 = 0;
+      const F = 420;                              // distancia focal de la proyección
+      const esc = (z) => F / (F + z);
+
+      function armar() {
+        const by = H + 10;                        // los tallos nacen fuera del borde
+        const chico = W < 640;                    // teléfono: el panel es angosto
+        flores = chico
+          ? [
+              { x: W * 0.72, y: H * 0.30, r: Math.min(W, H) * 0.10, base: { x: W * 0.64, y: by }, n: 40, z: 0 },
+              { x: W * 0.52, y: H * 0.42, r: Math.min(W, H) * 0.062, base: { x: W * 0.46, y: by }, n: 28, z: 90 },
+            ]
+          : [
+              { x: W * 0.66, y: H * 0.58, r: Math.min(W, H) * 0.115, base: { x: W * 0.56, y: by }, n: 44, z: 0 },
+              { x: W * 0.52, y: H * 0.74, r: Math.min(W, H) * 0.072, base: { x: W * 0.47, y: by }, n: 32, z: 90 },
+            ];
+        semillas = [];
+        const total = Math.round(30 * (chico ? 0.6 : 1));
+        for (let i = 0; i < total; i++) semillas.push(nueva(true));
+      }
+
+      function nueva(inicial) {
+        const f = flores[0];
+        // Salen del centro de la flor grande hacia el nor-este, como en la foto.
+        const dist = (inicial ? Math.random() : 0) * Math.hypot(W, H) * 0.9;
+        const ang = -0.72 + (Math.random() - 0.5) * 0.40;
+        return {
+          x: f.x + Math.cos(ang) * dist + (Math.random() - .5) * 40,
+          y: f.y + Math.sin(ang) * dist + (Math.random() - .5) * 40,
+          z: (Math.random() - .35) * 220,
+          vx: 0.22 + Math.random() * 0.5,
+          vy: -(0.18 + Math.random() * 0.34),
+          vz: (Math.random() - .5) * 0.22,
+          r: 7 + Math.random() * 7,
+          giro: Math.random() * Math.PI * 2,
+          vgiro: (Math.random() - .5) * 0.012,
+          inc: Math.random() * Math.PI,
+          vinc: 0.0035 + Math.random() * 0.006,
+          fase: Math.random() * Math.PI * 2,
+          n: 9 + ((Math.random() * 3) | 0),
+        };
+      }
+
+      function vilano(x, y, s, giro, inc, alfa, hilos, conTallo) {
+        const cosI = Math.cos(inc);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalAlpha = alfa;
+        ctx.lineWidth = Math.max(0.35, 0.85 * s / 9);
+        ctx.strokeStyle = '#fff';
+        ctx.beginPath();
+        for (let i = 0; i < hilos; i++) {
+          const a = giro + (i * Math.PI * 2) / hilos;
+          const px = Math.cos(a) * s, py = Math.sin(a) * s * cosI;
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(px * 0.55, py * 0.55 - s * 0.12, px, py);
+          ctx.moveTo(px, py); ctx.lineTo(px * 1.16, py * 1.16 - s * 0.06);
+          ctx.moveTo(px, py); ctx.lineTo(px * 1.1, py * 1.1 + s * 0.1);
+        }
+        ctx.stroke();
+        if (conTallo) {
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-s * 1.5 * Math.cos(giro * 0.3), s * 1.5 * cosI + s * 0.5);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function flor(f) {
+        const k = esc(f.z), cx = f.x, cy = f.y, R = f.r * k;
+        ctx.save();
+        ctx.globalAlpha = 0.42;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.bezierCurveTo(cx - R * 0.5, cy + R * 2.2, f.base.x + R * 0.9, cy + R * 4.2, f.base.x, f.base.y);
+        ctx.stroke();
+        ctx.lineWidth = 0.55;
+        ctx.beginPath();
+        for (let i = 0; i < f.n; i++) {
+          const a = (i * Math.PI * 2) / f.n + i * 0.013;
+          const rr = R * (0.82 + ((i * 37) % 19) / 100);
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        }
+        ctx.stroke();
+        for (let i = 0; i < f.n; i += 2) {
+          const a = (i * Math.PI * 2) / f.n + i * 0.013;
+          const rr = R * (0.82 + ((i * 37) % 19) / 100);
+          vilano(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, R * 0.12, a, 1.0, 0.34, 6, false);
+        }
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.ellipse(cx, cy, R * 0.07, R * 0.09, 0, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+
+      function cuadro(ts) {
+        const dt = Math.min(40, ts - t0) / 16.7; t0 = ts;
+        ctx.clearRect(0, 0, W, H);
+        flores.slice().sort((a, b) => b.z - a.z).forEach(flor);
+        semillas.sort((a, b) => b.z - a.z);        // pintor: primero las lejanas
+        for (const s of semillas) {
+          if (!quieto) {
+            s.fase += 0.012 * dt;
+            s.x += (s.vx + Math.sin(s.fase) * 0.22) * dt;
+            s.y += (s.vy + Math.cos(s.fase * 0.7) * 0.12) * dt;
+            s.z += s.vz * dt;
+            s.giro += s.vgiro * dt;
+            s.inc += s.vinc * dt;
+          }
+          const k = esc(s.z);
+          if (k <= 0.15 || s.x > W + 120 || s.y < -140) Object.assign(s, nueva(false));
+          const alfa = Math.max(0, Math.min(0.85, (k - 0.45) * 1.5)) * 0.9;
+          vilano(s.x, s.y, s.r * k * 1.5, s.giro, Math.sin(s.inc), alfa, s.n, true);
+        }
+        requestAnimationFrame(cuadro);
+      }
+
+      function medir() {
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        W = cv.clientWidth; H = cv.clientHeight;
+        if (!W || !H) return;
+        cv.width = W * DPR; cv.height = H * DPR;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        armar();
+      }
+
+      window.addEventListener('resize', medir);
+      medir();
+      requestAnimationFrame(cuadro);
+    })();
 
     const form = document.getElementById('login-form');
     const btn = document.getElementById('submit-btn');

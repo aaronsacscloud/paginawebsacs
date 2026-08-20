@@ -66,16 +66,30 @@ export const GET: APIRoute = async ({ url }) => {
       .select('contact_id').eq('campaign_id', c.id).not('clicked_at', 'is', null).not('contact_id', 'is', null).limit(5000);
     const ids = [...new Set((clicaron || []).map((r: any) => r.contact_id))];
 
+    // `.in()` por TANDAS: 5,000 uuids son ~185 KB de URL y PostgREST responde
+    // 414 — el tablero se quedaba sin datos, en silencio.
+    const enTandas = async <T>(lista: string[], f: (t: string[]) => Promise<T[]>): Promise<T[]> => {
+      const out: T[] = [];
+      for (let i = 0; i < lista.length; i += 400) out.push(...await f(lista.slice(i, i + 400)));
+      return out;
+    };
+
     let reuniones = 0, arr = 0;
     if (ids.length) {
       // …y qué hizo DESPUÉS: la única medida que importa.
       const desdeCamp = c.completada_at || c.created_at;
-      const { count } = await supabase.from('bookings')
-        .select('id', { count: 'exact', head: true }).in('contact_id', ids).gte('created_at', desdeCamp);
-      reuniones = count || 0;
+      const reus = await enTandas(ids, async t => {
+        const { data } = await supabase.from('bookings')
+          .select('id').in('contact_id', t).gte('created_at', desdeCamp);
+        return data || [];
+      });
+      reuniones = reus.length;
 
-      const { data: cs } = await supabase.from('contacts').select('company_id').in('id', ids).not('company_id', 'is', null);
-      const empresas = [...new Set((cs || []).map((r: any) => r.company_id))];
+      const cs = await enTandas(ids, async t => {
+        const { data } = await supabase.from('contacts').select('company_id').in('id', t).not('company_id', 'is', null);
+        return data || [];
+      });
+      const empresas = [...new Set(cs.map((r: any) => r.company_id))];
       if (empresas.length) {
         const { data: subs } = await supabase.from('subscriptions')
           .select('arr').in('company_id', empresas).eq('estado', 'activa').gte('fecha_inicio', String(desdeCamp).slice(0, 10));
@@ -105,9 +119,15 @@ export const GET: APIRoute = async ({ url }) => {
   let dormidos = 0;
   if (candidatos.length) {
     // Se excluye a quien el CRM sabe que sigue vivo: cliente activo o con trato abierto.
-    const { data: activos } = await supabase.from('contacts')
-      .select('id, lifecycle_stage').in('id', candidatos.slice(0, 1000));
-    dormidos = (activos || []).filter((c: any) => c.lifecycle_stage !== 'cliente').length;
+    // Antes cortaba a 1,000 sin avisar: el número de "dormidos" mentía por
+    // abajo justo cuando la lista crecía, que es cuando importa.
+    let noClientes = 0;
+    for (let i = 0; i < candidatos.length; i += 400) {
+      const { data } = await supabase.from('contacts')
+        .select('id, lifecycle_stage').in('id', candidatos.slice(i, i + 400));
+      noClientes += (data || []).filter((c: any) => c.lifecycle_stage !== 'cliente').length;
+    }
+    dormidos = noClientes;
   }
 
   const { count: suprimidos } = await supabase.from('email_suppressions')

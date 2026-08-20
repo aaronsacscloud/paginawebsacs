@@ -102,9 +102,13 @@ export async function materializar(t: Tenant, c: Campana): Promise<number> {
     .update({ materializada_at: new Date().toISOString() })
     .eq('id', c.id).is('materializada_at', null).select('id');
   if (!ganado?.length) {
+    // Otro proceso está materializando AHORA. Devolver su conteo parcial
+    // (probablemente 0, porque apenas va insertando) hacía que este siguiera
+    // de largo, no encontrara pendientes y cerrara la campaña como completada
+    // sin haber mandado nada. Se avisa con -1 y el llamador se retira.
     const { count } = await supabase.from('email_campaign_recipients')
       .select('id', { count: 'exact', head: true }).eq('campaign_id', c.id);
-    return count || 0;
+    return c.materializada_at ? (count || 0) : -1;
   }
   if (c.materializada_at) {
     const { count } = await supabase.from('email_campaign_recipients')
@@ -212,7 +216,10 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
   }
   if (!dentroDeVentana(t)) return { ...vacio, motivo: 'fuera_de_ventana' };
 
-  if (!c.materializada_at) await materializar(t, c as Campana);
+  if (!c.materializada_at) {
+    const n = await materializar(t, c as Campana);
+    if (n < 0) return { ...vacio, motivo: 'materializando' };   // otro proceso la tiene
+  }
   if (c.estado !== 'enviando') {
     await supabase.from('email_campaigns').update({ estado: 'enviando', iniciada_at: new Date().toISOString() }).eq('id', c.id);
   }
@@ -290,7 +297,11 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
     .select('id', { count: 'exact', head: true })
     .eq('campaign_id', c.id).in('estado', ['pendiente', 'enviando']);
   av.quedan = count || 0;
-  if (av.quedan === 0) av.terminada = true;
+  // Los DOS sentidos. Antes solo se ponía en true: una campaña con filas
+  // atoradas en 'enviando' (otra instancia, o una función muerta) entraba aquí
+  // con terminada=true de más arriba y se cerraba como completada dejando
+  // gente sin recibir — y ya no se reanudaba nunca.
+  av.terminada = av.quedan === 0;
 
   await refrescarResumen(c.id);
   if (av.terminada) {

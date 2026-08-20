@@ -96,9 +96,17 @@ export const POST: APIRoute = async ({ request, url }) => {
     // un secreto en la URL del Inbound Parse
     // (…/api/email/inbound?k=<INBOUND_SECRET>), que es el único dato que un
     // extraño no tiene.
+    // FALLA CERRADO. Antes, sin la variable no había candado — solo un aviso
+    // en consola — y la ruta está exenta de CSRF: eso era escritura anónima
+    // desde internet a conversaciones, actividades y bajas de cualquier
+    // contacto. Un secreto sin configurar es una puerta abierta, no un
+    // inconveniente.
     const esperado = (import.meta.env.INBOUND_SECRET || '').trim();
-    if (esperado && url.searchParams.get('k') !== esperado) return ok();
-    if (!esperado) console.warn('[inbound] sin INBOUND_SECRET: la puerta está abierta');
+    if (!esperado) {
+      console.error('[inbound] falta INBOUND_SECRET: correo entrante descartado');
+      return ok();
+    }
+    if (url.searchParams.get('k') !== esperado) return ok();
 
     const form = await request.formData();
     const campo = (k: string) => String(form.get(k) ?? '');

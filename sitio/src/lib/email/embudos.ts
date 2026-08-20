@@ -46,6 +46,51 @@ export interface Inscripcion {
   next_action_at: string | null; pasos_dados: number;
 }
 
+/**
+ * Cuánto dura un paso "esperar", en milisegundos.
+ *
+ * ⚠️ Esta función existe porque el motor y el constructor hablaban idiomas
+ * distintos y NADIE lo notaba: el motor leía `{dias, horas, minutos}`, pero
+ * el editor guarda `{value, unit}` y los embudos sembrados guardan
+ * `{delay_amount, delay_unit}`. Ninguna de las dos formas que el sistema de
+ * verdad escribe en la base era entendida → toda espera caía al valor por
+ * omisión y duraba EXACTAMENTE UN DÍA. Un "esperar 7 días" mandaba al día
+ * siguiente, y una secuencia de 3+5 días salía completa en 48 horas.
+ *
+ * Se aceptan las tres formas a propósito: hay embudos ya guardados con cada
+ * una y no se puede migrar lo que el usuario no ve.
+ */
+const EN_MS: Record<string, number> = {
+  minute: 60000, minutes: 60000, minuto: 60000, minutos: 60000,
+  hour: 3600000, hours: 3600000, hora: 3600000, horas: 3600000,
+  day: 86400000, days: 86400000, dia: 86400000, dias: 86400000, día: 86400000, días: 86400000,
+  week: 604800000, weeks: 604800000, semana: 604800000, semanas: 604800000,
+};
+const DEFECTO_ESPERA = 86400000;
+
+export function msDeEspera(cfg: any): number {
+  const c = cfg || {};
+
+  // Forma A — el editor: {value, unit} · y las semillas: {delay_amount, delay_unit}
+  const cantidad = c.value ?? c.delay_amount ?? c.cantidad;
+  const unidad = String(c.unit ?? c.delay_unit ?? c.unidad ?? '').toLowerCase().trim();
+  if (cantidad !== undefined && cantidad !== null && cantidad !== '' && EN_MS[unidad]) {
+    const n = Number(cantidad);
+    if (Number.isFinite(n) && n >= 0) return n * EN_MS[unidad];
+  }
+
+  // Forma B — campos sueltos por unidad.
+  const campos = ['dias', 'days', 'horas', 'hours', 'minutos', 'minutes', 'semanas', 'weeks'] as const;
+  const definido = campos.some(k => c[k] !== undefined && c[k] !== null && c[k] !== '');
+  if (definido) {
+    return campos.reduce((acc, k) => acc + (Number(c[k] ?? 0) * (EN_MS[k] || 0)), 0);
+  }
+
+  // Sin nada configurado: un día. Una espera de CERO explícita sí se respeta
+  // (arriba), porque cero es una decisión, no un hueco.
+  return DEFECTO_ESPERA;
+}
+
 /** Tope de pasos por inscripción: red contra un embudo mal armado en ciclo. */
 const MAX_PASOS = 60;
 const LOCK_MIN = 10;
@@ -190,8 +235,38 @@ async function siguientePaso(paso: Paso, rama: string | null): Promise<Paso | nu
   return (data as Paso) || null;
 }
 
-/** ¿Se cumple la condición de una rama? Hechos del CRM, no aperturas. */
+/**
+ * ¿Se cumple la condición de una rama?
+ *
+ * ⚠️ Igual que con las esperas: el constructor guarda `{property, operator,
+ * value}` (una comparación sobre el contacto) y esta función solo entendía
+ * `{tipo}`. Resultado: TODA condición devolvía false y el 100% de la gente se
+ * iba por la rama "no", incluidos los que sí habían agendado. Ahora se
+ * entienden las dos formas.
+ */
 async function evaluarCondicion(cfg: any, contactId: string): Promise<boolean> {
+  // Forma del constructor: comparación directa sobre una columna del contacto.
+  if (cfg?.property && !cfg?.tipo && !cfg?.type) {
+    const { data } = await supabase.from('contacts').select('*').eq('id', contactId).maybeSingle();
+    if (!data) return false;
+    const real = (data as any)[cfg.property];
+    const esperado = cfg.value;
+    const op = String(cfg.operator || 'eq');
+    const num = (x: any) => Number(x);
+    switch (op) {
+      case 'eq': return String(real ?? '') === String(esperado ?? '');
+      case 'neq': return String(real ?? '') !== String(esperado ?? '');
+      case 'gt': return num(real) > num(esperado);
+      case 'gte': return num(real) >= num(esperado);
+      case 'lt': return num(real) < num(esperado);
+      case 'lte': return num(real) <= num(esperado);
+      case 'contains': return String(real ?? '').toLowerCase().includes(String(esperado ?? '').toLowerCase());
+      case 'exists': return real !== null && real !== undefined && real !== '';
+      case 'not_exists': return real === null || real === undefined || real === '';
+      default: return false;
+    }
+  }
+
   const tipo = String(cfg?.tipo || cfg?.type || '');
   const dias = Number(cfg?.dias ?? cfg?.days ?? 7);
   const desde = new Date(Date.now() - dias * 86400000).toISOString();
@@ -329,7 +404,31 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
   let rama: string | null = null;
   let correos = 0;
 
+  // Un `wait` como paso ACTUAL no se manejaba: solo se detectaba cuando era el
+  // SIGUIENTE. Si el embudo arrancaba con una espera —o tenía dos seguidas—,
+  // la espera se ejecutaba con duración cero y el correo salía de inmediato.
+  if (paso.tipo === 'wait') {
+    const sigTrasEspera = await siguientePaso(paso, null);
+    if (!sigTrasEspera) { await terminar(e, 'terminó el embudo'); return { correos: 0, completada: true }; }
+    await supabase.from('automation_enrollments').update({
+      current_step_id: sigTrasEspera.id,
+      next_action_at: new Date(Date.now() + msDeEspera(cfg)).toISOString(),
+      pasos_dados: (e.pasos_dados || 0) + 1, locked_at: null,
+    }).eq('id', e.id);
+    return { correos: 0, completada: false };
+  }
+
   if (paso.tipo === 'send_email') {
+    // La ventana horaria del inquilino también manda aquí. Sin esto, alguien
+    // que entra al embudo un viernes a las 20:05 recibía marketing el sábado
+    // a las 20:05, con "no enviar fines de semana" configurado.
+    const { dentroDeVentana } = await import('./campanas');
+    if (!dentroDeVentana(t)) {
+      await supabase.from('automation_enrollments').update({
+        next_action_at: new Date(Date.now() + 30 * 60000).toISOString(), locked_at: null,
+      }).eq('id', e.id);
+      return { correos: 0, completada: false };
+    }
     const ctx = await contexto(e.contact_id);
     if (ctx.email) {
       const { data: tpl } = cfg.template_id
@@ -379,15 +478,8 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
   // "Esperar" es el único paso que consume tiempo de reloj.
   let cuando = new Date();
   if (sig.tipo === 'wait') {
-    const c = sig.config || {};
-    // `ms || DEFECTO` convertía una espera de CERO en un día entero: 0 es
-    // falsy. El valor por omisión solo aplica cuando NO se configuró ninguna
-    // unidad de tiempo — una espera de 0 es una decisión, no un hueco.
-    const definido = ['dias', 'days', 'horas', 'hours', 'minutos', 'minutes'].some(k => c[k] !== undefined && c[k] !== null && c[k] !== '');
-    const ms = (Number(c.dias ?? c.days ?? 0) * 86400000)
-             + (Number(c.horas ?? c.hours ?? 0) * 3600000)
-             + (Number(c.minutos ?? c.minutes ?? 0) * 60000);
-    cuando = new Date(Date.now() + (definido ? ms : 86400000));
+    const espera = msDeEspera(sig.config);
+    cuando = new Date(Date.now() + espera);
     // Un "esperar" no ejecuta nada: se salta al que sigue cuando venza.
     const trasEspera = await siguientePaso(sig, null);
     await supabase.from('automation_enrollments').update({
