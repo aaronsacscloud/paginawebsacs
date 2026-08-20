@@ -168,6 +168,10 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [verListos, setVerListos] = useState(false);
+  const [listos, setListos] = useState<any[] | null>(null);
+  const [creandoListo, setCreandoListo] = useState<string | null>(null);
+  const [errorListo, setErrorListo] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -192,14 +196,75 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
     load();
   };
 
+  useEffect(() => {
+    if (verListos && !listos) {
+      fetch('/api/crm/email/embudos-listos').then(r => r.json()).then(j => setListos(j.embudos || [])).catch(() => setListos([]));
+    }
+  }, [verListos]);
+
+  async function crearListo(id: string) {
+    setCreandoListo(id);
+    try {
+      const r = await fetch('/api/crm/email/embudos-listos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+      });
+      const j = await r.json();
+      if (j.error) { setErrorListo(j.error); return; }
+      setVerListos(false);
+      load();
+      if (j.automation_id) onSelect(j.automation_id);
+    } finally { setCreandoListo(null); }
+  }
+
   return (
     <div style={{ padding: '20px 24px' }}>
+      {verListos && (
+        <div onClick={e => { if (e.target === e.currentTarget) setVerListos(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.38)', zIndex: 970,
+                   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 560, maxWidth: '100%', maxHeight: '88vh',
+                        display: 'flex', flexDirection: 'column', boxShadow: '0 22px 54px rgba(16,24,40,.24)' }}>
+            <div style={{ padding: '14px 18px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Empezar de una lista</div>
+              <div style={{ fontSize: '0.74rem', color: '#8a8a8a', marginTop: 2 }}>
+                Se crean completos —correos, esperas y ramas— y quedan en borrador. No mandan nada hasta que los actives.
+              </div>
+            </div>
+            <div style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {listos === null && <div style={{ color: '#a5a2af', fontSize: '0.83rem' }}>Cargando…</div>}
+              {errorListo && (
+                <div style={{ background: '#FEF0EF', color: '#C0554E', borderRadius: 9, padding: '9px 11px', fontSize: '0.78rem' }}>{errorListo}</div>
+              )}
+              {(listos || []).map((e: any) => (
+                <button key={e.id} disabled={!!creandoListo} onClick={() => crearListo(e.id)}
+                  style={{ border: '1px solid #e2e4e9', borderRadius: 11, padding: '13px 15px', background: '#fff',
+                           textAlign: 'left', cursor: creandoListo ? 'wait' : 'pointer', fontFamily: 'inherit', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>{e.nombre}</span>
+                    <span style={{ fontSize: '0.64rem', fontWeight: 700, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px' }}>
+                      {e.correos} {e.correos === 1 ? 'correo' : 'correos'}
+                    </span>
+                    {creandoListo === e.id && <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#5B4BD6' }}>Creando…</span>}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 5, lineHeight: 1.5 }}>{e.que_hace}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ padding: '12px 18px', borderTop: '1px solid #f0eff3' }}>
+              <button onClick={() => setVerListos(false)}
+                style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 13px', background: '#fff',
+                         fontSize: '0.77rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1a1a' }}>Automatizaciones</div>
           <div style={{ fontSize: '0.8125rem', color: '#999', marginTop: 2 }}>{automations.length} automatizaciones</div>
         </div>
+        <button onClick={() => setVerListos(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>Empezar de una lista</button>
         <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva automatización</button>
       </div>
 
