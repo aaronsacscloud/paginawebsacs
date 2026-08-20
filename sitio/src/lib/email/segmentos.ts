@@ -126,7 +126,13 @@ const diasAtras = (d: number) => new Date(Date.now() - Number(d || 0) * 86400000
 const diasAdelante = (d: number) => new Date(Date.now() + Number(d || 0) * 86400000).toISOString();
 
 /** Ids de contactos que cumplen UNA condición. null = la condición no acota. */
+/** ¿Este par sujeto/campo está en el catálogo? Lo que no se ofrece, no se filtra. */
+function campoValido(c: Condicion): boolean {
+  return !!CATALOGO[c.sujeto]?.campos.some(f => f.id === c.campo);
+}
+
 async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | null> {
+  if (!campoValido(c)) return null;
   const base = () => {
     let q = supabase.from('contacts').select('id').is('archived_at', null);
     if (t.owner_team_member_id) q = q.eq('referrer_partner_id', t.owner_team_member_id);
@@ -142,7 +148,10 @@ async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | nu
     const v = c.valor as any;
     switch (c.operador) {
       case 'es': q = q.eq(c.campo, v); break;
-      case 'no_es': q = q.neq(c.campo, v); break;
+      // `neq` en PostgREST NO devuelve las filas con NULL (nada es distinto de
+      // NULL en SQL). "Etapa no es Cliente" dejaba fuera a todo contacto sin
+      // etapa, que suele ser justo el que se quiere alcanzar.
+      case 'no_es': q = q.or(`${c.campo}.neq.${v},${c.campo}.is.null`); break;
       case 'contiene': q = q.ilike(c.campo, `%${v}%`); break;
       case 'existe': q = q.not(c.campo, 'is', null); break;
       case 'no_existe': q = q.is(c.campo, null); break;
@@ -216,12 +225,12 @@ async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | nu
     }
     const { data } = await qs.limit(50000);
     const conActividad = new Set((data || []).map((r: any) => r.contact_id));
+    const alcance = await recolecta(base());
     // "no_existe" / "no_es" invierte: todos los del alcance menos estos.
     if (c.operador === 'no_existe' || c.operador === 'no_es') {
-      const todos = await recolecta(base());
-      return new Set(Array.from(todos).filter(id => !conActividad.has(id)));
+      return new Set(Array.from(alcance).filter(id => !conActividad.has(id)));
     }
-    return conActividad;
+    return new Set(Array.from(alcance).filter(id => conActividad.has(id)));
   }
 
   if (c.sujeto === 'reunion') {
@@ -230,11 +239,15 @@ async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | nu
     if (c.operador === 'hace_mas_de_dias') qb = qb.lt('created_at', diasAtras(Number(c.valor)));
     const { data } = await qb.limit(50000);
     const conReunion = new Set((data || []).map((r: any) => r.contact_id));
+    // El alcance NO es negociable: `bookings` no sabe de inquilinos, así que
+    // el resultado se cruza SIEMPRE contra los contactos que este inquilino
+    // puede ver. Sin esto, un partner alcanzaba contactos ajenos con una sola
+    // condición de "ha agendado reunión".
+    const alcance = await recolecta(base());
     if (c.operador === 'no_existe') {
-      const todos = await recolecta(base());
-      return new Set(Array.from(todos).filter(id => !conReunion.has(id)));
+      return new Set(Array.from(alcance).filter(id => !conReunion.has(id)));
     }
-    return conReunion;
+    return new Set(Array.from(alcance).filter(id => conReunion.has(id)));
   }
 
   return null;
@@ -324,7 +337,13 @@ export async function resolverMiembros(t: Tenant, def: Definicion, limite = 5000
 }
 
 /** Los miembros de una lista estática. Misma forma que un segmento. */
-export async function miembrosDeLista(listId: string): Promise<Miembro[]> {
+export async function miembrosDeLista(listId: string, tenantId?: string): Promise<Miembro[]> {
+  // Una lista tiene dueño. Sin esta verificación, una campaña podía apuntar a
+  // la lista de otro inquilino con solo poner su id.
+  if (tenantId) {
+    const { data: l } = await supabase.from('email_lists').select('id').eq('id', listId).eq('tenant_id', tenantId).maybeSingle();
+    if (!l) return [];
+  }
   const { data } = await supabase
     .from('email_list_members')
     .select('contact_id, email, nombre, contacts(nombre, apellido, company_id, companies(nombre))')

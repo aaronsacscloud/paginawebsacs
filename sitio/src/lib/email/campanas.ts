@@ -41,17 +41,22 @@ const LOTE = 50;
 
 /** La audiencia de una campaña, resuelta desde su origen. */
 export async function audiencia(t: Tenant, c: Campana): Promise<Miembro[]> {
-  if (c.origen_tipo === 'lista' && c.origen_id) return miembrosDeLista(c.origen_id);
+  // El inquilino se pasa siempre: la audiencia de una campaña no puede
+  // apuntar a una lista o un segmento de otro dueño.
+  if (c.origen_tipo === 'lista' && c.origen_id) return miembrosDeLista(c.origen_id, t.id);
   if (c.origen_tipo === 'segmento' && c.origen_id) {
-    const { data } = await supabase.from('email_segments').select('definicion').eq('id', c.origen_id).maybeSingle();
+    const { data } = await supabase.from('email_segments').select('definicion')
+      .eq('id', c.origen_id).eq('tenant_id', t.id).maybeSingle();
     return data ? resolverMiembros(t, data.definicion as Definicion, 50000) : [];
   }
   if (c.origen_tipo === 'contactos' && c.contact_ids?.length) {
     const out: Miembro[] = [];
     for (let i = 0; i < c.contact_ids.length; i += 500) {
-      const { data } = await supabase.from('contacts')
+      let q = supabase.from('contacts')
         .select('id, nombre, apellido, email, company_id, companies(nombre)')
         .in('id', c.contact_ids.slice(i, i + 500));
+      if (t.owner_team_member_id) q = q.eq('referrer_partner_id', t.owner_team_member_id);
+      const { data } = await q;
       for (const x of (data || []) as any[]) if (x.email) out.push({
         id: x.id, contact_id: x.id, nombre: [x.nombre, x.apellido].filter(Boolean).join(' ') || 'Sin nombre',
         email: x.email, empresa: x.companies?.nombre || null, company_id: x.company_id || null,
@@ -89,6 +94,18 @@ export async function revisarAudiencia(t: Tenant, c: Campana) {
 
 /** Congela la audiencia en filas: una por destinatario. Idempotente. */
 export async function materializar(t: Tenant, c: Campana): Promise<number> {
+  // CLAIM: `materializar` se llama desde el request ("enviar") y desde el cron.
+  // Sin este compare-and-swap, los dos veían `materializada_at` en null, los
+  // dos materializaban, el segundo chocaba contra el índice único y terminaba
+  // escribiendo `destinatarios: 0` en el resumen de una campaña que sí salió.
+  const { data: ganado } = await supabase.from('email_campaigns')
+    .update({ materializada_at: new Date().toISOString() })
+    .eq('id', c.id).is('materializada_at', null).select('id');
+  if (!ganado?.length) {
+    const { count } = await supabase.from('email_campaign_recipients')
+      .select('id', { count: 'exact', head: true }).eq('campaign_id', c.id);
+    return count || 0;
+  }
   if (c.materializada_at) {
     const { count } = await supabase.from('email_campaign_recipients')
       .select('id', { count: 'exact', head: true }).eq('campaign_id', c.id);
@@ -125,7 +142,6 @@ export async function materializar(t: Tenant, c: Campana): Promise<number> {
   }
 
   await supabase.from('email_campaigns').update({
-    materializada_at: new Date().toISOString(),
     resumen: { ...(c.resumen || {}), destinatarios: insertadas, no_materializados: fallidas },
   }).eq('id', c.id);
   return insertadas;
@@ -209,6 +225,15 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
       .select('id, email, contact_id, variante').eq('campaign_id', c.id).eq('estado', 'pendiente').limit(LOTE);
     if (!lote?.length) { av.terminada = true; break; }
 
+    // Releer el estado en CADA vuelta: `pausaSalud` y el botón "Pausar" del
+    // panel escriben en la BD, pero el bucle trabajaba con la copia leída al
+    // entrar. El freno de reputación marcaba "pausada" y seguían saliendo los
+    // otros 2,950 correos de una lista que ya estaba rebotando.
+    const { data: vivo } = await supabase.from('email_campaigns').select('estado').eq('id', c.id).maybeSingle();
+    if (vivo && vivo.estado !== 'enviando' && vivo.estado !== 'programada') {
+      av.motivo = vivo.estado; break;
+    }
+
     for (const r of lote) {
       if (Date.now() - inicio >= presupuestoMs) break;
 
@@ -258,15 +283,23 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
     await pausaSalud(c.id);
   }
 
+  // "Quedan" incluye los atorados en 'enviando': una función que murió a media
+  // llamada deja filas ahí, y contarlas como cero hacía que la campaña se
+  // declarara completada con gente que nunca recibió nada.
   const { count } = await supabase.from('email_campaign_recipients')
-    .select('id', { count: 'exact', head: true }).eq('campaign_id', c.id).eq('estado', 'pendiente');
+    .select('id', { count: 'exact', head: true })
+    .eq('campaign_id', c.id).in('estado', ['pendiente', 'enviando']);
   av.quedan = count || 0;
   if (av.quedan === 0) av.terminada = true;
 
   await refrescarResumen(c.id);
   if (av.terminada) {
+    // Condicionado a 'enviando': sin esto, el cierre pisaba una pausa
+    // automática por rebotes y borraba su motivo — la campaña "terminaba"
+    // como si nada hubiera pasado.
     await supabase.from('email_campaigns')
-      .update({ estado: 'completada', completada_at: new Date().toISOString() }).eq('id', c.id);
+      .update({ estado: 'completada', completada_at: new Date().toISOString() })
+      .eq('id', c.id).eq('estado', 'enviando');
   }
   return av;
 }

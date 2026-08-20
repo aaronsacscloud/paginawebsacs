@@ -42,10 +42,14 @@ export const GET: APIRoute = async ({ url }) => {
 
   // ── Alertas: el aviso llega ANTES de quemar el dominio ──
   const alertas: Array<{ nivel: 'urgente' | 'alerta' | 'info'; texto: string }> = [];
-  const tasaRebote = pct(rebotes, enviados);
-  const tasaQueja = pct(quejas, enviados);
-  if (enviados >= 20 && tasaRebote > 2) alertas.push({ nivel: 'urgente', texto: `Rebotes en ${tasaRebote}% (el límite sano es 2%). Limpia la lista antes de la próxima campaña.` });
-  if (enviados >= 20 && tasaQueja > 0.1) alertas.push({ nivel: 'urgente', texto: `Quejas de spam en ${tasaQueja}% (Gmail tolera hasta 0.3%, y su umbral de castigo empieza en 0.1%).` });
+  // El denominador incluye a los rebotados: `enviados` los excluye (su estado
+  // ya cambió a 'bounced'), así que dividir entre él sobrestimaba la tasa y no
+  // coincidía con la que usa el freno automático de las campañas.
+  const intentados = enviados + rebotes;
+  const tasaRebote = pct(rebotes, intentados);
+  const tasaQueja = pct(quejas, intentados);
+  if (intentados >= 20 && tasaRebote > 2) alertas.push({ nivel: 'urgente', texto: `Rebotes en ${tasaRebote}% (el límite sano es 2%). Limpia la lista antes de la próxima campaña.` });
+  if (intentados >= 20 && tasaQueja > 0.1) alertas.push({ nivel: 'urgente', texto: `Quejas de spam en ${tasaQueja}% (Gmail tolera hasta 0.3%, y su umbral de castigo empieza en 0.1%).` });
   if (enviados >= 50 && pct(clics, entregados) < 1) alertas.push({ nivel: 'alerta', texto: 'Menos de 1% de clics: el contenido o la audiencia no están conectando.' });
   if (fallidos > 0) alertas.push({ nivel: 'alerta', texto: `${fallidos} envíos quedaron fallidos o dudosos — revísalos antes de reintentar.` });
 

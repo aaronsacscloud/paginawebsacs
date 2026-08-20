@@ -102,10 +102,19 @@ async function candidatos(t: Tenant, auto: any): Promise<string[]> {
 
   // Nadie entra dos veces (salvo que el embudo permita re-inscripción y haya
   // pasado su periodo de espera).
-  const { data: yaVan } = await supabase.from('automation_enrollments')
-    .select('contact_id, estado, completed_at').eq('automation_id', auto.id).in('contact_id', ids);
+  // Por TANDAS y revisando el error: un `.in()` con 2,000 uuids es una URL de
+  // ~74 KB que PostgREST rechaza. El error no se miraba, `bloqueados` quedaba
+  // vacío y se reinscribía a todos — incluidos los que ya iban en camino.
+  const yaVan: any[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await supabase.from('automation_enrollments')
+      .select('contact_id, estado, completed_at')
+      .eq('automation_id', auto.id).in('contact_id', ids.slice(i, i + 200));
+    if (error) throw new Error('No se pudo revisar quién ya está inscrito: ' + error.message);
+    yaVan.push(...(data || []));
+  }
   const bloqueados = new Set<string>();
-  for (const e of yaVan || []) {
+  for (const e of yaVan) {
     if (e.estado === 'activo') { bloqueados.add(e.contact_id); continue; }
     if (!auto.allow_reenrollment) { bloqueados.add(e.contact_id); continue; }
     const espera = (auto.reenrollment_delay_hours || 720) * 3600000;
@@ -113,9 +122,15 @@ async function candidatos(t: Tenant, auto: any): Promise<string[]> {
   }
 
   // Quien se dio de baja no entra a un embudo de marketing.
-  const { data: supr } = await supabase.from('email_suppressions')
-    .select('contact_id').eq('tenant_id', t.id).is('restaurado_at', null).not('contact_id', 'is', null);
-  for (const s of supr || []) bloqueados.add(s.contact_id);
+  // Acotado a los candidatos (y por tandas): sin `.limit()` esto se cortaba en
+  // el tope de filas de PostgREST y, pasado ese punto, los suprimidos volvían
+  // a entrar al embudo.
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: supr } = await supabase.from('email_suppressions')
+      .select('contact_id').eq('tenant_id', t.id).is('restaurado_at', null)
+      .in('contact_id', ids.slice(i, i + 200)).limit(200);
+    for (const s of supr || []) if (s.contact_id) bloqueados.add(s.contact_id);
+  }
 
   return ids.filter(id => !bloqueados.has(id));
 }
@@ -237,6 +252,7 @@ export async function procesarInscripciones(presupuestoMs = 200_000): Promise<Av
       .order('next_action_at').limit(25);
     if (!lote?.length) break;
 
+    let avanceEnEsteLote = 0;
     for (const e of lote as Inscripcion[]) {
       if (Date.now() - inicio >= presupuestoMs) break;
 
@@ -246,8 +262,9 @@ export async function procesarInscripciones(presupuestoMs = 200_000): Promise<Av
         .eq('id', e.id).eq('estado', 'activo').lte('next_action_at', new Date().toISOString())
         .or(`locked_at.is.null,locked_at.lt.${new Date(Date.now() - LOCK_MIN * 60000).toISOString()}`)
         .select('id');
-      if (!tomada?.length) continue;
+      if (!tomada?.length) continue;   // otra instancia lo tomó
 
+      avanceEnEsteLote++;
       av.procesadas++;
       try {
         const hecho = await avanzarUna(e);
@@ -260,9 +277,14 @@ export async function procesarInscripciones(presupuestoMs = 200_000): Promise<Av
           error_count: (e as any).error_count ? (e as any).error_count + 1 : 1,
           // Un error no puede dejarla girando: se reintenta en una hora.
           next_action_at: new Date(Date.now() + 3600000).toISOString(),
+          locked_at: null,
         }).eq('id', e.id);
       }
     }
+    // Si otra instancia tiene todo el lote tomado, ninguno se gana y el `while`
+    // volvería a pedir las MISMAS 25 filas hasta agotar el presupuesto: dos
+    // consultas por fila girando en vacío durante minutos.
+    if (avanceEnEsteLote === 0) break;
   }
   return av;
 }

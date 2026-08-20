@@ -29,7 +29,15 @@ const A_SUPRESION: Record<string, 'rebote_duro' | 'rebote_suave' | 'queja' | 'ba
 
 function firmaValida(raw: string, sig: string | null, ts: string | null): boolean {
   const pub = (import.meta.env.SENDGRID_WEBHOOK_KEY || '').trim();
-  if (!pub) return true;              // sin clave configurada: no se bloquea
+  // FALLA CERRADO. Antes esto devolvía `true` cuando no había clave, y como la
+  // ruta está exenta de CSRF, cualquiera en internet podía mandar un arreglo de
+  // eventos `spamreport` con los correos de la cartera y suprimirla entera,
+  // cancelando de paso sus inscripciones a embudos. Sin clave no se procesa
+  // nada — y el log lo dice, para que no sea un silencio.
+  if (!pub) {
+    console.warn('[sendgrid-webhook] falta SENDGRID_WEBHOOK_KEY: evento descartado');
+    return false;
+  }
   if (!sig || !ts) return false;
   try {
     const verifier = crypto.createVerify('sha256');
@@ -71,7 +79,12 @@ export const POST: APIRoute = async ({ request }) => {
       } else if (tipo === 'dropped') { parche.estado = 'bounced'; parche.bounced_at = cuando; parche.bounce_reason = 'dropped: ' + String(ev.reason || ''); }
       else if (tipo === 'spamreport') { parche.estado = 'spam'; }
       if (Object.keys(parche).length) {
-        await supabase.from('email_sends').update(parche).eq('id', sendId);
+        // El comentario prometía no degradar y el update era incondicional: un
+        // `delivered` que llega tarde pisaba la baja o la queja del mismo
+        // correo, y el reporte de la campaña que quemó la lista mostraba cero
+        // bajas. Estos estados son terminales y no se sobrescriben.
+        await supabase.from('email_sends').update(parche).eq('id', sendId)
+          .not('estado', 'in', '(unsubscribed,spam,bounced)');
       }
     }
 

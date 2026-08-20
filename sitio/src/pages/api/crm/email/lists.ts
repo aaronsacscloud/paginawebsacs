@@ -104,7 +104,15 @@ export const DELETE: APIRoute = async ({ url }) => {
   if (!t) return json({ error: 'Sin inquilino.' }, 404);
   const miembro = url.searchParams.get('miembro');
   const id = url.searchParams.get('id');
-  if (miembro) { await supabase.from('email_list_members').delete().eq('id', miembro); return json({ ok: true }); }
+  if (miembro) {
+    // Verificando el dueño: borrar por id a secas dejaba quitar miembros de la
+    // lista de otro inquilino con solo conocer el id de la fila.
+    const { data: m } = await supabase.from('email_list_members')
+      .select('id, email_lists!inner(tenant_id)').eq('id', miembro).maybeSingle();
+    if (!m || (m as any).email_lists?.tenant_id !== t.id) return json({ error: 'No existe ese miembro.' }, 404);
+    await supabase.from('email_list_members').delete().eq('id', miembro);
+    return json({ ok: true });
+  }
   if (id) { await supabase.from('email_lists').update({ archived_at: new Date().toISOString() }).eq('id', id).eq('tenant_id', t.id); return json({ ok: true }); }
   return json({ error: 'Falta el id.' }, 400);
 };

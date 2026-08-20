@@ -33,6 +33,7 @@ import { resolverTenant, puedeEnviar, faltantesDeConfiguracion, type Tenant } fr
 import { enviar as enviarProveedor, proveedorListo } from './proveedor';
 import { firmar } from './token';
 import { footerHtml, footerTexto, headersBaja, htmlATexto } from './footer';
+import { envolverLinks, agregarPixel } from './tracking';
 
 export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional';
 
@@ -88,18 +89,52 @@ const cuentaParaPresion = (c: Categoria) => c === 'marketing';
 // ── Chequeos (exportados: el panel los usa para explicar ANTES de enviar) ──
 
 export async function estaSuprimido(tenantId: string, email: string): Promise<{ suprimido: boolean; motivo?: string }> {
-  const { data } = await supabase
-    .from('email_suppressions')
-    .select('motivo, pausado_hasta')
-    .eq('tenant_id', tenantId)
-    .eq('email', normalizarEmail(email))
-    .is('restaurado_at', null)
-    .limit(1)
-    .maybeSingle();
-  if (!data) return { suprimido: false };
-  // Una PAUSA vencida ya no suprime: el suscriptor vuelve solo.
-  if (data.pausado_hasta && new Date(data.pausado_hasta).getTime() < Date.now()) return { suprimido: false };
-  return { suprimido: true, motivo: data.motivo };
+  const e = normalizarEmail(email);
+
+  // Se consultan las DOS tablas a propósito. `email_unsubscribes` es la tabla
+  // vieja del CRM, y el link de baja que viaja en todos los correos ya
+  // entregados sigue escribiendo ahí. Si el pipeline solo mirara la nueva,
+  // alguien que se dio de baja el año pasado recibiría la próxima campaña —
+  // que además de ser la queja de spam más segura, es exposición legal.
+  const [nuevas, legacy] = await Promise.all([
+    supabase.from('email_suppressions')
+      .select('motivo, pausado_hasta')
+      .eq('tenant_id', tenantId).eq('email', e).is('restaurado_at', null)
+      // Sin orden explícito, con dos filas activas Postgres puede devolver la
+      // pausa vencida y ocultar un rebote duro posterior.
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase.from('email_unsubscribes')
+      .select('id').eq('email', e).is('resubscribed_at', null).limit(1),
+  ]);
+
+  if ((legacy.data || []).length) return { suprimido: true, motivo: 'baja' };
+
+  for (const s of (nuevas.data || [])) {
+    // Una PAUSA vencida ya no suprime; se sigue revisando el resto, porque
+    // puede haber debajo una supresión permanente.
+    if (s.pausado_hasta && new Date(s.pausado_hasta).getTime() < Date.now()) continue;
+    return { suprimido: true, motivo: s.motivo };
+  }
+  return { suprimido: false };
+}
+
+/**
+ * Medianoche del inquilino, en UTC. `setHours(0,0,0,0)` usa la zona del
+ * proceso — en Vercel eso es UTC, así que el límite diario se reiniciaba a
+ * las 18:00 hora de México y una campaña de la tarde gastaba la cuota del día
+ * siguiente.
+ */
+function inicioDelDia(t: Tenant): string {
+  const ahora = new Date();
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: t.timezone || 'America/Mexico_City',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(ahora);
+  const v = (k: string) => Number(partes.find(p => p.type === k)?.value || 0);
+  const transcurrido = (v('hour') % 24) * 3600000 + v('minute') * 60000 + v('second') * 1000;
+  return new Date(ahora.getTime() - transcurrido).toISOString();
 }
 
 export async function excedePresion(t: Tenant, email: string, companyId?: string | null): Promise<string | null> {
@@ -116,13 +151,12 @@ export async function excedePresion(t: Tenant, email: string, companyId?: string
   // mismo el mismo día se percibe como spam organizacional y multiplica el
   // riesgo de que ese dominio nos bloquee entero.
   if (t.presion_por_empresa && companyId) {
-    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     const { count: porEmpresa } = await supabase
       .from('email_presion')
       .select('id', { count: 'exact', head: true })
       .eq('tenant_id', t.id)
       .eq('company_id', companyId)
-      .gte('enviado_at', hoy.toISOString());
+      .gte('enviado_at', inicioDelDia(t));
     if ((porEmpresa || 0) >= 1) return 'presion_empresa';
   }
   return null;
@@ -130,13 +164,12 @@ export async function excedePresion(t: Tenant, email: string, companyId?: string
 
 export async function excedeLimiteDiario(t: Tenant): Promise<boolean> {
   if (!t.limite_diario || t.limite_diario <= 0) return false;
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
   const { count } = await supabase
     .from('email_sends')
     .select('id', { count: 'exact', head: true })
     .eq('tenant_id', t.id)
     .in('categoria', ['marketing', 'relacion'])
-    .gte('created_at', hoy.toISOString());
+    .gte('created_at', inicioDelDia(t));
   return (count || 0) >= t.limite_diario;
 }
 
@@ -215,7 +248,11 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   }
 
   const base = baseUrl();
-  const html = `${s.html}\n${footerHtml(t, base, token)}`;
+  // El orden importa: primero se arma el cuerpo con su pie, DESPUÉS se envuelve
+  // para medir. Así el link de baja del footer queda excluido del redirector
+  // (envolverLinks lo respeta) y el pixel va al final de todo.
+  let html = `${s.html}\n${footerHtml(t, base, token)}`;
+  html = agregarPixel(envolverLinks(html, base, send.id), base, send.id);
   const texto = `${s.texto?.trim() || htmlATexto(s.html)}\n${footerTexto(t, base, token)}`;
 
   const r = await enviarProveedor({

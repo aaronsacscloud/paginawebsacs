@@ -35,9 +35,17 @@ export async function darDeBaja(b: Baja): Promise<{ ok: boolean; contactId: stri
   }
 
   const { data: previa } = await supabase
-    .from('email_suppressions').select('id')
+    .from('email_suppressions').select('id, motivo')
     .eq('tenant_id', b.tenantId).eq('email', email).is('restaurado_at', null)
-    .limit(1).maybeSingle();
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+  // Una pausa NUNCA puede degradar una supresión permanente. Sin esto, quien
+  // había marcado spam o rebotado duro y luego tocaba "pausar 30 días" en el
+  // centro de preferencias volvía a ser enviable al mes siguiente.
+  const PERMANENTES = ['queja', 'rebote_duro', 'dropped'];
+  if (b.pausarHasta && previa && PERMANENTES.includes(String(previa.motivo))) {
+    return { ok: true, contactId };
+  }
 
   const fila = {
     tenant_id: b.tenantId,

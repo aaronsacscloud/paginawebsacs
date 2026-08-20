@@ -62,7 +62,11 @@ export async function enviar(e: EnvioProveedor): Promise<ResultadoProveedor> {
       { type: 'text/plain', value: e.texto },
       { type: 'text/html', value: e.html },
     ],
-    // Ver nota 1 de la cabecera.
+    // Ver nota 1 de la cabecera: el tracking lo hace el CRM contra su propio
+    // dominio (pipeline.ts reescribe los links y agrega el pixel ANTES de
+    // llamar aquí). Si eso alguna vez se desconecta, apagar esto de más deja
+    // el sistema sin aperturas ni clics — y con ellos se caen los segmentos de
+    // comportamiento, las ramas de embudo y medio tablero de salud.
     tracking_settings: {
       click_tracking: { enable: false, enable_text: false },
       open_tracking: { enable: false },
@@ -75,10 +79,13 @@ export async function enviar(e: EnvioProveedor): Promise<ResultadoProveedor> {
   if (e.categorias?.length) body.categories = e.categorias.slice(0, 10);
 
   try {
+    // Con timeout: una conexión colgada con SendGrid se comía la invocación
+    // entera del cron y con ella el resto de la campaña.
     const r = await fetch(API, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20000),
     });
     if (r.status >= 200 && r.status < 300) {
       return { ok: true, providerMessageId: r.headers.get('x-message-id'), error: null };

@@ -63,8 +63,18 @@ export function limpiarCitado(texto: string): string {
 /** "ya no me manden" — se detecta y se ofrece la baja con un clic. */
 const PIDE_BAJA = /\b(no me mand|dejen de mandar|ya no quiero recibir|quitenme|quítenme|remove me|unsubscribe|dar de baja|darme de baja|no me interesa recibir)/i;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   try {
+    // CANDADO DE LA PUERTA. Antes esto no validaba NADA: cualquiera en internet
+    // podía escribir conversaciones, mensajes y actividades a nombre de
+    // cualquier contacto, y mover su "último contacto". SendGrid permite poner
+    // un secreto en la URL del Inbound Parse
+    // (…/api/email/inbound?k=<INBOUND_SECRET>), que es el único dato que un
+    // extraño no tiene.
+    const esperado = (import.meta.env.INBOUND_SECRET || '').trim();
+    if (esperado && url.searchParams.get('k') !== esperado) return ok();
+    if (!esperado) console.warn('[inbound] sin INBOUND_SECRET: la puerta está abierta');
+
     const form = await request.formData();
     const campo = (k: string) => String(form.get(k) ?? '');
 
@@ -156,10 +166,13 @@ export const POST: APIRoute = async ({ request }) => {
       await supabase.from('contacts').update({ last_contact_at: new Date().toISOString() }).eq('id', contactId);
     }
 
-    // Baja pedida con palabras: se marca para que el panel la ofrezca en un clic.
+    // Baja pedida con palabras. Se ejecuta DE UNA: alguien que escribe "ya no
+    // me manden" y recibe otra campaña es la queja de spam más segura que
+    // existe. El hilo queda marcado para que se vea por qué.
     if (PIDE_BAJA.test(texto)) {
       await supabase.from('email_conversations')
         .update({ asunto: `[PIDE BAJA] ${asunto || ''}`.slice(0, 250) }).eq('id', convId);
+      await darDeBaja({ tenantId, email, contactId, origen: 'respuesta-textual', detalle: texto.slice(0, 200) });
     }
     return ok();
   } catch {
