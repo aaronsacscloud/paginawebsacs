@@ -64,7 +64,12 @@ export const GET: APIRoute = async ({ url }) => {
   const cuentasSinVer = Math.max(0, cuentasObjetivo - cuentasVieron.size);
   const tasaCtrl = cuentasSinVer ? control / cuentasSinVer : 0;
 
+  const { data: historial } = await supabase.from('inapp_auditoria')
+    .select('accion, quien, detalle, created_at').eq('campana_id', id)
+    .order('created_at', { ascending: false }).limit(15);
+
   return json({
+    historial: historial || [],
     campana: { id: c.id, nombre: c.nombre, estado: c.estado, formato: c.formato, meta: c.meta, materializada: c.materializada, pausa_motivo: c.pausa_motivo, vigencia_desde: c.vigencia_desde, vigencia_hasta: c.vigencia_hasta },
     resumen: {
       cuentas_objetivo: cuentasObjetivo,

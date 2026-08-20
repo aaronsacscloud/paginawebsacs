@@ -229,7 +229,12 @@ export const PUT: APIRoute = async ({ request, url }) => {
   const { data, error } = await supabase.from('inapp_campanas').update(upd).eq('id', id).select().single();
   if (error) return json({ error: error.message }, 500);
   const uid = await quien(request);
-  await auditar(id, 'edito', uid, { campos: Object.keys(upd).filter(k => k !== 'updated_at') });
+  // Versionado: la bitácora guarda el ANTES y el DESPUÉS de lo que cambió —
+  // sin esto sabías quién editó, pero no qué decía la campaña antes.
+  const campos = Object.keys(upd).filter(k => k !== 'updated_at');
+  const antes: any = {}; const despues: any = {};
+  for (const k of campos) { antes[k] = (previa as any)[k] ?? null; despues[k] = upd[k]; }
+  await auditar(id, 'edito', uid, { campos, antes, despues });
   // Editar una campaña VIVA re-publica para que sacs_api sirva lo nuevo — con
   // la audiencia CONGELADA si el modo es 'una sola vez' (editar un título no
   // debe mover la lista de cuentas que se congeló al activar).

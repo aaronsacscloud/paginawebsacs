@@ -140,6 +140,11 @@ export function validarCampana(c: any): string[] {
     if (b.accion === 'modulo' && !DESTINOS_MODULO.some(d => d.id === b.destino)) {
       errores.push(`El destino "${b.destino}" no está en el catálogo de módulos.`);
     }
+    // Deep-link opcional DENTRO del módulo (/:app/:api del router): solo
+    // segmentos [a-z0-9-], nada de '..' ni queries — misma lista blanca.
+    if (b.accion === 'modulo' && b.sub && !/^[a-z0-9-]{1,40}(\/[a-z0-9-]{1,40}){0,2}$/.test(String(b.sub))) {
+      errores.push(`La ruta interna "${b.sub}" no es válida (solo letras/números/guiones, máx. 3 segmentos).`);
+    }
     if (b.accion === 'url_sacs' && !urlSacsValida(b.destino)) {
       errores.push('Las URLs de botón solo pueden ser https de sacscloud.com.');
     }

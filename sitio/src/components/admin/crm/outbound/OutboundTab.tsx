@@ -203,6 +203,8 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
   const [iaOpciones, setIaOpciones] = useState<any[] | null>(null);
   const [iaIndice, setIaIndice] = useState(0);
   const [pasos, setPasos] = useState<any[]>([]);
+  const [audGuardadas, setAudGuardadas] = useState<any[]>([]);
+  const [audNombre, setAudNombre] = useState('');
   const [emailCamps, setEmailCamps] = useState<any[]>([]);
   useEffect(() => {
     let vivoE = true;
@@ -210,6 +212,8 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
       fetch(`/api/crm/outbound/campanas?id=${inicial.id}`).then(r => r.json())
         .then(j => { if (vivoE && Array.isArray(j.pasos)) setPasos(j.pasos); }).catch(() => { /* sin pasos */ });
     }
+    fetch('/api/crm/outbound/audiencias').then(r => r.json())
+      .then(j => { if (vivoE) setAudGuardadas(j.data || []); }).catch(() => { /* opcional */ });
     fetch('/api/crm/email/campaigns').then(r => r.json())
       .then(j => { if (vivoE) setEmailCamps((j.campanas || []).filter((x: any) => x.estado === 'borrador')); })
       .catch(() => { /* sin email configurado: el select queda vacío */ });
@@ -286,6 +290,26 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
   const form = (
     <div style={{ width: isMobile ? '100%' : 640, flexShrink: 0, background: '#fff', borderRight: isMobile ? 'none' : '1px solid #eee', padding: 24, overflowY: 'auto' }}>
       {paso === 0 && (<>
+        <span style={{ ...lblS as any, marginTop: 0 }}>Audiencias guardadas</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 8 }}>
+          <select style={inputS} value="" onChange={e => {
+            const a = audGuardadas.find((x: any) => x.id === e.target.value);
+            if (a) { set({ audiencia: a.definicion || { grupos: [] }, ...(a.nivel ? { nivel: a.nivel } : {}) }); show(`Audiencia "${a.nombre}" cargada`, 'info'); }
+          }}>
+            <option value="">{audGuardadas.length ? 'Cargar una audiencia guardada…' : 'Sin audiencias guardadas aún'}</option>
+            {audGuardadas.map((a: any) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          </select>
+          <input style={inputS} placeholder="Nombre para guardar la actual" value={audNombre} onChange={e => setAudNombre(e.target.value)} />
+          <button style={S.btnG} disabled={!audNombre.trim()} onClick={async () => {
+            try {
+              const r = await fetch('/api/crm/outbound/audiencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: audNombre.trim(), definicion: c.audiencia || {}, nivel: c.nivel || null }) });
+              const j = await r.json();
+              if (j.error) { show(j.error, 'error'); return; }
+              setAudGuardadas([...audGuardadas, j.audiencia]); setAudNombre('');
+              show('Audiencia guardada — reutilizable en cualquier campaña');
+            } catch { show('Sin conexión', 'error'); }
+          }}>Guardar</button>
+        </div>
         <span style={lblS as any}>Condiciones (las cumplen TODAS las cuentas alcanzadas; sin condiciones = todas)</span>
         {cond0.map((cd: any, i: number) => {
           const cat = campoCat(cd.campo);
@@ -426,10 +450,14 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
                   {(catalogo?.acciones_boton || []).map((a: any) => <option key={a.id} value={a.id}>{a.etiqueta}</option>)}
                 </select>
                 {b.accion === 'modulo' ? (
-                  <select style={inputS} value={b.destino || ''} onChange={e => setB({ destino: e.target.value })}>
-                    <option value="">Destino…</option>
-                    {(catalogo?.destinos_modulo || []).map((d: any) => <option key={d.id} value={d.id}>{d.etiqueta}</option>)}
-                  </select>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr', gap: 6 }}>
+                    <select style={inputS} value={b.destino || ''} onChange={e => setB({ destino: e.target.value })}>
+                      <option value="">Destino…</option>
+                      {(catalogo?.destinos_modulo || []).map((d: any) => <option key={d.id} value={d.id}>{d.etiqueta}</option>)}
+                    </select>
+                    <input style={inputS} placeholder="ruta interna (opc.)" title="Aterriza DENTRO del módulo: hasta 3 segmentos a-z0-9-" value={b.sub || ''}
+                      onChange={e => setB({ sub: e.target.value.trim().toLowerCase() })} />
+                  </div>
                 ) : b.accion === 'url_sacs' || b.accion === 'chat' ? (
                   <input style={inputS} placeholder={b.accion === 'chat' ? 'Mensaje precargado (opcional)' : 'https://…sacscloud.com/…'} value={b.destino || ''} onChange={e => setB({ destino: e.target.value })} />
                 ) : <span style={{ fontSize: '0.7rem', color: '#c9c7d0', alignSelf: 'center' }}>—</span>}
@@ -463,11 +491,15 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
             {(catalogo?.metas || []).map((m: any) => <option key={m.id} value={m.id}>{m.etiqueta}</option>)}
           </select>
           {c.meta?.tipo === 'uso_modulo' ? (
-            <select style={inputS} value={c.meta?.valor || ''} onChange={e => set({ meta: { ...c.meta, valor: e.target.value } })}>
-              <option value="">Módulo…</option>
-              {(catalogo?.modulos_puente || []).map((m: string) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          ) : c.meta && c.meta.tipo !== 'clic' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 8 }}>
+              <select style={inputS} value={c.meta?.valor || ''} onChange={e => set({ meta: { ...c.meta, valor: e.target.value } })}>
+                <option value="">Módulo…</option>
+                {(catalogo?.modulos_puente || []).map((m: string) => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <input style={inputS} type="number" min={1} title="Al menos N documentos en 30 días (retención, no un toque)" placeholder="veces (mín.)"
+                value={c.meta?.veces ?? ''} onChange={e => set({ meta: { ...c.meta, veces: e.target.value ? Math.max(1, Number(e.target.value)) : undefined } })} />
+            </div>
+          ) : c.meta && c.meta.tipo !== 'clic' && c.meta.tipo !== 'cita_agendada' ? (
             <input style={inputS} placeholder="valor (slug)" value={c.meta?.valor || ''} onChange={e => set({ meta: { ...c.meta, valor: e.target.value } })} />
           ) : <span />}
         </div>
@@ -687,7 +719,11 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
   );
   return (
     <Sheet open onClose={onClose} title={r?.campana?.nombre || 'Resultados'} width={860}
-      headerActions={r?.campana?.estado === 'activa' ? <button style={S.btnA} onClick={() => onAccion('pausar', id)}>Pausar</button> : undefined}>
+      headerActions={<>
+        <a href={`/api/crm/outbound/export?id=${id}`} style={{ ...S.btnG, textDecoration: 'none' }}>CSV eventos</a>
+        <a href={`/api/crm/outbound/export?id=${id}&que=conversiones`} style={{ ...S.btnG, textDecoration: 'none' }}>CSV conversiones</a>
+        {r?.campana?.estado === 'activa' ? <button style={S.btnA} onClick={() => onAccion('pausar', id)}>Pausar</button> : null}
+      </>}>
       {err && <Aviso tono="malo">{err}</Aviso>}
       {!r && !err && <Cargando texto="Cargando resultados…" alto={200} />}
       {r && (<>
@@ -755,6 +791,19 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
             </div>
           </div>
         </div>
+        {(r.historial || []).length > 0 && (
+          <div style={{ ...S.card, marginTop: 14 }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 8 }}>Historial de cambios</div>
+            {(r.historial || []).map((h: any, i: number) => (
+              <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.75rem', alignItems: 'baseline' }}>
+                <Tag tono={h.accion === 'activo' ? 'acento' : h.accion === 'pauso' ? 'aviso' : 'gris'}>{h.accion}</Tag>
+                <span style={{ flex: 1, color: '#555' }}>{(h.detalle?.campos || []).join(', ') || '—'}</span>
+                <span style={{ color: '#9c99a6', flexShrink: 0 }}>{fmtFecha(h.created_at)}</span>
+              </div>
+            ))}
+            <div style={{ fontSize: '0.66rem', color: '#9c99a6', fontWeight: 600, marginTop: 8 }}>Cada edición guarda el antes y el después completos en la bitácora.</div>
+          </div>
+        )}
       </>)}
     </Sheet>
   );
@@ -771,8 +820,13 @@ export default function OutboundTab() {
   const [resultadosId, setResultadosId] = useState<string | null>(null);
   const [menuRow, setMenuRow] = useState<any | null>(null);
   const [pickerAbierto, setPickerAbierto] = useState(false);
-  const [vista, setVista] = useState<'campanas' | 'convivencia'>('campanas');
+  const [vista, setVista] = useState<'campanas' | 'convivencia' | 'vercomo'>('campanas');
   const [conv, setConv] = useState<any>(null);
+  const [vcCuenta, setVcCuenta] = useState('');
+  const [vcUid, setVcUid] = useState('');
+  const [vcUsuarios, setVcUsuarios] = useState<any[]>([]);
+  const [vcRes, setVcRes] = useState<any>(null);
+  const [vcOcupado, setVcOcupado] = useState(false);
 
   async function load() {
     try {
@@ -890,9 +944,67 @@ export default function OutboundTab() {
           setVista('convivencia');
           if (!conv) fetch('/api/crm/outbound/convivencia').then(r => r.json()).then(setConv).catch(() => setConv({ error: true }));
         }}>Convivencia</button>
+        <button style={chip(vista === 'vercomo')} onClick={() => setVista('vercomo')}>Ver como…</button>
       </div>
 
-      {vista === 'convivencia' ? (
+      {vista === 'vercomo' ? (
+        <div style={{ marginTop: 14, maxWidth: 860 }}>
+          <div style={S.card}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 4 }}>Ver como un usuario</div>
+            <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: 12 }}>La MISMA decisión de entrega que corre en producción, con la razón exacta de cada filtro. Escribe la cuenta, carga sus usuarios y elige uno.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1.4fr auto', gap: 8, alignItems: 'end' }}>
+              <div><span style={{ display: 'block', fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Cuenta SACS</span>
+                <input style={S.inp} placeholder="ej. dibujotecnico" value={vcCuenta} onChange={e => setVcCuenta(e.target.value.trim().toLowerCase())} /></div>
+              <button style={S.btnG} disabled={!vcCuenta || vcOcupado} onClick={async () => {
+                setVcOcupado(true); setVcUsuarios([]); setVcUid('');
+                try {
+                  const r = await fetch(`/api/crm/sacs-usuarios?account=${encodeURIComponent(vcCuenta)}`);
+                  const j = await r.json();
+                  const us = j.usuarios || j.data || [];
+                  if (!us.length) show('Esa cuenta no tiene usuarios legibles', 'info');
+                  setVcUsuarios(us);
+                } catch { show('No se pudieron cargar los usuarios', 'error'); }
+                finally { setVcOcupado(false); }
+              }}>Cargar usuarios</button>
+              <div><span style={{ display: 'block', fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Usuario</span>
+                <select style={S.inp} value={vcUid} onChange={e => setVcUid(e.target.value)}>
+                  <option value="">{vcUsuarios.length ? 'Elige…' : 'Carga la cuenta primero'}</option>
+                  {vcUsuarios.map((u: any) => <option key={u.uid || u.fid} value={u.uid || u.fid}>{u.name || u.nombre || u.email || u.uid}</option>)}
+                </select></div>
+              <button style={S.btnP} disabled={!vcCuenta || !vcUid || vcOcupado} onClick={async () => {
+                setVcOcupado(true); setVcRes(null);
+                try {
+                  const r = await fetch(`/api/crm/outbound/simular?account=${encodeURIComponent(vcCuenta)}&uid=${encodeURIComponent(vcUid)}`);
+                  const j = await r.json();
+                  if (j.error) { show(j.error, 'error'); return; }
+                  setVcRes(j);
+                } catch { show('Sin conexión', 'error'); }
+                finally { setVcOcupado(false); }
+              }}>{vcOcupado ? 'Simulando…' : 'Simular'}</button>
+            </div>
+          </div>
+          {vcRes && (
+            <div style={{ ...S.card, marginTop: 12 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 800, flex: 1 }}>Resultado</span>
+                <Tag tono="acento">{vcRes.se_muestran} se mostrarían</Tag>
+                {vcRes.en_hora_pico && <Tag tono="aviso">El negocio está en su hora pico: interruptivos en espera</Tag>}
+                {vcRes.killswitch && <Tag tono="malo">Kill switch global encendido</Tag>}
+              </div>
+              {(vcRes.trazas || []).length === 0 && <div style={{ fontSize: '0.78rem', color: '#9c99a6' }}>Ninguna campaña activa apunta a esta cuenta.</div>}
+              {(vcRes.trazas || []).map((t: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem', alignItems: 'flex-start' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, flexShrink: 0, background: t.veredicto === 'se_muestra' ? '#EEECFE' : '#F4F4F6', color: t.veredicto === 'se_muestra' ? '#5B4BD6' : '#6B7280' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.veredicto === 'se_muestra' ? '#9B8CFA' : '#C9C7D0' }} />
+                    {t.veredicto === 'se_muestra' ? 'Se muestra' : 'Filtrada'}
+                  </span>
+                  <span style={{ flex: 1 }}><b>{t.nombre}</b> <span style={{ color: '#9c99a6' }}>({FMT_CORTO[t.formato] || t.formato})</span><br /><span style={{ fontSize: '0.74rem', color: '#666' }}>{t.razon}</span></span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : vista === 'convivencia' ? (
         <div style={{ marginTop: 14 }}>
           {!conv && <Cargando texto="Calculando traslapes…" alto={160} />}
           {conv?.error && <Aviso tono="malo">No se pudo cargar la convivencia.</Aviso>}

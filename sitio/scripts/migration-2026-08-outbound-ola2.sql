@@ -42,3 +42,16 @@ create unique index if not exists uq_inapp_paso_ejec on inapp_paso_ejecuciones(p
 
 alter table presion_por_company enable row level security;
 alter table inapp_paso_ejecuciones enable row level security;
+
+-- ── Mejoras post-Ola 2 (2026-08-20) ──
+-- Audiencias guardadas con nombre, reutilizables entre campañas.
+create table if not exists inapp_audiencias (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  descripcion text,
+  definicion jsonb not null default '{}',   -- Definicion del DSL
+  nivel jsonb,                              -- {tipo, grupos, uids} sugerido
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table inapp_audiencias enable row level security;

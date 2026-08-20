@@ -70,22 +70,51 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
       ingeridos += reales.length;
       // Alerta de DETRACTOR (NPS ≤ 6): el mismo día, no en el reporte del
       // trimestre. notificar() es idempotente por clave y nunca lanza.
-      const detractores = reales.filter((f: any) => f.evento === 'respuesta_encuesta' && f.valor != null && Number(f.valor) <= 6);
-      for (const d of detractores) {
+      const encuestas = reales.filter((f: any) => f.evento === 'respuesta_encuesta' && f.valor != null);
+      for (const d of encuestas) {
         let companyId: string | null = null;
         try {
           const { data: fila } = await supabase.from('company_sacs_accounts').select('company_id').eq('cuenta', d.cuenta).maybeSingle();
           companyId = fila?.company_id || null;
         } catch { /* sin empresa ligada: el aviso sale igual */ }
-        await notificar({
-          clave: `outbound-detractor:${d.campana_id}:${d.uid}:${d.created}`,
-          tipo: 'outbound_detractor',
-          nivel: 'alerta',
-          titulo: `NPS detractor (${d.valor}) en ${d.cuenta}`,
-          detalle: d.comentario ? `"${d.comentario}"` : 'Sin comentario. Vale una llamada de CS.',
-          company_id: companyId,
-          metadata: { campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor },
-        });
+        if (Number(d.valor) <= 6) {
+          await notificar({
+            clave: `outbound-detractor:${d.campana_id}:${d.uid}:${d.created}`,
+            tipo: 'outbound_detractor',
+            nivel: 'alerta',
+            titulo: `NPS detractor (${d.valor}) en ${d.cuenta}`,
+            detalle: d.comentario ? `"${d.comentario}"` : 'Sin comentario. Vale una llamada de CS.',
+            company_id: companyId,
+            metadata: { campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor },
+          });
+          // …y la TAREA en la ficha, para que no se quede en aviso: el loop del
+          // NPS se cierra con contacto humano, no con un badge.
+          if (companyId) {
+            const { data: yaTarea } = await supabase.from('activities')
+              .select('id').eq('company_id', companyId).eq('tipo', 'tarea')
+              .contains('metadata', { origen: 'outbound_detractor', evento_created: d.created }).limit(1);
+            if (!yaTarea?.length) {
+              await supabase.from('activities').insert({
+                company_id: companyId, tipo: 'tarea',
+                titulo: `Llamar: NPS detractor (${d.valor}) en ${d.cuenta}`,
+                descripcion: d.comentario ? `Comentario del cliente: "${d.comentario}"` : 'Respondió el NPS con calificación baja y sin comentario.',
+                metadata: { origen: 'outbound_detractor', campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor, evento_created: d.created },
+              });
+            }
+          }
+        }
+        // Promotor (9-10): queda marcado como interés "Promotor NPS" — la
+        // audiencia «Mostró interés en… Promotor NPS» permite encadenar la
+        // campaña de pedir reseña/testimonio (plantilla pedir_resena).
+        if (Number(d.valor) >= 9 && companyId) {
+          try {
+            const { data: comp } = await supabase.from('companies').select('intereses').eq('id', companyId).maybeSingle();
+            const intereses = { ...(comp?.intereses || {}) };
+            const prev = intereses['Promotor NPS'] || { score: 0 };
+            intereses['Promotor NPS'] = { score: (Number(prev.score) || 0) + 1, ultimo: new Date().toISOString(), campana: d.campana_id };
+            await supabase.from('companies').update({ intereses }).eq('id', companyId);
+          } catch { /* el interés es mejor-esfuerzo */ }
+        }
       }
     }
     // Guard de no-avance: si el cursor no se movió con hay_mas=true, salir en
@@ -184,6 +213,11 @@ async function procesarCampana(c: any): Promise<any> {
         const mods: any[] = comp.uso_sacs?.modulos || [];
         const m = mods.find((x: any) => x && x.modulo === c.meta.valor && x.usa);
         convirtio = !!m && (!desde || !m.ultimo || new Date(m.ultimo) >= desde);
+        // Meta con RETENCIÓN: "lo usó al menos N veces" (docs_30d del puente),
+        // no un toque de curiosidad. Sin `veces` basta con usarlo.
+        if (convirtio && Number(c.meta.veces) > 1) {
+          convirtio = (Number(m?.docs_30d) || 0) >= Number(c.meta.veces);
+        }
       }
       if (!convirtio) continue;
       const cuenta = normCuenta(f.cuenta);
@@ -567,6 +601,52 @@ async function correr() {
       }
       await guardarSync('presion', { hora: horaActual, companies: filasP.length });
       out.presion = filasP.length;
+    }
+
+    // ── Horas valle: una vez al día, el perfil de ventas por hora de las
+    // cuentas con campañas activas (sacs_api lo calcula y lo guarda; la
+    // entrega lo lee barato).
+    const marcaPico = await leerSync('horas_pico');
+    const hoyP = new Date().toISOString().slice(0, 10);
+    if (marcaPico.dia !== hoyP && Date.now() < deadline) {
+      const { data: activasP } = await supabase.from('inapp_campanas')
+        .select('materializada').eq('estado', 'activa').is('archived_at', null).limit(50);
+      const cuentasPico = Array.from(new Set((activasP || [])
+        .flatMap((c: any) => (c.materializada?.cuentas_lista || []) as string[])
+        .map(normCuenta).filter(Boolean)));
+      let perfiladas = 0;
+      for (let i = 0; i < cuentasPico.length && Date.now() < deadline; i += 50) {
+        try {
+          const r = await sacs('/interno/crm/campanas-horas-pico', { accounts: cuentasPico.slice(i, i + 50) });
+          perfiladas += Object.keys(r.data || {}).length;
+        } catch (e: any) { out.errores.push('horas_pico: ' + (e?.message || e)); break; }
+      }
+      await guardarSync('horas_pico', { dia: hoyP, perfiladas });
+      out.horas_pico = perfiladas;
+    }
+
+    // ── Digest semanal (lunes, hora de México): el canal se resume solo.
+    const ahoraMx = new Date(Date.now() - 6 * 3600000);
+    if (ahoraMx.getUTCDay() === 1 && ahoraMx.getUTCHours() >= 8) {
+      const semanaIso = ahoraMx.toISOString().slice(0, 10);
+      const { data: paraDigest } = await supabase.from('inapp_campanas')
+        .select('nombre, estado, resumen').in('estado', ['activa', 'pausada']).is('archived_at', null).limit(50);
+      if (paraDigest?.length) {
+        const lineas = paraDigest.map((c: any) => {
+          const r = c.resumen || {};
+          return `· ${c.nombre}: ${r.impresiones || 0} impresiones, ${r.ctr || 0}% CTR, ${r.conversiones || 0} conversiones` +
+            (r.ingreso ? ` ($${Math.round(r.ingreso).toLocaleString('es-MX')})` : '') +
+            (r.nps ? `, NPS ${r.nps.score}` : '') +
+            (c.estado === 'pausada' ? ' [PAUSADA]' : '');
+        });
+        await notificar({
+          clave: `outbound-digest:${semanaIso}`,
+          tipo: 'outbound_digest', nivel: 'info',
+          titulo: `Outbound, resumen semanal (${paraDigest.length} campañas)`,
+          detalle: lineas.slice(0, 12).join('\n'),
+          metadata: { semana: semanaIso },
+        });
+      }
     }
 
     // Recurrencia de encuestas (NPS cada X días): una vez al día por campaña,
