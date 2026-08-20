@@ -80,7 +80,7 @@ const desc =
     <div class="hero-inner">
       <p class="hero-eyebrow">SACS · Suite Calzado</p>
       <h1 class="hero-title">
-        Tu tienda no vende<br /><span class="apaga">modelos.</span> Vende<br /><span>números.</span>
+        Tu tienda no vende<br />modelos. Vende<br /><span>números.</span>
       </h1>
       <p class="hero-sub">
         El sistema para zapaterías. Corrida completa con medios números, cambio de número en el
@@ -239,33 +239,31 @@ const desc =
 <style>
   /* El nav es fixed (71px): sin padding-top el título queda debajo de la barra. */
   .hero {
-    position: relative; min-height: 92vh; display: flex; align-items: flex-end;
-    padding: 136px 24px 88px; overflow: hidden; background: #0A0A0B;
+    position: relative; min-height: 88vh; display: flex; align-items: flex-end;
+    padding: 136px 24px 88px; overflow: hidden;
+    background: var(--color-bg-primary, #FAFAF8);
   }
   .hero-bg { position: absolute; inset: 0; overflow: hidden; }
-  .hero-bg::before {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(80% 70% at 76% 46%, rgba(37,99,235,.2) 0%, rgba(10,10,11,0) 62%);
-  }
+  /* Sin resplandor: el fondo se queda quieto y el color lo pone el producto. */
   .hero-veil {
     position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(90deg,
-      rgba(8,8,10,.96) 0%, rgba(8,8,10,.9) 26%, rgba(8,8,10,.5) 44%,
-      rgba(8,8,10,.1) 56%, rgba(8,8,10,0) 66%);
+      rgba(250,250,248,1) 0%, rgba(250,250,248,.98) 30%, rgba(250,250,248,.72) 46%,
+      rgba(250,250,248,.14) 58%, rgba(250,250,248,0) 68%);
   }
   .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
   .hero-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 20px;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 20px;
   }
   .hero-title {
     font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
-    line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
+    line-height: .98; margin: 0 0 24px; max-width: 16ch;
+    color: var(--color-text-primary, #1A1A1A);
   }
-  .hero-title span { color: #4B7BE5; }
-  .hero-title span.apaga { color: #6B6B78; }
+  .hero-title span { color: var(--color-primary, #4B7BE5); }
   .hero-sub {
-    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
+    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: var(--color-text-secondary, #4A4A4A);
     max-width: 56ch; margin: 0 0 34px;
   }
   .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
@@ -274,27 +272,28 @@ const desc =
     height: 54px; padding: 0 30px; border-radius: 12px;
     font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
   }
-  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 6px 22px rgba(37,99,235,.42); }
+  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(75,123,229,.3); }
   .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
-  .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
-  .btn-sec:hover { background: rgba(255,255,255,.17); }
+  .btn-sec { background: transparent; color: var(--color-text-primary, #1A1A1A); border: 1.5px solid rgba(0,0,0,.18); }
+  .btn-sec:hover { border-color: rgba(0,0,0,.34); }
   .hero-datos {
     display: flex; gap: 30px; flex-wrap: wrap; max-width: 660px;
-    border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
+    border-top: 1px solid rgba(0,0,0,.1); padding-top: 26px;
   }
   .hero-datos > div { flex: 1 1 180px; }
   .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
   .hero-datos b {
-    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; color: #fff; letter-spacing: -.4px;
+    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; letter-spacing: -.4px;
+    color: var(--color-text-primary, #1A1A1A);
   }
-  .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
+  .hero-datos span { font-size: 13px; color: var(--color-text-secondary, #4A4A4A); font-weight: 600; }
 
   /* El punto de venta se dibuja a 980 px y se escala: nítido en cualquier
      pantalla y sin depender de una captura que envejece. */
   .hero-pos {
     position: absolute; right: -13%; top: 50%;
     transform: translateY(-46%) scale(.86); transform-origin: right center;
-    filter: drop-shadow(0 40px 90px rgba(0,0,0,.65));
+    filter: drop-shadow(0 30px 70px rgba(15,23,42,.22));
     opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
     -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
     mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
@@ -310,7 +309,7 @@ const desc =
     .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
   }
   @media (max-width: 1180px) {
-    .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
+    .hero-pos { right: -30%; transform: translateY(-46%) scale(.6); opacity: .9; animation: none; }
     /* En vertical el punto de venta se recuesta abajo y asoma: si se esconde,
        la página abre con dos mil cuatrocientos píxeles de texto sobre negro. */
   }
@@ -325,7 +324,7 @@ const desc =
       opacity: .95; animation: none;
     }
     .hero-veil {
-      background: linear-gradient(180deg, rgba(8,8,10,.98) 0%, rgba(8,8,10,.97) 62%, rgba(8,8,10,.86) 76%, rgba(8,8,10,.2) 100%);
+      background: linear-gradient(180deg, rgba(250,250,248,1) 0%, rgba(250,250,248,.98) 62%, rgba(250,250,248,.8) 76%, rgba(250,250,248,0) 100%);
     }
   }
 

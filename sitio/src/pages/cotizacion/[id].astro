@@ -3049,45 +3049,44 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 
 
 /* ── El contador, en los colores de la marca ──
-   Era un rectángulo negro en medio de un documento morado y rosa: se veía como
-   pegado de otro sistema. Ahora usa el mismo degradado profundo del encabezado
-   de la minuta y del estado de cuenta, con el halo rosa detrás de las cifras.
-   Cuando quedan pocos días vira a rojo: la urgencia se dice con color, no con
-   un negro que ya estaba ahí desde el principio. */
+   Era un rectángulo negro de borde a borde en medio de un documento morado y
+   rosa: se veía pegado de otro sistema. Ahora lleva el mismo degradado de la
+   cinta —morado → azul → rosa— a todo color, que conserva la fuerza que tenía
+   el negro pero en la paleta de la casa.
+   A cinco días o menos el degradado corre hacia el rosa fuerte: la urgencia se
+   dice cambiando de color, no con un tono oscuro que ya estaba ahí desde el
+   primer día. */
 .quote-modern .quote-timer {
   position: relative;
-  background: radial-gradient(120% 180% at 85% -40%, #3a2f8f 0%, #221a52 45%, #17123A 100%);
-  border-radius: 14px;
-  margin: 0 30px 16px;
-  padding: 22px 26px;
-  overflow: hidden;
+  background: linear-gradient(100deg, #9B8CFA 0%, #7DA6F5 52%, #EFA6CA 100%);
+  color: #fff;
+  padding: 26px 40px;
 }
-.quote-modern .quote-timer::after {
-  content: ''; position: absolute; right: -60px; top: -80px; width: 240px; height: 240px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(244,168,205,.22), transparent 62%); pointer-events: none;
-}
-.quote-modern .quote-timer > * { position: relative; z-index: 1; }
 .quote-modern .quote-timer--urgent {
-  background: radial-gradient(120% 180% at 85% -40%, #E0699F 0%, #B93C74 45%, #7E2B52 100%);
+  background: linear-gradient(100deg, #7C6BF0 0%, #C06FB4 45%, #D9538E 100%);
 }
-.quote-modern .quote-timer-label {
-  font-size: .62rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: .85;
-}
-.quote-modern .quote-timer-num { font-size: 2.1rem; }
-.quote-modern .quote-timer-unit { color: rgba(255,255,255,.72); }
-.quote-modern .quote-timer-deadline { font-size: .84rem; font-weight: 700; }
-.quote-modern .quote-timer-warning { font-size: .72rem; opacity: .72; font-style: normal; }
-/* El ahorro se dice en verde claro: en todo el sistema el verde es dinero que
-   se queda en el bolsillo del cliente. */
+.quote-modern .quote-timer-label { opacity: .92; }
+.quote-modern .quote-timer-num { font-size: 2.4rem; }
+.quote-modern .quote-timer-unit { color: rgba(255,255,255,.82); opacity: 1; }
+.quote-modern .quote-timer-deadline { font-size: .9rem; font-weight: 700; }
+.quote-modern .quote-timer-warning { font-size: .78rem; opacity: .85; font-style: normal; }
+/* El ahorro, en pastilla: dentro de un fondo de color, el verde no se lee, y
+   una cifra suelta sobre degradado se pierde. */
 .quote-modern .quote-timer-savings {
-  display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 20px;
-  background: rgba(79,191,149,.18); color: #9BE7C6; font-weight: 800; opacity: 1;
+  display: inline-block; margin-top: 12px; padding: 5px 14px; border-radius: 20px;
+  background: rgba(255,255,255,.22); color: #fff; font-weight: 700; opacity: 1;
 }
-.quote-modern .quote-timer-promo-name { color: #F6CFE2; }
-@media (max-width: 560px) { .quote-modern .quote-timer { margin-left: 18px; margin-right: 18px; padding: 18px; } }
-@media print { .quote-modern .quote-timer { background: #EEECFE !important; color: #3f2fb8 !important; }
-  .quote-modern .quote-timer-unit, .quote-modern .quote-timer-warning { color: #5B4BD6 !important; } }
-
+.quote-modern .quote-timer-promo { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.28); }
+.quote-modern .quote-timer-promo-name { color: #fff; }
+.quote-modern .quote-timer-extended { background: rgba(255,255,255,.16); }
+@media (max-width: 560px) { .quote-modern .quote-timer { padding: 20px 18px; } }
+/* Impreso, el degradado se aclara: media página de tinta de color no la quiere
+   nadie, y el dato se lee igual. */
+@media print {
+  .quote-modern .quote-timer { background: linear-gradient(100deg,#EDE9FE,#E4EDFB 50%,#FBE7F1) !important; color: #3f2fb8 !important; }
+  .quote-modern .quote-timer-unit, .quote-modern .quote-timer-warning, .quote-modern .quote-timer-label { color: #5B4BD6 !important; }
+  .quote-modern .quote-timer-savings { background: #EAF8F2 !important; color: #1E8A63 !important; }
+}
 </style>
 
 <script>

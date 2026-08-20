@@ -144,20 +144,21 @@ const MODOS = [
 </section>
 
 <style>
-  .pr { background: #0C0C10; color: #fff; padding: 104px 24px 112px; }
+  .pr { background: var(--color-bg-primary, #FAFAF8); color: var(--color-text-primary, #1a1a2e); padding: 96px 24px 104px; }
   .pr-inner { max-width: 1200px; margin: 0 auto; }
 
   .pr-head { max-width: 760px; margin-bottom: 56px; }
   .pr-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 16px;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 16px;
   }
   .pr-head h2 {
-    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
-    line-height: 1.05; margin: 0 0 16px; color: #fff;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
   }
-  .pr-head h2 span { color: #4B7BE5; }
-  .pr-sub { margin: 0; font-size: clamp(15px, 1.8vw, 19px); line-height: 1.65; color: #A8A8B4; }
+  .pr-head h2 span { color: var(--color-primary, #4B7BE5); }
+  .pr-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); }
 
   .pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
 
@@ -165,79 +166,82 @@ const MODOS = [
   .pr-panel { position: sticky; top: 108px; }
   .pr-fotos {
     position: relative; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden;
-    background: #16161C; border: 1px solid rgba(255,255,255,.08);
+    background: #EDEDE9; box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.12);
   }
   .pr-foto { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .5s ease; }
   .pr-foto.on { opacity: 1; }
   .pr-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .pr-marca {
     position: absolute; left: 18px; bottom: 16px; display: flex; align-items: baseline; gap: 6px;
-    background: rgba(8,8,10,.72); backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 7px 15px;
+    background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+    border: 1px solid rgba(0,0,0,.08); border-radius: 999px; padding: 7px 15px;
+    box-shadow: 0 2px 10px rgba(15,23,42,.14);
   }
-  .pr-marca-n { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .pr-marca-t { font-size: 11.5px; color: #A1A1AA; font-weight: 600; }
+  .pr-marca-n { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--color-text-primary, #1a1a2e); }
+  .pr-marca-t { font-size: 11.5px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 600; }
 
   /* ── Los pasos ── */
   .pr-pasos { list-style: none; margin: 0; padding: 0; }
   .pr-paso {
-    padding: 34px 0 38px; border-top: 1px solid rgba(255,255,255,.1);
-    opacity: .38; transition: opacity .4s ease;
+    padding: 34px 0 38px; border-top: 1px solid rgba(0,0,0,.09);
+    opacity: .42; transition: opacity .4s ease;
   }
-  .pr-paso:last-child { border-bottom: 1px solid rgba(255,255,255,.1); }
+  .pr-paso:last-child { border-bottom: 1px solid rgba(0,0,0,.09); }
   .pr-paso.on { opacity: 1; }
   .pr-paso-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .pr-cuando {
     font-size: 11.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-    color: #8A8A96;
+    color: var(--color-text-tertiary, #8C8C8C);
   }
   /* La tienda no cierra ni un día: por eso el sello va en TODOS los pasos. */
   .pr-abierta {
-    font-size: 10.5px; font-weight: 800; color: #34D399;
-    border: 1px solid rgba(52,211,153,.42); border-radius: 999px; padding: 3px 10px;
+    font-size: 10.5px; font-weight: 800; color: #12796A;
+    background: #E6F7F3; border: 1px solid #B9E8DE; border-radius: 999px; padding: 3px 10px;
   }
   .pr-paso h3 {
-    margin: 0 0 10px; font-size: clamp(19px, 2.2vw, 24px); font-weight: 800; letter-spacing: -.6px;
-    color: #fff;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    margin: 0 0 10px; font-size: clamp(1.125rem, 2vw, 1.5rem); font-weight: 700; letter-spacing: -.02em;
+    color: var(--color-text-primary, #1a1a2e);
   }
-  .pr-paso p { margin: 0; font-size: 16px; line-height: 1.65; color: #A8A8B4; max-width: 46ch; }
+  .pr-paso p { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); max-width: 48ch; }
   .pr-detalle {
     margin-top: 12px !important; padding-left: 14px; border-left: 2px solid #4B7BE5;
-    color: #D4D4DC !important; font-size: 15px !important;
+    color: var(--color-text-primary, #1a1a2e) !important; font-size: 0.9375rem !important;
   }
 
   /* ── Las tres formas ── */
-  .pr-modos { margin-top: 72px; padding-top: 34px; border-top: 1px solid rgba(255,255,255,.1); }
+  .pr-modos { margin-top: 64px; padding-top: 32px; border-top: 1px solid rgba(0,0,0,.09); }
   .pr-modos-rot {
     margin: 0 0 20px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
-    text-transform: uppercase; color: #8A8A96;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
   .pr-modos-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .pr-modo {
-    background: #14141A; border: 1px solid rgba(255,255,255,.09); border-radius: 14px;
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 14px;
     padding: 20px 22px; display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
   }
-  .pr-modo b { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
-  .pr-modo span { font-size: 14px; color: #A8A8B4; line-height: 1.5; }
+  .pr-modo b { font-size: 16px; font-weight: 800; letter-spacing: -.3px; color: var(--color-text-primary, #1a1a2e); }
+  .pr-modo span { font-size: 14px; color: var(--color-text-secondary, #4A4A4A); line-height: 1.5; }
 
   .pr-remate {
-    margin: 34px 0 0; font-size: 15.5px; line-height: 1.7; color: #A8A8B4; max-width: 74ch;
+    margin: 34px 0 0; font-size: 0.9375rem; line-height: 1.7; color: var(--color-text-secondary, #4A4A4A); max-width: 74ch;
   }
-  .pr-remate :global(b) { color: #fff; }
+  .pr-remate :global(b) { color: var(--color-text-primary, #1a1a2e); }
 
   /* ── La caja sin conexión ── */
   .pr-offline {
-    margin-top: 48px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,.1);
+    margin-top: 48px; padding-top: 40px; border-top: 1px solid rgba(0,0,0,.09);
     display: grid; grid-template-columns: 1fr 380px; gap: 48px; align-items: center;
   }
   .pr-offline-rot {
     margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
-    text-transform: uppercase; color: #E8A838;
+    text-transform: uppercase; color: #B45309;
   }
-  .pr-offline h3 { margin: 0 0 12px; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; letter-spacing: -.9px; color: #fff; }
-  .pr-offline p { margin: 0; font-size: 16px; line-height: 1.65; color: #A8A8B4; max-width: 52ch; }
+  .pr-offline h3 { font-family: var(--font-display, 'Sora', sans-serif); margin: 0 0 12px; font-size: clamp(1.375rem, 2.5vw, 1.875rem); font-weight: 700; letter-spacing: -.02em; color: var(--color-text-primary, #1a1a2e); }
+  .pr-offline p { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); max-width: 52ch; }
 
-  .pr-caja { background: #fff; color: #0F172A; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.4); }
+  .pr-caja { background: #fff; color: #0F172A; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.14); }
   .pr-caja-barra {
     display: flex; align-items: center; gap: 10px; padding: 10px 14px;
     background: #FEF3C7; border-bottom: 1px solid #FDE68A;

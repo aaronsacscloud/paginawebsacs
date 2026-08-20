@@ -93,7 +93,7 @@ const {
           <span>Venta rápida</span>
         </div>
         {tiles.map((x) => (
-          <div class="pm-tile" style={`background:${x.c}`}><span>{x.t}</span></div>
+          <div class="pm-tile"><i style={`background:${x.c}`}></i><span>{x.t}</span></div>
         ))}
       </div>
     </div>
@@ -195,10 +195,13 @@ const {
 
   .pm-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .pm-tile {
-    height: 96px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    height: 96px; border-radius: 16px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 9px;
     text-align: center; padding: 10px;
+    background: #fff; border: 1px solid #E8ECF1;
   }
-  .pm-tile span { color: #fff; font-size: 14.5px; font-weight: 500; line-height: 1.25; }
+  .pm-tile i { width: 26px; height: 26px; border-radius: 8px; display: block; }
+  .pm-tile span { color: #334155; font-size: 13.5px; font-weight: 600; line-height: 1.25; }
   .pm-tile-rapida { background: #fff; border: 1px solid #E8ECF1; flex-direction: column; gap: 8px; }
   .pm-tile-rapida svg { width: 26px; height: 26px; }
   .pm-tile-rapida span { color: #64748B; font-size: 13.5px; }
