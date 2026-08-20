@@ -161,6 +161,14 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ height: 4, flexShrink: 0, background: 'linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)' }} />
+      {/* En el teléfono no caben dos columnas: el riel se vuelve una lista
+          corta arriba —con su propio scroll— y el contenido queda debajo. */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 860px) {
+          .cfg-cuerpo { grid-template-columns: 1fr !important; grid-template-rows: auto 1fr; }
+          .cfg-riel { max-height: 34vh; border-right: none !important; border-bottom: 1px solid #f0eef7; }
+        }
+      ` }} />
 
       <header style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0 }}>
         <div style={{ minWidth: 0 }}>
