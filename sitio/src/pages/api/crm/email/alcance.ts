@@ -17,8 +17,12 @@ export const GET: APIRoute = async ({ url }) => {
   const dias = Math.min(365, Math.max(7, Number(url.searchParams.get('dias')) || 90));
   const desde = new Date(Date.now() - dias * 86400000).toISOString();
 
-  const { count: total } = await supabase.from('contacts')
-    .select('id', { count: 'exact', head: true }).is('archived_at', null).not('email', 'is', null);
+  // Con el filtro de alcance del inquilino: sin él, un partner con 20
+  // contactos referidos veía "puedes alcanzar 225" — los del CRM entero.
+  const conAlcance = (q: any) => (t.owner_team_member_id ? q.eq('referrer_partner_id', t.owner_team_member_id) : q);
+
+  const { count: total } = await conAlcance(supabase.from('contacts')
+    .select('id', { count: 'exact', head: true }).is('archived_at', null).not('email', 'is', null));
   const { count: suprimidos } = await supabase.from('email_suppressions')
     .select('id', { count: 'exact', head: true }).eq('tenant_id', t.id).is('restaurado_at', null);
 
@@ -38,10 +42,16 @@ export const GET: APIRoute = async ({ url }) => {
     .sort((a, b) => b.personas - a.personas);
 
   // Sin correo no hay a quién escribirle, y eso también es alcance perdido.
-  const { count: sinCorreo } = await supabase.from('contacts')
-    .select('id', { count: 'exact', head: true }).is('archived_at', null).is('email', null);
+  const { count: sinCorreo } = await conAlcance(supabase.from('contacts')
+    .select('id', { count: 'exact', head: true }).is('archived_at', null).is('email', null));
 
-  const alcanzables = Math.max(0, (total || 0) - (suprimidos || 0));
+  // Los suprimidos que de verdad restan son los que están EN la base: la lista
+  // de supresión puede tener correos que nunca fueron contactos, y restarlos
+  // daba un porcentaje sin sentido.
+  const { data: suprEnBase } = await supabase.from('email_suppressions')
+    .select('contact_id').eq('tenant_id', t.id).is('restaurado_at', null).not('contact_id', 'is', null).limit(20000);
+  const suprimidosReales = new Set((suprEnBase || []).map((r: any) => r.contact_id)).size;
+  const alcanzables = Math.max(0, (total || 0) - suprimidosReales);
   return json({
     periodo_dias: dias,
     total_con_correo: total || 0,

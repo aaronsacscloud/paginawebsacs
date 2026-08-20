@@ -27,9 +27,23 @@ export const GET: APIRoute = async ({ url }) => {
   const desdeISO = desde.toISOString();
 
   // 1 · De qué canal vino cada contacto.
+  // Los LEADS se cuentan dentro de la ventana, pero el mapa empresa→canal se
+  // construye con TODO el histórico: en B2B el contacto puede haber entrado
+  // hace 200 días y la empresa firmar ayer. Acotarlo a la ventana descartaba
+  // esa suscripción y subestimaba justo al canal de ciclo más largo.
+  //
+  // Y con orden ascendente: el comentario prometía "se queda el primero, el
+  // que la trajo", pero sin `.order()` el primero era el que Postgres
+  // devolviera — la UI afirmaba una regla que el código no cumplía.
   const { data: contactos } = await supabase.from('contacts')
     .select('id, company_id, utm_source, fuente, created_at, lifecycle_stage')
-    .gte('created_at', desdeISO).is('archived_at', null).limit(20000);
+    .gte('created_at', desdeISO).is('archived_at', null)
+    .order('created_at', { ascending: true }).limit(20000);
+
+  const { data: historicos } = await supabase.from('contacts')
+    .select('company_id, utm_source, fuente, created_at')
+    .not('company_id', 'is', null).is('archived_at', null)
+    .order('created_at', { ascending: true }).limit(20000);
 
   const canalDe = (c: any): string => {
     const u = String(c.utm_source || '').toLowerCase();
@@ -42,18 +56,23 @@ export const GET: APIRoute = async ({ url }) => {
   };
 
   const porCanal: Record<string, { leads: number; clientes: number; arr: number; empresas: Set<string> }> = {};
+  const clientesPorCanal: Record<string, Set<string>> = {};
   const empresaCanal: Record<string, string> = {};
+  // 1a · El mapa empresa→canal, con todo el histórico y en orden cronológico.
+  for (const h of historicos || []) {
+    if (h.company_id) empresaCanal[h.company_id] ||= canalDe(h);
+  }
+  // 1b · Los leads del periodo.
   for (const c of contactos || []) {
     const canal = canalDe(c);
     porCanal[canal] ||= { leads: 0, clientes: 0, arr: 0, empresas: new Set() };
     porCanal[canal].leads++;
-    if (c.company_id) {
-      porCanal[canal].empresas.add(c.company_id);
-      // Si dos contactos de la misma empresa vinieron por canales distintos,
-      // se queda el PRIMERO: es el que la trajo. Repartir el crédito entre
-      // canales suena justo pero hace imposible comparar.
-      empresaCanal[c.company_id] ||= canal;
-    }
+    if (c.company_id) porCanal[canal].empresas.add(c.company_id);
+  }
+  // Un canal puede tener clientes sin leads nuevos en el periodo (firmó ahora,
+  // entró antes): se asegura la fila para que su ARR no desaparezca.
+  for (const canal of Object.values(empresaCanal)) {
+    porCanal[canal] ||= { leads: 0, clientes: 0, arr: 0, empresas: new Set() };
   }
 
   // 2 · Qué suscripciones se activaron, y de qué canal era esa empresa.
@@ -67,8 +86,13 @@ export const GET: APIRoute = async ({ url }) => {
     for (const s of subs || []) {
       const canal = empresaCanal[s.company_id!];
       if (!canal || !porCanal[canal]) continue;
-      porCanal[canal].clientes++;
+      // El ARR se SUMA por suscripción; los clientes se cuentan por EMPRESA.
+      // Antes se hacía clientes++ por cada fila: 13 empresas tienen más de una
+      // suscripción activa, así que la conversión salía inflada y el costo por
+      // cliente subestimado.
       porCanal[canal].arr += Number(s.arr || 0);
+      clientesPorCanal[canal] ||= new Set();
+      clientesPorCanal[canal].add(s.company_id!);
     }
   }
 
@@ -86,13 +110,13 @@ export const GET: APIRoute = async ({ url }) => {
     const gasto = gastoPorCanal[canal] || 0;
     return {
       canal, nombre: bonito(canal),
-      leads: v.leads, clientes: v.clientes, arr: Math.round(v.arr), gasto: Math.round(gasto),
+      leads: v.leads, clientes: (clientesPorCanal[canal]?.size || 0), arr: Math.round(v.arr), gasto: Math.round(gasto),
       // null cuando no hay gasto capturado: mejor un hueco visible que un cero
       // que se lee como "me salió gratis".
       costo_por_lead: gasto > 0 && v.leads ? Math.round(gasto / v.leads) : null,
-      costo_por_cliente: gasto > 0 && v.clientes ? Math.round(gasto / v.clientes) : null,
+      costo_por_cliente: gasto > 0 && clientesPorCanal[canal]?.size ? Math.round(gasto / clientesPorCanal[canal].size) : null,
       retorno: gasto > 0 ? Math.round((v.arr / gasto) * 10) / 10 : null,
-      conversion_pct: v.leads ? Math.round((v.clientes / v.leads) * 1000) / 10 : 0,
+      conversion_pct: v.leads ? Math.round(((clientesPorCanal[canal]?.size || 0) / v.leads) * 1000) / 10 : 0,
     };
   }).sort((a, b) => b.arr - a.arr);
 

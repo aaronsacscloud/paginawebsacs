@@ -24,7 +24,12 @@ export const GET: APIRoute = async ({ url }) => {
   // Se recalcula al abrir la ficha: el cron lo mantiene al día para las listas,
   // pero quien está mirando a esta persona AHORA merece el número de ahora.
   const intencion = await calcularIntencion(id);
-  if (intencion.puntaje !== c.intencion) {
+
+  // El guardado va detrás de ?persistir=1 y NUNCA en el GET simple: un GET que
+  // escribe se salta el gate de escritura del middleware, así que un permiso
+  // de solo-lectura terminaba modificando `contacts`. El número fresco se
+  // devuelve igual; lo que no se hace es persistirlo sin permiso.
+  if (url.searchParams.get('persistir') === '1' && intencion.puntaje !== c.intencion) {
     await supabase.from('contacts').update({
       intencion: intencion.puntaje, intencion_at: new Date().toISOString(), intencion_motivos: intencion.motivos,
     }).eq('id', id);

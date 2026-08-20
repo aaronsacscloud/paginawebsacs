@@ -60,10 +60,10 @@ export const CATALOGO: EmbudoListo[] = [
     nombre: 'Renovación 30 / 7 días',
     descripcion: 'Avisa con tiempo antes de que venza la suscripción.',
     que_hace: 'Para cuentas con renovación próxima. Un aviso a 30 días y otro a 7. Va como correo de RELACIÓN: no cuenta para el límite semanal de marketing, porque un tope de cortesía no puede costar una renovación.',
-    trigger: { type: 'segmento', segmento_nombre: 'Renovaciones próximas 30 días' },
+    trigger: { type: 'segmento', segmento_nombre: 'Renovaciones próximas (90 días)' },
     categoria: 'relacion',
     plantillas: [
-      { clave: 'a', nombre: 'Renovación · aviso 30 días', asunto: 'Tu plan se renueva el mes que entra',
+      { clave: 'a', nombre: 'Renovación · primer aviso', asunto: 'Tu plan se renueva pronto',
         preview: 'Sin sorpresas: te avisamos con tiempo.',
         bloques: [
           { id: '1', tipo: 'texto', texto: 'Hola {{nombre|}}, tu plan se renueva pronto y preferimos avisarte con tiempo.' },
@@ -71,10 +71,10 @@ export const CATALOGO: EmbudoListo[] = [
           { id: '3', tipo: 'texto', texto: 'Si todo sigue igual no tienes que hacer nada. Si quieres cambiar algo, responde este correo.' },
           firma(),
         ] as Bloque[] },
-      { clave: 'b', nombre: 'Renovación · aviso 7 días', asunto: 'Se renueva esta semana',
+      { clave: 'b', nombre: 'Renovación · segundo aviso', asunto: 'Se acerca la renovación de tu plan',
         preview: 'Último aviso antes del cargo.',
         bloques: [
-          { id: '1', tipo: 'texto', texto: '{{nombre|Hola}}, esta semana se renueva tu plan.' },
+          { id: '1', tipo: 'texto', texto: '{{nombre|Hola}}, se acerca la fecha de renovación de tu plan.' },
           { id: '2', tipo: 'cuenta', titulo: 'Lo que se renueva' },
           firma(),
         ] as Bloque[] },
@@ -182,7 +182,7 @@ export const CATALOGO: EmbudoListo[] = [
     nombre: 'Reactivación de lead frío',
     descripcion: 'Un solo correo honesto, y se cierra.',
     que_hace: 'Para leads sin contacto en mucho tiempo. Manda UN correo —no una secuencia— porque insistirle a quien ya se enfrió es la vía rápida a que te marque como spam. Si hace clic, sale como interesado.',
-    trigger: { type: 'segmento', segmento_nombre: 'Leads fríos' },
+    trigger: { type: 'segmento', segmento_nombre: 'Leads sin reunión agendada' },
     plantillas: [
       { clave: 'a', nombre: 'Reactivación · último correo', asunto: '¿Lo dejamos aquí?',
         preview: 'Si no es el momento, lo entiendo — solo dímelo.',
@@ -229,6 +229,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     idPorClave[pl.clave] = data!.id;
   }
 
+  // IDEMPOTENTE, como el de segmentos. Sin esto un doble clic creaba dos
+  // embudos de cobranza idénticos, y activando ambos el cliente moroso recibía
+  // los tres correos por duplicado.
+  const { data: yaExiste } = await supabase.from('automations')
+    .select('id, estado').eq('tenant_id', t.id).eq('nombre', listo.nombre).is('archived_at', null).maybeSingle();
+  if (yaExiste) {
+    return json({ ok: true, automation_id: yaExiste.id, nombre: listo.nombre, ya_existia: true,
+      mensaje: `"${listo.nombre}" ya existe (está en ${yaExiste.estado}).` });
+  }
+
   const { data: auto, error: errA } = await supabase.from('automations').insert({
     tenant_id: t.id, nombre: listo.nombre, descripcion: listo.descripcion,
     tipo: 'lifecycle', estado: 'borrador',            // nace apagado, a propósito
@@ -251,6 +261,14 @@ export const POST: APIRoute = async ({ request, url }) => {
       tipo: p.tipo, config, activo: true,
     };
     const res: any = await supabase.from('automation_steps').insert(fila).select('id').single();
+    // El error SÍ se revisa: sin esto, un paso que falla devolvía {ok:true} con
+    // un embudo mutilado — y si el que fallaba era el `if_then`, los pasos de
+    // rama se insertaban como pasos raíz chocando con el primero.
+    if (res?.error) {
+      await supabase.from('automation_steps').delete().eq('automation_id', auto.id);
+      await supabase.from('automations').delete().eq('id', auto.id);
+      return json({ error: 'No se pudo crear el paso "' + p.tipo + '": ' + res.error.message }, 500);
+    }
     if (p.tipo === 'if_then' && res?.data?.id) padre = String(res.data.id);
   }
 

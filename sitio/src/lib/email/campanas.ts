@@ -286,6 +286,13 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
       if (companyId && t.presion_por_empresa && empresasHoy.has(companyId)) {
         await supabase.from('email_campaign_recipients')
           .update({ estado: 'rechazado', motivo: 'presion_empresa', procesado_at: new Date().toISOString() }).eq('id', r.id);
+        // También al registro de no-alcanzados: este `continue` se saltaba el
+        // insert de más abajo, así que el motivo que el tablero destaca como
+        // "recuperable" era justo el que no se contaba.
+        await supabase.from('email_no_alcanzados').insert({
+          tenant_id: t.id, campaign_id: c.id, contact_id: r.contact_id,
+          email: r.email, motivo: 'presion_empresa',
+        }).then(() => {}, () => {});
         av.rechazados++;
         continue;
       }

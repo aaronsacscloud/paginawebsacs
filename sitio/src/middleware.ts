@@ -101,6 +101,11 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
   { pre: '/api/crm/oportunidades', sec: 'cuentas' },
   { pre: '/api/crm/reuniones', sec: 'cuentas' },
   { pre: '/api/crm/actividad', sec: 'cuentas' },
+  // Las señales de un contacto (intención + timeline) son de CUENTAS, no de
+  // configuración: sin esta línea caían en el fallback 'config', que el rol
+  // Consultor tiene en 'no' — la pestaña quedaba invisible justo para quien
+  // hace las llamadas, que es a quien más le sirve.
+  { pre: '/api/crm/contacto-senales', sec: 'cuentas' },
   { pre: '/api/crm/search', sec: 'cuentas' },
   { pre: '/api/crm/etiquetas', sec: 'cuentas' },
   { pre: '/api/get-leads', sec: 'cuentas' },

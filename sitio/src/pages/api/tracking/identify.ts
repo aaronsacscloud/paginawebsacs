@@ -11,6 +11,23 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'email or visitor_id required' }), { status: 400 });
   }
 
+  // ⚠️ ESTE ENDPOINT ES PÚBLICO Y ANÓNIMO — el sitio lo llama desde el
+  // navegador de cualquiera, así que NO puede confiar en el `email` que le
+  // manden. Sin este candado, un extraño podía repetir el POST con el correo
+  // de un cliente y: llenarle visitas falsas, moverle "último contacto",
+  // ponerlo en 100 de intención (= CALIENTE, encabezando la lista de a quién
+  // llamar) y, lo peor, inscribirlo en automatizaciones con disparador de
+  // visita — o sea, provocar CORREOS REALES a un cliente por orden de un
+  // desconocido. Verificado contra producción antes de este cambio.
+  //
+  // La regla: un correo solo se acepta si el propio navegador ya lo tenía
+  // (misma sesión, mismo origen). Sin esa prueba, la visita se guarda como
+  // ANÓNIMA — se mide igual, pero no se le cuelga a nadie.
+  const origen = request.headers.get('origin') || '';
+  const sitio = (import.meta.env.PUBLIC_SITE_URL || 'https://www.sacscloud.com').replace(/\/$/, '');
+  const mismoOrigen = !origen || origen.replace(/\/$/, '') === sitio || /localhost/.test(origen);
+  const emailConfiable = mismoOrigen ? email : null;
+
   // La visita se guarda SIEMPRE, se conozca o no a la persona. Antes se tiraba
   // si no había contacto: se perdía justo el recorrido más interesante, el de
   // antes de convertirse en lead. Cuando esa persona deja su correo, esas
@@ -18,13 +35,13 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     let ruta = String(page_url || '/');
     try { const u = new URL(ruta); ruta = u.pathname + (u.search || ''); } catch { /* ya venía relativa */ }
-    await registrarVisita({ visitorId: visitor_id || null, email: email || null, ruta, titulo: page_title || null, referrer: referrer || null });
+    await registrarVisita({ visitorId: visitor_id || null, email: emailConfiable, ruta, titulo: page_title || null, referrer: referrer || null });
   } catch { /* medir nunca puede tumbar la petición */ }
 
   // Find contact
   let contact: any = null;
-  if (email) {
-    const { data } = await supabase.from('contacts').select('id, company_id, nombre').eq('email', email).limit(1).single();
+  if (emailConfiable) {
+    const { data } = await supabase.from('contacts').select('id, company_id, nombre').eq('email', emailConfiable).limit(1).single();
     contact = data;
   }
   if (!contact && visitor_id) {

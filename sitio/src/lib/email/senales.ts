@@ -117,9 +117,19 @@ export interface Intencion { puntaje: number; motivos: Array<{ senal: string; cu
 export async function calcularIntencion(contactId: string): Promise<Intencion> {
   const desde = new Date(Date.now() - VENTANA_DIAS * 86400000).toISOString();
   const motivos: Intencion['motivos'] = [];
+
+  // UNA VEZ POR SEÑAL Y POR DÍA. Sin esto, recargar /planes seis veces sumaba
+  // 108 puntos y el tope aplanaba a todos en 100: el que abrió una cotización
+  // quedaba indistinguible del que solo refrescó. Se conserva la ocurrencia
+  // más reciente, que es la que menos ha decaído.
+  const vistos = new Map<string, { cuando: string; puntos: number; senal: string }>();
   const suma = (senal: string, cuando: string, base: number) => {
     const puntos = Math.round(base * decaimiento(cuando));
-    if (puntos > 0) motivos.push({ senal, cuando, puntos });
+    if (puntos <= 0) return;
+    const dia = String(cuando).slice(0, 10);
+    const llave = `${senal}|${dia}`;
+    const previo = vistos.get(llave);
+    if (!previo || puntos > previo.puntos) vistos.set(llave, { senal, cuando, puntos });
   };
 
   const [visitas, correos, reuniones, actividades] = await Promise.all([
@@ -148,19 +158,47 @@ export async function calcularIntencion(contactId: string): Promise<Intencion> {
     else if (a.tipo === 'pago_recibido') suma('Pagó', a.created_at, PESOS.pago);
   }
 
-  motivos.sort((a, b) => b.puntos - a.puntos);
-  const puntaje = Math.min(TOPE, motivos.reduce((s, m) => s + m.puntos, 0));
-  return { puntaje, motivos: motivos.slice(0, 8) };
+  // El clic de un correo y la visita que ese mismo clic produjo son el MISMO
+  // hecho contado dos veces (el redirector registra ambos). Se queda el de
+  // más peso.
+  const clave = (m: { senal: string; cuando: string }) => `${m.senal}|${m.cuando.slice(0, 13)}`;
+  const porHora = new Map<string, typeof motivos[number]>();
+  for (const m of vistos.values()) motivos.push(m);
+  for (const m of motivos) {
+    const esClicOVisita = /clic|Visitó|Vio precios|Vio producto/i.test(m.senal);
+    const k = esClicOVisita ? `accion|${m.cuando.slice(0, 13)}` : clave(m);
+    const p = porHora.get(k);
+    if (!p || m.puntos > p.puntos) porHora.set(k, m);
+  }
+
+  const finales = Array.from(porHora.values()).sort((a, b) => b.puntos - a.puntos);
+  const puntaje = Math.min(TOPE, finales.reduce((s, m) => s + m.puntos, 0));
+  return { puntaje, motivos: finales.slice(0, 8) };
 }
 
 /** Recalcula en lote (lo usa el cron). Devuelve cuántos cambiaron. */
 export async function recalcularIntenciones(limite = 500): Promise<number> {
-  // Solo quien tiene alguna señal reciente: recalcular a los inactivos es
-  // gastar consultas para escribir el mismo cero.
   const desde = new Date(Date.now() - VENTANA_DIAS * 86400000).toISOString();
   const ids = new Set<string>();
+
+  // LOS QUE SE ENFRIARON, PRIMERO. Antes la lista salía solo de quien tenía
+  // señal reciente: a quien dejó de moverse nadie volvía a recalcularlo y su
+  // puntaje quedaba congelado en 85 para siempre — apareciendo CALIENTE en la
+  // lista de a quién llamar meses después. La UI promete "baja con el
+  // silencio"; esto es lo que cumple esa promesa.
+  const { data: frios } = await supabase.from('contacts')
+    .select('id, intencion_at').gt('intencion', 0)
+    .or(`intencion_at.is.null,intencion_at.lt.${new Date(Date.now() - 24 * 3600000).toISOString()}`)
+    .order('intencion_at', { ascending: true, nullsFirst: true })
+    .limit(200);
+  for (const c of frios || []) ids.add(c.id);
+  // Con orden explícito: sin `.order()` un `.limit()` devuelve filas
+  // arbitrarias, así que al crecer la tabla se recalcularía siempre a los
+  // mismos y el resto envejecería congelado.
   for (const t of ['contact_visits', 'email_sends'] as const) {
-    const { data } = await supabase.from(t).select('contact_id').gte('created_at', desde).not('contact_id', 'is', null).limit(5000);
+    const { data } = await supabase.from(t).select('contact_id, created_at')
+      .gte('created_at', desde).not('contact_id', 'is', null)
+      .order('created_at', { ascending: false }).limit(3000);
     for (const r of data || []) if (r.contact_id) ids.add(r.contact_id);
   }
   const { data: act } = await supabase.from('activities').select('contact_id')
@@ -197,8 +235,19 @@ export async function timeline(contactId: string, limite = 60): Promise<Evento[]
     supabase.from('email_sends').select('id, email_to, estado, created_at, sent_at, first_opened_at, clicked_at, categoria').eq('contact_id', contactId).order('created_at', { ascending: false }).limit(30),
     supabase.from('bookings').select('fecha, hora_inicio, estado, created_at, asunto').eq('contact_id', contactId).order('created_at', { ascending: false }).limit(20),
     supabase.from('activities').select('tipo, titulo, descripcion, created_at').eq('contact_id', contactId).order('created_at', { ascending: false }).limit(40),
-    supabase.from('email_messages').select('direccion, cuerpo_texto, created_at, conversation_id').order('created_at', { ascending: false }).limit(20),
+    // Los mensajes se piden POR CONVERSACIÓN de esta persona. Antes se traían
+    // los 20 más recientes de TODO el sistema y luego se cruzaban: si en la
+    // semana hubo 20 mensajes de otros, la respuesta de este contacto
+    // desaparecía del timeline.
+    supabase.from('email_conversations').select('id').eq('contact_id', contactId).limit(20),
   ]);
+
+  const idsConv = (mensajes.data || []).map((c: any) => c.id);
+  const { data: msgs } = idsConv.length
+    ? await supabase.from('email_messages')
+        .select('direccion, cuerpo_texto, created_at, conversation_id')
+        .in('conversation_id', idsConv).order('created_at', { ascending: false }).limit(40)
+    : { data: [] as any[] };
 
   for (const v of visitas.data || []) {
     ev.push({ cuando: v.created_at, tipo: 'visita', icono: '◆',
@@ -221,10 +270,7 @@ export async function timeline(contactId: string, limite = 60): Promise<Evento[]
     ev.push({ cuando: a.created_at, tipo: a.tipo, icono: a.tipo === 'pago_recibido' ? '$' : '·',
       titulo: a.titulo || a.tipo, detalle: a.descripcion });
   }
-  const { data: convs } = await supabase.from('email_conversations').select('id').eq('contact_id', contactId).limit(20);
-  const idsConv = new Set((convs || []).map((c: any) => c.id));
-  for (const m of mensajes.data || []) {
-    if (!idsConv.has(m.conversation_id)) continue;
+  for (const m of msgs || []) {
     ev.push({ cuando: m.created_at, tipo: 'conversacion', icono: m.direccion === 'entrante' ? '↩' : '↪',
       titulo: m.direccion === 'entrante' ? 'Nos respondió' : 'Le respondimos',
       detalle: String(m.cuerpo_texto || '').slice(0, 110) });
