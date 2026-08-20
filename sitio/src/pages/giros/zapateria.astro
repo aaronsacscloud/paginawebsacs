@@ -28,7 +28,7 @@ import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
 import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
 import SuiteFormal from '../../components/suite/SuiteFormal.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
-import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
 import PosMock from '../../components/suite/PosMock.astro';
 import {
   seccionesZapateria, casosZapateria, cortinaZapateria, sucursalesZapateria,
@@ -218,8 +218,8 @@ const desc =
        bajar dos pantallas y media de animación para hacer clic -->
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia corrida en pantalla." cta="Agenda una demo" />
 
-  <!-- ── Cierre ── -->
-  <SuiteEnsamble giro="tu zapatería" suyo="tus corridas, tus números, tus sucursales" />
+  <!-- El mismo cierre que la portada -->
+  <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus números y tu venta real. 30 min, sin compromiso." />
 </BaseLayout>
 
 <style>

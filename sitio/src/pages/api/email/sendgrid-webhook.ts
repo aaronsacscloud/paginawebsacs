@@ -51,14 +51,25 @@ function firmaValida(raw: string, sig: string | null, ts: string | null): boolea
 
 export const POST: APIRoute = async ({ request }) => {
   const raw = await request.text().catch(() => '');
-  if (!firmaValida(raw, request.headers.get('x-twilio-email-event-webhook-signature'),
-                   request.headers.get('x-twilio-email-event-webhook-timestamp'))) {
-    return ok();
-  }
+  const firmaOk = firmaValida(raw, request.headers.get('x-twilio-email-event-webhook-signature'),
+                              request.headers.get('x-twilio-email-event-webhook-timestamp'));
 
   let eventos: any[] = [];
-  try { eventos = JSON.parse(raw); } catch { return ok(); }
-  if (!Array.isArray(eventos)) return ok();
+  try { eventos = JSON.parse(raw); } catch { eventos = []; }
+  if (!Array.isArray(eventos)) eventos = [];
+
+  // BITÁCORA. Se escribe SIEMPRE, pase o no la firma. Un webhook que se
+  // descarta en silencio deja las métricas en cero sin que nadie sepa por qué
+  // — y ese silencio cuesta días de diagnóstico. Aquí queda el rastro.
+  await supabase.from('email_webhook_log').insert({
+    origen: 'sendgrid',
+    firma_ok: firmaOk,
+    eventos: eventos.length,
+    muestra: eventos.slice(0, 3).map((e: any) => ({ event: e.event, email: e.email, send: e.send || null })),
+    nota: firmaOk ? null : 'firma inválida o ausente: eventos descartados',
+  }).then(() => {}, () => {});
+
+  if (!firmaOk) return ok();
 
   for (const ev of eventos) {
     const tenantId = ev.tenant || null;
