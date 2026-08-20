@@ -269,6 +269,158 @@ async function reevaluarContinuas(deadline: number): Promise<number> {
   return re;
 }
 
+
+// ── 4. Pasos cross-canal (embudo): in-app → email → tarea WhatsApp ──────────
+// Regla de oro: quien YA cumplió la meta sale del embudo (no se le vende lo
+// comprado). Un paso de email ejecuta UNA vez (las campañas de email son de
+// un solo disparo): la cohorte elegible del momento arma una lista fija y la
+// campaña referenciada se programa a +5 min — el cron de email hace el resto,
+// con SUS supresiones y presión. La tarea de WhatsApp es HUMANA: una tarea en
+// activities por empresa, nunca un envío automatizado.
+async function correrPasos(deadline: number): Promise<{ ejecutados: number; errores: string[] }> {
+  const out = { ejecutados: 0, errores: [] as string[] };
+  const { data: pasos } = await supabase.from('inapp_pasos')
+    .select('*, inapp_campanas!inner(id, nombre, estado, publicada_at, materializada)')
+    .eq('inapp_campanas.estado', 'activa')
+    .in('canal_paso', ['email', 'tarea_whatsapp'])
+    .order('orden');
+  for (const paso of (pasos || [])) {
+    if (Date.now() > deadline) break;
+    const camp: any = (paso as any).inapp_campanas;
+    if (!camp?.publicada_at) continue;
+    const due = new Date(camp.publicada_at).getTime() + (Number(paso.espera_dias) || 0) * 86400000;
+    if (Date.now() < due) continue;
+
+    try {
+      // ¿Ya se ejecutó? (email usa el marcador global '*')
+      const { data: marca } = await supabase.from('inapp_paso_ejecuciones')
+        .select('id').eq('paso_id', paso.id).eq('cuenta', '*').maybeSingle();
+      if (paso.canal_paso === 'email' && marca) continue;
+
+      // Cohorte elegible: cuentas objetivo − convertidas − las que no cumplen
+      // la condición del paso.
+      const targets: string[] = (camp.materializada?.cuentas_lista || []).map(normCuenta).filter(Boolean);
+      if (!targets.length) continue;
+      const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
+        .select('evento, cuenta').eq('campana_id', camp.id).order('id', { ascending: true }).range(from, to));
+      const vieron = new Set<string>(); const actuaron = new Set<string>(); const clicaron = new Set<string>();
+      for (const e of evs) {
+        if (e.evento === 'impresion') vieron.add(e.cuenta);
+        if (e.evento === 'clic') { clicaron.add(e.cuenta); actuaron.add(e.cuenta); }
+        if (['chat_abierto', 'respuesta_encuesta', 'cita_agendada'].includes(e.evento)) actuaron.add(e.cuenta);
+      }
+      const { data: convs } = await supabase.from('inapp_conversiones').select('cuenta').eq('campana_id', camp.id).limit(1000);
+      const convertidas = new Set((convs || []).map((x: any) => normCuenta(x.cuenta)));
+      const { data: ejec } = await supabase.from('inapp_paso_ejecuciones').select('cuenta').eq('paso_id', paso.id).limit(2000);
+      const yaEjec = new Set((ejec || []).map((x: any) => x.cuenta));
+
+      const elegibles = targets.filter(cu => {
+        if (convertidas.has(cu) || yaEjec.has(cu)) return false;
+        if (paso.condicion === 'no_visto') return !vieron.has(cu);
+        if (paso.condicion === 'sin_interaccion') return !actuaron.has(cu);
+        if (paso.condicion === 'sin_clic') return !clicaron.has(cu);
+        return true; // 'siempre'
+      });
+      if (!elegibles.length) continue;
+
+      // company_id + contactos por lotes
+      const filasCsa: any[] = [];
+      for (let i = 0; i < elegibles.length; i += 500) {
+        const { data } = await supabase.from('company_sacs_accounts')
+          .select('cuenta, company_id').in('cuenta', elegibles.slice(i, i + 500));
+        filasCsa.push(...(data || []));
+      }
+      const companyDeCuenta: Record<string, string> = {};
+      for (const f of filasCsa) if (f.company_id) companyDeCuenta[normCuenta(f.cuenta)] = f.company_id;
+      const companyIds = Array.from(new Set(Object.values(companyDeCuenta)));
+
+      if (paso.canal_paso === 'email') {
+        if (!paso.email_campaign_id) { out.errores.push(`paso ${paso.id}: sin campaña de email referenciada`); continue; }
+        const { data: refCamp } = await supabase.from('email_campaigns')
+          .select('id, tenant_id, estado, nombre, utm_campaign').eq('id', paso.email_campaign_id).maybeSingle();
+        if (!refCamp) { out.errores.push(`paso ${paso.id}: la campaña de email no existe`); continue; }
+        if (refCamp.estado !== 'borrador') { out.errores.push(`paso ${paso.id}: la campaña de email está en "${refCamp.estado}" (debe ser borrador)`); continue; }
+        const contactos: any[] = [];
+        for (let i = 0; i < companyIds.length; i += 500) {
+          const { data } = await supabase.from('contacts')
+            .select('id, email, nombre').in('company_id', companyIds.slice(i, i + 500))
+            .not('email', 'is', null).is('archived_at', null);
+          contactos.push(...(data || []));
+        }
+        if (!contactos.length) { out.errores.push(`paso ${paso.id}: cohorte sin contactos con correo`); continue; }
+        const { data: lista, error: eL } = await supabase.from('email_lists')
+          .insert({ tenant_id: refCamp.tenant_id, nombre: `Outbound · ${camp.nombre} · paso ${paso.orden}`, descripcion: 'Cohorte del embudo cross-canal (generada por el cron de Outbound)' })
+          .select().single();
+        if (eL || !lista) { out.errores.push(`paso ${paso.id}: no se pudo crear la lista: ${eL?.message}`); continue; }
+        // El índice único de miembros es de EXPRESIÓN (list_id, lower(email)):
+        // PostgREST no puede hacer ON CONFLICT contra él. La lista es NUEVA,
+        // así que basta deduplicar por email en JS e insertar plano.
+        const porEmail = new Map<string, any>();
+        for (const ct of contactos) {
+          const em = String(ct.email).trim().toLowerCase();
+          if (em && !porEmail.has(em)) porEmail.set(em, ct);
+        }
+        const unicos = Array.from(porEmail.entries());
+        for (let i = 0; i < unicos.length; i += 200) {
+          const filas = unicos.slice(i, i + 200).map(([em, ct]) => ({
+            list_id: lista.id, email: em, nombre: ct.nombre || null,
+            contact_id: ct.id, agregado_por: 'outbound',
+          }));
+          const { error: eM } = await supabase.from('email_list_members').insert(filas);
+          if (eM) out.errores.push(`paso ${paso.id}: miembros: ${eM.message}`);
+        }
+        const { error: eC } = await supabase.from('email_campaigns').update({
+          origen_tipo: 'lista', origen_id: lista.id, contact_ids: null,
+          estado: 'programada', programada_para: new Date(Date.now() + 5 * 60000).toISOString(),
+          utm_campaign: refCamp.utm_campaign || `outbound-${camp.id}`,
+        }).eq('id', refCamp.id).eq('estado', 'borrador');
+        if (eC) { out.errores.push(`paso ${paso.id}: no se pudo programar el email: ${eC.message}`); continue; }
+        const ejecFilas = elegibles.map(cu => ({ paso_id: paso.id, campana_id: camp.id, cuenta: cu, detalle: { canal: 'email', lista_id: lista.id } }));
+        ejecFilas.push({ paso_id: paso.id, campana_id: camp.id, cuenta: '*', detalle: { canal: 'email', lista_id: lista.id, contactos: contactos.length } as any });
+        await supabase.from('inapp_paso_ejecuciones').upsert(ejecFilas, { onConflict: 'paso_id,cuenta', ignoreDuplicates: true });
+        await notificar({
+          clave: `outbound-paso-email:${paso.id}`, tipo: 'outbound_paso', nivel: 'info',
+          titulo: `Embudo "${camp.nombre}": email programado`,
+          detalle: `${contactos.length} contactos de ${elegibles.length} cuentas (condición: ${paso.condicion}). Sale en 5 minutos por el módulo de Email.`,
+          metadata: { campana_id: camp.id, paso_id: paso.id },
+        });
+        out.ejecutados++;
+      }
+
+      if (paso.canal_paso === 'tarea_whatsapp') {
+        let creadas = 0;
+        for (const cu of elegibles.slice(0, 100)) {
+          if (Date.now() > deadline) break;
+          const companyId = companyDeCuenta[cu];
+          const { error } = await supabase.from('inapp_paso_ejecuciones')
+            .insert({ paso_id: paso.id, campana_id: camp.id, cuenta: cu, detalle: { canal: 'tarea_whatsapp' } });
+          if (error) continue; // ya ejecutada (índice único) — no duplicar la tarea
+          await supabase.from('activities').insert({
+            company_id: companyId || null, tipo: 'tarea',
+            titulo: `Contactar por WhatsApp: ${camp.nombre}`,
+            descripcion: (paso.contenido?.mensaje || `La cuenta ${cu} no reaccionó a la campaña — toca contacto humano.`) + ` (cuenta: ${cu})`,
+            metadata: { campana_id: camp.id, paso_id: paso.id, cuenta: cu, origen: 'outbound' },
+          });
+          creadas++;
+        }
+        if (creadas) {
+          await notificar({
+            clave: `outbound-paso-tarea:${paso.id}:${new Date().toISOString().slice(0, 10)}`,
+            tipo: 'outbound_paso', nivel: 'info',
+            titulo: `Embudo "${camp.nombre}": ${creadas} tareas de WhatsApp creadas`,
+            detalle: `Cuentas que no reaccionaron (condición: ${paso.condicion}). Las tareas están en las fichas de cada cliente.`,
+            metadata: { campana_id: camp.id, paso_id: paso.id },
+          });
+          out.ejecutados++;
+        }
+      }
+    } catch (e: any) {
+      out.errores.push(`paso ${paso.id}: ${e?.message || e}`);
+    }
+  }
+  return out;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
   return correr();
@@ -311,6 +463,10 @@ async function correr() {
     }
 
     out.continuas = await reevaluarContinuas(deadline);
+
+    const pasosOut = await correrPasos(deadline);
+    out.pasos = pasosOut.ejecutados;
+    out.errores.push(...pasosOut.errores);
 
     // Recurrencia de encuestas (NPS cada X días): una vez al día por campaña,
     // sacs_api re-habilita a quien respondió hace >= recurrencia_dias (sin

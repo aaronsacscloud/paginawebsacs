@@ -180,6 +180,30 @@ export const PUT: APIRoute = async ({ request, url }) => {
   let body: any; try { body = await request.json(); } catch { return json({ error: 'Body inválido' }, 400); }
   const upd: any = { updated_at: new Date().toISOString() };
   for (const k of CAMPOS_EDITABLES) if (body[k] !== undefined) upd[k] = body[k];
+
+  // Pasos del embudo: se REEMPLAZAN completos (pocos por campaña). Los pasos
+  // ya ejecutados guardan su historial en inapp_paso_ejecuciones por paso_id;
+  // reordenar pasos crea ids nuevos y arranca limpio — comportamiento
+  // deliberado: un embudo editado es un embudo nuevo.
+  if (Array.isArray(body.pasos)) {
+    const validos = body.pasos
+      .filter((x: any) => x && ['email', 'tarea_whatsapp', 'inapp'].includes(x.canal_paso))
+      .slice(0, 10)
+      .map((x: any, i: number) => ({
+        campana_id: id,
+        orden: i + 1,
+        espera_dias: Math.max(0, Number(x.espera_dias) || 0),
+        condicion: ['siempre', 'sin_interaccion', 'sin_clic', 'no_visto'].includes(x.condicion) ? x.condicion : 'sin_interaccion',
+        canal_paso: x.canal_paso,
+        email_campaign_id: x.canal_paso === 'email' ? (x.email_campaign_id || null) : null,
+        contenido: x.canal_paso === 'tarea_whatsapp' ? { mensaje: String(x.contenido?.mensaje || '').slice(0, 400) } : (x.contenido || {}),
+      }));
+    await supabase.from('inapp_pasos').delete().eq('campana_id', id);
+    if (validos.length) {
+      const { error: eP } = await supabase.from('inapp_pasos').insert(validos);
+      if (eP) return json({ error: 'No se pudieron guardar los pasos: ' + eP.message }, 500);
+    }
+  }
   // Una campaña VIVA no puede editarse por fuera de la lista blanca: sin esta
   // validación, el PUT era un bypass de la revisión (botones fuera de catálogo,
   // volverla bloqueante sin aprobación). El borrador sí se guarda incompleto.

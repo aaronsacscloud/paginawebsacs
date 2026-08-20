@@ -202,6 +202,19 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
   const [iaOcupada, setIaOcupada] = useState(false);
   const [iaOpciones, setIaOpciones] = useState<any[] | null>(null);
   const [iaIndice, setIaIndice] = useState(0);
+  const [pasos, setPasos] = useState<any[]>([]);
+  const [emailCamps, setEmailCamps] = useState<any[]>([]);
+  useEffect(() => {
+    let vivoE = true;
+    if (inicial.id) {
+      fetch(`/api/crm/outbound/campanas?id=${inicial.id}`).then(r => r.json())
+        .then(j => { if (vivoE && Array.isArray(j.pasos)) setPasos(j.pasos); }).catch(() => { /* sin pasos */ });
+    }
+    fetch('/api/crm/email/campaigns').then(r => r.json())
+      .then(j => { if (vivoE) setEmailCamps((j.campanas || []).filter((x: any) => x.estado === 'borrador')); })
+      .catch(() => { /* sin email configurado: el select queda vacío */ });
+    return () => { vivoE = false; };
+  }, [inicial.id]);
   // Cerrar el editor con un fetch en vuelo no debe disparar setState sobre un
   // componente desmontado (ni perder de vista una creación que resolvió tarde).
   const vivo = useRef(true);
@@ -218,7 +231,7 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
       const r = await fetch(esNueva ? '/api/crm/outbound/campanas' : `/api/crm/outbound/campanas?id=${c.id}`, {
         method: esNueva ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(c),
+        body: JSON.stringify(esNueva ? c : { ...c, pasos }),
       });
       const j = await r.json();
       if (!vivo.current) return null;
@@ -517,6 +530,51 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
             <button key={p} style={chip((c.prioridad || 'normal') === p)} onClick={() => set({ prioridad: p })}>{p[0].toUpperCase() + p.slice(1)}</button>
           ))}
         </div>
+        <span style={lblS as any}>Pasos siguientes del embudo (cross-canal)</span>
+        {pasos.map((pp: any, i: number) => (
+          <div key={i} style={{ border: '1px solid #eef0f3', borderRadius: 10, padding: '10px 12px', marginBottom: 8, background: '#fafafc' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.08em', flex: 1 }}>Paso {i + 2}</span>
+              <button style={{ ...S.btnG, padding: '3px 9px' }} onClick={() => setPasos(pasos.filter((_, j) => j !== i))}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr 1fr', gap: 8 }}>
+              <div><span style={{ ...lblS as any, margin: '0 0 4px' }}>Tras (días)</span>
+                <input style={inputS} type="number" min={1} value={pp.espera_dias ?? 5} onChange={e => { const n = [...pasos]; n[i] = { ...pp, espera_dias: Number(e.target.value) || 0 }; setPasos(n); }} /></div>
+              <div><span style={{ ...lblS as any, margin: '0 0 4px' }}>Si el usuario…</span>
+                <select style={inputS} value={pp.condicion || 'sin_interaccion'} onChange={e => { const n = [...pasos]; n[i] = { ...pp, condicion: e.target.value }; setPasos(n); }}>
+                  <option value="no_visto">No lo vio (nunca entró)</option>
+                  <option value="sin_interaccion">Lo vio pero no interactuó</option>
+                  <option value="sin_clic">No dio clic</option>
+                  <option value="siempre">Siempre (todos los pendientes)</option>
+                </select></div>
+              <div><span style={{ ...lblS as any, margin: '0 0 4px' }}>Canal</span>
+                <select style={inputS} value={pp.canal_paso || 'email'} onChange={e => { const n = [...pasos]; n[i] = { ...pp, canal_paso: e.target.value }; setPasos(n); }}>
+                  <option value="email">Email (campaña del módulo)</option>
+                  <option value="tarea_whatsapp">Tarea: WhatsApp humano</option>
+                </select></div>
+            </div>
+            {pp.canal_paso !== 'tarea_whatsapp' ? (
+              <div style={{ marginTop: 8 }}>
+                <select style={inputS} value={pp.email_campaign_id || ''} onChange={e => { const n = [...pasos]; n[i] = { ...pp, email_campaign_id: e.target.value }; setPasos(n); }}>
+                  <option value="">Elige la campaña de email (en borrador)…</option>
+                  {emailCamps.map((ec: any) => <option key={ec.id} value={ec.id}>{ec.nombre}</option>)}
+                </select>
+                <div style={{ fontSize: '0.66rem', color: '#9c99a6', fontWeight: 600, marginTop: 4 }}>Se programa sola con la cohorte que cumpla la condición, respetando las supresiones y presión del módulo de Email. Quien ya cumplió la meta sale del embudo.</div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 8 }}>
+                <input style={inputS} placeholder="Nota para la tarea (qué decirle al cliente)" value={pp.contenido?.mensaje || ''} onChange={e => { const n = [...pasos]; n[i] = { ...pp, contenido: { mensaje: e.target.value } }; setPasos(n); }} />
+                <div style={{ fontSize: '0.66rem', color: '#9c99a6', fontWeight: 600, marginTop: 4 }}>Crea una tarea humana por empresa en su ficha (nunca un WhatsApp automatizado) y avisa en la campana del CRM.</div>
+              </div>
+            )}
+          </div>
+        ))}
+        {c.id ? (
+          <button style={S.btnG} onClick={() => setPasos([...pasos, { espera_dias: 5, condicion: 'sin_interaccion', canal_paso: 'email', contenido: {} }])}>+ Agregar paso</button>
+        ) : (
+          <div style={{ fontSize: '0.68rem', color: '#9c99a6', fontWeight: 600 }}>Guarda la campaña primero para poder encadenar pasos.</div>
+        )}
+
         <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 12, fontWeight: 600, lineHeight: 1.6 }}>
           Reglas de plataforma (no configurables por campaña): máx. 1 mensaje interruptivo por sesión · nunca durante una venta o cobro en el POS · «No me interesa» suprime la campaña para ese usuario permanentemente · tope global de 3 campañas/usuario/semana · auto-pausa si el descarte supera 60% en las primeras 200 impresiones.
         </div>
