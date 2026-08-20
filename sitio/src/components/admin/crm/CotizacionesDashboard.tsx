@@ -132,36 +132,60 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     // cobrado. Es la única vista que contesta "¿dónde se me está quedando?".
     fuga: () => {
       const f = d.fuga || {};
-      const mx = Math.max(1, f.cotizado || 0);
-      const alto = 150;
       const pasos = [
-        { l: 'Cotizado', v: f.cotizado, c: P_MEDIO, neg: false },
-        { l: 'Sin abrir', v: -(f.sin_abrir || 0), c: '#EF7A72', neg: true },
-        { l: 'Sin respuesta', v: -(f.sin_respuesta || 0), c: '#EF7A72', neg: true },
-        { l: 'Aceptado sin pagar', v: -(f.aceptado_sin_pagar || 0), c: '#E8A838', neg: true },
-        { l: 'Cobrado', v: f.cobrado, c: P, neg: false },
+        { l: 'Cotizado', v: f.cotizado || 0, c: P_MEDIO, tipo: 'total' },
+        { l: 'Sin abrir', v: -(f.sin_abrir || 0), c: '#EF7A72', tipo: 'delta' },
+        { l: 'Sin respuesta', v: -(f.sin_respuesta || 0), c: '#EF7A72', tipo: 'delta' },
+        { l: 'Aceptado sin pagar', v: -(f.aceptado_sin_pagar || 0), c: '#E8A838', tipo: 'delta' },
+        { l: 'Cobrado', v: f.cobrado || 0, c: P, tipo: 'total' },
       ];
-      let base = 0;
+      // ── La cascada tiene que CUADRAR a la vista ──
+      // Cada barra flota donde termina la anterior y se une con una línea; el
+      // último tramo se cierra contra la base. Sin eso eran cinco barras
+      // sueltas de distintos tamaños y el ojo no podía sumarlas. Los pasos en
+      // cero se pintan como una raya en su nivel: decir "aquí no se perdió
+      // nada" vale, pero no puede parecer una barra.
+      const alto = 170;
+      const mx = Math.max(1, f.cotizado || 0);
+      const px = (v: number) => (Math.abs(v) / mx) * alto;
+      let acum = 0;
+      const geo = pasos.map((p, i) => {
+        if (i === 0) { acum = p.v; return { ...p, base: 0, h: px(p.v) }; }
+        if (i === pasos.length - 1) return { ...p, base: 0, h: px(p.v) };
+        const desde = acum; acum += p.v;
+        return { ...p, base: px(acum), h: Math.abs(px(desde) - px(acum)) };
+      });
       return (
-        <W id="fuga" titulo="Dónde se queda el dinero" cap="Del cotizado del mes a lo que de verdad entró. Cada caída es una fuga con nombre.">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: alto + 34 }}>
-            {pasos.map((p, i) => {
-              const h = Math.max(4, Math.round((Math.abs(p.v) / mx) * alto));
-              let bottom = 0;
-              if (i === 0) { base = p.v; bottom = 0; }
-              else if (i === pasos.length - 1) { bottom = 0; }
-              else { const nb = base + p.v; bottom = Math.round((nb / mx) * alto); base = nb; }
-              return (
-                <div key={p.l} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: p.neg ? NOCHE : '#3f3b4d' }}>{p.neg ? '−' : ''}{money(Math.abs(p.v))}</div>
-                  <div style={{ width: '100%', height: alto, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                    <div style={{ height: h, background: p.c, borderRadius: 6, marginBottom: bottom }} />
-                  </div>
-                  <div style={{ fontSize: '0.66rem', color: '#8a8590', textAlign: 'center' }}>{p.l}</div>
+        <W id="fuga" titulo="Dónde se queda el dinero" cap="Del cotizado del mes a lo que de verdad entró. Cada caída es una fuga con su monto.">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
+            {geo.map((p, i) => (
+              <div key={p.l} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Monto arriba, siempre a la misma altura: si cada uno flota
+                    con su barra, la fila de cifras queda en escalera. */}
+                <div style={{ height: 22, fontSize: '0.72rem', fontWeight: 800, color: p.v < 0 ? NOCHE : '#3f3b4d', whiteSpace: 'nowrap' }}>
+                  {p.v < 0 ? '−' : ''}{money(Math.abs(p.v))}
                 </div>
-              );
-            })}
+                <div style={{ position: 'relative', width: '100%', height: alto }}>
+                  {/* la línea que enlaza con el paso anterior */}
+                  {i > 0 && (
+                    <div style={{ position: 'absolute', left: 0, width: '50%', bottom: Math.round(p.base + p.h) - 1, height: 1, background: '#dcd9e6' }} />
+                  )}
+                  <div style={{
+                    position: 'absolute', left: '18%', width: '64%',
+                    bottom: Math.round(p.base), height: Math.max(p.h < 1 ? 2 : 6, Math.round(p.h)),
+                    background: p.h < 1 ? '#dcd9e6' : p.c, borderRadius: p.h < 1 ? 2 : 6,
+                  }} />
+                </div>
+                {/* Rótulo con altura fija a dos renglones: "Aceptado sin pagar"
+                    se partía y empujaba su columna. */}
+                <div style={{ height: 30, fontSize: '0.66rem', color: '#8a8590', textAlign: 'center', lineHeight: 1.25, paddingTop: 6 }}>{p.l}</div>
+              </div>
+            ))}
           </div>
+          <Nota>
+            De {money(f.cotizado)} cotizados en el mes entraron <b>{money(f.cobrado)}</b>.
+            {(f.aceptado_sin_pagar || 0) > 0 && <> La fuga más grande es lo <b>aceptado y sin pagar</b> ({money(f.aceptado_sin_pagar)}): eso no se arregla vendiendo más, se arregla cobrando.</>}
+          </Nota>
         </W>
       );
     },
@@ -371,56 +395,62 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
 
     origenes: () => {
       const o = d.origenes;
-      // La dona se calcula sobre lo COBRADO del periodo, no sobre lo cotizado:
-      // cotizar no es cobrar, y esa distinción es justo la que hace útil el
-      // gráfico. Las no ligadas ya no entran: no se puede decir de dónde viene
-      // un dinero cuyo cliente nadie registró.
+      // Todo el bloque habla del MISMO periodo: la dona, las dos columnas y sus
+      // renglones. Mezclar "cotizado de siempre" con "cobrado de este mes" era
+      // lo que hacía que los números no cuadraran al mirarlos juntos; el
+      // histórico se queda como una línea de contexto al final de cada columna.
       const cli = o.cliente.cobrado_periodo || 0, lea = o.lead.cobrado_periodo || 0;
-      const tot = Math.max(1, cli + lea);
-      const pc = (n: number) => Math.round((n / tot) * 100);
+      const tot = cli + lea;
+      const pc = (n: number) => (tot > 0 ? Math.round((n / tot) * 100) : 0);
       const Col = ({ t, x, color }: any) => (
-        <div style={{ flex: 1, minWidth: 150 }}>
-          <div style={{ fontSize: '0.64rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c99a6' }}>{t}</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 4 }}>{money(x.cotizado)}</div>
-          {[['Cobrado en el periodo', money(x.cobrado_periodo || 0), color], ['Cierre', `${x.cierre}%`, null], ['Ticket', money(x.ticket), null], ['Cotizaciones', String(x.n), null]].map(([k, v, c]: any) => (
-            <div key={k} style={{ fontSize: '0.72rem', color: '#7d7a88', marginTop: 7, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span>{k}</span><b style={{ color: c || '#1a1a1a' }}>{v}</b>
+        <div style={{ flex: 1, minWidth: 170 }}>
+          <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9c99a6' }}>{t}</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: 4, color }}>{money(x.cobrado_periodo || 0)}</div>
+          <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginBottom: 8 }}>cobrado en el periodo</div>
+          {[['Cotizado', money(x.periodo?.cotizado || 0)],
+            ['Cotizaciones', String(x.periodo?.n || 0)],
+            ['Ticket', money(x.periodo?.ticket || 0)],
+            ['Cierre', x.periodo?.cierre == null ? '—' : `${x.periodo.cierre}%`]].map(([k, v]: any) => (
+            <div key={k} style={{ fontSize: '0.73rem', color: '#7d7a88', padding: '5px 0', display: 'flex', justifyContent: 'space-between', gap: 8, borderTop: '1px solid #f6f5f9' }}>
+              <span>{k}</span><b style={{ color: '#1a1a1a' }}>{v}</b>
             </div>
           ))}
+          <div style={{ fontSize: '0.68rem', color: '#b3b1bb', marginTop: 7 }}>
+            Histórico: {money(x.cotizado)} en {x.n} cotizaciones
+          </div>
         </div>
       );
       return (
-        <W id="origenes" titulo="De dónde salió el dinero" cap="Sobre lo COBRADO en el periodo, no sobre lo cotizado: cotizar no es cobrar.">
-          <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', width: 116, height: 116, flexShrink: 0 }}>
-              <svg width="116" height="116">{arcos([cli || 1, lea], [P_MEDIO, LILA])}</svg>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <b style={{ fontSize: '0.9rem' }}>{money(cli + lea)}</b>
-                <span style={{ fontSize: '0.53rem', color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em' }}>cobrado</span>
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 190 }}>
-              {[['Clientes', cli, P_MEDIO], ['Leads', lea, LILA]].map(([t, v, c]: any) => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.78rem', borderTop: t === 'Leads' ? '1px solid #f6f5f9' : 'none' }}>
-                  <i style={{ width: 9, height: 9, borderRadius: 3, background: c, display: 'block' }} />
-                  <span style={{ flex: 1 }}>{t}</span>
-                  <span style={{ color: '#a5a2af' }}>{pc(v)}%</span>
-                  <b>{money(v)}</b>
+        <W id="origenes" titulo="De dónde salió el dinero" cap="Todo el bloque mira el mismo periodo, y sobre lo COBRADO: cotizar no es cobrar.">
+          {tot === 0
+            ? <div style={{ fontSize: '0.78rem', color: '#a5a2af' }}>En este periodo no ha entrado dinero de cotizaciones.</div>
+            : (
+              <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', width: 116, height: 116, flexShrink: 0 }}>
+                  <svg width="116" height="116">{arcos([cli, lea].filter(v => v > 0), cli > 0 && lea > 0 ? [P_MEDIO, LILA] : [cli > 0 ? P_MEDIO : LILA])}</svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <b style={{ fontSize: '0.9rem' }}>{money(tot)}</b>
+                    <span style={{ fontSize: '0.53rem', color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em' }}>cobrado</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 28, marginTop: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 190 }}>
+                  {[['Clientes', cli, P_MEDIO], ['Leads', lea, LILA]].map(([t, v, c]: any, i: number) => (
+                    <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontSize: '0.78rem', borderTop: i ? '1px solid #f6f5f9' : 'none' }}>
+                      <i style={{ width: 9, height: 9, borderRadius: 3, background: c, display: 'block' }} />
+                      <span style={{ flex: 1 }}>{t}</span>
+                      <span style={{ color: '#a5a2af', width: 42, textAlign: 'right' }}>{pc(v)}%</span>
+                      <b style={{ width: 92, textAlign: 'right' }}>{money(v)}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap', paddingTop: 14, borderTop: '1px solid #f4f3f7' }}>
             <Col t="De clientes" x={o.cliente} color={P_TINTA} />
             <Col t="De leads" x={o.lead} color={P_TINTA} />
           </div>
           {(d.sin_ligar?.n || 0) > 0 && (
-            <Nota>{d.sin_ligar.n} cotizaciones no tienen cliente ni lead ligado ({money(d.sin_ligar.monto)}) y quedan fuera del análisis: sin dueño no se puede decir de dónde vino el dinero. Ligarlas desde la lista las trae de vuelta.</Nota>
-          )}
-          {(o.cliente.estimados + o.lead.estimados) > 0 && (
-            <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 8 }}>
-              {o.cliente.estimados + o.lead.estimados} son anteriores a que se guardara el origen: se deducen del estado que tiene el cliente hoy, no del que tenía al cotizar.
-            </div>
+            <Nota>{d.sin_ligar.n} cotizaciones no tienen cliente ni lead ligado ({money(d.sin_ligar.monto)}) y quedan fuera de este bloque: sin dueño no se puede decir de dónde vino el dinero. Ligarlas desde la lista las trae de vuelta.</Nota>
           )}
         </W>
       );

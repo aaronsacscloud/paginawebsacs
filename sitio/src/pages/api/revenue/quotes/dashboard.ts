@@ -187,9 +187,24 @@ export const GET: APIRoute = async ({ url }) => {
   // de las ganadas: cotizar no es cobrar.
   const bloqueCobrado = (o: string) => base.filter(f => norm(f.origen) === o)
     .reduce((a, f) => a + (f.pagos || []).filter((p: any) => mesDe(p.fecha) === mes).reduce((x: number, p: any) => x + Number(p.monto || 0), 0), 0);
+  // Del PERIODO, no del histórico: mezclar "cotizado de siempre" con "cobrado
+  // de este mes" en la misma columna es lo que hacía que los números no
+  // cuadraran a la vista. El histórico se manda aparte, como contexto.
+  const bloquePeriodo = (o: string) => {
+    const [ini, fin] = rangoMes(mes);
+    const en = base.filter(f => norm(f.origen) === o && f.created_at >= ini && f.created_at < fin);
+    const ganadas = en.filter(f => GANADA.includes(f.estado)).length;
+    const resueltas = en.filter(f => GANADA.includes(f.estado) || PERDIDA.includes(f.estado)).length;
+    const cotizado = en.reduce((a, f) => a + f.total, 0);
+    return {
+      n: en.length, cotizado: dinero(cotizado),
+      cierre: resueltas ? Math.round((ganadas / resueltas) * 100) : null,
+      ticket: en.length ? dinero(cotizado / en.length) : 0,
+    };
+  };
   const origenes = {
-    cliente: { ...bloque('cliente'), cobrado_periodo: dinero(bloqueCobrado('cliente')) },
-    lead: { ...bloque('lead'), cobrado_periodo: dinero(bloqueCobrado('lead')) },
+    cliente: { ...bloque('cliente'), cobrado_periodo: dinero(bloqueCobrado('cliente')), periodo: bloquePeriodo('cliente') },
+    lead: { ...bloque('lead'), cobrado_periodo: dinero(bloqueCobrado('lead')), periodo: bloquePeriodo('lead') },
   };
 
   // ── Lo próximo en cobrar: parcialidades pactadas dentro de la cotización ──
