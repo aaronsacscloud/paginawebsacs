@@ -169,7 +169,16 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
     : [];
 
   const pantalla = (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    /* Medidas en unidades de VENTANA, no del contenedor: aunque algún ancestro
+       creara un bloque contenedor —un transform, un filter, un contain—, la
+       pantalla sigue midiendo lo que mide la ventana. Con inset:0 a secas se
+       encogía al tamaño de ese ancestro. */
+    <div style={{
+      position: 'fixed', top: 0, left: 0, zIndex: 200,
+      width: '100vw', height: '100dvh', maxWidth: '100vw',
+      background: '#fff', display: 'flex', flexDirection: 'column',
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
+    }}>
       <div style={{ height: 4, flexShrink: 0, background: 'linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)' }} />
       {/* En el teléfono no caben dos columnas: el riel se vuelve una lista
           corta arriba —con su propio scroll— y el contenido queda debajo. */}
