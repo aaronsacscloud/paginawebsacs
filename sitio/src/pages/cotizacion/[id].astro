@@ -3047,6 +3047,47 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
    documento y el borde del bloque de aceptación. */
 .quote-modern .quote-action-btn { border-radius: 9px; }
 
+
+/* ── El contador, en los colores de la marca ──
+   Era un rectángulo negro en medio de un documento morado y rosa: se veía como
+   pegado de otro sistema. Ahora usa el mismo degradado profundo del encabezado
+   de la minuta y del estado de cuenta, con el halo rosa detrás de las cifras.
+   Cuando quedan pocos días vira a rojo: la urgencia se dice con color, no con
+   un negro que ya estaba ahí desde el principio. */
+.quote-modern .quote-timer {
+  position: relative;
+  background: radial-gradient(120% 180% at 85% -40%, #3a2f8f 0%, #221a52 45%, #17123A 100%);
+  border-radius: 14px;
+  margin: 0 30px 16px;
+  padding: 22px 26px;
+  overflow: hidden;
+}
+.quote-modern .quote-timer::after {
+  content: ''; position: absolute; right: -60px; top: -80px; width: 240px; height: 240px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,168,205,.22), transparent 62%); pointer-events: none;
+}
+.quote-modern .quote-timer > * { position: relative; z-index: 1; }
+.quote-modern .quote-timer--urgent {
+  background: radial-gradient(120% 180% at 85% -40%, #E0699F 0%, #B93C74 45%, #7E2B52 100%);
+}
+.quote-modern .quote-timer-label {
+  font-size: .62rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: .85;
+}
+.quote-modern .quote-timer-num { font-size: 2.1rem; }
+.quote-modern .quote-timer-unit { color: rgba(255,255,255,.72); }
+.quote-modern .quote-timer-deadline { font-size: .84rem; font-weight: 700; }
+.quote-modern .quote-timer-warning { font-size: .72rem; opacity: .72; font-style: normal; }
+/* El ahorro se dice en verde claro: en todo el sistema el verde es dinero que
+   se queda en el bolsillo del cliente. */
+.quote-modern .quote-timer-savings {
+  display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 20px;
+  background: rgba(79,191,149,.18); color: #9BE7C6; font-weight: 800; opacity: 1;
+}
+.quote-modern .quote-timer-promo-name { color: #F6CFE2; }
+@media (max-width: 560px) { .quote-modern .quote-timer { margin-left: 18px; margin-right: 18px; padding: 18px; } }
+@media print { .quote-modern .quote-timer { background: #EEECFE !important; color: #3f2fb8 !important; }
+  .quote-modern .quote-timer-unit, .quote-modern .quote-timer-warning { color: #5B4BD6 !important; } }
+
 </style>
 
 <script>
