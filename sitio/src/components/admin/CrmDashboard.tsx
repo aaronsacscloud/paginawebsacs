@@ -78,7 +78,6 @@ const ICONS: Record<string, string> = {
 // El pie son SALIDAS, no destinos: mismos iconos de línea que el menú pero más
 // chicos, sobre un fondo apenas distinto. Sin emoji, como el resto del módulo.
 const ICONO_SALIR = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
-const ICONO_ATRAS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
 /** AA de "Aaron Araujo"; si solo hay correo, sus dos primeras letras. */
 const iniciales = (n?: string | null) => {
   const t = String(n || '').trim();
@@ -107,10 +106,12 @@ const NAV_SECTIONS = [
   // que se usa en los filtros de Clientes.
   {
     // Sin título: lo que se abre todos los días no necesita presentación.
+    // "Hoy" salió del menú —lo que avisaba ya lo avisa la campana— y "Tablero"
+    // se llama Dashboard, que es como se le dice en voz alta. La pantalla de
+    // Hoy sigue existiendo para las ligas viejas (?tab=hoy).
     label: '',
     items: [
-      { id: 'hoy' as Tab, label: 'Hoy', icon: 'hoy' },
-      { id: 'dashboard' as Tab, label: 'Tablero', icon: 'dashboard' },
+      { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
     ],
   },
   {
@@ -188,15 +189,13 @@ function getInitialTab(): Tab {
   // 'agenda' y 'config' ya no son renglones del menú —la primera es una vista
   // dentro de Reuniones y la segunda vive en el pie—, pero las ligas viejas y
   // los enlaces guardados tienen que seguir llevando a donde llevaban.
-  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs'];
+  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy'];
   if (t && allIds.includes(t)) return t;
-  // Mobile aterriza en "Hoy" (inbox diario); desktop en Dashboard.
-  if (window.matchMedia('(max-width: 899px)').matches) return 'hoy';
   return 'dashboard';
 }
 
 // Destinos del BottomNav mobile (el resto vive en "Más").
-const BOTTOM_IDS: Tab[] = ['hoy', 'dashboard', 'clientes', 'deals'];
+const BOTTOM_IDS: Tab[] = ['dashboard', 'clientes', 'deals', 'cotizaciones'];
 
 export default function CrmDashboard() {
   const [tab, setTab] = useState<Tab>(getInitialTab);
@@ -268,7 +267,7 @@ export default function CrmDashboard() {
   const revenueTab = (['cotizaciones', 'config'].includes(tab)) ? tab : 'dashboard';
   // En mobile, cuando expanded el sidebar es overlay (no empuja el contenido)
   const mobileExpanded = isMobile && !sidebarCollapsed;
-  const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 60) : 220;
+  const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 64) : 220;
   const mainMarginLeft = isMobile ? 0 : sidebarWidth;
 
   return (
@@ -312,56 +311,82 @@ export default function CrmDashboard() {
           </svg>
         </button>
       )}
-      {/* ─── Sidebar ─── */}
+      {/* ─── Sidebar ───
+          Papel lila —el degradado de la cinta de la cotización— con el renglón
+          activo en tarjeta blanca. Se invierte la figura a propósito: el
+          contenido de la derecha es blanco, así que el menú se separa solo sin
+          necesidad de una línea, y el activo se ve de reojo entre veinte
+          renglones. */}
       <div style={{
-        width: mobileExpanded ? 260 : sidebarWidth, flexShrink: 0, background: '#fff', color: '#1a1a1a',
+        width: mobileExpanded ? 260 : sidebarWidth, flexShrink: 0,
+        background: 'linear-gradient(180deg,#FBFAFF 0%,#F6F3FE 55%,#F4EFFC 100%)', color: '#4b4560',
         display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease, transform 0.2s ease',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 110, overflow: 'hidden',
-        borderRight: '1px solid #e8e8e8',
+        borderRight: '1px solid #eae4f8',
         transform: (isMobile && sidebarCollapsed) ? 'translateX(-100%)' : 'translateX(0)',
-        boxShadow: mobileExpanded ? '4px 0 24px rgba(0,0,0,0.18)' : 'none',
+        boxShadow: mobileExpanded ? '4px 0 24px rgba(60,30,140,0.18)' : 'none',
       }}>
         {/* Logo */}
         <div style={{
-          padding: sidebarCollapsed ? '16px 0' : '15px 20px 14px', display: 'flex', alignItems: sidebarCollapsed ? 'center' : 'flex-start',
-          justifyContent: sidebarCollapsed ? 'center' : 'space-between', gap: 10,
-          borderBottom: '1px solid #f0f0f0', minHeight: 56,
+          padding: sidebarCollapsed ? '14px 0 12px' : '13px 14px 12px', display: 'flex', alignItems: 'center',
+          justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 9,
+          borderBottom: '1px solid #ece7fa', minHeight: 56,
         }}>
+          <span style={{ width: 29, height: 29, borderRadius: 99, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', flexShrink: 0 }} />
           {!sidebarCollapsed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              {/* Marca en un solo bloque, como el selector de cuenta del
-                  sistema: distintivo, nombre y firma se leen como una unidad. */}
-              <span style={{ width: 30, height: 30, borderRadius: 99, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', flexShrink: 0 }} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.02rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.15 }}>
-                  Sacs <span style={{ fontSize: '0.5rem', fontWeight: 800, color: '#5B4BD6', background: '#EEECFE', padding: '3px 6px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.08em', verticalAlign: 'middle' }}>CRM</span>
-                </div>
-                {/* La firma en el rosa de los filtros, bajo el nombre. */}
-                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2, whiteSpace: 'nowrap' }}>
-                  by Andy Araujo
-                </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '0.98rem', fontWeight: 700, color: '#241d43', lineHeight: 1.1 }}>
+                Sacs <span style={{ fontSize: '0.47rem', fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', padding: '2px 5px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.09em', verticalAlign: 'middle' }}>CRM</span>
+              </div>
+              {/* La firma lleva el degradado del contador de la cotización,
+                  pero saltándose el tramo azul claro: a 8 px en mayúsculas ese
+                  azul se lee grisáceo sobre el papel lila y la palabra de en
+                  medio se apagaba. Va del morado al rosa de la firma. */}
+              <div style={{
+                fontSize: '0.53rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+                marginTop: 3, whiteSpace: 'nowrap',
+                background: 'linear-gradient(100deg,#7C6BF0 0%,#8E7DEF 35%,#D9538E 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+              }}>
+                by Andy Araujo
               </div>
             </div>
           )}
-          {/* Plegado, este es el único modo de volver a abrir; expandido, la
-              flecha vive abajo, junto a lo demás que se toca. */}
-          {(sidebarCollapsed || isMobile) && (
+          {/* Una sola flecha, siempre en el mismo lugar: abre y cierra desde
+              arriba. Antes había dos —una arriba solo cuando estaba plegado y
+              otra abajo en la barra— y se sentían como dos controles distintos. */}
+          {!sidebarCollapsed && (
             <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+              onClick={() => setSidebarCollapsed(true)}
+              aria-label="Plegar menú" title="Plegar menú"
               style={{
-                background: 'none', border: 'none', color: '#ccc',
-                cursor: 'pointer', fontSize: '1rem',
-                width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: -10,
+                marginLeft: 'auto', width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                background: '#fff', border: 'none', boxShadow: '0 1px 2px rgba(40,20,90,.10)',
+                color: '#8e88a8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
-            >{sidebarCollapsed ? '→' : '←'}</button>
+              dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }}
+            />
           )}
         </div>
+        {/* Plegado, la flecha se convierte en el propio botón de abrir, debajo
+            del distintivo: el riel no tiene dónde poner nada más. */}
+        {sidebarCollapsed && !isMobile && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            aria-label="Abrir menú" title="Abrir menú"
+            style={{
+              width: 44, height: 34, margin: '6px auto 0', borderRadius: 10, border: 'none',
+              background: '#fff', boxShadow: '0 1px 2px rgba(40,20,90,.10)', color: '#8e88a8',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transform: 'scaleX(-1)',
+            }}
+            dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }}
+          />
+        )}
 
         {/* Search (sidebar) */}
         {!sidebarCollapsed && (
-          <div style={{ padding: '12px 16px' }}>
+          <div style={{ padding: '10px 12px 6px' }}>
             <div className="crm-search-wrapper" style={{ position: 'relative' }}>
               <input
                 ref={searchRef}
@@ -379,8 +404,8 @@ export default function CrmDashboard() {
                 placeholder={isTouchDevice() ? 'Buscar…' : 'Buscar…  (⌘K)'}
                 style={{
                   width: '100%', padding: '8px 10px 8px 30px', fontSize: '0.75rem',
-                  border: '1px solid #e8e8e8', borderRadius: 8,
-                  background: '#fafafa', color: '#1a1a1a', outline: 'none',
+                  border: '1px solid #eae4f8', borderRadius: 9,
+                  background: '#fff', color: '#241d43', outline: 'none',
                   fontFamily: 'inherit', boxSizing: 'border-box',
                 }}
               />
@@ -430,11 +455,12 @@ export default function CrmDashboard() {
             <div key={section.label || si} style={{ marginBottom: 4 }}>
               {/* Una línea fina entre bloques: agrupa igual que el título, sin
                   gastar un renglón de texto. */}
-              {si > 0 && !sidebarCollapsed && <div style={{ height: 1, background: '#f0eff3', margin: '6px 12px 2px' }} />}
+              {si > 0 && !sidebarCollapsed && <div style={{ height: 1, background: '#ece7fa', margin: '6px 12px 2px' }} />}
+              {si > 0 && sidebarCollapsed && <div style={{ height: 1, background: '#e7e0f7', margin: '7px auto', width: 26 }} />}
               {!sidebarCollapsed && section.label && (
                 <div style={{
                   padding: '10px 18px 3px', fontSize: '0.54rem', fontWeight: 800,
-                  color: '#c9c7d0', textTransform: 'uppercase',
+                  color: '#b0a8c9', textTransform: 'uppercase',
                   letterSpacing: '0.13em',
                 }}>{section.label}</div>
               )}
@@ -444,31 +470,41 @@ export default function CrmDashboard() {
                   <button
                     key={item.id}
                     onClick={() => switchTab(item.id)}
+                    // Plegado no hay texto: el nombre lo dice el globito del
+                    // sistema, que además no se puede quedar pegado en pantalla.
+                    title={sidebarCollapsed ? item.label : undefined}
                     style={{
-                      // Pastilla con aire a los lados, no franja pegada al
-                      // borde: el activo se despega y el menú respira.
-                      width: sidebarCollapsed ? '100%' : 'calc(100% - 16px)',
+                      // Tarjeta blanca con aire a los lados, no franja pegada
+                      // al borde: el activo se levanta del papel lila.
+                      position: 'relative',
+                      width: sidebarCollapsed ? 44 : 'calc(100% - 16px)',
                       display: 'flex', alignItems: 'center',
                       gap: sidebarCollapsed ? 0 : 11,
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      padding: sidebarCollapsed ? '10px 0' : '7px 10px',
-                      margin: sidebarCollapsed ? 0 : '1px 8px',
-                      minHeight: sidebarCollapsed ? 44 : 38,
-                      borderRadius: sidebarCollapsed ? 0 : 9,
-                      background: isActive ? '#EEECFE' : 'transparent',
-                      color: isActive ? '#5B4BD6' : '#4a4a52',
+                      padding: sidebarCollapsed ? 0 : '7px 10px',
+                      margin: sidebarCollapsed ? '2px auto' : '1px 8px',
+                      minHeight: sidebarCollapsed ? 40 : 38,
+                      borderRadius: sidebarCollapsed ? 11 : 9,
+                      background: isActive ? '#fff' : 'transparent',
+                      boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
+                      color: isActive ? '#4C3BD0' : '#4b4560',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: '0.79rem', fontWeight: isActive ? 800 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
                       // desalineado del resto del menú.
                       textAlign: 'left' as const, lineHeight: 1.3,
-                      transition: 'all 0.15s ease',
+                      transition: 'background 0.15s ease, box-shadow 0.15s ease',
                     }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#faf8ff'; }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: 'flex-start', marginTop: 1, color: isActive ? '#9B8CFA' : '#9c99a6' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    {/* El filo morado→rosa del activo: la misma cinta del
+                        documento, de canto. */}
+                    {isActive && !sidebarCollapsed && (
+                      <span style={{ position: 'absolute', left: -8, top: 6, bottom: 6, width: 3, borderRadius: '0 3px 3px 0', background: 'linear-gradient(180deg,#9B8CFA,#D9538E)' }} />
+                    )}
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1, color: isActive ? '#7C6BF0' : '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
                     {!sidebarCollapsed && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
                         compromiso con fecha que ya pasó. Poner números en todos
@@ -488,50 +524,53 @@ export default function CrmDashboard() {
             Deja de ser una lista de ligas chiquitas: notificaciones y
             configuración son renglones completos, quién eres vive en su propio
             panel, y abajo una barra con plegar el menú y salir. */}
-        {!sidebarCollapsed && (
-          <div style={{ borderTop: '1px solid #ece7fa', background: '#faf8ff' }}>
-            <div style={{ padding: '8px 0 2px' }}>
+        {!sidebarCollapsed ? (
+          <div style={{ borderTop: '1px solid #e7e0f7', background: 'rgba(255,255,255,.5)' }}>
+            <div style={{ padding: '6px 0 2px' }}>
               {!isMobile && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} enMenu />}
 
-              <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#EEECFE' : 'none', color: tab === 'config' ? '#5B4BD6' : '#5a5a63' }}>
-                <span style={{ ...pieIcono, color: '#9B8CFA' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+              <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
+                <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
               </button>
-
-              <a href="/" style={{ ...pieFila, color: '#a5a2af', fontWeight: 600, textDecoration: 'none' }}>
-                <span style={{ ...pieIcono, color: '#b3b1bb' }} dangerouslySetInnerHTML={{ __html: ICONO_ATRAS }} />Volver al sitio
-              </a>
             </div>
 
             {/* Quién entró. El día que haya más de una persona en el CRM, saber
                 con qué cuenta estás parado deja de ser un adorno. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', margin: '6px 10px', borderRadius: 11, background: '#EEECFE' }}>
-              <span style={{ width: 34, height: 34, borderRadius: 9, background: '#fff', color: '#5B4BD6', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', margin: '6px 10px', borderRadius: 11, background: '#fff', boxShadow: '0 1px 3px rgba(40,20,90,.08)' }}>
+              <span style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {iniciales(yo?.nombre || yo?.email)}
               </span>
               <span style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {yo?.nombre || yo?.email || '—'}
                 </div>
                 {yo?.rol && (
                   /* El rol es una etiqueta que describe, no un botón: por eso va
                      en el rosa de la firma y en pastilla chica. */
-                  <span style={{ display: 'inline-block', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 7px', marginTop: 4, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
+                  <span style={{ display: 'inline-block', fontSize: '0.53rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', marginTop: 3, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
                     {yo.rol}
                   </span>
                 )}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderTop: '1px solid #ece7fa', background: '#f3efff' }}>
-              <button onClick={() => setSidebarCollapsed(true)} aria-label="Plegar menú"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9c99a6', display: 'flex', padding: 0 }}
-                dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />
-              <button
-                onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#C0554E', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit' }}>
-                <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
-              </button>
-            </div>
+            {/* Salir es la última salida y va sola, alineada con todo lo demás
+                del menú: pegada a la izquierda, no escondida en la esquina. */}
+            <button
+              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 18px', borderTop: '1px solid #e7e0f7', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#B24C57', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit', textAlign: 'left' }}>
+              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+            </button>
+          </div>
+        ) : !isMobile && (
+          /* Plegado, la salida sigue a mano al pie del riel. La campana no se
+             repite aquí: plegado ya flota arriba a la derecha. */
+          <div style={{ borderTop: '1px solid #e7e0f7', padding: '6px 0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button
+              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+              aria-label="Cerrar sesión" title="Cerrar sesión"
+              style={{ width: 44, height: 38, borderRadius: 11, border: 'none', background: 'none', cursor: 'pointer', color: '#B24C57', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />
           </div>
         )}
       </div>
