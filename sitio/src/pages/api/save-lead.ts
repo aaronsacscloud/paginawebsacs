@@ -284,7 +284,7 @@ export const POST: APIRoute = async ({ request }) => {
               current_step_id: firstStep.id,
               next_action_at: new Date().toISOString(),
               enrollment_trigger: { type: 'lead_created', source: 'website-form' },
-            }).catch(() => {}); // Ignore duplicates
+            }).then(() => {}, () => {});   // duplicados: se ignoran
           }
         }
       } catch {}

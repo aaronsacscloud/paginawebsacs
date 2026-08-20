@@ -23,9 +23,16 @@ export const POST: APIRoute = async ({ request }) => {
   // La regla: un correo solo se acepta si el propio navegador ya lo tenía
   // (misma sesión, mismo origen). Sin esa prueba, la visita se guarda como
   // ANÓNIMA — se mide igual, pero no se le cuelga a nadie.
-  const origen = request.headers.get('origin') || '';
+  // Se EXIGE la cabecera. Antes bastaba con no mandarla —`!origen` daba por
+  // bueno el correo— y eso es justo lo que hace curl, Postman o cualquier
+  // script: el ataque que este bloque dice cerrar seguía abierto de par en
+  // par. Verificado contra producción antes del arreglo.
+  //
+  // Un navegador real SIEMPRE manda Origin en un POST con JSON; una petición
+  // sin él no viene de nuestro sitio.
+  const origen = (request.headers.get('origin') || '').replace(/\/$/, '');
   const sitio = (import.meta.env.PUBLIC_SITE_URL || 'https://www.sacscloud.com').replace(/\/$/, '');
-  const mismoOrigen = !origen || origen.replace(/\/$/, '') === sitio || /localhost/.test(origen);
+  const mismoOrigen = !!origen && (origen === sitio || /^https?:\/\/localhost(:\d+)?$/.test(origen));
   const emailConfiable = mismoOrigen ? email : null;
 
   // La visita se guarda SIEMPRE, se conozca o no a la persona. Antes se tiraba
@@ -114,7 +121,7 @@ export const POST: APIRoute = async ({ request }) => {
           current_step_id: firstStep.id,
           next_action_at: new Date().toISOString(),
           enrollment_trigger: { type: 'website_visit', page_url },
-        }).catch(() => {});
+        }).then(() => {}, () => {});   // duplicados: se ignoran
       }
     }
   } catch {}

@@ -170,6 +170,26 @@ export const PUT: APIRoute = async ({ request, url }) => {
     if (k in body) updates[k] = body[k];
   }
 
+  // El tipo SÍ se puede cambiar. Antes el formulario lo mandaba, el servidor lo
+  // ignoraba y guardaba la configuración nueva: quedaba una regla de tipo viejo
+  // leyendo una config que no le corresponde —"3 visitas" guardado en una regla
+  // de permanencia, que no lee `veces`— y no disparaba nunca sin decir por qué.
+  if (body.tipo) {
+    if (!(body.tipo in TIPOS)) return json({ error: 'Tipo de regla desconocido.' }, 400);
+    updates.tipo = body.tipo;
+  }
+
+  // Editar una regla ENCENDIDA reinicia su reloj. El arranque limpio de abajo
+  // solo cubría el momento de activarla; cambiarle las rutas o el tipo después
+  // la aplicaba hacia atrás, sobre navegación anterior al cambio, y mandaba
+  // correos por un recorrido que la regla nueva nunca vio ocurrir.
+  const tocaLaCaza = 'config' in body || 'tipo' in body;
+  if (tocaLaCaza && !body.estado) {
+    const { data: prev } = await supabase.from('web_reglas')
+      .select('estado').eq('id', body.id).eq('tenant_id', t.id).maybeSingle();
+    if (prev?.estado === 'activa') updates.activado_at = new Date().toISOString();
+  }
+
   if (body.estado) {
     const { data: actual } = await supabase.from('web_reglas')
       .select('automation_id, activado_at').eq('id', body.id).eq('tenant_id', t.id).maybeSingle();

@@ -49,9 +49,13 @@ const RUTA_INTERNA = /^\/(admin|api|email\/(baja|preferencias))/i;
 
 const calza = (ruta: string, patron: string): boolean => {
   if (RUTA_INTERNA.test(String(ruta || ''))) return false;
-  const r = String(ruta || '').toLowerCase().split('?')[0].replace(/\/$/, '');
-  const p = String(patron || '').toLowerCase().split('?')[0].replace(/\/$/, '');
-  if (!p) return false;
+  if (!String(patron || '').trim()) return false;   // patrón vacío no calza con nada
+  // Quitar la diagonal final dejaba la portada como cadena vacía, y la línea
+  // siguiente la descartaba: una regla sobre "/" —la página más visitada del
+  // sitio— no podía disparar nunca. Se normaliza a "/" en vez de a "".
+  const norm = (x: string) => String(x || '').toLowerCase().split('?')[0].replace(/\/+$/, '') || '/';
+  const r = norm(ruta);
+  const p = norm(patron);
   if (p.endsWith('*')) return r.startsWith(p.slice(0, -1));
   return r === p || r.startsWith(p + '/');
 };
@@ -65,11 +69,23 @@ interface Visita { contact_id: string; ruta: string; created_at: string; segundo
  * puede disparar correos por lo que la gente navegó el mes pasado — ese es el
  * mismo desastre que el arranque limpio de los embudos evita.
  */
+/** La fecha de hoy en CDMX, igual que el default de `web_disparos.dia`. */
+export function diaCdmx(t: Date = new Date()): string {
+  // en-CA da directamente YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(t);
+}
+
 export async function candidatos(r: Regla): Promise<Array<{ contactId: string; detalle: any }>> {
   const desdeActivacion = r.activado_at || new Date().toISOString();
   const cfg = r.config || {};
   const rutas: string[] = Array.isArray(cfg.rutas) ? cfg.rutas.filter(Boolean) : [];
   const dias = Math.min(90, Math.max(1, Number(cfg.dias) || 7));
+
+  // La ventana de lectura NO es el umbral de la regla. `ausencia` pregunta
+  // "vio la página y lleva N días sin volver": si solo se leen los últimos N
+  // días, la visita que la dispara queda fuera por construcción y la regla no
+  // podía cumplirse jamás. Necesita ver hacia atrás bastante más que su umbral.
+  const ventana = r.tipo === 'ausencia' ? Math.min(120, dias * 4 + 7) : dias;
 
   // Caso aparte: no mira visitas sino el puntaje ya calculado.
   if (r.tipo === 'intencion') {
@@ -86,13 +102,18 @@ export async function candidatos(r: Regla): Promise<Array<{ contactId: string; d
     .select('contact_id, ruta, created_at, segundos')
     .not('contact_id', 'is', null)
     .gte('created_at', desdeActivacion)
-    .gte('created_at', hace(dias))
-    .order('created_at', { ascending: true })
+    .gte('created_at', hace(ventana))
+    // Descendente: si el tope de 20 000 recorta, que recorte lo VIEJO. En
+    // ascendente el recorte se comía justo las visitas recientes, que son las
+    // únicas que pueden disparar algo. Se reinvierte abajo porque las reglas
+    // de recorrido (secuencia, ausencia) leen el arreglo en orden cronológico.
+    .order('created_at', { ascending: false })
     .limit(20000);
+  const enOrden = ((visitas || []) as Visita[]).slice().reverse();
 
   // Agrupar por persona: casi todas las reglas leen un RECORRIDO, no un hecho.
   const porPersona = new Map<string, Visita[]>();
-  for (const v of (visitas || []) as Visita[]) {
+  for (const v of enOrden) {
     if (!porPersona.has(v.contact_id)) porPersona.set(v.contact_id, []);
     porPersona.get(v.contact_id)!.push(v);
   }
@@ -127,6 +148,8 @@ export async function candidatos(r: Regla): Promise<Array<{ contactId: string; d
       // Vio la página y NO ha vuelto al sitio en N días.
       const vio = vs.filter(v => rutas.some(p => calza(v.ruta, p)));
       if (!vio.length) continue;
+      // La última visita a CUALQUIER página: volver al sitio, aunque sea a
+      // otra sección, significa que no está ausente.
       const ultimaVisita = vs[vs.length - 1];
       const diasSin = (Date.now() - Date.parse(ultimaVisita.created_at)) / 86400000;
       if (diasSin >= dias) out.push({ contactId, detalle: { ruta: vio[vio.length - 1].ruta, dias_sin_volver: Math.floor(diasSin) } });
@@ -174,7 +197,13 @@ export async function evaluar(tenantId?: string): Promise<Avance> {
   if (!reglas?.length) return av;
 
   // Quién ya recibió algo hoy por ESTE camino: el "uno por recorrido".
-  const hoyISO = new Date().toISOString().slice(0, 10);
+  //
+  // El día se calcula en la MISMA zona que la columna `dia`, cuyo default es
+  // (now() AT TIME ZONE 'America/Mexico_City')::date. Con toISOString() —UTC—
+  // a partir de las 18:00 CDMX el lector preguntaba por mañana mientras el
+  // escritor seguía guardando hoy: el "un correo por persona al día" se
+  // apagaba solo cada tarde.
+  const hoyISO = diaCdmx();
   const { data: disparosHoy } = await supabase.from('web_disparos')
     .select('contact_id').eq('dia', hoyISO).limit(5000);
   const yaHoy = new Set((disparosHoy || []).map((d: any) => d.contact_id));
@@ -217,6 +246,16 @@ export async function evaluar(tenantId?: string): Promise<Avance> {
         .eq('activo', true).order('orden').limit(1).maybeSingle();
       if (!primer) { salta('el embudo no tiene pasos'); continue; }
 
+      // PRIMERO se reclama el disparo, DESPUÉS se inscribe. El índice único
+      // (regla_id, contact_id, dia) es el candado: si dos ciclos corren a la
+      // vez —cron y disparo inmediato, que es lo normal aquí— el segundo choca
+      // y se va. Al revés, como estaba, ambos alcanzaban a inscribir y el
+      // registro fallaba en silencio con el error tragado: dos correos.
+      const { data: reclamo, error: eReclamo } = await supabase.from('web_disparos').insert({
+        regla_id: r.id, contact_id: contactId, dia: hoyISO, detalle,
+      }).select('id').single();
+      if (eReclamo || !reclamo) { salta('ya reclamado hoy'); continue; }
+
       // EL RETRASO: el correo no sale ahora, sale en N minutos.
       const cuando = new Date(Date.now() + Math.max(1, r.retraso_minutos) * 60000).toISOString();
       const { data: ins, error } = await supabase.from('automation_enrollments').insert({
@@ -224,13 +263,13 @@ export async function evaluar(tenantId?: string): Promise<Avance> {
         current_step_id: primer.id, estado: 'activo', next_action_at: cuando,
         enrollment_trigger: { type: 'web', regla: r.nombre, regla_id: r.id, detalle },
       }).select('id').single();
-      if (error) { salta('no se pudo inscribir'); continue; }
-
-      // El disparo queda registrado ANTES de dar por bueno el ciclo: es el
-      // candado anti-repetición, no solo el reporte.
-      await supabase.from('web_disparos').insert({
-        regla_id: r.id, contact_id: contactId, enrollment_id: ins?.id || null, detalle,
-      }).then(() => {}, () => {});
+      if (error) {
+        // Si no se pudo inscribir, se suelta el candado: si no, esa persona
+        // queda bloqueada todo el día por un correo que nunca salió.
+        await supabase.from('web_disparos').delete().eq('id', reclamo.id);
+        salta('no se pudo inscribir'); continue;
+      }
+      await supabase.from('web_disparos').update({ enrollment_id: ins.id }).eq('id', reclamo.id);
 
       await supabase.from('web_reglas').update({ total_disparos: (r as any).total_disparos + 1 }).eq('id', r.id);
       yaHoy.add(contactId);

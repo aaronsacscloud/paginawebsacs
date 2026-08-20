@@ -32,6 +32,28 @@ export interface Visita {
  * recupera todo lo que ya había navegado. Sin eso se perdería justo el
  * recorrido más interesante: el de antes de convertirse en lead.
  */
+
+/**
+ * De dónde llegó esta visita.
+ *
+ * Los parámetros de campaña (utm_*, ttclid, gclid, fbclid) viajan en la URL de
+ * la página, NO en el referrer — el referrer trae el dominio de quien te mandó.
+ * Buscarlos solo en el referrer clasificaba TODO el tráfico pagado como
+ * "directo": el reporte de retorno le acreditaba a nadie las visitas que se
+ * pagaron, que es justo el número por el que existe.
+ */
+function clasificarOrigen(v: { sendId?: string | null; ruta?: string; referrer?: string | null }): string {
+  if (v.sendId) return 'email';
+  const marcas = /[?&](utm_|gclid|ttclid|fbclid|msclkid|li_fat_id)/i;
+  if (marcas.test(String(v.ruta || ''))) return 'anuncio';
+  if (marcas.test(String(v.referrer || ''))) return 'anuncio';
+  const ref = String(v.referrer || '');
+  if (!ref) return 'directo';
+  if (/(google|bing|duckduckgo|yahoo)\./i.test(ref)) return 'buscador';
+  if (/(facebook|instagram|tiktok|linkedin|x\.com|twitter|youtube|t\.co)\./i.test(ref)) return 'social';
+  return 'referido';
+}
+
 export async function registrarVisita(v: Visita): Promise<void> {
   const email = v.email ? String(v.email).trim().toLowerCase() : null;
   let contactId = v.contactId || null;
@@ -71,7 +93,7 @@ export async function registrarVisita(v: Visita): Promise<void> {
     ruta: String(v.ruta || '/').slice(0, 500),
     titulo: v.titulo?.slice(0, 200) || null,
     referrer: v.referrer?.slice(0, 500) || null,
-    origen: v.sendId ? 'email' : (v.referrer && /utm_|gclid|ttclid/.test(v.referrer) ? 'anuncio' : 'directo'),
+    origen: clasificarOrigen(v),
     send_id: v.sendId || null,
     campaign_id: v.campaignId || null,
     segundos: v.segundos ?? null,
