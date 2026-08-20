@@ -199,6 +199,9 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
   const [cargandoRev, setCargandoRev] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [confirmaActivar, setConfirmaActivar] = useState(false);
+  const [iaOcupada, setIaOcupada] = useState(false);
+  const [iaOpciones, setIaOpciones] = useState<any[] | null>(null);
+  const [iaIndice, setIaIndice] = useState(0);
   // Cerrar el editor con un fetch en vuelo no debe disparar setState sobre un
   // componente desmontado (ni perder de vista una creación que resolvió tarde).
   const vivo = useRef(true);
@@ -330,7 +333,33 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
             </div>
           ))}
         </div>
-        <span style={lblS as any}>Título</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 16 }}>
+          <span style={{ ...lblS as any, margin: 0, flex: 1 }}>Título</span>
+          <button style={{ ...S.btnA, opacity: iaOcupada ? 0.6 : 1 }} disabled={iaOcupada}
+            onClick={async () => {
+              if (iaOcupada) return;
+              if (iaOpciones && iaOpciones.length > 1) {
+                const sig = (iaIndice + 1) % iaOpciones.length;
+                setIaIndice(sig); setCt({ titulo: iaOpciones[sig].titulo, mensaje: iaOpciones[sig].mensaje, botones: iaOpciones[sig].botones });
+                return;
+              }
+              setIaOcupada(true);
+              try {
+                const r = await fetch('/api/crm/outbound/redactar', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ objetivo: c.objetivo_texto || c.nombre || '', formato: c.formato, modulo: c.meta?.valor || c.comportamiento?.modulo_ancla || null }),
+                });
+                const j = await r.json();
+                if (!r.ok || j.error) { show(j.error || 'No se pudo redactar', 'error'); return; }
+                setIaOpciones(j.opciones); setIaIndice(0);
+                setCt({ titulo: j.opciones[0].titulo, mensaje: j.opciones[0].mensaje, botones: j.opciones[0].botones });
+                show('Borrador generado — edítalo a tu gusto. Toca de nuevo para otra versión.', 'info');
+              } catch { show('Sin conexión', 'error'); }
+              finally { setIaOcupada(false); }
+            }}>
+            {iaOcupada ? 'Redactando…' : iaOpciones ? 'Otra versión' : 'Redactar con IA'}
+          </button>
+        </div>
         <input style={inputS} value={c.contenido?.titulo || ''} onChange={e => setCt({ titulo: e.target.value })} />
         <span style={lblS as any}>Mensaje</span>
         <textarea style={{ ...inputS, minHeight: 64 }} value={c.contenido?.mensaje || ''} onChange={e => setCt({ mensaje: e.target.value })} />
@@ -682,6 +711,7 @@ export default function OutboundTab() {
   const [editando, setEditando] = useState<any | null>(null);
   const [resultadosId, setResultadosId] = useState<string | null>(null);
   const [menuRow, setMenuRow] = useState<any | null>(null);
+  const [pickerAbierto, setPickerAbierto] = useState(false);
 
   async function load() {
     try {
@@ -708,12 +738,24 @@ export default function OutboundTab() {
     } catch { show('Sin conexión', 'error'); }
   }
 
-  const nueva = () => setEditando({
+  const BASE_NUEVA = {
     nombre: '', formato: 'modal', canal: 'web', prioridad: 'normal', modo: 'unica',
     holdout_pct: 10, ventana_atribucion_dias: 14,
     contenido: { botones: [] }, comportamiento: { trigger: 'al_iniciar', frecuencia: { tipo: 'hasta_interactuar', tope: 5, descanso_dias: 1 }, cerrable: true },
     audiencia: { grupos: [] }, nivel: { tipo: 'todos' },
-  });
+  };
+  const nueva = () => setPickerAbierto(true);
+  const nuevaDesde = (plantilla: any | null) => {
+    setPickerAbierto(false);
+    if (!plantilla) { setEditando({ ...BASE_NUEVA }); return; }
+    setEditando({
+      ...BASE_NUEVA,
+      ...plantilla.valores,
+      nombre: plantilla.nombre,
+      contenido: { botones: [], ...(plantilla.valores.contenido || {}) },
+      comportamiento: { ...BASE_NUEVA.comportamiento, ...(plantilla.valores.comportamiento || {}) },
+    });
+  };
 
   const activas = (data || []).filter(c => c.estado === 'activa');
   const kpis = useMemo(() => {
@@ -842,6 +884,28 @@ export default function OutboundTab() {
       )}
       {resultadosId && <Resultados id={resultadosId} onClose={() => setResultadosId(null)} onAccion={accionRapida} />}
 
+      {pickerAbierto && (
+        <Sheet open onClose={() => setPickerAbierto(false)} title="Nueva campaña" width={760}>
+          <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: 14 }}>Empieza desde una receta probada — la audiencia, el formato, la meta y la frecuencia ya vienen puestos — o desde cero.</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+            <div onClick={() => nuevaDesde(null)}
+              style={{ border: '1.5px dashed #c9bcf7', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', background: '#fdfcff' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#5B4BD6' }}>Empezar en blanco</div>
+              <div style={{ fontSize: '0.7rem', color: '#9c99a6', fontWeight: 600, marginTop: 3 }}>Todo desde cero, sin precargas.</div>
+            </div>
+            {(catalogo?.plantillas || []).map((pl: any) => (
+              <div key={pl.id} onClick={() => nuevaDesde(pl)}
+                style={{ border: '1.5px solid #e2e4e9', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', background: '#fff' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, flex: 1 }}>{pl.nombre}</span>
+                  <Tag tono="acento">{pl.fam}</Tag>
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#9c99a6', fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>{pl.desc}</div>
+              </div>
+            ))}
+          </div>
+        </Sheet>
+      )}
       <ActionSheet
         open={!!menuRow}
         onClose={() => setMenuRow(null)}
