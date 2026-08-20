@@ -129,7 +129,7 @@ function CfgFila({ it, ruta, onAbrir }: { it: CfgItem; ruta?: string; onAbrir: (
       <span style={{ width: 42, height: 42, borderRadius: 12, background: '#F3F0FE', color: '#7C6BF0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <span style={{ display: 'flex', width: 19, height: 19 }} dangerouslySetInnerHTML={{ __html: CFG_ICONOS[it.ico] || '' }} />
       </span>
-      <span style={{ minWidth: 0 }}>
+      <span style={{ minWidth: 0, flex: 1 }}>
         <span style={{ display: 'block', fontSize: '0.91rem', fontWeight: 700, color: '#241d43' }}>
           {it.t}
           {it.mudado && <span style={{ marginLeft: 8, fontSize: '0.52rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', background: '#FFF4E5', color: '#9a6a10', borderRadius: 20, padding: '2px 8px', verticalAlign: 2 }}>Antes en Ajustes</span>}
@@ -166,16 +166,24 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
       <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 860px) {
           .cfg-cuerpo { grid-template-columns: 1fr !important; grid-template-rows: auto 1fr; }
-          .cfg-riel { max-height: 34vh; border-right: none !important; border-bottom: 1px solid #f0eef7; }
+          .cfg-riel { max-height: 30vh; border-right: none !important; border-bottom: 1px solid #f0eef7; }
+          .cfg-main { padding: 18px 16px 50px !important; }
+        }
+        @media (max-width: 620px) {
+          /* El título y el buscador dejan de pelearse por el mismo renglón. */
+          .cfg-cab { padding: 12px 16px 12px !important; gap: 10px !important; }
+          .cfg-cab h1 { font-size: 1.05rem !important; }
+          .cfg-cab-acc { margin-left: 0 !important; width: 100%; }
+          .cfg-cab-acc > div { flex: 1; width: auto !important; }
         }
       ` }} />
 
-      <header style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0 }}>
+      <header className="cfg-cab" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: '1.32rem', fontWeight: 800, letterSpacing: '-.02em', margin: 0, color: '#241d43' }}>Configuración y personalización</h1>
           <p style={{ fontSize: '0.77rem', color: '#6b7280', margin: '3px 0 0' }}>Cada ajuste vive donde vive su módulo.</p>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <div className="cfg-cab-acc" style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #eae4f8', background: '#FBFAFF', borderRadius: 10, padding: '0 12px', height: 36, width: 240 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a49dbd" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             <input value={q} onChange={e => onQ(e.target.value)} placeholder="Buscar un ajuste…"
@@ -215,13 +223,13 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
         </nav>
 
         {/* Contenido */}
-        <main style={{ overflowY: 'auto', padding: '24px 30px 60px' }}>
+        <main className="cfg-main" style={{ overflowY: 'auto', minWidth: 0, padding: '24px 30px 60px' }}>
           {busca ? (
             <>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>Resultados</h2>
               <p style={{ fontSize: '0.81rem', color: '#6b7280', margin: '0 0 18px' }}>{hits.length} ajuste{hits.length === 1 ? '' : 's'} con “{q.trim()}”.</p>
               {hits.length ? (
-                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', maxWidth: 900 }}>
+                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', width: '100%', maxWidth: 900 }}>
                   {hits.map(h => <CfgFila key={h.m.id + h.i.id} it={h.i} ruta={`${h.m.g} › ${h.m.nom}`} onAbrir={() => onItem(h.m.id, h.i.id)} />)}
                 </div>
               ) : (
@@ -245,7 +253,7 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>{actual?.nom}</h2>
               <p style={{ fontSize: '0.81rem', color: '#6b7280', margin: '0 0 18px', lineHeight: 1.55, maxWidth: '74ch' }}>{actual?.sub}</p>
               {actual?.items.length ? (
-                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', maxWidth: 900 }}>
+                <div style={{ border: '1px solid #f0eef7', borderRadius: 16, overflow: 'hidden', width: '100%', maxWidth: 900 }}>
                   {actual.items.map(it => <CfgFila key={it.id} it={it} onAbrir={() => onItem(actual.id, it.id)} />)}
                 </div>
               ) : (
