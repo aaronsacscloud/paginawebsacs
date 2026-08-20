@@ -354,6 +354,31 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
     // Dos vías para saber de quién es el pago: la referencia (links creados por
     // el CRM) o el vínculo con la suscripción de MP (las que ya existían allá).
+    // Pago de una OFERTA de Outbound (venta de plugin/upgrade desde una
+    // campaña in-app): external_reference outbound:<company>:<campana>. No es
+    // una suscripción existente — se registra el cobro y se avisa al equipo
+    // para materializar la venta (patrón de la bandeja de MP).
+    const mo = ref.match(/^outbound:([0-9a-f-]{36}):([0-9a-f-]{36})$/i);
+    if (!m && !subPorPreapproval && mo) {
+      await anotarCobro({
+        mp_payment_id: String(pago.id), company_id: mo[1], payer_email: pago?.payer?.email || null,
+        monto: Number(pago?.transaction_amount || 0), moneda: pago?.currency_id,
+        estado: 'approved', metodo: pago?.payment_method_id || null,
+        fecha: pago?.date_approved || pago?.date_created || null,
+        external_reference: ref,
+      });
+      await notificar({
+        clave: `outbound_venta:${pago.id}`,
+        tipo: 'outbound_venta', nivel: 'alerta',
+        titulo: `Venta desde Outbound: $${Number(pago?.transaction_amount || 0).toLocaleString('es-MX')}`,
+        detalle: `Un cliente pagó una oferta de una campaña in-app. Materialízala (alta de plugin/upgrade) en Cobro con Mercado Pago.`,
+        monto: Number(pago?.transaction_amount || 0), company_id: mo[1],
+        destino: 'cobros', metadata: { mp_payment_id: String(pago.id), campana_id: mo[2], origen: 'outbound' },
+      });
+      await cerrar('ok', 'pago de oferta Outbound — registrado y avisado');
+      return ok({ registrado: true, outbound: true });
+    }
+
     if (!m && !subPorPreapproval) {
       // Alguien PAGÓ y no sabemos a quién acreditárselo. Antes se contestaba 200
       // y ahí moría: el dinero entraba a la cuenta de MP y el cliente seguía

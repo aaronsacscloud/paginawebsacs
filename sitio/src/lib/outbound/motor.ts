@@ -161,6 +161,14 @@ export function validarCampana(c: any): string[] {
       errores.push('El formato "Agendar cita" necesita un tipo de reunión del catálogo (slug inválido o vacío).');
     }
   }
+  if (c.formato === 'compra') {
+    const of = ct.oferta || {};
+    if (!String(of.concepto || '').trim()) errores.push('La oferta necesita un concepto (qué se vende).');
+    if (!of.plan_slug && !(Number(of.monto_base) > 0)) {
+      errores.push('La oferta necesita un plan del catálogo o un precio base.');
+    }
+    if (of.monto_base != null && !(Number(of.monto_base) >= 0)) errores.push('El precio base no es válido.');
+  }
   const comp = c.comportamiento || {};
   if (comp.bloqueante && botones.length === 0) {
     errores.push('Un modal bloqueante necesita al menos un botón: sin él, el usuario queda atrapado sin forma de cerrar.');

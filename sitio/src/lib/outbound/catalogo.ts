@@ -17,6 +17,7 @@ export const FORMATOS = [
   { id: 'encuesta', etiqueta: 'Encuesta 1 clic', desc: 'NPS / CSAT con un tap', interruptivo: true },
   { id: 'coachmark', etiqueta: 'Coachmark', desc: 'Al entrar a un módulo', interruptivo: true },
   { id: 'agenda', etiqueta: 'Agendar cita', desc: 'Modal con el calendario para reservar', interruptivo: true },
+  { id: 'compra', etiqueta: 'Comprar / upgrade', desc: 'Modal con precio personalizado y pago', interruptivo: true },
 ] as const;
 
 // Host FIJO del agendador embebible. La campaña solo elige el SLUG de un tipo

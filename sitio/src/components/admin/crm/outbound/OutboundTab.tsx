@@ -54,7 +54,7 @@ function KpiCard({ titulo, valor, sub, franja = '#9B8CFA', color }: { titulo: st
 const FMT_CORTO: Record<string, string> = {
   banner_superior: 'Banner superior', banner_cuadrado: 'Banner cuadrado', modal: 'Modal',
   chat: 'Abrir chat', tarjeta_inicio: 'Tarjeta en inicio', badge_menu: 'Badge en menú',
-  encuesta: 'Encuesta 1 clic', coachmark: 'Coachmark', agenda: 'Agendar cita',
+  encuesta: 'Encuesta 1 clic', coachmark: 'Coachmark', agenda: 'Agendar cita', compra: 'Comprar / upgrade',
 };
 
 function resumenAudiencia(c: any): string {
@@ -441,6 +441,42 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
           <input style={inputS} type="number" min={7} placeholder="ej. 90 para NPS trimestral" value={c.recurrencia_dias ?? ''}
             onChange={e => set({ recurrencia_dias: e.target.value ? Math.max(7, Number(e.target.value)) : null })} />
           <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 6, fontWeight: 600 }}>Quien responde vuelve a ver la encuesta cuando pasa el periodo; quien la descarta con "No me interesa" no vuelve a verla nunca. Una respuesta ≤6 avisa a la campana del CRM el mismo día.</div>
+        </>) : null}
+        {c.formato === 'compra' ? (<>
+          <span style={lblS as any}>Qué se vende</span>
+          <input style={inputS} placeholder="ej. Plugin de Nivelación" value={c.contenido?.oferta?.concepto || ''} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), concepto: e.target.value } })} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><span style={lblS as any}>Plan del catálogo (precio automático)</span>
+              <select style={inputS} value={c.contenido?.oferta?.plan_slug || ''} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), plan_slug: e.target.value, monto_base: e.target.value ? undefined : c.contenido?.oferta?.monto_base } })}>
+                <option value="">— o precio fijo —</option>
+                {['vende', 'controla', 'fideliza', 'automatiza'].map(p => <option key={p} value={p}>{p}</option>)}
+              </select></div>
+            <div><span style={lblS as any}>Precio fijo (si no es plan)</span>
+              <input style={inputS} type="number" placeholder="$ mensual" value={c.contenido?.oferta?.monto_base ?? ''} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), monto_base: e.target.value ? Number(e.target.value) : undefined } })} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+            <div><span style={{ ...lblS as any, marginTop: 0 }}>Ciclo</span>
+              <select style={inputS} value={c.contenido?.oferta?.ciclo || 'mensual'} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), ciclo: e.target.value } })}>
+                <option value="mensual">Mensual</option><option value="anual">Anual</option>
+              </select></div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'end', fontSize: '0.75rem', fontWeight: 700, color: '#555', cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!c.contenido?.oferta?.por_sucursal} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), por_sucursal: e.target.checked } })} />
+              Multiplicar por sucursales del cliente
+            </label>
+          </div>
+          <span style={lblS as any}>Prueba social (opcional)</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.4fr', gap: 8 }}>
+            <select style={inputS} value={c.contenido?.oferta?.prueba_social?.tipo || ''} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), prueba_social: e.target.value ? { tipo: e.target.value, valor: c.contenido?.oferta?.prueba_social?.valor || '' } : undefined } })}>
+              <option value="">Sin prueba social</option>
+              <option value="modulo">Negocios que usan el módulo…</option>
+              <option value="plugin">Negocios con el plugin…</option>
+              <option value="giro">Negocios del giro…</option>
+            </select>
+            {c.contenido?.oferta?.prueba_social?.tipo && (
+              <input style={inputS} placeholder={c.contenido?.oferta?.prueba_social?.tipo === 'modulo' ? 'Nombre exacto del módulo' : c.contenido?.oferta?.prueba_social?.tipo === 'plugin' ? 'slug del plugin' : 'Giro'} value={c.contenido?.oferta?.prueba_social?.valor || ''} onChange={e => setCt({ oferta: { ...(c.contenido?.oferta || {}), prueba_social: { ...(c.contenido?.oferta?.prueba_social || {}), valor: e.target.value } } })} />
+            )}
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 8, fontWeight: 600 }}>El modal muestra el precio calculado para ESE cliente y cobra por Mercado Pago (la venta se materializa cuando el pago se confirma). Sin precio calculable, el botón pide contacto por WhatsApp.</div>
         </>) : null}
         {c.formato === 'agenda' ? (<>
           <span style={lblS as any}>Tipo de reunión (del agendador)</span>

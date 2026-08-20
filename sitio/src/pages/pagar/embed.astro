@@ -1,0 +1,100 @@
+---
+// OUTBOUND · Página de oferta embebible (dentro del modal de SACS3).
+// SSR: calcula precio personalizado + prueba social server-side desde la BD
+// confiable — del cliente solo llegan cuenta + campana (ids). El pago va a
+// /api/pagar/checkout (público, re-valida contra la BD).
+export const prerender = false;
+
+import { resolverOferta } from '../api/pagar/checkout';
+import { calcularPrecio, pruebaSocial } from '../../lib/outbound/venta';
+
+const url = Astro.url;
+const campana = url.searchParams.get('campana') || '';
+const cuenta = url.searchParams.get('cuenta') || '';
+const nombre = (url.searchParams.get('nombre') || '').slice(0, 120);
+
+let precio: any = null, social: any = null, error: string | null = null, concepto = '';
+try {
+  const r = await resolverOferta(campana, cuenta);
+  concepto = r.concepto;
+  precio = await calcularPrecio(r.companyId, r.oferta);
+  const ps = r.oferta.prueba_social;
+  if (ps?.tipo && ps?.valor) social = await pruebaSocial(ps.tipo, ps.valor);
+} catch (e: any) {
+  error = e?.message || 'No se pudo cargar la oferta';
+}
+
+const money = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+---
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compra SACS</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #FAFBFF; color: #0F172A; padding: 20px; }
+    .card { max-width: 420px; margin: 0 auto; }
+    .social { font-size: 12.5px; font-weight: 700; color: #1E8A63; background: #EAF8F2; border-radius: 999px; padding: 6px 14px; display: inline-block; margin-bottom: 14px; }
+    h1 { font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.01em; }
+    .desglose { font-size: 13px; color: #64748B; margin: 0 0 18px; }
+    .precio { font-size: 40px; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+    .precio small { font-size: 15px; color: #94A3B8; font-weight: 700; }
+    .box { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 22px 24px; box-shadow: 0 8px 30px rgba(15,23,42,.06); }
+    .pagar { width: 100%; border: none; border-radius: 12px; padding: 14px; background: #4536BE; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; margin-top: 18px; }
+    .pagar:disabled { opacity: .6; cursor: default; }
+    .seguro { text-align: center; font-size: 11.5px; color: #94A3B8; font-weight: 600; margin-top: 10px; }
+    .err { background: #FEF0EF; color: #C0554E; border-radius: 12px; padding: 16px; font-size: 13.5px; font-weight: 600; }
+    .cotiza { font-size: 14px; color: #64748B; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {error ? (
+      <div class="err">{error}</div>
+    ) : (
+      <div class="box">
+        {social && <div class="social">{social.texto}</div>}
+        <h1>{concepto}</h1>
+        {precio.es_cotizacion ? (
+          <p class="cotiza">Esta opción se cotiza según tu caso. Toca "Solicitar" y te contactamos.</p>
+        ) : (
+          <>
+            <p class="precio">{money(precio.monto)} <small>{precio.ciclo === 'anual' ? 'al año' : 'al mes'}</small></p>
+            <p class="desglose">{precio.desglose}</p>
+          </>
+        )}
+        <button class="pagar" id="btn" data-campana={campana} data-cuenta={cuenta} data-cotiza={precio.es_cotizacion ? '1' : '0'}>
+          {precio.es_cotizacion ? 'Solicitar información' : 'Pagar con Mercado Pago'}
+        </button>
+        <p class="seguro">Pago seguro procesado por Mercado Pago</p>
+      </div>
+    )}
+  </div>
+
+  <script is:inline define:vars={{ campana, cuenta, nombre }}>
+    const btn = document.getElementById('btn');
+    if (btn) btn.addEventListener('click', async () => {
+      // Cotización: avisar al padre (SACS3 abre WhatsApp de ventas).
+      if (btn.dataset.cotiza === '1') {
+        try { window.parent.postMessage({ tipo: 'sacs_pago_cotizar', campana }, '*'); } catch (e) {}
+        return;
+      }
+      btn.disabled = true; btn.textContent = 'Generando pago…';
+      try {
+        const r = await fetch('/api/pagar/checkout', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campana, cuenta }),
+        });
+        const j = await r.json();
+        if (!r.ok || !j.link) { btn.disabled = false; btn.textContent = 'Reintentar pago'; alert(j.error || 'No se pudo iniciar el pago'); return; }
+        // Avisar al padre que se generó el pago (para la telemetría) y navegar
+        // a Mercado Pago en la pestaña completa (MP no permite iframe).
+        try { window.parent.postMessage({ tipo: 'sacs_pago_iniciado', campana }, '*'); } catch (e) {}
+        window.top.location.href = j.link;
+      } catch (e) { btn.disabled = false; btn.textContent = 'Reintentar pago'; alert('Sin conexión'); }
+    });
+  </script>
+</body>
+</html>
