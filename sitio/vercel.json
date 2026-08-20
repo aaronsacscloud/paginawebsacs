@@ -14,6 +14,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/outbound-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/scheduling/google/sync",
       "schedule": "*/30 * * * *"
     },

@@ -1,0 +1,225 @@
+// OUTBOUND · Motor: audiencia → cuentas, validación, materialización y
+// publicación hacia sacs_api (sacs3_global.campanas_inapp).
+//
+// La audiencia se resuelve en JS sobre las companies con cuenta SACS (son
+// centenas, no millones) — mismo trade-off documentado en email/segmentos.ts:
+// cero superficie de inyección y un solo lugar donde se leen los jsonb del
+// puente (uso_sacs / actividad / intereses), que PostgREST no filtra bien.
+import crypto from 'node:crypto';
+import { supabase } from '../supabase';
+import { cuentasPorEmpresa, normCuenta } from '../crm/sacs-cuentas';
+import { urlSacsValida, DESTINOS_MODULO, ACCIONES_BOTON, FORMATOS, MODULOS_PUENTE, type AudienciaDef, type CondicionUso } from './catalogo';
+
+const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
+const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
+
+/**
+ * Réplica EXACTA de enHoldout de sacs_api/modules/campanasInapp.js.
+ * md5('<campana_id>:<uid>') → primeros 8 hex → mod 100 < pct.
+ * El sorteo es inmutable durante la vida de la campaña: así el brazo de
+ * control sobrevive las re-materializaciones diarias del modo continuo.
+ */
+export function enHoldout(campanaId: string, uid: string, pct: number): boolean {
+  const p = Number(pct) || 0;
+  if (p <= 0) return false;
+  const h = crypto.createHash('md5').update(`${campanaId}:${uid}`).digest('hex');
+  return (parseInt(h.slice(0, 8), 16) % 100) < p;
+}
+
+// ── Resolución de audiencia ──────────────────────────────────────────────────
+
+interface EmpresaEval {
+  id: string;
+  nombre: string;
+  plan: string | null;
+  estado_cuenta: string | null;
+  dias_sin_venta: number | null;
+  giro: string | null;
+  months_active: number | null;
+  fecha_renovacion: string | null;
+  sacs_account: string | null;
+  uso_sacs: any;
+  intereses: any;
+}
+
+function cumpleCondicion(e: EmpresaEval, c: CondicionUso): boolean {
+  const num = (x: any) => (x == null || x === '' ? null : Number(x));
+  switch (c.campo) {
+    case 'plan': return c.operador === 'no_es' ? e.plan !== c.valor : e.plan === c.valor;
+    case 'estado_cuenta': return c.operador === 'no_es' ? e.estado_cuenta !== c.valor : e.estado_cuenta === c.valor;
+    case 'giro': return (e.giro || '').toLowerCase() === String(c.valor || '').toLowerCase();
+    case 'dias_sin_venta': {
+      const v = num(e.dias_sin_venta); if (v == null) return false;
+      return c.operador === 'mayor_que' ? v > Number(c.valor) : v < Number(c.valor);
+    }
+    case 'meses_activo': {
+      const v = num(e.months_active); if (v == null) return false;
+      return c.operador === 'mayor_que' ? v > Number(c.valor) : v < Number(c.valor);
+    }
+    case 'renovacion_proxima_dias': {
+      if (!e.fecha_renovacion) return false;
+      const dias = (new Date(e.fecha_renovacion).getTime() - Date.now()) / 86400000;
+      return dias >= 0 && dias < Number(c.valor);
+    }
+    case 'usa_modulo': {
+      // uso_sacs.modulos = [{ modulo, usa, ... }] — nombres EXACTOS del puente.
+      const mods: any[] = (e.uso_sacs && Array.isArray(e.uso_sacs.modulos)) ? e.uso_sacs.modulos : [];
+      const usa = mods.some(m => m && m.modulo === c.valor && m.usa);
+      return c.operador === 'no_es' ? !usa : usa;
+    }
+    case 'interes_modulo': {
+      const i = e.intereses && e.intereses[String(c.valor)];
+      return !!(i && (i.score || 0) > 0);
+    }
+    default: return false; // campo fuera de catálogo: no acota → no cumple
+  }
+}
+
+export interface AudienciaResuelta {
+  companies: Array<{ id: string; nombre: string; cuentas: string[] }>;
+  cuentas: string[];
+  exclusiones: { sin_cuenta: number; excluidas_manual: number };
+}
+
+/** Empresas (con sus cuentas SACS) que cumplen la definición HOY. */
+export async function resolverAudiencia(def: AudienciaDef): Promise<AudienciaResuelta> {
+  const { data, error } = await supabase.from('companies')
+    .select('id, nombre, plan, estado_cuenta, dias_sin_venta, giro, months_active, fecha_renovacion, sacs_account, uso_sacs, intereses')
+    .is('archived_at', null)
+    .limit(5000);
+  if (error) throw new Error('No se pudieron leer las empresas: ' + error.message);
+
+  const grupos = (def && Array.isArray(def.grupos)) ? def.grupos.filter(g => g && Array.isArray(g.condiciones) && g.condiciones.length) : [];
+  const todasSinCondicion = grupos.length === 0;
+
+  const candidatas = (data || []).filter((e: any) =>
+    todasSinCondicion || grupos.some(g => g.condiciones.every(c => cumpleCondicion(e as EmpresaEval, c)))
+  );
+
+  const mapa = await cuentasPorEmpresa(candidatas.map((e: any) => e.id));
+  const excluir = new Set((def?.excluir_cuentas || []).map(normCuenta));
+  const incluirExtra = (def?.incluir_cuentas || []).map(normCuenta).filter(Boolean);
+
+  let sinCuenta = 0, excluidas = 0;
+  const companies: AudienciaResuelta['companies'] = [];
+  const cuentasSet = new Set<string>();
+  for (const e of candidatas) {
+    const cs = (mapa[e.id] && mapa[e.id].length) ? mapa[e.id] : (normCuenta(e.sacs_account) ? [normCuenta(e.sacs_account)] : []);
+    const vivas = cs.filter(c => { if (excluir.has(c)) { excluidas++; return false; } return true; });
+    if (!vivas.length) { sinCuenta++; continue; }
+    companies.push({ id: e.id, nombre: e.nombre, cuentas: vivas });
+    vivas.forEach(c => cuentasSet.add(c));
+  }
+  for (const c of incluirExtra) cuentasSet.add(c);
+
+  return { companies, cuentas: Array.from(cuentasSet), exclusiones: { sin_cuenta: sinCuenta, excluidas_manual: excluidas } };
+}
+
+// ── Validación (los checks del paso Revisión) ────────────────────────────────
+
+export function validarCampana(c: any): string[] {
+  const errores: string[] = [];
+  if (!c.nombre || !String(c.nombre).trim()) errores.push('Falta el nombre de la campaña.');
+  if (!FORMATOS.some(f => f.id === c.formato)) errores.push('Formato desconocido.');
+  const ct = c.contenido || {};
+  if (c.formato !== 'chat' && c.formato !== 'badge_menu' && !String(ct.titulo || '').trim()) {
+    errores.push('Falta el título del mensaje.');
+  }
+  const botones = Array.isArray(ct.botones) ? ct.botones : [];
+  if (botones.length > 2) errores.push('Máximo 2 botones.');
+  for (const b of botones) {
+    if (!String(b.texto || '').trim()) errores.push('Un botón no tiene texto.');
+    if (!ACCIONES_BOTON.some(a => a.id === b.accion)) { errores.push(`Acción de botón fuera de catálogo: "${b.accion}".`); continue; }
+    if (b.accion === 'modulo' && !DESTINOS_MODULO.some(d => d.id === b.destino)) {
+      errores.push(`El destino "${b.destino}" no está en el catálogo de módulos.`);
+    }
+    if (b.accion === 'url_sacs' && !urlSacsValida(b.destino)) {
+      errores.push('Las URLs de botón solo pueden ser https de sacscloud.com.');
+    }
+  }
+  if (ct.imagen && !urlSacsValida(ct.imagen)) errores.push('La imagen debe estar hospedada en sacscloud.com.');
+  if (ct.video && !urlSacsValida(ct.video)) errores.push('El video debe estar hospedado en sacscloud.com (o ser una URL https de sacscloud.com a YouTube embebido).');
+  // Sin emoji decorativo (estándar enterprise de sacs3). El ⚠️ de riesgo real se tolera.
+  const texto = `${ct.titulo || ''} ${ct.mensaje || ''}`;
+  if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/u.test(texto.replace(/⚠/gu, ''))) {
+    errores.push('El contenido lleva emojis decorativos; el estándar de SACS es tipografía limpia.');
+  }
+  const comp = c.comportamiento || {};
+  if (comp.bloqueante && !c.bloqueante_aprobada_por) {
+    errores.push('Un modal bloqueante necesita aprobación aparte antes de activarse.');
+  }
+  if (comp.bloqueante && c.formato !== 'modal') errores.push('Solo un modal puede ser bloqueante.');
+  if (c.meta && c.meta.tipo === 'uso_modulo' && !MODULOS_PUENTE.includes(c.meta.valor)) {
+    errores.push(`La meta apunta a un módulo que el puente no reporta: "${c.meta.valor}".`);
+  }
+  return errores;
+}
+
+// ── Materialización + publicación ────────────────────────────────────────────
+
+/** Doc que viaja a sacs3_global.campanas_inapp (lo que sacs_api sirve tal cual). */
+export function docParaSacs(c: any, cuentas: string[]) {
+  const nivel = c.nivel || { tipo: 'todos' };
+  return {
+    campana_id: c.id,
+    nombre: c.nombre,
+    estado: 'activa',
+    formato: c.formato,
+    canal: c.canal || 'web',
+    prioridad: c.prioridad || 'normal',
+    holdout_pct: c.holdout_pct ?? 0,
+    variante: c.variante || null,
+    guardar_campana: !!c.guardar_campana,
+    vigencia: {
+      desde: c.vigencia_desde ? new Date(c.vigencia_desde).toISOString() : null,
+      hasta: c.vigencia_hasta ? new Date(c.vigencia_hasta).toISOString() : null,
+    },
+    contenido: c.contenido || {},
+    comportamiento: c.comportamiento || {},
+    objetivo: {
+      cuentas,
+      grupos: nivel.tipo === 'grupos' ? (nivel.grupos || []) : null,
+      uids: nivel.tipo === 'uids' ? (nivel.uids || []) : null,
+    },
+  };
+}
+
+async function llamarSacs(ruta: string, body: any): Promise<any> {
+  const r = await fetch(SACS_API + ruta, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`sacs_api ${ruta} respondió ${r.status}`);
+  return r.json();
+}
+
+/** Publica (o re-publica) una campaña ACTIVA hacia sacs_api. */
+export async function publicarCampana(c: any): Promise<{ cuentas: number }> {
+  const res = await resolverAudiencia((c.audiencia || {}) as AudienciaDef);
+  if (!res.cuentas.length) throw new Error('La audiencia resuelve a 0 cuentas — no hay a quién publicar.');
+  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [docParaSacs(c, res.cuentas)] });
+  await supabase.from('inapp_campanas').update({
+    publicada_at: new Date().toISOString(),
+    materializada: {
+      cuentas: res.cuentas.length,
+      companies: res.companies.length,
+      exclusiones: res.exclusiones,
+      // La lista completa se guarda para que el cron evalúe la meta también en
+      // las cuentas que NUNCA vieron la campaña (view-through y brazo control).
+      cuentas_lista: res.cuentas,
+      at: new Date().toISOString(),
+    },
+    updated_at: new Date().toISOString(),
+  }).eq('id', c.id);
+  return { cuentas: res.cuentas.length };
+}
+
+/** Retira una campaña de la entrega (pausa/término/archivo). */
+export async function despublicarCampana(id: string): Promise<void> {
+  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [], eliminar: [id] });
+}
+
+export async function auditar(campanaId: string | null, accion: string, quien: string | null, detalle?: any) {
+  await supabase.from('inapp_auditoria').insert({ campana_id: campanaId, accion, quien, detalle: detalle || null });
+}

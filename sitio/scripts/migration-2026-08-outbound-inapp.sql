@@ -95,12 +95,15 @@ create table if not exists inapp_conversiones (
   campana_id uuid not null references inapp_campanas(id) on delete cascade,
   company_id uuid,
   cuenta text not null,
-  uid text,                                 -- null cuando la meta es de cuenta (activó plugin)
+  uid text not null default '',             -- '' cuando la meta es de cuenta (no de usuario):
+                                            -- el default permite el upsert por columnas
+                                            -- (PostgREST no puede hacer ON CONFLICT sobre
+                                            -- un índice de expresión con coalesce)
   brazo text not null default 'expuesto' check (brazo in ('expuesto','control')),
   convirtio_at timestamptz not null default now(),
   detalle jsonb
 );
-create unique index if not exists uq_inapp_conv on inapp_conversiones(campana_id, cuenta, coalesce(uid,''));
+create unique index if not exists uq_inapp_conv on inapp_conversiones(campana_id, cuenta, uid);
 
 -- Bitácora de autoría (gobernanza; obligatoria para bloqueantes y postmortems).
 create table if not exists inapp_auditoria (
