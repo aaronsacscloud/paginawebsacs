@@ -14,6 +14,34 @@ const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleSt
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
 const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/\D/g, '') : '';
 
+// La fecha se compara SIEMPRE en día local. Un lead que entró a las 8 de la
+// noche de México cae en el día siguiente si se corta por UTC, y entonces
+// "los de hoy" deja de ser lo que uno ve en la pantalla. 'sv-SE' da el formato
+// YYYY-MM-DD ya en la zona del navegador, que es la del que está mirando.
+const diaLocal = (d?: string | null) => {
+  if (!d) return '';
+  const t = Date.parse(d);
+  return Number.isFinite(t) ? new Date(t).toLocaleDateString('sv-SE') : '';
+};
+const HOY_LOCAL = () => new Date().toLocaleDateString('sv-SE');
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+/** "hoy", "ayer" o "14/ago" — y el año solo cuando no es el corriente. */
+function fechaCorta(d?: string | null) {
+  const dl = diaLocal(d);
+  if (!dl) return '';
+  const hoy = HOY_LOCAL();
+  if (dl === hoy) return 'hoy';
+  const ayer = new Date(Date.now() - 86400000).toLocaleDateString('sv-SE');
+  if (dl === ayer) return 'ayer';
+  const [y, m, dd] = dl.split('-');
+  const esteAno = hoy.slice(0, 4);
+  return `${Number(dd)}/${MESES[Number(m) - 1].slice(0, 3)}${y === esteAno ? '' : ' ' + y}`;
+}
+const horaCorta = (d?: string | null) => {
+  const t = d ? Date.parse(d) : NaN;
+  return Number.isFinite(t) ? new Date(t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '';
+};
+
 const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
   lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
@@ -51,13 +79,20 @@ export default function LeadsTab() {
   const [busca, setBusca] = useState('');
   const [etapa, setEtapa] = useState('abiertos');
   const [origen, setOrigen] = useState('todo');
+  // Cuándo llegó. 'todo' | 'hoy' | 'ayer' | '7' | '30' | 'YYYY-MM' | 'rango'
+  const [cuando, setCuando] = useState('todo');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+  // Lo nuevo primero. Es el orden natural de una bandeja: lo de hoy arriba.
+  const [orden, setOrden] = useState<'reciente' | 'frio'>('reciente');
   const [verContacto, setVerContacto] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
 
   function exportar() {
-    const cols = ['Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Sin contacto (días)'];
+    const cols = ['Llegó', 'Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Sin contacto (días)'];
     const filas = lista.map((c: any) => [
+      diaLocal(c.created_at),
       [c.nombre, c.apellido].filter(Boolean).join(' '), c.companies?.nombre || '', c.email || '',
       c.whatsapp || c.telefono || '', origenDe(origenDeRegistro(c)).l,
       c.sucursales_interes || c.companies?.sucursales || '', (ETAPAS[c.lifecycle_stage] || ETAPAS.lead).l,
@@ -84,9 +119,39 @@ export default function LeadsTab() {
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
-    // Lo más frío arriba: el lead sin contacto es la fuga más cara.
-    return r.sort((a: any, b: any) => (dias(b.last_contact_at || b.created_at) || 0) - (dias(a.last_contact_at || a.created_at) || 0));
-  }, [rows, etapa, origen, busca]);
+
+    // Cuándo llegó. Todo se resuelve comparando cadenas YYYY-MM-DD en día
+    // local: sin husos de por medio, "agosto" es agosto.
+    if (cuando !== 'todo') {
+      const hoy = HOY_LOCAL();
+      let ini = '', fin = '';
+      if (cuando === 'hoy') { ini = fin = hoy; }
+      else if (cuando === 'ayer') { ini = fin = new Date(Date.now() - 86400000).toLocaleDateString('sv-SE'); }
+      else if (cuando === '7' || cuando === '30') {
+        ini = new Date(Date.now() - (Number(cuando) - 1) * 86400000).toLocaleDateString('sv-SE'); fin = hoy;
+      } else if (cuando === 'rango') { ini = desde; fin = hasta; }
+      else if (/^\d{4}-\d{2}$/.test(cuando)) { ini = cuando + '-01'; fin = cuando + '-31'; }
+      r = r.filter((c: any) => {
+        const d = diaLocal(c.created_at);
+        if (!d) return false;
+        return (!ini || d >= ini) && (!fin || d <= fin);
+      });
+    }
+
+    return r.sort((a: any, b: any) => orden === 'reciente'
+      // Lo que llegó hoy, arriba: es la bandeja del día.
+      ? Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)
+      // Lo más frío arriba: el lead sin contacto es la fuga más cara.
+      : (dias(b.last_contact_at || b.created_at) || 0) - (dias(a.last_contact_at || a.created_at) || 0));
+  }, [rows, etapa, origen, busca, cuando, desde, hasta, orden]);
+
+  // Los meses que existen de verdad en los datos, del más nuevo al más viejo:
+  // ofrecer "marzo" cuando no llegó nadie en marzo es ruido.
+  const meses = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of rows || []) { const d = diaLocal(c.created_at); if (d) set.add(d.slice(0, 7)); }
+    return [...set].sort().reverse();
+  }, [rows]);
 
   if (rows === null) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando leads…</div>;
 
@@ -203,6 +268,43 @@ export default function LeadsTab() {
               ))}
               <option value="sin_definir">Sin definir</option>
             </select>
+
+            {/* Cuándo llegó. Los meses salen de los datos, del más nuevo al más
+                viejo, y "Rango…" abre dos fechas para lo que no es un mes. */}
+            <select value={cuando} onChange={e => setCuando(e.target.value)}
+              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: cuando === 'todo' ? '#fff' : '#f7f4ff', color: cuando === 'todo' ? '#555' : '#5B4BD6', fontWeight: cuando === 'todo' ? 400 : 700 }}>
+              <option value="todo">Cuándo llegó: todo</option>
+              <option value="hoy">Hoy</option>
+              <option value="ayer">Ayer</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              {meses.length > 0 && (
+                <optgroup label="Por mes">
+                  {meses.map(m => {
+                    const [y, mm] = m.split('-');
+                    return <option key={m} value={m}>{MESES[Number(mm) - 1]} {y}</option>;
+                  })}
+                </optgroup>
+              )}
+              <option value="rango">Rango de fechas…</option>
+            </select>
+            {cuando === 'rango' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
+                  style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit', background: '#fff' }} />
+                <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>a</span>
+                <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} title="Hasta"
+                  style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit', background: '#fff' }} />
+              </span>
+            )}
+
+            <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')}
+              title="El orden de la lista"
+              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
+              <option value="reciente">Más recientes primero</option>
+              <option value="frio">Más fríos primero</option>
+            </select>
+
             <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} leads</span>
           </div>
 
@@ -210,6 +312,7 @@ export default function LeadsTab() {
             <table className="lead-tabla">
               <thead>
                 <tr>
+                  <th style={{ ...S.th, width: 92 }}>Llegó</th>
                   <th style={{ ...S.th, minWidth: 180 }}>Lead</th>
                   <th style={{ ...S.th, minWidth: 150 }}>Empresa</th>
                   <th style={{ ...S.th, minWidth: 190 }}>Correo</th>
@@ -223,7 +326,7 @@ export default function LeadsTab() {
               </thead>
               <tbody>
                 {lista.length === 0 && (
-                  <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={9}>Nada con estos filtros.</td></tr>
+                  <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={10}>Nada con estos filtros.</td></tr>
                 )}
                 {lista.map((c: any) => {
                   const o = origenDe(origenDeRegistro(c));
@@ -232,6 +335,18 @@ export default function LeadsTab() {
                   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
                   return (
                     <tr key={c.id}>
+                      {/* Cuándo entró a SACS. Lo de hoy se marca para que la
+                          bandeja del día se lea sin contar renglones. */}
+                      <td style={S.td}>
+                        {c.created_at ? (
+                          <span title={new Date(c.created_at).toLocaleString('es-MX')}>
+                            <span style={{ fontWeight: fechaCorta(c.created_at) === 'hoy' ? 800 : 600, color: fechaCorta(c.created_at) === 'hoy' ? '#1E8A63' : '#4a4a52', fontSize: '0.76rem' }}>
+                              {fechaCorta(c.created_at)}
+                            </span>
+                            <span style={{ display: 'block', fontSize: '0.66rem', color: '#b3b1bb' }}>{horaCorta(c.created_at)}</span>
+                          </span>
+                        ) : <span style={{ color: '#c9c7d0' }}>—</span>}
+                      </td>
                       <td style={S.td}>
                         <div style={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => setVerContacto(c.id)}>
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
