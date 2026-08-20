@@ -23,7 +23,7 @@ INSERT INTO plans (slug, nombre, precio_mensual, precio_anual, a_la_medida, orde
   ('vende',           'Plan Vende',       600,   6000,  false, 1),
   ('controla',        'Plan Controla',    900,   9000,  false, 2),
   ('fideliza',        'Plan Fideliza',    1400,  14000, false, 3),
-  ('automatiza',      'Plan Automatiza',  5900,  59000, false, 4),
+  ('automatiza',      'Plan Automatiza',  2800,  28000, false, 4),
   ('personalizada',   'Licencia personalizada', NULL, NULL, true, 5),
   ('soporte_premium', 'Soporte premium',       NULL, NULL, true, 6)
 ON CONFLICT (slug) DO UPDATE SET
