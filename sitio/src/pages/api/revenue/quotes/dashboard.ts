@@ -76,8 +76,17 @@ export const GET: APIRoute = async ({ url }) => {
     };
   });
 
-  const delSegmento = (f: any) => segmento === 'todos' || f.origen === segmento;
-  const base = filas.filter(delSegmento);
+  // ── Las no ligadas salen del análisis ──
+  // Una cotización sin cliente ni lead detrás no puede decir de dónde viene el
+  // dinero ni de quién depende el periodo: en vez de inventar una categoría
+  // gris que nadie puede accionar, se excluyen y se reportan aparte para que
+  // el total siga cuadrando con la lista.
+  const sinLigar = filas.filter(f => f.origen === 'sin_ligar');
+  const ligadas = filas.filter(f => f.origen !== 'sin_ligar');
+  // Un excliente sigue siendo un cliente para esta lectura: compró antes.
+  const norm = (o: string) => (o === 'excliente' ? 'cliente' : o);
+  const delSegmento = (f: any) => segmento === 'todos' || norm(f.origen) === segmento;
+  const base = ligadas.filter(delSegmento);
 
   // ── KPIs del periodo, contra el periodo anterior ──
   const kpisDe = (m: string) => {
@@ -162,7 +171,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // ── Clientes contra leads (sobre TODO el histórico, no solo el mes) ──
   const bloque = (o: string) => {
-    const en = filas.filter(f => f.origen === o);
+    const en = ligadas.filter(f => norm(f.origen) === o);
     const ganadas = en.filter(f => GANADA.includes(f.estado));
     const resueltas = en.filter(f => GANADA.includes(f.estado) || PERDIDA.includes(f.estado)).length;
     return {
@@ -173,7 +182,15 @@ export const GET: APIRoute = async ({ url }) => {
       estimados: en.filter(f => f.origen_estimado).length,
     };
   };
-  const origenes = { cliente: bloque('cliente'), lead: bloque('lead'), excliente: bloque('excliente'), sin_ligar: bloque('sin_ligar') };
+  // Dos orígenes y nada más: cliente (incluye exclientes, que ya compraron) y
+  // lead. El cobrado del bloque se mide con PAGOS del periodo, no con el total
+  // de las ganadas: cotizar no es cobrar.
+  const bloqueCobrado = (o: string) => base.filter(f => norm(f.origen) === o)
+    .reduce((a, f) => a + (f.pagos || []).filter((p: any) => mesDe(p.fecha) === mes).reduce((x: number, p: any) => x + Number(p.monto || 0), 0), 0);
+  const origenes = {
+    cliente: { ...bloque('cliente'), cobrado_periodo: dinero(bloqueCobrado('cliente')) },
+    lead: { ...bloque('lead'), cobrado_periodo: dinero(bloqueCobrado('lead')) },
+  };
 
   // ── Lo próximo en cobrar: parcialidades pactadas dentro de la cotización ──
   // Se cubren en orden de fecha con lo que ya entró: sin recibo por parcialidad,
@@ -238,8 +255,107 @@ export const GET: APIRoute = async ({ url }) => {
     .sort((a, b) => b.monto - a.monto);
   const silencio = perdidas.filter(f => f.estado === 'expired');
 
+  // ═══ Serie diaria acumulada: el mes contra el anterior ═══
+  // Un acumulado dice si vas adelante o atrás del ritmo; un total no.
+  const serieDe = (m: string) => {
+    const [a, mm] = m.split('-').map(Number);
+    const ultimo = new Date(Date.UTC(a, mm, 0)).getUTCDate();
+    const porDia: number[] = Array(ultimo).fill(0);
+    base.forEach(f => (f.pagos || []).forEach((p: any) => {
+      if (mesDe(p.fecha) !== m) return;
+      const d = Number(String(p.fecha).slice(8, 10));
+      if (d >= 1 && d <= ultimo) porDia[d - 1] += Number(p.monto || 0);
+    }));
+    let acc = 0;
+    return porDia.map(v => (acc += v, dinero(acc)));
+  };
+
+  // ═══ Dónde se queda el dinero ═══
+  // Del cotizado del mes, cuánto se perdió en cada paso. Cada caída con nombre.
+  const [iniM, finM] = rangoMes(mes);
+  const delMesW = base.filter(f => f.created_at >= iniM && f.created_at < finM);
+  const cotizadoW = delMesW.reduce((a, f) => a + f.total, 0);
+  const sinAbrir = delMesW.filter(f => f.vistas === 0 && !GANADA.includes(f.estado)).reduce((a, f) => a + f.total, 0);
+  const sinRespuesta = delMesW.filter(f => f.vistas > 0 && ['sent', 'draft'].includes(f.estado)).reduce((a, f) => a + f.total, 0);
+  const aceptadoSinPagar = delMesW.filter(f => f.estado === 'accepted').reduce((a, f) => a + (f.total - f.abonado), 0);
+  const cobradoDelMes = base.reduce((a, f) => a + (f.pagos || [])
+    .filter((p: any) => mesDe(p.fecha) === mes).reduce((x: number, p: any) => x + Number(p.monto || 0), 0), 0);
+
+  // ═══ De cuántos clientes depende ═══
+  const porCliente: Record<string, { cliente: string; company_id: string | null; origen: string; cotizado: number; cobrado: number; n: number; dias: number[]; estado: string }> = {};
+  base.forEach(f => {
+    const k = f.company_id || f.empresa || f.id;
+    porCliente[k] = porCliente[k] || { cliente: f.empresa || 'Sin nombre', company_id: f.company_id, origen: norm(f.origen), cotizado: 0, cobrado: 0, n: 0, dias: [], estado: f.estado };
+    const r = porCliente[k];
+    if (f.created_at >= iniM && f.created_at < finM) { r.cotizado += f.total; r.n++; }
+    r.cobrado += (f.pagos || []).filter((p: any) => mesDe(p.fecha) === mes).reduce((x: number, p: any) => x + Number(p.monto || 0), 0);
+    if (f.pagado_fecha && f.created_at) {
+      const d = (new Date(f.pagado_fecha).getTime() - new Date(f.created_at).getTime()) / 86400000;
+      if (d >= 0) r.dias.push(Math.round(d));
+    }
+  });
+  const clientes = Object.values(porCliente).filter(c => c.cotizado > 0 || c.cobrado > 0)
+    .map(c => ({ ...c, dias: c.dias.length ? Math.round(c.dias.reduce((a, b) => a + b, 0) / c.dias.length) : null }))
+    .sort((a, b) => b.cotizado - a.cotizado);
+  const top4 = clientes.slice(0, 4);
+  const restoConc = clientes.slice(4).reduce((a, c) => a + c.cotizado, 0);
+  const totalConc = clientes.reduce((a, c) => a + c.cotizado, 0);
+
+  // ═══ Cuándo leen ═══
+  // Cada apertura registrada, por día de la semana y hora. Es el dato que ya se
+  // guardaba y nunca se había mirado: dice cuándo mandar y cuándo llamar.
+  const heat: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  (qs || []).forEach((q: any) => {
+    const { meta } = parseMeta(q.notas || '');
+    (meta?.timeline || []).forEach((t: any) => {
+      if (t.event !== 'viewed' || !t.at) return;
+      const d = new Date(t.at);
+      if (isNaN(d.getTime())) return;
+      // Hora de México: los eventos se guardan en UTC.
+      const mx = new Date(d.getTime() - 6 * 3600000);
+      heat[(mx.getUTCDay() + 6) % 7][mx.getUTCHours()]++;
+    });
+  });
+
+  // ═══ Lo que ya está comprometido ═══
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const comprometido: Record<string, { monto: number; n: number }> = {};
+  base.forEach(f => {
+    if (GANADA.includes(f.estado) || (!f.abonado && f.estado !== 'accepted')) return;
+    let restante = f.abonado;
+    [...f.plan].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha))).forEach((x: any) => {
+      const monto = Number(x.monto || 0);
+      const cubierto = Math.min(monto, Math.max(0, restante));
+      restante -= cubierto;
+      const falta = monto - cubierto;
+      if (falta <= 0.01 || String(x.fecha) < hoyISO) return;
+      const k = String(x.fecha).slice(0, 7);
+      comprometido[k] = comprometido[k] || { monto: 0, n: 0 };
+      comprometido[k].monto += falta; comprometido[k].n++;
+    });
+  });
+
   return json({
     mes, mes_anterior: mesAnterior(mes), segmento,
+    serie: { actual: serieDe(mes), anterior: serieDe(mesAnterior(mes)) },
+    fuga: {
+      cotizado: dinero(cotizadoW), sin_abrir: dinero(sinAbrir), sin_respuesta: dinero(sinRespuesta),
+      aceptado_sin_pagar: dinero(aceptadoSinPagar), cobrado: dinero(cobradoDelMes),
+    },
+    concentracion: {
+      total: dinero(totalConc),
+      top: top4.map(c => ({ cliente: c.cliente, company_id: c.company_id, monto: dinero(c.cotizado), pct: totalConc > 0 ? Math.round((c.cotizado / totalConc) * 100) : 0 })),
+      resto: dinero(restoConc), resto_n: Math.max(0, clientes.length - 4),
+      pct_top: totalConc > 0 ? Math.round((top4.reduce((a, c) => a + c.cotizado, 0) / totalConc) * 100) : 0,
+    },
+    clientes: clientes.slice(0, 12).map(c => ({
+      cliente: c.cliente, company_id: c.company_id, origen: c.origen,
+      cotizado: dinero(c.cotizado), cobrado: dinero(c.cobrado), n: c.n, dias: c.dias, estado: c.estado,
+    })),
+    heat,
+    comprometido: Object.entries(comprometido).sort((a, b) => a[0].localeCompare(b[0])).slice(0, 4)
+      .map(([m, v]) => ({ mes: m, monto: dinero(v.monto), n: v.n })),
+    sin_ligar: { n: sinLigar.length, monto: dinero(sinLigar.reduce((a, f) => a + f.total, 0)) },
     kpis: {
       cotizado: { valor: act.cotizado, anterior: ant.cotizado, detalle: act.cotizado_detalle },
       cobrado: { valor: act.cobrado, anterior: ant.cobrado, detalle: act.cobrado_detalle },
@@ -263,8 +379,9 @@ export const GET: APIRoute = async ({ url }) => {
       silencio_monto: dinero(silencio.reduce((a, f) => a + f.total, 0)),
     },
     conteos: {
-      todos: filas.length, cliente: origenes.cliente.n, lead: origenes.lead.n,
-      excliente: origenes.excliente.n, sin_ligar: origenes.sin_ligar.n,
+      todos: ligadas.length,
+      cliente: ligadas.filter(f => norm(f.origen) === 'cliente').length,
+      lead: ligadas.filter(f => norm(f.origen) === 'lead').length,
     },
   });
 };
