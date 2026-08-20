@@ -350,37 +350,67 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
-  /* ── El resultado ── */
+  /* ── El resultado ──
+     Era un panel oscuro con cuatro colores saturados peleando: azul en los
+     pares, verde en el dinero y rojo en las dos cifras de abajo, sobre negro.
+     Cinco superficies en un bloque que ya era claro. Ahora es una tarjeta más,
+     con el mismo blanco de las de traspaso, y el color se gasta en un solo
+     lugar: la cifra de dinero, que es el remate. Todo lo demás en tinta. */
   .nv-resultado {
-    background: var(--color-bg-dark, #1A1A1A); border-radius: var(--radio, 16px); padding: 24px 26px 26px;
-    box-shadow: 0 18px 44px rgba(15,23,42,.28);
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.07);
+    border-radius: var(--radio, 16px); padding: 26px 28px 28px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
   }
   .nv-cifra-rot, .nv-dinero-rot {
-    margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em;
+    margin: 0 0 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em;
     text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums; }
-  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
-  .nv-dinero { padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); }
-  .nv-dinero-n { margin: 0 0 14px; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1.6px; color: var(--color-secondary, #2AB5A0); font-variant-numeric: tabular-nums; }
-  .nv-supuesto { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  .nv-supuesto span { font-size: 12px; font-weight: 700; color: var(--claro-apunte); }
-  .nv-supuesto select {
-    background: var(--color-bg-dark-deep, #1A1A2E); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
-    padding: 9px 11px; font-family: inherit; font-size: 13.5px; font-weight: 600;
+  .nv-cifra-n {
+    margin: 0; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -.04em;
+    color: var(--color-text-primary, #1A1A1A); font-variant-numeric: tabular-nums;
   }
-  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--claro-apunte); }
+  .nv-cifra-pie { margin: 8px 0 24px; font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
 
-  .nv-feo { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); display: grid; gap: 14px; }
-  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: var(--alerta-borde); letter-spacing: -.4px; }
-  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: var(--color-text-tertiary, #8C8C8C); }
+  .nv-dinero { padding-top: 22px; border-top: 1px solid rgba(0,0,0,.07); }
+  /* El único color del panel. */
+  .nv-dinero-n {
+    margin: 0 0 18px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -.04em;
+    color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums;
+  }
+  .nv-supuesto { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .nv-supuesto span { font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
+  .nv-supuesto select {
+    background: var(--color-bg-primary, #FAFAF8); color: var(--color-text-primary, #1A1A1A);
+    border: 1px solid rgba(0,0,0,.14); border-radius: var(--radio-chico, 8px);
+    padding: 10px 12px; font-family: inherit; font-size: 13.5px; font-weight: 600;
+  }
+  .nv-dinero-pie {
+    margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--color-text-tertiary, #8C8C8C);
+  }
+
+  /* La columna fea pesa lo mismo que la bonita, pero no compite por color: la
+     marca es una regla al costado, no un titular rojo. */
+  .nv-feo { margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(0,0,0,.07); display: grid; gap: 18px; }
+  .nv-feo > div { padding-left: 14px; border-left: 2px solid var(--alerta-borde); }
+  .nv-feo b {
+    display: block; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 17px; font-weight: 700; letter-spacing: -.02em;
+    color: var(--color-text-primary, #1A1A1A);
+  }
+  .nv-feo span {
+    display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.55;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
 
   .nv-cta {
-    display: block; margin-top: 22px; text-align: center; background: #4B7BE5; color: #fff;
-    text-decoration: none; border-radius: var(--radio-pildora, 999px); padding: 13px 22px; font-size: 14.5px; font-weight: 800;
-    transition: transform .2s ease;
+    display: block; margin-top: 26px; text-align: center;
+    background: var(--color-primary, #4B7BE5); color: #fff; text-decoration: none;
+    border-radius: var(--radio-pildora, 999px); padding: 14px 22px;
+    font-size: 14.5px; font-weight: 700; transition: transform .2s ease;
   }
-  .nv-cta:hover { transform: scale(1.02); }
+  .nv-cta:hover { transform: scale(1.02); text-decoration: none; }
 
   /* ── De la sugerencia al piso ── */
   .nv-pasos { margin-top: clamp(48px, 6vw, 72px); }
