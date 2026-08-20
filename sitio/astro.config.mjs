@@ -17,7 +17,12 @@ export default defineConfig({
   // el resto del sitio.
   security: { checkOrigin: false },
   output: 'static',
-  adapter: vercel(),
+  // maxDuration en el ADAPTADOR, no en el bloque `functions` de vercel.json:
+  // ese patrón apunta a rutas del código fuente y en Astro las funciones las
+  // genera el adaptador, así que Vercel no lo encuentra y falla el build.
+  // Sin esto rige el default de 60 s y el motor de campañas —que se presupuesta
+  // 240 s— muere a media corrida dejando destinatarios sin enviar.
+  adapter: vercel({ maxDuration: 300 }),
   integrations: [sitemap({ filter: (page) => !page.includes('/admin/') }), react()],
   image: {
     domains: [],

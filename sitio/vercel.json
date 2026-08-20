@@ -41,10 +41,5 @@
       "path": "/api/cron/arr-weekly",
       "schedule": "0 14 * * 1"
     }
-  ],
-  "functions": {
-    "src/pages/api/**/*.ts": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }
