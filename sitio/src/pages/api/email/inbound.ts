@@ -18,6 +18,8 @@ import { verificar } from '../../../lib/email/token';
 import { darDeBaja } from '../../../lib/email/bajas';
 import { tenantDeCasa } from '../../../lib/email/tenant';
 
+import { detenerRecorridos } from '../../../lib/email/detener';
+
 export const prerender = false;
 const ok = () => new Response('OK', { status: 200 });
 
@@ -197,6 +199,15 @@ export const POST: APIRoute = async ({ request, url }) => {
         metadata: { conversation_id: convId, nombre: extraerNombre(de) },
       });
       await supabase.from('contacts').update({ last_contact_at: new Date().toISOString() }).eq('id', contactId);
+
+      // Quien responde deja de ser destinatario y pasa a ser conversación: se
+      // le detienen los recorridos automáticos. Antes la respuesta solo le
+      // subía el puntaje de intención y la secuencia seguía su curso encima de
+      // un humano que ya estaba contestando.
+      try {
+        const n = await detenerRecorridos(contactId, 'respondio', { detalle: (texto || asunto || '').slice(0, 100) });
+        if (n) console.log(`[inbound] ${n} recorrido(s) detenidos porque ${email} respondió`);
+      } catch (e) { console.warn('[inbound] detenerRecorridos:', e); }
     }
 
     // Baja pedida con palabras. Se ejecuta DE UNA: alguien que escribe "ya no
@@ -206,6 +217,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       await supabase.from('email_conversations')
         .update({ asunto: `[PIDE BAJA] ${asunto || ''}`.slice(0, 250) }).eq('id', convId);
       await darDeBaja({ tenantId, email, contactId, origen: 'respuesta-textual', detalle: texto.slice(0, 200) });
+      // Una baja pedida con palabras para TODO, incluidos los embudos marcados
+      // como "no detener": ahí no hay interruptor que valga.
+      if (contactId) { try { await detenerRecorridos(contactId, 'baja', { soloSiParar: false }); } catch {} }
     }
     return ok();
   } catch {

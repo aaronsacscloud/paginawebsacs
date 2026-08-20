@@ -5,6 +5,7 @@
 // vencido y no "lo de este tick": un tick perdido no puede dejar una campaña
 // varada para siempre.
 import type { APIRoute } from 'astro';
+import { revisarFreno } from '../../../lib/email/freno';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { procesar } from '../../../lib/email/campanas';
@@ -15,6 +16,13 @@ const json = (b: any, s = 200) => new Response(JSON.stringify(b, null, 2), { sta
 
 export const GET: APIRoute = async ({ url, request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
+
+  // Red de seguridad del freno: si el webhook se cayó, aquí se mide igual
+  // antes de mandar un solo correo más.
+  try {
+    const { data: inquilinos } = await supabase.from('email_tenants').select('id');
+    for (const t of inquilinos || []) await revisarFreno(t.id);
+  } catch (e) { console.warn('[cron] revisarFreno:', e); }
   const soloUna = url.searchParams.get('campana');
 
   // Envíos que quedaron a medias por una función muerta: se marcan, no se

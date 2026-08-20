@@ -91,6 +91,23 @@ export default function ReglasWeb({ onIrA }: { onIrA?: (s: string) => void }) {
                   Espera {r.retraso_minutos} min antes de escribir · no repite en {r.espera_dias} días
                   {r.total_disparos > 0 && ` · ${r.total_disparos} ${r.total_disparos === 1 ? 'persona alcanzada' : 'personas alcanzadas'}`}
                 </div>
+                {/* Por qué NO disparó. Una regla activa que no manda nada es
+                    indistinguible de una regla rota si no se dice el motivo. */}
+                {d.descartes?.[r.id]?.length > 0 && (
+                  <div style={{ marginTop: 7, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                      No disparó, 7 días
+                    </span>
+                    {d.descartes[r.id].slice(0, 4).map((x: any) => (
+                      <span key={x.motivo} style={{
+                        fontSize: '0.7rem', color: '#6f6b7d', background: '#f4f3f7',
+                        border: '1px solid #e6e4ec', borderRadius: 5, padding: '1px 7px',
+                      }}>
+                        {x.motivo} <b style={{ fontVariantNumeric: 'tabular-nums' }}>{x.veces}</b>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                 <button style={S.btnG} onClick={() => setEditando({ ...r })}>Editar</button>

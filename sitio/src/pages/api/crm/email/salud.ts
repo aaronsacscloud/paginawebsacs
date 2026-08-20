@@ -13,6 +13,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { resolverTenant } from '../../../../lib/email/tenant';
+import { revisarFreno, soltarFreno } from '../../../../lib/email/freno';
+import { getSessionFromRequest } from '../../../../lib/auth/session';
 
 export const prerender = false;
 const json = (b: any, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -151,5 +153,24 @@ export const GET: APIRoute = async ({ url }) => {
     campanas: porCampana,
     dormidos,
     dominio_remitente: String(t.from_email || '').split('@')[1] || null,
+    freno: await revisarFreno(t.id),
   });
+};
+
+/**
+ * POST — levantar el freno de emergencia.
+ *
+ * A mano y a propósito: un freno que se quita solo vuelve a mandar la misma
+ * campaña que lo activó. Queda el nombre de quien lo levantó.
+ */
+export const POST: APIRoute = async ({ request, url }) => {
+  const t = await resolverTenant(url.searchParams.get('tenant'));
+  if (!t) return json({ error: 'Sin inquilino.' }, 404);
+  const body = await request.json().catch(() => ({} as any));
+  if (body?.accion !== 'soltar_freno') return json({ error: 'Acción desconocida.' }, 400);
+
+  const sesion = await getSessionFromRequest(request);
+  const quien = sesion?.email || sesion?.nombre || 'el equipo';
+  await soltarFreno(t.id, quien);
+  return json({ ok: true, freno: await revisarFreno(t.id) });
 };

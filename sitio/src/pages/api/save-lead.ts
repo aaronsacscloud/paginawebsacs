@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { ligarVisitasPrevias } from '../../lib/email/senales';
 import { google } from 'googleapis';
 import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
@@ -80,6 +81,14 @@ async function appendToSheet(data: Record<string, string>, userAgent: string) {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
+
+    // El id del navegante: lo que mande el formulario o, si se le olvidó, la
+    // cookie que siembra PageTracker. Solo UNA de las cuatro formas del sitio
+    // se acordaba de mandarlo, y por eso apenas 3 de 225 contactos tenían con
+    // qué ligarse a su navegación: todo el recorrido previo al registro —el
+    // que dice si venía comparando o llegó de rebote— se estaba tirando.
+    const cookieVid = /(?:^|;\s*)sacs_vid=([^;]+)/.exec(request.headers.get('cookie') || '')?.[1];
+    const visitorId = String(data.visitorId || (cookieVid ? decodeURIComponent(cookieVid) : '') || '') || null;
 
     // Save to Stripe
     const params = new URLSearchParams();
@@ -169,6 +178,7 @@ export const POST: APIRoute = async ({ request }) => {
           lifecycle_stage,
           plan_interes: data.plan || null,
         };
+        if (visitorId) updates.visitor_id = visitorId;
         // Solo settear partner_id si no existe ya (no sobreescribir atribución previa)
         if (referrerPartnerId && !existingContact.referrer_partner_id) {
           updates.referrer_partner_id = referrerPartnerId;
@@ -200,7 +210,7 @@ export const POST: APIRoute = async ({ request }) => {
             total_time_on_site: parseInt(data.totalTime) || 0,
             pages_visited: data.pagesVisited || null,
             page_count: parseInt(data.pageCount) || 0,
-            visitor_id: data.visitorId || null,
+            visitor_id: visitorId,
             company_id,
             plan_interes: data.plan || null,
             giro: data.giro || null,
@@ -214,6 +224,18 @@ export const POST: APIRoute = async ({ request }) => {
           contactId = newContact.id;
           isNewContact = true;
         }
+      }
+
+      // EL PUENTE: todo lo que esta persona navegó siendo anónima se le cuelga
+      // ahora a su ficha. La función existía y nadie la llamaba desde aquí, así
+      // que las visitas anónimas se quedaban huérfanas para siempre — y las
+      // reglas de comportamiento, que solo miran visitas CON contacto, no
+      // tenían a quién dispararle.
+      if (contactId && visitorId) {
+        try {
+          const n = await ligarVisitasPrevias(visitorId, contactId);
+          if (n) console.log(`[save-lead] ${n} visitas anónimas ligadas a ${contactId}`);
+        } catch (e) { console.warn('[save-lead] ligarVisitasPrevias:', e); }
       }
 
       // Si vino por partner link y es lead nuevo → generar bono pendiente $500

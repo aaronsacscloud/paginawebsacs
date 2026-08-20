@@ -5,7 +5,11 @@ import { registrarVisita, ligarVisitasPrevias } from '../../../lib/email/senales
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  const { email, visitor_id, page_url, page_title, referrer, segundos } = await request.json();
+  const { email, visitor_id: vidCuerpo, page_url, page_title, referrer, segundos } = await request.json();
+
+  // Misma cookie que lee save-lead: si el cuerpo no trae id, la cookie sí.
+  const cookieVid = /(?:^|;\s*)sacs_vid=([^;]+)/.exec(request.headers.get('cookie') || '')?.[1];
+  const visitor_id = vidCuerpo || (cookieVid ? decodeURIComponent(cookieVid) : null);
 
   if (!email && !visitor_id) {
     return new Response(JSON.stringify({ error: 'email or visitor_id required' }), { status: 400 });

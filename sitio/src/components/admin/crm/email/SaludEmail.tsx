@@ -11,6 +11,7 @@ export default function SaludEmail() {
   const [supr, setSupr] = useState<any[] | null>(null);
   const [verSupr, setVerSupr] = useState(false);
   const [restaurando, setRestaurando] = useState<any>(null);
+  const [soltando, setSoltando] = useState(false);
 
   useEffect(() => { setD(null); fetch(`/api/crm/email/salud?dias=${dias}`).then(r => r.json()).then(setD).catch(() => setD({ error: 1 })); }, [dias]);
   useEffect(() => { if (verSupr && !supr) fetch('/api/crm/email/suprimidos').then(r => r.json()).then(j => setSupr(j.suprimidos || [])).catch(() => setSupr([])); }, [verSupr]);
@@ -19,6 +20,15 @@ export default function SaludEmail() {
     setRestaurando(null);
     await fetch('/api/crm/email/suprimidos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: s.email, accion: 'restaurar' }) });
     setSupr(prev => (prev || []).filter(x => x.email !== s.email));
+  }
+
+  async function soltarFreno() {
+    setSoltando(false);
+    const j = await fetch('/api/crm/email/salud', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'soltar_freno' }),
+    }).then(r => r.json()).catch(() => null);
+    if (j?.freno) setD((prev: any) => ({ ...prev, freno: j.freno }));
   }
 
   if (!d) return <Cargando que="las métricas" />;
@@ -46,6 +56,42 @@ export default function SaludEmail() {
           {[7, 30, 90].map(n => <button key={n} style={chip(dias === n)} onClick={() => setDias(n)}>{n} días</button>)}
         </div>
       </div>
+
+      {soltando && (
+        <Confirmar titulo="Volver a enviar marketing" peligro
+          confirmar="Sí, quitar el freno"
+          mensaje={<>El envío de marketing se reanudará de inmediato para todo el inquilino.</>}
+          detalle={<>El freno se puso porque <b>{d.freno?.motivo}</b>. Si la causa sigue ahí, se volverá a activar en cuanto lleguen las siguientes quejas — y cada reincidencia le cuesta más a tu reputación. Revisa primero qué campaña la provocó.</>}
+          onSi={soltarFreno} onNo={() => setSoltando(false)} />
+      )}
+
+      {/* El freno de emergencia. Va ARRIBA de todo: si está puesto, ningún
+          otro número de esta pantalla importa hasta resolverlo. */}
+      {d.freno?.frenado && (
+        <div style={{
+          border: '1px solid #E2B4B0', background: '#FBF2F1', borderRadius: 10,
+          padding: '14px 16px', marginBottom: 14,
+        }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <b style={{ color: '#8E3A34', fontSize: '0.92rem' }}>⚠️ Marketing detenido automáticamente</b>
+            <span style={{ fontSize: '0.75rem', color: '#8a6b68' }}>
+              desde {fmtFecha(d.freno.desde)}
+            </span>
+            <button style={{ ...S.btnG, marginLeft: 'auto' }} onClick={() => setSoltando(true)}>Quitar el freno</button>
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#6f4f4c', marginTop: 6, lineHeight: 1.55 }}>
+            {d.freno.motivo}. Las campañas en vuelo quedaron en pausa. El correo de
+            relación —cobros, renovaciones, avisos— <b>sigue saliendo normal</b>: es lo
+            último que conviene detener cuando la reputación está en riesgo.
+          </div>
+        </div>
+      )}
+      {!d.freno?.frenado && d.freno?.muestra > 0 && (
+        <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginBottom: 10 }}>
+          Freno de emergencia armado · quejas {d.freno.quejas_pct}% de {d.freno.umbral_quejas}% ·
+          rebotes {d.freno.rebotes_pct}% de {d.freno.umbral_rebotes}% · muestra {d.freno.muestra} envíos de 24 h
+        </div>
+      )}
 
       {(d.alertas || []).map((a: any, i: number) => (
         <Aviso key={i} tono={a.nivel === 'urgente' ? 'malo' : 'aviso'} titulo={a.nivel === 'urgente' ? 'Atiende esto antes de la próxima campaña' : undefined}>{a.texto}</Aviso>

@@ -35,6 +35,8 @@ import { firmar } from './token';
 import { footerHtml, footerTexto, headersBaja, htmlATexto } from './footer';
 import { envolverLinks, agregarPixel } from './tracking';
 
+import { frenado } from './freno';
+
 export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional';
 
 export interface Solicitud {
@@ -187,6 +189,10 @@ export async function evaluarDestinatario(
 ): Promise<string | null> {
   const e = normalizarEmail(email);
   if (!EMAIL_RE.test(e)) return 'email_invalido';
+  // El freno de emergencia manda sobre todo lo demás en marketing. El correo
+  // de relación —cobros, renovaciones— sigue saliendo: si el dominio se está
+  // quemando, eso es justo lo último que quieres detener.
+  if (categoria === 'marketing' && (await frenado(t.id)).si) return 'frenado';
   if (categoria !== 'prueba' && esRoleAccount(e)) return 'role_account';
   const sup = await estaSuprimido(t.id, e);
   if (sup.suprimido) return 'suprimido';
@@ -211,6 +217,10 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
   }
   if (!proveedorListo()) {
     return { enviado: false, motivo: 'sin_proveedor', sendId: null, detalle: 'Falta SENDGRID_API_KEY.' };
+  }
+  if (categoria === 'marketing') {
+    const f = await frenado(t.id);
+    if (f.si) return { enviado: false, motivo: 'frenado', sendId: null, detalle: f.motivo };
   }
   if (!s.asunto?.trim() || !s.html?.trim()) {
     return { enviado: false, motivo: 'datos_invalidos', sendId: null, detalle: 'Faltan asunto o contenido.' };

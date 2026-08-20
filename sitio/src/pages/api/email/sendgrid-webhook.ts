@@ -15,6 +15,9 @@ import crypto from 'node:crypto';
 import { supabase } from '../../../lib/supabase';
 import { darDeBaja } from '../../../lib/email/bajas';
 
+import { detenerRecorridos } from '../../../lib/email/detener';
+import { revisarFreno } from '../../../lib/email/freno';
+
 export const prerender = false;
 const ok = () => new Response('OK', { status: 200 });
 
@@ -123,6 +126,30 @@ export const POST: APIRoute = async ({ request }) => {
         origen: 'sendgrid:' + tipo,
         detalle: String(ev.reason || ev.status || '').slice(0, 400),
       });
+
+      // Y se le cortan los recorridos. Suprimir sin detener dejaba a la
+      // persona avanzando por el embudo en silencio: cada paso intentaba
+      // enviar, chocaba con la supresión y se contaba como paso dado, así que
+      // el embudo "terminaba" sin haber entregado nada. Aquí no hay
+      // interruptor por embudo que valga: un rebote duro o una queja son
+      // definitivos.
+      try {
+        const { data: quien } = sendId
+          ? await supabase.from('email_sends').select('contact_id').eq('id', sendId).maybeSingle()
+          : await supabase.from('contacts').select('id').eq('email', email).limit(1).maybeSingle()
+              .then((r: any) => ({ data: r.data ? { contact_id: r.data.id } : null }));
+        if (quien?.contact_id) {
+          await detenerRecorridos(quien.contact_id, motivo === 'queja' ? 'queja' : 'rebote', { soloSiParar: false });
+        }
+      } catch (e) { console.warn('[sendgrid-webhook] detenerRecorridos:', e); }
+
+      // Y se mide el daño acumulado: si la tasa de quejas o rebotes de las
+      // últimas 24 h cruzó el límite, el marketing se apaga solo. Aquí, sobre
+      // el evento, es donde reacciona en segundos; el cron es la red por si
+      // este webhook se cae justo cuando más importa.
+      if (motivo === 'queja' || motivo === 'rebote_duro') {
+        try { await revisarFreno(tenantId); } catch (e) { console.warn('[sendgrid-webhook] revisarFreno:', e); }
+      }
     }
   }
   return ok();

@@ -104,7 +104,28 @@ export const GET: APIRoute = async ({ url }) => {
   const { data: embudos } = await supabase.from('automations')
     .select('id, nombre, estado').eq('tenant_id', t.id).is('archived_at', null).order('nombre');
 
-  return json({ reglas: reglas || [], tipos: TIPOS, rutas, embudos: embudos || [] });
+  // Por qué NO disparó: los siete días recientes, agrupados por regla. Es la
+  // respuesta a la pregunta que más se hace de este módulo, y hasta ahora solo
+  // se podía contestar leyendo el evaluador.
+  const ids = (reglas || []).map((r: any) => r.id);
+  const descartes: Record<string, Array<{ motivo: string; veces: number }>> = {};
+  if (ids.length) {
+    const desde = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const { data: ds } = await supabase.from('web_descartes')
+      .select('regla_id, motivo, veces').in('regla_id', ids).gte('dia', desde).limit(5000);
+    const suma = new Map<string, number>();
+    for (const d of ds || []) {
+      const k = `${d.regla_id}|${d.motivo}`;
+      suma.set(k, (suma.get(k) || 0) + (d.veces || 1));
+    }
+    for (const [k, veces] of suma) {
+      const [rid, motivo] = k.split('|');
+      (descartes[rid] ||= []).push({ motivo, veces });
+    }
+    for (const rid of Object.keys(descartes)) descartes[rid].sort((a, b) => b.veces - a.veces);
+  }
+
+  return json({ reglas: reglas || [], tipos: TIPOS, rutas, embudos: embudos || [], descartes });
 };
 
 export const POST: APIRoute = async ({ request, url }) => {

@@ -188,7 +188,18 @@ export interface Avance { reglas: number; evaluados: number; inscritos: number; 
  */
 export async function evaluar(tenantId?: string): Promise<Avance> {
   const av: Avance = { reglas: 0, evaluados: 0, inscritos: 0, saltados: {} };
-  const salta = (m: string) => { av.saltados[m] = (av.saltados[m] || 0) + 1; };
+
+  // Los descartes se CUENTAN y se GUARDAN. Antes solo se contaban y el conteo
+  // moría con la respuesta del cron, que nadie mira: quedaba una regla activa,
+  // con candidatos, que no mandaba nada y sin forma de saber por qué salvo
+  // leyendo el código. Ahora la pregunta se contesta con una consulta.
+  const porGuardar: Array<{ regla_id: string; contact_id: string | null; motivo: string }> = [];
+  let reglaEnCurso = '';
+  let personaEnCurso: string | null = null;
+  const salta = (m: string) => {
+    av.saltados[m] = (av.saltados[m] || 0) + 1;
+    if (reglaEnCurso) porGuardar.push({ regla_id: reglaEnCurso, contact_id: personaEnCurso, motivo: m });
+  };
 
   let q = supabase.from('web_reglas').select('*').eq('estado', 'activa')
     .not('automation_id', 'is', null).order('prioridad', { ascending: false });
@@ -210,10 +221,13 @@ export async function evaluar(tenantId?: string): Promise<Avance> {
 
   for (const r of reglas as Regla[]) {
     av.reglas++;
+    reglaEnCurso = r.id;
     const lista = await candidatos(r);
     av.evaluados += lista.length;
+    if (!lista.length) { personaEnCurso = null; salta('nadie cumple la regla todavía'); }
 
     for (const { contactId, detalle } of lista) {
+      personaEnCurso = contactId;
       if (yaHoy.has(contactId)) { salta('ya recibió hoy'); continue; }
 
       // Solo a quien está en el CRM con correo — regla 3 de la cabecera.
@@ -275,6 +289,20 @@ export async function evaluar(tenantId?: string): Promise<Avance> {
       yaHoy.add(contactId);
       av.inscritos++;
     }
+  }
+
+  // Un solo viaje al final. `veces` se acumula: si la misma persona choca con
+  // el mismo motivo cincuenta veces hoy, es una fila con 50, no cincuenta filas.
+  if (porGuardar.length) {
+    try {
+      const agrupado = new Map<string, { regla_id: string; contact_id: string | null; motivo: string; veces: number }>();
+      for (const d of porGuardar) {
+        const k = `${d.regla_id}|${d.contact_id || ''}|${d.motivo}`;
+        const prev = agrupado.get(k);
+        if (prev) prev.veces++; else agrupado.set(k, { ...d, veces: 1 });
+      }
+      await supabase.rpc('registrar_descartes_web', { filas: [...agrupado.values()] });
+    } catch (e) { console.warn('[reglas-web] no se pudieron guardar los descartes:', e); }
   }
   return av;
 }

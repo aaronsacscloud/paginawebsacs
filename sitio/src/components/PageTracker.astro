@@ -28,6 +28,16 @@
 
   function saveVisitor(v) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)); } catch(e) {}
+    // Y en cookie. localStorage solo lo ve el navegador: cualquier formulario
+    // que no se acuerde de mandar el visitorId a mano rompe el puente entre lo
+    // que la persona navegó de anónima y su ficha del CRM. En cookie el
+    // servidor lo lee SIEMPRE, venga de la forma que venga. Un año de vida,
+    // sin HttpOnly porque el propio rastreador la lee.
+    try {
+      document.cookie = 'sacs_vid=' + encodeURIComponent(v.id) +
+        '; Path=/; Max-Age=31536000; SameSite=Lax' +
+        (location.protocol === 'https:' ? '; Secure' : '');
+    } catch(e) {}
   }
 
   // Track scroll depth
@@ -95,6 +105,7 @@
   // anónima y la liga hacia atrás el día que se identifique.
   try {
     var visitante = getVisitor();
+    saveVisitor(visitante);          // re-sella la cookie en cada carga
     var correoGuardado = localStorage.getItem('sacs_visitor_email');
     var entrada = Date.now();
     var reportado = false;
