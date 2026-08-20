@@ -3762,7 +3762,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             />
           );
         })()}
-        )}
       </div>
     </div>
   );

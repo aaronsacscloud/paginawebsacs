@@ -211,7 +211,15 @@ export default function CrmDashboard() {
     // recargar: es lo primero que uno mira para comprobar que sí guardó.
     const alGuardar = () => traerYo();
     window.addEventListener('sacs-perfil', alGuardar);
-    return () => { vivo = false; window.removeEventListener('sacs-perfil', alGuardar); };
+    // Configuración se abre a pantalla completa y se cierra con su X: avisa
+    // aquí para volver a donde se estaba, no a una pantalla cualquiera.
+    const alCerrarConfig = () => switchTab(volverDeConfig.current);
+    window.addEventListener('sacs-cerrar-config', alCerrarConfig);
+    return () => {
+      vivo = false;
+      window.removeEventListener('sacs-perfil', alGuardar);
+      window.removeEventListener('sacs-cerrar-config', alCerrarConfig);
+    };
   }, []);
   // Las secciones que esta persona puede ver. Mientras carga se muestra todo:
   // parpadear el menú completo y luego recortarlo se lee como un error.
@@ -257,8 +265,11 @@ export default function CrmDashboard() {
     };
   }, []);
 
+  // De dónde se venía al abrir Configuración: su X devuelve ahí, no a una
+  // pantalla cualquiera.
+  const volverDeConfig = useRef<Tab>('dashboard');
   const switchTab = (t: Tab) => {
-    setTab(t);
+    setTab(prev => { if (t === 'config' && prev !== 'config') volverDeConfig.current = prev; return t; });
     if (isMobile) setSidebarCollapsed(true);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', t);
