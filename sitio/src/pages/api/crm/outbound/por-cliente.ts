@@ -66,14 +66,14 @@ export const GET: APIRoute = async ({ url }) => {
   // interpolación cruda en el string del .or es inyectable si el dato de
   // origen cambia algún día).
   const [convA, convB] = await Promise.all([
-    supabase.from('inapp_conversiones').select('campana_id, cuenta, brazo, convirtio_at, detalle')
+    supabase.from('inapp_conversiones').select('campana_id, cuenta, uid, brazo, convirtio_at, detalle')
       .eq('company_id', companyId).limit(500),
-    supabase.from('inapp_conversiones').select('campana_id, cuenta, brazo, convirtio_at, detalle')
+    supabase.from('inapp_conversiones').select('campana_id, cuenta, uid, brazo, convirtio_at, detalle')
       .in('cuenta', cuentas).limit(500),
   ]);
   const vistosConv = new Set<string>();
   const convs = [...(convA.data || []), ...(convB.data || [])].filter((x: any) => {
-    const k = `${x.campana_id}|${x.cuenta}`;
+    const k = `${x.campana_id}|${x.cuenta}|${x.uid || ''}`;
     if (vistosConv.has(k)) return false;
     vistosConv.add(k);
     return true;
