@@ -6,6 +6,7 @@
 // de email: un contador que se desincroniza no se nota; un recálculo, sí.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { leerPaginado } from '../../../../lib/outbound/motor';
 
 export const prerender = false;
 
@@ -20,11 +21,11 @@ export const GET: APIRoute = async ({ url }) => {
   const { data: c, error } = await supabase.from('inapp_campanas').select('*').eq('id', id).single();
   if (error || !c) return json({ error: 'Campaña no encontrada' }, 404);
 
-  const { data: eventos } = await supabase.from('inapp_eventos')
+  // Paginado: PostgREST capa a max_rows=1000 CUALQUIER select por grande que
+  // sea el .limit() — sin esto, una campaña con tracción subcuenta en silencio.
+  const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
     .select('evento, boton, valor, uid, cuenta, dia')
-    .eq('campana_id', id).limit(100000);
-
-  const evs = eventos || [];
+    .eq('campana_id', id).order('id', { ascending: true }).range(from, to));
   const usuariosVieron = new Set<string>();
   const usuariosClic = new Set<string>();
   const cuentasVieron = new Set<string>();
@@ -48,8 +49,8 @@ export const GET: APIRoute = async ({ url }) => {
   // Interés = clic/chat/encuesta O ≥2 impresiones (lo vio dos veces y no lo descartó).
   for (const [u, n] of Object.entries(vistasPorUsuario)) if (n >= 2) interesados.add(u);
 
-  const { data: convs } = await supabase.from('inapp_conversiones')
-    .select('cuenta, brazo, convirtio_at').eq('campana_id', id).limit(10000);
+  const convs = await leerPaginado((from, to) => supabase.from('inapp_conversiones')
+    .select('cuenta, brazo, convirtio_at').eq('campana_id', id).order('id', { ascending: true }).range(from, to));
   const expuestas = (convs || []).filter(x => x.brazo === 'expuesto').length;
   const control = (convs || []).filter(x => x.brazo === 'control').length;
 
@@ -59,7 +60,7 @@ export const GET: APIRoute = async ({ url }) => {
   const tasaCtrl = cuentasSinVer ? control / cuentasSinVer : 0;
 
   return json({
-    campana: { id: c.id, nombre: c.nombre, estado: c.estado, formato: c.formato, meta: c.meta, materializada: c.materializada, pausa_motivo: c.pausa_motivo },
+    campana: { id: c.id, nombre: c.nombre, estado: c.estado, formato: c.formato, meta: c.meta, materializada: c.materializada, pausa_motivo: c.pausa_motivo, vigencia_desde: c.vigencia_desde, vigencia_hasta: c.vigencia_hasta },
     resumen: {
       cuentas_objetivo: cuentasObjetivo,
       cuentas_vieron: cuentasVieron.size,

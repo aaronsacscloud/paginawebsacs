@@ -8,7 +8,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
-import { resolverAudiencia, docParaSacs, despublicarCampana } from '../../../lib/outbound/motor';
+import { resolverAudiencia, docParaSacs, despublicarCampana, leerPaginado } from '../../../lib/outbound/motor';
 import { normCuenta } from '../../../lib/crm/sacs-cuentas';
 
 export const prerender = false;
@@ -39,10 +39,12 @@ async function guardarSync(id: string, valor: any) {
 
 // ── 1. Ingesta de eventos (cursor progresivo) ────────────────────────────────
 async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; error?: string }> {
-  let cursor = (await leerSync('eventos_cursor')).desde || null;
+  const sync = await leerSync('eventos_cursor');
+  let cursor = sync.desde || null;
+  let cursorId = sync.desde_id || null;
   let ingeridos = 0;
   while (Date.now() < deadline) {
-    const r = await sacs('/interno/crm/campanas-eventos', { desde: cursor, limite: 1000 });
+    const r = await sacs('/interno/crm/campanas-eventos', { desde: cursor, desde_id: cursorId, limite: 1000 });
     const evs = r.eventos || [];
     if (!evs.length) break;
     const filas = evs.map((e: any) => ({
@@ -59,8 +61,14 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
       if (error) return { ingeridos, error: error.message };
       ingeridos += reales.length;
     }
-    cursor = r.siguiente || cursor;
-    await guardarSync('eventos_cursor', { desde: cursor });
+    // Guard de no-avance: si el cursor no se movió con hay_mas=true, salir en
+    // vez de quemar el presupuesto reintentando la misma página.
+    const nuevoCursor = r.siguiente || cursor;
+    const nuevoId = r.siguiente_id || cursorId;
+    if (r.hay_mas && nuevoCursor === cursor && nuevoId === cursorId) break;
+    cursor = nuevoCursor;
+    cursorId = nuevoId;
+    await guardarSync('eventos_cursor', { desde: cursor, desde_id: cursorId });
     if (!r.hay_mas) break;
   }
   return { ingeridos };
@@ -68,9 +76,12 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
 
 // ── 2. Métricas + breaker + metas por campaña activa ─────────────────────────
 async function procesarCampana(c: any): Promise<any> {
-  const { data: eventos } = await supabase.from('inapp_eventos')
-    .select('evento, uid, cuenta, valor').eq('campana_id', c.id).limit(100000);
-  const evs = eventos || [];
+  // Paginado: max_rows=1000 de PostgREST capa cualquier select — sin esto, el
+  // circuit breaker y el brazo expuesto/control se calculan sobre un
+  // subconjunto arbitrario en cuanto la campaña rebasa 1000 eventos.
+  const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
+    .select('evento, uid, cuenta, valor').eq('campana_id', c.id)
+    .order('id', { ascending: true }).range(from, to));
   const usuarios = new Set<string>(); const clics = new Set<string>(); const cuentasVieron = new Set<string>();
   const vistas: Record<string, number> = {}; const interesados = new Set<string>();
   const cuentaDeUsuario: Record<string, string> = {};
@@ -99,9 +110,15 @@ async function procesarCampana(c: any): Promise<any> {
   let conversiones = 0;
   if (c.meta && targets.length && ['uso_modulo', 'plan'].includes(c.meta.tipo)) {
     const desde = c.publicada_at ? new Date(c.publicada_at) : null;
-    const { data: filas } = await supabase.from('company_sacs_accounts')
-      .select('cuenta, company_id, companies(id, plan, uso_sacs)')
-      .in('cuenta', targets.slice(0, 1000));
+    // Por LOTES (no un tope mudo): con >N cuentas objetivo, el resto quedaba
+    // sin evaluar la meta en silencio.
+    const filas: any[] = [];
+    for (let i = 0; i < targets.length; i += 500) {
+      const { data } = await supabase.from('company_sacs_accounts')
+        .select('cuenta, company_id, companies(id, plan, uso_sacs)')
+        .in('cuenta', targets.slice(i, i + 500));
+      filas.push(...(data || []));
+    }
     for (const f of (filas || [])) {
       const comp: any = (f as any).companies;
       if (!comp) continue;
@@ -129,9 +146,14 @@ async function procesarCampana(c: any): Promise<any> {
     const cuentasInteres = new Set<string>();
     for (const u of interesados) if (cuentaDeUsuario[u]) cuentasInteres.add(cuentaDeUsuario[u]);
     if (cuentasInteres.size) {
-      const { data: filas } = await supabase.from('company_sacs_accounts')
-        .select('cuenta, company_id, companies(id, intereses)')
-        .in('cuenta', Array.from(cuentasInteres).slice(0, 500));
+      const listaInteres = Array.from(cuentasInteres);
+      const filas: any[] = [];
+      for (let i = 0; i < listaInteres.length; i += 500) {
+        const { data } = await supabase.from('company_sacs_accounts')
+          .select('cuenta, company_id, companies(id, intereses)')
+          .in('cuenta', listaInteres.slice(i, i + 500));
+        filas.push(...(data || []));
+      }
       const porCompany: Record<string, { intereses: any; score: number }> = {};
       for (const f of (filas || [])) {
         const comp: any = (f as any).companies;
@@ -206,8 +228,22 @@ export const GET: APIRoute = async ({ request }) => {
 async function correr() {
   const inicio = Date.now();
   const deadline = inicio + PRESUPUESTO_MS;
-  const out: any = { ingeridos: 0, campanas: 0, continuas: 0, errores: [] as string[] };
+  const out: any = { ingeridos: 0, campanas: 0, continuas: 0, terminadas: 0, errores: [] as string[] };
   try {
+    // Campañas cuya vigencia ya venció: se terminan y se despublican. Sin esto
+    // el listado mostraba "activas" expiradas y el modo continuo las
+    // re-publicaba para siempre.
+    const { data: vencidas } = await supabase.from('inapp_campanas')
+      .select('id').in('estado', ['activa', 'pausada'])
+      .not('vigencia_hasta', 'is', null).lt('vigencia_hasta', new Date().toISOString());
+    for (const v of (vencidas || [])) {
+      try {
+        await despublicarCampana(v.id);
+        await supabase.from('inapp_campanas').update({ estado: 'terminada', updated_at: new Date().toISOString() }).eq('id', v.id);
+        out.terminadas++;
+      } catch (e: any) { out.errores.push(`vencida ${v.id}: ${e?.message || e}`); }
+    }
+
     const ing = await ingerirEventos(deadline);
     out.ingeridos = ing.ingeridos;
     if (ing.error) out.errores.push('ingesta: ' + ing.error);

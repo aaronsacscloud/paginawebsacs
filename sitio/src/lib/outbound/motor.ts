@@ -138,13 +138,16 @@ export function validarCampana(c: any): string[] {
     }
   }
   if (ct.imagen && !urlSacsValida(ct.imagen)) errores.push('La imagen debe estar hospedada en sacscloud.com.');
-  if (ct.video && !urlSacsValida(ct.video)) errores.push('El video debe estar hospedado en sacscloud.com (o ser una URL https de sacscloud.com a YouTube embebido).');
+  if (ct.video && !urlSacsValida(ct.video)) errores.push('El video debe ser una URL https de sacscloud.com (sube el mp4 a code.sacscloud.com; YouTube directo no está permitido).');
   // Sin emoji decorativo (estándar enterprise de sacs3). El ⚠️ de riesgo real se tolera.
   const texto = `${ct.titulo || ''} ${ct.mensaje || ''}`;
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/u.test(texto.replace(/⚠/gu, ''))) {
     errores.push('El contenido lleva emojis decorativos; el estándar de SACS es tipografía limpia.');
   }
   const comp = c.comportamiento || {};
+  if (comp.bloqueante && botones.length === 0) {
+    errores.push('Un modal bloqueante necesita al menos un botón: sin él, el usuario queda atrapado sin forma de cerrar.');
+  }
   if (comp.bloqueante && !c.bloqueante_aprobada_por) {
     errores.push('Un modal bloqueante necesita aprobación aparte antes de activarse.');
   }
@@ -194,16 +197,27 @@ async function llamarSacs(ruta: string, body: any): Promise<any> {
   return r.json();
 }
 
-/** Publica (o re-publica) una campaña ACTIVA hacia sacs_api. */
-export async function publicarCampana(c: any): Promise<{ cuentas: number }> {
-  const res = await resolverAudiencia((c.audiencia || {}) as AudienciaDef);
+/**
+ * Publica (o re-publica) una campaña ACTIVA hacia sacs_api.
+ * opts.congelada: usa la lista de cuentas ya materializada (modo 'unica' tras
+ *   la activación: editar el título NO debe mover la audiencia).
+ * opts.reactivar: levanta deliberadamente la pausa del circuit breaker en
+ *   sacs_api (solo activar/reanudar; una republicación de rutina jamás).
+ */
+export async function publicarCampana(c: any, opts: { congelada?: boolean; reactivar?: boolean } = {}): Promise<{ cuentas: number }> {
+  const congeladas: string[] = (opts.congelada && Array.isArray(c.materializada?.cuentas_lista)) ? c.materializada.cuentas_lista : [];
+  const res = congeladas.length
+    ? { cuentas: congeladas, companies: [], exclusiones: c.materializada?.exclusiones || {} } as any
+    : await resolverAudiencia((c.audiencia || {}) as AudienciaDef);
   if (!res.cuentas.length) throw new Error('La audiencia resuelve a 0 cuentas — no hay a quién publicar.');
-  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [docParaSacs(c, res.cuentas)] });
+  const doc: any = docParaSacs(c, res.cuentas);
+  if (opts.reactivar) doc.reactivar = true;
+  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [doc] });
   await supabase.from('inapp_campanas').update({
     publicada_at: new Date().toISOString(),
     materializada: {
       cuentas: res.cuentas.length,
-      companies: res.companies.length,
+      companies: congeladas.length ? (c.materializada?.companies || 0) : res.companies.length,
       exclusiones: res.exclusiones,
       // La lista completa se guarda para que el cron evalúe la meta también en
       // las cuentas que NUNCA vieron la campaña (view-through y brazo control).
@@ -215,9 +229,29 @@ export async function publicarCampana(c: any): Promise<{ cuentas: number }> {
   return { cuentas: res.cuentas.length };
 }
 
-/** Retira una campaña de la entrega (pausa/término/archivo). */
+/** Retira una campaña de la entrega (pausa/término/archivo).
+ *  Elimina también su copia efímera de prueba (`<id>-prueba`): sin esto, cada
+ *  "Enviar prueba" dejaba un doc activo permanente apuntando a pruebasmongo. */
 export async function despublicarCampana(id: string): Promise<void> {
-  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [], eliminar: [id] });
+  await llamarSacs('/interno/crm/campanas-publicar', { campanas: [], eliminar: [id, `${id}-prueba`] });
+}
+
+/**
+ * Lee TODAS las filas paginando de 1000 en 1000. PostgREST tiene max_rows=1000
+ * EN ESTE PROYECTO (verificado en la config viva): cualquier .limit() mayor se
+ * capa en silencio y las métricas subcuentan. `build` recibe (from,to) y debe
+ * devolver la query CON .order() determinista y .range(from,to).
+ */
+export async function leerPaginado(build: (from: number, to: number) => any, tope = 200000): Promise<any[]> {
+  const out: any[] = [];
+  for (let off = 0; off < tope; off += 1000) {
+    const { data, error } = await build(off, off + 999);
+    if (error) throw new Error(error.message);
+    const filas = data || [];
+    out.push(...filas);
+    if (filas.length < 1000) break;
+  }
+  return out;
 }
 
 export async function auditar(campanaId: string | null, accion: string, quien: string | null, detalle?: any) {

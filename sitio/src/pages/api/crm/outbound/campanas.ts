@@ -99,7 +99,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       case 'activar': {
         const errores = validarCampana(c);
         if (errores.length) return json({ error: 'La campaña no pasa la revisión', errores }, 400);
-        const r = await publicarCampana(c);
+        const r = await publicarCampana(c, { reactivar: true });
         await setEstado('activa', { pausa_motivo: null });
         await auditar(id, 'activo', uid, { cuentas: r.cuentas });
         return json({ ok: true, cuentas: r.cuentas });
@@ -111,7 +111,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         return json({ ok: true });
       }
       case 'reanudar': {
-        const r = await publicarCampana(c);
+        const errores = validarCampana(c);
+        if (errores.length) return json({ error: 'La campaña no pasa la revisión', errores }, 400);
+        // Modo 'una sola vez': la audiencia quedó congelada al activar y una
+        // pausa/reanudación no debe moverla.
+        const r = await publicarCampana(c, { congelada: c.modo === 'unica', reactivar: true });
         await setEstado('activa', { pausa_motivo: null });
         await auditar(id, 'activo', uid, { reanudada: true, cuentas: r.cuentas });
         return json({ ok: true, cuentas: r.cuentas });
@@ -166,13 +170,25 @@ export const PUT: APIRoute = async ({ request, url }) => {
   let body: any; try { body = await request.json(); } catch { return json({ error: 'Body inválido' }, 400); }
   const upd: any = { updated_at: new Date().toISOString() };
   for (const k of CAMPOS_EDITABLES) if (body[k] !== undefined) upd[k] = body[k];
+  // Una campaña VIVA no puede editarse por fuera de la lista blanca: sin esta
+  // validación, el PUT era un bypass de la revisión (botones fuera de catálogo,
+  // volverla bloqueante sin aprobación). El borrador sí se guarda incompleto.
+  const { data: previa } = await supabase.from('inapp_campanas').select('*').eq('id', id).single();
+  if (!previa) return json({ error: 'Campaña no encontrada' }, 404);
+  if (previa.estado === 'activa') {
+    const errores = validarCampana({ ...previa, ...upd });
+    if (errores.length) return json({ error: 'La campaña está activa y el cambio no pasa la revisión', errores }, 400);
+  }
   const { data, error } = await supabase.from('inapp_campanas').update(upd).eq('id', id).select().single();
   if (error) return json({ error: error.message }, 500);
   const uid = await quien(request);
   await auditar(id, 'edito', uid, { campos: Object.keys(upd).filter(k => k !== 'updated_at') });
-  // Editar una campaña VIVA re-publica para que sacs_api sirva lo nuevo.
+  // Editar una campaña VIVA re-publica para que sacs_api sirva lo nuevo — con
+  // la audiencia CONGELADA si el modo es 'una sola vez' (editar un título no
+  // debe mover la lista de cuentas que se congeló al activar).
   if (data.estado === 'activa') {
-    try { await publicarCampana(data); } catch (e: any) { return json({ campana: data, aviso: 'Guardada, pero no se pudo re-publicar: ' + (e?.message || '') }); }
+    try { await publicarCampana(data, { congelada: data.modo === 'unica' }); }
+    catch (e: any) { return json({ campana: data, aviso: 'Guardada, pero no se pudo re-publicar: ' + (e?.message || '') }); }
   }
   return json({ campana: data });
 };

@@ -5,7 +5,7 @@
 // split-view con preview en vivo como el drawer de cotizaciones). El diseño
 // pasó por auditoría de UI contra el código real — no inventar tonos nuevos:
 // verde/rojo SOLO para dinero o estados consumados/malos.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import TablaEnterprise, { type ColDef, type VistaDef } from '../TablaEnterprise';
 import Sheet from '../ui/Sheet';
 import ActionSheet from '../ui/ActionSheet';
@@ -178,11 +178,16 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
   const [cargandoRev, setCargandoRev] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [confirmaActivar, setConfirmaActivar] = useState(false);
+  // Cerrar el editor con un fetch en vuelo no debe disparar setState sobre un
+  // componente desmontado (ni perder de vista una creación que resolvió tarde).
+  const vivo = useRef(true);
+  useEffect(() => () => { vivo.current = false; }, []);
   const set = (patch: any) => setC((prev: any) => ({ ...prev, ...patch }));
   const setCt = (patch: any) => set({ contenido: { ...(c.contenido || {}), ...patch } });
   const setComp = (patch: any) => set({ comportamiento: { ...(c.comportamiento || {}), ...patch } });
 
-  async function guardar(): Promise<any | null> {
+  async function guardar(): Promise<{ campana: any; aviso?: string } | null> {
+    if (guardando) return null; // dos clics rápidos creaban DOS campañas
     setGuardando(true);
     try {
       const esNueva = !c.id;
@@ -192,35 +197,44 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
         body: JSON.stringify(c),
       });
       const j = await r.json();
-      if (!r.ok || j.error) { show(j.error || 'No se pudo guardar', 'error'); return null; }
+      if (!vivo.current) return null;
+      if (!r.ok || j.error) {
+        show(j.error || 'No se pudo guardar', 'error');
+        if (j.errores) setRev((prev: any) => ({ ...(prev || {}), errores: j.errores }));
+        return null;
+      }
       if (j.aviso) show(j.aviso, 'info');
       set({ id: j.campana.id, estado: j.campana.estado });
-      return j.campana;
-    } catch { show('Sin conexión — revisa tu internet', 'error'); return null; }
-    finally { setGuardando(false); }
+      return { campana: j.campana, aviso: j.aviso };
+    } catch { if (vivo.current) show('Sin conexión — revisa tu internet', 'error'); return null; }
+    finally { if (vivo.current) setGuardando(false); }
   }
 
   async function revisar() {
+    if (guardando || cargandoRev) return; // anti doble disparo (chips + botones)
     const g = await guardar(); if (!g) return;
     setCargandoRev(true); setRev(null);
     try {
-      const r = await fetch(`/api/crm/outbound/campanas?id=${g.id}&accion=revisar`, { method: 'POST' });
-      setRev(await r.json());
-    } catch { show('No se pudo revisar', 'error'); }
-    finally { setCargandoRev(false); }
+      const r = await fetch(`/api/crm/outbound/campanas?id=${g.campana.id}&accion=revisar`, { method: 'POST' });
+      const j = await r.json();
+      if (vivo.current) setRev(j);
+    } catch { if (vivo.current) show('No se pudo revisar', 'error'); }
+    finally { if (vivo.current) setCargandoRev(false); }
   }
 
   async function accion(a: string, body?: any) {
-    const g = c.id ? c : await guardar(); if (!g) return;
+    const idCampana = c.id || (await guardar())?.campana?.id;
+    if (!idCampana) return;
     try {
-      const r = await fetch(`/api/crm/outbound/campanas?id=${c.id || g.id}&accion=${a}`, {
+      const r = await fetch(`/api/crm/outbound/campanas?id=${idCampana}&accion=${a}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
       });
       const j = await r.json();
-      if (!r.ok || j.error) { show(j.error || 'No se pudo', 'error'); if (j.errores) setRev({ ...(rev || {}), errores: j.errores }); return; }
+      if (!vivo.current) return;
+      if (!r.ok || j.error) { show(j.error || 'No se pudo', 'error'); if (j.errores) setRev((prev: any) => ({ ...(prev || {}), errores: j.errores })); return; }
       if (a === 'activar') { show(`Campaña activa para ${j.cuentas} cuentas`); onSaved(); onClose(); }
       if (a === 'prueba') show(`Prueba publicada en ${j.cuenta} — entra a SACS con esa cuenta para verla`, 'info');
-    } catch { show('Sin conexión', 'error'); }
+    } catch { if (vivo.current) show('Sin conexión', 'error'); }
   }
 
   const cond0 = (c.audiencia?.grupos?.[0]?.condiciones) || [];
@@ -504,7 +518,7 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
             ))}
           </div>
         )}
-        <button style={S.btnP} disabled={guardando} onClick={async () => { const g = await guardar(); if (g) { show('Campaña guardada'); onSaved(); } }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+        <button style={S.btnP} disabled={guardando} onClick={async () => { const g = await guardar(); if (g) { if (!g.aviso) show('Campaña guardada'); onSaved(); } }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
         <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', color: '#999', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
       </div>
       {isMobile && (
@@ -530,9 +544,11 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
   const [r, setR] = useState<any>(null);
   const [err, setErr] = useState('');
   useEffect(() => {
+    let vivo = true;
     fetch(`/api/crm/outbound/resultados?id=${id}`).then(x => x.json())
-      .then(j => j.error ? setErr(j.error) : setR(j))
-      .catch(() => setErr('Sin conexión'));
+      .then(j => { if (vivo) { j.error ? setErr(j.error) : setR(j); } })
+      .catch(() => { if (vivo) setErr('Sin conexión'); });
+    return () => { vivo = false; };
   }, [id]);
   const fu = (t: string, v: any, sub?: string, hito?: boolean) => (
     <div style={{ flex: 1, background: '#fff', border: '1px solid #ececec', borderLeft: hito ? '3px solid #9B8CFA' : '1px solid #ececec', borderRadius: 10, padding: '12px 14px', minWidth: 100 }}>
@@ -611,6 +627,7 @@ export default function OutboundTab() {
         catalogo ? Promise.resolve({ catalogo }) : fetch('/api/crm/outbound/campanas?catalogo=1').then(r => r.json()),
       ]);
       if (a.error) { show(a.error, 'error'); return; }
+      if (b.error) { show('No se pudo cargar el catálogo: ' + b.error, 'error'); }
       setData(a.data || []);
       if (b.catalogo) setCatalogo(b.catalogo);
     } catch { show('No se pudieron cargar las campañas — revisa tu internet', 'error'); setData([]); }
