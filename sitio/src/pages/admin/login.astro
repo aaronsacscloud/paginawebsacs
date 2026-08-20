@@ -97,7 +97,9 @@ if (user) {
     .auth-brand-fm { display: block; font-size: .56rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #FBD3E5; margin-top: 3px; }
 
     .auth-saludo { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 12px; }
-    .auth-frase { font-size: 2.15rem; line-height: 1.14; font-weight: 800; letter-spacing: -.025em; margin: 0; }
+    /* El color va explícito: la hoja global le pone tinta oscura a todos los
+       h2, y una regla directa le gana a heredar el blanco del panel. */
+    .auth-frase { font-size: 2.15rem; line-height: 1.14; font-weight: 800; letter-spacing: -.025em; margin: 0; color: #fff; }
     .auth-frase-sub { font-size: .92rem; line-height: 1.6; color: rgba(255,255,255,.84); margin: 16px 0 0; max-width: 30ch; }
     .auth-pie { font-size: .68rem; color: rgba(255,255,255,.66); margin: 0; letter-spacing: .02em; }
 
