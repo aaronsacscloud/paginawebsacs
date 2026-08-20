@@ -52,18 +52,32 @@ export const GET: APIRoute = async ({ url }) => {
   const ids = Object.keys(porCampana);
 
   // Nombres y metas de esas campañas
+  // Por LOTES sobre TODOS los ids: un solo slice marcaba campañas reales como
+  // "(campaña eliminada)" pasando de 200 (el clásico truncado silencioso).
   let campanasInfo: Record<string, any> = {};
-  if (ids.length) {
+  for (let i = 0; i < ids.length; i += 200) {
     const { data: cs } = await supabase.from('inapp_campanas')
-      .select('id, nombre, formato, estado, meta').in('id', ids.slice(0, 200));
+      .select('id, nombre, formato, estado, meta').in('id', ids.slice(i, i + 200));
     for (const c of (cs || [])) campanasInfo[c.id] = c;
   }
 
   // Conversiones del cliente (con monto atribuido)
-  const { data: convs } = await supabase.from('inapp_conversiones')
-    .select('campana_id, cuenta, brazo, convirtio_at, detalle')
-    .or(`company_id.eq.${companyId},cuenta.in.(${cuentas.map(c => `"${c}"`).join(',')})`)
-    .limit(500);
+  // Dos consultas parametrizadas en vez de un .or() interpolado a mano (la
+  // interpolación cruda en el string del .or es inyectable si el dato de
+  // origen cambia algún día).
+  const [convA, convB] = await Promise.all([
+    supabase.from('inapp_conversiones').select('campana_id, cuenta, brazo, convirtio_at, detalle')
+      .eq('company_id', companyId).limit(500),
+    supabase.from('inapp_conversiones').select('campana_id, cuenta, brazo, convirtio_at, detalle')
+      .in('cuenta', cuentas).limit(500),
+  ]);
+  const vistosConv = new Set<string>();
+  const convs = [...(convA.data || []), ...(convB.data || [])].filter((x: any) => {
+    const k = `${x.campana_id}|${x.cuenta}`;
+    if (vistosConv.has(k)) return false;
+    vistosConv.add(k);
+    return true;
+  });
 
   // Citas nacidas de campañas (bookings con la utm del canal)
   const { data: citas } = await supabase.from('bookings')

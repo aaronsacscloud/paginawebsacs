@@ -156,7 +156,7 @@ async function procesarCampana(c: any): Promise<any> {
       vistasCitas.add(k);
       const { error } = await supabase.from('inapp_conversiones')
         .upsert({ campana_id: c.id, company_id: null, cuenta: cita.cuenta, uid: cita.uid, brazo: 'expuesto', detalle: { meta: c.meta } },
-                { onConflict: 'campana_id,cuenta,uid', ignoreDuplicates: true });
+                { onConflict: 'campana_id,cuenta,uid' });
       if (!error) conversiones++;
     }
   }
@@ -202,9 +202,12 @@ async function procesarCampana(c: any): Promise<any> {
         monto = (subs || []).filter((sb: any) => String(sb.nombre_plan || '').toLowerCase().includes(String(c.meta.valor || '').toLowerCase()))
           .reduce((a: number, sb: any) => a + (Number(sb.arr) || 0), 0);
       }
+      // upsert SIN ignoreDuplicates: el primer tick puede calcular monto=0
+      // (companies.plan cambia antes de que exista la suscripción) y el
+      // siguiente lo corrige — congelarlo dejaba el KPI de ingreso mintiendo.
       const { error } = await supabase.from('inapp_conversiones')
         .upsert({ campana_id: c.id, company_id: comp.id, cuenta, uid: '', brazo, detalle: { meta: c.meta, monto } },
-                { onConflict: 'campana_id,cuenta,uid', ignoreDuplicates: true });
+                { onConflict: 'campana_id,cuenta,uid' });
       if (!error) conversiones++;
     }
   }
@@ -413,12 +416,18 @@ async function correrPasos(deadline: number): Promise<{ ejecutados: number; erro
           const { error: eM } = await supabase.from('email_list_members').insert(filas);
           if (eM) out.errores.push(`paso ${paso.id}: miembros: ${eM.message}`);
         }
-        const { error: eC } = await supabase.from('email_campaigns').update({
+        const { data: gano, error: eC } = await supabase.from('email_campaigns').update({
           origen_tipo: 'lista', origen_id: lista.id, contact_ids: null,
           estado: 'programada', programada_para: new Date(Date.now() + 5 * 60000).toISOString(),
           utm_campaign: refCamp.utm_campaign || `outbound-${camp.id}`,
-        }).eq('id', refCamp.id).eq('estado', 'borrador');
+        }).eq('id', refCamp.id).eq('estado', 'borrador').select('id');
         if (eC) { out.errores.push(`paso ${paso.id}: no se pudo programar el email: ${eC.message}`); continue; }
+        if (!gano?.length) {
+          // Otro tick ganó la carrera: no marcar ejecutado ni notificar dos
+          // veces, y no dejar la lista huérfana.
+          await supabase.from('email_lists').delete().eq('id', lista.id);
+          continue;
+        }
         const ejecFilas = elegibles.map(cu => ({ paso_id: paso.id, campana_id: camp.id, cuenta: cu, detalle: { canal: 'email', lista_id: lista.id } }));
         ejecFilas.push({ paso_id: paso.id, campana_id: camp.id, cuenta: '*', detalle: { canal: 'email', lista_id: lista.id, contactos: contactos.length } as any });
         await supabase.from('inapp_paso_ejecuciones').upsert(ejecFilas, { onConflict: 'paso_id,cuenta', ignoreDuplicates: true });

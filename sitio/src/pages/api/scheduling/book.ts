@@ -211,6 +211,9 @@ export const POST: APIRoute = async ({ request }) => {
   // de SACS3 arma la URL del embed con ?oc=<campana_id> y BookingPage lo
   // reenvía en el body. Pisa las utm para que la correlación campaña↔cita sea
   // determinista (uuid validado; cualquier otra cosa se ignora).
+  // DECISIÓN deliberada: gana sobre la atribución de marketing porque el oc
+  // solo viaja dentro del modal de SACS3 (usuario ya cliente); el bloque
+  // completo de atribución original se conserva intacto en `atribucion` jsonb.
   const oc = String((body as any).oc || '');
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(oc)) {
     utm.utm_source = 'outbound_inapp';

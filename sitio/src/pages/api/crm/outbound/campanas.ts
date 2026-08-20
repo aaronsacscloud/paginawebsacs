@@ -200,7 +200,7 @@ export const PUT: APIRoute = async ({ request, url }) => {
   // deliberado: un embudo editado es un embudo nuevo.
   if (Array.isArray(body.pasos)) {
     const validos = body.pasos
-      .filter((x: any) => x && ['email', 'tarea_whatsapp', 'inapp'].includes(x.canal_paso))
+      .filter((x: any) => x && ['email', 'tarea_whatsapp'].includes(x.canal_paso))
       .slice(0, 10)
       .map((x: any, i: number) => ({
         campana_id: id,
