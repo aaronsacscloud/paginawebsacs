@@ -407,11 +407,28 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
             <input style={inputS} value={c.contenido?.video || ''} onChange={e => setCt({ video: e.target.value })} /></div>
         </div>
         {c.formato === 'encuesta' ? (<>
-          <span style={lblS as any}>Escala de la encuesta</span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button style={chip((c.contenido?.encuesta?.escala || '1_5') === '1_5')} onClick={() => setCt({ encuesta: { escala: '1_5' } })}>1 a 5 (CSAT)</button>
-            <button style={chip(c.contenido?.encuesta?.escala === 'nps')} onClick={() => setCt({ encuesta: { escala: 'nps' } })}>0 a 10 (NPS)</button>
-          </div>
+          <span style={lblS as any}>Tipo de pregunta (estándares de encuesta)</span>
+          <select style={inputS} value={c.contenido?.encuesta?.escala || 'nps'} onChange={e => setCt({ encuesta: { ...(c.contenido?.encuesta || {}), escala: e.target.value } })}>
+            {(catalogo?.escalas_encuesta || []).map((es: any) => <option key={es.id} value={es.id}>{es.etiqueta} — {es.desc}</option>)}
+          </select>
+          {c.contenido?.encuesta?.escala === 'opcion' && (<>
+            <span style={lblS as any}>Opciones (una por línea)</span>
+            <textarea style={{ ...inputS, minHeight: 70 }} placeholder={'Punto de venta\nInventario\nReportes'}
+              value={(c.contenido?.encuesta?.opciones || []).join('\n')}
+              onChange={e => setCt({ encuesta: { ...(c.contenido?.encuesta || {}), opciones: e.target.value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 8) } })} />
+          </>)}
+          {['nps', 'ces', '1_5', 'csat_emoji', 'estrellas', 'pulgar'].includes(c.contenido?.encuesta?.escala || 'nps') && (<>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: '0.75rem', fontWeight: 700, color: '#555', cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!(c.contenido?.encuesta?.drivers || []).length}
+                onChange={e => setCt({ encuesta: { ...(c.contenido?.encuesta || {}), drivers: e.target.checked ? (catalogo?.drivers_default || []) : [] } })} />
+              Pedir el motivo con chips (drivers) — convierte el "¿por qué?" en dato medible
+            </label>
+            {(c.contenido?.encuesta?.drivers || []).length > 0 && (
+              <input style={{ ...inputS, marginTop: 6 }} value={(c.contenido?.encuesta?.drivers || []).join(', ')}
+                onChange={e => setCt({ encuesta: { ...(c.contenido?.encuesta || {}), drivers: e.target.value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 8) } })} />
+            )}
+            <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 6, fontWeight: 600 }}>La pregunta de seguimiento cambia sola por sentimiento: al detractor "¿qué salió mal?", al promotor "¿qué valoras?".</div>
+          </>)}
           <span style={lblS as any}>Repetir cada (días) — vacío = una sola vez</span>
           <input style={inputS} type="number" min={7} placeholder="ej. 90 para NPS trimestral" value={c.recurrencia_dias ?? ''}
             onChange={e => set({ recurrencia_dias: e.target.value ? Math.max(7, Number(e.target.value)) : null })} />
@@ -765,11 +782,37 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
               <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 8 }}>Encuesta</div>
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 {typeof r.resumen.encuesta.score === 'number' && <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4536BE' }}>NPS {r.resumen.encuesta.score}</span>}
-                <span style={{ fontSize: '0.78rem', color: '#555', fontWeight: 600 }}>{r.resumen.encuesta.respuestas} respuestas · promedio {r.resumen.encuesta.promedio}</span>
-                <Tag tono="ok">{r.resumen.encuesta.promotores} promotores</Tag>
+                <span style={{ fontSize: '0.78rem', color: '#555', fontWeight: 600 }}>{r.resumen.encuesta.opciones} respuestas · promedio {r.resumen.encuesta.promedio}</span>
+                {typeof r.resumen.encuesta.score === 'number' && <><Tag tono="ok">{r.resumen.encuesta.promotores} promotores</Tag>
                 <Tag tono="gris">{r.resumen.encuesta.pasivos} pasivos</Tag>
-                <Tag tono="malo">{r.resumen.encuesta.detractores} detractores</Tag>
+                <Tag tono="malo">{r.resumen.encuesta.detractores} detractores</Tag></>}
               </div>
+              {Object.keys(r.resumen.encuesta.drivers || {}).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#888', marginBottom: 6 }}>¿Qué influyó (drivers)</div>
+                  {Object.entries(r.resumen.encuesta.drivers).sort((a: any, b: any) => b[1] - a[1]).map(([d, n]: any) => {
+                    const max = Math.max(...Object.values(r.resumen.encuesta.drivers).map(Number));
+                    return (
+                      <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', fontSize: '0.78rem' }}>
+                        <span style={{ flex: 1, fontWeight: 700 }}>{d}</span>
+                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                        <span style={{ width: 90, height: 6, borderRadius: 99, background: '#f0eefb', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${Math.round(Number(n) / max * 100)}%`, background: '#9B8CFA', borderRadius: 99 }} /></span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {Object.keys(r.resumen.encuesta.opciones || {}).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#888', marginBottom: 6 }}>Respuestas</div>
+                  {Object.entries(r.resumen.encuesta.opciones).sort((a: any, b: any) => b[1] - a[1]).map(([resp, n]: any) => (
+                    <div key={resp} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', fontSize: '0.78rem' }}>
+                      <span style={{ flex: 1, fontWeight: 700 }}>{resp}</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {(r.resumen.encuesta.comentarios || []).length > 0 && (
                 <div style={{ marginTop: 12 }}>
                   {(r.resumen.encuesta.comentarios || []).map((cm: any, i: number) => (

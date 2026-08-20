@@ -82,8 +82,11 @@ export default function TabOutbound({ companyId }: { companyId: string }) {
             <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 10 }}>NPS histórico</div>
             {(d.nps || []).map((n: any, i: number) => (
               <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem', alignItems: 'flex-start' }}>
-                <Tag tono={npsTono(Number(n.valor))}>{n.valor}</Tag>
-                <span style={{ flex: 1, color: n.comentario ? '#444' : '#9c99a6' }}>{n.comentario || 'Sin comentario'}</span>
+                <Tag tono={n.valor != null ? npsTono(Number(n.valor)) : 'gris'}>{n.valor != null ? n.valor : (n.respuesta || '—')}</Tag>
+                <span style={{ flex: 1, color: n.comentario ? '#444' : '#9c99a6' }}>
+                  {n.driver && <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#5B4BD6', background: '#EEECFE', borderRadius: 6, padding: '1px 7px', marginRight: 6 }}>{n.driver}</span>}
+                  {n.comentario || (n.driver ? '' : 'Sin comentario')}
+                </span>
                 <span style={{ fontSize: '0.68rem', color: '#9c99a6', flexShrink: 0 }}>{n.dia}</span>
               </div>
             ))}

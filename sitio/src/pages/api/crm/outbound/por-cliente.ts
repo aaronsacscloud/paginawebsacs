@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // Eventos de TODAS sus cuentas (paginado: max_rows=1000)
   const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
-    .select('campana_id, evento, boton, valor, comentario, cuenta, dia, created')
+    .select('campana_id, evento, boton, valor, comentario, driver, respuesta, cuenta, dia, created')
     .in('cuenta', cuentas).order('id', { ascending: true }).range(from, to), 20000);
 
   // Agrupar por campaña con la información clave de cada acción
@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ url }) => {
     if (e.evento === 'cita_agendada') g.citas++;
     if (e.evento === 'respuesta_encuesta') {
       g.encuestas++;
-      nps.push({ campana_id: e.campana_id, valor: e.valor, comentario: e.comentario || null, dia: e.dia, cuenta: e.cuenta });
+      nps.push({ campana_id: e.campana_id, valor: e.valor, comentario: e.comentario || null, driver: e.driver || null, respuesta: e.respuesta || null, dia: e.dia, cuenta: e.cuenta });
     }
   }
   const ids = Object.keys(porCampana);

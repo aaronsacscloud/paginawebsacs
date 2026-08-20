@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
   // Paginado: PostgREST capa a max_rows=1000 CUALQUIER select por grande que
   // sea el .limit() — sin esto, una campaña con tracción subcuenta en silencio.
   const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
-    .select('evento, boton, valor, comentario, uid, cuenta, dia')
+    .select('evento, boton, valor, comentario, driver, respuesta, uid, cuenta, dia')
     .eq('campana_id', id).order('id', { ascending: true }).range(from, to));
   const usuariosVieron = new Set<string>();
   const usuariosClic = new Set<string>();
@@ -33,6 +33,8 @@ export const GET: APIRoute = async ({ url }) => {
   const porBoton: Record<string, number> = {};
   const encuesta: number[] = [];
   const comentarios: Array<{ cuenta: string; valor: number; comentario: string; dia: string }> = [];
+  const drivers: Record<string, number> = {};
+  const respuestas: Record<string, number> = {};
   const interesados = new Set<string>();
   const vistasPorUsuario: Record<string, number> = {};
 
@@ -45,9 +47,14 @@ export const GET: APIRoute = async ({ url }) => {
     if (e.evento === 'cierre') cierres++;
     if (e.evento === 'descarte') descartes++;
     if (e.evento === 'chat_abierto') { chats++; interesados.add(e.uid); }
-    if (e.evento === 'respuesta_encuesta' && e.valor != null) {
-      encuesta.push(Number(e.valor)); interesados.add(e.uid);
-      if (e.comentario) comentarios.push({ cuenta: e.cuenta, valor: Number(e.valor), comentario: e.comentario, dia: e.dia });
+    if (e.evento === 'respuesta_encuesta') {
+      interesados.add(e.uid);
+      if (e.valor != null) {
+        encuesta.push(Number(e.valor));
+        if (e.comentario) comentarios.push({ cuenta: e.cuenta, valor: Number(e.valor), comentario: e.comentario, dia: e.dia });
+      }
+      if (e.driver) drivers[e.driver] = (drivers[e.driver] || 0) + 1;
+      if (e.respuesta) respuestas[e.respuesta] = (respuestas[e.respuesta] || 0) + 1;
     }
     if (e.evento === 'cita_agendada') { interesados.add(e.uid); }
   }
@@ -83,12 +90,15 @@ export const GET: APIRoute = async ({ url }) => {
       encuesta: encuesta.length ? {
         respuestas: encuesta.length,
         promedio: +(encuesta.reduce((a, b) => a + b, 0) / encuesta.length).toFixed(1),
+        respondio_valor: encuesta.length,
         promotores: encuesta.filter(v => v >= 9).length,
         pasivos: encuesta.filter(v => v === 7 || v === 8).length,
         detractores: encuesta.filter(v => v <= 6).length,
         score: Math.round((encuesta.filter(v => v >= 9).length - encuesta.filter(v => v <= 6).length) / encuesta.length * 100),
         comentarios: comentarios.slice(0, 100),
-      } : null,
+        drivers,
+        opciones: respuestas,
+      } : (Object.keys(respuestas).length ? { respondio_valor: 0, drivers, opciones: respuestas, comentarios: [] } : null),
       citas: evs.filter(e => e.evento === 'cita_agendada').length,
       conversiones: {
         expuestas, control,

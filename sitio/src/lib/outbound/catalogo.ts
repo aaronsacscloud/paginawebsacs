@@ -119,6 +119,24 @@ export const CATALOGO_AUDIENCIA: Array<{ id: string; etiqueta: string; tipo: 'op
 
 export const GRUPO_SUPER_ADMIN = '-LaRW9St-VNoA6rL27Cs';
 
+// ── Formatos de encuesta (estándares de la industria) ────────────────────────
+// Cada escala define cómo se pinta y qué rango de `valor` produce (0 = no
+// numérica → usa `respuesta`). `promotorDesde`/`detractorHasta` marcan los
+// cortes de sentimiento para el seguimiento condicional y el color.
+export const ESCALAS_ENCUESTA = [
+  { id: 'nps', etiqueta: 'NPS (0-10)', desc: '¿Qué tan probable es que nos recomiendes?', min: 0, max: 10, detractorHasta: 6, promotorDesde: 9, pie: ['Nada probable', 'Muy probable'] },
+  { id: 'ces', etiqueta: 'CES · Esfuerzo (1-7)', desc: 'Qué tan fácil fue — predice retención mejor que CSAT', min: 1, max: 7, detractorHasta: 3, promotorDesde: 6, pie: ['Muy difícil', 'Muy fácil'] },
+  { id: '1_5', etiqueta: 'CSAT (1-5)', desc: 'Satisfacción clásica', min: 1, max: 5, detractorHasta: 2, promotorDesde: 5, pie: ['Muy malo', 'Excelente'] },
+  { id: 'csat_emoji', etiqueta: 'CSAT con caras', desc: 'Cinco caras — más respuestas en móvil', min: 1, max: 5, detractorHasta: 2, promotorDesde: 5, emojis: ['😞', '😕', '😐', '🙂', '😀'] },
+  { id: 'estrellas', etiqueta: 'Estrellas (1-5)', desc: 'Calificar una función puntual', min: 1, max: 5, detractorHasta: 2, promotorDesde: 5 },
+  { id: 'pulgar', etiqueta: 'Pulgar arriba / abajo', desc: 'Feedback binario de 1 tap', min: 0, max: 1, detractorHasta: 0, promotorDesde: 1, opciones: [{ v: '0', l: 'No' }, { v: '1', l: 'Sí' }] },
+  { id: 'opcion', etiqueta: 'Opción múltiple', desc: 'Una respuesta de una lista', min: 0, max: 0 },
+] as const;
+
+// Drivers estándar de CX: convierten el "¿por qué?" de texto libre en dato
+// cuantificable. El operador puede editar la lista por campaña.
+export const DRIVERS_DEFAULT = ['Soporte', 'Precio', 'Facilidad de uso', 'Funciones', 'Estabilidad', 'Capacitación'];
+
 // ── Plantillas de 1 clic ─────────────────────────────────────────────────────
 // Recetas destiladas de los casos de uso: elegir una precarga el editor
 // completo (audiencia, formato, meta, frecuencia y textos sugeridos). El
@@ -236,5 +254,7 @@ export function catalogoCompleto() {
       { id: 'al_entrar_modulo', etiqueta: 'Al entrar a un módulo' },
     ],
     plantillas: PLANTILLAS,
+    escalas_encuesta: ESCALAS_ENCUESTA,
+    drivers_default: DRIVERS_DEFAULT,
   };
 }

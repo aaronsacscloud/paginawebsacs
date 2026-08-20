@@ -55,3 +55,9 @@ create table if not exists inapp_audiencias (
   updated_at timestamptz not null default now()
 );
 alter table inapp_audiencias enable row level security;
+
+-- ── Encuestas avanzadas (2026-08-20) ──
+-- `driver` = motivo categorizado (chip) de la respuesta; `respuesta` = valor no
+-- numérico (opción elegida, pulgar, texto del seguimiento condicional).
+alter table inapp_eventos add column if not exists driver text;
+alter table inapp_eventos add column if not exists respuesta text;
