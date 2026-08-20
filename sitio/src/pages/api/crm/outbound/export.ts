@@ -7,7 +7,11 @@ import { leerPaginado } from '../../../../lib/outbound/motor';
 export const prerender = false;
 
 const esc = (v: any) => {
-  const s = v == null ? '' : String(v);
+  let s = v == null ? '' : String(v);
+  // Anti-inyeccion de formulas: un campo (ej. comentario de NPS del cliente)
+  // que empieza con = + - @ tab o CR se ejecuta al abrirlo en Excel/Sheets.
+  // Un apostrofo al frente lo vuelve texto literal.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 const csv = (nombre: string, filas: string[]) => new Response('﻿' + filas.join('\n'), {
@@ -24,18 +28,23 @@ export const GET: APIRoute = async ({ url }) => {
   const que = url.searchParams.get('que') || 'eventos';
 
   if (que === 'conversiones') {
+    const TOPE = 20000;
     const rows = await leerPaginado((from, to) => supabase.from('inapp_conversiones')
       .select('cuenta, uid, brazo, convirtio_at, detalle').eq('campana_id', id)
-      .order('id', { ascending: true }).range(from, to), 20000);
+      .order('id', { ascending: true }).range(from, to), TOPE);
     const filas = ['cuenta,uid,brazo,fecha,monto'];
     for (const r of rows) filas.push([esc(r.cuenta), esc(r.uid), esc(r.brazo), esc(r.convirtio_at), esc(r.detalle?.monto ?? 0)].join(','));
+    // No truncar en silencio: si se llegó al tope, el archivo lo dice.
+    if (rows.length >= TOPE) filas.push(`# AVISO: export truncado a ${TOPE} filas — hay más conversiones`);
     return csv(`outbound-conversiones-${id}.csv`, filas);
   }
 
+  const TOPE = 100000;
   const rows = await leerPaginado((from, to) => supabase.from('inapp_eventos')
     .select('cuenta, uid, evento, boton, valor, comentario, dia, created').eq('campana_id', id)
-    .order('id', { ascending: true }).range(from, to), 100000);
+    .order('id', { ascending: true }).range(from, to), TOPE);
   const filas = ['cuenta,uid,evento,boton,valor,comentario,dia,fecha'];
   for (const r of rows) filas.push([esc(r.cuenta), esc(r.uid), esc(r.evento), esc(r.boton), esc(r.valor), esc(r.comentario), esc(r.dia), esc(r.created)].join(','));
+  if (rows.length >= TOPE) filas.push(`# AVISO: export truncado a ${TOPE} filas — hay más eventos`);
   return csv(`outbound-eventos-${id}.csv`, filas);
 };

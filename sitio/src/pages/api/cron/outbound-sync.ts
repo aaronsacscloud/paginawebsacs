@@ -108,10 +108,15 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
         // campaña de pedir reseña/testimonio (plantilla pedir_resena).
         if (Number(d.valor) >= 9 && companyId) {
           try {
+            // Merge leer-modificar-escribir: seguro dentro de un tick (ingesta
+            // se await-ea completa antes del loop secuencial de campañas). Se
+            // marca la fecha, no se acumula ciegamente el score, para que dos
+            // ticks traslapados no inflen el promotor.
             const { data: comp } = await supabase.from('companies').select('intereses').eq('id', companyId).maybeSingle();
             const intereses = { ...(comp?.intereses || {}) };
-            const prev = intereses['Promotor NPS'] || { score: 0 };
-            intereses['Promotor NPS'] = { score: (Number(prev.score) || 0) + 1, ultimo: new Date().toISOString(), campana: d.campana_id };
+            // "Promotor NPS" es un marcador (score 1), no un acumulador: dos
+            // ticks traslapados no lo inflan. Refresca la fecha del último 9-10.
+            intereses['Promotor NPS'] = { score: 1, ultimo: new Date().toISOString(), campana: d.campana_id };
             await supabase.from('companies').update({ intereses }).eq('id', companyId);
           } catch { /* el interés es mejor-esfuerzo */ }
         }
