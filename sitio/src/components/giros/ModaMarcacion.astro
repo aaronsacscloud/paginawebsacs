@@ -1,0 +1,380 @@
+---
+/**
+ * ModaMarcacion — la junta del rebaje.
+ *
+ * El bloque propio de moda, y no se parece al de zapatería a propósito: allá
+ * el problema es la corrida cerrada del fabricante; aquí es que la utilidad no
+ * se decide cuando compras, se decide cuando marcas.
+ *
+ * Lo que lo hace del oficio y no software de abarrotes con etiquetas de ropa:
+ *
+ * · No ordena por antigüedad. Una prenda de diez semanas al 80% está perfecta
+ *   y una de cuatro al 12% ya está muerta. Lo que manda es el vendido contra
+ *   su marca, y cuánta temporada le queda.
+ * · Antes de bajar un peso hay cuatro palancas gratis —acomodo, maniquí,
+ *   traspaso y combo—. Por eso hay filas cuya acción NO es un descuento.
+ * · El básico de continuidad no se marca nunca.
+ * · Si ya se fue el corazón de la talla, marcar no salva nada: es esqueleto.
+ * · Se marca en números redondos. Nadie ha puesto una etiqueta que diga 17%.
+ * · Y el dinero sale de no regalarle 30% a lo que ya se vendía solo, no de
+ *   vender más barato: en esas prendas se cuentan las MISMAS piezas en los dos
+ *   caminos, porque el descuento no crea clientes, solo adelanta la venta.
+ */
+interface Props {
+  datos: any;
+  sucursales?: string;
+}
+const { datos } = Astro.props;
+const { temporada, semana, semanasTotal, prendas, feo, pasos, pasosDetalle } = datos;
+
+const piezasPiso = prendas.reduce((a: number, p: any) => a + p.piso, 0);
+const costoPiso = prendas.reduce((a: number, p: any) => a + p.piso * p.costo, 0);
+const totalDif = prendas.reduce((a: number, p: any) => a + p.dif, 0);
+const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+const ETIQUETA: Record<string, string> = {
+  ok: 'Se vende sola',
+  marca: 'Marcar 30%',
+  traspaso: 'Cambiar de tienda',
+  esqueleto: 'Sacar del piso',
+};
+---
+
+<section class="mk" data-marcacion={JSON.stringify({ prendas: prendas.map((p: any) => ({ id: p.id, dif: p.dif })), totalDif })}>
+  <div class="mk-inner">
+
+    <div class="mk-hero">
+      <div class="mk-hero-txt">
+        <span class="mk-eyebrow">El lunes de la marcación</span>
+        <h2 class="mk-titulo">En moda la utilidad no se decide cuando compras. Se decide cuando marcas.</h2>
+        <p class="mk-desc">
+          {temporada}, semana {semana} de {semanasTotal}: quedan {semanasTotal - semana} semanas de
+          venta a precio. Estas son {prendas.length} prendas de tu piso — {piezasPiso} piezas,
+          {' '}{mx(costoPiso)} a costo. Hoy se marcan todas parejo al 30%. Mira qué pasa si cada
+          una recibe la decisión que le toca.
+        </p>
+      </div>
+
+      <div class="mk-hero-vis">
+        <div class="mk-tabla">
+          <div class="mk-tabla-cab">
+            <span class="mk-modelo">Tu temporada, prenda por prenda</span>
+            <span class="mk-estado" id="mkEstado">Como se marca hoy · todo al 30%</span>
+          </div>
+
+          <div class="mk-filas">
+            {prendas.map((p: any) => (
+              <article class:list={['mk-fila', `t-${p.tono}`]} data-prenda={p.id}>
+                <div class="mk-fila-cab">
+                  <b>{p.nombre}</b>
+                  <span class="mk-accion">{ETIQUETA[p.tono]}</span>
+                </div>
+
+                <div class="mk-medidas">
+                  <span><i>Va en</i><b>{p.marca > 0 ? `${p.va}%` : '—'}</b></span>
+                  <span><i>Su marca</i><b>{p.marca > 0 ? `${p.marca}%` : 'Básico'}</b></span>
+                  <span><i>En piso</i><b>{p.piso}</b></span>
+                  <span class="mk-talla"><i>Talla</i><b>{p.talla}</b></span>
+                </div>
+
+                <p class="mk-nota">{p.nota}</p>
+
+                {p.reparto && (
+                  <div class="mk-reparto">
+                    {p.reparto.map((r: any) => (
+                      <span class:list={['mk-rep', { mal: r.piso > 12 }]}>
+                        <i>{r.tienda}</i>
+                        <b>{r.piso}</b>
+                        <em>vende {r.vende}/sem</em>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div class="mk-fila-pie">
+                  <span class="mk-dif">
+                    {p.dif > 0
+                      ? <Fragment><b>{mx(p.dif)}</b> que hoy estarías regalando</Fragment>
+                      : <Fragment>Aquí marcar <b>sí</b> conviene: el descuento saca ocho piezas más</Fragment>}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mk-cuerpo">
+      <div class="mk-resultado">
+        <p class="mk-rot">Margen que dejas de regalar en estas {prendas.length} prendas</p>
+        <p class="mk-cifra" id="mkCifra">{mx(totalDif)}</p>
+        <p class="mk-pie">
+          Es la diferencia entre marcar todo parejo y darle a cada prenda lo que le toca. En las
+          que ya se vendían solas se cuentan las mismas piezas en los dos caminos: el descuento no
+          crea clientes, solo adelanta la venta.
+        </p>
+
+        <label class="mk-supuesto">
+          <span>¿Cuánto te mueve un 30%?</span>
+          <select id="mkMueve">
+            <option value="1" selected>Al doble de ritmo</option>
+            <option value="0.72">Una vez y media</option>
+            <option value="0.4">Casi nada</option>
+          </select>
+        </label>
+
+        <p class="mk-remate">Y esto son {prendas.length} prendas de las ciento ochenta de tu temporada.</p>
+
+        <div class="mk-feo">
+          <b>{feo.piezas} piezas que ya no se salvan · {mx(feo.costo)} a costo</b>
+          <span><em>{feo.prenda}.</em> {feo.detalle}</span>
+          <span class="mk-feo-remate">{feo.remate}</span>
+        </div>
+
+        <a class="mk-cta" href="/contacto" id="mkCta">Ver mi temporada con mis prendas</a>
+      </div>
+
+      <div class="mk-palancas">
+        <p class="mk-rot">Antes de bajar un peso</p>
+        <ol>
+          <li><b>Acomodo.</b> Una prenda que lleva seis semanas al fondo del pasillo no está muerta: está mal exhibida.</li>
+          <li><b>Maniquí.</b> La prenda puesta se vende; colgada de perfil no existe.</li>
+          <li><b>Traspaso.</b> Si el sobrante está en la tienda donde esa talla no sale, el problema no es el precio.</li>
+          <li><b>Combo.</b> Se arma un look con algo que sí rota y se le da ticket, no descuento.</li>
+        </ol>
+        <p class="mk-palancas-pie">Las cuatro cuestan cero. Un sistema que va directo al descuento no conoce el giro.</p>
+      </div>
+    </div>
+
+    <div class="mk-pasos">
+      <p class="mk-rot">Y así llega el precio nuevo a la etiqueta</p>
+      <div class="mk-rejilla">
+        {pasos.map((paso: string, i: number) => (
+          <div class="mk-tarjeta">
+            <span class="mk-tarjeta-n">{i + 1}</span>
+            <h3>{paso}</h3>
+            <p>{pasosDetalle[i]}</p>
+          </div>
+        ))}
+      </div>
+      <p class="mk-pasos-pie">
+        Marcar la prenda y que la caja cobre el precio nuevo viene <b>desde el plan Vende</b>.
+        Marcarla en varias tiendas a la vez, ver el margen por prenda y auditar quién la marcó,
+        <b> desde Controla</b>. Que el precio entre y se apague solo a la fecha que fijaste,
+        <b> desde Fideliza</b>. Y que la lista se arme sola cada lunes con el vendido de cada
+        prenda contra su semana, <b>en Automatiza</b>.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .mk {
+    background: var(--color-bg-primary, #FAFAF8);
+    color: var(--color-text-primary, #1a1a2e);
+    padding: clamp(72px, 9vw, 120px) 0 clamp(40px, 5vw, 64px);
+  }
+  .mk-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+  .mk-hero { display: flex; flex-direction: column; gap: clamp(32px, 5vw, 56px); margin-bottom: clamp(44px, 6vw, 72px); }
+  @media (min-width: 1100px) { .mk-hero { flex-direction: row; align-items: flex-start; } }
+  .mk-hero-txt { flex: 1; min-width: 0; position: sticky; top: 104px; }
+  .mk-hero-vis { flex: 1.35; min-width: 0; }
+
+  .mk-eyebrow {
+    display: inline-block; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--color-text-tertiary, #8C8C8C); margin-bottom: 16px;
+  }
+  .mk-titulo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.9rem, 4vw, 3rem); font-weight: 800; line-height: 1.05;
+    letter-spacing: -.04em; color: var(--color-text-primary, #1a1a2e);
+    margin: 0 0 20px; max-width: 15ch;
+  }
+  .mk-desc {
+    font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.65;
+    color: var(--color-text-secondary, #4A4A4A); max-width: 46ch; margin: 0;
+  }
+
+  /* ── La tabla de prendas ── */
+  .mk-tabla {
+    background: var(--color-bg-card, #fff); border-radius: var(--radio, 16px);
+    padding: 22px 24px 24px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.1);
+  }
+  .mk-tabla-cab {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,.07); margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .mk-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; }
+  .mk-estado { font-size: 12px; font-weight: 700; color: var(--color-primary, #4B7BE5); }
+
+  .mk-fila { padding: 20px 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+  .mk-fila:last-child { border-bottom: none; padding-bottom: 4px; }
+  .mk-fila-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .mk-fila-cab b {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 15.5px; font-weight: 700; letter-spacing: -.02em;
+  }
+  .mk-accion {
+    font-size: 10.5px; font-weight: 800; border-radius: var(--radio-pildora, 999px);
+    padding: 4px 11px; white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .t-ok .mk-accion { background: var(--ok-fondo); color: var(--ok-texto); border: 1px solid var(--ok-borde); }
+  .t-marca .mk-accion { background: var(--azul-fondo); color: var(--azul-texto); border: 1px solid var(--azul-borde); }
+  .t-traspaso .mk-accion { background: var(--aviso-fondo); color: var(--aviso-texto); border: 1px solid var(--aviso-borde); }
+  .t-esqueleto .mk-accion { background: var(--alerta-fondo); color: var(--alerta-texto); border: 1px solid var(--alerta-borde); }
+
+  .mk-medidas { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 11px; }
+  .mk-medidas span { display: flex; flex-direction: column; gap: 2px; }
+  .mk-medidas i {
+    font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .mk-medidas b { font-size: 14.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mk-talla b { font-size: 13px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A); }
+
+  .mk-nota { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); }
+
+  .mk-reparto { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .mk-rep {
+    display: flex; align-items: baseline; gap: 6px; padding: 6px 11px;
+    background: var(--color-bg-primary, #FAFAF8); border: 1px solid rgba(0,0,0,.07);
+    border-radius: var(--radio-chico, 8px); font-size: 11.5px;
+  }
+  .mk-rep.mal { background: var(--aviso-fondo); border-color: var(--aviso-borde); }
+  .mk-rep i { font-style: normal; font-weight: 700; }
+  .mk-rep b { font-variant-numeric: tabular-nums; font-weight: 800; }
+  .mk-rep em { font-style: normal; color: var(--color-text-tertiary, #8C8C8C); }
+
+  .mk-fila-pie { margin-top: 12px; }
+  .mk-dif { font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
+  .mk-dif b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  /* ── Resultado y palancas ── */
+  .mk-cuerpo { display: grid; grid-template-columns: 1.15fr 1fr; gap: 26px; align-items: start; }
+  .mk-rot {
+    margin: 0 0 14px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .mk-resultado, .mk-palancas {
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.07);
+    border-radius: var(--radio, 16px); padding: 26px 28px 28px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+  }
+  .mk-cifra {
+    margin: 0 0 14px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(38px, 5vw, 52px); font-weight: 800; line-height: 1; letter-spacing: -.04em;
+    color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums;
+  }
+  .mk-pie { margin: 0 0 20px; font-size: 13px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); }
+  .mk-supuesto { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+  .mk-supuesto span { font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
+  .mk-supuesto select {
+    background: var(--color-bg-primary, #FAFAF8); color: var(--color-text-primary, #1a1a2e);
+    border: 1px solid rgba(0,0,0,.14); border-radius: var(--radio-chico, 8px);
+    padding: 10px 12px; font-family: inherit; font-size: 13.5px; font-weight: 600;
+  }
+  .mk-remate { margin: 0; font-size: 13px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
+
+  .mk-feo { margin-top: 24px; padding: 0 0 0 14px; border-left: 2px solid var(--alerta-borde); }
+  .mk-feo b {
+    display: block; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 16px; font-weight: 700; letter-spacing: -.02em;
+  }
+  .mk-feo span { display: block; margin-top: 6px; font-size: 12.5px; line-height: 1.55; color: var(--color-text-secondary, #4A4A4A); }
+  .mk-feo em { font-style: normal; font-weight: 700; color: var(--color-text-primary, #1a1a2e); }
+  .mk-feo-remate { font-weight: 600; color: var(--color-text-primary, #1a1a2e) !important; }
+
+  .mk-cta {
+    display: block; margin-top: 26px; text-align: center;
+    background: var(--color-primary, #4B7BE5); color: #fff; text-decoration: none;
+    border-radius: var(--radio-pildora, 999px); padding: 14px 22px;
+    font-size: 14.5px; font-weight: 700; transition: transform .2s ease;
+  }
+  .mk-cta:hover { transform: scale(1.02); text-decoration: none; }
+
+  .mk-palancas ol { margin: 0; padding: 0 0 0 20px; display: grid; gap: 12px; }
+  .mk-palancas li { font-size: 14px; line-height: 1.55; color: var(--color-text-secondary, #4A4A4A); }
+  .mk-palancas li b { color: var(--color-text-primary, #1a1a2e); font-weight: 700; }
+  .mk-palancas-pie {
+    margin: 18px 0 0; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.07);
+    font-size: 13px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  /* ── Los seis pasos ── */
+  .mk-pasos { margin-top: clamp(48px, 6vw, 72px); }
+  .mk-rejilla { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(0,0,0,.08); margin-top: 20px; }
+  .mk-tarjeta {
+    padding: clamp(26px, 3vw, 36px) clamp(18px, 2.5vw, 28px);
+    border-bottom: 1px solid rgba(0,0,0,.08); border-right: 1px solid rgba(0,0,0,.08);
+  }
+  .mk-tarjeta:nth-child(3n) { border-right: none; }
+  .mk-tarjeta:nth-child(n+4) { border-bottom: none; }
+  .mk-tarjeta-n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; margin-bottom: 18px;
+    background: var(--azul-fondo); color: var(--azul-texto); font-size: 12px; font-weight: 800;
+  }
+  .mk-tarjeta h3 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    margin: 0 0 8px; font-size: 1.0625rem; font-weight: 700; letter-spacing: -.02em;
+  }
+  .mk-tarjeta p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); }
+  .mk-pasos-pie {
+    margin: clamp(28px, 3vw, 40px) 0 0; font-size: .9375rem; line-height: 1.7;
+    color: var(--color-text-secondary, #4A4A4A); max-width: 82ch;
+  }
+  .mk-pasos-pie b { color: var(--color-text-primary, #1a1a2e); }
+
+  @media (max-width: 1099px) { .mk-hero-txt { position: static; } }
+  @media (max-width: 1023px) {
+    .mk-cuerpo { grid-template-columns: 1fr; }
+    .mk-rejilla { grid-template-columns: repeat(2, 1fr); }
+    .mk-tarjeta:nth-child(3n) { border-right: 1px solid rgba(0,0,0,.08); }
+    .mk-tarjeta:nth-child(2n) { border-right: none; }
+    .mk-tarjeta:nth-child(n+4) { border-bottom: 1px solid rgba(0,0,0,.08); }
+    .mk-tarjeta:nth-last-child(-n+2) { border-bottom: none; }
+  }
+  @media (max-width: 767px) {
+    .mk-rejilla { grid-template-columns: 1fr; }
+    .mk-tarjeta { border-right: none; border-bottom: 1px solid rgba(0,0,0,.08); }
+    .mk-tarjeta:last-child { border-bottom: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mk-cta { transition: none; } }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector<HTMLElement>('.mk');
+    if (bloque) {
+      const datos = JSON.parse(bloque.dataset.marcacion || '{}');
+      const cifra = document.getElementById('mkCifra');
+      const cta = document.getElementById('mkCta') as HTMLAnchorElement | null;
+      const mueve = document.getElementById('mkMueve') as HTMLSelectElement | null;
+
+      const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+      const recalcular = () => {
+        // El supuesto solo mueve lo que depende de que el descuento acelere la
+        // venta. Lo que se dejó de regalar sobre prenda que ya salía sola no
+        // cambia: esas piezas se venden con o sin marcación.
+        const f = Number(mueve?.value || 1);
+        const total = Math.round(datos.totalDif * (0.82 + 0.18 * f));
+        if (cifra) cifra.textContent = mx(total);
+        if (cta) {
+          const u = new URL('/contacto', location.origin);
+          if (total > 0) u.searchParams.set('estimado', String(total));
+          cta.href = u.pathname + u.search;
+        }
+      };
+
+      mueve?.addEventListener('change', recalcular);
+      recalcular();
+    }
+  }
+</script>

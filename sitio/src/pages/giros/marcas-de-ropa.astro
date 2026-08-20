@@ -11,21 +11,21 @@
  * prendas con nombre. Ver src/data/suite-ropa.ts.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
-import SuiteCubo from '../../components/suite/SuiteCubo.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
-import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
-import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
-import SuiteFormal from '../../components/suite/SuiteFormal.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
-import SuiteRack from '../../components/suite/SuiteRack.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
-import SuiteEnsamble from '../../components/suite/SuiteEnsamble.astro';
-import PosMock from '../../components/suite/PosMock.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import ModaMarcacion from '../../components/giros/ModaMarcacion.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
-import { rackModa, cortinaModa, sucursalesModa, reglasModa, diasModa, cajaModa } from '../../data/giros/moda';
+import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
@@ -33,40 +33,21 @@ const desc =
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
-  <!-- ── Portada: el sistema ES el fondo ──
-       Antes la foto de la boutique era el fondo y el punto de venta iba flotando
-       encima. Eran dos protagonistas peleandose el mismo espacio y la portada se
-       saturaba. Ahora manda una sola imagen —la nuestra— y el texto vive sobre
-       la zona oscura de la izquierda. -->
-  <header class="hero">
-    <div class="hero-bg" aria-hidden="true">
-      <div class="hero-pos"><PosMock /></div>
-      <div class="hero-veil"></div>
-    </div>
-
-    <div class="hero-inner">
-      <p class="hero-eyebrow">SACS · Suite Moda</p>
-      <h1 class="hero-title">
-        Tu tienda no vende<br /><span>productos.</span> Vende<br /><span>tallas y colores.</span>
-      </h1>
-      <p class="hero-sub">
-        El sistema para boutiques y marcas de moda. Matriz de tallas, curvas de compra y
-        consignación a departamentales, con un mismo inventario para tu piso de venta, tu
-        tienda en línea, tus marketplaces y tu WhatsApp. Más agentes de IA que tú programas
-        para que trabajen tu operación.
-      </p>
-      <div class="hero-cta">
-        <a href="/contacto" class="btn-pri">Agenda una demo</a>
-        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
-      </div>
-      <div class="hero-datos">
-        <div><b>+3,000</b><span>marcas activas</span></div>
-        <div><b>24 SKU</b><span>de un modelo, en un paso</span></div>
-        <div><b>1 inventario</b><span>físico, en línea y WhatsApp</span></div>
-        <div><b>11</b><span>funciones hechas para moda</span></div>
-      </div>
-    </div>
-  </header>
+  <!-- ── Portada: la forma del Home. El mensaje a la izquierda, la tienda a
+       la derecha y los avisos del sistema encima — pero avisos de moda. ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu tienda no vende productos."
+    resalte="Vende tallas y colores."
+    sub="Matriz de tallas y colores, curvas de compra por temporada y consignación a departamentales — con un mismo inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces."
+    foto="/images/hero-moda.webp"
+    fotoAlt="Empleada de una boutique consultando existencias en una tablet frente a los racks de ropa"
+    avisos={[
+      { modulo: 'Talla agotada', texto: 'Blusa satinada negra: sin M ni L en Polanco', pos: 1, tono: 'rojo', sello: 'Hoy' },
+      { modulo: 'Rebaja sugerida', texto: '38 piezas de la temporada pasada, en tres tiendas', pos: 2, tono: 'ambar', sello: 'Semana 12' },
+      { modulo: 'Consignación', texto: 'La departamental vendió 31 de 48 · quedan 17', pos: 3, tono: 'azul', sello: 'Al corte' },
+    ]}
+  />
 
   <!-- ── Manifiesto: aqui se demuestra que entendemos el giro ── -->
   <SuiteManifiesto
@@ -83,8 +64,30 @@ const desc =
     cierre="Ningún sistema de abarrotes entiende esto. Y hoy ya no basta con entender el mostrador: tu tienda física, tu tienda en línea, tus marketplaces y tu WhatsApp son el mismo negocio, con el mismo inventario y la misma clienta. Esa es la nueva era del retail y es la que llevamos años construyendo: cada pantalla que sigue funciona igual en el piso de venta que en digital, y encima puedes poner agentes de IA — programados por ti — para que hagan el trabajo repetitivo."
   />
 
-  <!-- ── El momento fuerte: el cubo de inventario girando ── -->
-  <SuiteCubo />
+
+  <!-- Entra una blusa y salen las veinticuatro que de verdad hay que comprar,
+       guardar y contar. Aquí el eje es talla × color; en calzado es número. -->
+  <SuiteVariantes
+    eyebrow="Un solo modelo"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“una blusa”."
+    sub="Seis tallas en cuatro colores. Veinticuatro piezas distintas que comprar, guardar, contar y reponer — de un solo modelo. Y las que están en cero son justo las que te están pidiendo."
+    ejeA={['XS', 'S', 'M', 'L', 'XL', 'XXL']}
+    filas={[
+      { nombre: 'Negro', img: '/images/blusa-negra.webp', alt: 'Blusa satinada negra' },
+      { nombre: 'Vino', img: '/images/blusa-vino.webp', alt: 'Blusa satinada vino' },
+      { nombre: 'Blanco', img: '/images/blusa-blanca.webp', alt: 'Blusa satinada blanca' },
+      { nombre: 'Olivo', img: '/images/blusa-olivo.webp', alt: 'Blusa satinada verde olivo' },
+    ]}
+    matriz={[
+      [2, 0, 0, 3, 5, 4],
+      [1, 2, 0, 0, 4, 3],
+      [3, 4, 1, 0, 2, 2],
+      [2, 0, 0, 1, 3, 5],
+    ]}
+    unidad="piezas"
+    leyendas={['Con piezas', 'Última pieza', 'Agotada']}
+  />
 
   <!-- ── La comparación que hace el propio visitante ── -->
   <SuiteCortina
@@ -98,6 +101,9 @@ const desc =
 
   <!-- ── Por qué lo que ya probó no le sirvió ── -->
   <SuiteProblemas />
+
+  <!-- Salida: aquí muere la objeción de los dos caminos que ya probó -->
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una matriz de tallas." />
 
   <!-- ── Respiro fotográfico: la escala de la operación ── -->
   <SuiteCifras
@@ -113,151 +119,49 @@ const desc =
     ]}
   />
 
-  <!-- ── El perchero: un modelo son muchas piezas ── -->
-  <SuiteRack piezas={rackModa} />
 
-  <!-- ── Recorrido de funcionalidades ── -->
-  <SuiteScroll
-    eyebrow="Suite Moda"
-    titulo="Todo tu negocio de ropa, físico y digital, en un solo lugar"
-    intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de ropa real: tallas que se agotan, colores que nadie compra y prendas paradas de la temporada pasada. Y todo funciona igual en el mostrador que en tu tienda en línea, porque es el mismo inventario."
-    secciones={seccionesRopa}
+
+
+
+
+  <!-- Los cuatro momentos del año, con su escena -->
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una tienda de ropa gana o pierde el dinero. Toca cada una."
+    casos={casosModa}
   />
 
-  <!-- ── Lo que ve el dueño: comparativo de sucursales y candados ── -->
-  <SuiteDireccion sucursales={sucursalesModa} reglas={reglasModa} />
+  <!-- El bloque propio del giro: en moda la utilidad se decide al marcar -->
+  <ModaMarcacion datos={marcacionModa} />
 
-  <!-- ── El bloqueador real: como se cambia sin parar ── -->
-  <SuiteMigracion dias={diasModa} lineas={cajaModa.lineas} total={cajaModa.total} />
+  <!-- Cómo se cambia sin cerrar -->
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin cerrar la tienda."
+    sub="Tienes tiendas operando y no puedes darte el lujo de parar una semana. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
+    pasos={pasosModa}
+    remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —clientes, prendas, existencias— y lo demás queda consultable. Nunca te pedimos empezar de cero, porque nadie con cinco años de temporadas puede hacerlo."
+  />
 
-  <!-- ── Lo eliminatorio para una empresa formal: la factura ── -->
-  <SuiteFormal />
+  <!-- Lo que todavía no se ha enseñado: que aquí cabe el negocio entero -->
+  <SuiteIntegral
+    eyebrow="Toda la operación, en un solo lugar"
+    titulo="Y esto es solo lo que te enseñamos."
+    resalte="Adentro cabe todo."
+    sub="Una tienda de ropa no es solo el probador. Es lo que compras seis meses antes, lo que te queda al cierre de temporada, quién lo vendió y quién regresa. Las cuatro cosas viven en el mismo sistema — toca cada una."
+    etapas={etapasModa}
+    centro="Tu tienda"
+    pie="<b>No son cuatro productos.</b> Son las cuatro cosas que tu tienda hace todos los días, en el mismo lugar y con los mismos datos: la prenda que se vendió en el probador ya descontó existencia, ya sumó puntos a la clienta, ya cuenta para la comisión de la vendedora y ya está en el reporte que abres el lunes."
+  />
 
   <!-- ── El modelo comercial: la suite va dentro del plan ── -->
   <SuitePlanes suite="Suite de Moda" />
 
-  <!-- ── Cierre: las cuatro piezas se ensamblan y encajan con el giro ──
-       Sustituye al cierre de foto + boton. Quien llega hasta aqui ya leyo once
-       bloques: lo que le falta entender es que todo es una sola pieza. -->
-  <SuiteEnsamble giro="tu tienda de ropa" suyo="tus tallas, tus colores, tus sucursales" />
+  <!-- Salida: quien se convence con el precio no debería tener que bajar más -->
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propia matriz de tallas en pantalla." cta="Agenda una demo" />
+
+  <!-- El mismo cierre que la portada -->
+  <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus tallas y tu venta real. 30 min, sin compromiso." />
 </BaseLayout>
 
-<style>
-  /* El nav es fixed (71px). Sin padding-top el contenido se alinea abajo, crece
-     mas que el viewport y el titulo termina DEBAJO de la barra: se veia cortado.
-     El padding-top reserva esa franja y ademas deja respirar la foto arriba. */
-  .hero {
-    position: relative; min-height: 92vh; display: flex; align-items: flex-end;
-    padding: 136px 24px 88px; overflow: hidden; background: #0A0A0B;
-  }
-  .hero-bg { position: absolute; inset: 0; overflow: hidden; }
-  /* Halo azul de ambiente: sin el, sobre negro plano la pantalla se recorta
-     como una calcomania pegada. */
-  .hero-bg::before {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(80% 70% at 76% 46%, rgba(37,99,235,.2) 0%, rgba(10,10,11,0) 62%);
-  }
-  /* Velo DIRECCIONAL, en dos capas. Un velo parejo apagaba toda la foto y
-     mataba el contraste que pide la portada. Aqui se oscurece el lado izquierdo
-     (donde va el texto) y se deja brillar el derecho, que es justo donde estan
-     la terminal y los percheros. La capa vertical solo asienta el pie. */
-  /* El velo ya no oscurece una foto: separa el texto de la interfaz. Opaco a la
-     izquierda y abierto del todo a la derecha, donde la pantalla tiene que
-     verse nitida y con sus colores reales. */
-  .hero-veil {
-    position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg,
-      rgba(8,8,10,.97) 0%, rgba(8,8,10,.95) 28%, rgba(8,8,10,.62) 45%,
-      rgba(8,8,10,.16) 57%, rgba(8,8,10,0) 68%);
-  }
-  .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
-  .hero-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 20px;
-  }
-  .hero-title {
-    font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
-    line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
-  }
-  .hero-title span {
-    color: #4B7BE5;
-  }
-  .hero-sub {
-    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
-    max-width: 56ch; margin: 0 0 34px;
-  }
-  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
-  .btn-pri, .btn-sec {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 54px; padding: 0 30px; border-radius: 12px;
-    font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
-  }
-  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 6px 22px rgba(37,99,235,.42); }
-  .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
-  .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
-  .btn-sec:hover { background: rgba(255,255,255,.17); }
-  .hero-datos {
-    display: flex; gap: 44px; flex-wrap: wrap;
-    border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
-  }
-  .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
-  .hero-datos b {
-    font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; color: #fff; letter-spacing: -.6px;
-  }
-  .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
-
-  /* El punto de venta se dibuja a 980 px y se escala: asi se ve nitido en
-     cualquier pantalla y no depende de una captura que envejece.
-     Sangra por la derecha a proposito: una pantalla completa y centrada se lee
-     como captura de manual; recortada por el borde se lee como ventana a algo
-     mas grande. */
-  .hero-pos {
-    position: absolute; right: -13%; top: 50%;
-    transform: translateY(-46%) scale(.86); transform-origin: right center;
-    filter: drop-shadow(0 40px 90px rgba(0,0,0,.65));
-    opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
-    /* El borde izquierdo se funde con el fondo. Sin esto la interfaz corta en
-       seco a media pantalla y se ve como una calcomania pegada encima del
-       titulo; con el degradado parece que la pantalla emerge de la oscuridad. */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-  }
-  @keyframes posEntra {
-    from { opacity: 0; transform: translateY(-46%) scale(.84) translateX(34px); }
-    to   { opacity: 1; transform: translateY(-46%) scale(.86); }
-  }
-  @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  /* Entre 1181 y 1440 el titulo ocupa casi la mitad: la pantalla se corre mas
-     a la derecha y se achica para no montarse encima. */
-  @media (max-width: 1440px) {
-    .hero-pos { right: -26%; transform: translateY(-46%) scale(.78); }
-  }
-  /* Con el POS a la derecha el parrafo tiene que ser mas corto o se mete
-     debajo del marco. */
-  @media (min-width: 1181px) {
-    .hero-sub { max-width: 44ch; }
-    /* El titulo tambien tiene que caber en la mitad libre: a 84 px la linea
-       "productos. Vende" se metia debajo del marco del punto de venta. */
-    .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
-  }
-  /* En pantalla angosta la interfaz no se lee: se asoma un pedazo, muy tenue,
-     como textura. Ahi el texto manda solo. */
-  @media (max-width: 1180px) {
-    .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
-  }
-  @media (max-width: 760px) { .hero-pos { display: none; } }
-  @media (prefers-reduced-motion: reduce) {
-    .hero-pos { opacity: 1; animation: none; }
-  }
-
-  @media (max-width: 900px) {
-    .hero { min-height: 88vh; padding: 104px 18px 56px; }
-    .hero-bg img { object-position: 62% 32%; }
-    /* En movil los 4 datos se acomodaban 2 + 1 + 1 porque "1 inventario" es
-       ancho. Con grid quedan en una retícula 2x2 pareja. */
-    .hero-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; }
-    .hero-datos b { font-size: 21px; }
-    .hero-datos span { font-size: 12px; }
-    .hero-cta { margin-bottom: 34px; }
-  }
-</style>
