@@ -54,7 +54,7 @@ function KpiCard({ titulo, valor, sub, franja = '#9B8CFA', color }: { titulo: st
 const FMT_CORTO: Record<string, string> = {
   banner_superior: 'Banner superior', banner_cuadrado: 'Banner cuadrado', modal: 'Modal',
   chat: 'Abrir chat', tarjeta_inicio: 'Tarjeta en inicio', badge_menu: 'Badge en menú',
-  encuesta: 'Encuesta 1 clic', coachmark: 'Coachmark',
+  encuesta: 'Encuesta 1 clic', coachmark: 'Coachmark', agenda: 'Agendar cita',
 };
 
 function resumenAudiencia(c: any): string {
@@ -130,6 +130,24 @@ function PreviewSacs3({ c }: { c: any }) {
             )}
             <div style={{ height: 46, borderRadius: 9, background: '#fff', border: '1px solid #ececec', marginBottom: 8 }} />
             <div style={{ height: 46, borderRadius: 9, background: '#fff', border: '1px solid #ececec', width: '70%' }} />
+            {c.formato === 'agenda' && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,25,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+                <div style={{ background: '#fff', borderRadius: 14, width: 300, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '9px 12px', borderBottom: '1px solid #F1F5F9' }}>
+                    <span style={{ flex: 1, fontSize: '0.72rem', fontWeight: 800 }}>{ct.titulo || 'Agenda tu sesión'}</span>
+                    <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>✕</span>
+                  </div>
+                  <div style={{ padding: 12, background: '#FAFBFF' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3 }}>
+                      {Array.from({ length: 21 }, (_, i) => (
+                        <span key={i} style={{ height: 20, borderRadius: 5, background: [4, 9, 12, 16].includes(i) ? '#9B8CFA' : '#fff', border: '1px solid #edeaf9', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 700, color: [4, 9, 12, 16].includes(i) ? '#fff' : '#9c99a6' }}>{i + 1}</span>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '0.58rem', color: '#9c99a6', fontWeight: 700, marginTop: 8, textAlign: 'center' }}>{ct.agenda_slug ? 'Tipo de reunión: ' + ct.agenda_slug : 'Calendario interactivo del agendador'}</div>
+                  </div>
+                </div>
+              </div>
+            )}
             {(c.formato === 'modal' || c.formato === 'encuesta') && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,25,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
                 {c.formato === 'modal' ? cuerpoModal : (
@@ -319,6 +337,14 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
           <div><span style={lblS as any}>Video (URL de sacscloud.com)</span>
             <input style={inputS} value={c.contenido?.video || ''} onChange={e => setCt({ video: e.target.value })} /></div>
         </div>
+        {c.formato === 'agenda' ? (<>
+          <span style={lblS as any}>Tipo de reunión (del agendador)</span>
+          <select style={inputS} value={c.contenido?.agenda_slug || ''} onChange={e => setCt({ agenda_slug: e.target.value })}>
+            <option value="">Elige el tipo de reunión…</option>
+            {(catalogo?.event_types || []).map((t: any) => <option key={t.slug} value={t.slug}>{t.nombre} · {t.duracion_minutos} min</option>)}
+          </select>
+          <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 6, fontWeight: 600 }}>El modal abre el calendario real con los datos del usuario precargados; la cita cae en Reuniones ligada a su empresa y cuenta como conversión de esta campaña.</div>
+        </>) : null}
         {c.formato === 'badge_menu' || c.formato === 'coachmark' ? (<>
           <span style={lblS as any}>Módulo ancla (dónde aparece)</span>
           <select style={inputS} value={c.comportamiento?.modulo_ancla || ''} onChange={e => setComp({ modulo_ancla: e.target.value })}>

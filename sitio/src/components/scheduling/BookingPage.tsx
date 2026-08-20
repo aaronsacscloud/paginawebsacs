@@ -415,11 +415,16 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   const [recurrenceCount, setRecurrenceCount] = useState(4);
 
   // Step 3: Form
+  // Prefill por query (?nombre=&email=&whatsapp=&empresa=): lo usa el modal de
+  // campañas de SACS3 (Outbound), que arma la URL del embed DIRECTO con estos
+  // parámetros — aquí sí llegan, a diferencia del iframe de /contacto que no
+  // reenvía su propia query. Solo rellenan; el usuario puede corregirlos.
+  const _q = (() => { try { return new URL(window.location.href).searchParams; } catch { return new URLSearchParams(); } })();
   const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    whatsapp: '',
-    empresa: '',
+    nombre: (_q.get('nombre') || '').slice(0, 120),
+    email: (_q.get('email') || '').slice(0, 160),
+    whatsapp: (_q.get('whatsapp') || '').slice(0, 30),
+    empresa: (_q.get('empresa') || '').slice(0, 120),
     giro: '',
     sucursales: '',
     notas: '',
@@ -554,6 +559,8 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           answers: Object.entries(formData.answers).filter(([,v]) => v).map(([qid, valor]) => ({ question_id: qid, valor })),
           ...(recurrenceEnabled ? { recurrence: { frequency: recurrenceFrequency, count: recurrenceCount } } : {}),
           ref_partner_id: refPartnerId,
+          // Campaña in-app de Outbound (uuid; el servidor lo re-valida).
+          oc: _q.get('oc') || null,
           atribucion,
           utm_source: toque?.s || null,
           utm_medium: toque?.m || null,
@@ -578,6 +585,13 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       setStep(4);
+      // Aviso al padre cuando corremos embebidos (modal de campañas en SACS3):
+      // solo un ping de confirmación, sin datos del invitado.
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ tipo: 'sacs_booking_confirmada', oc: _q.get('oc') || null }, '*');
+        }
+      } catch { /* el aviso jamás tumba la reserva */ }
     } catch {
       setFormError('Error de conexion. Intenta de nuevo.');
     }

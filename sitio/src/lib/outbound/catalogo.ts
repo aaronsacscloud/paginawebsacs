@@ -16,7 +16,15 @@ export const FORMATOS = [
   { id: 'badge_menu', etiqueta: 'Badge en menú', desc: '"NUEVO" junto a un módulo', interruptivo: false },
   { id: 'encuesta', etiqueta: 'Encuesta 1 clic', desc: 'NPS / CSAT con un tap', interruptivo: true },
   { id: 'coachmark', etiqueta: 'Coachmark', desc: 'Al entrar a un módulo', interruptivo: true },
+  { id: 'agenda', etiqueta: 'Agendar cita', desc: 'Modal con el calendario para reservar', interruptivo: true },
 ] as const;
+
+// Host FIJO del agendador embebible. La campaña solo elige el SLUG de un tipo
+// de reunión del catálogo real (event_types) — sin URL configurable no hay
+// vector de redirección, que es la razón por la que el iframe puede ir sin
+// sandbox (el flujo de reserva necesita scripts y forms, y es first-party).
+export const AGENDA_EMBED_BASE = 'https://www.sacscloud.com/agendar/embed/';
+export const slugAgendaValido = (s: string) => /^[a-z0-9-]{1,60}$/.test(String(s || ''));
 
 // Destinos de "Ir a módulo": el `destino` es el primer segmento de la ruta de
 // sacs3 (/lavidaesparadisfrutar/<cuenta>/<destino>) — nombres EXACTOS de los

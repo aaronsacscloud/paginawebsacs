@@ -87,10 +87,12 @@ async function procesarCampana(c: any): Promise<any> {
   const vistas: Record<string, number> = {}; const interesados = new Set<string>();
   const cuentaDeUsuario: Record<string, string> = {};
   let impresiones = 0, descartes = 0;
+  const citas: Array<{ cuenta: string; uid: string }> = [];
   for (const e of evs) {
     cuentaDeUsuario[e.uid] = e.cuenta;
     if (e.evento === 'impresion') { impresiones++; usuarios.add(e.uid); cuentasVieron.add(e.cuenta); vistas[e.uid] = (vistas[e.uid] || 0) + 1; }
     if (e.evento === 'clic' || e.evento === 'chat_abierto' || e.evento === 'respuesta_encuesta') { clics.add(e.uid); interesados.add(e.uid); }
+    if (e.evento === 'cita_agendada') { citas.push({ cuenta: e.cuenta, uid: e.uid }); clics.add(e.uid); interesados.add(e.uid); }
     if (e.evento === 'descarte') descartes++;
   }
   for (const [u, n] of Object.entries(vistas)) if (n >= 2) interesados.add(u);
@@ -109,6 +111,21 @@ async function procesarCampana(c: any): Promise<any> {
   // puente aún no reporta plugins por cuenta.
   const targets: string[] = (c.materializada?.cuentas_lista || []).map(normCuenta);
   let conversiones = 0;
+  // Meta "agendó una cita": el evento cita_agendada (postMessage del embed →
+  // sacs3 → sacs_api) YA trae cuenta y uid — conversión directa, brazo expuesto
+  // por definición (para agendar tuvo que ver el modal).
+  if (c.meta?.tipo === 'cita_agendada' && citas.length) {
+    const vistasCitas = new Set<string>();
+    for (const cita of citas) {
+      const k = `${cita.cuenta}|${cita.uid}`;
+      if (vistasCitas.has(k)) continue;
+      vistasCitas.add(k);
+      const { error } = await supabase.from('inapp_conversiones')
+        .upsert({ campana_id: c.id, company_id: null, cuenta: cita.cuenta, uid: cita.uid, brazo: 'expuesto', detalle: { meta: c.meta } },
+                { onConflict: 'campana_id,cuenta,uid', ignoreDuplicates: true });
+      if (!error) conversiones++;
+    }
+  }
   if (c.meta && targets.length && ['uso_modulo', 'plan', 'plugin_activo'].includes(c.meta.tipo)) {
     const desde = c.publicada_at ? new Date(c.publicada_at) : null;
     // Por LOTES (no un tope mudo): con >N cuentas objetivo, el resto quedaba
@@ -188,6 +205,7 @@ async function procesarCampana(c: any): Promise<any> {
       impresiones, usuarios: usuarios.size, cuentas_vieron: cuentasVieron.size,
       clics: clics.size, ctr: usuarios.size ? +((clics.size / usuarios.size) * 100).toFixed(1) : 0,
       descartes, interes: interesados.size, conversiones,
+      citas: citas.length,
       at: new Date().toISOString(),
     },
   }).eq('id', c.id);

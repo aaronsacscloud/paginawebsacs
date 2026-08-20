@@ -8,7 +8,7 @@
 import crypto from 'node:crypto';
 import { supabase } from '../supabase';
 import { cuentasPorEmpresa, normCuenta } from '../crm/sacs-cuentas';
-import { urlSacsValida, DESTINOS_MODULO, ACCIONES_BOTON, FORMATOS, MODULOS_PUENTE, type AudienciaDef, type CondicionUso } from './catalogo';
+import { urlSacsValida, DESTINOS_MODULO, ACCIONES_BOTON, FORMATOS, MODULOS_PUENTE, slugAgendaValido, type AudienciaDef, type CondicionUso } from './catalogo';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
 const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
@@ -150,6 +150,11 @@ export function validarCampana(c: any): string[] {
   const texto = `${ct.titulo || ''} ${ct.mensaje || ''}`;
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}]/u.test(texto.replace(/⚠/gu, ''))) {
     errores.push('El contenido lleva emojis decorativos; el estándar de SACS es tipografía limpia.');
+  }
+  if (c.formato === 'agenda') {
+    if (!slugAgendaValido(ct.agenda_slug)) {
+      errores.push('El formato "Agendar cita" necesita un tipo de reunión del catálogo (slug inválido o vacío).');
+    }
   }
   const comp = c.comportamiento || {};
   if (comp.bloqueante && botones.length === 0) {

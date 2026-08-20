@@ -35,7 +35,13 @@ async function quien(request: Request): Promise<string | null> {
 }
 
 export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('catalogo')) return json({ catalogo: catalogoCompleto() });
+  if (url.searchParams.get('catalogo')) {
+    // Los tipos de reunión son datos vivos (tabla event_types), no catálogo
+    // estático: el formato "Agendar cita" elige uno por slug.
+    const { data: tipos } = await supabase.from('event_types')
+      .select('slug, nombre, duracion_minutos').order('nombre').limit(100);
+    return json({ catalogo: { ...catalogoCompleto(), event_types: tipos || [] } });
+  }
   const id = url.searchParams.get('id');
   if (id) {
     const { data, error } = await supabase.from('inapp_campanas').select('*').eq('id', id).single();
@@ -82,6 +88,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     switch (accion) {
       case 'revisar': {
         const errores = validarCampana(c);
+        if (c.formato === 'agenda' && c.contenido?.agenda_slug) {
+          const { data: t } = await supabase.from('event_types').select('id').eq('slug', c.contenido.agenda_slug).maybeSingle();
+          if (!t) errores.push(`El tipo de reunión "${c.contenido.agenda_slug}" no existe en el agendador.`);
+        }
         const res = await resolverAudiencia(c.audiencia || {});
         const holdoutEst = Math.round(res.cuentas.length * (c.holdout_pct || 0) / 100);
         return json({

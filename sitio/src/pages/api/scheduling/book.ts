@@ -207,6 +207,16 @@ export const POST: APIRoute = async ({ request }) => {
   // sacs_attr → utm_* sueltos. Ver src/lib/atribucion-marketing.ts.
   const atribucion = resolverAtribucion(request, body);
   const utm = columnasUtm(atribucion);
+  // Cita nacida de una campaña in-app de Outbound (formato "agenda"): el modal
+  // de SACS3 arma la URL del embed con ?oc=<campana_id> y BookingPage lo
+  // reenvía en el body. Pisa las utm para que la correlación campaña↔cita sea
+  // determinista (uuid validado; cualquier otra cosa se ignora).
+  const oc = String((body as any).oc || '');
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(oc)) {
+    utm.utm_source = 'outbound_inapp';
+    utm.utm_medium = 'inapp';
+    utm.utm_campaign = oc;
+  }
   const bloqueAttr = bloqueAtribucion(atribucion, request);
   const puntaje = puntajeDeDemo({ whatsapp, empresa, giro, sucursales });
 
