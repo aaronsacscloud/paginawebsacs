@@ -36,8 +36,10 @@ export default function Retorno() {
       {registrando && <GastoModal onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); cargar(); }} />}
 
       {d.sin_gasto_capturado?.length > 0 && (
-        <Aviso tono="aviso" titulo="Falta el gasto de algunos canales">
-          Sin cuánto costó, se puede ver el ARR que trajo {d.sin_gasto_capturado.join(' y ')} pero no si valió la pena. Registra el gasto y aparece el costo por cliente.
+        <Aviso tono="aviso"
+          accion={<button style={S.btnP} onClick={() => setRegistrando(true)}>Registrar</button>}>
+          Ya se ve el ARR que trajo <b>{d.sin_gasto_capturado.join(' y ')}</b>, pero no si valió la pena.
+          Con el gasto aparece el costo por cliente.
         </Aviso>
       )}
 

@@ -20,7 +20,7 @@ const SECCIONES: Array<{ id: Sec; label: string }> = [
   // Oportunidades va primero a propósito: es la pantalla que dice qué hacer
   // hoy con el dinero que ya está sobre la mesa. Campañas es la herramienta;
   // esto es la razón para abrirla.
-  { id: 'oportunidades', label: 'Oportunidades' },
+  { id: 'oportunidades', label: 'Dinero en la mesa' },
   { id: 'campanas', label: 'Campañas' },
   { id: 'audiencias', label: 'Audiencias' },
   { id: 'plantillas', label: 'Plantillas' },
@@ -55,8 +55,8 @@ export default function EmailTab() {
               style={{
                 border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 padding: '9px 14px 11px', fontSize: '0.82rem', position: 'relative',
-                fontWeight: sec === s.id ? 800 : 600,
-                color: sec === s.id ? '#5B4BD6' : '#6a6a72',
+                fontWeight: sec === s.id ? 800 : 500,
+                color: sec === s.id ? '#5B4BD6' : '#8a8a92',
                 // La activa se marca con una barra bajo el texto, no con un
                 // borde alrededor: entre seis chips iguales, el "seleccionado"
                 // por color de fondo casi no se lee (se ve en la captura).

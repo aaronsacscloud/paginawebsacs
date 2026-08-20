@@ -36,7 +36,7 @@ export default function Oportunidades({ onIrA }: { onIrA?: (s: string) => void }
   return (
     <div style={S.wrap}>
       <div style={{ marginBottom: 14 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Oportunidades</h2>
+        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Dinero en la mesa</h2>
         <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
           Audiencias que ya corresponden a dinero. Un clic las crea y quedan listas para una campaña.
         </div>
@@ -54,8 +54,11 @@ export default function Oportunidades({ onIrA }: { onIrA?: (s: string) => void }
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12 }}>
-        {segs.map(s => (
-          <div key={s.id} style={{ ...S.card, display: 'flex', flexDirection: 'column' }}>
+        {/* Las de más gente primero, y las vacías al final: la pantalla debe
+            leerse de arriba abajo por lo que vale, no por el orden en que se
+            escribió el catálogo. */}
+        {[...segs].sort((a, b) => (b.total || 0) - (a.total || 0)).map(s => (
+          <div key={s.id} style={{ ...S.card, display: 'flex', flexDirection: 'column', opacity: s.total ? 1 : .6 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1, color: s.total ? '#1a1a1a' : '#c9c7d0', fontVariantNumeric: 'tabular-nums' }}>{s.total}</span>
               <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{s.total === 1 ? 'persona' : 'personas'}</span>
