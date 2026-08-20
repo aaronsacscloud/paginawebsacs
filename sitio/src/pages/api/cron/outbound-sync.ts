@@ -10,6 +10,7 @@ import { supabase } from '../../../lib/supabase';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { resolverAudiencia, docParaSacs, despublicarCampana, leerPaginado } from '../../../lib/outbound/motor';
 import { normCuenta } from '../../../lib/crm/sacs-cuentas';
+import { notificar } from '../../../lib/crm/notificaciones';
 
 export const prerender = false;
 
@@ -61,6 +62,25 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
         .upsert(reales, { onConflict: 'campana_id,uid,evento,created', ignoreDuplicates: true });
       if (error) return { ingeridos, error: error.message };
       ingeridos += reales.length;
+      // Alerta de DETRACTOR (NPS ≤ 6): el mismo día, no en el reporte del
+      // trimestre. notificar() es idempotente por clave y nunca lanza.
+      const detractores = reales.filter((f: any) => f.evento === 'respuesta_encuesta' && f.valor != null && Number(f.valor) <= 6);
+      for (const d of detractores) {
+        let companyId: string | null = null;
+        try {
+          const { data: fila } = await supabase.from('company_sacs_accounts').select('company_id').eq('cuenta', d.cuenta).maybeSingle();
+          companyId = fila?.company_id || null;
+        } catch { /* sin empresa ligada: el aviso sale igual */ }
+        await notificar({
+          clave: `outbound-detractor:${d.campana_id}:${d.uid}:${d.created}`,
+          tipo: 'outbound_detractor',
+          nivel: 'alerta',
+          titulo: `NPS detractor (${d.valor}) en ${d.cuenta}`,
+          detalle: d.comentario ? `"${d.comentario}"` : 'Sin comentario. Vale una llamada de CS.',
+          company_id: companyId,
+          metadata: { campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor },
+        });
+      }
     }
     // Guard de no-avance: si el cursor no se movió con hay_mas=true, salir en
     // vez de quemar el presupuesto reintentando la misma página.
@@ -88,11 +108,13 @@ async function procesarCampana(c: any): Promise<any> {
   const cuentaDeUsuario: Record<string, string> = {};
   let impresiones = 0, descartes = 0;
   const citas: Array<{ cuenta: string; uid: string }> = [];
+  const npsValores: number[] = [];
   for (const e of evs) {
     cuentaDeUsuario[e.uid] = e.cuenta;
     if (e.evento === 'impresion') { impresiones++; usuarios.add(e.uid); cuentasVieron.add(e.cuenta); vistas[e.uid] = (vistas[e.uid] || 0) + 1; }
     if (e.evento === 'clic' || e.evento === 'chat_abierto' || e.evento === 'respuesta_encuesta') { clics.add(e.uid); interesados.add(e.uid); }
     if (e.evento === 'cita_agendada') { citas.push({ cuenta: e.cuenta, uid: e.uid }); clics.add(e.uid); interesados.add(e.uid); }
+    if (e.evento === 'respuesta_encuesta' && e.valor != null) npsValores.push(Number(e.valor));
     if (e.evento === 'descarte') descartes++;
   }
   for (const [u, n] of Object.entries(vistas)) if (n >= 2) interesados.add(u);
@@ -206,6 +228,14 @@ async function procesarCampana(c: any): Promise<any> {
       clics: clics.size, ctr: usuarios.size ? +((clics.size / usuarios.size) * 100).toFixed(1) : 0,
       descartes, interes: interesados.size, conversiones,
       citas: citas.length,
+      nps: npsValores.length ? {
+        respuestas: npsValores.length,
+        promedio: +(npsValores.reduce((a, b) => a + b, 0) / npsValores.length).toFixed(1),
+        promotores: npsValores.filter(v => v >= 9).length,
+        pasivos: npsValores.filter(v => v === 7 || v === 8).length,
+        detractores: npsValores.filter(v => v <= 6).length,
+        score: Math.round((npsValores.filter(v => v >= 9).length - npsValores.filter(v => v <= 6).length) / npsValores.length * 100),
+      } : null,
       at: new Date().toISOString(),
     },
   }).eq('id', c.id);
@@ -281,6 +311,25 @@ async function correr() {
     }
 
     out.continuas = await reevaluarContinuas(deadline);
+
+    // Recurrencia de encuestas (NPS cada X días): una vez al día por campaña,
+    // sacs_api re-habilita a quien respondió hace >= recurrencia_dias (sin
+    // tocar descartes). El día ya-corrido se persiste en inapp_sync.
+    const { data: recurrentes } = await supabase.from('inapp_campanas')
+      .select('id, recurrencia_dias').eq('estado', 'activa').eq('formato', 'encuesta')
+      .not('recurrencia_dias', 'is', null);
+    const hoyR = new Date().toISOString().slice(0, 10);
+    for (const cR of (recurrentes || [])) {
+      if (Date.now() > deadline) break;
+      if (!cR.recurrencia_dias || cR.recurrencia_dias < 7) continue;
+      const marca = await leerSync(`nps_reset:${cR.id}`);
+      if (marca.dia === hoyR) continue;
+      try {
+        const r = await sacs('/interno/crm/campanas-reset-estado', { campana_id: cR.id, dias: cR.recurrencia_dias });
+        await guardarSync(`nps_reset:${cR.id}`, { dia: hoyR, reseteados: r.reseteados || 0 });
+        out.nps_resets = (out.nps_resets || 0) + 1;
+      } catch (e: any) { out.errores.push(`nps_reset ${cR.id}: ${e?.message || e}`); }
+    }
   } catch (e: any) {
     out.errores.push(e?.message || String(e));
   }

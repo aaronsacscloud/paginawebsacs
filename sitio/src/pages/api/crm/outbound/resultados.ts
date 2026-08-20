@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
   // Paginado: PostgREST capa a max_rows=1000 CUALQUIER select por grande que
   // sea el .limit() — sin esto, una campaña con tracción subcuenta en silencio.
   const evs = await leerPaginado((from, to) => supabase.from('inapp_eventos')
-    .select('evento, boton, valor, uid, cuenta, dia')
+    .select('evento, boton, valor, comentario, uid, cuenta, dia')
     .eq('campana_id', id).order('id', { ascending: true }).range(from, to));
   const usuariosVieron = new Set<string>();
   const usuariosClic = new Set<string>();
@@ -32,6 +32,7 @@ export const GET: APIRoute = async ({ url }) => {
   let impresiones = 0, cierres = 0, descartes = 0, chats = 0;
   const porBoton: Record<string, number> = {};
   const encuesta: number[] = [];
+  const comentarios: Array<{ cuenta: string; valor: number; comentario: string; dia: string }> = [];
   const interesados = new Set<string>();
   const vistasPorUsuario: Record<string, number> = {};
 
@@ -44,7 +45,11 @@ export const GET: APIRoute = async ({ url }) => {
     if (e.evento === 'cierre') cierres++;
     if (e.evento === 'descarte') descartes++;
     if (e.evento === 'chat_abierto') { chats++; interesados.add(e.uid); }
-    if (e.evento === 'respuesta_encuesta' && e.valor != null) { encuesta.push(Number(e.valor)); interesados.add(e.uid); }
+    if (e.evento === 'respuesta_encuesta' && e.valor != null) {
+      encuesta.push(Number(e.valor)); interesados.add(e.uid);
+      if (e.comentario) comentarios.push({ cuenta: e.cuenta, valor: Number(e.valor), comentario: e.comentario, dia: e.dia });
+    }
+    if (e.evento === 'cita_agendada') { interesados.add(e.uid); }
   }
   // Interés = clic/chat/encuesta O ≥2 impresiones (lo vio dos veces y no lo descartó).
   for (const [u, n] of Object.entries(vistasPorUsuario)) if (n >= 2) interesados.add(u);
@@ -70,7 +75,16 @@ export const GET: APIRoute = async ({ url }) => {
       ctr: impresiones ? +(usuariosClic.size / usuariosVieron.size * 100).toFixed(1) : 0,
       cierres, descartes, chats_abiertos: chats,
       interes: interesados.size,
-      encuesta: encuesta.length ? { respuestas: encuesta.length, promedio: +(encuesta.reduce((a, b) => a + b, 0) / encuesta.length).toFixed(1) } : null,
+      encuesta: encuesta.length ? {
+        respuestas: encuesta.length,
+        promedio: +(encuesta.reduce((a, b) => a + b, 0) / encuesta.length).toFixed(1),
+        promotores: encuesta.filter(v => v >= 9).length,
+        pasivos: encuesta.filter(v => v === 7 || v === 8).length,
+        detractores: encuesta.filter(v => v <= 6).length,
+        score: Math.round((encuesta.filter(v => v >= 9).length - encuesta.filter(v => v <= 6).length) / encuesta.length * 100),
+        comentarios: comentarios.slice(0, 100),
+      } : null,
+      citas: evs.filter(e => e.evento === 'cita_agendada').length,
       conversiones: {
         expuestas, control,
         tasa_expuestos_pct: +(tasaExp * 100).toFixed(1),

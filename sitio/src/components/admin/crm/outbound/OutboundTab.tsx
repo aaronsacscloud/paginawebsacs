@@ -153,8 +153,11 @@ function PreviewSacs3({ c }: { c: any }) {
                 {c.formato === 'modal' ? cuerpoModal : (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '16px 18px', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,.3)' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.8rem', marginBottom: 10 }}>{ct.titulo || '¿Qué tan probable es que nos recomiendes?'}</div>
-                    <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
-                      {Array.from({ length: 5 }, (_, i) => <span key={i} style={{ width: 26, height: 26, borderRadius: 7, border: '1.5px solid #d9d2fb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.64rem', fontWeight: 800, color: '#5B4BD6' }}>{i + 1}</span>)}
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {(c.contenido?.encuesta?.escala === 'nps'
+                        ? Array.from({ length: 11 }, (_, i) => i)
+                        : Array.from({ length: 5 }, (_, i) => i + 1)
+                      ).map(n => <span key={n} style={{ width: c.contenido?.encuesta?.escala === 'nps' ? 20 : 26, height: 24, borderRadius: 6, border: '1.5px solid #d9d2fb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6' }}>{n}</span>)}
                     </div>
                   </div>
                 )}
@@ -337,6 +340,17 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
           <div><span style={lblS as any}>Video (URL de sacscloud.com)</span>
             <input style={inputS} value={c.contenido?.video || ''} onChange={e => setCt({ video: e.target.value })} /></div>
         </div>
+        {c.formato === 'encuesta' ? (<>
+          <span style={lblS as any}>Escala de la encuesta</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button style={chip((c.contenido?.encuesta?.escala || '1_5') === '1_5')} onClick={() => setCt({ encuesta: { escala: '1_5' } })}>1 a 5 (CSAT)</button>
+            <button style={chip(c.contenido?.encuesta?.escala === 'nps')} onClick={() => setCt({ encuesta: { escala: 'nps' } })}>0 a 10 (NPS)</button>
+          </div>
+          <span style={lblS as any}>Repetir cada (días) — vacío = una sola vez</span>
+          <input style={inputS} type="number" min={7} placeholder="ej. 90 para NPS trimestral" value={c.recurrencia_dias ?? ''}
+            onChange={e => set({ recurrencia_dias: e.target.value ? Math.max(7, Number(e.target.value)) : null })} />
+          <div style={{ fontSize: '0.68rem', color: '#9c99a6', marginTop: 6, fontWeight: 600 }}>Quien responde vuelve a ver la encuesta cuando pasa el periodo; quien la descarta con "No me interesa" no vuelve a verla nunca. Una respuesta ≤6 avisa a la campana del CRM el mismo día.</div>
+        </>) : null}
         {c.formato === 'agenda' ? (<>
           <span style={lblS as any}>Tipo de reunión (del agendador)</span>
           <select style={inputS} value={c.contenido?.agenda_slug || ''} onChange={e => setCt({ agenda_slug: e.target.value })}>
@@ -619,9 +633,32 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
             ))}
             <div style={{ fontSize: '0.72rem', color: '#888', marginTop: 10 }}>
               Cierres: <b>{r.resumen.cierres}</b> · «No me interesa»: <b>{r.resumen.descartes}</b> · Chats: <b>{r.resumen.chats_abiertos}</b>
-              {r.resumen.encuesta && <> · Encuesta: <b>{r.resumen.encuesta.promedio}</b> prom. ({r.resumen.encuesta.respuestas})</>}
+              {r.resumen.citas ? <> · Citas agendadas: <b>{r.resumen.citas}</b></> : null}
             </div>
           </div>
+          {r.resumen.encuesta && (
+            <div style={{ ...S.card, gridColumn: '1 / -1' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 8 }}>Encuesta</div>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                {typeof r.resumen.encuesta.score === 'number' && <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4536BE' }}>NPS {r.resumen.encuesta.score}</span>}
+                <span style={{ fontSize: '0.78rem', color: '#555', fontWeight: 600 }}>{r.resumen.encuesta.respuestas} respuestas · promedio {r.resumen.encuesta.promedio}</span>
+                <Tag tono="ok">{r.resumen.encuesta.promotores} promotores</Tag>
+                <Tag tono="gris">{r.resumen.encuesta.pasivos} pasivos</Tag>
+                <Tag tono="malo">{r.resumen.encuesta.detractores} detractores</Tag>
+              </div>
+              {(r.resumen.encuesta.comentarios || []).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  {(r.resumen.encuesta.comentarios || []).map((cm: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem' }}>
+                      <span style={{ fontSize: '0.6875rem', fontWeight: 800, padding: '2px 8px', borderRadius: 10, background: cm.valor >= 9 ? '#EAF8F2' : cm.valor <= 6 ? '#FEF0EF' : '#F4F4F6', color: cm.valor >= 9 ? '#1E8A63' : cm.valor <= 6 ? '#C0554E' : '#6B7280', flexShrink: 0, height: 'fit-content' }}>{cm.valor}</span>
+                      <span style={{ flex: 1, color: '#444' }}>{cm.comentario}</span>
+                      <span style={{ fontSize: '0.68rem', color: '#9c99a6', flexShrink: 0 }}>{cm.cuenta} · {cm.dia}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div style={S.card}>
             <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 8 }}>Interés generado</div>
             <div style={{ fontSize: '0.78rem', color: '#444', lineHeight: 1.7 }}>
