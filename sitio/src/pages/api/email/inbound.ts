@@ -48,16 +48,41 @@ function esAutomatico(headers: string, asunto: string): boolean {
   return /^(out of office|automatic reply|respuesta autom|fuera de la oficina)/i.test(String(asunto || '').trim());
 }
 
-/** Quita el texto citado: el hilo ya está arriba, repetirlo lo vuelve ilegible. */
+/**
+ * Quita el texto citado: el hilo ya está arriba y repetirlo vuelve la bandeja
+ * ilegible.
+ *
+ * La línea de atribución NO siempre cabe en un renglón. Gmail la parte:
+ *     On Wed, Aug 19, 2026 at 8:18 PM Aarón de SACS Cloud <
+ *     aaron@news.sacscloud.com> wrote:
+ * Buscar "On … wrote:" en una sola línea fallaba con el cliente más usado que
+ * existe, y el encabezado del citado se colaba a la vista. Por eso la
+ * atribución se busca sobre la línea UNIDA con las dos siguientes.
+ */
 export function limpiarCitado(texto: string): string {
-  const lineas = String(texto || '').split('\n');
-  const corte = lineas.findIndex(l =>
-    /^\s*>/.test(l) ||
-    /^\s*(-{2,}\s*)?(mensaje original|original message|forwarded message)/i.test(l) ||
-    /^\s*el .+escribi(ó|o):\s*$/i.test(l) ||
-    /^\s*on .+wrote:\s*$/i.test(l) ||
-    /^\s*de:\s.+$/i.test(l));
-  return (corte > 0 ? lineas.slice(0, corte) : lineas).join('\n').trim();
+  const lineas = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  const ATRIBUCION = /(wrote|escribi(ó|o)|a écrit|schrieb)\s*:\s*$/i;
+  const ARRANQUE = /^\s*(on|el|le|am)\s+\S/i;
+
+  const esCorte = (i: number): boolean => {
+    const l = lineas[i];
+    if (/^\s*>/.test(l)) return true;
+    if (/^\s*(-{2,}|_{2,})?\s*(mensaje original|original message|forwarded message|mensaje reenviado)/i.test(l)) return true;
+    if (/^\s*de:\s.+$/i.test(l) && /^\s*(para|enviado el|asunto):/im.test(lineas.slice(i + 1, i + 4).join('\n'))) return true;
+    // Atribución, en una línea o repartida en hasta tres.
+    if (ARRANQUE.test(l)) {
+      for (let n = 0; n < 3; n++) {
+        const unida = lineas.slice(i, i + n + 1).join(' ').replace(/\s+/g, ' ');
+        if (ATRIBUCION.test(unida)) return true;
+      }
+    }
+    return false;
+  };
+
+  let corte = -1;
+  for (let i = 0; i < lineas.length; i++) if (esCorte(i)) { corte = i; break; }
+  return (corte > 0 ? lineas.slice(0, corte) : corte === 0 ? [] : lineas).join('\n').trim();
 }
 
 /** "ya no me manden" — se detecta y se ofrece la baja con un clic. */
