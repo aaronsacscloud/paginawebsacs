@@ -50,6 +50,7 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
     const filas = evs.map((e: any) => ({
       campana_id: e.campana_id, cuenta: normCuenta(e.cuenta), uid: String(e.uid || ''),
       evento: e.evento, boton: e.boton, valor: e.valor, variante: e.variante,
+      comentario: e.comentario || null,
       dia: e.dia || null, created: e.created,
     })).filter((f: any) => f.uid && f.cuenta);
     // Los ids de campañas de PRUEBA (<uuid>-prueba) no existen en inapp_campanas
@@ -108,7 +109,7 @@ async function procesarCampana(c: any): Promise<any> {
   // puente aún no reporta plugins por cuenta.
   const targets: string[] = (c.materializada?.cuentas_lista || []).map(normCuenta);
   let conversiones = 0;
-  if (c.meta && targets.length && ['uso_modulo', 'plan'].includes(c.meta.tipo)) {
+  if (c.meta && targets.length && ['uso_modulo', 'plan', 'plugin_activo'].includes(c.meta.tipo)) {
     const desde = c.publicada_at ? new Date(c.publicada_at) : null;
     // Por LOTES (no un tope mudo): con >N cuentas objetivo, el resto quedaba
     // sin evaluar la meta en silencio.
@@ -124,6 +125,10 @@ async function procesarCampana(c: any): Promise<any> {
       if (!comp) continue;
       let convirtio = false;
       if (c.meta.tipo === 'plan') convirtio = comp.plan === c.meta.valor;
+      if (c.meta.tipo === 'plugin_activo') {
+        const pls: any[] = comp.uso_sacs?.plugins || [];
+        convirtio = pls.indexOf(String(c.meta.valor || '').trim()) !== -1;
+      }
       if (c.meta.tipo === 'uso_modulo') {
         const mods: any[] = comp.uso_sacs?.modulos || [];
         const m = mods.find((x: any) => x && x.modulo === c.meta.valor && x.usa);

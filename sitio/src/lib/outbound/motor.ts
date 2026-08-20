@@ -61,6 +61,13 @@ function cumpleCondicion(e: EmpresaEval, c: CondicionUso): boolean {
       const dias = (new Date(e.fecha_renovacion).getTime() - Date.now()) / 86400000;
       return dias >= 0 && dias < Number(c.valor);
     }
+    case 'tiene_plugin': {
+      // uso_sacs.plugins = ['torre-evento','reglas-catalogo',...] — lo reporta
+      // el puente desde info/config.plugins (Ola 2, W1).
+      const pls: any[] = (e.uso_sacs && Array.isArray(e.uso_sacs.plugins)) ? e.uso_sacs.plugins : [];
+      const tiene = pls.indexOf(String(c.valor || '').trim()) !== -1;
+      return c.operador === 'no_es' ? !tiene : tiene;
+    }
     case 'usa_modulo': {
       // uso_sacs.modulos = [{ modulo, usa, ... }] — nombres EXACTOS del puente.
       const mods: any[] = (e.uso_sacs && Array.isArray(e.uso_sacs.modulos)) ? e.uso_sacs.modulos : [];

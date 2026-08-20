@@ -70,6 +70,7 @@ export const METAS = [
   { id: 'uso_modulo', etiqueta: 'Usó el módulo…', necesita: 'modulo' },
   { id: 'plugin_activo', etiqueta: 'Activó el plugin…', necesita: 'texto' },
   { id: 'plan', etiqueta: 'Subió al plan…', necesita: 'texto' },
+  { id: 'cita_agendada', etiqueta: 'Agendó una cita', necesita: null },
   { id: 'clic', etiqueta: 'Dio clic (sin meta de negocio)', necesita: null },
 ] as const;
 
@@ -101,6 +102,7 @@ export const CATALOGO_AUDIENCIA: Array<{ id: string; etiqueta: string; tipo: 'op
     { v: 'activo', l: 'Activo' }, { v: 'trial', l: 'Trial' }, { v: 'vencido', l: 'Vencido' }] },
   { id: 'dias_sin_venta', etiqueta: 'Días sin venta', tipo: 'numero', operadores: ['mayor_que', 'menor_que'] },
   { id: 'usa_modulo', etiqueta: 'Usa el módulo…', tipo: 'modulo', operadores: ['es', 'no_es'] },
+  { id: 'tiene_plugin', etiqueta: 'Tiene el plugin…', tipo: 'texto', operadores: ['es', 'no_es'] },
   { id: 'interes_modulo', etiqueta: 'Mostró interés en…', tipo: 'modulo', operadores: ['es'] },
   { id: 'giro', etiqueta: 'Giro', tipo: 'texto', operadores: ['es'] },
   { id: 'meses_activo', etiqueta: 'Meses como cliente', tipo: 'numero', operadores: ['mayor_que', 'menor_que'] },
