@@ -73,14 +73,22 @@ export default function CobranzaTab() {
   const [tramoSel, setTramoSel] = useState<any>(null);
   const [menuTramo, setMenuTramo] = useState(false);
   const [busca, setBusca] = useState('');
-  // El tablero vive detrás de un botón, no de una pestaña: se consulta una vez
-  // a la semana, no cada vez que se entra a cobrar.
+  // El tablero es una VISTA, no un modal: se analiza, se cambia el periodo y se
+  // compara. Un modal invita a cerrarlo, no a quedarse.
+  const [modo, setModo] = useState<'trabajo' | 'tablero'>('trabajo');
   const [tablero, setTablero] = useState<any>(null);
-  const [verTablero, setVerTablero] = useState(false);
+  const [rango, setRango] = useState<{ desde: string; hasta: string; label: string }>(() => {
+    const h = new Date();
+    const d1 = new Date(h.getFullYear(), h.getMonth(), 1);
+    const d2 = new Date(h.getFullYear(), h.getMonth() + 1, 0);
+    return { desde: iso(d1), hasta: iso(d2), label: 'Este mes' };
+  });
   useEffect(() => {
-    if (!verTablero || tablero) return;
-    fetch('/api/crm/cobranza/tablero').then(r => r.json()).then(setTablero).catch(() => setTablero({ error: true }));
-  }, [verTablero]);
+    if (modo !== 'tablero') return;
+    setTablero(null);
+    fetch(`/api/crm/cobranza/tablero?desde=${rango.desde}&hasta=${rango.hasta}`)
+      .then(r => r.json()).then(setTablero).catch(() => setTablero({ error: true }));
+  }, [modo, rango.desde, rango.hasta]);
   // El menú de la fila se ancla con position FIXED: dentro de la tabla lo
   // recortaba el contenedor con desplazamiento y solo se veía la primera opción.
   const [menuFila, setMenuFila] = useState<any>(null);
@@ -255,9 +263,11 @@ export default function CobranzaTab() {
     <div style={S.wrap}>
       <style>{`
         .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:10px; }
+        .cob-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+        @media (max-width: 1100px) { .cob-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 1250px) { .cob-5 { grid-template-columns:repeat(3, minmax(0,1fr)); } }
         @media (max-width: 780px)  { .cob-5 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-        @media (max-width: 620px)  { .cob-5 { grid-template-columns:1fr; } }
+        @media (max-width: 620px)  { .cob-5, .cob-4 { grid-template-columns:1fr; } }
       `}</style>
 
       <div style={{ marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
@@ -267,14 +277,20 @@ export default function CobranzaTab() {
           Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
         </div>
         </div>
-        <button style={{ ...S.mini, height: 36, padding: '0 14px', fontSize: '0.8rem', color: '#2C5FC4', borderColor: '#cdd9f7' }}
-          onClick={() => setVerTablero(true)}>Tablero de cobranza</button>
+        <span style={{ display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' }}>
+          {([['trabajo', 'A cobrar'], ['tablero', 'Tablero']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setModo(v)} style={seg(modo === v)}>{l}</button>
+          ))}
+        </span>
       </div>
 
       {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
       {/* Las tarjetas del MES se abren: un número que nadie puede desarmar es un
           número que hay que creer. */}
+      {modo === 'tablero'
+        ? <Tablero d={tablero} rango={rango} setRango={setRango} onCliente={(id: string) => setCliente(id)} />
+        : (<>
       {/* Cinco tarjetas con el patrón de Cotizaciones: barra de color, rótulo,
           número y una línea que explica. "Bajas del mes" se fue al tablero de
           ARR —una baja no se cobra, es churn— y su lugar lo toma lo que vence
@@ -358,6 +374,7 @@ export default function CobranzaTab() {
         <div style={S.hd}>{activa.nota}</div>
         <Tabla filas={filas} />
       </div>
+      </>)}
 
       {menuFila && (() => {
         const f = menuFila.f;
@@ -395,7 +412,6 @@ export default function CobranzaTab() {
           </div>
         );
       })()}
-      {verTablero && <Tablero d={tablero} onCerrar={() => setVerTablero(false)} />}
       {panel === 'recuperado' && <DetalleMes filas={d.recuperado_detalle || []} total={k.recuperado} onCerrar={() => setPanel('')} onCliente={(id: string) => { setPanel(''); setCliente(id); }} />}
       {gestion && <Gestion f={gestion} onCerrar={() => setGestion(null)} onListo={(t: string) => { setGestion(null); flash(t); cargar(); }} />}
       {partir && <PartirEnPagos f={partir} onCerrar={() => setPartir(null)} onListo={() => { setPartir(null); flash('Plan de pagos creado'); cargar(); }} />}
@@ -453,19 +469,59 @@ function DetalleMes({ filas, total, onCerrar, onCliente }: any) {
 
 
 /* ─── Tablero de cobranza ───
- * Qué tan rápido se cobra y qué tan sana está la cartera. Casi todo depende de
- * datos que se empezaron a guardar HOY —la fecha que cada pago venía a cubrir,
- * la bitácora de gestión y el desenlace de las promesas—, así que lo que
- * todavía no tiene base se dice con todas sus letras en vez de inventar un
- * promedio con dos datos. */
-function Tablero({ d, onCerrar }: any) {
-  if (!d) return <Modal titulo="Tablero de cobranza" onCerrar={onCerrar} ancho={880}><Cargando texto="Armando el tablero…" alto={220} /></Modal>;
-  if (d.error) return <Modal titulo="Tablero de cobranza" onCerrar={onCerrar} ancho={880}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>No se pudo cargar.</div></Modal>;
+ * Dos naturalezas conviven aquí y no hay que confundirlas: lo del PERIODO
+ * —cobrado, lo que venció, cómo entró el dinero— cambia con el filtro y se
+ * compara contra el periodo anterior; la CARTERA —vencido, aging, proyección,
+ * promesas— es una foto de hoy, porque lo que se debe se debe hoy. */
+const PERIODOS = (): { label: string; desde: string; hasta: string }[] => {
+  const h = new Date();
+  const m = (off: number) => [new Date(h.getFullYear(), h.getMonth() + off, 1), new Date(h.getFullYear(), h.getMonth() + off + 1, 0)];
+  const [a1, a2] = m(0), [b1, b2] = m(-1);
+  return [
+    { label: 'Este mes', desde: iso(a1), hasta: iso(a2) },
+    { label: 'Mes pasado', desde: iso(b1), hasta: iso(b2) },
+    { label: 'Últimos 3 meses', desde: iso(new Date(h.getFullYear(), h.getMonth() - 2, 1)), hasta: iso(a2) },
+    { label: 'Este año', desde: `${h.getFullYear()}-01-01`, hasta: `${h.getFullYear()}-12-31` },
+  ];
+};
 
-  const kpi = (label: string, valor: any, sub: string, color?: string, pend?: boolean) => (
-    <div style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${pend ? '#f5e2b8' : (color || '#9B8CFA')}`, borderRadius: 10, padding: '12px 14px' }}>
-      <div style={{ ...S.kl, display: 'flex', alignItems: 'center', gap: 5 }}>
-        {label}{pend && <span style={{ fontSize: '0.52rem', background: '#FEF6E7', color: '#9a6a10', borderRadius: 20, padding: '1px 6px' }}>midiendo</span>}
+function Tablero({ d, rango, setRango, onCliente }: any) {
+  const [abierto, setAbierto] = useState(false);
+  const barra = (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+      <div style={{ position: 'relative' }}>
+        <button onClick={() => setAbierto(v => !v)} style={{ ...S.mini, height: 36, padding: '0 14px', fontSize: '0.8rem', background: '#EEECFE', color: '#5B4BD6', borderColor: '#ddd6fb' }}>
+          {rango.label} ▾
+        </button>
+        {abierto && (
+          <div style={{ position: 'absolute', left: 0, top: 42, background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, width: 230, zIndex: 40 }}>
+            {PERIODOS().map(p => (
+              <button key={p.label} onClick={() => { setRango({ ...p }); setAbierto(false); }}
+                style={{ ...S.mini, width: '100%', textAlign: 'left' as const, border: 'none', marginBottom: 3, padding: '8px 10px', background: rango.label === p.label ? '#EEECFE' : 'transparent', color: rango.label === p.label ? '#5B4BD6' : '#444' }}>
+                {p.label}
+              </button>
+            ))}
+            <div style={{ borderTop: '1px solid #f2f1f6', marginTop: 4, paddingTop: 7, display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input type="date" value={rango.desde} onChange={e => setRango({ ...rango, desde: e.target.value, label: 'Personalizado' })} style={{ ...S.fi, padding: '6px 8px', fontSize: '0.72rem' }} />
+              <input type="date" value={rango.hasta} onChange={e => setRango({ ...rango, hasta: e.target.value, label: 'Personalizado' })} style={{ ...S.fi, padding: '6px 8px', fontSize: '0.72rem' }} />
+            </div>
+          </div>
+        )}
+      </div>
+      <span style={{ fontSize: '0.73rem', color: '#a5a2af' }}>
+        {fmtDate(rango.desde)} al {fmtDate(rango.hasta)}
+        {d?.previo ? ` · se compara contra ${fmtCorta(d.previo.desde)}–${fmtCorta(d.previo.hasta)}` : ''}
+      </span>
+    </div>
+  );
+
+  if (!d) return <div>{barra}<Cargando texto="Armando el tablero…" alto={240} /></div>;
+  if (d.error) return <div>{barra}<div style={{ ...S.card, color: '#C0554E' }}>No se pudo cargar el tablero.</div></div>;
+
+  const K = ({ label, valor, sub, color, franja, midiendo }: any) => (
+    <div style={{ ...S.card, marginBottom: 0, padding: '14px 16px', borderLeft: `3px solid ${midiendo ? '#f5e2b8' : (franja || '#9B8CFA')}` }}>
+      <div style={{ ...S.kl, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+        {label}{midiendo && <span style={{ fontSize: '0.52rem', background: '#FEF6E7', color: '#9a6a10', borderRadius: 20, padding: '1px 6px' }}>midiendo</span>}
       </div>
       <div style={{ ...S.kv, color: valor === '—' ? '#c9c7d0' : (color || '#1a1a1a') }}>{valor}</div>
       <div style={S.ks}>{sub}</div>
@@ -473,78 +529,176 @@ function Tablero({ d, onCerrar }: any) {
   );
   const dias = (x: any) => (x?.dias == null ? '—' : `${x.dias} d`);
   const maxMes = Math.max(1, ...(d.proyeccion || []).map((m: any) => m.total));
+  const maxDia = Math.max(1, ...(d.dinero.por_dia || []).map((x: any) => x.monto));
+  const varTxt = (v: number | null) => v == null
+    ? <span style={{ color: '#c4c4cc' }}>sin periodo anterior</span>
+    : <span style={{ color: v > 0 ? '#1E8A63' : v < 0 ? '#C0554E' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
 
   return (
-    <Modal titulo="Tablero de cobranza" nota={`al ${fmtCorta(d.hoy)}`} onCerrar={onCerrar} ancho={880}>
+    <div>
+      {barra}
+
+      <div style={{ ...S.kl, marginBottom: 8 }}>El dinero del periodo</div>
+      <div className="cob-4" style={{ marginBottom: 16 }}>
+        <K label="Cobrado" valor={money(d.dinero.cobrado)} color="#1E8A63" franja="#4FBF95"
+          sub={<>{varTxt(d.dinero.variacion)} vs. periodo anterior · {d.dinero.pagos} pagos</>} />
+        <K label="Venció en el periodo" valor={money(d.dinero.vencio)} franja="#E8A838"
+          sub={`${d.dinero.vencio_n} cobros con fecha en el rango`} />
+        <K label="Tasa de cobro" valor={d.dinero.tasa == null ? '—' : d.dinero.tasa + '%'} franja="#9B8CFA"
+          color={(d.dinero.tasa || 0) >= 90 ? '#1E8A63' : undefined}
+          sub="de lo que tocaba cobrar, cuánto entró" />
+        <K label="Pago promedio" valor={money(d.dinero.ticket)} franja="#7DA6F5"
+          sub={`${money(d.dinero.suscripciones)} de suscripciones · ${money(d.dinero.cotizaciones)} de cotizaciones`} />
+      </div>
+
+      {(d.dinero.por_dia || []).length > 0 && (
+        <div style={S.card}>
+          <div style={S.h}>Ritmo de cobro<span style={S.hr}>{d.dinero.pagos} pagos en el periodo</span></div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 90, marginTop: 10 }}>
+            {d.dinero.por_dia.map((x: any) => (
+              <div key={x.fecha} title={`${fmtDate(x.fecha)} · ${money(x.monto)}`}
+                style={{ flex: 1, minWidth: 4, height: Math.max(3, Math.round((x.monto / maxDia) * 86)), background: '#9B8CFA', borderRadius: '4px 4px 0 0' }} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.66rem', color: '#a5a2af', marginTop: 5 }}>
+            <span>{fmtCorta(d.periodo.desde)}</span><span>{fmtCorta(d.periodo.hasta)}</span>
+          </div>
+        </div>
+      )}
+
       <div style={{ ...S.kl, marginBottom: 8 }}>Qué tan rápido se cobra</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
-        {kpi('Anualidades', dias(d.velocidad.anual), `${d.velocidad.anual.n} pago${d.velocidad.anual.n === 1 ? '' : 's'} medidos`, '#5B4BD6', d.velocidad.anual.dias == null)}
-        {kpi('Mensuales', dias(d.velocidad.mensual), `${d.velocidad.mensual.n} pago${d.velocidad.mensual.n === 1 ? '' : 's'} medidos`, '#5B4BD6', d.velocidad.mensual.dias == null)}
-        {kpi('Cotizaciones', dias(d.velocidad.cotizacion), `${d.velocidad.cotizacion.n} abono${d.velocidad.cotizacion.n === 1 ? '' : 's'} medidos`, '#2C5FC4', d.velocidad.cotizacion.dias == null)}
-        {kpi('Pagan a tiempo', d.velocidad.a_tiempo == null ? '—' : d.velocidad.a_tiempo + '%', 'el día o antes', '#1E8A63', d.velocidad.a_tiempo == null)}
+      <div className="cob-4" style={{ marginBottom: 16 }}>
+        <K label="Anualidades" valor={dias(d.velocidad.anual)} color="#5B4BD6" midiendo={d.velocidad.anual.dias == null}
+          sub={`${d.velocidad.anual.n} pago${d.velocidad.anual.n === 1 ? '' : 's'} medidos en el periodo`} />
+        <K label="Mensuales" valor={dias(d.velocidad.mensual)} color="#5B4BD6" midiendo={d.velocidad.mensual.dias == null}
+          sub={`${d.velocidad.mensual.n} pago${d.velocidad.mensual.n === 1 ? '' : 's'} medidos`} />
+        <K label="Cotizaciones" valor={dias(d.velocidad.cotizacion)} color="#2C5FC4" franja="#7DA6F5" midiendo={d.velocidad.cotizacion.dias == null}
+          sub={`${d.velocidad.cotizacion.n} abono${d.velocidad.cotizacion.n === 1 ? '' : 's'} medidos`} />
+        <K label="Pagan a tiempo" valor={d.velocidad.a_tiempo == null ? '—' : d.velocidad.a_tiempo + '%'} color="#1E8A63" franja="#4FBF95"
+          midiendo={d.velocidad.a_tiempo == null} sub="el día pactado o antes" />
       </div>
       <div style={{ fontSize: '0.72rem', color: '#a5a2af', marginTop: -8, marginBottom: 16, lineHeight: 1.5 }}>
-        Se mide desde que el pago guarda la fecha que venía a cubrir. Van {d.velocidad.total_medidos} pagos con fecha
-        y {d.velocidad.sin_medir} anteriores que no la tienen —esos no se pueden reconstruir hacia atrás.
+        Se mide desde que cada pago guarda la fecha que venía a cubrir: {d.velocidad.medidos} de los {d.velocidad.medidos + d.velocidad.sin_medir} pagos
+        del periodo ya la traen. Los anteriores no se pueden reconstruir —esa fecha se pisa en cada renovación.
       </div>
 
-      <div style={{ ...S.kl, marginBottom: 8 }}>Salud de la cartera</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
-        {kpi('Cartera vencida', d.cartera.pct_vencido == null ? '—' : d.cartera.pct_vencido + '%', `${money(d.cartera.vencido)} sobre ${money(d.cartera.arr_activo)} de ARR`, '#C0554E')}
-        {kpi('Vencido por origen', money(d.cartera.vencido), `${money(d.cartera.vencido_subs)} suscripciones · ${money(d.cartera.vencido_cotizaciones)} parcialidades`, '#EF7A72')}
-        {kpi('Cobrado este mes', money(d.cartera.cobrado_mes), 'todo lo que entró desde el día 1', '#1E8A63')}
+      <div style={{ ...S.kl, marginBottom: 8 }}>La cartera hoy</div>
+      <div className="cob-4" style={{ marginBottom: 16 }}>
+        <K label="Vencido" valor={money(d.cartera.vencido)} color="#C0554E" franja="#EF7A72"
+          sub={`${d.cartera.cuentas} cobros · ${d.cartera.atraso_prom || 0} días de atraso promedio`} />
+        <K label="Sobre el ARR" valor={d.cartera.pct_arr == null ? '—' : d.cartera.pct_arr + '%'} franja="#EF7A72"
+          sub={`${money(d.cartera.arr_activo)} de ARR activo`} />
+        <K label="Sin contactar" valor={money(d.proceso.sin_contactar_monto)} franja="#E8A838"
+          sub={`${d.proceso.sin_contactar} cobros que nadie ha trabajado`} />
+        <K label="Deben y no venden" valor={money((d.cartera.en_riesgo || []).reduce((a: number, x: any) => a + x.monto, 0))} color="#C0554E" franja="#EF7A72"
+          sub={`${(d.cartera.en_riesgo || []).length} cuentas · ahí la cobranza es otra conversación`} />
       </div>
 
-      <div style={{ ...S.kl, marginBottom: 8 }}>Lo que entra los próximos meses</div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 130, marginBottom: 6 }}>
-        {(d.proyeccion || []).map((m: any) => (
-          <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end', alignItems: 'center', gap: 5 }}>
-            <b style={{ fontSize: '0.72rem' }}>{money(m.total)}</b>
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end' }}>
-              {m.parcial > 0 && <div style={{ height: Math.round((m.parcial / maxMes) * 95), background: '#c9c2f7', borderRadius: '6px 6px 0 0' }} />}
-              <div style={{ height: Math.max(4, Math.round((m.subs / maxMes) * 95)), background: '#9B8CFA', borderRadius: m.parcial > 0 ? 0 : '6px 6px 0 0' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
+          <div style={S.h}>Antigüedad del atraso</div>
+          <div style={S.hd}>A 7 días se cobra con un recordatorio; a 90 ya es una negociación.</div>
+          {d.cartera.tramos.map((t: any) => {
+            const pct = d.cartera.vencido > 0 ? Math.round((t.monto / d.cartera.vencido) * 100) : 0;
+            return (
+              <div key={t.k} style={{ marginBottom: 9 }}>
+                <div style={{ display: 'flex', fontSize: '0.76rem', marginBottom: 3 }}>
+                  <span style={{ flex: 1, color: '#6b6b74' }}>{t.k}</span>
+                  <b>{money(t.monto)}</b><span style={{ color: '#a5a2af', marginLeft: 6 }}>{t.n}</span>
+                </div>
+                <div style={{ height: 7, background: '#f3f2f7', borderRadius: 99 }}>
+                  <div style={{ height: '100%', width: pct + '%', background: t.k.includes('90') ? '#C0554E' : t.k.includes('31') ? '#EF7A72' : t.k.includes('8') ? '#E8A838' : '#9B8CFA', borderRadius: 99 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ ...S.card, marginBottom: 0 }}>
+          <div style={S.h}>Quién debe más</div>
+          <div style={S.hd}>Los ocho que concentran la cartera. Da clic para abrir su ficha.</div>
+          {(d.cartera.top || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Nada vencido. Buen día.</div>}
+          {(d.cartera.top || []).map((x: any, i: number) => (
+            <div key={x.id + '' + i} onClick={() => x.company_id && onCliente(x.company_id)}
+              style={{ display: 'flex', gap: 9, alignItems: 'baseline', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none', fontSize: '0.78rem', cursor: x.company_id ? 'pointer' : 'default' }}>
+              <span style={{ fontWeight: 700, flex: 1, minWidth: 0 }}>{x.cliente}
+                <span style={{ fontWeight: 400, color: '#a5a2af' }}> · {x.concepto}</span>
+              </span>
+              <span style={{ color: x.dias > 90 ? '#C0554E' : '#9a6a10', whiteSpace: 'nowrap' }}>{x.dias} d</span>
+              <b style={{ whiteSpace: 'nowrap' }}>{money(x.monto)}</b>
             </div>
-            <span style={{ fontSize: '0.66rem', color: '#8a8590' }}>{m.mes.slice(5)} · {m.n}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginBottom: 16 }}>
-        Morado sólido: renovaciones. Claro: parcialidades con fecha pactada. Es la caja que se puede prometer.
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div>
-          <div style={{ ...S.kl, marginBottom: 8 }}>Promesas de pago</div>
-          {[['Vivas', `${d.promesas.vivas} · ${money(d.promesas.monto_vivo)}`],
-            ['Cumplidas', String(d.promesas.cumplidas)],
-            ['Rotas', String(d.promesas.rotas)],
-            ['Cumplimiento', d.promesas.cumplimiento == null ? '— · aún sin promesas cerradas' : d.promesas.cumplimiento + '%']]
+      <div style={S.card}>
+        <div style={S.h}>Lo que entra los próximos meses</div>
+        <div style={S.hd}>Renovaciones por su fecha y parcialidades por la fecha pactada. Es la caja que se puede prometer.</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 140, marginTop: 8 }}>
+          {(d.proyeccion || []).map((m: any) => (
+            <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end', alignItems: 'center', gap: 5 }}>
+              <b style={{ fontSize: '0.75rem' }}>{money(m.total)}</b>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end' }}>
+                {m.parcial > 0 && <div title={`Parcialidades ${money(m.parcial)}`} style={{ height: Math.round((m.parcial / maxMes) * 100), background: '#c9c2f7', borderRadius: '6px 6px 0 0' }} />}
+                <div title={`Renovaciones ${money(m.subs)}`} style={{ height: Math.max(4, Math.round((m.subs / maxMes) * 100)), background: '#9B8CFA', borderRadius: m.parcial > 0 ? 0 : '6px 6px 0 0' }} />
+              </div>
+              <span style={{ fontSize: '0.68rem', color: '#8a8590' }}>{m.mes} · {m.n}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 8 }}>Morado sólido: renovaciones. Claro: parcialidades con fecha pactada.</div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
+          <div style={S.h}>En qué va la cobranza</div>
+          <div style={S.hd}>Cada peso vencido, según hasta dónde se ha trabajado.</div>
+          {(d.proceso.embudo || []).map((e: any, i: number) => (
+            <div key={e.estado} style={{ display: 'flex', gap: 9, alignItems: 'center', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none', fontSize: '0.78rem' }}>
+              <span style={S.tag(GESTION[e.estado]?.bg || '#f4f4f6', GESTION[e.estado]?.fg || '#6B7280')}>{GESTION[e.estado]?.l || e.estado}</span>
+              <span style={{ flex: 1, color: '#a5a2af' }}>{e.n} cobro{e.n === 1 ? '' : 's'}</span>
+              <b>{money(e.monto)}</b>
+            </div>
+          ))}
+          <div style={{ fontSize: '0.73rem', color: '#a5a2af', marginTop: 8, lineHeight: 1.5 }}>
+            {d.proceso.gestiones} gestión{d.proceso.gestiones === 1 ? '' : 'es'} registrada{d.proceso.gestiones === 1 ? '' : 's'} en el periodo
+            {(d.proceso.por_accion || []).length ? ` · ${d.proceso.por_accion.map((a: any) => `${GESTION[a.tipo]?.l || a.tipo} ${a.n}`).join(' · ')}` : ' · la bitácora se llena al usar “Gestión” en cada fila'}
+          </div>
+        </div>
+        <div style={{ ...S.card, marginBottom: 0 }}>
+          <div style={S.h}>Promesas de pago</div>
+          <div style={S.hd}>Lo único que convierte una lista en una agenda.</div>
+          {[['Vivas', `${d.proceso.promesas.vivas} · ${money(d.proceso.promesas.monto)}`],
+            ['Cumplidas', String(d.proceso.promesas.cumplidas)],
+            ['Rotas', String(d.proceso.promesas.rotas)],
+            ['Cumplimiento', d.proceso.promesas.cumplimiento == null ? '— · aún sin promesas cerradas' : d.proceso.promesas.cumplimiento + '%']]
             .map(([a, b], i) => (
               <div key={a} style={{ display: 'flex', fontSize: '0.79rem', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none' }}>
                 <span style={{ flex: 1, color: '#6b6b74' }}>{a}</span><b>{b}</b>
               </div>
             ))}
         </div>
-        <div>
-          <div style={{ ...S.kl, marginBottom: 8 }}>Gestión registrada</div>
-          {(d.gestion.por_accion || []).length === 0
-            ? <div style={{ fontSize: '0.78rem', color: '#a5a2af', lineHeight: 1.55 }}>
-                Todavía no hay bitácora. Cada vez que uses “Gestión” en una fila queda registrado el contacto, y con eso
-                sale qué acción cobra más rápido y cuántos toques cuesta cada peso.
-              </div>
-            : (<>
-              {(d.gestion.por_accion || []).map((x: any, i: number) => (
-                <div key={x.tipo} style={{ display: 'flex', fontSize: '0.79rem', padding: '7px 0', borderTop: i ? '1px solid #f5f4f8' : 'none' }}>
-                  <span style={{ flex: 1, color: '#6b6b74' }}>{GESTION[x.tipo]?.l || x.tipo}</span><b>{x.n}</b>
-                </div>
-              ))}
-              <div style={{ fontSize: '0.73rem', color: '#a5a2af', marginTop: 6 }}>
-                {d.gestion.toques} contactos en {d.gestion.cuentas_tocadas} cuentas · {d.gestion.toques_por_cuenta} por cuenta
-              </div>
-            </>)}
-        </div>
       </div>
-    </Modal>
+
+      {(d.dinero.por_metodo || []).length > 0 && (
+        <div style={{ ...S.card, marginTop: 14 }}>
+          <div style={S.h}>Cómo entró el dinero<span style={S.hr}>{fmtCorta(d.periodo.desde)} al {fmtCorta(d.periodo.hasta)}</span></div>
+          {d.dinero.por_metodo.map((m: any, i: number) => {
+            const pct = d.dinero.cobrado > 0 ? Math.round((m.monto / d.dinero.cobrado) * 100) : 0;
+            return (
+              <div key={m.metodo} style={{ marginBottom: 9, paddingTop: i ? 4 : 0 }}>
+                <div style={{ display: 'flex', fontSize: '0.77rem', marginBottom: 3 }}>
+                  <span style={{ flex: 1, color: '#6b6b74' }}>{m.metodo} <span style={{ color: '#c4c2cc' }}>· {m.n}</span></span>
+                  <b>{money(m.monto)}</b><span style={{ color: '#a5a2af', marginLeft: 6 }}>{pct}%</span>
+                </div>
+                <div style={{ height: 7, background: '#f3f2f7', borderRadius: 99 }}>
+                  <div style={{ height: '100%', width: pct + '%', background: '#4FBF95', borderRadius: 99 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

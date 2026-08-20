@@ -2,6 +2,14 @@
   "installCommand": "npm ci --include=dev",
   "crons": [
     {
+      "path": "/api/cron/email-campanas",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/email-embudos",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/tiktok-leads",
       "schedule": "*/15 * * * *"
     },

@@ -88,8 +88,39 @@ function needsSession(path: string): boolean {
   return SESSION_PREFIXES.some(p => path.startsWith(p)) || SESSION_EXACT.has(path);
 }
 
+// ── CSRF propio (sustituye a `security.checkOrigin` de Astro) ─────────────
+// Astro rechazaba todo POST con cuerpo de formulario sin `Origin` del mismo
+// sitio. Correcto para un formulario del navegador, fatal para un webhook
+// servidor-a-servidor: SendGrid manda multipart/form-data SIN `Origin`, así
+// que la bandeja de respuestas devolvía 403 en silencio.
+//
+// Aquí se conserva la protección con la misma regla, pero con salida para las
+// rutas que EXISTEN para recibir de fuera. Esas no quedan desprotegidas: cada
+// una valida lo suyo (firma del proveedor o token HMAC), que es más fuerte que
+// mirar una cabecera.
+const CT_FORMULARIO = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+const WEBHOOKS_PUBLICOS = new Set([
+  '/api/email/inbound',            // SendGrid Inbound Parse (multipart, sin Origin)
+  '/api/email/sendgrid-webhook',   // eventos de entrega (firma Ed25519)
+  '/api/email/baja-one-click',     // RFC 8058: lo llama el proveedor de correo
+]);
+
+function csrfSospechoso(request: Request, url: URL): boolean {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return false;
+  if (WEBHOOKS_PUBLICOS.has(url.pathname)) return false;
+  const ct = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!CT_FORMULARIO.includes(ct)) return false;   // JSON nunca fue el vector
+  const origin = request.headers.get('origin');
+  if (!origin) return true;
+  try { return new URL(origin).host !== url.host; } catch { return true; }
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
+
+  if (csrfSospechoso(context.request, context.url)) {
+    return new Response('Cross-site form submission forbidden', { status: 403 });
+  }
   const admin = needsAdmin(path);
   const session = needsSession(path);
   if (!admin && !session) return next();

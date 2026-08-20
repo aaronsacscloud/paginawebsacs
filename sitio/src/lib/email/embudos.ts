@@ -27,7 +27,12 @@ import { resolverTenant, type Tenant } from './tenant';
 import { enviarCorreo } from './pipeline';
 import { compilar, compilarTexto, type Bloque, type Contexto } from './plantillas';
 
-export type TipoPaso = 'send_email' | 'wait' | 'condition' | 'goal' | 'send_notification';
+export type TipoPaso =
+  | 'send_email' | 'wait'
+  /** `if_then` es como el esquema del CRM ya llamaba a la condición; se
+   *  acepta también `condition` para no atarse al nombre. */
+  | 'if_then' | 'condition'
+  | 'goal' | 'send_notification' | 'set_property' | 'create_task';
 
 export interface Paso {
   id: string; automation_id: string; orden: number;
@@ -157,11 +162,16 @@ async function siguientePaso(paso: Paso, rama: string | null): Promise<Paso | nu
     .is('branch_key', null).eq('activo', true).order('orden').limit(1).maybeSingle();
   if (hijo) return hijo as Paso;
 
-  const { data } = await supabase.from('automation_steps').select('*')
+  // OJO: en PostgREST `.eq(campo, null)` NO empata con NULL — se traduce a
+  // `campo=eq.null` y en SQL nada es igual a NULL. Hay que usar `.is()`.
+  // Con `.eq` aquí, un paso de primer nivel nunca encontraba a su hermano y
+  // el embudo se daba por terminado después del primer correo.
+  let q = supabase.from('automation_steps').select('*')
     .eq('automation_id', paso.automation_id)
-    .eq('parent_step_id', paso.parent_step_id ?? null as any)
-    .eq('branch_key', paso.branch_key ?? null as any)
-    .gt('orden', paso.orden).eq('activo', true).order('orden').limit(1).maybeSingle();
+    .gt('orden', paso.orden).eq('activo', true);
+  q = paso.parent_step_id ? q.eq('parent_step_id', paso.parent_step_id) : q.is('parent_step_id', null);
+  q = paso.branch_key ? q.eq('branch_key', paso.branch_key) : q.is('branch_key', null);
+  const { data } = await q.order('orden').limit(1).maybeSingle();
   return (data as Paso) || null;
 }
 
@@ -323,7 +333,7 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
       titulo: cfg.titulo || `Tarea del embudo "${auto.nombre}"`,
       metadata: { automation_id: auto.id, step_id: paso.id },
     });
-  } else if (paso.tipo === 'condition') {
+  } else if (paso.tipo === 'if_then' || paso.tipo === 'condition') {
     rama = (await evaluarCondicion(cfg, e.contact_id)) ? 'si' : 'no';
   } else if (paso.tipo === 'goal') {
     const lograda = await evaluarCondicion(cfg, e.contact_id);
@@ -348,8 +358,14 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
   let cuando = new Date();
   if (sig.tipo === 'wait') {
     const c = sig.config || {};
-    const ms = (Number(c.dias ?? c.days ?? 0) * 86400000) + (Number(c.horas ?? c.hours ?? 0) * 3600000) + (Number(c.minutos ?? c.minutes ?? 0) * 60000);
-    cuando = new Date(Date.now() + (ms || 86400000));
+    // `ms || DEFECTO` convertía una espera de CERO en un día entero: 0 es
+    // falsy. El valor por omisión solo aplica cuando NO se configuró ninguna
+    // unidad de tiempo — una espera de 0 es una decisión, no un hueco.
+    const definido = ['dias', 'days', 'horas', 'hours', 'minutos', 'minutes'].some(k => c[k] !== undefined && c[k] !== null && c[k] !== '');
+    const ms = (Number(c.dias ?? c.days ?? 0) * 86400000)
+             + (Number(c.horas ?? c.hours ?? 0) * 3600000)
+             + (Number(c.minutos ?? c.minutes ?? 0) * 60000);
+    cuando = new Date(Date.now() + (definido ? ms : 86400000));
     // Un "esperar" no ejecuta nada: se salta al que sigue cuando venza.
     const trasEspera = await siguientePaso(sig, null);
     await supabase.from('automation_enrollments').update({

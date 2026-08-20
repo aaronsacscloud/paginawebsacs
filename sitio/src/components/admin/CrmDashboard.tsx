@@ -6,6 +6,7 @@ import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
+import EmailTab from './crm/email/EmailTab';
 import SchedulingTab from './crm/SchedulingTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
@@ -42,7 +43,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -144,6 +145,9 @@ const NAV_SECTIONS = [
     // "Marketing" agrupaba un solo renglón. Un grupo de uno no agrupa nada.
     label: 'Automatización',
     items: [
+      // Email vive junto a las automatizaciones porque es la misma pregunta
+      // ("qué le llega solo al cliente"), vista desde el canal.
+      { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
       { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
       { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
     ],
@@ -578,6 +582,8 @@ export default function CrmDashboard() {
                 : <SchedulingTab />}
             </div>
           </div>
+        ) : tab === 'email' ? (
+          <ErrorBoundary><EmailTab /></ErrorBoundary>
         ) : tab === 'automations' ? (
           <ErrorBoundary><AutomationsTab /></ErrorBoundary>
         ) : tab === 'partners' ? (
