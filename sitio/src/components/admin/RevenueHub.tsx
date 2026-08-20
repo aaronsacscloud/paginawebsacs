@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
@@ -150,6 +151,15 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
   mapa: CfgGrupo[]; mod: string; item: string; q: string;
   onMod: (m: string) => void; onItem: (m: string, i: string) => void; onQ: (v: string) => void; onCerrar: () => void;
 }) {
+  // Mientras está abierta, lo de atrás no se mueve: si el CRM sigue con scroll
+  // propio, cerrar la pantalla te deja en otro punto de la lista.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = antes; };
+  }, []);
+
   const todos = mapa.flatMap(g => g.mods.map(m => ({ ...m, g: g.g })));
   const actual = todos.find(m => m.id === mod) || todos[0];
   const abierto = actual?.items.find(i => i.id === item) || null;
@@ -158,7 +168,7 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
     ? todos.flatMap(m => m.items.filter(i => `${i.t} ${i.d} ${m.nom}`.toLowerCase().includes(busca)).map(i => ({ i, m })))
     : [];
 
-  return (
+  const pantalla = (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ height: 4, flexShrink: 0, background: 'linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)' }} />
       {/* En el teléfono no caben dos columnas: el riel se vuelve una lista
@@ -268,6 +278,10 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
       </div>
     </div>
   );
+
+  // Al <body>: así ningún contenedor del CRM puede recortarla ni encogerla.
+  // En el servidor no hay document, y entonces se devuelve tal cual.
+  return typeof document !== 'undefined' ? createPortal(pantalla, document.body) : pantalla;
 }
 
 export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = {}) {
