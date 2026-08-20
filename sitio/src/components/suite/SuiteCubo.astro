@@ -165,10 +165,10 @@ const {
     /* En movil no hay lugar para poner el objeto al lado: se sube arriba, el
        texto baja y el velo pasa a ser vertical. Antes el titulo se leia encima
        de los cubos claros y no se entendia ninguno de los dos. */
-    .cubo-pin { align-items: flex-end; padding-bottom: 46px; }
+    .cubo-pin { align-items: flex-end; padding-bottom: 92px; }
     /* El lienzo deja libre la mitad de abajo para el texto y no se mete
        debajo del header pegajoso. */
-    #cuboLienzo { top: 56px; height: min(52svh, 400px); inset-block-end: auto; }
+    #cuboLienzo { top: 40px; height: min(44svh, 340px); inset-block-end: auto; }
     .cubo-velo {
       background: linear-gradient(180deg, rgba(8,8,10,.2) 0%, rgba(8,8,10,.62) 38%, rgba(8,8,10,.94) 62%, rgba(8,8,10,.98) 100%);
     }
@@ -217,11 +217,16 @@ const {
 
         const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
         r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // Sin esto los canales saturan y el verde se va al cian: el cubo deja
+        // de tener el color de su propia leyenda.
+        r.outputColorSpace = THREE.SRGBColorSpace;
+        r.toneMapping = THREE.ACESFilmicToneMapping;
+        r.toneMappingExposure = 1.15;
 
-        esc.add(new THREE.AmbientLight(0x2b2b33, 2.6));
-        const l1 = new THREE.PointLight(0xE6EDFB, 1.6, 90); l1.position.set(-10, 9, 12); esc.add(l1);
-        const l2 = new THREE.PointLight(0xC9D6F2, 1.1, 90); l2.position.set(11, -4, 9); esc.add(l2);
-        const l3 = new THREE.PointLight(0x9BB6EE, 0.7, 80); l3.position.set(0, 10, -8); esc.add(l3);
+        esc.add(new THREE.AmbientLight(0x2b2b33, 1.9));
+        const l1 = new THREE.PointLight(0xE6EDFB, 1.05, 90); l1.position.set(-10, 9, 12); esc.add(l1);
+        const l2 = new THREE.PointLight(0xC9D6F2, 0.55, 90); l2.position.set(11, -4, 9); esc.add(l2);
+        const l3 = new THREE.PointLight(0x9BB6EE, 0.35, 80); l3.position.set(0, 10, -8); esc.add(l3);
 
         // La misma matriz de la blusa satinada que vive en el recorrido. Al
         // alejarse de la sucursal principal queda menos pieza: por eso el -2.
@@ -243,10 +248,10 @@ const {
                 color: agotado ? 0x24242c : ultima ? 0xE8A838 : 0x34D399,
                 metalness: agotado ? 0.1 : 0.12,
                 roughness: agotado ? 0.9 : 0.66,
-                emissive: agotado ? 0x000000 : ultima ? 0x4a3208 : 0x0a3f26,
-                emissiveIntensity: 0.55,
-                transparent: true,
-                opacity: agotado ? 0.3 : 0.95,
+                emissive: agotado ? 0x000000 : ultima ? 0x2a1c04 : 0x062415,
+                emissiveIntensity: 0.15,
+                transparent: agotado,
+                opacity: agotado ? 0.3 : 1,
               }));
               m.position.set((t - (cols - 1) / 2) * 1.25, ((filas - 1) / 2 - c) * 1.25, ((capas - 1) / 2 - s) * 1.25);
               grupo.add(m);
@@ -269,8 +274,10 @@ const {
           // La retícula del giro puede ser de seis columnas o de once: con una
           // distancia fija, la de once se salía del encuadre y se cortaba en la
           // orilla. La cámara se aleja en proporción a lo ancha que sea.
-          const base = angosto ? 30 : (a < 1320 ? 19 : 16);
-          cam.position.z = base * (1 + Math.max(0, cols - 6) * 0.055);
+          // La cámara es fija por tamaño de pantalla; lo que se ajusta al
+          // ancho de la retícula es la escala, y nada más. Con las dos palancas
+          // a la vez el objeto se encogía dos veces.
+          cam.position.z = angosto ? 20 : (a < 1320 ? 19 : 16);
           cam.lookAt(0, 0, 0);
           const medioAlto = cam.position.z * Math.tan((42 / 2) * Math.PI / 180);
           const medioAncho = medioAlto * cam.aspect;
@@ -281,8 +288,10 @@ const {
 
           if (angosto) {
             grupo.position.x = 0;
-            grupo.position.y = 2.6;
-            grupo.scale.setScalar(Math.min(1, (medioAncho - 0.4) / radio));
+            grupo.position.y = 2.4;
+            // Nunca por debajo del 55% del ancho del lienzo: si no, el momento
+            // fuerte de la página queda como una estampilla.
+            grupo.scale.setScalar(Math.max(medioAncho * 0.55 / radio, Math.min(1, (medioAncho - 0.4) / radio)));
           } else {
             // En escritorio se recuesta contra la orilla derecha y deja libre
             // la mitad izquierda para el texto. Se le da el 46% del ancho

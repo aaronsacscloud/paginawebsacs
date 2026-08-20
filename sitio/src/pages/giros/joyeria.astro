@@ -289,7 +289,7 @@ detrás de"
     to   { opacity: 1; transform: translateY(-46%) scale(.86); }
   }
   @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  @media (max-width: 1440px) { .hero-pos { right: -10%; transform: translateY(-50%) scale(.72); } }
+  @media (max-width: 1440px) { .hero-pos { right: -1%; transform: translateY(-50%) scale(.60); } }
   @media (min-width: 1181px) {
     .hero-sub { max-width: 44ch; }
     .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
@@ -323,5 +323,11 @@ detrás de"
 
   /* Al final a propósito: la regla de 900 px que viene antes vuelve a poner la
      franja en rejilla. */
-  @media (max-width: 760px) { .hero-datos { display: none; } }
+  @media (max-width: 760px) {
+    .hero-datos { display: none; }
+    /* El mock necesita su propio renglón bajo los botones: si comparten sitio,
+       el botón secundario —vidrio translúcido— deja ver las teclas del punto
+       de venta y se vuelve ilegible. */
+    .hero { padding-bottom: 300px !important; }
+  }
 </style>

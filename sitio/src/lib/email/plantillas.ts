@@ -1,0 +1,205 @@
+// COMPILADOR DE PLANTILLAS — bloques (JSON) → HTML de correo.
+//
+// Se compila en el SERVIDOR y no en el navegador por dos razones: el HTML
+// resultante es el que de verdad se envía (nadie puede mandar HTML arbitrario
+// desde el panel), y el escape de valores ocurre en un solo lugar.
+//
+// ── Por qué tablas y CSS inline ──
+// Outlook de escritorio usa el motor de Word: no entiende flexbox, grid, ni
+// hojas de estilo externas. Un correo "moderno" con divs se ve destrozado en
+// el cliente que más usan las empresas. Tablas anidadas con `style=` inline es
+// feo de escribir y es lo único que se ve igual en todos lados.
+//
+// ── Personalización con red de seguridad ──
+// `{{nombre|Hola}}` — el texto tras la barra es el respaldo. Un correo que
+// dice "Hola null" quema más confianza que no personalizar; por eso una
+// variable sin respaldo es un ERROR de validación, no una advertencia.
+import { escapar } from './footer';
+import type { Tenant } from './tenant';
+
+export type TipoBloque =
+  | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
+  | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes';
+
+export interface Bloque { id: string; tipo: TipoBloque; [k: string]: any }
+
+export interface Contexto {
+  nombre?: string | null; apellido?: string | null; empresa?: string | null;
+  email?: string | null; plan?: string | null; monto_renovacion?: string | number | null;
+  giro?: string | null; sucursales?: number | null; [k: string]: any;
+}
+
+const FA = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
+const ANCHO = 600;
+
+/** Variables ofrecidas por la UI. Una sola lista para el editor y el validador. */
+export const VARIABLES = [
+  { id: 'nombre', etiqueta: 'Nombre de pila' },
+  { id: 'apellido', etiqueta: 'Apellido' },
+  { id: 'empresa', etiqueta: 'Empresa' },
+  { id: 'plan', etiqueta: 'Plan contratado' },
+  { id: 'monto_renovacion', etiqueta: 'Monto de renovación' },
+  { id: 'giro', etiqueta: 'Giro' },
+  { id: 'sucursales', etiqueta: 'Sucursales' },
+] as const;
+
+const RE_VAR = /\{\{\s*([a-z_]+)\s*(?:\|([^}]*))?\}\}/gi;
+
+/** Sustituye variables. Sin dato y sin respaldo → cadena vacía, nunca "null". */
+export function interpolar(texto: string, ctx: Contexto): string {
+  return String(texto ?? '').replace(RE_VAR, (_m, campo, respaldo) => {
+    const v = (ctx as any)?.[String(campo).toLowerCase()];
+    if (v === null || v === undefined || String(v).trim() === '') return String(respaldo ?? '').trim();
+    return String(v);
+  });
+}
+
+/** Variables SIN respaldo — el editor bloquea guardar hasta que tengan uno. */
+export function variablesSinRespaldo(bloques: Bloque[]): string[] {
+  const malas = new Set<string>();
+  const revisar = (s: unknown) => {
+    for (const m of String(s ?? '').matchAll(RE_VAR)) {
+      if (m[2] === undefined || String(m[2]).trim() === '') malas.add(m[1]);
+    }
+  };
+  for (const b of bloques || []) for (const [k, v] of Object.entries(b)) {
+    if (typeof v === 'string' && k !== 'id' && k !== 'tipo') revisar(v);
+    if (Array.isArray(v)) for (const it of v) if (typeof it === 'string') revisar(it); else if (it && typeof it === 'object') Object.values(it).forEach(revisar);
+  }
+  return [...malas];
+}
+
+const txt = (s: unknown, ctx: Contexto) => escapar(interpolar(String(s ?? ''), ctx));
+/** Una URL que no sea `javascript:` ni `data:` — el correo no ejecuta scripts. */
+const url = (s: unknown, ctx: Contexto) => {
+  const u = interpolar(String(s ?? ''), ctx).trim();
+  return /^(https?:|mailto:|tel:)/i.test(u) ? escapar(u) : '#';
+};
+const fila = (contenido: string) => `<tr><td style="padding:0 32px;">${contenido}</td></tr>`;
+
+function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
+  const acento = escapar(b.color || t.color_acento || '#5B4BD6');
+  switch (b.tipo) {
+    case 'hero': {
+      const fondo = escapar(b.fondo || '#1a1633');
+      const logo = t.logo_url
+        ? `<img src="${escapar(t.logo_url)}" alt="${escapar(t.nombre)}" width="130" style="display:block;margin-bottom:16px;border:0;max-width:130px;height:auto;">`
+        : '';
+      return `<tr><td style="background:${fondo};padding:32px;">${logo}
+        <div style="${FA}color:#fff;font-size:26px;line-height:1.25;font-weight:800;">${txt(b.titulo, ctx)}</div>
+        ${b.subtitulo ? `<div style="${FA}color:#ffffffb8;font-size:15px;line-height:1.5;margin-top:8px;">${txt(b.subtitulo, ctx)}</div>` : ''}
+      </td></tr>`;
+    }
+    case 'encabezado': {
+      const n = Math.min(3, Math.max(1, Number(b.nivel) || 2));
+      const tam = [26, 21, 17][n - 1];
+      return fila(`<div style="${FA}font-size:${tam}px;font-weight:800;color:#1a1633;line-height:1.3;padding-top:20px;">${txt(b.texto, ctx)}</div>`);
+    }
+    case 'texto':
+      return fila(`<div style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
+    case 'imagen': {
+      const img = `<img src="${url(b.src, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${ANCHO - 64}" style="display:block;width:100%;max-width:${ANCHO - 64}px;height:auto;border:0;border-radius:10px;">`;
+      return fila(`<div style="padding-top:16px;">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}</div>`);
+    }
+    case 'boton': {
+      // Botón como tabla: un <a> con padding se rompe en Outlook.
+      const align = ['left', 'center', 'right'].includes(b.align) ? b.align : 'left';
+      return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;" align="${align}"><tr>
+        <td style="background:${acento};border-radius:9px;">
+          <a href="${url(b.href, ctx)}" style="${FA}display:inline-block;padding:13px 26px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${txt(b.texto || 'Ver más', ctx)}</a>
+        </td></tr></table>`);
+    }
+    case 'separador':
+      return fila(`<div style="border-top:1px solid #E8E5F0;margin-top:24px;"></div>`);
+    case 'espaciador':
+      return `<tr><td style="height:${Math.min(80, Math.max(4, Number(b.alto) || 20))}px;line-height:1px;font-size:1px;">&nbsp;</td></tr>`;
+    case 'dos_columnas': {
+      const col = (c: any) => `<td width="50%" valign="top" style="${FA}font-size:14px;line-height:1.6;color:#444;padding:0 8px;">
+        ${c?.titulo ? `<div style="font-weight:700;color:#1a1633;margin-bottom:4px;font-size:15px;">${txt(c.titulo, ctx)}</div>` : ''}
+        ${txt(c?.texto || '', ctx)}</td>`;
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>${col(b.izquierda)}${col(b.derecha)}</tr></table>`);
+    }
+    case 'cita':
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr>
+        <td style="border-left:3px solid ${acento};padding:4px 0 4px 16px;${FA}">
+          <div style="font-size:15px;line-height:1.6;color:#333;font-style:italic;">"${txt(b.texto, ctx)}"</div>
+          ${b.autor ? `<div style="font-size:13px;color:#8a8a92;margin-top:7px;">— ${txt(b.autor, ctx)}</div>` : ''}
+        </td></tr></table>`);
+    case 'lista': {
+      const items = (Array.isArray(b.items) ? b.items : []).map((i: any) =>
+        `<tr><td valign="top" style="${FA}font-size:15px;line-height:1.6;color:${acento};padding:5px 9px 0 0;font-weight:800;">&bull;</td>
+             <td style="${FA}font-size:15px;line-height:1.6;color:#333;padding-top:5px;">${txt(i, ctx)}</td></tr>`).join('');
+      return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:14px;">${items}</table>`);
+    }
+    case 'planes': {
+      const planes = (Array.isArray(b.planes) ? b.planes : []).slice(0, 3);
+      const ancho = Math.floor(100 / Math.max(1, planes.length));
+      const celdas = planes.map((p: any) => `<td width="${ancho}%" valign="top" style="padding:0 5px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E8E5F0;border-radius:10px;"><tr>
+          <td style="${FA}padding:16px;text-align:center;">
+            <div style="font-size:13px;font-weight:800;color:${acento};text-transform:uppercase;letter-spacing:.5px;">${txt(p?.nombre, ctx)}</div>
+            <div style="font-size:22px;font-weight:800;color:#1a1633;margin-top:6px;">${txt(p?.precio, ctx)}</div>
+            <div style="font-size:13px;color:#6a6a72;line-height:1.5;margin-top:6px;">${txt(p?.detalle || '', ctx)}</div>
+          </td></tr></table></td>`).join('');
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr>${celdas}</tr></table>`);
+    }
+    case 'firma': {
+      // La firma sale del INQUILINO: un partner firma con su nombre, no el nuestro.
+      const foto = b.foto_url || t.logo_url;
+      const nombre = b.nombre || t.from_nombre;
+      return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;"><tr>
+        ${foto ? `<td width="52" valign="top"><img src="${escapar(foto)}" width="44" height="44" alt="" style="border-radius:50%;display:block;border:0;"></td>` : ''}
+        <td valign="middle" style="${FA}">
+          <div style="font-size:14px;font-weight:700;color:#1a1633;">${escapar(nombre)}</div>
+          ${b.puesto ? `<div style="font-size:13px;color:#8a8a92;">${escapar(b.puesto)}</div>` : ''}
+        </td></tr></table>`);
+    }
+    default:
+      return '';
+  }
+}
+
+/** El HTML completo del correo (sin el pie legal: ese lo pone el pipeline). */
+export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant): string {
+  const cuerpo = (bloques || []).map(b => bloqueHtml(b, ctx, t)).join('\n');
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${escapar(t.nombre)}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F3F7;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3F7;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
+    ${cuerpo}
+    <tr><td style="height:28px;line-height:1px;font-size:1px;">&nbsp;</td></tr>
+  </table>
+</td></tr></table>
+</body></html>`;
+}
+
+/** Versión text/plain — obligatoria: sin ella el correo pesa más como spam. */
+export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
+  const p: string[] = [];
+  for (const b of bloques || []) {
+    const i = (s: unknown) => interpolar(String(s ?? ''), ctx);
+    switch (b.tipo) {
+      case 'hero': p.push(i(b.titulo).toUpperCase(), b.subtitulo ? i(b.subtitulo) : ''); break;
+      case 'encabezado': p.push('', i(b.texto).toUpperCase()); break;
+      case 'texto': p.push(i(b.texto)); break;
+      case 'boton': p.push(`${i(b.texto || 'Ver más')}: ${i(b.href)}`); break;
+      case 'cita': p.push(`"${i(b.texto)}"${b.autor ? ' — ' + i(b.autor) : ''}`); break;
+      case 'lista': for (const it of (b.items || [])) p.push('· ' + i(it)); break;
+      case 'dos_columnas': p.push(i(b.izquierda?.texto || ''), i(b.derecha?.texto || '')); break;
+      case 'planes': for (const pl of (b.planes || [])) p.push(`${i(pl?.nombre)}: ${i(pl?.precio)} — ${i(pl?.detalle || '')}`); break;
+      case 'firma': p.push('', i(b.nombre || ''), i(b.puesto || '')); break;
+      case 'separador': p.push('—'); break;
+    }
+  }
+  return p.filter(x => x !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/** Peso del HTML: Gmail recorta arriba de ~102 KB y se lleva el link de baja. */
+export const pesoKb = (html: string): number => Math.round(Buffer.byteLength(html, 'utf8') / 1024 * 10) / 10;
+export const LIMITE_GMAIL_KB = 102;

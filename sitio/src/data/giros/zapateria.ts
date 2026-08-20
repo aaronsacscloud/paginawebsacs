@@ -578,6 +578,6 @@ export const casosZapateria = [
       'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco de deportes, y al niño se le mide el pie antes de traer caja. El número se agota en horas y la reposición diaria por número te dice qué pedir hoy.',
     remate: 'Si el cliente no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
     img: '/images/caso-zap-escolar.webp',
-    alt: 'Vendedora hincada calzando a un niño con zapato escolar negro, con la caja abierta y el tenis blanco del segundo par en el piso',
+    alt: 'Vendedora hincada revisando la punta del zapato escolar que el niño ya trae puesto, con la caja abierta y el tenis blanco del segundo par en el piso',
   },
 ];

@@ -142,8 +142,8 @@ const KILATES = [
 
   @media (max-width: 900px) {
     .gr-bloque { height: 150vh; }
-    .gr-pin { align-items: flex-end; padding-bottom: 46px; }
-    #grLienzo { top: 56px; height: min(52svh, 400px); inset-block-end: auto; }
+    .gr-pin { align-items: flex-end; padding-bottom: 92px; }
+    #grLienzo { top: 40px; height: min(44svh, 340px); inset-block-end: auto; }
     .gr-velo {
       background: linear-gradient(180deg, rgba(8,8,10,.2) 0%, rgba(8,8,10,.62) 38%, rgba(8,8,10,.94) 62%, rgba(8,8,10,.98) 100%);
     }
@@ -190,6 +190,9 @@ const KILATES = [
 
         const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
         r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        r.outputColorSpace = THREE.SRGBColorSpace;
+        r.toneMapping = THREE.ACESFilmicToneMapping;
+        r.toneMappingExposure = 1.15;
 
         esc.add(new THREE.AmbientLight(0x241d12, 2.4));
         const l1 = new THREE.PointLight(0xFFD98A, 2.4, 90); l1.position.set(-9, 8, 12); esc.add(l1);
