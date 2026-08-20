@@ -17,7 +17,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
-import SuiteCubo from '../../components/suite/SuiteCubo.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
@@ -75,9 +75,27 @@ const desc =
   />
 
   <!-- ── El momento fuerte: la corrida en 3D ── -->
-  <SuiteCubo
+  <!-- Entra un botín y salen los veintidós que de verdad tienes que comprar,
+       guardar y contar. El cubo de casillas decía lo mismo y había que
+       explicarlo con un párrafo. -->
+  <SuiteVariantes
     eyebrow="Un solo modelo"
-    titulo="Esto es lo que de verdad hay<br /> detrás de"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“un botín de dama”."
+    sub="Once números con medios, en dos colores. Veintidós pares distintos que comprar, guardar, contar y reponer — de un solo modelo. Y los que están en cero son justo los que te están pidiendo."
+    ejeA={['22', '22½', '23', '23½', '24', '24½', '25', '25½', '26', '26½', '27']}
+    filas={[
+      { nombre: 'Café', img: '/images/botin-cafe.webp', alt: 'Botín de dama en piel café' },
+      { nombre: 'Negro', img: '/images/botin-negro.webp', alt: 'Botín de dama en piel negra' },
+    ]}
+    matriz={[
+      [1, 2, 0, 0, 0, 0, 3, 4, 3, 2, 2],
+      [1, 1, 2, 0, 0, 1, 4, 5, 4, 2, 1],
+    ]}
+    unidad="pares"
+    leyendas={['Con pares', 'Último par', 'Agotado']}
+  />
+detrás de"
     resalte="“un botín de dama”"
     sub="Once números con medios, por dos colores, en tres sucursales. Sesenta y seis casillas de un solo modelo. Las apagadas son las que rompen la corrida — y son justo las que te están pidiendo."
     matriz={[

@@ -1,0 +1,264 @@
+---
+/**
+ * SuiteVariantes — un producto que se parte en todos los que de verdad son.
+ *
+ * Sustituye al cubo de casillas. El cubo era abstracto: cientos de bloques de
+ * colores que había que explicar con un párrafo. Esto se entiende sin leer —
+ * entra UN botín y salen los veintidós que en realidad tienes que comprar,
+ * guardar y contar, cada uno con su número y su color.
+ *
+ * Es el mismo bloque para todos los giros y en cada uno cuenta su problema:
+ * en calzado son número × color, en joyería talla × quilataje, en ropa talla ×
+ * color. Lo que cambia es la foto y los ejes; lo que se entiende es lo mismo:
+ * el catálogo no se cuenta en modelos.
+ *
+ * Se mueve con scroll y sin WebGL. El cubo bajaba 590 KB de Three.js para
+ * decir esto, y si algo fallaba no quedaba nada en pantalla. Aquí lo peor que
+ * puede pasar —sin JS o con menos animación— es que la retícula se vea
+ * completa desde el principio, que es justo lo que se quiere enseñar.
+ */
+export interface VarianteEje {
+  /** El valor del eje horizontal: el número, la talla, el quilataje. */
+  v: string;
+}
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  resalte?: string;
+  sub?: string;
+  /** Los valores del eje horizontal, en orden. */
+  ejeA: string[];
+  /** Las filas: cada una con su nombre y su foto. */
+  filas: { nombre: string; img: string; alt: string }[];
+  /** Existencia por fila y columna. El 0 es el hueco que rompe la corrida. */
+  matriz: number[][];
+  /** Qué es una casilla en este giro. */
+  unidad?: string;
+  leyendas?: [string, string, string];
+}
+const {
+  eyebrow = 'Un solo modelo',
+  titulo,
+  resalte,
+  sub,
+  ejeA,
+  filas,
+  matriz,
+  unidad = 'pares',
+  leyendas = ['Con existencia', 'Último', 'Agotado'],
+} = Astro.props;
+
+const celdas = ejeA.length * filas.length;
+const agotadas = matriz.flat().filter((n) => n === 0).length;
+---
+
+<section class="vr" data-celdas={String(celdas)}>
+  <div class="vr-inner">
+
+    <header class="vr-head">
+      <p class="vr-eyebrow">{eyebrow}</p>
+      <h2>{titulo} {resalte && <span>{resalte}</span>}</h2>
+      {sub && <p class="vr-sub">{sub}</p>}
+      <ul class="vr-leyenda">
+        <li><i class="ok"></i>{leyendas[0]}</li>
+        <li><i class="bajo"></i>{leyendas[1]}</li>
+        <li><i class="cero"></i>{leyendas[2]}</li>
+      </ul>
+    </header>
+
+    <!-- El escenario: la foto entra sola y sale multiplicada -->
+    <div class="vr-escena">
+      <div class="vr-pin">
+
+        <div class="vr-uno" data-uno>
+          <img src={filas[0].img} alt={filas[0].alt} width="600" height="600" loading="lazy" />
+          <p class="vr-uno-rot">Un modelo</p>
+        </div>
+
+        <div class="vr-rejilla" data-rejilla>
+          {filas.map((f, fi) => (
+            <div class="vr-fila">
+              <span class="vr-fila-rot">{f.nombre}</span>
+              <div class="vr-celdas">
+                {ejeA.map((a, ci) => {
+                  const n = matriz[fi][ci];
+                  return (
+                    <div
+                      class:list={['vr-celda', n === 0 ? 'cero' : n <= 2 ? 'bajo' : 'ok']}
+                      style={`--i:${fi * ejeA.length + ci}`}
+                    >
+                      <img src={f.img} alt="" width="120" height="120" loading="lazy" aria-hidden="true" />
+                      <b>{a}</b>
+                      <span>{n === 0 ? 'agotado' : `${n}`}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p class="vr-conteo" data-conteo>
+          <b>{celdas}</b> {unidad} distintos que comprar, guardar y contar —
+          <b class="vr-rojo">{agotadas}</b> ya agotados
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .vr { background: var(--color-bg-primary, #FAFAF8); padding: 0 0 clamp(48px, 6vw, 80px); }
+  .vr-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+  .vr-head { max-width: 720px; padding-top: clamp(72px, 8vw, 104px); }
+  .vr-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 16px;
+  }
+  .vr-head h2 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
+  }
+  .vr-head h2 span { color: var(--color-primary, #4B7BE5); }
+  .vr-sub {
+    margin: 0 0 22px; font-size: 0.9375rem; line-height: 1.65;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+  .vr-leyenda {
+    list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; flex-wrap: wrap;
+    font-size: 12.5px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A);
+  }
+  .vr-leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
+  .vr-leyenda i.ok { background: #2AB5A0; }
+  .vr-leyenda i.bajo { background: #E8A838; }
+  .vr-leyenda i.cero { background: #E2E5EA; border: 1px solid #C7CDD6; }
+
+  /* Dos pantallas de scroll: una para que se parta y otra para leerlo. */
+  .vr-escena { height: 200vh; position: relative; }
+  .vr-pin {
+    position: sticky; top: 84px; height: calc(100vh - 84px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+
+  /* ── El modelo, antes de partirse ── */
+  .vr-uno {
+    position: absolute; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    transition: opacity .3s ease, transform .5s cubic-bezier(.25,.46,.45,.94);
+  }
+  .vr-uno img { width: clamp(220px, 30vw, 380px); height: auto; display: block; }
+  .vr-uno-rot {
+    margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+
+  /* ── La retícula que sale de él ── */
+  .vr-rejilla { width: 100%; display: grid; gap: clamp(14px, 2vw, 24px); }
+  .vr-fila { display: grid; gap: 8px; }
+  .vr-fila-rot {
+    font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+    opacity: 0; transition: opacity .4s ease .15s;
+  }
+  .vr-celdas { display: grid; grid-template-columns: repeat(11, 1fr); gap: clamp(5px, .7vw, 10px); }
+
+  .vr-celda {
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 10px;
+    padding: 8px 4px 7px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    /* Cada casilla sale del centro: el desfase lo pone el índice. */
+    opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(.35);
+    transition: opacity .45s ease, transform .55s cubic-bezier(.25,.46,.45,.94);
+    transition-delay: calc(var(--i) * 9ms);
+  }
+  .vr-celda img { width: 100%; height: auto; display: block; }
+  .vr-celda b {
+    font-size: 12px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
+    font-variant-numeric: tabular-nums;
+  }
+  .vr-celda span { font-size: 10px; font-weight: 700; color: #12796A; }
+  .vr-celda.bajo span { color: #9A6B10; }
+  .vr-celda.cero { background: #F4F6F8; border-style: dashed; border-color: #C7CDD6; }
+  .vr-celda.cero img { opacity: .18; filter: grayscale(1); }
+  .vr-celda.cero b { color: #A0A6B0; }
+  .vr-celda.cero span { color: #C22F2F; }
+
+  .vr-conteo {
+    margin: clamp(18px, 2.5vw, 28px) 0 0; text-align: center;
+    font-size: clamp(15px, 1.8vw, 19px); color: var(--color-text-secondary, #4A4A4A);
+    opacity: 0; transition: opacity .5s ease .2s;
+  }
+  .vr-conteo b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; }
+  .vr-conteo .vr-rojo { color: #C22F2F; }
+
+  /* ── Estado abierto: lo pone el script al pasar el scroll ── */
+  .vr.abierto .vr-uno { opacity: 0; transform: scale(.4); pointer-events: none; }
+  .vr.abierto .vr-celda { opacity: 1; transform: none; }
+  .vr.abierto .vr-conteo, .vr.abierto .vr-fila-rot { opacity: 1; }
+
+  @media (max-width: 900px) {
+    .vr-escena { height: 170vh; }
+    .vr-pin { top: 72px; height: calc(100vh - 72px); }
+    .vr-celdas { grid-template-columns: repeat(6, 1fr); }
+    .vr-celda b { font-size: 11px; }
+    .vr-celda span { font-size: 9px; }
+  }
+
+  /* Sin animación —o sin JS— la retícula se ve entera desde el principio, que
+     es justo lo que el bloque quiere enseñar. */
+  @media (prefers-reduced-motion: reduce) {
+    .vr-escena { height: auto; }
+    .vr-pin { position: relative; top: auto; height: auto; padding: 40px 0; }
+    .vr-uno { display: none; }
+    .vr-fila-rot { opacity: 1; }
+    .vr-celda { opacity: 1; transform: none; transition: none; }
+    .vr-conteo { opacity: 1; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector<HTMLElement>('.vr');
+    const escena = bloque?.querySelector<HTMLElement>('.vr-escena');
+    if (bloque && escena) {
+      // Cada casilla arranca desde el centro del escenario: se calcula una vez
+      // y se guarda en variables CSS, para que el scroll solo prenda una clase.
+      const colocar = () => {
+        const pin = bloque.querySelector<HTMLElement>('.vr-pin');
+        if (!pin) return;
+        const c = pin.getBoundingClientRect();
+        const cx = c.left + c.width / 2;
+        const cy = c.top + c.height / 2;
+        bloque.querySelectorAll<HTMLElement>('.vr-celda').forEach((el) => {
+          const r = el.getBoundingClientRect();
+          el.style.setProperty('--dx', `${cx - (r.left + r.width / 2)}px`);
+          el.style.setProperty('--dy', `${cy - (r.top + r.height / 2)}px`);
+        });
+      };
+
+      const avance = () => {
+        const r = escena.getBoundingClientRect();
+        const total = r.height - window.innerHeight;
+        return total <= 0 ? 0 : Math.min(1, Math.max(0, -r.top / total));
+      };
+
+      let abierto = false;
+      const revisar = () => {
+        const p = avance();
+        // Se parte en el primer tercio y ya no vuelve a juntarse hacia abajo:
+        // el visitante que sigue leyendo no quiere verlo rearmarse.
+        if (!abierto && p > 0.18) { abierto = true; bloque.classList.add('abierto'); }
+        if (abierto && p < 0.04) { abierto = false; bloque.classList.remove('abierto'); }
+      };
+
+      // Se recolocan al abrir para que el punto de partida sea el real.
+      const alPintar = () => { if (!abierto) colocar(); revisar(); };
+      colocar();
+      window.addEventListener('scroll', alPintar, { passive: true });
+      window.addEventListener('resize', () => { colocar(); }, { passive: true });
+      revisar();
+    }
+  }
+</script>
