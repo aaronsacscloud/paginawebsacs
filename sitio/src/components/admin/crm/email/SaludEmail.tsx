@@ -3,21 +3,22 @@
 // La segunda tabla es la que ninguna herramienta de correo puede dar, porque
 // no tiene el CRM: qué campaña produjo reuniones y cuánto ARR tocó.
 import { useEffect, useState } from 'react';
-import { S, Kpi, Aviso, Cargando, Tag, chip, money, pct, fmtFecha } from './ui';
+import { S, Kpi, Aviso, Cargando, Tag, chip, money, pct, fmtFecha, Confirmar } from './ui';
 
 export default function SaludEmail() {
   const [d, setD] = useState<any>(null);
   const [dias, setDias] = useState(30);
   const [supr, setSupr] = useState<any[] | null>(null);
   const [verSupr, setVerSupr] = useState(false);
+  const [restaurando, setRestaurando] = useState<any>(null);
 
   useEffect(() => { setD(null); fetch(`/api/crm/email/salud?dias=${dias}`).then(r => r.json()).then(setD).catch(() => setD({ error: 1 })); }, [dias]);
   useEffect(() => { if (verSupr && !supr) fetch('/api/crm/email/suprimidos').then(r => r.json()).then(j => setSupr(j.suprimidos || [])).catch(() => setSupr([])); }, [verSupr]);
 
-  async function restaurar(email: string) {
-    if (!confirm(`¿Volver a enviarle correos a ${email}?`)) return;
-    await fetch('/api/crm/email/suprimidos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, accion: 'restaurar' }) });
-    setSupr(s => (s || []).filter(x => x.email !== email));
+  async function restaurar(s: any) {
+    setRestaurando(null);
+    await fetch('/api/crm/email/suprimidos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: s.email, accion: 'restaurar' }) });
+    setSupr(prev => (prev || []).filter(x => x.email !== s.email));
   }
 
   if (!d) return <Cargando que="las métricas" />;
@@ -25,6 +26,15 @@ export default function SaludEmail() {
 
   return (
     <div style={S.wrap}>
+      {restaurando && (
+        <Confirmar titulo="Volver a enviarle correos" peligro={restaurando.riesgoso_restaurar}
+          confirmar={restaurando.riesgoso_restaurar ? 'Restaurar de todos modos' : 'Sí, restaurar'}
+          mensaje={<><b>{restaurando.nombre || restaurando.email}</b> volverá a recibir tus correos de marketing.</>}
+          detalle={restaurando.riesgoso_restaurar
+            ? <><b style={{ color: '#C0554E' }}>Cuidado:</b> quedó fuera por «{restaurando.etiqueta.toLowerCase()}». Volver a escribirle puede costarte reputación con su proveedor de correo — y si vuelve a marcarte como spam, el daño es peor la segunda vez. Restaurar tiene sentido si fue un error o si la dirección ya se corrigió.</>
+            : 'También se quita de la lista de supresión de SendGrid, para que no siga descartando sus correos en silencio.'}
+          onSi={() => restaurar(restaurando)} onNo={() => setRestaurando(null)} />
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Salud del correo</h2>
@@ -121,8 +131,7 @@ export default function SaludEmail() {
                 </div>
                 <Tag tono={s.riesgoso_restaurar ? 'malo' : 'gris'}>{s.etiqueta}</Tag>
                 <button style={{ ...S.btnG, padding: '4px 10px', fontSize: '0.7rem' }}
-                  title={s.riesgoso_restaurar ? 'Restaurar a quien marcó spam o rebotó duro daña tu reputación' : undefined}
-                  onClick={() => restaurar(s.email)}>Restaurar</button>
+                  onClick={() => setRestaurando(s)}>Restaurar</button>
               </div>
             ))}
           </div>

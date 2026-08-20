@@ -7,7 +7,7 @@
 // El HTML lo compila el SERVIDOR (mismo compilador que el envío), así que lo
 // que se ve en la vista previa es literalmente lo que va a salir.
 import { useEffect, useRef, useState } from 'react';
-import { S, Tag, Vacio, Cargando, Aviso, chip } from './ui';
+import { S, Tag, Vacio, Cargando, Aviso, chip, Elegir, PedirTexto, BotonCopiar } from './ui';
 
 const TIPOS: Array<{ id: string; label: string; base: any }> = [
   { id: 'hero', label: 'Portada', base: { titulo: 'Un titular que importe', subtitulo: '' } },
@@ -27,24 +27,28 @@ const TIPOS: Array<{ id: string; label: string; base: any }> = [
 export default function Plantillas() {
   const [lista, setLista] = useState<any[] | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [eligiendo, setEligiendo] = useState<any[] | null>(null);
+  const [base, setBase] = useState<any>(undefined);   // undefined = nada en curso
+  const [error, setError] = useState<string | null>(null);
 
   const cargar = () => fetch('/api/crm/email/templates').then(r => r.json()).then(j => setLista(j.plantillas || []));
   useEffect(() => { cargar(); }, []);
 
-  async function nueva() {
+  async function abrirElector() {
+    setError(null);
     const pre = await fetch('/api/crm/email/templates?predisenadas=1').then(r => r.json());
-    const op = pre.prediseñadas || [];
-    const idx = prompt(`¿De dónde parto?\n\n0 · En blanco\n${op.map((p: any, i: number) => `${i + 1} · ${p.nombre}`).join('\n')}`, '1');
-    if (idx === null) return;
-    const elegida = Number(idx) > 0 ? op[Number(idx) - 1] : null;
-    const nombre = prompt('Nombre de la plantilla', elegida?.nombre || 'Nueva plantilla');
-    if (!nombre?.trim()) return;
+    setEligiendo(pre['prediseñadas'] || pre.predisenadas || []);
+  }
+
+  async function crear(nombre: string) {
+    const elegida = base;
+    setBase(undefined);
     const r = await fetch('/api/crm/email/templates', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre, asunto: elegida?.asunto || '', bloques: elegida?.bloques || [] }),
     });
     const j = await r.json();
-    if (j.error) { alert(j.error); return; }
+    if (j.error) { setError(j.error); return; }
     await cargar(); setAbierta(j.plantilla.id);
   }
 
@@ -53,16 +57,35 @@ export default function Plantillas() {
 
   return (
     <div style={S.wrap}>
+      {eligiendo && (
+        <Elegir titulo="¿De dónde partimos?" sub="Puedes cambiar todo después: los bloques, el texto y los colores."
+          opciones={[
+            { id: 'blanco', nombre: 'En blanco', detalle: 'Empezar sin nada y armarlo bloque por bloque', valor: null },
+            ...eligiendo.map((p: any, i: number) => ({
+              id: String(i), nombre: p.nombre,
+              detalle: p.bloques?.length ? `${p.bloques.length} bloques listos · asunto: "${p.asunto}"` : undefined,
+              valor: p,
+            })),
+          ]}
+          onElegir={(v: any) => { setEligiendo(null); setBase(v); }}
+          onCancelar={() => setEligiendo(null)} />
+      )}
+      {base !== undefined && (
+        <PedirTexto titulo="Nombre de la plantilla" sub="Solo lo ves tú, para encontrarla después."
+          etiqueta="¿Cómo se llama?" valorInicial={base?.nombre || ''} marcador="Ej. Newsletter mensual"
+          boton="Crear plantilla" onOk={crear} onCancelar={() => setBase(undefined)} />
+      )}
+      {error && <Aviso tono="malo" titulo="No se pudo crear">{error}</Aviso>}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Plantillas</h2>
           <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>Los correos que reutilizas en campañas y embudos</div>
         </div>
-        <button style={{ ...S.btnP, marginLeft: 'auto' }} onClick={nueva}>+ Nueva plantilla</button>
+        <button style={{ ...S.btnP, marginLeft: 'auto' }} onClick={abrirElector}>+ Nueva plantilla</button>
       </div>
       {lista.length === 0 ? (
         <Vacio titulo="Sin plantillas todavía" texto="Puedes partir de una prediseñada y cambiarle lo que quieras."
-          accion={<button style={S.btnP} onClick={nueva}>Crear la primera</button>} />
+          accion={<button style={S.btnP} onClick={abrirElector}>Crear la primera</button>} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12 }}>
           {lista.map(p => (
@@ -243,8 +266,8 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               <span style={S.lbl}>Variables (arrástralas al texto)</span>
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {['nombre', 'empresa', 'plan'].map(v => (
-                  <button key={v} style={{ ...S.btnG, fontSize: '0.68rem', padding: '3px 8px' }}
-                    onClick={() => navigator.clipboard?.writeText(`{{${v}|}}`)} title="Copiar">{`{{${v}}}`}</button>
+                  <BotonCopiar key={v} texto={`{{${v}|}}`} etiqueta={`{{${v}}}`}
+                    estilo={{ fontSize: '0.68rem', padding: '3px 8px' }} />
                 ))}
               </div>
               <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 6, lineHeight: 1.5 }}>

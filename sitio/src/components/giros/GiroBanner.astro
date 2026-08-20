@@ -1,0 +1,221 @@
+---
+/**
+ * GiroBanner — la portada de las páginas de giro, con la forma del Home.
+ *
+ * El mensaje a la izquierda y la tienda a la derecha, con avisos del sistema
+ * flotando encima. Es el mismo gesto que abre sacscloud.com, y por eso se
+ * reconoce: antes cada giro abría con el punto de venta de fondo, debajo de un
+ * velo, y ni se leía el titular ni se veía el producto.
+ *
+ * Lo que cambia por giro es el contenido de los avisos. Ahí está el trabajo:
+ * un aviso genérico ("tienes 3 notificaciones") no dice nada; uno del oficio
+ * —"botín café: sin 23½ ni 24 en Centro"— le enseña al dueño, en la primera
+ * pantalla, que el sistema habla su idioma.
+ */
+export interface AvisoGiro {
+  /** Qué módulo lo manda. */
+  modulo: string;
+  /** El aviso, con los datos del giro. */
+  texto: string;
+  /** La esquina: 1 arriba-izquierda, 2 derecha, 3 abajo-izquierda. */
+  pos: 1 | 2 | 3;
+  /** Tono del icono. */
+  tono?: 'azul' | 'ambar' | 'rojo' | 'verde';
+  /** Sello a la derecha: un número, una hora o una palabra. */
+  sello?: string;
+}
+interface Props {
+  eyebrow: string;
+  titulo: string;
+  resalte?: string;
+  sub: string;
+  foto: string;
+  fotoAlt: string;
+  avisos: AvisoGiro[];
+  ctaPri?: { label: string; href: string };
+  ctaSec?: { label: string; href: string };
+}
+const {
+  eyebrow,
+  titulo,
+  resalte,
+  sub,
+  foto,
+  fotoAlt,
+  avisos,
+  ctaPri = { label: 'Prueba 7 días gratis', href: '/prueba-gratis' },
+  ctaSec = { label: 'Agenda una demo', href: '/contacto' },
+} = Astro.props;
+---
+
+<header class="gb">
+  <div class="gb-inner">
+
+    <div class="gb-texto">
+      <p class="gb-eyebrow">{eyebrow}</p>
+      <h1 class="gb-titulo">{titulo}{resalte && <> <span>{resalte}</span></>}</h1>
+      <p class="gb-sub">{sub}</p>
+
+      <div class="gb-ctas">
+        <a href={ctaPri.href} class="gb-btn gb-btn-lleno">{ctaPri.label}</a>
+        <a href={ctaSec.href} class="gb-btn gb-btn-linea">{ctaSec.label}</a>
+      </div>
+
+      <div class="gb-sellos">
+        <div class="gb-sello">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838"/>
+          </svg>
+          <div><b>4.8/5</b><span>Google Reviews</span></div>
+        </div>
+        <i class="gb-sello-sep"></i>
+        <div class="gb-sello">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <div><b>+3,000</b><span>Marcas activas en México y Latam</span></div>
+        </div>
+        <i class="gb-sello-sep"></i>
+        <div class="gb-sello">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div><b>99.9%</b><span>Uptime</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gb-visual">
+      <div class="gb-foto">
+        <img src={foto} alt={fotoAlt} width="900" height="1200" loading="eager" fetchpriority="high" />
+
+        {avisos.map((a) => (
+          <div class:list={['gb-aviso', `gb-aviso-${a.pos}`]} aria-hidden="true">
+            <span class:list={['gb-aviso-icono', `t-${a.tono || 'azul'}`]}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7l-8-4-8 4v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/>
+              </svg>
+            </span>
+            <span class="gb-aviso-cuerpo">
+              <b>{a.modulo}</b>
+              <span>{a.texto}</span>
+            </span>
+            {a.sello && <span class="gb-aviso-sello">{a.sello}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<style>
+  .gb {
+    background: var(--color-bg-primary, #FAFAF8);
+    padding: clamp(104px, 12vw, 148px) clamp(20px, 4vw, 48px) clamp(56px, 7vw, 88px);
+  }
+  .gb-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 5vw, 72px); align-items: center;
+  }
+
+  .gb-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 20px;
+  }
+  .gb-titulo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2.4rem, 5.2vw, 4.25rem); font-weight: 800; letter-spacing: -.04em;
+    line-height: 1.02; margin: 0 0 24px; color: var(--color-text-primary, #1A1A1A);
+    text-wrap: balance;
+  }
+  .gb-titulo span { color: var(--color-primary, #4B7BE5); }
+  .gb-sub {
+    font-size: clamp(1rem, 1.5vw, 1.1875rem); line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A); margin: 0 0 32px; max-width: 46ch;
+  }
+
+  .gb-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+  .gb-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 54px; padding: 0 32px; border-radius: 50px;
+    font-size: 15px; font-weight: 700; text-decoration: none; white-space: nowrap;
+    transition: transform .2s ease, background .2s ease, border-color .2s ease;
+  }
+  .gb-btn-lleno { background: #4B7BE5; color: #fff; box-shadow: 0 4px 14px rgba(75,123,229,.3); }
+  .gb-btn-lleno:hover { background: #3A67CE; transform: scale(1.02); text-decoration: none; }
+  .gb-btn-linea { background: #fff; color: var(--color-text-primary, #1A1A1A); border: 1.5px solid rgba(0,0,0,.14); }
+  .gb-btn-linea:hover { border-color: rgba(0,0,0,.34); text-decoration: none; }
+
+  .gb-sellos { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .gb-sello { display: flex; align-items: center; gap: 10px; color: var(--color-text-tertiary, #8C8C8C); }
+  .gb-sello div { display: flex; flex-direction: column; }
+  .gb-sello b { font-size: 15px; font-weight: 800; color: var(--color-text-primary, #1A1A1A); }
+  .gb-sello span { font-size: 12.5px; color: var(--color-text-secondary, #4A4A4A); }
+  .gb-sello-sep { width: 1px; height: 30px; background: rgba(0,0,0,.1); }
+
+  /* ── La tienda, con los avisos encima ── */
+  .gb-visual { position: relative; }
+  .gb-foto { position: relative; border-radius: 24px; overflow: visible; }
+  .gb-foto img {
+    width: 100%; height: auto; display: block; border-radius: 24px;
+    aspect-ratio: 4 / 5; object-fit: cover;
+    box-shadow: 0 24px 60px rgba(15,23,42,.14);
+  }
+
+  .gb-aviso {
+    position: absolute; display: flex; align-items: center; gap: 11px;
+    background: #fff; border-radius: 14px; padding: 12px 14px;
+    box-shadow: 0 8px 28px rgba(15,23,42,.16);
+    max-width: 320px; animation: gbEntra .7s cubic-bezier(.16,1,.3,1) backwards;
+  }
+  .gb-aviso-1 { top: 16%; left: -8%; animation-delay: .35s; }
+  .gb-aviso-2 { top: 52%; right: -10%; animation-delay: .55s; }
+  .gb-aviso-3 { bottom: 10%; left: -4%; animation-delay: .75s; }
+
+  @keyframes gbEntra {
+    from { opacity: 0; transform: translateY(14px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .gb-aviso-icono {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .gb-aviso-icono.t-azul { background: #4B7BE5; }
+  .gb-aviso-icono.t-ambar { background: #E8A838; }
+  .gb-aviso-icono.t-rojo { background: #E54B4B; }
+  .gb-aviso-icono.t-verde { background: #2AB5A0; }
+
+  .gb-aviso-cuerpo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .gb-aviso-cuerpo b {
+    font-size: 13px; font-weight: 800; color: var(--color-text-primary, #1A1A1A); letter-spacing: -.2px;
+  }
+  .gb-aviso-cuerpo span {
+    font-size: 12.5px; color: var(--color-text-secondary, #4A4A4A); line-height: 1.35;
+  }
+  .gb-aviso-sello {
+    flex-shrink: 0; font-size: 11px; font-weight: 700;
+    color: var(--color-text-tertiary, #8C8C8C); white-space: nowrap;
+  }
+
+  @media (max-width: 980px) {
+    .gb { padding: 96px 18px 56px; }
+    .gb-inner { grid-template-columns: 1fr; gap: 44px; }
+    .gb-foto img { aspect-ratio: 4 / 3; }
+    /* En vertical los avisos se meten dentro del encuadre: colgados por fuera
+       se salen de la pantalla. */
+    .gb-aviso { max-width: 74%; }
+    .gb-aviso-1 { left: 4%; top: 8%; }
+    .gb-aviso-2 { right: 4%; left: auto; top: 44%; }
+    .gb-aviso-3 { left: 4%; bottom: 6%; }
+    .gb-sellos { gap: 14px; }
+    .gb-sello span { font-size: 11.5px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gb-aviso { animation: none; }
+    .gb-btn { transition: none; }
+  }
+</style>

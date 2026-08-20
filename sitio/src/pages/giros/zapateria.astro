@@ -30,7 +30,7 @@ import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
-import PosMock from '../../components/suite/PosMock.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
 import {
   seccionesZapateria, casosZapateria, cortinaZapateria, sucursalesZapateria,
   reglasZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
@@ -43,65 +43,23 @@ const desc =
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
-  <!-- ── Portada: el sistema es el fondo ── -->
-  <header class="hero">
-    <div class="hero-bg" aria-hidden="true">
-      <div class="hero-pos">
-        <PosMock
-          cajero="Ramiro"
-          caja="Caja Centro"
-          cliente="JORGE C."
-          puntos="2,140 pts"
-          tiles={[
-            { t: 'Botín piel', c: '#8A6242' },
-            { t: 'Tenis casual', c: '#94A3B8' },
-            { t: 'Mocasín caballero', c: '#3F3F46' },
-            { t: 'Sandalia dama', c: '#C09A6B' },
-            { t: 'Zapatilla vestir', c: '#4B4B55' },
-            { t: 'Escolar infantil', c: '#2C2C34' },
-            { t: 'Bota industrial', c: '#6B4E32' },
-            { t: 'Calcetín', c: '#7C8AA0' },
-            { t: 'Plantilla', c: '#93A3B8' },
-            { t: 'Grasa y agujetas', c: '#A0784F' },
-          ]}
-          lineas={[
-            { nombre: 'Botín dama piel café', detalle: 'Número 24½', cant: 1, precio: '1,290.00' },
-            { nombre: 'Calcetín invisible', detalle: 'Paquete de 3', cant: 1, precio: '120.00' },
-          ]}
-          subtotal="$1,215.52"
-          iva="$194.48"
-          total="$1,410.00"
-          articulos="2 ARTÍCULOS · 1 PAR"
-        />
-      </div>
-      <div class="hero-veil"></div>
-    </div>
-
-    <div class="hero-inner">
-      <p class="hero-eyebrow">SACS · Suite Calzado</p>
-      <h1 class="hero-title">
-        Tu tienda no vende<br />modelos. Vende<br /><span>números.</span>
-      </h1>
-      <p class="hero-sub">
-        El sistema para zapaterías. Corrida completa con medios números, cambio de número en el
-        mostrador, apartados por quincena y el pedido de temporada por remesas — con un mismo
-        inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces.
-      </p>
-      <div class="hero-cta">
-        <a href="/contacto" class="btn-pri">Agenda una demo</a>
-        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
-      </div>
-
-      <!-- Nada de cifras aquí: la franja de más abajo ya las da, y repetirlas
-           a 800 px de distancia las gasta dos veces. Esto es lo que solo el
-           hero puede decir: de qué está hecho el giro. -->
-      <div class="hero-datos">
-        <div><b>Medios números</b><span>el 23½ es un número, no un detalle</span></div>
-        <div><b>Modelo × color × número</b><span>así se arma cada corrida</span></div>
-        <div><b>Cambio en mostrador</b><span>aunque el par sea de otra sucursal</span></div>
-      </div>
-    </div>
-  </header>
+  <!-- ── Portada: la forma del Home. El mensaje a la izquierda, la tienda a
+       la derecha y los avisos del sistema encima — pero avisos de calzado, que
+       es lo que enseña en la primera pantalla que el sistema habla el idioma
+       del giro. ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Calzado"
+    titulo="Tu tienda no vende modelos."
+    resalte="Vende números."
+    sub="Corrida completa con medios números, cambio de número en el mostrador, apartados por quincena y el pedido de temporada por remesas — con un mismo inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces."
+    foto="/images/hero-zapateria.webp"
+    fotoAlt="Empleado de una zapatería consultando existencias en una tablet frente a los muros de calzado"
+    avisos={[
+      { modulo: 'Corrida rota', texto: 'Botín café: sin 23½ ni 24 en Centro', pos: 1, tono: 'rojo', sello: 'Hoy' },
+      { modulo: 'Remesa del lunes', texto: '9 pares de Plaza Norte a Sur cierran su corrida', pos: 2, tono: 'azul', sello: 'Sugerida' },
+      { modulo: 'Apartado por vencer', texto: 'Sra. Jiménez · 24½ · vence el viernes', pos: 3, tono: 'ambar', sello: '3 días' },
+    ]}
+  />
 
   <!-- ── Aquí se demuestra que entendemos el giro ── -->
   <SuiteManifiesto
@@ -236,116 +194,3 @@ const desc =
   <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus números y tu venta real. 30 min, sin compromiso." />
 </BaseLayout>
 
-<style>
-  /* El nav es fixed (71px): sin padding-top el título queda debajo de la barra. */
-  .hero {
-    position: relative; min-height: 88vh; display: flex; align-items: flex-end;
-    padding: 136px 24px 88px; overflow: hidden;
-    background: var(--color-bg-primary, #FAFAF8);
-  }
-  .hero-bg { position: absolute; inset: 0; overflow: hidden; }
-  /* Sin resplandor: el fondo se queda quieto y el color lo pone el producto. */
-  .hero-veil {
-    position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg,
-      rgba(250,250,248,1) 0%, rgba(250,250,248,.98) 30%, rgba(250,250,248,.72) 46%,
-      rgba(250,250,248,.14) 58%, rgba(250,250,248,0) 68%);
-  }
-  .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
-  .hero-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--color-primary, #4B7BE5); margin: 0 0 20px;
-  }
-  .hero-title {
-    font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
-    line-height: .98; margin: 0 0 24px; max-width: 16ch;
-    color: var(--color-text-primary, #1A1A1A);
-  }
-  .hero-title span { color: var(--color-primary, #4B7BE5); }
-  .hero-sub {
-    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: var(--color-text-secondary, #4A4A4A);
-    max-width: 56ch; margin: 0 0 34px;
-  }
-  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
-  .btn-pri, .btn-sec {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 54px; padding: 0 30px; border-radius: 12px;
-    font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
-  }
-  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(75,123,229,.3); }
-  .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
-  .btn-sec { background: transparent; color: var(--color-text-primary, #1A1A1A); border: 1.5px solid rgba(0,0,0,.18); }
-  .btn-sec:hover { border-color: rgba(0,0,0,.34); }
-  .hero-datos {
-    display: flex; gap: 30px; flex-wrap: wrap; max-width: 660px;
-    border-top: 1px solid rgba(0,0,0,.1); padding-top: 26px;
-  }
-  .hero-datos > div { flex: 1 1 180px; }
-  .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
-  .hero-datos b {
-    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; letter-spacing: -.4px;
-    color: var(--color-text-primary, #1A1A1A);
-  }
-  .hero-datos span { font-size: 13px; color: var(--color-text-secondary, #4A4A4A); font-weight: 600; }
-
-  /* El punto de venta se dibuja a 980 px y se escala: nítido en cualquier
-     pantalla y sin depender de una captura que envejece. */
-  .hero-pos {
-    position: absolute; right: -13%; top: 50%;
-    transform: translateY(-46%) scale(.86); transform-origin: right center;
-    filter: drop-shadow(0 30px 70px rgba(15,23,42,.22));
-    opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-  }
-  @keyframes posEntra {
-    from { opacity: 0; transform: translateY(-46%) scale(.84) translateX(34px); }
-    to   { opacity: 1; transform: translateY(-46%) scale(.86); }
-  }
-  @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  @media (max-width: 1440px) { .hero-pos { right: -1%; transform: translateY(-50%) scale(.60); } }
-  @media (min-width: 1181px) {
-    .hero-sub { max-width: 44ch; }
-    .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
-  }
-  @media (max-width: 1180px) {
-    .hero-pos { right: -30%; transform: translateY(-46%) scale(.6); opacity: .9; animation: none; }
-    /* En vertical el punto de venta se recuesta abajo y asoma: si se esconde,
-       la página abre con dos mil cuatrocientos píxeles de texto sobre negro. */
-  }
-  @media (max-width: 760px) {
-    /* En vertical, el pie del hero se cambia: salen los tres apuntes de texto
-       —que repiten lo que ya dijo el subtítulo— y entra el punto de venta
-       asomando de verdad. Si no, la página abre con dos mil cuatrocientos
-       píxeles de texto sobre negro antes de la primera imagen. */
-    .hero-pos {
-      right: auto; left: 50%; top: auto; bottom: 0;
-      transform: translateX(-50%) scale(.34); transform-origin: bottom center;
-      opacity: .95; animation: none;
-    }
-    .hero-veil {
-      background: linear-gradient(180deg, rgba(250,250,248,1) 0%, rgba(250,250,248,.98) 62%, rgba(250,250,248,.8) 76%, rgba(250,250,248,0) 100%);
-    }
-  }
-
-  @media (max-width: 900px) {
-    .hero { min-height: 88vh; padding: 104px 18px 56px; }
-    .hero-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; }
-    .hero-datos b { font-size: 21px; }
-    .hero-datos span { font-size: 12px; }
-    .hero-cta { margin-bottom: 34px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hero-pos { opacity: 1; animation: none; }
-  }
-
-  /* Va al final a propósito: la regla de 900 px que viene antes vuelve a poner
-     la franja en rejilla, y en vertical queremos el punto de venta en su lugar. */
-  @media (max-width: 760px) {
-    .hero-datos { display: none; }
-    /* El mock necesita su propio renglón bajo los botones: si comparten sitio,
-       el botón secundario —vidrio translúcido— deja ver las teclas del punto
-       de venta y se vuelve ilegible. */
-    .hero { padding-bottom: 300px !important; }
-  }
-</style>

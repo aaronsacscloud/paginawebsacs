@@ -8,7 +8,7 @@
 // banner para cancelar. Esa ventana es el único deshacer que existe cuando
 // alguien le da a enviar a 200 personas por error.
 import { useEffect, useState } from 'react';
-import { S, Tag, Aviso, Vacio, Cargando, chip, fmtFecha, MOTIVO } from './ui';
+import { S, Tag, Aviso, Vacio, Cargando, chip, fmtFecha, MOTIVO, PedirTexto, Modal } from './ui';
 
 const ESTADO_TONO: Record<string, string> = {
   borrador: 'gris', programada: 'info', enviando: 'acento',
@@ -18,13 +18,13 @@ const ESTADO_TONO: Record<string, string> = {
 export default function Campanas({ onIrA }: { onIrA?: (s: string) => void }) {
   const [lista, setLista] = useState<any[] | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [pidiendoNombre, setPidiendoNombre] = useState(false);
 
   const cargar = () => fetch('/api/crm/email/campaigns').then(r => r.json()).then(j => setLista(j.campanas || [])).catch(() => setLista([]));
   useEffect(() => { cargar(); }, []);
 
-  async function nueva() {
-    const nombre = prompt('¿Cómo se va a llamar la campaña?');
-    if (!nombre?.trim()) return;
+  async function nueva(nombre: string) {
+    setPidiendoNombre(false);
     const r = await fetch('/api/crm/email/campaigns', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre }),
     });
@@ -37,18 +37,23 @@ export default function Campanas({ onIrA }: { onIrA?: (s: string) => void }) {
 
   return (
     <div style={S.wrap}>
+      {pidiendoNombre && (
+        <PedirTexto titulo="Nueva campaña" sub="Este nombre es solo para ti — no lo ve nadie que reciba el correo."
+          etiqueta="Nombre de la campaña" marcador="Ej. Lanzamiento de Mín/Máx automáticos"
+          boton="Crear" onOk={nueva} onCancelar={() => setPidiendoNombre(false)} />
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Campañas</h2>
           <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>Un correo, una audiencia, una vez</div>
         </div>
-        <button style={{ ...S.btnP, marginLeft: 'auto' }} onClick={nueva}>+ Nueva campaña</button>
+        <button style={{ ...S.btnP, marginLeft: 'auto' }} onClick={() => setPidiendoNombre(true)}>+ Nueva campaña</button>
       </div>
 
       {lista.length === 0 ? (
         <Vacio titulo="Todavía no has creado ninguna campaña"
           texto="Una campaña es un correo que sale una vez a un grupo de personas. Para secuencias automáticas, usa Embudos."
-          accion={<button style={S.btnP} onClick={nueva}>Crear la primera</button>} />
+          accion={<button style={S.btnP} onClick={() => setPidiendoNombre(true)}>Crear la primera</button>} />
       ) : (
         <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
@@ -94,6 +99,7 @@ function Detalle({ id, onCerrar, onIrA }: { id: string; onCerrar: () => void; on
   const [plantillas, setPlantillas] = useState<any[]>([]);
   const [msg, setMsg] = useState<{ tipo: string; texto: string } | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [pidiendoPrueba, setPidiendoPrueba] = useState(false);
 
   const cargar = () => fetch(`/api/crm/email/campaigns?id=${id}`).then(r => r.json()).then(j => { setC(j.campana); setDest(j.destinatarios || []); });
   useEffect(() => { cargar(); }, [id]);
@@ -232,9 +238,17 @@ function Detalle({ id, onCerrar, onIrA }: { id: string; onCerrar: () => void; on
               </select>
             </div>
             <button style={S.btnA} disabled={ocupado || !c.template_id}
-              onClick={() => { const to = prompt('¿A qué correo mando la prueba?'); if (to) accion('prueba', { para: to }); }}>
+              onClick={() => setPidiendoPrueba(true)}>
               Enviar prueba
             </button>
+            {pidiendoPrueba && (
+              <PedirTexto titulo="Enviar una prueba"
+                sub="Sale con datos de ejemplo y no cuenta para los límites de envío."
+                etiqueta="¿A qué correo?" tipo="email" marcador="tu@correo.com" boton="Enviar prueba"
+                validar={v => /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(v) ? null : 'Ese correo no se ve válido.'}
+                onOk={to => { setPidiendoPrueba(false); accion('prueba', { para: to }); }}
+                onCancelar={() => setPidiendoPrueba(false)} />
+            )}
           </div>
         )}
 
@@ -246,6 +260,7 @@ function Detalle({ id, onCerrar, onIrA }: { id: string; onCerrar: () => void; on
 
 function Revision({ c, rev, accion, ocupado }: any) {
   const [cuando, setCuando] = useState('');
+  const [confirmando, setConfirmando] = useState(false);
   if (!rev) return <Cargando que="la revisión" />;
   const total = rev.revision?.alcanzables ?? 0;
 
@@ -282,9 +297,14 @@ function Revision({ c, rev, accion, ocupado }: any) {
         <div style={S.card}>
           <button style={{ ...S.btnP, width: '100%', padding: '11px', fontSize: '0.85rem', opacity: (!rev.listo || ocupado) ? .45 : 1 }}
             disabled={!rev.listo || ocupado}
-            onClick={() => { if (confirm(`Se enviará a ${total} personas.\n\nTendrás 5 minutos para cancelar antes de que salga.`)) accion('enviar'); }}>
+            onClick={() => setConfirmando(true)}>
             Enviar a {total} {total === 1 ? 'contacto' : 'contactos'}
           </button>
+          {confirmando && (
+            <ConfirmarEnvio total={total} nombre={c.nombre}
+              onSi={() => { setConfirmando(false); accion('enviar'); }}
+              onNo={() => setConfirmando(false)} />
+          )}
           <div style={{ fontSize: '0.7rem', color: '#8a8a8a', textAlign: 'center', marginTop: 7, lineHeight: 1.5 }}>
             Sale en 5 minutos — con un botón para cancelar mientras tanto.
           </div>
@@ -298,6 +318,42 @@ function Revision({ c, rev, accion, ocupado }: any) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Confirmar el envío. La fricción es proporcional: mandarle a 8 personas no
+ * merece lo mismo que mandarle a 800. Arriba de 50 hay que teclear el número
+ * — es el patrón de "escribe el nombre del repositorio para borrarlo", y aquí
+ * aplica porque un envío tampoco se deshace.
+ */
+function ConfirmarEnvio({ total, nombre, onSi, onNo }: { total: number; nombre: string; onSi: () => void; onNo: () => void }) {
+  const exigeTeclear = total > 50;
+  const [tecleado, setTecleado] = useState('');
+  const puede = !exigeTeclear || tecleado.trim() === String(total);
+
+  return (
+    <Modal titulo={`Enviar «${nombre}»`} onCerrar={onNo} ancho={440}
+      pie={<>
+        <button onClick={onSi} disabled={!puede} style={{ ...S.btnP, opacity: puede ? 1 : .45 }}>
+          Sí, enviar a {total}
+        </button>
+        <button onClick={onNo} style={S.btnG}>Cancelar</button>
+      </>}>
+      <div style={{ fontSize: '0.88rem', lineHeight: 1.6 }}>
+        Este correo le llegará a <b>{total} {total === 1 ? 'persona' : 'personas'}</b>.
+      </div>
+      <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 10, padding: '10px 12px', fontSize: '0.79rem', marginTop: 12, lineHeight: 1.55 }}>
+        <b>Tienes 5 minutos para arrepentirte.</b> No sale de inmediato: queda programado y podrás cancelarlo desde esta misma pantalla.
+      </div>
+      {exigeTeclear && (
+        <div style={{ marginTop: 14 }}>
+          <span style={S.lbl}>Para confirmar, escribe el número de destinatarios</span>
+          <input value={tecleado} onChange={e => setTecleado(e.target.value)} placeholder={String(total)}
+            style={{ ...S.inp, maxWidth: 130 }} autoFocus inputMode="numeric" />
+        </div>
+      )}
+    </Modal>
   );
 }
 

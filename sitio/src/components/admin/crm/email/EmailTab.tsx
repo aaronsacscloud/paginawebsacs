@@ -4,7 +4,7 @@
 // dirección física o el dominio, todas las pantallas lo dicen y el envío está
 // apagado. Es mejor un candado explicado que seis pantallas vacías.
 import { useEffect, useState } from 'react';
-import { S, Aviso, chip } from './ui';
+import { S, Aviso, chip, FOCO } from './ui';
 import ConfigEmail from './ConfigEmail';
 import Campanas from './Campanas';
 import Audiencias from './Audiencias';
@@ -38,14 +38,22 @@ export default function EmailTab() {
   const bloqueado = faltan.length > 0;
 
   return (
-    <div>
+    <div className="em-sec">
+      <style>{FOCO}</style>
       <div style={{ background: '#fff', borderBottom: '1px solid #f0eff3', padding: '12px 24px 0' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {SECCIONES.map(s => (
             <button key={s.id} onClick={() => setSec(s.id)}
+              aria-current={sec === s.id ? 'page' : undefined}
               style={{
-                ...chip(sec === s.id), borderRadius: '9px 9px 0 0', marginBottom: -1,
-                borderBottomColor: sec === s.id ? '#fff' : undefined, position: 'relative',
+                border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                padding: '9px 14px 11px', fontSize: '0.82rem', position: 'relative',
+                fontWeight: sec === s.id ? 800 : 600,
+                color: sec === s.id ? '#5B4BD6' : '#6a6a72',
+                // La activa se marca con una barra bajo el texto, no con un
+                // borde alrededor: entre seis chips iguales, el "seleccionado"
+                // por color de fondo casi no se lee (se ve en la captura).
+                boxShadow: sec === s.id ? 'inset 0 -3px 0 #9B8CFA' : 'none',
               }}>
               {s.label}
               {s.id === 'bandeja' && sinLeer > 0 && (

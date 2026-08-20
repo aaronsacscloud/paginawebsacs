@@ -4,13 +4,14 @@
 // entre grupos, "o bien, TODO esto". Excluir es una zona aparte, en rojo,
 // porque un NOT anidado no lo entiende nadie que no programe.
 import { useEffect, useState } from 'react';
-import { S, Tag, Vacio, Cargando, Aviso, chip } from './ui';
+import { S, Tag, Vacio, Cargando, Aviso, chip, PedirTexto } from './ui';
 
 export default function Audiencias() {
   const [segs, setSegs] = useState<any[] | null>(null);
   const [listas, setListas] = useState<any[]>([]);
   const [editando, setEditando] = useState<string | 'nuevo' | null>(null);
   const [vista, setVista] = useState<'segmentos' | 'listas'>('segmentos');
+  const [pidiendoLista, setPidiendoLista] = useState(false);
 
   const cargar = () => {
     fetch('/api/crm/email/segments').then(r => r.json()).then(j => setSegs(j.segmentos || []));
@@ -23,6 +24,16 @@ export default function Audiencias() {
 
   return (
     <div style={S.wrap}>
+      {pidiendoLista && (
+        <PedirTexto titulo="Nueva lista" sub="Una lista es un grupo fijo: no cambia sola como un segmento."
+          etiqueta="Nombre de la lista" marcador="Ej. Cuentas VIP" boton="Crear lista"
+          onOk={async nombre => {
+            setPidiendoLista(false);
+            await fetch('/api/crm/email/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre }) });
+            cargar();
+          }}
+          onCancelar={() => setPidiendoLista(false)} />
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Audiencias</h2>
@@ -32,11 +43,7 @@ export default function Audiencias() {
           <button style={chip(vista === 'segmentos')} onClick={() => setVista('segmentos')}>Segmentos</button>
           <button style={chip(vista === 'listas')} onClick={() => setVista('listas')}>Listas</button>
           {vista === 'segmentos' && <button style={S.btnP} onClick={() => setEditando('nuevo')}>+ Nuevo segmento</button>}
-          {vista === 'listas' && <button style={S.btnP} onClick={async () => {
-            const nombre = prompt('¿Cómo se llama la lista?'); if (!nombre?.trim()) return;
-            await fetch('/api/crm/email/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre }) });
-            cargar();
-          }}>+ Nueva lista</button>}
+          {vista === 'listas' && <button style={S.btnP} onClick={() => setPidiendoLista(true)}>+ Nueva lista</button>}
         </div>
       </div>
 

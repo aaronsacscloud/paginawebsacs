@@ -3,7 +3,7 @@
 // Un buzón de Gmail no sabe que quien escribe paga $9,000 de ARR ni en qué
 // plan está. Esa es la única razón para contestar desde aquí y no desde Gmail.
 import { useEffect, useState } from 'react';
-import { S, Tag, Vacio, Cargando, Aviso, chip, fmtFecha } from './ui';
+import { S, Tag, Vacio, Cargando, Aviso, chip, fmtFecha, Confirmar } from './ui';
 
 export default function Bandeja() {
   const [lista, setLista] = useState<any[] | null>(null);
@@ -13,6 +13,7 @@ export default function Bandeja() {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [msg, setMsg] = useState<any>(null);
+  const [confirmandoBaja, setConfirmandoBaja] = useState(false);
 
   const cargar = () => fetch(`/api/crm/email/conversaciones?filtro=${filtro}`).then(r => r.json())
     .then(j => setLista(j.conversaciones || [])).catch(() => setLista([]));
@@ -42,7 +43,7 @@ export default function Bandeja() {
   }
 
   async function darDeBaja() {
-    if (!confirm('¿Sacarlo de todos los correos de marketing?')) return;
+    setConfirmandoBaja(false);
     await fetch('/api/crm/email/conversaciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: sel, accion: 'dar_de_baja' }) });
     setSel(null); cargar();
   }
@@ -53,6 +54,12 @@ export default function Bandeja() {
 
   return (
     <div style={S.wrap}>
+      {confirmandoBaja && conv && (
+        <Confirmar titulo="Dar de baja" peligro confirmar="Sí, darlo de baja"
+          mensaje={<><b>{conv.email}</b> dejará de recibir todos tus correos de marketing.</>}
+          detalle="Seguirá recibiendo lo indispensable de su cuenta (facturas, avisos de servicio), porque eso no es marketing. Puedes revertirlo desde Salud → Quién no recibe correos."
+          onSi={darDeBaja} onNo={() => setConfirmandoBaja(false)} />
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Bandeja</h2>
@@ -107,7 +114,7 @@ export default function Bandeja() {
                   </div>
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
-                  <button style={S.btnG} onClick={darDeBaja}>Dar de baja</button>
+                  <button style={S.btnG} onClick={() => setConfirmandoBaja(true)}>Dar de baja</button>
                   <button style={S.btnG} onClick={async () => {
                     await fetch('/api/crm/email/conversaciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: sel, estado: conv.estado === 'cerrada' ? 'abierta' : 'cerrada' }) });
                     setSel(null); cargar();
@@ -117,7 +124,7 @@ export default function Bandeja() {
 
               {String(conv.asunto || '').startsWith('[PIDE BAJA]') && (
                 <Aviso tono="aviso" titulo="Pidió que dejaran de escribirle"
-                  accion={<button style={S.btnG} onClick={darDeBaja}>Darlo de baja</button>}>
+                  accion={<button style={S.btnG} onClick={() => setConfirmandoBaja(true)}>Darlo de baja</button>}>
                   El texto de su respuesta suena a baja. Atenderlo ahora evita que te marque como spam.
                 </Aviso>
               )}

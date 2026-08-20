@@ -6,7 +6,7 @@
 // Todo lo de esta pantalla es del INQUILINO: cuando un partner use la
 // herramienta, verá su propio remitente, su logo y su dirección.
 import { useEffect, useState } from 'react';
-import { S, Aviso, Cargando, Tag, chip } from './ui';
+import { S, Aviso, Cargando, Tag, chip, BotonCopiar } from './ui';
 
 export default function ConfigEmail({ onCambio }: { onCambio?: () => void }) {
   const [cfg, setCfg] = useState<any>(null);
@@ -162,8 +162,7 @@ export default function ConfigEmail({ onCambio }: { onCambio?: () => void }) {
                 <code style={{ fontSize: '0.7rem', background: '#f7f6fb', padding: '3px 8px', borderRadius: 6, flex: 1, minWidth: 200, wordBreak: 'break-all' }}>
                   {r.host} → {r.valor}
                 </code>
-                <button style={{ ...S.btnG, padding: '4px 10px', fontSize: '0.7rem' }}
-                  onClick={() => navigator.clipboard?.writeText(String(r.valor))}>Copiar</button>
+                <BotonCopiar texto={String(r.valor)} estilo={{ padding: '4px 10px', fontSize: '0.7rem' }} />
                 {r.valido ? <Tag tono="ok">OK</Tag> : <Tag tono="gris">pendiente</Tag>}
               </div>
             ))}

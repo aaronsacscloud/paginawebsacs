@@ -3023,13 +3023,6 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-modern .quote-conditions-title { font-size: .55rem; letter-spacing: .1em; color: #a5a2af; font-weight: 800; }
 .quote-modern .quote-conditions-text { font-size: .76rem; color: #6b7280; line-height: 1.7; }
 
-@media (max-width: 560px) {
-  .quote-modern .quote-header, .quote-modern .quote-client,
-  .quote-modern .quote-table th, .quote-modern .quote-table td,
-  .quote-modern .quote-totals, .quote-modern .quote-conditions, .quote-pagos { padding-left: 18px; padding-right: 18px; }
-}
-
-
 /* Botones que cierran la venta: en el morado del sistema, no en negro. El
    negro era de otra paleta y el verde significa "pagado" — decir "aceptar" en
    verde promete algo que todavía no pasó. */
@@ -3079,13 +3072,56 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-modern .quote-timer-promo { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.28); }
 .quote-modern .quote-timer-promo-name { color: #fff; }
 .quote-modern .quote-timer-extended { background: rgba(255,255,255,.16); }
-@media (max-width: 560px) { .quote-modern .quote-timer { padding: 20px 18px; } }
 /* Impreso, el degradado se aclara: media página de tinta de color no la quiere
    nadie, y el dato se lee igual. */
 @media print {
   .quote-modern .quote-timer { background: linear-gradient(100deg,#EDE9FE,#E4EDFB 50%,#FBE7F1) !important; color: #3f2fb8 !important; }
   .quote-modern .quote-timer-unit, .quote-modern .quote-timer-warning, .quote-modern .quote-timer-label { color: #5B4BD6 !important; }
   .quote-modern .quote-timer-savings { background: #EAF8F2 !important; color: #1E8A63 !important; }
+}
+
+/* ── En el teléfono, que es donde de verdad se abre ──────────────────────
+   El re-vestido se escribió midiendo una pantalla ancha, y como todas sus
+   reglas llevan `.quote-modern` delante le ganaban en peso a la hoja móvil
+   que ya existía: el documento volvía a su escala de escritorio en un
+   teléfono —márgenes de 30 px, cifras de 2.4 rem— y el concepto se partía en
+   una palabra por renglón. Aquí se devuelve la escala chica, la misma que la
+   plantilla tenía antes de tocarla. Va a 640 px, el corte que usa el resto
+   del documento, no a 560. */
+@media (max-width: 640px) {
+  .quote-modern .quote-header, .quote-modern .quote-client,
+  .quote-modern .quote-table th, .quote-modern .quote-table td,
+  .quote-modern .quote-totals, .quote-modern .quote-conditions, .quote-pagos { padding-left: 20px; padding-right: 20px; }
+  .quote-modern .quote-header { padding-top: 18px; padding-bottom: 14px; }
+  .quote-modern .quote-client { padding-top: 13px; padding-bottom: 13px; }
+  .quote-modern .quote-logo-text { font-size: 1.15rem; }
+  .quote-modern .quote-number { font-size: .95rem; }
+  .quote-modern .quote-client-name { font-size: .92rem; }
+  .quote-modern .quote-client-detail { font-size: .72rem; }
+
+  /* La columna del concepto es la que lleva el texto: se le da el ancho y a
+     las cifras lo justo. Si no, "Plan Controla" cae en dos renglones y la
+     descripción en cinco. */
+  .quote-modern .quote-table th { padding-top: 9px; padding-bottom: 9px; }
+  .quote-modern .quote-table td { padding-top: 11px; padding-bottom: 11px; font-size: .75rem; }
+  .quote-modern .quote-table .qt-concept { width: 56%; }
+  .quote-modern .quote-table .qt-price, .quote-modern .quote-table .qt-subtotal { white-space: nowrap; text-align: right; }
+  .quote-modern .quote-totals { padding-top: 12px; }
+  .quote-modern .quote-total-row.quote-total-final { padding: 12px 14px; font-size: 1.05rem; }
+
+  /* El contador: chico y completo arriba del fold, que es su único trabajo. */
+  .quote-modern .quote-timer { padding: 15px 18px 17px; }
+  .quote-modern .quote-timer-num { font-size: 1.55rem; }
+  .quote-modern .quote-timer-unit { font-size: .62rem; margin-right: 8px; }
+  .quote-modern .quote-timer-label { font-size: .64rem; margin-bottom: 5px; }
+  .quote-modern .quote-timer-deadline { font-size: .78rem; margin-top: 7px; }
+  .quote-modern .quote-timer-warning { font-size: .66rem; margin-top: 3px; line-height: 1.4; }
+  .quote-modern .quote-timer-savings { font-size: .66rem; margin-top: 8px; padding: 4px 11px; }
+  .quote-modern .quote-timer-promo { font-size: .62rem; }
+  .quote-modern .quote-timer-extended { font-size: .62rem; }
+
+  .quote-pago-n { width: auto; }
+  .quote-modern .quote-conditions-text { font-size: .73rem; }
 }
 </style>
 
