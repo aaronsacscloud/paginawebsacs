@@ -52,10 +52,6 @@ const S = {
   fi: { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 11px', fontSize: '0.78rem', background: '#fdfcff', width: '100%', boxSizing: 'border-box' as const, fontFamily: 'inherit' } as const,
   fl: { fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase' as const, letterSpacing: '.05em', marginBottom: 4 } as const,
 };
-const seg = (on: boolean) => ({
-  border: 'none', cursor: 'pointer', padding: '6px 13px', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'inherit',
-  background: on ? 'rgba(244,168,205,.34)' : 'transparent', color: on ? '#9c3d70' : '#8a8a92',
-}) as const;
 
 export default function CobranzaTab() {
   const [d, setD] = useState<any>(null);
@@ -277,11 +273,12 @@ export default function CobranzaTab() {
           Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
         </div>
         </div>
-        <span style={{ display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' }}>
-          {([['trabajo', 'A cobrar'], ['tablero', 'Tablero']] as const).map(([v, l]) => (
-            <button key={v} onClick={() => setModo(v)} style={seg(modo === v)}>{l}</button>
-          ))}
-        </span>
+        {/* Mismo botón que abre el dashboard en Cotizaciones: contorno azul,
+            sin ícono. El segmentado rosa era otro idioma para lo mismo. */}
+        <button onClick={() => setModo(modo === 'tablero' ? 'trabajo' : 'tablero')}
+          style={{ background: '#fff', color: '#2C5FC4', border: '1.5px solid #7DA6F5', borderRadius: 12, padding: '9px 20px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {modo === 'tablero' ? 'Ver lo que hay que cobrar' : 'Dashboard'}
+        </button>
       </div>
 
       {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
