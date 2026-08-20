@@ -363,7 +363,7 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
         <span style={{ ...lblS as any, marginTop: 0 }}>Formato</span>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 10 }}>
           {(catalogo?.formatos || []).map((f: any) => (
-            <div key={f.id} onClick={() => set({ formato: f.id })}
+            <div key={f.id} onClick={() => set(f.id === 'encuesta' && !c.contenido?.encuesta ? { formato: f.id, contenido: { ...(c.contenido || {}), encuesta: { escala: 'nps' } } } : { formato: f.id })}
               style={{ border: `1.5px solid ${c.formato === f.id ? '#9B8CFA' : '#e2e4e9'}`, borderRadius: 12, padding: 12, background: c.formato === f.id ? '#fdfcff' : '#fff', cursor: 'pointer', boxShadow: c.formato === f.id ? '0 0 0 3px rgba(155,140,250,.14)' : 'none' }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 800 }}>{f.etiqueta}</div>
               <div style={{ fontSize: '0.66rem', color: '#9c99a6', fontWeight: 600, marginTop: 2 }}>{f.desc}</div>
@@ -408,7 +408,15 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
         </div>
         {c.formato === 'encuesta' ? (<>
           <span style={lblS as any}>Tipo de pregunta (estándares de encuesta)</span>
-          <select style={inputS} value={c.contenido?.encuesta?.escala || 'nps'} onChange={e => setCt({ encuesta: { ...(c.contenido?.encuesta || {}), escala: e.target.value } })}>
+          <select style={inputS} value={c.contenido?.encuesta?.escala || 'nps'} onChange={e => {
+            const esc = e.target.value;
+            const soportaDrivers = ['nps', 'ces', '1_5', 'csat_emoji', 'estrellas', 'pulgar'].includes(esc);
+            setCt({ encuesta: {
+              escala: esc,
+              drivers: soportaDrivers ? (c.contenido?.encuesta?.drivers || []) : [],
+              opciones: esc === 'opcion' ? (c.contenido?.encuesta?.opciones || []) : [],
+            } });
+          }}>
             {(catalogo?.escalas_encuesta || []).map((es: any) => <option key={es.id} value={es.id}>{es.etiqueta} — {es.desc}</option>)}
           </select>
           {c.contenido?.encuesta?.escala === 'opcion' && (<>

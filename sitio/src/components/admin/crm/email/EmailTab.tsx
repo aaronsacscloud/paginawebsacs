@@ -13,14 +13,16 @@ import Bandeja from './Bandeja';
 import SaludEmail from './SaludEmail';
 import Oportunidades from './Oportunidades';
 import Retorno from './Retorno';
+import ReglasWeb from './ReglasWeb';
 
-type Sec = 'oportunidades' | 'campanas' | 'audiencias' | 'plantillas' | 'bandeja' | 'salud' | 'retorno' | 'ajustes';
+type Sec = 'oportunidades' | 'disparadores' | 'campanas' | 'audiencias' | 'plantillas' | 'bandeja' | 'salud' | 'retorno' | 'ajustes';
 
 const SECCIONES: Array<{ id: Sec; label: string }> = [
   // Oportunidades va primero a propósito: es la pantalla que dice qué hacer
   // hoy con el dinero que ya está sobre la mesa. Campañas es la herramienta;
   // esto es la razón para abrirla.
   { id: 'oportunidades', label: 'Dinero en la mesa' },
+  { id: 'disparadores', label: 'Disparadores' },
   { id: 'campanas', label: 'Campañas' },
   { id: 'audiencias', label: 'Audiencias' },
   { id: 'plantillas', label: 'Plantillas' },
@@ -84,6 +86,7 @@ export default function EmailTab() {
       )}
 
       {sec === 'oportunidades' && <Oportunidades onIrA={s => setSec(s as Sec)} />}
+      {sec === 'disparadores' && <ReglasWeb onIrA={s => setSec(s as Sec)} />}
       {sec === 'campanas' && <Campanas onIrA={s => setSec(s as Sec)} />}
       {sec === 'audiencias' && <Audiencias />}
       {sec === 'plantillas' && <Plantillas />}

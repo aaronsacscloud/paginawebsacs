@@ -137,6 +137,14 @@ export const ESCALAS_ENCUESTA = [
 // cuantificable. El operador puede editar la lista por campaña.
 export const DRIVERS_DEFAULT = ['Soporte', 'Precio', 'Facilidad de uso', 'Funciones', 'Estabilidad', 'Capacitación'];
 
+// Cortes de sentimiento POR ESCALA (no hardcodear los de NPS): un 5 de CSAT es
+// promotor, no detractor. `esNps` marca cuáles admiten el score estilo NPS.
+export function cortesEscala(escala?: string | null): { det: number; prom: number; esNps: boolean } {
+  const e = ESCALAS_ENCUESTA.find(x => x.id === escala);
+  if (!e || e.min === e.max) return { det: -1, prom: 999, esNps: false }; // opción/desconocida: sin score
+  return { det: (e as any).detractorHasta, prom: (e as any).promotorDesde, esNps: escala === 'nps' };
+}
+
 // ── Plantillas de 1 clic ─────────────────────────────────────────────────────
 // Recetas destiladas de los casos de uso: elegir una precarga el editor
 // completo (audiencia, formato, meta, frecuencia y textos sugeridos). El

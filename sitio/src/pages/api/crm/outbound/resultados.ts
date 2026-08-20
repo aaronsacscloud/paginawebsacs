@@ -7,6 +7,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { leerPaginado } from '../../../../lib/outbound/motor';
+import { cortesEscala } from '../../../../lib/outbound/catalogo';
 
 export const prerender = false;
 
@@ -87,18 +88,21 @@ export const GET: APIRoute = async ({ url }) => {
       ctr: impresiones ? +(usuariosClic.size / usuariosVieron.size * 100).toFixed(1) : 0,
       cierres, descartes, chats_abiertos: chats,
       interes: interesados.size,
-      encuesta: encuesta.length ? {
-        respuestas: encuesta.length,
-        promedio: +(encuesta.reduce((a, b) => a + b, 0) / encuesta.length).toFixed(1),
-        respondio_valor: encuesta.length,
-        promotores: encuesta.filter(v => v >= 9).length,
-        pasivos: encuesta.filter(v => v === 7 || v === 8).length,
-        detractores: encuesta.filter(v => v <= 6).length,
-        score: Math.round((encuesta.filter(v => v >= 9).length - encuesta.filter(v => v <= 6).length) / encuesta.length * 100),
-        comentarios: comentarios.slice(0, 100),
-        drivers,
-        opciones: respuestas,
-      } : (Object.keys(respuestas).length ? { respondio_valor: 0, drivers, opciones: respuestas, comentarios: [] } : null),
+      encuesta: (encuesta.length || Object.keys(respuestas).length || Object.keys(drivers).length) ? (() => {
+        const cx = cortesEscala(c.contenido?.encuesta?.escala);
+        const prom = encuesta.filter(v => v >= cx.prom).length;
+        const det = encuesta.filter(v => v <= cx.det).length;
+        return {
+          respuestas: encuesta.length,
+          respondio_valor: encuesta.length,
+          promedio: encuesta.length ? +(encuesta.reduce((a, b) => a + b, 0) / encuesta.length).toFixed(1) : null,
+          promotores: prom, pasivos: encuesta.length - prom - det, detractores: det,
+          score: (cx.esNps && encuesta.length) ? Math.round((prom - det) / encuesta.length * 100) : null,
+          escala: c.contenido?.encuesta?.escala || 'nps',
+          comentarios: comentarios.slice(0, 100),
+          drivers, opciones: respuestas,
+        };
+      })() : null,
       citas: evs.filter(e => e.evento === 'cita_agendada').length,
       conversiones: {
         expuestas, control,

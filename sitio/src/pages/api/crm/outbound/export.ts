@@ -41,10 +41,10 @@ export const GET: APIRoute = async ({ url }) => {
 
   const TOPE = 100000;
   const rows = await leerPaginado((from, to) => supabase.from('inapp_eventos')
-    .select('cuenta, uid, evento, boton, valor, comentario, dia, created').eq('campana_id', id)
+    .select('cuenta, uid, evento, boton, valor, comentario, driver, respuesta, dia, created').eq('campana_id', id)
     .order('id', { ascending: true }).range(from, to), TOPE);
-  const filas = ['cuenta,uid,evento,boton,valor,comentario,dia,fecha'];
-  for (const r of rows) filas.push([esc(r.cuenta), esc(r.uid), esc(r.evento), esc(r.boton), esc(r.valor), esc(r.comentario), esc(r.dia), esc(r.created)].join(','));
+  const filas = ['cuenta,uid,evento,boton,valor,driver,respuesta,comentario,dia,fecha'];
+  for (const r of rows) filas.push([esc(r.cuenta), esc(r.uid), esc(r.evento), esc(r.boton), esc(r.valor), esc(r.driver), esc(r.respuesta), esc(r.comentario), esc(r.dia), esc(r.created)].join(','));
   if (rows.length >= TOPE) filas.push(`# AVISO: export truncado a ${TOPE} filas — hay más eventos`);
   return csv(`outbound-eventos-${id}.csv`, filas);
 };

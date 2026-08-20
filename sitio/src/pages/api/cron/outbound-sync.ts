@@ -10,6 +10,7 @@ import { supabase } from '../../../lib/supabase';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { resolverAudiencia, docParaSacs, despublicarCampana, leerPaginado } from '../../../lib/outbound/motor';
 import { normCuenta } from '../../../lib/crm/sacs-cuentas';
+import { cortesEscala } from '../../../lib/outbound/catalogo';
 import { notificar } from '../../../lib/crm/notificaciones';
 
 export const prerender = false;
@@ -71,18 +72,26 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
       // Alerta de DETRACTOR (NPS ≤ 6): el mismo día, no en el reporte del
       // trimestre. notificar() es idempotente por clave y nunca lanza.
       const encuestas = reales.filter((f: any) => f.evento === 'respuesta_encuesta' && f.valor != null);
+      // Escala por campaña (para saber qué es detractor en ESTA escala).
+      const escalaPorCamp: Record<string, string> = {};
+      if (encuestas.length) {
+        const idsE = Array.from(new Set(encuestas.map((f: any) => f.campana_id)));
+        const { data: campsE } = await supabase.from('inapp_campanas').select('id, contenido').in('id', idsE);
+        for (const c of (campsE || [])) escalaPorCamp[c.id] = c.contenido?.encuesta?.escala || 'nps';
+      }
       for (const d of encuestas) {
+        const cx = cortesEscala(escalaPorCamp[d.campana_id]);
         let companyId: string | null = null;
         try {
           const { data: fila } = await supabase.from('company_sacs_accounts').select('company_id').eq('cuenta', d.cuenta).maybeSingle();
           companyId = fila?.company_id || null;
         } catch { /* sin empresa ligada: el aviso sale igual */ }
-        if (Number(d.valor) <= 6) {
+        if (Number(d.valor) <= cx.det) {
           await notificar({
             clave: `outbound-detractor:${d.campana_id}:${d.uid}:${d.created}`,
             tipo: 'outbound_detractor',
             nivel: 'alerta',
-            titulo: `NPS detractor (${d.valor}) en ${d.cuenta}`,
+            titulo: `Encuesta detractor (${d.valor}) en ${d.cuenta}`,
             detalle: d.comentario ? `"${d.comentario}"` : 'Sin comentario. Vale una llamada de CS.',
             company_id: companyId,
             metadata: { campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor },
@@ -96,17 +105,15 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
             if (!yaTarea?.length) {
               await supabase.from('activities').insert({
                 company_id: companyId, tipo: 'tarea',
-                titulo: `Llamar: NPS detractor (${d.valor}) en ${d.cuenta}`,
+                titulo: `Llamar: encuesta detractor (${d.valor}) en ${d.cuenta}`,
                 descripcion: d.comentario ? `Comentario del cliente: "${d.comentario}"` : 'Respondió el NPS con calificación baja y sin comentario.',
                 metadata: { origen: 'outbound_detractor', campana_id: d.campana_id, cuenta: d.cuenta, valor: d.valor, evento_created: d.created },
               });
             }
           }
         }
-        // Promotor (9-10): queda marcado como interés "Promotor NPS" — la
-        // audiencia «Mostró interés en… Promotor NPS» permite encadenar la
-        // campaña de pedir reseña/testimonio (plantilla pedir_resena).
-        if (Number(d.valor) >= 9 && companyId) {
+        // Promotor (según la escala): interés "Promotor NPS" → plantilla de reseña.
+        if (Number(d.valor) >= cx.prom && cx.esNps && companyId) {
           try {
             // Merge leer-modificar-escribir: seguro dentro de un tick (ingesta
             // se await-ea completa antes del loop secuencial de campañas). Se
@@ -314,14 +321,17 @@ async function procesarCampana(c: any): Promise<any> {
       descartes, interes: interesados.size, conversiones,
       citas: citas.length,
       ingreso,
-      nps: npsValores.length ? {
-        respuestas: npsValores.length,
-        promedio: +(npsValores.reduce((a, b) => a + b, 0) / npsValores.length).toFixed(1),
-        promotores: npsValores.filter(v => v >= 9).length,
-        pasivos: npsValores.filter(v => v === 7 || v === 8).length,
-        detractores: npsValores.filter(v => v <= 6).length,
-        score: Math.round((npsValores.filter(v => v >= 9).length - npsValores.filter(v => v <= 6).length) / npsValores.length * 100),
-      } : null,
+      nps: npsValores.length ? (() => {
+        const cx = cortesEscala(c.contenido?.encuesta?.escala);
+        const prom = npsValores.filter(v => v >= cx.prom).length;
+        const det = npsValores.filter(v => v <= cx.det).length;
+        return {
+          respuestas: npsValores.length,
+          promedio: +(npsValores.reduce((a, b) => a + b, 0) / npsValores.length).toFixed(1),
+          promotores: prom, pasivos: npsValores.length - prom - det, detractores: det,
+          score: cx.esNps ? Math.round((prom - det) / npsValores.length * 100) : null,
+        };
+      })() : null,
       at: new Date().toISOString(),
     },
   }).eq('id', c.id);

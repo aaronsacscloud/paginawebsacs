@@ -74,23 +74,60 @@
   // Expose for signup form
   window.__sacsVisitor = getVisitor;
 
-  // Visitor identification for CRM
+  // ── Reporte de la visita al CRM ──────────────────────────────────────
+  //
+  // Antes esto solo corría si el navegador YA tenía el correo guardado, y
+  // además leía `sacs_visitor_id`, una llave que NADIE escribe (el id vive
+  // dentro del objeto `sacs_visitor`). Resultado: el 90% del tráfico —el
+  // anónimo— era invisible, y alguien podía pasar tres veces por la página de
+  // precios sin que el CRM se enterara. Peor: si esa persona después dejaba
+  // sus datos, su recorrido previo ya se había perdido, que es justo la parte
+  // que dice si venía comparando o si llegó por accidente.
+  //
+  // Ahora se reporta SIEMPRE, con el id anónimo del navegador. El servidor
+  // decide qué hace con eso: si no conoce a la persona, guarda la visita
+  // anónima y la liga hacia atrás el día que se identifique.
   try {
-    const visitorEmail = localStorage.getItem('sacs_visitor_email');
-    const visitorId = localStorage.getItem('sacs_visitor_id');
-    if (visitorEmail || visitorId) {
-      fetch('/api/tracking/identify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: visitorEmail || null,
-          visitor_id: visitorId || null,
-          page_url: window.location.pathname + window.location.search,
-          page_title: document.title,
-          referrer: document.referrer || null,
-        }),
-      }).catch(() => {});
+    var visitante = getVisitor();
+    var correoGuardado = localStorage.getItem('sacs_visitor_email');
+    var entrada = Date.now();
+    var reportado = false;
+
+    function reportar(segundos) {
+      if (reportado && !segundos) return;   // el periódico solo manda una vez
+      reportado = true;
+      var cuerpo = JSON.stringify({
+        email: correoGuardado || null,
+        visitor_id: visitante && visitante.id ? visitante.id : null,
+        page_url: window.location.pathname + window.location.search,
+        page_title: document.title,
+        referrer: document.referrer || null,
+        // Cuánto se quedó: distingue el rebote de la lectura real, que es
+        // media señal de intención. Se manda al salir, no al entrar.
+        segundos: segundos || null,
+      });
+      // sendBeacon sobrevive al cierre de la pestaña; fetch no siempre.
+      if (segundos && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/tracking/identify', new Blob([cuerpo], { type: 'application/json' }));
+      } else {
+        fetch('/api/tracking/identify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: cuerpo, keepalive: true,
+        }).catch(function () {});
+      }
     }
-  } catch {}
+
+    // Al entrar: la visita se registra de una, sin esperar a que se vaya.
+    reportar(0);
+
+    // Al salir: el tiempo real de permanencia.
+    function alSalir() {
+      var seg = Math.round((Date.now() - entrada) / 1000);
+      if (seg >= 3 && seg < 3600) reportar(seg);   // <3s es rebote, >1h es pestaña olvidada
+    }
+    window.addEventListener('pagehide', alSalir);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') alSalir();
+    });
+  } catch (e) {}
 })();
 </script>

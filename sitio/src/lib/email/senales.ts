@@ -45,6 +45,25 @@ export async function registrarVisita(v: Visita): Promise<void> {
     contactId = data?.id || null;
   }
 
+  // La misma página se reporta DOS veces: al entrar (sin tiempo) y al salir
+  // (con el tiempo real). Son un solo hecho: si se insertaran las dos, cada
+  // visita contaría doble en el puntaje y en los disparadores por número de
+  // visitas. La segunda ACTUALIZA a la primera.
+  if (v.segundos && (v.visitorId || email)) {
+    const hace = new Date(Date.now() - 2 * 3600000).toISOString();
+    let q = supabase.from('contact_visits').select('id')
+      .eq('ruta', String(v.ruta || '/').slice(0, 500)).is('segundos', null)
+      .gte('created_at', hace).order('created_at', { ascending: false }).limit(1);
+    q = v.visitorId ? q.eq('visitor_id', v.visitorId) : q.eq('email', email!);
+    const { data: previa } = await q.maybeSingle();
+    if (previa) {
+      await supabase.from('contact_visits')
+        .update({ segundos: v.segundos, contact_id: contactId || undefined })
+        .eq('id', previa.id);
+      return;
+    }
+  }
+
   await supabase.from('contact_visits').insert({
     contact_id: contactId,
     visitor_id: v.visitorId || null,

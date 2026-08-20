@@ -5,7 +5,7 @@ import { registrarVisita, ligarVisitasPrevias } from '../../../lib/email/senales
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  const { email, visitor_id, page_url, page_title, referrer } = await request.json();
+  const { email, visitor_id, page_url, page_title, referrer, segundos } = await request.json();
 
   if (!email && !visitor_id) {
     return new Response(JSON.stringify({ error: 'email or visitor_id required' }), { status: 400 });
@@ -35,7 +35,11 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     let ruta = String(page_url || '/');
     try { const u = new URL(ruta); ruta = u.pathname + (u.search || ''); } catch { /* ya venía relativa */ }
-    await registrarVisita({ visitorId: visitor_id || null, email: emailConfiable, ruta, titulo: page_title || null, referrer: referrer || null });
+    await registrarVisita({
+      visitorId: visitor_id || null, email: emailConfiable, ruta,
+      titulo: page_title || null, referrer: referrer || null,
+      segundos: Number.isFinite(Number(segundos)) && Number(segundos) > 0 ? Math.min(3600, Number(segundos)) : null,
+    });
   } catch { /* medir nunca puede tumbar la petición */ }
 
   // Find contact

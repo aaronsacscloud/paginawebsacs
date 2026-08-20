@@ -10,6 +10,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/reglas-web",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/tiktok-leads",
       "schedule": "*/15 * * * *"
     },
