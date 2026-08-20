@@ -191,7 +191,7 @@ async function armarCorreo(t: Tenant, c: Campana, m: { email: string; contact_id
     };
   }
   const bloques = (tpl?.bloques || []) as Bloque[];
-  return { html: compilar(bloques, ctx, t), texto: compilarTexto(bloques, ctx), ctx };
+  return { html: compilar(bloques, ctx, t, c.preview_text), texto: compilarTexto(bloques, ctx), ctx };
 }
 
 export interface Avance { procesados: number; enviados: number; rechazados: number; errores: number; quedan: number; terminada: boolean; motivo?: string }

@@ -43,30 +43,36 @@ interface Props {
 const { datos } = Astro.props;
 const { modelo, numeros, tiendas, traspasos, saldo, comprar, pasos } = datos;
 
+/* Cada paso con quién lo toca: sin esto la rejilla es una lista de verbos. */
+const PASOS_DETALLE = [
+  'El sistema arma la lista el lunes a las siete, ordenada por prioridad y agrupada por ruta.',
+  'El dueño o el gerente de operaciones. La tienda que envía nunca decide qué envía: el par que sale de su piso es comisión que su gerente no va a cobrar.',
+  'La tienda que envía, con lista de surtido por número y par escaneado. Sale de su inventario y queda en tránsito.',
+  'Con su documento y su caja rotulada. En tránsito el par no se vende, no se aparta y no aparece en tu tienda en línea.',
+  'La tienda que recibe, contra el documento y par por par. Lo que falta o llegó cambiado se marca ahí, no después.',
+  'Disponible en el mostrador, en línea y en WhatsApp, con el precio de la tienda destino. Y a las cuatro semanas el sistema mide cuántos de esos pares se vendieron allá.',
+];
+
 const paresDe = (t: { items: { pares: number }[] }) => t.items.reduce((a, i) => a + i.pares, 0);
 const totalMovido = traspasos.reduce((a, t) => a + paresDe(t), 0);
 const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) => x + y, 0), 0);
 ---
 
 <section class="nv" data-nivelacion={JSON.stringify(datos)}>
-  <div class="nv-head-wrap">
-    <header class="nv-head container">
-      <p class="nv-eyebrow">El lunes por la mañana</p>
-      <h2>La remesa que hoy armas en un cuaderno.</h2>
-      <p class="nv-sub">
-        Contra el corte del fin de semana, que es cuando se rompe la corrida. Esto es
-        {modelo.toLowerCase()} en tus cuatro tiendas: {totalExistencia} pares, los mismos antes y
-        después. Aplica los traspasos uno por uno y mira qué corrida se cierra.
-      </p>
-    </header>
-  </div>
+  <div class="nv-inner">
 
-  <!-- La pieza se apoya sobre la banda azul, igual que en las páginas de
-       producto: arriba respira blanco y abajo la banda la sostiene. -->
-  <div class="nv-visual">
-    <div class="nv-banda" aria-hidden="true"></div>
-    <div class="nv-inner container">
+    <div class="nv-hero">
+      <div class="nv-hero-txt">
+        <span class="nv-eyebrow">El lunes por la mañana</span>
+        <h2 class="nv-titulo">La remesa que hoy armas en un cuaderno.</h2>
+        <p class="nv-desc">
+          Contra el corte del fin de semana, que es cuando se rompe la corrida. Esto es
+          {modelo.toLowerCase()} en tus cuatro tiendas: {totalExistencia} pares, los mismos antes
+          y después. Aplica los traspasos uno por uno y mira qué corrida se cierra.
+        </p>
+      </div>
 
+      <div class="nv-hero-vis">
     <!-- ── La matriz: número × tienda ── -->
     <div class="nv-matriz">
       <div class="nv-matriz-cab">
@@ -105,6 +111,9 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         <li><i class="bajo"></i>Le queda menos de un mes de venta</li>
         <li><i class="mov"></i>Se movió en este paso</li>
       </ul>
+    </div>
+
+      </div>
     </div>
 
     <!-- ── Los traspasos, uno por uno ── -->
@@ -176,14 +185,18 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       </aside>
     </div>
 
-    <!-- ── De la sugerencia al piso ── -->
+    <!-- ── De la sugerencia al piso: la rejilla de la portada ── -->
     <div class="nv-pasos">
       <p class="nv-pasos-rot">Y así llega el par a piso</p>
-      <ol>
-        {pasos.map((p, i) => (
-          <li><span>{i + 1}</span>{p}</li>
+      <div class="nv-rejilla">
+        {pasos.map((paso, i) => (
+          <div class="nv-tarjeta">
+            <span class="nv-tarjeta-n">{i + 1}</span>
+            <h3>{paso}</h3>
+            <p>{PASOS_DETALLE[i]}</p>
+          </div>
         ))}
-      </ol>
+      </div>
       <p class="nv-pasos-pie">
         El par sale del origen y queda <b>en tránsito</b>: no se vende, no se aparta y no aparece
         en tu tienda en línea hasta que la otra tienda lo recibe contra el documento. Si entrara
@@ -196,22 +209,42 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       </p>
     </div>
 
-    </div>
   </div>
 </section>
 
 <style>
-  .nv { background: #fff; color: var(--color-text-primary, #1a1a2e); padding: 76px 0 0; }
-  .nv-head-wrap { padding: 0 clamp(16px, 2vw, 32px); }
-  .nv-visual { position: relative; padding-bottom: clamp(40px, 5vw, 64px); }
-  /* La banda arranca a un cuarto de la altura: la pieza queda medio apoyada
-     sobre ella, que es lo que le da el aire de las páginas de producto. */
-  .nv-banda {
-    position: absolute; top: 22%; left: clamp(16px, 2vw, 32px); right: clamp(16px, 2vw, 32px); bottom: 0;
-    border-radius: 24px 24px 0 0;
-    background: linear-gradient(180deg, #2A5FD4 0%, #4B7BE5 55%, #6B9BF7 100%);
+  /* Mismo patrón que la sección de inventario inteligente de la portada:
+     texto a la izquierda, la pieza a la derecha, y las tarjetas debajo. */
+  .nv {
+    background: var(--color-bg-primary, #FAFAF8);
+    color: var(--color-text-primary, #1a1a2e);
+    padding: clamp(72px, 9vw, 120px) 0 clamp(40px, 5vw, 64px);
   }
-  .nv-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+  .nv-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+  .nv-hero {
+    display: flex; flex-direction: column; gap: clamp(32px, 5vw, 56px);
+    margin-bottom: clamp(44px, 6vw, 72px);
+  }
+  @media (min-width: 1100px) { .nv-hero { flex-direction: row; align-items: center; } }
+  .nv-hero-txt { flex: 1; min-width: 0; }
+  .nv-hero-vis { flex: 1.35; min-width: 0; }
+
+  .nv-eyebrow {
+    display: inline-block; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--color-text-tertiary, #8C8C8C); margin-bottom: 16px;
+  }
+  .nv-titulo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2rem, 4.5vw, 3.25rem); font-weight: 800; line-height: 1.05;
+    letter-spacing: -.04em; color: var(--color-text-primary, #1a1a2e);
+    margin: 0 0 20px; max-width: 520px;
+  }
+  .nv-desc {
+    font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.65;
+    color: var(--color-text-secondary, #4A4A4A); max-width: 480px; margin: 0;
+  }
 
   .nv-head { margin-bottom: clamp(40px, 5vw, 60px); }
   .nv-head h2, .nv-head .nv-sub { max-width: 760px; }
@@ -228,27 +261,27 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
   /* ── La matriz ── */
   .nv-matriz {
-    background: #fff; border-radius: 18px; padding: 24px 26px 22px; margin-bottom: 26px;
-    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.12);
+    background: #fff; border-radius: 18px; padding: 22px 24px 20px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.1);
   }
   .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
   .nv-modelo { font-size: 14px; font-weight: 800; letter-spacing: -.2px; color: var(--color-text-primary, #1a1a2e); }
   .nv-estado { font-size: 12px; font-weight: 700; color: #4B7BE5; }
 
   .nv-tabla-envoltura { overflow-x: auto; }
-  .nv-tabla { width: 100%; border-collapse: separate; border-spacing: 5px; min-width: 620px; }
+  .nv-tabla { width: 100%; border-collapse: separate; border-spacing: 4px; min-width: 540px; }
   .nv-tabla th {
     font-size: 11px; font-weight: 800; color: var(--color-text-tertiary, #8C8C8C);
     padding-bottom: 4px; text-align: center;
   }
-  .nv-th-tienda { text-align: left !important; font-size: 12.5px !important; color: var(--color-text-primary, #1a1a2e) !important; white-space: nowrap; padding-right: 10px; }
+  .nv-th-tienda { text-align: left !important; font-size: 12px !important; color: var(--color-text-primary, #1a1a2e) !important; white-space: nowrap; padding-right: 10px; }
   .nv-th-total { color: #C0C0C8 !important; }
   .nv-celda {
-    width: 44px; height: 38px; text-align: center; border-radius: 9px;
+    width: 36px; height: 34px; text-align: center; border-radius: 8px;
     background: #E6F7F3; border: 1px solid #B9E8DE;
     transition: background .45s ease, border-color .45s ease, transform .45s ease;
   }
-  .nv-celda b { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #12796A; }
+  .nv-celda b { font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #12796A; }
   /* Cero en un número que esa tienda SÍ vende: eso es el hueco que duele. */
   .nv-celda.hueco { background: #FDE7E7; border-color: #F3AEAE; }
   .nv-celda.hueco b { color: #C22F2F; }
@@ -274,15 +307,15 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-cuerpo { display: grid; grid-template-columns: 1.25fr 1fr; gap: 30px; align-items: start; }
   .nv-lista-rot {
     margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: rgba(255,255,255,.85);
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
   .nv-lista-rot em {
     font-style: normal; margin-left: 8px; padding: 3px 9px; border-radius: 999px;
-    background: rgba(255,255,255,.2); letter-spacing: .06em;
+    background: #EAF0FD; color: #2A5FD4; letter-spacing: .06em;
   }
   .nv-tr {
-    background: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 8px 22px rgba(15,23,42,.1);
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.05);
     transition: opacity .3s ease;
   }
   .nv-tr.hecho { opacity: .5; }
@@ -313,7 +346,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
      primero, porque el primero es el que le deja los pares al segundo. */
   .nv-aplicar[disabled] { background: #E2E8F0; color: #A0A6B0; cursor: default; }
   .nv-reiniciar {
-    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 50px;
+    background: none; border: 1px solid rgba(0,0,0,.16); color: var(--color-text-secondary, #4A4A4A); border-radius: 50px;
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
@@ -350,27 +383,56 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-cta:hover { transform: scale(1.02); }
 
   /* ── De la sugerencia al piso ── */
-  .nv-pasos { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,.28); }
+  .nv-pasos { margin-top: clamp(48px, 6vw, 72px); }
   .nv-pasos-rot {
-    margin: 0 0 18px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
-    text-transform: uppercase; color: rgba(255,255,255,.85);
+    margin: 0 0 4px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
   }
-  .nv-pasos ol { list-style: none; margin: 0 0 18px; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; }
-  .nv-pasos li {
-    display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 700;
+  .nv-rejilla {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid rgba(0,0,0,.08); margin-top: 20px;
+  }
+  .nv-tarjeta {
+    padding: clamp(26px, 3vw, 36px) clamp(18px, 2.5vw, 28px);
+    border-bottom: 1px solid rgba(0,0,0,.08); border-right: 1px solid rgba(0,0,0,.08);
+  }
+  .nv-tarjeta:nth-child(3n) { border-right: none; }
+  .nv-tarjeta:nth-child(n+4) { border-bottom: none; }
+  .nv-tarjeta-n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; margin-bottom: 18px;
+    background: #EAF0FD; color: #2A5FD4; font-size: 12px; font-weight: 800;
+  }
+  .nv-tarjeta h3 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    margin: 0 0 8px; font-size: 1.0625rem; font-weight: 700; letter-spacing: -.02em;
     color: var(--color-text-primary, #1a1a2e);
-    background: #fff; border-radius: 50px; padding: 8px 16px 8px 8px;
-    box-shadow: 0 2px 8px rgba(15,23,42,.12);
   }
-  .nv-pasos li span {
-    width: 22px; height: 22px; border-radius: 50%; background: #EAF0FD; color: #2A5FD4;
-    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+  .nv-tarjeta p {
+    margin: 0; font-size: 0.875rem; line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
   }
-  .nv-pasos-pie { margin: 0; font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.88); max-width: 82ch; }
-  .nv-pasos-pie b { color: #fff; }
+  .nv-pasos-pie {
+    margin: clamp(28px, 3vw, 40px) 0 0; font-size: 0.9375rem; line-height: 1.7;
+    color: var(--color-text-secondary, #4A4A4A); max-width: 82ch;
+  }
+  .nv-pasos-pie b { color: var(--color-text-primary, #1a1a2e); }
+
+  @media (max-width: 1023px) {
+    .nv-rejilla { grid-template-columns: repeat(2, 1fr); }
+    .nv-tarjeta:nth-child(3n) { border-right: 1px solid rgba(0,0,0,.08); }
+    .nv-tarjeta:nth-child(2n) { border-right: none; }
+    .nv-tarjeta:nth-child(n+4) { border-bottom: 1px solid rgba(0,0,0,.08); }
+    .nv-tarjeta:nth-last-child(-n+2) { border-bottom: none; }
+  }
+  @media (max-width: 767px) {
+    .nv-rejilla { grid-template-columns: 1fr; }
+    .nv-tarjeta { border-right: none; border-bottom: 1px solid rgba(0,0,0,.08); }
+    .nv-tarjeta:last-child { border-bottom: none; }
+  }
 
   @media (max-width: 980px) {
-    .nv { padding: 56px 0 0; }
     .nv-cuerpo { grid-template-columns: 1fr; gap: 24px; }
     .nv-matriz { padding: 18px 16px 16px; }
   }

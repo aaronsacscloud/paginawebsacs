@@ -61,9 +61,9 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 /** Compila y valida: una sola función para crear, actualizar y previsualizar. */
-function preparar(bloques: Bloque[], t: any, ctxDemo = true) {
+function preparar(bloques: Bloque[], t: any, ctxDemo = true, preview?: string | null) {
   const ctx = ctxDemo ? { nombre: 'Ana', apellido: 'Pérez', empresa: 'Boutique Ejemplo', plan: 'Plan Controla' } : {};
-  const html = compilar(bloques, ctx, t);
+  const html = compilar(bloques, ctx, t, preview);
   const texto = compilarTexto(bloques, ctx);
   const peso = pesoKb(html);
   const sinRespaldo = variablesSinRespaldo(bloques);
@@ -81,10 +81,10 @@ export const POST: APIRoute = async ({ request, url }) => {
   const bloques = (body.bloques || []) as Bloque[];
 
   // Vista previa: compila sin guardar.
-  if (body.preview) return json(preparar(bloques, t));
+  if (body.preview) return json(preparar(bloques, t, true, body.preview_text));
 
   if (!body?.nombre?.trim()) return json({ error: 'Ponle nombre a la plantilla.' }, 400);
-  const p = preparar(bloques, t);
+  const p = preparar(bloques, t, true, body.preview_text);
   const { data, error } = await supabase.from('email_templates').insert({
     tenant_id: t.id, nombre: body.nombre.trim(), asunto: body.asunto || null,
     preview_text: body.preview_text || null, bloques,
@@ -107,7 +107,7 @@ export const PUT: APIRoute = async ({ request, url }) => {
   for (const k of ['nombre', 'asunto', 'preview_text', 'categoria']) if (k in body) updates[k] = body[k];
   let avisos: string[] = [];
   if (body.bloques) {
-    const p = preparar(body.bloques as Bloque[], t);
+    const p = preparar(body.bloques as Bloque[], t, true, body.preview_text ?? undefined);
     updates.bloques = body.bloques; updates.html_compilado = p.html; updates.texto_plano = p.texto;
     avisos = p.avisos;
   }

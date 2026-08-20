@@ -276,6 +276,22 @@ async function evaluarCondicion(cfg: any, contactId: string): Promise<boolean> {
       .eq('contact_id', contactId).gte('created_at', desde);
     return (count || 0) > 0;
   }
+  if (tipo === 'visito_pagina') {
+    // La señal más fuerte que existe: entró al sitio DESPUÉS del correo. Sale
+    // del propio redirector (el clic aterriza en una página nuestra) y del
+    // registro de visitas del CRM.
+    const { data: clics } = await supabase.from('email_sends')
+      .select('clicked_links').eq('contact_id', contactId)
+      .not('clicked_at', 'is', null).gte('created_at', desde).limit(50);
+    const patron = String(cfg?.ruta || cfg?.valor || '').toLowerCase();
+    for (const s of clics || []) {
+      for (const l of ((s.clicked_links || []) as any[])) {
+        const u = String(l?.url || '').toLowerCase();
+        if (!patron || u.includes(patron)) return true;
+      }
+    }
+    return false;
+  }
   if (tipo === 'hizo_clic') {
     const { count } = await supabase.from('email_sends').select('id', { count: 'exact', head: true })
       .eq('contact_id', contactId).not('clicked_at', 'is', null).gte('created_at', desde);
@@ -496,6 +512,29 @@ async function avanzarUna(e: Inscripcion): Promise<{ correos: number; completada
     pasos_dados: (e.pasos_dados || 0) + 1, locked_at: null,
   }).eq('id', e.id);
   return { correos, completada: false };
+}
+
+/**
+ * Empuja de inmediato las inscripciones recién creadas.
+ *
+ * El cron corre cada 5 minutos: un "gracias por tu interés" que llega 5
+ * minutos tarde ya perdió el momento de máxima atención, que son los primeros
+ * segundos. Esto se llama desde donde nace el lead (save-lead) para que el
+ * primer paso salga en el mismo request, y el cron se queda con el resto.
+ *
+ * Nunca lanza: que falle el correo de bienvenida no puede tumbar el alta del
+ * lead, que es lo que de verdad importa guardar.
+ */
+export async function empujarContacto(contactId: string): Promise<number> {
+  try {
+    const { data } = await supabase.from('automation_enrollments')
+      .select('id').eq('contact_id', contactId).eq('estado', 'activo')
+      .lte('next_action_at', new Date().toISOString()).limit(3);
+    if (!data?.length) return 0;
+    // Presupuesto corto: va dentro de un request de alta, no de un cron.
+    const av = await procesarInscripciones(8000);
+    return av.correos;
+  } catch { return 0; }
 }
 
 /**

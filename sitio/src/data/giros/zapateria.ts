@@ -484,42 +484,45 @@ export const documentosZapateria = {
 export const casosZapateria = [
   {
     id: 'mostrador',
-    titulo: 'Sábado, 1 p.m.: te piden el 24 y hay tres personas esperando',
+    cuando: 'Sábado, 1 p.m.',
+    titulo: '“¿Me lo trae en el 24?”',
     texto:
-      'La vendedora está hincada junto al probador con el pie del cliente en la mano — y ahí mismo ve si ese número existe, sin levantarse ni caminar a la bodega. Si aquí no está, ve en qué sucursal sí y lo aparta en el momento.',
-    remate: 'Cada viaje a bodega en sábado son cuatro o cinco minutos con otros dos clientes esperando.',
+      'La vendedora está hincada junto al probador, con el pie del cliente en la mano. Ahí mismo ve si ese número existe — y si aquí no, en qué tienda sí y lo aparta.',
+    remate: 'Cada viaje a la bodega son cinco minutos con otros dos clientes esperando.',
     img: '/images/caso-zap-mostrador.webp',
     alt: 'Vendedora hincada junto al banco del probador calzando a una clienta con calzador, con tres cajas abiertas en el piso',
   },
   {
     id: 'quincena',
-    titulo: 'Viernes 15, 7 p.m.: el día que más vendes del mes',
+    cuando: 'Viernes 15, 7 p.m.',
+    titulo: 'El día que más vendes del mes',
     texto:
-      'Entra de golpe la gente que llevaba quince días viendo el aparador y la que viene a liquidar su apartado. Cada apartado se busca por teléfono, se cobra el resto y sale con su par, sin buscar el papelito en la carpeta.',
-    remate: 'La quincena y el día 30 hacen la mitad del mes. Es cuando el mostrador no puede detenerse.',
+      'Entra de golpe quien llevaba quince días viendo el aparador y quien viene a liquidar su apartado. Se busca por teléfono, se cobra el resto y sale con su par.',
+    remate: 'La quincena y el día 30 hacen la mitad del mes.',
     img: '/images/caso-zap-quincena.webp',
     alt: 'Fila de clientes con cajas de zapatos en la caja de una zapatería un viernes por la tarde',
   },
   {
     id: 'recepcion',
-    titulo: 'Llegó la segunda remesa y no trae lo que dice la remisión',
+    cuando: 'Llega la segunda remesa',
+    titulo: 'La caja dice 24 y adentro viene 25',
     texto:
-      'Se recibe contra la orden de compra, par por par y número por número. Lo que falta, lo que llegó de más y —el error de siempre— la caja rotulada 24 que adentro trae 25, todo queda a la vista antes de firmar.',
-    remate: 'El proveedor de León manda en tres remesas: sin esto, a media temporada nadie sabe qué falta.',
+      'Se recibe contra la orden de compra, par por par y número por número: lo que falta, lo que llegó de más y lo que viene cambiado, todo antes de firmar.',
+    remate: 'León manda en tres remesas. Sin esto, a media temporada nadie sabe qué falta.',
     img: '/images/caso-zap-recepcion.webp',
     alt: 'Empleado abriendo una caja madre con doce cajas de zapatos de canto, con la remisión en la mano',
   },
   {
     id: 'escolar',
-    titulo: 'Del 15 al 30 de agosto se juega el año',
+    cuando: '15 al 30 de agosto',
+    titulo: 'Se juega el año en quince días',
     texto:
-      'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco de deportes, y al niño se le mide el pie antes de traer caja. El número se agota en horas y la reposición diaria por número te dice qué pedir hoy.',
-    remate: 'Si el cliente no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
+      'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco. Y al niño se le mide el pie antes de traer caja.',
+    remate: 'Si no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
     img: '/images/caso-zap-escolar.webp',
     alt: 'Vendedora hincada revisando la punta del zapato escolar que el niño ya trae puesto, con la caja abierta y el tenis blanco del segundo par en el piso',
   },
 ];
-
 /* ── Las cuatro etapas del negocio, con lo que significan en una zapatería.
    No son planes: son las cuatro cosas que la tienda hace todos los días. Cada
    punto existe de verdad en el sistema — la referencia es src/data/plans.ts. */

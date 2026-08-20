@@ -19,7 +19,8 @@ import type { Tenant } from './tenant';
 
 export type TipoBloque =
   | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
-  | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes';
+  | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes'
+  | 'cuenta';
 
 export interface Bloque { id: string; tipo: TipoBloque; [k: string]: any }
 
@@ -75,7 +76,7 @@ const url = (s: unknown, ctx: Contexto) => {
   const u = interpolar(String(s ?? ''), ctx).trim();
   return /^(https?:|mailto:|tel:)/i.test(u) ? escapar(u) : '#';
 };
-const fila = (contenido: string) => `<tr><td style="padding:0 32px;">${contenido}</td></tr>`;
+const fila = (contenido: string) => `<tr><td class="em-pad" style="padding:0 32px;">${contenido}</td></tr>`;
 
 function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
   const acento = escapar(b.color || t.color_acento || '#5B4BD6');
@@ -93,10 +94,10 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
     case 'encabezado': {
       const n = Math.min(3, Math.max(1, Number(b.nivel) || 2));
       const tam = [26, 21, 17][n - 1];
-      return fila(`<div style="${FA}font-size:${tam}px;font-weight:800;color:#1a1633;line-height:1.3;padding-top:20px;">${txt(b.texto, ctx)}</div>`);
+      return fila(`<div class="em-tinta ${n === 1 ? 'em-h1' : ''}" style="${FA}font-size:${tam}px;font-weight:800;color:#1a1633;line-height:1.3;padding-top:20px;">${txt(b.texto, ctx)}</div>`);
     }
     case 'texto':
-      return fila(`<div style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
+      return fila(`<div class="em-tinta" style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
     case 'imagen': {
       const img = `<img src="${url(b.src, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${ANCHO - 64}" style="display:block;width:100%;max-width:${ANCHO - 64}px;height:auto;border:0;border-radius:10px;">`;
       return fila(`<div style="padding-top:16px;">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}</div>`);
@@ -106,42 +107,69 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       const align = ['left', 'center', 'right'].includes(b.align) ? b.align : 'left';
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;" align="${align}"><tr>
         <td style="background:${acento};border-radius:9px;">
-          <a href="${url(b.href, ctx)}" style="${FA}display:inline-block;padding:13px 26px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${txt(b.texto || 'Ver más', ctx)}</a>
+          <a href="${url(b.href, ctx)}" class="em-btn" style="${FA}display:inline-block;padding:13px 26px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${txt(b.texto || 'Ver más', ctx)}</a>
         </td></tr></table>`);
     }
     case 'separador':
-      return fila(`<div style="border-top:1px solid #E8E5F0;margin-top:24px;"></div>`);
+      return fila(`<div class="em-linea" style="border-top:1px solid #E8E5F0;margin-top:24px;"></div>`);
     case 'espaciador':
       return `<tr><td style="height:${Math.min(80, Math.max(4, Number(b.alto) || 20))}px;line-height:1px;font-size:1px;">&nbsp;</td></tr>`;
     case 'dos_columnas': {
-      const col = (c: any) => `<td width="50%" valign="top" style="${FA}font-size:14px;line-height:1.6;color:#444;padding:0 8px;">
-        ${c?.titulo ? `<div style="font-weight:700;color:#1a1633;margin-bottom:4px;font-size:15px;">${txt(c.titulo, ctx)}</div>` : ''}
+      // `em-col` apila las columnas en móvil: 73% de las aperturas de esta
+    // cuenta son webmail/teléfono, y dos columnas a 300px son ilegibles.
+    const col = (c: any) => `<td width="50%" valign="top" class="em-col em-tinta" style="${FA}font-size:14px;line-height:1.6;color:#444;padding:0 8px;">
+        ${c?.titulo ? `<div class="em-tinta" style="font-weight:700;color:#1a1633;margin-bottom:4px;font-size:15px;">${txt(c.titulo, ctx)}</div>` : ''}
         ${txt(c?.texto || '', ctx)}</td>`;
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>${col(b.izquierda)}${col(b.derecha)}</tr></table>`);
     }
     case 'cita':
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr>
         <td style="border-left:3px solid ${acento};padding:4px 0 4px 16px;${FA}">
-          <div style="font-size:15px;line-height:1.6;color:#333;font-style:italic;">"${txt(b.texto, ctx)}"</div>
-          ${b.autor ? `<div style="font-size:13px;color:#8a8a92;margin-top:7px;">— ${txt(b.autor, ctx)}</div>` : ''}
+          <div class="em-tinta" style="font-size:15px;line-height:1.6;color:#333;font-style:italic;">"${txt(b.texto, ctx)}"</div>
+          ${b.autor ? `<div class="em-suave" style="font-size:13px;color:#8a8a92;margin-top:7px;">— ${txt(b.autor, ctx)}</div>` : ''}
         </td></tr></table>`);
     case 'lista': {
       const items = (Array.isArray(b.items) ? b.items : []).map((i: any) =>
         `<tr><td valign="top" style="${FA}font-size:15px;line-height:1.6;color:${acento};padding:5px 9px 0 0;font-weight:800;">&bull;</td>
-             <td style="${FA}font-size:15px;line-height:1.6;color:#333;padding-top:5px;">${txt(i, ctx)}</td></tr>`).join('');
+             <td class="em-tinta" style="${FA}font-size:15px;line-height:1.6;color:#333;padding-top:5px;">${txt(i, ctx)}</td></tr>`).join('');
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:14px;">${items}</table>`);
     }
     case 'planes': {
       const planes = (Array.isArray(b.planes) ? b.planes : []).slice(0, 3);
       const ancho = Math.floor(100 / Math.max(1, planes.length));
       const celdas = planes.map((p: any) => `<td width="${ancho}%" valign="top" style="padding:0 5px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E8E5F0;border-radius:10px;"><tr>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-linea em-tarjeta" style="border:1px solid #E8E5F0;border-radius:10px;"><tr>
           <td style="${FA}padding:16px;text-align:center;">
             <div style="font-size:13px;font-weight:800;color:${acento};text-transform:uppercase;letter-spacing:.5px;">${txt(p?.nombre, ctx)}</div>
-            <div style="font-size:22px;font-weight:800;color:#1a1633;margin-top:6px;">${txt(p?.precio, ctx)}</div>
-            <div style="font-size:13px;color:#6a6a72;line-height:1.5;margin-top:6px;">${txt(p?.detalle || '', ctx)}</div>
+            <div class="em-tinta" style="font-size:22px;font-weight:800;color:#1a1633;margin-top:6px;">${txt(p?.precio, ctx)}</div>
+            <div class="em-suave" style="font-size:13px;color:#6a6a72;line-height:1.5;margin-top:6px;">${txt(p?.detalle || '', ctx)}</div>
           </td></tr></table></td>`).join('');
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr>${celdas}</tr></table>`);
+    }
+    case 'cuenta': {
+      // Un correo que le habla a alguien de SUS datos se lee distinto a uno
+      // genérico. Los renglones se arman solo con lo que de verdad se sabe:
+      // un dato vacío no se pinta, en vez de dejar "Plan: —".
+      const filas: Array<[string, string]> = [];
+      const agrega = (etiqueta: string, valor: unknown) => {
+        const v = String(valor ?? '').trim();
+        if (v) filas.push([etiqueta, v]);
+      };
+      agrega('Empresa', ctx.empresa);
+      agrega('Plan', ctx.plan);
+      agrega('Renovación', (ctx as any).renovacion);
+      agrega(b.etiqueta_monto || 'Monto', ctx.monto_renovacion ? String(ctx.monto_renovacion) : '');
+      agrega('Sucursales', ctx.sucursales);
+      if (!filas.length) return '';   // sin datos no se pinta una tarjeta vacía
+      const renglones = filas.map(([k, v]) => `
+        <tr>
+          <td class="em-suave" style="${FA}font-size:13px;color:#8a8a92;padding:5px 12px 5px 0;white-space:nowrap;">${escapar(k)}</td>
+          <td class="em-tinta" style="${FA}font-size:14px;color:#1a1633;font-weight:700;padding:5px 0;">${escapar(v)}</td>
+        </tr>`).join('');
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-cita em-linea" style="margin-top:20px;background:#F8F7FC;border:1px solid #E8E5F0;border-radius:10px;"><tr><td style="padding:14px 16px;">
+        ${b.titulo ? `<div class="em-suave" style="${FA}font-size:11px;font-weight:800;color:#8a8a92;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${txt(b.titulo, ctx)}</div>` : ''}
+        <table role="presentation" cellpadding="0" cellspacing="0">${renglones}</table>
+      </td></tr></table>`);
     }
     case 'firma': {
       // La firma sale del INQUILINO: un partner firma con su nombre, no el nuestro.
@@ -150,8 +178,8 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:26px;"><tr>
         ${foto ? `<td width="52" valign="top"><img src="${escapar(foto)}" width="44" height="44" alt="" style="border-radius:50%;display:block;border:0;"></td>` : ''}
         <td valign="middle" style="${FA}">
-          <div style="font-size:14px;font-weight:700;color:#1a1633;">${escapar(nombre)}</div>
-          ${b.puesto ? `<div style="font-size:13px;color:#8a8a92;">${escapar(b.puesto)}</div>` : ''}
+          <div class="em-tinta" style="font-size:14px;font-weight:700;color:#1a1633;">${escapar(nombre)}</div>
+          ${b.puesto ? `<div class="em-suave" style="font-size:13px;color:#8a8a92;">${escapar(b.puesto)}</div>` : ''}
         </td></tr></table>`);
     }
     default:
@@ -159,19 +187,74 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
   }
 }
 
+/**
+ * PREHEADER — la segunda línea que se ve en la bandeja, junto al asunto.
+ *
+ * Sin esto, Gmail la rellena con las primeras palabras del correo (casi
+ * siempre el título del hero, o sea información repetida). Es una línea de
+ * venta gratis en cada envío y estaba desperdiciada: `preview_text` se
+ * guardaba en la base pero nunca llegaba al HTML.
+ *
+ * El relleno de después existe porque, sin él, el cliente sigue "leyendo"
+ * texto del cuerpo hasta llenar su vista previa.
+ */
+function preheader(texto?: string | null): string {
+  const t = String(texto || '').trim();
+  if (!t) return '';
+  return `<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">`
+    + escapar(t)
+    + '&#8199;&#65279;&#847; '.repeat(60)
+    + '</div>';
+}
+
+/**
+ * MODO OSCURO.
+ *
+ * Gmail —que es el 68% de las aperturas de esta cuenta— invierte los colores
+ * por su cuenta cuando el correo no declara nada. Un hero oscuro con texto
+ * blanco puede quedar con texto blanco sobre fondo blanco. Declarando
+ * `color-scheme` y dando una paleta explícita, el cliente respeta el diseño en
+ * vez de inventarlo.
+ *
+ * Apple Mail e iOS respetan las media queries; Gmail en móvil hace su propia
+ * inversión pero `color-scheme` la vuelve predecible. Outlook las ignora y se
+ * queda con la versión clara, que es correcta.
+ */
+const ESTILOS = `
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .em-fondo   { background:#14131A !important; }
+    .em-tarjeta { background:#1E1C27 !important; }
+    .em-tinta   { color:#ECEAF3 !important; }
+    .em-suave   { color:#A9A4B8 !important; }
+    .em-linea   { border-color:#332F40 !important; }
+    .em-cita    { background:#231F30 !important; }
+  }
+  @media only screen and (max-width:620px) {
+    .em-pad  { padding-left:20px !important; padding-right:20px !important; }
+    .em-h1   { font-size:23px !important; }
+    .em-col  { display:block !important; width:100% !important; padding:0 0 14px 0 !important; }
+    .em-btn  { display:block !important; text-align:center !important; }
+  }
+`;
+
 /** El HTML completo del correo (sin el pie legal: ese lo pone el pipeline). */
-export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant): string {
+export function compilar(bloques: Bloque[], ctx: Contexto, t: Tenant, preview?: string | null): string {
   const cuerpo = (bloques || []).map(b => bloqueHtml(b, ctx, t)).join('\n');
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
 <title>${escapar(t.nombre)}</title>
+<style type="text/css">${ESTILOS}</style>
 </head>
-<body style="margin:0;padding:0;background:#F4F3F7;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3F7;">
+<body class="em-fondo" style="margin:0;padding:0;background:#F4F3F7;">
+${preheader(preview)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="em-fondo" style="background:#F4F3F7;">
 <tr><td align="center" style="padding:24px 12px;">
-  <table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
+  <table role="presentation" width="${ANCHO}" cellpadding="0" cellspacing="0" class="em-tarjeta" style="width:100%;max-width:${ANCHO}px;background:#fff;border-radius:14px;overflow:hidden;">
     ${cuerpo}
     <tr><td style="height:28px;line-height:1px;font-size:1px;">&nbsp;</td></tr>
   </table>
@@ -193,6 +276,12 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
       case 'lista': for (const it of (b.items || [])) p.push('· ' + i(it)); break;
       case 'dos_columnas': p.push(i(b.izquierda?.texto || ''), i(b.derecha?.texto || '')); break;
       case 'planes': for (const pl of (b.planes || [])) p.push(`${i(pl?.nombre)}: ${i(pl?.precio)} — ${i(pl?.detalle || '')}`); break;
+      case 'cuenta': {
+        for (const [k, v] of [['Empresa', ctx.empresa], ['Plan', ctx.plan], ['Sucursales', ctx.sucursales]] as any[]) {
+          if (String(v ?? '').trim()) p.push(`${k}: ${v}`);
+        }
+        break;
+      }
       case 'firma': p.push('', i(b.nombre || ''), i(b.puesto || '')); break;
       case 'separador': p.push('—'); break;
     }

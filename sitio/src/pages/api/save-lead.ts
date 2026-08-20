@@ -241,6 +241,18 @@ export const POST: APIRoute = async ({ request }) => {
           automatico: true,
         });
       }
+      // El primer paso del embudo sale AHORA, no en el próximo tick del cron:
+      // cinco minutos de retraso en un "gracias por tu interés" es la
+      // diferencia entre llegar cuando la persona sigue en la pestaña y
+      // llegar cuando ya se fue. Ver empujarContacto().
+      const empujar = async (cid: string | null) => {
+        if (!cid) return;
+        try {
+          const { empujarContacto } = await import('../../lib/email/embudos');
+          await empujarContacto(cid);
+        } catch { /* que falle el correo no puede tumbar el alta del lead */ }
+      };
+
       // Auto-enroll new lead in welcome automation
       try {
         const { data: welcomeAutos } = await supabase
@@ -275,7 +287,11 @@ export const POST: APIRoute = async ({ request }) => {
             }).catch(() => {}); // Ignore duplicates
           }
         }
+      }
       } catch {}
+      // Fuera del try de la inscripción a propósito: si esa parte falló, el
+      // empuje no tiene nada que hacer, pero tampoco debe impedirse.
+      await empujar(contactId);
     } catch (crmErr) {
       console.error('CRM save error:', crmErr);
     }

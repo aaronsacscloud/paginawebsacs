@@ -24,7 +24,6 @@ import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import ZapCorridaCerrada from '../../components/giros/ZapCorridaCerrada.astro';
-import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
 import ZapNivelacion from '../../components/giros/ZapNivelacion.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
@@ -32,8 +31,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import {
-  seccionesZapateria, casosZapateria, cortinaZapateria, sucursalesZapateria,
-  reglasZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
+  seccionesZapateria, casosZapateria, cortinaZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
   nivelacionZapateria,
 } from '../../data/giros/zapateria';
 
@@ -95,18 +93,6 @@ const desc =
     unidad="pares"
     leyendas={['Con pares', 'Último par', 'Agotado']}
   />
-detrás de"
-    resalte="“un botín de dama”"
-    sub="Once números con medios, por dos colores, en tres sucursales. Sesenta y seis casillas de un solo modelo. Las apagadas son las que rompen la corrida — y son justo las que te están pidiendo."
-    matriz={[
-      [1, 2, 0, 0, 0, 0, 3, 4, 3, 2, 2],
-      [1, 1, 2, 0, 0, 1, 4, 5, 4, 2, 1],
-    ]}
-    ejeA={['22', '22½', '23', '23½', '24', '24½', '25', '25½', '26', '26½', '27']}
-    ejeB={['Café', 'Negro']}
-    capas={3}
-    leyendas={['Con pares', 'Último par', 'Agotado']}
-  />
 
   <!-- ── La comparación que hace el propio visitante ── -->
   <SuiteCortina
@@ -152,7 +138,7 @@ detrás de"
   <SuiteCasos
     eyebrow="Cuatro momentos del año"
     titulo="Dónde te sirve, con fecha y hora"
-    sub="No son funciones: son los cuatro momentos del año en los que una zapatería gana o pierde dinero. Toca cada uno."
+    sub="Los cuatro momentos del año en los que una zapatería gana o pierde el dinero. Toca cada uno."
     casos={casosZapateria}
   />
 
@@ -167,13 +153,6 @@ detrás de"
 
   <!-- ── El complemento propio de este giro: la corrida cerrada ── -->
   <ZapCorridaCerrada />
-
-  <!-- ── Lo que ve el dueño ── -->
-  <SuiteDireccion
-    sub="Tus tiendas abren sin ti. La pregunta no es si venden — es cuál se está quedando sin los números que sí salen, y por dónde se te va el margen en remates."
-    sucursales={sucursalesZapateria}
-    reglas={reglasZapateria}
-  />
 
   <!-- La respuesta al tablero: qué número sale de qué tienda y a cuál -->
   <ZapNivelacion datos={nivelacionZapateria} />
