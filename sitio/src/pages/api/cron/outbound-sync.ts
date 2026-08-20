@@ -18,6 +18,12 @@ const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.
 const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 const PRESUPUESTO_MS = 120_000;
 
+function lunesDe(d = new Date()): string {
+  const x = new Date(d); const dow = (x.getUTCDay() + 6) % 7;
+  x.setUTCDate(x.getUTCDate() - dow);
+  return x.toISOString().slice(0, 10);
+}
+
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 async function sacs(ruta: string, body: any) {
@@ -124,6 +130,12 @@ async function procesarCampana(c: any): Promise<any> {
   if (c.estado === 'activa' && impresiones >= 200 && descartes / Math.max(impresiones, 1) > 0.6) {
     await despublicarCampana(c.id);
     await supabase.from('inapp_campanas').update({ estado: 'pausada', pausa_motivo: 'circuit_breaker', updated_at: new Date().toISOString() }).eq('id', c.id);
+    await notificar({
+      clave: `outbound-breaker:${c.id}`, tipo: 'outbound_breaker', nivel: 'urgente',
+      titulo: `Campaña auto-pausada: "${c.nombre}"`,
+      detalle: `El descarte superó el umbral (${descartes} descartes en ${impresiones} impresiones). Revisa el mensaje antes de reanudarla.`,
+      metadata: { campana_id: c.id },
+    });
   }
 
   // ── Meta (view-through): se evalúa por CUENTA objetivo contra los datos del
@@ -177,8 +189,21 @@ async function procesarCampana(c: any): Promise<any> {
       const cuenta = normCuenta(f.cuenta);
       const tieneEventos = evs.some(e => e.cuenta === cuenta);
       const brazo = cuentasVieron.has(cuenta) ? 'expuesto' : (tieneEventos ? 'expuesto' : 'control');
+      // Ingreso atribuido: para la meta "plan", el ARR de las suscripciones de
+      // ESE plan nacidas después de publicar (dentro de la ventana). Para
+      // plugin_activo aún no hay monto mapeable (los plugins no siempre son
+      // una suscripción propia) — queda en 0 y el conteo sí habla.
+      let monto = 0;
+      if (c.meta.tipo === 'plan' && desde) {
+        const hasta = new Date(desde.getTime() + (Number(c.ventana_atribucion_dias) || 14) * 86400000);
+        const { data: subs } = await supabase.from('subscriptions')
+          .select('arr, created_at, nombre_plan').eq('company_id', comp.id)
+          .gte('created_at', desde.toISOString()).lte('created_at', hasta.toISOString());
+        monto = (subs || []).filter((sb: any) => String(sb.nombre_plan || '').toLowerCase().includes(String(c.meta.valor || '').toLowerCase()))
+          .reduce((a: number, sb: any) => a + (Number(sb.arr) || 0), 0);
+      }
       const { error } = await supabase.from('inapp_conversiones')
-        .upsert({ campana_id: c.id, company_id: comp.id, cuenta, uid: '', brazo, detalle: { meta: c.meta } },
+        .upsert({ campana_id: c.id, company_id: comp.id, cuenta, uid: '', brazo, detalle: { meta: c.meta, monto } },
                 { onConflict: 'campana_id,cuenta,uid', ignoreDuplicates: true });
       if (!error) conversiones++;
     }
@@ -221,6 +246,24 @@ async function procesarCampana(c: any): Promise<any> {
     }
   }
 
+  // Ingreso atribuido desde la verdad (suma de detalle.monto de conversiones)
+  let ingreso = 0;
+  try {
+    const { data: convRows } = await supabase.from('inapp_conversiones')
+      .select('detalle').eq('campana_id', c.id).eq('brazo', 'expuesto').limit(1000);
+    ingreso = (convRows || []).reduce((a: number, r: any) => a + (Number(r.detalle?.monto) || 0), 0);
+  } catch { /* sin ingreso legible: 0 */ }
+
+  // Primera conversión: aviso de hito (idempotente por clave)
+  if (conversiones > 0) {
+    await notificar({
+      clave: `outbound-primera-conversion:${c.id}`, tipo: 'outbound_hito', nivel: 'info',
+      titulo: `Primera conversión de "${c.nombre}"`,
+      detalle: `La meta ya se cumplió al menos una vez.` + (ingreso ? ` Ingreso atribuido: $${Math.round(ingreso).toLocaleString('es-MX')}.` : ''),
+      metadata: { campana_id: c.id },
+    });
+  }
+
   // ── Resumen cacheado para la lista (la verdad completa vive en resultados.ts)
   await supabase.from('inapp_campanas').update({
     resumen: {
@@ -228,6 +271,7 @@ async function procesarCampana(c: any): Promise<any> {
       clics: clics.size, ctr: usuarios.size ? +((clics.size / usuarios.size) * 100).toFixed(1) : 0,
       descartes, interes: interesados.size, conversiones,
       citas: citas.length,
+      ingreso,
       nps: npsValores.length ? {
         respuestas: npsValores.length,
         promedio: +(npsValores.reduce((a, b) => a + b, 0) / npsValores.length).toFixed(1),
@@ -445,6 +489,7 @@ async function correr() {
       try {
         await despublicarCampana(v.id);
         await supabase.from('inapp_campanas').update({ estado: 'terminada', updated_at: new Date().toISOString() }).eq('id', v.id);
+        await notificar({ clave: `outbound-vencida:${v.id}`, tipo: 'outbound_hito', nivel: 'info', titulo: 'Campaña terminada por vigencia', detalle: 'Llegó a su fecha final y se retiró de la entrega.', metadata: { campana_id: v.id } });
         out.terminadas++;
       } catch (e: any) { out.errores.push(`vencida ${v.id}: ${e?.message || e}`); }
     }
@@ -467,6 +512,53 @@ async function correr() {
     const pasosOut = await correrPasos(deadline);
     out.pasos = pasosOut.ejecutados;
     out.errores.push(...pasosOut.errores);
+
+    // ── Presión por cliente/semana (una vez por hora): impresiones in-app +
+    // correos enviados, para el paso Revisión y la vista Convivencia.
+    const marcaPresion = await leerSync('presion');
+    const horaActual = new Date().toISOString().slice(0, 13);
+    if (marcaPresion.hora !== horaActual && Date.now() < deadline) {
+      const semana = lunesDe();
+      const desdeSemana = semana + 'T00:00:00.000Z';
+      const porCuenta: Record<string, number> = {};
+      const evSemana = await leerPaginado((from, to) => supabase.from('inapp_eventos')
+        .select('cuenta').eq('evento', 'impresion').gte('created', desdeSemana)
+        .order('id', { ascending: true }).range(from, to), 50000);
+      for (const e of evSemana) porCuenta[e.cuenta] = (porCuenta[e.cuenta] || 0) + 1;
+      const cuentasP = Object.keys(porCuenta);
+      const porCompany: Record<string, { inapp: number; emails: number }> = {};
+      for (let i = 0; i < cuentasP.length; i += 500) {
+        const { data } = await supabase.from('company_sacs_accounts')
+          .select('cuenta, company_id').in('cuenta', cuentasP.slice(i, i + 500));
+        for (const f of (data || [])) {
+          if (!f.company_id) continue;
+          porCompany[f.company_id] = porCompany[f.company_id] || { inapp: 0, emails: 0 };
+          porCompany[f.company_id].inapp += porCuenta[normCuenta(f.cuenta)] || 0;
+        }
+      }
+      const sends = await leerPaginado((from, to) => supabase.from('email_sends')
+        .select('contact_id').gte('created_at', desdeSemana).not('contact_id', 'is', null)
+        .order('id', { ascending: true }).range(from, to), 20000).catch(() => [] as any[]);
+      const contactIds = Array.from(new Set(sends.map((x: any) => x.contact_id)));
+      const emailsPorContacto: Record<string, number> = {};
+      for (const x of sends) emailsPorContacto[x.contact_id] = (emailsPorContacto[x.contact_id] || 0) + 1;
+      for (let i = 0; i < contactIds.length; i += 500) {
+        const { data } = await supabase.from('contacts')
+          .select('id, company_id').in('id', contactIds.slice(i, i + 500)).not('company_id', 'is', null);
+        for (const ct of (data || [])) {
+          porCompany[ct.company_id] = porCompany[ct.company_id] || { inapp: 0, emails: 0 };
+          porCompany[ct.company_id].emails += emailsPorContacto[ct.id] || 0;
+        }
+      }
+      const filasP = Object.entries(porCompany).map(([company_id, v]) => ({
+        company_id, semana, inapp: v.inapp, emails: v.emails, updated_at: new Date().toISOString(),
+      }));
+      for (let i = 0; i < filasP.length; i += 200) {
+        await supabase.from('presion_por_company').upsert(filasP.slice(i, i + 200), { onConflict: 'company_id,semana' });
+      }
+      await guardarSync('presion', { hora: horaActual, companies: filasP.length });
+      out.presion = filasP.length;
+    }
 
     // Recurrencia de encuestas (NPS cada X días): una vez al día por campaña,
     // sacs_api re-habilita a quien respondió hace >= recurrencia_dias (sin

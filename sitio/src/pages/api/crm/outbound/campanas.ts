@@ -94,6 +94,18 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
         const res = await resolverAudiencia(c.audiencia || {});
         const holdoutEst = Math.round(res.cuentas.length * (c.holdout_pct || 0) / 100);
+        // Presión de la semana: cuántos de estos clientes ya están saturados
+        // (3+ toques entre in-app y email) — el dato ANTES de activar.
+        let saturadas = 0;
+        try {
+          const ids = res.companies.map(x => x.id);
+          const lunes = (() => { const x = new Date(); const dw = (x.getUTCDay() + 6) % 7; x.setUTCDate(x.getUTCDate() - dw); return x.toISOString().slice(0, 10); })();
+          for (let i = 0; i < ids.length; i += 500) {
+            const { data: pr } = await supabase.from('presion_por_company')
+              .select('company_id, inapp, emails').eq('semana', lunes).in('company_id', ids.slice(i, i + 500));
+            saturadas += (pr || []).filter((x: any) => (Number(x.inapp) || 0) + (Number(x.emails) || 0) >= 3).length;
+          }
+        } catch { /* sin datos de presión aún */ }
         return json({
           errores,
           avisos: c.comportamiento?.bloqueante ? ['Es un modal BLOQUEANTE: solo para cobranza/avisos críticos.'] : [],
@@ -101,6 +113,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             companies: res.companies.length,
             cuentas: res.cuentas.length,
             holdout_estimado: holdoutEst,
+            saturadas,
             exclusiones: res.exclusiones,
             muestra: res.companies.slice(0, 10).map(x => ({ nombre: x.nombre, cuentas: x.cuentas })),
           },

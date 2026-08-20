@@ -616,6 +616,7 @@ function Editor({ inicial, catalogo, onClose, onSaved, show }: { inicial: any; c
                 – {rev.alcance.exclusiones?.sin_cuenta ?? 0} clientes sin cuenta SACS ligada<br />
                 – {rev.alcance.exclusiones?.excluidas_manual ?? 0} cuentas excluidas a mano<br />
                 – ~{rev.alcance.holdout_estimado ?? 0} usuarios quedarán como grupo de control ({c.holdout_pct}%)
+                {rev.alcance.saturadas ? <><br />⚠️ {rev.alcance.saturadas} de estos clientes ya llevan 3+ mensajes esta semana (in-app + email)</> : null}
               </div>
               {!(rev.errores || []).length && rev.alcance.cuentas > 0 && (
                 <button
@@ -770,6 +771,8 @@ export default function OutboundTab() {
   const [resultadosId, setResultadosId] = useState<string | null>(null);
   const [menuRow, setMenuRow] = useState<any | null>(null);
   const [pickerAbierto, setPickerAbierto] = useState(false);
+  const [vista, setVista] = useState<'campanas' | 'convivencia'>('campanas');
+  const [conv, setConv] = useState<any>(null);
 
   async function load() {
     try {
@@ -821,8 +824,9 @@ export default function OutboundTab() {
     const usuarios = (data || []).reduce((a, c) => a + (c.resumen?.usuarios || 0), 0);
     const clics = (data || []).reduce((a, c) => a + (c.resumen?.clics || 0), 0);
     const conv = (data || []).reduce((a, c) => a + (c.resumen?.conversiones || 0), 0);
+    const ingreso = (data || []).reduce((a, c) => a + (Number(c.resumen?.ingreso) || 0), 0);
     const alcance = activas.reduce((a, c) => a + (c.materializada?.cuentas || 0), 0);
-    return { imp, usuarios, clics, conv, alcance, ctr: usuarios ? +(clics / usuarios * 100).toFixed(1) : 0 };
+    return { imp, usuarios, clics, conv, ingreso, alcance, ctr: usuarios ? +(clics / usuarios * 100).toFixed(1) : 0 };
   }, [data]);
 
   const cols: ColDef[] = [
@@ -880,7 +884,56 @@ export default function OutboundTab() {
         <button style={S.btnP} onClick={nueva}>+ Nueva campaña</button>
       </div>
 
-      {data === null ? (
+      <div style={{ display: 'flex', gap: 6, margin: '14px 0 4px' }}>
+        <button style={chip(vista === 'campanas')} onClick={() => setVista('campanas')}>Campañas</button>
+        <button style={chip(vista === 'convivencia')} onClick={() => {
+          setVista('convivencia');
+          if (!conv) fetch('/api/crm/outbound/convivencia').then(r => r.json()).then(setConv).catch(() => setConv({ error: true }));
+        }}>Convivencia</button>
+      </div>
+
+      {vista === 'convivencia' ? (
+        <div style={{ marginTop: 14 }}>
+          {!conv && <Cargando texto="Calculando traslapes…" alto={160} />}
+          {conv?.error && <Aviso tono="malo">No se pudo cargar la convivencia.</Aviso>}
+          {conv && !conv.error && (
+            <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 14 }}>
+              <div style={S.card}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 4 }}>Campañas que comparten audiencia</div>
+                <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: 10 }}>Semana del {conv.semana}. Si dos campañas apuntan a las mismas cuentas, gana la de mayor prioridad y la otra espera su turno.</div>
+                {(conv.traslapes || []).length === 0 && <div style={{ fontSize: '0.78rem', color: '#9c99a6' }}>Sin traslapes entre las campañas activas.</div>}
+                {(conv.traslapes || []).map((t: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem' }}>
+                    <span style={{ flex: 1, fontWeight: 700 }}>{t.a} <span style={{ color: '#9c99a6', fontWeight: 600 }}>×</span> {t.b}</span>
+                    <Tag tono="acento">{t.cuentas} cuentas en común</Tag>
+                  </div>
+                ))}
+                <div style={{ marginTop: 12 }}>
+                  {(conv.campanas || []).map((cc: any) => (
+                    <div key={cc.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0', fontSize: '0.75rem', color: '#555' }}>
+                      <span style={{ flex: 1 }}>{cc.nombre}</span>
+                      <span style={{ color: '#9c99a6' }}>{FMT_CORTO[cc.formato] || cc.formato}</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>{cc.cuentas} cuentas</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={S.card}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 4 }}>Clientes saturados esta semana</div>
+                <div style={{ fontSize: '0.72rem', color: '#888', marginBottom: 10 }}>3+ toques entre mensajes in-app y correos. Piénsalo dos veces antes de sumarles otra campaña.</div>
+                {(conv.saturados || []).length === 0 && <div style={{ fontSize: '0.78rem', color: '#9c99a6' }}>Nadie saturado. Buen ritmo.</div>}
+                {(conv.saturados || []).map((sx: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem' }}>
+                    <span style={{ flex: 1, fontWeight: 700 }}>{sx.nombre}</span>
+                    <span style={{ fontSize: '0.7rem', color: '#888' }}>{sx.inapp} in-app · {sx.emails} correos</span>
+                    <Tag tono={sx.total >= 5 ? 'malo' : 'aviso'}>{sx.total}</Tag>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : data === null ? (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap: 10, margin: '18px 0' }}>
           {[0, 1, 2, 3, 4].slice(0, isMobile ? 2 : 5).map(i => (
             <div key={i} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #eee', padding: '14px 16px', borderRadius: 10 }}>
@@ -896,16 +949,18 @@ export default function OutboundTab() {
             <KpiCard key="b" titulo="Alcance actual" valor={kpis.alcance.toLocaleString('es-MX')} sub="cuentas en campañas activas" franja="#7DA6F5" />,
             <KpiCard key="c" titulo="Impresiones" valor={kpis.imp.toLocaleString('es-MX')} sub={`${kpis.usuarios.toLocaleString('es-MX')} usuarios únicos`} />,
             <KpiCard key="d" titulo="CTR promedio" valor={`${kpis.ctr}%`} sub="usuarios con clic / que vieron" franja="#7DA6F5" />,
-            <KpiCard key="e" titulo="Cumplieron su meta" valor={kpis.conv} sub="cuentas convertidas" franja="#9B8CFA" color="#4536BE" />,
+            kpis.ingreso > 0
+              ? <KpiCard key="e" titulo="Ingreso atribuido" valor={'$' + Math.round(kpis.ingreso).toLocaleString('es-MX')} sub={`${kpis.conv} conversiones (expuestos)`} franja="#4FBF95" color="#1E8A63" />
+              : <KpiCard key="e" titulo="Cumplieron su meta" valor={kpis.conv} sub="cuentas convertidas" franja="#9B8CFA" color="#4536BE" />,
           ].map((k, i) => isMobile ? <div key={i} style={{ minWidth: '82%', scrollSnapAlign: 'start', flex: 'none' }}>{k}</div> : k)}
         </div>
       )}
 
-      {data !== null && data.length === 0 ? (
+      {vista === 'campanas' && data !== null && data.length === 0 ? (
         <Vacio titulo="Todavía no has creado ninguna campaña"
           texto="Crea la primera para mostrar un mensaje dentro de SACS a las cuentas que elijas: un banner, un modal o una tarjeta en su inicio."
           accion={<button style={S.btnP} onClick={nueva}>+ Nueva campaña</button>} />
-      ) : data !== null && (
+      ) : vista === 'campanas' && data !== null && (
         <div style={{ background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)', padding: '20px 22px' }}>
           <TablaEnterprise
             tabla="campanas_app"
