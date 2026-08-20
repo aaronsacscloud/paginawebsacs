@@ -261,7 +261,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
   /* ── La matriz ── */
   .nv-matriz {
-    background: #fff; border-radius: 18px; padding: 22px 24px 20px;
+    background: #fff; border-radius: var(--radio, 16px); padding: 22px 24px 20px;
     box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.1);
   }
   .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
@@ -275,32 +275,32 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
     padding-bottom: 4px; text-align: center;
   }
   .nv-th-tienda { text-align: left !important; font-size: 12px !important; color: var(--color-text-primary, #1a1a2e) !important; white-space: nowrap; padding-right: 10px; }
-  .nv-th-total { color: #C0C0C8 !important; }
+  .nv-th-total { color: var(--color-text-tertiary, #8C8C8C) !important; }
   .nv-celda {
     width: 36px; height: 34px; text-align: center; border-radius: 8px;
-    background: #E6F7F3; border: 1px solid #B9E8DE;
+    background: var(--ok-fondo); border: 1px solid var(--ok-borde);
     transition: background .45s ease, border-color .45s ease, transform .45s ease;
   }
-  .nv-celda b { font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: #12796A; }
+  .nv-celda b { font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ok-texto); }
   /* Cero en un número que esa tienda SÍ vende: eso es el hueco que duele. */
-  .nv-celda.hueco { background: #FDE7E7; border-color: #F3AEAE; }
-  .nv-celda.hueco b { color: #C22F2F; }
+  .nv-celda.hueco { background: var(--alerta-fondo); border-color: var(--alerta-borde); }
+  .nv-celda.hueco b { color: var(--alerta-texto); }
   /* Cero en un número que ahí no sale: no es hueco, es limpieza. */
   .nv-celda.limpio { background: #F8FAFC; border-color: #EDF1F5; }
-  .nv-celda.limpio b { color: #C7CDD6; }
-  .nv-celda.bajo { background: #FDF3DF; border-color: #F2DCA8; }
-  .nv-celda.bajo b { color: #9A6B10; }
+  .nv-celda.limpio b { color: #D4D4D4; }
+  .nv-celda.bajo { background: var(--aviso-fondo); border-color: var(--aviso-borde); }
+  .nv-celda.bajo b { color: var(--aviso-texto); }
   .nv-celda.mov { transform: scale(1.09); box-shadow: 0 0 0 2px #4B7BE5; }
-  .nv-total { text-align: center; font-size: 12.5px; font-weight: 800; color: #A0A6B0; font-variant-numeric: tabular-nums; }
+  .nv-total { text-align: center; font-size: 12.5px; font-weight: 800; color: var(--color-text-tertiary, #8C8C8C); font-variant-numeric: tabular-nums; }
 
   .nv-clave {
     list-style: none; margin: 16px 0 0; padding: 0; display: flex; gap: 20px; flex-wrap: wrap;
     font-size: 11.5px; color: var(--color-text-secondary, #4A4A4A); font-weight: 600;
   }
   .nv-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
-  .nv-clave i.hueco { background: #FDE7E7; border: 1px solid #E54B4B; }
+  .nv-clave i.hueco { background: var(--alerta-fondo); border: 1px solid #E54B4B; }
   .nv-clave i.limpio { background: #F8FAFC; border: 1px solid #DDE3EA; }
-  .nv-clave i.bajo { background: #FDF3DF; border: 1px solid #E8A838; }
+  .nv-clave i.bajo { background: var(--aviso-fondo); border: 1px solid #E8A838; }
   .nv-clave i.mov { background: #4B7BE5; }
 
   /* ── Los traspasos ── */
@@ -311,10 +311,10 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-lista-rot em {
     font-style: normal; margin-left: 8px; padding: 3px 9px; border-radius: 999px;
-    background: #EAF0FD; color: #2A5FD4; letter-spacing: .06em;
+    background: var(--azul-fondo); color: var(--azul-texto); letter-spacing: .06em;
   }
   .nv-tr {
-    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 14px;
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: var(--radio, 16px);
     padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.05);
     transition: opacity .3s ease;
   }
@@ -324,10 +324,10 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-ruta b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; }
   .nv-motivo {
     font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 4px 11px; white-space: nowrap;
-    background: #EAF0FD; color: #2A5FD4; border: 1px solid #C9DAF8;
+    background: var(--azul-fondo); color: var(--azul-texto); border: 1px solid var(--azul-borde);
   }
-  .nv-motivo[data-motivo="Quiebre inminente"] { background: #FDE7E7; color: #C22F2F; border-color: #F3AEAE; }
-  .nv-motivo[data-motivo="Excedente muerto"] { background: #FDF3DF; color: #9A6B10; border-color: #F2DCA8; }
+  .nv-motivo[data-motivo="Quiebre inminente"] { background: var(--alerta-fondo); color: var(--alerta-texto); border-color: var(--alerta-borde); }
+  .nv-motivo[data-motivo="Excedente muerto"] { background: var(--aviso-fondo); color: var(--aviso-texto); border-color: var(--aviso-borde); }
   .nv-remesa { margin: 0 0 10px; font-size: 12px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 700; }
   .nv-items {
     margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
@@ -335,7 +335,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-nota { margin: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); max-width: 54ch; }
   .nv-aplicar {
-    background: #4B7BE5; color: #fff; border: none; border-radius: 50px;
+    background: #4B7BE5; color: #fff; border: none; border-radius: var(--radio-pildora, 999px);
     padding: 10px 20px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
     transition: transform .2s ease;
   }
@@ -344,40 +344,40 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-tr.hecho .nv-aplicar { background: #E2E8F0; color: #8C8C8C; pointer-events: none; }
   /* Los traspasos van en orden: el segundo no se puede autorizar antes que el
      primero, porque el primero es el que le deja los pares al segundo. */
-  .nv-aplicar[disabled] { background: #E2E8F0; color: #A0A6B0; cursor: default; }
+  .nv-aplicar[disabled] { background: #E2E8F0; color: var(--color-text-tertiary, #8C8C8C); cursor: default; }
   .nv-reiniciar {
-    background: none; border: 1px solid rgba(0,0,0,.16); color: var(--color-text-secondary, #4A4A4A); border-radius: 50px;
+    background: none; border: 1px solid rgba(0,0,0,.16); color: var(--color-text-secondary, #4A4A4A); border-radius: var(--radio-pildora, 999px);
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
   /* ── El resultado ── */
   .nv-resultado {
-    background: #0F172A; border-radius: 18px; padding: 24px 26px 26px;
+    background: var(--color-bg-dark, #1A1A1A); border-radius: var(--radio, 16px); padding: 24px 26px 26px;
     box-shadow: 0 18px 44px rgba(15,23,42,.28);
   }
   .nv-cifra-rot, .nv-dinero-rot {
     margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .1em;
-    text-transform: uppercase; color: #94A3B8;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: #7FA6F5; font-variant-numeric: tabular-nums; }
-  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: #94A3B8; }
+  .nv-cifra-n { margin: 0; font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -2px; color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums; }
+  .nv-cifra-pie { margin: 6px 0 22px; font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
   .nv-dinero { padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); }
-  .nv-dinero-n { margin: 0 0 14px; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1.6px; color: #34D399; font-variant-numeric: tabular-nums; }
+  .nv-dinero-n { margin: 0 0 14px; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -1.6px; color: var(--color-secondary, #2AB5A0); font-variant-numeric: tabular-nums; }
   .nv-supuesto { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  .nv-supuesto span { font-size: 12px; font-weight: 700; color: #CBD5E1; }
+  .nv-supuesto span { font-size: 12px; font-weight: 700; color: var(--claro-apunte); }
   .nv-supuesto select {
-    background: #1E293B; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 9px;
+    background: var(--color-bg-dark-deep, #1A1A2E); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
     padding: 9px 11px; font-family: inherit; font-size: 13.5px; font-weight: 600;
   }
-  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: #8595AB; }
+  .nv-dinero-pie { margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--claro-apunte); }
 
   .nv-feo { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); display: grid; gap: 14px; }
-  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: #FCA5A5; letter-spacing: -.4px; }
-  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: #94A3B8; }
+  .nv-feo b { display: block; font-size: 17px; font-weight: 800; color: var(--alerta-borde); letter-spacing: -.4px; }
+  .nv-feo span { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.55; color: var(--color-text-tertiary, #8C8C8C); }
 
   .nv-cta {
     display: block; margin-top: 22px; text-align: center; background: #4B7BE5; color: #fff;
-    text-decoration: none; border-radius: 50px; padding: 13px 22px; font-size: 14.5px; font-weight: 800;
+    text-decoration: none; border-radius: var(--radio-pildora, 999px); padding: 13px 22px; font-size: 14.5px; font-weight: 800;
     transition: transform .2s ease;
   }
   .nv-cta:hover { transform: scale(1.02); }
@@ -402,7 +402,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-tarjeta-n {
     display: inline-flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; border-radius: 50%; margin-bottom: 18px;
-    background: #EAF0FD; color: #2A5FD4; font-size: 12px; font-weight: 800;
+    background: var(--azul-fondo); color: var(--azul-texto); font-size: 12px; font-weight: 800;
   }
   .nv-tarjeta h3 {
     font-family: var(--font-display, 'Sora', sans-serif);

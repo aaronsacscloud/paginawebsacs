@@ -223,11 +223,11 @@ const documentos = [doc1, doc2];
     flex-shrink: 0; font-size: 10.5px; font-weight: 800; letter-spacing: .04em;
     border-radius: 999px; padding: 5px 12px; white-space: nowrap; text-transform: uppercase;
   }
-  .pp-estado-rojo { background: #FDE7E7; color: #C22F2F; border: 1px solid #F3AEAE; }
-  .pp-estado-ambar { background: #FDF3DF; color: #9A6B10; border: 1px solid #F2DCA8; }
+  .pp-estado-rojo { background: var(--alerta-fondo); color: var(--alerta-texto); border: 1px solid var(--alerta-borde); }
+  .pp-estado-ambar { background: var(--aviso-fondo); color: var(--aviso-texto); border: 1px solid var(--aviso-borde); }
 
   .pp-cuerpo { margin-bottom: 20px; }
-  .pp-tabla { border: 1px solid rgba(0,0,0,.07); border-radius: 10px; overflow: hidden; }
+  .pp-tabla { border: 1px solid rgba(0,0,0,.07); border-radius: 8px; overflow: hidden; }
   .pp-fila {
     display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 12px;
     padding: 10px 14px; font-size: 13px; align-items: baseline;
@@ -239,8 +239,8 @@ const documentos = [doc1, doc2];
     background: #F8FAFC; font-size: 10.5px; font-weight: 800; letter-spacing: .08em;
     text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-  .pp-vacio { color: #C7CDD6; }
-  .pp-tachado { color: #C22F2F; }
+  .pp-vacio { color: #D4D4D4; }
+  .pp-tachado { color: var(--alerta-texto); }
   .pp-tachado span:last-child { text-decoration: line-through; }
 
   /* Lo que el documento NO contesta. Antes iba manuscrito al margen; ahora es
@@ -258,7 +258,7 @@ const documentos = [doc1, doc2];
   .pp-notas li :global(b) { color: var(--color-text-primary, #1a1a2e); font-weight: 700; }
   .pp-notas-icono {
     flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
-    background: rgba(229,75,75,.1); color: #C22F2F;
+    background: rgba(229,75,75,.1); color: var(--alerta-texto);
     display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
   }
 
@@ -291,7 +291,7 @@ const documentos = [doc1, doc2];
   .pp-pie b { color: var(--color-text-primary, #1a1a2e); }
 
   @media (max-width: 900px) {
-    .pp-inner { padding: 44px 20px 48px; border-radius: 18px; }
+    .pp-inner { padding: 44px 20px 48px; border-radius: var(--radio, 16px); }
     .pp-hojas { grid-template-columns: 1fr; gap: 18px; }
     .pp-cab { display: none; }
     .pp-reng { grid-template-columns: 1fr; gap: 6px; padding: 16px 0; }

@@ -204,7 +204,7 @@ const escalaInicial = Math.max(4, ...caja, ...venta);
 
   .cc-dinero {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-    background: #F8FAFC; border: 1px solid rgba(0,0,0,.06); border-radius: 12px; padding: 16px 18px;
+    background: #F8FAFC; border: 1px solid rgba(0,0,0,.06); border-radius: var(--radio-chico, 8px); padding: 16px 18px;
   }
   .cc-dinero-rot {
     font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
@@ -215,7 +215,7 @@ const escalaInicial = Math.max(4, ...caja, ...venta);
     letter-spacing: -1px; font-variant-numeric: tabular-nums; margin-right: auto;
   }
   .cc-cta {
-    background: #4B7BE5; color: #fff; text-decoration: none; border-radius: 50px;
+    background: #4B7BE5; color: #fff; text-decoration: none; border-radius: var(--radio-pildora, 999px);
     padding: 11px 22px; font-size: 14px; font-weight: 700; white-space: nowrap;
     box-shadow: 0 4px 14px rgba(75,123,229,.3); transition: transform .2s ease;
   }

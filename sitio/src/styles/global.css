@@ -24,6 +24,35 @@
   --color-border:         #D4D4D4;
   --color-border-light:   rgba(0, 0, 0, 0.08);
 
+  /* ─── Semánticos sobre fondo claro ───
+     El verde, el rojo y el ámbar de marca están calibrados para fondo oscuro:
+     sobre blanco no alcanzan contraste AA en texto chico. Estas son sus
+     versiones legibles, y su fondo y su borde. Sin ellas cada bloque se
+     inventaba las suyas, y así llegamos a cincuenta colores de texto en una
+     sola página. */
+  --ok-texto:             #12796A;
+  --ok-fondo:             #E6F7F3;
+  --ok-borde:             #B9E8DE;
+  --alerta-texto:         #C22F2F;
+  --alerta-fondo:         #FDE7E7;
+  --alerta-borde:         #F3AEAE;
+  --aviso-texto:          #9A6B10;
+  --aviso-fondo:          #FDF3DF;
+  --aviso-borde:          #F2DCA8;
+  --azul-texto:           #2A5FD4;
+  --azul-fondo:           #EAF0FD;
+  --azul-borde:           #C9DAF8;
+
+  /* Grises sobre oscuro: uno para el cuerpo y uno para el apunte. */
+  --claro-texto:          rgba(255, 255, 255, .88);
+  --claro-apunte:         rgba(255, 255, 255, .62);
+
+  /* ─── Radios ─── Cuatro pasos, no diecisiete. */
+  --radio-chico:          8px;
+  --radio:                16px;
+  --radio-panel:          24px;
+  --radio-pildora:        999px;
+
   /* ─── Gradients ─── */
   --gradient-hero:        linear-gradient(135deg, var(--color-bg-dark-deep) 0%, var(--color-bg-dark-blue) 50%, var(--color-bg-dark-deep) 100%);
   --gradient-dark:        linear-gradient(135deg, var(--color-bg-dark-deep) 0%, var(--color-bg-dark-blue) 100%);

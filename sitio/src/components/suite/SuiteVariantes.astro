@@ -135,7 +135,7 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
   .vr-leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
   .vr-leyenda i.ok { background: #2AB5A0; }
   .vr-leyenda i.bajo { background: #E8A838; }
-  .vr-leyenda i.cero { background: #E2E5EA; border: 1px solid #C7CDD6; }
+  .vr-leyenda i.cero { background: #E2E5EA; border: 1px solid #D4D4D4; }
 
   /* Dos pantallas de scroll: una para que se parta y otra para leerlo. */
   .vr-escena { height: 200vh; position: relative; }
@@ -166,7 +166,7 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
   .vr-celdas { display: grid; grid-template-columns: repeat(11, 1fr); gap: clamp(5px, .7vw, 10px); }
 
   .vr-celda {
-    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 10px;
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 8px;
     padding: 8px 4px 7px; display: flex; flex-direction: column; align-items: center; gap: 2px;
     /* Cada casilla sale del centro: el desfase lo pone el índice. */
     opacity: 0; transform: translate(var(--dx, 0), var(--dy, 0)) scale(.35);
@@ -178,12 +178,12 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
     font-size: 12px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
     font-variant-numeric: tabular-nums;
   }
-  .vr-celda span { font-size: 10px; font-weight: 700; color: #12796A; }
-  .vr-celda.bajo span { color: #9A6B10; }
-  .vr-celda.cero { background: #F4F6F8; border-style: dashed; border-color: #C7CDD6; }
+  .vr-celda span { font-size: 10px; font-weight: 700; color: var(--ok-texto); }
+  .vr-celda.bajo span { color: var(--aviso-texto); }
+  .vr-celda.cero { background: #F4F6F8; border-style: dashed; border-color: #D4D4D4; }
   .vr-celda.cero img { opacity: .18; filter: grayscale(1); }
-  .vr-celda.cero b { color: #A0A6B0; }
-  .vr-celda.cero span { color: #C22F2F; }
+  .vr-celda.cero b { color: var(--color-text-tertiary, #8C8C8C); }
+  .vr-celda.cero span { color: var(--alerta-texto); }
 
   .vr-conteo {
     margin: clamp(18px, 2.5vw, 28px) 0 0; text-align: center;
@@ -191,7 +191,7 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
     opacity: 0; transition: opacity .5s ease .2s;
   }
   .vr-conteo b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; }
-  .vr-conteo .vr-rojo { color: #C22F2F; }
+  .vr-conteo .vr-rojo { color: var(--alerta-texto); }
 
   /* ── Estado abierto: lo pone el script al pasar el scroll ── */
   .vr.abierto .vr-uno { opacity: 0; transform: scale(.4); pointer-events: none; }

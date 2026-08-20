@@ -33,7 +33,7 @@ const { intro, frases, cierre } = Astro.props;
 <style>
   /* En claro: iba justo después del hero y abría cuatro mil píxeles de negro
      seguido, que es lo que hacía sentir saturada la página. */
-  .mf { background: var(--color-bg-secondary, #F5F3EE); color: var(--color-text-primary, #1A1A1A); padding: 120px 24px; }
+  .mf { background: var(--color-bg-card, #FFFFFF); color: var(--color-text-primary, #1A1A1A); padding: 120px 24px; }
   .mf-inner { max-width: 900px; margin: 0 auto; }
   .mf-intro {
     font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
@@ -42,7 +42,7 @@ const { intro, frases, cierre } = Astro.props;
   .mf-frases { display: grid; gap: 40px; }
   .mf-frase {
     margin: 0; font-size: clamp(26px, 4.4vw, 46px); font-weight: 700;
-    letter-spacing: -1.2px; line-height: 1.18; color: #C9C6BE;
+    letter-spacing: -1.2px; line-height: 1.18; color: #D2D0CB;
     transition: color .5s ease, transform .5s ease;
   }
   .mf-frase.on { color: var(--color-text-primary, #1A1A1A); transform: translateX(6px); }
