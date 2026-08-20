@@ -296,6 +296,16 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
         campaignId: c.id, templateId: c.template_id, variante: r.variante,
       });
 
+      // Se registra el motivo del rechazo, no solo el conteo. Sin esto no se
+      // puede responder "¿qué parte de mi base es inalcanzable y por qué?",
+      // que suele ser más grande de lo que se cree.
+      if (!res.enviado && res.motivo && res.motivo !== 'error' && res.motivo !== 'error_proveedor') {
+        await supabase.from('email_no_alcanzados').insert({
+          tenant_id: t.id, campaign_id: c.id, contact_id: r.contact_id,
+          email: r.email, motivo: res.motivo,
+        }).then(() => {}, () => {});
+      }
+
       if (res.enviado) {
         if (companyId) empresasHoy.add(companyId);
         await supabase.from('email_campaign_recipients')

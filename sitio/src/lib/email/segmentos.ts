@@ -28,7 +28,7 @@ export type Operador =
   | 'en_los_proximos_dias';
 
 export interface Condicion {
-  sujeto: 'contacto' | 'empresa' | 'suscripcion' | 'email' | 'reunion';
+  sujeto: 'contacto' | 'empresa' | 'suscripcion' | 'email' | 'reunion' | 'actividad';
   campo: string;
   operador: Operador;
   valor?: string | number | null;
@@ -88,6 +88,18 @@ export const CATALOGO: Record<string, { etiqueta: string; campos: Array<{ id: st
       { id: 'ciclo', etiqueta: 'Ciclo', tipo: 'opciones', operadores: ['es'], opciones: [{ v: 'mensual', l: 'Mensual' }, { v: 'anual', l: 'Anual' }] },
       { id: 'proxima_factura', etiqueta: 'Próxima factura', tipo: 'fecha', operadores: ['en_los_proximos_dias', 'en_los_ultimos_dias'] },
       { id: 'existe', etiqueta: 'Tiene suscripción', tipo: 'bool', operadores: ['existe', 'no_existe'] },
+    ],
+  },
+  actividad: {
+    etiqueta: 'Comportamiento',
+    campos: [
+      // Estas señales las escribe el propio sistema cuando la persona ACTÚA.
+      // Valen más que cualquier etapa del pipeline, que depende de que alguien
+      // se acuerde de moverla a mano.
+      { id: 'cotizacion_vista', etiqueta: 'Vio una cotización', tipo: 'fecha', operadores: ['en_los_ultimos_dias', 'no_existe'] },
+      { id: 'visito_precios', etiqueta: 'Visitó la página de precios', tipo: 'fecha', operadores: ['en_los_ultimos_dias', 'no_existe'] },
+      { id: 'visito_sitio', etiqueta: 'Visitó el sitio', tipo: 'fecha', operadores: ['en_los_ultimos_dias', 'no_existe'] },
+      { id: 'intencion', etiqueta: 'Puntaje de intención', tipo: 'numero', operadores: ['mayor_que', 'menor_que'] },
     ],
   },
   email: {
@@ -239,6 +251,34 @@ async function idsDeCondicion(t: Tenant, c: Condicion): Promise<Set<string> | nu
       return new Set(Array.from(alcance).filter(id => !conActividad.has(id)));
     }
     return new Set(Array.from(alcance).filter(id => conActividad.has(id)));
+  }
+
+  if (c.sujeto === 'actividad') {
+    const v = c.valor as any;
+    const desdeF = diasAtras(Number(v || 30));
+
+    if (c.campo === 'intencion') {
+      let q = base();
+      q = c.operador === 'mayor_que' ? q.gt('intencion', Number(v)) : q.lt('intencion', Number(v));
+      return recolecta(q);
+    }
+
+    let conSenal = new Set<string>();
+    if (c.campo === 'cotizacion_vista') {
+      const { data } = await supabase.from('activities').select('contact_id')
+        .eq('tipo', 'cotizacion_vista').gte('created_at', desdeF).not('contact_id', 'is', null).limit(20000);
+      conSenal = new Set((data || []).map((r: any) => r.contact_id));
+    } else {
+      let qv = supabase.from('contact_visits').select('contact_id')
+        .gte('created_at', desdeF).not('contact_id', 'is', null);
+      if (c.campo === 'visito_precios') qv = qv.or('ruta.ilike.%precio%,ruta.ilike.%planes%');
+      const { data } = await qv.limit(20000);
+      conSenal = new Set((data || []).map((r: any) => r.contact_id));
+    }
+
+    const alcance = await recolecta(base());
+    if (c.operador === 'no_existe') return new Set(Array.from(alcance).filter(id => !conSenal.has(id)));
+    return new Set(Array.from(alcance).filter(id => conSenal.has(id)));
   }
 
   if (c.sujeto === 'reunion') {

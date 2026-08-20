@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { registrarVisita, ligarVisitasPrevias } from '../../../lib/email/senales';
 
 export const prerender = false;
 
@@ -9,6 +10,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (!email && !visitor_id) {
     return new Response(JSON.stringify({ error: 'email or visitor_id required' }), { status: 400 });
   }
+
+  // La visita se guarda SIEMPRE, se conozca o no a la persona. Antes se tiraba
+  // si no había contacto: se perdía justo el recorrido más interesante, el de
+  // antes de convertirse en lead. Cuando esa persona deja su correo, esas
+  // visitas anónimas se le ligan hacia atrás (ligarVisitasPrevias).
+  try {
+    let ruta = String(page_url || '/');
+    try { const u = new URL(ruta); ruta = u.pathname + (u.search || ''); } catch { /* ya venía relativa */ }
+    await registrarVisita({ visitorId: visitor_id || null, email: email || null, ruta, titulo: page_title || null, referrer: referrer || null });
+  } catch { /* medir nunca puede tumbar la petición */ }
 
   // Find contact
   let contact: any = null;
@@ -24,6 +35,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (!contact) {
     return new Response(JSON.stringify({ identified: false }));
   }
+
+  // Ya sabemos quién es: recuperar lo que navegó cuando era anónimo.
+  if (visitor_id) { try { await ligarVisitasPrevias(visitor_id, contact.id); } catch {} }
 
   // Log page visit activity
   await supabase.from('activities').insert({

@@ -44,6 +44,10 @@
     {
       "path": "/api/cron/arr-weekly",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/senales",
+      "schedule": "15 * * * *"
     }
   ]
 }

@@ -11,20 +11,27 @@ import Audiencias from './Audiencias';
 import Plantillas from './Plantillas';
 import Bandeja from './Bandeja';
 import SaludEmail from './SaludEmail';
+import Oportunidades from './Oportunidades';
+import Retorno from './Retorno';
 
-type Sec = 'campanas' | 'audiencias' | 'plantillas' | 'bandeja' | 'salud' | 'ajustes';
+type Sec = 'oportunidades' | 'campanas' | 'audiencias' | 'plantillas' | 'bandeja' | 'salud' | 'retorno' | 'ajustes';
 
 const SECCIONES: Array<{ id: Sec; label: string }> = [
+  // Oportunidades va primero a propósito: es la pantalla que dice qué hacer
+  // hoy con el dinero que ya está sobre la mesa. Campañas es la herramienta;
+  // esto es la razón para abrirla.
+  { id: 'oportunidades', label: 'Oportunidades' },
   { id: 'campanas', label: 'Campañas' },
   { id: 'audiencias', label: 'Audiencias' },
   { id: 'plantillas', label: 'Plantillas' },
   { id: 'bandeja', label: 'Bandeja' },
   { id: 'salud', label: 'Salud' },
+  { id: 'retorno', label: 'Retorno' },
   { id: 'ajustes', label: 'Ajustes' },
 ];
 
 export default function EmailTab() {
-  const [sec, setSec] = useState<Sec>('campanas');
+  const [sec, setSec] = useState<Sec>('oportunidades');
   const [cfg, setCfg] = useState<any>(null);
   const [sinLeer, setSinLeer] = useState(0);
 
@@ -76,11 +83,13 @@ export default function EmailTab() {
         </div>
       )}
 
+      {sec === 'oportunidades' && <Oportunidades onIrA={s => setSec(s as Sec)} />}
       {sec === 'campanas' && <Campanas onIrA={s => setSec(s as Sec)} />}
       {sec === 'audiencias' && <Audiencias />}
       {sec === 'plantillas' && <Plantillas />}
       {sec === 'bandeja' && <Bandeja />}
       {sec === 'salud' && <SaludEmail />}
+      {sec === 'retorno' && <Retorno />}
       {sec === 'ajustes' && <ConfigEmail onCambio={revisar} />}
     </div>
   );

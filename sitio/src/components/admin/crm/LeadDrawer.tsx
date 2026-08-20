@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
+import SenalesContacto from './email/SenalesContacto';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -73,7 +74,7 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 };
 
 export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
-  const [tab, setTab] = useState<'resumen' | 'actividad' | 'reuniones' | 'cotizaciones'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'senales' | 'actividad' | 'reuniones' | 'cotizaciones'>('resumen');
   const [c, setC] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -173,7 +174,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 2, marginTop: 12, overflowX: 'auto' }}>
-            {([['resumen', 'Resumen'], ['actividad', 'Actividad'], ['reuniones', 'Reuniones'], ['cotizaciones', 'Cotizaciones']] as const).map(([k, l]) => (
+            {([['resumen', 'Resumen'], ['senales', 'Señales'], ['actividad', 'Actividad'], ['reuniones', 'Reuniones'], ['cotizaciones', 'Cotizaciones']] as const).map(([k, l]) => (
               <button key={k} style={D.tab(tab === k)} onClick={() => setTab(k)}>{l}</button>
             ))}
           </div>
@@ -271,6 +272,9 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             </div>
           )}
 
+          {/* Señales: el puntaje de intención y la historia completa de las
+              cinco fuentes. Es lo que se lee antes de llamar. */}
+          {tab === 'senales' && <div style={{ padding: '4px 0' }}><SenalesContacto contactId={c.id} /></div>}
           {tab === 'actividad' && <Actividad c={c} recargar={cargar} flash={flash} />}
 
           {tab === 'reuniones' && (

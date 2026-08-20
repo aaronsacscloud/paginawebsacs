@@ -17,6 +17,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { firmaDeUrl, esDominioPropio } from '../../../lib/email/tracking';
+import { registrarVisita } from '../../../lib/email/senales';
 
 export const prerender = false;
 
@@ -72,6 +73,25 @@ export const GET: APIRoute = async ({ url: reqUrl }) => {
         }
       }
     } catch {}
+  }
+
+  // El clic ya se registró arriba; aquí se guarda ADEMÁS como visita, con el
+  // envío y la campaña que la produjeron. Es lo que convierte "hizo clic" en
+  // "entró a la página de precios desde la campaña de agosto" — la diferencia
+  // entre una métrica y una razón para llamar.
+  if (sid && esDominioPropio(targetUrl)) {
+    try {
+      const { data: send } = await supabase.from('email_sends')
+        .select('contact_id, campaign_id, email_to').eq('id', sid).maybeSingle();
+      if (send) {
+        const u = new URL(targetUrl);
+        await registrarVisita({
+          contactId: send.contact_id, email: send.email_to,
+          ruta: u.pathname + (u.search || ''), referrer: 'email',
+          sendId: sid, campaignId: send.campaign_id,
+        });
+      }
+    } catch { /* medir no puede impedir la redirección */ }
   }
 
   // 302 redirect to the original URL
