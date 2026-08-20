@@ -71,6 +71,16 @@ const OPERATORS = [
   { id: 'contains', label: 'contiene' },
 ];
 
+/** Esperas de un toque. Cubren los casos reales que más se usan. */
+const ATAJOS_ESPERA = [
+  { label: '20 min', value: 20, unit: 'minutes' },
+  { label: '1 hora', value: 1, unit: 'hours' },
+  { label: '3 horas', value: 3, unit: 'hours' },
+  { label: '1 día', value: 1, unit: 'days' },
+  { label: '3 días', value: 3, unit: 'days' },
+  { label: '1 semana', value: 1, unit: 'weeks' },
+];
+
 const WAIT_UNITS = [
   { id: 'minutes', label: 'minutos' },
   { id: 'hours', label: 'horas' },
@@ -483,6 +493,27 @@ function AutomationDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const isActive = automation.estado === 'activo';
   const steps = (automation.steps || []).sort((a, b) => a.orden - b.orden);
 
+  // CALENDARIO. Un embudo de 4 pasos no dice cuándo llega cada correo, así que
+  // nadie nota que la secuencia es agresiva hasta que llegan las bajas. Aquí
+  // se acumulan las esperas y se etiqueta cada paso con su día.
+  const EN_MS: Record<string, number> = { minutes: 60000, hours: 3600000, days: 86400000, weeks: 604800000 };
+  let acumulado = 0;
+  const cuandoLlega: Record<string, string> = {};
+  for (const p of steps) {
+    if (p.tipo === 'wait') {
+      const c: any = p.config || {};
+      acumulado += (Number(c.value ?? c.delay_amount ?? 0) || 0) * (EN_MS[String(c.unit ?? c.delay_unit ?? 'days')] || 0);
+      continue;
+    }
+    if (acumulado === 0) cuandoLlega[p.id] = 'de inmediato';
+    else if (acumulado < 3600000) cuandoLlega[p.id] = `a los ${Math.round(acumulado / 60000)} min`;
+    else if (acumulado < 86400000) cuandoLlega[p.id] = `a las ${Math.round(acumulado / 3600000)} h`;
+    else cuandoLlega[p.id] = `día ${Math.round(acumulado / 86400000)}`;
+  }
+  const duracionTotal = acumulado === 0 ? null
+    : acumulado < 86400000 ? `${Math.round(acumulado / 3600000)} horas`
+    : `${Math.round(acumulado / 86400000)} días`;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Top bar */}
@@ -576,7 +607,9 @@ function AutomationDetail({ id, onBack }: { id: string; onBack: () => void }) {
         {/* Left panel: Steps (60%) */}
         <div style={{ flex: 6, padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid #f0f0f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Label style={{ marginBottom: 0, fontSize: '0.6875rem' }}>WORKFLOW — {steps.length} pasos</Label>
+            <Label style={{ marginBottom: 0, fontSize: '0.6875rem' }}>
+              WORKFLOW — {steps.length} pasos{duracionTotal ? ` · dura ${duracionTotal}` : ''}
+            </Label>
           </div>
 
           {/* Steps timeline */}
@@ -595,6 +628,12 @@ function AutomationDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   )}
 
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative', zIndex: 1, marginBottom: 16 }}>
+                    {cuandoLlega[step.id] && (
+                      <span style={{
+                        position: 'absolute', right: 0, top: -2, fontSize: '0.66rem', fontWeight: 700,
+                        color: '#5B4BD6', background: '#EEECFE', borderRadius: 20, padding: '2px 9px',
+                      }}>{cuandoLlega[step.id]}</span>
+                    )}
                     {/* Step number circle */}
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
@@ -922,6 +961,25 @@ function StepConfigForm({ tipo, config, templates, onChange }: {
 
     case 'wait':
       return (
+        <div>
+          {/* Atajos. Los embudos que convierten se miden en minutos y horas
+              ("20 min después de registrarse"), pero teclear cantidad+unidad
+              empuja a poner días porque es lo que ya está seleccionado. */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+            {ATAJOS_ESPERA.map(a => {
+              const activo = config.value === a.value && config.unit === a.unit;
+              return (
+                <button key={a.label} type="button"
+                  onClick={() => onChange({ ...config, value: a.value, unit: a.unit })}
+                  style={{
+                    border: '1px solid', borderColor: activo ? '#c9bcf7' : '#e2e4e9',
+                    background: activo ? '#f7f4ff' : '#fff', color: activo ? '#5B4BD6' : '#555',
+                    borderRadius: 8, padding: '5px 11px', fontSize: '0.74rem',
+                    fontWeight: activo ? 700 : 600, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>{a.label}</button>
+              );
+            })}
+          </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <Label>Cantidad</Label>
@@ -939,6 +997,7 @@ function StepConfigForm({ tipo, config, templates, onChange }: {
               {WAIT_UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
             </select>
           </div>
+        </div>
         </div>
       );
 

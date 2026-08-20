@@ -21,9 +21,12 @@ if (user) {
 ---
 <BaseLayout title="Acceso administrador — SACS" description="Panel interno de SACS" noindex={true} bareLayout={true}>
   <div class="auth-wrap">
+    <!-- El lienzo del vuelo cuelga del contenedor, no del panel: las semillas
+         tienen que poder cruzar la frontera hacia el lado del formulario. -->
+    <canvas id="vuelo"></canvas>
+
     <!-- Panel de marca: el mensaje del día y quién firma esto. -->
     <aside class="auth-marca">
-      <canvas id="vuelo"></canvas>
 
       <div class="auth-brand">
         <span class="auth-dot"></span>
@@ -62,6 +65,7 @@ if (user) {
 
         <button id="submit-btn" type="submit" class="auth-btn">Entrar</button>
         <div class="auth-foot"><a href="/partner/forgot-password">¿Olvidaste tu contraseña?</a></div>
+        <span class="auth-firma">Sacs CRM · by Andy Araujo</span>
       </form>
     </main>
   </div>
@@ -70,6 +74,7 @@ if (user) {
     /* El papel: lila clarito, como el menú del CRM. El negro de antes hacía
        que la pantalla siguiente pareciera de otro producto. */
     .auth-wrap {
+      position: relative;
       min-height: 100vh; display: grid; grid-template-columns: 1.05fr 1fr;
       background: linear-gradient(180deg, #FBFAFF 0%, #F6F3FE 55%, #F4EFFC 100%);
       font-family: 'DM Sans', system-ui, sans-serif;
@@ -90,14 +95,16 @@ if (user) {
     }
     .auth-marca::before { width: 520px; height: 520px; top: -190px; right: -160px; background: radial-gradient(circle, rgba(255,255,255,.30), transparent 62%); }
     .auth-marca::after { width: 420px; height: 420px; bottom: -170px; left: -120px; background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%); }
-    /* El diente de león en vuelo: vive entre los halos y el texto. */
+    /* El diente de león en vuelo, sobre TODA la pantalla. La máscara hace dos
+       trabajos: deja limpio el tercio izquierdo, donde va el texto, y apaga las
+       semillas conforme cruzan al papel claro de la derecha. */
     #vuelo {
-      position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
-      /* El texto vive a la izquierda: ahí el vuelo se desvanece para no pisarlo. */
-      -webkit-mask-image: linear-gradient(105deg, transparent 8%, rgba(0,0,0,.35) 30%, #000 52%);
-      mask-image: linear-gradient(105deg, transparent 8%, rgba(0,0,0,.35) 30%, #000 52%);
+      position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2;
+      -webkit-mask-image: linear-gradient(101deg, transparent 5%, rgba(0,0,0,.4) 17%, #000 30%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.22) 72%, transparent 88%);
+      mask-image: linear-gradient(101deg, transparent 5%, rgba(0,0,0,.4) 17%, #000 30%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.22) 72%, transparent 88%);
     }
-    .auth-marca > *:not(#vuelo) { position: relative; z-index: 1; }
+    .auth-marca { z-index: 0; }
+    .auth-marca > * { position: relative; z-index: 1; }
 
     .auth-brand { display: flex; align-items: center; gap: 11px; }
     .auth-dot { width: 34px; height: 34px; border-radius: 99px; background: rgba(255,255,255,.9); flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.14); }
@@ -115,10 +122,31 @@ if (user) {
     .auth-pie { font-size: .68rem; color: rgba(255,255,255,.66); margin: 0; letter-spacing: .02em; }
 
     /* ── Formulario ── */
-    .auth-lado { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+    /* El lado derecho ya no es una hoja blanca aparte: el color de la izquierda
+       se escurre sobre él y unas semillas lo cruzan. */
+    .auth-lado { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+    .auth-lado::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(105% 120% at -18% 45%, rgba(140,120,250,.42), rgba(155,140,250,.14) 42%, transparent 66%),
+        radial-gradient(75% 65% at 112% 92%, rgba(217,83,142,.20), transparent 62%);
+    }
     .auth-card {
+      position: relative; overflow: hidden;
       width: 100%; max-width: 372px; background: #fff; border-radius: 16px; padding: 32px 30px;
       box-shadow: 0 1px 3px rgba(40,20,90,.06), 0 18px 44px rgba(40,20,90,.12);
+    }
+    /* La cinta de la marca, de canto sobre la tarjeta: la misma que encabeza la
+       cotización y la minuta. Es lo que la ata al resto de los documentos. */
+    .auth-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%);
+    }
+    .auth-firma {
+      display: block; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f0edfa;
+      text-align: center; font-size: .56rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+      background: linear-gradient(100deg,#7C6BF0 0%,#8E7DEF 35%,#D9538E 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
     }
     .auth-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #9c3d70; }
     .auth-title { font-size: 25px; font-weight: 800; letter-spacing: -.02em; margin: 6px 0 4px; color: #241d43; }
@@ -143,8 +171,12 @@ if (user) {
          arriba. Con la máscara diagonal, la flor le pasaba por encima al
          titular. */
       #vuelo {
-        -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 62%);
-        mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 62%);
+        -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 34%, rgba(0,0,0,.18) 52%, transparent 66%);
+        mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.55) 34%, rgba(0,0,0,.18) 52%, transparent 66%);
+      }
+      /* Apilado, el color se derrama hacia abajo desde la cinta de arriba. */
+      .auth-lado::before {
+        background: radial-gradient(120% 70% at 50% -12%, rgba(140,120,250,.34), rgba(155,140,250,.10) 46%, transparent 70%);
       }
       .auth-wrap { grid-template-columns: 1fr; }
       .auth-marca { padding: 26px 24px 30px; gap: 20px; min-height: 62vh; }
@@ -185,18 +217,22 @@ if (user) {
 
       function armar() {
         const by = H + 10;                        // los tallos nacen fuera del borde
-        const chico = W < 640;                    // teléfono: el panel es angosto
+        // El lienzo abarca la pantalla completa, pero las flores se siguen
+        // plantando sobre el panel de marca: lo que cruza son las semillas.
+        const panel = document.querySelector('.auth-marca');
+        const WF = Math.min(W, (panel && panel.clientWidth) || W);
+        const chico = WF < 640;                   // teléfono: el panel es angosto
         flores = chico
           ? [
-              { x: W * 0.72, y: H * 0.30, r: Math.min(W, H) * 0.10, base: { x: W * 0.64, y: by }, n: 40, z: 0 },
-              { x: W * 0.52, y: H * 0.42, r: Math.min(W, H) * 0.062, base: { x: W * 0.46, y: by }, n: 28, z: 90 },
+              { x: WF * 0.72, y: H * 0.30, r: Math.min(W, H) * 0.10, base: { x: WF * 0.64, y: by }, n: 40, z: 0 },
+              { x: WF * 0.52, y: H * 0.42, r: Math.min(W, H) * 0.062, base: { x: WF * 0.46, y: by }, n: 28, z: 90 },
             ]
           : [
-              { x: W * 0.66, y: H * 0.58, r: Math.min(W, H) * 0.115, base: { x: W * 0.56, y: by }, n: 44, z: 0 },
-              { x: W * 0.52, y: H * 0.74, r: Math.min(W, H) * 0.072, base: { x: W * 0.47, y: by }, n: 32, z: 90 },
+              { x: WF * 0.66, y: H * 0.58, r: Math.min(W, H) * 0.115, base: { x: WF * 0.56, y: by }, n: 44, z: 0 },
+              { x: WF * 0.52, y: H * 0.74, r: Math.min(W, H) * 0.072, base: { x: WF * 0.47, y: by }, n: 32, z: 90 },
             ];
         semillas = [];
-        const total = Math.round(30 * (chico ? 0.6 : 1));
+        const total = Math.round(34 * (chico ? 0.6 : 1));
         for (let i = 0; i < total; i++) semillas.push(nueva(true));
       }
 

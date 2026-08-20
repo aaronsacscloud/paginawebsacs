@@ -287,7 +287,6 @@ export const POST: APIRoute = async ({ request }) => {
             }).catch(() => {}); // Ignore duplicates
           }
         }
-      }
       } catch {}
       // Fuera del try de la inscripción a propósito: si esa parte falló, el
       // empuje no tiene nada que hacer, pero tampoco debe impedirse.

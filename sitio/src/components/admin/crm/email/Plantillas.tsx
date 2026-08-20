@@ -107,6 +107,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
   const [html, setHtml] = useState('');
   const [avisos, setAvisos] = useState<string[]>([]);
   const [ancho, setAncho] = useState<'desktop' | 'movil'>('desktop');
+  const [cfgTenant, setCfgTenant] = useState<any>(null);
   const [estado, setEstado] = useState('');
   const historia = useRef<any[][]>([]);
   const guardado = useRef<any>(null);
@@ -115,6 +116,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
     fetch(`/api/crm/email/templates?id=${id}`).then(r => r.json()).then(j => {
       setP(j.plantilla); setBloques(j.plantilla?.bloques || []);
     });
+    fetch('/api/crm/email/config').then(r => r.json()).then(j => setCfgTenant(j.tenant)).catch(() => {});
   }, [id]);
 
   // Vista previa con el compilador real, no una imitación del navegador.
@@ -122,7 +124,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
     const t = setTimeout(() => {
       fetch('/api/crm/email/templates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preview: true, bloques }),
+        body: JSON.stringify({ preview: true, bloques, preview_text: p?.preview_text }),
       }).then(r => r.json()).then(j => { setHtml(j.html || ''); setAvisos(j.avisos || []); }).catch(() => {});
     }, 350);
     return () => clearTimeout(t);
@@ -177,8 +179,12 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
         <input defaultValue={p.nombre} onBlur={e => fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, nombre: e.target.value }) })}
           style={{ ...S.inp, maxWidth: 260, fontWeight: 700 }} />
         <input defaultValue={p.asunto ?? ''} placeholder="Asunto"
-          onBlur={e => fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, asunto: e.target.value }) })}
-          style={{ ...S.inp, maxWidth: 300 }} />
+          onBlur={e => { setP((x: any) => ({ ...x, asunto: e.target.value })); fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, asunto: e.target.value }) }); }}
+          style={{ ...S.inp, maxWidth: 260 }} />
+        <input defaultValue={p.preview_text ?? ''} placeholder="Texto de vista previa"
+          title="La segunda línea que se ve en la bandeja, debajo del asunto"
+          onBlur={e => { setP((x: any) => ({ ...x, preview_text: e.target.value })); fetch('/api/crm/email/templates', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, preview_text: e.target.value }) }); }}
+          style={{ ...S.inp, maxWidth: 280 }} />
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: '#8a8a8a' }}>{estado}</span>
           <button style={S.btnG} onClick={deshacer} title="Ctrl+Z">Deshacer</button>
@@ -201,6 +207,29 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
         </div>
 
         <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
+          {/* Así se ve en la bandeja. Es la decisión que de verdad importa:
+              nadie lee el correo si esta fila no lo convence. */}
+          <div style={{ padding: '10px 12px', borderBottom: '1px solid #f0eff3', background: '#fff' }}>
+            <div style={{ ...S.kl, marginBottom: 7 }}>Así se verá en su bandeja</div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#5B4BD6', color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', flexShrink: 0 }}>
+                {(cfgTenant?.from_nombre || 'S').trim().charAt(0).toUpperCase()}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {cfgTenant?.from_nombre || 'Remitente sin configurar'}
+                </div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.asunto?.trim() || <span style={{ color: '#C0554E' }}>(sin asunto — se verá vacío)</span>}
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#8a8a92', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.preview_text?.trim()
+                    || <span style={{ fontStyle: 'italic' }}>sin texto de vista previa — Gmail rellenará con las primeras palabras del correo</span>}
+                </div>
+              </div>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#faf9fc', borderBottom: '1px solid #f0eff3', overflowX: 'auto' }}>
             {bloques.map((x, i) => (
               <button key={x.id} onClick={() => setSel(i)}
