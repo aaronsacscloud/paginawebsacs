@@ -3099,13 +3099,17 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-modern .quote-client-name { font-size: .92rem; }
   .quote-modern .quote-client-detail { font-size: .72rem; }
 
-  /* La columna del concepto es la que lleva el texto: se le da el ancho y a
-     las cifras lo justo. Si no, "Plan Controla" cae en dos renglones y la
-     descripción en cinco. */
+  /* En un teléfono la tabla se queda con dos columnas: qué es y cuánto. El
+     escritorio ya escondía "detalle" y "cantidad"; el precio unitario se va
+     con ellas porque la descripción lo dice igual ("$900/suc × 1 suc. × 10
+     meses") y sin él el concepto deja de partirse en una palabra por
+     renglón. */
   .quote-modern .quote-table th { padding-top: 9px; padding-bottom: 9px; }
   .quote-modern .quote-table td { padding-top: 11px; padding-bottom: 11px; font-size: .75rem; }
-  .quote-modern .quote-table .qt-concept { width: 56%; }
-  .quote-modern .quote-table .qt-price, .quote-modern .quote-table .qt-subtotal { white-space: nowrap; text-align: right; }
+  .quote-modern .quote-table .qt-price { display: none; }
+  .quote-modern .quote-table .qt-subtotal { white-space: nowrap; text-align: right; }
+  /* El precio tachado, arriba del que se cobra: uno junto a otro no cabe. */
+  .quote-modern .qt-subtotal .qt-strikethrough { display: block; margin: 0 0 1px; font-size: .66rem; }
   .quote-modern .quote-totals { padding-top: 12px; }
   .quote-modern .quote-total-row.quote-total-final { padding: 12px 14px; font-size: 1.05rem; }
 

@@ -102,6 +102,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       <ul class="nv-clave">
         <li><i class="hueco"></i>Hueco: cero en un número que esa tienda sí vende</li>
         <li><i class="limpio"></i>Cero en un número que ahí no sale — eso no es hueco</li>
+        <li><i class="bajo"></i>Le queda menos de un mes de venta</li>
         <li><i class="mov"></i>Se movió en este paso</li>
       </ul>
     </div>
@@ -109,7 +110,10 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
     <!-- ── Los traspasos, uno por uno ── -->
     <div class="nv-cuerpo">
       <div class="nv-lista">
-        <p class="nv-lista-rot">Lo que propone el sistema · {traspasos.length} renglones, {totalMovido} pares</p>
+        <p class="nv-lista-rot">
+          Lo que propone el sistema · {traspasos.length} traspasos, {totalMovido} pares
+          <em>en Automatiza</em>
+        </p>
 
         {traspasos.map((t, i) => (
           <article class="nv-tr" data-tr={String(i)}>
@@ -120,7 +124,9 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
             <p class="nv-remesa">{t.remesa} · {paresDe(t)} pares</p>
             <p class="nv-items">{t.items.map((it) => `${it.n} ×${it.pares}`).join('  ·  ')}</p>
             <p class="nv-nota">{t.nota}</p>
-            <button type="button" class="nv-aplicar" data-aplica={String(i)}>Autorizar y surtir</button>
+            <button type="button" class="nv-aplicar" data-aplica={String(i)} disabled={i !== 0}>
+              {i === 0 ? 'Autorizar y surtir' : 'Espera su turno'}
+            </button>
           </article>
         ))}
 
@@ -182,6 +188,11 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         El par sale del origen y queda <b>en tránsito</b>: no se vende, no se aparta y no aparece
         en tu tienda en línea hasta que la otra tienda lo recibe contra el documento. Si entrara
         antes, alguien vendería un par que va en la camioneta.
+        <br /><br />
+        El traspaso completo —autorizar, surtir, tránsito y recepción contra documento— viene
+        <b>desde el plan Controla</b>. Lo que agrega <b>Automatiza</b> es que la lista se arme
+        sola cada lunes, ordenada por prioridad y con el tope de lo que cada tienda alcanza a
+        vender ya calculado.
       </p>
     </div>
 
@@ -256,13 +267,18 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
   .nv-clave i.hueco { background: #FDE7E7; border: 1px solid #E54B4B; }
   .nv-clave i.limpio { background: #F8FAFC; border: 1px solid #DDE3EA; }
+  .nv-clave i.bajo { background: #FDF3DF; border: 1px solid #E8A838; }
   .nv-clave i.mov { background: #4B7BE5; }
 
   /* ── Los traspasos ── */
   .nv-cuerpo { display: grid; grid-template-columns: 1.25fr 1fr; gap: 30px; align-items: start; }
   .nv-lista-rot {
     margin: 0 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: rgba(255,255,255,.8);
+    text-transform: uppercase; color: rgba(255,255,255,.85);
+  }
+  .nv-lista-rot em {
+    font-style: normal; margin-left: 8px; padding: 3px 9px; border-radius: 999px;
+    background: rgba(255,255,255,.2); letter-spacing: .06em;
   }
   .nv-tr {
     background: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
@@ -293,6 +309,9 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-aplicar:hover { transform: scale(1.03); }
   .nv-aplicar:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
   .nv-tr.hecho .nv-aplicar { background: #E2E8F0; color: #8C8C8C; pointer-events: none; }
+  /* Los traspasos van en orden: el segundo no se puede autorizar antes que el
+     primero, porque el primero es el que le deja los pares al segundo. */
+  .nv-aplicar[disabled] { background: #E2E8F0; color: #A0A6B0; cursor: default; }
   .nv-reiniciar {
     background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 50px;
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -373,6 +392,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       // Estado vivo: se parte de la existencia de hoy y cada traspaso la mueve.
       let stock: number[][] = tiendas.map((t: any) => [...t.existencia]);
       let aplicados = 0;
+      let arrancoNivelada = false;
 
       const celda = (f: number, c: number) =>
         bloque.querySelector<HTMLElement>(`[data-fila="${f}"][data-col="${c}"]`);
@@ -430,8 +450,10 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
         const cta = document.getElementById('nvCta') as HTMLAnchorElement | null;
         if (cta) {
-          const u = new URL(cta.getAttribute('href') || '/contacto', location.origin);
-          u.searchParams.set('estimado', String(Math.max(0, Math.round(total))));
+          const u = new URL('/contacto', location.origin);
+          // Sin remesa aplicada no hay estimado que mandar: un ?estimado=0 le
+          // llega a la llamada como si el cliente no tuviera nada que ganar.
+          if (total > 0) u.searchParams.set('estimado', String(Math.round(total)));
           cta.href = u.pathname + u.search;
         }
       };
@@ -449,6 +471,8 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         });
         aplicados++;
         bloque.querySelector(`[data-tr="${i}"]`)?.classList.add('hecho');
+        const siguiente = bloque.querySelector<HTMLButtonElement>(`[data-aplica="${i + 1}"]`);
+        if (siguiente) { siguiente.disabled = false; siguiente.textContent = 'Autorizar y surtir'; }
         pintar(movidas);
         recalcular();
 
@@ -462,7 +486,8 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         if (reiniciar) reiniciar.hidden = false;
 
         // La marca del movimiento es un pulso, no un estado.
-        setTimeout(() => pintar(), 1400);
+        if (arrancoNivelada) setTimeout(() => pintar(), 1400);
+        else pintar();
       };
 
       bloque.querySelectorAll<HTMLElement>('[data-aplica]').forEach((b) => {
@@ -473,6 +498,10 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         stock = tiendas.map((t: any) => [...t.existencia]);
         aplicados = 0;
         bloque.querySelectorAll('.nv-tr').forEach((el) => el.classList.remove('hecho'));
+        bloque.querySelectorAll<HTMLButtonElement>('[data-aplica]').forEach((b, k) => {
+          b.disabled = k !== 0;
+          b.textContent = k === 0 ? 'Autorizar y surtir' : 'Espera su turno';
+        });
         const estado = document.getElementById('nvEstado');
         if (estado) estado.textContent = 'Como está hoy';
         const reiniciar = document.getElementById('nvReiniciar');
@@ -482,6 +511,12 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       });
 
       document.getElementById('nvSaldo')?.addEventListener('change', recalcular);
+
+      // El bloque arranca con la remesa ya aplicada: el número tiene que estar
+      // ahí para quien solo pasa de largo. Quien quiera ver el antes, lo
+      // desarma con "Volver a como está hoy".
+      traspasos.forEach((_: any, i: number) => aplicar(i));
+      arrancoNivelada = true;
 
       pintar();
       recalcular();

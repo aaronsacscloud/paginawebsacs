@@ -95,30 +95,6 @@ export const seccionesZapateria: SuiteSeccion[] = [
     </div>`,
   },
   {
-    id: 'compra',
-    tag: 'Compras',
-    titulo: 'Compra la curva de tu tienda, no la del proveedor',
-    texto:
-      'La corrida cerrada del proveedor viene 1-2-3-3-2-1 por docena, igual para todos. Tu tienda no vende así. Cuando te dan surtido libre, la pregunta es qué pedir — y ahí sirve tener tu venta por número a la mano.',
-    bullets: [
-      'Tu venta real por número, para pedir surtido libre con datos y no de memoria',
-      'Cada sucursal con la suya: en el centro sale el 23½, en la del norte el 25',
-      'Planificador de compra por número (en Automatiza)',
-    ],
-    visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Surtido libre · 48 pares de dama</p>
-      ${[['22',1,2],['22½',2,4],['23',5,10],['23½',7,15],['24',8,17],['24½',8,17],['25',7,15],['25½',5,10],['26',3,6],['26½',1,2],['27',1,2]]
-        .map(([t,n,p]:any)=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
-          <span style="width:34px;font-size:11px;font-weight:800;color:#0F172A;">${t}</span>
-          <div style="flex:1;height:18px;background:#F1F5F9;border-radius:5px;overflow:hidden;">
-            <div style="width:${p*4}%;height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB);"></div>
-          </div>
-          <span style="width:58px;text-align:right;font-size:11.5px;font-weight:700;color:#475569;">${n} pares</span>
-        </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">Tu venta real · del 23½ al 24½ sale la mitad de tus pares</p>
-    </div>`,
-  },
-  {
     id: 'caja',
     tag: 'Mostrador',
     titulo: '“¿Me lo trae en el 24?”',
@@ -252,29 +228,6 @@ export const seccionesZapateria: SuiteSeccion[] = [
     </div>`,
   },
   {
-    id: 'complemento',
-    tag: 'Ticket promedio',
-    titulo: 'El par ya está vendido; el ticket no',
-    texto:
-      'Lo que sube el ticket es lo que va con el par: calcetín, plantilla, agujetas, grasa. El sistema se lo pone al vendedor en la pantalla de cobro, cuando el cliente ya dijo que sí.',
-    bullets: [
-      'Sugerencia automática al cobrar el par (Fideliza)',
-      'Promociones combinadas: par + calcetín + plantilla',
-    ],
-    visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Sugerido al cobrar</p>
-      ${[['Botín dama café · 24½','$1,290','en el ticket','#94A3B8'],['Calcetín invisible · 3 pzas','$120','sugerido','#2563EB'],['Plantilla de gel','$180','sugerido','#2563EB'],['Impermeabilizante','$140','sugerido','#2563EB']]
-        .map(([n,p,t,c]:any)=>`<div style="display:flex;align-items:center;gap:11px;border:1px solid ${t==='sugerido'?'#DBE7FB':'#EEF1F5'};background:${t==='sugerido'?'#FAFCFF':'#fff'};border-radius:11px;padding:10px 12px;margin-bottom:7px;">
-          <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-          <div style="font-size:10px;color:${c};font-weight:700;">${t==='sugerido'?'+ SUGERIDO':'EN EL TICKET'}</div></div>
-          <span style="font-size:12.5px;font-weight:800;color:#0F172A;">${p}</span>
-        </div>`).join('')}
-      <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:700;color:#047857;">Ticket del par solo: $1,290 · con complementos: $1,730</span>
-      </div>
-    </div>`,
-  },
-  {
     id: 'marca',
     tag: 'Marca y proveedor',
     titulo: '"¿Cómo me fue con Flexi este mes?"',
@@ -323,31 +276,6 @@ export const seccionesZapateria: SuiteSeccion[] = [
     </div>`,
   },
   {
-    id: 'sucursales',
-    tag: 'Multisucursal',
-    titulo: 'Un par en la otra tienda vale más que en remate',
-    texto:
-      'Antes de mandar un modelo roto al saldero, revisa si la otra sucursal necesita justo esos números. Mover un par cuesta un traspaso; saldarlo cuesta la mitad del precio o más.',
-    bullets: [
-      'Ves qué números le faltan a cada tienda y quién los tiene de sobra',
-      'Nivelación entre tiendas para completar corridas en vez de saldar (en Automatiza)',
-      'Cada sucursal con su existencia real, descontando lo apartado',
-      'Y quién vendió cada par: metas y comisión por vendedor y por sucursal',
-    ],
-    visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Traspaso sugerido · esta semana</p>
-      ${[['Centro → Norte','Botín café 26, 27','4 pares','completa corrida'],['Norte → Centro','Mocasín caballero 26, 26½','3 pares','completa corrida'],['Plaza → Centro','Sandalia tan 23','2 pares','se vende 3× más rápido']]
-        .map(([r,q,p,m]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${r}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${q}</div></div>
-            <span style="font-size:12px;font-weight:800;color:#2563EB;">${p}</span>
-          </div>
-          <div style="margin-top:7px;font-size:10.5px;color:#047857;font-weight:700;">${m}</div>
-        </div>`).join('')}
-    </div>`,
-  },
-  {
     id: 'omnicanal',
     tag: 'Omnicanalidad',
     titulo: 'Un solo inventario: piso, en línea y WhatsApp',
@@ -372,33 +300,6 @@ export const seccionesZapateria: SuiteSeccion[] = [
       <div style="border:1.5px solid #3B82F6;background:#F7FBFF;border-radius:11px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <span style="font-size:11.5px;font-weight:800;color:#1D4ED8;">El mismo 12 · no cuatro inventarios</span>
         <span style="font-size:15px;font-weight:800;color:#0F172A;">12</span>
-      </div>
-    </div>`,
-  },
-  {
-    id: 'clientes',
-    tag: 'Fidelización',
-    titulo: 'Sabes qué número calza cada cliente',
-    texto:
-      'El pie de tu cliente ya no crece: es 26 cada temporada — y tú ya sabes en qué marcas le queda y en cuáles pide medio número más. Saber eso vale más que cualquier campaña masiva: le avisas cuando entra su número, no cuando entra la colección.',
-    bullets: [
-      'Ficha con su número, su horma y las marcas que se lleva',
-      'Aviso por WhatsApp cuando entra su número, con campañas segmentadas (Fideliza) o disparado solo (Automatiza)',
-      'Y la familia completa: los números de los niños, que cambian cada año',
-    ],
-    visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Ficha de cliente</p>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#DBEAFE,#BFDBFE);display:flex;align-items:center;justify-content:center;font-weight:800;color:#2563EB;">JC</div>
-        <div><div style="font-size:14px;font-weight:800;color:#0F172A;">Jorge C.</div>
-        <div style="font-size:11px;color:#94A3B8;font-weight:600;">9 compras · $21,300 · desde 2023</div></div>
-      </div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">
-        ${['Número 26','Horma ancha','Piel','Casual','2 hijos'].map(t=>`<span style="background:#EFF6FF;color:#2563EB;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700;">${t}</span>`).join('')}
-      </div>
-      <div style="background:#F0FDF9;border:1px solid #A7F3D0;border-radius:11px;padding:11px 13px;">
-        <div style="font-size:11.5px;font-weight:800;color:#047857;">Llegó su número</div>
-        <div style="font-size:11.5px;color:#065F46;margin-top:3px;">Botín café en 26, horma ancha. Y el escolar del niño ya le queda chico.</div>
       </div>
     </div>`,
   },
@@ -494,7 +395,7 @@ export const pasosZapateria = [
   {
     cuando: 'Día 3',
     titulo: 'Capacitación',
-    texto: 'Dos horas con tu equipo, antes de abrir. Cobrar y consultar un número se aprende en veinte minutos.',
+    texto: 'Una sesión con tu equipo antes de abrir. Cobrar y consultar un número se aprende en la primera media hora.',
     detalle: 'Y se practica lo que de verdad se usa a diario: el cambio de número, el apartado con abonos y el corte.',
     img: '/images/proc-zap-3.webp',
     alt: 'Equipo de una zapatería en capacitación alrededor del mostrador antes de abrir',
@@ -629,8 +530,8 @@ export const etapasZapateria = [
     resumen: 'El mostrador, la bodega y tus canales cobrando el mismo par, con un solo inventario.',
     puntos: [
       'Venta por número, con medios y por color',
-      'Cambio de número y devoluciones en el mostrador',
-      'Apartados con abonos por quincena',
+
+      'Apartados con anticipo, y abonos por quincena (desde Controla)',
       'Ventas a crédito y cotizaciones',
       'Listas de precios y precio por volumen',
       'Tienda en línea con tu mismo inventario',
@@ -644,6 +545,7 @@ export const etapasZapateria = [
     resumen: 'La corrida, lo que compras a León y lo que de verdad te deja cada par.',
     puntos: [
       'Existencia por modelo, color y número en cada tienda',
+      'Cambio de número y devoluciones, aunque el par sea de otra sucursal',
       'Traspasos entre sucursales y bodega central',
       'Conteo físico desde el celular y conteos cíclicos',
       'Kardex y trazabilidad de cada par',
@@ -674,7 +576,7 @@ export const etapasZapateria = [
     resumen: 'Tu equipo, tus permisos y los números con los que decides — sin estar en la tienda.',
     puntos: [
       'Metas y comisión por vendedor y por sucursal',
-      'Permisos por usuario, por tienda y por caja',
+      'Permisos por usuario y por tienda (y por caja en Automatiza)',
       'Auditoría de movimientos: quién, cuándo y qué',
       '50+ reportes y 20+ indicadores de tu operación',
       'CFDI desde la caja y factura global',
