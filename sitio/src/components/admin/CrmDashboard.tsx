@@ -115,7 +115,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Cuentas',
+    label: 'Cuentas', sec: 'cuentas',
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
@@ -126,7 +126,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Facturación',
+    label: 'Facturación', sec: 'facturacion',
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
@@ -138,7 +138,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Acompañamiento',
+    label: 'Acompañamiento', sec: 'acompanamiento',
     items: [
       { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
@@ -146,7 +146,7 @@ const NAV_SECTIONS = [
   },
   {
     // "Marketing" agrupaba un solo renglón. Un grupo de uno no agrupa nada.
-    label: 'Automatización',
+    label: 'Automatización', sec: 'automatizacion',
     items: [
       // Email vive junto a las automatizaciones porque es la misma pregunta
       // ("qué le llega solo al cliente"), vista desde el canal.
@@ -159,25 +159,13 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Colaboradores',
+    label: 'Colaboradores', sec: 'colaboradores',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
       { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'content-review' as Tab, label: 'Revisar contenido', icon: 'automations' },
       // "Mi desempeño" no tiene nada de IA: es tu marcador.
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
-    ],
-  },
-  {
-    // Se llama Ajustes y no Configuración para no chocar con el botón del pie,
-    // que lleva a otra pantalla.
-    label: 'Ajustes',
-    items: [
-      { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
-      // Los documentos que salen al cliente los firma una persona, no la
-      // plataforma: aquí cada quien pone su logo, su nombre y su color.
-      { id: 'marca' as Tab, label: 'Mi marca', icon: 'marca' },
-      { id: 'cobros' as Tab, label: 'Cobro con Mercado Pago', icon: 'pagos' },
     ],
   },
 ];
@@ -189,7 +177,7 @@ function getInitialTab(): Tab {
   // 'agenda' y 'config' ya no son renglones del menú —la primera es una vista
   // dentro de Reuniones y la segunda vive en el pie—, pero las ligas viejas y
   // los enlaces guardados tienen que seguir llevando a donde llevaban.
-  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy'];
+  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy', 'pipelines', 'marca', 'cobros'];
   if (t && allIds.includes(t)) return t;
   return 'dashboard';
 }
@@ -216,10 +204,23 @@ export default function CrmDashboard() {
     let vivo = true;
     fetch('/api/crm/mejoras').then(r => r.json())
       .then(j => { if (vivo) setVencidasMenu((j.vencidas || []).length); }).catch(() => {});
-    fetch('/api/auth/yo').then(r => r.json())
+    const traerYo = () => fetch('/api/auth/yo').then(r => r.json())
       .then(j => { if (vivo && !j.error) setYo(j); }).catch(() => {});
-    return () => { vivo = false; };
+    traerYo();
+    // Al guardar el perfil (nombre o foto) el pie del menú se actualiza sin
+    // recargar: es lo primero que uno mira para comprobar que sí guardó.
+    const alGuardar = () => traerYo();
+    window.addEventListener('sacs-perfil', alGuardar);
+    return () => { vivo = false; window.removeEventListener('sacs-perfil', alGuardar); };
   }, []);
+  // Las secciones que esta persona puede ver. Mientras carga se muestra todo:
+  // parpadear el menú completo y luego recortarlo se lee como un error.
+  const permisos = (yo?.permisos || null) as Record<string, string> | null;
+  const seccionesVisibles = NAV_SECTIONS.filter(sec => {
+    const k = (sec as any).sec as string | undefined;
+    if (!k || !permisos) return true;
+    return permisos[k] !== 'no';
+  });
   const isMobile = useIsMobile();
   const searchRef = useRef<HTMLInputElement>(null);
   // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
@@ -451,7 +452,7 @@ export default function CrmDashboard() {
 
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-          {NAV_SECTIONS.map((section, si) => (
+          {seccionesVisibles.map((section, si) => (
             <div key={section.label || si} style={{ marginBottom: 4 }}>
               {/* Una línea fina entre bloques: agrupa igual que el título, sin
                   gastar un renglón de texto. */}
@@ -537,8 +538,13 @@ export default function CrmDashboard() {
             {/* Quién entró. El día que haya más de una persona en el CRM, saber
                 con qué cuenta estás parado deja de ser un adorno. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', margin: '6px 10px', borderRadius: 11, background: '#fff', boxShadow: '0 1px 3px rgba(40,20,90,.08)' }}>
-              <span style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {iniciales(yo?.nombre || yo?.email)}
+              {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
+              <span style={{
+                width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
+                color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {!yo?.foto_url && iniciales(yo?.nombre || yo?.email)}
               </span>
               <span style={{ minWidth: 0 }}>
                 <div style={{ fontSize: '0.81rem', fontWeight: 800, color: '#241d43', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

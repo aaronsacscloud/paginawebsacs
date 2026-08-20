@@ -7,6 +7,8 @@ export interface CurrentUser {
   email?: string;
   nombre?: string;
   default_commission_pct?: number;
+  foto_url?: string | null;
+  permisos?: Record<string, string> | null;
 }
 
 /**

@@ -9,6 +9,7 @@
 // herramientas del navegador, así que solo va lo que ya se muestra en pantalla.
 import type { APIRoute } from 'astro';
 import { getCurrentUser } from '../../../lib/auth/scope';
+import { permisosDe } from '../../../lib/crm/permisos';
 
 export const prerender = false;
 
@@ -17,5 +18,11 @@ export const GET: APIRoute = async ({ request }) => {
   if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify({
     id: user.id, nombre: user.nombre || null, email: user.email || null, rol: user.role,
+    // La foto y los permisos SÍ viajan: el menú tiene que esconder las
+    // secciones que esta persona no puede ver y pintar su cara en el pie. Son
+    // sus propios permisos, no los de nadie más, y el candado de verdad vive
+    // en el middleware — esto solo evita mostrar puertas que no abren.
+    foto_url: user.foto_url || null,
+    permisos: permisosDe({ rol: user.role, permisos: user.permisos }),
   }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 };

@@ -21,6 +21,10 @@ export interface SessionUser {
   email?: string;
   nombre?: string;
   default_commission_pct?: number;
+  /** Foto del usuario: el menú, la actividad y el anfitrión de las reuniones. */
+  foto_url?: string | null;
+  /** Permiso por sección; el middleware lo lee para gatear la API. */
+  permisos?: Record<string, string> | null;
 }
 
 /**
@@ -77,7 +81,7 @@ export async function getSessionFromRequest(request: Request): Promise<SessionUs
 
   const { data: member } = await supabase
     .from('team_members')
-    .select('id, rol, email, nombre, default_commission_pct, activo')
+    .select('id, rol, email, nombre, default_commission_pct, activo, foto_url, permisos')
     .eq('id', session.team_member_id)
     .maybeSingle();
 
@@ -89,6 +93,8 @@ export async function getSessionFromRequest(request: Request): Promise<SessionUs
     email: member.email,
     nombre: member.nombre,
     default_commission_pct: member.default_commission_pct ?? 50,
+    foto_url: (member as any).foto_url || null,
+    permisos: (member as any).permisos || null,
   };
 }
 

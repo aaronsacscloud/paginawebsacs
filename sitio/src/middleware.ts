@@ -13,6 +13,7 @@
 // partners, webhooks de Stripe, vista PÚBLICA de cotizaciones) pasa intacto.
 import { defineMiddleware } from 'astro:middleware';
 import { getSessionFromRequest } from './lib/auth/session';
+import { permisosDe, type Seccion } from './lib/crm/permisos';
 
 // Prefijos 100% admin (todo lo que cuelga de aquí exige founder/cs).
 const ADMIN_PREFIXES = [
@@ -81,6 +82,78 @@ function needsAdmin(path: string): boolean {
   return false;
 }
 
+// ── Permiso por SECCIÓN ───────────────────────────────────────────────────
+// Esconder un renglón del menú no protege nada: la API sigue contestando a
+// quien escriba la URL. Aquí cada ruta admin se mapea a la sección del sistema
+// a la que pertenece, y el permiso se revisa de verdad: 'no' no entra, 'ver'
+// solo lee (GET/HEAD) y 'edit' puede escribir.
+//
+// Lo que no aparezca en esta tabla NO queda abierto: cae en 'config', la
+// sección más restringida, así que una ruta nueva sin clasificar se lee como
+// administración y solo la ve quien administra.
+const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
+  // Cuentas
+  { pre: '/api/crm/contactos', sec: 'cuentas' },
+  { pre: '/api/crm/empresas', sec: 'cuentas' },
+  { pre: '/api/crm/clientes', sec: 'cuentas' },
+  { pre: '/api/crm/leads', sec: 'cuentas' },
+  { pre: '/api/crm/deals', sec: 'cuentas' },
+  { pre: '/api/crm/oportunidades', sec: 'cuentas' },
+  { pre: '/api/crm/reuniones', sec: 'cuentas' },
+  { pre: '/api/crm/actividad', sec: 'cuentas' },
+  { pre: '/api/crm/search', sec: 'cuentas' },
+  { pre: '/api/crm/etiquetas', sec: 'cuentas' },
+  { pre: '/api/get-leads', sec: 'cuentas' },
+  { pre: '/api/update-lead', sec: 'cuentas' },
+  { pre: '/api/add-note', sec: 'cuentas' },
+  // Facturación
+  { pre: '/api/revenue/', sec: 'facturacion' },
+  { pre: '/api/crm/arr', sec: 'facturacion' },
+  { pre: '/api/crm/cobranza', sec: 'facturacion' },
+  { pre: '/api/crm/pagos', sec: 'facturacion' },
+  { pre: '/api/crm/suscripciones', sec: 'facturacion' },
+  { pre: '/api/crm/unificar', sec: 'facturacion' },
+  // Acompañamiento
+  { pre: '/api/crm/mejoras', sec: 'acompanamiento' },
+  { pre: '/api/crm/consultoria', sec: 'acompanamiento' },
+  { pre: '/api/crm/expansion', sec: 'acompanamiento' },
+  { pre: '/api/crm/salud', sec: 'acompanamiento' },
+  // Automatización
+  { pre: '/api/automations/', sec: 'automatizacion' },
+  { pre: '/api/agents/', sec: 'automatizacion' },
+  { pre: '/api/crm/email', sec: 'automatizacion' },
+  { pre: '/api/crm/outbound', sec: 'automatizacion' },
+  // Colaboradores
+  { pre: '/api/partners/', sec: 'colaboradores' },
+  { pre: '/api/crm/comisiones', sec: 'colaboradores' },
+  // Configuración (lo demás cae aquí por omisión)
+  { pre: '/api/crm/usuarios', sec: 'config' },
+  { pre: '/api/crm/propiedades', sec: 'config' },
+  { pre: '/api/crm/pipelines', sec: 'config' },
+];
+
+// El propio perfil se edita siempre: es de uno mismo, no una sección del
+// sistema. Sin esta salida, alguien sin permiso de Configuración no podría
+// cambiarse ni la foto.
+const SIN_SECCION = new Set([
+  '/api/crm/perfil', '/api/auth/yo', '/api/revenue/upload-logo',
+  // La marca de los documentos es de cada persona, no del sistema: quien no
+  // administra la configuración igual tiene que poder poner su logo.
+  '/api/crm/marca',
+]);
+
+// Definir un campo o una etapa es configurar; LEERLOS es usar el CRM. La ficha
+// del cliente y el tablero de oportunidades piden estas rutas para saber qué
+// columnas pintar: si se gatean como Configuración, quien solo opera cuentas ve
+// la pantalla vacía. Se gatea la escritura, no la lectura.
+const LECTURA_LIBRE = new Set(['/api/crm/propiedades', '/api/crm/pipelines']);
+
+function seccionDe(path: string): Seccion | null {
+  if (SIN_SECCION.has(path)) return null;
+  for (const r of SECCION_POR_RUTA) if (path.startsWith(r.pre)) return r.sec;
+  return 'config';
+}
+
 const forbidden = (msg: string) =>
   new Response(JSON.stringify({ error: msg }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 
@@ -130,5 +203,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Rutas admin: rechazan a partners. Rutas de sesión (portal): cualquier rol
   // autenticado pasa (el endpoint ya scopea por user.id de la sesión).
   if (admin && user.role === 'partner') return forbidden('No autorizado (solo administradores).');
+
+  // Permiso por sección. Solo sobre rutas admin: el portal del partner ya se
+  // scopea por su propio id.
+  if (admin) {
+    const sec = seccionDe(path);
+    if (sec) {
+      const escribe = !['GET', 'HEAD', 'OPTIONS'].includes(context.request.method);
+      // La lectura de catálogos pasa antes que nada: sin ella, quien opera
+      // cuentas no puede ni pintar las columnas de su tablero.
+      if (!escribe && LECTURA_LIBRE.has(path)) return next();
+      const permisos = permisosDe({ rol: user.role, permisos: user.permisos });
+      const nivel = permisos[sec];
+      if (nivel === 'no') return forbidden('Tu usuario no tiene acceso a esta sección.');
+      if (escribe && nivel !== 'edit') return forbidden('Tu usuario puede ver esta sección, pero no modificarla.');
+    }
+  }
   return next();
 });
