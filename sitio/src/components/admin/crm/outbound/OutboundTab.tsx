@@ -790,7 +790,7 @@ function Resultados({ id, onClose, onAccion }: { id: string; onClose: () => void
               <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 8 }}>Encuesta</div>
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 {typeof r.resumen.encuesta.score === 'number' && <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#4536BE' }}>NPS {r.resumen.encuesta.score}</span>}
-                <span style={{ fontSize: '0.78rem', color: '#555', fontWeight: 600 }}>{r.resumen.encuesta.opciones} respuestas · promedio {r.resumen.encuesta.promedio}</span>
+                <span style={{ fontSize: '0.78rem', color: '#555', fontWeight: 600 }}>{r.resumen.encuesta.respuestas || 0} respuestas{r.resumen.encuesta.promedio != null ? ` · promedio ${r.resumen.encuesta.promedio}` : ''}</span>
                 {typeof r.resumen.encuesta.score === 'number' && <><Tag tono="ok">{r.resumen.encuesta.promotores} promotores</Tag>
                 <Tag tono="gris">{r.resumen.encuesta.pasivos} pasivos</Tag>
                 <Tag tono="malo">{r.resumen.encuesta.detractores} detractores</Tag></>}
