@@ -86,9 +86,15 @@ export const GET: APIRoute = async ({ url }) => {
   // reglas que apuntan a páginas que nadie abre o que ya no existen.
   const { data: vs } = await supabase.from('contact_visits')
     .select('ruta').gte('created_at', new Date(Date.now() - 90 * 86400000).toISOString()).limit(20000);
+  // Fuera las rutas que no son del sitio público: el panel, las APIs y las
+  // páginas de baja son nuestro propio uso o el pie de un correo, no el
+  // recorrido de un prospecto. Ofrecerlas invita a crear una regla que
+  // dispare con nuestras propias sesiones de trabajo.
+  const INTERNA = /^\/(admin|api|email\/(baja|preferencias)|qa-)/i;
   const conteo: Record<string, number> = {};
   for (const v of vs || []) {
     const r = String(v.ruta || '/').split('?')[0];
+    if (INTERNA.test(r)) continue;
     conteo[r] = (conteo[r] || 0) + 1;
   }
   const rutas = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 40).map(([ruta, n]) => ({ ruta, visitas: n }));

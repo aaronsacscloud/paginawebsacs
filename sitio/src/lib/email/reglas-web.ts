@@ -43,7 +43,12 @@ export const TIPOS: Record<TipoRegla, { etiqueta: string; explica: string; campo
 
 const hace = (dias: number) => new Date(Date.now() - dias * 86400000).toISOString();
 /** ¿La ruta calza con el patrón? `/planes` calza con `/planes?x=1` y `/planes/anual`. */
+/** Rutas que NO son comportamiento de prospecto: el panel, las APIs, el pie
+ *  de los correos. Aunque alguien las ponga en una regla, no disparan. */
+const RUTA_INTERNA = /^\/(admin|api|email\/(baja|preferencias))/i;
+
 const calza = (ruta: string, patron: string): boolean => {
+  if (RUTA_INTERNA.test(String(ruta || ''))) return false;
   const r = String(ruta || '').toLowerCase().split('?')[0].replace(/\/$/, '');
   const p = String(patron || '').toLowerCase().split('?')[0].replace(/\/$/, '');
   if (!p) return false;
