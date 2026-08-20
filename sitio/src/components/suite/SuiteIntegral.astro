@@ -166,11 +166,12 @@ const COLORES = ['#4B7BE5', '#2AB5A0', '#E8A838', '#8B7BE5'];
   .ig-boton:hover { transform: translate(-50%, -50%) scale(1.04); }
   .ig-boton.on { border-color: var(--c); color: var(--c); box-shadow: 0 4px 14px rgba(15,23,42,.1); }
   .ig-boton:focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
-  /* Arriba, derecha, abajo, izquierda: el orden en que se lee el círculo. */
-  .ig-b0 { top: 4%; left: 50%; }
-  .ig-b1 { top: 50%; left: 100%; }
-  .ig-b2 { top: 96%; left: 50%; }
-  .ig-b3 { top: 50%; left: 0%; }
+  /* Cada botón va sobre el MEDIO de su arco, no sobre donde empieza: puesto en
+     el arranque parecía etiquetar al arco anterior. */
+  .ig-b0 { top: 15%; left: 85%; }
+  .ig-b1 { top: 85%; left: 85%; }
+  .ig-b2 { top: 85%; left: 15%; }
+  .ig-b3 { top: 15%; left: 15%; }
 
   /* ── El panel ── */
   .ig-panel { position: relative; min-height: 380px; }
