@@ -484,8 +484,7 @@ export const documentosZapateria = {
 export const casosZapateria = [
   {
     id: 'mostrador',
-    cuando: 'Sábado, 1 p.m.',
-    titulo: '“¿Me lo trae en el 24?”',
+    titulo: 'Te piden un número y nadie sabe si lo hay',
     texto:
       'La vendedora está hincada junto al probador, con el pie del cliente en la mano. Ahí mismo ve si ese número existe — y si aquí no, en qué tienda sí y lo aparta.',
     remate: 'Cada viaje a la bodega son cinco minutos con otros dos clientes esperando.',
@@ -494,17 +493,15 @@ export const casosZapateria = [
   },
   {
     id: 'quincena',
-    cuando: 'Viernes 15, 7 p.m.',
-    titulo: 'El día que más vendes del mes',
+    titulo: 'Llega la quincena y todos vienen a liquidar su apartado',
     texto:
-      'Entra de golpe quien llevaba quince días viendo el aparador y quien viene a liquidar su apartado. Se busca por teléfono, se cobra el resto y sale con su par.',
-    remate: 'La quincena y el día 30 hacen la mitad del mes.',
+      'Se busca al cliente por su teléfono, se cobra lo que falta y sale con su par. Sin buscar el papelito en la carpeta ni preguntarle a quién se lo apartó.',
+    remate: 'Es el día que más vendes del mes: el mostrador no puede detenerse.',
     img: '/images/caso-zap-quincena.webp',
     alt: 'Fila de clientes con cajas de zapatos en la caja de una zapatería un viernes por la tarde',
   },
   {
     id: 'recepcion',
-    cuando: 'Llega la segunda remesa',
     titulo: 'La caja dice 24 y adentro viene 25',
     texto:
       'Se recibe contra la orden de compra, par por par y número por número: lo que falta, lo que llegó de más y lo que viene cambiado, todo antes de firmar.',
@@ -514,10 +511,9 @@ export const casosZapateria = [
   },
   {
     id: 'escolar',
-    cuando: '15 al 30 de agosto',
-    titulo: 'Se juega el año en quince días',
+    titulo: 'Llega el regreso a clases y el número se agota en horas',
     texto:
-      'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco. Y al niño se le mide el pie antes de traer caja.',
+      'Aquí no se lleva un par: se lleva el negro de diario y el tenis blanco. Y al niño se le mide el pie antes de traer caja. La reposición diaria por número te dice qué pedir hoy.',
     remate: 'Si no encuentra el número, compra en otra parte y no vuelve hasta el año que entra.',
     img: '/images/caso-zap-escolar.webp',
     alt: 'Vendedora hincada revisando la punta del zapato escolar que el niño ya trae puesto, con la caja abierta y el tenis blanco del segundo par en el piso',

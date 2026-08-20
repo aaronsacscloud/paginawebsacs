@@ -18,9 +18,7 @@
  */
 export interface CasoUso {
   id: string;
-  /** Cuándo pasa: la hora, la fecha o el hecho que lo dispara. */
-  cuando?: string;
-  /** El momento, en las palabras del dueño. Una frase corta. */
+  /** La situación, en las palabras del dueño. Una frase corta y directa. */
   titulo: string;
   /** Qué pasa hoy y qué cambia. Dos o tres líneas, no más. */
   texto: string;
@@ -60,10 +58,7 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
               aria-controls={`panel-${c.id}`}
               data-abre={c.id}
             >
-              <span class="cs-txt">
-                {c.cuando && <i class="cs-cuando">{c.cuando}</i>}
-                {c.titulo}
-              </span>
+              <span class="cs-txt">{c.titulo}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                 <path d="M5 12h14"></path>
                 <path d="M12 5v14" class="cs-mas"></path>
@@ -118,14 +113,8 @@ const { eyebrow = 'Casos de uso', titulo, sub, casos } = Astro.props;
     font-family: inherit; color: #1A1A1A;
   }
   .cs-txt {
-    display: flex; flex-direction: column; gap: 5px;
-    font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: -.4px; line-height: 1.25;
+    font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: -.4px; line-height: 1.3;
   }
-  .cs-cuando {
-    font-style: normal; font-size: 11.5px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
-  }
-  .cs-caso.on .cs-cuando { color: var(--color-primary, #4B7BE5); }
   .cs-boton svg { width: 20px; height: 20px; color: #8C8C8C; flex-shrink: 0; transition: color .3s ease; }
   .cs-mas { transition: opacity .25s ease; }
   .cs-caso.on .cs-mas { opacity: 0; }
