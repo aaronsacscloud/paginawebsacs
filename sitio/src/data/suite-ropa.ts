@@ -86,7 +86,7 @@ export const seccionesRopa: SuiteSeccion[] = [
   {
     id: 'consignacion',
     tag: 'Distribución',
-    titulo: 'Lo que dejas en Liverpool, bajo control',
+    titulo: 'Lo que dejas en la departamental, bajo control',
     texto:
       'Consigna, venta en firme o distribuidor: registras qué entregaste, el sistema te dice qué se vendió, qué recoges y cuánto te deben. Se acabó el Excel de cada tienda.',
     bullets: [
@@ -96,7 +96,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Consignatarios · corte del mes</p>
-      ${[['Liverpool Perisur','Departamental',48,31,'$62,000'],['Boutique Ana','Consigna',40,26,'$18,200'],['Distribuidora Norte','Venta en firme',120,120,'$91,400']]
+      ${[['Departamental · Perisur','Departamental',48,31,'$62,000'],['Boutique Ana','Consigna',40,26,'$18,200'],['Distribuidora Norte','Venta en firme',120,120,'$91,400']]
         .map(([n,t,e,v,m]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>

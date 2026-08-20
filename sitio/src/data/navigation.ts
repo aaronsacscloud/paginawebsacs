@@ -48,7 +48,7 @@ export const businessSectors: BusinessSector[] = [
       { label: 'Probadores conectados', description: 'Tablet en probador con catálogo, recomendador de tallas y reserva entre sucursales.' },
       { label: 'Cambios sin ticket', description: '"No me quedó la talla" — cambio rápido vinculado al cliente sin ticket físico.' },
       { label: 'Looks completos', description: 'Vende un outfit (camisa + pantalón + cinturón) con descuento por look armado.' },
-      { label: 'Consignación y departamentales', description: 'Controla lo que dejas en tiendas de terceros, distribuidores o Liverpool: consigna o venta en firme, qué se vendió, qué recoges y la liquidación de cada uno.' },
+      { label: 'Consignación y departamentales', description: 'Controla lo que dejas en tiendas de terceros, distribuidores o una tienda departamental: consigna o venta en firme, qué se vendió, qué recoges y la liquidación de cada uno.' },
       { label: 'Reabasto por rotación', description: 'Detecta prendas que se están agotando antes que otras y sugiere reposición inteligente.' },
     ],
     href: '/giros/marcas-de-ropa',

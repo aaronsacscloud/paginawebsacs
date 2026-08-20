@@ -5,18 +5,19 @@
  * Desactiva la objecion que el visitante trae ANTES de que le enseñemos nada:
  * "yo ya tengo sistema" o "a mi me lo hicieron a la medida".
  *
- * Sobre la direccion de arte: la primera version eran tarjetas oscuras con
- * acento azul, viñetas y una tabla comparativa de tres columnas — la plantilla
- * exacta de cualquier pagina de software, indistinguible de cien mas. Esta
- * version se construye con el material del giro: papeleria. Los dos caminos son
- * DOCUMENTOS —una hoja de inventario impresa y una cotizacion de desarrollo—
- * con sus sellos, sus anotaciones al margen y su tinta corrida. Es un inserto
- * de papel dentro de una pagina oscura, y por eso corta el ritmo sin parecerse
- * a nada mas del sitio.
+ * Sobre la direccion de arte: hubo dos versiones antes de esta. La primera
+ * eran tarjetas oscuras con acento azul y una tabla de tres columnas — la
+ * plantilla de cualquier pagina de software. La segunda se disfrazo de
+ * expediente de papel: crema con grano, serif, monoespaciada, manuscrita y
+ * sellos de goma. Resolvia el problema de la primera y creaba otro: era el
+ * unico bloque del sitio con su propia tipografia y su propia paleta, y se
+ * leia como pegado de otra pagina.
  *
- * Nada de gradientes, sombras difusas ni esquinas redondeadas: el papel no hace
- * eso. Serif para el titular, monoespaciada para los datos, y el color solo
- * donde habria tinta de sello.
+ * Esta version usa los componentes y los tokens del sitio —los mismos de la
+ * portada y de producto/[slug]— y deja que el argumento haga el trabajo: dos
+ * documentos reales, uno al lado del otro, con lo que cada uno NO dice. El
+ * sello de goma pasa a ser una etiqueta de estado, que es como el sistema
+ * marca las cosas en todas partes.
  *
  * Regla de tono: no se habla mal de nadie. El generico funciona —para
  * abarrotes—, y quien pago un desarrollo hizo lo que pudo con lo que habia.
@@ -95,7 +96,7 @@ const documentos = [doc1, doc2];
   <div class="pp-inner">
 
     <header class="pp-head">
-      <p class="pp-kicker">Expediente</p>
+      <p class="pp-kicker">Los dos caminos de siempre</p>
       <h2 set:html={titulo} />
       <p class="pp-entrada">{entrada}</p>
     </header>
@@ -104,35 +105,46 @@ const documentos = [doc1, doc2];
       {documentos.map((d, k) => (
         <article class="pp-hoja">
           <div class="pp-membrete">
-            <span>{d.membrete}</span>
-            <span>{d.sub}</span>
-          </div>
-
-          <div class:list={['pp-cuerpo', { 'pp-cuerpo-ancho': k === 1 }]}>
-            <p class="pp-linea-doc">{d.cab.map((c, i) => <i class={i === d.cab.length - 1 ? 'der' : ''}>{c}</i>)}</p>
-            {d.lineas.map((l) => (
-              <p class:list={['pp-linea-doc', { 'pp-dato': !l.tenue, 'pp-vacio': l.tenue, 'pp-tachado': l.tachado }]}>
-                <i>{l.a}</i><i>{l.b}</i>{l.c !== undefined && <i class="der">{l.c}</i>}
-              </p>
-            ))}
-
-            <p class:list={['pp-margen', { 'pp-margen-2': k === 1 }]}>
-              {d.margen.map((m, i) => <Fragment>{i > 0 && <br />}{m}</Fragment>)}
-            </p>
-
-            <div class:list={['pp-sello', k === 1 ? 'pp-sello-ocre' : 'pp-sello-rojo']}>
-              <span set:html={d.sello} />
+            <div>
+              <b>{d.membrete}</b>
+              <span>{d.sub}</span>
             </div>
+            <span class:list={['pp-estado', k === 1 ? 'pp-estado-ambar' : 'pp-estado-rojo']}>
+              <Fragment set:html={d.sello.replace(/<br\s*\/?>/g, ' ')} />
+            </span>
           </div>
 
-          <ol class="pp-notas">
-            {d.notas.map((n) => <li set:html={n} />)}
-          </ol>
+          <div class="pp-cuerpo">
+            <div class="pp-tabla">
+              <div class="pp-fila pp-fila-cab">
+                {d.cab.map((c, i) => <span class={i === d.cab.length - 1 ? 'der' : ''}>{c}</span>)}
+              </div>
+              {d.lineas.map((l) => (
+                <div class:list={['pp-fila', { 'pp-vacio': l.tenue, 'pp-tachado': l.tachado }]}>
+                  <span>{l.a}</span><span>{l.b}</span>{l.c !== undefined && <span class="der">{l.c}</span>}
+                </div>
+              ))}
+            </div>
+
+            <p class="pp-pregunta">
+              {d.margen.map((m, i) => <Fragment>{i > 0 && ' · '}{m}</Fragment>)}
+            </p>
+          </div>
+
+          <ul class="pp-notas">
+            {d.notas.map((n) => (
+              <li>
+                <span class="pp-notas-icono" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </span>
+                <span set:html={n} />
+              </li>
+            ))}
+          </ul>
         </article>
       ))}
     </div>
 
-    <!-- Cuadro comparativo, impreso -->
     <div class="pp-cuadro">
       <p class="pp-cuadro-rot">Lo que tu giro necesita · los tres caminos</p>
 
@@ -163,173 +175,132 @@ const documentos = [doc1, doc2];
 </section>
 
 <style>
-  /* Papel dentro de una página oscura: el bloque entero es un inserto. */
-  .pp {
-    background: #E8E2D6;
-    color: #1A1815;
-    padding: 96px 24px 104px;
-    /* Grano: dos capas de rayas casi invisibles. Sin esto el crema se ve como
-       un fondo plano de plantilla. */
-    background-image:
-      repeating-linear-gradient(0deg, rgba(26,24,21,.035) 0 1px, transparent 1px 3px),
-      repeating-linear-gradient(90deg, rgba(26,24,21,.02) 0 1px, transparent 1px 4px);
+  /* Los tokens del sitio, nada propio: la línea es la de la portada y la de
+     las páginas de producto. */
+  .pp { background: #fff; padding: clamp(20px, 3vw, 32px) clamp(16px, 2vw, 32px); }
+  .pp-inner {
+    max-width: 1280px; margin: 0 auto; background: #f2f2f2; border-radius: 24px;
+    padding: clamp(48px, 6vw, 76px) clamp(24px, 4vw, 56px);
   }
-  .pp-inner { max-width: 1180px; margin: 0 auto; }
 
-  /* ── Encabezado editorial ── */
-  .pp-head {
-    display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: end;
-    padding-bottom: 30px; margin-bottom: 46px;
-    border-bottom: 2px solid #1A1815;
-  }
+  .pp-head { max-width: 680px; margin-bottom: clamp(40px, 5vw, 56px); }
   .pp-kicker {
-    grid-column: 1 / -1; margin: 0 0 16px;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11.5px; letter-spacing: .28em; text-transform: uppercase; color: #8A8071;
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 16px;
   }
   .pp-head h2 {
-    margin: 0;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(34px, 5.4vw, 62px); font-weight: 400; line-height: 1.02;
-    letter-spacing: -.02em;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
   }
-  .pp-entrada { margin: 0; font-size: 16px; line-height: 1.65; color: #4A443B; max-width: 46ch; }
+  .pp-entrada {
+    margin: 0; font-size: 0.9375rem; line-height: 1.65;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
 
   /* ── Los dos documentos ── */
-  .pp-hojas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 76px; }
-
+  .pp-hojas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 56px; }
+  .pp-hoja {
+    background: #fff; border-radius: 16px; padding: 24px 26px 26px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 12px 32px rgba(15,23,42,.07);
+    display: flex; flex-direction: column;
+  }
   .pp-membrete {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #6B6459;
-    border-bottom: 1px solid #1A1815; padding-bottom: 9px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,.07); margin-bottom: 18px;
   }
-  .pp-membrete span:first-child { color: #1A1815; font-weight: 700; }
+  .pp-membrete div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .pp-membrete b {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.0625rem; font-weight: 700; letter-spacing: -.02em;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+  .pp-membrete span { font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 600; }
 
-  /* La hoja: blanco de impresión sobre el crema. */
-  .pp-cuerpo {
-    position: relative; background: #FBF9F4; border: 1px solid #CFC7B8; border-top: none;
-    /* La franja de abajo se reserva para el sello y la anotacion: son tinta
-       encima del documento y no deben caer sobre los renglones. */
-    padding: 22px 22px 104px; overflow: hidden;
-    box-shadow: 3px 3px 0 rgba(26,24,21,.07);
-    /* Las dos hojas miden lo mismo aunque una traiga un renglon menos: si no,
-       las notas de cada columna arrancan a distinta altura y el bloque se ve
-       desalineado. */
-    min-height: 232px;
+  /* El sello de goma pasa a ser una etiqueta de estado, que es como el sistema
+     marca las cosas en el resto del sitio. */
+  .pp-estado {
+    flex-shrink: 0; font-size: 10.5px; font-weight: 800; letter-spacing: .04em;
+    border-radius: 999px; padding: 5px 12px; white-space: nowrap; text-transform: uppercase;
   }
-  .pp-linea-doc {
-    display: flex; gap: 14px; margin: 0 0 9px; padding-bottom: 8px;
-    border-bottom: 1px dotted #D6CEC0;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11px; letter-spacing: .04em; color: #8A8071;
-  }
-  .pp-linea-doc i { font-style: normal; flex: 1; }
-  .pp-linea-doc i:first-child { flex: 0 0 96px; }
-  /* El segundo documento tiene conceptos largos: su primera columna es ancha
-     para que el plazo no se parta en dos renglones. */
-  .pp-cuerpo-ancho .pp-linea-doc i:first-child { flex: 1 1 auto; }
-  .pp-cuerpo-ancho .pp-linea-doc i.der { flex: 0 0 86px; }
-  .pp-linea-doc i.der { flex: 0 0 62px; text-align: right; }
-  .pp-dato { color: #1A1815; font-size: 12.5px; font-weight: 600; }
-  .pp-vacio { color: #C9C0B0; }
-  .pp-tachado i { text-decoration: line-through; text-decoration-color: #B23A2E; }
+  .pp-estado-rojo { background: #FDE7E7; color: #C22F2F; border: 1px solid #F3AEAE; }
+  .pp-estado-ambar { background: #FDF3DF; color: #9A6B10; border: 1px solid #F2DCA8; }
 
-  /* Anotación al margen, a mano sobre el documento. */
-  .pp-margen {
-    position: absolute; right: 18px; top: 78px; margin: 0;
-    font-family: "Caveat", "Segoe Script", cursive;
-    font-size: 19px; line-height: 1.35; color: #2E5FA8; transform: rotate(-6deg);
-    text-align: right;
+  .pp-cuerpo { margin-bottom: 20px; }
+  .pp-tabla { border: 1px solid rgba(0,0,0,.07); border-radius: 10px; overflow: hidden; }
+  .pp-fila {
+    display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 12px;
+    padding: 10px 14px; font-size: 13px; align-items: baseline;
+    color: var(--color-text-primary, #1a1a2e); font-variant-numeric: tabular-nums;
   }
-  /* En la cotizacion la anotacion baja: arriba chocaba con el renglon tachado
-     y las dos tintas se leian encimadas. */
-  .pp-margen-2 { top: auto; bottom: 24px; right: 18px; color: #B23A2E; transform: rotate(-4deg); }
-
-  /* Sello de tinta: borde grueso, rotado, tinta un poco comida. */
-  .pp-sello {
-    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%) rotate(-9deg);
-    border: 3px solid currentColor; padding: 7px 16px;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 15px; font-weight: 700; letter-spacing: .1em; line-height: 1.15;
-    text-align: center; opacity: .72;
+  .pp-fila + .pp-fila { border-top: 1px solid rgba(0,0,0,.05); }
+  .pp-fila .der { text-align: right; font-weight: 700; }
+  .pp-fila-cab {
+    background: #F8FAFC; font-size: 10.5px; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-  .pp-sello-rojo { color: #B23A2E; }
-  .pp-sello-ocre { color: #A6702A; }
+  .pp-vacio { color: #C7CDD6; }
+  .pp-tachado { color: #C22F2F; }
+  .pp-tachado span:last-child { text-decoration: line-through; }
 
-  .pp-notas { list-style: none; margin: 22px 0 0; padding: 0; counter-reset: n; }
+  /* Lo que el documento NO contesta. Antes iba manuscrito al margen; ahora es
+     una pregunta al pie, que es la misma idea sin el disfraz. */
+  .pp-pregunta {
+    margin: 14px 0 0; font-size: 13px; font-weight: 700; font-style: italic;
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  .pp-notas { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; margin-top: auto; }
   .pp-notas li {
-    counter-increment: n; position: relative; padding-left: 30px; margin-bottom: 14px;
-    font-size: 15px; line-height: 1.6; color: #4A443B;
+    display: flex; align-items: flex-start; gap: 11px;
+    font-size: 0.875rem; line-height: 1.55; color: var(--color-text-secondary, #4A4A4A);
   }
-  .pp-notas li::before {
-    content: counter(n, decimal-leading-zero);
-    position: absolute; left: 0; top: 2px;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11px; color: #A39781; letter-spacing: .06em;
+  .pp-notas li :global(b) { color: var(--color-text-primary, #1a1a2e); font-weight: 700; }
+  .pp-notas-icono {
+    flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(229,75,75,.1); color: #C22F2F;
+    display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
   }
-  .pp-notas b { color: #1A1815; font-weight: 700; }
 
-  /* ── Cuadro comparativo impreso ── */
-  .pp-cuadro { border-top: 2px solid #1A1815; padding-top: 30px; }
+  /* ── El cuadro de los tres caminos ── */
+  .pp-cuadro { padding-top: 40px; border-top: 1px solid rgba(0,0,0,.09); }
   .pp-cuadro-rot {
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: #8A8071;
-    margin: 0 0 22px;
+    margin: 0 0 20px; font-size: 12px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-
   .pp-cab, .pp-reng {
-    display: grid; grid-template-columns: 2.1fr 1fr 1fr 1.15fr; gap: 18px; align-items: center;
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 16px; align-items: center;
   }
   .pp-cab {
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #8A8071;
-    padding-bottom: 12px; border-bottom: 1px solid #1A1815;
+    padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,.1);
+    font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
   }
-  .pp-cab span:not(.pp-cab-que) { text-align: center; }
-  .pp-cab-sacs { color: #1A1815; font-weight: 700; }
-
-  .pp-reng { padding: 14px 0; border-bottom: 1px solid #D6CEC0; }
-  .pp-que { font-size: 15px; color: #1A1815; }
-  .pp-val {
-    text-align: center; font-size: 13.5px; color: #7C7466;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  }
-  /* La columna nuestra se marca como se marcaría en papel: en negro y subrayada
-     con tinta, sin fondos de color. */
-  .pp-val-sacs {
-    color: #1A1815; font-weight: 700; font-family: inherit; font-size: 15px;
-    box-shadow: inset 0 -7px 0 rgba(47,107,79,.22);
-  }
+  .pp-cab span { text-align: center; }
+  .pp-cab-que { text-align: left !important; }
+  .pp-cab-sacs { color: var(--color-primary, #4B7BE5) !important; }
+  .pp-reng { padding: 14px 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+  .pp-que { font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary, #1a1a2e); }
+  .pp-val { text-align: center; font-size: 0.875rem; color: var(--color-text-secondary, #4A4A4A); }
+  .pp-val-sacs { font-weight: 800; color: var(--color-primary, #4B7BE5); }
 
   .pp-pie {
-    margin: 26px 0 0; font-size: 15.5px; line-height: 1.65; color: #4A443B; max-width: 74ch;
+    margin: 28px 0 0; font-size: 0.9375rem; line-height: 1.7;
+    color: var(--color-text-secondary, #4A4A4A); max-width: 76ch;
   }
-  .pp-pie b { color: #1A1815; font-weight: 700; }
+  .pp-pie b { color: var(--color-text-primary, #1a1a2e); }
 
   @media (max-width: 900px) {
-    .pp { padding: 66px 18px 74px; }
-    .pp-head { grid-template-columns: 1fr; gap: 20px; align-items: start; }
-    .pp-hojas { grid-template-columns: 1fr; gap: 44px; margin-bottom: 56px; }
-    .pp-margen { font-size: 14px; top: 74px; right: 12px; }
-    /* La regla de arriba tambien alcanzaba a la segunda anotacion y la subia
-       encima del renglon tachado: aqui recupera su sitio en la franja de tinta. */
-    .pp-margen-2 { top: auto; bottom: 20px; right: 12px; }
-
-    /* El cuadro deja de ser rejilla: cada necesidad es un renglón con sus tres
-       lecturas debajo. Cuatro columnas en un teléfono se leen de lado. */
+    .pp-inner { padding: 44px 20px 48px; border-radius: 18px; }
+    .pp-hojas { grid-template-columns: 1fr; gap: 18px; }
     .pp-cab { display: none; }
-    .pp-reng { display: block; padding: 16px 0; }
-    .pp-que { display: block; font-weight: 700; margin-bottom: 10px; font-size: 15.5px; }
-    .pp-val {
-      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-      text-align: right; padding: 5px 0; font-size: 13px;
-    }
+    .pp-reng { grid-template-columns: 1fr; gap: 6px; padding: 16px 0; }
+    /* En vertical cada valor dice de qué columna es: sin encabezado, tres
+       valores sueltos no significan nada. */
+    .pp-val { text-align: left; display: flex; justify-content: space-between; gap: 14px; }
     .pp-val::before {
-      content: attr(data-col);
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #A39781;
+      content: attr(data-col); font-size: 11.5px; font-weight: 700;
+      color: var(--color-text-tertiary, #8C8C8C);
     }
-    .pp-val-sacs { font-size: 14.5px; box-shadow: inset 0 -8px 0 rgba(47,107,79,.22); }
   }
 </style>

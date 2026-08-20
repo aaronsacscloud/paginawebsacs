@@ -28,7 +28,7 @@ export const cortinaModa = {
   filas: [
     { que: 'Blusa satinada negra · M', donde: 'Centro', dato: '4' },
     { que: 'Vestido midi verde · S', donde: 'Satélite', dato: '3' },
-    { que: 'Vestido cruzado · M', donde: 'Liverpool', dato: '31 vend.' },
+    { que: 'Vestido cruzado · M', donde: 'Departamental', dato: '31 vend.' },
   ],
 };
 

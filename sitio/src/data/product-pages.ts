@@ -3018,7 +3018,7 @@ export const pageContent: Record<string, any> = {
         "answer": "Depende del plan SACS que contrates. Los timbres los provee tu PAC — puedes usar la bolsa que ya tengas o contratar una nueva con Facturama/Quadrum a través de nosotros al precio de mayorista."
       },
       {
-        "question": "¿Soportan addendas para clientes B2B (Walmart, Liverpool, Soriana)?",
+        "question": "¿Soportan addendas para clientes B2B (autoservicio y departamentales)?",
         "answer": "Addendas estándar las podemos configurar por cliente — es un flujo de onboarding con tu equipo contable. Si tu cliente B2B tiene una addenda custom, la evaluamos caso por caso."
       },
       {
