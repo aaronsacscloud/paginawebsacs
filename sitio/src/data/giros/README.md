@@ -12,6 +12,8 @@ etiquetas sirve para otro negocio, está mal pensado.
 
 | Bloque | Qué hace |
 |---|---|
+| `GiroBanner` | La portada, con la forma del Home: mensaje a la izquierda, la tienda a la derecha y avisos del sistema encima — pero avisos del oficio |
+| `BloqueProducto` | El envoltorio de las páginas de producto (`sq-block`), para que los bloques interactivos del giro no inventen su propio formato |
 | `SuiteCasos` | Momentos reales del giro: lista de casos y la escena fotográfica que cambia con cada uno |
 | `SuiteManifiesto` | Nombra los dolores del oficio con sus palabras. Sin producto todavía |
 | `SuiteCubo` | La variante del giro en 3D. Se le pasa la matriz real |
@@ -22,10 +24,10 @@ etiquetas sirve para otro negocio, está mal pensado.
 | `SuiteSalida` | Franja delgada de salida. Va después del expediente y después de los casos: sin ella hay siete bloques sin dónde hacer clic |
 | `SuiteScroll` | El recorrido de funcionalidades con panel pegajoso |
 | `SuiteDireccion` | Para quien firma: comparativo de sucursales y las reglas contra la fuga |
-| `SuiteMigracion` | Cómo se cambia sin cerrar, y la caja sin conexión |
-| `SuiteFormal` | La factura (CFDI). Lo eliminatorio para una empresa formal |
+| `SuiteProceso` | Cómo se cambia sin cerrar: la escena se queda quieta y los pasos pasan. Trae las tres formas de implementar y la caja sin conexión |
+| `SuiteIntegral` | Las cuatro cosas que el negocio hace todos los días —vender, controlar, fidelizar, administrar— en un círculo, con las funciones del giro |
 | `SuitePlanes` | La escalera de planes y desde dónde viene incluida la suite |
-| `SuiteEnsamble` | El cierre en tres actos, con el llamado dentro de la animación |
+| `CtaDudas` | El cierre. Es el mismo componente de la portada: el sitio no puede hablar con dos voces donde más importa |
 
 ## Complementos acumulados
 
@@ -35,6 +37,7 @@ Viven en `src/components/giros/` y llevan el prefijo del giro, no `Suite*`.
 |---|---|---|
 | Marcas de ropa | *(pendiente: le toca el suyo)* | |
 | Zapaterías | `ZapCorridaCerrada` — la docena 1-2-3-3-2-1 del fabricante contra la venta real por número | La corrida cerrada solo existe en calzado |
+| Zapaterías | `ZapNivelacion` — la matriz número × tienda y los traspasos que cierran corrida, uno por uno | Nivelar por número con medios, y saber que un cero en un número que ahí no sale no es un hueco |
 | Joyerías | `JoyColchon` — tu precio del gramo de fino contra el spot, con lo que hay que reetiquetar y lo que NO se mueve | Solo aquí el costo es una materia prima con precio público que cambia a diario |
 
 ### La animación también es del giro
@@ -103,3 +106,18 @@ muestra: es lo único que ya sabemos del visitante antes de la llamada.
   contrario de lo que quiere decir.
 - **El dinero se cuenta a costo.** A precio de lista toda cifra de inventario
   parado se infla al doble y el dueño la cuestiona en el acto.
+- **Nada de bloques con su propia identidad gráfica.** La línea es la de la
+  portada y la de `producto/[slug].astro`; ahí están los componentes. Un bloque
+  que trae su propia tipografía, su propia paleta o su propio disfraz se lee
+  como de otro sitio aunque por dentro esté bien argumentado.
+- **Un contador nunca arranca en cero en el HTML.** Si el script no corre —o si
+  alguien captura la página— la franja dice "0 negocios activos". El valor final
+  va en el marcado y la animación lo recorre.
+- **Un bloque interactivo abre con su resultado puesto.** El visitante que solo
+  baja tiene que ver el número; el que quiera ver el antes, lo desarma. Abrir en
+  cero regala el argumento.
+- **Un solo padrón de sucursales por página.** En cuanto un bloque fija los
+  nombres de las tiendas, los demás tienen que usar esos.
+- **El recorrido no repite lo que ya argumenta un bloque propio.** Cuatro
+  secciones de zapatería decían lo mismo que la corrida cerrada, la nivelación y
+  el círculo — seis mil píxeles de eco.

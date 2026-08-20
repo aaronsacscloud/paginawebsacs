@@ -107,7 +107,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín piel café · número 25</p>
-      ${[['Esta tienda','Centro',0,true],['Sucursal Norte','a 20 min',2,false],['Sucursal Plaza','a 35 min',5,false],['Bodega','entrega mañana',9,false]]
+      ${[['Esta tienda','Centro',0,true],['Plaza Norte','a 20 min',2,false],['Galerías','a 35 min',5,false],['Bodega central','entrega mañana',9,false]]
         .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#3B82F6':'#EEF1F5'};background:${aqui?'#F7FBFF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;">
             <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
@@ -159,7 +159,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de número · sin ticket</p>
       <div style="border:1px solid #EEF1F5;border-radius:11px;padding:12px;margin-bottom:10px;">
-        <div style="font-size:11px;color:#94A3B8;font-weight:700;margin-bottom:6px;">SE LLEVÓ (3 ene · Sucursal Plaza)</div>
+        <div style="font-size:11px;color:#94A3B8;font-weight:700;margin-bottom:6px;">SE LLEVÓ (3 ene · Galerías)</div>
         <div style="font-size:13px;font-weight:700;color:#0F172A;">Botín dama café
           <span style="background:#FEE2E2;color:#991B1B;border-radius:5px;padding:2px 7px;font-size:10.5px;margin-left:6px;">26</span></div>
       </div>
@@ -348,9 +348,9 @@ export const cortinaZapateria = {
   libreta: ['Botín café 25 — ¿queda?', '¿pedir a Norte?'],
   pieAntes: 'Diez minutos entre cajas<br />y el cliente se fue.',
   filas: [
-    { que: 'Botín piel café · 25', donde: 'Norte', dato: '2' },
+    { que: 'Botín piel café · 25', donde: 'Plaza Norte', dato: '2' },
     { que: 'Mocasín negro · 27', donde: 'Centro', dato: '5' },
-    { que: 'Escolar negro · 23', donde: 'Bodega', dato: '14' },
+    { que: 'Escolar negro · 23', donde: 'Bodega central', dato: '14' },
   ],
   pieDespues: 'Sabes si existe antes de caminar.',
 };

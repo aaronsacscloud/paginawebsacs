@@ -38,7 +38,7 @@ const { foto, alt, frase, datos, encuadre = 'center 45%' } = Astro.props;
     <div class="cif-grid">
       {datos.map((d) => (
         <div>
-          <b data-hasta={d.n} data-pre={d.pre || ''} data-pos={d.pos || ''}>0</b>
+          <b data-hasta={d.n} data-pre={d.pre || ''} data-pos={d.pos || ''}>{`${d.pre || ''}${d.n.toLocaleString('es-MX')}${d.pos || ''}`}</b>
           <span>{d.rotulo}</span>
         </div>
       ))}
@@ -98,6 +98,7 @@ const { foto, alt, frase, datos, encuadre = 'center 45%' } = Astro.props;
 
           if (menos) { pinta(fin); return; }
 
+          pinta(0);
           const t0 = performance.now();
           const paso = (t: number) => {
             const p = Math.min(1, (t - t0) / 1400);

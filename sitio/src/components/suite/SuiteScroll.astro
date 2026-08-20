@@ -204,7 +204,8 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   /* ── pasos ── */
   .suite-step {
     scroll-margin-top: 148px;
-    min-height: 78vh; display: flex; flex-direction: column; justify-content: center;
+    /* Bajó de 78vh: con diez secciones eran nueve mil píxeles de recorrido. */
+    min-height: 62vh; display: flex; flex-direction: column; justify-content: center;
     padding: 24px 0; opacity: .38; transition: opacity .4s ease;
   }
   .suite-step.on { opacity: 1; }

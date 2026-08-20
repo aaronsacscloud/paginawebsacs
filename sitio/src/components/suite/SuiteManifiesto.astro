@@ -31,33 +31,35 @@ const { intro, frases, cierre } = Astro.props;
 </section>
 
 <style>
-  .mf { background: #0A0A0B; color: #fff; padding: 140px 24px; }
+  /* En claro: iba justo después del hero y abría cuatro mil píxeles de negro
+     seguido, que es lo que hacía sentir saturada la página. */
+  .mf { background: var(--color-bg-secondary, #F5F3EE); color: var(--color-text-primary, #1A1A1A); padding: 120px 24px; }
   .mf-inner { max-width: 900px; margin: 0 auto; }
   .mf-intro {
     font-size: 13px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #3B82F6; margin: 0 0 56px;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 56px;
   }
   .mf-frases { display: grid; gap: 40px; }
   .mf-frase {
     margin: 0; font-size: clamp(26px, 4.4vw, 46px); font-weight: 700;
-    letter-spacing: -1.2px; line-height: 1.18; color: #2A2A2E;
+    letter-spacing: -1.2px; line-height: 1.18; color: #C9C6BE;
     transition: color .5s ease, transform .5s ease;
   }
-  .mf-frase.on { color: #fff; transform: translateX(6px); }
+  .mf-frase.on { color: var(--color-text-primary, #1A1A1A); transform: translateX(6px); }
   /* La palabra clave se queda encendida siempre: es el ancla visual de la frase. */
-  .mf-frase :global(b) { color: #3B82F6; font-weight: 800; }
+  .mf-frase :global(b) { color: var(--color-primary, #4B7BE5); font-weight: 800; }
   .mf-cierre {
     margin: 72px 0 0; padding-top: 40px; border-top: 1px solid #1F1F23;
-    font-size: clamp(17px, 2.2vw, 22px); line-height: 1.55; color: #A1A1AA; max-width: 62ch;
+    font-size: clamp(17px, 2.2vw, 22px); line-height: 1.55; color: var(--color-text-secondary, #4A4A4A); max-width: 62ch;
   }
 
   @media (max-width: 900px) {
     .mf { padding: 80px 20px; }
     .mf-frases { gap: 28px; }
-    .mf-frase { color: #fff; }   /* en movil no se atenua: se lee de corrido */
+    .mf-frase { color: var(--color-text-primary, #1A1A1A); }   /* en movil no se atenua: se lee de corrido */
   }
   @media (prefers-reduced-motion: reduce) {
-    .mf-frase { transition: none; color: #fff; transform: none; }
+    .mf-frase { transition: none; color: var(--color-text-primary, #1A1A1A); transform: none; }
   }
 </style>
 
