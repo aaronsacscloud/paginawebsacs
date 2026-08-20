@@ -24,6 +24,12 @@ const EDITABLES = [
   'direccion_fisica', 'aviso_privacidad_url', 'motivo_recepcion', 'footer_extra',
   'presion_max_semana', 'presion_por_empresa', 'limite_diario',
   'ventana_inicio', 'ventana_fin', 'timezone', 'enviar_fines_semana', 'activo',
+  // Reputación: umbrales del freno, rampa de calentamiento y semillas.
+  // `proveedor_key_env` es el NOMBRE de la variable con la llave del
+  // inquilino, nunca la llave: un secreto en la base es un secreto en cada
+  // respaldo y en cada exportación.
+  'freno_umbral_quejas', 'freno_umbral_rebotes', 'freno_muestra_minima',
+  'calentamiento_inicio', 'semillas', 'proveedor_key_env',
 ] as const;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
@@ -53,6 +59,29 @@ export const PUT: APIRoute = async ({ request, url }) => {
   const body = await request.json().catch(() => ({} as any));
   const updates: Record<string, any> = {};
   for (const k of EDITABLES) if (k in body) updates[k] = body[k];
+
+  // Las semillas llegan como texto libre del panel: se parten, se limpian y se
+  // validan aquí. Una dirección mal escrita en esta lista rebota en CADA
+  // campaña y arrastra la tasa de rebotes de todo el inquilino hacia el freno.
+  if ('semillas' in updates) {
+    const crudas = Array.isArray(updates.semillas)
+      ? updates.semillas
+      : String(updates.semillas || '').split(/[\s,;]+/);
+    const limpias = [...new Set(crudas.map((x: any) => String(x).trim().toLowerCase()).filter(Boolean))];
+    const malas = limpias.filter((x: string) => !EMAIL_RE.test(x));
+    if (malas.length) return json({ error: `Direcciones semilla inválidas: ${malas.join(', ')}` }, 400);
+    if (limpias.length > 10) return json({ error: 'Máximo 10 semillas: cada una recibe copia de cada campaña.' }, 400);
+    updates.semillas = limpias;
+  }
+  if ('calentamiento_inicio' in updates && !updates.calentamiento_inicio) updates.calentamiento_inicio = null;
+  if ('proveedor_key_env' in updates) {
+    const n = String(updates.proveedor_key_env || '').trim();
+    // Si alguien pega la llave en vez del nombre, se rechaza: las llaves de
+    // SendGrid empiezan con SG. y no tienen por qué pasar por aquí.
+    if (/^SG\./.test(n)) return json({ error: 'Aquí va el NOMBRE de la variable de entorno, no la llave.' }, 400);
+    if (n && !/^[A-Z][A-Z0-9_]*$/.test(n)) return json({ error: 'El nombre de la variable va en MAYÚSCULAS con guion bajo.' }, 400);
+    updates.proveedor_key_env = n || null;
+  }
 
   // Validaciones que evitan un correo roto en producción:
   if ('from_email' in updates && !EMAIL_RE.test(String(updates.from_email || ''))) {

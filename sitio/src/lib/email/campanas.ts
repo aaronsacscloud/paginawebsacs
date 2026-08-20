@@ -116,8 +116,22 @@ export async function materializar(t: Tenant, c: Campana): Promise<number> {
     return count || 0;
   }
   const miembros = await audiencia(t, c);
+
+  // Las SEMILLAS: una dirección propia por proveedor (Gmail, Outlook, Yahoo)
+  // que recibe una copia de cada campaña. Es la única forma de saber DÓNDE
+  // cayó el correo — las aperturas no distinguen la bandeja principal de
+  // Promociones ni de spam, y una campaña que llegó entera a spam se ve en el
+  // tablero exactamente igual que una con poco interés.
+  //
+  // Van primero, para que si algo del envío se rompe se rompa con nosotros.
+  const semillas: string[] = ((t as any).semillas || []).filter(Boolean);
+  const conSemillas = [
+    ...semillas.map(e => ({ email: String(e).toLowerCase(), contact_id: null as string | null })),
+    ...miembros,
+  ];
+
   const vistos = new Set<string>();
-  const filas = miembros
+  const filas = conSemillas
     .filter(m => m.email && !vistos.has(m.email.toLowerCase()) && vistos.add(m.email.toLowerCase()))
     .map(m => ({
       campaign_id: c.id,

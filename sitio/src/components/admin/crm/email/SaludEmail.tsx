@@ -3,7 +3,7 @@
 // La segunda tabla es la que ninguna herramienta de correo puede dar, porque
 // no tiene el CRM: qué campaña produjo reuniones y cuánto ARR tocó.
 import { useEffect, useState } from 'react';
-import { S, Kpi, Aviso, Cargando, Tag, chip, money, pct, fmtFecha, Confirmar } from './ui';
+import { S, Kpi, Aviso, Cargando, Tag, chip, money, pct, fmtFecha, Confirmar, BotonCopiar } from './ui';
 
 export default function SaludEmail() {
   const [d, setD] = useState<any>(null);
@@ -92,6 +92,35 @@ export default function SaludEmail() {
           rebotes {d.freno.rebotes_pct}% de {d.freno.umbral_rebotes}% · muestra {d.freno.muestra} envíos de 24 h
         </div>
       )}
+
+      {/* Protección del dominio: qué falta y cuál es el SIGUIENTE paso, no
+          una lista de todo lo posible. Un solo paso a la vez es lo que hace
+          que la rampa de DMARC se termine en vez de quedarse en p=none. */}
+      {(d.dmarc || []).filter((x: any) => x.siguiente).map((x: any) => (
+        <div key={x.dominio} style={{
+          border: '1px solid #e6e4ec', borderRadius: 10, padding: '12px 14px', marginBottom: 10,
+          background: '#fbfafd',
+        }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <b style={{ fontSize: '0.85rem' }}>{x.siguiente.titulo}</b>
+            <span style={{ fontSize: '0.72rem', color: '#8a8a8a' }}>
+              {x.dominio} · hoy {x.politica === 'ninguna' ? 'sin DMARC' : `p=${x.politica}${x.pct < 100 ? ` al ${x.pct}%` : ''}`}
+            </span>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#6f6b7d', marginTop: 5, lineHeight: 1.55 }}>{x.siguiente.porque}</div>
+          {x.siguiente.registro && (
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <code style={{
+                fontSize: '0.72rem', background: '#fff', border: '1px solid #e6e4ec', borderRadius: 6,
+                padding: '6px 9px', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap',
+              }}>
+                TXT {x.siguiente.registro.host} → {x.siguiente.registro.valor}
+              </code>
+              <BotonCopiar texto={`${x.siguiente.registro.valor}`} />
+            </div>
+          )}
+        </div>
+      ))}
 
       {(d.alertas || []).map((a: any, i: number) => (
         <Aviso key={i} tono={a.nivel === 'urgente' ? 'malo' : 'aviso'} titulo={a.nivel === 'urgente' ? 'Atiende esto antes de la próxima campaña' : undefined}>{a.texto}</Aviso>

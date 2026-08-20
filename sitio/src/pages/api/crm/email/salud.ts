@@ -14,6 +14,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { resolverTenant } from '../../../../lib/email/tenant';
 import { revisarFreno, soltarFreno } from '../../../../lib/email/freno';
+import { diagnosticar } from '../../../../lib/email/dmarc';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
 
 export const prerender = false;
@@ -54,6 +55,37 @@ export const GET: APIRoute = async ({ url }) => {
   if (intentados >= 20 && tasaQueja > 0.1) alertas.push({ nivel: 'urgente', texto: `Quejas de spam en ${tasaQueja}% (Gmail tolera hasta 0.3%, y su umbral de castigo empieza en 0.1%).` });
   if (enviados >= 50 && pct(clics, entregados) < 1) alertas.push({ nivel: 'alerta', texto: 'Menos de 1% de clics: el contenido o la audiencia no están conectando.' });
   if (fallidos > 0) alertas.push({ nivel: 'alerta', texto: `${fallidos} envíos quedaron fallidos o dudosos — revísalos antes de reintentar.` });
+
+  // El daño colateral que nadie ve: las listas de rebotes y quejas de SendGrid
+  // son de CUENTA. Una queja contra una campaña del CRM también deja a esa
+  // persona sin el ticket y sin la factura que manda el producto. El grupo de
+  // supresión protege las bajas voluntarias, pero no esto — y esta cuenta no
+  // tiene subusuarios disponibles (la API responde 403). Mientras no haya
+  // cuenta aparte, al menos hay que SABER a quién le pasó.
+  const { data: cortados } = await supabase.from('email_suppressions')
+    .select('email, motivo, created_at')
+    .eq('tenant_id', t.id).in('motivo', ['queja', 'rebote_duro'])
+    .gte('created_at', desde).limit(500);
+  let clientesCortados: Array<{ email: string; motivo: string; empresa: string | null }> = [];
+  if (cortados?.length) {
+    const correos = cortados.map((x: any) => x.email);
+    const { data: quienes } = await supabase.from('contacts')
+      .select('email, companies(nombre, estado_cuenta)').in('email', correos).limit(500);
+    const activos = new Map<string, string | null>();
+    for (const c of quienes || []) {
+      const co: any = (c as any).companies;
+      if (co?.estado_cuenta === 'activo') activos.set(String(c.email).toLowerCase(), co.nombre || null);
+    }
+    clientesCortados = cortados
+      .filter((x: any) => activos.has(String(x.email).toLowerCase()))
+      .map((x: any) => ({ email: x.email, motivo: x.motivo, empresa: activos.get(String(x.email).toLowerCase()) || null }));
+  }
+  if (clientesCortados.length) {
+    alertas.push({
+      nivel: 'urgente',
+      texto: `${clientesCortados.length} ${clientesCortados.length === 1 ? 'persona de una cuenta activa quedó' : 'personas de cuentas activas quedaron'} en la supresión de la cuenta de SendGrid: además del marketing, dejan de recibir tickets y facturas del producto. Revísalas abajo.`,
+    });
+  }
 
   // ── Campañas → negocio ──
   const { data: camps } = await supabase.from('email_campaigns')
@@ -153,7 +185,14 @@ export const GET: APIRoute = async ({ url }) => {
     campanas: porCampana,
     dormidos,
     dominio_remitente: String(t.from_email || '').split('@')[1] || null,
+    clientes_cortados: clientesCortados,
     freno: await revisarFreno(t.id),
+    // Los dos dominios que importan y no son el mismo: el de envío (news.…)
+    // y el raíz, que es el que alguien falsificaría para hacerse pasar por ti.
+    dmarc: await Promise.all([
+      diagnosticar(String(t.from_email || '').split('@')[1] || ''),
+      diagnosticar((String(t.from_email || '').split('@')[1] || '').split('.').slice(-2).join('.')),
+    ]).then(([envio, raiz]) => (envio.dominio === raiz.dominio ? [envio] : [envio, raiz])),
   });
 };
 

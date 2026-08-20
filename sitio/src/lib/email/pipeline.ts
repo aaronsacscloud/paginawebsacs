@@ -30,12 +30,13 @@
 //                 se bloquea y se pierde una hora depurando el candado).
 import { supabase } from '../supabase';
 import { resolverTenant, puedeEnviar, faltantesDeConfiguracion, type Tenant } from './tenant';
-import { enviar as enviarProveedor, proveedorListo } from './proveedor';
+import { enviar as enviarProveedor, proveedorListo, llaveDe } from './proveedor';
 import { firmar } from './token';
 import { footerHtml, footerTexto, headersBaja, htmlATexto } from './footer';
 import { envolverLinks, agregarPixel } from './tracking';
 
 import { frenado } from './freno';
+import { escalonCalentamiento } from './puro';
 
 export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional';
 
@@ -170,14 +171,16 @@ export async function excedePresion(t: Tenant, email: string, companyId?: string
 }
 
 export async function excedeLimiteDiario(t: Tenant): Promise<boolean> {
-  if (!t.limite_diario || t.limite_diario <= 0) return false;
+  const rampa = escalonCalentamiento((t as any).calentamiento_inicio, t.limite_diario);
+  const tope = rampa ?? t.limite_diario;
+  if (!tope || tope <= 0) return false;
   const { count } = await supabase
     .from('email_sends')
     .select('id', { count: 'exact', head: true })
     .eq('tenant_id', t.id)
     .in('categoria', ['marketing', 'relacion'])
     .gte('created_at', inicioDelDia(t));
-  return (count || 0) >= t.limite_diario;
+  return (count || 0) >= tope;
 }
 
 /**
@@ -288,6 +291,7 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
       : t.reply_to,
     headers: headersBaja(base, token),
     asmGroupId: t.sendgrid_asm_group_id,
+    apiKey: llaveDe(t as any),
     customArgs: { tenant: t.id, send: send.id, categoria },
     categorias: [categoria, ...(s.campaignId ? ['campaign'] : [])],
   });

@@ -147,7 +147,58 @@ export default function ConfigEmail({ onCambio }: { onCambio?: () => void }) {
               <input type="checkbox" checked={!!t.enviar_fines_semana} onChange={e => set('enviar_fines_semana', e.target.checked)} />
               <span style={{ fontSize: '0.8rem' }}>Enviar también sábados y domingos</span>
             </label>
-            {campo('limite_diario', 'Límite de correos por día', 'Déjalo vacío para no limitar. Útil al estrenar un dominio: se empieza bajo y se sube.', 'number')}
+            {campo('limite_diario', 'Límite de correos por día', 'Déjalo vacío para no limitar. Es el techo al que llega la rampa de calentamiento.', 'number')}
+
+            <div style={{ borderTop: '1px solid #f0eff4', marginTop: 18, paddingTop: 16 }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 3 }}>Reputación del dominio</div>
+              <div style={{ fontSize: '0.72rem', color: '#a5a2af', marginBottom: 13, lineHeight: 1.55 }}>
+                Lo que evita quemar el dominio: arrancar despacio, ver dónde cae el correo y
+                apagarse solo si algo se descompone.
+              </div>
+
+              {campo('calentamiento_inicio', 'Empezó a enviar desde este dominio el',
+                'Con esta fecha el sistema arranca en 50 correos al día y dobla cada dos días hasta tu límite. Un dominio nuevo que manda miles el primer día es, para Gmail, la definición de spam. Vacío = sin rampa.', 'date')}
+
+              <div style={{ marginBottom: 13 }}>
+                <span style={S.lbl}>Direcciones semilla</span>
+                <input type="text" value={Array.isArray(t.semillas) ? t.semillas.join(', ') : (t.semillas || '')}
+                  onChange={e => set('semillas', e.target.value)} style={S.inp}
+                  placeholder="tucorreo@gmail.com, tucorreo@outlook.com" />
+                <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 4, lineHeight: 1.5 }}>
+                  Una dirección tuya por proveedor. Reciben copia de cada campaña para que
+                  <b> veas dónde cayó</b>: bandeja principal, Promociones o spam. Las aperturas no
+                  distinguen entre las tres, así que una campaña que se fue entera a spam se ve
+                  igual que una que simplemente no interesó. Máximo 10.
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 6 }}>
+                <div>
+                  <span style={S.lbl}>Freno · quejas %</span>
+                  <input type="number" step="0.1" value={t.freno_umbral_quejas ?? 0.3}
+                    onChange={e => set('freno_umbral_quejas', Number(e.target.value))} style={S.inp} />
+                </div>
+                <div>
+                  <span style={S.lbl}>Freno · rebotes %</span>
+                  <input type="number" step="0.5" value={t.freno_umbral_rebotes ?? 5}
+                    onChange={e => set('freno_umbral_rebotes', Number(e.target.value))} style={S.inp} />
+                </div>
+                <div>
+                  <span style={S.lbl}>Muestra mínima</span>
+                  <input type="number" value={t.freno_muestra_minima ?? 50}
+                    onChange={e => set('freno_muestra_minima', Number(e.target.value))} style={S.inp} />
+                </div>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginBottom: 13, lineHeight: 1.5 }}>
+                Si en 24 horas se cruza alguno de los dos, el marketing se apaga solo y las campañas
+                en vuelo quedan en pausa; el correo de cobranza y renovación sigue saliendo. El 0.3%
+                de quejas es el límite que publican Gmail y Yahoo. La muestra mínima evita que dos
+                rebotes de tres envíos —66%— disparen el freno.
+              </div>
+
+              {campo('proveedor_key_env', 'Variable de entorno con su llave de SendGrid',
+                'Solo si este inquilino usa su PROPIA cuenta de SendGrid. Va el NOMBRE de la variable (p. ej. SENDGRID_API_KEY_ACME), nunca la llave. Vacío = cuenta compartida.')}
+            </div>
           </>)}
 
           {seccion === 'dominio' && (<>

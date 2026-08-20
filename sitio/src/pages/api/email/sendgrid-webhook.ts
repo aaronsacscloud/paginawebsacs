@@ -84,8 +84,18 @@ export const POST: APIRoute = async ({ request }) => {
   if (!firmaOk) return ok();
 
   for (const ev of eventos) {
-    const tenantId = ev.tenant || null;
     const sendId = ev.send || null;
+    // El inquilino viene como argumento del envío, pero NO siempre: un correo
+    // mandado antes de multi-inquilino, o por otra pieza que no puso el
+    // argumento, llega sin él. Y sin inquilino todo el bloque de supresión de
+    // más abajo se saltaba EN SILENCIO: un rebote duro o una queja de spam no
+    // suprimían a nadie y se le seguía escribiendo a una dirección que ya
+    // rebotó. Se recupera del propio envío antes de rendirse.
+    let tenantId: string | null = ev.tenant || null;
+    if (!tenantId && sendId) {
+      const { data } = await supabase.from('email_sends').select('tenant_id').eq('id', sendId).maybeSingle();
+      tenantId = data?.tenant_id || null;
+    }
     const email = String(ev.email || '').toLowerCase();
     const tipo = String(ev.event || '');
     const cuando = ev.timestamp ? new Date(ev.timestamp * 1000).toISOString() : new Date().toISOString();
@@ -112,6 +122,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const motivo = A_SUPRESION[tipo];
+    if (motivo && !tenantId) {
+      console.warn(`[sendgrid-webhook] ${tipo} de ${email} sin inquilino: NO se suprimió`);
+    }
     if (motivo && tenantId) {
       // Un rebote SUAVE no suprime a la primera: el buzón puede estar lleno
       // hoy y libre mañana. Solo se suprime al tercero.

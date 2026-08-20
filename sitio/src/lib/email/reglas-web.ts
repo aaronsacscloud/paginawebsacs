@@ -20,6 +20,8 @@
 //    No es cautela: es lo que exige la LFPDPPP y lo que hace cierto el aviso
 //    de privacidad del pie.
 import { supabase } from '../supabase';
+import { calza, diaCdmx, ventanaDeLectura, RUTA_INTERNA } from './puro';
+export { diaCdmx };
 
 export type TipoRegla = 'pagina' | 'repeticion' | 'permanencia' | 'ausencia' | 'combinacion' | 'secuencia' | 'intencion';
 
@@ -42,23 +44,6 @@ export const TIPOS: Record<TipoRegla, { etiqueta: string; explica: string; campo
 };
 
 const hace = (dias: number) => new Date(Date.now() - dias * 86400000).toISOString();
-/** ¿La ruta calza con el patrón? `/planes` calza con `/planes?x=1` y `/planes/anual`. */
-/** Rutas que NO son comportamiento de prospecto: el panel, las APIs, el pie
- *  de los correos. Aunque alguien las ponga en una regla, no disparan. */
-const RUTA_INTERNA = /^\/(admin|api|email\/(baja|preferencias))/i;
-
-const calza = (ruta: string, patron: string): boolean => {
-  if (RUTA_INTERNA.test(String(ruta || ''))) return false;
-  if (!String(patron || '').trim()) return false;   // patrón vacío no calza con nada
-  // Quitar la diagonal final dejaba la portada como cadena vacía, y la línea
-  // siguiente la descartaba: una regla sobre "/" —la página más visitada del
-  // sitio— no podía disparar nunca. Se normaliza a "/" en vez de a "".
-  const norm = (x: string) => String(x || '').toLowerCase().split('?')[0].replace(/\/+$/, '') || '/';
-  const r = norm(ruta);
-  const p = norm(patron);
-  if (p.endsWith('*')) return r.startsWith(p.slice(0, -1));
-  return r === p || r.startsWith(p + '/');
-};
 
 interface Visita { contact_id: string; ruta: string; created_at: string; segundos: number | null }
 
@@ -69,11 +54,6 @@ interface Visita { contact_id: string; ruta: string; created_at: string; segundo
  * puede disparar correos por lo que la gente navegó el mes pasado — ese es el
  * mismo desastre que el arranque limpio de los embudos evita.
  */
-/** La fecha de hoy en CDMX, igual que el default de `web_disparos.dia`. */
-export function diaCdmx(t: Date = new Date()): string {
-  // en-CA da directamente YYYY-MM-DD.
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(t);
-}
 
 export async function candidatos(r: Regla): Promise<Array<{ contactId: string; detalle: any }>> {
   const desdeActivacion = r.activado_at || new Date().toISOString();
@@ -85,7 +65,7 @@ export async function candidatos(r: Regla): Promise<Array<{ contactId: string; d
   // "vio la página y lleva N días sin volver": si solo se leen los últimos N
   // días, la visita que la dispara queda fuera por construcción y la regla no
   // podía cumplirse jamás. Necesita ver hacia atrás bastante más que su umbral.
-  const ventana = r.tipo === 'ausencia' ? Math.min(120, dias * 4 + 7) : dias;
+  const ventana = ventanaDeLectura(r.tipo, dias);
 
   // Caso aparte: no mira visitas sino el puntaje ya calculado.
   if (r.tipo === 'intencion') {

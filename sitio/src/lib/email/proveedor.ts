@@ -20,6 +20,34 @@
 //
 // 3. `custom_args` con tenant/send: los eventos del webhook vuelven con ellos
 //    y por eso se puede saber de quién era el correo sin adivinar.
+/**
+ * La llave que usa ESTE inquilino.
+ *
+ * Se guarda el NOMBRE de la variable de entorno, nunca la llave: un secreto en
+ * la base de datos es un secreto en cada respaldo, en cada exportación y en
+ * cada consulta de soporte.
+ *
+ * Por qué importa: las listas de rebotes y quejas de SendGrid son de CUENTA,
+ * no de grupo de supresión. El `asm.group_id` protege las bajas voluntarias
+ * —eso sí funciona—, pero si alguien marca como spam una campaña del CRM,
+ * SendGrid mete su dirección en la supresión global de la cuenta y a partir de
+ * ahí también deja de entregarle el TICKET y la FACTURA que manda sacs_api.
+ * Esta cuenta no tiene subusuarios disponibles (la API responde 403: hace
+ * falta plan con IP dedicada), así que el aislamiento de verdad es una segunda
+ * cuenta. Con esto, mudarse es poner una variable y un renglón — no reescribir
+ * el camino de envío.
+ */
+export function llaveDe(tenant?: { proveedor_key_env?: string | null } | null): string {
+  const env = (import.meta.env as any) || {};
+  const nombre = (tenant?.proveedor_key_env || '').trim();
+  if (nombre) {
+    const propia = String(env[nombre] || '').trim();
+    if (propia) return propia;
+    console.warn(`[proveedor] ${nombre} no está en el entorno: se usa la cuenta compartida`);
+  }
+  return String(env.SENDGRID_API_KEY || '').trim();
+}
+
 export interface EnvioProveedor {
   para: string;
   asunto: string;
@@ -30,6 +58,8 @@ export interface EnvioProveedor {
   replyTo?: string | null;
   headers?: Record<string, string>;
   asmGroupId?: number | null;
+  /** Llave del inquilino; si no viene, la cuenta compartida. */
+  apiKey?: string | null;
   customArgs?: Record<string, string>;
   categorias?: string[];
 }
@@ -47,7 +77,7 @@ export function proveedorListo(): boolean {
 }
 
 export async function enviar(e: EnvioProveedor): Promise<ResultadoProveedor> {
-  const key = (import.meta.env.SENDGRID_API_KEY || '').trim();
+  const key = (e.apiKey || '').trim() || (import.meta.env.SENDGRID_API_KEY || '').trim();
   if (!key) return { ok: false, providerMessageId: null, error: 'Falta SENDGRID_API_KEY en el entorno.' };
 
   const body: Record<string, any> = {
