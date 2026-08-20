@@ -48,7 +48,7 @@ export default function TabOutbound({ companyId }: { companyId: string }) {
         {(d.citas || []).length > 0 && <Tag tono="info">{d.citas.length} citas desde campañas</Tag>}
         {(d.conversiones || []).filter((x: any) => x.brazo === 'expuesto').length > 0 &&
           <Tag tono="ok">{d.conversiones.filter((x: any) => x.brazo === 'expuesto').length} conversiones{montoTotal ? ` · $${Math.round(montoTotal).toLocaleString('es-MX')}` : ''}</Tag>}
-        {(d.nps || []).length > 0 && <Tag tono={npsTono(Number(d.nps[0].valor))}>Último NPS: {d.nps[0].valor}</Tag>}
+        {(d.nps || []).some((n: any) => n.valor != null) && (() => { const u = (d.nps || []).find((n: any) => n.valor != null); return <Tag tono={npsTono(Number(u.valor))}>Último NPS: {u.valor}</Tag>; })()}
       </div>
 
       {/* campañas con la información clave de cada acción */}
@@ -79,7 +79,7 @@ export default function TabOutbound({ companyId }: { companyId: string }) {
         {/* NPS histórico con comentarios */}
         {(d.nps || []).length > 0 && (
           <div style={S.card}>
-            <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 10 }}>NPS histórico</div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, marginBottom: 10 }}>Respuestas de encuesta</div>
             {(d.nps || []).map((n: any, i: number) => (
               <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderBottom: '1px solid #f7f6fa', fontSize: '0.79rem', alignItems: 'flex-start' }}>
                 <Tag tono={n.valor != null ? npsTono(Number(n.valor)) : 'gris'}>{n.valor != null ? n.valor : (n.respuesta || '—')}</Tag>
