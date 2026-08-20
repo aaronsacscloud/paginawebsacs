@@ -51,10 +51,26 @@ function esDeBaja(url: string): boolean {
  * NUNCA toca el link de baja: si la medición falla, la baja tiene que seguir
  * funcionando — es lo único que no puede romperse en un correo.
  */
+/**
+ * Deshace el escape HTML de un href.
+ *
+ * El compilador escapa los atributos —correcto— así que un link con dos
+ * parámetros llega aquí como `...?plan=pro&amp;utm_source=email`. Al meterlo
+ * con encodeURIComponent dentro de `?url=`, el `&amp;` viajaba LITERAL y la
+ * landing recibía los parámetros llamados `amp;utm_source` y `amp;utm_campaign`.
+ * Efecto: la atribución de marketing no veía nada y todo lead que llegaba por
+ * correo aterrizaba sin campaña — justo la medición que este módulo existe
+ * para dar.
+ */
+function desescapar(u: string): string {
+  return u.replace(/&amp;/g, '&').replace(/&#38;/g, '&').replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+}
+
 export function envolverLinks(html: string, base: string, sendId: string): string {
   const raiz = base.replace(/\/$/, '');
   return String(html || '').replace(/href="([^"]+)"/gi, (todo, url) => {
-    const u = String(url);
+    const u = desescapar(String(url));
     if (NO_TOCAR.test(u) || esDeBaja(u) || !/^https?:/i.test(u)) return todo;
     if (u.startsWith(`${raiz}/api/email/track-click`)) return todo;   // ya envuelto
     const f = firmaDeUrl(u, sendId);

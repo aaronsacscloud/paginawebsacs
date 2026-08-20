@@ -200,6 +200,28 @@ export interface Avance { procesados: number; enviados: number; rechazados: numb
  * Procesa lo que quepa en esta invocación. Reanudable: se llama tantas veces
  * como haga falta y siempre continúa donde quedó.
  */
+/**
+ * Rescata destinatarios que quedaron reclamados y sin resolver.
+ *
+ * El claim escribe estado='enviando' y `claimed_at`, pero nadie volvía a leer
+ * `claimed_at`: si el proceso moría entre el claim y el cierre (timeout,
+ * redeploy, OOM), esa fila quedaba en 'enviando' PARA SIEMPRE. Con el cierre
+ * honesto, eso deja la campaña eternamente en 'enviando': el cron la re-toma
+ * cada 5 minutos sin hacer nada y esas personas nunca reciben el correo.
+ *
+ * Se devuelven a 'pendiente' para reintentar. Es seguro porque el envío real
+ * tiene su propia red: `email_sends` registra ANTES de llamar al proveedor, así
+ * que un envío que sí salió deja rastro y el índice único impide duplicarlo.
+ */
+async function rescatarAtorados(campaignId: string, minutos = 15): Promise<number> {
+  const limite = new Date(Date.now() - minutos * 60000).toISOString();
+  const { data } = await supabase.from('email_campaign_recipients')
+    .update({ estado: 'pendiente', claimed_at: null })
+    .eq('campaign_id', campaignId).eq('estado', 'enviando')
+    .lt('claimed_at', limite).select('id');
+  return (data || []).length;
+}
+
 export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_MS): Promise<Avance> {
   const inicio = Date.now();
   const vacio: Avance = { procesados: 0, enviados: 0, rechazados: 0, errores: 0, quedan: 0, terminada: false };
@@ -220,6 +242,7 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
     const n = await materializar(t, c as Campana);
     if (n < 0) return { ...vacio, motivo: 'materializando' };   // otro proceso la tiene
   }
+  await rescatarAtorados(c.id);
   if (c.estado !== 'enviando') {
     await supabase.from('email_campaigns').update({ estado: 'enviando', iniciada_at: new Date().toISOString() }).eq('id', c.id);
   }
@@ -251,6 +274,7 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
       if (!ganado?.length) continue;   // otro proceso lo tomó: seguir en silencio
 
       av.procesados++;
+      try {
       const { html, texto } = await armarCorreo(t, c as Campana, r as any);
       const asunto = (r.variante === 'b' && c.asunto_b) ? c.asunto_b : (c.asunto || '(sin asunto)');
 
@@ -285,6 +309,14 @@ export async function procesar(campaignId: string, presupuestoMs = PRESUPUESTO_M
         await supabase.from('email_campaign_recipients')
           .update({ estado: 'rechazado', motivo: res.motivo, procesado_at: new Date().toISOString() }).eq('id', r.id);
         av.rechazados++;
+      }
+      } catch (err: any) {
+        // Sin este try, una excepción en cualquiera de las consultas por
+        // destinatario salía del cron y dejaba la fila reclamada para siempre.
+        await supabase.from('email_campaign_recipients')
+          .update({ estado: 'error', motivo: String(err?.message || err).slice(0, 300), procesado_at: new Date().toISOString() })
+          .eq('id', r.id);
+        av.errores++;
       }
     }
     await pausaSalud(c.id);
