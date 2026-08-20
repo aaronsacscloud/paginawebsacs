@@ -50,6 +50,17 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   churned: { l: 'Perdido', bg: '#FEF0EF', fg: '#C0554E' },
 };
 
+// Las pestañas de la lista. "Abiertos" primero porque es el trabajo del día:
+// lo que todavía se puede convertir.
+const VISTAS = [
+  { v: 'abiertos', l: 'Abiertos' },
+  { v: 'lead', l: 'Nuevos' },
+  { v: 'lead_calificado', l: 'Calificados' },
+  { v: 'oportunidad', l: 'Oportunidad' },
+  { v: 'churned', l: 'Perdidos' },
+  { v: 'todos', l: 'Todos' },
+];
+
 const S = {
   wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
@@ -68,6 +79,8 @@ const S = {
   ico: { width: 34, height: 34, border: '1px solid #e2e4e9', borderRadius: 9, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8a8a92', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9rem' } as const,
   btnP: { border: 'none', borderRadius: 9, padding: '8px 15px', background: '#9B8CFA', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as const,
   btnA: { border: '1.5px solid #7DA6F5', borderRadius: 9, padding: '7px 13px', background: '#fff', fontSize: '0.77rem', fontWeight: 700, color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit' } as const,
+  fk: { fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: '#a5a2af', margin: '4px 0 7px' } as const,
+  fsel: { width: '100%', border: '1px solid #e2e4e9', borderRadius: 9, padding: '8px 10px', fontFamily: 'inherit', fontSize: '0.78rem', background: '#fff', marginBottom: 10 } as const,
   mini: { border: '1px solid #e2e4e9', borderRadius: 7, padding: '3px 8px', fontSize: '0.67rem', fontWeight: 700, color: '#555', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
   tag: (bg: string, fg: string) => ({ fontSize: '0.57rem', fontWeight: 800, background: bg, color: fg, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' as const }) as const,
 };
@@ -85,6 +98,11 @@ export default function LeadsTab() {
   const [hasta, setHasta] = useState('');
   // Lo nuevo primero. Es el orden natural de una bandeja: lo de hoy arriba.
   const [orden, setOrden] = useState<'reciente' | 'frio'>('reciente');
+  const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
+  const [panelFiltros, setPanelFiltros] = useState(false);
+  // El menú de la fila se ancla con coordenadas de pantalla: dentro de una
+  // tabla con scroll, un menú en flujo se recorta contra el borde.
+  const [menu, setMenu] = useState<{ c: any; x: number; y: number } | null>(null);
   const [verContacto, setVerContacto] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
@@ -138,12 +156,33 @@ export default function LeadsTab() {
       });
     }
 
+    if (sinContacto) {
+      const min = Number(sinContacto);
+      r = r.filter((c: any) => (dias(c.last_contact_at || c.created_at) ?? 0) > min);
+    }
+
     return r.sort((a: any, b: any) => orden === 'reciente'
       // Lo que llegó hoy, arriba: es la bandeja del día.
       ? Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)
       // Lo más frío arriba: el lead sin contacto es la fuga más cara.
       : (dias(b.last_contact_at || b.created_at) || 0) - (dias(a.last_contact_at || a.created_at) || 0));
-  }, [rows, etapa, origen, busca, cuando, desde, hasta, orden]);
+  }, [rows, etapa, origen, busca, cuando, desde, hasta, orden, sinContacto]);
+
+  // Los contadores de las pestañas cuentan con los OTROS filtros ya puestos:
+  // "Nuevos 71" con el canal en TikTok tiene que decir cuántos nuevos de TikTok
+  // hay, no cuántos nuevos hay en total.
+  const conteos = useMemo(() => {
+    let base = rows || [];
+    if (origen !== 'todo') base = base.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
+    const t = busca.trim().toLowerCase();
+    if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
+    const cae = (c: any, k: string) => k === 'todos' ? true
+      : k === 'abiertos' ? ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage)
+      : c.lifecycle_stage === k;
+    const out: Record<string, number> = {};
+    for (const v of VISTAS) out[v.v] = base.filter((c: any) => cae(c, v.v)).length;
+    return out;
+  }, [rows, origen, busca]);
 
   // Los meses que existen de verdad en los datos, del más nuevo al más viejo:
   // ofrecer "marzo" cuando no llegó nadie en marzo es ruido.
@@ -152,6 +191,25 @@ export default function LeadsTab() {
     for (const c of rows || []) { const d = diaLocal(c.created_at); if (d) set.add(d.slice(0, 7)); }
     return [...set].sort().reverse();
   }, [rows]);
+
+  // Lo aplicado, en pastillas: un filtro que no se ve es un filtro que se
+  // olvida, y luego "faltan leads" es en realidad un mes puesto la semana pasada.
+  const etiquetaCuando = () => {
+    if (cuando === 'hoy') return 'Hoy';
+    if (cuando === 'ayer') return 'Ayer';
+    if (cuando === '7') return 'Últimos 7 días';
+    if (cuando === '30') return 'Últimos 30 días';
+    if (cuando === 'rango') return `${desde || '…'} a ${hasta || '…'}`;
+    const [y, mm] = cuando.split('-');
+    return `${MESES[Number(mm) - 1]} ${y}`;
+  };
+  const chips = [
+    cuando !== 'todo' && { k: 'cuando', l: etiquetaCuando(), quitar: () => { setCuando('todo'); setDesde(''); setHasta(''); } },
+    origen !== 'todo' && { k: 'origen', l: origen === 'sin_definir' ? 'Sin definir' : origenDe(origen).l, quitar: () => setOrigen('todo') },
+    sinContacto && { k: 'sc', l: `Sin contacto +${sinContacto} d`, quitar: () => setSinContacto('') },
+  ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
+  const nFiltros = chips.length;
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); };
 
   if (rows === null) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando leads…</div>;
 
@@ -246,66 +304,123 @@ export default function LeadsTab() {
         )}
 
         <div style={S.card}>
+          {/* Las etapas son PESTAÑAS con contador, como las vistas de
+              Cotizaciones: cuántos hay en cada una se ve de golpe y se cambia
+              con un clic, no abriendo un desplegable. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
+            {VISTAS.map(v => {
+              const on = etapa === v.v;
+              const n = conteos[v.v] ?? 0;
+              return (
+                <button key={v.v} onClick={() => setEtapa(v.v)} style={{
+                  padding: '10px 15px', background: on ? '#EEECFE' : 'transparent',
+                  borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
+                  borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+                  color: on ? '#5B4BD6' : '#666', fontWeight: on ? 800 : 500,
+                  fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+                }}>
+                  {v.l}
+                  <span style={{
+                    marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                    background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
+                    borderRadius: 20, padding: '2px 8px',
+                  }}>{n}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
+              creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
+              Lo aplicado se ve en pastillas que se quitan con la ✕. */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar nombre, empresa o correo…"
-              style={{ border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 12px', fontSize: '0.78rem', background: '#fdfcff', fontFamily: 'inherit', minWidth: 250 }} />
-            <select value={etapa} onChange={e => setEtapa(e.target.value)}
-              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
-              <option value="abiertos">Abiertos</option>
-              <option value="lead">Nuevos</option>
-              <option value="lead_calificado">Calificados</option>
-              <option value="oportunidad">Oportunidad</option>
-              <option value="churned">Perdidos</option>
-              <option value="todos">Todos</option>
-            </select>
-            <select value={origen} onChange={e => setOrigen(e.target.value)}
-              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
-              <option value="todo">Todos los canales</option>
-              {GRUPOS_ORIGEN.map(g => (
-                <optgroup key={g} label={g}>
-                  {ORIGENES.filter(o => o.grupo === g).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                </optgroup>
-              ))}
-              <option value="sin_definir">Sin definir</option>
-            </select>
+            <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: 420 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar nombre, empresa o correo…"
+                style={{ width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
+            </div>
 
-            {/* Cuándo llegó. Los meses salen de los datos, del más nuevo al más
-                viejo, y "Rango…" abre dos fechas para lo que no es un mes. */}
-            <select value={cuando} onChange={e => setCuando(e.target.value)}
-              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: cuando === 'todo' ? '#fff' : '#f7f4ff', color: cuando === 'todo' ? '#555' : '#5B4BD6', fontWeight: cuando === 'todo' ? 400 : 700 }}>
-              <option value="todo">Cuándo llegó: todo</option>
-              <option value="hoy">Hoy</option>
-              <option value="ayer">Ayer</option>
-              <option value="7">Últimos 7 días</option>
-              <option value="30">Últimos 30 días</option>
-              {meses.length > 0 && (
-                <optgroup label="Por mes">
-                  {meses.map(m => {
-                    const [y, mm] = m.split('-');
-                    return <option key={m} value={m}>{MESES[Number(mm) - 1]} {y}</option>;
-                  })}
-                </optgroup>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setPanelFiltros(!panelFiltros)} style={{
+                height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: '0.78rem', fontWeight: 700, padding: '0 14px',
+                background: nFiltros ? '#EEF1FE' : '#fff', border: `1px solid ${nFiltros ? '#d8e2fb' : '#e2e4e9'}`, color: nFiltros ? '#2C5FC4' : '#555',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+                Filtros {nFiltros > 0 && <span style={{ background: '#2C5FC4', color: '#fff', fontSize: '0.62rem', borderRadius: 10, padding: '1px 6px' }}>{nFiltros}</span>}
+              </button>
+
+              {panelFiltros && (
+                <>
+                  <div onClick={() => setPanelFiltros(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
+                  <div style={{ position: 'absolute', top: 42, left: 0, zIndex: 40, background: '#fff', border: '1px solid #e6e2f3', borderRadius: 12, padding: 14, width: 320, boxShadow: '0 12px 34px rgba(40,20,90,.16)' }}>
+                    <div style={S.fk}>Cuándo llegó</div>
+                    <select value={cuando} onChange={e => setCuando(e.target.value)} style={S.fsel}>
+                      <option value="todo">Todo el tiempo</option>
+                      <option value="hoy">Hoy</option>
+                      <option value="ayer">Ayer</option>
+                      <option value="7">Últimos 7 días</option>
+                      <option value="30">Últimos 30 días</option>
+                      {meses.length > 0 && (
+                        <optgroup label="Por mes">
+                          {meses.map(m => {
+                            const [y, mm] = m.split('-');
+                            return <option key={m} value={m}>{MESES[Number(mm) - 1]} {y}</option>;
+                          })}
+                        </optgroup>
+                      )}
+                      <option value="rango">Rango de fechas…</option>
+                    </select>
+                    {cuando === 'rango' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <input type="date" value={desde} onChange={e => setDesde(e.target.value)} style={S.fsel} />
+                        <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} style={S.fsel} />
+                      </div>
+                    )}
+
+                    <div style={S.fk}>Canal</div>
+                    <select value={origen} onChange={e => setOrigen(e.target.value)} style={S.fsel}>
+                      <option value="todo">Todos los canales</option>
+                      {GRUPOS_ORIGEN.map(g => (
+                        <optgroup key={g} label={g}>
+                          {ORIGENES.filter(o => o.grupo === g).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                        </optgroup>
+                      ))}
+                      <option value="sin_definir">Sin definir</option>
+                    </select>
+
+                    <div style={S.fk}>Sin contacto</div>
+                    <select value={sinContacto} onChange={e => setSinContacto(e.target.value)} style={S.fsel}>
+                      <option value="">Cualquiera</option>
+                      <option value="7">Más de 7 días</option>
+                      <option value="14">Más de 14 días</option>
+                      <option value="30">Más de 30 días</option>
+                    </select>
+
+                    {nFiltros > 0 && (
+                      <button onClick={limpiarFiltros} style={{ ...S.mini, marginTop: 4 }}>Quitar todos</button>
+                    )}
+                  </div>
+                </>
               )}
-              <option value="rango">Rango de fechas…</option>
-            </select>
-            {cuando === 'rango' && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <input type="date" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
-                  style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit', background: '#fff' }} />
-                <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>a</span>
-                <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} title="Hasta"
-                  style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '6px 9px', fontSize: '0.75rem', fontFamily: 'inherit', background: '#fff' }} />
+            </div>
+
+            {chips.map(ch => (
+              <span key={ch.k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, borderRadius: 20, padding: '0 6px 0 11px', fontSize: '0.72rem', fontWeight: 700, background: '#EEF1FE', color: '#2C5FC4', border: '1px solid #d8e2fb' }}>
+                {ch.l}
+                <span onClick={ch.quitar} title="Quitar filtro"
+                  style={{ width: 18, height: 18, borderRadius: 99, background: 'rgba(44,95,196,.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.68rem' }}>✕</span>
               </span>
-            )}
+            ))}
 
-            <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')}
-              title="El orden de la lista"
-              style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 11px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
-              <option value="reciente">Más recientes primero</option>
-              <option value="frio">Más fríos primero</option>
-            </select>
-
-            <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} leads</span>
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')} title="El orden de la lista"
+                style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
+                <option value="reciente">Más recientes primero</option>
+                <option value="frio">Más fríos primero</option>
+              </select>
+              <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} leads</span>
+            </span>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -321,7 +436,7 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: 80 }}>Sucursales</th>
                   <th style={{ ...S.th, width: 100 }}>Etapa</th>
                   <th style={{ ...S.th, width: 90 }}>Sin contacto</th>
-                  <th style={{ ...S.th, width: 130 }} />
+                  <th style={{ ...S.th, width: 44 }} />
                 </tr>
               </thead>
               <tbody>
@@ -369,11 +484,17 @@ export default function LeadsTab() {
                               {d === 0 ? 'hoy' : `${d} d`}
                             </span>}
                       </td>
-                      <td style={S.td}>
-                        <div style={{ display: 'flex', gap: 5 }}>
-                          {tel && <a style={{ ...S.mini, borderColor: '#cdeadd', color: '#1E8A63', background: '#EAF8F2' }} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
-                          <button style={S.mini} onClick={() => setVerContacto(c.id)}>Abrir</button>
-                        </div>
+                      {/* Las acciones viven en el menú de tres puntos, como en
+                          Cotizaciones y Cobranza. Dos botones sueltos se comían
+                          130 px en todos los renglones para dos acciones que se
+                          usan de vez en cuando. */}
+                      <td style={{ ...S.td, textAlign: 'right' }}>
+                        <button aria-label="Acciones"
+                          onClick={e => {
+                            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setMenu(menu?.c?.id === c.id ? null : { c, x: r.right, y: r.bottom });
+                          }}
+                          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: menu?.c?.id === c.id ? '#f6f4fb' : 'none', color: menu?.c?.id === c.id ? '#5B4BD6' : '#a5a2af', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>⋮</button>
                       </td>
                     </tr>
                   );
@@ -383,6 +504,30 @@ export default function LeadsTab() {
           </div>
         </div>
       </>)}
+
+      {/* Anclado con coordenadas de pantalla: dentro de una tabla con scroll,
+          un menú en flujo se recorta contra el borde de la tarjeta. */}
+      {menu && (() => {
+        const c = menu.c;
+        const tel = c.whatsapp || c.telefono;
+        const ancho = 210;
+        const izq = Math.max(10, Math.min(menu.x - ancho, (typeof window !== 'undefined' ? window.innerWidth : 1200) - ancho - 10));
+        const opcion = { display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'none', fontFamily: 'inherit', fontSize: '0.79rem', color: '#3f3b4d', padding: '9px 12px', cursor: 'pointer', textDecoration: 'none', borderRadius: 8 };
+        return (
+          <>
+            <div onClick={() => setMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 300 }} />
+            <div style={{ position: 'fixed', left: izq, top: menu.y + 6, zIndex: 301, width: ancho, background: '#fff', border: '1px solid #eceaf4', borderRadius: 11, boxShadow: '0 12px 34px rgba(40,20,90,.18)', padding: 6 }}>
+              <div style={{ padding: '7px 12px 8px', borderBottom: '1px solid #f5f4f8', marginBottom: 4 }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}</div>
+                <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.companies?.nombre || 'sin empresa'}</div>
+              </div>
+              <button style={opcion} onClick={() => { setVerContacto(c.id); setMenu(null); }}>Abrir ficha</button>
+              {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
+              {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
+            </div>
+          </>
+        );
+      })()}
 
       {verContacto && <LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar} />}
       {nuevo && <NuevoLead onCerrar={() => setNuevo(false)} onListo={() => { setNuevo(false); cargar(); }} />}
