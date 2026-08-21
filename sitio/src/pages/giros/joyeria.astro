@@ -25,14 +25,14 @@ import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import JoyColchon from '../../components/giros/JoyColchon.astro';
 import SuiteDireccion from '../../components/suite/SuiteDireccion.astro';
-import SuiteMigracion from '../../components/suite/SuiteMigracion.astro';
-import SuiteFormal from '../../components/suite/SuiteFormal.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
-import PosMock from '../../components/suite/PosMock.astro';
 import {
   seccionesJoyeria, casosJoyeria, cortinaJoyeria, sucursalesJoyeria,
-  reglasJoyeria, diasJoyeria, cajaJoyeria, documentosJoyeria,
+  reglasJoyeria, documentosJoyeria, pasosJoyeria, planoJoyeria,
 } from '../../data/giros/joyeria';
 
 const titulo = 'Suite para Joyerías';
@@ -41,64 +41,21 @@ const desc =
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
-  <!-- ── Portada: el sistema es el fondo ── -->
-  <header class="hero">
-    <div class="hero-bg" aria-hidden="true">
-      <div class="hero-pos">
-        <PosMock
-          cajero="Lorena"
-          caja="Matriz Centro"
-          cliente="JORGE C."
-          puntos="4,860 pts"
-          tiles={[
-            { t: 'Anillo 14K', c: '#C9A227' },
-            { t: 'Cadena 10K', c: '#B8912B' },
-            { t: 'Esclava 14K', c: '#D4B24C' },
-            { t: 'Aretes oro blanco', c: '#9AA3B0' },
-            { t: 'Dije y medalla', c: '#C08F3E' },
-            { t: 'Plata .925', c: '#8A94A3' },
-            { t: 'Bridal', c: '#6B5B8A' },
-            { t: 'Reloj de marca', c: '#3F3F46' },
-            { t: 'Compostura', c: '#5B87C4' },
-            { t: 'Estuches', c: '#7A6A4E' },
-          ]}
-          lineas={[
-            { nombre: 'Anillo solitario 14K', detalle: 'Talla 7 · 3.2 g netos', cant: 1, precio: '14,850.00' },
-            { nombre: 'Grabado', detalle: 'Interior, 12 caracteres', cant: 1, precio: '350.00' },
-          ]}
-          subtotal="$13,103.45"
-          iva="$2,096.55"
-          total="$15,200.00"
-          articulos="2 ARTÍCULOS · 1 PIEZA"
-        />
-      </div>
-      <div class="hero-veil"></div>
-    </div>
-
-    <div class="hero-inner">
-      <p class="hero-eyebrow">SACS · Suite Joyería</p>
-      <h1 class="hero-title">
-        Tu vitrina no vende<br /><span class="apaga">piezas.</span> Vende<br /><span>gramos.</span>
-      </h1>
-      <p class="hero-sub">
-        El sistema para joyerías. Tu precio del gramo de fino, el factor por quilataje que usa
-        tu casa, el costo histórico que no se mueve y repreciar cientos de piezas viendo antes
-        qué cambia — con un mismo inventario para tu piso, tu tienda en línea y tu WhatsApp.
-      </p>
-      <div class="hero-cta">
-        <a href="/contacto" class="btn-pri">Agenda una demo</a>
-        <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
-      </div>
-
-      <!-- Nada de cifras: la franja de más abajo ya las da. Esto es lo que
-           solo el hero puede decir: de qué está hecho el giro. -->
-      <div class="hero-datos">
-        <div><b>Precio por gramo</b><span>con tu colchón, no con el spot</span></div>
-        <div><b>Factor por quilataje</b><span>10K .445 · 14K .620 · 18K .780</span></div>
-        <div><b>Costo histórico</b><span>lo que pagaste no se mueve nunca</span></div>
-      </div>
-    </div>
-  </header>
+  <!-- ── Portada: la forma del Home. El mensaje a la izquierda, la vitrina a
+       la derecha y los avisos del sistema encima — pero avisos de joyería. ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Joyería"
+    titulo="Tu vitrina no vende piezas."
+    resalte="Vende gramos."
+    sub="Tu precio del gramo de fino, el factor por quilataje que usa tu casa y el costo histórico que no se mueve — con un mismo inventario para tu piso, tu tienda en línea y tu WhatsApp."
+    foto="/images/hero-joyeria.webp"
+    fotoAlt="Vendedora de una joyería consultando en su tablet detrás de la vitrina de oro"
+    avisos={[
+      { modulo: 'Subió el fino', texto: 'El gramo de 14K cambió $38 · 214 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Apartado por vencer', texto: 'Cadena 10K de la Sra. Ruiz · último abono hace 46 días', pos: 2, tono: 'rojo', sello: 'Vence el 3' },
+      { modulo: 'Descuento por autorizar', texto: 'Anillo 14K · 12% pedido en Matriz · lo autoriza la gerente', pos: 3, tono: 'azul', sello: 'Ahora' },
+    ]}
+  />
 
   <!-- ── Aquí se demuestra que entendemos el giro ── -->
   <SuiteManifiesto
@@ -182,8 +139,6 @@ detrás de"
   />
 
   <!-- Salida: el visitante acaba de reconocer su propio mostrador -->
-  <SuiteSalida frase="Te lo mostramos con tu colchón, tus quilatajes y tus piezas — no con los de la demo." cta="Ver una demo con mi catálogo" />
-
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll
     eyebrow="Suite Joyería"
@@ -202,13 +157,19 @@ detrás de"
     reglas={reglasJoyeria}
   />
 
-  <!-- ── Cómo se cambia sin parar ── -->
-  <SuiteMigracion dias={diasJoyeria} lineas={cajaJoyeria.lineas} total={cajaJoyeria.total} />
+  <!-- ── La suite entera, contada como el plano de la joyería ── -->
+  <SuitePlano
+    titulo="Tu joyería, por dentro."
+    sub="Entra el cliente, recorre la vitrina, se prueba la pieza, aparta o paga y se va. Detrás está el taller y la caja fuerte y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona del plano y mira qué hace SACS ahí."
+    proyecto="Tu joyería — planta baja"
+    zonas={planoJoyeria}
+  />
 
-  <!-- ── La factura ── -->
-  <SuiteFormal
-    sub="El cliente pide factura por la pieza que acaba de comprar y se emite ahí mismo, con la venta abierta. Nadie anota el RFC en una libreta para capturarlo en la noche."
-    receptor="JORGE C."
+  <!-- ── Cómo se cambia sin cerrar ── -->
+  <SuiteProceso
+    titulo="Cambiarte no cierra tu joyería."
+    sub="Cinco días. Tu catálogo lo subimos nosotros y tu equipo aprende lo que usa a diario antes de que abras."
+    pasos={pasosJoyeria}
   />
 
   <!-- ── El modelo comercial ── -->
@@ -221,114 +182,3 @@ detrás de"
   <!-- El mismo cierre que la portada -->
   <CtaDudas demoDesc="Te mostramos SACS con tus piezas, tu colchón del gramo y tus quilatajes. 30 min, sin compromiso." />
 </BaseLayout>
-
-<style>
-  /* El nav es fixed (71px): sin padding-top el título queda debajo de la barra. */
-  .hero {
-    position: relative; min-height: 92vh; display: flex; align-items: flex-end;
-    padding: 136px 24px 88px; overflow: hidden; background: #0A0A0B;
-  }
-  .hero-bg { position: absolute; inset: 0; overflow: hidden; }
-  .hero-bg::before {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(80% 70% at 76% 46%, rgba(37,99,235,.2) 0%, rgba(10,10,11,0) 62%);
-  }
-  .hero-veil {
-    position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(90deg,
-      rgba(8,8,10,.96) 0%, rgba(8,8,10,.9) 26%, rgba(8,8,10,.5) 44%,
-      rgba(8,8,10,.1) 56%, rgba(8,8,10,0) 66%);
-  }
-  .hero-inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
-  .hero-eyebrow {
-    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #60A5FA; margin: 0 0 20px;
-  }
-  .hero-title {
-    font-size: clamp(38px, 7vw, 84px); font-weight: 800; letter-spacing: -2.6px;
-    line-height: .98; margin: 0 0 24px; color: #fff; max-width: 16ch;
-  }
-  .hero-title span { color: #4B7BE5; }
-  .hero-title span.apaga { color: #6B6B78; }
-  .hero-sub {
-    font-size: clamp(16px, 1.8vw, 20px); line-height: 1.6; color: #D4D4D8;
-    max-width: 56ch; margin: 0 0 34px;
-  }
-  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
-  .btn-pri, .btn-sec {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 54px; padding: 0 30px; border-radius: 12px;
-    font-size: 16px; font-weight: 700; text-decoration: none; transition: all .16s ease;
-  }
-  .btn-pri { background: #2563EB; color: #fff; box-shadow: 0 6px 22px rgba(37,99,235,.42); }
-  .btn-pri:hover { background: #1D4ED8; transform: translateY(-1px); }
-  .btn-sec { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.26); backdrop-filter: blur(6px); }
-  .btn-sec:hover { background: rgba(255,255,255,.17); }
-  .hero-datos {
-    display: flex; gap: 30px; flex-wrap: wrap; max-width: 660px;
-    border-top: 1px solid rgba(255,255,255,.14); padding-top: 26px;
-  }
-  .hero-datos > div { flex: 1 1 180px; }
-  .hero-datos div { display: flex; flex-direction: column; gap: 3px; }
-  .hero-datos b {
-    font-size: clamp(17px, 1.6vw, 21px); font-weight: 800; color: #fff; letter-spacing: -.4px;
-  }
-  .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
-
-  /* El punto de venta se dibuja a 980 px y se escala: nítido en cualquier
-     pantalla y sin depender de una captura que envejece. */
-  .hero-pos {
-    position: absolute; right: -13%; top: 50%;
-    transform: translateY(-46%) scale(.86); transform-origin: right center;
-    filter: drop-shadow(0 40px 90px rgba(0,0,0,.65));
-    opacity: 0; animation: posEntra 1s cubic-bezier(.16,1,.3,1) .25s forwards;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, #000 30%);
-  }
-  @keyframes posEntra {
-    from { opacity: 0; transform: translateY(-46%) scale(.84) translateX(34px); }
-    to   { opacity: 1; transform: translateY(-46%) scale(.86); }
-  }
-  @media (min-width: 1600px) { .hero-pos { right: -8%; transform: translateY(-46%) scale(.95); } }
-  @media (max-width: 1440px) { .hero-pos { right: -1%; transform: translateY(-50%) scale(.60); } }
-  @media (min-width: 1181px) {
-    .hero-sub { max-width: 44ch; }
-    .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
-  }
-  @media (max-width: 1180px) {
-    .hero-pos { right: -44%; transform: translateY(-44%) scale(.74); opacity: .3; animation: none; }
-  }
-  @media (max-width: 760px) {
-    /* Igual que en calzado: el punto de venta asoma al pie en lugar de
-       desaparecer, y salen los apuntes que repiten el subtítulo. */
-    .hero-pos {
-      right: auto; left: 50%; top: auto; bottom: 0;
-      transform: translateX(-50%) scale(.34); transform-origin: bottom center;
-      opacity: .95; animation: none;
-    }
-    .hero-veil {
-      background: linear-gradient(180deg, rgba(8,8,10,.98) 0%, rgba(8,8,10,.97) 62%, rgba(8,8,10,.86) 76%, rgba(8,8,10,.2) 100%);
-    }
-  }
-
-  @media (max-width: 900px) {
-    .hero { min-height: 88vh; padding: 104px 18px 56px; }
-    .hero-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; }
-    .hero-datos b { font-size: 21px; }
-    .hero-datos span { font-size: 12px; }
-    .hero-cta { margin-bottom: 34px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hero-pos { opacity: 1; animation: none; }
-  }
-
-  /* Al final a propósito: la regla de 900 px que viene antes vuelve a poner la
-     franja en rejilla. */
-  @media (max-width: 760px) {
-    .hero-datos { display: none; }
-    /* El mock necesita su propio renglón bajo los botones: si comparten sitio,
-       el botón secundario —vidrio translúcido— deja ver las teclas del punto
-       de venta y se vuelve ilegible. */
-    .hero { padding-bottom: 300px !important; }
-  }
-</style>

@@ -347,3 +347,145 @@ export const casosJoyeria = [
     alt: 'Dos empleados contando piezas de joyería de una charola al cierre de la tienda',
   },
 ];
+
+/** Los cinco días de la implementación, en lenguaje de joyería. */
+export const pasosJoyeria = [
+  {
+    cuando: 'Día 1', titulo: 'Tu catálogo, cargado',
+    texto: 'Nos das tu archivo o tu base actual y lo subimos nosotros. No capturas nada.',
+    detalle: 'Modelo, metal y pureza — con el peso de cada pieza y su costo histórico, que es el que no se debe mover nunca.',
+    img: '/images/proc-joy-1.webp',
+    alt: 'Consultor con laptop y una vendedora revisando una charola de cadenas de oro sobre el mostrador',
+  },
+  {
+    cuando: 'Día 2', titulo: 'Tu operación, configurada',
+    texto: 'Queda como ya trabajas, no como el sistema quiere que trabajes.',
+    detalle: 'Tu precio del gramo, el factor de cada quilataje, quién puede dar descuento y hasta cuánto puede bajar.',
+    img: '/images/proc-joy-2.webp',
+    alt: 'Dueña de una joyería y un consultor revisando la configuración en la oficina',
+  },
+  {
+    cuando: 'Día 3', titulo: 'Capacitación',
+    texto: 'Una sesión con tu equipo antes de abrir. Cobrar y buscar una pieza se aprende en la primera media hora.',
+    detalle: 'Y se practica lo que se usa a diario: el apartado con abonos, el descuento con autorización y el corte.',
+    img: '/images/proc-joy-3.webp',
+    alt: 'Equipo de una joyería en capacitación alrededor del mostrador antes de abrir',
+  },
+  {
+    cuando: 'Día 4', titulo: 'Abre una sucursal',
+    texto: 'Arranca la primera vitrina, acompañada. Si algo se atora, estamos en la línea.',
+    detalle: 'Ese día se cobra, se aparta, se factura y se cierra la caja como cualquier otro — pero con alguien al lado.',
+    img: '/images/proc-joy-4.webp',
+    alt: 'Vendedora empacando una pieza en su estuche acompañada por una compañera el primer día',
+  },
+  {
+    cuando: 'Día 5', titulo: 'Abren las demás',
+    texto: 'Con lo aprendido en la primera, las otras entran el mismo día.',
+    detalle: 'Y desde ese momento el precio del gramo se cambia una vez y baja a todas tus vitrinas.',
+    img: '/images/proc-joy-5.webp',
+    alt: 'Dueña de una cadena de joyerías recorriendo las vitrinas con su tablet',
+  },
+];
+
+/**
+ * El plano de la joyería.
+ *
+ * Las zonas son las del oficio, y aquí el eje no es la corrida ni la talla:
+ * es el metal y la llave. Casi todo lo que importa se pesa, se guarda bajo
+ * llave o se derrite. Por eso el taller es zona de venta —una pieza opaca no
+ * es un clavo, es una pieza sucia— y por eso la caja fuerte es la única hora
+ * del día en que el inventario entero pasa por las manos de alguien.
+ *
+ * OJO con lo que NO está aquí: la mesa de compra de oro es una zona real y de
+ * las más rentables del giro, pero SACS no tiene ese módulo. Ver el README.
+ */
+export const planoJoyeria = [
+  {
+    id: 'vitrinas',
+    nombre: 'Vitrinas',
+    simbolo: 'vitrinas',
+    foto: '/images/plano-joy-vitrinas.webp',
+    alt: 'Línea de vitrinas iluminadas de una joyería con charolas de oro ordenadas',
+    pie: 'Cada pieza sabe cuánto pesa, de qué ley es y desde cuándo lleva ahí.',
+    pregunta: '«¿Y esta charola desde cuándo está aquí? Me acuerdo de ese juego desde la temporada pasada.»',
+    caja: { x: 68, y: 82, w: 216, h: 166 },
+    items: [
+      { t: 'Precio por gramo con tu colchón del fino, no con el spot' },
+      { t: 'Peso bruto, neto y fino de cada pieza, con su ley' },
+      { t: 'Existencia por modelo, metal y quilataje, en cada vitrina' },
+      { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Controla' },
+      { t: 'Repreciar cientos de piezas viendo antes qué cambia' },
+    ],
+  },
+  {
+    id: 'mostrador',
+    nombre: 'Mostrador',
+    simbolo: 'mostrador',
+    foto: '/images/plano-joy-mostrador.webp',
+    alt: 'Mostrador de cierre de una joyería con una pieza sobre el paño y una clienta sentada',
+    pie: 'Aquí se regatea, se autoriza y se cobra. Y aquí se decide si dejó dinero.',
+    pregunta: '«Le hice quince por ciento de descuento… ¿sí ganamos algo o se la vendí abajo del oro?»',
+    caja: { x: 298, y: 82, w: 128, h: 112 },
+    items: [
+      { t: 'Punto de venta que sigue cobrando sin conexión' },
+      { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Controla' },
+      { t: 'Apartado con anticipo y abonos, con el precio congelado' },
+      { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
+      { t: 'Corte de caja y arqueo automáticos al cerrar' },
+    ],
+  },
+  {
+    id: 'taller',
+    nombre: 'Taller',
+    ambito: 'Detrás del mostrador',
+    simbolo: 'banco',
+    foto: '/images/plano-joy-taller.webp',
+    alt: 'Banco de joyero con su media luna, el motor colgante y las herramientas en fila',
+    pie: 'Una pieza opaca no es un clavo: es una pieza sucia. Aquí vuelve a la vitrina.',
+    pregunta: '«El anillo de la señora entró con 4.1 gramos y salió con 3.8. ¿Y los 0.3 dónde quedaron?»',
+    caja: { x: 298, y: 208, w: 128, h: 96 },
+    items: [
+      { t: 'Orden de taller con el peso de entrada y la descripción' },
+      { t: 'Soldadura, cambio de medida, rodinado y pulido, cada uno con su costo' },
+      { t: 'La pieza sale de disponible mientras está en el banco' },
+      { t: 'Quién recibió, quién trabajó y quién entregó', plan: 'Controla' },
+      { t: 'Registro de empleados, horarios, turnos y asistencia', extra: true },
+    ],
+  },
+  {
+    id: 'caja',
+    nombre: 'Caja fuerte',
+    ambito: 'Al cierre',
+    simbolo: 'anaqueles',
+    foto: '/images/plano-joy-caja.webp',
+    alt: 'Caja fuerte de piso abierta con charolas de terciopelo en sus anaqueles',
+    pie: 'La única hora del día en que el inventario entero pasa por las manos de alguien.',
+    pregunta: '«Ya guardamos. ¿Alguien contó la charola de compromiso o nomás la metimos?»',
+    caja: { x: 68, y: 262, w: 216, h: 106 },
+    items: [
+      { t: 'Corte de vitrina: se cuenta charola por charola, desde el celular', plan: 'Controla' },
+      { t: 'Traslado entre sucursales, con la pieza en tránsito hasta que se recibe', plan: 'Controla' },
+      { t: 'Kardex y trazabilidad de cada pieza', plan: 'Controla' },
+      { t: 'Permisos por usuario y por sucursal', plan: 'Controla' },
+      { t: 'Auditoría: quién canceló, quién cambió, quién autorizó', plan: 'Controla' },
+    ],
+  },
+  {
+    id: 'linea',
+    nombre: 'En línea',
+    fuera: true,
+    simbolo: 'paquetes',
+    foto: '/images/plano-joy-linea.webp',
+    alt: 'Rincón de fotografía de una joyería con tripié, aro de luz y cadenas sobre el paño',
+    pie: 'La foto se manda con el peso escrito encima. Y sale del mismo inventario.',
+    pregunta: '«Vendí por WhatsApp una pieza que ya estaba apartada.»',
+    caja: { x: 480, y: 148, w: 158, h: 156 },
+    items: [
+      { t: 'Tienda en línea con el mismo inventario del mostrador' },
+      { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
+      { t: 'Un solo inventario para todos los canales' },
+      { t: 'Perfil del cliente con lo que compró y en qué ley', plan: 'Fideliza' },
+      { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
+    ],
+  },
+];
