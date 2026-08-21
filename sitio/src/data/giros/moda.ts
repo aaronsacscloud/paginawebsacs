@@ -184,7 +184,6 @@ export const planoModa = [
     caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
       { t: 'Punto de venta con la matriz de tallas y colores de cada estilo' },
-      { t: 'Etiquetas con código de barras' },
       { t: 'Existencia por estilo, talla y color, en cada tienda', plan: 'Controla' },
       { t: 'Traspaso entre tiendas cuando la talla está donde no se vende', plan: 'Controla' },
       { t: 'Conteo desde el celular, sin cerrar la tienda', plan: 'Controla' },

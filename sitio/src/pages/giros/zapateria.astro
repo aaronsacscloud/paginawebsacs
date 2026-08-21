@@ -26,12 +26,12 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import ZapCorridaCerrada from '../../components/giros/ZapCorridaCerrada.astro';
 import ZapNivelacion from '../../components/giros/ZapNivelacion.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
-import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
-import { seccionesZapateria, casosZapateria, cortinaZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
-  nivelacionZapateria,
+import { seccionesZapateria, casosZapateria, cortinaZapateria, pasosZapateria, cajaZapateria, documentosZapateria,
+  nivelacionZapateria, planoZapateria,
 } from '../../data/giros/zapateria';
 
 const titulo = 'Suite para Zapaterías';
@@ -168,15 +168,12 @@ const desc =
     total={cajaZapateria.total}
   />
 
-  <!-- Lo que todavía no se ha enseñado: que aquí cabe el negocio entero -->
-  <SuiteIntegral
-    eyebrow="Toda la operación, en un solo lugar"
-    titulo="Y esto es solo lo que te enseñamos."
-    resalte="Adentro cabe todo."
-    sub="Una zapatería no es solo el mostrador. Es lo que compras, lo que te queda, quién lo vendió y quién regresa. Las cuatro cosas viven en el mismo sistema — toca cada una."
-    etapas={etapasZapateria}
-    centro="Tu zapatería"
-    pie="<b>No son cuatro productos.</b> Son las cuatro cosas que tu tienda hace todos los días, en el mismo lugar y con los mismos datos: el par que se vendió en el mostrador ya descontó existencia, ya sumó puntos al cliente, ya cuenta para la comisión del vendedor y ya está en el reporte que abres el lunes."
+  <!-- ── La suite entera, contada como el plano de la tienda ── -->
+  <SuitePlano
+    titulo="Tu zapatería, por dentro."
+    sub="Entra el cliente, ve la muestra en el muro, se sienta a probarse, paga y se va. Detrás está la bodega donde vive la corrida y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona del plano y mira qué hace SACS ahí."
+    proyecto="Tu zapatería — planta baja"
+    zonas={planoZapateria}
   />
 
   <!-- ── El modelo comercial ── -->

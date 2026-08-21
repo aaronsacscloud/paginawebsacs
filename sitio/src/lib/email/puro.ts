@@ -151,3 +151,54 @@ export const SALIDA: EstadoInscripcion = 'unenrolled';
 export function esEstadoValido(e: string): e is EstadoInscripcion {
   return (ESTADOS_INSCRIPCION as readonly string[]).includes(e);
 }
+
+// ── Correo entrante ──────────────────────────────────────────────────────
+
+/** El texto de un HTML, cuando el cliente de correo no manda la parte plana. */
+export function htmlAtexto(html: string): string {
+  return String(html || '')
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    // Los cortes de bloque se vuelven saltos ANTES de quitar las etiquetas: si
+    // no, los párrafos se pegan en un solo renglón y limpiarCitado ya no puede
+    // reconocer la línea de atribución que separa la respuesta de lo citado.
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6]|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function limpiarCitado(texto: string): string {
+  const lineas = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  const ATRIBUCION = /(wrote|escribi(ó|o)|a écrit|schrieb)\s*:\s*$/i;
+  const ARRANQUE = /^\s*(on|el|le|am)\s+\S/i;
+
+  const esCorte = (i: number): boolean => {
+    const l = lineas[i];
+    if (/^\s*>/.test(l)) return true;
+    if (/^\s*(-{2,}|_{2,})?\s*(mensaje original|original message|forwarded message|mensaje reenviado)/i.test(l)) return true;
+    if (/^\s*de:\s.+$/i.test(l) && /^\s*(para|enviado el|asunto):/im.test(lineas.slice(i + 1, i + 4).join('\n'))) return true;
+    // La firma. El RFC 3676 §4.3 define como separador una línea de exactamente
+    // "-- ", pero casi ningún cliente respeta el espacio final, así que se
+    // acepta también "--" y "__". Sin esto, cada respuesta arrastra el
+    // "Sent with …" de su cliente a la bandeja Y al título de la actividad en
+    // la ficha, donde ocupa el lugar de lo que la persona realmente dijo.
+    if (/^\s*(--|__)\s*$/.test(l)) return true;
+    // Atribución, en una línea o repartida en hasta tres.
+    if (ARRANQUE.test(l)) {
+      for (let n = 0; n < 3; n++) {
+        const unida = lineas.slice(i, i + n + 1).join(' ').replace(/\s+/g, ' ');
+        if (ATRIBUCION.test(unida)) return true;
+      }
+    }
+    return false;
+  };
+
+  let corte = -1;
+  for (let i = 0; i < lineas.length; i++) if (esCorte(i)) { corte = i; break; }
+  return (corte > 0 ? lineas.slice(0, corte) : corte === 0 ? [] : lineas).join('\n').trim();
+}

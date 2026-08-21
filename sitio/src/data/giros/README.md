@@ -312,6 +312,10 @@ Cómo se les habla:
   su turno, sin decirlo, se lee como roto.
 - **Toda leyenda explica todos los colores.** El cuarto color sin leyenda es el
   que confunde.
+- **Las columnas paralelas llevan la MISMA cantidad de renglones.** Cinco por
+  zona en `SuitePlano`. Con una de seis, la rejilla se desalinea y se lee como
+  que a las otras cuatro les falta algo — que es justo lo contrario de lo que
+  el bloque tiene que demostrar.
 - **Nada de pastillas de color en las listas.** Cinco columnas con una pastilla
   "INCLUIDO" en cada renglón se leen como una tabla de precios sucia. El plan y
   lo que se cobra aparte van como **nota tenue en la misma línea**, y el color
@@ -366,8 +370,13 @@ Cómo se les habla:
 
 ### Largo
 
-- **Objetivo: 20,000–28,000 px en escritorio.** Zapatería llegó a 33,900 y se
-  bajó a 27,800 sin perder un argumento.
+- **Objetivo: 20,000–28,000 px de CONTENIDO en escritorio.** Zapatería llegó a
+  33,900 y se bajó a 27,800 sin perder un argumento.
+- **El riel no cuenta para ese objetivo.** Cada bloque con riel suma su
+  recorrido a la altura del documento —el plano ~208vh, la cortina 120vh, unos
+  2,950 px entre los dos— pero eso no es contenido que haya que leer, es el
+  ritmo con el que se recorre. Al medir, réstalo; si no, la página parece
+  inflada y se recorta un argumento por nada.
 - **El recorrido no repite lo que ya argumenta un bloque propio.** Cuatro
   secciones de zapatería decían lo mismo que la corrida cerrada, la nivelación y
   el círculo: seis mil píxeles de eco.

@@ -15,6 +15,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { verificar } from '../../../lib/email/token';
+import { limpiarCitado, htmlAtexto } from '../../../lib/email/puro';
 import { darDeBaja } from '../../../lib/email/bajas';
 import { tenantDeCasa } from '../../../lib/email/tenant';
 
@@ -61,48 +62,6 @@ function esAutomatico(headers: string, asunto: string): boolean {
  * existe, y el encabezado del citado se colaba a la vista. Por eso la
  * atribución se busca sobre la línea UNIDA con las dos siguientes.
  */
-/** El texto de un HTML, cuando el cliente de correo no manda la parte plana. */
-export function htmlAtexto(html: string): string {
-  return String(html || '')
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
-    // Los cortes de bloque se vuelven saltos ANTES de quitar las etiquetas: si
-    // no, los párrafos se pegan en un solo renglón y limpiarCitado ya no puede
-    // reconocer la línea de atribución que separa la respuesta de lo citado.
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|tr|h[1-6]|blockquote)>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-export function limpiarCitado(texto: string): string {
-  const lineas = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-
-  const ATRIBUCION = /(wrote|escribi(ó|o)|a écrit|schrieb)\s*:\s*$/i;
-  const ARRANQUE = /^\s*(on|el|le|am)\s+\S/i;
-
-  const esCorte = (i: number): boolean => {
-    const l = lineas[i];
-    if (/^\s*>/.test(l)) return true;
-    if (/^\s*(-{2,}|_{2,})?\s*(mensaje original|original message|forwarded message|mensaje reenviado)/i.test(l)) return true;
-    if (/^\s*de:\s.+$/i.test(l) && /^\s*(para|enviado el|asunto):/im.test(lineas.slice(i + 1, i + 4).join('\n'))) return true;
-    // Atribución, en una línea o repartida en hasta tres.
-    if (ARRANQUE.test(l)) {
-      for (let n = 0; n < 3; n++) {
-        const unida = lineas.slice(i, i + n + 1).join(' ').replace(/\s+/g, ' ');
-        if (ATRIBUCION.test(unida)) return true;
-      }
-    }
-    return false;
-  };
-
-  let corte = -1;
-  for (let i = 0; i < lineas.length; i++) if (esCorte(i)) { corte = i; break; }
-  return (corte > 0 ? lineas.slice(0, corte) : corte === 0 ? [] : lineas).join('\n').trim();
-}
 
 /** "ya no me manden" — se detecta y se ofrece la baja con un clic. */
 const PIDE_BAJA = /\b(no me mand|dejen de mandar|ya no quiero recibir|quitenme|quítenme|remove me|unsubscribe|dar de baja|darme de baja|no me interesa recibir)/i;

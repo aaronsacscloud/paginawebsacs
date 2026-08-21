@@ -637,3 +637,100 @@ export const nivelacionZapateria = {
   comprar: { pares: 38, detalle: '24½ ×15 · 24 ×12 · 25½ ×11', nota: 'No hay excedente de 24½ en toda la cadena: hay nueve pares y las cuatro tiendas venden doce al mes. Ese hueco se compra o no existe.' },
   pasos: ['Se propone', 'Se autoriza', 'Se surte', 'Va en camino', 'Se recibe', 'Entra a piso'],
 };
+
+/**
+ * El plano de la zapatería. Sustituye al círculo de las cuatro etapas.
+ *
+ * Las zonas son las del oficio y no las de una tienda cualquiera: en calzado
+ * el piso exhibe UNA muestra por modelo y la corrida vive en la bodega de
+ * cajas, así que la bodega es una zona de venta, no un almacén. Y el probador
+ * con su banca es donde se decide el par: si el número no está, ahí se pierde.
+ */
+export const planoZapateria = [
+  {
+    id: 'piso',
+    nombre: 'Piso de venta',
+    simbolo: 'exhibidores',
+    foto: '/images/plano-zap-piso.webp',
+    alt: 'Piso de una zapatería grande con muros de repisas y una muestra por modelo',
+    pie: 'En el muro va la muestra; la corrida completa está atrás, en cajas.',
+    pregunta: '«¿Este me lo tienes del 25 y medio?»',
+    caja: { x: 68, y: 82, w: 216, h: 166 },
+    items: [
+      { t: 'Punto de venta por modelo, color y número, con medios' },
+      { t: 'Etiquetas con código de barras' },
+      { t: 'Existencia por número en cada tienda y en la bodega', plan: 'Controla' },
+      { t: 'Traspaso entre tiendas para cerrar la corrida', plan: 'Controla' },
+      { t: 'Conteo desde el celular, sin cerrar la tienda', plan: 'Controla' },
+    ],
+  },
+  {
+    id: 'probador',
+    nombre: 'Probador',
+    simbolo: 'bancas',
+    foto: '/images/plano-zap-probador.webp',
+    alt: 'Zona de bancas de una zapatería, con una vendedora arrodillada y una caja abierta',
+    pie: 'Aquí se decide el par: si el número no está, la venta se cae en la banca.',
+    pregunta: '«Me aprieta. ¿No tendrás el siguiente número?»',
+    caja: { x: 298, y: 82, w: 128, h: 112 },
+    items: [
+      { t: 'Consulta del número en las otras tiendas sin dejar al cliente', plan: 'Controla' },
+      { t: 'Apartado con anticipo y abonos por quincena' },
+      { t: 'Cambio de número o color, aunque el par venga de otra tienda' },
+      { t: 'Vale a favor cuando no está su número' },
+      { t: 'Cambio sin ticket físico', plan: 'Fideliza' },
+    ],
+  },
+  {
+    id: 'bodega',
+    nombre: 'Bodega de cajas',
+    simbolo: 'anaqueles',
+    foto: '/images/plano-zap-bodega.webp',
+    alt: 'Bodega de una zapatería con anaqueles llenos de cajas de calzado ordenadas',
+    pie: 'La corrida entera vive aquí: lo que no está en caja, no se vende.',
+    pregunta: '«Llegó la remesa y no sé qué números faltan.»',
+    caja: { x: 298, y: 208, w: 128, h: 96 },
+    items: [
+      { t: 'Recepción de la remesa contra la orden de compra', plan: 'Controla' },
+      { t: 'Reparto a tiendas desde el mismo documento', plan: 'Controla' },
+      { t: 'Kardex y trazabilidad de cada par', plan: 'Controla' },
+      { t: 'Aviso de existencia baja y de exceso', plan: 'Controla' },
+      { t: 'Registro de empleados, horarios, turnos y asistencia', extra: true },
+    ],
+  },
+  {
+    id: 'mostrador',
+    nombre: 'Mostrador',
+    simbolo: 'mostrador',
+    foto: '/images/plano-zap-mostrador.webp',
+    alt: 'Mostrador de cobro de una zapatería grande, con bolsas de papel y cajas al fondo',
+    pie: 'La caja que no se detiene, ni en quincena ni sin internet.',
+    pregunta: '«Es quincena, hay fila y se cayó el internet.»',
+    caja: { x: 68, y: 262, w: 216, h: 106 },
+    items: [
+      { t: 'Punto de venta que sigue cobrando sin conexión' },
+      { t: 'Corte de caja y arqueo automáticos al cerrar' },
+      { t: 'Ticket por WhatsApp' },
+      { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
+      { t: 'Corte ciego: el cajero no sabe cuánto debe haber', plan: 'Fideliza' },
+    ],
+  },
+  {
+    id: 'linea',
+    nombre: 'En línea',
+    fuera: true,
+    simbolo: 'paquetes',
+    foto: '/images/plano-zap-linea.webp',
+    alt: 'Mesa de empaque de una zapatería con cajas de calzado listas para enviar',
+    pie: 'El mismo inventario del piso, empacándose para salir.',
+    pregunta: '«Vendí en línea un par que ya estaba apartado.»',
+    caja: { x: 480, y: 148, w: 158, h: 156 },
+    items: [
+      { t: 'Tienda en línea con el mismo inventario del mostrador' },
+      { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
+      { t: 'Un solo inventario para todos los canales' },
+      { t: 'Perfil del cliente con lo que compró y en qué número', plan: 'Fideliza' },
+      { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
+    ],
+  },
+];

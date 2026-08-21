@@ -7,7 +7,7 @@
  *
  * Correr:  node --experimental-strip-types src/lib/email/puro.test.ts
  */
-import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, direccionRespuesta, esEstadoValido, SALIDA, ESTADOS_INSCRIPCION, RUTA_INTERNA } from './puro.ts';
+import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, direccionRespuesta, esEstadoValido, SALIDA, ESTADOS_INSCRIPCION, limpiarCitado, htmlAtexto, RUTA_INTERNA } from './puro.ts';
 
 let ok = 0;
 const fallas: string[] = [];
@@ -157,6 +157,38 @@ es(SALIDA, 'unenrolled', 'la salida es unenrolled');
 es([...ESTADOS_INSCRIPCION].sort(),
    ['activo', 'completado', 'error', 'goal_achieved', 'pausado', 'unenrolled'],
    'el catálogo coincide con el CHECK de la base');
+
+// ── correo entrante ──────────────────────────────────────────────────────
+// Todos estos son de respuestas REALES. El de Gmail rompió limpiarCitado la
+// primera vez —parte la línea de atribución en dos— y el de Hostinger la
+// segunda, mandando solo HTML y arrastrando su propia firma.
+{
+  // Hostinger, respuesta real del 2026-08-21.
+  const hostinger = 'esta es una respuesta\nde dos renglones\n\n--\n\nSent with Hostinger Mail';
+  es(limpiarCitado(hostinger), 'esta es una respuesta\nde dos renglones',
+     'se recorta la firma que el cliente agrega solo');
+
+  // Gmail parte la atribución en dos líneas: por eso se unen hasta tres.
+  const gmail = 'Claro que sí.\n\nEl mié, 20 ago 2026 a las 14:02, SACS Cloud (<aaron@news.sacscloud.com>)\nescribió:\n\n> Hola, te escribo para…';
+  es(limpiarCitado(gmail), 'Claro que sí.', 'la atribución de Gmail repartida en dos líneas');
+
+  es(limpiarCitado('Va.\n\n> lo anterior'), 'Va.', 'el citado con >');
+  es(limpiarCitado('Perfecto.\n\n-----Mensaje original-----\nDe: alguien'), 'Perfecto.', 'el mensaje original de Outlook');
+  es(limpiarCitado('Sin nada que cortar'), 'Sin nada que cortar', 'un texto limpio no se toca');
+  es(limpiarCitado('costo -- beneficio'), 'costo -- beneficio', 'un "--" EN MEDIO de una línea no es firma');
+
+  // htmlAtexto: cuando el cliente no manda la parte plana.
+  es(htmlAtexto('<p>Hola</p><p>Adiós</p>'), 'Hola\nAdiós', 'los párrafos se vuelven renglones');
+  es(htmlAtexto('uno<br>dos'), 'uno\ndos', 'los <br> también');
+  es(htmlAtexto('<div>a</div><div>b</div>'), 'a\nb', 'y los <div>');
+  es(htmlAtexto('<style>p{color:red}</style><p>Solo esto</p>'), 'Solo esto', 'el <style> no es texto');
+  es(htmlAtexto('<p>caf&eacute; &amp; t&eacute;</p>').includes('&amp;'), false, 'las entidades se resuelven');
+  es(htmlAtexto(''), '', 'un HTML vacío da texto vacío');
+  // El orden importa: si se quitaran las etiquetas ANTES de convertir los
+  // cortes, todo quedaría en un renglón y la atribución sería irreconocible.
+  es(limpiarCitado(htmlAtexto('<p>Mi respuesta</p><p>El mié, 20 ago 2026 a las 14:02, X escribió:</p><p>&gt; algo</p>')),
+     'Mi respuesta', 'HTML citado: se convierte y DESPUÉS se recorta');
+}
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) {
