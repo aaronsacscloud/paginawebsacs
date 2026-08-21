@@ -17,6 +17,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
@@ -29,7 +30,7 @@ import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
-import { casosZapateria, cortinaZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
+import { seccionesZapateria, casosZapateria, cortinaZapateria, pasosZapateria, cajaZapateria, documentosZapateria, etapasZapateria,
   nivelacionZapateria,
 } from '../../data/giros/zapateria';
 
@@ -142,6 +143,14 @@ const desc =
 
 
   <!-- ── El complemento propio de este giro: la corrida cerrada ── -->
+  <!-- ── El recorrido de funcionalidades, con su panel pegajoso ── -->
+  <SuiteScroll
+    eyebrow="Suite Calzado"
+    titulo="Todo tu negocio de calzado, físico y digital, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una zapatería real: la corrida con medios números, el cambio en el mostrador y el pedido por remesas. Y todo funciona igual en el mostrador que en tu tienda en línea, porque es el mismo inventario."
+    secciones={seccionesZapateria}
+  />
+
   <ZapCorridaCerrada />
 
   <!-- La respuesta al tablero: qué número sale de qué tienda y a cuál -->

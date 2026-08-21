@@ -22,11 +22,11 @@
 
 /* ── Recorrido de funcionalidades ── */
 const est = {
-  wrap: 'font-family:Inter,system-ui,sans-serif;',
-  h: 'font-size:11px;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;',
-  ok: 'background:#D1FAE5;color:#065F46;',
-  lo: 'background:#FEF3C7;color:#92400E;',
-  cero: 'background:#F8FAFC;color:#CBD5E1;',
+  wrap: 'font-family:var(--font-body), system-ui, sans-serif;',
+  h: 'font-size:11px;font-weight:800;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;',
+  ok: 'background:var(--ok-fondo);color:var(--ok-texto);',
+  lo: 'background:var(--aviso-fondo);color:var(--aviso-texto);',
+  cero: 'background:var(--color-bg-primary);color:#D4D4D4;',
 };
 
 export interface SuiteSeccion {
@@ -55,15 +55,15 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín dama piel · pares por número</p>
       <table style="width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;">
-        <tr><th style="text-align:left;font-size:10.5px;color:#64748B;width:58px;"></th>
-        ${['22','22½','23','23½','24','24½','25','25½','26','26½','27'].map(t=>`<th style="font-size:9.5px;color:#64748B;font-weight:700;">${t}</th>`).join('')}</tr>
+        <tr><th style="text-align:left;font-size:10.5px;color:var(--color-text-tertiary);width:58px;"></th>
+        ${['22','22½','23','23½','24','24½','25','25½','26','26½','27'].map(t=>`<th style="font-size:9.5px;color:var(--color-text-tertiary);font-weight:700;">${t}</th>`).join('')}</tr>
         ${[['Café',[1,2,0,0,0,0,3,4,3,2,2]],['Negro',[1,1,2,0,0,1,4,5,4,2,1]]]
-          .map(([c,v]:any)=>`<tr><td style="font-size:11px;font-weight:700;color:#0F172A;">${c}</td>${v.map((n:number)=>{
+          .map(([c,v]:any)=>`<tr><td style="font-size:11px;font-weight:700;color:var(--color-text-primary);">${c}</td>${v.map((n:number)=>{
             const s = n===0?est.cero:(n<=3?est.lo:est.ok);
-            return `<td style="${s}border-radius:7px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;
+            return `<td style="${s}border-radius:8px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;
           }).join('')}</tr>`).join('')}
       </table>
-      <p style="margin:12px 0 0;font-size:11px;color:#EF4444;font-weight:700;">Café: sin 23, 23½, 24 ni 24½ · quedan 17 pares que ya nadie pide</p>
+      <p style="margin:12px 0 0;font-size:11px;color:var(--alerta-texto);font-weight:700;">Café: sin 23, 23½, 24 ni 24½ · quedan 17 pares que ya nadie pide</p>
     </div>`,
   },
   {
@@ -80,17 +80,17 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Modelos con la corrida rota</p>
       ${[['Botín dama café','faltan 23 a 24½','17 pares','$10,200'],['Mocasín caballero negro','faltan 27 a 28½','11 pares','$7,040'],['Sandalia dama tan','faltan 23 y 23½','9 pares','$3,870']]
-        .map(([n,f,p,m]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;"></span>
+        .map(([n,f,p,m]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--alerta-texto);flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${f} · ${p}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
+            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${f} · ${p}</div>
           </div>
-          <span style="font-size:13px;font-weight:800;color:#B91C1C;font-variant-numeric:tabular-nums;">${m}</span>
+          <span style="font-size:13px;font-weight:800;color:var(--alerta-texto);font-variant-numeric:tabular-nums;">${m}</span>
         </div>`).join('')}
-      <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:800;color:#0F172A;">Parado en modelos rotos, a costo</span>
-        <span style="font-size:15px;font-weight:800;color:#B91C1C;">$21,110</span>
+      <div style="border-top:1px dashed var(--color-border-light);margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:800;color:var(--color-text-primary);">Parado en modelos rotos, a costo</span>
+        <span style="font-size:15px;font-weight:800;color:var(--alerta-texto);">$21,110</span>
       </div>
     </div>`,
   },
@@ -108,14 +108,14 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín piel café · número 25</p>
       ${[['Esta tienda','Centro',0,true],['Plaza Norte','a 20 min',2,false],['Galerías','a 35 min',5,false],['Bodega central','entrega mañana',9,false]]
-        .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#3B82F6':'#EEF1F5'};background:${aqui?'#F7FBFF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
+        .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'var(--color-primary)':'var(--color-border-light)'};background:${aqui?'var(--azul-fondo)':'#fff'};border-radius:8px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
+            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${s}</div>
           </div>
-          <span style="font-size:14px;font-weight:800;color:${q>0?'#10B981':'#CBD5E1'};font-variant-numeric:tabular-nums;">${q}</span>
-          ${aqui?'<span style="background:#3B82F6;color:#fff;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">AQUÍ</span>'
-                :(q>0?'<span style="background:#ECFDF5;color:#047857;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">APARTAR</span>':'')}
+          <span style="font-size:14px;font-weight:800;color:${q>0?'var(--ok-texto)':'#D4D4D4'};font-variant-numeric:tabular-nums;">${q}</span>
+          ${aqui?'<span style="background:var(--color-primary);color:#fff;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">AQUÍ</span>'
+                :(q>0?'<span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">APARTAR</span>':'')}
         </div>`).join('')}
     </div>`,
   },
@@ -133,14 +133,14 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Escolar infantil · agosto, día a día</p>
       <div style="display:flex;align-items:flex-end;gap:5px;height:110px;margin-bottom:12px;">
-        ${[8,11,16,22,34,58,88,100,72,58,84,46].map((h,i)=>`<div style="flex:1;height:${h}%;border-radius:4px 4px 0 0;background:${h>70?'#2563EB':(h>35?'#7FA6F5':'#DBEAFE')};"></div>`).join('')}
+        ${[8,11,16,22,34,58,88,100,72,58,84,46].map((h,i)=>`<div style="flex:1;height:${h}%;border-radius:8px 8px 0 0;background:${h>70?'var(--color-primary)':(h>35?'#7FA6F5':'var(--azul-fondo)')};"></div>`).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94A3B8;font-weight:700;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--color-text-tertiary);font-weight:700;margin-bottom:12px;">
         <span>1 ago</span><span>pico: 15 al 30</span><span>31 ago</span>
       </div>
-      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:11px;padding:11px 13px;">
-        <div style="font-size:11.5px;font-weight:800;color:#9A3412;">Repón el 18 y el 19 antes de la quincena</div>
-        <div style="font-size:11.5px;color:#9A3412;margin-top:3px;">Al ritmo de hoy se acaban en 2 días, y falta la cresta del 30.</div>
+      <div style="background:var(--aviso-fondo);border:1px solid var(--aviso-borde);border-radius:8px;padding:11px 13px;">
+        <div style="font-size:11.5px;font-weight:800;color:var(--aviso-texto);">Repón el 18 y el 19 antes de la quincena</div>
+        <div style="font-size:11.5px;color:var(--aviso-texto);margin-top:3px;">Al ritmo de hoy se acaban en 2 días, y falta la cresta del 30.</div>
       </div>
     </div>`,
   },
@@ -158,17 +158,17 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de número · sin ticket</p>
-      <div style="border:1px solid #EEF1F5;border-radius:11px;padding:12px;margin-bottom:10px;">
-        <div style="font-size:11px;color:#94A3B8;font-weight:700;margin-bottom:6px;">SE LLEVÓ (3 ene · Galerías)</div>
-        <div style="font-size:13px;font-weight:700;color:#0F172A;">Botín dama café
-          <span style="background:#FEE2E2;color:#991B1B;border-radius:5px;padding:2px 7px;font-size:10.5px;margin-left:6px;">26</span></div>
+      <div style="border:1px solid var(--color-border-light);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--color-text-tertiary);font-weight:700;margin-bottom:6px;">SE LLEVÓ (3 ene · Galerías)</div>
+        <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Botín dama café
+          <span style="background:var(--alerta-fondo);color:var(--alerta-texto);border-radius:8px;padding:2px 7px;font-size:10.5px;margin-left:6px;">26</span></div>
       </div>
-      <div style="text-align:center;color:#CBD5E1;font-size:16px;margin:2px 0 8px;">↓</div>
-      <div style="border:1.5px solid #10B981;background:#F0FDF9;border-radius:11px;padding:12px;">
-        <div style="font-size:11px;color:#047857;font-weight:700;margin-bottom:6px;">SE LLEVA HOY (Sucursal Centro)</div>
-        <div style="font-size:13px;font-weight:700;color:#0F172A;">Botín dama café
-          <span style="background:#D1FAE5;color:#065F46;border-radius:5px;padding:2px 7px;font-size:10.5px;margin-left:6px;">26½</span></div>
-        <div style="font-size:11px;color:#64748B;font-weight:600;margin-top:5px;">Sin diferencia a pagar · 3 pares disponibles</div>
+      <div style="text-align:center;color:#D4D4D4;font-size:16px;margin:2px 0 8px;">↓</div>
+      <div style="border:1.5px solid var(--ok-texto);background:var(--ok-fondo);border-radius:8px;padding:12px;">
+        <div style="font-size:11px;color:var(--ok-texto);font-weight:700;margin-bottom:6px;">SE LLEVA HOY (Sucursal Centro)</div>
+        <div style="font-size:13px;font-weight:700;color:var(--color-text-primary);">Botín dama café
+          <span style="background:var(--ok-fondo);color:var(--ok-texto);border-radius:8px;padding:2px 7px;font-size:10.5px;margin-left:6px;">26½</span></div>
+        <div style="font-size:11px;color:var(--color-text-tertiary);font-weight:600;margin-top:5px;">Sin diferencia a pagar · 3 pares disponibles</div>
       </div>
     </div>`,
   },
@@ -185,18 +185,18 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Apartados · corte de la quincena</p>
-      ${[['Ana M.','Botín dama 24½','$1,290','3 de 4 abonos','#047857','al corriente'],['Luis R.','Deportivo 27','$1,450','2 de 4 abonos','#B45309','vence el 15'],['Carmen T.','Zapatilla 23','$980','1 de 4 abonos','#B91C1C','vencido · 68 días']]
-        .map(([c,q,m,a,col,e]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;">
+      ${[['Ana M.','Botín dama 24½','$1,290','3 de 4 abonos','var(--ok-texto)','al corriente'],['Luis R.','Deportivo 27','$1,450','2 de 4 abonos','var(--aviso-texto)','vence el 15'],['Carmen T.','Zapatilla 23','$980','1 de 4 abonos','var(--alerta-texto)','vencido · 68 días']]
+        .map(([c,q,m,a,col,e]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="flex:1;min-width:0;">
-              <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${c} · ${q}</div>
-              <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${a}</div>
+              <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${c} · ${q}</div>
+              <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${a}</div>
             </div>
-            <span style="font-size:13px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">${m}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--color-text-primary);font-variant-numeric:tabular-nums;">${m}</span>
           </div>
           <div style="margin-top:7px;font-size:10.5px;font-weight:800;color:${col};">${e}</div>
         </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">El vencido lo liberas de un clic · el par vuelve al piso y su abono queda en vale</p>
+      <p style="margin:10px 0 0;font-size:11px;color:var(--color-text-tertiary);">El vencido lo liberas de un clic · el par vuelve al piso y su abono queda en vale</p>
     </div>`,
   },
   {
@@ -212,18 +212,18 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Orden 1042 · proveedor de León</p>
-      ${[['1ª remesa','12 jun','recibida','96 de 96 pares','#047857'],['2ª remesa','28 jun','recibida','72 de 84 pares','#B45309'],['3ª remesa','pendiente','sin fecha','0 de 60 pares','#B91C1C']]
-        .map(([r,f,e,p,col]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
+      ${[['1ª remesa','12 jun','recibida','96 de 96 pares','var(--ok-texto)'],['2ª remesa','28 jun','recibida','72 de 84 pares','var(--aviso-texto)'],['3ª remesa','pendiente','sin fecha','0 de 60 pares','var(--alerta-texto)']]
+        .map(([r,f,e,p,col]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${r} · ${f}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${p}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${r} · ${f}</div>
+            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${p}</div>
           </div>
           <span style="font-size:11px;font-weight:800;color:${col};">${e}</span>
         </div>`).join('')}
-      <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:700;color:#0F172A;">Te debe 72 pares · le debes</span>
-        <span style="font-size:14px;font-weight:800;color:#0F172A;">$118,400</span>
+      <div style="border-top:1px dashed var(--color-border-light);margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:700;color:var(--color-text-primary);">Te debe 72 pares · le debes</span>
+        <span style="font-size:14px;font-weight:800;color:var(--color-text-primary);">$118,400</span>
       </div>
     </div>`,
   },
@@ -242,20 +242,20 @@ export const seccionesZapateria: SuiteSeccion[] = [
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Tus marcas principales · agosto</p>
       <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
-        <tr style="color:#94A3B8;font-weight:700;text-align:left;">
+        <tr style="color:var(--color-text-tertiary);font-weight:700;text-align:left;">
           <th style="padding:0 0 7px;font-weight:700;">Marca</th>
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Venta</th>
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Margen</th>
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Desplazamiento</th>
         </tr>
-        ${[['Flexi','$214,800','47%',82,'#047857'],['Pakar','$168,300','44%',71,'#047857'],['Quirelli','$96,400','41%',48,'#B45309'],['Marca propia','$52,100','58%',31,'#B91C1C'],['Otras marcas','$702,000','43%',64,'#047857']]
-          .map(([m,v,g,d,c]:any)=>`<tr style="border-top:1px solid #EEF1F5;">
-            <td style="padding:9px 0;font-weight:700;color:#0F172A;">${m}</td>
-            <td style="padding:9px 0;text-align:right;color:#334155;font-variant-numeric:tabular-nums;">${v}</td>
-            <td style="padding:9px 0;text-align:right;color:#334155;font-variant-numeric:tabular-nums;">${g}</td>
+        ${[['Flexi','$214,800','47%',82,'var(--ok-texto)'],['Pakar','$168,300','44%',71,'var(--ok-texto)'],['Quirelli','$96,400','41%',48,'var(--aviso-texto)'],['Marca propia','$52,100','58%',31,'var(--alerta-texto)'],['Otras marcas','$702,000','43%',64,'var(--ok-texto)']]
+          .map(([m,v,g,d,c]:any)=>`<tr style="border-top:1px solid var(--color-border-light);">
+            <td style="padding:9px 0;font-weight:700;color:var(--color-text-primary);">${m}</td>
+            <td style="padding:9px 0;text-align:right;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;">${v}</td>
+            <td style="padding:9px 0;text-align:right;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;">${g}</td>
             <td style="padding:9px 0;text-align:right;">
               <span style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;">
-                <span style="display:inline-block;width:52px;height:5px;border-radius:3px;background:#EEF1F5;overflow:hidden;">
+                <span style="display:inline-block;width:52px;height:5px;border-radius:8px;background:var(--color-border-light);overflow:hidden;">
                   <span style="display:block;width:${d}%;height:100%;background:${c};"></span>
                 </span>
                 <b style="color:${c};font-variant-numeric:tabular-nums;">${d}%</b>
@@ -263,16 +263,16 @@ export const seccionesZapateria: SuiteSeccion[] = [
             </td>
           </tr>`).join('')}
       </table>
-      <div style="border-top:1px dashed #E5E7EB;margin-top:12px;padding-top:11px;">
+      <div style="border-top:1px dashed var(--color-border-light);margin-top:12px;padding-top:11px;">
         <p style="${est.h}">Y por proveedor</p>
         ${[['León · Calzado Mtz','3 marcas','$1.4M al año'],['Guanajuato · Distribuidora RG','2 marcas','$610K al año']]
           .map(([n,m,v]:any)=>`<div style="display:flex;align-items:center;gap:10px;font-size:11.5px;margin-bottom:6px;">
-            <span style="flex:1;font-weight:700;color:#0F172A;">${n}</span>
-            <span style="color:#94A3B8;font-weight:600;">${m}</span>
-            <b style="color:#334155;font-variant-numeric:tabular-nums;">${v}</b>
+            <span style="flex:1;font-weight:700;color:var(--color-text-primary);">${n}</span>
+            <span style="color:var(--color-text-tertiary);font-weight:600;">${m}</span>
+            <b style="color:var(--color-text-secondary);font-variant-numeric:tabular-nums;">${v}</b>
           </div>`).join('')}
       </div>
-      <p style="margin:11px 0 0;font-size:10.5px;color:#94A3B8;font-weight:600;">Desplazamiento (sell-through): de cada 100 pares que compré de la temporada, cuántos ya vendí.</p>
+      <p style="margin:11px 0 0;font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">Desplazamiento (sell-through): de cada 100 pares que compré de la temporada, cuántos ya vendí.</p>
     </div>`,
   },
   {
@@ -288,18 +288,18 @@ export const seccionesZapateria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Botín piel café · número 25 · hoy</p>
-      ${[['Piso de venta','Sucursal Centro',12,'#2563EB'],['Tienda en línea','Tu ecommerce',12,'#7C3AED'],['Redes','TikTok Shop · Instagram',12,'#EA580C'],['WhatsApp','Catálogo y chat',12,'#059669']]
-        .map(([n,s,q,c]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
+      ${[['Piso de venta','Sucursal Centro',12,'var(--color-primary)'],['Tienda en línea','Tu ecommerce',12,'#8B7BE5'],['Redes','TikTok Shop · Instagram',12,'var(--color-accent)'],['WhatsApp','Catálogo y chat',12,'var(--ok-texto)']]
+        .map(([n,s,q,c]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
+            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${s}</div>
           </div>
-          <span style="font-size:13px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">ve ${q} pares</span>
+          <span style="font-size:13px;font-weight:800;color:var(--color-text-primary);font-variant-numeric:tabular-nums;">ve ${q} pares</span>
         </div>`).join('')}
-      <div style="border:1.5px solid #3B82F6;background:#F7FBFF;border-radius:11px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span style="font-size:11.5px;font-weight:800;color:#1D4ED8;">El mismo 12 · no cuatro inventarios</span>
-        <span style="font-size:15px;font-weight:800;color:#0F172A;">12</span>
+      <div style="border:1.5px solid var(--color-primary);background:var(--azul-fondo);border-radius:8px;padding:11px 13px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="font-size:11.5px;font-weight:800;color:var(--color-primary);">El mismo 12 · no cuatro inventarios</span>
+        <span style="font-size:15px;font-weight:800;color:var(--color-text-primary);">12</span>
       </div>
     </div>`,
   },
@@ -320,18 +320,18 @@ export const seccionesZapateria: SuiteSeccion[] = [
         ['Vigía de corridas','Cada mañana, 8:00','Avisa','Botín café: si se va el 25, el modelo se rompe'],
         ['Asesor de WhatsApp','En cuanto escriben','Responde','Dice si hay el número y en qué sucursal está'],
         ['Comprador de temporada','Lunes, 9:00','Solo propone','Corrida escolar sugerida, lista para tu OK'],
-      ].map(([n,c,m,r]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:12px;padding:12px 13px;margin-bottom:8px;">
+      ].map(([n,c,m,r]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:12px 13px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
-          <span style="width:26px;height:26px;border-radius:8px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">IA</span>
+          <span style="width:26px;height:26px;border-radius:8px;background:var(--azul-fondo);color:var(--color-primary);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">IA</span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${c}</div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
+            <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${c}</div>
           </div>
-          <span style="background:#EFF6FF;color:#2563EB;border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
+          <span style="background:var(--azul-fondo);color:var(--color-primary);border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
         </div>
-        <div style="font-size:11px;color:#475569;font-weight:600;line-height:1.45;">${r}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);font-weight:600;line-height:1.45;">${r}</div>
       </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">Los configuras tú, con tus reglas y tus límites</p>
+      <p style="margin:10px 0 0;font-size:11px;color:var(--color-text-tertiary);">Los configuras tú, con tus reglas y tus límites</p>
     </div>`,
   },
 ];

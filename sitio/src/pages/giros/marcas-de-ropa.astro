@@ -13,6 +13,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
@@ -24,6 +25,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ModaMarcacion from '../../components/giros/ModaMarcacion.astro';
+import { seccionesRopa } from '../../data/suite-ropa';
 import { seccionesRopa } from '../../data/suite-ropa';
 import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa } from '../../data/giros/moda';
 
@@ -130,6 +132,14 @@ const desc =
     titulo="Dónde te sirve, en concreto"
     sub="Las cuatro situaciones en las que una tienda de ropa gana o pierde el dinero. Toca cada una."
     casos={casosModa}
+  />
+
+  <!-- ── El recorrido de funcionalidades, con su panel pegajoso ── -->
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Todo tu negocio de moda, físico y digital, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una tienda de ropa real: la matriz de tallas y colores, la curva de compra por temporada y el cambio de talla en el mostrador. Y todo funciona igual en el probador que en tu tienda en línea, porque es el mismo inventario."
+    secciones={seccionesRopa}
   />
 
   <!-- El bloque propio del giro: en moda la utilidad se decide al marcar -->
