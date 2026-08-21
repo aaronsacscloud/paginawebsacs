@@ -9,6 +9,26 @@ import { notificar } from '../crm/notificaciones';
 
 const SECRET = (import.meta.env.INTERCOM_WEBHOOK_SECRET || '').trim();
 const APP_ID = (import.meta.env.INTERCOM_APP_ID || 'zla430r8').trim();
+const TOKEN = (import.meta.env.INTERCOM_ACCESS_TOKEN || '').trim();
+const API = 'https://api.intercom.io';
+const IV = { 'Authorization': 'Bearer ' + TOKEN, 'Intercom-Version': '2.11', 'Content-Type': 'application/json' };
+
+export function hayToken(): boolean { return TOKEN.length > 0; }
+
+/** La cuenta SACS de una conversación viene del CONTACTO, no de la conversación:
+ *  contacto.companies[0].company_id = la cuenta (lo que sacs3 pone como company.id).
+ *  Solo se puede resolver con el Access Token. Devuelve {cuenta, email} o null. */
+export async function cuentaDeContacto(contactId: string): Promise<{ cuenta: string | null; email: string | null }> {
+  if (!TOKEN || !contactId) return { cuenta: null, email: null };
+  try {
+    const r = await fetch(`${API}/contacts/${contactId}/companies`, { headers: IV });
+    const j: any = await r.json();
+    const comp = (j?.data || j?.companies || [])[0];
+    let email: string | null = null;
+    try { const rc = await fetch(`${API}/contacts/${contactId}`, { headers: IV }); email = (await rc.json())?.email || null; } catch { /* email opcional */ }
+    return { cuenta: comp?.company_id || null, email };
+  } catch { return { cuenta: null, email: null }; }
+}
 
 export function hayConfig(): boolean { return SECRET.length > 0; }
 
@@ -43,7 +63,7 @@ function seg(ms: number | null | undefined): string | null {
 
 /** Extrae de un evento de Intercom los datos del ticket que nos interesan. */
 export function parseEvento(body: any): {
-  topic: string; conversationId: string; estado: string;
+  topic: string; conversationId: string; estado: string; contactoId: string | null;
   asunto: string | null; vistaPrevia: string | null; prioridad: string | null;
   asignado: string | null; cuenta: string | null; autorEmail: string | null;
   abiertoAt: string | null; resueltoAt: string | null; ultimaAt: string | null; url: string | null;
@@ -65,14 +85,15 @@ export function parseEvento(body: any): {
 
   const source = item.source || {};
   const autor = source.author || {};
-  // La cuenta SACS viaja como company del contacto (Intercom la incluye a veces
-  // en item.contacts o en item.company). Se intentan varias rutas.
+  // La cuenta SACS NO viene en la conversación: viene del CONTACTO. Aquí solo
+  // se guarda el contactId; upsertTicket la enriquece con el token si hace falta.
   let cuenta: string | null = null;
   const comp = item.company || (Array.isArray(item.companies?.companies) ? item.companies.companies[0] : null);
-  if (comp) cuenta = comp.company_id || comp.remote_company_id || comp.name || null;
+  if (comp) cuenta = comp.company_id || comp.name || null;
+  const contactoId = (Array.isArray(item.contacts?.contacts) ? item.contacts.contacts[0]?.id : null) || autor.id || null;
 
   return {
-    topic, conversationId: String(item.id), estado,
+    topic, conversationId: String(item.id), estado, contactoId,
     asunto: item.title || source.subject || null,
     vistaPrevia: (source.body ? String(source.body).replace(/<[^>]*>/g, ' ').trim().slice(0, 300) : null),
     prioridad: item.priority || null,
@@ -92,20 +113,29 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
   if (!ev) return { ok: false, company_id: null };
 
   // Resolver identidad: cuenta SACS → company_id; si no, email → contacto.
+  // Si el evento no trae ni cuenta ni email, se enriquece con el token
+  // (contacto → company → cuenta), que es el join fiable.
+  let cuenta = ev.cuenta;
+  let email = ev.autorEmail;
+  if (!cuenta && ev.contactoId && hayToken()) {
+    const enr = await cuentaDeContacto(ev.contactoId);
+    cuenta = cuenta || enr.cuenta;
+    email = email || enr.email;
+  }
   let companyId: string | null = null;
   let contactId: string | null = null;
-  if (ev.cuenta) companyId = await companyIdDeCuenta(ev.cuenta);
-  if (ev.autorEmail) {
+  if (cuenta) companyId = await companyIdDeCuenta(cuenta);
+  if (email) {
     const { data: ct } = await supabase.from('contacts').select('id, company_id')
-      .eq('email', String(ev.autorEmail).trim().toLowerCase()).limit(1).maybeSingle();
+      .eq('email', String(email).trim().toLowerCase()).limit(1).maybeSingle();
     if (ct) { contactId = ct.id; if (!companyId) companyId = ct.company_id || null; }
   }
 
   const fila: any = {
     conversation_id: ev.conversationId, company_id: companyId, contact_id: contactId,
-    cuenta: ev.cuenta ? normCuenta(ev.cuenta) : null,
+    cuenta: cuenta ? normCuenta(cuenta) : null,
     estado: ev.estado, asunto: ev.asunto, vista_previa: ev.vistaPrevia, prioridad: ev.prioridad,
-    asignado: ev.asignado, autor_email: ev.autorEmail,
+    asignado: ev.asignado, autor_email: email,
     ultima_actividad_at: ev.ultimaAt, intercom_url: ev.url,
     updated_at: new Date().toISOString(),
   };
@@ -141,7 +171,7 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
       titulo: ev.estado === 'resuelto' ? 'Ticket de soporte resuelto' : 'Nuevo ticket de soporte',
       detalle: ev.asunto || ev.vistaPrevia || 'Sin asunto',
       company_id: companyId, destino: 'soporte',
-      metadata: { conversation_id: ev.conversationId, cuenta: ev.cuenta },
+      metadata: { conversation_id: ev.conversationId, cuenta },
     });
   }
   return { ok: true, company_id: companyId };
