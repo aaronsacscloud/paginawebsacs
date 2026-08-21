@@ -26,12 +26,11 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ModaMarcacion from '../../components/giros/ModaMarcacion.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
-import { seccionesRopa } from '../../data/suite-ropa';
-import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa } from '../../data/giros/moda';
+import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa, cajaModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
-  'El sistema para boutiques y marcas de moda: matriz de tallas y colores, curvas de compra, consignación a departamentales y control de todas tus sucursales.';
+  'El sistema para boutiques y marcas de moda: matriz de tallas y colores, existencia por talla en cada tienda, traspasos y control de todas tus sucursales.';
 ---
 
 <BaseLayout title={`${titulo} — SACS`} description={desc}>
@@ -41,13 +40,13 @@ const desc =
     eyebrow="SACS · Suite Moda"
     titulo="Tu tienda no vende productos."
     resalte="Vende tallas y colores."
-    sub="Matriz de tallas y colores, curvas de compra por temporada y consignación a departamentales — con un mismo inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces."
+    sub="Matriz de tallas y colores, existencia por talla en cada tienda y el traspaso entre ellas — con un mismo inventario para tu piso, tu tienda en línea, tu WhatsApp y tus marketplaces."
     foto="/images/hero-moda.webp"
     fotoAlt="Empleada de una boutique consultando existencias en una tablet frente a los racks de ropa"
     avisos={[
       { modulo: 'Talla agotada', texto: 'Blusa satinada negra: sin M ni L en Polanco', pos: 1, tono: 'rojo', sello: 'Hoy' },
       { modulo: 'Rebaja sugerida', texto: '38 piezas de la temporada pasada, en tres tiendas', pos: 2, tono: 'ambar', sello: 'Semana 12' },
-      { modulo: 'Consignación', texto: 'La departamental vendió 31 de 48 · quedan 17', pos: 3, tono: 'azul', sello: 'Al corte' },
+      { modulo: 'Cambio de talla', texto: 'La M que pide está en Satélite · se aparta desde aquí', pos: 3, tono: 'azul', sello: 'Ahora' },
     ]}
   />
 
@@ -88,7 +87,8 @@ const desc =
       [2, 0, 0, 1, 3, 5],
     ]}
     unidad="piezas"
-    leyendas={['Con piezas', 'Última pieza', 'Agotada']}
+    genero="f"
+    leyendas={['Con existencia', 'Quedan pocas', 'Agotada']}
   />
 
   <!-- ── La comparación que hace el propio visitante ── -->
@@ -115,7 +115,7 @@ const desc =
     encuadre="center 38%"
     datos={[
       { n: 3000, pre: '+', rotulo: 'MARCAS ACTIVAS' },
-      { n: 558, rotulo: 'OPERACIONES EN VIVO' },
+      { n: 1, pos: ' semana', rotulo: 'PARA CAMBIARTE, SIN CERRAR UN DÍA' },
       { n: 24, pos: ' SKU', rotulo: 'DE UN MODELO, EN UN PASO' },
       { n: 4, pos: ' canales', rotulo: 'UN SOLO INVENTARIO' },
     ]}
@@ -151,6 +151,8 @@ const desc =
     resalte="sin cerrar la tienda."
     sub="Tienes tiendas operando y no puedes darte el lujo de parar una semana. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
     pasos={pasosModa}
+    lineas={cajaModa.lineas}
+    total={cajaModa.total}
     remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —clientes, prendas, existencias— y lo demás queda consultable. Nunca te pedimos empezar de cero, porque nadie con cinco años de temporadas puede hacerlo."
   />
 

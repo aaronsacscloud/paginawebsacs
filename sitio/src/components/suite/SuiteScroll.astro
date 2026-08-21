@@ -118,7 +118,7 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
     display: flex; align-items: center; gap: 22px;
   }
   .suite-nav-label {
-    font-size: 14.5px; font-weight: 800; color: #0F172A; flex-shrink: 0;
+    font-size: 14.5px; font-weight: 800; color: var(--color-text-primary); flex-shrink: 0;
   }
   .suite-nav-tabs {
     display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
@@ -131,11 +131,11 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-nav-tabs::-webkit-scrollbar { display: none; }
   .suite-tab {
     flex-shrink: 0; padding: 8px 13px; border-radius: 8px; font-size: 13.5px;
-    font-weight: 600; color: #64748B; text-decoration: none; white-space: nowrap;
+    font-weight: 600; color: var(--color-text-tertiary); text-decoration: none; white-space: nowrap;
     transition: all .15s ease;
   }
-  .suite-tab:hover { background: #F8FAFC; color: #0F172A; }
-  .suite-tab.on { background: #EFF6FF; color: #2563EB; font-weight: 700; }
+  .suite-tab:hover { background: var(--color-bg-primary); color: var(--color-text-primary); }
+  .suite-tab.on { background: var(--azul-fondo); color: var(--color-primary); font-weight: 700; }
 
   .suite {
     max-width: 1200px;
@@ -145,13 +145,13 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-head { max-width: 720px; margin-bottom: 56px; }
   .suite-eyebrow {
     font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-    color: #2563EB; margin: 0 0 12px;
+    color: var(--color-primary); margin: 0 0 12px;
   }
   .suite-title {
     font-size: clamp(30px, 4.6vw, 52px); font-weight: 800; letter-spacing: -1.4px;
-    line-height: 1.06; margin: 0 0 16px; color: #0F172A;
+    line-height: 1.06; margin: 0 0 16px; color: var(--color-text-primary);
   }
-  .suite-intro { font-size: 18px; line-height: 1.6; color: #64748B; margin: 0; max-width: 62ch; }
+  .suite-intro { font-size: 18px; line-height: 1.6; color: var(--color-text-tertiary); margin: 0; max-width: 62ch; }
 
   .suite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
 
@@ -176,16 +176,16 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   }
   .suite-panel {
     position: relative; z-index: 1;
-    background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden;
+    background: #fff; border: 1px solid var(--color-border-light); border-radius: 16px; overflow: hidden;
     box-shadow: 0 26px 60px rgba(15, 23, 42, .18), 0 3px 10px rgba(15,23,42,.06);
   }
   .suite-panel-bar {
-    height: 34px; background: #F8FAFC; border-bottom: 1px solid #EEF1F5;
+    height: 34px; background: var(--color-bg-primary); border-bottom: 1px solid var(--color-border-light);
     display: flex; align-items: center; gap: 6px; padding: 0 12px;
   }
-  .suite-panel-bar span { width: 9px; height: 9px; border-radius: 50%; background: #E2E8F0; }
+  .suite-panel-bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--color-border-light); }
   .suite-panel-url {
-    margin-left: 10px; font-style: normal; font-size: 10.5px; font-weight: 600; color: #94A3B8;
+    margin-left: 10px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--color-text-tertiary);
   }
   /* Alto suficiente para el mock mas grande. Con menos, el ultimo renglon del
      look y el total quedaban recortados por el overflow del panel. */
@@ -198,8 +198,8 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-visual.on { opacity: 1; transform: none; pointer-events: auto; }
 
   .suite-dots { display: flex; gap: 7px; justify-content: center; margin: 18px 0 0; padding: 0; list-style: none; }
-  .suite-dot { width: 6px; height: 6px; border-radius: 50%; background: #E2E8F0; transition: all .3s ease; }
-  .suite-dot.on { background: #2563EB; width: 20px; border-radius: 3px; }
+  .suite-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-border-light); transition: all .3s ease; }
+  .suite-dot.on { background: var(--color-primary); width: 20px; border-radius: 3px; }
 
   /* ── pasos ── */
   .suite-step {
@@ -210,33 +210,33 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   }
   .suite-step.on { opacity: 1; }
   .suite-num {
-    font-size: 12px; font-weight: 800; color: #CBD5E1; letter-spacing: .08em; margin-bottom: 10px;
+    font-size: 12px; font-weight: 800; color: #D4D4D4; letter-spacing: .08em; margin-bottom: 10px;
   }
   .suite-tag {
     font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: #2563EB; margin: 0 0 8px;
+    color: var(--color-primary); margin: 0 0 8px;
   }
   .suite-step-title {
     font-size: clamp(23px, 2.7vw, 32px); font-weight: 800; letter-spacing: -.7px;
-    line-height: 1.15; margin: 0 0 14px; color: #0F172A;
+    line-height: 1.15; margin: 0 0 14px; color: var(--color-text-primary);
   }
-  .suite-text { font-size: 16.5px; line-height: 1.65; color: #475569; margin: 0 0 16px; max-width: 52ch; }
+  .suite-text { font-size: 16.5px; line-height: 1.65; color: var(--color-text-secondary); margin: 0 0 16px; max-width: 52ch; }
   .suite-bullets { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
   .suite-bullets li {
-    position: relative; padding-left: 22px; font-size: 14.5px; color: #334155; line-height: 1.5;
+    position: relative; padding-left: 22px; font-size: 14.5px; color: var(--color-text-secondary); line-height: 1.5;
   }
   .suite-quote {
-    margin: 26px 0 0; border-left: 3px solid #2563EB; background: #F8FAFC;
+    margin: 26px 0 0; border-left: 3px solid var(--color-primary); background: var(--color-bg-primary);
     border-radius: 0 14px 14px 0; padding: 18px 22px;
   }
   .suite-quote blockquote {
-    margin: 0 0 10px; font-size: 15.5px; line-height: 1.6; color: #0F172A; font-weight: 500;
+    margin: 0 0 10px; font-size: 15.5px; line-height: 1.6; color: var(--color-text-primary); font-weight: 500;
   }
-  .suite-quote figcaption { font-size: 12.5px; color: #94A3B8; font-weight: 600; }
+  .suite-quote figcaption { font-size: 12.5px; color: var(--color-text-tertiary); font-weight: 600; }
 
   .suite-bullets li::before {
     content: ''; position: absolute; left: 0; top: 8px; width: 7px; height: 7px;
-    border-radius: 50%; background: #2563EB;
+    border-radius: 50%; background: var(--color-primary);
   }
 
   @media (max-width: 900px) {
@@ -274,8 +274,8 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .mk-gancho { width: 22px; height: 22px; border: 2.5px solid #A8AEBB; border-bottom: none;
     border-radius: 50% 50% 0 0; margin: 0 auto -2px; }
   .mk-tela { height: 128px; border-radius: 5px 5px 14px 14px; box-shadow: inset 0 -24px 30px rgba(0,0,0,.22); }
-  .mk-ficha { margin-top: 9px; font-size: 10px; color: #94A3B8; font-weight: 600; }
-  .mk-ficha b { display: block; font-size: 11.5px; color: #0F172A; margin-bottom: 2px; }
+  .mk-ficha { margin-top: 9px; font-size: 10px; color: var(--color-text-tertiary); font-weight: 600; }
+  .mk-ficha b { display: block; font-size: 11.5px; color: var(--color-text-primary); margin-bottom: 2px; }
 
   /* ── Cursor fantasma sobre el buscador (Matriz) ── */
   .mk-cursor { position: absolute; width: 17px; height: 17px; z-index: 4; opacity: 0;
@@ -295,18 +295,18 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   .suite-visual.on .mk-chip-1 { animation: mkPrende .1s 2.9s forwards; }
   .suite-visual.on .mk-chip-2 { animation: mkPrende .1s 3.3s forwards; }
   .suite-visual.on .mk-chip-3 { animation: mkPrende .1s 3.7s forwards; }
-  @keyframes mkPrende { to { background: #EFF6FF; border-color: #93B4F5; color: #1D4ED8; } }
+  @keyframes mkPrende { to { background: var(--azul-fondo); border-color: #93B4F5; color: var(--color-primary); } }
 
   /* ── Traspaso trazándose en el mapa (Multisucursal) ── */
   .mk-mapa { position: relative; height: 234px; }
   .mk-mapa svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .mk-linea { stroke: #2563EB; stroke-width: 2; fill: none; stroke-dasharray: 340; stroke-dashoffset: 340; }
+  .mk-linea { stroke: var(--color-primary); stroke-width: 2; fill: none; stroke-dasharray: 340; stroke-dashoffset: 340; }
   .suite-visual.on .mk-linea { animation: mkTrazo 1.6s ease forwards .4s; }
   @keyframes mkTrazo { to { stroke-dashoffset: 0; } }
   .mk-pin { position: absolute; transform: translate(-50%, -50%); text-align: center; }
-  .mk-pin i { display: block; width: 11px; height: 11px; border-radius: 50%; margin: 0 auto 6px; background: #CBD5E1; }
+  .mk-pin i { display: block; width: 11px; height: 11px; border-radius: 50%; margin: 0 auto 6px; background: #D4D4D4; }
   .mk-pin.viva i { background: #10B981; }
-  .mk-pin.aqui i { background: #2563EB; }
+  .mk-pin.aqui i { background: var(--color-primary); }
   .suite-visual.on .mk-pin.viva i,
   .suite-visual.on .mk-pin.aqui i { animation: mkLatido 2.6s ease-out infinite; }
   @keyframes mkLatido {
@@ -314,32 +314,32 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
     70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
     100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
   }
-  .mk-pin b { display: block; font-size: 11.5px; font-weight: 700; color: #0F172A; }
-  .mk-pin small { font-size: 10px; color: #94A3B8; font-weight: 600; }
+  .mk-pin b { display: block; font-size: 11.5px; font-weight: 700; color: var(--color-text-primary); }
+  .mk-pin small { font-size: 10px; color: var(--color-text-tertiary); font-weight: 600; }
 
   /* ── La colección que se apaga (Temporadas) ── */
   .mk-env { display: flex; gap: 10px; margin-bottom: 16px; }
   .mk-env-p { flex: 1; text-align: center; }
   .mk-env-tela { height: 96px; border-radius: 5px 5px 12px 12px; transition: filter 1.4s ease, opacity 1.4s ease; }
-  .mk-env-p small { display: block; margin-top: 7px; font-size: 9.5px; color: #94A3B8; font-weight: 700; }
+  .mk-env-p small { display: block; margin-top: 7px; font-size: 9.5px; color: var(--color-text-tertiary); font-weight: 700; }
   .suite-visual.on .mk-env-p:nth-child(2) .mk-env-tela { filter: grayscale(.5); }
   .suite-visual.on .mk-env-p:nth-child(3) .mk-env-tela { filter: grayscale(.85); opacity: .78; }
   .suite-visual.on .mk-env-p:nth-child(4) .mk-env-tela { filter: grayscale(1); opacity: .5; }
-  .mk-env-barra { height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .mk-env-barra { height: 6px; background: var(--color-bg-primary); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
   .mk-env-barra i { display: block; height: 100%; width: 0;
-    background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444); transition: width 2.2s ease; }
+    background: linear-gradient(90deg, #10B981, #F59E0B, var(--alerta-texto)); transition: width 2.2s ease; }
   .suite-visual.on .mk-env-barra i { width: 100%; }
 
   /* ── El agente escribiendo (Agentes de IA) ── */
   .mk-chat { display: flex; flex-direction: column; gap: 9px; }
   .mk-burb { max-width: 82%; border-radius: 13px; padding: 10px 13px; font-size: 12.5px; line-height: 1.5; }
-  .mk-burb-cli { background: #F1F5F9; color: #0F172A; border-bottom-left-radius: 4px; }
-  .mk-burb-ia { background: #EFF6FF; border: 1px solid #C7DAFB; color: #0F172A;
+  .mk-burb-cli { background: var(--color-bg-primary); color: var(--color-text-primary); border-bottom-left-radius: 4px; }
+  .mk-burb-ia { background: var(--azul-fondo); border: 1px solid #C7DAFB; color: var(--color-text-primary);
     align-self: flex-end; border-bottom-right-radius: 4px; }
   .mk-rot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800;
-    color: #94A3B8; margin-bottom: 5px; }
-  .mk-burb-ia .mk-rot { color: #2563EB; }
-  .mk-teclea { display: inline-block; width: 7px; height: 13px; background: #2563EB;
+    color: var(--color-text-tertiary); margin-bottom: 5px; }
+  .mk-burb-ia .mk-rot { color: var(--color-primary); }
+  .mk-teclea { display: inline-block; width: 7px; height: 13px; background: var(--color-primary);
     vertical-align: -2px; margin-left: 1px; }
   .suite-visual.on .mk-teclea { animation: mkParpadeo 1s steps(2) infinite; }
   @keyframes mkParpadeo { 50% { opacity: 0; } }
@@ -347,8 +347,8 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
     padding: 10px 13px; opacity: 0; transform: translateY(6px); }
   .suite-visual.on .mk-accion { animation: mkSube .5s ease 3.4s forwards; }
   @keyframes mkSube { to { opacity: 1; transform: none; } }
-  .mk-accion b { display: block; font-size: 9.5px; letter-spacing: .1em; color: #047857; margin-bottom: 3px; }
-  .mk-accion span { font-size: 11.5px; color: #065F46; }
+  .mk-accion b { display: block; font-size: 9.5px; letter-spacing: .1em; color: var(--ok-texto); margin-bottom: 3px; }
+  .mk-accion span { font-size: 11.5px; color: var(--ok-texto); }
 
   @media (prefers-reduced-motion: reduce) {
     .suite-visual.on .mk-prendas,
@@ -359,7 +359,7 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
     .mk-cursor { opacity: 1; left: 52%; top: 62%; }
     .mk-linea { stroke-dashoffset: 0; }
     .mk-accion { opacity: 1; transform: none; animation: none; }
-    .mk-chip-1, .mk-chip-2, .mk-chip-3 { background: #EFF6FF; border-color: #93B4F5; color: #1D4ED8; }
+    .mk-chip-1, .mk-chip-2, .mk-chip-3 { background: var(--azul-fondo); border-color: #93B4F5; color: var(--color-primary); }
   }
 </style>
 

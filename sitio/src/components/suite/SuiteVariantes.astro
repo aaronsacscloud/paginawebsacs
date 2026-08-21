@@ -34,6 +34,8 @@ interface Props {
   matriz: number[][];
   /** Qué es una casilla en este giro. */
   unidad?: string;
+  /** El género de la unidad, para que concuerden "distintos" y "agotados". */
+  genero?: 'm' | 'f';
   leyendas?: [string, string, string];
 }
 const {
@@ -45,11 +47,14 @@ const {
   filas,
   matriz,
   unidad = 'pares',
+  genero = 'm',
   leyendas = ['Con existencia', 'Último', 'Agotado'],
 } = Astro.props;
 
 const celdas = ejeA.length * filas.length;
-const agotadas = matriz.flat().filter((n) => n === 0).length;
+const distintas = genero === 'f' ? 'distintas' : 'distintos';
+const agotadas = genero === 'f' ? 'agotadas' : 'agotados';
+const enCero = matriz.flat().filter((n) => n === 0).length;
 ---
 
 <section class="vr" data-celdas={String(celdas)} style={`--cols:${ejeA.length}`}>
@@ -85,6 +90,7 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
                   return (
                     <div
                       class:list={['vr-celda', n === 0 ? 'cero' : n <= 2 ? 'bajo' : 'ok']}
+                      title={n === 0 ? 'Agotado' : n <= 2 ? 'Quedan pocas' : 'Con existencia'}
                       style={`--i:${fi * ejeA.length + ci}`}
                     >
                       <img src={f.img} alt="" width="120" height="120" loading="lazy" aria-hidden="true" />
@@ -99,8 +105,8 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
         </div>
 
         <p class="vr-conteo" data-conteo>
-          <b>{celdas}</b> {unidad} distintos que comprar, guardar y contar —
-          <b class="vr-rojo">{agotadas}</b> ya agotados
+          <b>{celdas}</b> {unidad} {distintas} que comprar, guardar y contar —
+          <b class="vr-rojo">{enCero}</b> ya {agotadas}
         </p>
 
       </div>

@@ -55,6 +55,25 @@ const PASOS_DETALLE = [
 
 const paresDe = (t: { items: { pares: number }[] }) => t.items.reduce((a, i) => a + i.pares, 0);
 const totalMovido = traspasos.reduce((a, t) => a + paresDe(t), 0);
+
+/* El bloque abre con la remesa ya aplicada, así que el número tiene que estar
+   en el marcado: si el script no corre, decía "0 pares · $0" — la regla del
+   manual rota en la pieza que más se ve. Se calcula igual que en el script. */
+const meses = datos.semanas / 4;
+const idxTienda = (n: string) => tiendas.findIndex((t) => t.nombre === n);
+const rescatadosIniciales = traspasos.reduce((acc, t) => {
+  const o = idxTienda(t.de), d = idxTienda(t.a);
+  return acc + t.items.reduce((a, it) => {
+    const c = numeros.indexOf(it.n);
+    const sobraba = Math.max(0, tiendas[o].existencia[c] - tiendas[o].venta[c] * meses);
+    const cabe = Math.max(0, tiendas[d].venta[c] * meses - tiendas[d].existencia[c]);
+    return a + Math.min(it.pares, sobraba, cabe);
+  }, 0);
+}, 0);
+const margenPrecio = datos.precio - datos.costo;
+const margenSaldo = datos.precio * 0.5 - datos.costo;
+const dineroInicial =
+  '$' + Math.round(rescatadosIniciales * (margenPrecio - margenSaldo - datos.flete)).toLocaleString('es-MX');
 const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) => x + y, 0), 0);
 ---
 
@@ -146,13 +165,13 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
       <aside class="nv-resultado">
         <div class="nv-cifra">
           <p class="nv-cifra-rot">Pares que hoy no se venderían donde están</p>
-          <p class="nv-cifra-n" id="nvPares">0</p>
+          <p class="nv-cifra-n" id="nvPares">{rescatadosIniciales}</p>
           <p class="nv-cifra-pie">de {totalMovido} que propone mover</p>
         </div>
 
         <div class="nv-dinero">
           <p class="nv-dinero-rot">Margen que deja de irse al saldero</p>
-          <p class="nv-dinero-n" id="nvDinero" aria-live="polite">$0</p>
+          <p class="nv-dinero-n" id="nvDinero" aria-live="polite">{dineroInicial}</p>
 
           <label class="nv-supuesto">
             <span>¿A cuánto sacas tu saldo?</span>
@@ -172,7 +191,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         <!-- La columna fea va del mismo tamaño que la bonita, o el bloque miente -->
         <div class="nv-feo">
           <div>
-            <b>{saldo.pares} pares</b>
+            <b>Otros {saldo.pares} pares</b>
             <span>ya no tienen rescate: ninguna tienda los alcanza a vender. {saldo.detalle}. Eso es saldo, y sale ahora — no en enero.</span>
           </div>
           <div>

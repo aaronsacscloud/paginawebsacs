@@ -230,7 +230,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
   {
     id: 'marca',
     tag: 'Marca y proveedor',
-    titulo: '"¿Cómo me fue con Flexi este mes?"',
+    titulo: '"¿Cómo me fue con mi marca principal este mes?"',
     texto:
       'Es la primera pregunta del dueño y casi ningún sistema la contesta. Cada modelo carga su marca y su proveedor, así que la venta, el margen y el desplazamiento se leen por marca — y la junta de compra deja de ser de memoria.',
     bullets: [
@@ -248,7 +248,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Margen</th>
           <th style="padding:0 0 7px;text-align:right;font-weight:700;">Desplazamiento</th>
         </tr>
-        ${[['Flexi','$214,800','47%',82,'var(--ok-texto)'],['Pakar','$168,300','44%',71,'var(--ok-texto)'],['Quirelli','$96,400','41%',48,'var(--aviso-texto)'],['Marca propia','$52,100','58%',31,'var(--alerta-texto)'],['Otras marcas','$702,000','43%',64,'var(--ok-texto)']]
+        ${[['Marca principal','$214,800','47%',82,'var(--ok-texto)'],['Segunda marca','$168,300','44%',71,'var(--ok-texto)'],['Marca de entrada','$96,400','41%',48,'var(--aviso-texto)'],['Marca propia','$52,100','58%',31,'var(--alerta-texto)'],['Otras marcas','$702,000','43%',64,'var(--ok-texto)']]
           .map(([m,v,g,d,c]:any)=>`<tr style="border-top:1px solid var(--color-border-light);">
             <td style="padding:9px 0;font-weight:700;color:var(--color-text-primary);">${m}</td>
             <td style="padding:9px 0;text-align:right;color:var(--color-text-secondary);font-variant-numeric:tabular-nums;">${v}</td>

@@ -22,7 +22,6 @@
  */
 interface Props {
   datos: any;
-  sucursales?: string;
 }
 const { datos } = Astro.props;
 const { temporada, semana, semanasTotal, prendas, feo, pasos, pasosDetalle } = datos;
@@ -32,12 +31,9 @@ const costoPiso = prendas.reduce((a: number, p: any) => a + p.piso * p.costo, 0)
 const totalDif = prendas.reduce((a: number, p: any) => a + p.dif, 0);
 const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 
-const ETIQUETA: Record<string, string> = {
-  ok: 'Se vende sola',
-  marca: 'Marcar 30%',
-  traspaso: 'Cambiar de tienda',
-  esqueleto: 'Sacar del piso',
-};
+/* El veredicto de cada prenda viene escrito en `accion`, con palabras del piso.
+   Un diccionario genérico —"se vende sola" para un básico, que no se vende
+   solo sino que se repone— borra justo lo que hace creíble el bloque. */
 ---
 
 <section class="mk" data-marcacion={JSON.stringify({ prendas: prendas.map((p: any) => ({ id: p.id, dif: p.dif })), totalDif })}>
@@ -47,6 +43,10 @@ const ETIQUETA: Record<string, string> = {
       <div class="mk-hero-txt">
         <span class="mk-eyebrow">El lunes de la marcación</span>
         <h2 class="mk-titulo">En moda la utilidad no se decide cuando compras. Se decide cuando marcas.</h2>
+        <p class="mk-tesis">
+          Una prenda de diez semanas al 80% está perfecta. Una de cuatro al 12% ya está muerta.
+          Por eso la lista no se ordena por antigüedad.
+        </p>
         <p class="mk-desc">
           {temporada}, semana {semana} de {semanasTotal}: quedan {semanasTotal - semana} semanas de
           venta a precio. Estas son {prendas.length} prendas de tu piso — {piezasPiso} piezas,
@@ -59,7 +59,7 @@ const ETIQUETA: Record<string, string> = {
         <div class="mk-tabla">
           <div class="mk-tabla-cab">
             <span class="mk-modelo">Tu temporada, prenda por prenda</span>
-            <span class="mk-estado" id="mkEstado">Como se marca hoy · todo al 30%</span>
+            <span class="mk-estado">Hoy se marcan todas parejo, al 30%</span>
           </div>
 
           <div class="mk-filas">
@@ -67,13 +67,15 @@ const ETIQUETA: Record<string, string> = {
               <article class:list={['mk-fila', `t-${p.tono}`]} data-prenda={p.id}>
                 <div class="mk-fila-cab">
                   <b>{p.nombre}</b>
-                  <span class="mk-accion">{ETIQUETA[p.tono]}</span>
+                  <span class="mk-accion">{p.accion}</span>
                 </div>
 
                 <div class="mk-medidas">
                   <span><i>Va en</i><b>{p.marca > 0 ? `${p.va}%` : '—'}</b></span>
-                  <span><i>Su marca</i><b>{p.marca > 0 ? `${p.marca}%` : 'Básico'}</b></span>
+                  <span><i>Su meta</i><b>{p.marca > 0 ? `${p.marca}%` : 'Básico'}</b></span>
                   <span><i>En piso</i><b>{p.piso}</b></span>
+                  <span><i>Precio</i><b>{mx(p.precio)}</b></span>
+                  {p.ritmo > 0 && <span><i>Sale</i><b>{p.ritmo}/sem</b></span>}
                   <span class="mk-talla"><i>Talla</i><b>{p.talla}</b></span>
                 </div>
 
@@ -90,6 +92,8 @@ const ETIQUETA: Record<string, string> = {
                     ))}
                   </div>
                 )}
+
+                {p.cuenta && <p class="mk-cuenta">{p.cuenta}</p>}
 
                 <div class="mk-fila-pie">
                   <span class="mk-dif">
@@ -115,14 +119,10 @@ const ETIQUETA: Record<string, string> = {
           crea clientes, solo adelanta la venta.
         </p>
 
-        <label class="mk-supuesto">
-          <span>¿Cuánto te mueve un 30%?</span>
-          <select id="mkMueve">
-            <option value="1" selected>Al doble de ritmo</option>
-            <option value="0.72">Una vez y media</option>
-            <option value="0.4">Casi nada</option>
-          </select>
-        </label>
+        <p class="mk-firme">
+          Y este número no depende de que el descuento funcione: aunque el 30% no te mueva ni una
+          pieza extra, siguen ahí. Es margen que hoy regalas sobre prenda que se vendía sola.
+        </p>
 
         <p class="mk-remate">Y esto son {prendas.length} prendas de las ciento ochenta de tu temporada.</p>
 
@@ -194,6 +194,11 @@ const ETIQUETA: Record<string, string> = {
     letter-spacing: -.04em; color: var(--color-text-primary, #1a1a2e);
     margin: 0 0 20px; max-width: 15ch;
   }
+  .mk-tesis {
+    margin: 0 0 18px; padding-left: 14px; border-left: 3px solid var(--color-primary, #4B7BE5);
+    font-size: clamp(1rem, 1.3vw, 1.0625rem); line-height: 1.55; font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e); max-width: 44ch;
+  }
   .mk-desc {
     font-size: clamp(1rem, 1.3vw, 1.125rem); line-height: 1.65;
     color: var(--color-text-secondary, #4A4A4A); max-width: 46ch; margin: 0;
@@ -250,6 +255,12 @@ const ETIQUETA: Record<string, string> = {
   .mk-rep b { font-variant-numeric: tabular-nums; font-weight: 800; }
   .mk-rep em { font-style: normal; color: var(--color-text-tertiary, #8C8C8C); }
 
+  .mk-cuenta {
+    margin: 12px 0 0; padding: 10px 12px; border-radius: var(--radio-chico, 8px);
+    background: var(--color-bg-primary, #FAFAF8);
+    font-size: 12px; line-height: 1.55; color: var(--color-text-secondary, #4A4A4A);
+    font-variant-numeric: tabular-nums;
+  }
   .mk-fila-pie { margin-top: 12px; }
   .mk-dif { font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
   .mk-dif b { color: var(--color-text-primary, #1a1a2e); font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -272,12 +283,10 @@ const ETIQUETA: Record<string, string> = {
     color: var(--color-primary, #4B7BE5); font-variant-numeric: tabular-nums;
   }
   .mk-pie { margin: 0 0 20px; font-size: 13px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); }
-  .mk-supuesto { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
-  .mk-supuesto span { font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
-  .mk-supuesto select {
-    background: var(--color-bg-primary, #FAFAF8); color: var(--color-text-primary, #1a1a2e);
-    border: 1px solid rgba(0,0,0,.14); border-radius: var(--radio-chico, 8px);
-    padding: 10px 12px; font-family: inherit; font-size: 13.5px; font-weight: 600;
+  .mk-firme {
+    margin: 0 0 16px; padding: 14px 16px; border-radius: var(--radio-chico, 8px);
+    background: var(--azul-fondo); border: 1px solid var(--azul-borde);
+    font-size: 13px; line-height: 1.6; color: var(--color-text-primary, #1a1a2e);
   }
   .mk-remate { margin: 0; font-size: 13px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
 
@@ -348,33 +357,4 @@ const ETIQUETA: Record<string, string> = {
   @media (prefers-reduced-motion: reduce) { .mk-cta { transition: none; } }
 </style>
 
-<script>
-  {
-    const bloque = document.querySelector<HTMLElement>('.mk');
-    if (bloque) {
-      const datos = JSON.parse(bloque.dataset.marcacion || '{}');
-      const cifra = document.getElementById('mkCifra');
-      const cta = document.getElementById('mkCta') as HTMLAnchorElement | null;
-      const mueve = document.getElementById('mkMueve') as HTMLSelectElement | null;
 
-      const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
-
-      const recalcular = () => {
-        // El supuesto solo mueve lo que depende de que el descuento acelere la
-        // venta. Lo que se dejó de regalar sobre prenda que ya salía sola no
-        // cambia: esas piezas se venden con o sin marcación.
-        const f = Number(mueve?.value || 1);
-        const total = Math.round(datos.totalDif * (0.82 + 0.18 * f));
-        if (cifra) cifra.textContent = mx(total);
-        if (cta) {
-          const u = new URL('/contacto', location.origin);
-          if (total > 0) u.searchParams.set('estimado', String(total));
-          cta.href = u.pathname + u.search;
-        }
-      };
-
-      mueve?.addEventListener('change', recalcular);
-      recalcular();
-    }
-  }
-</script>

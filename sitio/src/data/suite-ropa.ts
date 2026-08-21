@@ -96,7 +96,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Consignatarios · corte del mes</p>
-      ${[['Departamental · Perisur','Departamental',48,31,'$62,000'],['Boutique Ana','Consigna',40,26,'$18,200'],['Distribuidora Norte','Venta en firme',120,120,'$91,400']]
+      ${[['Departamental · centro','Departamental',48,31,'$62,000'],['Boutique Ana','Consigna',40,26,'$18,200'],['Distribuidora Norte','Venta en firme',120,120,'$91,400']]
         .map(([n,t,e,v,m]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
@@ -118,7 +118,7 @@ export const seccionesRopa: SuiteSeccion[] = [
     bullets: [
       'Primavera-Verano 26 vs. Otoño-Invierno 25, separados en todo reporte',
       'Rebajas programadas por colección, sin tocar el catálogo nuevo',
-      'Alerta de prenda que lleva más de 90 días sin moverse',
+      'Alerta de la prenda que va abajo de su meta con temporada por delante (en Automatiza)',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Lo que tienes colgado, por antigüedad</p>
