@@ -45,14 +45,14 @@ const {
 ---
 
 <section class="cort-bloque">
-  <div class="cort-riel">
-  <div class="cort-pegado">
   <div class="cort-head">
     <p class="cort-eyebrow">{eyebrow}</p>
     <h2>{titulo}</h2>
     <p class="cort-sub">{sub}</p>
   </div>
 
+  <div class="cort-riel">
+  <div class="cort-pegado">
   <div class="cort" id="cort">
     <!-- HOY -->
     <div class="cort-capa cort-antes">
@@ -101,7 +101,7 @@ const {
 
 <style>
   .cort-bloque { background: var(--color-bg-dark, #1A1A1A); padding: 96px 24px 110px; }
-  .cort-head { max-width: 1200px; margin: 0 auto 40px; }
+  .cort-head { max-width: 1200px; margin: 0 auto 56px; }
   .cort-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
     color: var(--color-primary, #4B7BE5); margin: 0 0 16px;
@@ -122,7 +122,7 @@ const {
 
   .cort {
     position: relative; max-width: 1200px; margin: 0 auto;
-    height: clamp(400px, calc(100vh - 330px), 660px);
+    height: clamp(440px, calc(100vh - 150px), 780px);
     border-radius: var(--radius-2xl); overflow: hidden; border: 1px solid #23232B;
     user-select: none; touch-action: pan-y; background: var(--color-bg-dark-deep, #1A1A2E);
   }
@@ -212,7 +212,6 @@ const {
     .cort-bloque { padding: 64px 18px 76px; }
     .cort-recorrido { display: none; }
     .cort-pegado { position: static; }
-    .cort { height: 660px; }
     .cort { height: 560px; }
     .cort-panel-a { left: 5%; max-width: 44%; bottom: 5%; }
     .cort-panel-d { right: 4%; width: 46%; bottom: 5%; }
