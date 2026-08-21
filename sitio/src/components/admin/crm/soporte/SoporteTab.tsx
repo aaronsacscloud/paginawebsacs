@@ -32,7 +32,7 @@ function Encabezado({ children }: { children?: any }) {
   return (
     <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
       <style>{CSS}</style>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Soporte</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
           Todo lo que entra por Intercom: qué se pide, qué tan rápido se resuelve y quién lo pide.

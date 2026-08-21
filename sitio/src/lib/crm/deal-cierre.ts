@@ -82,11 +82,25 @@ async function asegurarCliente(deal: any): Promise<{ company_id: string | null; 
   return { company_id: null, creado: false, aviso: 'La oportunidad no tiene ni cliente ni contacto: no hay a quién cobrarle.' };
 }
 
-/** ¿Ya existe una sub igual creada por este mismo trato? (reabrir y recerrar) */
-async function subDelDeal(dealId: string, ciclo: string): Promise<string | null> {
+/**
+ * ¿Ya existe una sub igual por este mismo trato? (reabrir y recerrar)
+ *
+ * Busca por el TRATO y por la COTIZACIÓN. Antes solo miraba `deal_id`, y las
+ * licencias creadas por el otro camino —registrar el pago a mano, que las liga
+ * a la cotización pero no al trato— quedaban invisibles: caso Okulany, una
+ * licencia activa con su pago y, 23 minutos después, una segunda idéntica
+ * 'programada' creada por el cierre de la misma cotización.
+ */
+async function subDelDeal(dealId: string, ciclo: string, quoteId?: string | null): Promise<string | null> {
+  const mismoCiclo = (s: any) => (ciclo === 'vitalicia' ? s.ciclo === 'vitalicia' : s.ciclo !== 'vitalicia');
   const { data } = await supabase.from('subscriptions').select('id, ciclo').eq('deal_id', dealId).limit(20);
-  const hit = (data || []).find((s: any) => (ciclo === 'vitalicia' ? s.ciclo === 'vitalicia' : s.ciclo !== 'vitalicia'));
-  return hit?.id || null;
+  const hit = (data || []).find(mismoCiclo);
+  if (hit) return hit.id;
+  if (!quoteId) return null;
+  const { data: porQuote } = await supabase.from('subscriptions')
+    .select('id, ciclo, estado').eq('quote_id', quoteId).limit(20);
+  const hit2 = (porQuote || []).filter((s: any) => s.estado !== 'cancelada').find(mismoCiclo);
+  return hit2?.id || null;
 }
 
 async function crearSub(fila: any): Promise<{ id: string | null; error?: string }> {
@@ -133,7 +147,7 @@ export async function materializarDealGanado(deal: any): Promise<ResultadoCierre
 
   // ── Recurrente ──
   if (t.mrr > 0) {
-    const yaEsta = await subDelDeal(deal.id, 'recurrente');
+    const yaEsta = await subDelDeal(deal.id, 'recurrente', deal.quote_id);
     if (yaEsta) { out.subscription_id = yaEsta; }
     else {
       const ciclo = t.billing_period === 'anual' ? 'anual' : 'mensual';
@@ -164,7 +178,7 @@ export async function materializarDealGanado(deal: any): Promise<ResultadoCierre
   // Va como licencia vitalicia: es la forma que el CRM ya tiene de un cobro que
   // no se repite. Así se le puede cobrar y NO infla el ARR.
   if (t.valor_unico > 0) {
-    const yaEsta = await subDelDeal(deal.id, 'vitalicia');
+    const yaEsta = await subDelDeal(deal.id, 'vitalicia', deal.quote_id);
     if (yaEsta) { out.unico_id = yaEsta; }
     else {
       const unicos = items.filter(i => i.ciclo === 'unico');

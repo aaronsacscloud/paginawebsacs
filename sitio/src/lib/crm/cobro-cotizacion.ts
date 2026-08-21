@@ -117,7 +117,20 @@ export async function aplicarCobroDeCotizacion(
   const orden = [...ligadas].sort((a: any, b: any) =>
     (a.ciclo === 'vitalicia' ? 1 : 0) - (b.ciclo === 'vitalicia' ? 1 : 0));
 
-  let restante = dinero;
+  // ── El dinero de una cotización solo se puede aplicar UNA vez ──
+  // Caso Okulany: el cobro se registró a mano (licencia activa, próxima factura
+  // 2027) y minutos después el cierre de la cotización creó una SEGUNDA licencia
+  // igual, programada. Sin este descuento, aplicar el cobro la activaría también
+  // y el cliente aparecería pagando $5,850 dos veces — con el doble de ARR.
+  const yaAplicado = r2(ligadas.reduce((sum: number, s: any) =>
+    sum + (Number(s.pagos_realizados || 0) > 0 ? Number(s.total_pagado || 0) : 0), 0));
+  if (yaAplicado > 0) out.avisos.push(`Ya había $${yaAplicado.toLocaleString('es-MX')} registrados en las licencias de esta cotización; solo se aplica la diferencia.`);
+
+  let restante = r2(dinero - yaAplicado);
+  if (restante <= 0) {
+    out.motivo = 'el dinero de esta cotización ya está registrado en sus licencias';
+    return out;
+  }
   for (const sub of orden) {
     if (restante <= 0) break;
     // Idempotencia: si ya se le registró un pago, esta cotización ya se aplicó
@@ -158,7 +171,7 @@ export async function aplicarCobroDeCotizacion(
     // cotización, fueron todos sus abonos (una cotización liquidada en dos
     // transferencias son dos pagos, no uno). Si el dinero se repartió entre
     // varias licencias, cuenta como uno.
-    const nPagos = asignado === dinero ? Math.max(1, validos.length) : 1;
+    const nPagos = asignado === r2(dinero - yaAplicado) ? Math.max(1, validos.length) : 1;
     const upd: any = {
       estado: fila.estado,
       proxima_factura: proxima,

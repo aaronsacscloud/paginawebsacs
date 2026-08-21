@@ -178,7 +178,7 @@ if (quote && saldoRestante > 0.5) {
   if (!subRenov && quote?.company_id) {
     const { data: sr } = await supabase.from('subscriptions')
       .select('nombre_plan, ciclo, proxima_factura, monto_proximo')
-      .eq('company_id', quote.company_id).eq('estado', 'activa')
+      .eq('company_id', quote.company_id).in('estado', ['activa', 'programada', 'pendiente_pago'])
       .order('proxima_factura', { ascending: true }).limit(1).maybeSingle();
     subRenov = sr || null;
   }
@@ -382,8 +382,9 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
           <table class="acuse-table acuse-table--items" style={planData ? 'margin-top:18px' : ''}>
             <tbody>
               {coveredItems.map((it: any) => {
+                const pdItem = it.tipo === 'plan' ? plans.find(p => p.id === String(it.nombre || '').toLowerCase()) : null;
                 const label = it.tipo === 'plan'
-                  ? `${it.titulo || `Plan ${it.nombre}`}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
+                  ? `${it.titulo || `Plan ${pdItem?.name || it.nombre}`}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
                   : it.nombre || 'Concepto';
                 const sub2 = it.tipo === 'plan'
                   ? (it.periodo === 'anual' ? 'Renovación anual' : it.periodo === 'mensual' ? 'Suscripción mensual' : '')
@@ -949,9 +950,8 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
     justify-content: space-between;
     gap: 12px;
     font-size: 0.6875rem;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    color: #a5a2af;
+    letter-spacing: 0.01em;
   }
 
   /* ─── Mobile ─── */
@@ -979,9 +979,11 @@ const proxLimite = prox ? masDias(prox.fecha, DIAS_PARA_PAGAR) : '';
   /* ─── Print ─── */
   @media print {
     .acuse-page { background: #fff; padding: 0; }
-    .acuse-doc { box-shadow: none; border-radius: 0; padding: 24px 32px; max-width: none; }
+    .acuse-doc { box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
     .no-print { display: none !important; }
-    .acuse-saldo { background: #fafafa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acuse-saldo { background: #FBFAFF !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acuse-prox, .acuse-totals-row--total { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acuse-area-full { break-inside: avoid; }
     .acuse-meta-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .acuse-saldo-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
