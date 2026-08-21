@@ -25,7 +25,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
-import { cortinaModa, casosModa, pasosModa, planoModa, entradasModa } from '../../data/giros/moda';
+import { cortinaModa, casosModa, pasosModa, planoModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
@@ -148,7 +148,6 @@ const desc =
     sub="Entra la clienta, recorre el piso, se prueba, paga y se va. Detrás hay una trastienda y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona del plano y mira qué hace SACS ahí."
     proyecto="Tu boutique — planta baja"
     zonas={planoModa}
-    entradas={entradasModa}
   />
   <!-- Cómo se cambia sin cerrar -->
   <SuiteProceso

@@ -47,7 +47,6 @@ export interface ZonaPlano {
   /** Cada función, con su escalón: incluido, desde un plan, o complemento. */
   items: { t: string; plan?: string; extra?: boolean }[];
 }
-export interface EntradaPlano { titulo: string; texto: string; plan: string }
 interface Props {
   eyebrow?: string;
   titulo: string;
@@ -56,8 +55,6 @@ interface Props {
   proyecto?: string;
   zonas: ZonaPlano[];
   todoRot?: string;
-  entradasRot?: string;
-  entradas: EntradaPlano[];
 }
 const {
   eyebrow = 'Toda la operación, en un solo lugar',
@@ -66,8 +63,6 @@ const {
   proyecto = 'Tu tienda — planta baja',
   zonas,
   todoRot = 'Todo lo que incluye, zona por zona',
-  entradasRot = 'Y no hace falta encender todo el primer día',
-  entradas,
 } = Astro.props;
 
 /** El mobiliario, dibujado en símbolos sobre la caja de cada zona. */
@@ -156,7 +151,24 @@ const primera = clave[0];
       {sub && <p class="pn-sub">{sub}</p>}
     </header>
 
-    <div class="pn-maq">
+    <div class="pn-riel" style={`--pasos:${zonas.length}`}>
+      <div class="pn-pegado">
+
+      <!-- El indicador: sin esto no se entiende que el plano se toca -->
+      <div class="pn-guia">
+        <p class="pn-guia-t">Recorre las {zonas.length} zonas — baja o toca la que te interese</p>
+        <ol class="pn-pasos">
+          {clave.map((z) => (
+            <li>
+              <button type="button" data-ir={z.id} class:list={{ on: z.id === primera.id }}>
+                <b>{z.n}</b><span>{z.nombre}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="pn-maq">
 
       <!-- ── La lámina ── -->
       <figure class="pn-lamina">
@@ -272,6 +284,9 @@ const primera = clave[0];
           </article>
         ))}
       </div>
+      </div>
+      </div>
+      <div class="pn-recorrido" aria-hidden="true"></div>
     </div>
 
     <!-- ── La lámina de abajo: todo lo que incluye, sin esconder nada ── -->
@@ -288,9 +303,9 @@ const primera = clave[0];
               {z.items.map((it) => (
                 <li class:list={{ extra: it.extra }}>
                   <i></i>
-                  <span>{it.t}</span>
-                  <span class:list={['pn-tag', it.extra ? 'pn-tag-ext' : 'pn-tag-inc']}>
-                    {it.extra ? 'Se cotiza aparte' : it.plan ? `Desde ${it.plan}` : 'Incluido'}
+                  <span>
+                    {it.t}
+                    {(it.extra || it.plan) && <em>{it.extra ? 'Se cotiza aparte' : `Desde el plan ${it.plan}`}</em>}
                   </span>
                 </li>
               ))}
@@ -298,23 +313,7 @@ const primera = clave[0];
           </article>
         ))}
       </div>
-      <p class="pn-leyenda">
-        <span><i class="inc"></i>Incluido en tu plan</span>
-        <span><i class="ext"></i>Complemento que se cotiza aparte</span>
-      </p>
-    </div>
-
-    <div class="pn-ent">
-      <p class="pn-ent-rot">{entradasRot}</p>
-      <div class="pn-ent-g">
-        {entradas.map((e) => (
-          <div class="pn-ent-c">
-            <b>{e.titulo}</b>
-            <span>{e.texto}</span>
-            <em>{e.plan}</em>
-          </div>
-        ))}
-      </div>
+      <p class="pn-leyenda">Todo lo de arriba viene incluido en tu plan, salvo lo que diga otra cosa.</p>
     </div>
 
   </div>
@@ -339,6 +338,49 @@ const primera = clave[0];
     line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
   }
   .pn-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); }
+
+  /* El plano se queda pegado y va cambiando de zona conforme se baja. Así se
+     recorre entero sin que nadie tenga que adivinar que es clicable, y al
+     terminar suelta y la página sigue. */
+  /* El recorrido va como caja propia y no como padding: un sticky sólo puede
+     viajar dentro del content box de quien lo contiene, y con padding-bottom
+     el panel se quedaba clavado arriba sin pegarse nunca. */
+  .pn-recorrido { height: calc((var(--pasos) - 1) * 52vh); }
+  .pn-pegado { position: sticky; top: var(--pn-tope, 96px); }
+  .pn.sin-riel .pn-recorrido { display: none; }
+  .pn.sin-riel .pn-pegado { position: static; }
+
+  .pn-guia { margin-bottom: 18px; }
+  .pn-guia-t {
+    margin: 0 0 12px; font-size: 12.5px; font-weight: 700;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .pn-pasos {
+    list-style: none; display: flex; gap: 8px; margin: 0; padding: 0;
+  }
+  .pn-pasos li { flex: 1 1 0; min-width: 0; }
+  .pn-pasos button {
+    width: 100%; display: flex; align-items: center; gap: 9px; cursor: pointer;
+    background: none; border: none; border-top: 2px solid rgba(0,0,0,.12);
+    padding: 11px 2px 0; text-align: left; font: inherit;
+    transition: border-color .3s ease;
+  }
+  .pn-pasos button b {
+    width: 20px; height: 20px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    background: var(--color-bg-secondary, #F5F3EE); color: var(--color-text-tertiary, #8C8C8C);
+    font-size: 9.5px; font-weight: 800;
+    transition: background .3s ease, color .3s ease;
+  }
+  .pn-pasos button span {
+    font-size: 13px; font-weight: 600; color: var(--color-text-tertiary, #8C8C8C);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color .3s ease;
+  }
+  .pn-pasos button:hover span { color: var(--color-text-secondary, #4A4A4A); }
+  .pn-pasos button.on { border-top-color: var(--color-primary, #4B7BE5); }
+  .pn-pasos button.on b { background: var(--color-primary, #4B7BE5); color: #fff; }
+  .pn-pasos button.on span { color: var(--color-text-primary, #1a1a2e); font-weight: 700; }
+  .pn-pasos button:focus-visible { outline: 2px solid var(--color-primary, #4B7BE5); outline-offset: 3px; }
 
   .pn-maq { display: grid; grid-template-columns: 1.28fr 1fr; gap: 22px; align-items: stretch; }
 
@@ -482,50 +524,27 @@ const primera = clave[0];
     padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 13.5px; line-height: 1.45;
   }
   .pn-col li:last-child { border-bottom: none; }
-  .pn-col li i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok-texto); margin-top: 6px; }
-  .pn-col li.extra i { background: var(--color-accent, #E8A838); }
-  .pn-tag {
-    grid-column: 2; justify-self: start; margin-top: 5px;
-    font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: var(--radius-full, 50px); white-space: nowrap;
+  .pn-col li i {
+    width: 5px; height: 5px; border-radius: 50%; margin-top: 7px;
+    background: var(--color-text-tertiary, #8C8C8C); opacity: .55;
   }
-  .pn-tag-inc { background: var(--ok-fondo); color: var(--ok-texto); }
-  .pn-tag-ext { background: var(--aviso-fondo); color: var(--aviso-texto); }
-
-  .pn-leyenda {
-    display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0;
-    font-size: 12.5px; color: var(--color-text-secondary, #4A4A4A);
-  }
-  .pn-leyenda span { display: inline-flex; align-items: center; gap: 8px; }
-  .pn-leyenda i { width: 7px; height: 7px; border-radius: 50%; }
-  .pn-leyenda i.inc { background: var(--ok-texto); }
-  .pn-leyenda i.ext { background: var(--color-accent, #E8A838); }
-
-  /* ── Por dónde empezar ── */
-  .pn-ent { margin-top: 34px; padding-top: 30px; border-top: 1px solid rgba(0,0,0,.09); }
-  .pn-ent-rot {
-    margin: 0 0 18px; font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  .pn-col li em {
+    display: block; margin-top: 3px; font-style: normal; font-size: 11.5px; font-weight: 700;
     color: var(--color-text-tertiary, #8C8C8C);
   }
-  .pn-ent-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .pn-ent-c {
-    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
-    border-radius: var(--radius-lg, 16px); padding: 20px 22px;
-  }
-  .pn-ent-c b {
-    display: block; font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 16px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px;
-  }
-  .pn-ent-c span { display: block; font-size: 13.5px; color: var(--color-text-secondary, #4A4A4A); line-height: 1.55; }
-  .pn-ent-c em {
-    display: block; margin-top: 10px; font-size: 11.5px; font-style: normal; font-weight: 800;
-    letter-spacing: .06em; text-transform: uppercase; color: var(--azul-texto);
-  }
+  .pn-col li.extra em { color: var(--aviso-texto); }
+
+  .pn-leyenda { margin: 16px 0 0; font-size: 12.5px; color: var(--color-text-tertiary, #8C8C8C); }
 
   @media (max-width: 980px) {
+    /* Apilado el bloque no cabe en una pantalla: el riel se apaga y queda
+       sólo el toque, con el indicador desplazable. */
+    .pn-recorrido { display: none; }
+    .pn-pegado { position: static; }
+    .pn-pasos { overflow-x: auto; scrollbar-width: none; }
+    .pn-pasos::-webkit-scrollbar { display: none; }
+    .pn-pasos li { flex: 0 0 128px; }
     .pn-maq { grid-template-columns: 1fr; }
-    .pn-ent-g { grid-template-columns: 1fr; }
     .pn-cj-n { margin-left: 0; width: 100%; }
   }
   /* En celular la lámina mide la mitad: la tipografía del plano tiene que
@@ -557,22 +576,85 @@ const primera = clave[0];
 <script>
   {
     const bloque = document.querySelector<HTMLElement>('.pn');
-    if (bloque) {
+    const riel = bloque?.querySelector<HTMLElement>('.pn-riel');
+    const pegado = bloque?.querySelector<HTMLElement>('.pn-pegado');
+
+    if (bloque && riel && pegado) {
       const zonas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-zona]'));
       const hojas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-hoja]'));
       const cols = Array.from(bloque.querySelectorAll<HTMLElement>('[data-col]'));
+      const pasos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-ir]'));
+      const orden = zonas.map((z) => z.dataset.zona || '');
+      let actual = orden[0];
+
       const abrir = (id: string) => {
+        if (!id || id === actual) return;
+        actual = id;
         zonas.forEach((z) => z.classList.toggle('on', z.dataset.zona === id));
         hojas.forEach((h) => h.classList.toggle('on', h.dataset.hoja === id));
         cols.forEach((c) => c.classList.toggle('on', c.dataset.col === id));
+        pasos.forEach((p) => p.classList.toggle('on', p.dataset.ir === id));
       };
+
+      const quieto = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      /* El riel sólo tiene sentido si el panel cabe entero en la pantalla; si
+         no, el visitante se quedaría viendo un bloque cortado que además le
+         secuestra el scroll. */
+      let conRiel = false;
+      const medir = () => {
+        const tope = parseFloat(getComputedStyle(pegado).top) || 0;
+        conRiel =
+          window.innerWidth > 980 &&
+          !quieto.matches &&
+          window.innerHeight >= pegado.offsetHeight + tope + 24;
+        bloque.classList.toggle('sin-riel', !conRiel);
+        return tope;
+      };
+
+      let pendiente = false;
+      const alScroll = () => {
+        if (!conRiel || pendiente) return;
+        pendiente = true;
+        requestAnimationFrame(() => {
+          pendiente = false;
+          const tope = parseFloat(getComputedStyle(pegado).top) || 0;
+          const recorrido = riel.offsetHeight - pegado.offsetHeight;
+          if (recorrido <= 0) return;
+          const avance = (tope - riel.getBoundingClientRect().top) / recorrido;
+          const i = Math.min(orden.length - 1, Math.max(0, Math.floor(avance * orden.length)));
+          abrir(orden[i]);
+        });
+      };
+
+      /* Al tocar una zona no basta con cambiarla: si el riel está activo hay
+         que llevar el scroll a su tramo, o el siguiente movimiento del dedo la
+         revertiría. */
+      const irA = (id: string) => {
+        const i = orden.indexOf(id);
+        if (i < 0) return;
+        if (!conRiel) { abrir(id); return; }
+        const recorrido = riel.offsetHeight - pegado.offsetHeight;
+        const y = window.scrollY + riel.getBoundingClientRect().top
+          - (parseFloat(getComputedStyle(pegado).top) || 0)
+          + recorrido * ((i + 0.5) / orden.length);
+        window.scrollTo({ top: y, behavior: quieto.matches ? 'auto' : 'smooth' });
+        abrir(id);
+      };
+
       zonas.forEach((z) => {
-        z.addEventListener('click', () => abrir(z.dataset.zona || ''));
+        z.addEventListener('click', () => irA(z.dataset.zona || ''));
         z.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(z.dataset.zona || ''); }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); irA(z.dataset.zona || ''); }
         });
       });
-      cols.forEach((c) => c.addEventListener('click', () => abrir(c.dataset.col || '')));
+      cols.forEach((c) => c.addEventListener('click', () => irA(c.dataset.col || '')));
+      pasos.forEach((p) => p.addEventListener('click', () => irA(p.dataset.ir || '')));
+
+      medir();
+      alScroll();
+      window.addEventListener('scroll', alScroll, { passive: true });
+      window.addEventListener('resize', () => { medir(); alScroll(); });
     }
   }
 </script>

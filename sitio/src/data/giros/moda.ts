@@ -13,8 +13,8 @@
 export const cortinaModa = {
   fotoAntes: '/images/suite-moda-hoy.webp',
   fotoDespues: '/images/suite-moda-resuelto.webp',
-  altAntes: 'Vendedora buscando en su libreta si queda una talla',
-  altDespues: 'Vendedora atendiendo tranquila con el sistema en pantalla',
+  altAntes: 'Gerente de tienda al teléfono, buscando en su libreta si queda una talla',
+  altDespues: 'La misma gerente, tranquila en el mostrador, consultando la existencia en su tablet',
   libreta: ['Blusa negra M — ¿quedan?', 'Vestido S … ¿en Satélite?'],
   filas: [
     { que: 'Blusa satinada negra · M', donde: 'Centro', dato: '4' },
@@ -46,7 +46,7 @@ export const casosModa = [
       'El 10 de mayo o el Buen Fin se vende en tres días lo de tres semanas. La caja cobra aunque se caiga el internet, y la vendedora ve desde el probador si esa talla está en otra tienda antes de que la clienta se vaya.',
     remate: 'Al lunes te enteras de qué talla se acabó, cuando ya no hay a quién pedírsela.',
     img: '/images/caso-moda-evento.webp',
-    alt: 'Boutique llena un fin de semana, con clientas recorriendo los burros y dos esperando en la caja',
+    alt: 'Tienda grande un sábado: tres vendedoras uniformadas atendiendo el piso, los probadores y el mostrador',
   },
   {
     id: 'corazon',
@@ -55,7 +55,7 @@ export const casosModa = [
       'Va en 60% de vendido y parece un éxito, pero lo que queda son XS y XXL. El vendido se lee por talla y por color, no por estilo, y las tallas sueltas de cuatro tiendas se juntan para rearmar la curva.',
     remate: 'Un estilo sin su corazón de talla se muere en dos semanas, y el reporte lo mostraba como una sola línea.',
     img: '/images/caso-moda-corazon.webp',
-    alt: 'Dos empleadas revisando prenda por prenda un burro de ropa, buscando qué tallas quedan',
+    alt: 'Dos vendedoras uniformadas revisando talla por talla un riel largo en el piso de venta',
   },
   {
     id: 'cambio',
@@ -64,7 +64,7 @@ export const casosModa = [
       'El cambio se hace aunque la prenda venga de otra sucursal: la diferencia se cobra o se abona al monedero, y queda registrado quién lo autorizó.',
     remate: 'Una de cada seis prendas vuelve, y casi siempre por talla. Ahí se decide si haces una segunda venta o devuelves el dinero.',
     img: '/images/caso-moda-cambio.webp',
-    alt: 'Vendedora mostrando dos prendas colgadas a una clienta junto a los probadores',
+    alt: 'Vendedora uniformada entregando una prenda a una clienta en el mostrador, junto a los probadores',
   },
 ];
 
@@ -75,7 +75,7 @@ export const pasosModa = [
     texto: 'Nos das tu archivo o tu base actual y lo subimos nosotros. No capturas nada.',
     detalle: 'Estilo, color y talla — no una lista de "productos". Con la curva de cada estilo y la existencia real de cada tienda.',
     img: '/images/proc-moda-1.webp',
-    alt: 'Consultor con laptop y empleada revisando prendas en un burro contra una lista',
+    alt: 'Consultor con laptop y dos vendedoras uniformadas revisando el riel durante la carga del surtido',
   },
   {
     cuando: 'Día 2', titulo: 'Tu operación, configurada',
@@ -183,11 +183,12 @@ export const planoModa = [
     pregunta: '«¿Cuántas me quedan de esta talla, y en qué tienda?»',
     caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
-      { t: 'Existencia por estilo, talla y color, en cada tienda' },
-      { t: 'Traspaso entre tiendas cuando la talla está donde no se vende' },
-      { t: 'Conteo desde el celular, sin cerrar la tienda' },
-      { t: 'Recepción de la entrega contra la orden de compra' },
+      { t: 'Punto de venta con la matriz de tallas y colores de cada estilo' },
       { t: 'Etiquetas con código de barras' },
+      { t: 'Existencia por estilo, talla y color, en cada tienda', plan: 'Controla' },
+      { t: 'Traspaso entre tiendas cuando la talla está donde no se vende', plan: 'Controla' },
+      { t: 'Conteo desde el celular, sin cerrar la tienda', plan: 'Controla' },
+      { t: 'Recepción de la entrega contra la orden de compra', plan: 'Controla' },
     ],
   },
   {
@@ -259,10 +260,4 @@ export const planoModa = [
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
     ],
   },
-];
-
-export const entradasModa = [
-  { titulo: 'Tengo una tienda', texto: 'Mostrador, apartados, tienda en línea y corte de caja. Es lo que necesita quien vende en un solo lugar.', plan: 'Plan Vende' },
-  { titulo: 'Tengo varias', texto: 'Se suma la existencia por talla en cada tienda, los traspasos, las compras y quién vendió qué.', plan: 'Plan Controla' },
-  { titulo: 'Quiero que regresen', texto: 'Se suma el monedero, las campañas por WhatsApp y el perfil de la clienta con su talla.', plan: 'Plan Fideliza' },
 ];
