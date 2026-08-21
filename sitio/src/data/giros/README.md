@@ -15,8 +15,8 @@ copiar su estructura es el camino corto.
 
 | Giro | Estado |
 |---|---|
-| Zapatería | Completa, pero una pasada atrás: sin riel, con `SuiteIntegral` y con pastillas |
-| Marcas de ropa | **Al día.** Es la referencia |
+| Zapatería | **Al día.** Lleva además sus dos bloques propios |
+| Marcas de ropa | **Al día.** Es la referencia de estructura |
 | Joyería | Estructura vieja; sólo las cifras están al día |
 | Los demás (~20) | Sin empezar |
 
@@ -163,6 +163,7 @@ mal pensado.
 |---|---|---|
 | Zapaterías | `ZapCorridaCerrada` — la docena 1-2-3-3-2-1 del fabricante contra tu venta real por número | La corrida cerrada solo existe en calzado |
 | Zapaterías | `ZapNivelacion` — la matriz número × tienda y los traspasos que cierran corrida, uno por uno | Nivelar por número con medios; y que un cero en un número que ahí no sale **no es un hueco** |
+| — | *Nota de zonas:* en calzado el plano lleva **bodega de cajas** y no trastienda, porque el piso sólo exhibe una muestra por modelo y la corrida vive en cajas atrás. La bodega es zona de venta, no almacén | |
 | Joyerías | `JoyColchon` — tu precio del gramo de fino contra el spot | Solo aquí el costo es una materia prima con precio público que cambia a diario |
 | Joyerías | `JoyGramo` — el lingote que se reparte en 10K, 14K y 18K | Lo mismo |
 | Marcas de ropa | *(pendiente)* | |
@@ -396,9 +397,6 @@ Cómo se les habla:
   regla de la sección 3 y hay que reponerlo.
 - **Joyería sigue con la estructura vieja**: cubo, hero oscuro con el POS de
   fondo, `SuiteFormal`, `SuiteMigracion`. Le toca esta misma pasada.
-- **Zapatería va una pasada atrás de moda**: sigue con `SuiteIntegral` en vez de
-  `SuitePlano`, sin riel en el plano ni en la cortina, y con las pastillas de
-  color en las listas.
 - **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento
   moral del bloque de trastienda. Hoy se apoya en "Permisos por usuario y
   sucursal" (Controla). Falta decidir si merece su propia línea.

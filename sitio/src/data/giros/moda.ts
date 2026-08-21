@@ -210,6 +210,7 @@ export const planoModa = [
   {
     id: 'trastienda',
     nombre: 'Trastienda',
+    ambito: 'Detrás del mostrador',
     simbolo: 'anaqueles',
     foto: '/images/plano-moda-trastienda.webp',
     alt: 'Trastienda de una boutique: escritorio de madera, anaquelería con mercancía doblada y burro rodante',

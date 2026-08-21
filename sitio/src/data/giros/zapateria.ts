@@ -667,6 +667,7 @@ export const planoZapateria = [
   {
     id: 'probador',
     nombre: 'Probador',
+    ambito: 'En piso, junto a las bancas',
     simbolo: 'bancas',
     foto: '/images/plano-zap-probador.webp',
     alt: 'Zona de bancas de una zapatería, con una vendedora arrodillada y una caja abierta',
@@ -684,6 +685,7 @@ export const planoZapateria = [
   {
     id: 'bodega',
     nombre: 'Bodega de cajas',
+    ambito: 'Detrás del mostrador',
     simbolo: 'anaqueles',
     foto: '/images/plano-zap-bodega.webp',
     alt: 'Bodega de una zapatería con anaqueles llenos de cajas de calzado ordenadas',

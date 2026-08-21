@@ -33,6 +33,8 @@ export interface ZonaPlano {
   nombre: string;
   /** Dentro o fuera del muro de la tienda. */
   fuera?: boolean;
+  /** Cómo se nombra dónde está, si "En piso" no aplica. */
+  ambito?: string;
   /** La pregunta que el dueño ya se hizo. */
   pregunta: string;
   /** Rectángulo dentro del plano, en el sistema de 660 × 430. */
@@ -154,8 +156,8 @@ function mobiliario(z: ZonaPlano): string {
 
 /** El rótulo tiene que caber en su zona; si no cabe, se achica. */
 function cuerpo(z: ZonaPlano): number {
-  const disponible = z.caja.w - 36;
-  return Math.max(7.5, Math.min(11, disponible / (z.nombre.length * 0.66)));
+  const disponible = z.caja.w - 42;
+  return Math.max(7.5, Math.min(11, disponible / (z.nombre.length * 0.70)));
 }
 
 const dentro = zonas.filter((z) => !z.fuera);
@@ -295,7 +297,7 @@ const primera = clave[0];
               </div>
             )}
             <div class="pn-hoja-txt">
-              <p class="pn-det-et">{z.fuera ? 'Fuera de la tienda' : 'En piso'}</p>
+              <p class="pn-det-et">{z.ambito || (z.fuera ? 'Fuera de la tienda' : 'En piso')}</p>
               <h3>{z.nombre}</h3>
               <p class="pn-q">{z.pregunta}</p>
               <p class="pn-cuenta">
