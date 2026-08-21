@@ -271,7 +271,10 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
         @media (max-width: 620px)  { .cob-5, .cob-4 { grid-template-columns:1fr; } }
       `}</style>
 
-      <div style={{ marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+      {/* Embebido, esta franja ya no lleva título: es solo la barra del botón de
+          Dashboard, así que se aprieta contra las pestañas de Pagos en vez de
+          dejar un hueco donde antes iba el encabezado. */}
+      <div style={{ marginTop: embebido ? -6 : 0, marginBottom: embebido ? 8 : 14, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
         {!embebido && <>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
