@@ -154,7 +154,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
       'Buscas por teléfono del cliente y aparece el par que se llevó',
       'Cambio de 26 a 26½ del mismo modelo, con la diferencia si aplica',
       'Vale a favor por el importe, para cuando entre su número',
-      'El par que regresa despegado queda ligado a su marca y a su remesa, para el cargo al proveedor',
+      'El par que regresa despegado queda ligado a su marca y a su embarque, para el cargo al proveedor',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cambio de número · sin ticket</p>
@@ -200,19 +200,19 @@ export const seccionesZapateria: SuiteSeccion[] = [
     </div>`,
   },
   {
-    id: 'remesas',
+    id: 'embarques',
     tag: 'Compra de temporada',
-    titulo: 'El pedido de SAPICA llega en tres remesas',
+    titulo: 'El pedido de SAPICA llega en tres embarques',
     texto:
       'La compra se cierra seis meses antes y llega por partes. A media temporada nadie sabe qué números ya entraron, qué sigue debiendo el proveedor y cuánto se le debe por lo que sí llegó.',
     bullets: [
       'Orden de compra por número, no por modelo suelto',
       'Recepción contra la orden: lo que llegó, lo que falta y lo que no pediste',
-      'Cuentas por pagar por remesa recibida, con su complemento de pago',
+      'Cuentas por pagar por embarque recibido, con su complemento de pago',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Orden 1042 · proveedor de León</p>
-      ${[['1ª remesa','12 jun','recibida','96 de 96 pares','var(--ok-texto)'],['2ª remesa','28 jun','recibida','72 de 84 pares','var(--aviso-texto)'],['3ª remesa','pendiente','sin fecha','0 de 60 pares','var(--alerta-texto)']]
+      ${[['1er embarque','12 jun','recibido','96 de 96 pares','var(--ok-texto)'],['2º embarque','28 jun','recibido','72 de 84 pares','var(--aviso-texto)'],['3er embarque','pendiente','sin fecha','0 de 60 pares','var(--alerta-texto)']]
         .map(([r,f,e,p,col]:any)=>`<div style="border:1px solid var(--color-border-light);border-radius:8px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;"></span>
           <div style="flex:1;min-width:0;">
@@ -505,7 +505,7 @@ export const casosZapateria = [
     titulo: 'La caja dice 24 y adentro viene 25',
     texto:
       'Se recibe contra la orden de compra, par por par y número por número: lo que falta, lo que llegó de más y lo que viene cambiado, todo antes de firmar.',
-    remate: 'León manda en tres remesas. Sin esto, a media temporada nadie sabe qué falta.',
+    remate: 'León manda en tres embarques. Sin esto, a media temporada nadie sabe qué falta.',
     img: '/images/caso-zap-recepcion.webp',
     alt: 'Empleado abriendo una caja madre con doce cajas de zapatos de canto, con la remisión en la mano',
   },
@@ -548,7 +548,7 @@ export const etapasZapateria = [
       'Traspasos entre sucursales y bodega central',
       'Conteo físico desde el celular y conteos cíclicos',
       'Kardex y trazabilidad de cada par',
-      'Órdenes de compra y recepción por remesa',
+      'Órdenes de compra y recepción por embarque',
       'Cuentas por pagar y control de gastos',
       'Costeo y utilidad por par, no solo por venta',
       'Mermas, pérdidas y aviso de existencia baja',
@@ -586,7 +586,7 @@ export const etapasZapateria = [
   },
 ];
 
-/* ── La remesa del lunes: el bloque propio del giro.
+/* ── El reparto del lunes: el bloque propio del giro.
    Todo esto salió de la manera en que se nivela de verdad una cadena de
    calzado. Lo que hay que respetar si algún día se toca:
 
@@ -613,19 +613,19 @@ export const nivelacionZapateria = {
   ],
   traspasos: [
     {
-      de: 'Plaza Norte', a: 'Sur', remesa: 'Remesa del martes',
+      de: 'Plaza Norte', a: 'Sur', reparto: 'Reparto del martes',
       motivo: 'Cierra corrida',
       items: [{ n: '23½', pares: 4 }, { n: '24', pares: 3 }, { n: '23', pares: 2 }],
       nota: 'Sur no vende mal: no tiene qué vender. Le faltan tres números seguidos de su núcleo, justo donde hace doce de sus diecisiete pares al mes.',
     },
     {
-      de: 'Galerías', a: 'Centro', remesa: 'Misma remesa',
+      de: 'Galerías', a: 'Centro', reparto: 'Mismo reparto',
       motivo: 'Quiebre inminente',
       items: [{ n: '23½', pares: 3 }, { n: '24', pares: 4 }],
       nota: 'A Centro le queda un par del 24 y vende seis al mes: cinco días. Galerías conserva sus cuatro y cuatro, que es su mes completo.',
     },
     {
-      de: 'Sur', a: 'Plaza Norte', remesa: 'Regresa en la misma camioneta',
+      de: 'Sur', a: 'Plaza Norte', reparto: 'Regresa en la misma camioneta',
       motivo: 'Excedente muerto',
       items: [{ n: '26', pares: 2 }, { n: '26½', pares: 2 }, { n: '27', pares: 1 }],
       nota: 'Son cinco pares, por debajo del umbral de seis. Se autoriza igual porque es el viaje de regreso del primero: flete cero.',
@@ -690,10 +690,10 @@ export const planoZapateria = [
     foto: '/images/plano-zap-bodega.webp',
     alt: 'Bodega de una zapatería con anaqueles llenos de cajas de calzado ordenadas',
     pie: 'La corrida entera vive aquí: lo que no está en caja, no se vende.',
-    pregunta: '«Llegó la remesa y no sé qué números faltan.»',
+    pregunta: '«Llegó el embarque y no sé qué números faltan.»',
     caja: { x: 298, y: 208, w: 128, h: 96 },
     items: [
-      { t: 'Recepción de la remesa contra la orden de compra', plan: 'Controla' },
+      { t: 'Recepción del embarque contra la orden de compra', plan: 'Controla' },
       { t: 'Reparto a tiendas desde el mismo documento', plan: 'Controla' },
       { t: 'Kardex y trazabilidad de cada par', plan: 'Controla' },
       { t: 'Aviso de existencia baja y de exceso', plan: 'Controla' },

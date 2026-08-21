@@ -280,6 +280,12 @@ Cómo se les habla:
 
 ### Oficio
 
+- **Una palabra, un significado.** En zapatería, *remesa* nombraba dos cosas
+  distintas —lo que manda el proveedor de León y lo que se mueve entre tus
+  propias tiendas— y encima no es la palabra que se usa en México. Quedó
+  **embarque** para lo del proveedor y **reparto** para lo interno. Antes de
+  elegir un término del oficio, revisa que no esté ya cargando otro trabajo en
+  la misma página.
 - **El vocabulario es del piso, no del blog.** Número y no talla en calzado;
   corrida rota y no "par descabalado"; colchón y no "precio automático"; medidor
   de pie y no "escalímetro" (que es la regla del dibujante); vale y no "nota de

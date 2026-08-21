@@ -1,6 +1,6 @@
 ---
 /**
- * ZapNivelacion — la remesa del lunes.
+ * ZapNivelacion — el reparto del lunes.
  *
  * Es el bloque que hace que un dueño de cadena de calzado levante el teléfono,
  * porque es exactamente lo que lleva años haciendo en un cuaderno el lunes por
@@ -34,7 +34,7 @@ interface Props {
     flete: number;
     numeros: string[];
     tiendas: { nombre: string; venta: number[]; existencia: number[] }[];
-    traspasos: { de: string; a: string; remesa: string; motivo: string; items: { n: string; pares: number }[]; nota: string }[];
+    traspasos: { de: string; a: string; reparto: string; motivo: string; items: { n: string; pares: number }[]; nota: string }[];
     saldo: { pares: number; detalle: string };
     comprar: { pares: number; detalle: string; nota: string };
     pasos: string[];
@@ -56,7 +56,7 @@ const PASOS_DETALLE = [
 const paresDe = (t: { items: { pares: number }[] }) => t.items.reduce((a, i) => a + i.pares, 0);
 const totalMovido = traspasos.reduce((a, t) => a + paresDe(t), 0);
 
-/* El bloque abre con la remesa ya aplicada, así que el número tiene que estar
+/* El bloque abre con el reparto ya aplicado, así que el número tiene que estar
    en el marcado: si el script no corre, decía "0 pares · $0" — la regla del
    manual rota en la pieza que más se ve. Se calcula igual que en el script. */
 const meses = datos.semanas / 4;
@@ -83,7 +83,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
     <div class="nv-hero">
       <div class="nv-hero-txt">
         <span class="nv-eyebrow">El lunes por la mañana</span>
-        <h2 class="nv-titulo">La remesa que hoy armas en un cuaderno.</h2>
+        <h2 class="nv-titulo">El reparto que hoy armas en un cuaderno.</h2>
         <p class="nv-desc">
           Contra el corte del fin de semana, que es cuando se rompe la corrida. Esto es
           {modelo.toLowerCase()} en tus cuatro tiendas: {totalExistencia} pares, los mismos antes
@@ -149,7 +149,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
               <span class="nv-ruta"><b>{t.de}</b> → <b>{t.a}</b></span>
               <span class="nv-motivo" data-motivo={t.motivo}>{t.motivo}</span>
             </div>
-            <p class="nv-remesa">{t.remesa} · {paresDe(t)} pares</p>
+            <p class="nv-reparto">{t.reparto} · {paresDe(t)} pares</p>
             <p class="nv-items">{t.items.map((it) => `${it.n} ×${it.pares}`).join('  ·  ')}</p>
             <p class="nv-nota">{t.nota}</p>
             <button type="button" class="nv-aplicar" data-aplica={String(i)} disabled={i !== 0}>
@@ -200,7 +200,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
           </div>
         </div>
 
-        <a class="nv-cta" href="/contacto" id="nvCta">Ver mi remesa con mis tiendas</a>
+        <a class="nv-cta" href="/contacto" id="nvCta">Ver mi reparto con mis tiendas</a>
       </aside>
     </div>
 
@@ -347,7 +347,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-motivo[data-motivo="Quiebre inminente"] { background: var(--alerta-fondo); color: var(--alerta-texto); border-color: var(--alerta-borde); }
   .nv-motivo[data-motivo="Excedente muerto"] { background: var(--aviso-fondo); color: var(--aviso-texto); border-color: var(--aviso-borde); }
-  .nv-remesa { margin: 0 0 10px; font-size: 12px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 700; }
+  .nv-reparto { margin: 0 0 10px; font-size: 12px; color: var(--color-text-tertiary, #8C8C8C); font-weight: 700; }
   .nv-items {
     margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
     font-variant-numeric: tabular-nums; letter-spacing: -.2px;
@@ -562,7 +562,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         const cta = document.getElementById('nvCta') as HTMLAnchorElement | null;
         if (cta) {
           const u = new URL('/contacto', location.origin);
-          // Sin remesa aplicada no hay estimado que mandar: un ?estimado=0 le
+          // Sin reparto aplicado no hay estimado que mandar: un ?estimado=0 le
           // llega a la llamada como si el cliente no tuviera nada que ganar.
           if (total > 0) u.searchParams.set('estimado', String(Math.round(total)));
           cta.href = u.pathname + u.search;
@@ -590,7 +590,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
         const estado = document.getElementById('nvEstado');
         if (estado) {
           estado.textContent = aplicados === traspasos.length
-            ? 'Después de la remesa · tres corridas cerradas de cuatro'
+            ? 'Después del reparto · tres corridas cerradas de cuatro'
             : `Después de ${aplicados} de ${traspasos.length} traspasos`;
         }
         const reiniciar = document.getElementById('nvReiniciar');
@@ -623,7 +623,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
       document.getElementById('nvSaldo')?.addEventListener('change', recalcular);
 
-      // El bloque arranca con la remesa ya aplicada: el número tiene que estar
+      // El bloque arranca con el reparto ya aplicado: el número tiene que estar
       // ahí para quien solo pasa de largo. Quien quiera ver el antes, lo
       // desarma con "Volver a como está hoy".
       traspasos.forEach((_: any, i: number) => aplicar(i));
