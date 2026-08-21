@@ -81,7 +81,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Esclava oro 14K · 18.4 g</p>
-      ${[['Costo del fino cuando lo compraste','12 feb 2025 · $1,740 /g','$19,857','#0F172A'],['Hechura y acabados','mano de obra + rodinado','$2,400','#0F172A'],['Costo histórico total','no se mueve con el mercado','$22,257','#0F172A']]
+      ${[['Costo del fino cuando lo compraste','12 feb 2025 · 10.73 g de fino × $1,740','$18,670','#0F172A'],['Hechura y acabados','mano de obra + rodinado','$2,400','#0F172A'],['Costo histórico total','no se mueve con el mercado','$21,070','#0F172A']]
         .map(([a,b,c,col]:any)=>`<div style="display:flex;align-items:center;gap:11px;border-bottom:1px solid #F1F5F9;padding:11px 0;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${col};">${a}</div>
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${b}</div></div>
@@ -92,7 +92,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
           <span>Precio de venta hoy</span><span>$33,100</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#047857;margin-top:5px;">
-          <span>Margen real</span><span>33% · $10,843</span>
+          <span>Margen real</span><span>36% · $12,030</span>
         </div>
       </div>
     </div>`,
@@ -118,7 +118,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
         </div>`).join('')}
       <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
         <span style="font-size:12px;font-weight:800;color:#0F172A;">Lo que sube el catálogo</span>
-        <span style="font-size:15px;font-weight:800;color:#0F172A;">$315,200</span>
+        <span style="font-size:15px;font-weight:800;color:#0F172A;">$316,200</span>
       </div>
     </div>`,
   },
@@ -293,10 +293,10 @@ export const casosJoyeria = [
     id: 'apartado',
     titulo: 'Las argollas que se apartan en enero para la boda de agosto',
     texto:
-      'En joyería el apartado es largo —de tres a seis meses, abonado por quincena— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
+      'En joyería el apartado es largo —medio año o más, abonado por quincena— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
     remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
     img: '/images/caso-joy-apartado.webp',
-    alt: 'Vendedora explicando una pieza sobre la vitrina a un cliente de pie en el mostrador',
+    alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
   },
   {
     id: 'vitrina',
@@ -374,7 +374,7 @@ export const planoJoyeria = [
       { t: 'Precio por gramo con tu colchón del fino, no con el spot', suite: true },
       { t: 'Peso bruto, neto y fino de cada pieza, con su ley', suite: true },
       { t: 'Existencia por modelo, metal y quilataje, en cada vitrina', plan: 'Controla' },
-      { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Controla' },
+      { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Automatiza' },
       { t: 'Repreciar cientos de piezas viendo antes qué cambia', suite: true },
     ],
   },
@@ -383,13 +383,13 @@ export const planoJoyeria = [
     nombre: 'Mostrador',
     simbolo: 'mostrador',
     foto: '/images/plano-joy-mostrador.webp',
-    alt: 'Mostrador de cierre de una joyería con una pieza sobre el paño y una clienta sentada',
+    alt: 'Vendedora explicando una pieza sobre la vitrina a un cliente de pie en el mostrador',
     pie: 'Aquí se regatea, se autoriza y se cobra. Y aquí se decide si dejó dinero.',
     pregunta: '«Le hice quince por ciento de descuento… ¿sí ganamos algo o se la vendí abajo del oro?»',
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Punto de venta que sigue cobrando sin conexión' },
-      { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Controla' },
+      { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Automatiza' },
       { t: 'Apartado con anticipo y abonos, con el precio congelado', suite: true },
       { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
       { t: 'Corte de caja y arqueo automáticos al cerrar' },
@@ -406,10 +406,10 @@ export const planoJoyeria = [
     pregunta: '«El anillo de la señora entró con 4.1 gramos y salió con 3.8. ¿Y los 0.3 dónde quedaron?»',
     caja: { x: 298, y: 208, w: 128, h: 96 },
     items: [
-      { t: 'Orden de taller con el peso de entrada y la descripción', suite: true },
+      { t: 'Orden de taller con pesada de entrada y de salida: si no cuadra el gramaje, la pieza no se libera', suite: true },
       { t: 'Soldadura, cambio de medida, rodinado y pulido, cada uno con su costo', suite: true },
       { t: 'La pieza sale de disponible mientras está en el banco', suite: true },
-      { t: 'Quién recibió, quién trabajó y quién entregó', plan: 'Controla' },
+      { t: 'Quién recibió, quién trabajó y quién entregó', suite: true },
       { t: 'Registro de empleados, horarios, turnos y asistencia', otro: true },
     ],
   },
@@ -425,7 +425,7 @@ export const planoJoyeria = [
     caja: { x: 68, y: 262, w: 216, h: 106 },
     items: [
       { t: 'Corte de vitrina: se cuenta charola por charola, desde el celular', plan: 'Controla' },
-      { t: 'Traslado entre sucursales, con la pieza en tránsito hasta que se recibe', plan: 'Controla' },
+      { t: 'Traspaso entre sucursales, con la pieza en tránsito hasta que se recibe', plan: 'Controla' },
       { t: 'Kardex y trazabilidad de cada pieza', plan: 'Controla' },
       { t: 'Permisos por usuario y por sucursal', plan: 'Controla' },
       { t: 'Auditoría: quién canceló, quién cambió, quién autorizó', plan: 'Controla' },

@@ -47,15 +47,16 @@ const desc =
   <GiroBanner
     eyebrow="SACS · Suite Joyería"
     ctaPri={{ label: 'Agenda una demo', href: '/contacto' }}
+    ctaSec={{ label: 'Ver planes', href: '/planes' }}
     titulo="Tu vitrina no vende piezas."
     resalte="Vende gramos."
     sub="Tu precio del gramo de fino, el factor por quilataje que usa tu casa y el costo histórico que no se mueve — con un mismo inventario para tu piso, tu tienda en línea y tu WhatsApp."
     foto="/images/hero-joyeria.webp"
     fotoAlt="Vendedora de una joyería riendo detrás de la vitrina, con las charolas de oro iluminadas"
     avisos={[
-      { modulo: 'Subió el fino', texto: 'El gramo de 14K cambió $38 · 386 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Subió el fino', texto: 'El gramo de 14K subió $115 · 386 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
       { modulo: 'Apartado por vencer', texto: 'Cadena 10K de la Sra. Ruiz · último abono hace 46 días', pos: 2, tono: 'rojo', sello: 'Vence el 3' },
-      { modulo: 'Descuento por autorizar', texto: 'Anillo 14K · 12% pedido en Matriz · lo autoriza la gerente', pos: 3, tono: 'azul', sello: 'Ahora' },
+      { modulo: 'Descuento por autorizar', texto: 'Anillo 14K · 12% pedido en Centro · lo autoriza la gerente', pos: 3, tono: 'azul', sello: 'Ahora' },
     ]}
   />
 
@@ -65,7 +66,7 @@ const desc =
     frases={[
       'El oro subió en marzo y la vitrina sigue con el precio de <b>agosto pasado</b>.',
       'Dos anillos del mismo modelo, <b>uno pesa 2.4 y otro 3.1</b>.',
-      'Reetiquetar cuatro mil piezas son <b>tres días con la tienda cerrada</b>.',
+      'Reetiquetar la vitrina entera son <b>tres domingos con la cortina abajo</b>.',
       'La esclava te la dejaron a un precio en enero y a otro en junio: <b>¿ganaste o te vendiste barato?</b>',
       'La hoja de cálculo del costeo <b>solo la entiende el dueño</b>.',
     ]}
@@ -77,10 +78,10 @@ const desc =
        el gramo solo significa algo donde la materia prima cotiza. ── -->
   <JoyGramo />
 
-  <!-- ── Un modelo, cuarenta piezas: la matriz de medida × quilataje ── -->
+  <!-- ── Un modelo, veinticuatro claves: la matriz de medida × quilataje ── -->
   <SuiteVariantes
-    eyebrow="Un modelo, veinticuatro piezas"
-    titulo="Los 24 renglones que hay<br />detrás de"
+    eyebrow="Un modelo, veinticuatro claves"
+    titulo="Las 24 claves que hay<br />detrás de"
     resalte="“un anillo de oro”"
     sub="Ocho medidas por tres quilatajes. Y cada casilla pesa distinto: la medida 12 lleva más de un tercio más de oro que la 5. Mismo modelo, otro peso, otro costo y otro precio."
     matriz={[
@@ -94,9 +95,9 @@ const desc =
       { nombre: 'Oro 14K', img: '/images/rack-joy-anillo.webp', alt: 'El mismo anillo en oro de 14 quilates' },
       { nombre: 'Oro 18K', img: '/images/rack-joy-anillo.webp', alt: 'El mismo anillo en oro de 18 quilates' },
     ]}
-    unidad="piezas"
+    unidad="claves"
     genero="f"
-    leyendas={['En vitrina', 'Última pieza', 'Sin existencia']}
+    leyendas={['En vitrina', 'Queda una o dos', 'Sin existencia']}
   />
 
   <!-- ── La comparación que hace el propio visitante ── -->
@@ -174,7 +175,7 @@ const desc =
     proyecto="Tu joyería — planta baja"
     zonas={planoJoyeria}
     rotuloSuite="De la Suite Joyería"
-    leyenda="Lo marcado como Suite Joyería es el complemento que se cotiza aparte; el resto entra con tu plan."
+    leyenda="Lo marcado como Suite Joyería es el complemento que se cotiza aparte; lo marcado como Otro complemento se cotiza por su lado, y el resto entra con tu plan."
   />
 
   <!-- ── Cómo se cambia sin cerrar ── -->

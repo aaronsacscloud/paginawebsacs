@@ -55,7 +55,7 @@ escribe, no se omite.
 - [ ] Lleva **al menos un bloque propio** que fuera de ese oficio no significaría nada.
 - [ ] Lleva `SuitePlano` con **cinco zonas del oficio** y **cinco renglones cada una**.
 - [ ] Exactamente **dos** `SuiteSalida`, y `CtaDudas` al cierre.
-- [ ] `SuiteScroll` a seis secciones, sin repetir lo que ya argumenta el bloque propio.
+- [ ] `SuiteScroll` con **seis o menos** secciones, sin repetir lo que ya argumenta el bloque propio.
 
 **Verdad**
 
@@ -132,7 +132,7 @@ búscale su equivalente en el sistema antes de dibujarlo aparte.
 | `SuiteSalida` | Franja delgada de salida. **Dos por página**: después del expediente y después del precio |
 | `SuiteCifras` | Franja fotográfica a sangre con cifras que se cuentan solas |
 | `SuiteCasos` | Los momentos del año del giro: lista a un lado, la escena fotográfica al otro |
-| `SuiteScroll` | El recorrido de funcionalidades con panel pegajoso. **Seis secciones, no catorce** |
+| `SuiteScroll` | El recorrido de funcionalidades con panel pegajoso. **Hasta seis secciones, no catorce** — menos está bien; repetir no |
 | `SuiteDireccion` | Para quien firma: comparativo de sucursales y las reglas contra la fuga |
 | `SuiteProceso` | Cómo se cambia sin cerrar: la escena se queda quieta y los pasos pasan. Trae las tres formas de implementar y la caja sin conexión |
 | `SuitePlano` | La suite completa contada como el plano de la tienda: lámina arquitectónica con zonas, la foto de cada zona y **abajo, todas las funciones a la vez**. Sustituyó a `SuiteIntegral` en moda |
@@ -497,8 +497,24 @@ Cómo se les habla:
   según el experto, la operación más rentable del año —se le compra al público
   al 60-70% del fino en enero, cuando la joyería no trae liquidez—, pero el
   módulo no existe. Vale una conversación de producto.
-- **Joyería no ha pasado los tres referees.** Ronda 2: oficio 6, calidad 6.2,
-  diseño 8.
+- **Joyería no ha pasado los tres referees.** Ronda 1: 4 / 5.8 / 4. Ronda 2:
+  6 / 6.2 / 8. Ronda 3: 7.5 / 6.6 / 8.5. Lo que sigue abierto ahí:
+  - **`JoyGramo` va en la posición 3, no en la 9.** Se dejó a propósito: en
+    joyería el gramo es el axioma y sin él no se entiende lo que sigue. Pero
+    `JoyGramo` (leyes .417/.583/.750) y `JoyColchon` (factores .445/.620/.780)
+    cuentan dos veces que el quilataje cambia el precio, con dos juegos de
+    números y diez pantallas de por medio. Hay que ponerlos frente a frente o
+    fundirlos.
+  - **`SuiteDireccion` sólo existe en joyería** y no está en el orden de la
+    sección 2. O sube al orden y entra también en moda y calzado, o sale.
+  - **`JoyColchon` conserva una paleta de grises cálidos propia** que no aparece
+    en ningún otro archivo del sitio. Los oros y los negros ya están en tokens;
+    los grises no.
+  - **La matriz de medida × quilataje ilustra "un anillo de oro" con un
+    solitario**, y la propia página jura que el diamante se cotiza aparte. Falta
+    la foto de un anillo liso.
+  - **El spot va fechado a mano** ("16 jul"): envejece solo en una página cuyo
+    argumento es que el gramo se mueve. O se genera la fecha o se quita.
 - **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento
   moral del bloque de trastienda. Hoy se apoya en "Permisos por usuario y
   sucursal" (Controla). Falta decidir si merece su propia línea.

@@ -50,7 +50,7 @@ const {
      saber que el reloj de marca no se reprecia es otra cosa. */
   fijos = [
     { nombre: 'Reloj de marca', razon: 'precio de lista de la marca', piezas: 38 },
-    { nombre: 'Bisutería y chapa de oro', razon: 'se cuesta por pieza, no por gramo', piezas: 164 },
+    { nombre: 'Bisutería y chapa de oro', razon: 'se costea por pieza, no por gramo', piezas: 164 },
   ],
 } = Astro.props;
 
@@ -92,7 +92,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
         </label>
         <input
           type="range" id="jcColchon" class="jc-rango"
-          min={spot} max={Math.round(spot * 1.45)} step="10"
+          min={spot} max={Math.round(spot * 1.45)} step="2"
           value={colchonInicial}
           aria-label="Precio de tu colchón por gramo de fino"
         />
@@ -171,7 +171,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
 </section>
 
 <style>
-  .jc { background: #1A1A1A; padding: 100px 24px 110px; }
+  .jc { background: var(--color-bg-dark, #1A1A1A); padding: 100px 24px 110px; }
   .jc-inner { max-width: 1200px; margin: 0 auto; }
 
   .jc-head { max-width: 720px; margin-bottom: 50px; }
