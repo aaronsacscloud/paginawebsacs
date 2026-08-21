@@ -152,9 +152,20 @@ export async function aplicarCobroDeCotizacion(
     // Con tolerancia de un peso: $5,849.50 de $5,850 es el periodo pagado.
     const parcial = precio > 0 && asignado + 1 < precio;
     const baseVieja = sub.proxima_factura ? String(sub.proxima_factura).slice(0, 10) : null;
-    // El ciclo corre desde el pago, salvo que la licencia ya tuviera una fecha
-    // pactada MÁS ADELANTE (alta programada a futuro): esa se respeta.
-    const base = (baseVieja && baseVieja > fechaPago) ? baseVieja : fechaPago;
+    // ── La anualidad corre desde el DÍA DEL PAGO ──
+    // Es lo que dice el contrato ("la anualidad comenzará a correr a partir del
+    // día en que se realice el pago") y lo que el cliente espera ver.
+    //
+    // La única fecha que se respeta por encima del pago es una pactada A FUTURO
+    // de verdad (un alta programada para el mes que entra). Ojo con la trampa:
+    // una licencia recién creada por el cierre nace con proxima_factura = HOY,
+    // así que comparar solo contra el pago mandaba la renovación al aniversario
+    // del DÍA EN QUE SE REPARÓ, no del día en que pagaron — Giacca pagó el
+    // 12-ago y le tocaba renovar el 21-ago. Por eso se exige que la fecha vieja
+    // sea posterior a HOY, no solo al pago.
+    const hoyIso = new Date().toISOString().slice(0, 10);
+    const pactadaAFuturo = !!(baseVieja && baseVieja > fechaPago && baseVieja > hoyIso);
+    const base = pactadaAFuturo ? (baseVieja as string) : fechaPago;
     const proxima = sub.ciclo === 'vitalicia' ? null
       : (parcial ? baseVieja : addCiclo(base, sub.ciclo));
 
@@ -179,6 +190,12 @@ export async function aplicarCobroDeCotizacion(
       total_pagado: asignado,
       updated_at: new Date().toISOString(),
     };
+    // La licencia arrancó el día del pago, no el día en que el CRM la creó.
+    // Sin esto, una venta que se materializa días después nace con antigüedad
+    // falsa y el histórico del cliente miente.
+    if (!pactadaAFuturo && (!sub.fecha_inicio || String(sub.fecha_inicio).slice(0, 10) > fechaPago)) {
+      upd.fecha_inicio = fechaPago;
+    }
     // Columnas de SQL-4: si el deploy va antes que el SQL, se reintenta sin ellas.
     const updExtra = { ...upd, cancela_al_vencer: false };
     let res = await supabase.from('subscriptions').update(updExtra).eq('id', sub.id).select('*').maybeSingle();
