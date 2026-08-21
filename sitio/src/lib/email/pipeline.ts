@@ -36,7 +36,7 @@ import { footerHtml, footerTexto, headersBaja, htmlATexto } from './footer';
 import { envolverLinks, agregarPixel } from './tracking';
 
 import { frenado } from './freno';
-import { escalonCalentamiento } from './puro';
+import { escalonCalentamiento, direccionRespuesta } from './puro';
 
 export type Categoria = 'marketing' | 'relacion' | 'prueba' | 'transaccional';
 
@@ -287,9 +287,19 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
     // cliente). Si el subdominio de recepción no está configurado, se cae al
     // reply_to normal: mejor que la respuesta llegue a un buzón humano a que se
     // pierda en un dominio sin MX.
-    replyTo: dominioRespuestas()
-      ? `reply+${token}@${dominioRespuestas()}`
-      : t.reply_to,
+    // El Reply-To lleva el ID DEL ENVÍO, no el token firmado.
+    //
+    // El token completo mide ~166 caracteres y el RFC 5321 limita la parte
+    // local de una dirección a 64 octetos: Hostinger —y no es el único—
+    // rechazaba la dirección al escribirla y NADIE podía responder. Un correo
+    // al que no se puede contestar es peor que no mandarlo. Lo encontró el
+    // usuario intentando responder; ninguna revisión de código lo vio.
+    //
+    // El id del envío basta para identificar: de él salen inquilino, contacto
+    // y correo. Y no es un secreto que proteger — la puerta la cuida el
+    // INBOUND_SECRET de la URL del Parse, sin el cual no entra nada. Aun así
+    // es un UUID v4: 122 bits, no se adivina.
+    replyTo: direccionRespuesta(send.id, dominioRespuestas()) || t.reply_to,
     headers: headersBaja(base, token),
     asmGroupId: t.sendgrid_asm_group_id,
     apiKey: llaveDe(t as any),

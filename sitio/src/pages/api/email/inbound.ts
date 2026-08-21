@@ -125,10 +125,28 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (esAutomatico(headers, asunto)) return ok();
 
     // ── De quién es esta conversación ──
+    //
+    // Se aceptan DOS formas de Reply-To. La nueva es el id del envío sin
+    // guiones (32 hex): la anterior metía el token firmado completo —166
+    // caracteres— y el RFC 5321 limita la parte local a 64, así que varios
+    // servidores rechazaban la dirección y la respuesta nunca salía. Los
+    // correos ya entregados con la forma vieja siguen funcionando: quien
+    // conteste un correo de la semana pasada no puede quedarse sin respuesta
+    // por un cambio nuestro.
     const token = tokenDeDestino(para, campo('envelope'), headers);
-    const p = token ? verificar(token) : null;
-    let tenantId = p?.t || null;
-    let sendId = p?.s || null;
+    let tenantId: string | null = null;
+    let sendId: string | null = null;
+
+    if (token && /^[0-9a-f]{32}$/i.test(token)) {
+      const uuid = token.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+      const { data } = await supabase.from('email_sends')
+        .select('id, tenant_id').eq('id', uuid).maybeSingle();
+      if (data) { sendId = data.id; tenantId = data.tenant_id; }
+    } else if (token) {
+      const p = verificar(token);
+      tenantId = p?.t || null;
+      sendId = p?.s || null;
+    }
     if (!tenantId) {
       // Sin token (alguien escribió directo): cae en el inquilino de casa.
       const casa = await tenantDeCasa();

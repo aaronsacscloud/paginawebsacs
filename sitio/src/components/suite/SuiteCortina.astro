@@ -32,7 +32,7 @@ interface Props {
 const {
   eyebrow = 'La misma pregunta, dos veces',
   titulo = '“¿Tendrás esta en chica?”',
-  sub = 'Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.',
+  sub = 'Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.',
   fotoAntes,
   fotoDespues,
   altAntes = 'Cómo se resuelve hoy',
@@ -45,12 +45,12 @@ const {
 ---
 
 <section class="cort-bloque">
+  <div class="cort-riel">
+  <div class="cort-pegado">
   <div class="cort-head">
     <p class="cort-eyebrow">{eyebrow}</p>
     <h2>{titulo}</h2>
-    <p class="cort-sub">
-      Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.
-    </p>
+    <p class="cort-sub">{sub}</p>
   </div>
 
   <div class="cort" id="cort">
@@ -93,6 +93,9 @@ const {
       aria-valuenow="50"
     ></div>
   </div>
+  </div>
+  <div class="cort-recorrido" aria-hidden="true"></div>
+  </div>
 </section>
 
 <style>
@@ -108,8 +111,17 @@ const {
   }
   .cort-sub { color: var(--claro-apunte); font-size: clamp(15px, 1.7vw, 18px); margin: 0; max-width: 56ch; }
 
+  /* Mismo patrón que el plano: el bloque se queda pegado y la comparación
+     avanza con el scroll. El recorrido va como caja propia porque un sticky
+     sólo viaja dentro del content box de quien lo contiene. */
+  .cort-recorrido { height: 120vh; }
+  .cort-pegado { position: sticky; top: var(--cort-tope, 88px); }
+  .cort-bloque.sin-riel .cort-recorrido { display: none; }
+  .cort-bloque.sin-riel .cort-pegado { position: static; }
+
   .cort {
-    position: relative; max-width: 1200px; margin: 0 auto; height: 660px;
+    position: relative; max-width: 1200px; margin: 0 auto;
+    height: clamp(420px, calc(100vh - 300px), 660px);
     border-radius: var(--radius-2xl); overflow: hidden; border: 1px solid #23232B;
     user-select: none; touch-action: pan-y; background: var(--color-bg-dark-deep, #1A1A2E);
   }
@@ -197,6 +209,9 @@ const {
 
   @media (max-width: 900px) {
     .cort-bloque { padding: 64px 18px 76px; }
+    .cort-recorrido { display: none; }
+    .cort-pegado { position: static; }
+    .cort { height: 660px; }
     .cort { height: 560px; }
     .cort-panel-a { left: 5%; max-width: 44%; bottom: 5%; }
     .cort-panel-d { right: 4%; width: 46%; bottom: 5%; }

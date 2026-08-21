@@ -41,6 +41,7 @@ export const GET: APIRoute = async ({ url }) => {
   // Estancados (abierto, sin actividad > 48 h).
   const corte = Date.now() - 48 * 3600_000;
   const estancados = abiertos.filter((x: any) => { const ref = x.ultima_actividad_at || x.abierto_at; return ref ? new Date(ref).getTime() < corte : false; });
+  const estancadoIds = new Set(estancados.map((x: any) => x.conversation_id));
 
   // SLA. FRT = tiempo a la 1ª respuesta sobre CUALQUIER ticket que ya la tuvo
   // (resuelto o no), no solo los resueltos — si no, sesga el indicador.
@@ -56,6 +57,58 @@ export const GET: APIRoute = async ({ url }) => {
     const a = x.asignado || 'Sin asignar'; m[a] = m[a] || { agente: a, abiertos: 0, total: 0 };
     m[a].total++; if (ABIERTO.includes(x.estado)) m[a].abiertos++; return m;
   }, {})).map(([, v]) => v).sort((a: any, b: any) => b.abiertos - a.abiertos);
+
+  // ── Clientes que más piden atención ───────────────────────────────────
+  // Ranking por volumen EN LA VENTANA elegida, no histórico: un cliente con 20
+  // tickets de hace medio año no está pidiendo atención hoy. Manda la ÚLTIMA
+  // ACTIVIDAD sobre la apertura — un hilo viejo que sigue vivo sí cuenta.
+  // Los tickets sin company_id se agrupan por la cuenta SACS cruda para que no
+  // desaparezcan del ranking mientras el backfill los liga.
+  const cortePeriodo = Date.now() - dias * 86400_000;
+  const acum = new Map<string, any>();
+  for (const x of t) {
+    const cta = (x.cuenta || '').trim().toLowerCase();
+    const key = x.company_id || `cuenta:${cta || 'sin-identificar'}`;
+    let c = acum.get(key);
+    if (!c) {
+      c = { company_id: x.company_id || null, cuenta: x.cuenta || null, nombre: null, plan: null, estado_cuenta: null,
+            n: 0, total: 0, abiertos: 0, estancados: 0, urgentes: 0, ultimo: null as string | null, temas: {} as Record<string, number> };
+      acum.set(key, c);
+    }
+    const ref = x.ultima_actividad_at || x.abierto_at || null;
+    c.total++;
+    if (ref && (!c.ultimo || ref > c.ultimo)) c.ultimo = ref;
+    if (ABIERTO.includes(x.estado)) c.abiertos++;
+    if (estancadoIds.has(x.conversation_id)) c.estancados++;
+    if (!ref || new Date(ref).getTime() < cortePeriodo) continue;
+    c.n++;
+    if (x.sentimiento === 'urgente' || x.sentimiento === 'negativo') c.urgentes++;
+    const tm = x.tema || 'otros';
+    c.temas[tm] = (c.temas[tm] || 0) + 1;
+  }
+  const topClientes = [...acum.values()]
+    .filter((c: any) => c.n > 0)
+    .sort((a: any, b: any) => b.n - a.n || b.abiertos - a.abiertos || b.urgentes - a.urgentes)
+    .slice(0, 25)
+    .map((c: any) => {
+      const tema = Object.entries(c.temas).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || null;
+      const { temas, ...resto } = c;
+      return { ...resto, tema, tema_label: tema ? (TEMA_LABEL[tema] || tema) : null };
+    });
+
+  // Los nombres, en UNA consulta por los ids del top (no una por cliente).
+  const idsTop = topClientes.map((c: any) => c.company_id).filter(Boolean) as string[];
+  if (idsTop.length) {
+    const { data: emp } = await supabase.from('companies').select('id, nombre, nombre_comercial, plan, estado_cuenta').in('id', idsTop);
+    const porId = new Map((emp || []).map((e: any) => [e.id, e]));
+    for (const c of topClientes as any[]) {
+      const e = c.company_id ? porId.get(c.company_id) : null;
+      if (!e) continue;
+      c.nombre = e.nombre_comercial || e.nombre || null;
+      c.plan = e.plan || null;
+      c.estado_cuenta = e.estado_cuenta || null;
+    }
+  }
 
   // Tendencia diaria (abiertos vs resueltos) últimos `dias`, en DÍA DE MÉXICO
   // (CDMX = UTC−6): sin esto, un ticket de la tarde/noche cae en el día UTC
@@ -86,6 +139,8 @@ export const GET: APIRoute = async ({ url }) => {
     por_sentimiento: cuentaCon('sentimiento', 'neutral'),
     por_tema: porTema,
     por_agente: porAgente,
+    top_clientes: topClientes,
+    periodo_dias: dias,
     tendencia: Object.values(serie),
   });
 };

@@ -7,7 +7,7 @@
  *
  * Correr:  node --experimental-strip-types src/lib/email/puro.test.ts
  */
-import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, RUTA_INTERNA } from './puro.ts';
+import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, direccionRespuesta, RUTA_INTERNA } from './puro.ts';
 
 let ok = 0;
 const fallas: string[] = [];
@@ -120,6 +120,27 @@ es(clasificarOrigen({ ruta: '/blog/que-es-utm_source' }), 'directo', 'utm_ en el
   es(cualesDetener(insc, emb, { tenantId: T1 }).includes('e4'), true,
      'ante un embudo desconocido, callarse: se detiene');
   es(cualesDetener([], emb, { tenantId: T1 }), [], 'sin recorridos activos, nada que hacer');
+}
+
+// ── direccionRespuesta ───────────────────────────────────────────────────
+// BUG REAL, encontrado por el usuario al intentar responder: el Reply-To
+// llevaba el token firmado completo (166 caracteres) y el RFC 5321 limita la
+// parte local a 64. Hostinger rechazaba la dirección: el correo llegaba
+// perfecto y no se podía contestar.
+{
+  const ID = 'f32cc0c7-bec2-474d-af36-e5050ab80df0';
+  const dir = direccionRespuesta(ID, 'crm.sacscloud.com')!;
+  es(dir, 'reply+f32cc0c7bec2474daf36e5050ab80df0@crm.sacscloud.com', 'el id del envío sin guiones');
+  es(dir.split('@')[0].length <= 64, true, 'la parte local CABE en el límite del RFC 5321');
+  es(dir.split('@')[0].length, 38, 'mide 38, contra los 172 de antes');
+  es(direccionRespuesta(ID, ''), null, 'sin dominio configurado no hay dirección de respuesta');
+  es(direccionRespuesta(ID, '  '), null, 'un dominio en blanco tampoco');
+
+  // El token viejo, para que nadie lo reintroduzca sin que suene la alarma.
+  const tokenViejo = 'eyJOljoiMjY5YTc3YzEtMjhhNS00NzQ4LThlYTEtOWFmNGRhOTQwY2RkIiwibSI6ImFhcm9uQHNhY3NjbG91ZC5jb20iLCJzIjoiZjMyY2MwYzctYmVjMi00NzRkLWFmMzn4J9YuTiUiuB2VFWlQgwM9OBdd3zdiauBQFU';
+  let lanzo = false;
+  try { direccionRespuesta(tokenViejo, 'crm.sacscloud.com'); } catch { lanzo = true; }
+  es(lanzo, true, 'una parte local que no cabe LANZA en vez de mandar un correo mudo');
 }
 
 console.log(`\n  ${ok} casos pasaron`);

@@ -109,3 +109,26 @@ export function cualesDetener(
     return true;
   }).map(e => e.id);
 }
+
+/**
+ * La dirección de respuesta de un envío: `reply+<id sin guiones>@dominio`.
+ *
+ * El RFC 5321 limita la parte local de una dirección a **64 octetos**. La
+ * versión anterior metía ahí el token firmado completo —166 caracteres— y
+ * servidores como Hostinger rechazaban la dirección al momento de escribir:
+ * el correo llegaba perfecto y NADIE podía contestarlo. Un correo al que no se
+ * puede responder es peor que uno que no se manda, porque parece que funcionó.
+ *
+ * Devuelve null si no hay dominio configurado (entonces se usa el reply_to
+ * normal) y lanza si la dirección no cabe: es preferible fallar al enviar que
+ * mandar un correo mudo.
+ */
+export function direccionRespuesta(sendId: string, dominio: string): string | null {
+  const d = String(dominio || '').trim();
+  if (!d) return null;
+  const local = 'reply+' + String(sendId || '').replace(/-/g, '');
+  if (local.length > 64) {
+    throw new Error(`La parte local del Reply-To mide ${local.length} y el máximo es 64 (RFC 5321).`);
+  }
+  return `${local}@${d}`;
+}
