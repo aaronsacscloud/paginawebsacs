@@ -16,7 +16,7 @@ const { id } = Astro.params;
 const exh = Number(Astro.url.searchParams.get('exh') || 0);
 
 const { data: q } = await supabase.from('quotes')
-  .select('id, numero, empresa, contacto, email, total, moneda, estado, created_at, aceptado_fecha, notas, link_pago, company_id')
+  .select('id, numero, empresa, contacto, email, total, moneda, estado, created_at, aceptado_fecha, notas, link_pago, company_id, cobranza_promesa, cobranza_nota, cobranza_promesa_estado')
   .eq('id', id).maybeSingle();
 if (!q) return Astro.redirect('/404');
 
@@ -40,6 +40,13 @@ function fecha(d?: string | null) {
   return `${dd} de ${MESES[(m || 1) - 1]} de ${y}`;
 }
 const liquidada = saldo <= 0.5;
+
+/* La promesa de pago. Este documento se manda justo cuando algo no pasó, y si
+   hubo un acuerdo de fecha, escribirlo aquí evita la conversación de "yo te
+   dije que el 25". */
+const promesa = String(q.cobranza_promesa || '').slice(0, 10);
+const promesaVigente = !!promesa && promesa >= hoy && q.cobranza_promesa_estado !== 'cumplida' && !liquidada;
+const promesaVencida = !!promesa && promesa < hoy && q.cobranza_promesa_estado !== 'cumplida' && !liquidada;
 ---
 <html lang="es">
 <head>
@@ -89,7 +96,12 @@ const liquidada = saldo <= 0.5;
     .foot { padding:14px 26px 20px; border-top:1px solid var(--line); margin-top:16px; color:var(--muted); font-size:.71rem; line-height:1.7; }
     .foot b { color:#3f3b4d; }
     @media (max-width:560px) { .head,.para,.sec,.foot { padding-left:18px; padding-right:18px; } .hero,.cta { margin-left:18px; margin-right:18px; } }
-    @media print { body { background:#fff; padding:0; } .toolbar,.cta { display:none !important; } .doc { box-shadow:none; border-radius:0; max-width:none; } }
+    @media print {
+      body { background:#fff; padding:0; }
+      .toolbar,.cta { display:none !important; }
+      .doc { box-shadow:none; border-radius:0; max-width:none; }
+      .hero,.promesa { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
   </style>
 </head>
 <body>
@@ -102,7 +114,7 @@ const liquidada = saldo <= 0.5;
     <div class="band"></div>
     <div class="head">
       <div>
-        <div class="marca">SACSCloud</div>
+        <div class="marca">Sacscloud</div>
         <div class="firma">Estado de cuenta · {q.numero}</div>
       </div>
       <div class="meta">
@@ -129,6 +141,18 @@ const liquidada = saldo <= 0.5;
             </>}
       </div>
     </div>
+
+    {promesaVigente && (
+      <div class="promesa viva">
+        Quedamos en que este saldo se cubre el <b>{fecha(promesa)}</b>.
+        {q.cobranza_nota ? <> Nota: {q.cobranza_nota}</> : null}
+      </div>
+    )}
+    {promesaVencida && (
+      <div class="promesa rota">
+        Se acordó cubrirlo el <b>{fecha(promesa)}</b> y a la fecha sigue pendiente. Escríbenos para acordar una nueva fecha.
+      </div>
+    )}
 
     {plan.length > 0 && (
       <div class="sec">
@@ -165,7 +189,7 @@ const liquidada = saldo <= 0.5;
       {liquidada
         ? 'Su cuenta está al corriente. Cualquier duda, respóndanos por este mismo medio.'
         : 'Los pagos se aplican en el orden de las fechas acordadas. Si necesita mover alguna fecha, escríbanos y lo vemos.'}<br />
-      <b>SACSCloud</b> · www.sacscloud.com
+      <b>Sacscloud</b> · www.sacscloud.com
     </div>
   </div>
 

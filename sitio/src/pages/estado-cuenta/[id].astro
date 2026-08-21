@@ -11,7 +11,7 @@ const { id } = Astro.params;
 
 const { data: sub } = await supabase
   .from('subscriptions')
-  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id, pp_monto, pp_pct, pp_expira_at')
+  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id, pp_monto, pp_pct, pp_expira_at, cobranza_promesa, cobranza_estado, cobranza_nota, cobranza_promesa_estado, mp_link_pago, mp_link_periodo')
   .eq('id', id)
   .single();
 
@@ -74,6 +74,20 @@ const ESTADO: Record<string, { label: string; bg: string; color: string }> = {
 };
 const estadoInfo = ESTADO[sub.estado] || ESTADO.activa;
 
+/* ── Lo que hace de esto un comprobante de cobranza ──
+   El documento no solo dice "tienes un plan": dice CUÁNTO DEBES, DESDE CUÁNDO
+   y —si la hubo— qué se prometió. Es lo que se manda cuando un cobro no pasó,
+   y sin el atraso a la vista no sirve para eso. */
+const HOY = new Date().toLocaleDateString('sv-SE');
+const diasAtraso = (() => {
+  const f = String(sub.proxima_factura || '').slice(0, 10);
+  if (!f || f >= HOY || sub.estado === 'cancelada') return 0;
+  return Math.floor((Date.parse(HOY + 'T12:00:00') - Date.parse(f + 'T12:00:00')) / 86400000);
+})();
+const promesa = String(sub.cobranza_promesa || '').slice(0, 10);
+const promesaVigente = !!promesa && promesa >= HOY && sub.cobranza_promesa_estado !== 'cumplida';
+const promesaVencida = !!promesa && promesa < HOY && sub.cobranza_promesa_estado !== 'cumplida';
+
 const clienteNombre = [contact?.nombre, contact?.apellido].filter(Boolean).join(' ').trim() || company?.nombre || 'Cliente';
 const empresaNombre = company?.nombre || '';
 const hoy = new Date();
@@ -86,11 +100,13 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Estado de cuenta · {empresaNombre || clienteNombre} · SACS</title>
+  <title>Estado de cuenta · {empresaNombre || clienteNombre} · Sacscloud</title>
   <style>
     :root {
-      --ink: #16181d; --muted: #6b7280; --faint: #9aa0a8;
-      --accent: #1A8F7A; --line: #e7e9ee; --paper: #ffffff; --bg: #eef0f3;
+      --ink: #241d43; --muted: #6b7280; --faint: #a5a2af;
+      --accent: #5B4BD6; --violeta: #9B8CFA; --tinta: #3f2fb8;
+      --rojo: #C0554E; --verde: #1E8A63;
+      --line: #f0eff3; --paper: #ffffff; --bg: #eceef1;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -110,11 +126,49 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
       font-family: inherit; border: 1px solid var(--line); background: #fff; color: var(--ink);
       text-decoration: none;
     }
-    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary { background: var(--violeta); color: #fff; border-color: var(--violeta); }
     .doc {
       max-width: 720px; margin: 0 auto; background: var(--paper);
-      border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
-      box-shadow: 0 1px 3px rgba(16,24,40,0.06), 0 8px 32px rgba(16,24,40,0.06);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(16,24,40,0.06), 0 14px 36px rgba(16,24,40,0.10);
+    }
+    /* La cinta de la marca corona el documento, igual que la cotización. */
+    .cinta { height: 4px; background: linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%); }
+    .marca-nom { font-size: 1.3rem; font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+    .marca-firma {
+      font-size: .55rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; margin-top: 3px;
+      background: linear-gradient(100deg,#7C6BF0 0%,#8E7DEF 35%,#D9538E 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* ── El adeudo: el ancla del documento ── */
+    .adeudo {
+      margin: 16px 40px; border-radius: 13px; padding: 18px 20px;
+      background: linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22));
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    }
+    .adeudo.vencido { background: linear-gradient(135deg,#FEF0EF,rgba(244,168,205,.22)); }
+    .adeudo .kk { font-size: .56rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+    .adeudo.vencido .kk { color: var(--rojo); }
+    .adeudo .monto { font-size: 2rem; font-weight: 800; color: var(--tinta); letter-spacing: -.02em; line-height: 1.05; margin-top: 3px; }
+    .adeudo.vencido .monto { color: #a53d36; }
+    .adeudo .sub { font-size: .78rem; color: var(--accent); margin-top: 5px; font-weight: 600; }
+    .adeudo.vencido .sub { color: var(--rojo); }
+    .adeudo .caja { margin-left: auto; text-align: right; background: rgba(255,255,255,.72); border-radius: 11px; padding: 10px 14px; }
+    .adeudo .caja .g { font-size: 1.5rem; font-weight: 800; color: var(--tinta); line-height: 1; }
+    .adeudo.vencido .caja .g { color: #a53d36; }
+    .adeudo .caja .t { font-size: .64rem; font-weight: 700; color: var(--accent); margin-top: 3px; }
+    .adeudo.vencido .caja .t { color: var(--rojo); }
+
+    /* ── La promesa de pago, cuando la hubo ── */
+    .promesa { margin: 0 40px 16px; border-radius: 12px; padding: 13px 16px; font-size: .82rem; line-height: 1.6; }
+    .promesa.viva { background: #F3F0FE; color: #4C3BD0; }
+    .promesa.rota { background: #FFF4E5; color: #9a6a10; }
+    .promesa b { font-weight: 800; }
+    .cta-pago {
+      display: block; text-align: center; background: var(--violeta); color: #fff;
+      border-radius: 10px; padding: 13px; font-size: .86rem; font-weight: 800;
+      margin: 0 40px 16px; text-decoration: none;
     }
     .doc-head {
       padding: 34px 40px 26px; border-bottom: 1px solid var(--line);
@@ -123,7 +177,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     .doc-head img { height: 30px; }
     .doc-head .meta { text-align: right; font-size: 0.72rem; color: var(--muted); line-height: 1.7; }
     .doc-head .meta b { color: var(--ink); }
-    .eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase; color: var(--faint); }
     .h1 { font-size: 1.5rem; font-weight: 800; margin: 6px 0 0; letter-spacing: -0.01em; }
     .section { padding: 26px 40px; border-bottom: 1px solid var(--line); }
     .section:last-child { border-bottom: none; }
@@ -136,11 +190,11 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
     /* Bloque destacado del próximo pago */
     .highlight {
-      background: linear-gradient(180deg, #f6fbfa 0%, #eef8f5 100%);
-      border: 1px solid #cfe9e2; border-radius: 14px; padding: 22px 24px;
+      background: linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22));
+      border: none; border-radius: 13px; padding: 20px 22px;
       display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;
     }
-    .highlight .amount { font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+    .highlight .amount { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--tinta); }
     .highlight .per { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
     .highlight .when { text-align: right; }
     .highlight .when .d { font-size: 1.05rem; font-weight: 800; }
@@ -180,25 +234,70 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
       body { background: #fff; padding: 0; }
       .toolbar { display: none !important; }
       .doc { box-shadow: none; border: none; border-radius: 0; max-width: none; }
-      .section, .doc-head { border-color: #e7e9ee; }
+      .section, .doc-head { border-color: #f0eff3; }
+      .adeudo, .promesa, .highlight { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .cta-pago { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="toolbar">
-    <button class="btn" id="copy-link">🔗 Copiar link</button>
-    <button class="btn btn-primary" id="download-pdf">⬇ Descargar PDF</button>
+    <button class="btn" id="copy-link">Copiar liga</button>
+    <button class="btn btn-primary" id="download-pdf">Descargar PDF</button>
   </div>
 
   <div class="doc">
+    <div class="cinta"></div>
     <div class="doc-head">
-      <img src="/brand/sacs-wordmark-dark.svg" alt="SACS" />
+      <div>
+        <div class="marca-nom">Sacscloud</div>
+        <div class="marca-firma">Estado de cuenta · {folio}</div>
+      </div>
       <div class="meta">
-        <div class="eyebrow">Estado de cuenta</div>
-        <div style="margin-top:6px"><b>Folio</b> {folio}</div>
-        <div><b>Emitido</b> {fmtFechaCorta(hoy.toISOString())}</div>
+        <div class="eyebrow">Emitido</div>
+        <div style="margin-top:4px"><b>{fmtFecha(hoy.toISOString())}</b></div>
+        {empresaNombre && <div>{empresaNombre}</div>}
       </div>
     </div>
+
+    {/* ── Lo que se debe hoy ──
+        El documento se manda cuando un cobro NO pasó: lo primero tiene que ser
+        cuánto y desde cuándo, no el nombre del plan. Si va al corriente, el
+        mismo bloque dice lo que toca y cuándo. */}
+    {esRecurrente && sub.estado !== 'cancelada' && (
+      <>
+        <div class={diasAtraso > 0 ? 'adeudo vencido' : 'adeudo'}>
+          <div>
+            <span class="kk">{diasAtraso > 0 ? 'Saldo vencido' : 'Tu próximo pago'}</span>
+            <div class="monto num">{money(montoPagar)}</div>
+            <div class="sub">
+              {sub.nombre_plan} · {diasAtraso > 0 ? 'venció el' : 'se cobra el'} {fmtFecha(sub.proxima_factura)}
+            </div>
+          </div>
+          {diasAtraso > 0 && (
+            <div class="caja">
+              <div class="g num">{diasAtraso}</div>
+              <div class="t">{diasAtraso === 1 ? 'día de atraso' : 'días de atraso'}</div>
+            </div>
+          )}
+        </div>
+
+        {promesaVigente && (
+          <div class="promesa viva">
+            Quedamos en que este pago se cubre el <b>{fmtFecha(promesa)}</b>.
+            {sub.cobranza_nota ? <> Nota: {sub.cobranza_nota}</> : null}
+          </div>
+        )}
+        {promesaVencida && (
+          <div class="promesa rota">
+            Se acordó cubrirlo el <b>{fmtFecha(promesa)}</b> y a la fecha sigue pendiente. Escríbenos para acordar una nueva fecha.
+          </div>
+        )}
+        {diasAtraso > 0 && sub.mp_link_pago && (
+          <a class="cta-pago" href={sub.mp_link_pago} target="_blank" rel="noreferrer">Pagar {money(montoPagar)}</a>
+        )}
+      </>
+    )}
 
     <div class="section">
       <div class="label">Para</div>
@@ -255,20 +354,6 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
           </div>
         )}
 
-        <div id="pp-regular" style={ofertaValida ? 'display:none' : ''}>
-          <div class="label" style="margin-bottom:12px">Tu próximo pago</div>
-          <div class="highlight">
-            <div>
-              <div class="amount num">{money(montoPagar)}</div>
-              <div class="per">{periodicidad ? `${cicloLabel} · se cobra ${periodicidad}` : cicloLabel}</div>
-            </div>
-            <div class="when">
-              <div class="label">{vencida ? 'Fecha de pago (vencida)' : 'Fecha del próximo pago'}</div>
-              <div class="d" style={vencida ? 'color:#b93333' : ''}>{fmtFecha(sub.proxima_factura)}</div>
-            </div>
-          </div>
-          {vencida && <div class="note" style="color:#b93333">Este pago está vencido. Realiza tu pago para mantener tu servicio activo sin interrupciones.</div>}
-        </div>
       </div>
     )}
 
@@ -299,9 +384,9 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     )}
 
     <div class="foot">
-      Este documento es un resumen informativo de tu suscripción con <span class="brand">SACS</span>.
+      Este documento resume el estado de tu suscripción con <span class="brand">Sacscloud</span>.
       Para cualquier aclaración sobre tu plan o tus pagos, escríbenos a <b>hola@sacscloud.com</b>.
-      <div style="margin-top:8px">SACS · www.sacscloud.com</div>
+      <div style="margin-top:8px">Sacscloud · www.sacscloud.com</div>
     </div>
   </div>
 
@@ -317,7 +402,6 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
         var ms = exp - Date.now();
         if (ms <= 0) {
           var of = document.getElementById('pp-oferta'); if (of) of.style.display = 'none';
-          var reg = document.getElementById('pp-regular'); if (reg) reg.style.display = '';
           return;
         }
         var s = Math.floor(ms / 1000);
@@ -333,7 +417,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
       const btn = e.currentTarget as HTMLButtonElement;
       try {
         await navigator.clipboard.writeText(window.location.href);
-        const prev = btn.textContent; btn.textContent = '✓ Link copiado';
+        const prev = btn.textContent; btn.textContent = '✓ Liga copiada';
         setTimeout(() => { btn.textContent = prev; }, 1800);
       } catch { /* clipboard puede fallar sin https */ }
     });

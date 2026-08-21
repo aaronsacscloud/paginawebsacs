@@ -376,6 +376,9 @@ export default function CobranzaTab() {
       {menuFila && (() => {
         const f = menuFila.f;
         const esCot = f.tipo === 'cotizacion';
+        /* Dos documentos con el mismo propósito: el de la cotización desglosa
+           las parcialidades; el de la suscripción, el ciclo y su atraso. */
+        const ecUrl = (x: any) => x.tipo === 'cotizacion' ? `/estado-cuenta/cotizacion/${x.id}` : `/estado-cuenta/${x.id}`;
         const mensual = f.ciclo === 'mensual';
         const item = (label: string, onClick: () => void, color?: string) => (
           <button onClick={() => { setMenuFila(null); onClick(); }}
@@ -402,7 +405,16 @@ export default function CobranzaTab() {
             {f.plan_pagos.length > 0 && item(abierta === f.id ? 'Ocultar plan de pagos' : 'Ver plan de pagos', () => setAbierta(abierta === f.id ? null : f.id))}
             {f.plan_pagos.length === 0 && !mensual && item('Partir en pagos', () => setPartir(f))}
             {esCot && item('Ver cotización', () => window.open(`/cotizacion/${f.id}`, '_blank'))}
-            {esCot && item('Estado de cuenta', () => window.open(`/estado-cuenta/cotizacion/${f.id}`, '_blank'))}
+            {/* El estado de cuenta es el comprobante que se manda cuando un
+                cobro no pasó: dice cuánto se debe, desde cuándo y qué se
+                prometió. Existe para las dos: la cotización en parcialidades y
+                la suscripción vencida. Antes solo salía en cotizaciones, que
+                son la minoría de lo que se cobra. */}
+            {item('Ver estado de cuenta', () => window.open(ecUrl(f), '_blank'))}
+            {item('Copiar liga del estado de cuenta', async () => {
+              try { await navigator.clipboard.writeText(location.origin + ecUrl(f)); flash('Liga copiada'); }
+              catch { window.open(ecUrl(f), '_blank'); }
+            })}
             {f.link && item('Abrir link de cobro', () => window.open(f.link, '_blank'), '#1E8A63')}
             {f.company_id && item('Abrir ficha del cliente', () => setCliente(f.company_id))}
             {!esCot && item('Dar de baja', () => setCancelar(f), '#C0554E')}
