@@ -104,6 +104,49 @@ function Desplegable({ etiqueta, valor, opciones, onCambio }: {
   );
 }
 
+/**
+ * Aviso de lo que la lectura nocturna del chat de soporte dejó por revisar.
+ *
+ * Vive aquí porque Consultoría es donde se trabaja lo que pide el cliente, y
+ * una petición que salió de un chat no sirve de nada si hay que acordarse de ir
+ * a buscarla a otra pantalla. Solo aparece cuando hay algo: un aviso que está
+ * siempre deja de leerse en una semana.
+ */
+function AvisoHallazgos() {
+  const [r, setR] = useState<any>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/crm/soporte/hallazgos?estado=pendiente')
+      .then(x => x.json()).then(j => { if (vivo && !j.error) setR(j.resumen || null); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+  const n = r?.pendientes || 0;
+  if (!n) return null;
+  const t = r?.por_tipo || {};
+  const partes = [
+    t.mejora ? `${t.mejora} ${t.mejora === 1 ? 'mejora' : 'mejoras'}` : '',
+    t.oportunidad ? `${t.oportunidad} ${t.oportunidad === 1 ? 'oportunidad' : 'oportunidades'}` : '',
+    t.riesgo ? `${t.riesgo} de riesgo` : '',
+    t.testimonio ? `${t.testimonio} ${t.testimonio === 1 ? 'testimonio' : 'testimonios'}` : '',
+  ].filter(Boolean);
+  return (
+    <div style={{ background: '#EEECFE', border: '1px solid #cdbdf7', borderRadius: 11, padding: '12px 15px', marginBottom: 14, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, minWidth: 240, fontSize: '0.8rem', color: '#5B4BD6', lineHeight: 1.55 }}>
+        <b>Tienes {n} {n === 1 ? 'revisión pendiente' : 'revisiones pendientes'} de lo que los clientes pidieron por soporte</b>
+        {partes.length > 0 && <> — {partes.join(', ')}.</>}
+        <div style={{ fontSize: '0.72rem', color: '#6d4bc7', opacity: 0.85, marginTop: 2 }}>
+          Salieron de leer el chat de Intercom anoche. Acepta las que apliquen y se crean aquí o en la bandeja de oportunidades.
+        </div>
+      </div>
+      <button onClick={() => window.dispatchEvent(new CustomEvent('sacs-ir-tab', { detail: 'soporte' }))}
+        style={{ border: 'none', borderRadius: 9, padding: '8px 16px', background: '#5B4BD6', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        Revisarlas
+      </button>
+    </div>
+  );
+}
+
 export default function MejorasTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
@@ -288,6 +331,7 @@ export default function MejorasTab() {
 
   return (
     <div style={S.wrap}>
+      <AvisoHallazgos />
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>

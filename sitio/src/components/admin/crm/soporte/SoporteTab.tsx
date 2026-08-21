@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { S, Tag, Aviso, Vacio, Cargando, fmtFecha } from '../email/ui';
 import ClienteDrawer360 from '../ClienteDrawer360';
+import Hallazgos from './Hallazgos';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
 
 // ─── Gama (la de Cotizaciones) ───
@@ -508,6 +509,8 @@ export default function SoporteTab() {
         </div>
 
         <TopClientes filas={d.top_clientes || []} etiqueta={etiqueta} onAbrir={(id) => setCliente(id)} />
+
+        <Hallazgos onAbrirCliente={(id) => setCliente(id)} onCambio={() => setRecarga(r => r + 1)} />
 
         {/* La calificación va ANTES de las gráficas: es lo único que dice si el
             cliente quedó bien. El sentimiento de abajo es cómo LLEGA; esto es

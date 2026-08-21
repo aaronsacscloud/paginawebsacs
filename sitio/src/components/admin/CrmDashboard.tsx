@@ -225,10 +225,19 @@ export default function CrmDashboard() {
     // aquí para volver a donde se estaba, no a una pantalla cualquiera.
     const alCerrarConfig = () => switchTab(volverDeConfig.current);
     window.addEventListener('sacs-cerrar-config', alCerrarConfig);
+    // Un aviso que manda a otra sección tiene que poder llevarte: el de
+    // Consultoría ("tienes N revisiones") apunta a Soporte, y sin esto habría
+    // que buscarla a mano en el menú, que es justo lo que el aviso evita.
+    const alIrTab = (e: Event) => {
+      const destino = (e as CustomEvent).detail;
+      if (typeof destino === 'string') switchTab(destino as Tab);
+    };
+    window.addEventListener('sacs-ir-tab', alIrTab);
     return () => {
       vivo = false;
       window.removeEventListener('sacs-perfil', alGuardar);
       window.removeEventListener('sacs-cerrar-config', alCerrarConfig);
+      window.removeEventListener('sacs-ir-tab', alIrTab);
     };
   }, []);
   // Las secciones que esta persona puede ver. Mientras carga se muestra todo:

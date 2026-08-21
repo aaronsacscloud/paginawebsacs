@@ -60,6 +60,10 @@
     {
       "path": "/api/cron/soporte-sla",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/soporte-oportunidades",
+      "schedule": "15 9 * * *"
     }
   ]
 }
