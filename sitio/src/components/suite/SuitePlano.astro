@@ -11,10 +11,18 @@
  * abre con la pregunta que él ya se hizo —«es sábado, hay fila y se cayó el
  * internet»— así la función llega como respuesta y no como característica.
  *
- * Dos reglas que no hay que romper:
+ * Se dibuja con las convenciones de un plano de verdad —muro con poché, giro
+ * de puerta, mobiliario en símbolos, cotas, escala gráfica y clave numerada—
+ * porque el lenguaje del oficio es lo que separa un diagrama de una lámina.
+ * Y cada zona lleva su fotografía: el plano da la estructura, la foto da la
+ * aspiración.
+ *
+ * Tres reglas que no hay que romper:
  *
  * · Lo que se cobra aparte se marca aparte, en la misma lista y no escondido.
  *   Si el cliente lo descubre en la llamada, la llamada se enfría.
+ * · La lista completa vive ABAJO y siempre visible. El panel de la zona invita
+ *   a explorar; la lámina de abajo es la que prueba que la suite está entera.
  * · El plano cambia con el giro; la estructura no. En una zapatería las zonas
  *   son mostrador, probador con su banco, bodega de cajas y trastienda; en una
  *   joyería, vitrina, mostrador, taller y caja fuerte.
@@ -27,8 +35,15 @@ export interface ZonaPlano {
   fuera?: boolean;
   /** La pregunta que el dueño ya se hizo. */
   pregunta: string;
-  /** Rectángulo dentro del plano, en el sistema de 460 × 400. */
+  /** Rectángulo dentro del plano, en el sistema de 520 × 430. */
   caja: { x: number; y: number; w: number; h: number };
+  /** Qué mobiliario se dibuja dentro. */
+  simbolo?: 'rieles' | 'probadores' | 'anaqueles' | 'mostrador' | 'paquetes' | 'vitrinas';
+  /** La fotografía de la zona. */
+  foto?: string;
+  alt?: string;
+  /** Pie de foto: qué se está viendo. */
+  pie?: string;
   /** Cada función, con su escalón: incluido, desde un plan, o complemento. */
   items: { t: string; plan?: string; extra?: boolean }[];
 }
@@ -37,9 +52,10 @@ interface Props {
   eyebrow?: string;
   titulo: string;
   sub?: string;
-  /** Cómo se llama la tienda de este giro. */
-  rotuloDentro?: string;
+  /** Rótulo del cajetín, como en una lámina real. */
+  proyecto?: string;
   zonas: ZonaPlano[];
+  todoRot?: string;
   entradasRot?: string;
   entradas: EntradaPlano[];
 }
@@ -47,11 +63,87 @@ const {
   eyebrow = 'Toda la operación, en un solo lugar',
   titulo,
   sub,
-  rotuloDentro = 'Tu tienda',
+  proyecto = 'Tu tienda — planta baja',
   zonas,
+  todoRot = 'Todo lo que incluye, zona por zona',
   entradasRot = 'Y no hace falta encender todo el primer día',
   entradas,
 } = Astro.props;
+
+/** El mobiliario, dibujado en símbolos sobre la caja de cada zona. */
+function mobiliario(z: ZonaPlano): string {
+  const { x, y, w, h } = z.caja;
+  const L = (a: number, b: number, c: number, d: number, k = 'pn-mob') =>
+    `<line class="${k}" x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
+  const R = (a: number, b: number, c: number, d: number, k = 'pn-mob-f') =>
+    `<rect class="${k}" x="${a}" y="${b}" width="${c}" height="${d}" rx="1.5"/>`;
+
+  switch (z.simbolo) {
+    case 'rieles': {
+      // Dos rieles largos con sus ganchos, una mesa de doblado y una banca.
+      let s = '';
+      [0.44, 0.68].forEach((f) => {
+        const yy = y + h * f;
+        s += `<rect class="pn-mob-f" x="${x + 14}" y="${yy - 2}" width="${w - 76}" height="4" rx="2"/>`;
+        for (let i = x + 22; i < x + w - 66; i += 11) s += L(i, yy - 6, i, yy + 6);
+      });
+      s += R(x + w - 52, y + h * 0.40, 38, 30);            // mesa de doblado
+      s += R(x + 16, y + h - 24, 40, 11);                   // banca
+      return s;
+    }
+    case 'probadores': {
+      // Tres cabinas con su cortina y su banco.
+      let s = '';
+      const cw = (w - 20) / 3;
+      for (let i = 0; i < 3; i++) {
+        const cx = x + 10 + i * cw;
+        s += L(cx, y + 26, cx, y + h - 10);
+        s += `<path class="pn-mob" d="M${cx + 4} ${y + 26} A ${cw - 8} ${cw - 8} 0 0 1 ${cx + cw - 4} ${y + 26 + (cw - 8) * 0.34}" opacity=".5"/>`;
+        s += R(cx + 6, y + h - 26, cw - 14, 9);
+      }
+      s += L(x + 10 + 3 * cw, y + 26, x + 10 + 3 * cw, y + h - 10);
+      return s;
+    }
+    case 'anaqueles': {
+      // Anaquelería en dos muros y el escritorio.
+      let s = '';
+      s += `<rect class="pn-mob-t" x="${x + 10}" y="${y + 26}" width="${w - 20}" height="13"/>`;
+      s += `<rect class="pn-mob-t" x="${x + w - 23}" y="${y + 44}" width="13" height="${h - 60}"/>`;
+      s += R(x + 12, y + h - 42, 44, 26);
+      s += `<circle class="pn-mob" cx="${x + 66}" cy="${y + h - 29}" r="6" fill="none"/>`;
+      return s;
+    }
+    case 'mostrador': {
+      // Mostrador en L, con la anaquelería de respaldo.
+      let s = '';
+      s += `<rect class="pn-mob-f" x="${x + 18}" y="${y + h - 46}" width="${w - 70}" height="15" rx="2"/>`;
+      s += `<rect class="pn-mob-f" x="${x + 18}" y="${y + h - 84}" width="15" height="38" rx="2"/>`;
+      s += `<rect class="pn-mob-t" x="${x + 12}" y="${y + 26}" width="${w - 24}" height="12"/>`;
+      s += R(x + w - 44, y + h - 40, 30, 22);
+      return s;
+    }
+    case 'paquetes': {
+      // Mesa de empaque y los paquetes listos.
+      let s = R(x + 14, y + 34, w - 28, 26);
+      for (let i = 0; i < 3; i++) s += R(x + 16 + i * 20, y + 74, 16, 16);
+      s += L(x + 14, y + h - 30, x + w - 14, y + h - 30);
+      return s;
+    }
+    default:
+      return '';
+  }
+}
+
+/** El rótulo tiene que caber en su zona; si no cabe, se achica. */
+function cuerpo(z: ZonaPlano): number {
+  const disponible = z.caja.w - 36;
+  return Math.max(7.5, Math.min(11, disponible / (z.nombre.length * 0.66)));
+}
+
+const dentro = zonas.filter((z) => !z.fuera);
+const fuera = zonas.filter((z) => z.fuera);
+const clave = zonas.map((z, i) => ({ ...z, n: String(i + 1).padStart(2, '0') }));
+const primera = clave[0];
 ---
 
 <section class="pn">
@@ -64,32 +156,111 @@ const {
     </header>
 
     <div class="pn-maq">
-      <!-- El plano -->
-      <div class="pn-plano">
-        <svg viewBox="0 0 460 400" role="img" aria-label={`Plano con ${zonas.length} zonas: ${zonas.map((z) => z.nombre).join(', ')}`}>
-          <rect class="pn-muro" x="20" y="60" width="330" height="310" rx="10"></rect>
-          <text class="pn-rot" x="20" y="50">{rotuloDentro}</text>
-          {zonas.some((z) => z.fuera) && <text class="pn-rot" x="378" y="50">Fuera</text>}
 
-          {zonas.some((z) => z.fuera) && <path class="pn-liga" d="M350 200 C 372 200, 372 170, 392 170"></path>}
+      <!-- ── La lámina ── -->
+      <figure class="pn-lamina">
+        <svg viewBox="0 0 520 430" role="img" aria-label={`Plano de la tienda con ${zonas.length} zonas: ${zonas.map((z) => z.nombre).join(', ')}`}>
+          <defs>
+            <pattern id="pnPoche" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="4" stroke="#1a1a2e" stroke-width="2.2" opacity=".32"></line>
+            </pattern>
+            <pattern id="pnTrama" width="7" height="7" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="7" x2="7" y2="0" stroke="#1a1a2e" stroke-width=".6" opacity=".45"></line>
+            </pattern>
+            <pattern id="pnRetic" width="26" height="26" patternUnits="userSpaceOnUse">
+              <path d="M26 0 H0 V26" fill="none" stroke="#1a1a2e" stroke-width=".5" opacity=".07"></path>
+            </pattern>
+          </defs>
 
-          {zonas.map((z, i) => (
-            <g class:list={['pn-z', { on: i === 0 }]} data-zona={z.id} tabindex="0" role="button" aria-label={z.nombre}>
-              <rect class="pn-sup" x={z.caja.x} y={z.caja.y} width={z.caja.w} height={z.caja.h} rx="8"></rect>
-              <circle class="pn-pt" cx={z.caja.x + 14} cy={z.caja.y + 16} r="3"></circle>
-              <text x={z.caja.x + 24} y={z.caja.y + 20}>{z.nombre}</text>
+          <rect x="0" y="0" width="520" height="430" fill="url(#pnRetic)"></rect>
+
+          <!-- Muro perimetral con espesor -->
+          <path class="pn-poche" d="M28 62 H364 V392 H28 Z M40 74 H352 V380 H40 Z" fill-rule="evenodd"></path>
+          <rect class="pn-muro" x="28" y="62" width="336" height="330"></rect>
+          <rect class="pn-muro" x="40" y="74" width="312" height="306"></rect>
+
+          <!-- Vano y giro de puerta -->
+          <rect class="pn-vano" x="250" y="378" width="72" height="16"></rect>
+          <path class="pn-giro" d="M322 380 A 72 72 0 0 0 250 308"></path>
+          <line class="pn-muro-fino" x1="250" y1="380" x2="250" y2="308"></line>
+          <text class="pn-rot" x="258" y="410">Acceso</text>
+
+          <!-- Cota general -->
+          <g class="pn-cota">
+            <line x1="28" y1="44" x2="364" y2="44"></line>
+            <path d="M28 39 V49 M364 39 V49"></path>
+            <text x="196" y="36" text-anchor="middle">12.40 m</text>
+          </g>
+
+          <!-- Zonas -->
+          {clave.map((z) => (
+            <g class:list={['pn-z', { on: z.id === primera.id }]} data-zona={z.id} tabindex="0" role="button" aria-label={z.nombre}>
+              <rect class="pn-sup" x={z.caja.x} y={z.caja.y} width={z.caja.w} height={z.caja.h} rx="2"></rect>
+              <g class="pn-mobs"><Fragment set:html={mobiliario(z)} /></g>
+              <circle class="pn-num-b" cx={z.caja.x + 15} cy={z.caja.y + 15} r="10"></circle>
+              <text class="pn-num-t" x={z.caja.x + 15} y={z.caja.y + 18.5} text-anchor="middle">{z.n}</text>
+              <text class="pn-z-t" x={z.caja.x + 31} y={z.caja.y + 19} style={`font-size:${cuerpo(z)}px`}>{z.nombre.toUpperCase()}</text>
             </g>
           ))}
-        </svg>
-      </div>
 
-      <!-- Lo que pasa en la zona -->
-      <div class="pn-det">
-        {zonas.map((z, i) => (
-          <div class:list={['pn-hoja', { on: i === 0 }]} data-hoja={z.id}>
-            <p class="pn-det-et">{z.fuera ? 'Fuera de la tienda' : 'Dentro de la tienda'}</p>
-            <h3>{z.nombre}</h3>
-            <p class="pn-q">{z.pregunta}</p>
+          {fuera.length > 0 && (
+            <>
+              <path class="pn-liga" d="M364 214 C 392 214, 392 178, 414 178"></path>
+              <text class="pn-rot" x="446" y="130" text-anchor="middle">Fuera del muro</text>
+            </>
+          )}
+
+          <!-- Escala gráfica -->
+          <g class="pn-escala">
+            <rect x="28" y="404" width="22" height="5"></rect>
+            <rect class="alt" x="50" y="404" width="22" height="5"></rect>
+            <rect x="72" y="404" width="22" height="5"></rect>
+            <text x="100" y="412">3 m</text>
+          </g>
+        </svg>
+
+        <figcaption class="pn-cajetin">
+          <span class="pn-cj-p">{proyecto}</span>
+          <span class="pn-cj-e">Esc. 1:100</span>
+          <span class="pn-cj-n">{dentro.length} zonas en piso · {fuera.length} fuera del muro</span>
+        </figcaption>
+      </figure>
+
+      <!-- ── La zona seleccionada, en foto ── -->
+      <div class="pn-vista">
+        {clave.map((z) => (
+          <article class:list={['pn-hoja', { on: z.id === primera.id }]} data-hoja={z.id}>
+            {z.foto && (
+              <div class="pn-foto">
+                <img src={z.foto} alt={z.alt || z.nombre} loading={z.id === primera.id ? 'eager' : 'lazy'} decoding="async" />
+                <span class="pn-foto-n">{z.n}</span>
+                {z.pie && <span class="pn-foto-p">{z.pie}</span>}
+              </div>
+            )}
+            <div class="pn-hoja-txt">
+              <p class="pn-det-et">{z.fuera ? 'Fuera de la tienda' : 'En piso'}</p>
+              <h3>{z.nombre}</h3>
+              <p class="pn-q">{z.pregunta}</p>
+              <p class="pn-cuenta">
+                <b>{z.items.length}</b> funciones de SACS trabajan en esta zona
+                <span>Las tienes enlistadas abajo</span>
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── La lámina de abajo: todo lo que incluye, sin esconder nada ── -->
+    <div class="pn-todo">
+      <p class="pn-todo-rot">{todoRot}</p>
+      <div class="pn-todo-g">
+        {clave.map((z) => (
+          <article class:list={['pn-col', { on: z.id === primera.id }]} data-col={z.id} data-ir={z.id}>
+            <header>
+              <b class="pn-col-n">{z.n}</b>
+              <h4>{z.nombre}</h4>
+            </header>
             <ul>
               {z.items.map((it) => (
                 <li class:list={{ extra: it.extra }}>
@@ -101,9 +272,13 @@ const {
                 </li>
               ))}
             </ul>
-          </div>
+          </article>
         ))}
       </div>
+      <p class="pn-leyenda">
+        <span><i class="inc"></i>Incluido en tu plan</span>
+        <span><i class="ext"></i>Complemento que se cotiza aparte</span>
+      </p>
     </div>
 
     <div class="pn-ent">
@@ -142,73 +317,157 @@ const {
   }
   .pn-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); }
 
-  .pn-maq { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+  .pn-maq { display: grid; grid-template-columns: 1.18fr 1fr; gap: 22px; align-items: stretch; }
 
-  /* ── El plano ── */
-  .pn-plano {
-    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
-    border-radius: var(--radius-2xl, 24px); padding: 22px;
+  /* ── La lámina ── */
+  .pn-lamina {
+    margin: 0; background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
+    border-radius: var(--radius-2xl, 24px); padding: 20px 20px 0; overflow: hidden;
+    display: flex; flex-direction: column;
   }
-  .pn-plano svg { width: 100%; height: auto; display: block; }
-  .pn-muro { fill: none; stroke: var(--color-text-primary, #1a1a2e); stroke-width: 2; opacity: .45; }
-  .pn-rot {
-    font-family: var(--font-body), system-ui, sans-serif; font-size: 9px; letter-spacing: .1em;
-    fill: var(--color-text-tertiary, #8C8C8C); text-transform: uppercase;
+  .pn-lamina svg { width: 100%; height: auto; display: block; flex: 1; }
+
+  .pn-poche { fill: url(#pnPoche); }
+  .pn-muro { fill: none; stroke: var(--color-text-primary, #1a1a2e); stroke-width: 1.6; opacity: .85; }
+  .pn-muro-fino { stroke: var(--color-text-primary, #1a1a2e); stroke-width: 1.4; opacity: .7; }
+  .pn-vano { fill: var(--color-bg-card, #fff); }
+  .pn-giro { fill: none; stroke: var(--color-text-primary, #1a1a2e); stroke-width: 1; opacity: .35; stroke-dasharray: 3 3; }
+
+  .pn-cota line, .pn-cota path { stroke: var(--color-text-tertiary, #8C8C8C); stroke-width: .9; }
+  .pn-cota text, .pn-rot, .pn-escala text {
+    font-family: var(--font-body), system-ui, sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: .1em; fill: var(--color-text-tertiary, #8C8C8C); text-transform: uppercase;
   }
-  .pn-liga {
-    stroke: var(--color-primary, #4B7BE5); stroke-width: 1.5; stroke-dasharray: 4 4;
-    fill: none; opacity: .5;
-  }
+  .pn-escala rect { fill: none; stroke: var(--color-text-tertiary, #8C8C8C); stroke-width: .9; }
+  .pn-escala rect.alt { fill: var(--color-text-tertiary, #8C8C8C); }
+
+  .pn-liga { stroke: var(--color-primary, #4B7BE5); stroke-width: 1.4; stroke-dasharray: 4 4; fill: none; opacity: .6; }
 
   .pn-z { cursor: pointer; }
-  .pn-z:focus-visible { outline: 2px solid var(--color-primary, #4B7BE5); outline-offset: 3px; }
+  .pn-z:focus-visible { outline: 2px solid var(--color-primary, #4B7BE5); outline-offset: 3px; border-radius: 4px; }
   .pn-sup {
-    fill: var(--color-bg-primary, #FAFAF8); stroke: rgba(0,0,0,.1); stroke-width: 1.5;
+    fill: #fff; stroke: rgba(26,26,46,.28); stroke-width: 1;
     transition: fill .25s ease, stroke .25s ease;
   }
-  .pn-z:hover .pn-sup { fill: var(--azul-fondo); stroke: var(--azul-borde); }
-  .pn-z.on .pn-sup { fill: var(--azul-fondo); stroke: var(--color-primary, #4B7BE5); stroke-width: 2; }
-  .pn-z text {
-    font-family: var(--font-body), system-ui, sans-serif; font-size: 11px; font-weight: 700;
-    fill: var(--color-text-tertiary, #8C8C8C); pointer-events: none;
-  }
-  .pn-z.on text { fill: var(--azul-texto); }
-  .pn-pt { fill: var(--color-text-tertiary, #8C8C8C); transition: fill .25s ease; }
-  .pn-z.on .pn-pt { fill: var(--color-primary, #4B7BE5); }
+  .pn-z:hover .pn-sup { fill: var(--azul-fondo); }
+  .pn-z.on .pn-sup { fill: var(--azul-fondo); stroke: var(--color-primary, #4B7BE5); stroke-width: 1.8; }
 
-  /* ── La hoja de la zona ── */
-  .pn-det {
+  .pn-num-b { fill: var(--color-text-primary, #1a1a2e); transition: fill .25s ease; }
+  .pn-z.on .pn-num-b { fill: var(--color-primary, #4B7BE5); }
+  .pn-num-t {
+    font-family: var(--font-body), system-ui, sans-serif; font-size: 9.5px; font-weight: 800;
+    fill: #fff; pointer-events: none;
+  }
+  .pn-z-t {
+    font-family: var(--font-body), system-ui, sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: .07em; fill: var(--color-text-secondary, #4A4A4A); pointer-events: none;
+    transition: fill .25s ease;
+  }
+  .pn-z.on .pn-z-t { fill: var(--azul-texto); }
+
+  .pn-cajetin {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+    border-top: 1px solid rgba(0,0,0,.1); margin: 8px -20px 0; padding: 13px 20px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .pn-cj-p { color: var(--color-text-primary, #1a1a2e); }
+  .pn-cj-n { margin-left: auto; font-weight: 600; letter-spacing: .06em; text-transform: none; }
+
+  /* ── La zona en foto ── */
+  .pn-vista {
     background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
-    border-radius: var(--radius-2xl, 24px); padding: 26px 28px 28px; position: relative;
+    border-radius: var(--radius-2xl, 24px); overflow: hidden; display: flex; flex-direction: column;
   }
   .pn-hoja { display: none; }
-  .pn-hoja.on { display: block; }
+  .pn-hoja.on { display: flex; flex-direction: column; flex: 1; }
+  .pn-foto { position: relative; aspect-ratio: 3 / 2; background: var(--color-bg-secondary, #F5F3EE); }
+  .pn-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pn-foto-n {
+    position: absolute; top: 16px; left: 16px; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--color-bg-dark, #1A1A1A); color: #fff; display: grid; place-items: center;
+    font-size: 12px; font-weight: 800; letter-spacing: .02em;
+  }
+  .pn-foto-p {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 34px 18px 14px; color: #fff;
+    font-size: 12.5px; font-weight: 600; line-height: 1.4;
+    background: linear-gradient(180deg, rgba(26,26,26,0) 0%, rgba(26,26,26,.82) 72%, rgba(26,26,26,.92) 100%);
+  }
+  .pn-hoja-txt { padding: 22px 24px 26px; flex: 1; display: flex; flex-direction: column; }
   .pn-det-et {
-    margin: 0 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .12em;
+    margin: 0 0 9px; font-size: 11px; font-weight: 800; letter-spacing: .12em;
     text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
   }
-  .pn-det h3 {
+  .pn-vista h3 {
     font-family: var(--font-display, 'Sora', sans-serif);
-    margin: 0 0 10px; font-size: clamp(1.25rem, 2.2vw, 1.625rem); font-weight: 700; letter-spacing: -.02em;
+    margin: 0 0 12px; font-size: clamp(1.25rem, 2.2vw, 1.625rem); font-weight: 700; letter-spacing: -.02em;
   }
   .pn-q {
-    margin: 0 0 22px; padding-left: 12px; border-left: 3px solid var(--color-primary, #4B7BE5);
-    font-size: 0.9375rem; color: var(--color-text-secondary, #4A4A4A);
+    margin: 0; padding-left: 13px; border-left: 3px solid var(--color-primary, #4B7BE5);
+    font-size: 0.9375rem; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A);
   }
-  .pn-det ul { list-style: none; margin: 0; padding: 0; }
-  .pn-det li {
-    display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: start;
-    padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 0.9375rem;
+
+  .pn-cuenta {
+    margin: auto 0 0; padding-top: 20px; font-size: 13.5px;
+    color: var(--color-text-secondary, #4A4A4A);
   }
-  .pn-det li:last-child { border-bottom: none; }
-  .pn-det li i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok-texto); margin-top: 8px; }
-  .pn-det li.extra i { background: var(--color-accent, #E8A838); }
+  .pn-cuenta b { font-weight: 800; color: var(--color-text-primary, #1a1a2e); }
+  .pn-cuenta span {
+    display: block; margin-top: 3px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
+  }
+
+  /* ── Todo lo que incluye ── */
+  .pn-todo { margin-top: 30px; }
+  .pn-todo-rot {
+    margin: 0 0 16px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .pn-todo-g { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 14px; }
+  .pn-col {
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
+    border-radius: var(--radius-lg, 16px); padding: 18px 18px 6px; cursor: pointer;
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  .pn-col:hover { border-color: rgba(75,123,229,.4); }
+  .pn-col.on { border-color: var(--color-primary, #4B7BE5); box-shadow: 0 4px 18px rgba(75,123,229,.13); }
+  .pn-col header { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+  .pn-col-n {
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    background: var(--color-bg-secondary, #F5F3EE); color: var(--color-text-tertiary, #8C8C8C);
+    display: grid; place-items: center; font-size: 10px; font-weight: 800;
+    transition: background .25s ease, color .25s ease;
+  }
+  .pn-col.on .pn-col-n { background: var(--color-primary, #4B7BE5); color: #fff; }
+  .pn-col h4 {
+    margin: 0; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 15px; font-weight: 700; letter-spacing: -.01em;
+  }
+  .pn-col ul { list-style: none; margin: 0; padding: 0; }
+  .pn-col li {
+    display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start;
+    padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 13.5px; line-height: 1.45;
+  }
+  .pn-col li:last-child { border-bottom: none; }
+  .pn-col li i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok-texto); margin-top: 6px; }
+  .pn-col li.extra i { background: var(--color-accent, #E8A838); }
   .pn-tag {
+    grid-column: 2; justify-self: start; margin-top: 5px;
     font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: var(--radius-full, 50px); white-space: nowrap; margin-top: 2px;
+    padding: 3px 9px; border-radius: var(--radius-full, 50px); white-space: nowrap;
   }
   .pn-tag-inc { background: var(--ok-fondo); color: var(--ok-texto); }
   .pn-tag-ext { background: var(--aviso-fondo); color: var(--aviso-texto); }
+
+  .pn-leyenda {
+    display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0;
+    font-size: 12.5px; color: var(--color-text-secondary, #4A4A4A);
+  }
+  .pn-leyenda span { display: inline-flex; align-items: center; gap: 8px; }
+  .pn-leyenda i { width: 7px; height: 7px; border-radius: 50%; }
+  .pn-leyenda i.inc { background: var(--ok-texto); }
+  .pn-leyenda i.ext { background: var(--color-accent, #E8A838); }
 
   /* ── Por dónde empezar ── */
   .pn-ent { margin-top: 34px; padding-top: 30px; border-top: 1px solid rgba(0,0,0,.09); }
@@ -232,13 +491,34 @@ const {
     letter-spacing: .06em; text-transform: uppercase; color: var(--azul-texto);
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     .pn-maq { grid-template-columns: 1fr; }
     .pn-ent-g { grid-template-columns: 1fr; }
+    .pn-cj-n { margin-left: 0; width: 100%; }
+  }
+  /* En celular la lámina mide la mitad: la tipografía del plano tiene que
+     crecer o el rótulo de la zona deja de leerse. */
+  @media (max-width: 640px) {
+    .pn-lamina { padding: 14px 14px 0; }
+    .pn-z-t { display: none; }
+    .pn-num-t { font-size: 12.5px; }
+    .pn-num-b { r: 13px; }
+    .pn-cota text, .pn-rot, .pn-escala text { font-size: 11.5px; }
+    .pn-cajetin { margin: 8px -14px 0; padding: 12px 14px; font-size: 10px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .pn-sup, .pn-pt { transition: none; }
+    .pn-sup, .pn-num-b, .pn-col, .pn-col-n, .pn-z-t { transition: none; }
   }
+</style>
+
+<style is:global>
+  /* El mobiliario entra por set:html y queda fuera del scope de Astro. */
+  .pn .pn-mobs { pointer-events: none; }
+  .pn .pn-mob { stroke: #1a1a2e; stroke-width: 1; opacity: .34; fill: none; }
+  .pn .pn-mob-f { fill: none; stroke: #1a1a2e; stroke-width: 1; opacity: .42; }
+  .pn .pn-mob-t { fill: url(#pnTrama); stroke: #1a1a2e; stroke-width: .8; opacity: .5; }
+  .pn .pn-z.on .pn-mob, .pn .pn-z.on .pn-mob-f { stroke: #2A5FD4; opacity: .75; }
+  .pn .pn-z.on .pn-mob-t { stroke: #2A5FD4; opacity: .6; }
 </style>
 
 <script>
@@ -247,9 +527,11 @@ const {
     if (bloque) {
       const zonas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-zona]'));
       const hojas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-hoja]'));
+      const cols = Array.from(bloque.querySelectorAll<HTMLElement>('[data-col]'));
       const abrir = (id: string) => {
         zonas.forEach((z) => z.classList.toggle('on', z.dataset.zona === id));
         hojas.forEach((h) => h.classList.toggle('on', h.dataset.hoja === id));
+        cols.forEach((c) => c.classList.toggle('on', c.dataset.col === id));
       };
       zonas.forEach((z) => {
         z.addEventListener('click', () => abrir(z.dataset.zona || ''));
@@ -257,6 +539,7 @@ const {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(z.dataset.zona || ''); }
         });
       });
+      cols.forEach((c) => c.addEventListener('click', () => abrir(c.dataset.col || '')));
     }
   }
 </script>
