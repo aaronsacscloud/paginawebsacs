@@ -11,7 +11,7 @@ const { id } = Astro.params;
 
 const { data: sub } = await supabase
   .from('subscriptions')
-  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id, pp_monto, pp_pct, pp_expira_at, cobranza_promesa, cobranza_estado, cobranza_nota, cobranza_promesa_estado, mp_link_pago, mp_link_periodo')
+  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id, pp_monto, pp_pct, pp_expira_at, cobranza_promesa, cobranza_estado, cobranza_nota, cobranza_promesa_estado, mp_link_pago, mp_link_periodo, saldo_favor')
   .eq('id', id)
   .single();
 
@@ -84,6 +84,23 @@ const diasAtraso = (() => {
   if (!f || f >= HOY || sub.estado === 'cancelada') return 0;
   return Math.floor((Date.parse(HOY + 'T12:00:00') - Date.parse(f + 'T12:00:00')) / 86400000);
 })();
+/* Lo que DEBE, no lo que cuesta un mes. Con una mensual atrasada, el cargo se
+   repite cada periodo: al cliente de 248 días no se le cobran $900, se le
+   cobran los nueve meses que lleva. Es el mismo conteo que hace la pantalla de
+   Cobranza —mes a mes desde la fecha vencida, no dividiendo entre 30, porque
+   un mes no dura 30 días— para que el papel diga la misma cifra que el CRM. */
+const saldoFavor = Number(sub.saldo_favor || 0);
+let periodosVencidos = 0;
+if (diasAtraso > 0 && sub.ciclo === 'mensual') {
+  const f = new Date(String(sub.proxima_factura).slice(0, 10) + 'T12:00:00');
+  while (f.toLocaleDateString('sv-SE') <= HOY && periodosVencidos < 120) { periodosVencidos++; f.setMonth(f.getMonth() + 1); }
+} else if (diasAtraso > 0) {
+  periodosVencidos = 1;
+}
+const adeudo = periodosVencidos > 0
+  ? Math.max(0, montoPagar * periodosVencidos - saldoFavor)
+  : Math.max(0, montoPagar - saldoFavor);
+
 const promesa = String(sub.cobranza_promesa || '').slice(0, 10);
 const promesaVigente = !!promesa && promesa >= HOY && sub.cobranza_promesa_estado !== 'cumplida';
 const promesaVencida = !!promesa && promesa < HOY && sub.cobranza_promesa_estado !== 'cumplida';
@@ -143,7 +160,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
 
     /* ── El adeudo: el ancla del documento ── */
     .adeudo {
-      margin: 16px 40px; border-radius: 13px; padding: 18px 20px;
+      margin: 18px 34px; border-radius: 13px; padding: 18px 20px;
       background: linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22));
       display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
     }
@@ -159,19 +176,31 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     .adeudo.vencido .caja .g { color: #a53d36; }
     .adeudo .caja .t { font-size: .64rem; font-weight: 700; color: var(--accent); margin-top: 3px; }
     .adeudo.vencido .caja .t { color: var(--rojo); }
+    /* De qué está hecha la cifra. Sin esto, "$7,731" en una mensual de $900 se
+       lee como un error de sistema y la llamada empieza discutiendo el monto. */
+    .adeudo .desglose {
+      flex-basis: 100%; margin-top: 10px; padding-top: 9px;
+      border-top: 1px solid rgba(255,255,255,.75);
+      font-size: .74rem; font-weight: 600; color: var(--rojo); opacity: .92;
+    }
+    .sello-venc {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+      background: #FEF0EF; color: var(--rojo); border-radius: 20px; padding: 4px 11px;
+      font-size: .6rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+    }
 
     /* ── La promesa de pago, cuando la hubo ── */
-    .promesa { margin: 0 40px 16px; border-radius: 12px; padding: 13px 16px; font-size: .82rem; line-height: 1.6; }
+    .promesa { margin: 0 34px 16px; border-radius: 12px; padding: 13px 16px; font-size: .82rem; line-height: 1.6; }
     .promesa.viva { background: #F3F0FE; color: #4C3BD0; }
     .promesa.rota { background: #FFF4E5; color: #9a6a10; }
     .promesa b { font-weight: 800; }
     .cta-pago {
       display: block; text-align: center; background: var(--violeta); color: #fff;
       border-radius: 10px; padding: 13px; font-size: .86rem; font-weight: 800;
-      margin: 0 40px 16px; text-decoration: none;
+      margin: 0 34px 18px; text-decoration: none;
     }
     .doc-head {
-      padding: 34px 40px 26px; border-bottom: 1px solid var(--line);
+      padding: 24px 34px 20px; background: #fcfbfe; border-bottom: 1px solid var(--line);
       display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
     }
     .doc-head img { height: 30px; }
@@ -179,7 +208,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     .doc-head .meta b { color: var(--ink); }
     .eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.11em; text-transform: uppercase; color: var(--faint); }
     .h1 { font-size: 1.5rem; font-weight: 800; margin: 6px 0 0; letter-spacing: -0.01em; }
-    .section { padding: 26px 40px; border-bottom: 1px solid var(--line); }
+    .section { padding: 20px 34px; border-bottom: 1px solid var(--line); }
     .section:last-child { border-bottom: none; }
     .label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
     .para-quien { font-size: 1.05rem; font-weight: 700; }
@@ -203,7 +232,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     td { padding: 11px 0; font-size: 0.86rem; border-bottom: 1px solid #f2f3f6; }
     tr:last-child td { border-bottom: none; }
     .right { text-align: right; }
-    .foot { padding: 22px 40px 30px; color: var(--muted); font-size: 0.76rem; line-height: 1.7; }
+    .foot { padding: 18px 34px 24px; color: var(--muted); font-size: 0.76rem; line-height: 1.7; }
     .foot .brand { color: var(--ink); font-weight: 800; }
     .note { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
     /* Oferta de pronto pago — destacada, acento ámbar de urgencia */
@@ -251,12 +280,13 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     <div class="doc-head">
       <div>
         <div class="marca-nom">Sacscloud</div>
-        <div class="marca-firma">Estado de cuenta · {folio}</div>
+        <div class="marca-firma">{diasAtraso > 0 ? 'Sacscloud Cobranza' : 'Estado de cuenta'} · {folio}</div>
       </div>
       <div class="meta">
         <div class="eyebrow">Emitido</div>
         <div style="margin-top:4px"><b>{fmtFecha(hoy.toISOString())}</b></div>
         {empresaNombre && <div>{empresaNombre}</div>}
+        {diasAtraso > 0 && <div class="sello-venc">Pago pendiente</div>}
       </div>
     </div>
 
@@ -269,10 +299,16 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
         <div class={diasAtraso > 0 ? 'adeudo vencido' : 'adeudo'}>
           <div>
             <span class="kk">{diasAtraso > 0 ? 'Saldo vencido' : 'Tu próximo pago'}</span>
-            <div class="monto num">{money(montoPagar)}</div>
+            <div class="monto num">{money(adeudo)}</div>
             <div class="sub">
               {sub.nombre_plan} · {diasAtraso > 0 ? 'venció el' : 'se cobra el'} {fmtFecha(sub.proxima_factura)}
             </div>
+            {periodosVencidos > 1 && (
+              <div class="desglose">
+                {periodosVencidos} periodos sin cubrir × {money(montoPagar)}
+                {saldoFavor > 0 ? ` · menos ${money(saldoFavor)} a favor` : ''}
+              </div>
+            )}
           </div>
           {diasAtraso > 0 && (
             <div class="caja">
@@ -294,7 +330,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
           </div>
         )}
         {diasAtraso > 0 && sub.mp_link_pago && (
-          <a class="cta-pago" href={sub.mp_link_pago} target="_blank" rel="noreferrer">Pagar {money(montoPagar)}</a>
+          <a class="cta-pago" href={sub.mp_link_pago} target="_blank" rel="noreferrer">Pagar {money(adeudo)}</a>
         )}
       </>
     )}
@@ -305,10 +341,8 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
         {clienteNombre}
         {empresaNombre && empresaNombre !== clienteNombre && <div class="sub">{empresaNombre}</div>}
       </div>
-    </div>
 
-    <div class="section">
-      <div class="grid2">
+      <div class="grid2" style="margin-top:20px">
         <div class="kv">
           <div class="label">Plan contratado</div>
           <div class="val">{sub.nombre_plan}</div>
@@ -384,9 +418,12 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     )}
 
     <div class="foot">
-      Este documento resume el estado de tu suscripción con <span class="brand">Sacscloud</span>.
-      Para cualquier aclaración sobre tu plan o tus pagos, escríbenos a <b>hola@sacscloud.com</b>.
-      <div style="margin-top:8px">Sacscloud · www.sacscloud.com</div>
+      {diasAtraso > 0
+        ? <>Este documento detalla el saldo pendiente de tu suscripción con <span class="brand">Sacscloud</span>.
+            Si ya realizaste el pago o quieres acordar una fecha, escríbenos a <b>cobranza@sacscloud.com</b> y lo revisamos.</>
+        : <>Este documento resume el estado de tu suscripción con <span class="brand">Sacscloud</span>.
+            Para cualquier aclaración sobre tu plan o tus pagos, escríbenos a <b>hola@sacscloud.com</b>.</>}
+      <div style="margin-top:8px">Sacscloud · www.sacscloud.com{diasAtraso > 0 ? ' · Cobranza' : ''}</div>
     </div>
   </div>
 
