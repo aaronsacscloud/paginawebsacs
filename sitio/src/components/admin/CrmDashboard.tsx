@@ -29,6 +29,7 @@ import PipelinesConfig from './crm/PipelinesConfig';
 import AgendaHoy from './crm/AgendaHoy';
 import SacsUsuariosTab from './crm/SacsUsuariosTab';
 import OportunidadesTab from './crm/OportunidadesTab';
+import SoporteTab from './crm/soporte/SoporteTab';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -44,7 +45,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'outbound';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'outbound' | 'soporte';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -142,6 +143,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
+      { id: 'soporte' as Tab, label: 'Soporte', icon: 'automations' },
     ],
   },
   {
@@ -695,6 +697,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><CobranzaTab /></ErrorBoundary>
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
+        ) : tab === 'soporte' ? (
+          <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (

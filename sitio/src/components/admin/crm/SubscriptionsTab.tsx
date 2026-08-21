@@ -322,7 +322,7 @@ export default function SubscriptionsTab() {
             style={{ ...S.btn, ...(isMobile ? { flexShrink: 0, height: 44, scrollSnapAlign: 'start' } : {}),
               background: vista === v ? '#EEECFE' : 'transparent', color: vista === v ? '#5B4BD6' : '#666',
               borderRadius: vista === v ? '9px 9px 0 0' : 9, borderBottom: vista === v ? '2px solid #9B8CFA' : '2px solid transparent', fontWeight: vista === v ? 800 : 500 }}>
-            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : 'Inteligencia ARR'}
+            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0) + (riesgo?.soporte?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : 'Inteligencia ARR'}
           </button>
         ))}
         {/* La acción principal del hub es dar de alta lo que se acaba de vender.
@@ -428,7 +428,7 @@ export default function SubscriptionsTab() {
             <div className="crm-scroll-x">
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
               <thead><tr>
-                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Cobro', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
+                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Cobro', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Soporte', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.map(s => {
@@ -490,6 +490,14 @@ export default function SubscriptionsTab() {
                       <td style={{ ...S.td, color: dias != null && dias > 15 ? '#C0554E' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
                         {s.companies?.ultima_venta_at ? fmtDate(s.companies.ultima_venta_at) + (dias != null ? ` (${dias}d)` : '') : '—'}
                       </td>
+                      <td style={S.td}>{(() => {
+                        const ab = Number((s.companies as any)?.soporte_abiertos || 0);
+                        if (!ab) return <span style={{ color: '#cbd5e1' }}>—</span>;
+                        const seria = (s.companies as any)?.soporte_estancado === true || (s.companies as any)?.soporte_sentimiento === 'urgente' || (s.companies as any)?.soporte_sentimiento === 'negativo';
+                        const col = seria ? '#C0554E' : '#a06600';
+                        const tit = `${ab} ticket(s) abierto(s)` + ((s.companies as any)?.soporte_estancado ? ' · estancado' : '') + ((s.companies as any)?.soporte_sentimiento ? ` · ${(s.companies as any).soporte_sentimiento}` : '');
+                        return <span title={tit} style={{ fontWeight: 800, color: col, background: seria ? '#fdecec' : '#fff6e6', borderRadius: 6, padding: '1px 7px' }}>{ab}{seria ? ' ⚠' : ''}</span>;
+                      })()}</td>
                       <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1E8A63' : h >= 40 ? '#a06600' : '#C0554E'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
                         <button style={{ ...S.btnSmall, marginRight: 4, background: '#4FBF95', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>Pago</button>
@@ -513,7 +521,7 @@ export default function SubscriptionsTab() {
                     <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.arr || 0), 0))}</td>
                     <td style={S.td} colSpan={2} />
                     <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.total_pagado || 0), 0))}</td>
-                    <td style={S.td} colSpan={3} />
+                    <td style={S.td} colSpan={4} />
                   </tr>
                 </tfoot>
               )}
@@ -528,6 +536,27 @@ export default function SubscriptionsTab() {
       {/* ═══ VISTA RIESGO ═══ */}
       {vista === 'riesgo' && (
         <div>
+          {/* Riesgo por SOPORTE: queja abierta seria (estancada o urgente/negativa).
+              Paralelo a la inactividad — un cliente que compra a diario pero está
+              furioso también se puede ir. */}
+          {(riesgo?.soporte?.length || 0) > 0 && (
+            <div style={S.card}>
+              <div style={{ fontWeight: 800, marginBottom: 10 }}>🎧 Queja de soporte abierta — riesgo por servicio <span style={{ color: '#999', fontWeight: 400 }}>· {riesgo.soporte.length} cliente(s) · {fmt(riesgo.arr_en_riesgo_soporte || 0)} ARR</span></div>
+              <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>{['Cliente', 'Cuenta SACS', 'Tickets abiertos', 'Señal', 'ARR en juego', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                <tbody>{riesgo.soporte.map((x: any) => (
+                  <tr key={x.company_id}>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{x.nombre}</td>
+                    <td style={S.td}>{x.sacs_account}</td>
+                    <td style={{ ...S.td, fontWeight: 800, color: '#C0554E' }}>{x.tickets_abiertos}</td>
+                    <td style={S.td}>{[x.estancado ? 'estancado' : null, x.sentimiento && x.sentimiento !== 'neutral' ? x.sentimiento : null].filter(Boolean).map((s: string) => <span key={s} style={{ ...S.badge, background: '#fdecec', color: '#C0554E', marginRight: 4 }}>{s}</span>)}</td>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{fmt(x.arr)}</td>
+                    <td style={S.td}><button style={S.btnSmall} onClick={() => setDetailId(x.company_id)}>Ver cliente</button></td>
+                  </tr>
+                ))}</tbody>
+              </table></div>
+            </div>
+          )}
           {[{ titulo: '🔴 Más de 15 días sin vender — churn probable', items: riesgo?.banda_15_mas || [] },
             { titulo: '🟠 De 3 a 15 días sin vender — atender ya', items: riesgo?.banda_3_15 || [] }].map(sec => (
             <div key={sec.titulo} style={S.card}>

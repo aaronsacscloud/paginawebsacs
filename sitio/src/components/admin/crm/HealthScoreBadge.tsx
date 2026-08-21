@@ -101,7 +101,19 @@ export default function HealthScoreBadge({ score, factors, computed_at, size = '
           })().map(({ key, LBL, MAXES }) => {
             const FACTOR_LABELS = LBL, FACTOR_MAX = MAXES;
             const v = factors[key] || 0;
-            const max = FACTOR_MAX[key] || 10;
+            const maxRaw = FACTOR_MAX[key];
+            // Factor de PENALIZACIÓN (max sentinela = 0, p.ej. 'soporte'): fila roja
+            // "−N", sin barra. Se oculta si no hay penalización.
+            if (maxRaw === 0) {
+              if (!v) return null;
+              return (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ color: '#ff8a80' }}>{FACTOR_LABELS[key]}</span>
+                  <span style={{ color: '#ff8a80', fontWeight: 700 }}>{v}</span>
+                </div>
+              );
+            }
+            const max = maxRaw || 10;
             const pct = Math.min(100, (v / max) * 100);
             return (
               <div key={key} style={{ marginBottom: 8 }}>
