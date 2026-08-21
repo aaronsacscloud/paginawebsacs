@@ -181,7 +181,7 @@ export const planoModa = [
     alt: 'Piso de venta de una boutique: rieles de latón con prendas y una mesa de exhibición',
     pie: 'Cada prenda del riel sabe en qué talla y en qué tienda queda existencia.',
     pregunta: '«¿Cuántas me quedan de esta talla, y en qué tienda?»',
-    caja: { x: 48, y: 86, w: 178, h: 162 },
+    caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
       { t: 'Existencia por estilo, talla y color, en cada tienda' },
       { t: 'Traspaso entre tiendas cuando la talla está donde no se vende' },
@@ -198,7 +198,7 @@ export const planoModa = [
     alt: 'Probadores de una boutique con cortinas de lino, banca de terciopelo y espejo de latón',
     pie: 'Aquí se decide la venta: la talla que falta se busca sin dejar a la clienta.',
     pregunta: '«Le quedó chica. ¿La tienes en M?»',
-    caja: { x: 234, y: 86, w: 106, h: 110 },
+    caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Consulta de existencia de las otras tiendas sin dejar a la clienta' },
       { t: 'Apartado con anticipo y abonos' },
@@ -215,7 +215,7 @@ export const planoModa = [
     alt: 'Trastienda de una boutique: escritorio de madera, anaquelería con mercancía doblada y burro rodante',
     pie: 'La parte que nadie ve: quién abrió, quién vendió y quién autorizó.',
     pregunta: '«¿Quién abrió hoy, quién vendió qué y quién autorizó ese descuento?»',
-    caja: { x: 234, y: 204, w: 106, h: 100 },
+    caja: { x: 298, y: 208, w: 128, h: 96 },
     items: [
       { t: 'Metas y comisión por vendedora y por tienda' },
       { t: 'Permisos por usuario y por tienda' },
@@ -232,7 +232,7 @@ export const planoModa = [
     alt: 'Mostrador de cobro de una boutique en madera y travertino, con bolsas de papel y papel de china',
     pie: 'La caja que no se detiene, ni en sábado ni sin internet.',
     pregunta: '«Es sábado, hay fila y se cayó el internet.»',
-    caja: { x: 48, y: 256, w: 178, h: 116 },
+    caja: { x: 68, y: 262, w: 216, h: 106 },
     items: [
       { t: 'Punto de venta que sigue cobrando sin conexión' },
       { t: 'Corte de caja y arqueo automáticos al cerrar' },
@@ -250,7 +250,7 @@ export const planoModa = [
     alt: 'Mesa de empaque de pedidos en línea con cajas, papel de china y paquetes listos para enviar',
     pie: 'El mismo inventario del piso, empacándose para salir.',
     pregunta: '«Vendí en línea algo que ya no estaba en el piso.»',
-    caja: { x: 400, y: 140, w: 92, h: 120 },
+    caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
