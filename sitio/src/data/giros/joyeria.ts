@@ -447,7 +447,7 @@ export const planoJoyeria = [
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
-      { t: 'Apartado y pedido especial también desde el canal en línea', plan: 'Fideliza' },
+      { t: 'Apartado y pedido especial también desde el canal en línea' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
       { t: 'Perfil del cliente con lo que compró y en qué ley', plan: 'Fideliza' },
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
