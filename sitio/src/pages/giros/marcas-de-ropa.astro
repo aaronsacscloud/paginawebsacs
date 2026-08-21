@@ -17,7 +17,7 @@ import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
-import SuiteIntegral from '../../components/suite/SuiteIntegral.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
@@ -26,7 +26,7 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ModaMarcacion from '../../components/giros/ModaMarcacion.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
-import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa } from '../../data/giros/moda';
+import { cortinaModa, marcacionModa, casosModa, pasosModa, planoModa, entradasModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
@@ -154,15 +154,14 @@ const desc =
     remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —clientes, prendas, existencias— y lo demás queda consultable. Nunca te pedimos empezar de cero, porque nadie con cinco años de temporadas puede hacerlo."
   />
 
-  <!-- Lo que todavía no se ha enseñado: que aquí cabe el negocio entero -->
-  <SuiteIntegral
-    eyebrow="Toda la operación, en un solo lugar"
-    titulo="Y esto es solo lo que te enseñamos."
-    resalte="Adentro cabe todo."
-    sub="Una tienda de ropa no es solo el probador. Es lo que compras seis meses antes, lo que te queda al cierre de temporada, quién lo vendió y quién regresa. Las cuatro cosas viven en el mismo sistema — toca cada una."
-    etapas={etapasModa}
-    centro="Tu tienda"
-    pie="<b>No son cuatro productos.</b> Son las cuatro cosas que tu tienda hace todos los días, en el mismo lugar y con los mismos datos: la prenda que se vendió en el probador ya descontó existencia, ya sumó puntos a la clienta, ya cuenta para la comisión de la vendedora y ya está en el reporte que abres el lunes."
+  <!-- La operación completa, contada como el plano de la tienda: una lista de
+       cuarenta funciones se hojea y se olvida; un plano se recorre. -->
+  <SuitePlano
+    titulo="Tu tienda, por dentro."
+    sub="Entra la clienta, recorre el piso, se prueba, paga y se va. Detrás hay una trastienda y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona y mira qué hace SACS ahí."
+    rotuloDentro="Tu tienda"
+    zonas={planoModa}
+    entradas={entradasModa}
   />
 
   <!-- ── El modelo comercial: la suite va dentro del plan ── -->

@@ -274,3 +274,82 @@ export const etapasModa = [
     ],
   },
 ];
+
+/* ── El plano de la tienda: la operación completa contada como un lugar.
+   El control de asistencia y horarios NO viene en ningún plan —es el addon
+   `staff` de plans.ts— y por eso va marcado. Descubrirlo en la llamada enfría
+   la llamada. */
+export const planoModa = [
+  {
+    id: 'piso',
+    nombre: 'Piso de venta',
+    pregunta: '«¿Cuántas me quedan de esta talla, y en qué tienda?»',
+    caja: { x: 38, y: 78, w: 160, h: 150 },
+    items: [
+      { t: 'Existencia por estilo, talla y color, en cada tienda' },
+      { t: 'Traspaso entre tiendas cuando la talla está donde no se vende' },
+      { t: 'Conteo desde el celular, sin cerrar la tienda' },
+      { t: 'Recepción de la entrega contra la orden de compra' },
+      { t: 'Etiquetas con código de barras' },
+    ],
+  },
+  {
+    id: 'probador',
+    nombre: 'Probadores',
+    pregunta: '«Le quedó chica. ¿La tienes en M?»',
+    caja: { x: 212, y: 78, w: 122, h: 98 },
+    items: [
+      { t: 'Consulta de existencia de las otras tiendas sin dejar a la clienta' },
+      { t: 'Apartado con anticipo y abonos' },
+      { t: 'Cambio de talla o color, aunque la prenda venga de otra tienda' },
+      { t: 'Vale a favor cuando no está su talla' },
+      { t: 'Cambio sin ticket físico', plan: 'Fideliza' },
+    ],
+  },
+  {
+    id: 'trastienda',
+    nombre: 'Trastienda',
+    pregunta: '«¿Quién abrió hoy, quién vendió qué y quién autorizó ese descuento?»',
+    caja: { x: 212, y: 190, w: 122, h: 82 },
+    items: [
+      { t: 'Metas y comisión por vendedora y por tienda' },
+      { t: 'Permisos por usuario y por tienda' },
+      { t: 'Auditoría: quién canceló, quién cambió, quién autorizó' },
+      { t: 'Reportes e indicadores de la operación' },
+      { t: 'Registro de empleados, horarios, turnos y asistencia', extra: true },
+    ],
+  },
+  {
+    id: 'mostrador',
+    nombre: 'Mostrador',
+    pregunta: '«Es sábado, hay fila y se cayó el internet.»',
+    caja: { x: 38, y: 244, w: 160, h: 106 },
+    items: [
+      { t: 'Punto de venta que sigue cobrando sin conexión' },
+      { t: 'Corte de caja y arqueo automáticos al cerrar' },
+      { t: 'Ticket por WhatsApp' },
+      { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
+      { t: 'Corte ciego: el cajero no sabe cuánto debe haber', plan: 'Fideliza' },
+    ],
+  },
+  {
+    id: 'linea',
+    nombre: 'En línea',
+    fuera: true,
+    pregunta: '«Vendí en línea algo que ya no estaba en el piso.»',
+    caja: { x: 378, y: 120, w: 66, h: 100 },
+    items: [
+      { t: 'Tienda en línea con el mismo inventario del mostrador' },
+      { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
+      { t: 'Un solo inventario para todos los canales' },
+      { t: 'Perfil de la clienta con lo que compró y en qué talla', plan: 'Fideliza' },
+      { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
+    ],
+  },
+];
+
+export const entradasModa = [
+  { titulo: 'Tengo una tienda', texto: 'Mostrador, apartados, tienda en línea y corte de caja. Es lo que necesita quien vende en un solo lugar.', plan: 'Plan Vende' },
+  { titulo: 'Tengo varias', texto: 'Se suma la existencia por talla en cada tienda, los traspasos, las compras y quién vendió qué.', plan: 'Plan Controla' },
+  { titulo: 'Quiero que regresen', texto: 'Se suma el monedero, las campañas por WhatsApp y el perfil de la clienta con su talla.', plan: 'Plan Fideliza' },
+];

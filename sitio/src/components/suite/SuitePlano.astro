@@ -1,0 +1,262 @@
+---
+/**
+ * SuitePlano — la operación completa, contada como el plano de la tienda.
+ *
+ * Sustituye al círculo de las cuatro etapas. El problema del círculo no era
+ * el contenido: era que seguía siendo una lista de funciones agrupada, y una
+ * lista de cuarenta funciones se hojea y se olvida.
+ *
+ * Un plano se recorre. El dueño reconoce su propia tienda, va a la zona que le
+ * duele, y la cobertura completa se percibe sin tener que enumerarla. Cada zona
+ * abre con la pregunta que él ya se hizo —«es sábado, hay fila y se cayó el
+ * internet»— así la función llega como respuesta y no como característica.
+ *
+ * Dos reglas que no hay que romper:
+ *
+ * · Lo que se cobra aparte se marca aparte, en la misma lista y no escondido.
+ *   Si el cliente lo descubre en la llamada, la llamada se enfría.
+ * · El plano cambia con el giro; la estructura no. En una zapatería las zonas
+ *   son mostrador, probador con su banco, bodega de cajas y trastienda; en una
+ *   joyería, vitrina, mostrador, taller y caja fuerte.
+ */
+export interface ZonaPlano {
+  id: string;
+  /** El nombre de la zona, como se le dice en el piso. */
+  nombre: string;
+  /** Dentro o fuera del muro de la tienda. */
+  fuera?: boolean;
+  /** La pregunta que el dueño ya se hizo. */
+  pregunta: string;
+  /** Rectángulo dentro del plano, en el sistema de 460 × 400. */
+  caja: { x: number; y: number; w: number; h: number };
+  /** Cada función, con su escalón: incluido, desde un plan, o complemento. */
+  items: { t: string; plan?: string; extra?: boolean }[];
+}
+export interface EntradaPlano { titulo: string; texto: string; plan: string }
+interface Props {
+  eyebrow?: string;
+  titulo: string;
+  sub?: string;
+  /** Cómo se llama la tienda de este giro. */
+  rotuloDentro?: string;
+  zonas: ZonaPlano[];
+  entradasRot?: string;
+  entradas: EntradaPlano[];
+}
+const {
+  eyebrow = 'Toda la operación, en un solo lugar',
+  titulo,
+  sub,
+  rotuloDentro = 'Tu tienda',
+  zonas,
+  entradasRot = 'Y no hace falta encender todo el primer día',
+  entradas,
+} = Astro.props;
+---
+
+<section class="pn">
+  <div class="pn-inner">
+
+    <header class="pn-head">
+      <p class="pn-eyebrow">{eyebrow}</p>
+      <h2>{titulo}</h2>
+      {sub && <p class="pn-sub">{sub}</p>}
+    </header>
+
+    <div class="pn-maq">
+      <!-- El plano -->
+      <div class="pn-plano">
+        <svg viewBox="0 0 460 400" role="img" aria-label={`Plano con ${zonas.length} zonas: ${zonas.map((z) => z.nombre).join(', ')}`}>
+          <rect class="pn-muro" x="20" y="60" width="330" height="310" rx="10"></rect>
+          <text class="pn-rot" x="20" y="50">{rotuloDentro}</text>
+          {zonas.some((z) => z.fuera) && <text class="pn-rot" x="378" y="50">Fuera</text>}
+
+          {zonas.some((z) => z.fuera) && <path class="pn-liga" d="M350 200 C 372 200, 372 170, 392 170"></path>}
+
+          {zonas.map((z, i) => (
+            <g class:list={['pn-z', { on: i === 0 }]} data-zona={z.id} tabindex="0" role="button" aria-label={z.nombre}>
+              <rect class="pn-sup" x={z.caja.x} y={z.caja.y} width={z.caja.w} height={z.caja.h} rx="8"></rect>
+              <circle class="pn-pt" cx={z.caja.x + 14} cy={z.caja.y + 16} r="3"></circle>
+              <text x={z.caja.x + 24} y={z.caja.y + 20}>{z.nombre}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      <!-- Lo que pasa en la zona -->
+      <div class="pn-det">
+        {zonas.map((z, i) => (
+          <div class:list={['pn-hoja', { on: i === 0 }]} data-hoja={z.id}>
+            <p class="pn-det-et">{z.fuera ? 'Fuera de la tienda' : 'Dentro de la tienda'}</p>
+            <h3>{z.nombre}</h3>
+            <p class="pn-q">{z.pregunta}</p>
+            <ul>
+              {z.items.map((it) => (
+                <li class:list={{ extra: it.extra }}>
+                  <i></i>
+                  <span>{it.t}</span>
+                  <span class:list={['pn-tag', it.extra ? 'pn-tag-ext' : 'pn-tag-inc']}>
+                    {it.extra ? 'Se cotiza aparte' : it.plan ? `Desde ${it.plan}` : 'Incluido'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="pn-ent">
+      <p class="pn-ent-rot">{entradasRot}</p>
+      <div class="pn-ent-g">
+        {entradas.map((e) => (
+          <div class="pn-ent-c">
+            <b>{e.titulo}</b>
+            <span>{e.texto}</span>
+            <em>{e.plan}</em>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .pn {
+    background: var(--color-bg-primary, #FAFAF8);
+    color: var(--color-text-primary, #1a1a2e);
+    padding: clamp(72px, 9vw, 112px) 0;
+  }
+  .pn-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+  .pn-head { max-width: 720px; margin-bottom: clamp(34px, 4vw, 48px); }
+  .pn-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--color-primary, #4B7BE5); margin: 0 0 16px;
+  }
+  .pn-head h2 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: var(--color-text-primary, #1a1a2e);
+  }
+  .pn-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: var(--color-text-secondary, #4A4A4A); }
+
+  .pn-maq { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+
+  /* ── El plano ── */
+  .pn-plano {
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
+    border-radius: var(--radius-2xl, 24px); padding: 22px;
+  }
+  .pn-plano svg { width: 100%; height: auto; display: block; }
+  .pn-muro { fill: none; stroke: var(--color-text-primary, #1a1a2e); stroke-width: 2; opacity: .45; }
+  .pn-rot {
+    font-family: var(--font-body), system-ui, sans-serif; font-size: 9px; letter-spacing: .1em;
+    fill: var(--color-text-tertiary, #8C8C8C); text-transform: uppercase;
+  }
+  .pn-liga {
+    stroke: var(--color-primary, #4B7BE5); stroke-width: 1.5; stroke-dasharray: 4 4;
+    fill: none; opacity: .5;
+  }
+
+  .pn-z { cursor: pointer; }
+  .pn-z:focus-visible { outline: 2px solid var(--color-primary, #4B7BE5); outline-offset: 3px; }
+  .pn-sup {
+    fill: var(--color-bg-primary, #FAFAF8); stroke: rgba(0,0,0,.1); stroke-width: 1.5;
+    transition: fill .25s ease, stroke .25s ease;
+  }
+  .pn-z:hover .pn-sup { fill: var(--azul-fondo); stroke: var(--azul-borde); }
+  .pn-z.on .pn-sup { fill: var(--azul-fondo); stroke: var(--color-primary, #4B7BE5); stroke-width: 2; }
+  .pn-z text {
+    font-family: var(--font-body), system-ui, sans-serif; font-size: 11px; font-weight: 700;
+    fill: var(--color-text-tertiary, #8C8C8C); pointer-events: none;
+  }
+  .pn-z.on text { fill: var(--azul-texto); }
+  .pn-pt { fill: var(--color-text-tertiary, #8C8C8C); transition: fill .25s ease; }
+  .pn-z.on .pn-pt { fill: var(--color-primary, #4B7BE5); }
+
+  /* ── La hoja de la zona ── */
+  .pn-det {
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
+    border-radius: var(--radius-2xl, 24px); padding: 26px 28px 28px; position: relative;
+  }
+  .pn-hoja { display: none; }
+  .pn-hoja.on { display: block; }
+  .pn-det-et {
+    margin: 0 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .pn-det h3 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    margin: 0 0 10px; font-size: clamp(1.25rem, 2.2vw, 1.625rem); font-weight: 700; letter-spacing: -.02em;
+  }
+  .pn-q {
+    margin: 0 0 22px; padding-left: 12px; border-left: 3px solid var(--color-primary, #4B7BE5);
+    font-size: 0.9375rem; color: var(--color-text-secondary, #4A4A4A);
+  }
+  .pn-det ul { list-style: none; margin: 0; padding: 0; }
+  .pn-det li {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: start;
+    padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 0.9375rem;
+  }
+  .pn-det li:last-child { border-bottom: none; }
+  .pn-det li i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok-texto); margin-top: 8px; }
+  .pn-det li.extra i { background: var(--color-accent, #E8A838); }
+  .pn-tag {
+    font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: var(--radius-full, 50px); white-space: nowrap; margin-top: 2px;
+  }
+  .pn-tag-inc { background: var(--ok-fondo); color: var(--ok-texto); }
+  .pn-tag-ext { background: var(--aviso-fondo); color: var(--aviso-texto); }
+
+  /* ── Por dónde empezar ── */
+  .pn-ent { margin-top: 34px; padding-top: 30px; border-top: 1px solid rgba(0,0,0,.09); }
+  .pn-ent-rot {
+    margin: 0 0 18px; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .pn-ent-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pn-ent-c {
+    background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.08);
+    border-radius: var(--radius-lg, 16px); padding: 20px 22px;
+  }
+  .pn-ent-c b {
+    display: block; font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 16px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px;
+  }
+  .pn-ent-c span { display: block; font-size: 13.5px; color: var(--color-text-secondary, #4A4A4A); line-height: 1.55; }
+  .pn-ent-c em {
+    display: block; margin-top: 10px; font-size: 11.5px; font-style: normal; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--azul-texto);
+  }
+
+  @media (max-width: 900px) {
+    .pn-maq { grid-template-columns: 1fr; }
+    .pn-ent-g { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pn-sup, .pn-pt { transition: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector<HTMLElement>('.pn');
+    if (bloque) {
+      const zonas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-zona]'));
+      const hojas = Array.from(bloque.querySelectorAll<HTMLElement>('[data-hoja]'));
+      const abrir = (id: string) => {
+        zonas.forEach((z) => z.classList.toggle('on', z.dataset.zona === id));
+        hojas.forEach((h) => h.classList.toggle('on', h.dataset.hoja === id));
+      };
+      zonas.forEach((z) => {
+        z.addEventListener('click', () => abrir(z.dataset.zona || ''));
+        z.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(z.dataset.zona || ''); }
+        });
+      });
+    }
+  }
+</script>
