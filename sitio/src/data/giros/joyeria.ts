@@ -39,9 +39,9 @@ export const seccionesJoyeria: SuiteSeccion[] = [
   {
     id: 'fino',
     tag: 'Precio',
-    titulo: 'El precio no lo pone el mercado: lo pones tú',
+    titulo: 'Lo que se cobra es el metal, no la báscula',
     texto:
-      'El oro se mueve todos los días y tú no reprecias todos los días. Fijas tu precio del gramo de fino —tu colchón— por arriba del spot, y lo mueves cuando tú decides. El spot solo te avisa; nunca te cambia los precios solo.',
+      'Una pieza pesa una cosa y cobra otra. Del peso bruto se descuenta la piedra para llegar al neto, y del neto sale el fino según su ley: la circonia no se cobra a precio de oro y el diamante se cotiza aparte, no al gramo.',
     bullets: [
       'Tu colchón por metal y por pureza, con su historial de cuándo y quién lo movió',
       'El spot de oro y plata a la vista, como alerta y no como automatismo',
@@ -123,33 +123,6 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     </div>`,
   },
   {
-    id: 'lfpiorpi',
-    tag: 'Actividad vulnerable',
-    titulo: 'Te avisa antes de cobrar, no después',
-    texto:
-      'La joyería es actividad vulnerable y los umbrales van en UMA, no en pesos fijos. Nadie en el mostrador se sabe de memoria a partir de cuánto hay que identificar al cliente, ni si ese mismo señor ya acumuló en los últimos seis meses.',
-    bullets: [
-      'Umbrales en UMA configurables: identificación, aviso y tope de efectivo',
-      'Evaluación de la venta antes de cobrarla, con la acumulación del cliente a 6 meses',
-      'Tablero de detección para revisar lo que se acercó a los umbrales',
-    ],
-    visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Antes de cobrar · venta en efectivo</p>
-      ${[['Identificación del cliente','805 UMA','se pide identificación','#B45309'],['Aviso a la autoridad','1,605 UMA','no alcanza el umbral','#047857'],['Tope de efectivo','3,210 UMA','dentro del límite','#047857']]
-        .map(([a,b,c,col]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;"></span>
-          <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${a}</div>
-          <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${b}</div></div>
-          <span style="font-size:11px;font-weight:700;color:${col};">${c}</span>
-        </div>`).join('')}
-      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:11px;padding:11px 13px;margin-top:4px;">
-        <div style="font-size:11.5px;font-weight:800;color:#9A3412;">Este cliente ya acumuló en los últimos 6 meses</div>
-        <div style="font-size:11.5px;color:#9A3412;margin-top:3px;">Tercera compra del semestre. Súmalas antes de decidir.</div>
-      </div>
-      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">Los umbrales van en UMA porque el valor en pesos cambia cada febrero</p>
-    </div>`,
-  },
-  {
     id: 'apartados',
     tag: 'Apartados',
     titulo: 'El anillo apartado a precio de hace tres meses',
@@ -189,7 +162,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Anillo solitario 14K · 3.2 g</p>
-      ${[['Centro','Matriz',2,true],['Plaza','a 15 min',1,false],['Galerías','a 40 min',0,false]]
+      ${[['Centro','Matriz',2,true],['Plaza','a 15 min',1,false],['Galerías','a 40 min',0,false],['Norte','a 25 min',0,false]]
         .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#C9A227':'#EEF1F5'};background:${aqui?'#FFFBEF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div></div>
@@ -223,11 +196,11 @@ export const cortinaJoyeria = {
 };
 
 export const sucursalesJoyeria = [
-  { nombre: 'Matriz Centro', venta: '$684,200', llena: 100, ticket: '$8,940', margen: '31%', delta: '+6%' },
+  { nombre: 'Centro', venta: '$684,200', llena: 100, ticket: '$8,940', margen: '31%', delta: '+6%' },
   { nombre: 'Plaza', venta: '$521,700', llena: 76, ticket: '$7,120', margen: '29%', delta: '+2%' },
   { nombre: 'Galerías', venta: '$438,900', llena: 64, ticket: '$6,480', margen: '27%', delta: '+1%' },
   {
-    nombre: 'Sucursal Norte', venta: '$214,300', llena: 31, ticket: '$4,210', margen: '19%', delta: '−14%',
+    nombre: 'Norte', venta: '$214,300', llena: 31, ticket: '$4,210', margen: '19%', delta: '−14%',
     alerta: true,
     nota: 'Está vendiendo con el colchón viejo: nadie repreció ahí después de que el oro subió, y el margen se comió ocho puntos.',
   },
@@ -300,34 +273,34 @@ export const documentosJoyeria = {
 export const casosJoyeria = [
   {
     id: 'pesar',
-    titulo: 'Entra un cliente y pregunta cuánto cuesta esa cadena',
+    titulo: 'Diez de mayo: la vitrina se vacía en tres días',
     texto:
       'La pieza se pesa y el precio sale con tu colchón del gramo y el factor de su quilataje — el mismo para toda la casa, sin calculadora ni memoria. Y el peso que entra a la cuenta es el neto: la piedra no se cobra dos veces.',
-    remate: 'El precio no lo decide quien está en el mostrador ese día.',
+    remate: 'Del 6 al 10 de mayo se hace hasta la sexta parte del año. El precio no lo puede decidir quien esté en el mostrador ese día.',
     img: '/images/caso-joy-pesar.webp',
     alt: 'Joyera pesando una cadena de oro en una báscula sobre el mostrador',
   },
   {
     id: 'etiquetar',
-    titulo: 'El oro subió y hay que reetiquetar cientos de piezas',
+    titulo: 'Subió el oro en plena temporada y hay que reetiquetar',
     texto:
       'Antes de aplicar el precio nuevo ves la simulación completa: qué sube, cuánto, qué queda bajo tu margen mínimo y cuánto dinero está en juego. Se imprime solo lo que cambió, con su código de barras.',
-    remate: 'Bajar precios no pasa solo: exige que tú lo autorices.',
+    remate: 'Repreciar un lunes de abril y repreciar uno de junio no son la misma decisión: entre los dos hay una quinta parte del año.',
     img: '/images/caso-joy-etiquetar.webp',
     alt: 'Empleada colocando etiquetas de precio a anillos de oro sobre una charola',
   },
   {
     id: 'apartado',
-    titulo: 'El anillo apartado en marzo que se liquida en agosto',
+    titulo: 'Las argollas que se apartan en enero para la boda de agosto',
     texto:
-      'El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
+      'En joyería el apartado es largo —de tres a seis meses, abonado por quincena— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
     remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
     img: '/images/caso-joy-apartado.webp',
     alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
   },
   {
     id: 'vitrina',
-    titulo: 'Cerrar y contar la vitrina sin que se vaya la noche',
+    titulo: 'Se acabó el Buen Fin: contar la vitrina sin que se vaya la noche',
     texto:
       'La charola se cuenta desde el celular, sin cerrar y sin avisar. Si falta una pieza te enteras ese día, con el nombre de quién la movió por última vez.',
     remate: 'Aquí una pieza que falta no es una merma: es el ticket promedio de la semana.',
@@ -444,7 +417,7 @@ export const planoJoyeria = [
     id: 'caja',
     nombre: 'Bóveda y trastienda',
     ambito: 'Al cerrar y al abrir',
-    simbolo: 'anaqueles',
+    simbolo: 'boveda',
     foto: '/images/plano-joy-caja.webp',
     alt: 'Caja fuerte de piso abierta con charolas de terciopelo en sus anaqueles',
     pie: 'La única hora del día en que el inventario entero pasa por las manos de alguien.',

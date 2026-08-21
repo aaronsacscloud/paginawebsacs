@@ -40,7 +40,7 @@ export interface ZonaPlano {
   /** Rectángulo dentro del plano, en el sistema de 660 × 430. */
   caja: { x: number; y: number; w: number; h: number };
   /** Qué mobiliario se dibuja dentro. */
-  simbolo?: 'rieles' | 'probadores' | 'anaqueles' | 'mostrador' | 'paquetes' | 'exhibidores' | 'bancas' | 'vitrinas' | 'banco';
+  simbolo?: 'rieles' | 'probadores' | 'anaqueles' | 'mostrador' | 'paquetes' | 'exhibidores' | 'bancas' | 'vitrinas' | 'banco' | 'boveda';
   /** La fotografía de la zona. */
   foto?: string;
   alt?: string;
@@ -105,12 +105,12 @@ function mobiliario(z: ZonaPlano): string {
     case 'banco': {
       // El banco de joyero con su media luna, la pulidora contra el muro y el
       // banquito. Nada de <path> aquí: el compilador de Astro se atraganta.
-      const med = Math.round(w * 0.42);
-      let s = R(x + 18, y + 40, w - 60, 28);
-      s += `<circle class="pn-mob" cx="${x + med}" cy="${y + 68}" r="15" fill="none" opacity=".5"/>`;
-      s += `<circle class="pn-mob" cx="${x + 34}" cy="${y + 92}" r="8" fill="none"/>`;
-      s += `<rect class="pn-mob-t" x="${x + w - 30}" y="${y + 36}" width="14" height="${h - 62}"/>`;
-      s += R(x + 62, y + h - 32, 40, 18);
+      // El banco contra el muro, con su escotadura marcada; la pulidora en el
+      // muro opuesto y el banquito enfrente. Nada encimado.
+      let s = R(x + 16, y + 34, w - 62, 22);
+      s += `<path class="pn-mob" d="M${x + 40} ${y + 56} q 11 12 22 0" fill="none"/>`;
+      s += `<circle class="pn-mob" cx="${x + 51}" cy="${y + 74}" r="7" fill="none"/>`;
+      s += `<rect class="pn-mob-t" x="${x + w - 34}" y="${y + 34}" width="16" height="${h - 60}"/>`;
       return s;
     }
     case 'exhibidores': {
@@ -146,6 +146,16 @@ function mobiliario(z: ZonaPlano): string {
         s += R(cx + 6, y + h - 26, cw - 14, 9);
       }
       s += L(x + 10 + 3 * cw, y + 26, x + 10 + 3 * cw, y + h - 10);
+      return s;
+    }
+    case 'boveda': {
+      // La caja fuerte con su puerta abierta, la anaquelería y el escritorio.
+      let s = `<rect class="pn-mob-f" x="${x + 18}" y="${y + 38}" width="46" height="46" rx="2"/>`;
+      s += `<path class="pn-mob" d="M${x + 64} ${y + 38} a 46 46 0 0 1 -46 46" fill="none" opacity=".45"/>`;
+      s += `<line class="pn-mob-f" x1="${x + 64}" y1="${y + 38}" x2="${x + 64}" y2="${y + 84}"/>`;
+      s += `<rect class="pn-mob-t" x="${x + 84}" y="${y + 34}" width="${w - 104}" height="14"/>`;
+      s += R(x + 84, y + h - 44, 52, 26);
+      s += `<circle class="pn-mob" cx="${x + 152}" cy="${y + h - 31}" r="7" fill="none"/>`;
       return s;
     }
     case 'anaqueles': {
@@ -225,8 +235,9 @@ const primera = clave[0];
             <pattern id="pnPoche" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
               <line x1="0" y1="0" x2="0" y2="4" stroke="#1a1a2e" stroke-width="2.2" opacity=".32"></line>
             </pattern>
-            <pattern id="pnTrama" width="7" height="7" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="7" x2="7" y2="0" stroke="#1a1a2e" stroke-width=".6" opacity=".45"></line>
+            <pattern id="pnTrama" width="6" height="6" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="1.5" x2="6" y2="1.5" stroke="#1a1a2e" stroke-width=".7" opacity=".5"></line>
+              <line x1="0" y1="4.5" x2="6" y2="4.5" stroke="#1a1a2e" stroke-width=".7" opacity=".5"></line>
             </pattern>
             <pattern id="pnRetic" width="26" height="26" patternUnits="userSpaceOnUse">
               <path d="M26 0 H0 V26" fill="none" stroke="#1a1a2e" stroke-width=".5" opacity=".07"></path>
@@ -293,7 +304,7 @@ const primera = clave[0];
             Mobiliario
           </li>
           <li>
-            <svg viewBox="0 0 18 12" aria-hidden="true"><rect x="1" y="2.5" width="16" height="7" fill="url(#pnTrama)" stroke="#1a1a2e" stroke-width=".8" opacity=".6"></rect></svg>
+            <svg viewBox="0 0 18 12" aria-hidden="true"><rect x="1" y="2.5" width="16" height="7" fill="url(#pnTrama)" stroke="#1a1a2e" stroke-width=".8" opacity=".75"></rect></svg>
             Anaquelería
           </li>
           <li>

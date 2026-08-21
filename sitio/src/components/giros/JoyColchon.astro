@@ -55,6 +55,14 @@ const {
 } = Astro.props;
 
 const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
+
+/* El bloque abre con el colchón inicial ya aplicado: si el script no corre, lo
+   que se publica tiene que ser correcto, no ceros. */
+const pesosMX = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const GRAMOS_PIEZA_SSR = 4.2;
+const totalPiezasSSR = metales.reduce((a, m) => a + m.piezas, 0);
+const juegoSSR = metales.reduce((a, m) => a + colchonInicial * m.factor * m.piezas * GRAMOS_PIEZA_SSR, 0);
+const sepSSR = ((colchonInicial - spot) / spot) * 100;
 ---
 
 <section class="jc" data-metales={JSON.stringify(metales)} data-spot={String(spot)} data-piezas={String(totalPiezas)}>
@@ -89,7 +97,7 @@ const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
           aria-label="Precio de tu colchón por gramo de fino"
         />
         <p class="jc-separacion">
-          <b id="jcSep">+11%</b> sobre el spot
+          <b id="jcSep">{(sepSSR >= 0 ? "+" : "") + sepSSR.toFixed(1) + "%"}</b> sobre el spot
         </p>
 
         <!-- El factor por quilataje: lo que un genérico no entiende -->
@@ -101,7 +109,7 @@ const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
                 <b>{m.nombre}</b>
                 <span>factor {m.factor} · teórico {m.teorico}</span>
               </div>
-              <span class="jc-metal-precio" id={`jm-${i}`}>$0</span>
+              <span class="jc-metal-precio" id={`jm-${i}`}>{pesosMX(colchonInicial * m.factor)} /g</span>
             </div>
           ))}
           <p class="jc-nota-factor">
@@ -116,13 +124,13 @@ const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
         <p class="jc-efecto-rot">Si aplicas este colchón</p>
 
         <div class="jc-fila">
-          <b id="jcPiezas">0</b>
+          <b id="jcPiezas">{totalPiezasSSR.toLocaleString("es-MX")}</b>
           <span>piezas a repreciar y reetiquetar</span>
         </div>
 
         <div class="jc-juego">
           <span>Dinero en juego</span>
-          <b id="jcJuego">$0</b>
+          <b id="jcJuego">{pesosMX(juegoSSR)}</b>
         </div>
 
         <div class="jc-congelado">
@@ -340,8 +348,12 @@ const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
         if (elJuego) elJuego.textContent = pesos(juego);
 
         if (cta) {
+          // Lo que cambia al mover el colchón, no el valor del inventario: un
+          // "estimado" que la página de agenda lee como dinero por ganar tiene
+          // que ser el efecto, no el total.
+          const base = metales.reduce((a, m) => a + spot * m.factor * m.piezas * GRAMOS_PIEZA, 0);
           const u = new URL(cta.href, location.origin);
-          u.searchParams.set('estimado', String(Math.round(juego)));
+          u.searchParams.set('estimado', String(Math.max(0, Math.round(juego - base))));
           cta.href = u.pathname + u.search;
         }
       };
