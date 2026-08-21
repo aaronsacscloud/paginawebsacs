@@ -185,7 +185,12 @@ export default function PagosTab() {
   if (loading && !summary) return <Cargando texto="Cargando pagos…" />;
 
   return (
-    <div>
+    // ── El mismo contenedor que Cotizaciones ──
+    // Pagos se renderizaba a sangre: sin menú, el título quedaba pegado al
+    // borde izquierdo y la tabla llegaba hasta la orilla derecha. El resto del
+    // CRM usa este marco (máximo 1280, centrado, 24 de aire), y por eso las
+    // pantallas se veían de dos anchos distintos según qué pestaña abrieras.
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, width: '100%', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0 }}>Pagos</h2>
