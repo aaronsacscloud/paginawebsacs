@@ -61,6 +61,22 @@ export async function cuentasDe(companyId: string, principal?: string | null): P
 }
 
 /** Mapa company_id → cuentas, para los crons (una sola query, no N). */
+/** Dirección inversa: una cuenta SACS → su company_id (o null). El índice
+ *  único uq_csa_cuenta garantiza que una cuenta pertenece a un solo cliente.
+ *  Fallback a companies.sacs_account por si la tabla nueva aún no la tiene. */
+export async function companyIdDeCuenta(cuenta: string): Promise<string | null> {
+  const c = normCuenta(cuenta);
+  if (!c) return null;
+  try {
+    const { data } = await supabase.from('company_sacs_accounts').select('company_id').eq('cuenta', c).maybeSingle();
+    if (data?.company_id) return data.company_id;
+  } catch { /* tabla ausente → fallback */ }
+  try {
+    const { data } = await supabase.from('companies').select('id').eq('sacs_account', c).maybeSingle();
+    return data?.id || null;
+  } catch { return null; }
+}
+
 export async function cuentasPorEmpresa(companyIds: string[]): Promise<Record<string, string[]>> {
   const out: Record<string, string[]> = {};
   if (!companyIds.length) return out;

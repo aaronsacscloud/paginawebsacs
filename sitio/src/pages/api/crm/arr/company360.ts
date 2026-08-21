@@ -71,8 +71,7 @@ export const GET: APIRoute = async ({ url }) => {
     // merece su propio ícono y no quedarse como un engrane más.
     cotizacion_vista: '👀',
     // El cierre ya no es una sola línea: cada paso se ve con su propio ícono.
-    cliente_convertido: '✨', suscripcion_creada: '📄', pago_unico_creado: '💵',
-  };
+    cliente_convertido: '✨', suscripcion_creada: '📄', pago_unico_creado: '💵', ticket_abierto: '🎫', ticket_resuelto: '✅' };
   // Anti-duplicados: las reuniones vienen de `bookings` (fila más rica, con
   // estado y Meet) y las cotizaciones de `quotes` → se OMITEN las activities
   // espejo (demo_* y tipo 'cotizacion') para no mostrar el mismo evento 2 veces.

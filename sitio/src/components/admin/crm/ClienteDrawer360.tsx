@@ -6,6 +6,7 @@ import { CamposFicha } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import TabOutbound from './outbound/TabOutbound';
+import TabSoporte from './soporte/TabSoporte';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
@@ -97,7 +98,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'act' | 'outbound'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -112,6 +113,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   // sin que nadie vaya a buscarlo.
   const [alertasReu, setAlertasReu] = useState<any[]>([]);
   const [vencidasMej, setVencidasMej] = useState<any[]>([]);
+  const [ticketsAbiertos, setTicketsAbiertos] = useState(0);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nombreEd, setNombreEd] = useState('');
   const isMobile = useIsMobile();
@@ -132,6 +134,9 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
       .then(r => r.json()).then(j => { if (alive) setAlertasReu(j.alertas || []); }).catch(() => {});
     fetch('/api/crm/mejoras?company_id=' + companyId)
       .then(r => r.json()).then(j => { if (alive) setVencidasMej(j.vencidas || []); }).catch(() => {});
+    setTicketsAbiertos(0);
+    fetch('/api/crm/soporte/por-cliente?company_id=' + companyId)
+      .then(r => r.json()).then(j => { if (alive) setTicketsAbiertos(j.resumen?.abiertos || 0); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -218,6 +223,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
                 <button style={D.tab(tab === 'outbound')} onClick={() => irA('outbound')}>Outbound</button>
+                <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
+                  Soporte
+                  {ticketsAbiertos > 0 && <span title="Tickets abiertos" style={{ display: 'inline-block', minWidth: 16, textAlign: 'center', fontSize: '0.6rem', fontWeight: 800, background: '#E9B949', color: '#fff', borderRadius: 99, padding: '1px 5px', marginLeft: 5, verticalAlign: 'middle' }}>{ticketsAbiertos}</span>}
+                </button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
@@ -251,6 +260,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
               {tab === 'outbound' && <TabOutbound companyId={companyId} />}
+              {tab === 'soporte' && <TabSoporte companyId={companyId} />}
             </div>
           </>
         )}
