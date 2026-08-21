@@ -195,7 +195,14 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
   .vr-celda span { font-size: 10px; font-weight: 700; color: var(--ok-texto); }
   .vr-celda.bajo span { color: var(--aviso-texto); }
   .vr-celda.cero { background: #F4F6F8; border-style: dashed; border-color: #D4D4D4; }
-  .vr-celda.cero img { opacity: .085; filter: grayscale(1); }
+  .vr-celda.cero img { visibility: hidden; }
+  /* El hueco se dibuja como hueco: recuadro punteado y una diagonal tenue.
+     Con el producto desvanecido dependía del color de la prenda para leerse. */
+  .vr-celda.cero {
+    position: relative;
+    background-image: repeating-linear-gradient(45deg,
+      rgba(0,0,0,.035) 0 6px, transparent 6px 12px);
+  }
   .vr-celda.cero b { color: var(--color-text-tertiary, #8C8C8C); }
   .vr-celda.cero span { color: var(--alerta-texto); }
 

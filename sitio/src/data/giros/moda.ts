@@ -150,8 +150,8 @@ export const casosModa = [
     texto:
       'La segunda entrega llega cuando la primera sigue colgada. Se recibe contra la orden, talla por talla y color por color, y el reparto a tiendas sale del mismo documento en lugar de a ojo.',
     remate: 'La prenda que no está en piso no existe: no se ve, no se prueba y no se vende — pero sí se marca en julio.',
-    img: '/images/caso-moda-temporada.webp',
-    alt: 'Compradora y proveedor revisando muestras y una orden impresa sobre una mesa con telas',
+    img: '/images/caso-moda-entrega.webp',
+    alt: 'Empleada acomodando prendas dobladas en los anaqueles del almacén, junto a un burro de ropa colgada',
   },
   {
     id: 'evento',
@@ -159,8 +159,8 @@ export const casosModa = [
     texto:
       'El 10 de mayo o el Buen Fin se vende en tres días lo de tres semanas. La caja cobra aunque se caiga el internet, y la vendedora ve desde el probador si esa talla está en otra tienda antes de que la clienta se vaya.',
     remate: 'Al lunes te enteras de qué talla se acabó, cuando ya no hay a quién pedírsela.',
-    img: '/images/caso-moda-probador.webp',
-    alt: 'Vendedora con prendas en el brazo atendiendo a una clienta que sale del probador',
+    img: '/images/caso-moda-evento.webp',
+    alt: 'Boutique llena un fin de semana, con clientas recorriendo los burros y dos esperando en la caja',
   },
   {
     id: 'corazon',
@@ -168,8 +168,8 @@ export const casosModa = [
     texto:
       'Va en 60% de vendido y parece un éxito, pero lo que queda son XS y XXL. El vendido se lee por talla y por color, no por estilo, y las tallas sueltas de cuatro tiendas se juntan para rearmar la curva.',
     remate: 'Un estilo sin su corazón de talla se muere en dos semanas, y el reporte lo mostraba como una sola línea.',
-    img: '/images/caso-moda-rebaja.webp',
-    alt: 'Dos empleadas ordenando un burro de ropa por talla y colocando etiquetas de precio',
+    img: '/images/caso-moda-corazon.webp',
+    alt: 'Dos empleadas revisando prenda por prenda un burro de ropa, buscando qué tallas quedan',
   },
   {
     id: 'cambio',
@@ -177,8 +177,8 @@ export const casosModa = [
     texto:
       'El cambio se hace aunque la prenda venga de otra sucursal: la diferencia se cobra o se abona al monedero, y queda registrado quién lo autorizó.',
     remate: 'Una de cada seis prendas vuelve, y casi siempre por talla. Ahí se decide si haces una segunda venta o devuelves el dinero.',
-    img: '/images/caso-moda-consigna.webp',
-    alt: 'Empleada revisando prendas colgadas en un burro contra una lista impresa en el almacén',
+    img: '/images/caso-moda-cambio.webp',
+    alt: 'Vendedora mostrando dos prendas colgadas a una clienta junto a los probadores',
   },
 ];
 
