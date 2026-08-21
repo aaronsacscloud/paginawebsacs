@@ -34,6 +34,8 @@ interface Props {
   matriz: number[][];
   /** Qué es una casilla en este giro. */
   unidad?: string;
+  /** Qué se hace con cada una; cámbialo si la unidad no es un objeto físico. */
+  remate?: string;
   /** El género de la unidad, para que concuerden "distintos" y "agotados". */
   genero?: 'm' | 'f';
   leyendas?: [string, string, string];
@@ -47,6 +49,7 @@ const {
   filas,
   matriz,
   unidad = 'pares',
+  remate = 'que comprar, guardar y contar',
   genero = 'm',
   leyendas = ['Con existencia', 'Último', 'Agotado'],
 } = Astro.props;
@@ -105,7 +108,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
         </div>
 
         <p class="vr-conteo" data-conteo>
-          <b>{celdas}</b> {unidad} {distintas} que comprar, guardar y contar —
+          <b>{celdas}</b> {unidad} {distintas} {remate} —
           <b class="vr-rojo">{enCero}</b> ya {agotadas}
         </p>
 

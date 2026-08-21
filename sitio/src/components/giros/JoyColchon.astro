@@ -58,6 +58,7 @@ const totalPiezas = metales.reduce((a, m) => a + m.piezas, 0);
 
 /* El bloque abre con el colchón inicial ya aplicado: si el script no corre, lo
    que se publica tiene que ser correcto, no ceros. */
+const lectura = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 const pesosMX = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const GRAMOS_PIEZA_SSR = 4.2;
 const totalPiezasSSR = metales.reduce((a, m) => a + m.piezas, 0);
@@ -82,7 +83,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
       <!-- El control -->
       <div class="jc-mando">
         <div class="jc-spot">
-          <span>Spot del gramo de oro fino · lectura del 16 jul</span>
+          <span>Spot del gramo de oro fino · lectura del {lectura}</span>
           <b>${spot.toLocaleString('es-MX')}</b>
         </div>
 
@@ -92,7 +93,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
         </label>
         <input
           type="range" id="jcColchon" class="jc-rango"
-          min={spot} max={Math.round(spot * 1.45)} step="2"
+          min={spot} max={Math.round(spot * 1.45)} step="1"
           value={colchonInicial}
           aria-label="Precio de tu colchón por gramo de fino"
         />
@@ -354,6 +355,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
           const base = metales.reduce((a, m) => a + spot * m.factor * m.piezas * GRAMOS_PIEZA, 0);
           const u = new URL(cta.href, location.origin);
           u.searchParams.set('estimado', String(Math.max(0, Math.round(juego - base))));
+          u.searchParams.set('de', 'colchon');
           cta.href = u.pathname + u.search;
         }
       };

@@ -345,7 +345,7 @@ export const addons: Addon[] = [
   {
     id: 'suite-joyeria',
     name: 'Suite Joyería',
-    description: 'Precio por gramo con tu colchón del fino, factor por quilataje, costo histórico inmutable, repreciado masivo con simulación, apartados con precio congelado y órdenes de taller con peso de entrada.',
+    description: 'Para joyerías: el producto no tiene precio fijo, vale lo que pesa por lo que vale el gramo — y el gramo lo pones tú. Colchón del fino, factor por quilataje, costo histórico que no se mueve y repreciado masivo con simulación antes de aplicar.',
     icon: 'joyeria',
   },
   {

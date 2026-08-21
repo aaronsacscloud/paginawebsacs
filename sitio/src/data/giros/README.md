@@ -176,7 +176,7 @@ sobra — así se fueron seis mil píxeles de zapatería.
 | — | `SuiteSalida` | Cambiar el ritmo y rematar el tramo. **Dos por página**, ni una más | Se vuelve un eslogan de relleno |
 | 6 | `SuiteCifras` | Responder "¿y ustedes quiénes son?". **Cifras de la casa, no del producto** (ver *Verdad*) | Repite funciones que ya se explicaron |
 | 7 | `SuiteCasos` | Los momentos del año en que el giro gana o pierde el dinero | Los casos servirían para cualquier negocio |
-| 8 | `SuiteScroll` | El recorrido de funcionalidades. **Seis secciones, no catorce** | Repite lo que ya dijo el bloque propio |
+| 8 | `SuiteScroll` | El recorrido de funcionalidades. **Hasta seis secciones, no catorce** | Repite lo que ya dijo el bloque propio |
 | 9 | **Bloque propio** | El argumento que sólo existe en ese oficio. Es lo que cierra | Al cambiarle las etiquetas sirve para otro giro |
 | 10 | `SuitePlano` | Probar que la suite está COMPLETA sin que parezca una lista de cuarenta funciones | El visitante cree que le falta comprar módulos |
 | 11 | `SuiteProceso` | Matar el miedo a cambiarse: en tienda, por videollamada o solo | Suena a proyecto de meses |
@@ -507,12 +507,22 @@ Cómo se les habla:
     fundirlos.
   - **`SuiteDireccion` sólo existe en joyería** y no está en el orden de la
     sección 2. O sube al orden y entra también en moda y calzado, o sale.
-  - **`JoyColchon` conserva una paleta de grises cálidos propia** que no aparece
-    en ningún otro archivo del sitio. Los oros y los negros ya están en tokens;
-    los grises no.
+  - **Los dos bloques firma usan grises de temperaturas distintas** sobre el
+    mismo negro: `JoyColchon` cálidos (#A9A498, #8A8578, #C9C3B4) y `JoyGramo`
+    fríos (#A1A1AA, #D4D4D8). Los oros y los negros ya están en tokens; los
+    grises no, en ninguno de los dos.
   - **La matriz de medida × quilataje ilustra "un anillo de oro" con un
     solitario**, y la propia página jura que el diamante se cotiza aparte. Falta
     la foto de un anillo liso.
+  - **Dos objetos de las fotos no aguantan el 300%**: el cabezal del tripié de
+    `plano-joy-linea` (un tubo abierto que no sostiene nada) y la puerta de
+    `plano-joy-caja` (un panel liso con tornillos, sin manija ni cerrojos). A
+    tamaño de tarjeta pasan; en la próxima regeneración no. El alt ya bajó de
+    "caja fuerte de piso" a "armario blindado" para no afirmar lo que el pixel
+    no sostiene.
+  - **Las tres filas de quilataje usan el mismo archivo de anillo** y cada alt
+    lo llama de un quilataje distinto. 10K, 14K y 18K se distinguen a simple
+    vista en tono: hace falta un render de anillo liso en tres tonos.
   - **El spot va fechado a mano** ("16 jul"): envejece solo en una página cuyo
     argumento es que el gramo se mueve. O se genera la fecha o se quita.
 - **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento

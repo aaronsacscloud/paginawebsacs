@@ -144,7 +144,7 @@ const planes = [
             </p>
             <p class="pl-anual">{p.anual} si pagas anual</p>
 
-            {p.popular && <p class="pl-popular">El primero que trae la suite completa</p>}
+            {p.popular && comoSeVende === 'incluida' && <p class="pl-popular">El primero que trae la suite completa</p>}
             {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para la ${suite}`}</p>}
           </div>
 

@@ -35,6 +35,10 @@ export interface SuiteSeccion {
   visual: string;
 }
 
+/** La fecha de la última lectura del spot, generada en cada despliegue. */
+const hoy = new Date();
+const LECTURA = hoy.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+
 export const seccionesJoyeria: SuiteSeccion[] = [
   {
     id: 'fino',
@@ -51,7 +55,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
       <p style="${est.h}">Precio del fino · oro</p>
       <div style="display:flex;gap:10px;margin-bottom:14px;">
         <div style="flex:1;border:1px solid #EEF1F5;border-radius:11px;padding:12px;">
-          <div style="font-size:10.5px;color:#94A3B8;font-weight:700;">SPOT · 16 JUL 2026</div>
+          <div style="font-size:10.5px;color:#94A3B8;font-weight:700;">SPOT · ${LECTURA.toUpperCase()}</div>
           <div style="font-size:19px;font-weight:800;color:#64748B;font-variant-numeric:tabular-nums;">$2,678<span style="font-size:11px;font-weight:600;"> /g</span></div>
         </div>
         <div style="flex:1;border:1.5px solid #E8A838;background:#FFFBEF;border-radius:11px;padding:12px;">
@@ -293,7 +297,7 @@ export const casosJoyeria = [
     id: 'apartado',
     titulo: 'Las argollas que se apartan en enero para la boda de agosto',
     texto:
-      'En joyería el apartado es largo —medio año o más, abonado por quincena— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
+      'En joyería el apartado es largo —medio año o más, abonado cada mes— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
     remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
     img: '/images/caso-joy-apartado.webp',
     alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
@@ -374,7 +378,7 @@ export const planoJoyeria = [
       { t: 'Precio por gramo con tu colchón del fino, no con el spot', suite: true },
       { t: 'Peso bruto, neto y fino de cada pieza, con su ley', suite: true },
       { t: 'Existencia por modelo, metal y quilataje, en cada vitrina', plan: 'Controla' },
-      { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Automatiza' },
+      { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Controla' },
       { t: 'Repreciar cientos de piezas viendo antes qué cambia', suite: true },
     ],
   },
@@ -389,7 +393,7 @@ export const planoJoyeria = [
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Punto de venta que sigue cobrando sin conexión' },
-      { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Automatiza' },
+      { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Controla' },
       { t: 'Apartado con anticipo y abonos, con el precio congelado', suite: true },
       { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
       { t: 'Corte de caja y arqueo automáticos al cerrar' },
@@ -419,7 +423,7 @@ export const planoJoyeria = [
     ambito: 'Al cerrar y al abrir',
     simbolo: 'boveda',
     foto: '/images/plano-joy-caja.webp',
-    alt: 'Caja fuerte de piso abierta con charolas de terciopelo en sus anaqueles',
+    alt: 'Armario blindado abierto al cierre, con las charolas de terciopelo en sus anaqueles',
     pie: 'La única hora del día en que el inventario entero pasa por las manos de alguien.',
     pregunta: '«Ya guardamos. ¿Alguien contó la charola de compromiso o nomás la metimos?»',
     caja: { x: 68, y: 262, w: 216, h: 106 },
