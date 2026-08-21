@@ -74,8 +74,8 @@ export const seccionesZapateria: SuiteSeccion[] = [
       'El modelo se rompió: salieron los números de en medio y quedaron los extremos. Eso ya no se vende a precio — sale al saldero por menos de la mitad, sin importar el modelo. Con la existencia por número a la vista lo ves antes de que pase.',
     bullets: [
       'Existencia por número: los huecos de la corrida se ven en la cuadrícula',
-      'Cuánto ya vendiste de lo que compraste, modelo por modelo',
-      'Alertas de producto estancado y riesgo de quiebre (en Automatiza)',
+      'Cuánto llevas vendido de lo que compraste, modelo por modelo',
+      'Aviso del modelo que se quedó parado y del que está por quedarse sin números (en Automatiza)',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Modelos con la corrida rota</p>
@@ -234,7 +234,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
     texto:
       'Es la primera pregunta del dueño y casi ningún sistema la contesta. Cada modelo carga su marca y su proveedor, así que la venta, el margen y el desplazamiento se leen por marca — y la junta de compra deja de ser de memoria.',
     bullets: [
-      'Venta y margen por marca, por tienda y por temporada — y el desplazamiento de la temporada (en Automatiza)',
+      'Venta y margen por marca, por tienda y por temporada — y cuánto llevas vendido de lo que compraste (en Automatiza)',
       'Qué marca te deja el margen y cuál solo te deja inventario',
       'Cuánto le compras a cada proveedor al año, para negociar con el dato en la mano',
       'Y cuántos pares te regresa cada marca por defecto: la que te deja 47% y te devuelve tres de cada cien no te deja 47%',
@@ -272,7 +272,7 @@ export const seccionesZapateria: SuiteSeccion[] = [
             <b style="color:var(--color-text-secondary);font-variant-numeric:tabular-nums;">${v}</b>
           </div>`).join('')}
       </div>
-      <p style="margin:11px 0 0;font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">Desplazamiento (sell-through): de cada 100 pares que compré de la temporada, cuántos ya vendí.</p>
+      <p style="margin:11px 0 0;font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">Desplazamiento: de cada 100 pares que compré de la temporada, cuántos ya vendí.</p>
     </div>`,
   },
   {
@@ -551,7 +551,7 @@ export const etapasZapateria = [
       'Órdenes de compra y recepción por remesa',
       'Cuentas por pagar y control de gastos',
       'Costeo y utilidad por par, no solo por venta',
-      'Mermas, pérdidas y alertas de stock',
+      'Mermas, pérdidas y aviso de existencia baja',
     ],
   },
   {

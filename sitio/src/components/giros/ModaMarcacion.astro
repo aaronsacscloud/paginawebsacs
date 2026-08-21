@@ -41,7 +41,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 
     <div class="mk-hero">
       <div class="mk-hero-txt">
-        <span class="mk-eyebrow">El lunes de la marcación</span>
+        <span class="mk-eyebrow">El lunes de la rebaja</span>
         <h2 class="mk-titulo">En moda la utilidad no se decide cuando compras. Se decide cuando marcas.</h2>
         <p class="mk-tesis">
           Una prenda de diez semanas al 80% está perfecta. Una de cuatro al 12% ya está muerta.
@@ -50,8 +50,8 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
         <p class="mk-desc">
           {temporada}, semana {semana} de {semanasTotal}: quedan {semanasTotal - semana} semanas de
           venta a precio. Estas son {prendas.length} prendas de tu piso — {piezasPiso} piezas,
-          {' '}{mx(costoPiso)} a costo. Hoy se marcan todas parejo al 30%. Mira qué pasa si cada
-          una recibe la decisión que le toca.
+          {' '}{mx(costoPiso)} a costo. Hoy se les baja a todas parejo el 30%. Mira qué pasa si cada una recibe la
+          decisión que le toca.
         </p>
       </div>
 
@@ -59,7 +59,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
         <div class="mk-tabla">
           <div class="mk-tabla-cab">
             <span class="mk-modelo">Tu temporada, prenda por prenda</span>
-            <span class="mk-estado">Hoy se marcan todas parejo, al 30%</span>
+            <span class="mk-estado">Hoy se les baja a todas parejo, el 30%</span>
           </div>
 
           <div class="mk-filas">
@@ -71,7 +71,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
                 </div>
 
                 {p.marca > 0 && (
-                  <div class="mk-barra" title={`Va en ${p.va}%, su meta es ${p.marca}%`}>
+                  <div class="mk-barra" title={`Va en ${p.va}%, debería ir en ${p.marca}%`}>
                     <span class="mk-barra-riel">
                       <span class="mk-barra-va" style={`width:${p.va}%`}></span>
                       <span class="mk-barra-meta" style={`left:${p.marca}%`}></span>
@@ -79,20 +79,20 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
                     <span class="mk-barra-et">
                       <b>{p.va}%</b> vendido
                       <i>{p.tono === 'esqueleto'
-                        ? 'arriba de su meta, pero sin corazón de talla'
+                        ? 'arriba de donde debería, pero ya sin tallas del centro'
                         : p.va >= p.marca
-                          ? `${p.va - p.marca} puntos arriba de su meta`
-                          : `${p.marca - p.va} puntos abajo de su meta`}</i>
+                          ? `${p.va - p.marca} puntos arriba de donde debería`
+                          : `${p.marca - p.va} puntos abajo de donde debería`}</i>
                     </span>
                   </div>
                 )}
 
                 <div class="mk-medidas">
-                  <span><i>Va en</i><b>{p.marca > 0 ? `${p.va}%` : '—'}</b></span>
-                  <span><i>Su meta</i><b>{p.marca > 0 ? `${p.marca}%` : 'Básico'}</b></span>
+                  <span><i>¿En cuánto va?</i><b>{p.marca > 0 ? `${p.va}%` : '—'}</b></span>
+                  <span><i>Debería ir en</i><b>{p.marca > 0 ? `${p.marca}%` : 'Básico'}</b></span>
                   <span><i>En piso</i><b>{p.piso}</b></span>
                   <span><i>Precio</i><b>{mx(p.precio)}</b></span>
-                  {p.ritmo > 0 && <span><i>Sale</i><b>{p.ritmo}/sem</b></span>}
+                  {p.ritmo > 0 && <span><i>Ritmo</i><b>{p.ritmo}/sem</b></span>}
                   <span class="mk-talla"><i>Talla</i><b>{p.talla}</b></span>
                 </div>
 
@@ -153,7 +153,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
       </div>
 
       <div class="mk-palancas">
-        <p class="mk-rot">Antes de bajar un peso</p>
+        <p class="mk-rot">Antes de bajarle un peso</p>
         <ol>
           <li><b>Acomodo.</b> Una prenda que lleva seis semanas al fondo del pasillo no está muerta: está mal exhibida.</li>
           <li><b>Maniquí.</b> La prenda puesta se vende; colgada de perfil no existe.</li>
@@ -165,7 +165,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
     </div>
 
     <div class="mk-pasos">
-      <p class="mk-rot">Y así llega el precio nuevo a la etiqueta</p>
+      <p class="mk-rot">Y así llega el precio nuevo al marbete</p>
       <div class="mk-rejilla">
         {pasos.map((paso: string, i: number) => (
           <div class="mk-tarjeta">
@@ -269,7 +269,7 @@ const mx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
     background: var(--color-text-primary, #1a1a2e);
   }
   .mk-barra-meta::after {
-    content: 'meta'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    content: 'debería'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
     font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
     color: var(--color-text-tertiary, #8C8C8C);
   }

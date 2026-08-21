@@ -33,9 +33,9 @@ export const seccionesRopa: SuiteSeccion[] = [
     tag: 'Inventario',
     titulo: 'La matriz de tallas y colores, como la piensas tú',
     texto:
-      'Dejas de capturar prenda por prenda. Armas la cuadrícula talla × color de un modelo y el sistema crea los SKU solo. Cada casilla lleva su propia existencia.',
+      'Dejas de capturar prenda por prenda. Armas la cuadrícula talla × color del estilo y el sistema abre cada casilla solo. Cada una lleva su propia existencia.',
     bullets: [
-      'Blusa satinada: 6 tallas × 4 colores = 24 SKU en un solo paso',
+      'Blusa satinada: 6 tallas × 4 colores = 24 piezas distintas, en un solo paso',
       'Ves de un vistazo que el negro XS lleva tres semanas agotado',
       'Y que el vino XXL nunca se vendió — deja de recomprarlo',
     ],
