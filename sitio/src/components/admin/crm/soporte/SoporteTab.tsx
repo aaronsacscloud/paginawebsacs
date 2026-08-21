@@ -20,10 +20,8 @@ const VERDE_TINTA = '#1E8A63';  // el mismo, legible — para las CANTIDADES
 const MORADO = '#9B8CFA';       // morado — estructura, volumen
 const MORADO_SUAVE = '#B6ABFC'; // morado claro
 const AZUL = '#7DA6F5';         // azul cielo — lo que entra, todavía en juego
-const AZUL_AGUA = '#DDE8FC';    // azul aguado — relleno de barras
 const ROJO = '#C0554E';         // rojo pastel en tinta — la alarma
 const TINTA = '#5B4BD6';        // morado oscuro — texto y énfasis
-const GRIS = '#E5E3EA';
 
 const CSS = `
   .sop { width: 100%; min-width: 0; }
@@ -125,6 +123,249 @@ function SelectorPeriodo({ modo, dias, desde, hasta, onDias, onRango, onModo }: 
         </div>
       )}
     </div>
+  );
+}
+
+// ── Dona de temas ─────────────────────────────────────────────────────────
+// Rampa morado→azul (los dos protagonistas de la gama) y gris SOLO para el
+// cajón del clasificador: que la rebanada muerta se vea muerta.
+const RAMPA = ['#7C6BF0', '#9B8CFA', '#B6ABFC', '#7DA6F5', '#A9C6F8', '#CFE0FA'];
+const AZUL_RESTO = '#DDE8FC';
+const GRIS_SIN = '#D7D4DE';
+
+function DonaTemas({ temas, total, etiqueta }: { temas: any[]; total: number; etiqueta: string }) {
+  // Los concretos mandan; 'otros' es el cajón y va SIEMPRE al final, en gris,
+  // aunque sea la rebanada más grande — que hoy lo es.
+  const concretos = temas.filter((x: any) => x.tema !== 'otros');
+  const sinClasificar = temas.find((x: any) => x.tema === 'otros')?.n || 0;
+  const top = concretos.slice(0, 6);
+  const restoN = concretos.slice(6).reduce((a: number, x: any) => a + x.n, 0);
+  const restoCuantos = concretos.slice(6).length;
+
+  const piezas: Array<{ label: string; n: number; color: string; apagado?: boolean }> = [
+    ...top.map((x: any, i: number) => ({ label: x.label, n: x.n, color: RAMPA[i] })),
+    ...(restoN ? [{ label: `Otros ${restoCuantos} temas`, n: restoN, color: AZUL_RESTO }] : []),
+    ...(sinClasificar ? [{ label: 'Sin clasificar', n: sinClasificar, color: GRIS_SIN, apagado: true }] : []),
+  ];
+  const suma = piezas.reduce((a, x) => a + x.n, 0) || 1;
+
+  // conic-gradient en vez de arcos SVG: una dona de siete rebanadas no necesita
+  // trigonometría, y así el anillo no depende de que corra JavaScript.
+  let acc = 0;
+  const tramos = piezas.map(x => {
+    const ini = (acc / suma) * 100; acc += x.n;
+    return `${x.color} ${ini.toFixed(3)}% ${((acc / suma) * 100).toFixed(3)}%`;
+  }).join(',');
+  const pctDe = (n: number) => Math.round((n / suma) * 100);
+  const gris = sinClasificar / suma;
+
+  return (
+    <Tarjeta titulo="De qué se trata el soporte" cap="Cuánto pesa cada tema de lo que entró en el periodo."
+      extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{total} tickets · {etiqueta}</span>}>
+      <div style={{ display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', width: 168, height: 168, flexShrink: 0, borderRadius: '50%', background: `conic-gradient(${tramos})` }}>
+          <div style={{ position: 'absolute', inset: 31, background: '#fff', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+            <b style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1 }}>{total}</b>
+            <span style={{ fontSize: '0.55rem', color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 3, fontWeight: 800 }}>tickets</span>
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          {piezas.map((x, i) => (
+            <div key={x.label} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 0', fontSize: '0.77rem', borderTop: i ? '1px solid #f6f5f9' : 'none' }}>
+              <i style={{ width: 9, height: 9, borderRadius: 3, background: x.color, display: 'block', flexShrink: 0 }} />
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: x.apagado ? '#8a8a8a' : '#1a1a1a' }}>{x.label}</span>
+              <span style={{ color: '#a5a2af', width: 34, textAlign: 'right' }}>{pctDe(x.n)}%</span>
+              <b style={{ width: 30, textAlign: 'right', color: x.apagado ? '#8a8a8a' : '#1a1a1a' }}>{x.n}</b>
+            </div>
+          ))}
+        </div>
+      </div>
+      {gris > 0.3 && (
+        <div style={{ fontSize: '0.72rem', color: '#7d7a88', marginTop: 14, lineHeight: 1.6, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+          <b>La rebanada gris es {pctDe(sinClasificar)}%.</b> "Sin clasificar" no es un tema: es el cajón de <code style={{ background: '#f4f3f8', borderRadius: 4, padding: '1px 5px' }}>clasificar.ts</code>. Se arregla con reglas nuevas, no leyendo esa barra.
+        </div>
+      )}
+    </Tarjeta>
+  );
+}
+
+// ── Área: lo que entra contra lo que se resuelve ──────────────────────────
+function AreaFlujo({ serie, periodo, kpis, etiqueta }: { serie: any[]; periodo: any; kpis: any; etiqueta: string }) {
+  const W = 600, H = 143;
+  const max = Math.max(1, ...serie.map((x: any) => Math.max(x.abiertos, x.resueltos)));
+  const px = (i: number) => (serie.length < 2 ? W / 2 : (i / (serie.length - 1)) * W);
+  const py = (v: number) => H - (v / max) * (H - 6) - 3;
+  const linea = (k: string) => serie.map((d: any, i: number) => `${i ? 'L' : 'M'}${px(i).toFixed(1)} ${py(d[k]).toFixed(1)}`).join(' ');
+  const area = (k: string) => `${linea(k)} L${W} ${H} L0 ${H} Z`;
+  const entraron = kpis?.entraron?.valor ?? 0, resueltos = kpis?.resueltos?.valor ?? 0;
+  const acumulado = entraron - resueltos;
+  const ancho = serie.length ? W / serie.length : W;
+
+  return (
+    <Tarjeta titulo="Lo que entra contra lo que se resuelve"
+      cap={`Cuando la curva azul va arriba de la verde, se está acumulando trabajo. ${periodo?.agrupado === 'semana' ? 'Por semana.' : 'Por día.'}`}
+      extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{etiqueta}</span>}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: H, display: 'block' }} role="img"
+        aria-label={`Entraron ${entraron} y se resolvieron ${resueltos} en el periodo`}>
+        <defs>
+          {/* El relleno se desvanece hacia abajo: dos áreas planas encimadas se
+              mezclan en un verdeazul que no es ninguno de los dos colores. */}
+          <linearGradient id="sopVerde" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={VERDE} stopOpacity="0.42" /><stop offset="100%" stopColor={VERDE} stopOpacity="0.03" />
+          </linearGradient>
+          <linearGradient id="sopAzul" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={AZUL} stopOpacity="0.34" /><stop offset="100%" stopColor={AZUL} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={area('resueltos')} fill="url(#sopVerde)" />
+        <path d={linea('resueltos')} fill="none" stroke={VERDE} strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <path d={area('abiertos')} fill="url(#sopAzul)" />
+        <path d={linea('abiertos')} fill="none" stroke={AZUL} strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        {/* Bandas invisibles: sin ellas el área pierde el dato por día que las
+            barras SÍ daban al pasar el cursor. */}
+        {serie.map((d: any, i: number) => (
+          <rect key={d.dia} x={(i * ancho).toFixed(1)} y={0} width={ancho.toFixed(1)} height={H} fill="transparent">
+            <title>{`${fechaCorta(d.dia)}: entraron ${d.abiertos}, se resolvieron ${d.resueltos}`}</title>
+          </rect>
+        ))}
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.63rem', color: '#b3b1bb', marginTop: 6, fontWeight: 700 }}>
+        <span>{fechaCorta(periodo?.desde || '')}</span><span>{fechaCorta(periodo?.hasta || '')}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 16, fontSize: '0.68rem', color: '#a5a2af', marginTop: 12 }}>
+        <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: AZUL }} />Entraron</span>
+        <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: VERDE }} />Se resolvieron</span>
+      </div>
+      <div style={{ display: 'flex', marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+        {[
+          { et: 'Entraron', v: entraron, c: '#2C5FC4' },
+          { et: 'Se resolvieron', v: resueltos, c: VERDE_TINTA },
+          { et: acumulado >= 0 ? 'Se acumularon' : 'Se descontaron', v: Math.abs(acumulado), c: acumulado > 0 ? ROJO : VERDE_TINTA },
+        ].map(x => (
+          <div key={x.et} style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em' }}>{x.et}</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, marginTop: 2, color: x.c }}>{x.v}</div>
+          </div>
+        ))}
+      </div>
+    </Tarjeta>
+  );
+}
+
+// ── Calificación de la atención (CSAT) ────────────────────────────────────
+const CARAS = [
+  { v: 5, em: '\u{1F600}', color: VERDE },
+  { v: 4, em: '\u{1F642}', color: '#8FD7BC' },
+  { v: 3, em: '\u{1F610}', color: MORADO_SUAVE },
+  { v: 2, em: '\u{1F615}', color: '#E2938C' },
+  { v: 1, em: '\u{1F61E}', color: ROJO },
+];
+
+function Calificacion({ csat, etiqueta }: { csat: any; etiqueta: string }) {
+  const dist = csat?.dist || {};
+  const n = csat?.n || 0;
+  const max = Math.max(1, ...CARAS.map(c => dist[c.v] || 0));
+  return (
+    <Tarjeta titulo="Cómo califican la atención"
+      cap="Las cinco caras que el cliente ve dentro del ERP al resolverse su ticket. Es la respuesta a &laquo;¿resolvimos bien?&raquo;, no a &laquo;¿resolvimos rápido?&raquo;."
+      extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{etiqueta}</span>}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginBottom: 16 }}>
+        <span style={{ fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: n === 0 ? '#c9c7d0' : (csat.promedio ?? 0) >= 4 ? VERDE_TINTA : (csat.promedio ?? 0) >= 3 ? TINTA : ROJO }}>{n === 0 ? '—' : csat.promedio}</span>
+        <span style={{ fontSize: '0.9rem', color: '#a5a2af', fontWeight: 700 }}>/ 5</span>
+        <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#a5a2af', fontWeight: 700 }}>{n} respuesta{n === 1 ? '' : 's'}</span>
+      </div>
+      {CARAS.map(c => {
+        const v = dist[c.v] || 0;
+        return (
+          <div key={c.v} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9, opacity: n === 0 ? 0.45 : 1 }}>
+            <span style={{ fontSize: '1.15rem', width: 24, textAlign: 'center' }}>{c.em}</span>
+            <span style={{ flex: 1, height: 9, background: '#f3f2f7', borderRadius: 5, overflow: 'hidden' }}>
+              <span style={{ display: 'block', height: '100%', borderRadius: 5, width: `${(v / max) * 100}%`, background: c.color }} />
+            </span>
+            <span style={{ width: 34, textAlign: 'right', fontWeight: 800, fontSize: '0.79rem' }}>{v}</span>
+            <span style={{ width: 38, textAlign: 'right', color: '#a5a2af', fontSize: '0.72rem' }}>{n ? Math.round((v / n) * 100) : 0}%</span>
+          </div>
+        );
+      })}
+      {n === 0 ? (
+        <div style={{ fontSize: '0.75rem', color: '#a5a2af', lineHeight: 1.65, marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+          Todavía no hay ni una calificación en este periodo. La encuesta se dispara sola cuando un ticket
+          se resuelve <b>en vivo</b> por el webhook de Intercom, y se le muestra al cliente la próxima vez
+          que entra a SACS — los resueltos que vinieron del backfill histórico nunca la dispararon.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, borderRadius: 20, padding: '5px 12px', background: '#EAF8F2', color: VERDE_TINTA }}>{csat.promotores_pct ?? 0}% contentos (5)</span>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, borderRadius: 20, padding: '5px 12px', background: '#FBECEA', color: ROJO }}>{csat.detractores_pct ?? 0}% molestos (1–2)</span>
+          {csat.anterior != null && csat.promedio != null && (
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, borderRadius: 20, padding: '5px 12px', background: '#f4f4f6', color: '#6B7280' }}>
+              {csat.promedio >= csat.anterior ? '↑' : '↓'} {Math.abs(Math.round((csat.promedio - csat.anterior) * 10) / 10)} vs. periodo anterior
+            </span>
+          )}
+        </div>
+      )}
+    </Tarjeta>
+  );
+}
+
+function Cobertura({ csat, onAbrir }: { csat: any; onAbrir: (id: string) => void }) {
+  const c = csat?.cobertura || {};
+  const base = Math.max(1, c.resueltos || 0);
+  const lista = csat?.lista_detractores || [];
+  const Paso = ({ et, pie, v, color }: any) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid #f4f3f7' }}>
+      <div style={{ width: 150, flexShrink: 0 }}>
+        <div style={{ fontSize: '0.78rem', fontWeight: 700 }}>{et}</div>
+        <div style={{ fontSize: '0.66rem', color: '#a5a2af', lineHeight: 1.35, marginTop: 1 }}>{pie}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 60, height: 16, background: '#f5f4f8', borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${Math.min(100, ((v || 0) / base) * 100)}%`, background: color, borderRadius: 8 }} />
+      </div>
+      <div style={{ width: 52, textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: v ? '#1a1a1a' : ROJO }}>{v || 0}</div>
+    </div>
+  );
+  return (
+    <Tarjeta titulo="Cuánta atención alcanzamos a calificar"
+      cap="Un promedio no vale nada si contestaron tres personas. Este embudo dice qué tan confiable es el número de al lado.">
+      <div style={{ marginTop: -4 }}>
+        <div style={{ borderTop: 'none' }}><Paso et="Resueltos" pie="Tickets cerrados en el periodo." v={c.resueltos} color={MORADO} /></div>
+        <Paso et="Se les preguntó" pie="Cuentas encoladas a la encuesta del ERP." v={c.preguntados} color={AZUL} />
+        <Paso et="Contestaron" pie="Respuestas que llegaron de vuelta." v={c.respondieron} color={VERDE} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginTop: 18 }}>
+        <span style={{ fontSize: '1.7rem', fontWeight: 800, letterSpacing: '-.03em', color: c.tasa_pct ? VERDE_TINTA : ROJO }}>
+          {c.respondieron || 0} de {c.resueltos || 0}
+        </span>
+        <span style={{ fontSize: '0.8rem', color: '#a5a2af', fontWeight: 700 }}>
+          resueltos alcanzaron a calificarse{c.tasa_pct != null ? ` · ${c.tasa_pct}%` : ''}
+        </span>
+      </div>
+
+      {lista.length > 0 && (
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f4f3f7' }}>
+          <h3 style={{ fontSize: '0.83rem', fontWeight: 800, margin: 0 }}>A quién hay que llamar</h3>
+          <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginTop: 3, marginBottom: 12 }}>Cada 1 o 2, con nombre. El sistema ya levanta el aviso y la tarea; aquí se ven juntos.</div>
+          <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Cliente', 'Calificó', 'Sobre', 'Cuándo'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <tbody>{lista.map((x: any) => {
+              const ligado = !!x.company_id;
+              return (
+                <tr key={x.conversation_id} onClick={() => ligado && onAbrir(x.company_id)} style={{ cursor: ligado ? 'pointer' : 'default' }}>
+                  <td style={{ ...S.td, fontWeight: 700 }}>{x.nombre || x.cuenta || 'Sin identificar'}</td>
+                  <td style={S.td}>
+                    <span style={{ fontSize: '1.05rem', marginRight: 5 }}>{CARAS.find(c2 => c2.v === x.score)?.em}</span>
+                    <b style={{ color: ROJO }}>{x.score}</b>
+                  </td>
+                  <td style={{ ...S.td, color: '#666' }}>{x.tema_label || '—'}</td>
+                  <td style={{ ...S.td, color: '#9c99a6', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>{fmtFecha(x.fecha)}</td>
+                </tr>
+              );
+            })}</tbody>
+          </table></div>
+        </div>
+      )}
+    </Tarjeta>
   );
 }
 
@@ -238,10 +479,6 @@ export default function SoporteTab() {
   if (!T.total) return <div className="sop" style={S.wrap}><Encabezado>{selector}</Encabezado><Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." /></div>;
 
   const etiqueta = per.personalizado ? `${fechaCorta(per.desde)} – ${fechaCorta(per.hasta)}` : `últimos ${per.dias} días`;
-  const maxTema = Math.max(1, ...(d.por_tema || []).map((x: any) => x.n));
-  const tend = d.tendencia || [];
-  const maxTend = Math.max(1, ...tend.map((x: any) => Math.max(x.abiertos, x.resueltos)));
-  const ALTO = 108;
   const sinResolver = K.sin_resolver || {};
   const hayAlarma = (sinResolver.estancados || 0) > 0;
 
@@ -250,8 +487,8 @@ export default function SoporteTab() {
       <Encabezado periodo={per}>{selector}</Encabezado>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Cinco KPIs, ni uno más. El CSAT bajó a la tarjeta de sentimiento: hoy
-            no tiene una sola respuesta y ocupaba un lugar de los importantes. */}
+        {/* Cinco KPIs, ni uno más: los cinco de la fila caben de un vistazo. La
+            calificación no es uno de ellos — tiene sección propia abajo. */}
         <div className="sop-kpis">
           <Kpi barra={AZUL} t="Entraron" v={K.entraron?.valor ?? 0}
             hijo={<><Delta v={K.entraron?.valor} a={K.entraron?.anterior} neutro /> · antes {K.entraron?.anterior ?? 0}</>} />
@@ -272,49 +509,18 @@ export default function SoporteTab() {
 
         <TopClientes filas={d.top_clientes || []} etiqueta={etiqueta} onAbrir={(id) => setCliente(id)} />
 
+        {/* La calificación va ANTES de las gráficas: es lo único que dice si el
+            cliente quedó bien. El sentimiento de abajo es cómo LLEGA; esto es
+            cómo SE VA. Las dos tarjetas van juntas a propósito — un promedio sin
+            su cobertura al lado invita a presumir un 4.8 de tres respuestas. */}
         <div className="sop-2">
-          {/* Entraron contra resueltos: dos barras por día, como el mensual de
-              Cotizaciones. La distancia entre ellas es la bandeja creciendo. */}
-          <Tarjeta titulo="Lo que entra contra lo que se resuelve"
-            cap={`La distancia entre las dos barras es lo que se está acumulando. ${per.agrupado === 'semana' ? 'Por semana.' : 'Por día.'}`}
-            extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{etiqueta}</span>}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: ALTO + 22 }}>
-              {tend.map((x: any) => (
-                <div key={x.dia} title={`${fechaCorta(x.dia)}: entraron ${x.abiertos}, se resolvieron ${x.resueltos}`}
-                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                  <div style={{ display: 'flex', gap: 1, alignItems: 'flex-end', height: ALTO, width: '100%', justifyContent: 'center' }}>
-                    <div style={{ flex: 1, maxWidth: 11, height: Math.round((x.abiertos / maxTend) * ALTO), minHeight: x.abiertos ? 2 : 0, background: AZUL_AGUA, borderRadius: '3px 3px 0 0' }} />
-                    <div style={{ flex: 1, maxWidth: 11, height: Math.round((x.resueltos / maxTend) * ALTO), minHeight: x.resueltos ? 2 : 0, background: VERDE, borderRadius: '3px 3px 0 0' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 16, fontSize: '0.68rem', color: '#a5a2af', marginTop: 12 }}>
-              <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: AZUL_AGUA }} />Entraron</span>
-              <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: VERDE }} />Se resolvieron</span>
-              <span style={{ marginLeft: 'auto' }}>{fechaCorta(per.desde)} → {fechaCorta(per.hasta)}</span>
-            </div>
-          </Tarjeta>
+          <Calificacion csat={d.csat || {}} etiqueta={etiqueta} />
+          <Cobertura csat={d.csat || {}} onAbrir={(id) => setCliente(id)} />
+        </div>
 
-          <Tarjeta titulo="Temas más frecuentes" cap="De qué se trata lo que entró en el periodo."
-            extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{T.en_periodo} tickets</span>}>
-            {(d.por_tema || []).slice(0, 8).map((x: any) => (
-              <div key={x.tema} style={{ marginBottom: 9 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 3 }}>
-                  <span style={{ color: x.tema === 'otros' ? '#a5a2af' : '#1a1a1a' }}>{x.label}</span>
-                  <span style={{ fontWeight: 800 }}>{x.n}</span>
-                </div>
-                <div style={{ height: 6, background: '#f3f2f7', borderRadius: 3 }}>
-                  <div style={{ width: `${(x.n / maxTema) * 100}%`, height: '100%', background: x.tema === 'otros' ? GRIS : MORADO, borderRadius: 3 }} />
-                </div>
-              </div>
-            ))}
-            {(d.por_tema || []).some((x: any) => x.tema === 'otros' && x.n / Math.max(1, T.en_periodo) > 0.3) && (
-              <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginTop: 12, paddingTop: 12, borderTop: '1px solid #f4f3f7', lineHeight: 1.55 }}>
-                "Otros" en gris a propósito: es el cajón del clasificador, no un tema. Cuando pesa más de un tercio, lo que hace falta son reglas nuevas en <code>lib/soporte/clasificar.ts</code>, no leer esa barra.
-              </div>
-            )}
-          </Tarjeta>
+        <div className="sop-2">
+          <AreaFlujo serie={d.tendencia || []} periodo={per} kpis={K} etiqueta={etiqueta} />
+          <DonaTemas temas={d.por_tema || []} total={T.en_periodo || 0} etiqueta={etiqueta} />
         </div>
 
         <div className="sop-2">
@@ -326,21 +532,14 @@ export default function SoporteTab() {
               })}
             </div>
 
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.07em' }}>CSAT</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 3 }}>
-                  {K.csat?.valor != null ? `${K.csat.valor}/5` : '—'}
-                  <span style={{ fontSize: '0.7rem', color: '#a5a2af', fontWeight: 600, marginLeft: 6 }}>{K.csat?.n || 0} respuesta(s)</span>
-                </div>
+            {/* El CSAT se fue a su propia sección arriba; repetirlo aquí era
+                invitar a que un día los dos números dejaran de coincidir. */}
+            {T.reabiertos > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.07em' }}>Se resolvieron y volvieron a abrirse</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 3, color: ROJO }}>{T.reabiertos}</div>
               </div>
-              {T.reabiertos > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.07em' }}>Reabiertos</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: 3, color: ROJO }}>{T.reabiertos}</div>
-                </div>
-              )}
-            </div>
+            )}
 
             {T.sin_ligar > 0 && (
               <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>

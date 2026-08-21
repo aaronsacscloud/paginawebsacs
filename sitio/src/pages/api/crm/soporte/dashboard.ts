@@ -27,7 +27,7 @@ const diaMx = (iso?: string | null) => iso ? new Date(new Date(iso).getTime() - 
 // PostgREST corta en 1000 filas EN ESTE PROYECTO (max_rows=1000): un .limit()
 // mayor subcuenta en silencio. Paginamos para no falsear los agregados.
 async function leerTodos(): Promise<any[]> {
-  const cols = 'conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, reabierto_count';
+  const cols = 'conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, csat_at, csat_campana_id, reabierto_count';
   const out: any[] = [];
   for (let off = 0; off < 200000; off += 1000) {
     const { data, error } = await supabase.from('crm_soporte_tickets').select(cols).order('conversation_id').range(off, off + 999);
@@ -85,15 +85,52 @@ export const GET: APIRoute = async ({ url }) => {
     const frt = t.filter((x: any) => dentro(x.primera_respuesta_at, a, b))
       .map((x: any) => horas(x.abierto_at, x.primera_respuesta_at)).filter((v): v is number => v != null && v >= 0);
     const res = resueltos.map((x: any) => horas(x.abierto_at, x.resuelto_at)).filter((v): v is number => v != null && v >= 0);
-    const csats = t.filter((x: any) => x.csat_score != null && dentro(x.ultima_actividad_at || x.resuelto_at, a, b)).map((x: any) => Number(x.csat_score));
     return {
       entraron: entraron.length, resueltos: resueltos.length,
       frt: prom(frt), frt_n: frt.length,
       resolucion: prom(res), resolucion_n: res.length,
-      csat: csats.length ? Math.round((csats.reduce((s, v) => s + v, 0) / csats.length) * 10) / 10 : null, csat_n: csats.length,
     };
   };
   const hoy = flujo(P.ini, P.fin), ant = flujo(P.antIni, P.antFin);
+
+  // ── Calificación de la atención (CSAT) ──────────────────────────────────
+  // COHORTE = los tickets RESUELTOS en el periodo. Todo se mide sobre ella: el
+  // embudo, la distribución y el promedio. Si el promedio saliera de un conjunto
+  // y la cobertura de otro, un 4.8 sobre 3 respuestas se leería como un 4.8
+  // sobre 149 — que es justo la mentira que la tarjeta debe impedir.
+  //
+  // La encuesta es la campaña Outbound "CSAT post-soporte" (5 caras, 1..5) que
+  // el ERP muestra al cliente; `csat_campana_id` marca a quién se le preguntó y
+  // `csat_score` quién contestó. Ver lib/soporte/csat.ts.
+  const DETRACTOR = 2, PROMOTOR = 5;
+  const csatDe = (a: number, b: number) => {
+    const cohorte = t.filter((x: any) => dentro(x.resuelto_at, a, b));
+    const conRespuesta = cohorte.filter((x: any) => x.csat_score != null);
+    const notas = conRespuesta.map((x: any) => Number(x.csat_score)).filter((v) => v >= 1 && v <= 5);
+    const dist: Record<string, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const v of notas) dist[v] = (dist[v] || 0) + 1;
+    return {
+      cohorte, conRespuesta, dist, n: notas.length,
+      promedio: notas.length ? Math.round((notas.reduce((s2, v) => s2 + v, 0) / notas.length) * 10) / 10 : null,
+      promotores: notas.filter((v) => v >= PROMOTOR).length,
+      detractores: notas.filter((v) => v <= DETRACTOR).length,
+      preguntados: cohorte.filter((x: any) => x.csat_campana_id).length,
+    };
+  };
+  const cs = csatDe(P.ini, P.fin), csAnt = csatDe(P.antIni, P.antFin);
+  const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : null);
+
+  // A quién hay que llamar: cada 1 o 2 con nombre. El sistema ya levanta el
+  // aviso y la tarea; aquí se ve la lista junta.
+  const detractores = cs.conRespuesta
+    .filter((x: any) => Number(x.csat_score) <= DETRACTOR)
+    .sort((a: any, b: any) => Number(a.csat_score) - Number(b.csat_score) || String(b.csat_at || '').localeCompare(String(a.csat_at || '')))
+    .slice(0, 12)
+    .map((x: any) => ({
+      conversation_id: x.conversation_id, company_id: x.company_id || null, cuenta: x.cuenta || null, nombre: null as string | null,
+      score: Number(x.csat_score), tema_label: x.tema ? (TEMA_LABEL[x.tema] || x.tema) : null,
+      fecha: x.csat_at || x.resuelto_at || null,
+    }));
 
   // Conteo por campo con default configurable (sentimiento null = 'neutral', no
   // un bucket 'otros' que no existe en esa dimensión).
@@ -158,7 +195,7 @@ export const GET: APIRoute = async ({ url }) => {
     });
 
   // Los nombres, en UNA consulta por los ids del top (no una por cliente).
-  const idsTop = topClientes.map((c: any) => c.company_id).filter(Boolean) as string[];
+  const idsTop = [...new Set([...topClientes.map((c: any) => c.company_id), ...detractores.map((x: any) => x.company_id)].filter(Boolean))] as string[];
   if (idsTop.length) {
     const { data: emp } = await supabase.from('companies').select('id, nombre, nombre_comercial, plan, estado_cuenta, arr, health_score').in('id', idsTop);
     const porId = new Map((emp || []).map((e: any) => [e.id, e]));
@@ -170,6 +207,10 @@ export const GET: APIRoute = async ({ url }) => {
       c.estado_cuenta = e.estado_cuenta || null;
       c.arr = e.arr ?? null;
       c.health_score = e.health_score ?? null;
+    }
+    for (const x of detractores) {
+      const e = x.company_id ? porId.get(x.company_id) : null;
+      if (e) x.nombre = e.nombre_comercial || e.nombre || null;
     }
   }
 
@@ -204,7 +245,7 @@ export const GET: APIRoute = async ({ url }) => {
       sin_resolver: { valor: abiertos.length, estancados: estancados.length, sin_1a_respuesta: sinPrimeraRespuesta.length },
       frt: { valor: hoy.frt, anterior: ant.frt, n: hoy.frt_n },
       resolucion: { valor: hoy.resolucion, anterior: ant.resolucion, n: hoy.resolucion_n },
-      csat: { valor: hoy.csat, anterior: ant.csat, n: hoy.csat_n },
+      csat: { valor: cs.promedio, anterior: csAnt.promedio, n: cs.n },
     },
     totales: {
       total: t.length, abiertos: abiertos.length, resueltos: t.filter((x: any) => x.estado === 'resuelto' || x.estado === 'cerrado').length,
@@ -214,6 +255,14 @@ export const GET: APIRoute = async ({ url }) => {
       reabiertos: t.filter((x: any) => (x.reabierto_count || 0) > 0).length,
       con_asignado: conAsignado,
       en_periodo: delPeriodo.length,
+    },
+    csat: {
+      promedio: cs.promedio, anterior: csAnt.promedio, n: cs.n,
+      dist: cs.dist,
+      promotores: cs.promotores, promotores_pct: pct(cs.promotores, cs.n),
+      detractores: cs.detractores, detractores_pct: pct(cs.detractores, cs.n),
+      cobertura: { resueltos: cs.cohorte.length, preguntados: cs.preguntados, respondieron: cs.n, tasa_pct: pct(cs.n, cs.cohorte.length) },
+      lista_detractores: detractores,
     },
     por_estado: cuentaCon('estado', 'otros', t),
     por_sentimiento: cuentaCon('sentimiento', 'neutral', delPeriodo),
