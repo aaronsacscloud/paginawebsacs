@@ -10,7 +10,7 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
 ---
 
 <div class="wa-bar" id="wa-bar">
-  <div class="wa-bar-inner">
+  <div class="wa-bar-inner" id="wa-bar-zona">
     <p class="wa-bar-text">
       <span class="wa-bar-text-desktop">¿Tienes dudas? Chatea con un asesor ahora por</span>
       <span class="wa-bar-text-mobile">¿Dudas? Escríbenos por</span>
@@ -45,6 +45,11 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
 </div>
 
 <style>
+  /* Toda la barra abre WhatsApp, no sólo el enlace y el botón: es lo que la
+     gente intenta antes de descubrir dónde hay que dar clic. La X se excluye. */
+  .wa-bar-inner { cursor: pointer; }
+  .wa-bar-close { cursor: default; }
+
   .wa-bar {
     position: fixed;
     bottom: 0;
@@ -234,6 +239,18 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
         const fullMsg = `${msg} ${window.location.href}`;
         el.href = `https://wa.me/${num}?text=${encodeURIComponent(fullMsg)}`;
       }
+    });
+
+    // Toda la barra es zona de clic. Se delega en el botón verde para no
+    // duplicar ni la URL ni el rastreo, y se respetan el cerrar, los enlaces
+    // reales y el clic con modificador o con la rueda.
+    const zona = document.getElementById('wa-bar-zona');
+    zona?.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('#wa-bar-close') || t.closest('a')) return;
+      if ((e as MouseEvent).metaKey || (e as MouseEvent).ctrlKey || (e as MouseEvent).button !== 0) return;
+      if (window.getSelection()?.toString()) return;
+      cta?.click();
     });
 
     // Track clicks
