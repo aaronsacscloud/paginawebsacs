@@ -4,6 +4,7 @@
 // cotización pública. Solo expone datos del propio cliente (plan, monto, próxima
 // fecha, historial de pagos) — nada interno (ARR, salud, notas, otras cuentas).
 import { supabase } from '../../lib/supabase';
+import { detectaPlan, areasDePlan, totalFunciones } from '../../lib/quotes/plan-catalogo';
 
 export const prerender = false;
 
@@ -104,6 +105,13 @@ const adeudo = periodosVencidos > 0
 const promesa = String(sub.cobranza_promesa || '').slice(0, 10);
 const promesaVigente = !!promesa && promesa >= HOY && sub.cobranza_promesa_estado !== 'cumplida';
 const promesaVencida = !!promesa && promesa < HOY && sub.cobranza_promesa_estado !== 'cumplida';
+
+/* Lo que tiene cubierto. El cliente que recibe un estado de cuenta —sobre todo
+   uno vencido— tiene derecho a ver por qué paga: no basta con "Licencia Vende
+   Mensual". Sale del MISMO catálogo que la cotización y el acuse. */
+const planCat = detectaPlan(sub.nombre_plan);
+const areasPlan = areasDePlan(planCat);
+const nFunciones = totalFunciones(areasPlan);
 
 const clienteNombre = [contact?.nombre, contact?.apellido].filter(Boolean).join(' ').trim() || company?.nombre || 'Cliente';
 const empresaNombre = company?.nombre || '';
@@ -232,6 +240,17 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     td { padding: 11px 0; font-size: 0.86rem; border-bottom: 1px solid #f2f3f6; }
     tr:last-child td { border-bottom: none; }
     .right { text-align: right; }
+    /* ── Lo que incluye el plan ── */
+    .plan-cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .plan-nom { font-size: 1rem; font-weight: 800; color: var(--ink); }
+    .plan-n { font-size: .72rem; font-weight: 700; color: var(--accent); background: #F3F0FE; border-radius: 20px; padding: 3px 10px; }
+    .areas { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 26px; margin-top: 12px; }
+    .area-t { font-size: .55rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 11px 0 4px; }
+    .area ul { margin: 0; padding: 0; }
+    .area li { list-style: none; font-size: .76rem; color: #4c4a57; padding: 2px 0 2px 16px; position: relative; line-height: 1.5; }
+    .area li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 5px; height: 5px; border-radius: 99px; background: var(--violeta); }
+    .servicios { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f5f4f8; display: flex; gap: 7px; flex-wrap: wrap; }
+    .servicio { font-size: .68rem; font-weight: 700; background: #EAF8F2; color: var(--verde); border-radius: 20px; padding: 4px 11px; }
     .foot { padding: 18px 34px 24px; color: var(--muted); font-size: 0.76rem; line-height: 1.7; }
     .foot .brand { color: var(--ink); font-weight: 800; }
     .note { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
@@ -254,7 +273,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     }
     @media (max-width: 560px) {
       .doc-head, .section, .foot { padding-left: 22px; padding-right: 22px; }
-      .grid2 { grid-template-columns: 1fr; gap: 16px; }
+      .grid2, .areas { grid-template-columns: 1fr; gap: 16px; }
       .highlight { flex-direction: column; align-items: flex-start; }
       .highlight .when { text-align: left; }
       .h1 { font-size: 1.28rem; }
@@ -265,6 +284,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
       .doc { box-shadow: none; border: none; border-radius: 0; max-width: none; }
       .section, .doc-head { border-color: #f0eff3; }
       .adeudo, .promesa, .highlight { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .area { break-inside: avoid; }
       .cta-pago { display: none !important; }
     }
   </style>
@@ -361,6 +381,29 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
         </div>
       </div>
     </div>
+
+    {areasPlan.length > 0 && (
+      <div class="section">
+        <div class="label">Lo que incluye tu plan</div>
+        <div class="plan-cab">
+          <span class="plan-nom">Plan {planCat!.name}</span>
+          <span class="plan-n">{nFunciones} funciones en {areasPlan.length} áreas</span>
+        </div>
+        <div class="areas">
+          {areasPlan.map((a) => (
+            <div class="area">
+              <div class="area-t">{a.category}</div>
+              <ul>{a.items.map((i) => <li>{i}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        {planCat!.services?.length > 0 && (
+          <div class="servicios">
+            {planCat!.services.map((sv) => <span class="servicio">{sv}</span>)}
+          </div>
+        )}
+      </div>
+    )}
 
     {esRecurrente && ofertaValida && (
       <div class="section">

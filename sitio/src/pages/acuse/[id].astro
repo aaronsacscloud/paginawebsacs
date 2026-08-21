@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 import { plans } from '../../data/plans';
+import { detectaPlan, areasDePlan } from '../../lib/quotes/plan-catalogo';
 
 export const prerender = false;
 
@@ -116,23 +117,14 @@ const fmtCorto = (d?: string | null) => {
 // una suscripción sin cotización, se toma de ahí.
 const planItem = quoteItems.find((i: any) => i.tipo === 'plan') || null;
 const planKey = String(planItem?.nombre || sub?.nombre_plan || '').toLowerCase();
-const planData = plans.find(p => p.id === planKey) || null;
+const planData = plans.find(p => p.id === planKey) || detectaPlan(planItem?.titulo || sub?.nombre_plan);
 const sucursalesPlan = Number(planItem?.sucursales || company?.sucursales || 1) || 1;
 const cicloPlan = planItem?.periodo || sub?.ciclo || '';
 
 // El catálogo COMPLETO del plan, incluido lo que hereda del plan de abajo: es
 // el mismo recorrido que hace la cotización, así no hay dos listas que
 // mantener y lo que ve en el acuse es lo que le vendimos.
-const areasPlan: { category: string; items: string[] }[] = [];
-if (planData) {
-  let cur: any = planData; const visto = new Set<string>();
-  while (cur && !visto.has(cur.id)) {
-    visto.add(cur.id);
-    for (const f of cur.features) if (f && typeof f === 'object' && 'category' in f) areasPlan.push(f as any);
-    cur = cur.inheritsFrom ? plans.find(p => p.name === cur.inheritsFrom) : undefined;
-  }
-  areasPlan.reverse();
-}
+const areasPlan = areasDePlan(planData);
 
 // El tipo de acompañamiento que se le acordó. Vive en el campo del cliente
 // (Configuración › Cuentas › Clientes) y por eso no todos lo tienen.
