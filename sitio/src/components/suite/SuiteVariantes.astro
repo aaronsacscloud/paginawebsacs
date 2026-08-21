@@ -52,7 +52,7 @@ const celdas = ejeA.length * filas.length;
 const agotadas = matriz.flat().filter((n) => n === 0).length;
 ---
 
-<section class="vr" data-celdas={String(celdas)}>
+<section class="vr" data-celdas={String(celdas)} style={`--cols:${ejeA.length}`}>
   <div class="vr-inner">
 
     <header class="vr-head">
@@ -157,13 +157,21 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
 
   /* ── La retícula que sale de él ── */
   .vr-rejilla { width: 100%; display: grid; gap: clamp(14px, 2vw, 24px); }
-  .vr-fila { display: grid; gap: 8px; }
+  .vr-fila { display: grid; gap: 8px; justify-items: center; }
+  .vr-fila-rot { width: 100%; max-width: calc(var(--cols, 11) * 122px); }
   .vr-fila-rot {
     font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
     color: var(--color-text-tertiary, #8C8C8C);
     opacity: 0; transition: opacity .4s ease .15s;
   }
-  .vr-celdas { display: grid; grid-template-columns: repeat(11, 1fr); gap: clamp(5px, .7vw, 10px); }
+  /* Las columnas son las del giro, no once fijas: en calzado son once números
+     y en moda seis tallas. Y la retícula se centra y se limita, para que con
+     pocas columnas no quede pegada a la izquierda ni las casillas enormes. */
+  .vr-celdas {
+    display: grid; grid-template-columns: repeat(var(--cols, 11), minmax(0, 1fr));
+    gap: clamp(5px, .7vw, 10px);
+    max-width: calc(var(--cols, 11) * 122px); margin: 0 auto;
+  }
 
   .vr-celda {
     background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 8px;
@@ -181,7 +189,7 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
   .vr-celda span { font-size: 10px; font-weight: 700; color: var(--ok-texto); }
   .vr-celda.bajo span { color: var(--aviso-texto); }
   .vr-celda.cero { background: #F4F6F8; border-style: dashed; border-color: #D4D4D4; }
-  .vr-celda.cero img { opacity: .18; filter: grayscale(1); }
+  .vr-celda.cero img { opacity: .085; filter: grayscale(1); }
   .vr-celda.cero b { color: var(--color-text-tertiary, #8C8C8C); }
   .vr-celda.cero span { color: var(--alerta-texto); }
 
@@ -201,7 +209,10 @@ const agotadas = matriz.flat().filter((n) => n === 0).length;
   @media (max-width: 900px) {
     .vr-escena { height: 170vh; }
     .vr-pin { top: 72px; height: calc(100vh - 72px); }
-    .vr-celdas { grid-template-columns: repeat(6, 1fr); }
+    .vr-celdas {
+      grid-template-columns: repeat(min(var(--cols, 6), 6), minmax(0, 1fr));
+      max-width: none;
+    }
     .vr-celda b { font-size: 11px; }
     .vr-celda span { font-size: 9px; }
   }
