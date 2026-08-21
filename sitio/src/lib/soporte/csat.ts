@@ -29,10 +29,13 @@ export async function asegurarCampanaCSAT(): Promise<any | null> {
       prioridad: 'baja',
       modo: 'continua',
       reentrada_dias: null,
-      recurrencia_dias: null,
+      // Re-preguntable: la maquinaria de recurrencia del Outbound re-habilita a
+      // quien respondió hace >= recurrencia_dias (mín. 7 que honra outbound-sync),
+      // para que un cliente con un ticket resuelto nuevo la vuelva a ver.
+      recurrencia_dias: 7,
       holdout_pct: 0,
       contenido: { titulo: '¿Cómo estuvo la atención de tu solicitud de soporte?', encuesta: { escala: 'csat_emoji' }, botones: [] },
-      comportamiento: { trigger: 'al_iniciar', frecuencia: { tipo: '1_vez', tope: 1, descanso_dias: 0 }, cerrable: true },
+      comportamiento: { trigger: 'al_iniciar', frecuencia: { tipo: 'hasta_interactuar', tope: 3, descanso_dias: 1 }, cerrable: true },
       audiencia: { ...COND_IMPOSIBLE, incluir_cuentas: [], excluir_con_ticket_abierto: false },
       nivel: { tipo: 'todos' },
       meta: META_FLAG,

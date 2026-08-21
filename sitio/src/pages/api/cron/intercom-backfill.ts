@@ -63,8 +63,9 @@ async function correr(): Promise<Response> {
 
         const estado = estadoDe(c);
         const asunto = c.title || c.source?.subject || null;
-        const vistaPrevia = c.source?.body ? String(c.source.body).replace(/<[^>]*>/g, ' ').trim().slice(0, 300) : null;
-        const { tema, sentimiento } = clasificar(asunto, vistaPrevia);
+        const cuerpo = c.source?.body ? String(c.source.body).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : null;
+        const vistaPrevia = cuerpo ? cuerpo.slice(0, 300) : null;
+        const { tema, sentimiento } = clasificar(asunto, cuerpo);
         const fila: any = {
           conversation_id: String(c.id), company_id: companyId, contact_id: crmContactId,
           cuenta: cuenta ? normCuenta(cuenta) : null, estado,

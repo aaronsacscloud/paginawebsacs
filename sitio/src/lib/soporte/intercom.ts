@@ -18,30 +18,47 @@ const IV = { 'Authorization': 'Bearer ' + TOKEN, 'Intercom-Version': '2.11', 'Co
 
 export function hayToken(): boolean { return TOKEN.length > 0; }
 
-// admin_id para responder: env override, o el primer admin activo de la app
-// (se resuelve una vez y se cachea en memoria del proceso).
+// Atribución del reply. Se resuelve el admin de Intercom que corresponde a la
+// persona logueada (por su correo), para que el cliente vea QUIÉN le respondió,
+// no siempre el mismo admin. Fallbacks: INTERCOM_ADMIN_ID (env) → primer admin.
 const ADMIN_ID_ENV = (import.meta.env.INTERCOM_ADMIN_ID || '').trim();
-let _adminIdCache: string | null = null;
-async function adminIdPredeterminado(): Promise<string | null> {
-  if (ADMIN_ID_ENV) return ADMIN_ID_ENV;
-  if (_adminIdCache) return _adminIdCache;
+let _adminsCache: { porEmail: Record<string, string>; primero: string | null } | null = null;
+
+async function cargarAdmins(): Promise<{ porEmail: Record<string, string>; primero: string | null }> {
+  if (_adminsCache) return _adminsCache;
+  const porEmail: Record<string, string> = {};
+  let primero: string | null = null;
   try {
     const r = await fetch(`${API}/admins`, { headers: IV });
     const j: any = await r.json();
     const admins: any[] = j?.admins || j?.data || [];
-    const activo = admins.find(a => a && a.away_mode_enabled !== undefined ? true : !!a?.id) || admins[0];
-    _adminIdCache = activo?.id ? String(activo.id) : null;
-    return _adminIdCache;
-  } catch { return null; }
+    for (const a of admins) {
+      if (!a?.id) continue;
+      if (primero == null) primero = String(a.id);
+      if (a.email) porEmail[String(a.email).trim().toLowerCase()] = String(a.id);
+    }
+  } catch { /* sin conexión: los fallbacks se encargan */ }
+  _adminsCache = { porEmail, primero };
+  return _adminsCache;
+}
+
+/** admin_id para responder: (1) el admin cuyo correo = el de la persona logueada,
+ *  (2) INTERCOM_ADMIN_ID, (3) el primer admin de la app. */
+async function resolverAdminId(autorEmail?: string | null): Promise<string | null> {
+  const { porEmail, primero } = await cargarAdmins();
+  const mail = (autorEmail || '').trim().toLowerCase();
+  if (mail && porEmail[mail]) return porEmail[mail];
+  if (ADMIN_ID_ENV) return ADMIN_ID_ENV;
+  return primero;
 }
 
 /** Responde (comentario público de admin) una conversación de Intercom desde el
- *  CRM. Devuelve {ok} o {error}. No lanza. */
-export async function responderConversacion(conversationId: string, texto: string): Promise<{ ok: boolean; error?: string }> {
+ *  CRM, atribuida a la persona logueada. Devuelve {ok} o {error}. No lanza. */
+export async function responderConversacion(conversationId: string, texto: string, autorEmail?: string | null): Promise<{ ok: boolean; error?: string }> {
   if (!TOKEN) return { ok: false, error: 'Intercom no configurado (falta INTERCOM_ACCESS_TOKEN)' };
   const body = (texto || '').trim();
   if (!body) return { ok: false, error: 'Mensaje vacío' };
-  const adminId = await adminIdPredeterminado();
+  const adminId = await resolverAdminId(autorEmail);
   if (!adminId) return { ok: false, error: 'No se encontró un admin de Intercom para responder (define INTERCOM_ADMIN_ID)' };
   try {
     const r = await fetch(`${API}/conversations/${conversationId}/reply`, {
@@ -102,7 +119,7 @@ function seg(ms: number | null | undefined): string | null {
 /** Extrae de un evento de Intercom los datos del ticket que nos interesan. */
 export function parseEvento(body: any): {
   topic: string; conversationId: string; estado: string; contactoId: string | null;
-  asunto: string | null; vistaPrevia: string | null; prioridad: string | null;
+  asunto: string | null; vistaPrevia: string | null; cuerpo: string | null; prioridad: string | null;
   asignado: string | null; cuenta: string | null; autorEmail: string | null;
   abiertoAt: string | null; resueltoAt: string | null; ultimaAt: string | null; url: string | null;
 } | null {
@@ -133,7 +150,8 @@ export function parseEvento(body: any): {
   return {
     topic, conversationId: String(item.id), estado, contactoId,
     asunto: item.title || source.subject || null,
-    vistaPrevia: (source.body ? String(source.body).replace(/<[^>]*>/g, ' ').trim().slice(0, 300) : null),
+    vistaPrevia: (source.body ? String(source.body).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300) : null),
+    cuerpo: (source.body ? String(source.body).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : null),
     prioridad: item.priority || null,
     asignado: item.assignee?.name || item.admin_assignee?.name || null,
     cuenta: cuenta,
@@ -175,7 +193,7 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
     .select('estado, primera_respuesta_at, reabierto_count, csat_campana_id')
     .eq('conversation_id', ev.conversationId).maybeSingle();
 
-  const { tema, sentimiento } = clasificar(ev.asunto, ev.vistaPrevia);
+  const { tema, sentimiento } = clasificar(ev.asunto, ev.cuerpo || ev.vistaPrevia);
   const reabierto = !!(prev && prev.estado === 'resuelto' && ev.estado !== 'resuelto');
   const esRespuestaAdmin = ev.topic === 'conversation.admin.replied';   // primera respuesta (FRT/SLA)
 

@@ -3,6 +3,7 @@
 // imágenes vía el Access Token. Founder-only por el middleware (/api/crm/).
 import type { APIRoute } from 'astro';
 import { responderConversacion } from '../../../../lib/soporte/intercom';
+import { getSessionFromRequest } from '../../../../lib/auth/session';
 
 export const prerender = false;
 const TOKEN = (import.meta.env.INTERCOM_ACCESS_TOKEN || '').trim();
@@ -87,7 +88,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   try { body = await request.json(); } catch { /* vacío */ }
   const texto = String(body?.texto || '').trim();
   if (!texto) return json({ error: 'Escribe un mensaje' }, 400);
-  const res = await responderConversacion(id, texto);
+  // Atribuir el reply a la persona logueada (por su correo → admin de Intercom).
+  const user = await getSessionFromRequest(request);
+  const res = await responderConversacion(id, texto, user?.email || null);
   if (!res.ok) return json({ error: res.error }, 502);
   return json({ ok: true });
 };
