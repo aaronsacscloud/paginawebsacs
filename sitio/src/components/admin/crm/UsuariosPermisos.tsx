@@ -24,6 +24,13 @@ const NIVELES: { v: Nivel; label: string; color: string; fondo: string }[] = [
   { v: 'no', label: 'No entra', color: '#8e88a8', fondo: '#f4f3f8' },
 ];
 
+/** El encabezado corto de cada sección: con el nombre completo, seis columnas
+ *  empujan la tabla fuera del panel y las acciones quedan tras el scroll. */
+const CORTO: Record<string, string> = {
+  cuentas: 'Cuentas', facturacion: 'Factura', acompanamiento: 'Acompaña',
+  automatizacion: 'Automat.', colaboradores: 'Colabora', config: 'Config.',
+};
+
 const iniciales = (n?: string | null) => {
   const t = String(n || '').trim();
   if (!t) return '—';
@@ -112,13 +119,16 @@ export default function UsuariosPermisos() {
         </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', minWidth: 860, borderCollapse: 'collapse', background: '#fff', border: '1px solid #efedf6', borderRadius: 14, overflow: 'hidden' }}>
+      {/* Con seis secciones y las acciones, la tabla no cabe en pantallas
+          medianas: se desplaza dentro de su propio marco en vez de estirar la
+          pantalla. */}
+      <div className="crm-scroll-x" style={{ overflowX: 'auto', border: '1px solid #efedf6', borderRadius: 14 }}>
+        <table style={{ width: '100%', minWidth: 940, borderCollapse: 'collapse', background: '#fff' }}>
           <thead>
             <tr>
               <th style={th}>Usuario</th>
               <th style={th}>Rol</th>
-              {SECCIONES.map(s => <th key={s.id} style={{ ...th, textAlign: 'center' }} title={s.desc}>{s.label}</th>)}
+              {SECCIONES.map(s => <th key={s.id} style={{ ...th, textAlign: 'center', padding: '11px 6px' }} title={`${s.label}: ${s.desc}`}>{CORTO[s.id] || s.label}</th>)}
               <th style={th} />
             </tr>
           </thead>
@@ -144,14 +154,14 @@ export default function UsuariosPermisos() {
                   <td style={td}>
                     <select value={u.rol} disabled={guardando === u.id}
                       onChange={e => cambiar(u, { rol: e.target.value, permisos: null })}
-                      style={{ ...input, width: 'auto', minWidth: 120, fontSize: '0.74rem', padding: '6px 8px' }}>
+                      style={{ ...input, width: 'auto', minWidth: 104, fontSize: '0.72rem', padding: '6px 6px' }}>
                       {ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                     </select>
                   </td>
                   {SECCIONES.map(s => {
                     const nivel: Nivel = (u.permisos_efectivos?.[s.id] || 'no') as Nivel;
                     return (
-                      <td key={s.id} style={{ ...td, textAlign: 'center' }}>
+                      <td key={s.id} style={{ ...td, textAlign: 'center', padding: '10px 6px' }}>
                         <select
                           value={nivel}
                           disabled={esFounder || guardando === u.id}
