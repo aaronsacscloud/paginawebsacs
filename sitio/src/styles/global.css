@@ -47,11 +47,8 @@
   --claro-texto:          rgba(255, 255, 255, .88);
   --claro-apunte:         rgba(255, 255, 255, .62);
 
-  /* ─── Radios ─── Cuatro pasos, no diecisiete. */
-  --radio-chico:          8px;
-  --radio:                16px;
-  --radio-panel:          24px;
-  --radio-pildora:        999px;
+  /* Un paso más de la escala del sitio, para paneles y contenedores. */
+  --radius-2xl:   24px;
 
   /* ─── Gradients ─── */
   --gradient-hero:        linear-gradient(135deg, var(--color-bg-dark-deep) 0%, var(--color-bg-dark-blue) 50%, var(--color-bg-dark-deep) 100%);
@@ -93,7 +90,6 @@
   --radius-md:    12px;
   --radius-lg:    16px;
   --radius-xl:    20px;
-  --radius-2xl:   24px;
   --radius-full:  50px;
 
   /* ─── Shadows ─── */

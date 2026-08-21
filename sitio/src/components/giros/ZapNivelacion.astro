@@ -280,7 +280,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
 
   /* ── La matriz ── */
   .nv-matriz {
-    background: #fff; border-radius: var(--radio, 16px); padding: 22px 24px 20px;
+    background: #fff; border-radius: var(--radius-lg); padding: 22px 24px 20px;
     box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.1);
   }
   .nv-matriz-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
@@ -333,7 +333,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
     background: var(--azul-fondo); color: var(--azul-texto); letter-spacing: .06em;
   }
   .nv-tr {
-    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: var(--radio, 16px);
+    background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: var(--radius-lg);
     padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.05);
     transition: opacity .3s ease;
   }
@@ -354,7 +354,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   }
   .nv-nota { margin: 0 0 14px; font-size: 13.5px; line-height: 1.6; color: var(--color-text-secondary, #4A4A4A); max-width: 54ch; }
   .nv-aplicar {
-    background: #4B7BE5; color: #fff; border: none; border-radius: var(--radio-pildora, 999px);
+    background: #4B7BE5; color: #fff; border: none; border-radius: var(--radius-full);
     padding: 10px 20px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
     transition: transform .2s ease;
   }
@@ -365,7 +365,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
      primero, porque el primero es el que le deja los pares al segundo. */
   .nv-aplicar[disabled] { background: #E2E8F0; color: var(--color-text-tertiary, #8C8C8C); cursor: default; }
   .nv-reiniciar {
-    background: none; border: 1px solid rgba(0,0,0,.16); color: var(--color-text-secondary, #4A4A4A); border-radius: var(--radio-pildora, 999px);
+    background: none; border: 1px solid rgba(0,0,0,.16); color: var(--color-text-secondary, #4A4A4A); border-radius: var(--radius-full);
     padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
@@ -377,7 +377,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
      lugar: la cifra de dinero, que es el remate. Todo lo demás en tinta. */
   .nv-resultado {
     background: var(--color-bg-card, #fff); border: 1px solid rgba(0,0,0,.07);
-    border-radius: var(--radio, 16px); padding: 26px 28px 28px;
+    border-radius: var(--radius-lg); padding: 26px 28px 28px;
     box-shadow: 0 1px 3px rgba(15,23,42,.05);
   }
   .nv-cifra-rot, .nv-dinero-rot {
@@ -402,7 +402,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-supuesto span { font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
   .nv-supuesto select {
     background: var(--color-bg-primary, #FAFAF8); color: var(--color-text-primary, #1A1A1A);
-    border: 1px solid rgba(0,0,0,.14); border-radius: var(--radio-chico, 8px);
+    border: 1px solid rgba(0,0,0,.14); border-radius: var(--radius-sm);
     padding: 10px 12px; font-family: inherit; font-size: 13.5px; font-weight: 600;
   }
   .nv-dinero-pie {
@@ -426,7 +426,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
   .nv-cta {
     display: block; margin-top: 26px; text-align: center;
     background: var(--color-primary, #4B7BE5); color: #fff; text-decoration: none;
-    border-radius: var(--radio-pildora, 999px); padding: 14px 22px;
+    border-radius: var(--radius-full); padding: 14px 22px;
     font-size: 14.5px; font-weight: 700; transition: transform .2s ease;
   }
   .nv-cta:hover { transform: scale(1.02); text-decoration: none; }
