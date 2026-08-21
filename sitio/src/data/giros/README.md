@@ -523,8 +523,6 @@ Cómo se les habla:
   - **Las tres filas de quilataje usan el mismo archivo de anillo** y cada alt
     lo llama de un quilataje distinto. 10K, 14K y 18K se distinguen a simple
     vista en tono: hace falta un render de anillo liso en tres tonos.
-  - **El spot va fechado a mano** ("16 jul"): envejece solo en una página cuyo
-    argumento es que el gramo se mueve. O se genera la fecha o se quita.
 - **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento
   moral del bloque de trastienda. Hoy se apoya en "Permisos por usuario y
   sucursal" (Controla). Falta decidir si merece su propia línea.
