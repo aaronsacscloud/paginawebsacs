@@ -17,8 +17,82 @@ copiar su estructura es el camino corto.
 |---|---|
 | Zapatería | **Al día.** Lleva además sus dos bloques propios |
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
-| Joyería | Estructura vieja; sólo las cifras están al día |
+| Joyería | **En proceso** — estructura vieja: hero propio, sin `SuiteVariantes`, con `SuiteMigracion` y `SuiteFormal`, tres salidas |
 | Los demás (~20) | Sin empezar |
+
+---
+
+## 0. Regla cero — antes de tocar nada
+
+**Este manual se lee completo antes de escribir la primera línea de un giro, y
+se vuelve a abrir en cada ronda.** No es documentación de consulta: es la lista
+de errores ya pagados. Saltárselo significa volver a pagarlos, y ya van veinte
+y tantas rondas.
+
+El arranque, en este orden y sin brincos:
+
+1. **Lee este archivo entero.** Sí, entero.
+2. **Abre `src/pages/giros/marcas-de-ropa.astro` y `zapateria.astro` en
+   paralelo.** Son la referencia viva. Lo que cambia entre las dos es
+   contenido; la estructura es la misma, y la tuya también lo será.
+3. **Habla con el experto del oficio ANTES de escribir** (sección 4, paso 1) y
+   pídele el bloque propio con sus siete puntos.
+4. **Verifica cada afirmación contra `plans.ts`** mientras escribes, no al
+   final. Al final ya te enamoraste de la frase.
+5. **Trabaja hasta la lista de terminado de abajo.** Un giro no está listo
+   porque se vea bien: está listo cuando pasa los veinte puntos.
+
+### La lista de terminado
+
+No se entrega ni se presume un giro con un solo renglón sin palomear. Si algo
+no se puede cerrar, se escribe en *Deuda conocida* con su motivo — pero se
+escribe, no se omite.
+
+**Estructura**
+
+- [ ] El orden de bloques es el de la sección 2, sin bloques retirados.
+- [ ] Lleva `GiroBanner` con avisos del oficio, no genéricos.
+- [ ] Lleva **al menos un bloque propio** que fuera de ese oficio no significaría nada.
+- [ ] Lleva `SuitePlano` con **cinco zonas del oficio** y **cinco renglones cada una**.
+- [ ] Exactamente **dos** `SuiteSalida`, y `CtaDudas` al cierre.
+- [ ] `SuiteScroll` a seis secciones, sin repetir lo que ya argumenta el bloque propio.
+
+**Verdad**
+
+- [ ] Cada función está respaldada en `plans.ts`, y el plan que la incluye es el que se dice.
+- [ ] Lo que se cobra aparte está marcado donde se ve.
+- [ ] Las cifras de `SuiteCifras` son las cuatro de la casa.
+- [ ] Cero estadísticas sin fuente, cero marcas de terceros, cero superlativos sin acordar.
+- [ ] Los números cuadran entre bloques y hay un solo padrón de sucursales.
+
+**Oficio**
+
+- [ ] Un experto del gremio revisó vocabulario y aritmética.
+- [ ] Ningún término carga dos significados en la misma página.
+- [ ] Las palabras son las del piso mexicano, no las del blog ni las de España.
+
+**Ejecución**
+
+- [ ] `npx astro build` limpio y consola del navegador sin errores.
+- [ ] Escritorio y móvil sin desbordes horizontales.
+- [ ] **Cada bloque interactivo abierto y usado a mano**, no leído en el código.
+- [ ] Los rieles se apagan bien: móvil, `prefers-reduced-motion` y pantalla corta.
+- [ ] Las fotos revisadas **al 300%**: manos, objetos del oficio y registro socioeconómico.
+- [ ] Ninguna imagen rota, medida en producción y no en local.
+
+**Cierre**
+
+- [ ] **Los tres referees en paralelo, con 9 de 10 cada uno.** Con un 8 se rehace.
+- [ ] Verificado **en producción**, no en el dev server — y confirmando que el
+      despliegue existe de verdad (ver *Deuda conocida*: un push puede quedarse
+      sin build y el sitio queda con HTML nuevo y assets viejos).
+- [ ] Este manual actualizado con lo aprendido en la vuelta, y la tabla de
+      estado por giro al día.
+
+**La regla que cierra todas:** cada vuelta tiene que dejar el manual mejor que
+como lo encontró. Si en el giro nuevo descubriste una trampa, escríbela aquí
+antes de dar por terminado — ese es el único motivo por el que el siguiente
+giro cuesta menos que el anterior.
 
 ---
 
@@ -394,6 +468,19 @@ Cómo se les habla:
 ---
 
 ## 6. Deuda conocida
+
+- **Un push puede quedarse sin despliegue.** Con cuatro sesiones empujando al
+  mismo repo pasó que el commit llegó a `origin/main` y Vercel nunca construyó:
+  el sitio quedó sirviendo HTML nuevo con assets viejos —imágenes en 404 con
+  `x-vercel-cache: MISS`, o sea 404 de origen, no de caché—. Se confirma así, y
+  se arregla con un commit vacío:
+
+  ```bash
+  T=$(cat ~/.claude/projects/-opt-sacs/memory/vercel-token.txt)
+  curl -s -H "Authorization: Bearer $T" \
+    "https://api.vercel.com/v6/deployments?projectId=prj_YknbNODDtDpknGYan5AnWIn4UW5B&limit=3"
+  # ¿el sha de tu commit no aparece? → git commit --allow-empty -m "chore: forzar despliegue"
+  ```
 
 - `plans.ts` **se contradice sobre sell-through**: la lista de Controla lo
   incluye y la tabla comparativa lo da solo a Automatiza. Las páginas están
