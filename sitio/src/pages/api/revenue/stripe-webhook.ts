@@ -782,6 +782,18 @@ export const POST: APIRoute = async ({ request }) => {
           automatico: true,
         });
 
+        // ── Stripe cobró: la venta se cierra igual que con el botón "Cobrar" ──
+        // Antes esta puerta solo marcaba la cotización y guardaba el pago: la
+        // oportunidad no se ganaba y no nacía ninguna licencia, así que un
+        // cliente que pagó con tarjeta no tenía ni suscripción ni fecha de
+        // renovación. Best-effort: el webhook nunca puede fallar por esto.
+        try {
+          const { cerrarCotizacionPagada } = await import('../../../lib/crm/cobro-cotizacion');
+          await cerrarCotizacionPagada(quoteId, { actor: 'stripe' });
+        } catch (err) {
+          console.error('[stripe-webhook] cierre de cotización pagada:', err);
+        }
+
         // Commission: mark earned when payment received for a deal.
         // Si no existe commission pending todavía (deal cerrado sin pasar por
         // sync-quote-deal), créala primero usando atribución del deal.

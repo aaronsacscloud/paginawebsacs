@@ -9,13 +9,30 @@ import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
 
 const SENT_TONO: Record<string, string> = { urgente: 'malo', negativo: 'aviso', neutral: 'gris', positivo: 'ok' };
 
+// El contenedor de sección es un ITEM FLEX de la columna principal del CRM y sin
+// `width:100%` toma el ancho de su CONTENIDO, no el de la pantalla: en móvil la
+// tarjeta más ancha estiraba toda la sección y el resto se cortaba contra el
+// `overflow:hidden` del contenedor (el título quedaba partido a media frase).
+// Los grids van con minmax(0,1fr) por lo mismo: con minmax(150px,…) una celda
+// no puede encoger por debajo de su contenido y desborda.
+const CSS = `
+  .sop { width: 100%; min-width: 0; }
+  .sop-card { min-width: 0; }
+  .sop-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  .sop-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  @media (max-width: 1250px) { .sop-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 900px)  { .sop-2 { grid-template-columns: 1fr; } }
+  @media (max-width: 700px)  { .sop-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+`;
+
 // El encabezado de sección: el mismo de Cobranza y Consultoría. Soporte era el
 // único tab sin él y sin el contenedor `S.wrap`, y por eso arrancaba pegado al
 // borde mientras el resto del CRM respira 24 px.
 function Encabezado({ children }: { children?: any }) {
   return (
     <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-      <div style={{ flex: 1, minWidth: 220 }}>
+      <style>{CSS}</style>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Soporte</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
           Todo lo que entra por Intercom: qué se pide, qué tan rápido se resuelve y quién lo pide.
@@ -31,7 +48,7 @@ function TopClientes({ filas, dias, onAbrir }: { filas: any[]; dias: number; onA
   const [todos, setTodos] = useState(false);
   if (!filas.length) {
     return (
-      <div style={S.card}>
+      <div className="sop-card" style={S.card}>
         <div style={{ fontWeight: 800 }}>Clientes que más piden atención</div>
         <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 6 }}>
           Nadie abrió ni movió un ticket en los últimos {dias} días.
@@ -43,7 +60,7 @@ function TopClientes({ filas, dias, onAbrir }: { filas: any[]; dias: number; onA
   const max = Math.max(1, ...filas.map((f: any) => f.n));
 
   return (
-    <div style={S.card}>
+    <div className="sop-card" style={S.card}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
         <div style={{ fontWeight: 800 }}>Clientes que más piden atención</div>
         <span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>últimos {dias} días</span>
@@ -123,17 +140,17 @@ export default function SoporteTab() {
     return () => { vivo = false; };
   }, [dias, recarga]);
 
-  if (err) return <div style={S.wrap}><Encabezado /><Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso></div>;
-  if (!d) return <div style={S.wrap}><Encabezado /><Cargando que="el panel de soporte" /></div>;
+  if (err) return <div className="sop" style={S.wrap}><Encabezado /><Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso></div>;
+  if (!d) return <div className="sop" style={S.wrap}><Encabezado /><Cargando que="el panel de soporte" /></div>;
 
   const T = d.totales || {}, sla = d.sla || {};
-  if (!T.total) return <div style={S.wrap}><Encabezado /><Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." /></div>;
+  if (!T.total) return <div className="sop" style={S.wrap}><Encabezado /><Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." /></div>;
 
   const maxTema = Math.max(1, ...(d.por_tema || []).map((x: any) => x.n));
   const maxTend = Math.max(1, ...(d.tendencia || []).map((x: any) => Math.max(x.abiertos, x.resueltos)));
 
   return (
-    <div style={S.wrap}>
+    <div className="sop" style={S.wrap}>
       <Encabezado>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: '0.72rem', color: '#9c99a6', fontWeight: 700 }}>Periodo:</span>
@@ -145,7 +162,7 @@ export default function SoporteTab() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        <div className="sop-kpis">
           <Kpi etiqueta="Abiertos" valor={T.abiertos} tono={T.abiertos ? 'aviso' : 'ok'} sub={`${T.en_curso} en curso`} />
           <Kpi etiqueta="Estancados" valor={T.estancados} tono={T.estancados ? 'malo' : 'ok'} sub="+48 h sin movimiento" />
           <Kpi etiqueta="Resueltos" valor={T.resueltos} tono="ok" sub={T.reabiertos ? `${T.reabiertos} reabiertos` : undefined} />
@@ -156,9 +173,9 @@ export default function SoporteTab() {
 
         <TopClientes filas={d.top_clientes || []} dias={d.periodo_dias || dias} onAbrir={(id) => setCliente(id)} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        <div className="sop-2">
           {/* Tendencia abiertos vs resueltos */}
-          <div style={S.card}>
+          <div className="sop-card" style={S.card}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               <div style={{ fontWeight: 800 }}>Entrada vs. resolución</div>
               <span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>últimos {dias} días</span>
@@ -178,7 +195,7 @@ export default function SoporteTab() {
           </div>
 
           {/* Top temas */}
-          <div style={S.card}>
+          <div className="sop-card" style={S.card}>
             <div style={{ fontWeight: 800, marginBottom: 12 }}>Temas más frecuentes</div>
             {(d.por_tema || []).slice(0, 8).map((x: any) => (
               <div key={x.tema} style={{ marginBottom: 8 }}>
@@ -191,9 +208,9 @@ export default function SoporteTab() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        <div className="sop-2">
           {/* Sentimiento + sin ligar */}
-          <div style={S.card}>
+          <div className="sop-card" style={S.card}>
             <div style={{ fontWeight: 800, marginBottom: 12 }}>Sentimiento de tickets</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {Object.entries(d.por_sentimiento || {}).sort((a: any, b: any) => b[1] - a[1]).map(([k, n]: any) => (
@@ -209,7 +226,7 @@ export default function SoporteTab() {
           </div>
 
           {/* Carga por agente */}
-          <div style={S.card}>
+          <div className="sop-card" style={S.card}>
             <div style={{ fontWeight: 800, marginBottom: 12 }}>Carga por agente</div>
             <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>{['Agente', 'Abiertos', 'Total'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>

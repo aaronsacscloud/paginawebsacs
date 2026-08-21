@@ -126,31 +126,14 @@ export const POST: APIRoute = async ({ request }) => {
     // Nada de esto puede tumbar el cobro: el pago ya está registrado y el acuse
     // enviado. Si algo falla aquí se reporta en la respuesta y se resuelve
     // después, pero el dinero no se pierde.
-    let cierre: any = null;
-    try {
-      const { syncQuoteToDeal } = await import('../../../lib/crm/sync-quote-deal');
-      const { data: q2 } = await supabase.from('quotes')
-        .select('id, deal_id, company_id, contact_id, total, pagado_fecha').eq('id', quoteId).maybeSingle();
-      const r = await syncQuoteToDeal(quoteId, {
-        targetStage: 'cerrada_ganada',
-        valor_total: Math.round(Number(q2?.total || 0)),
-        trigger: 'quote_paid',
-        closed_at: q2?.pagado_fecha || nowIso,
-      });
-      // Materializar: lead → cliente, suscripción del recurrente y pago único.
-      // Es idempotente, así que volver a cobrar no duplica nada.
-      if (r.dealId) {
-        const { data: deal } = await supabase.from('deals').select('*').eq('id', r.dealId).maybeSingle();
-        if (deal) {
-          const { materializarDealGanado } = await import('../../../lib/crm/deal-cierre');
-          cierre = await materializarDealGanado(deal);
-        }
-      }
-      cierre = { ...(cierre || {}), deal_id: r.dealId, oportunidad_creada: r.created };
-    } catch (e) {
-      console.error('[mark-paid] cierre de oportunidad:', e);
-      cierre = { error: String(e) };
-    }
+    // Materializar (lead → cliente, suscripción, pago único) y APLICAR el dinero:
+    // la licencia queda activa con su próxima factura a un ciclo del pago, no
+    // 'programada' con fecha de hoy. Todo idempotente: volver a cobrar no
+    // duplica nada ni recorre la fecha dos veces.
+    const { cerrarCotizacionPagada } = await import('../../../lib/crm/cobro-cotizacion');
+    const resCierre = await cerrarCotizacionPagada(quoteId, { actor: 'mark-paid', closed_at: nowIso });
+    const cierre: any = resCierre.error ? { error: resCierre.error } : resCierre.cierre;
+    const cobro = resCierre.cobro || null;
 
     return new Response(JSON.stringify({
       success: true,
@@ -158,6 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
       acuse_url: createdPaymentId ? `/acuse/${createdPaymentId}` : null,
       acuse_email: acuseGenerated,
       cierre,
+      cobro,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

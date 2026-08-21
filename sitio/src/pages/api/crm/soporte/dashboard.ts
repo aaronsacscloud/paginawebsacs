@@ -91,7 +91,15 @@ export const GET: APIRoute = async ({ url }) => {
     .sort((a: any, b: any) => b.n - a.n || b.abiertos - a.abiertos || b.urgentes - a.urgentes)
     .slice(0, 25)
     .map((c: any) => {
-      const tema = Object.entries(c.temas).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || null;
+      // 'otros' es el cajón de sastre del clasificador y hoy es el tema más
+      // grande: si gana el desempate, la columna dice "Otros" para medio ranking
+      // y no informa nada. Se prefiere SIEMPRE un tema concreto, y solo cae en
+      // 'otros' cuando el cliente no pidió ninguna otra cosa. El desempate va
+      // por nombre para que el ranking no cambie entre dos cargas iguales.
+      const orden = (e: [string, any][]) => e.sort((a, b) => (b[1] as number) - (a[1] as number) || a[0].localeCompare(b[0]));
+      const entradas = Object.entries(c.temas) as [string, any][];
+      const concretos = orden(entradas.filter(([k]) => k !== 'otros'));
+      const tema = (concretos[0] || orden(entradas)[0])?.[0] || null;
       const { temas, ...resto } = c;
       return { ...resto, tema, tema_label: tema ? (TEMA_LABEL[tema] || tema) : null };
     });

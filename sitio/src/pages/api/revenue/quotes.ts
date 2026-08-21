@@ -247,6 +247,13 @@ export const PUT: APIRoute = async ({ request }) => {
         .select()
         .single();
       if (paidErr) return jsonResponse({ error: paidErr.message }, 500);
+      // Cobrada = venta cerrada: oportunidad ganada, cliente y licencia ACTIVA
+      // con su próxima factura. Sin esto, marcar pagada desde el portal del
+      // partner dejaba la venta sin rastro en el CRM.
+      try {
+        const { cerrarCotizacionPagada } = await import('../../../lib/crm/cobro-cotizacion');
+        await cerrarCotizacionPagada(id, { actor: user?.email || 'partner' });
+      } catch (e) { console.error('[quotes PUT] cierre pagada (partner):', e); }
       return jsonResponse(paidData);
     }
 
@@ -447,6 +454,17 @@ export const PUT: APIRoute = async ({ request }) => {
     }
   } catch (syncErr) {
     console.error('[quotes PUT] deal sync error:', syncErr);
+  }
+
+  // ── Editar una cotización a PAGADA también cierra la venta ──
+  // Mismo cierre que el botón "Cobrar": ganar la oportunidad, materializar el
+  // cliente + la licencia y aplicarle el dinero (activa, con próxima factura).
+  // Solo en la TRANSICIÓN (si ya estaba pagada no se repite nada).
+  if (prev?.estado !== 'paid' && data?.estado === 'paid') {
+    try {
+      const { cerrarCotizacionPagada } = await import('../../../lib/crm/cobro-cotizacion');
+      await cerrarCotizacionPagada(id, { actor: user?.email || 'admin' });
+    } catch (e) { console.error('[quotes PUT] cierre pagada:', e); }
   }
 
   return jsonResponse(data);

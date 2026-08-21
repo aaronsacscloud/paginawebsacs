@@ -64,6 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Si el pago está ligado a una cotización, recalcular saldo y avanzar estado si se completa
   let quoteUpdate: { totalPagado: number; saldoRestante: number; isPaid: boolean } | null = null;
+  let cierreResult: any = null;
   if (body.quote_id && data) {
     const { data: quote } = await supabase.from('quotes').select('id, total, estado, notas').eq('id', body.quote_id).single();
     if (quote) {
@@ -83,12 +84,27 @@ export const POST: APIRoute = async ({ request }) => {
           total_pagado_acumulado: totalPagado,
         }),
       };
-      if (isPaid && quote.estado !== 'paid') {
+      const seCompleta = isPaid && quote.estado !== 'paid';
+      if (seCompleta) {
         updates.estado = 'paid';
         updates.pagado_fecha = new Date().toISOString();
       }
       await supabase.from('quotes').update(updates).eq('id', body.quote_id);
       quoteUpdate = { totalPagado, saldoRestante, isPaid };
+
+      // ── El abono que LIQUIDA la cotización cierra la venta ──
+      // Antes esta puerta solo movía el estado: la oportunidad no se ganaba, el
+      // lead no se volvía cliente y no nacía ninguna licencia. La venta quedaba
+      // cobrada y en el CRM no existía. Best-effort: nunca tumba el registro
+      // del pago (el dinero ya está guardado).
+      if (seCompleta) {
+        try {
+          const { cerrarCotizacionPagada } = await import('../../../lib/crm/cobro-cotizacion');
+          cierreResult = await cerrarCotizacionPagada(body.quote_id, { actor: 'pago-registrado' });
+        } catch (e) {
+          console.error('[payments] cierre de cotización pagada:', e);
+        }
+      }
     }
   }
 
@@ -103,7 +119,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   return new Response(
-    JSON.stringify({ ...data, _quote: quoteUpdate, _acuse: acuseResult }),
+    JSON.stringify({ ...data, _quote: quoteUpdate, _acuse: acuseResult, _cierre: cierreResult }),
     { status: 201, headers: { 'Content-Type': 'application/json' } }
   );
 };
