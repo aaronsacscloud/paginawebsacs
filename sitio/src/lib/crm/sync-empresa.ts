@@ -22,7 +22,7 @@ export async function traerActividad(cuentas: string[]): Promise<Record<string, 
 
 export async function sincronizarEmpresa(companyId: string): Promise<any> {
   const { data: co } = await supabase.from('companies')
-    .select('id, sacs_account, uso_sacs').eq('id', companyId).maybeSingle();
+    .select('id, sacs_account, uso_sacs, soporte_abiertos, soporte_estancado, soporte_sentimiento').eq('id', companyId).maybeSingle();
   if (!co) return { error: 'empresa no encontrada' };
 
   const cuentas = await cuentasDe(companyId, co.sacs_account);
@@ -42,7 +42,11 @@ export async function sincronizarEmpresa(companyId: string): Promise<any> {
   const dias = act.ultima_venta
     ? Math.max(0, Math.floor((Date.now() - new Date(act.ultima_venta + 'T12:00:00Z').getTime()) / 86400000))
     : null;
-  const { score, factors } = healthScoreV2(act as any, (co as any).uso_sacs);
+  // Preservar la penalización de soporte: sin el 3er arg, el sync la borraría
+  // hasta el próximo evento de ticket / cron de SLA.
+  const { score, factors } = healthScoreV2(act as any, (co as any).uso_sacs, {
+    abiertos: (co as any).soporte_abiertos, estancado: (co as any).soporte_estancado, sentimiento: (co as any).soporte_sentimiento,
+  });
   const ahora = new Date().toISOString();
 
   const { error } = await supabase.from('companies').update({

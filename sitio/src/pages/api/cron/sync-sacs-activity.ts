@@ -97,7 +97,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   const arranque = Date.now();
   const transcurrido = () => Date.now() - arranque;
   const { data: companies, error } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at, uso_sacs')
+    .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at, uso_sacs, soporte_abiertos, soporte_estancado, soporte_sentimiento')
     .not('sacs_account', 'is', null).is('archived_at', null)
     .order('actividad_sync_at', { ascending: true, nullsFirst: true })
     .limit(limit);
@@ -172,7 +172,10 @@ export const GET: APIRoute = async ({ url, request }) => {
           ? Math.max(0, Math.floor((hoy.getTime() - new Date(a.ultima_venta + 'T12:00:00Z').getTime()) / 86400000))
           : null;
         const diasPrev = co.dias_sin_venta;
-        const { score, factors } = healthScoreV2(a, (co as any).uso_sacs);
+        // Preservar la penalización de soporte (si no, el sync diario la borra).
+        const { score, factors } = healthScoreV2(a, (co as any).uso_sacs, {
+          abiertos: (co as any).soporte_abiertos, estancado: (co as any).soporte_estancado, sentimiento: (co as any).soporte_sentimiento,
+        });
 
         const { error: ue } = await supabase.from('companies').update({
           actividad: a,
