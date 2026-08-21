@@ -13,14 +13,18 @@
  * liga (gris, lo que no). Al final quedan las tres lado a lado: mismo peso,
  * tres costos.
  *
- * Los factores son los reales del fino por quilataje: 10K .445, 14K .620,
- * 18K .780. Son los mismos que usa el bloque del colchón; si aquí se inventan,
+ * Aquí van las LEYES reales —10K .417, 14K .583, 18K .750—, que es el fino que
+ * de verdad lleva la pieza. No confundir con el FACTOR comercial (.445 / .620
+ * / .780) que usa el bloque del colchón para cobrar: ese va arriba de la ley
+ * porque absorbe merma y aleación. Son dos números distintos para dos cosas
+ * distintas, y publicar el factor como si fuera fino es decir que un 18K lleva
+ * más oro del que su propia ley permite; si aquí se inventan,
  * un joyero lo ve en el primer vistazo.
  */
 const KILATES = [
-  { k: '10K', factor: 0.445 },
-  { k: '14K', factor: 0.620 },
-  { k: '18K', factor: 0.780 },
+  { k: '10K', factor: 0.417 },
+  { k: '14K', factor: 0.583 },
+  { k: '18K', factor: 0.750 },
 ];
 ---
 
@@ -49,7 +53,8 @@ const KILATES = [
       <h2>Todo lo que hay en tu vitrina<br /> empieza en <span>el mismo gramo</span>.</h2>
       <p class="gr-sub">
         El gramo de oro fino cuesta lo mismo para todos. Lo que cambia es cuánto
-        fino lleva cada pieza: 10K lleva .445, 14K .620, 18K .780. Por eso dos
+        fino lleva cada pieza: el 10K lleva .417 de oro y el resto es liga; el
+        14K, .583; el 18K, .750. Por eso dos
         anillos que pesan igual no cuestan igual — y por eso el precio no puede
         salir de la cabeza de quien está en el mostrador.
       </p>

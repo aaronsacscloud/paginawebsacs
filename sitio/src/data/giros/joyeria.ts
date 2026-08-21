@@ -41,7 +41,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     tag: 'Precio',
     titulo: 'El precio no lo pone el mercado: lo pones tú',
     texto:
-      'El oro se mueve todos los días y tú no repreciás todos los días. Fijas tu precio del gramo de fino —tu colchón— por arriba del spot, y lo mueves cuando tú decides. El spot solo te avisa; nunca te cambia los precios solo.',
+      'El oro se mueve todos los días y tú no reprecias todos los días. Fijas tu precio del gramo de fino —tu colchón— por arriba del spot, y lo mueves cuando tú decides. El spot solo te avisa; nunca te cambia los precios solo.',
     bullets: [
       'Tu colchón por metal y por pureza, con su historial de cuándo y quién lo movió',
       'El spot de oro y plata a la vista, como alerta y no como automatismo',
@@ -59,7 +59,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
           <div style="font-size:19px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">$2,900<span style="font-size:11px;font-weight:600;"> /g</span></div>
         </div>
       </div>
-      ${[['Oro 10K','0.445','$1,192'],['Oro 14K','0.620','$1,660'],['Oro 18K','0.78','$2,089']]
+      ${[['Oro 10K','0.445','$1,291'],['Oro 14K','0.620','$1,798'],['Oro 18K','0.780','$2,262']]
         .map(([m,f,p]:any)=>`<div style="display:flex;align-items:center;gap:11px;border-bottom:1px solid #F1F5F9;padding:10px 0;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${m}</div>
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">factor ${f}</div></div>
@@ -81,7 +81,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Esclava oro 14K · 18.4 g</p>
-      ${[['Costo del fino cuando lo compraste','12 feb · $1,740 /g','$19,857','#0F172A'],['Hechura y acabados','mano de obra + rodinado','$2,400','#0F172A'],['Costo histórico total','no se mueve con el mercado','$22,257','#0F172A']]
+      ${[['Costo del fino cuando lo compraste','12 feb 2025 · $1,740 /g','$19,857','#0F172A'],['Hechura y acabados','mano de obra + rodinado','$2,400','#0F172A'],['Costo histórico total','no se mueve con el mercado','$22,257','#0F172A']]
         .map(([a,b,c,col]:any)=>`<div style="display:flex;align-items:center;gap:11px;border-bottom:1px solid #F1F5F9;padding:11px 0;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:${col};">${a}</div>
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${b}</div></div>
@@ -89,10 +89,10 @@ export const seccionesJoyeria: SuiteSeccion[] = [
         </div>`).join('')}
       <div style="background:#F0FDF9;border:1px solid #A7F3D0;border-radius:11px;padding:12px;margin-top:12px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#065F46;">
-          <span>Precio de venta hoy</span><span>$30,900</span>
+          <span>Precio de venta hoy</span><span>$33,100</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#047857;margin-top:5px;">
-          <span>Margen real</span><span>28% · $8,643</span>
+          <span>Margen real</span><span>33% · $10,843</span>
         </div>
       </div>
     </div>`,
@@ -109,7 +109,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
       'Los apartados quedan fuera: lo que ya pactaste no se toca',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Simulación · colchón $2,200 → $2,340</p>
+      <p style="${est.h}">Simulación · colchón $2,900 → $3,085</p>
       ${[['Oro 14K · 386 piezas','+6.4% de precio','#047857'],['Oro 10K · 212 piezas','+6.4% de precio','#047857'],['Bajo margen mínimo','14 piezas para revisar','#B45309'],['Apartados congelados','23 piezas sin tocar','#2563EB']]
         .map(([a,b,c]:any)=>`<div style="display:flex;align-items:center;gap:11px;border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:7px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
@@ -215,9 +215,9 @@ export const cortinaJoyeria = {
   libreta: ['14K · 18.4 g × ?', 'oro hoy… ¿1,980?'],
   pieAntes: 'Calculadora, memoria<br />y el precio de la semana pasada.',
   filas: [
-    { que: 'Esclava 14K · 18.4 g', donde: 'Tu colchón', dato: '$30,900' },
+    { que: 'Esclava 14K · 18.4 g', donde: 'Tu colchón', dato: '$33,100' },
     { que: 'Anillo 14K · 3.2 g', donde: 'Tu colchón', dato: '$14,850' },
-    { que: 'Cadena 10K · 9.7 g', donde: 'Tu colchón', dato: '$11,240' },
+    { que: 'Cadena 10K · 9.7 g', donde: 'Tu colchón', dato: '$12,520' },
   ],
   pieDespues: 'El mismo gramo para toda la casa.',
 };
@@ -239,21 +239,9 @@ export const reglasJoyeria = [
   { si: 'El corte de caja no cuadra', entonces: 'no cierra', detalle: 'El faltante se registra a nombre de quien cerró, y tú lo ves el mismo día — no a fin de mes.' },
 ];
 
-export const diasJoyeria = [
-  { dia: 'Día 1', titulo: 'Tu catálogo, cargado', detalle: 'Subimos tus piezas con su metal, su pureza, su gramaje y su costo histórico. Eso es lo que hace que el precio salga bien desde el primer día.' },
-  { dia: 'Día 2', titulo: 'Tu costeo, configurado', detalle: 'Tu colchón por metal, tus factores por quilataje y tus conceptos de costo: hechura, diseño, importación, certificado.' },
-  { dia: 'Día 3', titulo: 'Capacitación', detalle: 'Dos horas con tu equipo. Cobrar y cotizar una pieza por gramo se aprende rápido; el costo y el margen los ve solo quien tú digas.' },
-  { dia: 'Día 4', titulo: 'Arranca una tienda', detalle: 'La matriz vende con SACS. El sistema viejo sigue en pie por si acaso.' },
-  { dia: 'Día 5', titulo: 'Arrancan las demás', detalle: 'Con la primera resuelta, las otras entran el mismo día, con el mismo precio del gramo.' },
-];
 
-export const cajaJoyeria = {
-  lineas: [
-    { n: 'Anillo solitario 14K · 3.2 g', p: '$14,850.00' },
-    { n: 'Grabado', p: '$350.00' },
-  ],
-  total: '$15,200.00',
-};
+
+
 
 export const documentosJoyeria = {
   titulo: 'Ya lo intentaste<br />de las dos formas.',
@@ -273,7 +261,7 @@ export const documentosJoyeria = {
     notas: [
       'Un precio escrito a mano. <b>No sabe qué pesa la pieza</b> ni de qué ley es.',
       'Cuando el oro sube, alguien reprecia <b>a mano, pieza por pieza</b>.',
-      'El costo se recalcula con el oro de hoy, así que <b>tu margen es un número inventado</b>.',
+      'Y como no guarda a cuánto compraste ese metal, <b>el margen que te enseña es un número inventado</b>.',
       'Y el taller cotiza con otro precio del gramo, por su cuenta.',
     ],
   },
@@ -407,14 +395,14 @@ export const planoJoyeria = [
     foto: '/images/plano-joy-vitrinas.webp',
     alt: 'Línea de vitrinas iluminadas de una joyería con charolas de oro ordenadas',
     pie: 'Cada pieza sabe cuánto pesa, de qué ley es y desde cuándo lleva ahí.',
-    pregunta: '«¿Y esta charola desde cuándo está aquí? Me acuerdo de ese juego desde la temporada pasada.»',
+    pregunta: '«Ese juego de argollas lleva ahí desde antes del 10 de mayo. ¿Cuánto oro tengo parado en esa charola?»',
     caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
-      { t: 'Precio por gramo con tu colchón del fino, no con el spot' },
-      { t: 'Peso bruto, neto y fino de cada pieza, con su ley' },
-      { t: 'Existencia por modelo, metal y quilataje, en cada vitrina' },
+      { t: 'Precio por gramo con tu colchón del fino, no con el spot', suite: true },
+      { t: 'Peso bruto, neto y fino de cada pieza, con su ley', suite: true },
+      { t: 'Existencia por modelo, metal y quilataje, en cada vitrina', plan: 'Controla' },
       { t: 'Cuántos meses lleva cada pieza sin venderse en toda la casa', plan: 'Controla' },
-      { t: 'Repreciar cientos de piezas viendo antes qué cambia' },
+      { t: 'Repreciar cientos de piezas viendo antes qué cambia', suite: true },
     ],
   },
   {
@@ -429,7 +417,7 @@ export const planoJoyeria = [
     items: [
       { t: 'Punto de venta que sigue cobrando sin conexión' },
       { t: 'Descuento con autorización: quién puede bajar, y hasta dónde', plan: 'Controla' },
-      { t: 'Apartado con anticipo y abonos, con el precio congelado' },
+      { t: 'Apartado con anticipo y abonos, con el precio congelado', suite: true },
       { t: 'Factura desde la caja, sin anotar el RFC en una libreta' },
       { t: 'Corte de caja y arqueo automáticos al cerrar' },
     ],
@@ -441,21 +429,21 @@ export const planoJoyeria = [
     simbolo: 'banco',
     foto: '/images/plano-joy-taller.webp',
     alt: 'Banco de joyero con su media luna, el motor colgante y las herramientas en fila',
-    pie: 'Una pieza opaca no es un clavo: es una pieza sucia. Aquí vuelve a la vitrina.',
+    pie: 'Una pieza opaca no está muerta: está sucia. Aquí vuelve a la vitrina.',
     pregunta: '«El anillo de la señora entró con 4.1 gramos y salió con 3.8. ¿Y los 0.3 dónde quedaron?»',
     caja: { x: 298, y: 208, w: 128, h: 96 },
     items: [
-      { t: 'Orden de taller con el peso de entrada y la descripción' },
-      { t: 'Soldadura, cambio de medida, rodinado y pulido, cada uno con su costo' },
-      { t: 'La pieza sale de disponible mientras está en el banco' },
+      { t: 'Orden de taller con el peso de entrada y la descripción', suite: true },
+      { t: 'Soldadura, cambio de medida, rodinado y pulido, cada uno con su costo', suite: true },
+      { t: 'La pieza sale de disponible mientras está en el banco', suite: true },
       { t: 'Quién recibió, quién trabajó y quién entregó', plan: 'Controla' },
       { t: 'Registro de empleados, horarios, turnos y asistencia', extra: true },
     ],
   },
   {
     id: 'caja',
-    nombre: 'Caja fuerte',
-    ambito: 'Al cierre',
+    nombre: 'Bóveda y trastienda',
+    ambito: 'Al cerrar y al abrir',
     simbolo: 'anaqueles',
     foto: '/images/plano-joy-caja.webp',
     alt: 'Caja fuerte de piso abierta con charolas de terciopelo en sus anaqueles',
@@ -478,12 +466,12 @@ export const planoJoyeria = [
     foto: '/images/plano-joy-linea.webp',
     alt: 'Rincón de fotografía de una joyería con tripié, aro de luz y cadenas sobre el paño',
     pie: 'La foto se manda con el peso escrito encima. Y sale del mismo inventario.',
-    pregunta: '«Vendí por WhatsApp una pieza que ya estaba apartada.»',
+    pregunta: '«La aparté por WhatsApp y Plaza ya la había vendido. ¿Ahora quién le llama a la clienta?»',
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
+      { t: 'Apartado y pedido especial también desde el canal en línea' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
-      { t: 'Un solo inventario para todos los canales' },
       { t: 'Perfil del cliente con lo que compró y en qué ley', plan: 'Fideliza' },
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },
     ],

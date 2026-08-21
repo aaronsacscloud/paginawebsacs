@@ -16,6 +16,7 @@
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
 import JoyGramo from '../../components/giros/JoyGramo.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
@@ -51,7 +52,7 @@ const desc =
     foto="/images/hero-joyeria.webp"
     fotoAlt="Vendedora de una joyería consultando en su tablet detrás de la vitrina de oro"
     avisos={[
-      { modulo: 'Subió el fino', texto: 'El gramo de 14K cambió $38 · 214 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Subió el fino', texto: 'El gramo de 14K cambió $38 · 386 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
       { modulo: 'Apartado por vencer', texto: 'Cadena 10K de la Sra. Ruiz · último abono hace 46 días', pos: 2, tono: 'rojo', sello: 'Vence el 3' },
       { modulo: 'Descuento por autorizar', texto: 'Anillo 14K · 12% pedido en Matriz · lo autoriza la gerente', pos: 3, tono: 'azul', sello: 'Ahora' },
     ]}
@@ -75,17 +76,26 @@ const desc =
        El cubo de tallas × colores diría lo mismo en cualquier boutique;
        el gramo solo significa algo donde la materia prima cotiza. ── -->
   <JoyGramo />
-detrás de"
+
+  <!-- ── Un modelo, cuarenta piezas: la matriz de medida × quilataje ── -->
+  <SuiteVariantes
+    eyebrow="Un modelo, cuarenta piezas"
+    titulo="Los 24 renglones que hay<br />detrás de"
     resalte="“un anillo de oro”"
-    sub="Ocho tallas por tres quilatajes, en tres sucursales. Y cada casilla pesa distinto: la talla 12 lleva un tercio más de oro que la 5. Mismo modelo, otro costo y otro precio."
+    sub="Ocho medidas por tres quilatajes. Y cada casilla pesa distinto: la medida 12 lleva casi un tercio más de oro que la 5. Mismo modelo, otro peso, otro costo y otro precio."
     matriz={[
       [2, 3, 4, 3, 2, 1, 0, 0],
       [1, 4, 6, 5, 3, 2, 1, 0],
       [0, 1, 2, 2, 1, 0, 0, 0],
     ]}
     ejeA={['5', '6', '7', '8', '9', '10', '11', '12']}
-    ejeB={['Oro 10K', 'Oro 14K', 'Oro 18K']}
-    capas={3}
+    filas={[
+      { nombre: 'Oro 10K', img: '/images/rack-joy-anillo.webp', alt: 'Anillo de oro amarillo de 10 quilates' },
+      { nombre: 'Oro 14K', img: '/images/rack-joy-esclava.webp', alt: 'El mismo modelo en oro de 14 quilates' },
+      { nombre: 'Oro 18K', img: '/images/rack-joy-cadena.webp', alt: 'El mismo modelo en oro de 18 quilates' },
+    ]}
+    unidad="piezas"
+    genero="f"
     leyendas={['En vitrina', 'Última pieza', 'Sin existencia']}
   />
 
@@ -163,6 +173,7 @@ detrás de"
     sub="Entra el cliente, recorre la vitrina, se prueba la pieza, aparta o paga y se va. Detrás está el taller y la caja fuerte y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona del plano y mira qué hace SACS ahí."
     proyecto="Tu joyería — planta baja"
     zonas={planoJoyeria}
+    leyenda="Lo marcado como Suite Joyería es el complemento que se cotiza aparte; el resto entra con tu plan."
   />
 
   <!-- ── Cómo se cambia sin cerrar ── -->
