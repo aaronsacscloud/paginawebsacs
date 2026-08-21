@@ -52,7 +52,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   const out = {
     revisadas: 0, con_hilo: 0, sin_texto: 0,
-    hallazgos: 0, duplicados: 0, sin_cita: 0,
+    hallazgos: 0, duplicados: 0, sin_cita: 0, colapsados: 0,
     por_tipo: {} as Record<string, number>,
     errores: [] as string[],
     cursor_previo: desde, cursor_nuevo: desde,
@@ -86,7 +86,8 @@ export const GET: APIRoute = async ({ url, request }) => {
         const g = await guardarHallazgos(t, r.hallazgos);
         out.hallazgos += g.creados;
         out.duplicados += g.duplicados;
-        for (const h of r.hallazgos) out.por_tipo[h.tipo] = (out.por_tipo[h.tipo] || 0) + 1;
+        out.colapsados += g.colapsados;
+        for (const h of [...new Set(r.hallazgos.map(x => x.tipo))]) out.por_tipo[h] = (out.por_tipo[h] || 0) + 1;
       }
     }
 

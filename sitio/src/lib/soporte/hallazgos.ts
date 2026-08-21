@@ -96,12 +96,25 @@ const SISTEMA = [
   'Marca un hallazgo SOLO cuando el cliente:',
   '- oportunidad: pregunta precios o cómo pagar, pide activar/contratar algo, quiere abrir sucursal,',
   '  agregar usuarios, migrar de otra plataforma, o pide algo que su plan no cubre.',
-  '- mejora: describe un límite real del producto ("solo me deja elegir un tipo de tarjeta"),',
-  '  o pide una función que no existe.',
-  '- riesgo: está molesto, lleva varios intentos con lo mismo, o habla de cancelar/darse de baja.',
+  '- mejora: describe un límite del producto que funciona COMO ESTÁ DISEÑADO pero no le alcanza',
+  '  ("el sistema solo te permite seleccionar un tipo de tarjeta"), o pide una función que no existe.',
+  '- riesgo: habla de CANCELAR o darse de baja, o expresa enojo explícito ("es inaceptable",',
+  '  "llevo tres semanas con esto", "pésimo servicio").',
   '- testimonio: elogia el producto en primera persona, de forma citable.',
   '',
+  'LO QUE NO ES UN HALLAZGO, aunque lo parezca:',
+  '- UN BUG NO ES UNA MEJORA. "La factura la hizo mal el sistema", "no me deja facturar",',
+  '  "me duplica las ventas", "no aparece el tipo de cambio": son fallas de algo que debería',
+  '  funcionar. Eso lo arregla soporte, no ventas ni producto. No lo reportes.',
+  '- Insistir NO ES RIESGO. "Sigue sin aparecer", "les escribí ayer", "de nuevo me pasa" es un',
+  '  cliente dando seguimiento, no uno a punto de irse. Sin enojo explícito o mención de',
+  '  cancelar, no hay riesgo.',
+  '- Explicar el problema NO ES pedir una función. Que describa lo que le pasa es la materia',
+  '  prima de cualquier ticket.',
+  '',
   'Reglas duras:',
+  '- MÁXIMO UN hallazgo de cada tipo por conversación. Si el cliente describe tres facetas del',
+  '  mismo asunto, es UN hallazgo: elige la frase que mejor lo sostiene.',
   '- La CITA se copia TEXTUAL del hilo, sin corregir ortografía, acentos ni mayúsculas. Si no puedes',
   '  copiar una frase literal que sostenga el hallazgo, no lo reportes.',
   '- Nunca inventes precios, montos ni nombres de productos que no aparezcan en el catálogo dado.',
@@ -163,9 +176,25 @@ export type TicketMin = { conversation_id: string; company_id?: string | null; c
 /** Inserta los hallazgos de una conversación. El índice único parcial sobre la
  *  huella hace el deduplicado en la base, no en memoria: dos corridas en
  *  paralelo no pueden crear la misma fila dos veces. */
-export async function guardarHallazgos(t: TicketMin, hallazgos: HallazgoLeido[]): Promise<{ creados: number; duplicados: number }> {
+export async function guardarHallazgos(t: TicketMin, hallazgos: HallazgoLeido[]): Promise<{ creados: number; duplicados: number; colapsados: number }> {
   let creados = 0, duplicados = 0;
+  // UNO por tipo y conversación. Medido en producción, el modelo partía un mismo
+  // reclamo en tres tarjetas ("no aparece el tipo de cambio", "aparece el pago
+  // en dólares y no el total", "hice el corte y sigue igual") y quien revisa
+  // tiene que descartar dos para llegar a la buena. El prompt ya lo pide, pero
+  // pedirlo no es garantizarlo. Gana la de más confianza, y a igualdad la que
+  // trae la cita más larga: sostiene mejor el caso.
+  const orden = { alta: 2, media: 1, baja: 0 } as Record<string, number>;
+  const mejorPorTipo = new Map<string, HallazgoLeido>();
   for (const h of hallazgos) {
+    const previo = mejorPorTipo.get(h.tipo);
+    const gana = !previo
+      || (orden[h.confianza] ?? 0) > (orden[previo.confianza] ?? 0)
+      || ((orden[h.confianza] ?? 0) === (orden[previo.confianza] ?? 0) && h.cita.length > previo.cita.length);
+    if (gana) mejorPorTipo.set(h.tipo, h);
+  }
+  const colapsados = hallazgos.length - mejorPorTipo.size;
+  for (const h of mejorPorTipo.values()) {
     const fila = {
       conversation_id: t.conversation_id,
       company_id: t.company_id || null,
@@ -186,5 +215,5 @@ export async function guardarHallazgos(t: TicketMin, hallazgos: HallazgoLeido[])
     if ((error as any).code === '23505') { duplicados++; continue; }
     console.error('[hallazgos] no se pudo guardar', h.titulo, '→', error.message);
   }
-  return { creados, duplicados };
+  return { creados, duplicados, colapsados };
 }
