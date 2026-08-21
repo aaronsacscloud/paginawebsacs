@@ -51,10 +51,14 @@ export const GET: APIRoute = async () => {
   // Payments this month
   const { data: payments } = await supabase
     .from('payments')
-    .select('monto, fecha')
+    .select('monto, fecha, estado')
     .gte('fecha', thisMonth + '-01');
 
-  const paymentsThisMonth = (payments || []).reduce((s, p) => s + (p.monto || 0), 0);
+  // Los anulados son capturas duplicadas: existen como rastro, pero no son dinero.
+  const ANULADOS = ['anulado', 'cancelado', 'duplicado'];
+  const paymentsThisMonth = (payments || [])
+    .filter(p => !ANULADOS.includes(String((p as any).estado || '').toLowerCase()))
+    .reduce((s, p) => s + (p.monto || 0), 0);
 
   // Deals (pipeline)
   const { data: deals } = await supabase

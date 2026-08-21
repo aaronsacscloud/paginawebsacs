@@ -53,7 +53,12 @@ const S = {
   fl: { fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase' as const, letterSpacing: '.05em', marginBottom: 4 } as const,
 };
 
-export default function CobranzaTab() {
+/**
+ * `embebido` = vive DENTRO del módulo de Pagos, como su vista de Recuperación.
+ * Entonces no pone su propio título ni sus propios márgenes: los pone Pagos.
+ * Sin esto se veían dos encabezados y el doble de padding en el mismo alto.
+ */
+export default function CobranzaTab({ embebido = false }: { embebido?: boolean } = {}) {
   const [d, setD] = useState<any>(null);
   // Las vistas mandan, como en Cotizaciones: una barra de pestañas con su
   // conteo en vez de dos tablas fijas. Anual y mensual no son secciones, son
@@ -256,7 +261,7 @@ export default function CobranzaTab() {
   );
 
   return (
-    <div style={S.wrap}>
+    <div style={embebido ? { margin: 0, padding: 0 } : S.wrap}>
       <style>{`
         .cob-5 { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:10px; }
         .cob-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
@@ -268,10 +273,12 @@ export default function CobranzaTab() {
 
       <div style={{ marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
-        <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
-          Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
-        </div>
+        {!embebido && <>
+          <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Cobranza</h2>
+          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
+            Lo pendiente de cobro y lo que sí entró este mes: a quién, desde cuándo y con qué
+          </div>
+        </>}
         </div>
         {/* Mismo botón que abre el dashboard en Cotizaciones: contorno azul,
             sin ícono. El segmentado rosa era otro idioma para lo mismo. */}

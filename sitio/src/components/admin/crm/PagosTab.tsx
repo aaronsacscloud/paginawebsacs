@@ -1,14 +1,36 @@
-// Tab "Pagos" del CRM — ligado de verdad al sistema ARR (subscriptions + payments),
-// NO al legacy clients. Dos bloques:
-//  1) Por cobrar: vencidos + próximos (de /api/crm/arr/summary) con "Abonar" inline
-//     (reusa RegistrarPagoModal → activa la sub y avanza proxima_factura).
-//  2) Historial de pagos (de /api/crm/arr/payments): por contacto, con TIPO y CONCEPTO,
-//     filtros por tipo/referencia y resumen por método.
+// Pagos — LA CASA DEL DINERO. Un solo módulo con las tres caras del mismo cobro,
+// porque son el mismo trabajo visto en tres momentos del ciclo:
+//
+//   Por cobrar   · lo que falta por entrar: vencidos y próximos, con qué cobrarlos.
+//   Recibidos    · lo que ya entró: historial, conciliación y movimiento de MRR.
+//   Recuperación · lo vencido que hay que perseguir (era la pestaña "Cobranza").
+//
+// Antes Cobranza era una pestaña aparte y "Por cobrar" salía DUPLICADO en las dos
+// pantallas, con dos diseños y dos criterios: la misma fila con "Abonar" en una y
+// con gestión, promesa y parcialidades en la otra. Quien cobraba tenía que
+// acordarse de en cuál de las dos estaba la acción que necesitaba.
+//
+// Las vistas cargan lo suyo cuando se abren: entrar a Pagos ya no dispara seis
+// consultas de las que cinco no se van a ver.
 import { useState, useEffect } from 'react';
 import Cargando from './ui/Cargando';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
+import CobranzaTab from './CobranzaTab';
 import { useIsMobile } from '../../../lib/ui/mobile';
+
+type Vista = 'cobrar' | 'recibidos' | 'recuperacion';
+const VISTAS: { id: Vista; label: string; sub: string }[] = [
+  { id: 'cobrar', label: 'Por cobrar', sub: 'lo que falta por entrar' },
+  { id: 'recibidos', label: 'Recibidos', sub: 'lo que ya entró' },
+  { id: 'recuperacion', label: 'Recuperación', sub: 'lo vencido que hay que perseguir' },
+];
+/** La vista se lee de la URL para que los enlaces viejos a Cobranza sigan sirviendo. */
+function vistaInicial(): Vista {
+  if (typeof window === 'undefined') return 'cobrar';
+  const v = new URLSearchParams(window.location.search).get('vista');
+  return (VISTAS.some(x => x.id === v) ? v : 'cobrar') as Vista;
+}
 
 const fmt = (n: number) => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -29,6 +51,7 @@ function moraBadge(dias: number) {
 
 export default function PagosTab() {
   const isMobile = useIsMobile();
+  const [vista, setVista] = useState<Vista>(vistaInicial);
   const [summary, setSummary] = useState<any>(null);
   const [subs, setSubs] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -84,21 +107,41 @@ export default function PagosTab() {
     }).catch(() => {});
   };
 
+  // Lo que SIEMPRE hace falta: los KPIs y el conteo de cada vista salen de aquí.
+  const loadBase = () => Promise.all([
+    fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
+    fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
+    // Sin escanear=1: lectura barata de la bitácora, no una salida a MP.
+    fetch('/api/crm/arr/mp-cobros?dias=90').then(r => r.json()).then(setMp).catch(() => {}),
+  ]);
+
+  // Lo de "Recibidos": solo cuando esa vista se abre.
+  const loadRecibidos = () => Promise.all([
+    loadPayments(),
+    fetch('/api/crm/arr/reconciliacion').then(r => r.json()).then(setRecon).catch(() => {}),
+    fetch('/api/crm/arr/mrr-movimiento?meses=6').then(r => r.json()).then(setMrrMov).catch(() => {}),
+  ]);
+
   const loadAll = () => {
     setLoading(true);
-    Promise.all([
-      fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
-      fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
-      fetch('/api/crm/arr/reconciliacion').then(r => r.json()).then(setRecon).catch(() => {}),
-      // Sin escanear=1: lectura barata de la bitácora, no una salida a MP.
-      fetch('/api/crm/arr/mp-cobros?dias=90').then(r => r.json()).then(setMp).catch(() => {}),
-      fetch('/api/crm/arr/mrr-movimiento?meses=6').then(r => r.json()).then(setMrrMov).catch(() => {}),
-      loadPayments(),
-    ]).finally(() => setLoading(false));
+    const tareas: Promise<any>[] = [loadBase()];
+    if (vista === 'recibidos') tareas.push(loadRecibidos());
+    Promise.all(tareas).finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadAll(); }, []);
-  useEffect(() => { const t = setTimeout(loadPayments, 300); return () => clearTimeout(t); }, [fMetodo, fQ]);
+  useEffect(() => { setLoading(true); loadBase().finally(() => setLoading(false)); }, []);
+  // Al abrir "Recibidos" por primera vez se traen sus datos; después ya están.
+  useEffect(() => { if (vista === 'recibidos' && !recon) loadRecibidos(); }, [vista]);
+  useEffect(() => { if (vista !== 'recibidos') return; const t = setTimeout(loadPayments, 300); return () => clearTimeout(t); }, [fMetodo, fQ, vista]);
+
+  // La vista viaja en la URL: se puede compartir el enlace y el botón "atrás"
+  // del navegador hace lo que se espera.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const u = new URL(window.location.href);
+    if (vista === 'cobrar') u.searchParams.delete('vista'); else u.searchParams.set('vista', vista);
+    window.history.replaceState({}, '', u);
+  }, [vista]);
 
   const vencidas: any[] = summary?.vencidas || [];
   const proximos: any[] = (summary?.meses?.[0]?.cobros || []).filter((c: any) => c.fecha >= today());
@@ -143,16 +186,50 @@ export default function PagosTab() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0 }}>Pagos</h2>
-          <div style={{ color: '#888', fontSize: 13 }}>Cobranza en vivo: próximos cobros y todo el historial, por contacto y tipo.</div>
+          <div style={{ color: '#888', fontSize: 13, marginTop: 2 }}>El dinero de las licencias, de principio a fin: lo que falta por entrar, lo que ya entró y lo que hay que perseguir.</div>
         </div>
         <button onClick={() => { setPagoPrefill(null); setShowPago(true); }} style={{ ...S.btn, background: '#2AB5A0', color: '#fff' }}>+ Registrar pago</button>
       </div>
 
+      {/* ── Las tres vistas del mismo cobro ──
+          Con su conteo al lado: el número es lo que decide a cuál entrar. */}
+      <div className="crm-scroll-x" style={{ display: 'flex', gap: 8, marginBottom: 18, borderBottom: '1px solid #ececf2', paddingBottom: 0 }}>
+        {VISTAS.map(v => {
+          const activa = vista === v.id;
+          const badge = v.id === 'cobrar' ? (vencidas.length + proximos.length) || null
+            : v.id === 'recuperacion' ? (vencidas.length || null)
+            : null;
+          return (
+            <button key={v.id} onClick={() => setVista(v.id)} title={v.sub}
+              style={{
+                border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                padding: '9px 4px', marginRight: 10, display: 'flex', alignItems: 'center', gap: 7,
+                fontSize: '0.86rem', fontWeight: activa ? 800 : 600,
+                color: activa ? '#5B4BD6' : '#83808e',
+                borderBottom: activa ? '2px solid #9B8CFA' : '2px solid transparent',
+                marginBottom: -1, whiteSpace: 'nowrap',
+              }}>
+              {v.label}
+              {badge ? (
+                <span style={{
+                  background: v.id === 'recuperacion' ? '#FEF0EF' : '#EEECFE',
+                  color: v.id === 'recuperacion' ? '#C0554E' : '#5B4BD6',
+                  borderRadius: 20, padding: '1px 8px', fontSize: '0.68rem', fontWeight: 800,
+                }}>{badge}</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Recuperación: la antigua pestaña de Cobranza, ya adentro ── */}
+      {vista === 'recuperacion' && <CobranzaTab embebido />}
+
       {/* ── KPIs / pronóstico ── */}
-      {summary?.kpis && (
+      {vista === 'cobrar' && summary?.kpis && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={S.kpi}>
             <div style={S.kLabel}>ARR activo</div>
@@ -173,6 +250,7 @@ export default function PagosTab() {
       )}
 
       {/* ── Por cobrar (vencidos + próximos) ── */}
+      {vista === 'cobrar' && (
       <div style={S.card}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Por cobrar
           <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · {vencidas.length + proximos.length} cobros · {fmt(totalPorCobrar)}</span>
@@ -253,12 +331,13 @@ export default function PagosTab() {
           </div>
         )}
       </div>
+      )}
 
       {/* ── Cobros de Mercado Pago que NO entraron ──
           Un rebote no aparece en el historial (no hubo pago) ni en "por cobrar"
           hasta que la fecha se pasa. Ese hueco es donde se pierden: el cargo
           falló hoy y nadie se entera hasta que alguien cuadra el mes. */}
-      {(rechazos.length > 0 || sinIdentificar.length > 0) && (
+      {vista === 'cobrar' && (rechazos.length > 0 || sinIdentificar.length > 0) && (
         <div style={{ ...S.card, borderLeft: '4px solid #b93333' }}>
           <div style={{ fontWeight: 800, marginBottom: 4 }}>Cobros de Mercado Pago que no entraron
             <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · últimos 90 días</span>
@@ -333,6 +412,7 @@ export default function PagosTab() {
       )}
 
       {/* ── Historial de pagos ── */}
+      {vista === 'recibidos' && (
       <div style={S.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontWeight: 800 }}>Historial de pagos <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· {total}</span></div>
@@ -421,9 +501,10 @@ export default function PagosTab() {
         </div>
         )}
       </div>
+      )}
 
       {/* ── Conciliación (proveniencia: manual vs Stripe + huérfanos) ── */}
-      {recon && (
+      {vista === 'recibidos' && recon && (
         <div style={S.card}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Conciliación de pagos <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· {recon.total} en total</span></div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -451,7 +532,7 @@ export default function PagosTab() {
       )}
 
       {/* ── Movimiento de MRR (nuevo / churn / neto) ── */}
-      {mrrMov?.meses?.length ? (() => {
+      {vista === 'recibidos' && mrrMov?.meses?.length ? (() => {
         const meses = mrrMov.meses;
         const max = Math.max(1, ...meses.map((m: any) => Math.max(m.nuevo, m.churn)));
         const mesLabel = (ym: string) => new Date(ym + '-15T12:00:00').toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });

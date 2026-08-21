@@ -130,11 +130,10 @@ const NAV_SECTIONS = [
     label: 'Facturación', sec: 'facturacion',
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
+      // Pagos se comió a Cobranza: eran el mismo trabajo —el dinero— visto en
+      // dos momentos, y "Por cobrar" salía duplicado en las dos pantallas.
+      // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
-      // Cobrar es parte de facturar, no del acompañamiento: va pegado a Pagos
-      // porque son el mismo trabajo —el dinero que entra— visto desde los dos
-      // lados: lo que ya llegó y lo que falta por llegar.
-      { id: 'cobranza' as Tab, label: 'Cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
     ],
   },
@@ -179,7 +178,16 @@ function getInitialTab(): Tab {
   // 'agenda' y 'config' ya no son renglones del menú —la primera es una vista
   // dentro de Reuniones y la segunda vive en el pie—, pero las ligas viejas y
   // los enlaces guardados tienen que seguir llevando a donde llevaban.
-  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy', 'pipelines', 'marca', 'cobros'];
+  // Cobranza dejó de ser pestaña y es una vista de Pagos. Las ligas guardadas
+  // (y la campana, que manda destino='cobranza') tienen que seguir llegando.
+  if (t === 'cobranza') {
+    const u = new URL(window.location.href);
+    u.searchParams.set('tab', 'pagos');
+    u.searchParams.set('vista', 'recuperacion');
+    window.history.replaceState({}, '', u);
+    return 'pagos';
+  }
+  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs', 'hoy', 'pipelines', 'marca', 'cobros', 'cobranza'];
   if (t && allIds.includes(t)) return t;
   return 'dashboard';
 }
@@ -694,6 +702,8 @@ export default function CrmDashboard() {
             </div>
           </div>
         ) : tab === 'cobranza' ? (
+          // Ya no hay renglón de menú que lleve aquí; queda como red por si algún
+          // enlace interno viejo pone el estado a mano.
           <ErrorBoundary><CobranzaTab /></ErrorBoundary>
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>

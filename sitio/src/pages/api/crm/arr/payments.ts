@@ -16,7 +16,14 @@ type Filters = {
   metodo?: string; estado?: string; desde?: string; hasta?: string; q?: string;
 };
 
+// Un pago ANULADO no es dinero: es un registro que quedó como rastro de una
+// captura duplicada. Sigue existiendo (su acuse pudo haberse enviado y el link
+// no se puede romper), pero no suma en ningún lado. Solo aparece si se pide
+// explícitamente con ?estado=anulado.
+export const ANULADOS = ['anulado', 'cancelado', 'duplicado'];
+
 function applyFilters(query: any, f: Filters) {
+  if (!f.estado) query = query.or(`estado.is.null,estado.not.in.(${ANULADOS.join(',')})`);
   if (f.company_id) query = query.eq('company_id', f.company_id);
   if (f.contact_id) query = query.eq('contact_id', f.contact_id);
   if (f.subscription_id) query = query.eq('subscription_id', f.subscription_id);

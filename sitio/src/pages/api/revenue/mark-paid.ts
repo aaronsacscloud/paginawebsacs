@@ -40,11 +40,30 @@ export const POST: APIRoute = async ({ request }) => {
     let acuseGenerated: any = null;
     let createdPaymentId: string | null = null;
     try {
-      const { data: q } = await supabase.from('quotes').select('total').eq('id', quoteId).single();
+      const { data: q } = await supabase.from('quotes').select('total, company_id, deal_id').eq('id', quoteId).single();
       const total = Number(q?.total || 0);
       // Suma de pagos existentes
-      const { data: existing } = await supabase.from('payments').select('monto').eq('quote_id', quoteId);
-      const yaPagado = (existing || []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+      const { data: existing } = await supabase.from('payments').select('monto, estado').eq('quote_id', quoteId);
+      const ANULADOS = ['anulado', 'cancelado', 'duplicado'];
+      let yaPagado = (existing || [])
+        .filter((p: any) => !ANULADOS.includes(String(p.estado || '').toLowerCase()))
+        .reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+
+      // ── El dinero que ya está en la LICENCIA también cuenta ──
+      // Un cobro registrado directo sobre la suscripción (o importado de Mercado
+      // Pago) queda ligado a la licencia, no a la cotización. Sin mirarlo, marcar
+      // pagada la cotización creaba un SEGUNDO registro del mismo dinero: le pasó
+      // a Elena Boutique, cuya cuenta reportaba $35,100 de un pago de $17,550.
+      if (q?.company_id) {
+        const { data: subsLig } = await supabase.from('subscriptions')
+          .select('id, total_pagado, pagos_realizados, quote_id, deal_id')
+          .eq('company_id', q.company_id).limit(100);
+        const enLicencias = (subsLig || [])
+          .filter((sb: any) => sb.quote_id === quoteId || (q.deal_id && sb.deal_id === q.deal_id))
+          .reduce((sum: number, sb: any) => sum + (Number(sb.pagos_realizados || 0) > 0 ? Number(sb.total_pagado || 0) : 0), 0);
+        yaPagado = Math.max(yaPagado, enLicencias);
+      }
+
       const saldo = Math.max(0, total - yaPagado);
       const montoPago = Number(monto || saldo); // si no hay saldo, no creamos pago duplicado
       if (montoPago > 0) {
