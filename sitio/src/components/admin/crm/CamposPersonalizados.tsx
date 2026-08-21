@@ -53,7 +53,7 @@ export function useCampos(entidad: 'company' | 'deal' | 'subscription' | 'contac
 }
 
 /* ─────────── Configuración ─────────── */
-export default function CamposConfig({ entidad = 'company' }: { entidad?: 'company' | 'deal' | 'subscription' | 'contact' }) {
+export default function CamposConfig({ entidad = 'company', sinTitulo }: { entidad?: 'company' | 'deal' | 'subscription' | 'contact'; sinTitulo?: boolean }) {
   const { props, recargar } = useCampos(entidad);
   const [nuevo, setNuevo] = useState<any>(null);
   const [editando, setEditando] = useState<string | null>(null);
@@ -137,7 +137,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0 }}>Campos personalizados del cliente</h2>
+        {!sinTitulo && <h2 style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0 }}>Campos personalizados del cliente</h2>}
         <div style={{ flex: 1 }} />
         <button style={E.btn} onClick={() => setNuevo({ ...vacio })}>+ Nuevo campo</button>
       </div>

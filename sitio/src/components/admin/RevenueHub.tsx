@@ -3548,10 +3548,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               { id: 'marca', nom: 'Mi marca', sub: 'Cómo te ve un cliente en los documentos que le mandas.', items: [
                 { id: 'marca', ico: 'marca', t: 'Marca de los documentos', mudado: true,
                   d: 'Logo, nombre, línea, color de acento y firma con los que salen la minuta, el estado de cuenta y la cotización. Es de cada persona, no de la empresa.',
-                  editor: <MarcaTab /> },
+                  editor: <MarcaTab sinTitulo /> },
               ]},
               { id: 'usuarios', nom: 'Usuarios y permisos', sub: 'Quién entra al CRM y qué ve cada quien.', items: [
-                { id: 'usuarios', ico: 'gente', t: 'Usuarios y permisos', 
+                { id: 'usuarios', ico: 'gente', t: 'Personas con acceso', 
                   d: 'Alta de personas, rol de arranque y permiso por sección: edita, solo ve o no entra. Se revisa también en el servidor.',
                   editor: <UsuariosPermisos /> },
               ]},
@@ -3560,25 +3560,25 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               { id: 'clientes', nom: 'Clientes', sub: 'Lo que se guarda de una cuenta y por dónde pasa.', items: [
                 { id: 'campos-cliente', ico: 'campos', t: 'Campos personalizados',
                   d: 'Giro, subgiro, colaboradores, tipo de acompañamiento, origen. Se capturan en la ficha y sirven de filtro en la lista.',
-                  editor: <CamposConfig entidad="company" /> },
+                  editor: <CamposConfig entidad="company" sinTitulo /> },
                 { id: 'etapas-cliente', ico: 'pipe', t: 'Etapas del cliente', v: 'Pipeline', mudado: true,
                   d: 'Las columnas por las que pasa una cuenta ya ganada.',
-                  editor: <PipelinesConfig initialTipo="cliente" /> },
+                  editor: <PipelinesConfig initialTipo="cliente" sinTitulo /> },
               ]},
               { id: 'contactos', nom: 'Contactos', sub: 'Lo que se guarda de una persona.', items: [
                 { id: 'campos-contacto', ico: 'campos', t: 'Campos personalizados',
                   d: 'Lo que se guarda además de nombre, correo y teléfono.',
-                  editor: <CamposConfig entidad="contact" /> },
+                  editor: <CamposConfig entidad="contact" sinTitulo /> },
               ]},
               { id: 'leads', nom: 'Leads', sub: 'El embudo de lo que todavía no es cliente.', items: [
                 { id: 'etapas-lead', ico: 'pipe', t: 'Etapas del lead', v: 'Pipeline', mudado: true,
                   d: 'Las columnas del embudo y qué significa cada una.',
-                  editor: <PipelinesConfig initialTipo="lead" /> },
+                  editor: <PipelinesConfig initialTipo="lead" sinTitulo /> },
               ]},
               { id: 'oportunidades', nom: 'Oportunidades', sub: 'Cómo avanza lo que se está vendiendo.', items: [
                 { id: 'etapas-op', ico: 'pipe', t: 'Etapas de la oportunidad', v: 'Pipeline', mudado: true,
                   d: 'Hasta ganarse o perderse, y los motivos de pérdida.',
-                  editor: <PipelinesConfig initialTipo="oportunidad" /> },
+                  editor: <PipelinesConfig initialTipo="oportunidad" sinTitulo /> },
               ]},
               { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [] },
             ]},

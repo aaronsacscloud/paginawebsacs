@@ -22,7 +22,7 @@ const S = {
   btnSmall: { padding: '4px 9px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.75rem', cursor: 'pointer' } as const,
 };
 
-export default function PipelinesConfig({ initialTipo }: { initialTipo?: string } = {}) {
+export default function PipelinesConfig({ initialTipo, sinTitulo }: { initialTipo?: string; sinTitulo?: boolean } = {}) {
   const [pipes, setPipes] = useState<Record<string, Pipeline>>({});
   const [tipo, setTipo] = useState(initialTipo && ['lead', 'oportunidad', 'cliente'].includes(initialTipo) ? initialTipo : 'lead');
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function PipelinesConfig({ initialTipo }: { initialTipo?: string 
 
   return (
     <div style={{ padding: 24, maxWidth: 760, margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 800 }}>Pipelines</h2>
+      {!sinTitulo && <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 800 }}>Pipelines</h2>}
       <div style={{ color: '#888', fontSize: 13, marginBottom: 16 }}>Define las etapas de cada tipo. Se usan en las vistas Kanban de Contactos, Oportunidades y Clientes.</div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>

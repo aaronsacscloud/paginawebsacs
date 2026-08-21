@@ -17,7 +17,7 @@ const D = {
 
 type Acento = { clave: string; label: string; swatch: string; hd: string };
 
-export default function MarcaTab() {
+export default function MarcaTab({ sinTitulo }: { sinTitulo?: boolean } = {}) {
   const [campos, setCampos] = useState<Record<string, string>>({});
   const [marca, setMarca] = useState<any>(null);
   const [acentos, setAcentos] = useState<Acento[]>([]);
@@ -68,7 +68,7 @@ export default function MarcaTab() {
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: '1.15rem', fontWeight: 800 }}>Mi marca</h2>
+      {!sinTitulo && <h2 style={{ margin: '0 0 4px', fontSize: '1.15rem', fontWeight: 800 }}>Mi marca</h2>}
       <p style={{ margin: '0 0 20px', fontSize: '0.82rem', color: '#8d8a97', lineHeight: 1.6, maxWidth: 640 }}>
         Con esto salen las minutas que descargas y compartes con el cliente. Es tuya: cada persona del equipo
         configura la suya y firma sus propios documentos.
