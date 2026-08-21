@@ -21,7 +21,7 @@ interface Metal {
   nombre: string;
   /** Etiqueta de pureza tal como se captura. */
   pureza: string;
-  /** Factor comercial: MAYOR que la pureza teórica porque absorbe merma y aleación. */
+  /** Factor comercial: MAYOR que la pureza teórica porque absorbe la merma del taller y la hechura. */
   factor: number;
   /** Pureza teórica, para poder mostrar la diferencia. */
   teorico: number;
@@ -50,7 +50,7 @@ const {
      saber que el reloj de marca no se reprecia es otra cosa. */
   fijos = [
     { nombre: 'Reloj de marca', razon: 'precio de lista de la marca', piezas: 38 },
-    { nombre: 'Plata de fantasía', razon: 'se cuesta por pieza, no por gramo', piezas: 164 },
+    { nombre: 'Bisutería y chapa de oro', razon: 'se cuesta por pieza, no por gramo', piezas: 164 },
   ],
 } = Astro.props;
 
@@ -92,7 +92,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
         </label>
         <input
           type="range" id="jcColchon" class="jc-rango"
-          min={Math.round(spot * 0.9)} max={Math.round(spot * 1.45)} step="10"
+          min={spot} max={Math.round(spot * 1.45)} step="10"
           value={colchonInicial}
           aria-label="Precio de tu colchón por gramo de fino"
         />
@@ -113,7 +113,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
             </div>
           ))}
           <p class="jc-nota-factor">
-            El factor es tuyo y va por arriba del teórico: absorbe merma y aleación. Cada casa
+            El factor es tuyo y va por arriba del teórico: absorbe la merma del taller y la hechura. Cada casa
             usa el suyo — por eso no viene cableado.
           </p>
         </div>
@@ -129,7 +129,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
         </div>
 
         <div class="jc-juego">
-          <span>Dinero en juego</span>
+          <span>Valor del catálogo repreciado</span>
           <b id="jcJuego">{pesosMX(juegoSSR)}</b>
         </div>
 
@@ -171,26 +171,26 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
 </section>
 
 <style>
-  .jc { background: #0B0A08; padding: 100px 24px 110px; }
+  .jc { background: #1A1A1A; padding: 100px 24px 110px; }
   .jc-inner { max-width: 1200px; margin: 0 auto; }
 
   .jc-head { max-width: 720px; margin-bottom: 50px; }
   .jc-eyebrow {
     font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-    color: #C9A227; margin: 0 0 16px;
+    color: #E8A838; margin: 0 0 16px;
   }
   .jc-head h2 {
     font-size: clamp(28px, 4.2vw, 48px); font-weight: 800; letter-spacing: -1.7px;
     line-height: 1.06; color: #fff; margin: 0 0 16px;
   }
-  .jc-head h2 span { color: #E3C05C; }
+  .jc-head h2 span { color: #F0C877; }
   .jc-sub { margin: 0; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: #A9A498; }
 
   .jc-cuerpo { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: start; }
 
   /* ── El control ── */
   .jc-mando {
-    border: 1px solid #26231C; border-radius: 18px; padding: 26px; background: #12100C;
+    border: 1px solid #26231C; border-radius: 18px; padding: 26px; background: #242424;
   }
   .jc-spot {
     display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
@@ -202,7 +202,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
   .jc-label { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-bottom: 14px; }
   .jc-label span { font-size: 15px; color: #A9A498; }
   .jc-label b {
-    font-size: 30px; font-weight: 800; color: #E3C05C; letter-spacing: -1px;
+    font-size: 30px; font-weight: 800; color: #F0C877; letter-spacing: -1px;
     font-variant-numeric: tabular-nums;
   }
   .jc-rango {
@@ -211,14 +211,14 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
   }
   .jc-rango::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
-    background: #fff; border: 5px solid #C9A227; cursor: grab;
+    background: #fff; border: 5px solid #E8A838; cursor: grab;
   }
   .jc-rango::-moz-range-thumb {
-    width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid #C9A227; cursor: grab;
+    width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid #E8A838; cursor: grab;
   }
-  .jc-rango:focus-visible { outline: 2px solid #C9A227; outline-offset: 6px; }
+  .jc-rango:focus-visible { outline: 2px solid #E8A838; outline-offset: 6px; }
   .jc-separacion { margin: 12px 0 24px; font-size: 13.5px; color: #8A8578; }
-  .jc-separacion b { color: #E3C05C; font-weight: 800; }
+  .jc-separacion b { color: #F0C877; font-weight: 800; }
 
   .jc-factores { border-top: 1px solid #221F18; padding-top: 20px; }
   .jc-factores-rot {
@@ -239,11 +239,11 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
   /* ── El efecto ── */
   .jc-efecto {
     border: 1px solid #2E2718; border-radius: 18px; padding: 28px 26px 26px;
-    background: linear-gradient(165deg, rgba(201,162,39,.1), #12100C 62%);
+    background: linear-gradient(165deg, rgba(201,162,39,.1), #242424 62%);
   }
   .jc-efecto-rot {
     margin: 0 0 18px; font-size: 12px; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: #B99A34;
+    text-transform: uppercase; color: #C98F1E;
   }
   .jc-fila { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
   .jc-fila b {
@@ -259,7 +259,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
   }
   .jc-juego span { font-size: 14px; color: #A9A498; }
   .jc-juego b {
-    font-size: 24px; font-weight: 800; color: #E3C05C; font-variant-numeric: tabular-nums;
+    font-size: 24px; font-weight: 800; color: #F0C877; font-variant-numeric: tabular-nums;
   }
 
   .jc-congelado {
@@ -290,11 +290,11 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
 
   .jc-cta {
     display: inline-flex; align-items: center; justify-content: center; width: 100%;
-    height: 52px; border-radius: 12px; background: #C9A227; color: #1A1508;
+    height: 52px; border-radius: 12px; background: #E8A838; color: #1A1508;
     font-size: 15.5px; font-weight: 800; text-decoration: none;
     transition: background .16s ease;
   }
-  .jc-cta:hover { background: #E3C05C; text-decoration: none; }
+  .jc-cta:hover { background: #F0C877; text-decoration: none; }
 
   @media (max-width: 900px) {
     .jc { padding: 70px 18px 78px; }

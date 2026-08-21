@@ -62,7 +62,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
 
     <header class="vr-head">
       <p class="vr-eyebrow">{eyebrow}</p>
-      <h2>{titulo} {resalte && <span>{resalte}</span>}</h2>
+      <h2><Fragment set:html={titulo} /> {resalte && <span>{resalte}</span>}</h2>
       {sub && <p class="vr-sub">{sub}</p>}
       <ul class="vr-leyenda">
         <li><i class="ok"></i>{leyendas[0]}</li>
@@ -90,12 +90,12 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
                   return (
                     <div
                       class:list={['vr-celda', n === 0 ? 'cero' : n <= 2 ? 'bajo' : 'ok']}
-                      title={n === 0 ? 'Agotado' : n <= 2 ? 'Quedan pocas' : 'Con existencia'}
+                      title={n === 0 ? leyendas[2] : n <= 2 ? leyendas[1] : leyendas[0]}
                       style={`--i:${fi * ejeA.length + ci}`}
                     >
                       <img src={f.img} alt="" width="120" height="120" loading="lazy" aria-hidden="true" />
                       <b>{a}</b>
-                      <span>{n === 0 ? 'agotado' : `${n}`}</span>
+                      <span>{n === 0 ? leyendas[2].toLowerCase() : `${n}`}</span>
                     </div>
                   );
                 })}

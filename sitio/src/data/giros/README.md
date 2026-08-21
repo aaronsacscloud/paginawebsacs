@@ -17,7 +17,7 @@ copiar su estructura es el camino corto.
 |---|---|
 | Zapatería | **Al día.** Lleva además sus dos bloques propios |
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
-| Joyería | **En proceso** — estructura vieja: hero propio, sin `SuiteVariantes`, con `SuiteMigracion` y `SuiteFormal`, tres salidas |
+| Joyería | Estructura al día; **en rondas de referee**. Es el único giro que se vende como complemento |
 | Los demás (~20) | Sin empezar |
 
 ---
@@ -136,7 +136,7 @@ búscale su equivalente en el sistema antes de dibujarlo aparte.
 | `SuiteDireccion` | Para quien firma: comparativo de sucursales y las reglas contra la fuga |
 | `SuiteProceso` | Cómo se cambia sin cerrar: la escena se queda quieta y los pasos pasan. Trae las tres formas de implementar y la caja sin conexión |
 | `SuitePlano` | La suite completa contada como el plano de la tienda: lámina arquitectónica con zonas, la foto de cada zona y **abajo, todas las funciones a la vez**. Sustituyó a `SuiteIntegral` en moda |
-| `SuiteIntegral` | Vender, controlar, fidelizar y administrar en un círculo. **En retirada**: sigue en zapatería y joyería, y le toca pasar a `SuitePlano` |
+| `SuiteIntegral` | Vender, controlar, fidelizar y administrar en un círculo. **Retirado**: los tres giros ya usan `SuitePlano` |
 | `SuitePlanes` | La escalera de planes y desde dónde viene incluida la suite |
 | `CtaDudas` | El cierre. **Es el mismo componente de la portada** |
 | `BloqueProducto` | El envoltorio de las páginas de producto (`sq-block`). Cualquier pieza interactiva del giro va dentro de él |
@@ -360,6 +360,11 @@ Cómo se les habla:
   **embarque** para lo del proveedor y **reparto** para lo interno. Antes de
   elegir un término del oficio, revisa que no esté ya cargando otro trabajo en
   la misma página.
+- **Un `<br />` en una prop de título se imprime como texto** si el componente
+  la pinta con `{titulo}` en vez de `<Fragment set:html={titulo} />`. Y peor:
+  **Astro no falla ante un bloque de props huérfano** —al que le falta su
+  etiqueta de apertura— sino que lo imprime crudo en la página. Las dos
+  trampas ya se pagaron dos veces cada una, en zapatería y en joyería.
 - **El vocabulario es del piso, no del blog.** Número y no talla en calzado;
   corrida rota y no "par descabalado"; colchón y no "precio automático"; medidor
   de pie y no "escalímetro" (que es la regla del dibujante); vale y no "nota de
@@ -488,8 +493,12 @@ Cómo se les habla:
 - **Moda se quedó sin bloque propio** al retirar `ModaMarcacion` (recuperable en
   `git show 289039f:sitio/src/components/giros/ModaMarcacion.astro`). Rompe la
   regla de la sección 3 y hay que reponerlo.
-- **Joyería sigue con la estructura vieja**: cubo, hero oscuro con el POS de
-  fondo, `SuiteFormal`, `SuiteMigracion`. Le toca esta misma pasada.
+- **Joyería: la mesa de compra de oro no se publicó.** Es zona real del giro y,
+  según el experto, la operación más rentable del año —se le compra al público
+  al 60-70% del fino en enero, cuando la joyería no trae liquidez—, pero el
+  módulo no existe. Vale una conversación de producto.
+- **Joyería no ha pasado los tres referees.** Ronda 2: oficio 6, calidad 6.2,
+  diseño 8.
 - **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento
   moral del bloque de trastienda. Hoy se apoya en "Permisos por usuario y
   sucursal" (Controla). Falta decidir si merece su propia línea.

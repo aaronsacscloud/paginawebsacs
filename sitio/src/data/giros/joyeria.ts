@@ -22,7 +22,7 @@
  */
 
 const est = {
-  wrap: 'font-family:Inter,system-ui,sans-serif;',
+  wrap: 'font-family:var(--font-body);',
   h: 'font-size:11px;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;',
 };
 
@@ -54,7 +54,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
           <div style="font-size:10.5px;color:#94A3B8;font-weight:700;">SPOT · 16 JUL 2026</div>
           <div style="font-size:19px;font-weight:800;color:#64748B;font-variant-numeric:tabular-nums;">$2,678<span style="font-size:11px;font-weight:600;"> /g</span></div>
         </div>
-        <div style="flex:1;border:1.5px solid #C9A227;background:#FFFBEF;border-radius:11px;padding:12px;">
+        <div style="flex:1;border:1.5px solid #E8A838;background:#FFFBEF;border-radius:11px;padding:12px;">
           <div style="font-size:10.5px;color:#8A6D14;font-weight:800;">TU COLCHÓN</div>
           <div style="font-size:19px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">$2,900<span style="font-size:11px;font-weight:600;"> /g</span></div>
         </div>
@@ -65,7 +65,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">factor ${f}</div></div>
           <span style="font-size:13.5px;font-weight:800;color:#0F172A;font-variant-numeric:tabular-nums;">${p} /g</span>
         </div>`).join('')}
-      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">El factor es tuyo: va por arriba del teórico porque absorbe merma y aleación</p>
+      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">El factor es tuyo: va por arriba del teórico porque absorbe merma de taller y hechura</p>
     </div>`,
   },
   {
@@ -110,15 +110,15 @@ export const seccionesJoyeria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Simulación · colchón $2,900 → $3,085</p>
-      ${[['Oro 14K · 386 piezas','+6.4% de precio','#047857'],['Oro 10K · 212 piezas','+6.4% de precio','#047857'],['Bajo margen mínimo','14 piezas para revisar','#B45309'],['Apartados congelados','23 piezas sin tocar','#2563EB']]
+      ${[['Oro 14K · 386 piezas','+6.4% de precio','#047857'],['Oro 10K · 212 piezas','+6.4% de precio','#047857'],['Oro 18K · 94 piezas','+6.4% de precio','#047857'],['Bajo margen mínimo','14 piezas para revisar','#B45309'],['Apartados congelados','23 piezas sin tocar','#2563EB']]
         .map(([a,b,c]:any)=>`<div style="display:flex;align-items:center;gap:11px;border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-bottom:7px;">
           <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></span>
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${a}</div></div>
           <span style="font-size:11.5px;font-weight:700;color:${c};">${b}</span>
         </div>`).join('')}
       <div style="border-top:1px dashed #E5E7EB;margin-top:10px;padding-top:11px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:800;color:#0F172A;">Dinero en juego</span>
-        <span style="font-size:15px;font-weight:800;color:#0F172A;">$1,284,600</span>
+        <span style="font-size:12px;font-weight:800;color:#0F172A;">Lo que sube el catálogo</span>
+        <span style="font-size:15px;font-weight:800;color:#0F172A;">$315,200</span>
       </div>
     </div>`,
   },
@@ -144,7 +144,7 @@ export const seccionesJoyeria: SuiteSeccion[] = [
           </div>
         </div>`).join('')}
       <div style="background:#EFF6FF;border:1px solid #C7DAFB;border-radius:11px;padding:11px 13px;">
-        <div style="font-size:11.5px;font-weight:800;color:#1D4ED8;">El oro subió 7% desde marzo</div>
+        <div style="font-size:11.5px;font-weight:800;color:#1D4ED8;">El oro subió 6.4% desde marzo</div>
         <div style="font-size:11.5px;color:#1E40AF;margin-top:3px;">Ninguno de los tres se repreció. Lo pactado es lo pactado.</div>
       </div>
     </div>`,
@@ -161,17 +161,17 @@ export const seccionesJoyeria: SuiteSeccion[] = [
       'Traspasos entre tiendas con su costo histórico intacto',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Anillo solitario 14K · 3.2 g</p>
+      <p style="${est.h}">Anillo liso 14K · 3.2 g</p>
       ${[['Centro','Matriz',2,true],['Plaza','a 15 min',1,false],['Galerías','a 40 min',0,false],['Norte','a 25 min',0,false]]
-        .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#C9A227':'#EEF1F5'};background:${aqui?'#FFFBEF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
+        .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#E8A838':'#EEF1F5'};background:${aqui?'#FFFBEF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
           <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div></div>
           <span style="font-size:14px;font-weight:800;color:${q>0?'#10B981':'#CBD5E1'};">${q}</span>
-          ${aqui?'<span style="background:#C9A227;color:#1A1508;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">AQUÍ</span>':''}
+          ${aqui?'<span style="background:#E8A838;color:#1A1508;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">AQUÍ</span>':''}
         </div>`).join('')}
       <div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;margin-top:4px;display:flex;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:700;color:#0F172A;">Precio en las tres</span>
-        <span style="font-size:13.5px;font-weight:800;color:#0F172A;">$14,850</span>
+        <span style="font-size:12px;font-weight:700;color:#0F172A;">Precio en las cuatro</span>
+        <span style="font-size:13.5px;font-weight:800;color:#0F172A;">$5,750</span>
       </div>
     </div>`,
   },
@@ -185,11 +185,11 @@ export const cortinaJoyeria = {
   fotoDespues: '/images/suite-joy-resuelto.webp',
   altAntes: 'Vendedora pesando una cadena y sacando el precio con calculadora',
   altDespues: 'Vendedora presentando una pieza con el sistema en la tablet',
-  libreta: ['14K · 18.4 g × ?', 'oro hoy… ¿1,980?'],
+  libreta: ['14K · 18.4 g × ?', 'oro hoy… ¿2,540?'],
   pieAntes: 'Calculadora, memoria<br />y el precio de la semana pasada.',
   filas: [
     { que: 'Esclava 14K · 18.4 g', donde: 'Tu colchón', dato: '$33,100' },
-    { que: 'Anillo 14K · 3.2 g', donde: 'Tu colchón', dato: '$14,850' },
+    { que: 'Anillo liso 14K · 3.2 g', donde: 'Tu colchón', dato: '$5,750' },
     { que: 'Cadena 10K · 9.7 g', donde: 'Tu colchón', dato: '$12,520' },
   ],
   pieDespues: 'El mismo gramo para toda la casa.',
@@ -202,7 +202,7 @@ export const sucursalesJoyeria = [
   {
     nombre: 'Norte', venta: '$214,300', llena: 31, ticket: '$4,210', margen: '19%', delta: '−14%',
     alerta: true,
-    nota: 'Está vendiendo con el colchón viejo: nadie repreció ahí después de que el oro subió, y el margen se comió ocho puntos.',
+    nota: 'Ahí se está regateando abajo del piso de margen: uno de cada tres tickets salió con descuento autorizado a la carrera, y el margen se comió ocho puntos.',
   },
 ];
 
@@ -273,7 +273,7 @@ export const documentosJoyeria = {
 export const casosJoyeria = [
   {
     id: 'pesar',
-    titulo: 'Diez de mayo: la vitrina se vacía en tres días',
+    titulo: 'Diez de mayo: la vitrina se vacía en cinco días',
     texto:
       'La pieza se pesa y el precio sale con tu colchón del gramo y el factor de su quilataje — el mismo para toda la casa, sin calculadora ni memoria. Y el peso que entra a la cuenta es el neto: la piedra no se cobra dos veces.',
     remate: 'Del 6 al 10 de mayo se hace hasta la sexta parte del año. El precio no lo puede decidir quien esté en el mostrador ese día.',
@@ -285,7 +285,7 @@ export const casosJoyeria = [
     titulo: 'Subió el oro en plena temporada y hay que reetiquetar',
     texto:
       'Antes de aplicar el precio nuevo ves la simulación completa: qué sube, cuánto, qué queda bajo tu margen mínimo y cuánto dinero está en juego. Se imprime solo lo que cambió, con su código de barras.',
-    remate: 'Repreciar un lunes de abril y repreciar uno de junio no son la misma decisión: entre los dos hay una quinta parte del año.',
+    remate: 'Entre un lunes de abril y uno de junio está el 10 de mayo. Repreciar tarde te cuesta la temporada; repreciar de más te la apaga.',
     img: '/images/caso-joy-etiquetar.webp',
     alt: 'Empleada colocando etiquetas de precio a anillos de oro sobre una charola',
   },
@@ -296,14 +296,14 @@ export const casosJoyeria = [
       'En joyería el apartado es largo —de tres a seis meses, abonado por quincena— y el juego de argollas además se fabrica semanas después. El precio queda congelado desde el día que se pactó y la pieza sale de disponible: no se le vende a nadie más. Aunque el oro suba tres veces en el camino, ese apartado no se reprecia.',
     remate: 'En joyería el apartado es largo. Lo pactado es lo pactado.',
     img: '/images/caso-joy-apartado.webp',
-    alt: 'Vendedor entregando el comprobante de un apartado a una clienta en el mostrador',
+    alt: 'Vendedora explicando una pieza sobre la vitrina a un cliente de pie en el mostrador',
   },
   {
     id: 'vitrina',
     titulo: 'Se acabó el Buen Fin: contar la vitrina sin que se vaya la noche',
     texto:
       'La charola se cuenta desde el celular, sin cerrar y sin avisar. Si falta una pieza te enteras ese día, con el nombre de quién la movió por última vez.',
-    remate: 'Aquí una pieza que falta no es una merma: es el ticket promedio de la semana.',
+    remate: 'Aquí una pieza que falta no es un descuadre de centavos: es el ticket promedio de la semana.',
     img: '/images/caso-joy-vitrina.webp',
     alt: 'Dos empleados contando piezas de joyería de una charola al cierre de la tienda',
   },
@@ -410,7 +410,7 @@ export const planoJoyeria = [
       { t: 'Soldadura, cambio de medida, rodinado y pulido, cada uno con su costo', suite: true },
       { t: 'La pieza sale de disponible mientras está en el banco', suite: true },
       { t: 'Quién recibió, quién trabajó y quién entregó', plan: 'Controla' },
-      { t: 'Registro de empleados, horarios, turnos y asistencia', extra: true },
+      { t: 'Registro de empleados, horarios, turnos y asistencia', otro: true },
     ],
   },
   {
@@ -443,7 +443,7 @@ export const planoJoyeria = [
     caja: { x: 480, y: 148, w: 158, h: 156 },
     items: [
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
-      { t: 'Apartado y pedido especial también desde el canal en línea' },
+      { t: 'Apartado y pedido especial también desde el canal en línea', plan: 'Fideliza' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
       { t: 'Perfil del cliente con lo que compró y en qué ley', plan: 'Fideliza' },
       { t: 'Monedero, puntos y campañas', plan: 'Fideliza' },

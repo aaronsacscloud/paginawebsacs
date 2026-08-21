@@ -343,6 +343,12 @@ export interface Addon {
 
 export const addons: Addon[] = [
   {
+    id: 'suite-joyeria',
+    name: 'Suite Joyería',
+    description: 'Precio por gramo con tu colchón del fino, factor por quilataje, costo histórico inmutable, repreciado masivo con simulación, apartados con precio congelado y órdenes de taller con peso de entrada.',
+    icon: 'joyeria',
+  },
+  {
     id: 'shopify',
     name: 'Integración con Shopify',
     description: 'Sincroniza inventario, pedidos y clientes entre tus tiendas físicas y tu tienda en Shopify en tiempo real.',

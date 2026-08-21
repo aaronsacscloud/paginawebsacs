@@ -47,7 +47,7 @@ export interface ZonaPlano {
   /** Pie de foto: qué se está viendo. */
   pie?: string;
   /** Cada función, con su escalón: incluido, desde un plan, o complemento. */
-  items: { t: string; plan?: string; extra?: boolean; suite?: boolean }[];
+  items: { t: string; plan?: string; extra?: boolean; suite?: boolean; otro?: boolean }[];
 }
 interface Props {
   eyebrow?: string;
@@ -59,6 +59,8 @@ interface Props {
   todoRot?: string;
   /** Pie de la lámina de abajo; cámbialo si la suite se vende aparte. */
   leyenda?: string;
+  /** Cómo se llama el complemento del giro, si lo hay. */
+  rotuloSuite?: string;
 }
 const {
   eyebrow = 'Toda la operación, en un solo lugar',
@@ -68,6 +70,7 @@ const {
   zonas,
   todoRot = 'Todo lo que incluye, zona por zona',
   leyenda = 'Todo lo de arriba viene incluido en tu plan, salvo lo que diga otra cosa.',
+  rotuloSuite = 'Complemento del giro',
 } = Astro.props;
 
 /** El mobiliario, dibujado en símbolos sobre la caja de cada zona. */
@@ -360,11 +363,11 @@ const primera = clave[0];
             </header>
             <ul>
               {z.items.map((it) => (
-                <li class:list={{ extra: it.extra, suite: it.suite }}>
+                <li class:list={{ extra: it.extra || it.otro, suite: it.suite }}>
                   <i></i>
                   <span>
                     {it.t}
-                    {(it.extra || it.suite || it.plan) && <em>{it.extra ? 'Se cotiza aparte' : it.suite ? 'De la Suite Joyería' : `Desde el plan ${it.plan}`}</em>}
+                    {(it.extra || it.otro || it.suite || it.plan) && <em>{it.otro ? 'Otro complemento' : it.extra ? 'Se cotiza aparte' : it.suite ? rotuloSuite : `Desde el plan ${it.plan}`}</em>}
                   </span>
                 </li>
               ))}

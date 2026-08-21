@@ -46,11 +46,12 @@ const desc =
        la derecha y los avisos del sistema encima — pero avisos de joyería. ── -->
   <GiroBanner
     eyebrow="SACS · Suite Joyería"
+    ctaPri={{ label: 'Agenda una demo', href: '/contacto' }}
     titulo="Tu vitrina no vende piezas."
     resalte="Vende gramos."
     sub="Tu precio del gramo de fino, el factor por quilataje que usa tu casa y el costo histórico que no se mueve — con un mismo inventario para tu piso, tu tienda en línea y tu WhatsApp."
     foto="/images/hero-joyeria.webp"
-    fotoAlt="Vendedora de una joyería consultando en su tablet detrás de la vitrina de oro"
+    fotoAlt="Vendedora de una joyería riendo detrás de la vitrina, con las charolas de oro iluminadas"
     avisos={[
       { modulo: 'Subió el fino', texto: 'El gramo de 14K cambió $38 · 386 piezas por repreciar', pos: 1, tono: 'ambar', sello: 'Hoy' },
       { modulo: 'Apartado por vencer', texto: 'Cadena 10K de la Sra. Ruiz · último abono hace 46 días', pos: 2, tono: 'rojo', sello: 'Vence el 3' },
@@ -71,7 +72,6 @@ const desc =
     cierre="Ningún sistema genérico entiende esto: aquí el producto no tiene precio fijo. Vale lo que pesa por lo que vale el gramo, y el gramo lo decides tú — no el mercado. Dos piezas del mismo modelo no valen lo mismo porque no pesan lo mismo, y el costo con el que compraste ese metal no puede cambiar cuando el oro se mueve. Cada pantalla que sigue está hecha con esa lógica."
   />
 
-  <!-- ── El momento fuerte: la corrida en 3D ── -->
   <!-- ── La animación propia de este giro: el gramo que se reparte.
        El cubo de tallas × colores diría lo mismo en cualquier boutique;
        el gramo solo significa algo donde la materia prima cotiza. ── -->
@@ -79,10 +79,10 @@ const desc =
 
   <!-- ── Un modelo, cuarenta piezas: la matriz de medida × quilataje ── -->
   <SuiteVariantes
-    eyebrow="Un modelo, cuarenta piezas"
+    eyebrow="Un modelo, veinticuatro piezas"
     titulo="Los 24 renglones que hay<br />detrás de"
     resalte="“un anillo de oro”"
-    sub="Ocho medidas por tres quilatajes. Y cada casilla pesa distinto: la medida 12 lleva casi un tercio más de oro que la 5. Mismo modelo, otro peso, otro costo y otro precio."
+    sub="Ocho medidas por tres quilatajes. Y cada casilla pesa distinto: la medida 12 lleva más de un tercio más de oro que la 5. Mismo modelo, otro peso, otro costo y otro precio."
     matriz={[
       [2, 3, 4, 3, 2, 1, 0, 0],
       [1, 4, 6, 5, 3, 2, 1, 0],
@@ -91,8 +91,8 @@ const desc =
     ejeA={['5', '6', '7', '8', '9', '10', '11', '12']}
     filas={[
       { nombre: 'Oro 10K', img: '/images/rack-joy-anillo.webp', alt: 'Anillo de oro amarillo de 10 quilates' },
-      { nombre: 'Oro 14K', img: '/images/rack-joy-esclava.webp', alt: 'El mismo modelo en oro de 14 quilates' },
-      { nombre: 'Oro 18K', img: '/images/rack-joy-cadena.webp', alt: 'El mismo modelo en oro de 18 quilates' },
+      { nombre: 'Oro 14K', img: '/images/rack-joy-anillo.webp', alt: 'El mismo anillo en oro de 14 quilates' },
+      { nombre: 'Oro 18K', img: '/images/rack-joy-anillo.webp', alt: 'El mismo anillo en oro de 18 quilates' },
     ]}
     unidad="piezas"
     genero="f"
@@ -162,7 +162,7 @@ const desc =
 
   <!-- ── Lo que ve el dueño ── -->
   <SuiteDireccion
-    sub="Tus vitrinas abren sin ti. La pregunta no es si venden — es cuál se quedó con el colchón viejo, y por dónde se te va el margen cuando alguien regatea sin permiso."
+    sub="Tus vitrinas abren sin ti. La pregunta no es si venden — es dónde se está regateando abajo de tu piso de margen, y quién lo está autorizando a la carrera."
     sucursales={sucursalesJoyeria}
     reglas={reglasJoyeria}
   />
@@ -173,6 +173,7 @@ const desc =
     sub="Entra el cliente, recorre la vitrina, se prueba la pieza, aparta o paga y se va. Detrás está el taller y la caja fuerte y, afuera, una tienda en línea que vende del mismo inventario. Toca cada zona del plano y mira qué hace SACS ahí."
     proyecto="Tu joyería — planta baja"
     zonas={planoJoyeria}
+    rotuloSuite="De la Suite Joyería"
     leyenda="Lo marcado como Suite Joyería es el complemento que se cotiza aparte; el resto entra con tu plan."
   />
 
