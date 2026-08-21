@@ -46,8 +46,12 @@ export async function recomputarSoporteEmpresa(companyId: string): Promise<void>
       soporte_sentimiento: sentimiento,
       soporte_computed_at: new Date().toISOString(),
     };
-    if (co) {
-      const { score, factors } = healthScoreV2(co.actividad || {}, co.uso_sacs || null, soporte);
+    // Solo recalcular la salud si la empresa YA tiene actividad sincronizada:
+    // con actividad vacía, healthScoreV2 da ~10 (no null) y pisaría el "Sin
+    // calcular" legítimo de un prospecto con un ticket pero sin ventas medidas.
+    // Misma guarda que sync-empresa (if !act return) y sync-sacs-activity (if !a).
+    if (co && co.actividad && Object.keys(co.actividad).length > 0) {
+      const { score, factors } = healthScoreV2(co.actividad, co.uso_sacs || null, soporte);
       upd.health_score = score;
       upd.health_factors = factors;
       upd.health_computed_at = new Date().toISOString();

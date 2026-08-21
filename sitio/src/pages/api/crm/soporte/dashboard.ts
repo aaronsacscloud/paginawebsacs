@@ -12,15 +12,29 @@ const ABIERTO = ['abierto', 'en_curso', 'pausado'];
 const horas = (a?: string | null, b?: string | null) => (a && b) ? (new Date(b).getTime() - new Date(a).getTime()) / 3600_000 : null;
 const prom = (xs: number[]) => xs.length ? Math.round((xs.reduce((s, v) => s + v, 0) / xs.length) * 10) / 10 : null;
 
+// PostgREST corta en 1000 filas EN ESTE PROYECTO (max_rows=1000): un .limit()
+// mayor subcuenta en silencio. Paginamos para no falsear los agregados.
+async function leerTodos(): Promise<any[]> {
+  const cols = 'conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, reabierto_count';
+  const out: any[] = [];
+  for (let off = 0; off < 200000; off += 1000) {
+    const { data, error } = await supabase.from('crm_soporte_tickets').select(cols).order('conversation_id').range(off, off + 999);
+    if (error) throw new Error(error.message);
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
 export const GET: APIRoute = async ({ url }) => {
   const dias = Math.min(120, Math.max(7, Number(url.searchParams.get('dias') || 30)));
-  const { data, error } = await supabase.from('crm_soporte_tickets')
-    .select('conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, reabierto_count')
-    .limit(5000);
-  if (error) return json({ error: error.message }, 500);
-  const t = data || [];
+  let t: any[];
+  try { t = await leerTodos(); } catch (e: any) { return json({ error: e?.message || 'Error al leer tickets' }, 500); }
 
-  const cuenta = (k: string) => t.reduce((m: Record<string, number>, x: any) => { const v = x[k] || 'otros'; m[v] = (m[v] || 0) + 1; return m; }, {});
+  // Conteo por campo con default configurable (sentimiento null = 'neutral', no
+  // un bucket 'otros' que no existe en esa dimensión).
+  const cuentaCon = (k: string, def: string) => t.reduce((m: Record<string, number>, x: any) => { const v = x[k] || def; m[v] = (m[v] || 0) + 1; return m; }, {} as Record<string, number>);
+  const cuenta = (k: string) => cuentaCon(k, 'otros');
   const abiertos = t.filter((x: any) => ABIERTO.includes(x.estado));
   const resueltos = t.filter((x: any) => x.estado === 'resuelto' || x.estado === 'cerrado');
 
@@ -28,8 +42,9 @@ export const GET: APIRoute = async ({ url }) => {
   const corte = Date.now() - 48 * 3600_000;
   const estancados = abiertos.filter((x: any) => { const ref = x.ultima_actividad_at || x.abierto_at; return ref ? new Date(ref).getTime() < corte : false; });
 
-  // SLA.
-  const frt = resueltos.map((x: any) => horas(x.abierto_at, x.primera_respuesta_at)).filter((v): v is number => v != null && v >= 0);
+  // SLA. FRT = tiempo a la 1ª respuesta sobre CUALQUIER ticket que ya la tuvo
+  // (resuelto o no), no solo los resueltos — si no, sesga el indicador.
+  const frt = t.filter((x: any) => x.primera_respuesta_at).map((x: any) => horas(x.abierto_at, x.primera_respuesta_at)).filter((v): v is number => v != null && v >= 0);
   const res = resueltos.map((x: any) => horas(x.abierto_at, x.resuelto_at)).filter((v): v is number => v != null && v >= 0);
   const csats = t.map((x: any) => x.csat_score).filter((v: any) => v != null).map(Number);
 
@@ -42,12 +57,16 @@ export const GET: APIRoute = async ({ url }) => {
     m[a].total++; if (ABIERTO.includes(x.estado)) m[a].abiertos++; return m;
   }, {})).map(([, v]) => v).sort((a: any, b: any) => b.abiertos - a.abiertos);
 
-  // Tendencia diaria (abiertos vs resueltos) últimos `dias`.
-  const hoy = new Date(); const serie: Record<string, { dia: string; abiertos: number; resueltos: number }> = {};
-  for (let i = dias - 1; i >= 0; i--) { const d = new Date(hoy.getTime() - i * 86400_000).toISOString().slice(0, 10); serie[d] = { dia: d, abiertos: 0, resueltos: 0 }; }
+  // Tendencia diaria (abiertos vs resueltos) últimos `dias`, en DÍA DE MÉXICO
+  // (CDMX = UTC−6): sin esto, un ticket de la tarde/noche cae en el día UTC
+  // siguiente y la curva queda corrida para el negocio mexicano.
+  const diaMx = (iso?: string | null) => iso ? new Date(new Date(iso).getTime() - 6 * 3600_000).toISOString().slice(0, 10) : null;
+  const serie: Record<string, { dia: string; abiertos: number; resueltos: number }> = {};
+  const ahoraMx = Date.now() - 6 * 3600_000;
+  for (let i = dias - 1; i >= 0; i--) { const d = new Date(ahoraMx - i * 86400_000).toISOString().slice(0, 10); serie[d] = { dia: d, abiertos: 0, resueltos: 0 }; }
   for (const x of t) {
-    const da = x.abierto_at ? x.abierto_at.slice(0, 10) : null; if (da && serie[da]) serie[da].abiertos++;
-    const dr = x.resuelto_at ? x.resuelto_at.slice(0, 10) : null; if (dr && serie[dr]) serie[dr].resueltos++;
+    const da = diaMx(x.abierto_at); if (da && serie[da]) serie[da].abiertos++;
+    const dr = diaMx(x.resuelto_at); if (dr && serie[dr]) serie[dr].resueltos++;
   }
 
   return json({
@@ -64,7 +83,7 @@ export const GET: APIRoute = async ({ url }) => {
       csat_n: csats.length,
     },
     por_estado: cuenta('estado'),
-    por_sentimiento: cuenta('sentimiento'),
+    por_sentimiento: cuentaCon('sentimiento', 'neutral'),
     por_tema: porTema,
     por_agente: porAgente,
     tendencia: Object.values(serie),

@@ -517,7 +517,7 @@ export default function SubscriptionsTab() {
                 <tfoot>
                   <tr style={{ borderTop: '2px solid #eee' }}>
                     <td style={{ ...S.td, fontWeight: 800 }}>Total · {filtered.length}</td>
-                    <td style={S.td} colSpan={4} />
+                    <td style={S.td} colSpan={5} />
                     <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.arr || 0), 0))}</td>
                     <td style={S.td} colSpan={2} />
                     <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.total_pagado || 0), 0))}</td>

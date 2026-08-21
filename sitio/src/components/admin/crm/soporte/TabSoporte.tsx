@@ -1,10 +1,18 @@
 // FICHA 360 · Tab Soporte: los tickets de Intercom del cliente. Al dar clic en
 // uno se abre el HILO COMPLETO dentro del CRM (mensajes, fotos, adjuntos) — sin
 // mandar a Intercom. Patrón de TabOutbound (fetch propio al abrir).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
 import { S, Tag, Aviso, Vacio, fmtFecha } from '../email/ui';
+
+// Saneo en el SINK (el navegador), con un allow-list real. El cuerpo lo escribe
+// el cliente en Intercom → sin esto es XSS almacenado en la sesión del founder.
+// Un deny-list por regex es evadible (img/onerror sin espacio, javascript: sin
+// comillas…); DOMPurify parsea y aplica allow-list de verdad.
+const LIMPIO = { ALLOWED_TAGS: ['p', 'br', 'b', 'i', 'strong', 'em', 'u', 'a', 'img', 'ul', 'ol', 'li', 'blockquote', 'span', 'div', 'pre', 'code'], ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel'] };
+const sanea = (html: string) => (typeof window !== 'undefined' ? DOMPurify.sanitize(html || '', LIMPIO) : '');
 
 const ESTADO_TONO: Record<string, string> = {
   abierto: 'aviso', en_curso: 'info', pausado: 'gris', resuelto: 'ok', cerrado: 'gris',
@@ -21,6 +29,8 @@ function Hilo({ conversationId, asunto, companyId, onClose }: { conversationId: 
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState<{ tono: string; msg: string } | null>(null);
   const [creando, setCreando] = useState('');
+  const montado = useRef(true);
+  useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
   useEffect(() => {
     let vivo = true;
     fetch(`/api/crm/soporte/conversacion?id=${conversationId}`)
@@ -39,14 +49,16 @@ function Hilo({ conversationId, asunto, companyId, onClose }: { conversationId: 
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: t }),
       });
       const j = await r.json();
+      if (!montado.current) return;
       if (!r.ok || j.error) { setAviso({ tono: 'malo', msg: j.error || 'No se pudo enviar' }); }
       else {
         // Optimista: pinta el mensaje enviado al final del hilo.
-        setD((prev: any) => prev ? { ...prev, mensajes: [...(prev.mensajes || []), { autor_tipo: 'admin', autor: 'Tú (soporte)', body: t.replace(/\n/g, '<br>'), adjuntos: [], fecha: new Date().toISOString() }] } : prev);
+        const eco = t.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch] as string)).replace(/\n/g, '<br>');
+        setD((prev: any) => prev ? { ...prev, mensajes: [...(prev.mensajes || []), { autor_tipo: 'admin', autor: 'Tú (soporte)', body: eco, adjuntos: [], fecha: new Date().toISOString() }] } : prev);
         setTexto(''); setAviso({ tono: 'ok', msg: 'Respuesta enviada a Intercom.' });
       }
-    } catch { setAviso({ tono: 'malo', msg: 'Sin conexión — reintenta.' }); }
-    finally { setEnviando(false); }
+    } catch { if (montado.current) setAviso({ tono: 'malo', msg: 'Sin conexión — reintenta.' }); }
+    finally { if (montado.current) setEnviando(false); }
   }
 
   async function crear(tipo: 'deal' | 'mejora') {
@@ -60,14 +72,15 @@ function Hilo({ conversationId, asunto, companyId, onClose }: { conversationId: 
         : { company_id: companyId, titulo: (asunto || 'Petición de soporte').slice(0, 200), descripcion: ctx, estado: 'idea', categoria: 'pendiente' };
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json();
+      if (!montado.current) return;
       if (!r.ok || j.error) { setAviso({ tono: 'malo', msg: j.error || 'No se pudo crear' }); }
       else {
         // Rastro en el timeline ligando el ticket.
         fetch('/api/crm/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: companyId, tipo: 'sistema', titulo: tipo === 'deal' ? 'Oportunidad creada desde soporte' : 'Consultoría creada desde soporte', descripcion: asunto || null, automatico: true, metadata: { conversation_id: conversationId, origen: 'soporte' } }) }).catch(() => {});
         setAviso({ tono: 'ok', msg: tipo === 'deal' ? 'Oportunidad creada en el pipeline.' : 'Item de consultoría creado.' });
       }
-    } catch { setAviso({ tono: 'malo', msg: 'Sin conexión — reintenta.' }); }
-    finally { setCreando(''); }
+    } catch { if (montado.current) setAviso({ tono: 'malo', msg: 'Sin conexión — reintenta.' }); }
+    finally { if (montado.current) setCreando(''); }
   }
 
   return (
@@ -91,7 +104,7 @@ function Hilo({ conversationId, asunto, companyId, onClose }: { conversationId: 
                     borderTopLeftRadius: esCliente ? 3 : 12, borderTopRightRadius: esCliente ? 12 : 3,
                     wordBreak: 'break-word',
                   }}>
-                    {m.body ? <div className="hilo-body" dangerouslySetInnerHTML={{ __html: m.body }} /> : null}
+                    {m.body ? <div className="hilo-body" dangerouslySetInnerHTML={{ __html: sanea(m.body) }} /> : null}
                     {(m.adjuntos || []).map((a: any, j: number) => (
                       a.es_imagen
                         ? <a key={j} href={a.url} target="_blank" rel="noreferrer"><img src={a.url} alt={a.nombre} style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8, display: 'block' }} /></a>

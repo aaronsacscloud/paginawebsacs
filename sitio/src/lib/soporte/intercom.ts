@@ -37,9 +37,11 @@ async function cargarAdmins(): Promise<{ porEmail: Record<string, string>; prime
       if (primero == null) primero = String(a.id);
       if (a.email) porEmail[String(a.email).trim().toLowerCase()] = String(a.id);
     }
-  } catch { /* sin conexión: los fallbacks se encargan */ }
-  _adminsCache = { porEmail, primero };
-  return _adminsCache;
+  } catch { /* sin conexión: no cachear el fallo (ver abajo) */ }
+  // Cachear SOLO si el fetch trajo admins. Cachear un {} tras un hipo de red
+  // dejaría todos los reply rotos hasta reciclar la instancia (negative caching).
+  if (primero != null) _adminsCache = { porEmail, primero };
+  return { porEmail, primero };
 }
 
 /** admin_id para responder: (1) el admin cuyo correo = el de la persona logueada,
@@ -144,7 +146,9 @@ export function parseEvento(body: any): {
   // se guarda el contactId; upsertTicket la enriquece con el token si hace falta.
   let cuenta: string | null = null;
   const comp = item.company || (Array.isArray(item.companies?.companies) ? item.companies.companies[0] : null);
-  if (comp) cuenta = comp.company_id || comp.name || null;
+  // La cuenta SACS es el company_id de Intercom; NUNCA el nombre (un nombre como
+  // "Mi Bella Pandita" no es la cuenta y ensuciaría incluir_cuentas / el join).
+  if (comp) cuenta = comp.company_id || null;
   const contactoId = (Array.isArray(item.contacts?.contacts) ? item.contacts.contacts[0]?.id : null) || autor.id || null;
 
   return {
@@ -194,20 +198,30 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
     .eq('conversation_id', ev.conversationId).maybeSingle();
 
   const { tema, sentimiento } = clasificar(ev.asunto, ev.cuerpo || ev.vistaPrevia);
-  const reabierto = !!(prev && prev.estado === 'resuelto' && ev.estado !== 'resuelto');
   const esRespuestaAdmin = ev.topic === 'conversation.admin.replied';   // primera respuesta (FRT/SLA)
+
+  // Guarda monotónica: Intercom NO garantiza el orden de entrega. Si llega un
+  // evento MÁS VIEJO que lo ya registrado, no debe revertir el estado ni contar
+  // una reapertura falsa. Solo se compara cuando el evento trae updated_at real.
+  const evMs = ev.ultimaAt ? new Date(ev.ultimaAt).getTime() : null;
+  const prevMs = prev?.ultima_actividad_at ? new Date(prev.ultima_actividad_at).getTime() : null;
+  const esViejo = evMs != null && prevMs != null && evMs < prevMs;
+  const efEstado = esViejo ? (prev!.estado || ev.estado) : ev.estado;
+  const reabierto = !esViejo && !!(prev && prev.estado === 'resuelto' && ev.estado !== 'resuelto');
 
   const fila: any = {
     conversation_id: ev.conversationId, company_id: companyId, contact_id: contactId,
     cuenta: cuenta ? normCuenta(cuenta) : null,
-    estado: ev.estado, asunto: ev.asunto, vista_previa: ev.vistaPrevia, prioridad: ev.prioridad,
+    estado: efEstado, asunto: ev.asunto, vista_previa: ev.vistaPrevia, prioridad: ev.prioridad,
     asignado: ev.asignado, autor_email: email,
     tema, sentimiento,
-    ultima_actividad_at: ev.ultimaAt, intercom_url: ev.url,
+    intercom_url: ev.url,
     updated_at: new Date().toISOString(),
   };
+  // No retroceder la última actividad con un evento viejo.
+  fila.ultima_actividad_at = esViejo ? prev!.ultima_actividad_at : ev.ultimaAt;
   if (ev.abiertoAt) fila.abierto_at = ev.abiertoAt;
-  if (ev.resueltoAt) fila.resuelto_at = ev.resueltoAt;
+  if (ev.resueltoAt && !esViejo) fila.resuelto_at = ev.resueltoAt;
   if (!prev?.primera_respuesta_at && esRespuestaAdmin) fila.primera_respuesta_at = new Date().toISOString();
   if (reabierto) { fila.reabierto_count = (prev?.reabierto_count || 0) + 1; fila.resuelto_at = null; }
 
@@ -219,22 +233,22 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
   if (companyId) await recomputarSoporteEmpresa(companyId);
 
   // CSAT: al resolver por primera vez, encolar la cuenta a la encuesta post-soporte.
-  if (ev.estado === 'resuelto' && !prev?.csat_campana_id && cuenta) {
+  if (efEstado === 'resuelto' && !prev?.csat_campana_id && cuenta) {
     const campId = await dispararCSAT(cuenta);
     if (campId) await supabase.from('crm_soporte_tickets')
       .update({ csat_campana_id: campId }).eq('conversation_id', ev.conversationId);
   }
 
   // Evento en el timeline unificado (solo en abrir y resolver, no cada réplica).
-  if (companyId && (ev.estado === 'abierto' || ev.estado === 'resuelto')) {
-    const tipo = ev.estado === 'resuelto' ? 'ticket_resuelto' : 'ticket_abierto';
+  if (companyId && (efEstado === 'abierto' || efEstado === 'resuelto')) {
+    const tipo = efEstado === 'resuelto' ? 'ticket_resuelto' : 'ticket_abierto';
     const { data: yaAct } = await supabase.from('activities').select('id')
       .eq('company_id', companyId).eq('tipo', tipo)
       .contains('metadata', { conversation_id: ev.conversationId }).limit(1);
     if (!yaAct?.length) {
       await supabase.from('activities').insert({
         company_id: companyId, contact_id: contactId, tipo, automatico: true,
-        titulo: ev.estado === 'resuelto' ? 'Ticket de soporte resuelto' : 'Nuevo ticket de soporte',
+        titulo: efEstado === 'resuelto' ? 'Ticket de soporte resuelto' : 'Nuevo ticket de soporte',
         descripcion: ev.asunto || ev.vistaPrevia || null,
         metadata: { conversation_id: ev.conversationId, intercom_url: ev.url, origen: 'intercom' },
       });
@@ -242,12 +256,12 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
   }
 
   // Aviso a la campana del CRM al abrir y al resolver (idempotente por clave).
-  if (companyId && (ev.estado === 'abierto' || ev.estado === 'resuelto')) {
+  if (companyId && (efEstado === 'abierto' || efEstado === 'resuelto')) {
     await notificar({
-      clave: `intercom_ticket:${ev.conversationId}:${ev.estado}`,
-      tipo: ev.estado === 'resuelto' ? 'ticket_resuelto' : 'ticket_abierto',
-      nivel: ev.estado === 'resuelto' ? 'info' : 'alerta',
-      titulo: ev.estado === 'resuelto' ? 'Ticket de soporte resuelto' : 'Nuevo ticket de soporte',
+      clave: `intercom_ticket:${ev.conversationId}:${efEstado}`,
+      tipo: efEstado === 'resuelto' ? 'ticket_resuelto' : 'ticket_abierto',
+      nivel: efEstado === 'resuelto' ? 'info' : 'alerta',
+      titulo: efEstado === 'resuelto' ? 'Ticket de soporte resuelto' : 'Nuevo ticket de soporte',
       detalle: ev.asunto || ev.vistaPrevia || 'Sin asunto',
       company_id: companyId, destino: 'soporte',
       metadata: { conversation_id: ev.conversationId, cuenta },

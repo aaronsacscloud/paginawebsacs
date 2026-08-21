@@ -16,9 +16,10 @@ export const TEMA_LABEL: Record<string, string> = {
   pagos: 'Cobros/Pagos', otros: 'Otros',
 };
 
-// Orden importa: el primer tema con match gana. Los más específicos primero.
+// Orden importa: el primer tema con match gana. Los TEMAS ESPECÍFICOS primero;
+// 'producto' (petición de función) va al FINAL porque sus frases son amplias
+// ("no tiene la opción de facturar el IVA" es facturación, no petición).
 const REGLAS: Array<[Tema, RegExp]> = [
-  ['producto', /ser[íi]a posible|pueden agregar|podr[íi]an? (agregar|hacer|poner)|funci[oó]n(alidad)? nueva|nueva funci|sugeren|me gustar[íi]a que|solicit.*(m[oó]dulo|funci)|no tiene la opci|no existe la opci|hace falta (que|una|un)|se puede (agregar|habilitar)/i],
   ['facturacion', /factur|cfdi|complement|timbr|\bsat\b|\biva\b|desglos|nota de cr[eé]|xml|r[ée]gimen fiscal|uso de cfdi|constancia fiscal|reten/i],
   ['bancos', /banco|conciliaci|syncfy|paybook|bbva|santander|banorte|banamex|hsbc|transferenc|estado de cuenta|movimiento banc/i],
   ['nivelacion', /nivelaci|cubo|resurtid|m[ií]nimo|m[áa]ximo|traspas|cedis|redistribu|sugerido de compra/i],
@@ -32,6 +33,7 @@ const REGLAS: Array<[Tema, RegExp]> = [
   ['usuarios', /usuario|permis|acceso(?!rio)|contrase|no me deja entrar|no puedo (entrar|ingresar)|login|inici(ar|o) de sesi|\brol\b|grupo de/i],
   ['pagos', /\bcobro|\bpago(?!\s*de\s*n[oó]mina)|suscrip|renovaci|tarjeta de cr[eé]|stripe|mercado ?pago|domiciliaci|se me cobr[oó]/i],
   ['ventas', /\bventa|apartado|pedido|devoluci|reembols|cancelar? (una|la|el)? ?(venta|ticket)|nota de venta|cliente frecuente|abono/i],
+  ['producto', /ser[íi]a posible|pueden agregar|podr[íi]an? (agregar|hacer|poner)|funci[oó]n(alidad)? nueva|nueva funci|sugeren|me gustar[íi]a que|solicit.*(m[oó]dulo|funci)|no tiene la opci|no existe la opci|hace falta (que|una|un)|se puede (agregar|habilitar)/i],
 ];
 
 export function clasificarTema(texto: string): Tema {

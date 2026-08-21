@@ -195,7 +195,9 @@ export const PLANTILLAS: Array<{ id: string; nombre: string; desc: string; fam: 
   { id: 'aviso_mantenimiento', nombre: 'Aviso de mantenimiento', fam: 'Operativo',
     desc: 'Banner superior a TODAS las cuentas con vigencia exacta. Sin botones, sin meta.',
     valores: { formato: 'banner_superior', objetivo_texto: 'Informativo', modo: 'unica', prioridad: 'critica', holdout_pct: 0,
-      nivel: { tipo: 'todos' }, audiencia: { grupos: [] }, meta: null,
+      // Un aviso operativo NO es una venta: debe llegar también a quien tiene una
+      // queja abierta (justo los más afectados por una caída).
+      nivel: { tipo: 'todos' }, audiencia: { grupos: [], excluir_con_ticket_abierto: false }, meta: null,
       contenido: { botones: [] },
       comportamiento: { trigger: 'al_iniciar', frecuencia: { tipo: 'tope', tope: 99, descanso_dias: 0 }, cerrable: true } } },
   { id: 'upgrade_cita', nombre: 'Upgrade con cita', fam: 'Adopción',

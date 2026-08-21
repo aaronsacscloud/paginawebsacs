@@ -12,6 +12,7 @@ import { resolverAudiencia, docParaSacs, despublicarCampana, leerPaginado } from
 import { normCuenta } from '../../../lib/crm/sacs-cuentas';
 import { cortesEscala } from '../../../lib/outbound/catalogo';
 import { notificar } from '../../../lib/crm/notificaciones';
+import { quitarCuentaCSAT } from '../../../lib/soporte/csat';
 
 export const prerender = false;
 
@@ -89,7 +90,9 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
         } catch { /* sin empresa ligada: el aviso sale igual */ }
 
         // CSAT post-soporte: cerrar el loop escribiendo la calificación en el
-        // ticket resuelto más reciente de esa cuenta que aún no tenga CSAT.
+        // ticket resuelto más reciente de esa cuenta que aún no tenga CSAT, y
+        // QUITAR la cuenta de la campaña (si no, seguiría encuestando por siempre;
+        // un ticket resuelto nuevo la vuelve a encolar).
         if (esCsatSoporte[d.campana_id] && d.valor != null) {
           try {
             const { data: tk } = await supabase.from('crm_soporte_tickets')
@@ -98,6 +101,7 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
             if (tk) await supabase.from('crm_soporte_tickets')
               .update({ csat_score: Number(d.valor), csat_at: new Date().toISOString() })
               .eq('conversation_id', tk.conversation_id);
+            await quitarCuentaCSAT(d.campana_id, d.cuenta);
           } catch { /* mejor-esfuerzo */ }
         }
         if (Number(d.valor) <= cx.det) {

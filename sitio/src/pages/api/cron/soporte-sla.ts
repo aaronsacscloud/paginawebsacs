@@ -14,24 +14,34 @@ const PRESUPUESTO_MS = 60_000;
 const ABIERTO = ['abierto', 'en_curso', 'pausado'];
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
+// No avisar "sin primera respuesta" de tickets MUY viejos: el histórico
+// importado nunca tuvo primera_respuesta registrada y generaría una avalancha
+// de avisos de backlog. Solo alertamos los abiertos recientes (SLA operativo).
+const VENTANA_SIN_RESP_DIAS = 5;
+
 async function correr(): Promise<Response> {
   const deadline = Date.now() + PRESUPUESTO_MS;
   const out: any = { abiertos: 0, empresas: 0, avisos_sin_respuesta: 0, avisos_estancado: 0 };
-  const { data: tks, error } = await supabase.from('crm_soporte_tickets')
-    .select('conversation_id, company_id, asunto, estado, sentimiento, abierto_at, primera_respuesta_at, ultima_actividad_at, intercom_url')
-    .in('estado', ABIERTO).limit(5000);
-  if (error) return json({ error: error.message }, 500);
+  // PostgREST corta en 1000; paginar para no dejar tickets fuera del SLA.
+  const cols = 'conversation_id, company_id, asunto, estado, sentimiento, abierto_at, primera_respuesta_at, ultima_actividad_at, intercom_url';
+  const tickets: any[] = [];
+  for (let off = 0; off < 200000; off += 1000) {
+    const { data, error } = await supabase.from('crm_soporte_tickets').select(cols).in('estado', ABIERTO).order('conversation_id').range(off, off + 999);
+    if (error) return json({ error: error.message }, 500);
+    tickets.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
 
-  const tickets = tks || [];
   out.abiertos = tickets.length;
   const empresas = new Set<string>();
   const ahora = Date.now();
 
   for (const t of tickets) {
     if (t.company_id) empresas.add(t.company_id);
-    // Sin primera respuesta a tiempo.
+    // Sin primera respuesta a tiempo — solo tickets recientes (no el backlog).
     const abiertoMs = t.abierto_at ? new Date(t.abierto_at).getTime() : null;
-    if (!t.primera_respuesta_at && abiertoMs && (ahora - abiertoMs) > FRT_HORAS * 3600_000) {
+    const reciente = abiertoMs != null && (ahora - abiertoMs) < VENTANA_SIN_RESP_DIAS * 86400_000;
+    if (!t.primera_respuesta_at && abiertoMs && reciente && (ahora - abiertoMs) > FRT_HORAS * 3600_000) {
       const nuevo = await notificar({
         clave: `sla_soporte:${t.conversation_id}:sin_respuesta`,
         tipo: 'soporte_sla', nivel: t.sentimiento === 'urgente' ? 'urgente' : 'alerta',
