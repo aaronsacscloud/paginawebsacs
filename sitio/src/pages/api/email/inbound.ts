@@ -61,6 +61,23 @@ function esAutomatico(headers: string, asunto: string): boolean {
  * existe, y el encabezado del citado se colaba a la vista. Por eso la
  * atribución se busca sobre la línea UNIDA con las dos siguientes.
  */
+/** El texto de un HTML, cuando el cliente de correo no manda la parte plana. */
+export function htmlAtexto(html: string): string {
+  return String(html || '')
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    // Los cortes de bloque se vuelven saltos ANTES de quitar las etiquetas: si
+    // no, los párrafos se pegan en un solo renglón y limpiarCitado ya no puede
+    // reconocer la línea de atribución que separa la respuesta de lo citado.
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6]|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function limpiarCitado(texto: string): string {
   const lineas = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
@@ -117,8 +134,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     const para = campo('to');
     const asunto = campo('subject');
     const headers = campo('headers');
-    const texto = limpiarCitado(campo('text'));
     const html = campo('html');
+    // Hostinger —y varios clientes de correo— mandan SOLO la parte HTML: el
+    // campo `text` llega vacío y la respuesta se guardaba sin una palabra. La
+    // conversación existía y estaba muda, que para quien la lee en la bandeja
+    // es lo mismo que no haber llegado. Verificado con una respuesta real.
+    const texto = limpiarCitado(campo('text') || htmlAtexto(html));
     const email = extraerEmail(de);
     if (!email) return ok();
 

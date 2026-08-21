@@ -132,3 +132,22 @@ export function direccionRespuesta(sendId: string, dominio: string): string | nu
   }
   return `${local}@${d}`;
 }
+
+/**
+ * Los estados que la BASE acepta para una inscripción.
+ *
+ * Están aquí y no sueltos en cada archivo porque ya costó dos veces: el
+ * `update` de Postgrest **no lanza** cuando el valor viola el CHECK — devuelve
+ * el error en `error`, y quien solo desestructura `data` no se entera. Con
+ * `'detenido'` y con `'cancelado'` —dos valores que nadie permitió nunca— el
+ * código decía que detenía embudos y no detenía ninguno, en silencio.
+ */
+export const ESTADOS_INSCRIPCION = ['activo', 'completado', 'goal_achieved', 'unenrolled', 'error', 'pausado'] as const;
+export type EstadoInscripcion = typeof ESTADOS_INSCRIPCION[number];
+
+/** El estado con el que se saca a alguien de un embudo. */
+export const SALIDA: EstadoInscripcion = 'unenrolled';
+
+export function esEstadoValido(e: string): e is EstadoInscripcion {
+  return (ESTADOS_INSCRIPCION as readonly string[]).includes(e);
+}

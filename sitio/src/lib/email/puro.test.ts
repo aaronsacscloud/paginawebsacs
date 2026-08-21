@@ -7,7 +7,7 @@
  *
  * Correr:  node --experimental-strip-types src/lib/email/puro.test.ts
  */
-import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, direccionRespuesta, RUTA_INTERNA } from './puro.ts';
+import { calza, diaCdmx, ventanaDeLectura, clasificarOrigen, escalonCalentamiento, cualesDetener, direccionRespuesta, esEstadoValido, SALIDA, ESTADOS_INSCRIPCION, RUTA_INTERNA } from './puro.ts';
 
 let ok = 0;
 const fallas: string[] = [];
@@ -142,6 +142,21 @@ es(clasificarOrigen({ ruta: '/blog/que-es-utm_source' }), 'directo', 'utm_ en el
   try { direccionRespuesta(tokenViejo, 'crm.sacscloud.com'); } catch { lanzo = true; }
   es(lanzo, true, 'una parte local que no cabe LANZA en vez de mandar un correo mudo');
 }
+
+// ── estados de inscripción ───────────────────────────────────────────────
+// BUG REAL, dos veces: se escribieron 'detenido' y 'cancelado', que la base
+// nunca permitió. Postgrest NO lanza ante un CHECK violado —devuelve el error
+// en `error`— y el código solo leía `data`: el sistema aseguraba haber sacado
+// a alguien de un embudo y no sacaba a nadie, sin una sola línea de aviso.
+// Se descubrió respondiendo un correo de verdad y viendo que nada se detuvo.
+es(esEstadoValido(SALIDA), true, 'el estado de salida es uno que la base acepta');
+es(esEstadoValido('detenido'), false, "'detenido' NO existe (bug de agosto 2026)");
+es(esEstadoValido('cancelado'), false, "'cancelado' tampoco (el mismo bug, más viejo)");
+es(esEstadoValido('activo'), true, "'activo' sí");
+es(SALIDA, 'unenrolled', 'la salida es unenrolled');
+es([...ESTADOS_INSCRIPCION].sort(),
+   ['activo', 'completado', 'error', 'goal_achieved', 'pausado', 'unenrolled'],
+   'el catálogo coincide con el CHECK de la base');
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) {

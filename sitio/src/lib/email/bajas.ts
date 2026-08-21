@@ -8,6 +8,8 @@
 // recibir el siguiente paso pese a haberse dado de baja.
 import { supabase } from '../supabase';
 
+import { SALIDA } from './puro';
+
 export interface Baja {
   tenantId: string;
   email: string;
@@ -85,9 +87,15 @@ export async function darDeBaja(b: Baja): Promise<{ ok: boolean; contactId: stri
     const { data: mios } = await supabase.from('automations').select('id').eq('tenant_id', b.tenantId);
     const ids = (mios || []).map((a: any) => a.id);
     if (ids.length) {
-      await supabase.from('automation_enrollments')
-        .update({ estado: 'cancelado', unenrollment_reason: 'baja de correo', completed_at: new Date().toISOString() })
+      // 'cancelado' NO es un estado permitido por la base —nunca lo fue— y
+      // Postgrest devuelve el error en `error` en vez de lanzarlo. Como aquí
+      // no se leía, darse de baja NUNCA sacó a nadie de un embudo: la persona
+      // seguía avanzando paso a paso, cada envío chocaba con la supresión y el
+      // embudo "terminaba" sin haber entregado nada.
+      const { error: eSalida } = await supabase.from('automation_enrollments')
+        .update({ estado: SALIDA, unenrollment_reason: 'baja de correo', completed_at: new Date().toISOString() })
         .eq('contact_id', contactId).eq('estado', 'activo').in('automation_id', ids);
+      if (eSalida) console.error('[bajas] no se pudo sacar del embudo:', eSalida.message);
     }
     await supabase.from('activities').insert({
       contact_id: contactId, tipo: 'email_unsubscribed', automatico: true,
