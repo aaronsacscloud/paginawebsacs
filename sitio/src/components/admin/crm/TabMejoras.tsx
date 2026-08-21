@@ -6,6 +6,7 @@
 // solo cambia el estado y conserva de qué junta salió y en qué cotización se
 // cobró. Ese hilo es lo que se le enseña al cliente.
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 
@@ -89,7 +90,7 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
     cargar();
   }
 
-  if (rows === null) return <div style={{ ...S.card, color: '#999', fontSize: '0.82rem' }}>Cargando mejoras…</div>;
+  if (rows === null) return <Cargando texto="Cargando mejoras…" />;
 
   // Se agrupa por lo que hay que HACER, no por qué tipo de cosa es: que un
   // video y una personalización sean distintos le importa al sistema, no a

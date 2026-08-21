@@ -5,6 +5,7 @@
 // mayúscula. Arreglarlas de una en una son cuarenta visitas a la ficha; aquí se
 // escriben de corrido y se guarda todo al final.
 import { useEffect, useRef, useState } from 'react';
+import Cargando from './ui/Cargando';
 
 const money = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
 
@@ -78,7 +79,7 @@ export default function NombresEmpresaModal({ onCerrar, onGuardado }: { onCerrar
         </div>
 
         <div style={{ overflowY: 'auto', padding: '10px 20px 4px', flex: 1 }}>
-          {cargando && <div style={{ padding: 30, textAlign: 'center', color: '#9c99a6', fontSize: '0.85rem' }}>Cargando…</div>}
+          {cargando && <Cargando texto="Cargando…" />}
           {!cargando && visibles.length === 0 && (
             <div style={{ padding: 30, textAlign: 'center', color: '#9c99a6', fontSize: '0.85rem' }}>Todas las cuentas tienen su nombre escrito.</div>
           )}

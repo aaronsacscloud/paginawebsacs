@@ -196,7 +196,7 @@ export default function SaludEmail() {
         </div>
         {verSupr && (
           <div style={{ marginTop: 12, maxHeight: 320, overflowY: 'auto', borderTop: '1px solid #f5f4f8' }}>
-            {supr === null && <div style={{ padding: 16, color: '#a5a2af', fontSize: '0.8rem' }}>Cargando…</div>}
+            {supr === null && <Cargando texto="Cargando…" />}
             {supr?.length === 0 && <div style={{ padding: 16, color: '#a5a2af', fontSize: '0.8rem' }}>Nadie suprimido todavía.</div>}
             {(supr || []).map((s: any) => (
               <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f7f6fa', flexWrap: 'wrap' }}>

@@ -3,6 +3,7 @@
 // Guarda a /api/crm/pipelines (PUT upsert por tipo). Las vistas Kanban de
 // Contactos, Oportunidades y Clientes leen estas etapas.
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 
 type Stage = { key: string; label: string; color: string };
 type Pipeline = { id?: string; tipo: string; nombre: string; stages: Stage[] };
@@ -69,7 +70,7 @@ export default function PipelinesConfig({ initialTipo, sinTitulo }: { initialTip
     setTimeout(() => setToast(''), 4000);
   }
 
-  if (loading) return <div style={{ padding: 40, color: '#999' }}>Cargando pipelines…</div>;
+  if (loading) return <Cargando texto="Cargando pipelines…" />;
 
   return (
     <div style={{ padding: 24, maxWidth: 760, margin: '0 auto' }}>

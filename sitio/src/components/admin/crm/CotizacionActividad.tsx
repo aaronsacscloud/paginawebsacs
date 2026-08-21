@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 import RegistrarPagoModal, { resumenCierre } from './RegistrarPagoModal';
 
 /* ═══ Panel de actividad de una cotización ═══
@@ -68,7 +69,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
   if (!d) {
     return (
       <div style={P.panel}>
-        <div style={{ padding: 22, color: '#999' }}>Cargando…</div>
+        <Cargando texto="Cargando…" />
       </div>
     );
   }

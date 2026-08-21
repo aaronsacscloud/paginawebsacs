@@ -5,6 +5,7 @@
 //  2) Historial de pagos (de /api/crm/arr/payments): por contacto, con TIPO y CONCEPTO,
 //     filtros por tipo/referencia y resumen por método.
 import { useState, useEffect } from 'react';
+import Cargando from './ui/Cargando';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -138,7 +139,7 @@ export default function PagosTab() {
 
   const abonar = (subscription_id: string) => { setPagoPrefill({ subscription_id }); setShowPago(true); };
 
-  if (loading && !summary) return <div style={{ padding: 40, color: '#888' }}>Cargando pagos…</div>;
+  if (loading && !summary) return <Cargando texto="Cargando pagos…" />;
 
   return (
     <div>

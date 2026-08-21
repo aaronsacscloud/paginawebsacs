@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 import { ESPECIALIDADES } from '../../../data/partner-especialidades';
 import { FIL_TIERS } from '../../../data/filantropia';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -458,7 +459,7 @@ export default function PartnersTab() {
       {/* List */}
       <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14 }}>
         {loading ? (
-          <div style={{ padding: 60, textAlign: 'center', color: '#999', fontSize: '0.875rem' }}>Cargando invitaciones...</div>
+          <Cargando texto="Cargando invitaciones…" />
         ) : filtered.length === 0 ? (
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : isMobile ? (
@@ -906,7 +907,7 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
         </div>
 
         <div style={{ padding: 24 }}>
-          {loading && <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>Cargando detalle…</div>}
+          {loading && <Cargando texto="Cargando detalle…" />}
           {error && <div style={{ padding: 16, background: 'rgba(229,75,75,0.10)', color: '#b93333', borderRadius: 8 }}>{error}</div>}
           {data && (
             <>

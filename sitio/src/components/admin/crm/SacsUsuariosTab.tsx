@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Cargando from './ui/Cargando';
 import { Server, RefreshCw, ShieldCheck, User, LogIn } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -188,7 +189,7 @@ export default function SacsUsuariosTab() {
       <div style={{ background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         {error && <div style={{ background: '#fdecea', color: '#b93333', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: '0.82rem' }}>{error}</div>}
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cargando usuarios de <b>{account}</b>…</div>
+          <Cargando texto={`Cargando usuarios de ${account}…`} />
         ) : (
           <TablaEnterprise
             tabla={'sacs_usuarios_' + account}

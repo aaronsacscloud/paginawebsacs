@@ -1,6 +1,7 @@
 // Piezas compartidas de la sección Email. Viven aparte porque las usan las
 // seis pantallas y duplicarlas garantizaría que se separen con el tiempo.
 import type { CSSProperties, ReactNode } from 'react';
+import CargandoBase from '../ui/Cargando';
 
 /**
  * Estilo de foco para teclado. Los navegadores lo quitan cuando se define un
@@ -85,8 +86,10 @@ export function Vacio({ titulo, texto, accion }: { titulo: string; texto: string
   );
 }
 
+/** El mismo gesto que el resto del CRM: los tres corazones. Se conserva la
+ *  firma `que` para no tocar los veinte lugares que ya la llaman. */
 export function Cargando({ que = 'datos' }: { que?: string }) {
-  return <div style={{ padding: 40, textAlign: 'center', color: '#a5a2af', fontSize: '0.85rem' }}>Cargando {que}…</div>;
+  return <CargandoBase texto={`Cargando ${que}…`} />;
 }
 
 /**

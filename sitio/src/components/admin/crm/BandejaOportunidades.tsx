@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 import { S } from './SubscriptionsTab';
 
 /* ═══ Bandeja de oportunidades ═══
@@ -81,7 +82,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
         </div>
       ) : null}
 
-      {cargando && <div style={{ padding: 30, textAlign: 'center', color: '#999' }}>Cargando…</div>}
+      {cargando && <Cargando texto="Cargando…" />}
       {!cargando && !d?.data?.length && <div style={{ padding: 30, textAlign: 'center', color: '#999' }}>Nada por aquí.</div>}
 
       {!cargando && (d?.data || []).map((f: any) => {

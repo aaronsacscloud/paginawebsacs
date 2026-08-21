@@ -924,7 +924,7 @@ function TabSacs({ co, act, reload, flash }: any) {
           {lista.length > 0 && <button style={{ ...D.btnG, marginLeft: 'auto' }} disabled={busy} onClick={syncAhora}>🔄 Sincronizar {varias ? 'todas' : 'ahora'}</button>}
         </div>
 
-        {cuentas === null && <div style={{ color: '#999', fontSize: '0.82rem' }}>Cargando cuentas…</div>}
+        {cuentas === null && <Cargando texto="Cargando cuentas…" />}
         {cuentas !== null && lista.length === 0 && (
           <div style={{ color: '#c62828', fontSize: '0.82rem', marginBottom: 10 }}>Este cliente no tiene ninguna cuenta de SACS ligada.</div>
         )}
@@ -2082,7 +2082,7 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
     navigator.clipboard?.writeText(url).then(() => flash('Link copiado y abierto')).catch(() => flash('Link abierto'));
   }
 
-  if (rows === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando reuniones…</div>;
+  if (rows === null) return <Cargando texto="Cargando reuniones…" />;
 
   const hoy = new Date().toISOString().slice(0, 10);
   const orden = rows.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
@@ -2903,7 +2903,7 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
     flash('Cotización creada'); cargar(); reload?.();
   }
 
-  if (deals === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando oportunidades…</div>;
+  if (deals === null) return <Cargando texto="Cargando oportunidades…" />;
 
   const abiertas = deals.filter(d => !isWon(d.stage) && !isLost(d.stage));
   const pipeline = abiertas.reduce((a, d) => a + Number(d.valor_total || 0), 0);

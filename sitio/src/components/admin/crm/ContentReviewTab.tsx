@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Cargando from './ui/Cargando';
 
 interface Submission {
   id: string;
@@ -111,7 +112,7 @@ export default function ContentReviewTab() {
 
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ececec' }}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Cargando…</div>
+          <Cargando texto="Cargando…" />
         ) : list.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Sin submissions en este estado.</div>
         ) : (

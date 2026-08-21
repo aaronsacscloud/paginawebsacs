@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Cargando from './crm/ui/Cargando';
 
 interface Note { date: string; text: string; }
 
@@ -146,7 +147,7 @@ export default function LeadsTable() {
 
       {/* Content */}
       <div style={{ flex: 1, padding: '0 24px 24px', overflow: 'auto' }}>
-        {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div> :
+        {loading ? <Cargando texto="Cargando…" /> :
           view === 'pipeline' ? <PipelineView leads={leads} onSelect={openDetail} onMove={moveStage} /> :
           <TableView leads={leads} onSelect={openDetail} />
         }

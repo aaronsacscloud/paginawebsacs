@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Cargando from './ui/Cargando';
 
 interface Commission {
   id: string;
@@ -242,7 +243,7 @@ export default function CommissionsTab() {
       {/* Table */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ececec', overflowX: 'auto' }}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Cargando…</div>
+          <Cargando texto="Cargando…" />
         ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Sin comisiones que coincidan.</div>
         ) : (

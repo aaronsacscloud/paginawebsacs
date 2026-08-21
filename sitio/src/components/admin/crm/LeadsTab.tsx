@@ -5,6 +5,7 @@
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
 import { useEffect, useMemo, useState } from 'react';
+import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
 import LeadDrawer from './LeadDrawer';
 import ImportarTikTok from './ImportarTikTok';
@@ -211,7 +212,7 @@ export default function LeadsTab() {
   const nFiltros = chips.length;
   const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); };
 
-  if (rows === null) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando leads…</div>;
+  if (rows === null) return <Cargando texto="Cargando leads…" />;
 
   const topOrigenes = (res?.origenes || []).filter((o: any) => o.v !== 'sin_definir').slice(0, 6);
   const maxOrigen = Math.max(1, ...topOrigenes.map((o: any) => o.n));

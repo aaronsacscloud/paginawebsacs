@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Cargando from './ui/Cargando';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
@@ -260,7 +261,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     );
   };
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando reuniones…</div>;
+  if (loading) return <Cargando texto="Cargando reuniones…" />;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   return (

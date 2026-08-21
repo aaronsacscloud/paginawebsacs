@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Cargando from './ui/Cargando';
 
 // ─── Types ───
 interface Automation {
@@ -231,7 +232,7 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
               </div>
             </div>
             <div style={{ padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {listos === null && <div style={{ color: '#a5a2af', fontSize: '0.83rem' }}>Cargando…</div>}
+              {listos === null && <Cargando texto="Cargando…" />}
               {errorListo && (
                 <div style={{ background: '#FEF0EF', color: '#C0554E', borderRadius: 9, padding: '9px 11px', fontSize: '0.78rem' }}>{errorListo}</div>
               )}
@@ -269,7 +270,7 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>
+        <Cargando texto="Cargando…" />
       ) : automations.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: '#bbb' }}>
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>⚙</div>
@@ -552,7 +553,7 @@ function AutomationDetail({ id, onBack }: { id: string; onBack: () => void }) {
     load();
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>;
+  if (loading) return <Cargando texto="Cargando…" />;
   if (!automation) return <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>No encontrado</div>;
 
   const isActive = automation.estado === 'activo';
@@ -1247,7 +1248,7 @@ function TemplatesView() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>
+        <Cargando texto="Cargando…" />
       ) : templates.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: '#bbb' }}>
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>✉</div>

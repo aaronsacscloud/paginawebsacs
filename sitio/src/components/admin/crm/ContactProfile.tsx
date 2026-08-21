@@ -896,7 +896,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 onToggle={() => toggleSection('pagos')}
               >
                 {!c360 ? (
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Cargando…</div>
+                  <Cargando texto="Cargando…" />
                 ) : (
                   <div>
                     {edoCuenta?.resumen && (

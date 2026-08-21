@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Cargando from './ui/Cargando';
 import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
@@ -479,7 +480,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'todos', nombre: 'Todos', config: { sort: { key: 'arr', dir: -1 } } },
   ];
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
+  if (loading) return <Cargando texto="Cargando clientes…" />;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   // Un ícono y un botón, como en Cotizaciones: los secundarios son íconos sin
