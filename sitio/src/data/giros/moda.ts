@@ -26,13 +26,6 @@ export const cortinaModa = {
 
 
 
-export const cajaModa = {
-  lineas: [
-    { n: 'Blusa satinada · Negro · M', p: '$899.00' },
-    { n: 'Falda plisada · Vino · S', p: '$1,190.00' },
-  ],
-  total: '$2,089.00',
-};
 
 /* ── La junta del rebaje: el bloque propio del giro.
    En moda la utilidad no se decide cuando compras: se decide cuando marcas.

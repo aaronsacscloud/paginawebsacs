@@ -26,7 +26,7 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import ModaMarcacion from '../../components/giros/ModaMarcacion.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
-import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa, cajaModa } from '../../data/giros/moda';
+import { cortinaModa, marcacionModa, casosModa, pasosModa, etapasModa } from '../../data/giros/moda';
 
 const titulo = 'Suite para Tiendas de Ropa';
 const desc =
@@ -151,8 +151,6 @@ const desc =
     resalte="sin cerrar la tienda."
     sub="Tienes tiendas operando y no puedes darte el lujo de parar una semana. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
     pasos={pasosModa}
-    lineas={cajaModa.lineas}
-    total={cajaModa.total}
     remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —clientes, prendas, existencias— y lo demás queda consultable. Nunca te pedimos empezar de cero, porque nadie con cinco años de temporadas puede hacerlo."
   />
 
