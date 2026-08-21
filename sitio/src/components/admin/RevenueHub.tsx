@@ -183,6 +183,14 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
       {/* En el teléfono no caben dos columnas: el riel se vuelve una lista
           corta arriba —con su propio scroll— y el contenido queda debajo. */}
       <style dangerouslySetInnerHTML={{ __html: `
+        /* La página del CRM esconde el cromo del sitio público con
+           "nav, header, footer { display:none !important }". Esta pantalla no
+           usa esas etiquetas, y además se blinda por clase: una clase gana a un
+           selector de etiqueta aunque los dos lleven !important. */
+        .cfg-cab, .cfg-cuerpo, .cfg-riel, .cfg-main { display: revert !important; }
+        .cfg-cab { display: flex !important; }
+        .cfg-cuerpo { display: grid !important; }
+        .cfg-riel, .cfg-main { display: block !important; }
         @media (max-width: 860px) {
           .cfg-cuerpo { grid-template-columns: 1fr !important; grid-template-rows: auto 1fr; }
           .cfg-riel { max-height: 30vh; border-right: none !important; border-bottom: 1px solid #f0eef7; }
@@ -197,7 +205,7 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
         }
       ` }} />
 
-      <header className="cfg-cab" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0, flexWrap: 'wrap' }}>
+      <div className="cfg-cab" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 22px 14px', borderBottom: '1px solid #f0eef7', flexShrink: 0, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: '1.32rem', fontWeight: 800, letterSpacing: '-.02em', margin: 0, color: '#241d43' }}>Configuración y personalización</h1>
           <p style={{ fontSize: '0.77rem', color: '#6b7280', margin: '3px 0 0' }}>Cada ajuste vive donde vive su módulo.</p>
@@ -213,11 +221,11 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
-      </header>
+      </div>
 
       <div className="cfg-cuerpo" style={{ flex: 1, display: 'grid', gridTemplateColumns: '262px 1fr', minHeight: 0 }}>
         {/* Riel: los grupos del menú, con sus módulos */}
-        <nav className="cfg-riel" style={{ borderRight: '1px solid #f0eef7', overflowY: 'auto', padding: '10px 0 30px', background: '#fdfcff' }}>
+        <div className="cfg-riel" style={{ borderRight: '1px solid #f0eef7', overflowY: 'auto', padding: '10px 0 30px', background: '#fdfcff' }}>
           {mapa.map((g, gi) => (
             <div key={g.g}>
               <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: '#b0a8c9', padding: gi === 0 ? '8px 22px 6px' : '16px 22px 6px' }}>{g.g}</div>
@@ -239,10 +247,10 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
               })}
             </div>
           ))}
-        </nav>
+        </div>
 
         {/* Contenido */}
-        <main className="cfg-main" style={{ overflowY: 'auto', minWidth: 0, padding: '24px 30px 60px' }}>
+        <div className="cfg-main" style={{ overflowY: 'auto', minWidth: 0, padding: '24px 30px 60px' }}>
           {busca ? (
             <>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px', color: '#241d43' }}>Resultados</h2>
@@ -283,7 +291,7 @@ function CfgPantalla({ mapa, mod, item, q, onMod, onItem, onQ, onCerrar }: {
               )}
             </>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );
