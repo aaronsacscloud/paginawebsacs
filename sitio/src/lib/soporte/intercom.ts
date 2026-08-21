@@ -6,6 +6,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { supabase } from '../supabase';
 import { companyIdDeCuenta, normCuenta } from '../crm/sacs-cuentas';
 import { notificar } from '../crm/notificaciones';
+import { clasificar } from './clasificar';
+import { recomputarSoporteEmpresa } from '../crm/soporte-rollup';
+import { dispararCSAT } from './csat';
 
 const SECRET = (import.meta.env.INTERCOM_WEBHOOK_SECRET || '').trim();
 const APP_ID = (import.meta.env.INTERCOM_APP_ID || 'zla430r8').trim();
@@ -14,6 +17,41 @@ const API = 'https://api.intercom.io';
 const IV = { 'Authorization': 'Bearer ' + TOKEN, 'Intercom-Version': '2.11', 'Content-Type': 'application/json' };
 
 export function hayToken(): boolean { return TOKEN.length > 0; }
+
+// admin_id para responder: env override, o el primer admin activo de la app
+// (se resuelve una vez y se cachea en memoria del proceso).
+const ADMIN_ID_ENV = (import.meta.env.INTERCOM_ADMIN_ID || '').trim();
+let _adminIdCache: string | null = null;
+async function adminIdPredeterminado(): Promise<string | null> {
+  if (ADMIN_ID_ENV) return ADMIN_ID_ENV;
+  if (_adminIdCache) return _adminIdCache;
+  try {
+    const r = await fetch(`${API}/admins`, { headers: IV });
+    const j: any = await r.json();
+    const admins: any[] = j?.admins || j?.data || [];
+    const activo = admins.find(a => a && a.away_mode_enabled !== undefined ? true : !!a?.id) || admins[0];
+    _adminIdCache = activo?.id ? String(activo.id) : null;
+    return _adminIdCache;
+  } catch { return null; }
+}
+
+/** Responde (comentario público de admin) una conversación de Intercom desde el
+ *  CRM. Devuelve {ok} o {error}. No lanza. */
+export async function responderConversacion(conversationId: string, texto: string): Promise<{ ok: boolean; error?: string }> {
+  if (!TOKEN) return { ok: false, error: 'Intercom no configurado (falta INTERCOM_ACCESS_TOKEN)' };
+  const body = (texto || '').trim();
+  if (!body) return { ok: false, error: 'Mensaje vacío' };
+  const adminId = await adminIdPredeterminado();
+  if (!adminId) return { ok: false, error: 'No se encontró un admin de Intercom para responder (define INTERCOM_ADMIN_ID)' };
+  try {
+    const r = await fetch(`${API}/conversations/${conversationId}/reply`, {
+      method: 'POST', headers: IV,
+      body: JSON.stringify({ message_type: 'comment', type: 'admin', admin_id: adminId, body }),
+    });
+    if (!r.ok) { const t = await r.text().catch(() => ''); return { ok: false, error: `Intercom ${r.status}: ${t.slice(0, 200)}` }; }
+    return { ok: true };
+  } catch (e: any) { return { ok: false, error: e?.message || 'No se pudo enviar' }; }
+}
 
 /** La cuenta SACS de una conversación viene del CONTACTO, no de la conversación:
  *  contacto.companies[0].company_id = la cuenta (lo que sacs3 pone como company.id).
@@ -131,20 +169,43 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
     if (ct) { contactId = ct.id; if (!companyId) companyId = ct.company_id || null; }
   }
 
+  // Estado previo del ticket: para detectar REAPERTURA y no re-timbrar la
+  // primera respuesta ni el CSAT dos veces.
+  const { data: prev } = await supabase.from('crm_soporte_tickets')
+    .select('estado, primera_respuesta_at, reabierto_count, csat_campana_id')
+    .eq('conversation_id', ev.conversationId).maybeSingle();
+
+  const { tema, sentimiento } = clasificar(ev.asunto, ev.vistaPrevia);
+  const reabierto = !!(prev && prev.estado === 'resuelto' && ev.estado !== 'resuelto');
+  const esRespuestaAdmin = ev.topic === 'conversation.admin.replied';   // primera respuesta (FRT/SLA)
+
   const fila: any = {
     conversation_id: ev.conversationId, company_id: companyId, contact_id: contactId,
     cuenta: cuenta ? normCuenta(cuenta) : null,
     estado: ev.estado, asunto: ev.asunto, vista_previa: ev.vistaPrevia, prioridad: ev.prioridad,
     asignado: ev.asignado, autor_email: email,
+    tema, sentimiento,
     ultima_actividad_at: ev.ultimaAt, intercom_url: ev.url,
     updated_at: new Date().toISOString(),
   };
   if (ev.abiertoAt) fila.abierto_at = ev.abiertoAt;
   if (ev.resueltoAt) fila.resuelto_at = ev.resueltoAt;
+  if (!prev?.primera_respuesta_at && esRespuestaAdmin) fila.primera_respuesta_at = new Date().toISOString();
+  if (reabierto) { fila.reabierto_count = (prev?.reabierto_count || 0) + 1; fila.resuelto_at = null; }
 
   const { error } = await supabase.from('crm_soporte_tickets')
     .upsert(fila, { onConflict: 'conversation_id' });
   if (error) return { ok: false, company_id: companyId };
+
+  // Rollup de soporte + recálculo de salud (el health baja al instante).
+  if (companyId) await recomputarSoporteEmpresa(companyId);
+
+  // CSAT: al resolver por primera vez, encolar la cuenta a la encuesta post-soporte.
+  if (ev.estado === 'resuelto' && !prev?.csat_campana_id && cuenta) {
+    const campId = await dispararCSAT(cuenta);
+    if (campId) await supabase.from('crm_soporte_tickets')
+      .update({ csat_campana_id: campId }).eq('conversation_id', ev.conversationId);
+  }
 
   // Evento en el timeline unificado (solo en abrir y resolver, no cada réplica).
   if (companyId && (ev.estado === 'abierto' || ev.estado === 'resuelto')) {

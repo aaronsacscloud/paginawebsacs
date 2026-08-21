@@ -101,6 +101,11 @@ export interface AudienciaDef {
   grupos: Array<{ condiciones: CondicionUso[] }>;
   excluir_cuentas?: string[];
   incluir_cuentas?: string[];   // adiciones manuales (beta testers, pilotos)
+  // Supresión por soporte: por defecto se OMITE a la empresa con una queja
+  // abierta (ticket estancado o de sentimiento urgente/negativo) — no es momento
+  // de venderle. Ponlo en false para campañas que SÍ deben llegar (p.ej. la CSAT
+  // post-soporte, o un aviso operativo crítico).
+  excluir_con_ticket_abierto?: boolean;
 }
 
 export const CATALOGO_AUDIENCIA: Array<{ id: string; etiqueta: string; tipo: 'opciones' | 'numero' | 'texto' | 'modulo'; operadores: CondicionUso['operador'][]; opciones?: Array<{ v: string; l: string }> }> = [

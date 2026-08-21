@@ -56,6 +56,10 @@
     {
       "path": "/api/cron/intercom-backfill",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/soporte-sla",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

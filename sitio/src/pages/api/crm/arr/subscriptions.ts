@@ -39,7 +39,7 @@ export const GET: APIRoute = async ({ url }) => {
   const ciclo = url.searchParams.get('ciclo');
   const companyId = url.searchParams.get('company_id');
   let q = supabase.from('subscriptions')
-    .select('*, companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, health_score, estado_cuenta), contacts(id, nombre, email)')
+    .select('*, companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, health_score, estado_cuenta, soporte_abiertos, soporte_estancado, soporte_sentimiento), contacts(id, nombre, email)')
     .order('proxima_factura', { ascending: true, nullsFirst: false });
   if (estado) q = q.eq('estado', estado);
   if (ciclo) q = q.eq('ciclo', ciclo);

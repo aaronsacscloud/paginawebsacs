@@ -85,13 +85,21 @@ function cumpleCondicion(e: EmpresaEval, c: CondicionUso): boolean {
 export interface AudienciaResuelta {
   companies: Array<{ id: string; nombre: string; cuentas: string[] }>;
   cuentas: string[];
-  exclusiones: { sin_cuenta: number; excluidas_manual: number };
+  exclusiones: { sin_cuenta: number; excluidas_manual: number; soporte?: number };
+}
+
+/** ¿La empresa tiene una queja abierta que amerita NO venderle ahora? Reusa el
+ *  rollup denormalizado (companies.soporte_*): ticket abierto + estancado o de
+ *  sentimiento urgente/negativo. */
+function tieneQuejaAbierta(e: any): boolean {
+  return Number(e.soporte_abiertos || 0) > 0 &&
+    (e.soporte_estancado === true || e.soporte_sentimiento === 'urgente' || e.soporte_sentimiento === 'negativo');
 }
 
 /** Empresas (con sus cuentas SACS) que cumplen la definición HOY. */
 export async function resolverAudiencia(def: AudienciaDef): Promise<AudienciaResuelta> {
   const { data, error } = await supabase.from('companies')
-    .select('id, nombre, plan, estado_cuenta, dias_sin_venta, giro, months_active, fecha_renovacion, sacs_account, uso_sacs, intereses')
+    .select('id, nombre, plan, estado_cuenta, dias_sin_venta, giro, months_active, fecha_renovacion, sacs_account, uso_sacs, intereses, soporte_abiertos, soporte_estancado, soporte_sentimiento')
     .is('archived_at', null)
     .limit(5000);
   if (error) throw new Error('No se pudieron leer las empresas: ' + error.message);
@@ -106,20 +114,24 @@ export async function resolverAudiencia(def: AudienciaDef): Promise<AudienciaRes
   const mapa = await cuentasPorEmpresa(candidatas.map((e: any) => e.id));
   const excluir = new Set((def?.excluir_cuentas || []).map(normCuenta));
   const incluirExtra = (def?.incluir_cuentas || []).map(normCuenta).filter(Boolean);
+  const suprimirSoporte = def?.excluir_con_ticket_abierto !== false;   // opt-out explícito
 
-  let sinCuenta = 0, excluidas = 0;
+  let sinCuenta = 0, excluidas = 0, porSoporte = 0;
   const companies: AudienciaResuelta['companies'] = [];
   const cuentasSet = new Set<string>();
   for (const e of candidatas) {
+    if (suprimirSoporte && tieneQuejaAbierta(e)) { porSoporte++; continue; }   // no venderle con queja abierta
     const cs = (mapa[e.id] && mapa[e.id].length) ? mapa[e.id] : (normCuenta(e.sacs_account) ? [normCuenta(e.sacs_account)] : []);
     const vivas = cs.filter(c => { if (excluir.has(c)) { excluidas++; return false; } return true; });
     if (!vivas.length) { sinCuenta++; continue; }
     companies.push({ id: e.id, nombre: e.nombre, cuentas: vivas });
     vivas.forEach(c => cuentasSet.add(c));
   }
+  // Las adiciones manuales (incluir_cuentas) SIEMPRE entran, aunque tengan queja
+  // abierta: es una decisión deliberada del operador (p.ej. la CSAT post-soporte).
   for (const c of incluirExtra) cuentasSet.add(c);
 
-  return { companies, cuentas: Array.from(cuentasSet), exclusiones: { sin_cuenta: sinCuenta, excluidas_manual: excluidas } };
+  return { companies, cuentas: Array.from(cuentasSet), exclusiones: { sin_cuenta: sinCuenta, excluidas_manual: excluidas, soporte: porSoporte } };
 }
 
 // ── Validación (los checks del paso Revisión) ────────────────────────────────

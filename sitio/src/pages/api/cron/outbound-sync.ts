@@ -74,10 +74,11 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
       const encuestas = reales.filter((f: any) => f.evento === 'respuesta_encuesta' && f.valor != null);
       // Escala por campaña (para saber qué es detractor en ESTA escala).
       const escalaPorCamp: Record<string, string> = {};
+      const esCsatSoporte: Record<string, boolean> = {};   // campaña CSAT post-soporte
       if (encuestas.length) {
         const idsE = Array.from(new Set(encuestas.map((f: any) => f.campana_id)));
-        const { data: campsE } = await supabase.from('inapp_campanas').select('id, contenido').in('id', idsE);
-        for (const c of (campsE || [])) escalaPorCamp[c.id] = c.contenido?.encuesta?.escala || 'nps';
+        const { data: campsE } = await supabase.from('inapp_campanas').select('id, contenido, meta').in('id', idsE);
+        for (const c of (campsE || [])) { escalaPorCamp[c.id] = c.contenido?.encuesta?.escala || 'nps'; esCsatSoporte[c.id] = c.meta?.csat_soporte === true; }
       }
       for (const d of encuestas) {
         const cx = cortesEscala(escalaPorCamp[d.campana_id]);
@@ -86,6 +87,19 @@ async function ingerirEventos(deadline: number): Promise<{ ingeridos: number; er
           const { data: fila } = await supabase.from('company_sacs_accounts').select('company_id').eq('cuenta', d.cuenta).maybeSingle();
           companyId = fila?.company_id || null;
         } catch { /* sin empresa ligada: el aviso sale igual */ }
+
+        // CSAT post-soporte: cerrar el loop escribiendo la calificación en el
+        // ticket resuelto más reciente de esa cuenta que aún no tenga CSAT.
+        if (esCsatSoporte[d.campana_id] && d.valor != null) {
+          try {
+            const { data: tk } = await supabase.from('crm_soporte_tickets')
+              .select('conversation_id').eq('cuenta', d.cuenta).eq('estado', 'resuelto').is('csat_score', null)
+              .order('resuelto_at', { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+            if (tk) await supabase.from('crm_soporte_tickets')
+              .update({ csat_score: Number(d.valor), csat_at: new Date().toISOString() })
+              .eq('conversation_id', tk.conversation_id);
+          } catch { /* mejor-esfuerzo */ }
+        }
         if (Number(d.valor) <= cx.det) {
           await notificar({
             clave: `outbound-detractor:${d.campana_id}:${d.uid}:${d.created}`,

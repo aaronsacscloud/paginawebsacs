@@ -2,6 +2,7 @@
 // Trae todos los mensajes (source + conversation_parts), autores, adjuntos e
 // imágenes vía el Access Token. Founder-only por el middleware (/api/crm/).
 import type { APIRoute } from 'astro';
+import { responderConversacion } from '../../../../lib/soporte/intercom';
 
 export const prerender = false;
 const TOKEN = (import.meta.env.INTERCOM_ACCESS_TOKEN || '').trim();
@@ -76,4 +77,17 @@ export const GET: APIRoute = async ({ url }) => {
   } catch (e: any) {
     return json({ error: e?.message || 'No se pudo cargar la conversación' }, 502);
   }
+};
+
+// Responder la conversación desde el CRM (comentario público de admin).
+export const POST: APIRoute = async ({ request, url }) => {
+  const id = url.searchParams.get('id') || '';
+  if (!/^[0-9]+$/.test(id)) return json({ error: 'Conversación inválida' }, 400);
+  let body: any = {};
+  try { body = await request.json(); } catch { /* vacío */ }
+  const texto = String(body?.texto || '').trim();
+  if (!texto) return json({ error: 'Escribe un mensaje' }, 400);
+  const res = await responderConversacion(id, texto);
+  if (!res.ok) return json({ error: res.error }, 502);
+  return json({ ok: true });
 };

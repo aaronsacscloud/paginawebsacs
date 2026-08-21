@@ -6,6 +6,8 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { hayToken, cuentaDeContacto } from '../../../lib/soporte/intercom';
 import { supabase } from '../../../lib/supabase';
 import { companyIdDeCuenta, normCuenta } from '../../../lib/crm/sacs-cuentas';
+import { clasificar } from '../../../lib/soporte/clasificar';
+import { recomputarSoporteEmpresa } from '../../../lib/crm/soporte-rollup';
 
 export const prerender = false;
 const TOKEN = (import.meta.env.INTERCOM_ACCESS_TOKEN || '').trim();
@@ -27,8 +29,9 @@ const seg = (ms: number | null) => (ms && ms > 0) ? new Date(ms * 1000).toISOStr
 async function correr(): Promise<Response> {
   if (!hayToken()) return json({ error: 'Falta INTERCOM_ACCESS_TOKEN' }, 503);
   const deadline = Date.now() + PRESUPUESTO_MS;
-  const out: any = { revisadas: 0, ligadas: 0, sin_cuenta: 0, errores: [] as string[] };
+  const out: any = { revisadas: 0, ligadas: 0, sin_cuenta: 0, empresas_recomputadas: 0, errores: [] as string[] };
   const cacheCuenta = new Map<string, string | null>();  // contactId → cuenta (evita refetch)
+  const empresasTocadas = new Set<string>();             // para recomputar rollup/salud al final
 
   let starting_after: string | null = null;
   try {
@@ -59,11 +62,13 @@ async function correr(): Promise<Response> {
         if (!companyId) { out.sin_cuenta++; }
 
         const estado = estadoDe(c);
+        const asunto = c.title || c.source?.subject || null;
+        const vistaPrevia = c.source?.body ? String(c.source.body).replace(/<[^>]*>/g, ' ').trim().slice(0, 300) : null;
+        const { tema, sentimiento } = clasificar(asunto, vistaPrevia);
         const fila: any = {
           conversation_id: String(c.id), company_id: companyId, contact_id: crmContactId,
           cuenta: cuenta ? normCuenta(cuenta) : null, estado,
-          asunto: c.title || c.source?.subject || null,
-          vista_previa: c.source?.body ? String(c.source.body).replace(/<[^>]*>/g, ' ').trim().slice(0, 300) : null,
+          asunto, vista_previa: vistaPrevia, tema, sentimiento,
           prioridad: c.priority || null,
           autor_email: email,
           abierto_at: seg(c.created_at),
@@ -74,7 +79,7 @@ async function correr(): Promise<Response> {
         };
         const { error } = await supabase.from('crm_soporte_tickets').upsert(fila, { onConflict: 'conversation_id' });
         if (error) { out.errores.push(`upsert ${c.id}: ${error.message}`); continue; }
-        if (companyId) out.ligadas++;
+        if (companyId) { out.ligadas++; empresasTocadas.add(companyId); }
 
         // Evento en el timeline (idempotente por conversation_id + tipo).
         if (companyId && (estado === 'abierto' || estado === 'resuelto')) {
@@ -94,6 +99,12 @@ async function correr(): Promise<Response> {
 
       starting_after = j.pages?.next?.starting_after || null;
       if (!starting_after) break;
+    }
+    // Recomputar rollup de soporte + salud de las empresas tocadas.
+    for (const cid of empresasTocadas) {
+      if (Date.now() > deadline) { out.presupuesto_agotado = true; break; }
+      await recomputarSoporteEmpresa(cid);
+      out.empresas_recomputadas++;
     }
     if (Date.now() > deadline) out.presupuesto_agotado = true;
     return json({ ok: true, ...out });

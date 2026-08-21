@@ -14,6 +14,7 @@
 
 export const HEALTH_FACTOR_MAX: Record<string, number> = {
   recencia: 30, tendencia: 20, adopcion: 15, equipo: 10, programas: 15, crecimiento: 10,
+  soporte: 0,   // sentinela: factor de PENALIZACIÓN (valor ≤ 0), el badge lo pinta como "−N".
 };
 export const HEALTH_FACTOR_LABELS: Record<string, string> = {
   recencia: 'Ventas recientes',
@@ -22,9 +23,29 @@ export const HEALTH_FACTOR_LABELS: Record<string, string> = {
   equipo: 'Equipo operando',
   programas: 'Programas (lealtad/facturación)',
   crecimiento: 'Crecimiento de clientes',
+  soporte: 'Soporte',
 };
 
-export function healthScoreV2(a: any, uso?: any): { score: number; factors: Record<string, number> } {
+/** Rollup de soporte que penaliza la salud (viene de companies.soporte_*). */
+export interface SoporteSalud {
+  abiertos?: number;
+  estancado?: boolean;               // algún ticket abierto rompió el SLA
+  sentimiento?: string | null;       // 'urgente' | 'negativo' | ...
+}
+
+/** Penalización de salud por carga de soporte. Devuelve un número ≤ 0 (máx −20). */
+export function penalizacionSoporte(s?: SoporteSalud | null): number {
+  if (!s) return 0;
+  let p = 0;
+  const ab = Number(s.abiertos || 0);
+  if (ab >= 4) p -= 10; else if (ab >= 2) p -= 6; else if (ab === 1) p -= 3;
+  if (s.estancado) p -= 6;                       // SLA roto: pesa más que el conteo
+  if (s.sentimiento === 'urgente') p -= 8;
+  else if (s.sentimiento === 'negativo') p -= 4;
+  return Math.max(-20, p);
+}
+
+export function healthScoreV2(a: any, uso?: any, soporte?: SoporteSalud | null): { score: number; factors: Record<string, number> } {
   a = a || {}; uso = uso || null;
 
   const dias = a.ultima_venta ? Math.max(0, Math.floor((Date.now() - new Date(a.ultima_venta + 'T12:00:00Z').getTime()) / 86400000)) : 99;
@@ -56,7 +77,9 @@ export function healthScoreV2(a: any, uso?: any): { score: number; factors: Reco
     crecimiento += ln >= 10 ? 4 : ln >= 1 ? 2 : 0;
   }
 
-  const factors = { recencia, tendencia, adopcion, equipo, programas, crecimiento };
-  const score = Object.values(factors).reduce((s, v) => s + v, 0);
+  const soportePen = penalizacionSoporte(soporte);   // ≤ 0
+  const factors = { recencia, tendencia, adopcion, equipo, programas, crecimiento, soporte: soportePen };
+  const base = recencia + tendencia + adopcion + equipo + programas + crecimiento;   // 0-100
+  const score = Math.max(0, Math.min(100, base + soportePen));
   return { score, factors };
 }

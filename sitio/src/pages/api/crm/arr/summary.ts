@@ -20,7 +20,7 @@ export const GET: APIRoute = async () => {
   const [subsRes, goalsRes, compRes] = await Promise.all([
     supabase.from('subscriptions').select('*, contacts(nombre), companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre))').limit(2000),
     supabase.from('crm_goals').select('*'),
-    supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, contacts(nombre)').not('sacs_account', 'is', null),
+    supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, soporte_abiertos, soporte_estancado, soporte_sentimiento, contacts(nombre)').not('sacs_account', 'is', null),
   ]);
   if (subsRes.error) return new Response(JSON.stringify({ error: subsRes.error.message }), { status: 500 });
 
@@ -53,22 +53,33 @@ export const GET: APIRoute = async () => {
   };
 
   // ── Riesgo por inactividad (solo clientes con suscripción activa y cuenta ligada) ──
-  const riesgo = { banda_3_15: [] as any[], banda_15_mas: [] as any[], arr_en_riesgo: 0, sin_liga: 0 };
+  const riesgo = { banda_3_15: [] as any[], banda_15_mas: [] as any[], soporte: [] as any[], arr_en_riesgo: 0, arr_en_riesgo_soporte: 0, sin_liga: 0 };
   const activasPorCompany = new Map<string, number>();
   activas.forEach(s => { if (s.company_id) activasPorCompany.set(s.company_id, (activasPorCompany.get(s.company_id) || 0) + Number(s.arr || 0)); });
   (compRes.data || []).forEach(c => {
     const arrCliente = activasPorCompany.get(c.id) || 0;
     if (arrCliente <= 0) return;
+    const cliente = (c as any).contacts?.[0]?.nombre || c.nombre;
+    // Riesgo por SOPORTE: queja abierta (estancada o de sentimiento urgente/negativo).
+    // Es paralelo al de inactividad — un cliente que compra a diario pero está
+    // furioso por un ticket también está en riesgo.
+    const ab = Number((c as any).soporte_abiertos || 0);
+    const quejaSeria = ab > 0 && ((c as any).soporte_estancado === true || (c as any).soporte_sentimiento === 'urgente' || (c as any).soporte_sentimiento === 'negativo');
+    if (quejaSeria) {
+      riesgo.soporte.push({ company_id: c.id, nombre: cliente, cuenta: c.sacs_account || c.nombre, sacs_account: c.sacs_account, tickets_abiertos: ab, estancado: !!(c as any).soporte_estancado, sentimiento: (c as any).soporte_sentimiento || null, arr: r2(arrCliente) });
+      riesgo.arr_en_riesgo_soporte += arrCliente;
+    }
     const dias = c.dias_sin_venta;
     if (dias == null) { riesgo.sin_liga++; return; }
-    const cliente = (c as any).contacts?.[0]?.nombre || c.nombre;
-    const item = { company_id: c.id, nombre: cliente, cuenta: c.sacs_account || c.nombre, sacs_account: c.sacs_account, dias_sin_venta: dias, ultima_venta: c.ultima_venta_at, arr: r2(arrCliente) };
+    const item = { company_id: c.id, nombre: cliente, cuenta: c.sacs_account || c.nombre, sacs_account: c.sacs_account, dias_sin_venta: dias, ultima_venta: c.ultima_venta_at, arr: r2(arrCliente), tickets_abiertos: ab };
     if (dias > 15) { riesgo.banda_15_mas.push(item); riesgo.arr_en_riesgo += arrCliente; }
     else if (dias >= 3) { riesgo.banda_3_15.push(item); riesgo.arr_en_riesgo += arrCliente; }
   });
   riesgo.banda_3_15.sort((a, b) => b.arr - a.arr);
   riesgo.banda_15_mas.sort((a, b) => b.arr - a.arr);
+  riesgo.soporte.sort((a, b) => b.arr - a.arr);
   riesgo.arr_en_riesgo = r2(riesgo.arr_en_riesgo);
+  riesgo.arr_en_riesgo_soporte = r2(riesgo.arr_en_riesgo_soporte);
 
   // ── Calendario de cobros + proyección 12 meses ──
   const meses: { mes: string; contratado: number; pendiente: number; enRiesgo: number; cobros: any[] }[] = [];
