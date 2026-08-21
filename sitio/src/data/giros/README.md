@@ -1,12 +1,24 @@
 # Páginas de giro — el manual
 
-Todo lo que sigue salió de hacer **zapatería** de principio a fin: doce rondas,
-tres referees con veto y cuatro rechazos del dueño del sitio. Está escrito para
-que el siguiente giro —moda, y después los demás— no vuelva a pagar esas
-rondas.
+Todo lo que sigue salió de hacer **zapatería** y luego **moda** de principio a
+fin: veintitantas rondas, tres referees con veto y ocho rechazos del dueño del
+sitio. Está escrito para que el siguiente giro no vuelva a pagar esas rondas.
 
 Léelo completo antes de tocar un giro nuevo. La mitad de las reglas parecen
 obvias hasta que ves el error que las produjo.
+
+**Cómo se usa este manual:** la sección 2 dice qué bloque va, en qué orden y
+qué trabajo hace cada uno; la 3, qué hay que inventar de cero para ese oficio;
+la 4, el ciclo y los referees; la 5, las reglas que no se rompen. La referencia
+viva es `src/pages/giros/marcas-de-ropa.astro` — es la página más al día, y
+copiar su estructura es el camino corto.
+
+| Giro | Estado |
+|---|---|
+| Zapatería | Completa, pero una pasada atrás: sin riel, con `SuiteIntegral` y con pastillas |
+| Marcas de ropa | **Al día.** Es la referencia |
+| Joyería | Estructura vieja; sólo las cifras están al día |
+| Los demás (~20) | Sin empezar |
 
 ---
 
@@ -49,7 +61,8 @@ búscale su equivalente en el sistema antes de dibujarlo aparte.
 | `SuiteScroll` | El recorrido de funcionalidades con panel pegajoso. **Seis secciones, no catorce** |
 | `SuiteDireccion` | Para quien firma: comparativo de sucursales y las reglas contra la fuga |
 | `SuiteProceso` | Cómo se cambia sin cerrar: la escena se queda quieta y los pasos pasan. Trae las tres formas de implementar y la caja sin conexión |
-| `SuiteIntegral` | Vender, controlar, fidelizar y administrar en un círculo, con las funciones del giro |
+| `SuitePlano` | La suite completa contada como el plano de la tienda: lámina arquitectónica con zonas, la foto de cada zona y **abajo, todas las funciones a la vez**. Sustituyó a `SuiteIntegral` en moda |
+| `SuiteIntegral` | Vender, controlar, fidelizar y administrar en un círculo. **En retirada**: sigue en zapatería y joyería, y le toca pasar a `SuitePlano` |
 | `SuitePlanes` | La escalera de planes y desde dónde viene incluida la suite |
 | `CtaDudas` | El cierre. **Es el mismo componente de la portada** |
 | `BloqueProducto` | El envoltorio de las páginas de producto (`sq-block`). Cualquier pieza interactiva del giro va dentro de él |
@@ -64,11 +77,79 @@ producto suelto ES el argumento; ningún giro lo usa ya).
 ### El orden que funciona
 
 Portada → manifiesto → variantes → cortina → expediente → **salida** → cifras →
-casos → recorrido → **bloque propio 1** → dirección → **bloque propio 2** →
-proceso → integral → planes → **salida** → cierre.
+casos → recorrido → **bloque propio** → plano → proceso → planes → **salida** →
+cierre.
+
+Es literalmente el de `marcas-de-ropa.astro` y el de `zapateria.astro`. Léelos
+en paralelo antes de empezar uno nuevo: lo que cambia entre los dos es
+contenido, no estructura.
 
 Lo que de verdad convence son los bloques propios. Si quedan después de veinte
 pantallas, nadie llega.
+
+### La lógica de cada sección
+
+Cada bloque tiene **un trabajo y sólo uno**. Si dos bloques hacen el mismo, uno
+sobra — así se fueron seis mil píxeles de zapatería.
+
+| # | Bloque | El trabajo | Se sabe que falló cuando |
+|---|---|---|---|
+| 1 | `GiroBanner` | Probar en la primera pantalla que el sistema habla su idioma. Los **avisos** son del oficio, no genéricos | El visitante no sabe si esto es para él |
+| 2 | `SuiteManifiesto` | Nombrar el dolor con sus palabras, sin vender nada todavía | Suena a folleto |
+| 3 | `SuiteVariantes` | Enseñar el problema estructural del giro en una imagen: un producto que en realidad son cuarenta | Hay que explicarlo con texto |
+| 4 | `SuiteCortina` | Poner las dos caras del mismo empleado. **No convencen los datos, convence la cara** | Se ve como dos fotos de stock |
+| 5 | `SuiteProblemas` | Desactivar la objeción que ya trae: "yo ya tengo sistema" / "me lo hicieron a la medida" | Se habla mal de alguien |
+| — | `SuiteSalida` | Cambiar el ritmo y rematar el tramo. **Dos por página**, ni una más | Se vuelve un eslogan de relleno |
+| 6 | `SuiteCifras` | Responder "¿y ustedes quiénes son?". **Cifras de la casa, no del producto** (ver *Verdad*) | Repite funciones que ya se explicaron |
+| 7 | `SuiteCasos` | Los momentos del año en que el giro gana o pierde el dinero | Los casos servirían para cualquier negocio |
+| 8 | `SuiteScroll` | El recorrido de funcionalidades. **Seis secciones, no catorce** | Repite lo que ya dijo el bloque propio |
+| 9 | **Bloque propio** | El argumento que sólo existe en ese oficio. Es lo que cierra | Al cambiarle las etiquetas sirve para otro giro |
+| 10 | `SuitePlano` | Probar que la suite está COMPLETA sin que parezca una lista de cuarenta funciones | El visitante cree que le falta comprar módulos |
+| 11 | `SuiteProceso` | Matar el miedo a cambiarse: en tienda, por videollamada o solo | Suena a proyecto de meses |
+| 12 | `SuitePlanes` | Desde qué plan viene incluido | Esconde lo que se cobra aparte |
+| 13 | `CtaDudas` | El cierre. **Es el mismo componente de la portada** | El sitio habla con dos voces al final |
+
+### El patrón del riel (scroll que cuenta)
+
+Dos bloques ya lo usan —`SuitePlano` y `SuiteCortina`— y es el patrón por
+defecto para cualquier pieza que haya que *recorrer*. El visitante no descubre
+que algo es clicable; hay que llevarlo:
+
+```
+<div class="X-riel">                        ← contenedor
+  <div class="X-pegado"> …el panel… </div>   ← position: sticky; top: <tope>
+  <div class="X-recorrido"></div>            ← height: N * 52vh
+</div>
+```
+
+Progreso = `(tope − riel.getBoundingClientRect().top) / (riel.offsetHeight −
+pegado.offsetHeight)`, saturado a 0..1.
+
+Las cinco trampas, todas pagadas ya:
+
+1. **El recorrido va como caja propia, nunca como `padding-bottom`.** Un sticky
+   sólo viaja dentro del *content box* de quien lo contiene; con padding el
+   panel se queda clavado arriba y no se pega jamás. Cuesta media hora
+   encontrarlo porque el CSS computado dice `position: sticky` y todo parece
+   bien.
+2. **`body` tiene `overflow-x: clip`** en `global.css`. No rompe el sticky, pero
+   es lo primero que uno sospecha; no lo quites.
+3. **Tocar una zona tiene que mover el scroll a su tramo.** Si sólo cambias el
+   estado, el siguiente movimiento del dedo lo revierte y se lee como roto. En
+   la cortina, al soltar el arrastre se resincroniza el scroll: como todo lo que
+   está en pantalla es sticky, el salto no se ve.
+4. **Se apaga solo** abajo de ~950 px de ancho, con `prefers-reduced-motion`, y
+   —esto es lo importante— **si el panel no cabe entero en la pantalla**. Un
+   riel que secuestra el scroll para enseñar un bloque cortado es peor que no
+   tenerlo. La clase `sin-riel` devuelve todo a estático.
+5. **El encabezado no viaja dentro del panel** si eso obliga a achicar la
+   imagen. En la cortina, meter el título dentro dejaba la caja más apaisada que
+   la foto y le cortaba la cara a la persona — que era justo lo único que hacía
+   funcionar el bloque. El título se queda arriba y se va con el scroll.
+
+Y siempre un **indicador visible** de que hay recorrido: en el plano son los
+pasos `01…05` con su línea de avance; en la cortina, la frase de arriba. Sin
+indicador, la mitad de la gente pasa de largo.
 
 ---
 
@@ -116,15 +197,37 @@ genérico tiene.
 6. Añadir el bloque propio.
 7. QA propio: escritorio y móvil, consola limpia, sin desbordes, y **abrir cada
    bloque interactivo y usarlo**.
-8. **Los tres referees en paralelo**, con capturas frescas de escritorio, de
-   móvil y de cada bloque nuevo por separado. Un referee que no ve el bloque lo
-   califica por código y lo dice. Todos con veto y **mínimo 9 de 10**:
-   - **Oficio** — ¿alguien del gremio encontraría algo que delate desconocimiento?
-   - **Calidad** — especificidad, verdad del producto, diseño no genérico, conversión, ejecución.
-   - **Diseño y fotografía** — ¿las fotos aguantan el zoom? ¿la escena corresponde
-     a su caso? ¿el bloque se lee o es una pared de texto? ¿se ve como el resto
-     del sitio?
+8. **Los tres referees en paralelo** (ver abajo).
 9. Rondas hasta que los tres pasen de 9. En zapatería fueron cuatro.
+
+### Los tres referees
+
+Se lanzan **en paralelo, en la misma vuelta**, cada uno como agente aparte y sin
+ver el dictamen de los otros — si se corren en fila, el segundo repite al
+primero. Los tres tienen **veto** y el umbral es **9 de 10**: con un 8 se
+rehace, no se negocia.
+
+| Referee | Su pregunta | Lo que ha cazado |
+|---|---|---|
+| **Oficio** | ¿Alguien del gremio encontraría algo que delate que no somos del ramo? | El básico etiquetado "se vende solo" cuando un básico se resurte; el medidor de pie llamado escalímetro |
+| **Calidad** | Especificidad, verdad contra `plans.ts`, diseño no genérico, conversión y ejecución | El import duplicado que rompía la compilación; el selector de sensibilidad que movía el total 18% cuando por el propio argumento debía mover cero |
+| **Diseño y fotografía** | ¿Las fotos aguantan el 300%? ¿La escena corresponde a su caso? ¿Se lee o es una pared de texto? ¿Se ve como el resto del sitio? | Tres de cuatro casos con la foto equivocada; dos escalas de radios en paralelo; cuatro negros distintos, ninguno el token |
+
+Cómo se les habla:
+
+- **Capturas frescas y separadas**: escritorio, móvil, y **cada bloque nuevo por
+  su cuenta**. Un referee sin capturas califica por código y lo dice en el
+  dictamen; ese dictamen no cuenta.
+- **Se les da el contexto de negocio**: qué giro, qué ICP, de dónde llega el
+  tráfico. Sin eso califican una página bonita, no una página que vende.
+- **Se les pide número y lista accionable**, no prosa.
+- **El referee también se equivoca.** Dos veces marcó como falso algo que sí
+  estaba en `plans.ts` ("Programación por fecha y hora" es `fideliza: true`;
+  "Apartado con anticipo" es `vende: true`). Antes de rehacer, se verifica
+  contra el archivo. Cuando el referee tiene razón, se arregla; cuando no, se
+  anota y se sigue.
+- **Lo que no se puede cerrar se escribe en Deuda conocida**, no se discute
+  tres veces.
 
 ---
 
@@ -154,6 +257,25 @@ genérico tiene.
   que vuelve creíble el número.
 - **Nunca marcas de terceros.** Ni de cadenas ni de competidores, ni siquiera
   como ejemplo: "una tienda departamental", no su nombre. Riesgo legal.
+- **Las cifras de `SuiteCifras` son de la casa, no del producto.** Es el único
+  lugar de la página donde se contesta "¿y ustedes quiénes son?"; gastarlo en
+  "24 SKU de un modelo" es repetir lo que tres bloques arriba ya se explicó.
+  Las cuatro que van hoy en los tres giros: **+3,000 negocios activos ·
+  +$7,600 millones transaccionados · 20+ personas de soporte, en México ·
+  #1 en retail especializado**. Sólo cambia el primer rótulo para nombrar el
+  giro.
+- **Las unidades de dinero se confirman antes de publicarse.** En México un
+  *billón* son un millón de millones: "$7.6 billones" habría publicado casi la
+  quinta parte del PIB del país. Casi siempre es una lectura de *billion* en
+  inglés — se pregunta, no se asume.
+- **Los superlativos se acuerdan con el dueño.** "#1" es afirmación de marca y
+  se publica porque él lo decidió; si alguien pide la fuente, es su llamada, no
+  la nuestra.
+- **Lo que se cobra aparte se marca donde se ve**, en la misma lista, no en una
+  nota al pie. Si el cliente lo descubre en la llamada, la llamada se enfría.
+  Y al revés: **lo que es de un plan superior no se lista como incluido** —
+  cuatro puntos de "Piso de venta" en moda decían venir en el plan base cuando
+  los cuatro son de Controla.
 
 ### Oficio
 
@@ -190,6 +312,19 @@ genérico tiene.
   su turno, sin decirlo, se lee como roto.
 - **Toda leyenda explica todos los colores.** El cuarto color sin leyenda es el
   que confunde.
+- **Nada de pastillas de color en las listas.** Cinco columnas con una pastilla
+  "INCLUIDO" en cada renglón se leen como una tabla de precios sucia. El plan y
+  lo que se cobra aparte van como **nota tenue en la misma línea**, y el color
+  se guarda para lo único que de verdad avisa.
+- **El markup inyectado con `set:html` queda fuera del scope de Astro.** Sus
+  clases necesitan un `<style is:global>` aparte o presentación inline; si no,
+  hereda los valores por defecto — el mobiliario del plano salía relleno de
+  negro sólido.
+- **Un rótulo dentro de una figura se calcula contra su caja**, no se fija. En
+  el plano, el nombre de la zona sale de `caja.w / (largo del nombre)`; a
+  tamaño fijo, "PROBADORES" se salía por el muro. Y en celular la figura se
+  rotula **sólo por número**, con la clave abajo — que además es como se rotula
+  un plano de verdad.
 - **Nada de tipografías de sistema.** `cursive`, `"Bradley Hand"`, `"Segoe
   Script"` caen en Comic Sans en Windows. Si hace falta manuscrita, hay Caveat
   alojada en `/fonts` — y solo para lo diegético (la libreta del vendedor
@@ -213,8 +348,21 @@ genérico tiene.
 - **Nunca pantallas legibles dentro de la foto.** Una captura falsa se nota. Y
   una tablet apagada en la mano tampoco vende: si la pantalla sale, que salga
   apagada por encuadre, no por descuido.
-- **Registro socioeconómico correcto.** Una boutique de mármol no es el cliente
-  de una página de zapaterías.
+- **Registro socioeconómico correcto** — pero hacia arriba. El ICP no es la
+  emprendedora con un local: es el negocio **en crecimiento**, con varias
+  tiendas y personal contratado. Las fotos tienen que enseñar **tienda grande y
+  personal uniformado**, no un changarro lleno. Seis fotos de moda se
+  rehicieron por esto.
+- **El par antes/después es la MISMA persona.** Misma ropa, mismo peinado,
+  mismo encuadre; sólo cambian la luz y el gesto. Con dos personas distintas la
+  cortina se lee como dos fotos de stock; con la misma, la línea alinea casi
+  cuadro con cuadro y el argumento se cuenta solo.
+- **Ningún objeto de trabajo que la IA no sepa dibujar.** Nada de etiquetadoras,
+  terminales bancarias, tablas con clip ni hojas impresas: salen sin gatillo,
+  sin teclado o con garabatos en vez de letras. Si el gesto necesita un objeto
+  imposible, **se cambia el gesto**. Lo que sí funciona: prendas, ganchos,
+  burros, mercancía doblada, un teléfono, una tablet, bolsas de papel, una
+  libreta de espiral.
 
 ### Largo
 
@@ -234,8 +382,17 @@ genérico tiene.
 - `plans.ts` **se contradice sobre sell-through**: la lista de Controla lo
   incluye y la tabla comparativa lo da solo a Automatiza. Las páginas están
   gateadas a la lectura estricta (Automatiza). Falta cerrarlo en el archivo.
-- **Joyería y moda siguen con la estructura vieja**: cubo, hero oscuro con el
-  POS de fondo, `SuiteFormal`, `SuiteMigracion`. Les toca esta misma pasada.
+- **Moda se quedó sin bloque propio** al retirar `ModaMarcacion` (recuperable en
+  `git show 289039f:sitio/src/components/giros/ModaMarcacion.astro`). Rompe la
+  regla de la sección 3 y hay que reponerlo.
+- **Joyería sigue con la estructura vieja**: cubo, hero oscuro con el POS de
+  fondo, `SuiteFormal`, `SuiteMigracion`. Le toca esta misma pasada.
+- **Zapatería va una pasada atrás de moda**: sigue con `SuiteIntegral` en vez de
+  `SuitePlano`, sin riel en el plano ni en la cortina, y con las pastillas de
+  color en las listas.
+- **"Autorización de descuento" no existe en `plans.ts`** aunque es el argumento
+  moral del bloque de trastienda. Hoy se apoya en "Permisos por usuario y
+  sucursal" (Controla). Falta decidir si merece su propia línea.
 - El **CFDI** quedó como una viñeta dentro de *Administrar* al retirar
   `SuiteFormal`. Para una cadena con contabilidad formal es eliminatorio: vale
   la pena vigilar que no se pierda.
