@@ -79,7 +79,8 @@ export const GET: APIRoute = async ({ request, url }) => {
       ? '*, bookings(id, fecha, asunto, event_types(nombre, categoria)), quotes(id, numero, estado, total)'
       // La junta de origen viaja también en la vista global: es lo que permite
       // filtrar "lo que salió de mis juntas de esta semana".
-      : '*, companies(id, nombre, nombre_comercial, plan), quotes(id, numero, estado), bookings(id, fecha)')
+      // `asunto` para que el renglón pueda decir DE QUÉ junta salió, no solo cuándo.
+      : '*, companies(id, nombre, nombre_comercial, plan), quotes(id, numero, estado), bookings(id, fecha, asunto)')
     .is('archived_at', null)
     .order('fecha_entrega', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });

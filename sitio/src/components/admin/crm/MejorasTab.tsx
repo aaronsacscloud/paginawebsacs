@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
 import Cargando, { Corazones } from './ui/Cargando';
+import KpiCard from './ui/KpiCard';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -31,6 +32,30 @@ const cat = (k: string) => CATS[k] || CATS.otro;
 const PUNTO: Record<string, string> = {
   idea: '#7DA6F5', cotizada: '#9B8CFA', en_proceso: '#F0B84E', entregada: '#4FBF95', descartada: '#C9C7D0',
 };
+
+// ── El camino de un compromiso ──
+// Los mismos cuatro pasos siempre, en el mismo orden. Se avanza haciendo clic
+// en el paso: un desplegable esconde en qué punto está justo lo que se viene a
+// ver, y obliga a abrirlo para saberlo.
+const PASOS = ['idea', 'cotizada', 'en_proceso', 'entregada'] as const;
+const PASO_L: Record<string, string> = { idea: 'Idea', cotizada: 'Cotizada', en_proceso: 'En proceso', entregada: 'Entregada', descartada: 'Descartada' };
+
+const esPendiente = (m: any) => m.estado === 'cotizada' || m.estado === 'en_proceso';
+
+// ── Las vistas ──
+// Separan por NATURALEZA del trabajo, no por estado interno: una capacitación
+// no se cotiza ni se entrega como una personalización. "Pendientes" es la
+// excepción a propósito —es el estado— porque es la pregunta con la que se abre
+// la pantalla: qué le debo a mis clientes. La categoría `pendiente` existe pero
+// solo la usa 1 de 40 renglones; si la vista fuera esa, nacería vacía.
+const VISTAS: { id: string; l: string; f: (m: any) => boolean; agrupa?: boolean; urge?: boolean }[] = [
+  { id: 'todo',       l: 'Todo',                        f: () => true, agrupa: true },
+  { id: 'pend',       l: 'Pendientes',                  f: esPendiente, urge: true },
+  { id: 'mejoras',    l: 'Mejoras y personalizaciones', f: m => ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria) },
+  { id: 'capacita',   l: 'Capacitaciones',              f: m => m.categoria === 'capacitacion' },
+  { id: 'ideas',      l: 'Ideas',                       f: m => m.estado === 'idea' },
+  { id: 'entregadas', l: 'Entregadas',                  f: m => m.estado === 'entregada' },
+];
 
 const S = {
   wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
@@ -153,10 +178,16 @@ function AvisoHallazgos() {
 export default function MejorasTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
-  const [filtro, setFiltro] = useState<'todo' | 'pendientes' | 'idea' | 'comprometidas' | 'entregada'>('pendientes');
+  const [vista, setVista] = useState<string>('todo');
+  const [alerta, setAlerta] = useState<'' | 'vencidas' | 'semana' | 'sinliga'>('');
+  // Renglones expandidos y grupos plegados. Los grupos nacen ABIERTOS: la
+  // pantalla se abre para ver qué falta, no para ir destapando cuentas.
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  const [plegados, setPlegados] = useState<Set<string>>(new Set());
+  const [guardando, setGuardando] = useState<string | null>(null);
+  const [aviso, setAviso] = useState('');
   const [tipo, setTipo] = useState<string>('todo');
   const [origen, setOrigen] = useState<string>('todo');   // salió de juntas recientes
-  const [agrupado, setAgrupado] = useState(true);
   const [verSemana, setVerSemana] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
@@ -170,12 +201,33 @@ export default function MejorasTab() {
   // eso es el motivo por el que nadie actualiza nada.
   async function marcarHecha(e: any, m: any) {
     e.stopPropagation();
-    await fetch('/api/crm/mejoras', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: m.id, estado: 'entregada' }),
-    }).catch(() => {});
-    cargar();
+    await mueve(m, 'entregada');
   }
+
+  /** Avanzar (o regresar) un compromiso de paso. El servidor pone la fecha de
+   *  entrega solo cuando llega a 'entregada'. */
+  async function mueve(m: any, estado: string) {
+    if (m.estado === estado) return;
+    setGuardando(m.id);
+    const antes = PASO_L[m.estado] || m.estado;
+    try {
+      const r = await fetch('/api/crm/mejoras', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.id, estado }),
+      });
+      if (!r.ok) throw new Error();
+      flash(`${m.titulo}: ${antes} → ${PASO_L[estado]}`);
+      await cargar();
+    } catch { flash('No se pudo mover. Intenta de nuevo.'); }
+    setGuardando(null);
+  }
+
+  let tId: any;
+  function flash(txt: string) { setAviso(txt); clearTimeout(tId); tId = setTimeout(() => setAviso(''), 3800); }
+
+  const alterna = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
+    const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); setter(n);
+  };
   useEffect(() => { cargar(); }, []);
 
   const k = useMemo(() => {
@@ -215,12 +267,26 @@ export default function MejorasTab() {
   ).sort((a, b) => String(a.fecha_compromiso).localeCompare(String(b.fecha_compromiso))), [rows]);
   const idsSemana = useMemo(() => new Set(estaSemana.map(m => m.id)), [estaSemana]);
 
+  // Las tres alertas, cada una un filtro. Menos de tres no dice nada y más de
+  // tres deja de leerse: son las únicas que cambian lo que haces hoy.
+  const sinLiga = useMemo(() => (rows || []).filter(m => m.estado === 'entregada' && !m.url), [rows]);
+  const idsVencidas = useMemo(() => new Set(vencidas.map((v: any) => v.id)), [vencidas]);
+  const ALERTAS = [
+    { id: 'vencidas' as const, k: 'Prometido y vencido', franja: '#EF7A72', color: '#C0554E', n: vencidas.length,
+      s: vencidas.length ? 'lo que más daña una cuenta' : 'nada tarde, todo al día',
+      f: (m: any) => idsVencidas.has(m.id) },
+    { id: 'semana' as const, k: 'Vence en 7 días', franja: '#E8A838', color: '#9a6a10', n: estaSemana.length,
+      s: 'llegar antes de que se ponga rojo', f: (m: any) => idsSemana.has(m.id) },
+    { id: 'sinliga' as const, k: 'Entregado sin liga', franja: '#9B8CFA', color: '#5B4BD6', n: sinLiga.length,
+      s: 'trabajo hecho que no puedes enseñar', f: (m: any) => m.estado === 'entregada' && !m.url },
+  ];
+
   const lista = useMemo(() => {
     let r = rows || [];
-    if (filtro === 'pendientes') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
-    else if (filtro === 'idea') r = r.filter(m => m.estado === 'idea');
-    else if (filtro === 'comprometidas') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
-    else if (filtro === 'entregada') r = r.filter(m => m.estado === 'entregada');
+    const v = VISTAS.find(x => x.id === vista) || VISTAS[0];
+    r = r.filter(v.f);
+    const al = ALERTAS.find(a => a.id === alerta);
+    if (al) r = r.filter(al.f);
     if (tipo !== 'todo') r = r.filter(m => (m.categoria || 'otro') === tipo);
     // Lo que nació en juntas recientes: la lista de seguimiento de después de
     // las reuniones, que hoy había que armar a ojo.
@@ -230,14 +296,16 @@ export default function MejorasTab() {
     }
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter(m => `${m.titulo} ${m.descripcion || ''} ${m.companies?.nombre_comercial || m.companies?.nombre || ''}`.toLowerCase().includes(t));
-    // En "por hacer" manda la fecha comprometida: lo que vence primero, primero.
-    if (filtro === 'pendientes') r = r.slice().sort((a, b) =>
-      String(a.fecha_compromiso || '9999').localeCompare(String(b.fecha_compromiso || '9999')));
     // Las ideas se ordenan por monto: lo primero que quieres ver es dónde está
-    // el dinero más grande sin cerrar.
-    if (filtro === 'idea') r = r.slice().sort((a, b) => Number(b.valor || 0) - Number(a.valor || 0));
-    return r;
-  }, [rows, filtro, tipo, origen, busca]);
+    // el dinero más grande sin cerrar. Todo lo demás, por lo que vence antes,
+    // con lo vencido arriba — que es el orden en que se trabaja.
+    if (vista === 'ideas') return r.slice().sort((a, b) => Number(b.valor || 0) - Number(a.valor || 0));
+    return r.slice().sort((a, b) => {
+      const va = idsVencidas.has(a.id) ? 0 : 1, vb = idsVencidas.has(b.id) ? 0 : 1;
+      if (va !== vb) return va - vb;
+      return String(a.fecha_compromiso || '9999').localeCompare(String(b.fecha_compromiso || '9999'));
+    });
+  }, [rows, vista, alerta, tipo, origen, busca, idsVencidas, idsSemana]);
 
   // Agrupado por cuenta: al salir de tres juntas seguidas lo que quieres ver es
   // "Live Shows: 4 pendientes", no cuatro renglones perdidos entre los de otros.
@@ -297,43 +365,125 @@ export default function MejorasTab() {
 
   if (rows === null) return <div style={S.wrap}><Cargando texto="Cargando consultoría…" /></div>;
 
-  const renglon = (m: any, conCliente: boolean) => (
-          <div key={m.id} onClick={() => setAbierto(m.company_id)}
-            style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start', cursor: 'pointer' }}>
-            {m.estado !== 'entregada' && m.estado !== 'descartada'
-              ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
-              : <span style={{ width: 13, flexShrink: 0 }} />}
-            <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 6 }} />
-            {!conCliente ? null : (
-              <div style={{ flex: '0 0 190px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-                {m.titulo}
-                <span style={{ fontSize: '0.57rem', fontWeight: 800, background: cat(m.categoria).bg, color: cat(m.categoria).fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{cat(m.categoria).label}</span>
-              </div>
-              {m.descripcion && <div style={{ fontSize: '0.73rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{m.descripcion}</div>}
-              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4 }}>
-                {m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}` : m.fecha_compromiso ? `Comprometida para el ${fmtDate(m.fecha_compromiso)}` : 'Sin fecha'}
-                {m.quotes?.numero && ` · ${m.quotes.numero}`}
-              </div>
+  /**
+   * Un compromiso. Cerrado se lee de un vistazo; abierto trae todo lo que hace
+   * falta para moverlo sin salir de la pantalla. Antes el clic abría la ficha
+   * completa del cliente: para palomear una cosa había que cargar un cajón con
+   * su historia entera y volver.
+   */
+  const renglon = (m: any, conCliente: boolean) => {
+    const abiertoAqui = expandidos.has(m.id);
+    const venc = idsVencidas.has(m.id);
+    const c = cat(m.categoria);
+    const iAct = PASOS.indexOf(m.estado);
+    const fechaTxt = m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}`
+      : m.fecha_compromiso ? `${venc ? '⚠ ' : ''}Para el ${fmtDate(m.fecha_compromiso)}`
+      : 'Sin fecha';
+
+    return (
+      <div key={m.id} style={{ borderTop: '1px solid #f5f4f8' }}>
+        <div onClick={() => alterna(expandidos, setExpandidos, m.id)}
+          role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(expandidos, setExpandidos, m.id); } }}
+          style={{ display: 'flex', gap: 11, padding: '11px 0', alignItems: 'flex-start', cursor: 'pointer' }}>
+          {m.estado !== 'entregada' && m.estado !== 'descartada'
+            ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
+            : <span style={{ width: 13, flexShrink: 0 }} />}
+          <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 6 }} />
+          {conCliente && (
+            <div style={{ flex: '0 0 170px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-              <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
-                {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
-              </div>
-              {m.estado !== 'entregada' && m.estado !== 'descartada' && (
-                <button onClick={e => marcarHecha(e, m)} title="Marcar hecha"
-                  style={{ border: '1px solid #cdeadd', background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '4px 9px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓</button>
-              )}
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+              {m.titulo}
+              <span style={{ fontSize: '0.57rem', fontWeight: 800, background: c.bg, color: c.fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{c.label}</span>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <span>{PASO_L[m.estado] || m.estado}</span>
+              {m.bookings?.fecha && <><span>·</span><span>de la junta del {fmtDate(m.bookings.fecha)}</span></>}
+              {m.quotes?.numero && <><span>·</span><span>{m.quotes.numero}</span></>}
             </div>
           </div>
-  );
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+            <span style={{
+              fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '3px 9px',
+              border: '1px solid', ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
+                : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
+                : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
+            }}>{fechaTxt}</span>
+            <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
+              {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
+            </div>
+          </div>
+        </div>
+
+        {abiertoAqui && (
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#faf9fd', border: '1px solid #f0eff5', borderRadius: 10, padding: '13px 15px', margin: '0 0 12px 24px', display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {/* Los pasos: se avanza haciendo clic, no abriendo un menú. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+              {PASOS.map((paso, i) => {
+                const hecho = i < iAct, aqui = i === iAct;
+                return (
+                  <button key={paso} disabled={guardando === m.id}
+                    onClick={() => mueve(m, paso)}
+                    title={aqui ? 'Aquí está hoy' : `Mover a ${PASO_L[paso]}`}
+                    style={{
+                      fontFamily: 'inherit', fontSize: '0.61rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em',
+                      padding: '5px 11px', cursor: guardando === m.id ? 'wait' : 'pointer',
+                      border: '1px solid', borderLeft: i ? 'none' : '1px solid',
+                      borderRadius: i === 0 ? '7px 0 0 7px' : i === PASOS.length - 1 ? '0 7px 7px 0' : 0,
+                      ...(aqui ? { background: '#9B8CFA', color: '#fff', borderColor: '#9B8CFA' }
+                        : hecho ? { background: '#EEECFE', color: '#5B4BD6', borderColor: '#ddd6fb' }
+                        : { background: '#fff', color: '#a5a2af', borderColor: '#e6e3ee' }),
+                    }}>{PASO_L[paso]}</button>
+                );
+              })}
+            </div>
+
+            {m.descripcion && <div style={{ fontSize: '0.78rem', color: '#5a5a63', lineHeight: 1.55 }}>{m.descripcion}</div>}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+              {[
+                ['Cliente', m.companies?.nombre_comercial || m.companies?.nombre || '—'],
+                ['Salió de', m.bookings?.asunto || (m.bookings?.fecha ? `junta del ${fmtDate(m.bookings.fecha)}` : 'captura manual')],
+                ['Módulo', m.modulo || '—'],
+                ['Entregado como', m.estado === 'entregada' ? (m.url ? (m.modo || 'con liga') : '⚠️ sin liga de entrega') : (m.modo || '—')],
+              ].map(([kk, vv]) => (
+                <div key={kk as string} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>{kk}</span>
+                  <span style={{ fontSize: '0.79rem', color: '#4a4558' }}>{vv}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              {m.url && (
+                <a href={m.url} target="_blank" rel="noreferrer"
+                  style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: '0.73rem', fontWeight: 700, color: '#2C5FC4', textDecoration: 'none' }}>
+                  Ver lo entregado
+                </a>
+              )}
+              <button onClick={() => setAbierto(m.company_id)}
+                style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: '0.73rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Abrir ficha del cliente
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={S.wrap}>
+      <style>{`
+        .cons-alertas { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+        @media (max-width: 1100px) { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 620px)  { .cons-alertas { grid-template-columns:1fr; } }
+      `}</style>
       <AvisoHallazgos />
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
@@ -342,102 +492,50 @@ export default function MejorasTab() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        <div style={S.kpi}><div style={S.kl}>Entregadas este mes</div><div style={S.kv}>{k.entregadasMes}</div></div>
-        <div style={S.kpi}><div style={S.kl}>Cobrado este año</div><div style={{ ...S.kv, color: '#1E8A63' }}>{money(k.cobradoAnio)}</div></div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Capacitaciones</div>
-          <div style={{ ...S.kv, color: (videosPorEnviar.length + capsAgendadas.length) ? '#9a6a10' : '#1a1a1a' }}>
-            {videosPorEnviar.length + capsAgendadas.length}
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>
-            pendientes · {k.capsDadas} dadas este año
-          </div>
-        </div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Sobre la mesa</div>
-          <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.potencial)}</div>
-          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>{k.ideas} ideas en {k.cuentasConIdeas} cuentas</div>
-        </div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Por hacer</div>
-          <div style={{ ...S.kv, color: vencidas.length ? '#C0554E' : '#1a1a1a' }}>{pendientes.length}</div>
-          <div style={{ fontSize: '0.7rem', color: vencidas.length ? '#C0554E' : '#a5a2af', marginTop: 2 }}>
-            {vencidas.length ? `${vencidas.length} ya vencidas` : 'ninguna vencida'}
-          </div>
-        </div>
+      {/* ── Tres alertas, y cada una es un filtro ──
+          Antes había cinco cajas de KPI, un bloque rojo con la lista de
+          vencidas y una franja ámbar con la de esta semana: la misma
+          información contada tres veces, y media pantalla antes de llegar a lo
+          que se viene a trabajar. Ahora son tres tarjetas; al hacer clic, la
+          lista de abajo se queda solo con eso. */}
+      <div className="cons-alertas" style={{ marginBottom: 16 }}>
+        {ALERTAS.map(a => (
+          <KpiCard key={a.id} label={a.k} valor={a.n} franja={a.franja}
+            color={a.n ? a.color : '#1a1a1a'} sub={a.s}
+            activo={alerta === a.id}
+            onClick={a.n ? () => setAlerta(alerta === a.id ? '' : a.id) : undefined} />
+        ))}
+        <KpiCard label="Sobre la mesa" franja="#7DA6F5" color="#2C5FC4"
+          valor={money(k.potencial)} sub={`${k.ideas} ideas en ${k.cuentasConIdeas} cuentas`}
+          onClick={() => { setVista('ideas'); setAlerta(''); }} />
       </div>
 
-      {vencidas.length > 0 && (
-        <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 12, padding: '13px 15px', marginBottom: 14 }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#8c2f28', marginBottom: 7 }}>
-            ⚠️ {vencidas.length} {vencidas.length === 1 ? 'compromiso vencido' : 'compromisos vencidos'}
-          </div>
-          {vencidas.map((v: any) => (
-            <div key={v.id} onClick={() => setAbierto(v.company_id)}
-              style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer' }}>
-              <b style={{ color: '#8c2f28', minWidth: 170 }}>{v.cliente || 'Cuenta'}</b>
-              <span style={{ flex: 1 }}>{v.titulo}</span>
-              <span style={{ whiteSpace: 'nowrap' }}>{v.dias} {v.dias === 1 ? 'día' : 'días'} tarde · prometido {fmtDate(v.fecha_compromiso)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Franja, no lista: el aviso crece a lo ANCHO y no a lo alto. En lista
-          el nombre del cliente se repetía en cada renglón y la fecha se iba
-          hasta el extremo derecho, así que cuatro pendientes ocupaban un tercio
-          de la pantalla. Con quince sigue midiendo dos renglones. */}
-      {estaSemana.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', background: '#fffdf7', border: '1px solid #f5e2b8', borderRadius: 11, padding: '9px 13px', marginBottom: 14 }}>
-          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
-            ⚠ Vence esta semana · {estaSemana.length}
-          </span>
-          {estaSemana.slice(0, verSemana ? estaSemana.length : 4).map((m: any) => (
-            <button key={m.id} onClick={() => setAbierto(m.company_id)} title={m.companies?.nombre_comercial || m.companies?.nombre || ''}
+      {/* ── Las vistas ── */}
+      <div className="crm-scroll-x" style={{ display: 'flex', gap: 2, borderBottom: '1px solid #ececf2', marginBottom: 16 }}>
+        {VISTAS.map(v => {
+          const n = (rows || []).filter(v.f).length;
+          const on = vista === v.id;
+          const urge = v.urge && vencidas.length > 0;
+          return (
+            <button key={v.id} onClick={() => { setVista(v.id); setAlerta(''); }}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid #f2e6c8',
-                borderRadius: 20, padding: '4px 11px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit',
-                maxWidth: 300,
+                border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                padding: '9px 13px', marginBottom: -1, display: 'inline-flex', alignItems: 'center', gap: 7,
+                fontSize: '0.85rem', fontWeight: on ? 800 : 600, color: on ? '#5B4BD6' : '#83808e',
+                borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent', whiteSpace: 'nowrap',
               }}>
-              <b style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.titulo}</b>
-              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
-                {fmtDate(m.fecha_compromiso).replace(/ \d{4}$/, '')}
-              </span>
+              {v.l}
+              <span style={{
+                background: urge && !on ? '#FEF0EF' : on ? '#EEECFE' : '#f4f4f6',
+                color: urge && !on ? '#C0554E' : on ? '#5B4BD6' : '#8a8a92',
+                borderRadius: 20, padding: '1px 8px', fontSize: '0.67rem', fontWeight: 800,
+              }}>{n}</span>
             </button>
-          ))}
-          {estaSemana.length > 4 && (
-            <button onClick={() => setVerSemana(v => !v)}
-              style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: '0.7rem', fontWeight: 800, color: '#9a6a10', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-              {verSemana ? 'Ver menos' : `Ver todos (${estaSemana.length}) ›`}
-            </button>
-          )}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
-      {(videosPorEnviar.filter(m => !idsSemana.has(m.id)).length > 0 || capsAgendadas.filter(m => !idsSemana.has(m.id)).length > 0) && (
-        <div style={{ ...S.card, borderColor: '#f5e2b8', background: '#fffdf7' }}>
-          <div style={S.h}>
-            Capacitaciones pendientes
-            <span style={S.nota}>{videosPorEnviar.length ? `${videosPorEnviar.length} video(s) por enviar` : ''}{videosPorEnviar.length && capsAgendadas.length ? ' · ' : ''}{capsAgendadas.length ? `${capsAgendadas.length} agendada(s)` : ''}</span>
-          </div>
-          {[...videosPorEnviar, ...capsAgendadas].filter(m => !idsSemana.has(m.id)).map(m => (
-            <div key={m.id} onClick={() => setAbierto(m.company_id)}
-              style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '7px 0', borderTop: '1px solid #f7f1e4', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <b style={{ minWidth: 170, flexShrink: 0 }}>{m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta'}</b>
-              <span style={{ flex: 1 }}>
-                {m.titulo}
-                {m.modulo && <span style={{ color: '#a5a2af' }}> · {m.modulo}</span>}
-              </span>
-              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
-                {MODOS[modoDe(m)].pendiente}{m.fecha_compromiso ? ` · ${fmtDate(m.fecha_compromiso)}` : ''}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {repetidas.length > 0 && (
+      {vista === 'todo' && repetidas.length > 0 && (
         <div style={{ ...S.card, background: '#f6f9ff', borderColor: '#cfe0fa' }}>
           <div style={S.h}>Lo que piden varias cuentas<span style={S.nota}>Si tres o más lo pidieron, ya no es a la medida</span></div>
           {repetidas.map(r => (
@@ -457,18 +555,15 @@ export default function MejorasTab() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o mejora…"
             style={{ minWidth: 260, padding: '8px 12px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.78rem', outline: 'none', background: '#fdfcff', fontFamily: 'inherit' }} />
-          <Desplegable etiqueta="Estado" valor={filtro} onCambio={v => setFiltro(v as any)}
-            opciones={[
-              { v: 'pendientes', l: 'Por hacer' },
-              { v: 'idea', l: 'Ideas abiertas' },
-              { v: 'entregada', l: 'Entregadas' },
-              { v: 'todo', l: 'Todas' },
-            ]} />
           <Desplegable etiqueta="Tipo" valor={tipo} onCambio={setTipo}
             opciones={[{ v: 'todo', l: 'Todos' }, ...Object.entries(CATS).map(([k, v]) => ({ v: k, l: v.label }))]} />
           <Desplegable etiqueta="Salió de" valor={origen} onCambio={setOrigen}
             opciones={[{ v: 'todo', l: 'Cualquier junta' }, { v: '7', l: 'Juntas de 7 días' }, { v: '30', l: 'Juntas de 30 días' }]} />
-          <button onClick={() => setAgrupado(a => !a)} style={S.chip(agrupado)}>{agrupado ? 'Agrupado por cliente' : 'Lista corrida'}</button>
+          {alerta && (
+            <button onClick={() => setAlerta('')} style={S.chip(true)}>
+              {ALERTAS.find(a => a.id === alerta)?.k} ✕
+            </button>
+          )}
           <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} de {rows.length}</span>
         </div>
 
@@ -490,26 +585,51 @@ export default function MejorasTab() {
           </div>
         )}
 
-        {/* Agrupado, el nombre del cliente va en el encabezado del grupo y no
-            se repite en cada renglón: repetirlo veinte veces es ruido. */}
-        {agrupado
-          ? grupos.map(g => (
-            <div key={g.id} style={{ marginBottom: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 0 4px', borderTop: '1px solid #f0eff3' }}>
-                <b onClick={() => setAbierto(g.id)} style={{ fontSize: '0.85rem', cursor: 'pointer' }}>{g.nombre}</b>
-                <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>{g.items.length}</span>
-                <button onClick={() => copiarGrupo(g)}
-                  style={{ marginLeft: 'auto', border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Copiar lista
-                </button>
+        {/* La vista "Todo" agrupa por cliente —después de tres juntas seguidas
+            lo que quieres ver es "Live Shows: 4 pendientes", no cuatro
+            renglones perdidos entre los de otros— y ahí el nombre va en el
+            encabezado, no repetido veinte veces. Las vistas específicas van en
+            lista corrida, que es como se revisa una cosa a la vez. */}
+        {VISTAS.find(v => v.id === vista)?.agrupa
+          ? grupos.map(g => {
+            const vencG = g.items.filter((m: any) => idsVencidas.has(m.id)).length;
+            const pendG = g.items.filter(esPendiente).length;
+            const plegado = plegados.has(g.id);
+            return (
+              <div key={g.id} style={{ marginBottom: 6 }}>
+                <div onClick={() => alterna(plegados, setPlegados, g.id)}
+                  role="button" tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(plegados, setPlegados, g.id); } }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 0 6px', borderTop: '1px solid #f0eff3', cursor: 'pointer', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#b0aec0', fontSize: '0.7rem', transform: plegado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>▾</span>
+                  <b style={{ fontSize: '0.85rem' }}>{g.nombre}</b>
+                  {vencG > 0 && (
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#FEF0EF', color: '#C0554E', borderRadius: 20, padding: '2px 8px' }}>
+                      {vencG} vencida{vencG === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  {pendG > 0 && (
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>
+                      {pendG} por entregar
+                    </span>
+                  )}
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>{g.items.length} en total</span>
+                  <button onClick={e => { e.stopPropagation(); copiarGrupo(g); }}
+                    style={{ marginLeft: 'auto', border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Copiar lista
+                  </button>
+                </div>
+                {!plegado && g.items.map((m: any) => renglon(m, false))}
               </div>
-              {g.items.map((m: any) => renglon(m, false))}
-            </div>
-          ))
+            );
+          })
           : lista.map(m => renglon(m, true))}
       </div>
 
       {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
+      {aviso && (
+        <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{aviso}</div>
+      )}
     </div>
   );
 }
