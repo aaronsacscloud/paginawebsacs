@@ -44,16 +44,43 @@ export const GET: APIRoute = async ({ url }) => {
       .select('id, company_id, quote_id, nombre_plan, ciclo, estado, arr, mrr, precio, fecha_inicio, proxima_factura, monto_proximo, cancelada_at, razon_cancelacion, companies(id, nombre)')
       .limit(3000),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, company_id').limit(5000),
+    // Todos los pagos, no solo los que no traen suscripción: la diferencia
+    // entre recurrente y no recurrente NO es de dónde cuelga el pago, es QUÉ
+    // se vendió. El primer pago de una licencia anual va colgado de su
+    // cotización y contarlo como "pago único" infla los extras.
     supabase.from('payments')
-      .select('id, monto, fecha, estado, company_id, subscription_id, quote_id, quotes(company_id)')
-      .is('subscription_id', null).limit(3000),
+      .select('id, monto, fecha, estado, company_id, subscription_id, quote_id, clasificacion, quotes(company_id, items)')
+      .limit(4000),
     supabase.from('crm_goals').select('*'),
   ]);
   if (subsRes.error) return new Response(JSON.stringify({ error: subsRes.error.message }), { status: 500 });
 
   const subs = subsRes.data || [];
   const movs = (movRes.data || []).filter((m: any) => m.fecha);
-  const pagos = (pagosRes.data || []).filter((p: any) => p.estado !== 'reembolsado');
+  const pagosTodos = (pagosRes.data || []).filter((p: any) => p.estado !== 'reembolsado');
+  const cicloDeSub: Record<string, string> = {};
+  (subsRes.data || []).forEach((s: any) => { cicloDeSub[s.id] = s.ciclo; });
+
+  /* ── Qué es un pago NO RECURRENTE ──
+     No es "el que no tiene suscripción": el primer pago de una licencia anual
+     va colgado de su cotización y contarlo como extra infla la cifra. Es el
+     pago cuyo CONCEPTO no se vuelve a cobrar:
+       · una licencia vitalicia (se paga una vez y ya),
+       · o una cotización que NO vende ningún plan —plugins, personalizaciones,
+         implementaciones, desarrollos a la medida—.
+     Un pago sin cotización ni suscripción no se puede clasificar y NO se
+     cuenta: aparece en los pendientes para que alguien lo ligue. */
+  const esNoRecurrente = (p: any) => {
+    // Lo que alguien clasificó a mano manda sobre lo que se puede deducir.
+    if (p.clasificacion === 'unico') return true;
+    if (p.clasificacion === 'recurrente') return false;
+    if (p.subscription_id) return cicloDeSub[p.subscription_id] === 'vitalicia';
+    const its = Array.isArray(p.quotes?.items) ? p.quotes.items : null;
+    if (!its) return false;                       // sin origen: no se clasifica
+    return !its.some((i: any) => i.tipo === 'plan');
+  };
+  const sinOrigen = pagosTodos.filter((p: any) => !p.subscription_id && !p.quotes && !p.clasificacion);
+  const pagos = pagosTodos.filter(esNoRecurrente);
 
   // Recurrente = activas que no son vitalicias.
   const recurrentes = subs.filter((s: any) => s.ciclo !== 'vitalicia');
@@ -207,10 +234,7 @@ export const GET: APIRoute = async ({ url }) => {
          que va a comprar la tercera)
        · ¿en qué meses del año se compran? (para saber cuándo ofrecer) */
   const vitaliciasIds = new Set(subs.filter((s: any) => s.ciclo === 'vitalicia').map((s: any) => s.id));
-  const { data: pagosVit } = await supabase.from('payments')
-    .select('id, monto, fecha, estado, company_id, subscription_id')
-    .in('subscription_id', [...vitaliciasIds].slice(0, 200)).limit(500);
-  const pagosVitalicios = (pagosVit || []).filter((p: any) => p.estado !== 'reembolsado');
+  const pagosVitalicios = pagos.filter((p: any) => p.subscription_id && vitaliciasIds.has(p.subscription_id));
   const vitaliciasMonto = r0(pagosVitalicios.reduce((a: number, p: any) => a + num(p.monto), 0));
 
   // Estacionalidad: en qué mes del año se compran extras. Con dos años de
@@ -342,7 +366,14 @@ export const GET: APIRoute = async ({ url }) => {
   // No es una lista de errores: es captura pendiente que LIMITA lo que este
   // panel puede decir. Cada uno explica qué se deja de poder calcular.
   const canceladas = recurrentes.filter((s: any) => s.estado === 'cancelada');
+  const montoSinOrigen = r0(sinOrigen.reduce((a: number, p: any) => a + num(p.monto), 0));
   const pendientes = [
+    {
+      id: 'pagos_sin_origen', n: sinOrigen.length,
+      titulo: 'Pagos sin cotización ni licencia',
+      limita: `${'$' + montoSinOrigen.toLocaleString('es-MX')} que no se pueden clasificar como recurrente o único, así que no entran en ninguna de las dos cifras.`,
+      nivel: 'alto',
+    },
     {
       id: 'cotizacion_sin_sub', n: sinSub.length,
       titulo: 'Cotizaciones pagadas que no generaron licencia',
@@ -419,6 +450,7 @@ export const GET: APIRoute = async ({ url }) => {
     unicos: {
       total: totalUnicos, n: pagos.length,
       sin_cliente: unicosSinCliente, monto_sin_cliente: r0(montoSinCliente),
+      sin_origen: { n: sinOrigen.length, monto: montoSinOrigen },
       vitalicias: { n: pagosVitalicios.length, monto: vitaliciasMonto, licencias: vitaliciasIds.size },
       estacionalidad,
       // Cuentas que ya compraron extras más de una vez: la señal más barata de

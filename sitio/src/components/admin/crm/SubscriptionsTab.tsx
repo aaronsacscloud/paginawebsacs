@@ -6,7 +6,6 @@ import ClienteDrawer360 from './ClienteDrawer360';
 import NuevaSuscripcionModal from './NuevaSuscripcionModal';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Sheet from './ui/Sheet';
-import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
 import Cargando, { Corazones } from './ui/Cargando';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
@@ -122,9 +121,6 @@ export default function SubscriptionsTab() {
   // Etiquetas: mismo catálogo que clientes y oportunidades. Una suscripción se
   // etiqueta por sí misma (ej. "piloto", "precio especial"), no solo por su
   // cliente — por eso la asignación es de la sub, no de la empresa.
-  const { cat: catEtiquetas } = useCatalogoEtiquetas();
-  const { mapa: etiquetasSub } = useMapaEtiquetas('subscription');
-  const [selEtiquetas, setSelEtiquetas] = useState<string[]>([]);
 
   async function cobrarMP(s: any) {
     setCobrandoMP(s.id);
@@ -181,18 +177,13 @@ export default function SubscriptionsTab() {
     if (fPlan) { if (fPlan === '__none__') { if ((s as any).plan_id) return false; } else if ((s as any).plan_id !== fPlan) return false; }
     if (fCliente && s.company_id !== fCliente) return false;
     if (fStale && !esStale(s)) return false;
-    // Y implícita entre etiquetas: dos etiquetas dejan lo que tiene LAS DOS.
-    if (selEtiquetas.length) {
-      const ids = (etiquetasSub[s.id] || []).map((e: any) => e.id);
-      if (!selEtiquetas.every(x => ids.includes(x))) return false;
-    }
     if (search) {
       const q = search.toLowerCase();
       const hay = [s.nombre_plan, s.companies?.nombre, s.companies?.sacs_account, s.contacts?.nombre, s.contacts?.email].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
-  }), [subs, fCiclo, fEstado, fPlan, fCliente, fStale, search, hace60, selEtiquetas, etiquetasSub]);
+  }), [subs, fCiclo, fEstado, fPlan, fCliente, fStale, search, hace60]);
 
   // Clientes para el filtro: distintos por empresa, ordenados por cuenta.
   const clientesOpts = useMemo(() => {
@@ -225,10 +216,6 @@ export default function SubscriptionsTab() {
   const activeFiltros = [fCliente, fPlan, fCiclo, fEstado].filter(Boolean).length;
   const selW = isMobile ? { width: '100%' } : {};
   const filtrosSelects = (<>
-    <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, ...(isMobile ? selW : { maxWidth: 200 }) }} title="Ver todas las suscripciones de un cliente">
-      <option value="">Todos los clientes</option>
-      {clientesOpts.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-    </select>
     <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={{ ...S.input, ...selW }} title="Filtra por plan del catálogo">
       <option value="">Todos los planes</option>
       {plans.filter(p => p.id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
@@ -383,11 +370,6 @@ export default function SubscriptionsTab() {
               ? <button style={{ ...S.btn, height: 44, background: '#fff', border: '1.5px solid ' + (activeFiltros ? '#9B8CFA' : '#e2e4e9'), color: '#333', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowFiltrosSheet(true)}>⚙ Filtros{activeFiltros ? ` (${activeFiltros})` : ''}</button>
               : filtrosSelects}
           </div>
-          {catEtiquetas.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
-            </div>
-          )}
           {isMobile && (
             <Sheet open={showFiltrosSheet} onClose={() => setShowFiltrosSheet(false)} title="Filtros">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -480,7 +462,7 @@ export default function SubscriptionsTab() {
                       </>) : (
                         <span style={{ fontSize: '0.7rem', color: '#bbb', whiteSpace: 'nowrap' }} title="No está domiciliada: se le cobra a mano">manual</span>
                       )}</td>
-                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>{s.ciclo === 'vitalicia' ? ' único' : '/' + sufCiclo(s.ciclo)}</span>{etiquetasSub[s.id]?.length ? <div style={{ marginTop: 3 }}><ChipsEtiquetas etiquetas={etiquetasSub[s.id]} max={2} /></div> : null}{(() => {
+                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>{s.ciclo === 'vitalicia' ? ' único' : '/' + sufCiclo(s.ciclo)}</span>{(() => {
                         if (s.ciclo === 'vitalicia') return null;
                         const pl = Number((s as any).precio_lista) || 0, pr = Number(s.precio) || 0;
                         if (pl > 0 && pr > 0 && pr < pl) { const d = Math.round((1 - pr / pl) * 100); if (d > 0) return <span style={{ marginLeft: 5, fontSize: '0.6rem', color: '#a06600', background: '#fff5e6', borderRadius: 4, padding: '0 4px', fontWeight: 700 }} title={`Lista ${fmt(pl)}/${sufCiclo(s.ciclo)}`}>−{d}%</span>; }

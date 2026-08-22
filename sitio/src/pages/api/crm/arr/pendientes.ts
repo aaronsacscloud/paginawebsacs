@@ -124,6 +124,31 @@ export const GET: APIRoute = async ({ url }) => {
     return json({ filas });
   }
 
+  /* Pagos que no cuelgan de nada: ni cotización ni licencia. No se pueden
+     clasificar como recurrente o único, así que quedan fuera de las dos
+     cifras. Aquí se les asigna la cuenta; ligarlos a su cotización es un paso
+     que hoy no se puede hacer desde el CRM y se dice. */
+  if (id === 'pagos_sin_origen') {
+    const [pagosRes, compRes] = await Promise.all([
+      supabase.from('payments').select('id, monto, fecha, metodo, referencia, numero_acuse, company_id')
+        .is('subscription_id', null).is('quote_id', null).is('clasificacion', null).order('fecha', { ascending: false }).limit(200),
+      supabase.from('companies').select('id, nombre').order('nombre').limit(1000),
+    ]);
+    const nom: Record<string, string> = {};
+    (compRes.data || []).forEach((c: any) => { nom[c.id] = c.nombre; });
+    return json({
+      filas: (pagosRes.data || []).map((p: any) => ({
+        id: p.id,
+        titulo: `${Math.round(Number(p.monto) || 0).toLocaleString('es-MX')} · ${fecha(p.fecha)}`,
+        detalle: `${nom[p.company_id] || 'sin cliente'} · ${p.metodo || 'sin método'}${p.referencia ? ` · ref ${p.referencia}` : ''}`,
+        opciones: [
+          { v: 'recurrente', l: 'Es cobro de una licencia' },
+          { v: 'unico', l: 'Es un pago único (plugin, desarrollo)' },
+        ],
+      })),
+    });
+  }
+
   if (id === 'pagos_sin_cliente') {
     const [pagosRes, compRes] = await Promise.all([
       supabase.from('payments').select('id, monto, fecha, metodo, referencia, numero_acuse, quote_id, quotes(company_id)')
@@ -159,6 +184,7 @@ export const PUT: APIRoute = async ({ request }) => {
     sin_fecha_inicio: { tabla: 'subscriptions', campo: 'fecha_inicio', valida: v => /^\d{4}-\d{2}-\d{2}$/.test(v) },
     sin_proxima_factura: { tabla: 'subscriptions', campo: 'proxima_factura', valida: v => /^\d{4}-\d{2}-\d{2}$/.test(v) },
     pagos_sin_cliente: { tabla: 'payments', campo: 'company_id', valida: v => /^[0-9a-f-]{36}$/i.test(v) },
+    pagos_sin_origen: { tabla: 'payments', campo: 'clasificacion', valida: v => v === 'recurrente' || v === 'unico' },
   };
   /* Reparar una cotización sin licencia no es escribir una columna: es crear
      la suscripción que debió nacer al pagar. Se arma con lo que la propia

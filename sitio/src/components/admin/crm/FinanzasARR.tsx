@@ -324,9 +324,14 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
             </div>
           ))}
           <div style={S.nota}>
-            <b>{money(d.unicos.total)}</b> en {d.unicos.n} pagos únicos, de los cuales{' '}
-            <b>{money(d.unicos.vitalicias.monto)}</b> son licencias vitalicias ({d.unicos.vitalicias.licencias} en total).
-            Es ingreso real que el ARR no cuenta —y no debe contar—, pero que sin esta vista no se mide en ningún lado.
+            <b>{money(d.unicos.total)}</b> en {d.unicos.n} pagos no recurrentes
+            {d.unicos.vitalicias.monto > 0 && <>, de los cuales <b>{money(d.unicos.vitalicias.monto)}</b> son licencias vitalicias</>}.
+            Cuenta lo que <b>no se vuelve a cobrar</b>: plugins, personalizaciones, desarrollos y vitalicias. El primer pago de
+            una licencia anual NO entra aquí, aunque venga de una cotización — ese es recurrente.
+            {d.unicos.sin_origen?.n > 0 && (
+              <> Quedan <b>{d.unicos.sin_origen.n} pagos por {money(d.unicos.sin_origen.monto)}</b> sin cotización ni licencia:
+                no se pueden clasificar y por eso no están en ninguna de las dos cifras.</>
+            )}
           </div>
         </div>
       </div>
@@ -705,6 +710,7 @@ function PanelPendiente({ id, onCerrar, onListo }: { id: string; onCerrar: () =>
 
   const TITULO: Record<string, string> = {
     cotizacion_sin_sub: 'Cotizaciones pagadas sin licencia',
+    pagos_sin_origen: 'Pagos sin cotización ni licencia',
     bajas_sin_motivo: 'Bajas sin motivo',
     plan_no_reconocido: 'Licencias fuera del catálogo',
     pagos_sin_cliente: 'Pagos sin cliente',
