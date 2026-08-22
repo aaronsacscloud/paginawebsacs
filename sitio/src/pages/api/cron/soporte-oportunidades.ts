@@ -38,12 +38,16 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   const inicio = Date.now();
   const limite = Math.min(60, Number(url.searchParams.get('limit')) || 25);
-  const desde = url.searchParams.get('desde') || await leerCursor();
+  const hastaParam = url.searchParams.get('hasta');
+  // En modo histórico el cursor NO manda: se recorre hacia atrás justamente lo
+  // que la corrida nocturna ya dejó atrás. Sin esto, pedir `hasta` sin `desde`
+  // devuelve una ventana casi vacía y parece que no hay nada que leer.
+  const desde = url.searchParams.get('desde') || (hastaParam ? null : await leerCursor());
   // `hasta` = modo histórico: se camina hacia ATRÁS en ventanas, pasando en cada
   // llamada la fecha más vieja de la tanda anterior. La corrida nocturna avanza
   // hacia adelante desde el cursor; el backfill va al revés y por eso NO toca el
   // cursor — si lo moviera, la próxima noche se saltaría lo que entró hoy.
-  const hasta = url.searchParams.get('hasta') || null;
+  const hasta = hastaParam || null;
 
   // Las que se MOVIERON desde el corte. Sin cursor (primera corrida) se toman
   // las más recientes primero: son las que todavía se pueden trabajar.
@@ -108,7 +112,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (ref && (!masVieja || ref < masVieja)) masVieja = ref;
   }
 
-  out.siguiente_hasta = masVieja;
+  out.siguiente_hasta = masVieja ? new Date(masVieja).toISOString() : null;
   if (!hasta && ultima && ultima !== desde) { await guardarCursor(ultima); out.cursor_nuevo = ultima; }
   out.ms = Date.now() - inicio;
   return json({ ok: true, ...out });
