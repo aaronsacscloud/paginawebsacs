@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import FinanzasARR from './FinanzasARR';
 import InteligenciaView from './InteligenciaView';
 import ClienteDrawer360 from './ClienteDrawer360';
 import NuevaSuscripcionModal from './NuevaSuscripcionModal';
@@ -96,7 +97,9 @@ export default function SubscriptionsTab() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza' | 'conciliacion' | 'inteligencia'>('subs');
+  // Arranca en el panel financiero: suscripciones es, antes que nada, la salud
+  // del ingreso recurrente. La lista operativa sigue a un clic.
+  const [vista, setVista] = useState<'finanzas' | 'subs' | 'riesgo' | 'cobranza' | 'conciliacion' | 'inteligencia'>('finanzas');
   const [editSub, setEditSub] = useState<Sub | null>(null);
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
 
@@ -317,12 +320,12 @@ export default function SubscriptionsTab() {
       <div style={isMobile
         ? { display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch', marginBottom: 10, paddingBottom: 4 }
         : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        {(['subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
+        {(['finanzas', 'subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
           <button key={v} onClick={() => setVista(v)}
             style={{ ...S.btn, ...(isMobile ? { flexShrink: 0, height: 44, scrollSnapAlign: 'start' } : {}),
               background: vista === v ? '#EEECFE' : 'transparent', color: vista === v ? '#5B4BD6' : '#666',
               borderRadius: vista === v ? '9px 9px 0 0' : 9, borderBottom: vista === v ? '2px solid #9B8CFA' : '2px solid transparent', fontWeight: vista === v ? 800 : 500 }}>
-            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0) + (riesgo?.soporte?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : 'Inteligencia ARR'}
+            {v === 'finanzas' ? 'Panel financiero' : v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0) + (riesgo?.soporte?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : 'Inteligencia ARR'}
           </button>
         ))}
         {/* La acción principal del hub es dar de alta lo que se acaba de vender.
@@ -343,6 +346,8 @@ export default function SubscriptionsTab() {
       )}
 
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
+      {vista === 'finanzas' && <FinanzasARR onCuenta={(id: string) => setDetailId(id)} />}
+
       {vista === 'subs' && (
         <>
         {vitStats.total > 0 && (
