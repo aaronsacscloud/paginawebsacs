@@ -9,6 +9,7 @@
 // de errores, es lo que limita lo que este panel puede afirmar.
 import { useEffect, useMemo, useState } from 'react';
 import Cargando from './ui/Cargando';
+import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 
 const money = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 const kMoney = (n: number) => '$' + (n / 1_000_000).toFixed(2) + 'M';
@@ -19,10 +20,10 @@ const etiquetaMes = (m: string, conAnio = false) => {
 };
 
 const S = {
-  // Aire arriba: la cabecera del módulo tiene lo suyo y este panel empieza
-  // después, no pegado a ella.
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: '18px 0 40px' } as const,
-  card: { background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '16px 18px' } as const,
+  // El aire de arriba lo pone el contenedor del CRM; aquí solo la separación
+  // con la barra de pestañas.
+  wrap: { maxWidth: 1280, margin: '0 auto', padding: '14px 0 40px' } as const,
+  card: { background: P.papel, border: `1px solid ${P.linea}`, borderRadius: 10, padding: '16px 18px' } as const,
   k: { fontSize: '0.57rem', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#a5a2af' } as const,
   v: { fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.08, marginTop: 4, letterSpacing: '-.02em' } as const,
   s: { fontSize: '0.75rem', color: '#4a4a52', marginTop: 4 } as const,
@@ -33,7 +34,7 @@ const S = {
   th: { textAlign: 'left' as const, fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: '#b3b1bb', padding: 8, borderBottom: '1px solid #f0eff3' } as const,
   td: { padding: '9px 8px', fontSize: '0.78rem', borderBottom: '1px solid #f7f6fa' } as const,
 };
-const UP = '#1E8A63', DOWN = '#C0554E', VIO = '#5B4BD6', ROSA = '#9c3d70';
+const UP = P.verdeTinta, DOWN = P.rojoTinta, VIO = P.violetaTinta, ROSA = P.rosaTinta;
 
 /**
  * La tarjeta de KPI con su franja de color a la izquierda: el mismo objeto que
@@ -44,7 +45,7 @@ function Kpi({ k, v, s: sub, e, color, franja, ancho }: {
   k: string; v: string; s?: React.ReactNode; e?: React.ReactNode; color?: string; franja: string; ancho?: boolean;
 }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '14px 16px' }}>
+    <div style={tarjetaKpi(franja)}>
       <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>{k}</div>
       <div style={{ fontSize: ancho ? '1.55rem' : '1.375rem', fontWeight: 800, color: color || '#1a1a1a', marginTop: 4, letterSpacing: '-.02em' }}>{v}</div>
       {sub && <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 3, lineHeight: 1.5 }}>{sub}</div>}
@@ -120,26 +121,26 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
 
       {/* ── TITULAR: lo ganado y lo perdido, cada uno con su número ── */}
       <div className="fin-k5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 10, marginBottom: 14 }}>
-        <Kpi franja="#9B8CFA" color={VIO} ancho
+        <Kpi franja={P.violeta} color={VIO} ancho
           k="ARR activo" v={money(t.arr_activo)}
           s={<>{t.subs_activas} licencias · {t.clientes} clientes</>}
           e="Lo que factura en 12 meses si nadie más entra ni se va." />
-        <Kpi franja="#7DA6F5" color={(t.crecimiento_12m_pct ?? 0) >= 0 ? UP : DOWN}
+        <Kpi franja={P.azul} color={(t.crecimiento_12m_pct ?? 0) >= 0 ? UP : DOWN}
           k="Crecimiento 12 meses"
           v={t.crecimiento_12m_pct == null ? '—' : `${t.crecimiento_12m_pct > 0 ? '+' : ''}${t.crecimiento_12m_pct}%`}
           s={<>de {money(t.arr_hace_12m)} a hoy</>}
           e="A qué velocidad crece la base." />
-        <Kpi franja="#4FBF95" color={UP}
+        <Kpi franja={P.verde} color={UP}
           k="ARR ganado este mes" v={`+${money(t.ganado)}`}
           s={<>nuevo {money(p.nuevo)} · expansión {money(p.expansion)}</>}
           e="Altas y ampliaciones de cuentas vivas." />
         {/* Lo que se fue tiene su propio número: escondido dentro del neto no se
             ve venir, y es la mitad de la historia. */}
-        <Kpi franja="#D9538E" color={DOWN}
+        <Kpi franja={P.rosa} color={DOWN}
           k="ARR dado de baja este mes" v={money(t.perdido)}
           s={<>bajas {money(Math.abs(p.baja))} · contracción {money(Math.abs(p.contraccion))}</>}
           e={<>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} en el mes.</>} />
-        <Kpi franja={t.neto >= 0 ? '#4FBF95' : '#C0554E'} color={t.neto >= 0 ? UP : DOWN}
+        <Kpi franja={t.neto >= 0 ? P.verde : P.rojoTinta} color={t.neto >= 0 ? UP : DOWN}
           k="ARR neto" v={`${t.neto >= 0 ? '+' : ''}${money(t.neto)}`}
           s="ganado menos perdido"
           e={t.churn_come_pct != null
