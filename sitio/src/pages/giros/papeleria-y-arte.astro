@@ -28,11 +28,13 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuitePlano from '../../components/suite/SuitePlano.astro';
+import PapLista from '../../components/giros/PapLista.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import {
   seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
+  listaPapeleria,
 } from '../../data/giros/papeleria';
 
 const titulo = 'Suite para Papelerías';
@@ -168,6 +170,14 @@ const desc =
     titulo="Todo tu negocio de papelería, en un solo lugar"
     intro="Baja para ver cada pieza. Todos los ejemplos son de una papelería real: el renglón de la lista, el papá que quita lo que ya tiene, el faltante que se busca en la otra tienda y el sobrante de octubre."
     secciones={seccionesPapeleria}
+  />
+
+  <!-- ── El bloque propio: fuera de una papelería no significa nada ── -->
+  <PapLista
+    colegio="Colegio del Valle"
+    grado="Secundaria 1º"
+    alumna="Sofía"
+    renglones={listaPapeleria}
   />
 
   <!-- ── La suite entera, contada como el plano de la tienda ── -->
