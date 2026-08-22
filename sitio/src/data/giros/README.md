@@ -17,7 +17,7 @@ copiar su estructura es el camino corto.
 |---|---|
 | Zapatería | **Al día.** Lleva además sus dos bloques propios |
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
-| Joyería | Estructura al día; **en rondas de referee**. Es el único giro que se vende como complemento |
+| Joyería | **Al día y aprobada** por los tres referees (oficio 9.2 · calidad 9.2 · diseño 9). Único giro que se vende como complemento |
 | Los demás (~20) | Sin empezar |
 
 ---
@@ -524,6 +524,9 @@ Cómo se les habla:
   - **La matriz de medida × quilataje ilustra "un anillo de oro" con un
     solitario**, y la propia página jura que el diamante se cotiza aparte. Falta
     la foto de un anillo liso.
+  - **Falta prueba social del giro.** Ningún caso de joyería con nombre y cifra.
+    Es lo único que separa la página de un 10, y no es trabajo de review: hace
+    falta un cliente que dé permiso.
   - **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
     tres giros los arman y `/contacto` los usa, pero la página de agenda los
     ignora: el dato se pierde en el último salto.
