@@ -42,6 +42,16 @@ const PASO_L: Record<string, string> = { idea: 'Idea', cotizada: 'Cotizada', en_
 
 const esPendiente = (m: any) => m.estado === 'cotizada' || m.estado === 'en_proceso';
 
+// Por qué se movió una fecha. Lista cerrada a propósito: en texto libre acaban
+// veinte formas de escribir lo mismo y no se puede contar cuál se repite.
+const MOTIVOS_REAGENDA = [
+  'El cliente pidió más tiempo',
+  'Falta información del cliente',
+  'Se repriorizó',
+  'Depende de otro desarrollo',
+  'Se subestimó el trabajo',
+];
+
 // ── Las vistas ──
 // Separan por NATURALEZA del trabajo, no por estado interno: una capacitación
 // no se cotiza ni se entrega como una personalización. "Pendientes" es la
@@ -186,6 +196,9 @@ export default function MejorasTab() {
   const [plegados, setPlegados] = useState<Set<string>>(new Set());
   const [guardando, setGuardando] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
+  // Edición de la fecha de entrega: qué renglón, la fecha nueva y por qué.
+  const [editFecha, setEditFecha] = useState<{ id: string; fecha: string; motivo: string } | null>(null);
+  const [editLiga, setEditLiga] = useState<{ id: string; url: string } | null>(null);
   const [tipo, setTipo] = useState<string>('todo');
   const [origen, setOrigen] = useState<string>('todo');   // salió de juntas recientes
   const [verSemana, setVerSemana] = useState(false);
@@ -224,6 +237,43 @@ export default function MejorasTab() {
 
   let tId: any;
   function flash(txt: string) { setAviso(txt); clearTimeout(tId); tId = setTimeout(() => setAviso(''), 3800); }
+
+  /** Recorrer la fecha de entrega. El motivo es obligatorio: mover sin decir
+   *  por qué es lo que hace que el rastro no sirva para nada después. */
+  async function guardaFecha(m: any) {
+    if (!editFecha || editFecha.id !== m.id) return;
+    if (!editFecha.fecha) { flash('Ponle una fecha.'); return; }
+    if (m.fecha_compromiso && !editFecha.motivo.trim()) { flash('Dinos por qué se mueve.'); return; }
+    setGuardando(m.id);
+    try {
+      const r = await fetch('/api/crm/mejoras', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.id, fecha_compromiso: editFecha.fecha, motivo: editFecha.motivo }),
+      });
+      if (!r.ok) throw new Error();
+      const n = (Array.isArray(m.reagendas) ? m.reagendas.length : 0) + (m.fecha_compromiso ? 1 : 0);
+      flash(`Fecha guardada: ${fmtDate(editFecha.fecha)}${n > 0 ? ` · reagendada ${n} ${n === 1 ? 'vez' : 'veces'}` : ''}`);
+      setEditFecha(null);
+      await cargar();
+    } catch { flash('No se pudo guardar la fecha.'); }
+    setGuardando(null);
+  }
+
+  async function guardaLiga(m: any) {
+    if (!editLiga || editLiga.id !== m.id) return;
+    setGuardando(m.id);
+    try {
+      const r = await fetch('/api/crm/mejoras', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.id, url: editLiga.url.trim() }),
+      });
+      if (!r.ok) throw new Error();
+      flash(editLiga.url.trim() ? 'Liga de entrega guardada.' : 'Liga quitada.');
+      setEditLiga(null);
+      await cargar();
+    } catch { flash('No se pudo guardar la liga.'); }
+    setGuardando(null);
+  }
 
   const alterna = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
     const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); setter(n);
@@ -374,6 +424,8 @@ export default function MejorasTab() {
   const renglon = (m: any, conCliente: boolean) => {
     const abiertoAqui = expandidos.has(m.id);
     const venc = idsVencidas.has(m.id);
+    const reag: any[] = Array.isArray(m.reagendas) ? m.reagendas : [];
+    const nReag = reag.length;
     const c = cat(m.categoria);
     const iAct = PASOS.indexOf(m.estado);
     const fechaTxt = m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}`
@@ -404,15 +456,25 @@ export default function MejorasTab() {
               <span>{PASO_L[m.estado] || m.estado}</span>
               {m.bookings?.fecha && <><span>·</span><span>de la junta del {fmtDate(m.bookings.fecha)}</span></>}
               {m.quotes?.numero && <><span>·</span><span>{m.quotes.numero}</span></>}
+              {nReag > 0 && <><span>·</span><span style={{ color: '#C0554E', fontWeight: 700 }}>reagendada {nReag} {nReag === 1 ? 'vez' : 'veces'}</span></>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-            <span style={{
-              fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '3px 9px',
-              border: '1px solid', ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
-                : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
-                : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
-            }}>{fechaTxt}</span>
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                if (m.estado === 'entregada') return;
+                setExpandidos(x => new Set(x).add(m.id));
+                setEditFecha({ id: m.id, fecha: m.fecha_compromiso || '', motivo: '' });
+              }}
+              title={m.estado === 'entregada' ? 'Ya entregada' : 'Cambiar la fecha de entrega'}
+              style={{
+                fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '3px 9px',
+                border: '1px solid', fontFamily: 'inherit', cursor: m.estado === 'entregada' ? 'default' : 'pointer',
+                ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
+                  : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
+                  : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
+              }}>{fechaTxt}{m.estado !== 'entregada' ? ' ✎' : ''}</button>
             <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
               {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
             </div>
@@ -443,7 +505,68 @@ export default function MejorasTab() {
               })}
             </div>
 
+            {/* Editor de la fecha. El motivo es obligatorio cuando ya había una:
+                sin él, el rastro no explica nada tres meses después. */}
+            {editFecha?.id === m.id && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, padding: '11px 13px' }}>
+                <span style={{ width: '100%', fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>
+                  {m.fecha_compromiso ? 'Mover la fecha de entrega' : 'Poner fecha de entrega'}
+                </span>
+                <input type="date" autoFocus value={editFecha.fecha}
+                  onChange={e => setEditFecha(f => (f ? { ...f, fecha: e.target.value } : f))}
+                  style={{ border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }} />
+                {m.fecha_compromiso && (
+                  <select value={editFecha.motivo} onChange={e => setEditFecha(f => (f ? { ...f, motivo: e.target.value } : f))}
+                    style={{ border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }}>
+                    <option value="">¿Por qué se mueve?</option>
+                    {MOTIVOS_REAGENDA.map(x => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                )}
+                <button onClick={() => guardaFecha(m)} disabled={guardando === m.id}
+                  style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {guardando === m.id ? 'Guardando…' : 'Guardar'}
+                </button>
+                <button onClick={() => setEditFecha(null)}
+                  style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: '0.76rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Cancelar
+                </button>
+              </div>
+            )}
+
+            {/* La liga de lo entregado. Sin ella una entrega no se puede enseñar. */}
+            {editLiga?.id === m.id && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, padding: '11px 13px' }}>
+                <span style={{ width: '100%', fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>Liga de lo entregado</span>
+                <input autoFocus value={editLiga.url} onChange={e => setEditLiga(l => (l ? { ...l, url: e.target.value } : l))}
+                  placeholder="https://… el video, el módulo publicado, el documento"
+                  style={{ flex: '1 1 260px', border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }} />
+                <button onClick={() => guardaLiga(m)} disabled={guardando === m.id}
+                  style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {guardando === m.id ? 'Guardando…' : 'Guardar'}
+                </button>
+                <button onClick={() => setEditLiga(null)}
+                  style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: '0.76rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Cancelar
+                </button>
+              </div>
+            )}
+
             {m.descripcion && <div style={{ fontSize: '0.78rem', color: '#5a5a63', lineHeight: 1.55 }}>{m.descripcion}</div>}
+
+            {/* La historia de la fecha: de dónde a dónde, por qué y quién. */}
+            {nReag > 0 && (
+              <div style={{ background: '#FEF0EF', border: '1px solid #f7d9d6', borderRadius: 9, padding: '9px 11px' }}>
+                <div style={{ fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#C0554E', fontWeight: 800, marginBottom: 4 }}>
+                  Se movió {nReag} {nReag === 1 ? 'vez' : 'veces'}
+                </div>
+                {reag.slice().reverse().map((r: any, i: number) => (
+                  <div key={i} style={{ fontSize: '0.73rem', color: '#8c2f28', lineHeight: 1.5 }}>
+                    {fmtDate(r.de)} → <b>{fmtDate(r.a)}</b> · {r.motivo}
+                    {r.quien && <span style={{ color: '#b8837e' }}> · {r.quien}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
               {[
@@ -466,6 +589,16 @@ export default function MejorasTab() {
                   Ver lo entregado
                 </a>
               )}
+              {m.estado !== 'entregada' && (
+                <button onClick={() => setEditFecha({ id: m.id, fecha: m.fecha_compromiso || '', motivo: '' })}
+                  style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: '0.73rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {m.fecha_compromiso ? 'Cambiar fecha' : 'Poner fecha'}
+                </button>
+              )}
+              <button onClick={() => setEditLiga({ id: m.id, url: m.url || '' })}
+                style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: '0.73rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {m.url ? 'Cambiar liga' : 'Agregar liga de entrega'}
+              </button>
               <button onClick={() => setAbierto(m.company_id)}
                 style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '5px 11px', fontSize: '0.73rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
                 Abrir ficha del cliente

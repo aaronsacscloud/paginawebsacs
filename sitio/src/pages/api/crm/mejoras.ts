@@ -118,6 +118,32 @@ export const PUT: APIRoute = async ({ request }) => {
   const id = String(b?.id || '');
   if (!id) return json({ error: 'Falta la mejora.' }, 400);
   const p = limpia(b);
+
+  // ── Mover la fecha deja rastro ──
+  // Una fecha que se recorre tres veces en silencio es la que rompe la
+  // confianza: el cliente ve un retraso, no un patrón. Cada cambio se apila con
+  // de dónde, a dónde, por qué y quién — el motivo lo manda la pantalla y es
+  // obligatorio para poder recorrerla (mover sin decir por qué es lo que hace
+  // que el rastro no sirva de nada).
+  //
+  // El estado NO cuenta como reagenda: entregar tarde no es mover la promesa.
+  const cambiaFecha = 'fecha_compromiso' in b;
+  if (cambiaFecha) {
+    const { data: act } = await supabase.from('mejoras')
+      .select('fecha_compromiso, reagendas').eq('id', id).maybeSingle();
+    const antes = act?.fecha_compromiso ? String(act.fecha_compromiso).slice(0, 10) : null;
+    const ahora = p.fecha_compromiso ? String(p.fecha_compromiso).slice(0, 10) : null;
+    if (antes && ahora && antes !== ahora) {
+      const motivo = String(b?.motivo || '').trim().slice(0, 160) || 'sin motivo';
+      const previas = Array.isArray(act?.reagendas) ? act.reagendas : [];
+      p.reagendas = [...previas, {
+        de: antes, a: ahora, motivo,
+        quien: user.nombre || user.email || 'admin',
+        at: new Date().toISOString(),
+      }].slice(-30);
+    }
+  }
+
   if (p.estado === 'entregada' && !p.fecha_entrega) {
     const { data: act } = await supabase.from('mejoras').select('fecha_entrega').eq('id', id).maybeSingle();
     if (!act?.fecha_entrega) p.fecha_entrega = new Date().toISOString().slice(0, 10);
