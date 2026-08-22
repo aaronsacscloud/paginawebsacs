@@ -135,7 +135,18 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
       if (!a) return;
       var h = a.getAttribute("href") || "";
       if (h.indexOf("wa.me") === -1 && h.indexOf("api.whatsapp.com") === -1) return;
+      /* Los CTA que traen data-giro los mide su propio manejador, que ademas
+         sabe de que giro salio el clic. Si los midieramos aqui tambien,
+         contarian doble en los dos pixeles. */
+      if (a.dataset && a.dataset.giro) return;
       window.sacsOai("custom", { type: "custom" }, { custom_event_name: "mandowhatsapp" });
+      /* TikTok no tenia esta delegacion: solo media el WhatsApp del nav, el de
+         la barra de chat y el de los CTA de giro. Los del cierre de las paginas
+         de giro (SuiteEnsamble), /prueba-gratis, implementacion y /contacto
+         llegaban a OpenAI y nunca a TikTok. */
+      if (typeof ttq !== "undefined") {
+        ttq.track("Contact", { content_id: "whatsapp", content_name: "wa-" + location.pathname, content_type: "product" });
+      }
     }, true);
     </script>
 
