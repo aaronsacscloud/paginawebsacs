@@ -43,33 +43,133 @@ const METODOS = ['mercadopago', 'transferencia', 'tarjeta', 'stripe', 'efectivo'
 const METODO_LABEL: Record<string, string> = { mercadopago: 'Mercado Pago', transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Stripe', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
 const METODO_COLOR: Record<string, string> = { mercadopago: '#009ee3', transferencia: '#2563eb', tarjeta: '#7c3aed', stripe: '#635bff', efectivo: '#16a34a', oxxo: '#dc2626', otro: '#6b7280' };
 
-// ── Empresa y contacto son dos datos distintos ──
-// Iban pegados en una sola celda ("contacto · empresa") y el resultado era
-// ilegible: "Lorena del Carmen Medina Cisneros · Lorena del Carmen Medina
-// Cisneros" cuando el contacto se llama igual que su empresa, y
-// "+52 33 1324 4547 · FEELINGS" cuando el contacto se dio de alta con el
-// teléfono por nombre. Cada uno en su columna se lee solo.
-function nombreContacto(c: any): string {
-  if (!c) return '';
-  const n = `${c.nombre || ''} ${c.apellido || ''}`.trim();
-  if (n) return n;
-  // Sin nombre, el correo identifica mejor que un guion.
-  return c.email ? String(c.email).split('@')[0] : '';
-}
-
 /**
- * El mismo nombre en las dos columnas no dice nada dos veces: dice ruido.
- * Pasa cuando la empresa se creó a partir del contacto y heredó su nombre
- * (Lorena del Carmen Medina Cisneros). En ese caso la columna de contacto se
- * queda con el correo, que sí agrega algo.
+ * Cómo se llama el cliente en pantalla.
+ *
+ * `nombre` casi siempre trae el slug de la cuenta —"supercarnesriveramx"— en
+ * 125 de 142 clientes. `nombre_comercial` ya lo trae partido en palabras
+ * ("Super Carnes Rivera") y está lleno en 140 de 142. Se prefiere ese y el slug
+ * baja a la segunda línea, que es donde sirve: para reconocer la cuenta.
  */
-const mismoNombre = (a: string, b: string) =>
-  !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+function nombreEmpresa(co: any): string {
+  if (!co) return '';
+  const com = String(co.nombre_comercial || '').trim();
+  const n = String(co.nombre || '').trim();
+  return com || n;
+}
 
 // Semáforo de mora: 1-7 días ámbar, 8-30 naranja, +30 rojo.
 function moraBadge(dias: number) {
   const [bg, fg] = dias >= 30 ? ['#fde8e8', '#b93333'] : dias >= 8 ? ['#ffedd5', '#c2410c'] : ['#fef3c7', '#b45309'];
   return { background: bg, color: fg, padding: '2px 8px', borderRadius: 6, fontWeight: 700 as const, fontSize: 11 };
+}
+
+/**
+ * Los tres puntitos de cada pago.
+ *
+ * La tabla se estaba llenando de columnas (contacto, referencia…) que en
+ * realidad son ACCIONES, no datos que se comparen renglón contra renglón. Aquí
+ * viven todas: el recibo, el estado de cuenta, mandarlo por WhatsApp, abrir la
+ * ficha y dejar registrada la gestión. La tabla se queda con lo que sí se lee
+ * de corrido: cuándo, quién, cómo, qué y cuánto.
+ */
+function BotonAcciones({ pago, onAbrir }: { pago: any; onAbrir: (m: any) => void }) {
+  return (
+    <button
+      title="Más acciones"
+      aria-label="Más acciones"
+      onClick={(e) => {
+        e.stopPropagation();
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        onAbrir({ pago, x: r.right, y: r.bottom + 4 });
+      }}
+      style={{
+        border: '1px solid #e6e3ee', background: '#fff', borderRadius: 8, cursor: 'pointer',
+        width: 30, height: 30, lineHeight: 1, color: '#6f6b7d', fontSize: 15, fontFamily: 'inherit',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}>⋮</button>
+  );
+}
+
+const TIPOS_GESTION = [
+  { id: 'llamada', l: 'Llamada' },
+  { id: 'whatsapp', l: 'WhatsApp' },
+  { id: 'email', l: 'Correo' },
+  { id: 'reunion', l: 'Reunión' },
+  { id: 'nota', l: 'Nota interna' },
+];
+
+/**
+ * Registrar una gestión sobre un pago: la llamada que se hizo, lo que el
+ * cliente contestó, el acuerdo al que se llegó. Queda en la actividad del
+ * cliente —el mismo timeline que ya lee todo el CRM— con el pago referenciado,
+ * para que tres meses después se sepa por qué ese cobro fue como fue.
+ */
+function GestionModal({ pago, onCerrar, onListo }: { pago: any; onCerrar: () => void; onListo: (msg: string) => void }) {
+  const [tipo, setTipo] = useState('llamada');
+  const [texto, setTexto] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const empresa = nombreEmpresa(pago.companies) || 'este cliente';
+
+  const guardar = async () => {
+    if (!texto.trim()) return;
+    setGuardando(true);
+    try {
+      const etiqueta = TIPOS_GESTION.find(t => t.id === tipo)?.l || 'Gestión';
+      const r = await fetch('/api/crm/activities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: pago.company_id || pago.companies?.id || null,
+          contact_id: pago.contact_id || pago.contacts?.id || null,
+          tipo: 'nota',
+          titulo: `${etiqueta} sobre el pago de $${Number(pago.monto || 0).toLocaleString('es-MX')} del ${String(pago.fecha || '').slice(0, 10)}`,
+          descripcion: texto.trim(),
+          metadata: { gestion: tipo, payment_id: pago.id, numero_acuse: pago.numero_acuse || null, monto: pago.monto },
+        }),
+      });
+      if (!r.ok) throw new Error();
+      onListo('Gestión registrada en la actividad del cliente.');
+      onCerrar();
+    } catch { onListo('No se pudo guardar la gestión.'); }
+    setGuardando(false);
+  };
+
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 980, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 460, maxWidth: '100%', maxHeight: '88vh', overflowY: 'auto' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Registrar gestión</h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: '0.78rem', color: '#7c7c86' }}>
+            {empresa} · {fmt(pago.monto)} · {fmtDate(String(pago.fecha || '').slice(0, 10))}
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {TIPOS_GESTION.map(t => (
+              <button key={t.id} onClick={() => setTipo(t.id)}
+                style={{
+                  border: '1.5px solid', borderColor: tipo === t.id ? '#9B8CFA' : '#e4dffb',
+                  background: tipo === t.id ? '#EEECFE' : '#fff', color: tipo === t.id ? '#5B4BD6' : '#6f6b7d',
+                  borderRadius: 20, padding: '5px 13px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                }}>{t.l}</button>
+            ))}
+          </div>
+          <textarea autoFocus value={texto} onChange={e => setTexto(e.target.value)} rows={4}
+            placeholder="Qué se hizo y qué contestó el cliente…"
+            style={{ border: '1.5px solid #e4dffb', borderRadius: 10, padding: '10px 12px', fontSize: '0.85rem', fontFamily: 'inherit', resize: 'vertical', background: '#fdfcff' }} />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={onCerrar} style={{ ...S.btnSmall, padding: '8px 14px' }}>Cancelar</button>
+            <button onClick={guardar} disabled={guardando || !texto.trim()}
+              style={{ ...S.btnSmall, padding: '8px 16px', background: '#9B8CFA', color: '#fff', border: 'none', opacity: (guardando || !texto.trim()) ? 0.5 : 1 }}>
+              {guardando ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function PagosTab() {
@@ -89,6 +189,11 @@ export default function PagosTab() {
   const [showPago, setShowPago] = useState(false);
   const [pagoPrefill, setPagoPrefill] = useState<any>(null);
   const [drawerCompany, setDrawerCompany] = useState<string | null>(null);
+  // Menú de acciones de un pago: posición fija con las coordenadas del botón.
+  // Un panel `absolute` dentro de la tabla queda recortado por el overflow y
+  // solo se ve el de la primera fila — ya pasó en la ficha del cliente.
+  const [menuPago, setMenuPago] = useState<{ pago: any; x: number; y: number } | null>(null);
+  const [gestionPago, setGestionPago] = useState<any>(null);
   const [fMetodo, setFMetodo] = useState('');
   const [fQ, setFQ] = useState('');
   const [toast, setToast] = useState('');
@@ -470,8 +575,7 @@ export default function PagosTab() {
             {payments.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</div>
             ) : payments.map((p) => {
-              const contacto = nombreContacto(p.contacts);
-              const empresa = p.companies?.nombre || '';
+              const empresa = nombreEmpresa(p.companies);
               const compId = p.companies?.id;
               return (
                 <div key={p.id} onClick={() => compId && setDrawerCompany(compId)} style={{ border: '1px solid #f0f0f0', borderRadius: 10, padding: 12, cursor: compId ? 'pointer' : 'default' }}>
@@ -483,17 +587,14 @@ export default function PagosTab() {
                     )}
                     <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '0.95rem' }}>{fmt(p.monto)}</span>
                   </div>
-                  {/* En la tarjeta también van en dos renglones: la empresa arriba
-                      —que es a quien se le cobra— y la persona debajo. */}
-                  <div style={{ fontWeight: 700, fontSize: '0.86rem', marginTop: 4 }}>
-                    {empresa || <span style={{ color: '#c0392b', fontWeight: 600 }}>Sin cliente</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.86rem', minWidth: 0, flex: 1 }}>
+                      {empresa || <span style={{ color: '#c0392b', fontWeight: 600 }}>Sin cliente</span>}
+                    </div>
+                    <div onClick={e => e.stopPropagation()}><BotonAcciones pago={p} onAbrir={setMenuPago} /></div>
                   </div>
-                  {contacto && !mismoNombre(contacto, empresa) && <div style={{ fontSize: '0.76rem', color: '#888' }}>{contacto}</div>}
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4, fontSize: '0.75rem', color: '#888' }}>
-                    <span>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? ` · ${p.subscriptions.ciclo}` : ''}</span>
-                    <span style={{ marginLeft: 'auto' }}>{p.numero_acuse
-                      ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#2563eb', textDecoration: 'none' }} title="Ver / imprimir recibo">🧾 {p.numero_acuse}</a>
-                      : <span>Ref: {p.referencia || '—'}</span>}</span>
+                  <div style={{ marginTop: 3, fontSize: '0.75rem', color: '#888' }}>
+                    {p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? ` · ${p.subscriptions.ciclo}` : ''}
                   </div>
                 </div>
               );
@@ -502,36 +603,29 @@ export default function PagosTab() {
         ) : (
         <div className="crm-scroll-x">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Fecha', 'Empresa', 'Contacto', 'Tipo', 'Concepto', 'Referencia', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+          <thead><tr>{['Fecha', 'Empresa', 'Tipo', 'Concepto', 'Monto', ''].map((h, i) => <th key={i} style={S.th}>{h}</th>)}</tr></thead>
           <tbody>
             {payments.length === 0 ? (
-              <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</td></tr>
+              <tr><td colSpan={6} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</td></tr>
             ) : payments.map((p) => {
-              const contacto = nombreContacto(p.contacts);
-              const empresa = p.companies?.nombre || '';
+              const empresa = nombreEmpresa(p.companies);
               const cuenta = p.companies?.sacs_account || '';
               const compId = p.companies?.id;
               return (
                 <tr key={p.id} onClick={() => compId && setDrawerCompany(compId)} style={{ cursor: compId ? 'pointer' : 'default' }}>
                   <td style={S.td}>{fmtDate(p.fecha)}</td>
-                  {/* La empresa manda: es el clic que abre la ficha. */}
+                  {/* La empresa manda: un clic abre su ficha con todo lo demás
+                      —contacto, licencias, actividad—, así que no hace falta
+                      una columna por dato. */}
                   <td style={S.td}>
                     {empresa ? (
                       <>
                         <div style={{ fontWeight: 600 }}>{empresa}</div>
-                        {cuenta && cuenta !== empresa && <div style={{ fontSize: '0.72rem', color: '#a3a3ab' }}>{cuenta}</div>}
+                        {cuenta && cuenta.toLowerCase() !== empresa.toLowerCase() && (
+                          <div style={{ fontSize: '0.72rem', color: '#a3a3ab' }}>{cuenta}</div>
+                        )}
                       </>
                     ) : <span style={{ color: '#c0392b', fontSize: '0.78rem' }}>Sin cliente</span>}
-                  </td>
-                  <td style={S.td}>
-                    {contacto && !mismoNombre(contacto, empresa) ? (
-                      <>
-                        <div>{contacto}</div>
-                        {p.contacts?.email && <div style={{ fontSize: '0.72rem', color: '#a3a3ab' }}>{p.contacts.email}</div>}
-                      </>
-                    ) : p.contacts?.email ? (
-                      <span style={{ fontSize: '0.78rem', color: '#7c7c86' }}>{p.contacts.email}</span>
-                    ) : <span style={{ color: '#bcbcc4' }}>—</span>}
                   </td>
                   <td style={S.td}>
                     <span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span>
@@ -541,10 +635,10 @@ export default function PagosTab() {
                     )}
                   </td>
                   <td style={S.td}>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? <span style={{ color: '#999' }}> · {p.subscriptions.ciclo}</span> : null}</td>
-                  <td style={S.td}>{p.numero_acuse
-                    ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#2563eb', textDecoration: 'none' }} title="Ver / imprimir recibo">🧾 {p.numero_acuse}</a>
-                    : <span style={{ color: '#888' }}>{p.referencia || '—'}</span>}</td>
-                  <td style={{ ...S.td, fontWeight: 700 }}>{fmt(p.monto)}</td>
+                  <td style={{ ...S.td, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(p.monto)}</td>
+                  <td style={{ ...S.td, width: 44, textAlign: 'right' }}>
+                    <BotonAcciones pago={p} onAbrir={setMenuPago} />
+                  </td>
                 </tr>
               );
             })}
@@ -615,6 +709,56 @@ export default function PagosTab() {
           </div>
         );
       })() : null}
+
+      {/* ── Más acciones de un pago ── */}
+      {menuPago && (() => {
+        const p = menuPago.pago;
+        const compId = p.companies?.id || p.company_id || null;
+        const edoCuenta = compId && typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${compId}` : '';
+        const wa = String(p.contacts?.whatsapp || '').replace(/\D/g, '');
+        const cerrar = () => setMenuPago(null);
+        const item = (label: string, onClick: () => void, sub?: string, deshabilitado?: boolean) => (
+          <button key={label} disabled={deshabilitado} onClick={() => { onClick(); cerrar(); }}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent',
+              padding: '9px 13px', fontSize: '0.8rem', fontFamily: 'inherit', color: deshabilitado ? '#c3c1cb' : '#3f3b4d',
+              cursor: deshabilitado ? 'default' : 'pointer', borderRadius: 8,
+            }}
+            onMouseEnter={e => { if (!deshabilitado) (e.currentTarget as HTMLElement).style.background = '#f6f4fb'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+            {label}
+            {sub && <div style={{ fontSize: '0.68rem', color: '#a3a3ab', marginTop: 1 }}>{sub}</div>}
+          </button>
+        );
+        return (
+          <>
+            <div onClick={cerrar} style={{ position: 'fixed', inset: 0, zIndex: 970 }} />
+            <div style={{
+              position: 'fixed', top: Math.min(menuPago.y, (typeof window !== 'undefined' ? window.innerHeight : 900) - 250),
+              left: Math.max(12, menuPago.x - 232), width: 232, zIndex: 971,
+              background: '#fff', border: '1px solid #e9e6f1', borderRadius: 12, padding: 5,
+              boxShadow: '0 14px 40px rgba(16,24,40,.16)',
+            }}>
+              {item('Estado de cuenta', () => {
+                window.open(edoCuenta, '_blank', 'noopener');
+                try { navigator.clipboard?.writeText(edoCuenta); } catch { /* sin https no hay portapapeles */ }
+                setToast('Estado de cuenta abierto · link copiado'); setTimeout(() => setToast(''), 3500);
+              }, 'Se abre para ver, imprimir o guardar', !compId)}
+              {item('Enviar por WhatsApp', () => {
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(`Hola, te comparto tu estado de cuenta SACS:\n${edoCuenta}`)}`, '_blank', 'noopener');
+              }, wa ? undefined : 'El contacto no tiene WhatsApp', !compId || !wa)}
+              {item('Ver recibo', () => window.open(`/acuse/${p.id}`, '_blank', 'noopener'),
+                p.numero_acuse || 'Este pago no tiene acuse', !p.numero_acuse)}
+              <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
+              {item('Registrar gestión', () => setGestionPago(p), 'Llamada, WhatsApp, acuerdo…', !compId)}
+              {item('Abrir ficha del cliente', () => compId && setDrawerCompany(compId), undefined, !compId)}
+            </div>
+          </>
+        );
+      })()}
+
+      {gestionPago && <GestionModal pago={gestionPago} onCerrar={() => setGestionPago(null)}
+        onListo={(m) => { setToast(m); setTimeout(() => setToast(''), 4000); }} />}
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}

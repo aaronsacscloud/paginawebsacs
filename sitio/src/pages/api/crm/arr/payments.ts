@@ -59,7 +59,9 @@ export const GET: APIRoute = async ({ url }) => {
         // pasarela/mp_payment_id: son lo único que distingue un cobro que entró
         // SOLO (domiciliado) de uno que alguien capturó a mano.
         'id, fecha, monto, metodo, referencia, estado, numero_acuse, comprobante_url, notas, periodo_cubierto, stripe_payment_id, pasarela, mp_payment_id, comision, subscription_id, company_id, contact_id, migrado, ' +
-        'companies(id, nombre, sacs_account), contacts(id, nombre, apellido, email), subscriptions(id, nombre_plan, ciclo, mp_preapproval_id)',
+        // nombre_comercial: el nombre legible del cliente ("Super Carnes Rivera"),
+        // no el slug de la cuenta. whatsapp: para mandar el estado de cuenta.
+        'companies(id, nombre, nombre_comercial, sacs_account), contacts(id, nombre, apellido, email, whatsapp), subscriptions(id, nombre_plan, ciclo, mp_preapproval_id)',
         { count: 'exact' }
       )
       .order('fecha', { ascending: false });
