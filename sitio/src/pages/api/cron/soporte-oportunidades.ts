@@ -39,6 +39,11 @@ export const GET: APIRoute = async ({ url, request }) => {
   const inicio = Date.now();
   const limite = Math.min(60, Number(url.searchParams.get('limit')) || 25);
   const desde = url.searchParams.get('desde') || await leerCursor();
+  // `hasta` = modo histórico: se camina hacia ATRÁS en ventanas, pasando en cada
+  // llamada la fecha más vieja de la tanda anterior. La corrida nocturna avanza
+  // hacia adelante desde el cursor; el backfill va al revés y por eso NO toca el
+  // cursor — si lo moviera, la próxima noche se saltaría lo que entró hoy.
+  const hasta = url.searchParams.get('hasta') || null;
 
   // Las que se MOVIERON desde el corte. Sin cursor (primera corrida) se toman
   // las más recientes primero: son las que todavía se pueden trabajar.
@@ -47,6 +52,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     .order('ultima_actividad_at', { ascending: false, nullsFirst: false })
     .limit(limite);
   if (desde) q = q.gt('ultima_actividad_at', desde);
+  if (hasta) q = q.lt('ultima_actividad_at', hasta);
   const { data: tickets, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
@@ -56,6 +62,9 @@ export const GET: APIRoute = async ({ url, request }) => {
     por_tipo: {} as Record<string, number>,
     errores: [] as string[],
     cursor_previo: desde, cursor_nuevo: desde,
+    historico: !!hasta,
+    // Para encadenar la siguiente ventana del backfill sin adivinar la fecha.
+    siguiente_hasta: null as string | null,
     ms: 0,
   };
 
@@ -70,6 +79,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   }
 
   let ultima: string | null = desde;
+  let masVieja: string | null = null;
   for (const t of (tickets || [])) {
     if (Date.now() - inicio > PRESUPUESTO_MS) { out.errores.push('presupuesto de tiempo agotado'); break; }
     out.revisadas++;
@@ -95,9 +105,11 @@ export const GET: APIRoute = async ({ url, request }) => {
     // revisada. Si avanzara solo con hallazgos, cada corrida releería lo mismo.
     const ref = t.ultima_actividad_at || t.abierto_at;
     if (ref && (!ultima || ref > ultima)) ultima = ref;
+    if (ref && (!masVieja || ref < masVieja)) masVieja = ref;
   }
 
-  if (ultima && ultima !== desde) { await guardarCursor(ultima); out.cursor_nuevo = ultima; }
+  out.siguiente_hasta = masVieja;
+  if (!hasta && ultima && ultima !== desde) { await guardarCursor(ultima); out.cursor_nuevo = ultima; }
   out.ms = Date.now() - inicio;
   return json({ ok: true, ...out });
 };
