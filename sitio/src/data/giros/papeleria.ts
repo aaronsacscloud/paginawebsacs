@@ -191,7 +191,7 @@ export const cortinaPapeleria = {
   fotoAntes: '/images/suite-pap-hoy.webp',
   fotoDespues: '/images/suite-pap-resuelto.webp',
   altAntes: 'Empleada de papelería buscando en el anaquel con la lista del colegio en la mano',
-  altDespues: 'La misma empleada resolviendo desde el mostrador con la existencia de las otras tiendas',
+  altDespues: 'La misma empleada en el mostrador, con la existencia de las otras tiendas en la tablet',
   libreta: ['Cuadro chico 100 h… ¿queda?', '¿Y en Del Valle?'],
   pieAntes: 'Ir al anaquel, no encontrarlo,<br />y que el papá se lleve la lista completa.',
   filas: [
@@ -268,9 +268,16 @@ export const pasosPapeleria = [
   {
     cuando: 'Día 4', titulo: 'Abre una sucursal',
     texto: 'Arranca la primera tienda, acompañada. Si algo se atora, estamos en la línea.',
-    detalle: 'Ese día se cobra, se surte una lista, se factura y se cierra la caja — pero con alguien al lado. Y con lo aprendido ahí, las demás entran el mismo día.',
+    detalle: 'Ese día se cobra, se surte una lista, se factura y se cierra la caja — pero con alguien al lado.',
     img: '/images/proc-pap-4.webp',
     alt: 'Empleada cobrando en el mostrador acompañada por un compañero el primer día',
+  },
+  {
+    cuando: 'Día 5', titulo: 'Abren las demás',
+    texto: 'Con lo aprendido en la primera, las otras entran el mismo día.',
+    detalle: 'Y desde ese momento el mostrador ve la existencia de toda la cadena, que es lo que salva agosto.',
+    img: '/images/proc-pap-5.webp',
+    alt: 'Dueña de una cadena de papelerías recorriendo los pasillos, revisando el inventario en su tablet',
   },
 ];
 

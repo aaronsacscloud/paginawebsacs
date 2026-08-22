@@ -188,7 +188,7 @@ export const cortinaJoyeria = {
   fotoAntes: '/images/suite-joy-hoy.webp',
   fotoDespues: '/images/suite-joy-resuelto.webp',
   altAntes: 'Vendedora pesando una cadena y sacando el precio con calculadora',
-  altDespues: 'Vendedora presentando una pieza con el sistema en la tablet',
+  altDespues: 'Vendedora en el mostrador, con el precio del gramo y la existencia en la tablet',
   libreta: ['14K · 18.4 g × ?', 'oro hoy… ¿2,540?'],
   pieAntes: 'Calculadora, memoria<br />y el precio de la semana pasada.',
   filas: [
@@ -348,7 +348,7 @@ export const pasosJoyeria = [
     texto: 'Con lo aprendido en la primera, las otras entran el mismo día.',
     detalle: 'Y desde ese momento el precio del gramo se cambia una vez y baja a todas tus vitrinas.',
     img: '/images/proc-joy-5.webp',
-    alt: 'Dueña de una cadena de joyerías recorriendo las vitrinas con su tablet',
+    alt: 'Dueña de una cadena de joyerías recorriendo las vitrinas, revisando el inventario en su tablet',
   },
 ];
 

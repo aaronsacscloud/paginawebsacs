@@ -103,7 +103,7 @@ export const pasosModa = [
     texto: 'Con la primera resuelta, las otras entran el mismo día.',
     detalle: 'Y el traspaso de tallas entre tiendas ya corre desde el primer fin de semana, que es cuando se nota.',
     img: '/images/proc-moda-5.webp',
-    alt: 'Dueña de una cadena de boutiques revisando su tablet en el pasillo de una de sus tiendas',
+    alt: 'Dueña de una cadena de boutiques recorriendo el pasillo, revisando el inventario en su tablet',
   },
 ];
 

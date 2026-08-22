@@ -344,7 +344,7 @@ export const cortinaZapateria = {
   fotoAntes: '/images/suite-zap-hoy.webp',
   fotoDespues: '/images/suite-zap-resuelto.webp',
   altAntes: 'Vendedor buscando entre cajas el número que le piden',
-  altDespues: 'Vendedor atendiendo tranquilo con el sistema en la tablet',
+  altDespues: 'Vendedora en el mostrador, con la existencia por número de las otras tiendas en la tablet',
   libreta: ['Botín café 25 — ¿queda?', '¿pedir a Norte?'],
   pieAntes: 'Diez minutos entre cajas<br />y el cliente se fue.',
   filas: [
@@ -414,7 +414,7 @@ export const pasosZapateria = [
     texto: 'Con la primera resuelta, las otras entran el mismo día.',
     detalle: 'Y el traspaso de números entre tiendas ya corre desde el primer sábado, que es cuando se nota.',
     img: '/images/proc-zap-5.webp',
-    alt: 'Dueña de una cadena de zapaterías revisando su tablet en el pasillo de una de sus tiendas',
+    alt: 'Dueña de una cadena de zapaterías recorriendo el pasillo, revisando el inventario en su tablet',
   },
 ];
 export const cajaZapateria = {

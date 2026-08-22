@@ -18,7 +18,7 @@ copiar su estructura es el camino corto.
 | Zapatería | **Al día.** Lleva además sus dos bloques propios |
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
 | Joyería | **Al día y aprobada** por los tres referees (oficio 9.2 · calidad 9.2 · diseño 9). Único giro que se vende como complemento |
-| Papelería y arte | **Estructura al día**, pendiente de referees y de dos fotos |
+| Papelería y arte | Estructura y fotos al día; **pendiente de referees** |
 | Los demás (~19) | Sin empezar |
 
 ---
@@ -446,9 +446,16 @@ Cómo se les habla:
   esperando, la escena no puede ser una tienda vacía.
 - **Escenas de trabajo, no catálogo.** El producto suelto solo donde el producto
   ES el argumento (`SuiteVariantes`). En el resto, gente trabajando.
-- **Nunca pantallas legibles dentro de la foto.** Una captura falsa se nota. Y
-  una tablet apagada en la mano tampoco vende: si la pantalla sale, que salga
-  apagada por encuadre, no por descuido.
+- **Ninguna pantalla en blanco.** Si sale una tablet, un monitor o un celular,
+  **tiene que mostrar una pantalla de SACS** o algo relevante del negocio: una
+  existencia por sucursal, una matriz, un ticket, un tablero. Una tablet apagada
+  en la mano no vende y se nota. (Deroga la regla anterior, que pedía pantallas
+  apagadas para no inventar interfaces.) Lo que sigue prohibido es el **texto
+  legible y las cifras inventadas** dentro de la pantalla: se describe la forma,
+  no el contenido.
+- **Moderno, con gente y con experiencia.** El negocio se ve operando, con
+  personas trabajando y con diseño contemporáneo. Un set correcto pero plano ya
+  fue rechazado una vez; un set oscuro y saturado, otra.
 - **Registro socioeconómico correcto** — pero hacia arriba. El ICP no es la
   emprendedora con un local: es el negocio **en crecimiento**, con varias
   tiendas y personal contratado. Las fotos tienen que enseñar **tienda grande y
@@ -528,14 +535,7 @@ Cómo se les habla:
   - **Falta prueba social del giro.** Ningún caso de joyería con nombre y cifra.
     Es lo único que separa la página de un 10, y no es trabajo de review: hace
     falta un cliente que dé permiso.
-  - **Papelería: faltan dos fotos y por eso faltan dos bloques.** Se acabaron los
-  créditos de OpenAI a media generación. Sin las dos caras de la MISMA empleada
-  no se publica `SuiteCortina` —dos personas distintas es el defecto que el
-  referee cazó en moda— y sin la quinta foto el proceso quedó en cuatro días.
-  En cuanto haya créditos: `suite-pap-resuelto.webp` (la misma mujer de
-  `suite-pap-hoy`: camisa azul claro, mandil de mezclilla, pelo recogido bajo,
-  ahora tranquila en el mostrador con una tablet) y `proc-pap-5.webp`.
-- **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
+  - **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
     tres giros los arman y `/contacto` los usa, pero la página de agenda los
     ignora: el dato se pierde en el último salto.
   - **Dos objetos de las fotos no aguantan el 300%**: el cabezal del tripié de
