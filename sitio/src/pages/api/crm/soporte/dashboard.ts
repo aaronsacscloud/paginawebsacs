@@ -27,7 +27,7 @@ const diaMx = (iso?: string | null) => iso ? new Date(new Date(iso).getTime() - 
 // PostgREST corta en 1000 filas EN ESTE PROYECTO (max_rows=1000): un .limit()
 // mayor subcuenta en silencio. Paginamos para no falsear los agregados.
 async function leerTodos(): Promise<any[]> {
-  const cols = 'conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, csat_at, csat_campana_id, reabierto_count';
+  const cols = 'conversation_id, company_id, cuenta, estado, tema, sentimiento, asignado, abierto_at, primera_respuesta_at, resuelto_at, ultima_actividad_at, csat_score, csat_at, csat_campana_id, reabierto_count, rating_intercom, rating_intercom_at, rating_intercom_remark';
   const out: any[] = [];
   for (let off = 0; off < 200000; off += 1000) {
     const { data, error } = await supabase.from('crm_soporte_tickets').select(cols).order('conversation_id').range(off, off + 999);
@@ -118,6 +118,22 @@ export const GET: APIRoute = async ({ url }) => {
     };
   };
   const cs = csatDe(P.ini, P.fin), csAnt = csatDe(P.antIni, P.antFin);
+
+  // ── La OTRA encuesta: la nativa de Intercom, la que pide al cerrar el chat.
+  // Mide lo mismo pero pregunta en el momento correcto (dentro de la
+  // conversación, no la próxima vez que el cliente entra al ERP). Hoy trae cero
+  // en TODA la cuenta porque la opción está apagada en Intercom; se calcula
+  // igual para que el día que se prenda el tablero ya la esté esperando.
+  const ratingDe = (a: number, b: number) => {
+    const con = t.filter((x: any) => x.rating_intercom != null && dentro(x.rating_intercom_at || x.resuelto_at, a, b));
+    const notas = con.map((x: any) => Number(x.rating_intercom)).filter((v) => v >= 1 && v <= 5);
+    const dist: Record<string, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const v of notas) dist[v] = (dist[v] || 0) + 1;
+    return { n: notas.length, dist, con,
+      promedio: notas.length ? Math.round((notas.reduce((s2, v) => s2 + v, 0) / notas.length) * 10) / 10 : null };
+  };
+  const ri = ratingDe(P.ini, P.fin), riAnt = ratingDe(P.antIni, P.antFin);
+  const ratingHistorico = t.filter((x: any) => x.rating_intercom != null).length;
   const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : null);
 
   // A quién hay que llamar: cada 1 o 2 con nombre. El sistema ya levanta el
@@ -292,6 +308,20 @@ export const GET: APIRoute = async ({ url }) => {
       detractores: cs.detractores, detractores_pct: pct(cs.detractores, cs.n),
       cobertura: { resueltos: cs.cohorte.length, preguntados: cs.preguntados, respondieron: cs.n, tasa_pct: pct(cs.n, cs.cohorte.length) },
       lista_detractores: detractores,
+      // La encuesta de Intercom vive aparte del CSAT del ERP: son dos preguntas
+      // distintas en dos momentos distintos y promediarlas juntas escondería
+      // que una de las dos no está preguntando nada.
+      intercom: {
+        n: ri.n, promedio: ri.promedio, anterior: riAnt.promedio, dist: ri.dist,
+        historico: ratingHistorico,
+        // Si nunca ha llegado una sola calificación en toda la historia, el
+        // switch está apagado en Intercom. No es que a nadie le importe.
+        activa: ratingHistorico > 0,
+        comentarios: ri.con.filter((x: any) => x.rating_intercom_remark).map((x: any) => ({
+          cuenta: x.cuenta, rating: Number(x.rating_intercom), remark: String(x.rating_intercom_remark).slice(0, 300),
+          fecha: x.rating_intercom_at || x.resuelto_at || null,
+        })).slice(0, 20),
+      },
     },
     por_estado: cuentaCon('estado', 'otros', t),
     por_sentimiento: cuentaCon('sentimiento', 'neutral', delPeriodo),

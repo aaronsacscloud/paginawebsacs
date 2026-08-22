@@ -124,6 +124,9 @@ export function parseEvento(body: any): {
   asunto: string | null; vistaPrevia: string | null; cuerpo: string | null; prioridad: string | null;
   asignado: string | null; cuenta: string | null; autorEmail: string | null;
   abiertoAt: string | null; resueltoAt: string | null; ultimaAt: string | null; url: string | null;
+  /** Calificación nativa de Intercom, tal cual la manda (forma no documentada
+   *  públicamente: se pasa cruda y upsertTicket extrae lo que reconoce). */
+  conversationRating: any | null;
 } | null {
   const topic = String(body?.topic || '');
   const item = body?.data?.item;
@@ -164,6 +167,7 @@ export function parseEvento(body: any): {
     resueltoAt: estado === 'resuelto' ? (seg(item.updated_at) || new Date().toISOString()) : null,
     ultimaAt: seg(item.updated_at) || new Date().toISOString(),
     url: 'https://app.intercom.com/a/apps/' + APP_ID + '/conversations/' + item.id,
+    conversationRating: item.conversation_rating || null,
   };
 }
 
@@ -222,6 +226,17 @@ export async function upsertTicket(ev: ReturnType<typeof parseEvento>): Promise<
   fila.ultima_actividad_at = esViejo ? prev!.ultima_actividad_at : ev.ultimaAt;
   if (ev.abiertoAt) fila.abierto_at = ev.abiertoAt;
   if (ev.resueltoAt && !esViejo) fila.resuelto_at = ev.resueltoAt;
+  // Calificación nativa de Intercom, si el evento la trae. Nunca se sobrescribe
+  // con null: un evento posterior sin el campo borraría una calificación real.
+  const cr = ev.conversationRating;
+  const ratingIntercom = cr && Number.isFinite(Number(cr.rating)) ? Number(cr.rating) : null;
+  if (ratingIntercom != null) {
+    fila.rating_intercom = ratingIntercom;
+    fila.rating_intercom_at = cr.created_at ? new Date(cr.created_at * 1000).toISOString() : new Date().toISOString();
+    fila.rating_intercom_remark = cr.remark ? String(cr.remark).slice(0, 2000) : null;
+    fila.rating_intercom_raw = cr;
+  }
+
   if (!prev?.primera_respuesta_at && esRespuestaAdmin) fila.primera_respuesta_at = new Date().toISOString();
   if (reabierto) { fila.reabierto_count = (prev?.reabierto_count || 0) + 1; fila.resuelto_at = null; }
 

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { S, Tag, Aviso, Vacio, Cargando, fmtFecha } from '../email/ui';
 import ClienteDrawer360 from '../ClienteDrawer360';
 import Hallazgos from './Hallazgos';
+import Capacitacion from './Capacitacion';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
 
 // ─── Gama (la de Cotizaciones) ───
@@ -80,6 +81,38 @@ function Tarjeta({ titulo, cap, extra, children }: { titulo: string; cap?: strin
       {cap && <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginTop: 3, marginBottom: 16 }}>{cap}</div>}
       {!cap && <div style={{ height: 14 }} />}
       {children}
+    </div>
+  );
+}
+
+const VISTAS = [
+  { id: 'tablero', label: 'Tablero' },
+  { id: 'chat', label: 'Lo que salió del chat' },
+  { id: 'calificacion', label: 'Calificación' },
+  { id: 'capacitacion', label: 'Capacitación' },
+] as const;
+type Vista = typeof VISTAS[number]['id'];
+
+/** Barra de vistas. El tablero se estaba comiendo cuatro temas distintos en una
+ *  sola pantalla de cinco mil píxeles; cada uno se gestiona por separado. */
+function BarraVistas({ vista, setVista, pendientes }: { vista: Vista; setVista: (v: Vista) => void; pendientes: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', borderBottom: '1px solid #f0eff3', marginBottom: 18 }}>
+      {VISTAS.map(v => (
+        <button key={v.id} onClick={() => setVista(v.id)} aria-current={vista === v.id ? 'page' : undefined}
+          style={{
+            border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            padding: '9px 13px 11px', fontSize: '0.82rem', position: 'relative',
+            fontWeight: vista === v.id ? 800 : 500,
+            color: vista === v.id ? '#5B4BD6' : '#8a8a92',
+            boxShadow: vista === v.id ? 'inset 0 -3px 0 #9B8CFA' : 'none',
+          }}>
+          {v.label}
+          {v.id === 'chat' && pendientes > 0 && (
+            <span style={{ marginLeft: 6, background: '#9B8CFA', color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: '0.6rem', fontWeight: 800 }}>{pendientes}</span>
+          )}
+        </button>
+      ))}
     </div>
   );
 }
@@ -250,6 +283,67 @@ function AreaFlujo({ serie, periodo, kpis, etiqueta }: { serie: any[]; periodo: 
           </div>
         ))}
       </div>
+    </Tarjeta>
+  );
+}
+
+// ── La encuesta NATIVA de Intercom ────────────────────────────────────────
+// Intercom trae su propia calificación al cerrar el chat y la expone en la API
+// (`conversation_rating`). Es mejor pregunta que la nuestra: se hace en el
+// momento y en el mismo lugar donde pasó la atención, no la próxima vez que el
+// cliente entra al ERP. Hoy no llega ninguna porque está APAGADA en Intercom —
+// y eso hay que decirlo, no dibujar un cero como si a nadie le importara.
+function RatingIntercom({ intercom, etiqueta }: { intercom: any; etiqueta: string }) {
+  const n = intercom?.n || 0;
+  const dist = intercom?.dist || {};
+  const max = Math.max(1, ...CARAS.map(c => dist[c.v] || 0));
+  return (
+    <Tarjeta titulo="Calificación al cerrar el chat (Intercom)"
+      cap="La encuesta que Intercom le muestra al cliente en el momento en que se cierra la conversación."
+      extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{etiqueta}</span>}>
+      {!intercom?.activa ? (
+        <div style={{ background: '#FFF6E3', border: '1px solid #E8C88A', borderRadius: 11, padding: '13px 15px', fontSize: '0.79rem', color: '#8a6512', lineHeight: 1.7 }}>
+          <b>Está apagada en Intercom.</b> Revisé la cuenta entera: de 150 conversaciones traídas, 146 cerradas
+          y <b>ninguna</b> con calificación. El campo existe en la API y el tablero ya lo está leyendo en cada
+          sincronización — el día que se prenda, aparece aquí solo, sin tocar código.
+          <div style={{ marginTop: 9, paddingTop: 9, borderTop: '1px solid #E8C88A66' }}>
+            No se puede prender desde la API: es un interruptor en la configuración de Intercom
+            (<i>Settings → Conversation ratings</i>). Es la única parte que tiene que hacer una persona.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginBottom: 16 }}>
+            <span style={{ fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: (intercom.promedio ?? 0) >= 4 ? VERDE_TINTA : (intercom.promedio ?? 0) >= 3 ? TINTA : ROJO }}>{intercom.promedio}</span>
+            <span style={{ fontSize: '0.9rem', color: '#a5a2af', fontWeight: 700 }}>/ 5</span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#a5a2af', fontWeight: 700 }}>{n} calificación{n === 1 ? '' : 'es'}</span>
+          </div>
+          {CARAS.map(c => {
+            const v = dist[c.v] || 0;
+            return (
+              <div key={c.v} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+                <span style={{ fontSize: '1.15rem', width: 24, textAlign: 'center' }}>{c.em}</span>
+                <span style={{ flex: 1, height: 9, background: '#f3f2f7', borderRadius: 5, overflow: 'hidden' }}>
+                  <span style={{ display: 'block', height: '100%', borderRadius: 5, width: `${(v / max) * 100}%`, background: c.color }} />
+                </span>
+                <span style={{ width: 34, textAlign: 'right', fontWeight: 800, fontSize: '0.79rem' }}>{v}</span>
+              </div>
+            );
+          })}
+          {(intercom.comentarios || []).length > 0 && (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 8 }}>Lo que escribieron</div>
+              {intercom.comentarios.map((c: any, i: number) => (
+                <div key={i} style={{ padding: '7px 0', borderTop: i ? '1px solid #f7f6fa' : 'none' }}>
+                  <span style={{ fontSize: '1rem', marginRight: 6 }}>{CARAS.find(x => x.v === c.rating)?.em}</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.76rem' }}>{c.cuenta}</span>
+                  <div style={{ fontSize: '0.77rem', color: '#3f3b4d', fontStyle: 'italic', marginTop: 3, lineHeight: 1.55 }}>"{c.remark}"</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </Tarjeta>
   );
 }
@@ -526,6 +620,17 @@ export default function SoporteTab() {
   const [hasta, setHasta] = useState(hoyMx());
   const [cliente, setCliente] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const [vista, setVista] = useState<Vista>('tablero');
+  // El contador del menú se pide aparte del tablero: la vista de capacitación y
+  // la de calificación no cargan el dashboard y aun así tienen que mostrarlo.
+  const [pendientes, setPendientes] = useState(0);
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/crm/soporte/hallazgos?estado=pendiente')
+      .then(r => r.json()).then(j => { if (vivo && !j.error) setPendientes(j.resumen?.pendientes || 0); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [recarga]);
 
   const query = modo === 'rango' && desde && hasta && desde <= hasta
     ? `desde=${desde}&hasta=${hasta}` : `dias=${dias}`;
@@ -546,20 +651,41 @@ export default function SoporteTab() {
       onRango={(a: string, b: string) => { setDesde(a); setHasta(b); }} />
   );
 
-  if (err) return <div className="sop" style={S.wrap}><Encabezado>{selector}</Encabezado><Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso></div>;
-  if (!d) return <div className="sop" style={S.wrap}><Encabezado>{selector}</Encabezado><Cargando que="el panel de soporte" /></div>;
+  const marco = (hijo: any, conSelector = true) => (
+    <div className="sop" style={S.wrap}>
+      <Encabezado periodo={conSelector && d ? d.periodo : undefined}>{conSelector ? selector : null}</Encabezado>
+      <BarraVistas vista={vista} setVista={setVista} pendientes={pendientes} />
+      {hijo}
+      {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} />}
+    </div>
+  );
+
+  // Estas dos no dependen del periodo ni del dashboard: se sirven de inmediato.
+  if (vista === 'chat') return marco(<Hallazgos onAbrirCliente={(id) => setCliente(id)} onCambio={() => setRecarga(r => r + 1)} sinTope />, false);
+  if (vista === 'capacitacion') return marco(<Capacitacion onAbrirCliente={(id) => setCliente(id)} />, false);
+
+  if (err) return marco(<Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso>);
+  if (!d) return marco(<Cargando que="el panel de soporte" />);
 
   const T = d.totales || {}, K = d.kpis || {}, per = d.periodo || {};
-  if (!T.total) return <div className="sop" style={S.wrap}><Encabezado>{selector}</Encabezado><Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." /></div>;
+  if (!T.total) return marco(<Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." />);
 
   const etiqueta = per.personalizado ? `${fechaCorta(per.desde)} – ${fechaCorta(per.hasta)}` : `últimos ${per.dias} días`;
   const sinResolver = K.sin_resolver || {};
   const hayAlarma = (sinResolver.estancados || 0) > 0;
 
-  return (
-    <div className="sop" style={S.wrap}>
-      <Encabezado periodo={per}>{selector}</Encabezado>
+  // ── Vista de CALIFICACIÓN: las dos encuestas, su cobertura y a quién llamar.
+  if (vista === 'calificacion') return marco(
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <RatingIntercom intercom={d.csat?.intercom || {}} etiqueta={etiqueta} />
+      <div className="sop-2">
+        <Calificacion csat={d.csat || {}} etiqueta={etiqueta} />
+        <Cobertura csat={d.csat || {}} onAbrir={(id) => setCliente(id)} />
+      </div>
+    </div>
+  );
 
+  return marco(
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Cinco KPIs, ni uno más: los cinco de la fila caben de un vistazo. La
             calificación no es uno de ellos — tiene sección propia abajo. */}
@@ -582,17 +708,6 @@ export default function SoporteTab() {
         </div>
 
         <TopClientes filas={d.top_clientes || []} etiqueta={etiqueta} onAbrir={(id) => setCliente(id)} />
-
-        <Hallazgos onAbrirCliente={(id) => setCliente(id)} onCambio={() => setRecarga(r => r + 1)} />
-
-        {/* La calificación va ANTES de las gráficas: es lo único que dice si el
-            cliente quedó bien. El sentimiento de abajo es cómo LLEGA; esto es
-            cómo SE VA. Las dos tarjetas van juntas a propósito — un promedio sin
-            su cobertura al lado invita a presumir un 4.8 de tres respuestas. */}
-        <div className="sop-2">
-          <Calificacion csat={d.csat || {}} etiqueta={etiqueta} />
-          <Cobertura csat={d.csat || {}} onAbrir={(id) => setCliente(id)} />
-        </div>
 
         <div className="sop-2">
           <AreaFlujo serie={d.tendencia || []} periodo={per} kpis={K} etiqueta={etiqueta} />
@@ -652,8 +767,5 @@ export default function SoporteTab() {
           )}
         </div>
       </div>
-
-      {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} />}
-    </div>
   );
 }

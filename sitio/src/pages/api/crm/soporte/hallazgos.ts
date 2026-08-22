@@ -79,12 +79,12 @@ export const PUT: APIRoute = async ({ request }) => {
   if (estado === 'aceptado') {
     if (!h.company_id) return json({ error: 'Este hallazgo no está ligado a un cliente todavía: el cron de backfill tiene que mapear la cuenta primero.' }, 409);
 
-    if (h.tipo === 'mejora') {
+    if (h.tipo === 'mejora' || h.tipo === 'duda') {
       const { data: m, error } = await supabase.from('mejoras').insert({
         company_id: h.company_id,
         titulo: String(h.titulo).slice(0, 200),
-        descripcion: [`Lo pidió el cliente en soporte:`, `"${h.cita}"`, h.accion ? `\nSugerido: ${h.accion}` : ''].filter(Boolean).join('\n'),
-        estado: 'idea', categoria: 'pendiente',
+        descripcion: [h.tipo === 'duda' ? 'Duda que el cliente trajo a soporte:' : 'Lo pidió el cliente en soporte:', `"${h.cita}"`, h.accion ? `\nSugerido: ${h.accion}` : ''].filter(Boolean).join('\n'),
+        estado: 'idea', categoria: h.tipo === 'duda' ? 'capacitacion' : 'pendiente',
         modulo: h.modulo || null,
         creado_por: user.nombre || user.email || 'CRM',
       }).select('id').single();

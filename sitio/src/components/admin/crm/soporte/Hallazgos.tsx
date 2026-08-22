@@ -21,7 +21,7 @@ const TIPO: Record<string, { label: string; franja: string; bg: string; fg: stri
 
 const fecha = (d?: string | null) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '';
 
-export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente: (id: string) => void; onCambio?: () => void }) {
+export default function Hallazgos({ onAbrirCliente, onCambio, sinTope }: { onAbrirCliente: (id: string) => void; onCambio?: () => void; sinTope?: boolean }) {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
   const [vista, setVista] = useState<'pendiente' | 'aceptado' | 'descartado'>('pendiente');
@@ -30,7 +30,7 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
   const [descartando, setDescartando] = useState<any>(null);
   // Con el histórico cargado son 28 tarjetas y la sección se come la pantalla:
   // quien entra a Soporte a ver el tablero no viene a revisar la bandeja.
-  const [todas, setTodas] = useState(false);
+  const [todas, setTodas] = useState(!!sinTope);
 
   const cargar = (v = vista) => {
     setD(null); setErr('');
@@ -39,7 +39,7 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
       .then(j => { j.error ? setErr(j.error) : setD(j); })
       .catch(() => setErr('Sin conexión'));
   };
-  useEffect(() => { setTodas(false); cargar(vista); /* eslint-disable-next-line */ }, [vista]);
+  useEffect(() => { setTodas(!!sinTope); cargar(vista); /* eslint-disable-next-line */ }, [vista]);
 
   async function mover(h: any, estado: 'aceptado' | 'descartado', motivo?: string) {
     if (trabajando) return;
@@ -65,8 +65,9 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
 
   const R = d.resumen || {};
   const filas = d.data || [];
-  const TOPE = 8;
-  const vistas = todas ? filas : filas.slice(0, TOPE);
+  // En su vista propia no hay tope: para eso es la vista.
+  const TOPE = sinTope ? Infinity : 8;
+  const vistas = (todas || sinTope) ? filas : filas.slice(0, TOPE);
   const chip = (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#cdbdf7' : '#e2e4e9', background: on ? '#EEECFE' : '#fff',
     color: on ? '#6d4bc7' : '#666', borderRadius: 8, padding: '5px 12px', fontSize: '0.74rem',
@@ -142,7 +143,7 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
         );
       })}
 
-      {filas.length > TOPE && (
+      {!sinTope && filas.length > TOPE && (
         <button onClick={() => setTodas(!todas)} style={{ ...S.btnG, marginTop: 2 }}>
           {todas ? `Ver solo ${TOPE}` : `Ver las ${filas.length}`}
         </button>

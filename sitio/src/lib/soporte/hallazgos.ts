@@ -32,14 +32,14 @@ const IV = { Authorization: 'Bearer ' + TOKEN, 'Intercom-Version': '2.11', 'Cont
  *  que revisé. */
 const TOPE_TEXTO = 12000;
 
-export const TIPOS = ['oportunidad', 'mejora', 'riesgo', 'testimonio'] as const;
+export const TIPOS = ['oportunidad', 'mejora', 'riesgo', 'testimonio', 'duda'] as const;
 export type TipoHallazgo = typeof TIPOS[number];
 
 // ── Esquema de salida ──────────────────────────────────────────────────────
 // Cerrado a propósito: el modelo no puede devolver un campo que no esté aquí, y
 // si falta uno obligatorio el hallazgo no existe.
 const Hallazgo = z.object({
-  tipo: z.enum(TIPOS).describe('oportunidad = quiere algo que se vende o se activa; mejora = el producto no hace algo que necesita; riesgo = molesto, reincidente o amenaza con irse; testimonio = elogio explícito en primera persona'),
+  tipo: z.enum(TIPOS).describe('oportunidad = quiere algo que se vende o se activa; mejora = el producto NO hace algo que necesita; duda = el sistema SÍ lo hace y el cliente no supo cómo; riesgo = molesto o amenaza con irse; testimonio = elogio explícito en primera persona'),
   cita: z.string().describe('Frase TEXTUAL del cliente, copiada tal cual del hilo, sin corregir ortografía ni acentos. Entre 15 y 300 caracteres.'),
   titulo: z.string().describe('Qué pide, en una línea de máximo 80 caracteres. En español.'),
   modulo: z.string().nullable().describe('Módulo de SACS al que se refiere, EXACTO de la lista dada, o null.'),
@@ -100,7 +100,13 @@ const SISTEMA = [
   '  ("el sistema solo te permite seleccionar un tipo de tarjeta"), o pide una función que no existe.',
   '- riesgo: habla de CANCELAR o darse de baja, o expresa enojo explícito ("es inaceptable",',
   '  "llevo tres semanas con esto", "pésimo servicio").',
+  '- duda: pregunta CÓMO se hace algo que el sistema sí hace. No falta la función: falta saber usarla.',
+  '  Es la materia prima de la capacitación, así que el título debe nombrar el TEMA, no el caso',
+  '  particular: "Cómo configurar la impresora de tickets", no "A Nammiskin se le desconfiguró".',
   '- testimonio: elogia el producto en primera persona, de forma citable.',
+  '',
+  'La frontera entre mejora y duda importa más que ninguna otra: mejora es que el producto NO puede,',
+  'duda es que sí puede y el cliente no supo. Si no estás seguro de que el sistema no lo hace, es duda.',
   '',
   'LO QUE NO ES UN HALLAZGO, aunque lo parezca:',
   '- UN BUG NO ES UNA MEJORA. "La factura la hizo mal el sistema", "no me deja facturar",',

@@ -61,6 +61,14 @@ async function correr(): Promise<Response> {
         }
         if (!companyId) { out.sin_cuenta++; }
 
+        // Calificación NATIVA de Intercom (la que pide al cerrar el chat). Hoy
+        // viene null en todas: la opción está apagada en el workspace. Se lee
+        // igual para que el día que se prenda no haya que tocar nada, y se
+        // guarda el objeto crudo porque la forma exacta no la pude confirmar
+        // en la documentación pública.
+        const cr = c.conversation_rating || null;
+        const rating = cr && Number.isFinite(Number(cr.rating)) ? Number(cr.rating) : null;
+
         const estado = estadoDe(c);
         const asunto = c.title || c.source?.subject || null;
         const cuerpo = c.source?.body ? String(c.source.body).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : null;
@@ -70,6 +78,10 @@ async function correr(): Promise<Response> {
           conversation_id: String(c.id), company_id: companyId, contact_id: crmContactId,
           cuenta: cuenta ? normCuenta(cuenta) : null, estado,
           asunto, vista_previa: vistaPrevia, tema, sentimiento,
+          rating_intercom: rating,
+          rating_intercom_at: rating != null && cr?.created_at ? seg(cr.created_at) : null,
+          rating_intercom_remark: cr?.remark ? String(cr.remark).slice(0, 2000) : null,
+          rating_intercom_raw: cr || null,
           prioridad: c.priority || null,
           autor_email: email,
           abierto_at: seg(c.created_at),
