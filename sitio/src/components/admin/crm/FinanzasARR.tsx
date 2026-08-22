@@ -9,7 +9,7 @@
 // de errores, es lo que limita lo que este panel puede afirmar.
 import { useEffect, useMemo, useState } from 'react';
 import Cargando from './ui/Cargando';
-import { P, tarjetaKpi } from '../../../lib/crm/paleta';
+import { P, tarjetaKpi, CINTA } from '../../../lib/crm/paleta';
 
 const money = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 const kMoney = (n: number) => '$' + (n / 1_000_000).toFixed(2) + 'M';
@@ -41,11 +41,11 @@ const UP = P.verdeTinta, DOWN = P.rojoTinta, VIO = P.violetaTinta, ROSA = P.rosa
  * encabeza Cotizaciones. El color de la franja dice de qué habla el número
  * antes de leerlo — morado el recurrente, verde lo que entra, rosa lo que se va.
  */
-function Kpi({ k, v, s: sub, e, color, franja, ancho }: {
-  k: string; v: string; s?: React.ReactNode; e?: React.ReactNode; color?: string; franja: string; ancho?: boolean;
+function Kpi({ k, v, s: sub, e, color, franja, ancho, onClick }: {
+  k: string; v: string; s?: React.ReactNode; e?: React.ReactNode; color?: string; franja: string; ancho?: boolean; onClick?: () => void;
 }) {
   return (
-    <div style={tarjetaKpi(franja)}>
+    <div onClick={onClick} style={{ ...tarjetaKpi(franja), cursor: onClick ? 'pointer' : 'default' }}>
       <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>{k}</div>
       <div style={{ fontSize: ancho ? '1.55rem' : '1.375rem', fontWeight: 800, color: color || '#1a1a1a', marginTop: 4, letterSpacing: '-.02em' }}>{v}</div>
       {sub && <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 3, lineHeight: 1.5 }}>{sub}</div>}
@@ -70,6 +70,8 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [pendiente, setPendiente] = useState<string>('');
+  // Qué lista de cuentas se está viendo: la del KPI en el que se hizo clic.
+  const [detalle, setDetalle] = useState<'' | 'ganadas' | 'perdidas' | 'extras'>('');
 
   const cargar = (q = '') => {
     setD(null);
@@ -130,16 +132,16 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           v={t.crecimiento_12m_pct == null ? '—' : `${t.crecimiento_12m_pct > 0 ? '+' : ''}${t.crecimiento_12m_pct}%`}
           s={<>de {money(t.arr_hace_12m)} a hoy</>}
           e="A qué velocidad crece la base." />
-        <Kpi franja={P.verde} color={UP}
+        <Kpi franja={P.verde} color={UP} onClick={() => setDetalle('ganadas')}
           k="ARR ganado este mes" v={`+${money(t.ganado)}`}
           s={<>nuevo {money(p.nuevo)} · expansión {money(p.expansion)}</>}
-          e="Altas y ampliaciones de cuentas vivas." />
+          e={<>{d.detalle.ganadas.length} cuenta{d.detalle.ganadas.length === 1 ? '' : 's'} nueva{d.detalle.ganadas.length === 1 ? '' : 's'} · <b style={{ color: VIO }}>ver quiénes</b></>} />
         {/* Lo que se fue tiene su propio número: escondido dentro del neto no se
             ve venir, y es la mitad de la historia. */}
-        <Kpi franja={P.rosa} color={DOWN}
+        <Kpi franja={P.rosa} color={DOWN} onClick={() => setDetalle('perdidas')}
           k="ARR dado de baja este mes" v={money(t.perdido)}
           s={<>bajas {money(Math.abs(p.baja))} · contracción {money(Math.abs(p.contraccion))}</>}
-          e={<>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} en el mes.</>} />
+          e={<>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} · <b style={{ color: VIO }}>ver quiénes</b></>} />
         <Kpi franja={t.neto >= 0 ? P.verde : P.rojoTinta} color={t.neto >= 0 ? UP : DOWN}
           k="ARR neto" v={`${t.neto >= 0 ? '+' : ''}${money(t.neto)}`}
           s="ganado menos perdido"
@@ -265,6 +267,20 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
 
       {/* ── CUENTAS QUE CRECEN ── */}
       <div style={S.tit}>Cómo crece cada cuenta · recurrente + pagos únicos</div>
+
+      {/* El dinero se mide desde los PAGOS registrados, no desde el estado de
+          la cotización —que lo pone una persona—. Cuando las dos fuentes no
+          cuadran, la cifra de extras sale corta y nadie se entera. */}
+      {d.descuadres?.n > 0 && (
+        <div style={{ background: P.ambarAgua, border: '1px solid #f6e2c2', borderRadius: 11, padding: '12px 15px', marginBottom: 12, fontSize: '0.79rem', color: P.ambarTinta, lineHeight: 1.6 }}>
+          <b>{d.descuadres.n} cotización{d.descuadres.n === 1 ? '' : 'es'} marcada{d.descuadres.n === 1 ? '' : 's'} como pagada{d.descuadres.n === 1 ? '' : 's'} sin el pago capturado</b> — {money(d.descuadres.falta)}.
+          Estas cifras cuentan el dinero desde los pagos registrados, así que ese monto <b>no está sumado aquí</b>.
+          {' '}{d.descuadres.lista.slice(0, 3).map((q: any, i: number) => (
+            <span key={q.id}>{i > 0 ? ' · ' : ''}{q.numero} {q.empresa} ({money(q.total - q.cobrado)})</span>
+          ))}
+          {d.descuadres.n > 3 && ` y ${d.descuadres.n - 3} más.`}
+        </div>
+      )}
       <div className="fin-k2" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 13, marginBottom: 14 }}>
         <div style={S.card}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -299,17 +315,58 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           <div style={S.tit}>Ingreso por pagos únicos, mes a mes</div>
           {d.serie.map((x: any) => (
             <div key={x.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: '0.76rem' }}>
-              <span style={{ width: 42, color: '#8a8590' }}>{etiquetaMes(x.mes, x.mes.endsWith('-01'))}</span>
+              <span style={{ width: 42, color: P.tenue }}>{etiquetaMes(x.mes, x.mes.endsWith('-01'))}</span>
               <div style={{ height: 7, borderRadius: 9, background: '#f2f1f7', overflow: 'hidden', flex: 1 }}>
-                <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(x.monto_unicos ? 2 : 0, (x.monto_unicos / maxUnico) * 100)}%`, background: 'linear-gradient(90deg,#EFA6CA,#D9538E)' }} />
+                <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(x.monto_unicos ? 2 : 0, (x.monto_unicos / maxUnico) * 100)}%`, background: `linear-gradient(90deg,${P.rosaSuave},${P.rosa})` }} />
               </div>
               <span style={{ width: 74, textAlign: 'right', fontWeight: 800 }}>{x.monto_unicos ? money(x.monto_unicos) : '—'}</span>
-              <span style={{ width: 20, textAlign: 'right', color: '#a5a2af' }}>{x.unicos || ''}</span>
+              <span style={{ width: 20, textAlign: 'right', color: P.gris }}>{x.unicos || ''}</span>
             </div>
           ))}
           <div style={S.nota}>
-            <b>{money(d.unicos.total)}</b> en {d.unicos.n} pagos únicos. Es ingreso real que el ARR no cuenta —y no debe contar—,
-            pero que sin esta vista no se mide en ningún lado. Las <b>{d.ciclos.vitalicias} licencias vitalicias</b> son de esta familia.
+            <b>{money(d.unicos.total)}</b> en {d.unicos.n} pagos únicos, de los cuales{' '}
+            <b>{money(d.unicos.vitalicias.monto)}</b> son licencias vitalicias ({d.unicos.vitalicias.licencias} en total).
+            Es ingreso real que el ARR no cuenta —y no debe contar—, pero que sin esta vista no se mide en ningún lado.
+          </div>
+        </div>
+      </div>
+
+      {/* ── LA CUENTA COMPRA MÁS QUE SU LICENCIA ── */}
+      <div style={S.tit}>Quién compra extras · y cuándo se compran</div>
+      <div className="fin-k2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13, marginBottom: 14 }}>
+        <div style={S.card}>
+          <div style={S.tit}>Cuentas que ya repitieron</div>
+          {d.unicos.recurrentes_extra.length === 0
+            ? <div style={{ fontSize: '0.8rem', color: P.tenue, padding: '14px 0' }}>Todavía ninguna cuenta ha comprado un extra más de una vez.</div>
+            : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={S.th}>Cuenta</th><th style={{ ...S.th, textAlign: 'right' }}>Compras</th>
+                  <th style={{ ...S.th, textAlign: 'right' }}>Total</th><th style={{ ...S.th, textAlign: 'right' }}>Ticket</th>
+                </tr></thead>
+                <tbody>
+                  {d.unicos.recurrentes_extra.map((x: any) => (
+                    <tr key={x.company_id}>
+                      <td style={{ ...S.td, fontWeight: 800, cursor: onCuenta ? 'pointer' : 'default' }} onClick={() => onCuenta?.(x.company_id)}>{x.nombre}</td>
+                      <td style={{ ...S.td, textAlign: 'right' }}>{x.n}</td>
+                      <td style={{ ...S.td, textAlign: 'right', fontWeight: 800, color: ROSA }}>{money(x.monto)}</td>
+                      <td style={{ ...S.td, textAlign: 'right' }}>{money(x.ticket)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          <div style={S.nota}>
+            <b>Quien ya compró dos veces es quien va a comprar la tercera.</b> Esta lista es a quién ofrecerle el
+            siguiente desarrollo, y su ticket dice con cuánto empezar la conversación.
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={S.tit}>En qué mes del año se compran extras</div>
+          <Estacionalidad datos={d.unicos.estacionalidad} />
+          <div style={S.nota}>
+            Sumando todos los años, no un calendario del último. Los meses altos son cuando el cliente tiene
+            presupuesto y dice que sí — ofrecerle en su mes cuesta lo mismo y cierra más.
           </div>
         </div>
       </div>
@@ -414,6 +471,9 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
         </>
       )}
 
+      {detalle && (detalle === 'ganadas' || detalle === 'perdidas') &&
+        <PanelCuentas tipo={detalle} d={d} onCerrar={() => setDetalle('')} onCuenta={onCuenta} />}
+
       {pendiente && <PanelPendiente id={pendiente} onCerrar={() => setPendiente('')} onListo={() => { setPendiente(''); cargar(); }} />}
 
       <style>{`
@@ -424,6 +484,79 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
         }
       `}</style>
     </div>
+  );
+}
+
+/* ─── En qué mes del año se compran extras ───
+ * Doce barras, una por mes del calendario, sumando todos los años. Con un solo
+ * año esto es anécdota; con dos empieza a ser un calendario comercial. */
+function Estacionalidad({ datos }: { datos: any[] }) {
+  const max = Math.max(1, ...datos.map((x: any) => x.monto));
+  const NOM = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 150, marginTop: 8 }}>
+      {datos.map((x: any, i: number) => {
+        const h = (x.monto / max) * 100;
+        return (
+          <div key={x.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', height: '100%' }}>
+            {x.monto > 0 && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: ROSA, marginBottom: 4, whiteSpace: 'nowrap' }}>{Math.round(x.monto / 1000)}k</div>}
+            <div title={`${x.n} pago${x.n === 1 ? '' : 's'} · ${money(x.monto)}`}
+              style={{ width: '100%', borderRadius: '5px 5px 0 0', minHeight: 3, height: `${Math.max(2, h)}%`, background: x.monto ? `linear-gradient(180deg,${P.rosaSuave},${P.rosa})` : '#f2f1f7' }} />
+            <div style={{ fontSize: '0.62rem', color: P.tenue, marginTop: 6 }}>{NOM[i]}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── La lista de cuentas detrás de un KPI ───
+ * "+$64,012" no se puede verificar ni contar en una junta; los nombres sí. */
+function PanelCuentas({ tipo, d, onCerrar, onCuenta }: { tipo: string; d: any; onCerrar: () => void; onCuenta?: (id: string) => void }) {
+  const ganadas = tipo === 'ganadas';
+  const filas = ganadas ? d.detalle.ganadas : d.detalle.perdidas;
+  const suma = filas.reduce((a: number, x: any) => a + x.arr, 0);
+  const mes = new Date().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+  return (
+    <>
+      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(30,20,60,.35)', zIndex: 700 }} />
+      <div style={{
+        position: 'fixed', top: '8vh', left: '50%', transform: 'translateX(-50%)', width: 'min(700px, 94vw)', maxHeight: '82vh',
+        background: '#fff', borderRadius: 16, boxShadow: '0 24px 60px rgba(30,10,70,.28)', zIndex: 701, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        <div style={{ height: 4, background: CINTA }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '15px 20px', borderBottom: `1px solid ${P.lineaSuave}` }}>
+          <div>
+            <div style={{ fontSize: '1rem', fontWeight: 800 }}>{ganadas ? 'Cuentas ganadas' : 'Cuentas dadas de baja'} en {mes}</div>
+            <div style={{ fontSize: '0.75rem', color: P.tenue }}>
+              {filas.length} cuenta{filas.length === 1 ? '' : 's'} · {money(suma)} de ARR
+            </div>
+          </div>
+          <button onClick={onCerrar} style={{ marginLeft: 'auto', ...S.btn, padding: '7px 11px' }}>Cerrar</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 20px 16px' }}>
+          {filas.length === 0
+            ? <div style={{ padding: 30, textAlign: 'center', color: P.tenue, fontSize: '0.84rem' }}>
+                Ninguna {ganadas ? 'alta' : 'baja'} este mes.
+              </div>
+            : filas.map((x: any) => (
+              <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${P.lineaSuave}` }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, cursor: onCuenta ? 'pointer' : 'default' }}
+                    onClick={() => x.company_id && onCuenta?.(x.company_id)}>{x.nombre}</div>
+                  <div style={{ fontSize: '0.72rem', color: P.tenue }}>
+                    {x.plan || 'sin plan'} · {x.ciclo} · {x.fecha}
+                    {!ganadas && <> · {x.motivo ? `motivo: ${x.motivo}` : <b style={{ color: P.ambarTinta }}>sin motivo capturado</b>}</>}
+                  </div>
+                </div>
+                <span style={{ fontWeight: 800, color: ganadas ? UP : DOWN, whiteSpace: 'nowrap' }}>
+                  {ganadas ? '+' : '−'}{money(x.arr)}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </>
   );
 }
 

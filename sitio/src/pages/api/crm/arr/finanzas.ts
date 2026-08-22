@@ -114,6 +114,19 @@ export const GET: APIRoute = async ({ url }) => {
   // incompleto y decirlo es parte del dato.
   const ledgerDesde = movs.length ? movs.map((m: any) => mesDe(m.fecha)).sort()[0] : null;
 
+  /* ── Quién entró y quién se fue este mes ──
+     El KPI dice cuánto; esto dice a quién. Sin nombres, "+$64,012" no se puede
+     verificar ni contar en una junta. */
+  const nombreDe = (s: any) => s.companies?.nombre || 'Cuenta sin nombre';
+  const ganadasMes = recurrentes
+    .filter((s: any) => mesDe(s.fecha_inicio) === mesHoy)
+    .map((s: any) => ({ id: s.id, company_id: s.company_id, nombre: nombreDe(s), plan: s.nombre_plan, ciclo: s.ciclo, arr: r0(num(s.arr)), fecha: String(s.fecha_inicio).slice(0, 10) }))
+    .sort((a: any, b: any) => b.arr - a.arr);
+  const perdidasMes = recurrentes
+    .filter((s: any) => s.cancelada_at && mesDe(s.cancelada_at) === mesHoy)
+    .map((s: any) => ({ id: s.id, company_id: s.company_id, nombre: nombreDe(s), plan: s.nombre_plan, ciclo: s.ciclo, arr: r0(num(s.arr)), fecha: String(s.cancelada_at).slice(0, 10), motivo: s.razon_cancelacion || null }))
+    .sort((a: any, b: any) => b.arr - a.arr);
+
   // ── Calidad del ingreso ───────────────────────────────────────────────────
   const arrInicioMes = r0(arrAlCierre(mesMas(mesHoy, -1)));
   const canceladasMes = recurrentes.filter((s: any) => s.cancelada_at && mesDe(s.cancelada_at) === mesHoy).length;
@@ -185,6 +198,51 @@ export const GET: APIRoute = async ({ url }) => {
 
   const totalUnicos = r0(pagos.reduce((a: number, p: any) => a + num(p.monto), 0));
 
+  /* ── Los pagos únicos, medidos en serio ──
+     No son ARR y nunca deben sumarse a él, pero son la otra mitad de lo que
+     produce una cuenta: plugins, personalizaciones, implementaciones, vitalicias.
+     Tres preguntas que esta parte tiene que contestar:
+       · ¿cuánto entró de extras en el periodo?
+       · ¿quién compra extras y cada cuánto? (el que ya compró dos veces es el
+         que va a comprar la tercera)
+       · ¿en qué meses del año se compran? (para saber cuándo ofrecer) */
+  const vitaliciasIds = new Set(subs.filter((s: any) => s.ciclo === 'vitalicia').map((s: any) => s.id));
+  const { data: pagosVit } = await supabase.from('payments')
+    .select('id, monto, fecha, estado, company_id, subscription_id')
+    .in('subscription_id', [...vitaliciasIds].slice(0, 200)).limit(500);
+  const pagosVitalicios = (pagosVit || []).filter((p: any) => p.estado !== 'reembolsado');
+  const vitaliciasMonto = r0(pagosVitalicios.reduce((a: number, p: any) => a + num(p.monto), 0));
+
+  // Estacionalidad: en qué mes del año se compran extras. Con dos años de
+  // datos esto deja de ser anécdota y se vuelve calendario comercial.
+  const porMesAnio: Record<number, { n: number; monto: number }> = {};
+  pagos.forEach((p: any) => {
+    const m = Number(String(p.fecha || '').slice(5, 7));
+    if (!m) return;
+    porMesAnio[m] = porMesAnio[m] || { n: 0, monto: 0 };
+    porMesAnio[m].n++; porMesAnio[m].monto += num(p.monto);
+  });
+  const estacionalidad = Array.from({ length: 12 }, (_, i) => ({
+    mes: i + 1, n: porMesAnio[i + 1]?.n || 0, monto: r0(porMesAnio[i + 1]?.monto || 0),
+  }));
+
+  /* Cotizaciones marcadas como pagadas SIN pago capturado. El panel mide el
+     dinero desde `payments` —lo que de verdad entró— y no desde el estado de la
+     cotización, que lo pone una persona. Cuando las dos fuentes no cuadran, la
+     cifra de extras sale corta y nadie se entera: pasó con una de $44,505. */
+  const { data: cotsPaid } = await supabase.from('quotes')
+    .select('id, numero, empresa, total, company_id').eq('estado', 'paid').limit(500);
+  const cobradoPorCot: Record<string, number> = {};
+  const { data: pagosCot } = await supabase.from('payments')
+    .select('quote_id, monto, estado').not('quote_id', 'is', null).limit(3000);
+  (pagosCot || []).filter((p: any) => p.estado !== 'reembolsado')
+    .forEach((p: any) => { cobradoPorCot[p.quote_id] = (cobradoPorCot[p.quote_id] || 0) + num(p.monto); });
+  const descuadres = (cotsPaid || [])
+    .map((q: any) => ({ id: q.id, numero: q.numero, empresa: q.empresa, company_id: q.company_id, total: r0(num(q.total)), cobrado: r0(cobradoPorCot[q.id] || 0) }))
+    .filter(q => q.cobrado < q.total - 1)
+    .sort((a, b) => (b.total - b.cobrado) - (a.total - a.cobrado));
+  const faltaCapturar = r0(descuadres.reduce((a, q) => a + (q.total - q.cobrado), 0));
+
   // Los nombres que faltan: una cuenta que compró un plugin y nunca tuvo
   // licencia no aparece en `subs`, y salía como "Cuenta sin nombre" con su
   // dinero al lado — que es justo el caso que esta vista existe para mostrar.
@@ -194,6 +252,15 @@ export const GET: APIRoute = async ({ url }) => {
     (comps || []).forEach((c: any) => { nombrePorId[c.id] = c.nombre; });
   }
 
+  // Cuándo fue la última vez que una cuenta compró un extra: con eso se sabe
+  // a quién tocarle la puerta, que es la pregunta que sigue al número.
+  const ultimoExtra: Record<string, string> = {};
+  pagos.forEach((p: any) => {
+    const cid = p.company_id || p.quotes?.company_id; if (!cid) return;
+    const f = String(p.fecha || '').slice(0, 10);
+    if (!ultimoExtra[cid] || f > ultimoExtra[cid]) ultimoExtra[cid] = f;
+  });
+
   const cuentas = Object.keys({ ...extras, ...arrPorCuenta })
     .map(cid => ({
       company_id: cid,
@@ -202,6 +269,11 @@ export const GET: APIRoute = async ({ url }) => {
       unicos: r0(extras[cid]?.monto || 0),
       n_unicos: extras[cid]?.n || 0,
       total: r0((arrPorCuenta[cid] || 0) + (extras[cid]?.monto || 0)),
+      ultimo_extra: ultimoExtra[cid] || null,
+      // Cuánto pesa lo no recurrente en esa cuenta: un 50% dice que el cliente
+      // compra desarrollo, no solo licencia, y eso cambia cómo se le vende.
+      pct_unicos: (arrPorCuenta[cid] || 0) + (extras[cid]?.monto || 0) > 0
+        ? r0(((extras[cid]?.monto || 0) / ((arrPorCuenta[cid] || 0) + (extras[cid]?.monto || 0))) * 100) : 0,
     }))
     .sort((a, b) => b.total - a.total);
 
@@ -337,13 +409,25 @@ export const GET: APIRoute = async ({ url }) => {
       meta,
       meta_pct: meta?.monto ? r0((arrActivo / meta.monto) * 1000) / 10 : null,
     },
+    detalle: { ganadas: ganadasMes, perdidas: perdidasMes },
     puente: { ...puente, ganado, perdido, neto, arr_inicio: arrInicioMes, arr_fin: r0(arrActivo), ledger_desde: ledgerDesde },
     calidad,
     serie,
     ciclos: { por_ciclo: porCiclo, vitalicias: vitalicias.length, mrr_mensual: r0(activas.filter((s: any) => s.ciclo === 'mensual').reduce((a: number, s: any) => a + num(s.mrr), 0)) },
     planes: porPlan,
     cuentas: cuentas.slice(0, 40),
-    unicos: { total: totalUnicos, n: pagos.length, sin_cliente: unicosSinCliente, monto_sin_cliente: r0(montoSinCliente) },
+    unicos: {
+      total: totalUnicos, n: pagos.length,
+      sin_cliente: unicosSinCliente, monto_sin_cliente: r0(montoSinCliente),
+      vitalicias: { n: pagosVitalicios.length, monto: vitaliciasMonto, licencias: vitaliciasIds.size },
+      estacionalidad,
+      // Cuentas que ya compraron extras más de una vez: la señal más barata de
+      // quién va a volver a comprar.
+      recurrentes_extra: Object.entries(extras).filter(([, v]) => v.n >= 2)
+        .map(([cid, v]) => ({ company_id: cid, nombre: nombrePorId[cid] || 'Cuenta sin nombre', n: v.n, monto: r0(v.monto), ticket: r0(v.monto / v.n) }))
+        .sort((a, b) => b.monto - a.monto),
+    },
+    descuadres: { n: descuadres.length, falta: faltaCapturar, lista: descuadres.slice(0, 20) },
     concentracion,
     calendario,
     cohortes,
