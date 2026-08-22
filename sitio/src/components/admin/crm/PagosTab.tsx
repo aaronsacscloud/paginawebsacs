@@ -43,6 +43,29 @@ const METODOS = ['mercadopago', 'transferencia', 'tarjeta', 'stripe', 'efectivo'
 const METODO_LABEL: Record<string, string> = { mercadopago: 'Mercado Pago', transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Stripe', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
 const METODO_COLOR: Record<string, string> = { mercadopago: '#009ee3', transferencia: '#2563eb', tarjeta: '#7c3aed', stripe: '#635bff', efectivo: '#16a34a', oxxo: '#dc2626', otro: '#6b7280' };
 
+// ── Empresa y contacto son dos datos distintos ──
+// Iban pegados en una sola celda ("contacto · empresa") y el resultado era
+// ilegible: "Lorena del Carmen Medina Cisneros · Lorena del Carmen Medina
+// Cisneros" cuando el contacto se llama igual que su empresa, y
+// "+52 33 1324 4547 · FEELINGS" cuando el contacto se dio de alta con el
+// teléfono por nombre. Cada uno en su columna se lee solo.
+function nombreContacto(c: any): string {
+  if (!c) return '';
+  const n = `${c.nombre || ''} ${c.apellido || ''}`.trim();
+  if (n) return n;
+  // Sin nombre, el correo identifica mejor que un guion.
+  return c.email ? String(c.email).split('@')[0] : '';
+}
+
+/**
+ * El mismo nombre en las dos columnas no dice nada dos veces: dice ruido.
+ * Pasa cuando la empresa se creó a partir del contacto y heredó su nombre
+ * (Lorena del Carmen Medina Cisneros). En ese caso la columna de contacto se
+ * queda con el correo, que sí agrega algo.
+ */
+const mismoNombre = (a: string, b: string) =>
+  !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+
 // Semáforo de mora: 1-7 días ámbar, 8-30 naranja, +30 rojo.
 function moraBadge(dias: number) {
   const [bg, fg] = dias >= 30 ? ['#fde8e8', '#b93333'] : dias >= 8 ? ['#ffedd5', '#c2410c'] : ['#fef3c7', '#b45309'];
@@ -447,7 +470,7 @@ export default function PagosTab() {
             {payments.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</div>
             ) : payments.map((p) => {
-              const contacto = p.contacts ? `${p.contacts.nombre || ''} ${p.contacts.apellido || ''}`.trim() : '';
+              const contacto = nombreContacto(p.contacts);
               const empresa = p.companies?.nombre || '';
               const compId = p.companies?.id;
               return (
@@ -460,7 +483,12 @@ export default function PagosTab() {
                     )}
                     <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '0.95rem' }}>{fmt(p.monto)}</span>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: '0.86rem', marginTop: 4 }}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999', fontWeight: 400 }}> · {empresa}</span> : null}</div>
+                  {/* En la tarjeta también van en dos renglones: la empresa arriba
+                      —que es a quien se le cobra— y la persona debajo. */}
+                  <div style={{ fontWeight: 700, fontSize: '0.86rem', marginTop: 4 }}>
+                    {empresa || <span style={{ color: '#c0392b', fontWeight: 600 }}>Sin cliente</span>}
+                  </div>
+                  {contacto && !mismoNombre(contacto, empresa) && <div style={{ fontSize: '0.76rem', color: '#888' }}>{contacto}</div>}
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4, fontSize: '0.75rem', color: '#888' }}>
                     <span>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? ` · ${p.subscriptions.ciclo}` : ''}</span>
                     <span style={{ marginLeft: 'auto' }}>{p.numero_acuse
@@ -474,18 +502,37 @@ export default function PagosTab() {
         ) : (
         <div className="crm-scroll-x">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Fecha', 'Contacto / Empresa', 'Tipo', 'Concepto', 'Referencia', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+          <thead><tr>{['Fecha', 'Empresa', 'Contacto', 'Tipo', 'Concepto', 'Referencia', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
           <tbody>
             {payments.length === 0 ? (
-              <tr><td colSpan={6} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</td></tr>
+              <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</td></tr>
             ) : payments.map((p) => {
-              const contacto = p.contacts ? `${p.contacts.nombre || ''} ${p.contacts.apellido || ''}`.trim() : '';
+              const contacto = nombreContacto(p.contacts);
               const empresa = p.companies?.nombre || '';
+              const cuenta = p.companies?.sacs_account || '';
               const compId = p.companies?.id;
               return (
                 <tr key={p.id} onClick={() => compId && setDrawerCompany(compId)} style={{ cursor: compId ? 'pointer' : 'default' }}>
                   <td style={S.td}>{fmtDate(p.fecha)}</td>
-                  <td style={S.td}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999' }}> · {empresa}</span> : null}</td>
+                  {/* La empresa manda: es el clic que abre la ficha. */}
+                  <td style={S.td}>
+                    {empresa ? (
+                      <>
+                        <div style={{ fontWeight: 600 }}>{empresa}</div>
+                        {cuenta && cuenta !== empresa && <div style={{ fontSize: '0.72rem', color: '#a3a3ab' }}>{cuenta}</div>}
+                      </>
+                    ) : <span style={{ color: '#c0392b', fontSize: '0.78rem' }}>Sin cliente</span>}
+                  </td>
+                  <td style={S.td}>
+                    {contacto && !mismoNombre(contacto, empresa) ? (
+                      <>
+                        <div>{contacto}</div>
+                        {p.contacts?.email && <div style={{ fontSize: '0.72rem', color: '#a3a3ab' }}>{p.contacts.email}</div>}
+                      </>
+                    ) : p.contacts?.email ? (
+                      <span style={{ fontSize: '0.78rem', color: '#7c7c86' }}>{p.contacts.email}</span>
+                    ) : <span style={{ color: '#bcbcc4' }}>—</span>}
+                  </td>
                   <td style={S.td}>
                     <span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span>
                     {/* Se cobró solo: la sub está domiciliada, nadie mandó un link. */}
