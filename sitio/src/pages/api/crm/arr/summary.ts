@@ -136,6 +136,29 @@ export const GET: APIRoute = async () => {
 
   const sync = (compRes.data || []).map(c => c.actividad_sync_at).filter(Boolean).sort().pop() || null;
 
-  return new Response(JSON.stringify({ kpis, meta, riesgo, meses, vencidas, actividad_sync_at: sync }, null, 2),
+  // ── Cobrado este mes (y el anterior, para saber si vamos mejor o peor) ──
+  // Es el número que faltaba en Pagos: todo lo demás es lo que DEBERÍA entrar;
+  // este es el único que dice cuánto entró de verdad. Los pagos anulados son
+  // capturas duplicadas, no dinero, así que no cuentan.
+  const ini = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  const mesActual = ini(hoy);
+  const mesAnterior = ini(new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - 1, 1)));
+  const cobrado = { mes: 0, mes_n: 0, anterior: 0, variacion_pct: null as number | null };
+  try {
+    const { data: pagos } = await supabase.from('payments')
+      .select('monto, fecha, estado').gte('fecha', mesAnterior).limit(5000);
+    const ANULADOS = ['anulado', 'cancelado', 'duplicado'];
+    for (const p of pagos || []) {
+      if (ANULADOS.includes(String((p as any).estado || '').toLowerCase())) continue;
+      const f = String(p.fecha || '').slice(0, 10);
+      const monto = Number(p.monto) || 0;
+      if (f >= mesActual) { cobrado.mes += monto; cobrado.mes_n++; }
+      else if (f >= mesAnterior) cobrado.anterior += monto;
+    }
+    cobrado.mes = r2(cobrado.mes); cobrado.anterior = r2(cobrado.anterior);
+    if (cobrado.anterior > 0) cobrado.variacion_pct = Math.round(100 * (cobrado.mes - cobrado.anterior) / cobrado.anterior);
+  } catch { /* el KPI nunca tumba el resto del resumen */ }
+
+  return new Response(JSON.stringify({ kpis, meta, riesgo, meses, vencidas, cobrado, actividad_sync_at: sync }, null, 2),
     { status: 200, headers: NOCACHE });
 };

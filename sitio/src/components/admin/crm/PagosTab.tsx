@@ -17,6 +17,7 @@ import Cargando from './ui/Cargando';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
 import CobranzaTab from './CobranzaTab';
+import KpiCard from './ui/KpiCard';
 import { useIsMobile } from '../../../lib/ui/mobile';
 
 type Vista = 'cobrar' | 'recibidos' | 'recuperacion';
@@ -194,6 +195,9 @@ export default function PagosTab() {
   // solo se ve el de la primera fila — ya pasó en la ficha del cliente.
   const [menuPago, setMenuPago] = useState<{ pago: any; x: number; y: number } | null>(null);
   const [gestionPago, setGestionPago] = useState<any>(null);
+  // Las tarjetas de "Por cobrar" son filtros: al hacer clic recortan la lista
+  // de abajo. Un número que no se puede abrir es un reporte, no un indicador.
+  const [filtroCobrar, setFiltroCobrar] = useState<'' | 'semana' | 'vencido'>('');
   const [fMetodo, setFMetodo] = useState('');
   const [fQ, setFQ] = useState('');
   const [toast, setToast] = useState('');
@@ -274,6 +278,24 @@ export default function PagosTab() {
   const vencidas: any[] = summary?.vencidas || [];
   const proximos: any[] = (summary?.meses?.[0]?.cobros || []).filter((c: any) => c.fecha >= today());
   const totalPorCobrar = [...vencidas, ...proximos].reduce((a, v) => a + (Number(v.monto) || 0), 0);
+  const montoVencido = vencidas.reduce((a: number, v: any) => a + (Number(v.monto) || 0), 0);
+
+  // ── Lo que vence en los próximos 7 días ──
+  // Contesta la pregunta con la que se abre la pantalla: a quién hay que
+  // cobrarle esta semana. Se miran dos meses porque una semana que empieza el
+  // 28 termina en el mes siguiente.
+  const en7 = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); })();
+  const cobrosSemana: any[] = [...(summary?.meses?.[0]?.cobros || []), ...(summary?.meses?.[1]?.cobros || [])]
+    .filter((c: any) => c.fecha >= today() && c.fecha <= en7);
+  const montoSemana = cobrosSemana.reduce((a: number, c: any) => a + (Number(c.monto) || 0), 0);
+  const cobrado = summary?.cobrado || null;
+
+  // La lista de abajo obedece a la tarjeta que esté aplicada.
+  const idsSemana = new Set(cobrosSemana.map((c: any) => c.subscription_id));
+  const vencidasVis = filtroCobrar === 'semana' ? [] : vencidas;
+  const proximosVis = filtroCobrar === 'vencido' ? []
+    : filtroCobrar === 'semana' ? proximos.filter((c: any) => idsSemana.has(c.subscription_id))
+    : proximos;
 
   // Por qué está vencida. Una suscripción domiciliada que aparece vencida casi
   // siempre es una tarjeta que rebotó, no un cliente que no quiso pagar: sin el
@@ -319,6 +341,14 @@ export default function PagosTab() {
     // CRM usa este marco (máximo 1280, centrado, 24 de aire), y por eso las
     // pantallas se veían de dos anchos distintos según qué pestaña abrieras.
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, width: '100%', boxSizing: 'border-box' }}>
+      {/* Las cinco tarjetas en rejilla, con los mismos cortes que Cobranza:
+          nunca se apachurran ni se salen de la pantalla. */}
+      <style>{`
+        .pagos-kpis { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:10px; }
+        @media (max-width: 1250px) { .pagos-kpis { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+        @media (max-width: 780px)  { .pagos-kpis { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 620px)  { .pagos-kpis { grid-template-columns:1fr; } }
+      `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: 0 }}>Pagos</h2>
@@ -363,22 +393,47 @@ export default function PagosTab() {
 
       {/* ── KPIs / pronóstico ── */}
       {vista === 'cobrar' && summary?.kpis && (
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={S.kpi}>
-            <div style={S.kLabel}>ARR activo</div>
-            <div style={S.kValue}>{fmt(summary.kpis.arr_activo || 0)}</div>
-            {summary.meta?.monto ? <div style={S.kSub}>{Math.round(100 * (summary.kpis.arr_activo || 0) / Number(summary.meta.monto))}% de la meta {fmt(Number(summary.meta.monto))}</div> : null}
-          </div>
-          <div style={S.kpi}>
-            <div style={S.kLabel}>Por cobrar</div>
-            <div style={S.kValue}>{fmt(totalPorCobrar)}</div>
-            <div style={{ ...S.kSub, color: vencidas.length ? '#b93333' : '#999' }}>{fmt(vencidas.reduce((a, v) => a + (Number(v.monto) || 0), 0))} vencido · {vencidas.length} cuentas</div>
-          </div>
-          <div style={S.kpi}>
-            <div style={S.kLabel}>Cobranza esperada · 12m</div>
-            <div style={S.kValue}>{fmt((summary.meses || []).reduce((a: number, m: any) => a + (Number(m.contratado) || 0), 0))}</div>
-            <div style={S.kSub}>proyección de suscripciones activas</div>
-          </div>
+        <div className="pagos-kpis" style={{ marginBottom: 16 }}>
+          <KpiCard label="ARR activo" franja="#9B8CFA" color="#5B4BD6"
+            valor={fmt(summary.kpis.arr_activo || 0)}
+            sub={summary.meta?.monto
+              ? `${Math.round(100 * (summary.kpis.arr_activo || 0) / Number(summary.meta.monto))}% de la meta ${fmt(Number(summary.meta.monto))}`
+              : `${summary.kpis.subs_activas || 0} licencias activas`} />
+
+          {/* El único número que dice cuánto entró DE VERDAD. Todo lo demás en
+              esta pantalla es lo que debería entrar. */}
+          <KpiCard label="Cobrado este mes" franja="#4FBF95" color="#1E8A63"
+            valor={fmt(cobrado?.mes || 0)}
+            sub={<>
+              {(cobrado?.mes_n || 0)} pago{(cobrado?.mes_n || 0) === 1 ? '' : 's'} desde el día 1
+              {cobrado?.variacion_pct != null && (
+                <span style={{ color: cobrado.variacion_pct >= 0 ? '#1E8A63' : '#C0554E', fontWeight: 700 }}>
+                  {' · '}{cobrado.variacion_pct >= 0 ? '↑' : '↓'} {Math.abs(cobrado.variacion_pct)}% vs mes anterior
+                </span>
+              )}
+            </>}
+            onClick={() => setVista('recibidos')} />
+
+          <KpiCard label="Por cobrar" franja="#9B8CFA" color="#5B4BD6"
+            valor={fmt(totalPorCobrar)}
+            sub={`${vencidas.length + proximos.length} cobros pendientes`}
+            activo={filtroCobrar === ''}
+            onClick={filtroCobrar ? () => setFiltroCobrar('') : undefined} />
+
+          {/* La pregunta con la que se abre la pantalla en lunes. */}
+          <KpiCard label="Vence esta semana" franja="#E8A838" color="#1a1a1a"
+            valor={fmt(montoSemana)}
+            sub={`${cobrosSemana.length} cobro${cobrosSemana.length === 1 ? '' : 's'} en los próximos 7 días`}
+            activo={filtroCobrar === 'semana'}
+            onClick={() => setFiltroCobrar(filtroCobrar === 'semana' ? '' : 'semana')} />
+
+          <KpiCard label="Vencido" franja="#EF7A72" color={vencidas.length ? '#C0554E' : '#1a1a1a'}
+            valor={fmt(montoVencido)}
+            sub={vencidas.length
+              ? `${vencidas.length} cuenta${vencidas.length === 1 ? '' : 's'} · la más vieja, ${vencidas[0]?.dias_vencida || 0} días`
+              : 'nadie debe nada'}
+            activo={filtroCobrar === 'vencido'}
+            onClick={vencidas.length ? () => setFiltroCobrar(filtroCobrar === 'vencido' ? '' : 'vencido') : undefined} />
         </div>
       )}
 
@@ -386,13 +441,19 @@ export default function PagosTab() {
       {vista === 'cobrar' && (
       <div style={S.card}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Por cobrar
-          <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · {vencidas.length + proximos.length} cobros · {fmt(totalPorCobrar)}</span>
+          <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · {vencidasVis.length + proximosVis.length} cobros · {fmt([...vencidasVis, ...proximosVis].reduce((a, v) => a + (Number(v.monto) || 0), 0))}</span>
+          {filtroCobrar && (
+            <button onClick={() => setFiltroCobrar('')}
+              style={{ ...S.btnSmall, marginLeft: 10, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>
+              {filtroCobrar === 'semana' ? 'Solo esta semana' : 'Solo vencidos'} ✕
+            </button>
+          )}
         </div>
-        {(vencidas.length === 0 && proximos.length === 0) ? (
+        {(vencidasVis.length === 0 && proximosVis.length === 0) ? (
           <div style={{ color: '#16a34a', fontSize: 14 }}>✓ No hay cobros pendientes ni vencidos.</div>
         ) : isMobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {vencidas.map((v) => (
+            {vencidasVis.map((v: any) => (
               <div key={'v' + v.subscription_id} style={{ border: '1px solid #f0e0e0', borderRadius: 10, padding: 12, background: '#fffafa' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span>
@@ -409,7 +470,7 @@ export default function PagosTab() {
                 </div>
               </div>
             ))}
-            {proximos.map((c) => (
+            {proximosVis.map((c: any) => (
               <div key={'p' + c.subscription_id} style={{ border: '1px solid #eef0f4', borderRadius: 10, padding: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span>
@@ -429,7 +490,7 @@ export default function PagosTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Estado', 'Empresa', 'Concepto', 'Vence', 'Monto', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
-              {vencidas.map((v) => (
+              {vencidasVis.map((v: any) => (
                 <tr key={'v' + v.subscription_id}>
                   <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
                   <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}</td>
@@ -446,7 +507,7 @@ export default function PagosTab() {
                   </div></td>
                 </tr>
               ))}
-              {proximos.map((c) => (
+              {proximosVis.map((c: any) => (
                 <tr key={'p' + c.subscription_id}>
                   <td style={S.td}><span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span></td>
                   <td style={S.td}>{c.empresa}{c.cuenta && c.cuenta !== c.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{c.cuenta}</div> : null}</td>

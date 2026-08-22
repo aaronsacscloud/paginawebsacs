@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando, { Corazones } from './ui/Cargando';
+import KpiCard from './ui/KpiCard';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
@@ -249,16 +250,9 @@ export default function CobranzaTab({ embebido = false }: { embebido?: boolean }
     </div>
   );
 
-  const Kpi = ({ label, valor, color, sub, onClick, franja }: any) => (
-    <div onClick={onClick}
-      style={{ ...S.card, marginBottom: 0, padding: '14px 16px', borderLeft: `3px solid ${franja || '#ddd'}`, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s' }}
-      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.08)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
-      <div style={S.kl}>{label}</div>
-      <div style={{ ...S.kv, color: color || '#1a1a1a' }}>{valor}</div>
-      <div style={S.ks}>{sub}{onClick ? <span style={{ color: '#9B8CFA', fontWeight: 700 }}> · ver</span> : null}</div>
-    </div>
-  );
+  // La tarjeta es la MISMA que usa Pagos (y con el mismo aire que Cotizaciones):
+  // vive en ui/KpiCard para que no se puedan separar con el tiempo.
+  const Kpi = KpiCard;
 
   return (
     <div style={embebido ? { margin: 0, padding: 0 } : S.wrap}>
