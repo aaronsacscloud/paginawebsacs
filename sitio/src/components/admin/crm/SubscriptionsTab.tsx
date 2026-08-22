@@ -47,10 +47,10 @@ function addCicloDate(fecha: string, ciclo: string): string {
 
 export const S = {
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 18, marginBottom: 16 } as const,
-  kpi: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', flex: 1, minWidth: 150 } as const,
-  kLabel: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
-  kValue: { fontSize: '1.75rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', marginTop: 5, fontVariantNumeric: 'tabular-nums' as const },
-  kSub: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5 },
+  kpi: { background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #9B8CFA', borderRadius: 10, padding: '15px 17px', flex: 1, minWidth: 150 } as const,
+  kLabel: { fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' },
+  kValue: { fontSize: '1.6rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', marginTop: 4, fontVariantNumeric: 'tabular-nums' as const },
+  kSub: { fontSize: '0.6875rem', color: '#888', marginTop: 3, lineHeight: 1.5 },
   input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none' } as const,
   btn: { padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' } as const,
   btnSmall: { padding: '4px 10px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.75rem', cursor: 'pointer' } as const,
@@ -277,12 +277,12 @@ export default function SubscriptionsTab() {
             </div>
           </div>
         </div>
-        <div style={kpiCard}>
+        <div style={{ ...kpiCard, borderLeftColor: '#EF7A72' }}>
           <div style={S.kLabel}>ARR en riesgo</div>
           <div style={{ ...S.kValue, color: (riesgo?.arr_en_riesgo || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{fmt(riesgo?.arr_en_riesgo)}</div>
           <div style={S.kSub}>{(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)} clientes sin vender ≥3 días</div>
         </div>
-        <div style={kpiCard}>
+        <div style={{ ...kpiCard, borderLeftColor: '#D9538E' }}>
           <div style={S.kLabel}>Bajas este mes</div>
           <div style={{ ...S.kValue, color: (bajas?.n || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{bajas?.n ?? '—'}</div>
           <div style={S.kSub}>
@@ -301,7 +301,7 @@ export default function SubscriptionsTab() {
             </div>
           )}
         </div>
-        <div style={kpiCard}>
+        <div style={{ ...kpiCard, borderLeftColor: '#7DA6F5' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={S.kLabel}>Meta ARR {meta?.anio}</span>
             <button style={{ ...S.btnSmall, padding: '1px 8px' }} onClick={() => setShowMeta(true)}>⚙</button>

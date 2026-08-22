@@ -19,8 +19,10 @@ const etiquetaMes = (m: string, conAnio = false) => {
 };
 
 const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: '4px 0 40px' } as const,
-  card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 13, padding: '16px 18px' } as const,
+  // Aire arriba: la cabecera del módulo tiene lo suyo y este panel empieza
+  // después, no pegado a ella.
+  wrap: { maxWidth: 1280, margin: '0 auto', padding: '18px 0 40px' } as const,
+  card: { background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '16px 18px' } as const,
   k: { fontSize: '0.57rem', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#a5a2af' } as const,
   v: { fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.08, marginTop: 4, letterSpacing: '-.02em' } as const,
   s: { fontSize: '0.75rem', color: '#4a4a52', marginTop: 4 } as const,
@@ -32,6 +34,24 @@ const S = {
   td: { padding: '9px 8px', fontSize: '0.78rem', borderBottom: '1px solid #f7f6fa' } as const,
 };
 const UP = '#1E8A63', DOWN = '#C0554E', VIO = '#5B4BD6', ROSA = '#9c3d70';
+
+/**
+ * La tarjeta de KPI con su franja de color a la izquierda: el mismo objeto que
+ * encabeza Cotizaciones. El color de la franja dice de qué habla el número
+ * antes de leerlo — morado el recurrente, verde lo que entra, rosa lo que se va.
+ */
+function Kpi({ k, v, s: sub, e, color, franja, ancho }: {
+  k: string; v: string; s?: React.ReactNode; e?: React.ReactNode; color?: string; franja: string; ancho?: boolean;
+}) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '14px 16px' }}>
+      <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>{k}</div>
+      <div style={{ fontSize: ancho ? '1.55rem' : '1.375rem', fontWeight: 800, color: color || '#1a1a1a', marginTop: 4, letterSpacing: '-.02em' }}>{v}</div>
+      {sub && <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 3, lineHeight: 1.5 }}>{sub}</div>}
+      {e && <div style={{ fontSize: '0.6875rem', color: '#a5a2af', marginTop: 7, paddingTop: 7, borderTop: '1px solid #f5f4f8', lineHeight: 1.5 }}>{e}</div>}
+    </div>
+  );
+}
 
 /** Barra de dos tramos: morado el recurrente, rosa lo que es pago único. */
 function BarraDoble({ a, b, max }: { a: number; b: number; max: number }) {
@@ -99,45 +119,32 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       </div>
 
       {/* ── TITULAR: lo ganado y lo perdido, cada uno con su número ── */}
-      <div className="fin-k5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 12, marginBottom: 14 }}>
-        <div style={S.card}>
-          <div style={S.k}>ARR activo</div>
-          <div style={{ ...S.v, color: VIO }}>{money(t.arr_activo)}</div>
-          <div style={S.s}>{t.subs_activas} licencias · {t.clientes} clientes</div>
-          <div style={S.e}>Lo que factura en 12 meses si nadie más entra ni se va.</div>
-        </div>
-        <div style={S.card}>
-          <div style={S.k}>Crecimiento 12 meses</div>
-          <div style={{ ...S.v, color: (t.crecimiento_12m_pct ?? 0) >= 0 ? UP : DOWN }}>
-            {t.crecimiento_12m_pct == null ? '—' : `${t.crecimiento_12m_pct > 0 ? '+' : ''}${t.crecimiento_12m_pct}%`}
-          </div>
-          <div style={S.s}>de {money(t.arr_hace_12m)} a hoy</div>
-          <div style={S.e}>A qué velocidad crece la base.</div>
-        </div>
-        <div style={S.card}>
-          <div style={S.k}>ARR ganado este mes</div>
-          <div style={{ ...S.v, color: UP }}>+{money(t.ganado)}</div>
-          <div style={S.s}>nuevo {money(p.nuevo)} · expansión {money(p.expansion)}</div>
-          <div style={S.e}>Lo que entró: altas y ampliaciones de cuentas vivas.</div>
-        </div>
+      <div className="fin-k5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 10, marginBottom: 14 }}>
+        <Kpi franja="#9B8CFA" color={VIO} ancho
+          k="ARR activo" v={money(t.arr_activo)}
+          s={<>{t.subs_activas} licencias · {t.clientes} clientes</>}
+          e="Lo que factura en 12 meses si nadie más entra ni se va." />
+        <Kpi franja="#7DA6F5" color={(t.crecimiento_12m_pct ?? 0) >= 0 ? UP : DOWN}
+          k="Crecimiento 12 meses"
+          v={t.crecimiento_12m_pct == null ? '—' : `${t.crecimiento_12m_pct > 0 ? '+' : ''}${t.crecimiento_12m_pct}%`}
+          s={<>de {money(t.arr_hace_12m)} a hoy</>}
+          e="A qué velocidad crece la base." />
+        <Kpi franja="#4FBF95" color={UP}
+          k="ARR ganado este mes" v={`+${money(t.ganado)}`}
+          s={<>nuevo {money(p.nuevo)} · expansión {money(p.expansion)}</>}
+          e="Altas y ampliaciones de cuentas vivas." />
         {/* Lo que se fue tiene su propio número: escondido dentro del neto no se
             ve venir, y es la mitad de la historia. */}
-        <div style={{ ...S.card, background: 'linear-gradient(160deg,#fff 60%,rgba(244,168,205,.13))', borderColor: '#f6e6ee' }}>
-          <div style={S.k}>ARR dado de baja este mes</div>
-          <div style={{ ...S.v, color: DOWN }}>{money(t.perdido)}</div>
-          <div style={S.s}>bajas {money(Math.abs(p.baja))} · contracción {money(Math.abs(p.contraccion))}</div>
-          <div style={S.e}>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} en el mes.</div>
-        </div>
-        <div style={S.card}>
-          <div style={S.k}>ARR neto</div>
-          <div style={{ ...S.v, fontSize: '1.4rem', color: t.neto >= 0 ? UP : DOWN }}>{t.neto >= 0 ? '+' : ''}{money(t.neto)}</div>
-          <div style={S.s}>ganado menos perdido</div>
-          <div style={S.e}>
-            {t.churn_come_pct != null
-              ? <><b style={{ color: '#4a4a52' }}>El churn se comió el {t.churn_come_pct}%</b> de todo lo que se vendió este mes.</>
-              : 'Sin movimientos registrados este mes.'}
-          </div>
-        </div>
+        <Kpi franja="#D9538E" color={DOWN}
+          k="ARR dado de baja este mes" v={money(t.perdido)}
+          s={<>bajas {money(Math.abs(p.baja))} · contracción {money(Math.abs(p.contraccion))}</>}
+          e={<>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} en el mes.</>} />
+        <Kpi franja={t.neto >= 0 ? '#4FBF95' : '#C0554E'} color={t.neto >= 0 ? UP : DOWN}
+          k="ARR neto" v={`${t.neto >= 0 ? '+' : ''}${money(t.neto)}`}
+          s="ganado menos perdido"
+          e={t.churn_come_pct != null
+            ? <><b style={{ color: '#4a4a52' }}>El churn se comió el {t.churn_come_pct}%</b> de lo vendido este mes.</>
+            : 'Sin movimientos registrados este mes.'} />
       </div>
 
       {/* ── PROYECCIÓN ── */}
@@ -146,13 +153,13 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           <div style={S.tit}>Cuánto creció el ARR y a dónde va</div>
           <div className="fin-k4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 14 }}>
             {[
-              ['ARR al inicio del periodo', money(d.serie[0]?.arr), '#241d43'],
-              ['ARR hoy', money(t.arr_activo), VIO],
-              ['Crecimiento del periodo', d.serie[0]?.arr ? `${Math.round(((t.arr_activo - d.serie[0].arr) / d.serie[0].arr) * 1000) / 10}%` : '—', UP],
-              ['Ritmo mensual', (proy.ritmo >= 0 ? '+' : '') + money(proy.ritmo), proy.ritmo >= 0 ? UP : DOWN],
-            ].map(([l, v, col]) => (
-              <div key={l as string} style={{ background: '#FBFAFF', border: '1px solid #f1eefb', borderRadius: 11, padding: '12px 14px' }}>
-                <div style={{ ...S.k, fontSize: '0.55rem' }}>{l}</div>
+              ['ARR al inicio del periodo', money(d.serie[0]?.arr), '#241d43', '#ddd6fb'],
+              ['ARR hoy', money(t.arr_activo), VIO, '#9B8CFA'],
+              ['Crecimiento del periodo', d.serie[0]?.arr ? `${Math.round(((t.arr_activo - d.serie[0].arr) / d.serie[0].arr) * 1000) / 10}%` : '—', UP, '#4FBF95'],
+              ['Ritmo mensual', (proy.ritmo >= 0 ? '+' : '') + money(proy.ritmo), proy.ritmo >= 0 ? UP : DOWN, '#7DA6F5'],
+            ].map(([l, v, col, fr]) => (
+              <div key={l as string} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${fr}`, borderRadius: 10, padding: '13px 15px' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>{l}</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 3, color: col as string }}>{v}</div>
               </div>
             ))}
@@ -563,6 +570,7 @@ function PanelPendiente({ id, onCerrar, onListo }: { id: string; onCerrar: () =>
   }
 
   const TITULO: Record<string, string> = {
+    cotizacion_sin_sub: 'Cotizaciones pagadas sin licencia',
     bajas_sin_motivo: 'Bajas sin motivo',
     plan_no_reconocido: 'Licencias fuera del catálogo',
     pagos_sin_cliente: 'Pagos sin cliente',

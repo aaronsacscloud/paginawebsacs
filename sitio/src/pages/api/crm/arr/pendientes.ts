@@ -97,6 +97,33 @@ export const GET: APIRoute = async ({ url }) => {
     });
   }
 
+  /* Cotizaciones pagadas que nunca produjeron licencia. Aquí no se pide un
+     dato: se ofrece REPARAR — crear la suscripción que debió nacer al pagar,
+     con el plan y el precio que la propia cotización ya tiene. */
+  if (id === 'cotizacion_sin_sub') {
+    const [cotsRes, subsRes] = await Promise.all([
+      supabase.from('quotes').select('id, numero, empresa, total, items, company_id, created_at')
+        .eq('estado', 'paid').order('created_at', { ascending: false }).limit(300),
+      supabase.from('subscriptions').select('quote_id').not('quote_id', 'is', null).limit(3000),
+    ]);
+    const conSub = new Set((subsRes.data || []).map((s: any) => s.quote_id));
+    const filas = (cotsRes.data || [])
+      .filter((q: any) => !conSub.has(q.id))
+      .map((q: any) => {
+        const its = Array.isArray(q.items) ? q.items : [];
+        const plan = its.find((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+        if (!plan) return null;
+        const arr = plan.periodo === 'mensual' ? Number(plan.subtotal || 0) * 12 : Number(plan.subtotal || 0);
+        return {
+          id: q.id,
+          titulo: `${q.numero} · ${q.empresa || 'sin empresa'}`,
+          detalle: `${plan.nombre || 'plan'} ${plan.periodo} · ${Math.round(arr).toLocaleString('es-MX')} de ARR${q.company_id ? '' : ' · sin cliente ligado'}`,
+          opciones: [{ v: 'crear', l: 'Crear la licencia que faltó' }, { v: 'ignorar', l: 'No corresponde (no es recurrente)' }],
+        };
+      }).filter(Boolean);
+    return json({ filas });
+  }
+
   if (id === 'pagos_sin_cliente') {
     const [pagosRes, compRes] = await Promise.all([
       supabase.from('payments').select('id, monto, fecha, metodo, referencia, numero_acuse, quote_id, quotes(company_id)')
@@ -133,6 +160,54 @@ export const PUT: APIRoute = async ({ request }) => {
     sin_proxima_factura: { tabla: 'subscriptions', campo: 'proxima_factura', valida: v => /^\d{4}-\d{2}-\d{2}$/.test(v) },
     pagos_sin_cliente: { tabla: 'payments', campo: 'company_id', valida: v => /^[0-9a-f-]{36}$/i.test(v) },
   };
+  /* Reparar una cotización sin licencia no es escribir una columna: es crear
+     la suscripción que debió nacer al pagar. Se arma con lo que la propia
+     cotización ya dice —plan, ciclo, precio— y liga la empresa si falta, que
+     es justo lo que impidió que naciera la primera vez. */
+  if (id === 'cotizacion_sin_sub') {
+    let creadas = 0; const omitidas: string[] = [];
+    for (const c of cambios) {
+      if (c.valor !== 'crear') { omitidas.push(c.id); continue; }
+      const { data: q } = await supabase.from('quotes')
+        .select('id, empresa, items, company_id, aceptado_fecha, created_at, partner_id').eq('id', c.id).maybeSingle();
+      if (!q) { omitidas.push(c.id); continue; }
+
+      let cid = q.company_id;
+      if (!cid && String(q.empresa || '').trim()) {
+        const nom = String(q.empresa).trim();
+        const { data: co } = await supabase.from('companies').select('id').ilike('nombre', nom).limit(1).maybeSingle();
+        cid = co?.id || null;
+        if (!cid) {
+          const { data: nueva } = await supabase.from('companies')
+            .insert({ nombre: nom, estado_cuenta: 'activo' }).select('id').maybeSingle();
+          cid = nueva?.id || null;
+        }
+        if (cid) await supabase.from('quotes').update({ company_id: cid }).eq('id', q.id);
+      }
+      if (!cid) { omitidas.push(c.id); continue; }
+
+      const its = Array.isArray(q.items) ? q.items : [];
+      const plan = its.find((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+      if (!plan) { omitidas.push(c.id); continue; }
+      const precio = Number(plan.subtotal || 0);
+      const mrr = plan.periodo === 'mensual' ? precio : precio / 12;
+      // La fecha de inicio es la de la venta, no la de hoy: si no, la cohorte
+      // y la vida media del cliente quedan mal para siempre.
+      const inicio = String(q.aceptado_fecha || q.created_at || new Date().toISOString()).slice(0, 10);
+
+      const { error } = await supabase.from('subscriptions').insert({
+        company_id: cid, quote_id: q.id,
+        nombre_plan: String(plan.titulo || plan.nombre || 'Licencia SACS').slice(0, 160),
+        ciclo: plan.periodo, estado: 'activa', precio,
+        mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
+        fecha_inicio: inicio, monto_proximo: precio,
+        ...(q.partner_id ? { partner_id: q.partner_id } : {}),
+      });
+      if (error) omitidas.push(c.id); else creadas++;
+    }
+    return json({ ok: creadas, fallos: omitidas.length, total: cambios.length });
+  }
+
   const dest = DESTINO[id];
   if (!dest) return json({ error: 'Pendiente desconocido.' }, 400);
 

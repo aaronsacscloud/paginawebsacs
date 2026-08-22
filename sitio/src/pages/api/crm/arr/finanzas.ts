@@ -244,11 +244,39 @@ export const GET: APIRoute = async ({ url }) => {
     .filter(c => c.mes >= mesMas(mesHoy, -18))
     .sort((a, b) => a.mes.localeCompare(b.mes));
 
+  /* ── ARR que se está perdiendo de contar ──
+     Una cotización pagada con plan recurrente TIENE que producir una
+     suscripción: es el momento en que un lead se vuelve ARR. Cuando no la
+     produjo, ese dinero no aparece en ninguna cifra de esta pantalla —y es la
+     fuga más cara, porque son ventas que ya se cobraron. */
+  const { data: cotsPagadas } = await supabase.from('quotes')
+    .select('id, numero, empresa, total, items, company_id, created_at')
+    .eq('estado', 'paid').limit(500);
+  const idsConSub = new Set(subs.map((s: any) => s.quote_id).filter(Boolean));
+  const sinSub = (cotsPagadas || []).filter((q: any) => {
+    if (idsConSub.has(q.id)) return false;
+    const its = Array.isArray(q.items) ? q.items : [];
+    // Solo cuenta si vendió un PLAN recurrente: una cotización de plugins o de
+    // una implementación no genera ARR y no debería aparecer como faltante.
+    return its.some((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+  });
+  const arrNoContado = sinSub.reduce((a: number, q: any) => {
+    const its = Array.isArray(q.items) ? q.items : [];
+    return a + its.filter((i: any) => i.tipo === 'plan')
+      .reduce((b: number, i: any) => b + (i.periodo === 'mensual' ? num(i.subtotal) * 12 : num(i.subtotal)), 0);
+  }, 0);
+
   // ── Datos por completar ───────────────────────────────────────────────────
   // No es una lista de errores: es captura pendiente que LIMITA lo que este
   // panel puede decir. Cada uno explica qué se deja de poder calcular.
   const canceladas = recurrentes.filter((s: any) => s.estado === 'cancelada');
   const pendientes = [
+    {
+      id: 'cotizacion_sin_sub', n: sinSub.length,
+      titulo: 'Cotizaciones pagadas que no generaron licencia',
+      limita: `${'$' + r0(arrNoContado).toLocaleString('es-MX')} de ARR vendido y cobrado que no está contado en ninguna cifra de esta pantalla.`,
+      nivel: 'alto',
+    },
     {
       id: 'bajas_sin_motivo', n: canceladas.filter((s: any) => !s.razon_cancelacion).length,
       titulo: 'Bajas sin motivo',

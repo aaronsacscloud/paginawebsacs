@@ -177,6 +177,31 @@ export const POST: APIRoute = async ({ request, url }) => {
           .eq('id', contactId);
       }
 
+      /* ─── La empresa, antes que la suscripción ───
+         Una cotización a un lead suele no traer empresa ligada: se capturó con
+         el nombre escrito y nadie la conectó. Con `company_id` vacío este
+         bloque se saltaba entero y la venta NUNCA empezaba a contar ARR — ocho
+         cotizaciones pagadas con plan recurrente se quedaron así.
+         Al pagar, la empresa se resuelve (se busca por nombre, y si no existe
+         se crea) y se LIGA a la cotización: a partir de ahí el lead es una
+         cuenta y su recurrente entra al panel. */
+      if (!quote.company_id && String(quote.empresa || '').trim()) {
+        try {
+          const nom = String(quote.empresa).trim();
+          const { data: co } = await supabase.from('companies').select('id').ilike('nombre', nom).limit(1).maybeSingle();
+          let cid = co?.id || null;
+          if (!cid) {
+            const { data: nueva } = await supabase.from('companies')
+              .insert({ nombre: nom, estado_cuenta: 'prospecto' }).select('id').maybeSingle();
+            cid = nueva?.id || null;
+          }
+          if (cid) {
+            await supabase.from('quotes').update({ company_id: cid }).eq('id', quoteId);
+            quote.company_id = cid;   // el resto del flujo ya la ve ligada
+          }
+        } catch { /* si falla, sigue el camino de siempre: sin empresa, sin sub */ }
+      }
+
       // ─── Cotización aceptada → crear la SUSCRIPCIÓN (idempotente) ───
       // Cierra el loop cotización→deal→suscripción: al ganar, nace la sub. Solo si la
       // empresa aún NO tiene una suscripción viva (no duplica en re-aceptación ni en
