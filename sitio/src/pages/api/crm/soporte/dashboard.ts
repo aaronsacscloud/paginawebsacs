@@ -214,6 +214,35 @@ export const GET: APIRoute = async ({ url }) => {
     }
   }
 
+  // ── Cuándo pide soporte la cartera ────────────────────────────────────────
+  // Día de la semana × hora, en hora de MÉXICO. Sirve para decidir a qué hora
+  // tener a alguien: es la única métrica del tablero que no habla de clientes
+  // sino de turnos.
+  //
+  // La cohorte son los tickets ABIERTOS en el periodo — cuándo escribió el
+  // cliente, no cuándo se resolvió. Y se cuenta sobre la apertura, no sobre la
+  // última actividad: una conversación que sigue viva movería su hora cada vez
+  // que alguien contesta y el pico se correría solo.
+  const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const matriz: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  const totDia = new Array(7).fill(0), totHora = new Array(24).fill(0);
+  let nCuando = 0;
+  for (const x of t) {
+    if (!dentro(x.abierto_at, P.ini, P.fin)) continue;
+    const d = new Date(new Date(x.abierto_at).getTime() - MX);
+    const dia = d.getUTCDay(), hora = d.getUTCHours();
+    matriz[dia][hora]++; totDia[dia]++; totHora[hora]++; nCuando++;
+  }
+  // La semana arranca en LUNES: un tablero de trabajo que empieza en domingo
+  // obliga a recontar con el dedo cuál es el día flojo.
+  const ORDEN = [1, 2, 3, 4, 5, 6, 0];
+  const picoDia = ORDEN.reduce((a, b) => (totDia[b] > totDia[a] ? b : a), ORDEN[0]);
+  const picoHora = totHora.reduce((a, _b, i) => (totHora[i] > totHora[a] ? i : a), 0);
+  // Franja de dos horas más cargada: "entre 1 y 3" se agenda; "a las 14:00" no.
+  let picoFranja = 0;
+  for (let h = 0; h < 23; h++) if (totHora[h] + totHora[h + 1] > totHora[picoFranja] + totHora[picoFranja + 1]) picoFranja = h;
+  const fueraHorario = totHora.reduce((a, n, h) => a + ((h < 8 || h >= 21) ? n : 0), 0);
+
   // ── Tendencia ────────────────────────────────────────────────────────────
   // Por día hasta 92 días; más allá se agrupa por semana o serían 365 barras de
   // dos píxeles que no se pueden ni apuntar con el dedo.
@@ -266,6 +295,15 @@ export const GET: APIRoute = async ({ url }) => {
     },
     por_estado: cuentaCon('estado', 'otros', t),
     por_sentimiento: cuentaCon('sentimiento', 'neutral', delPeriodo),
+    cuando: {
+      dias: ORDEN.map(i => ({ i, label: DIAS[i], n: totDia[i], horas: matriz[i] })),
+      por_hora: totHora,
+      n: nCuando,
+      pico_dia: { i: picoDia, label: DIAS[picoDia], n: totDia[picoDia], pct: nCuando ? Math.round((totDia[picoDia] / nCuando) * 100) : 0 },
+      pico_hora: { hora: picoHora, n: totHora[picoHora] },
+      pico_franja: { desde: picoFranja, hasta: picoFranja + 2, n: totHora[picoFranja] + totHora[picoFranja + 1] },
+      fuera_horario: fueraHorario,
+    },
     por_tema: porTema,
     por_agente: porAgente,
     top_clientes: topClientes,

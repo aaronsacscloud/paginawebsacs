@@ -28,6 +28,9 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
   const [trabajando, setTrabajando] = useState('');
   const [aviso, setAviso] = useState<{ tono: string; msg: string } | null>(null);
   const [descartando, setDescartando] = useState<any>(null);
+  // Con el histórico cargado son 28 tarjetas y la sección se come la pantalla:
+  // quien entra a Soporte a ver el tablero no viene a revisar la bandeja.
+  const [todas, setTodas] = useState(false);
 
   const cargar = (v = vista) => {
     setD(null); setErr('');
@@ -36,7 +39,7 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
       .then(j => { j.error ? setErr(j.error) : setD(j); })
       .catch(() => setErr('Sin conexión'));
   };
-  useEffect(() => { cargar(vista); /* eslint-disable-next-line */ }, [vista]);
+  useEffect(() => { setTodas(false); cargar(vista); /* eslint-disable-next-line */ }, [vista]);
 
   async function mover(h: any, estado: 'aceptado' | 'descartado', motivo?: string) {
     if (trabajando) return;
@@ -62,6 +65,8 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
 
   const R = d.resumen || {};
   const filas = d.data || [];
+  const TOPE = 8;
+  const vistas = todas ? filas : filas.slice(0, TOPE);
   const chip = (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#cdbdf7' : '#e2e4e9', background: on ? '#EEECFE' : '#fff',
     color: on ? '#6d4bc7' : '#666', borderRadius: 8, padding: '5px 12px', fontSize: '0.74rem',
@@ -96,7 +101,7 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
         </div>
       )}
 
-      {filas.map((h: any) => {
+      {vistas.map((h: any) => {
         const t = TIPO[h.tipo] || TIPO.mejora;
         const ligado = !!h.company_id;
         return (
@@ -136,6 +141,12 @@ export default function Hallazgos({ onAbrirCliente, onCambio }: { onAbrirCliente
           </div>
         );
       })}
+
+      {filas.length > TOPE && (
+        <button onClick={() => setTodas(!todas)} style={{ ...S.btnG, marginTop: 2 }}>
+          {todas ? `Ver solo ${TOPE}` : `Ver las ${filas.length}`}
+        </button>
+      )}
 
       {descartando && (
         <PedirTexto titulo="¿Por qué no aplica?"

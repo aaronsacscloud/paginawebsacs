@@ -254,6 +254,79 @@ function AreaFlujo({ serie, periodo, kpis, etiqueta }: { serie: any[]; periodo: 
   );
 }
 
+// ── Cuándo pide soporte la cartera ────────────────────────────────────────
+// Mapa de calor día × hora. Responde a "¿qué día se ocupa más?" y "¿a qué hora
+// hay que tener a alguien?" — la única tarjeta del tablero que habla de turnos
+// y no de clientes.
+function Cuando({ cuando, etiqueta }: { cuando: any; etiqueta: string }) {
+  const dias = cuando?.dias || [];
+  const porHora: number[] = cuando?.por_hora || [];
+  const n = cuando?.n || 0;
+  if (!n) {
+    return (
+      <Tarjeta titulo="Cuándo pide soporte tu cartera" cap={`No se abrió ningún ticket en este periodo (${etiqueta}).`}>
+        <div />
+      </Tarjeta>
+    );
+  }
+  const maxCelda = Math.max(1, ...dias.flatMap((d: any) => d.horas));
+  const maxDia = Math.max(1, ...dias.map((d: any) => d.n));
+  const maxHora = Math.max(1, ...porHora);
+  const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
+  const enReloj = (h: number) => { const x = h % 12 === 0 ? 12 : h % 12; return `${x}${h < 12 ? ' a.m.' : ' p.m.'}`; };
+  const pd = cuando.pico_dia || {}, pf = cuando.pico_franja || {};
+  const DIA_LARGO: Record<string, string> = { Lun: 'lunes', Mar: 'martes', Mié: 'miércoles', Jue: 'jueves', Vie: 'viernes', Sáb: 'sábado', Dom: 'domingo' };
+
+  return (
+    <Tarjeta titulo="Cuándo pide soporte tu cartera"
+      cap="Cada ticket, por el día y la hora de México en que el cliente lo abrió. Mientras más oscuro, más carga."
+      extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{n} tickets · {etiqueta}</span>}>
+      <div className="crm-scroll-x">
+        <div style={{ minWidth: 620 }}>
+          {/* Eje de horas: una etiqueta cada tres, o no se lee. */}
+          <div style={{ display: 'flex', gap: 2, marginLeft: 82  /* 30 día + 2 gap + 40 barra + 8 margen + 2 gap */, marginBottom: 4 }}>
+            {Array.from({ length: 24 }, (_, h) => (
+              <div key={h} style={{ flex: 1, fontSize: '0.55rem', color: '#b3b1bb', textAlign: 'center', fontWeight: 700 }}>
+                {h % 3 === 0 ? String(h).padStart(2, '0') : ''}
+              </div>
+            ))}
+          </div>
+          {dias.map((d: any) => (
+            <div key={d.i} style={{ display: 'flex', gap: 2, alignItems: 'center', marginBottom: 3 }}>
+              <div style={{ width: 30, fontSize: '0.68rem', color: d.i === pd.i ? TINTA : '#8a8590', fontWeight: d.i === pd.i ? 800 : 600 }}>{d.label}</div>
+              {/* Barra del día: contesta "qué día se ocupa más" sin sumar celdas. */}
+              <div style={{ width: 40, marginRight: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ flex: 1, height: 5, background: '#f3f2f7', borderRadius: 3 }}>
+                  <div style={{ width: `${(d.n / maxDia) * 100}%`, height: '100%', background: d.i === pd.i ? MORADO : '#d8d3f3', borderRadius: 3 }} />
+                </div>
+                <span style={{ fontSize: '0.6rem', color: '#a5a2af', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{d.n}</span>
+              </div>
+              {d.horas.map((v: number, h: number) => (
+                <div key={h} title={`${d.label} ${hh(h)} — ${v} ticket${v === 1 ? '' : 's'}`}
+                  style={{ flex: 1, height: 20, borderRadius: 4, background: v ? `rgba(155,140,250,${(0.14 + (v / maxCelda) * 0.86).toFixed(2)})` : '#f7f6fa' }} />
+              ))}
+            </div>
+          ))}
+          {/* Totales por hora, para leer el pico sin recorrer la rejilla. */}
+          <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', marginLeft: 82  /* 30 día + 2 gap + 40 barra + 8 margen + 2 gap */, marginTop: 7, height: 26 }}>
+            {porHora.map((v, h) => (
+              <div key={h} title={`${hh(h)} — ${v} ticket${v === 1 ? '' : 's'}`}
+                style={{ flex: 1, height: `${Math.max(v ? 12 : 3, (v / maxHora) * 100)}%`, background: v ? AZUL : '#f1f0f6', borderRadius: '2px 2px 0 0' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: '0.78rem', color: '#3f3b4d', marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7', lineHeight: 1.65 }}>
+        El día más cargado es el <b>{DIA_LARGO[pd.label] || pd.label}</b> ({pd.n} tickets, {pd.pct}% de la semana), y la hora fuerte va de
+        las <b>{enReloj(pf.desde)}</b> a las <b>{enReloj(pf.hasta)}</b> ({pf.n} tickets).
+        {cuando.fuera_horario > 0 && <> Fuera de 8 a.m. – 9 p.m. entran {cuando.fuera_horario} ({Math.round((cuando.fuera_horario / n) * 100)}%).</>}
+        {n < 60 && <span style={{ color: '#a5a2af' }}> Ojo: son {n} tickets en el periodo, poca base para leerlo como patrón — amplía el rango para que signifique algo.</span>}
+      </div>
+    </Tarjeta>
+  );
+}
+
 // ── Calificación de la atención (CSAT) ────────────────────────────────────
 const CARAS = [
   { v: 5, em: '\u{1F600}', color: VERDE },
@@ -525,6 +598,8 @@ export default function SoporteTab() {
           <AreaFlujo serie={d.tendencia || []} periodo={per} kpis={K} etiqueta={etiqueta} />
           <DonaTemas temas={d.por_tema || []} total={T.en_periodo || 0} etiqueta={etiqueta} />
         </div>
+
+        <Cuando cuando={d.cuando || {}} etiqueta={etiqueta} />
 
         <div className="sop-2">
           <Tarjeta titulo="Cómo llegan los tickets" cap="El tono con el que escribe el cliente, clasificado por reglas sobre el primer mensaje.">
