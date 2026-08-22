@@ -89,6 +89,16 @@ escribe, no se omite.
 - [ ] Este manual actualizado con lo aprendido en la vuelta, y la tabla de
       estado por giro al día.
 
+**Comprueba el resultado, no el diff.** Tres veces en la pasada de joyería di
+por aplicado un cambio que no se aplicó: un `replace` buscaba el texto en una
+línea y en el archivo estaba partido en dos; otro buscaba la regla con sangría y
+ahí va sin ella. Ninguno de los dos falló — simplemente no coincidió, y el
+commit salió diciendo que estaba hecho. Después de tocar algo, míralo donde de
+verdad vive: el HTML servido, el CSS compilado del bundle, el navegador. Y al
+esperar un despliegue, **espera un marcador que sólo exista en ese commit**: dos
+veces me enganché con texto que ya estaba antes y di por vivo un cambio que
+todavía no salía.
+
 **La regla que cierra todas:** cada vuelta tiene que dejar el manual mejor que
 como lo encontró. Si en el giro nuevo descubriste una trampa, escríbela aquí
 antes de dar por terminado — ese es el único motivo por el que el siguiente
@@ -514,6 +524,9 @@ Cómo se les habla:
   - **La matriz de medida × quilataje ilustra "un anillo de oro" con un
     solitario**, y la propia página jura que el diamante se cotiza aparte. Falta
     la foto de un anillo liso.
+  - **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
+    tres giros los arman y `/contacto` los usa, pero la página de agenda los
+    ignora: el dato se pierde en el último salto.
   - **Dos objetos de las fotos no aguantan el 300%**: el cabezal del tripié de
     `plano-joy-linea` (un tubo abierto que no sostiene nada) y la puerta de
     `plano-joy-caja` (un panel liso con tornillos, sin manija ni cerrojos). A
