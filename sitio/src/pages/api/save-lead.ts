@@ -1,3 +1,4 @@
+import { normalizarTelefono } from '../../lib/telefono';
 import type { APIRoute } from 'astro';
 import { ligarVisitasPrevias } from '../../lib/email/senales';
 import { google } from 'googleapis';
@@ -199,7 +200,7 @@ export const POST: APIRoute = async ({ request }) => {
           .insert({
             nombre: data.nombre || 'Sin nombre',
             email,
-            whatsapp: data.whatsapp || null,
+            whatsapp: normalizarTelefono(data.whatsapp),
             tipo: 'lead',
             lifecycle_stage,
             fuente: referrerPartnerId ? 'partner-link' : 'website-form',

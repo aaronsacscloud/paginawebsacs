@@ -1,3 +1,4 @@
+import { telefonoWhatsApp } from '../telefono';
 // Leads de FORMULARIO INSTANTÁNEO de TikTok (Instant Form) → CRM.
 //
 // Por qué existe este archivo y no basta con la atribución del sitio:
@@ -125,17 +126,11 @@ const POR_LLAVE: Record<string, string> = {};
 for (const [campo, alias] of Object.entries(ALIAS)) for (const a of alias) POR_LLAVE[a] = campo;
 
 /* ── Teléfono ─────────────────────────────────────────────────────────────
-   Mismo formato que usa Kapso para mandar WhatsApp (+52 sin el 1 de móvil).
-   Si se guarda con otro formato, el botón de WhatsApp del CRM abre un chat
-   con un número que no existe.                                             */
-export function telefonoMeta(bruto?: string | null): string | null {
-  if (!bruto) return null;
-  let n = String(bruto).replace(/[^\d+]/g, '');
-  if (!n) return null;
-  if (!n.startsWith('+')) n = n.startsWith('52') ? '+' + n : '+52' + n;
-  if (n.startsWith('+521') && n.length === 14) n = '+52' + n.slice(4);
-  return n.length >= 11 ? n : null;
-}
+   Se delega en el normalizador canónico. Antes esta función era una de DOS
+   copias (la otra dentro de Kapso) y ningún otro camino de alta normalizaba,
+   así que el 28% de los teléfonos del CRM no abría un chat. Se conserva el
+   nombre porque el importador y sus pruebas ya lo usan.               */
+export const telefonoMeta = telefonoWhatsApp;
 
 /** "Ana María Pérez López" → nombre + apellido, sin perder nada. */
 function partirNombre(completo: string): { nombre: string; apellido: string | null } {

@@ -1,3 +1,4 @@
+import { normalizarTelefono } from '../telefono';
 // Idempotent helpers to keep quotes ↔ deals in sync.
 // All functions accept a supabase client and are safe to re-run.
 // Used by mark-accepted, mark-rejected, quotes PUT, and aging cron.
@@ -123,7 +124,7 @@ export async function ensureContactForQuote(quote: any): Promise<string | null> 
     .insert({
       nombre, apellido,
       email: email || null,
-      whatsapp: whatsapp || null,
+      whatsapp: normalizarTelefono(whatsapp),
       company_id: companyId,
       lifecycle_stage: 'oportunidad',
       tipo: 'lead',

@@ -1,3 +1,4 @@
+import { normalizarTelefono } from '../../lib/telefono';
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { createHash } from 'crypto';
@@ -269,7 +270,7 @@ export async function syncCrmForSubscription(ctx: CrmSyncCtx): Promise<void> {
         .insert({
           nombre: nombre || 'Sin nombre',
           email,
-          whatsapp: whatsapp || null,
+          whatsapp: normalizarTelefono(whatsapp),
           tipo: 'lead',
           lifecycle_stage: 'cliente',
           // Fuente real: create-subscription SIEMPRE implica tarjeta/Stripe

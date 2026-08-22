@@ -1,3 +1,4 @@
+import { normalizarTelefono } from '../../../lib/telefono';
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
@@ -74,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
       nombre: body.nombre,
       apellido: body.apellido || null,
       email: body.email || null,
-      whatsapp: body.whatsapp || null,
+      whatsapp: normalizarTelefono(body.whatsapp),
       telefono: body.telefono || null,
       tipo: body.tipo || 'lead',
       lifecycle_stage,

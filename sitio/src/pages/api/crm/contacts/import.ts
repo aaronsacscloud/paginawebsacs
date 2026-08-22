@@ -1,3 +1,4 @@
+import { normalizarTelefono } from '../../../../lib/telefono';
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 
@@ -43,7 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { error } = await supabase.from('contacts').insert({
       nombre,
       email: email || null,
-      whatsapp: whatsapp || null,
+      whatsapp: normalizarTelefono(whatsapp),
       company_id,
       giro: giro || null,
       sucursales_interes: parseInt(sucursales) || null,

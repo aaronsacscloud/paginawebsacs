@@ -1,19 +1,18 @@
+import { telefonoWhatsApp } from './telefono';
 const KAPSO_API_KEY = typeof import.meta !== 'undefined'
   ? (import.meta.env?.KAPSO_API_KEY || '').trim()
   : '';
 
-function normalizePhone(phone: string): string {
-  let cleaned = phone.replace(/[^\d+]/g, '');
-  if (!cleaned.startsWith('+')) cleaned = cleaned.startsWith('52') ? '+' + cleaned : '+52' + cleaned;
-  if (cleaned.startsWith('+521') && cleaned.length === 14) cleaned = '+52' + cleaned.slice(4);
-  return cleaned;
-}
 
 export async function sendWhatsApp(to: string, message: string): Promise<{ sent: boolean; error?: string }> {
   if (!KAPSO_API_KEY || !to) return { sent: false, error: 'Not configured or no number' };
 
   try {
-    const phone = normalizePhone(to);
+    // Estricto a propósito: si el número no sirve, NO se manda a Kapso con
+    // algo inventado. Un mensaje a un número que no existe se cobra igual y
+    // desaparece sin error.
+    const phone = telefonoWhatsApp(to);
+    if (!phone) return { ok: false, error: `Teléfono no utilizable para WhatsApp: ${to}` } as any;
     const res = await fetch('https://api.kapso.ai/v1/messages/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
