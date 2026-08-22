@@ -346,11 +346,11 @@ export default function SubscriptionsTab() {
             </div>
             <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
               <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div>
+              <div style={kpiCard}><div style={S.kLabel}>Cobrado de vitalicias</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div>
               {/* $0 con licencias vendidas no es que no hayan pagado: es que sus
                   pagos nunca se capturaron. Decir "sin pagos capturados" evita
                   que alguien concluya que ese dinero no entró. */}
-              <div style={S.kSub}>{vitStats.cobrado > 0 ? 'ingreso reconocido, no ARR'
+              <div style={S.kSub}>{vitStats.cobrado > 0 ? 'solo estas licencias · el resto de lo no recurrente está en el Panel financiero'
                 : (vitStats.total > 0 ? `sin pagos capturados en ${vitStats.total} licencias` : 'ingreso reconocido, no ARR')}</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1E8A63' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
