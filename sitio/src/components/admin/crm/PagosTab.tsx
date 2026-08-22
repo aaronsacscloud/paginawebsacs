@@ -405,7 +405,7 @@ export default function PagosTab() {
           <KpiCard label="Cobrado este mes" franja="#4FBF95" color="#1E8A63"
             valor={fmt(cobrado?.mes || 0)}
             sub={<>
-              {(cobrado?.mes_n || 0)} pago{(cobrado?.mes_n || 0) === 1 ? '' : 's'} desde el día 1
+              {(cobrado?.mes_n || 0)} pago{(cobrado?.mes_n || 0) === 1 ? '' : 's'}
               {cobrado?.variacion_pct != null && (
                 <span style={{ color: cobrado.variacion_pct >= 0 ? '#1E8A63' : '#C0554E', fontWeight: 700 }}>
                   {' · '}{cobrado.variacion_pct >= 0 ? '↑' : '↓'} {Math.abs(cobrado.variacion_pct)}% vs mes anterior
@@ -414,11 +414,11 @@ export default function PagosTab() {
             </>}
             onClick={() => setVista('recibidos')} />
 
+          {/* El total. No es un filtro: es contra lo que se comparan los dos de
+              la derecha, que sí recortan la lista. */}
           <KpiCard label="Por cobrar" franja="#9B8CFA" color="#5B4BD6"
             valor={fmt(totalPorCobrar)}
-            sub={`${vencidas.length + proximos.length} cobros pendientes`}
-            activo={filtroCobrar === ''}
-            onClick={filtroCobrar ? () => setFiltroCobrar('') : undefined} />
+            sub={`${vencidas.length + proximos.length} cobros pendientes`} />
 
           {/* La pregunta con la que se abre la pantalla en lunes. */}
           <KpiCard label="Vence esta semana" franja="#E8A838" color="#1a1a1a"

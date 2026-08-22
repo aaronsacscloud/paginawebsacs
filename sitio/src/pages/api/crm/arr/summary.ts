@@ -143,17 +143,21 @@ export const GET: APIRoute = async () => {
   const ini = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
   const mesActual = ini(hoy);
   const mesAnterior = ini(new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - 1, 1)));
+  // Tope por arriba: hay pagos capturados con fecha del futuro (un dedazo al
+  // teclear el año) y sin este corte se sumaban a "este mes" — de ahí salía
+  // $5,500 de diferencia contra el mismo número en Recuperación.
+  const finMes = ini(new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() + 1, 1)));
   const cobrado = { mes: 0, mes_n: 0, anterior: 0, variacion_pct: null as number | null };
   try {
     const { data: pagos } = await supabase.from('payments')
-      .select('monto, fecha, estado').gte('fecha', mesAnterior).limit(5000);
+      .select('monto, fecha, estado').gte('fecha', mesAnterior).lt('fecha', finMes).limit(5000);
     const ANULADOS = ['anulado', 'cancelado', 'duplicado'];
     for (const p of pagos || []) {
       if (ANULADOS.includes(String((p as any).estado || '').toLowerCase())) continue;
       const f = String(p.fecha || '').slice(0, 10);
       const monto = Number(p.monto) || 0;
-      if (f >= mesActual) { cobrado.mes += monto; cobrado.mes_n++; }
-      else if (f >= mesAnterior) cobrado.anterior += monto;
+      if (f >= mesActual && f < finMes) { cobrado.mes += monto; cobrado.mes_n++; }
+      else if (f >= mesAnterior && f < mesActual) cobrado.anterior += monto;
     }
     cobrado.mes = r2(cobrado.mes); cobrado.anterior = r2(cobrado.anterior);
     if (cobrado.anterior > 0) cobrado.variacion_pct = Math.round(100 * (cobrado.mes - cobrado.anterior) / cobrado.anterior);
