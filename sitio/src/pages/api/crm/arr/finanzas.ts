@@ -70,14 +70,37 @@ export const GET: APIRoute = async ({ url }) => {
          implementaciones, desarrollos a la medida—.
      Un pago sin cotización ni suscripción no se puede clasificar y NO se
      cuenta: aparece en los pendientes para que alguien lo ligue. */
+  /* Qué licencia nació de cada cotización: es la señal más fuerte de que ese
+     pago era recurrente, más fuerte que el tipo del renglón —que se captura a
+     mano y a veces trae la licencia escrita como "extra"—. */
+  const cicloPorCotizacion: Record<string, string> = {};
+  (subsRes.data || []).forEach((s: any) => { if (s.quote_id) cicloPorCotizacion[s.quote_id] = s.ciclo; });
+
+  /* Y el último recurso: leer el concepto. "Renovación Plan Controla" y
+     "Licencia Fideliza 3 Sucursales" se capturaron como renglón extra y sin
+     esto entrarían como pago único —dos casos reales de julio, $80,427 mal
+     clasificados—. */
+  const SUENA_A_LICENCIA = /(licencia|renovaci[oó]n|plan\b|suscrip|mensualidad|anualidad|vende|controla|fideliza|automatiza)/i;
+
   const esNoRecurrente = (p: any) => {
     // Lo que alguien clasificó a mano manda sobre lo que se puede deducir.
     if (p.clasificacion === 'unico') return true;
     if (p.clasificacion === 'recurrente') return false;
+
+    // Colgado de una licencia: vitalicia es pago único, el resto es recurrente.
     if (p.subscription_id) return cicloDeSub[p.subscription_id] === 'vitalicia';
+
     const its = Array.isArray(p.quotes?.items) ? p.quotes.items : null;
     if (!its) return false;                       // sin origen: no se clasifica
-    return !its.some((i: any) => i.tipo === 'plan');
+
+    // De esa cotización nació una licencia: manda su ciclo.
+    const cicloNacido = p.quote_id ? cicloPorCotizacion[p.quote_id] : null;
+    if (cicloNacido) return cicloNacido === 'vitalicia';
+
+    if (its.some((i: any) => i.tipo === 'plan')) return false;   // vendió plan
+    // Nadie marcó el renglón como plan, pero el concepto lo dice.
+    if (its.some((i: any) => SUENA_A_LICENCIA.test(String(i.nombre || i.titulo || '')))) return false;
+    return true;
   };
   const sinOrigen = pagosTodos.filter((p: any) => !p.subscription_id && !p.quotes && !p.clasificacion);
   const pagos = pagosTodos.filter(esNoRecurrente);
