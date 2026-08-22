@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const [subsRes, movRes, pagosRes, goalsRes] = await Promise.all([
     supabase.from('subscriptions')
-      .select('id, company_id, nombre_plan, ciclo, estado, arr, mrr, precio, fecha_inicio, proxima_factura, monto_proximo, cancelada_at, razon_cancelacion, companies(id, nombre)')
+      .select('id, company_id, quote_id, nombre_plan, ciclo, estado, arr, mrr, precio, fecha_inicio, proxima_factura, monto_proximo, cancelada_at, razon_cancelacion, companies(id, nombre)')
       .limit(3000),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, company_id').limit(5000),
     supabase.from('payments')
