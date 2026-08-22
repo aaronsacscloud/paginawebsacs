@@ -17,6 +17,7 @@ const TIPO: Record<string, { label: string; franja: string; bg: string; fg: stri
   mejora: { label: 'Mejora', franja: MORADO, bg: '#EEECFE', fg: TINTA, destino: 'Consultoría' },
   riesgo: { label: 'Riesgo', franja: ROJO, bg: '#FBECEA', fg: ROJO, destino: 'Bandeja de Oportunidades' },
   testimonio: { label: 'Testimonio', franja: '#7DA6F5', bg: '#E3EDFD', fg: '#2C5FC4', destino: 'Bandeja de Oportunidades' },
+  duda: { label: 'Duda', franja: '#B6ABFC', bg: '#F2EFFE', fg: TINTA, destino: 'Consultoría · capacitación' },
 };
 
 const fecha = (d?: string | null) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '';
@@ -31,6 +32,9 @@ export default function Hallazgos({ onAbrirCliente, onCambio, sinTope }: { onAbr
   // Con el histórico cargado son 28 tarjetas y la sección se come la pantalla:
   // quien entra a Soporte a ver el tablero no viene a revisar la bandeja.
   const [todas, setTodas] = useState(!!sinTope);
+  // Con 85 hallazgos, "por revisar" sin filtro es una lista imposible de
+  // trabajar: se revisa por tipo, que es como se decide qué hacer con cada uno.
+  const [tipo, setTipo] = useState<string>('todos');
 
   const cargar = (v = vista) => {
     setD(null); setErr('');
@@ -67,7 +71,8 @@ export default function Hallazgos({ onAbrirCliente, onCambio, sinTope }: { onAbr
   const filas = d.data || [];
   // En su vista propia no hay tope: para eso es la vista.
   const TOPE = sinTope ? Infinity : 8;
-  const vistas = (todas || sinTope) ? filas : filas.slice(0, TOPE);
+  const porTipo = tipo === 'todos' ? filas : filas.filter((h: any) => h.tipo === tipo);
+  const vistas = (todas || sinTope) ? porTipo : porTipo.slice(0, TOPE);
   const chip = (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#cdbdf7' : '#e2e4e9', background: on ? '#EEECFE' : '#fff',
     color: on ? '#6d4bc7' : '#666', borderRadius: 8, padding: '5px 12px', fontSize: '0.74rem',
@@ -91,6 +96,17 @@ export default function Hallazgos({ onAbrirCliente, onCambio, sinTope }: { onAbr
         <button onClick={() => setVista('aceptado')} style={chip(vista === 'aceptado')}>Aceptados {R.aceptados ? `(${R.aceptados})` : ''}</button>
         <button onClick={() => setVista('descartado')} style={chip(vista === 'descartado')}>Descartados {R.descartados ? `(${R.descartados})` : ''}</button>
       </div>
+
+      {sinTope && filas.length > 12 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          <button onClick={() => setTipo('todos')} style={chip(tipo === 'todos')}>Todos ({filas.length})</button>
+          {['oportunidad', 'mejora', 'duda', 'riesgo', 'testimonio'].map(k => {
+            const n = filas.filter((h: any) => h.tipo === k).length;
+            if (!n) return null;
+            return <button key={k} onClick={() => setTipo(k)} style={chip(tipo === k)}>{TIPO[k]?.label || k} ({n})</button>;
+          })}
+        </div>
+      )}
 
       {aviso && <Aviso tono={aviso.tono as any}>{aviso.msg}</Aviso>}
 
@@ -143,9 +159,9 @@ export default function Hallazgos({ onAbrirCliente, onCambio, sinTope }: { onAbr
         );
       })}
 
-      {!sinTope && filas.length > TOPE && (
+      {!sinTope && porTipo.length > TOPE && (
         <button onClick={() => setTodas(!todas)} style={{ ...S.btnG, marginTop: 2 }}>
-          {todas ? `Ver solo ${TOPE}` : `Ver las ${filas.length}`}
+          {todas ? `Ver solo ${TOPE}` : `Ver las ${porTipo.length}`}
         </button>
       )}
 

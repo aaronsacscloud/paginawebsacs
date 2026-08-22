@@ -124,7 +124,10 @@ function AvisoHallazgos() {
   const n = r?.pendientes || 0;
   if (!n) return null;
   const t = r?.por_tipo || {};
+  // El desglose tiene que sumar el total o el aviso se contradice solo: decía
+  // "85 revisiones" y enumeraba 31 porque las dudas no estaban en la lista.
   const partes = [
+    t.duda ? `${t.duda} ${t.duda === 1 ? 'duda de capacitación' : 'dudas de capacitación'}` : '',
     t.mejora ? `${t.mejora} ${t.mejora === 1 ? 'mejora' : 'mejoras'}` : '',
     t.oportunidad ? `${t.oportunidad} ${t.oportunidad === 1 ? 'oportunidad' : 'oportunidades'}` : '',
     t.riesgo ? `${t.riesgo} de riesgo` : '',
