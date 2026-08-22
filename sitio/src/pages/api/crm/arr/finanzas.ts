@@ -183,6 +183,17 @@ export const GET: APIRoute = async ({ url }) => {
   const arrPorCuenta: Record<string, number> = {};
   activas.forEach((s: any) => { if (s.company_id) arrPorCuenta[s.company_id] = (arrPorCuenta[s.company_id] || 0) + num(s.arr); });
 
+  const totalUnicos = r0(pagos.reduce((a: number, p: any) => a + num(p.monto), 0));
+
+  // Los nombres que faltan: una cuenta que compró un plugin y nunca tuvo
+  // licencia no aparece en `subs`, y salía como "Cuenta sin nombre" con su
+  // dinero al lado — que es justo el caso que esta vista existe para mostrar.
+  const faltan = Object.keys(extras).filter(cid => !nombrePorId[cid]);
+  if (faltan.length) {
+    const { data: comps } = await supabase.from('companies').select('id, nombre').in('id', faltan.slice(0, 200));
+    (comps || []).forEach((c: any) => { nombrePorId[c.id] = c.nombre; });
+  }
+
   const cuentas = Object.keys({ ...extras, ...arrPorCuenta })
     .map(cid => ({
       company_id: cid,
@@ -194,7 +205,6 @@ export const GET: APIRoute = async ({ url }) => {
     }))
     .sort((a, b) => b.total - a.total);
 
-  const totalUnicos = r0(pagos.reduce((a: number, p: any) => a + num(p.monto), 0));
 
   // ── Concentración ─────────────────────────────────────────────────────────
   const top = cuentas.filter(c => c.arr > 0).sort((a, b) => b.arr - a.arr).slice(0, 5);
