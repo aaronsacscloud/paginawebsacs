@@ -18,7 +18,9 @@ export const GET: APIRoute = async () => {
   const hoyStr = hoy.toISOString().slice(0, 10);
 
   const [subsRes, goalsRes, compRes] = await Promise.all([
-    supabase.from('subscriptions').select('*, contacts(nombre), companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre))').limit(2000),
+    // whatsapp/nombre_comercial: la lista de "por cobrar" manda el estado de
+    // cuenta desde ahí, y para eso necesita a quién y con qué nombre.
+    supabase.from('subscriptions').select('*, contacts(nombre, whatsapp), companies(id, nombre, nombre_comercial, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre, whatsapp))').limit(2000),
     supabase.from('crm_goals').select('*'),
     supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, soporte_abiertos, soporte_estancado, soporte_sentimiento, contacts(nombre)').not('sacs_account', 'is', null),
   ]);
@@ -94,7 +96,14 @@ export const GET: APIRoute = async () => {
     const co = (s as any).companies;
     // Nombre de la persona para identificar rápido; la cuenta va como referencia.
     const cliente = (s as any).contacts?.nombre || co?.contacts?.[0]?.nombre || co?.nombre || '—';
-    const base = { subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado, empresa: cliente, cuenta: co?.sacs_account || co?.nombre || null, sacs_account: co?.sacs_account || null };
+    const base = {
+      subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado,
+      empresa: cliente, cuenta: co?.sacs_account || co?.nombre || null, sacs_account: co?.sacs_account || null,
+      // Para armar el estado de cuenta y el WhatsApp desde la fila, sin otra consulta.
+      company_id: co?.id || null,
+      nombre_comercial: co?.nombre_comercial || null,
+      whatsapp: (s as any).contacts?.whatsapp || co?.contacts?.[0]?.whatsapp || null,
+    };
     if (s.estado === 'activa' || s.estado === 'pendiente_pago' || s.estado === 'programada') {
       if (s.ciclo === 'anual') {
         // renovación anual: cae en su mes de próxima factura
@@ -129,6 +138,9 @@ export const GET: APIRoute = async () => {
       subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado,
       empresa: (s as any).contacts?.nombre || (s as any).companies?.contacts?.[0]?.nombre || (s as any).companies?.nombre || '—',
       cuenta: (s as any).companies?.sacs_account || (s as any).companies?.nombre || null, vencida_desde: s.proxima_factura,
+      company_id: (s as any).companies?.id || null,
+      nombre_comercial: (s as any).companies?.nombre_comercial || null,
+      whatsapp: (s as any).contacts?.whatsapp || (s as any).companies?.contacts?.[0]?.whatsapp || null,
       dias_vencida: Math.floor((hoy.getTime() - new Date(s.proxima_factura).getTime()) / 86400000),
       monto: r2(Number(s.monto_proximo ?? s.precio) || 0),
     }))

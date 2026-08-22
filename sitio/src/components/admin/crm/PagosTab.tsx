@@ -92,6 +92,24 @@ function BotonAcciones({ pago, onAbrir }: { pago: any; onAbrir: (m: any) => void
   );
 }
 
+/** Los tres puntitos de una fila de "por cobrar". */
+function BotonAccionesCobro({ cobro, onAbrir }: { cobro: any; onAbrir: (m: any) => void }) {
+  return (
+    <button
+      title="Más acciones" aria-label="Más acciones del cobro"
+      onClick={(e) => {
+        e.stopPropagation();
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        onAbrir({ cobro, x: r.right, y: r.bottom + 4 });
+      }}
+      style={{
+        border: '1px solid #e6e3ee', background: '#fff', borderRadius: 8, cursor: 'pointer',
+        width: 30, height: 30, lineHeight: 1, color: '#6f6b7d', fontSize: 15, fontFamily: 'inherit',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>⋮</button>
+  );
+}
+
 const TIPOS_GESTION = [
   { id: 'llamada', l: 'Llamada' },
   { id: 'whatsapp', l: 'WhatsApp' },
@@ -110,22 +128,34 @@ function GestionModal({ pago, onCerrar, onListo }: { pago: any; onCerrar: () => 
   const [tipo, setTipo] = useState('llamada');
   const [texto, setTexto] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const empresa = nombreEmpresa(pago.companies) || 'este cliente';
+  const empresa = nombreEmpresa(pago.companies) || pago.empresa || 'este cliente';
 
   const guardar = async () => {
     if (!texto.trim()) return;
     setGuardando(true);
     try {
       const etiqueta = TIPOS_GESTION.find(t => t.id === tipo)?.l || 'Gestión';
+      // El mismo modal sirve para un pago que YA entró y para un cobro que está
+      // por vencer; lo único que cambia es cómo se cuenta en el timeline.
+      const monto = `$${Number(pago.monto || 0).toLocaleString('es-MX')}`;
+      const fechaTxt = String(pago.fecha || '').slice(0, 10);
+      const titulo = pago.es_cobro
+        ? `${etiqueta} sobre el cobro de ${monto} que vence el ${fechaTxt}`
+        : `${etiqueta} sobre el pago de ${monto} del ${fechaTxt}`;
       const r = await fetch('/api/crm/activities', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           company_id: pago.company_id || pago.companies?.id || null,
           contact_id: pago.contact_id || pago.contacts?.id || null,
           tipo: 'nota',
-          titulo: `${etiqueta} sobre el pago de $${Number(pago.monto || 0).toLocaleString('es-MX')} del ${String(pago.fecha || '').slice(0, 10)}`,
+          titulo,
           descripcion: texto.trim(),
-          metadata: { gestion: tipo, payment_id: pago.id, numero_acuse: pago.numero_acuse || null, monto: pago.monto },
+          metadata: {
+            gestion: tipo, monto: pago.monto,
+            ...(pago.es_cobro
+              ? { cobro_de: pago.subscription_id || null, vence: fechaTxt }
+              : { payment_id: pago.id, numero_acuse: pago.numero_acuse || null }),
+          },
         }),
       });
       if (!r.ok) throw new Error();
@@ -145,7 +175,7 @@ function GestionModal({ pago, onCerrar, onListo }: { pago: any; onCerrar: () => 
         </div>
         <div style={{ padding: '14px 17px 17px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ fontSize: '0.78rem', color: '#7c7c86' }}>
-            {empresa} · {fmt(pago.monto)} · {fmtDate(String(pago.fecha || '').slice(0, 10))}
+            {empresa} · {fmt(pago.monto)} · {pago.es_cobro ? 'vence ' : ''}{fmtDate(String(pago.fecha || '').slice(0, 10))}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {TIPOS_GESTION.map(t => (
@@ -194,6 +224,7 @@ export default function PagosTab() {
   // Un panel `absolute` dentro de la tabla queda recortado por el overflow y
   // solo se ve el de la primera fila — ya pasó en la ficha del cliente.
   const [menuPago, setMenuPago] = useState<{ pago: any; x: number; y: number } | null>(null);
+  const [menuCobro, setMenuCobro] = useState<{ cobro: any; x: number; y: number } | null>(null);
   const [gestionPago, setGestionPago] = useState<any>(null);
   // Las tarjetas de "Por cobrar" son filtros: al hacer clic recortan la lista
   // de abajo. Un número que no se puede abrir es un reporte, no un indicador.
@@ -466,7 +497,7 @@ export default function PagosTab() {
                 ) : null; })()}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
-                  <button onClick={() => linkPago(v.subscription_id, v.monto)} style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} title="Generar link de pago Stripe">🔗 Link</button>
+                  <BotonAccionesCobro cobro={v} onAbrir={setMenuCobro} />
                 </div>
               </div>
             ))}
@@ -480,7 +511,7 @@ export default function PagosTab() {
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>{c.plan} · {c.ciclo}{c.cuenta && c.cuenta !== c.empresa ? ` · ${c.cuenta}` : ''} · {fmtDate(c.fecha)}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
-                  <button onClick={() => linkPago(c.subscription_id, c.monto)} style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} title="Generar link de pago Stripe">🔗 Link</button>
+                  <BotonAccionesCobro cobro={c} onAbrir={setMenuCobro} />
                 </div>
               </div>
             ))}
@@ -503,7 +534,7 @@ export default function PagosTab() {
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
                   <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
-                    <button onClick={() => linkPago(v.subscription_id, v.monto)} style={S.btnSmall} title="Generar link de pago Stripe">🔗 Link</button>
+                    <BotonAccionesCobro cobro={v} onAbrir={setMenuCobro} />
                   </div></td>
                 </tr>
               ))}
@@ -516,7 +547,7 @@ export default function PagosTab() {
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>
                   <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
-                    <button onClick={() => linkPago(c.subscription_id, c.monto)} style={S.btnSmall} title="Generar link de pago Stripe">🔗 Link</button>
+                    <BotonAccionesCobro cobro={c} onAbrir={setMenuCobro} />
                   </div></td>
                 </tr>
               ))}
@@ -812,6 +843,68 @@ export default function PagosTab() {
                 p.numero_acuse || 'Este pago no tiene acuse', !p.numero_acuse)}
               <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
               {item('Registrar gestión', () => setGestionPago(p), 'Llamada, WhatsApp, acuerdo…', !compId)}
+              {item('Abrir ficha del cliente', () => compId && setDrawerCompany(compId), undefined, !compId)}
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── Más acciones de un COBRO por vencer ──
+          El estado de cuenta es la pieza clave: es el documento con el que se
+          le avisa a alguien —Jose Luis, PLUGIN VIP, 26 de agosto— ANTES de que
+          venza, no el recibo de después.
+          Se usa el de la LICENCIA (/estado-cuenta/<sub>), no el del cliente:
+          dice "se cobra el 26 de agosto", trae "Lo que incluye tu plan" y su
+          botón de Descargar PDF. Mandarle el total de todo a quien le estás
+          cobrando una sola invita a la pregunta equivocada. */}
+      {menuCobro && (() => {
+        const c = menuCobro.cobro;
+        const compId = c.company_id || null;
+        const origen = typeof window !== 'undefined' ? window.location.origin : '';
+        const edo = c.subscription_id ? `${origen}/estado-cuenta/${c.subscription_id}` : '';
+        const wa = String(c.whatsapp || '').replace(/\D/g, '');
+        const cliente = c.nombre_comercial || c.empresa || 'el cliente';
+        const vence = String(c.fecha || c.vencida_desde || '').slice(0, 10);
+        const cerrar = () => setMenuCobro(null);
+        const item = (label: string, onClick: () => void, sub?: string, off?: boolean) => (
+          <button key={label} disabled={off} onClick={() => { onClick(); cerrar(); }}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent',
+              padding: '9px 13px', fontSize: '0.8rem', fontFamily: 'inherit', color: off ? '#c3c1cb' : '#3f3b4d',
+              cursor: off ? 'default' : 'pointer', borderRadius: 8,
+            }}
+            onMouseEnter={e => { if (!off) (e.currentTarget as HTMLElement).style.background = '#f6f4fb'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+            {label}
+            {sub && <div style={{ fontSize: '0.68rem', color: '#a3a3ab', marginTop: 1 }}>{sub}</div>}
+          </button>
+        );
+        return (
+          <>
+            <div onClick={cerrar} style={{ position: 'fixed', inset: 0, zIndex: 970 }} />
+            <div style={{
+              position: 'fixed', top: Math.min(menuCobro.y, (typeof window !== 'undefined' ? window.innerHeight : 900) - 300),
+              left: Math.max(12, menuCobro.x - 250), width: 250, zIndex: 971,
+              background: '#fff', border: '1px solid #e9e6f1', borderRadius: 12, padding: 5,
+              boxShadow: '0 14px 40px rgba(16,24,40,.16)',
+            }}>
+              {item('Estado de cuenta', () => {
+                window.open(edo, '_blank', 'noopener');
+                try { navigator.clipboard?.writeText(edo); } catch { /* sin https no hay portapapeles */ }
+                setToast('Estado de cuenta abierto · trae el botón "Descargar PDF" · link copiado');
+                setTimeout(() => setToast(''), 5000);
+              }, 'De esta licencia · con PDF y qué incluye su plan', !c.subscription_id)}
+              {item('Enviar por WhatsApp', () => {
+                const msg = `Hola, te comparto el estado de cuenta de ${cliente}. ${c.plan || 'Tu licencia'} se renueva el ${vence} por $${Number(c.monto || 0).toLocaleString('es-MX')} MXN:\n${edo}`;
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+              }, wa ? 'Con el aviso de vencimiento' : 'El contacto no tiene WhatsApp', !c.subscription_id || !wa)}
+              {item('Link de pago', () => linkPago(c.subscription_id, c.monto), 'Genera un link para cobrarle')}
+              <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
+              {item('Registrar pago', () => abonar(c.subscription_id), 'Lo mismo que "Abonar"')}
+              {item('Registrar gestión', () => setGestionPago({
+                es_cobro: true, subscription_id: c.subscription_id, company_id: compId,
+                monto: c.monto, fecha: vence, empresa: cliente,
+              }), 'Llamada, WhatsApp, acuerdo…', !compId)}
               {item('Abrir ficha del cliente', () => compId && setDrawerCompany(compId), undefined, !compId)}
             </div>
           </>
