@@ -18,7 +18,8 @@ copiar su estructura es el camino corto.
 | Zapatería | **Al día.** Lleva además sus dos bloques propios |
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
 | Joyería | **Al día y aprobada** por los tres referees (oficio 9.2 · calidad 9.2 · diseño 9). Único giro que se vende como complemento |
-| Los demás (~20) | Sin empezar |
+| Papelería y arte | **Estructura al día**, pendiente de referees y de dos fotos |
+| Los demás (~19) | Sin empezar |
 
 ---
 
@@ -527,7 +528,14 @@ Cómo se les habla:
   - **Falta prueba social del giro.** Ningún caso de joyería con nombre y cifra.
     Es lo único que separa la página de un 10, y no es trabajo de review: hace
     falta un cliente que dé permiso.
-  - **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
+  - **Papelería: faltan dos fotos y por eso faltan dos bloques.** Se acabaron los
+  créditos de OpenAI a media generación. Sin las dos caras de la MISMA empleada
+  no se publica `SuiteCortina` —dos personas distintas es el defecto que el
+  referee cazó en moda— y sin la quinta foto el proceso quedó en cuatro días.
+  En cuanto haya créditos: `suite-pap-resuelto.webp` (la misma mujer de
+  `suite-pap-hoy`: camisa azul claro, mandil de mezclilla, pelo recogido bajo,
+  ahora tranquila en el mostrador con una tablet) y `proc-pap-5.webp`.
+- **`/agendar/demo` no lee `estimado` ni `de`.** Los bloques propios de los
     tres giros los arman y `/contacto` los usa, pero la página de agenda los
     ignora: el dato se pierde en el último salto.
   - **Dos objetos de las fotos no aguantan el 300%**: el cabezal del tripié de

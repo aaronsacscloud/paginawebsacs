@@ -268,16 +268,9 @@ export const pasosPapeleria = [
   {
     cuando: 'Día 4', titulo: 'Abre una sucursal',
     texto: 'Arranca la primera tienda, acompañada. Si algo se atora, estamos en la línea.',
-    detalle: 'Ese día se cobra, se surte una lista, se factura y se cierra la caja — pero con alguien al lado.',
+    detalle: 'Ese día se cobra, se surte una lista, se factura y se cierra la caja — pero con alguien al lado. Y con lo aprendido ahí, las demás entran el mismo día.',
     img: '/images/proc-pap-4.webp',
     alt: 'Empleada cobrando en el mostrador acompañada por un compañero el primer día',
-  },
-  {
-    cuando: 'Día 5', titulo: 'Abren las demás',
-    texto: 'Con lo aprendido en la primera, las otras entran el mismo día.',
-    detalle: 'Y desde ese momento el mostrador ve la existencia de toda la cadena, que es lo que salva agosto.',
-    img: '/images/proc-pap-5.webp',
-    alt: 'Dueña de una cadena de papelerías recorriendo los pasillos con su tablet',
   },
 ];
 

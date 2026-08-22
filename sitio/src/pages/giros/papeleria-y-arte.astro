@@ -21,7 +21,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
-import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteSalida from '../../components/suite/SuiteSalida.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
@@ -32,7 +31,7 @@ import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import {
-  seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
+  seccionesPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
 } from '../../data/giros/papeleria';
 
 const titulo = 'Suite para Papelerías';
@@ -74,20 +73,10 @@ const desc =
     cierre="Ningún sistema genérico entiende esto: aquí la unidad no es el producto, es el renglón que escribió un maestro — y un renglón se puede surtir con dos o tres artículos distintos, porque ninguna escuela puede imponer marca ni proveedor. Cada pantalla que sigue está hecha con esa lógica."
   />
 
-  <!-- ── La comparación que hace el propio visitante ── -->
-  <SuiteCortina
-    eyebrow={cortinaPapeleria.eyebrow}
-    titulo={cortinaPapeleria.titulo}
-    sub={cortinaPapeleria.sub}
-    fotoAntes={cortinaPapeleria.fotoAntes}
-    fotoDespues={cortinaPapeleria.fotoDespues}
-    altAntes={cortinaPapeleria.altAntes}
-    altDespues={cortinaPapeleria.altDespues}
-    libreta={cortinaPapeleria.libreta}
-    pieAntes={cortinaPapeleria.pieAntes}
-    filas={cortinaPapeleria.filas}
-    pieDespues={cortinaPapeleria.pieDespues}
-  />
+  <!-- La cortina del antes/después está pendiente: hacen falta las dos caras
+       de la MISMA empleada y se acabaron los créditos de imagen. Antes que
+       publicar dos personas distintas —el defecto que el referee cazó en
+       moda— el bloque se queda fuera. Ver Deuda conocida. -->
 
   <!-- ── Los dos caminos que ya intentó ── -->
   <SuiteProblemas />
