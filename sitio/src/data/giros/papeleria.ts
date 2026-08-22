@@ -52,18 +52,18 @@ export const seccionesPapeleria: SuiteSeccion[] = [
       'Kit armado a precio cerrado, o surtido suelto por el piso',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Renglón 14 · Primaria 3º · Colegio del Valle</p>
+      <p style="${est.h}">Renglón 14 · Secundaria 1º · Colegio del Valle</p>
       <div style="border:1px solid var(--color-border-light);border-radius:11px;padding:12px 13px;margin-bottom:10px;">
         <div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">“1 cuaderno profesional cuadro chico 100 h cosido”</div>
-        <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;margin-top:3px;">como lo escribió la maestra</div>
+        <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;margin-top:3px;">como lo escribió el colegio</div>
       </div>
-      ${[['Económico','engrapado · 100 h','$38'],['Sugerido','cosido pasta flexible','$52'],['Premium','cosido pasta dura','$74']]
+      ${[['Económico','cosido pasta flexible','$38'],['Sugerido','cosido pasta dura','$52'],['Premium','cosido pasta dura, hoja de 75 g','$74']]
         .map(([n,d,p]:any)=>`<div style="display:flex;align-items:center;gap:11px;border:1px solid var(--color-border-light);border-radius:11px;padding:10px 13px;margin-bottom:7px;">
           <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${n}</div>
           <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${d}</div></div>
           <span style="font-size:13.5px;font-weight:800;color:var(--color-text-primary);">${p}</span>
         </div>`).join('')}
-      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">Los tres surten el mismo renglón. La marca la elige el papá, no el colegio.</p>
+      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">Los tres cumplen el renglón: profesional, cuadro chico, 100 h y cosido. Lo único que cambia es la marca — y ésa la elige quien compra, no el colegio.</p>
     </div>`,
   },
   {
@@ -75,19 +75,19 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     bullets: [
       'Quitar renglones del kit desde la vitrina pública, con el precio recalculado',
       'El renglón quitado no se surte: sale del armado y de la orden de compra',
-      'Y si el colegio no permite extras, agregar queda bloqueado y quitar no',
+      'Y si el kit va a precio cerrado, agregar queda bloqueado y quitar no',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Lista de Sofía · Primaria 3º</p>
-      ${[['Cuaderno cuadro chico × 4','$208','sí',''],['Colores 12 largos','$96','sí',''],['Mochila','$540','no','ya la tiene'],['Juego de geometría','$78','no','ya lo tiene'],['Resistol blanco 250 g','$62','sí','']]
+      ${[['Cuaderno forma italiana cuadro grande 100 h × 4','$176','sí',''],['Colores 12 largos','$96','sí',''],['Mochila','$540','no','ya la tiene'],['Juego de geometría','$78','no','ya lo tiene'],['Pegamento blanco 225 g','$62','sí','']]
         .map(([n,p,s,r]:any)=>`<div style="display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--color-border-light);padding:10px 0;">
-          <div style="flex:1;"><div style="font-size:12.5px;font-weight:${s==='si'?'700':'600'};color:${s==='sí'?'var(--color-text-primary)':'var(--color-text-tertiary)'};text-decoration:${s==='sí'?'none':'line-through'};">${n}</div>
+          <div style="flex:1;"><div style="font-size:12.5px;font-weight:${s==='sí'?'700':'600'};color:${s==='sí'?'var(--color-text-primary)':'var(--color-text-tertiary)'};text-decoration:${s==='sí'?'none':'line-through'};">${n}</div>
           ${r?`<div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;">${r}</div>`:''}</div>
           <span style="font-size:13px;font-weight:700;color:${s==='sí'?'var(--color-text-primary)':'var(--color-text-tertiary)'};">${p}</span>
         </div>`).join('')}
       <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px dashed var(--color-border-light);">
         <span style="font-size:12px;font-weight:800;color:var(--color-text-primary);">Se lleva</span>
-        <span style="font-size:15px;font-weight:800;color:var(--color-text-primary);">$366</span>
+        <span style="font-size:15px;font-weight:800;color:var(--color-text-primary);">$334</span>
       </div>
     </div>`,
   },
@@ -96,7 +96,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     tag: 'Multisucursal',
     titulo: 'El faltante de $12 que se lleva la lista de $2,800',
     texto:
-      'Falta un renglón y el papá se va a completar a otro lado — y se lleva la lista entera, no el renglón. En más de la mitad de los casos la pieza sí existe en la cadena, en la sucursal de enfrente, que entrega en cuatro horas contra los cinco días del proveedor.',
+      'Falta un renglón y el papá se va a completar a otro lado — y se lleva la lista entera, no el renglón. En más de la mitad de los casos la pieza sí existe en la cadena, en la sucursal de enfrente, que entrega mañana contra los cinco días del proveedor.',
     bullets: [
       'Existencia de todas las sucursales desde el mostrador',
       'Traspaso entre tiendas antes de pedirle al proveedor',
@@ -126,7 +126,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cuaderno cuadro chico · 9 colegios</p>
-      ${[['Requerimiento de las listas','4,180 pz','var(--color-text-primary)'],['Existencia en las 6 tiendas','−1,340 pz','var(--ok-texto)'],['Por comprar','2,840 pz','var(--color-text-primary)']]
+      ${[['Requerimiento de las listas','4,180 pz','var(--color-text-primary)'],['Existencia en las 4 tiendas','−1,340 pz','var(--ok-texto)'],['Por comprar','2,840 pz','var(--color-text-primary)']]
         .map(([a,b,c]:any)=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--color-border-light);padding:11px 0;">
           <span style="font-size:12.5px;font-weight:700;color:var(--color-text-primary);">${a}</span>
           <span style="font-size:13.5px;font-weight:800;color:${c};">${b}</span>
@@ -143,7 +143,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     bullets: [
       'Cuántos meses lleva cada artículo sin venderse, en toda la cadena',
       'Alertas de exceso y de existencia baja por sucursal',
-      'Listas de precios para el remate, sin tocar el precio de piso',
+      'Un precio de remate propio, sin mover el de mostrador',
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Cierre al 30 de septiembre</p>
@@ -154,7 +154,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
             <span style="font-size:14px;font-weight:800;color:${col};">${b}</span></div>
           <div style="font-size:10.5px;color:var(--color-text-tertiary);font-weight:600;margin-top:3px;">${c}</div>
         </div>`).join('')}
-      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">Saldo, no merma: la merma es lo roto o lo robado, y es otra cuenta.</p>
+      <p style="margin:12px 0 0;font-size:11px;color:var(--color-text-tertiary);">A costo, no a precio de lista. Saldo, no merma: la merma es lo roto o lo robado, y es otra cuenta.</p>
     </div>`,
   },
   {
@@ -162,7 +162,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     tag: 'Servicios',
     titulo: 'La copiadora no es un producto: es un contrato',
     texto:
-      'Copias, engargolado, enmicado y empastado sostienen el valle de octubre a noviembre, con margen alto. Pero la copiadora se renta y se paga por clic, así que el margen del rincón no es precio menos costo: es precio menos clic, menos tóner y menos renta.',
+      'Copias, engargolado, enmicado y empastado sostienen el valle de octubre a febrero, con margen alto. Pero la copiadora se renta y se paga por clic, así que el margen del rincón no es precio menos costo: es precio menos clic —que ya trae tóner y servicio—, menos el arillo, y menos el excedente cuando te pasas de los clics que la renta incluye.',
     bullets: [
       'Los servicios se cobran en la misma caja y en el mismo ticket',
       'Costeo y utilidad por servicio, no sólo por producto',
@@ -170,7 +170,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Engargolado carta · 120 hojas</p>
-      ${[['Precio al público','$85',''],['Clics (120 a $0.28)','−$34',''],['Arillo y micas','−$14',''],['Parte de la renta del mes','−$6','']]
+      ${[['Precio al público','$85',''],['Clics (120 a $0.28)','−$34',''],['Arillo, mica y pasta','−$14',''],['Excedente de clics sobre la renta','−$6','']]
         .map(([a,b]:any)=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--color-border-light);padding:9px 0;">
           <span style="font-size:12.5px;font-weight:600;color:var(--color-text-secondary);">${a}</span>
           <span style="font-size:13px;font-weight:700;color:var(--color-text-primary);">${b}</span>
@@ -217,8 +217,8 @@ export const casosPapeleria = [
     id: 'lista',
     titulo: 'La lista llega en mayo y hay que capturarla completa',
     texto:
-      'Cuarenta colegios por doce grados por treinta y cinco renglones son casi diecisiete mil renglones. Pero siete de cada diez no cambian contra el ciclo pasado: se heredan y sólo se tocan los que el maestro movió.',
-    remate: 'Capturar de cero son doce jornadas. Heredando, son tres — y la orden de compra sale tres semanas antes.',
+      'Nueve colegios por doce grados por treinta y cinco renglones son casi cuatro mil renglones. Pero siete de cada diez no cambian contra el ciclo pasado: se heredan y sólo se tocan los que el maestro movió.',
+    remate: 'Capturar de cero son doce jornadas. Heredando, son tres — y la orden de compra sale dos semanas antes.',
     img: '/images/caso-pap-lista.webp',
     alt: 'Empleada capturando la lista de un colegio en la computadora de la trastienda',
   },
@@ -247,14 +247,14 @@ export const pasosPapeleria = [
   {
     cuando: 'Día 1', titulo: 'Tu catálogo, cargado',
     texto: 'Nos das tu archivo o tu base actual y lo subimos nosotros. No capturas nada.',
-    detalle: 'Con la presentación de compra y la de venta: el paquete de doce entra y la pieza sale, con su factor.',
+    detalle: 'Con la presentación de compra y la de venta: la gruesa de 144 entra y el lápiz sale por pieza; el bulto de cartulina entra y sale por pliego.',
     img: '/images/proc-pap-1.webp',
     alt: 'Consultor con laptop y una empleada revisando el anaquel durante la carga del catálogo',
   },
   {
     cuando: 'Día 2', titulo: 'Tus colegios y tus listas',
     texto: 'Se cargan los colegios con los que ya trabajas y las listas del ciclo pasado.',
-    detalle: 'Y quedan listas para heredarlas en abril: sólo se tocan los renglones que el maestro cambió.',
+    detalle: 'Y se pueden heredar en abril: sólo se tocan los renglones que el maestro cambió.',
     img: '/images/proc-pap-2.webp',
     alt: 'Dueña de la papelería y un consultor revisando las listas de los colegios en la oficina',
   },
@@ -299,8 +299,8 @@ export const planoPapeleria = [
     foto: '/images/plano-pap-mostrador.webp',
     alt: 'Mostrador de una papelería en agosto, con padres formados y la lista en la mano',
     pie: 'En agosto es el cuello de botella del negocio: por aquí pasan todos los tickets.',
-    pregunta: '«¿Cuántos papás se salieron de la fila en agosto sin comprar nada?»',
-    caja: { x: 68, y: 82, w: 216, h: 166 },
+    pregunta: '«Es 27 de agosto, hay ocho en la fila y se cayó el internet. ¿Sigo cobrando?»',
+    caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Punto de venta que sigue cobrando sin conexión' },
       { t: 'Kit escolar a precio cerrado, cobrado en tres minutos', suite: true },
@@ -312,25 +312,25 @@ export const planoPapeleria = [
   {
     id: 'piso',
     nombre: 'Piso de venta',
-    simbolo: 'exhibidores',
+    simbolo: 'gondolas',
     foto: '/images/plano-pap-piso.webp',
     alt: 'Pasillo de una papelería con góndolas de cuadernos y una mamá recorriendo con su lista',
     pie: 'El papá camina la lista en la mano. Aquí se decide si la completa o no.',
     pregunta: '«¿Por qué el anaquel se ve lleno y el cuaderno de cuadro chico ya no hay?»',
-    caja: { x: 298, y: 82, w: 128, h: 112 },
+    caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
       { t: 'Existencia por marca, rayado y número de hojas' },
       { t: 'La misma existencia de todas las tiendas, desde el piso', plan: 'Controla' },
       { t: 'Traspaso entre tiendas antes de pedirle al proveedor', plan: 'Controla' },
       { t: 'Conteo desde el celular, sin cerrar la tienda', plan: 'Controla' },
-      { t: 'Etiquetas con código de barras' },
+      { t: 'Venta por pliego, por medio pliego y por pieza, del mismo bulto' },
     ],
   },
   {
     id: 'servicios',
     nombre: 'Servicios',
     ambito: 'El rincón de la copiadora',
-    simbolo: 'banco',
+    simbolo: 'copiado',
     foto: '/images/plano-pap-servicios.webp',
     alt: 'Rincón de servicios de una papelería con copiadora, guillotina y engargoladora',
     pie: 'Lo que sostiene el valle de octubre: copias, engargolado, enmicado y empastado.',
@@ -341,18 +341,18 @@ export const planoPapeleria = [
       { t: 'Costeo y utilidad por servicio, no sólo por producto', plan: 'Controla' },
       { t: 'Control de gastos para la renta y el consumible', plan: 'Controla' },
       { t: 'Cotizaciones para el trabajo grande' },
-      { t: 'Registro de empleados, horarios, turnos y asistencia', otro: true },
+      { t: 'El trabajo que se deja y se recoge: folio, anticipo y aviso cuando está listo' },
     ],
   },
   {
     id: 'bodega',
     nombre: 'Bodega y armado',
     ambito: 'Detrás del mostrador',
-    simbolo: 'boveda',
+    simbolo: 'armado',
     foto: '/images/plano-pap-bodega.webp',
     alt: 'Mesa de armado de paquetes escolares en la trastienda, con dos empleados empacando',
     pie: 'De mayo a julio deja de ser bodega: es la línea que arma los paquetes.',
-    pregunta: '«¿Cuántos paquetes llevamos armados y cuántos faltan para la junta del viernes?»',
+    pregunta: '«¿Cuántos paquetes llevamos armados y cuántos faltan para la entrega del sábado?»',
     caja: { x: 68, y: 262, w: 216, h: 106 },
     items: [
       { t: 'Avance del armado por colegio y por grado', suite: true },
@@ -376,7 +376,7 @@ export const planoPapeleria = [
       { t: 'Vitrina pública de la lista: el papá la arma desde su teléfono', suite: true },
       { t: 'Tienda en línea con el mismo inventario del mostrador' },
       { t: 'WhatsApp, Instagram, Facebook y TikTok Shop' },
-      { t: 'Conciliación de lo que cobró el colegio, contra lo entregado', suite: true },
+      { t: 'Conciliación de los pedidos que juntó el colegio, contra lo entregado', suite: true },
       { t: 'Perfil del cliente con lo que compró y en qué colegio', plan: 'Fideliza' },
     ],
   },

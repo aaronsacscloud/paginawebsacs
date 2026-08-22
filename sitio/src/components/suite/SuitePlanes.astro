@@ -28,8 +28,17 @@ interface Props {
   /** 'incluida' = viene dentro del plan desde Fideliza. 'complemento' = se
       cotiza aparte, como la Suite Joyería. Decirlo mal es prometer de más. */
   comoSeVende?: 'incluida' | 'complemento';
+  /** El artículo que le toca al nombre del complemento: 'la' o 'las'. */
+  articulo?: string;
+  /** Por qué se cotiza aparte, en las palabras del giro. */
+  porQue?: string;
 }
-const { suite = 'Suite de Moda', comoSeVende = 'incluida' } = Astro.props;
+const {
+  suite = 'Suite de Moda',
+  comoSeVende = 'incluida',
+  articulo = 'la',
+  porQue = 'no es un módulo estándar sino una forma completa de costear',
+} = Astro.props;
 
 const planes = [
   {
@@ -111,7 +120,7 @@ const planes = [
       <p class="pl-eyebrow">Y lo que cuesta</p>
       <!-- h3 a propósito: los bloques de trámite no compiten por el mismo
            nivel que los que nombran el problema del giro. -->
-      <h3 class="pl-h">{comoSeVende === 'incluida' ? `La ${suite} no se paga aparte.` : `Los planes, y dónde entra la ${suite}.`}</h3>
+      <h3 class="pl-h">{comoSeVende === 'incluida' ? `La ${suite} no se paga aparte.` : `Los planes, y dónde entra ${articulo} ${suite}.`}</h3>
       {comoSeVende === 'incluida' ? (
         <p class="pl-sub">
           No es un módulo con precio propio ni una implementación a cotizar. Los planes son
@@ -121,10 +130,9 @@ const planes = [
         </p>
       ) : (
         <p class="pl-sub">
-          Los planes son acumulativos: cada uno trae todo el anterior. La <b>{suite}</b> es
-          distinta — se cotiza como complemento sobre los dos planes que la soportan, porque
-          no es un módulo estándar sino una forma completa de costear. Te la cotizamos con tu
-          catálogo en la mesa, no después.
+          Los planes son acumulativos: cada uno trae todo el anterior. {articulo === 'las' ? 'Las' : 'La'} <b>{suite}</b> {articulo === 'las' ? 'son' : 'es'}
+          distint{articulo === 'las' ? 'as' : 'a'} — se cotiza{articulo === 'las' ? 'n' : ''} como complemento sobre los dos planes que
+          {articulo === 'las' ? ' las' : ' la'} soportan, porque {porQue}. Te {articulo === 'las' ? 'las' : 'la'} cotizamos con tu catálogo en la mesa, no después.
         </p>
       )}
     </header>
@@ -145,7 +153,7 @@ const planes = [
             <p class="pl-anual">{p.anual} si pagas anual</p>
 
             {p.popular && comoSeVende === 'incluida' && <p class="pl-popular">El primero que trae la suite completa</p>}
-            {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para la ${suite}`}</p>}
+            {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para ${articulo} ${suite}`}</p>}
           </div>
 
           <div class="pl-que">

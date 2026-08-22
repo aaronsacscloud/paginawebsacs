@@ -44,17 +44,17 @@ const desc =
   <!-- ── Portada: la forma del Home, con avisos del oficio ── -->
   <GiroBanner
     eyebrow="SACS · Suite Papelería"
-    titulo="Tu tienda no vende productos."
-    resalte="Surte listas."
+    titulo="Tu tienda no vende cuadernos."
+    resalte="Surte renglones."
     sub="Listas escolares por colegio y grado, kits que el papá desglosa desde su teléfono, y la existencia de todas tus tiendas en el mostrador — que es lo que salva agosto."
     ctaPri={{ label: 'Agenda una demo', href: '/contacto' }}
     ctaSec={{ label: 'Ver planes', href: '/planes' }}
     foto="/images/hero-papeleria.webp"
     fotoAlt="Empleada de una papelería atendiendo detrás del mostrador, con los anaqueles de cuadernos al fondo"
     avisos={[
-      { modulo: 'Renglón sin surtir', texto: 'Cuadro chico 100 h · 46 piezas en la cadena, ninguna aquí', pos: 1, tono: 'rojo', sello: 'Ahora' },
+      { modulo: 'Renglón de lista sin surtir', texto: 'Cuadro chico 100 h · 46 piezas en la cadena, ninguna aquí', pos: 1, tono: 'rojo', sello: 'Ahora' },
       { modulo: 'Listas por heredar', texto: '9 colegios del ciclo pasado · 7 de cada 10 renglones no cambian', pos: 2, tono: 'azul', sello: 'Abril' },
-      { modulo: 'Sobrante de temporada', texto: '$960,000 específico de colegio · remátalo en septiembre', pos: 3, tono: 'ambar', sello: '30 sep' },
+      { modulo: 'Sobrante de temporada', texto: '$960,000 específico de colegio · remátalo en septiembre', pos: 3, tono: 'ambar', sello: 'Septiembre' },
     ]}
   />
 
@@ -67,7 +67,7 @@ const desc =
       '<b>“Esa ya la tengo”</b> — y hay que rehacer la cuenta en la caja, con la fila detrás.',
       'La lista del colegio llegó en <b>mayo</b> y la orden de compra se puso en <b>marzo</b>.',
       'En <b>octubre</b> aparece lo que sobró, cuando ya no hay devolución con el proveedor.',
-      'El colegio cobra, se queda su comisión y te paga a <b>45 días</b>.',
+      'El colegio junta los pedidos de los papás y te paga a <b>45 días</b> — y hay que cuadrar peso por peso contra lo entregado.',
       'La lista llega como <b>foto de WhatsApp</b> a las once de la noche.',
       'Y la copiadora no es un producto: es una <b>renta con costo por clic</b>.',
     ]}
@@ -90,7 +90,52 @@ const desc =
   />
 
   <!-- ── Los dos caminos que ya intentó ── -->
-  <SuiteProblemas />
+  <SuiteProblemas
+    entrada="Casi toda papelería que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'El renglón de la lista, con sus equivalentes', generico: 'No existe', medida: 'Si la pagaste', sacs: 'Incluido' },
+      { que: 'Kit que el papá desglosa, con el precio recalculado', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+      { que: 'La orden de compra que sale de las listas', generico: 'No existe', medida: 'A veces', sacs: 'Incluida' },
+      { que: 'Presentación de compra distinta a la de venta', generico: 'A medias', medida: 'Rara vez', sacs: 'Con su factor' },
+      { que: 'Existencia de todas las tiendas en el mostrador', generico: 'A medias', medida: 'Rara vez', sacs: 'En tiempo real' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+    doc1={{
+      membrete: 'Sistema genérico', sub: 'Reporte de inventario',
+      cab: ['CÓDIGO', 'DESCRIPCIÓN', 'EXIST.'],
+      lineas: [
+        { a: 'SKU-0117', b: 'CUADERNO 100 H', c: '340' },
+        { a: '—', b: '—', c: '—', tenue: true },
+        { a: '—', b: '—', c: '—', tenue: true },
+      ],
+      margen: ['¿y el rayado?', '¿cuadro chico?'],
+      sello: 'NO SABE<br />QUÉ ES UN RENGLÓN',
+      notas: [
+        'Te pide <b>un solo código</b>. Profesional, francesa e italiana, con sus cuatro rayados, se vuelven esa fila.',
+        'Para saber si queda el de cuadro chico abres un <b>Excel aparte</b> que alguien mantiene a mano.',
+        'Compraste la gruesa de 144 y vendes por pieza: <b>no sabe convertir</b>.',
+        'Y la lista del colegio no cabe en ningún lado, así que vive en otro Excel.',
+      ],
+    }}
+    doc2={{
+      membrete: 'Hoja de cálculo del dueño', sub: 'Listas 2026 · v9 FINAL',
+      cab: ['CONCEPTO', 'ESTADO'],
+      lineas: [
+        { a: 'COLEGIOS CAPTURADOS', b: '9 DE 9' },
+        { a: 'QUIÉN LA MANTIENE', b: 'EL DUEÑO', tachado: true },
+        { a: 'LA VE EL MOSTRADOR', b: 'NO' },
+      ],
+      margen: ['v9 final final', 'la buena'],
+      sello: 'VIVE EN<br />UNA SOLA LAPTOP',
+      notas: [
+        'Se captura en <b>mayo, de noche</b>, y para junio ya hay tres versiones.',
+        'El mostrador <b>no la ve</b>: para cotizar una lista hay que hablarle al dueño.',
+        'No sabe qué tienes en existencia, así que <b>la orden de compra sigue saliendo a ojo</b>.',
+        'Y en agosto, cuando más se necesita, <b>nadie más la sabe usar</b>.',
+      ],
+    }}
+  />
 
   <!-- Salida: aquí muere la objeción de los dos caminos -->
   <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es un renglón de lista." />
@@ -99,7 +144,7 @@ const desc =
   <SuiteCifras
     foto="/images/suite-pap-tienda.webp"
     alt="Pasillo central de una papelería grande con góndolas de cuadernos a ambos lados y clientes recorriendo"
-    frase="Desde una papelería hasta una cadena que surte a cuarenta colegios."
+    frase="Desde una papelería hasta una cadena que surte a nueve colegios."
     encuadre="center 42%"
     datos={[
       { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
@@ -128,8 +173,9 @@ const desc =
   <!-- ── La suite entera, contada como el plano de la tienda ── -->
   <SuitePlano
     titulo="Tu papelería, por dentro."
-    sub="Entra el papá con la lista en la mano, camina el piso, pregunta en el mostrador y paga. Detrás está la bodega que en junio arma paquetes y, afuera, el WhatsApp por donde llegan las listas a las once de la noche. Toca cada zona del plano y mira qué hace SACS ahí."
+    sub="Entra la mamá con la lista en la mano, camina el piso, pregunta en el mostrador y paga. Detrás está la bodega que en junio arma paquetes y, afuera, el WhatsApp por donde llegan las listas a las once de la noche. Toca cada zona del plano y mira qué hace SACS ahí."
     proyecto="Tu papelería — planta baja"
+    acceso="izquierda"
     zonas={planoPapeleria}
     rotuloSuite="De Listas Escolares"
     leyenda="Lo marcado como Listas Escolares es el complemento que se cotiza aparte; lo marcado como Otro complemento se cotiza por su lado, y el resto entra con tu plan."
@@ -143,7 +189,12 @@ const desc =
   />
 
   <!-- ── El modelo comercial ── -->
-  <SuitePlanes suite="Listas Escolares" comoSeVende="complemento" />
+  <SuitePlanes
+    suite="Listas Escolares"
+    comoSeVende="complemento"
+    articulo="las"
+    porQue="no son un módulo estándar sino la forma de trabajar de una temporada entera"
+  />
 
   <!-- Salida: quien se convence con el precio no debería bajar más -->
   <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias listas, con tus colegios, en pantalla." cta="Agenda una demo" />

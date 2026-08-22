@@ -40,7 +40,7 @@ export interface ZonaPlano {
   /** Rectángulo dentro del plano, en el sistema de 660 × 430. */
   caja: { x: number; y: number; w: number; h: number };
   /** Qué mobiliario se dibuja dentro. */
-  simbolo?: 'rieles' | 'probadores' | 'anaqueles' | 'mostrador' | 'paquetes' | 'exhibidores' | 'bancas' | 'vitrinas' | 'banco' | 'boveda';
+  simbolo?: 'rieles' | 'probadores' | 'anaqueles' | 'mostrador' | 'paquetes' | 'exhibidores' | 'bancas' | 'vitrinas' | 'banco' | 'boveda' | 'gondolas' | 'copiado' | 'armado';
   /** La fotografía de la zona. */
   foto?: string;
   alt?: string;
@@ -61,6 +61,8 @@ interface Props {
   leyenda?: string;
   /** Cómo se llama el complemento del giro, si lo hay. */
   rotuloSuite?: string;
+  /** Dónde abre la puerta: 'derecha' (por defecto) o 'izquierda'. */
+  acceso?: 'izquierda' | 'derecha';
 }
 const {
   eyebrow = 'Toda la operación, en un solo lugar',
@@ -71,6 +73,7 @@ const {
   todoRot = 'Todo lo que incluye, zona por zona',
   leyenda = 'Todo lo de arriba viene incluido en tu plan, salvo lo que diga otra cosa.',
   rotuloSuite = 'Complemento del giro',
+  acceso = 'derecha',
 } = Astro.props;
 
 /** El mobiliario, dibujado en símbolos sobre la caja de cada zona. */
@@ -149,6 +152,31 @@ function mobiliario(z: ZonaPlano): string {
         s += R(cx + 6, y + h - 26, cw - 14, 9);
       }
       s += L(x + 10 + 3 * cw, y + 26, x + 10 + 3 * cw, y + h - 10);
+      return s;
+    }
+    case 'gondolas': {
+      // Góndolas dobles de centro y muro perimetral de anaquel.
+      let s = `<rect class="pn-mob-t" x="${x + 12}" y="${y + 30}" width="${w - 24}" height="12"/>`;
+      [0.42, 0.62, 0.82].forEach((f) => {
+        s += `<rect class="pn-mob-f" x="${x + 16}" y="${y + h * f}" width="${w - 78}" height="11" rx="1.5"/>`;
+      });
+      s += R(x + w - 54, y + h * 0.44, 40, 30);
+      return s;
+    }
+    case 'copiado': {
+      // La copiadora, la guillotina y la engargoladora sobre su mesa.
+      let s = R(x + 14, y + 34, 34, 30);
+      s += R(x + 54, y + 38, 26, 22);
+      s += `<line class="pn-mob" x1="${x + 54}" y1="${y + 44}" x2="${x + 80}" y2="${y + 38}"/>`;
+      s += R(x + 88, y + 38, 24, 22);
+      s += `<rect class="pn-mob-t" x="${x + 14}" y="${y + h - 34}" width="${w - 28}" height="14"/>`;
+      return s;
+    }
+    case 'armado': {
+      // La mesa larga de armado con los paquetes en fila y el anaquel atrás.
+      let s = R(x + 16, y + 42, w - 60, 30);
+      for (let i = 0; i < 5; i++) s += R(x + 22 + i * 26, y + h - 44, 18, 22);
+      s += `<rect class="pn-mob-t" x="${x + w - 34}" y="${y + 34}" width="16" height="${h - 60}"/>`;
       return s;
     }
     case 'boveda': {
@@ -255,10 +283,21 @@ const primera = clave[0];
           <rect class="pn-muro" x="58" y="70" width="378" height="310"></rect>
 
           <!-- Vano y giro de puerta -->
-          <rect class="pn-vano" x="320" y="378" width="72" height="16"></rect>
-          <path class="pn-giro" d="M392 380 A 72 72 0 0 0 320 308"></path>
-          <line class="pn-muro-fino" x1="320" y1="380" x2="320" y2="308"></line>
-          <text class="pn-rot" x="330" y="412">Acceso</text>
+          {acceso === 'derecha' ? (
+            <>
+              <rect class="pn-vano" x="320" y="378" width="72" height="16"></rect>
+              <path class="pn-giro" d="M392 380 A 72 72 0 0 0 320 308"></path>
+              <line class="pn-muro-fino" x1="320" y1="380" x2="320" y2="308"></line>
+              <text class="pn-rot" x="330" y="412">Acceso</text>
+            </>
+          ) : (
+            <>
+              <rect class="pn-vano" x="96" y="378" width="72" height="16"></rect>
+              <path class="pn-giro" d="M96 380 A 72 72 0 0 1 168 308"></path>
+              <line class="pn-muro-fino" x1="168" y1="380" x2="168" y2="308"></line>
+              <text class="pn-rot" x="106" y="412">Acceso</text>
+            </>
+          )}
 
           <!-- Cotas -->
           <g class="pn-cota">
@@ -289,7 +328,7 @@ const primera = clave[0];
           )}
 
           <!-- Escala gráfica -->
-          <g class="pn-escala">
+          <g class="pn-escala" transform={acceso === 'izquierda' ? 'translate(266 0)' : undefined}>
             <rect x="46" y="406" width="32" height="5"></rect>
             <rect class="alt" x="78" y="406" width="32" height="5"></rect>
             <rect x="110" y="406" width="32" height="5"></rect>
