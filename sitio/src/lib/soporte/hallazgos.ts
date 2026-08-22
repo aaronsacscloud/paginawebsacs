@@ -206,7 +206,7 @@ export async function guardarHallazgos(t: TicketMin, hallazgos: HallazgoLeido[])
       producto: h.producto || null,
       accion: h.accion?.slice(0, 500) || null,
       confianza: h.confianza,
-      huella: huellaDe(t.company_id || null, t.cuenta || null, h.tipo, h.titulo),
+      huella: huellaDe(t.company_id || null, t.cuenta || null, h.tipo, h.cita),
       metadata: { origen: 'soporte_ia', tema: t.tema || null },
     };
     const { error } = await supabase.from('crm_soporte_hallazgos').insert(fila);

@@ -29,11 +29,21 @@ export function citaVerificada(cita: string, hilo: string): boolean {
   return trozos.length > 1 && trozos.every(t => h.includes(t));
 }
 
-/** Llave de deduplicado: la misma petición detectada dos noches seguidas es una
- *  sola fila. Va por empresa + tipo + primeras palabras del título, no por el
- *  título completo: el modelo lo redacta distinto cada vez. */
-export function huellaDe(companyId: string | null, cuenta: string | null, tipo: string, titulo: string): string {
+/**
+ * Llave de deduplicado: empresa + tipo + LA CITA.
+ *
+ * Iba por el título y no servía. Medido sobre el histórico completo (161
+ * conversaciones → 34 hallazgos), un mismo cliente que repite su petición en
+ * varios tickets generaba hasta CUATRO tarjetas con la MISMA frase textual y
+ * cuatro títulos distintos —"Permiso para subir precio en punto de venta pero
+ * no bajarlo", "Permiso de precio personalizado que solo permita subir, nunca
+ * bajar"…—, así que la huella nunca coincidía.
+ *
+ * La cita es lo estable: se copia del cliente, no la redacta el modelo. La
+ * misma frase del mismo cliente es la misma petición, venga del ticket que
+ * venga. Se recorta a 160 caracteres normalizados para acotar la llave.
+ */
+export function huellaDe(companyId: string | null, cuenta: string | null, tipo: string, cita: string): string {
   const quien = companyId || `cuenta:${normaliza(cuenta || 'sin-identificar')}`;
-  const clave = normaliza(titulo).split(' ').slice(0, 7).join(' ');
-  return `${quien}|${tipo}|${clave}`;
+  return `${quien}|${tipo}|${normaliza(cita).slice(0, 160)}`;
 }
