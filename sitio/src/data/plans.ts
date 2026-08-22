@@ -343,6 +343,12 @@ export interface Addon {
 
 export const addons: Addon[] = [
   {
+    id: 'listas-escolares',
+    name: 'Listas Escolares',
+    description: 'Para papelerías: captura las listas por colegio y grado, arma el kit, deja que el papá quite lo que ya tiene y saca la orden de compra de las listas mismas.',
+    icon: 'listas',
+  },
+  {
     id: 'suite-joyeria',
     name: 'Suite Joyería',
     description: 'Para joyerías: el producto no tiene precio fijo, vale lo que pesa por lo que vale el gramo — y el gramo lo pones tú. Colchón del fino, factor por quilataje, costo histórico que no se mueve y repreciado masivo con simulación antes de aplicar.',

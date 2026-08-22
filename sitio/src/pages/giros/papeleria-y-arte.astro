@@ -1,4 +1,153 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Suite para Papelerías y tiendas de arte.
+ *
+ * Mismos bloques base, contenido 100% del giro. Lo que cambia el argumento
+ * entero: aquí la unidad de trabajo no es el producto, es el RENGLÓN de una
+ * lista escolar — texto escrito por un maestro que se puede surtir con dos o
+ * tres artículos distintos.
+ *
+ * Bloque propio: las listas escolares. Fuera de una papelería no significan
+ * nada, y traen un candado legal que manda sobre el diseño: Profeco es
+ * explícita en que ninguna escuela puede exigir marca ni obligar a comprar con
+ * un proveedor. Por eso el kit es opcional, desglosable y con equivalencias.
+ *
+ * OJO: las listas escolares son un complemento que se cotiza aparte, no vienen
+ * dentro de los cuatro planes — por eso SuitePlanes va en modo "complemento" y
+ * los renglones del plano llevan su marca.
+ *
+ * Todo el contenido vive en src/data/giros/papeleria.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import {
+  seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
+} from '../../data/giros/papeleria';
+
+const titulo = 'Suite para Papelerías';
+const desc =
+  'El sistema para papelerías y tiendas de arte: listas escolares por colegio y grado, kits que el papá desglosa, existencia de toda la cadena en el mostrador y la orden de compra que sale de las listas.';
 ---
-<ComingSoon giro="Papelería y Arte" title="Papelería y Arte" description="Software para papelerías y tiendas de bellas artes. Kits escolares, pedidos por aula y catálogo amplio." color="#22C55E" />
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <!-- ── Portada: la forma del Home, con avisos del oficio ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Papelería"
+    titulo="Tu tienda no vende productos."
+    resalte="Surte listas."
+    sub="Listas escolares por colegio y grado, kits que el papá desglosa desde su teléfono, y la existencia de todas tus tiendas en el mostrador — que es lo que salva agosto."
+    ctaPri={{ label: 'Agenda una demo', href: '/contacto' }}
+    ctaSec={{ label: 'Ver planes', href: '/planes' }}
+    foto="/images/hero-papeleria.webp"
+    fotoAlt="Empleada de una papelería atendiendo detrás del mostrador, con los anaqueles de cuadernos al fondo"
+    avisos={[
+      { modulo: 'Renglón sin surtir', texto: 'Cuadro chico 100 h · 46 piezas en la cadena, ninguna aquí', pos: 1, tono: 'rojo', sello: 'Ahora' },
+      { modulo: 'Listas por heredar', texto: '9 colegios del ciclo pasado · 7 de cada 10 renglones no cambian', pos: 2, tono: 'azul', sello: 'Abril' },
+      { modulo: 'Sobrante de temporada', texto: '$960,000 específico de colegio · remátalo en septiembre', pos: 3, tono: 'ambar', sello: '30 sep' },
+    ]}
+  />
+
+  <!-- ── Manifiesto: aquí se demuestra que entendemos el giro ── -->
+  <SuiteManifiesto
+    intro="Sabemos cómo se surte una lista"
+    frases={[
+      'La lista dice <b>“cuadro chico”</b> y el anaquel está lleno… de cuadro grande.',
+      'Falta un renglón de <b>$12</b> y el papá se lleva la lista de <b>$2,800</b> a otro lado.',
+      '<b>“Esa ya la tengo”</b> — y hay que rehacer la cuenta en la caja, con la fila detrás.',
+      'La lista del colegio llegó en <b>mayo</b> y la orden de compra se puso en <b>marzo</b>.',
+      'En <b>octubre</b> aparece lo que sobró, cuando ya no hay devolución con el proveedor.',
+      'El colegio cobra, se queda su comisión y te paga a <b>45 días</b>.',
+      'La lista llega como <b>foto de WhatsApp</b> a las once de la noche.',
+      'Y la copiadora no es un producto: es una <b>renta con costo por clic</b>.',
+    ]}
+    cierre="Ningún sistema genérico entiende esto: aquí la unidad no es el producto, es el renglón que escribió un maestro — y un renglón se puede surtir con dos o tres artículos distintos, porque ninguna escuela puede imponer marca ni proveedor. Cada pantalla que sigue está hecha con esa lógica."
+  />
+
+  <!-- ── La comparación que hace el propio visitante ── -->
+  <SuiteCortina
+    eyebrow={cortinaPapeleria.eyebrow}
+    titulo={cortinaPapeleria.titulo}
+    sub={cortinaPapeleria.sub}
+    fotoAntes={cortinaPapeleria.fotoAntes}
+    fotoDespues={cortinaPapeleria.fotoDespues}
+    altAntes={cortinaPapeleria.altAntes}
+    altDespues={cortinaPapeleria.altDespues}
+    libreta={cortinaPapeleria.libreta}
+    pieAntes={cortinaPapeleria.pieAntes}
+    filas={cortinaPapeleria.filas}
+    pieDespues={cortinaPapeleria.pieDespues}
+  />
+
+  <!-- ── Los dos caminos que ya intentó ── -->
+  <SuiteProblemas />
+
+  <!-- Salida: aquí muere la objeción de los dos caminos -->
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es un renglón de lista." />
+
+  <!-- ── Respiro fotográfico: la escala de la operación ── -->
+  <SuiteCifras
+    foto="/images/suite-pap-tienda.webp"
+    alt="Pasillo central de una papelería grande con góndolas de cuadernos a ambos lados y clientes recorriendo"
+    frase="Desde una papelería hasta una cadena que surte a cuarenta colegios."
+    encuadre="center 42%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS ACTIVOS EN SACS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <!-- ── Momentos reales, con su escena ── -->
+  <SuiteCasos
+    eyebrow="Cuatro momentos del año"
+    titulo="Dónde se gana y dónde se pierde"
+    sub="Este giro vive de una temporada brutal y de tres meses que la sostienen. Toca cada uno."
+    casos={casosPapeleria}
+  />
+
+  <!-- ── Recorrido de funcionalidades ── -->
+  <SuiteScroll
+    eyebrow="Suite Papelería"
+    titulo="Todo tu negocio de papelería, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una papelería real: el renglón de la lista, el papá que quita lo que ya tiene, el faltante que se busca en la otra tienda y el sobrante de octubre."
+    secciones={seccionesPapeleria}
+  />
+
+  <!-- ── La suite entera, contada como el plano de la tienda ── -->
+  <SuitePlano
+    titulo="Tu papelería, por dentro."
+    sub="Entra el papá con la lista en la mano, camina el piso, pregunta en el mostrador y paga. Detrás está la bodega que en junio arma paquetes y, afuera, el WhatsApp por donde llegan las listas a las once de la noche. Toca cada zona del plano y mira qué hace SACS ahí."
+    proyecto="Tu papelería — planta baja"
+    zonas={planoPapeleria}
+    rotuloSuite="De Listas Escolares"
+    leyenda="Lo marcado como Listas Escolares es el complemento que se cotiza aparte; lo marcado como Otro complemento se cotiza por su lado, y el resto entra con tu plan."
+  />
+
+  <!-- ── Cómo se cambia sin cerrar ── -->
+  <SuiteProceso
+    titulo="Cambiarte no cierra tu papelería."
+    sub="Cinco días, y fuera de temporada. Tu catálogo lo subimos nosotros y tu equipo aprende lo de agosto antes de que llegue agosto."
+    pasos={pasosPapeleria}
+  />
+
+  <!-- ── El modelo comercial ── -->
+  <SuitePlanes suite="Listas Escolares" comoSeVende="complemento" />
+
+  <!-- Salida: quien se convence con el precio no debería bajar más -->
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus propias listas, con tus colegios, en pantalla." cta="Agenda una demo" />
+
+  <!-- El mismo cierre que la portada -->
+  <CtaDudas demoDesc="Te mostramos SACS con tus colegios, tus listas y tu catálogo real. 30 min, sin compromiso." />
+</BaseLayout>
