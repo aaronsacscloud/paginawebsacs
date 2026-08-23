@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
         ultimo_mensaje_at: u.enviado_at || u.created_at,
         ultimo_mensaje_texto: (u.cuerpo || u.transcript || `[${u.tipo}]`).slice(0, 200),
         ultima_direccion: u.direccion,
-      }).eq('id', id).lt('ultimo_mensaje_at', u.enviado_at || u.created_at);
+      }).eq('id', id);   // el mensaje más nuevo en BD ES la verdad (incluye los que lleguen durante la importación)
     }
     return json({ importados, vistos: data.length, next });
   } catch (e: any) {

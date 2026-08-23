@@ -115,7 +115,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
 
   let contenido: any;
   if (item.borrado_at) {
-    contenido = <span style={{ fontStyle: 'italic', opacity: .7, display: 'flex', alignItems: 'center', gap: 5 }}>🚫 Mensaje eliminado</span>;
+    contenido = <span style={{ fontStyle: 'italic', opacity: .7, display: 'flex', alignItems: 'center', gap: 5 }}>Mensaje eliminado por el cliente</span>;
   } else if (item.transcript) {
     contenido = (<>
       <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .8, marginBottom: 3 }}>NOTA DE VOZ · transcripción</span>
