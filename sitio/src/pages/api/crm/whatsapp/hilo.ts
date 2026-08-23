@@ -7,6 +7,7 @@
 // PUT { id, asignado_a? | estado_crm? | snooze_until? | ... } — whitelist;
 //   asignación/estado/snooze dejan su EVENTO de sistema en el hilo.
 import type { APIRoute } from 'astro';
+import { marcarLeido } from '../../../../lib/whatsapp/kapso-api';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { resolverTenant, puedeEnviar } from '../../../../lib/email/tenant';
@@ -74,17 +75,28 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   // ── Mensajes de WhatsApp + notas + eventos (solo con ancla de WhatsApp) ──
-  const [{ data: mensajes }, { data: notas }, { data: eventos }] = conv.id ? await Promise.all([
-    supabase.from('wa_mensajes')
-      .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, status, error, enviado_at, created_at, metadata')
-      .eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(500),
+  // Los N más NUEVOS (desc + reverse): ordenar ascendente y cortar dejaba
+  // fuera justo el mensaje que acaba de llegar en hilos largos.
+  // `?before=<created_at>` trae la página anterior para "Cargar más arriba".
+  const before = url.searchParams.get('before');
+  const PAGINA = 150;
+  const qMsj = supabase.from('wa_mensajes')
+    .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, media_id, mime, filename, autor, status, error, enviado_at, created_at, metadata, borrado_at')
+    .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(PAGINA + 1);
+  const [{ data: msjDesc }, { data: notasDesc }, { data: eventosDesc }] = conv.id ? await Promise.all([
+    before ? qMsj.lt('created_at', before) : qMsj,
     supabase.from('wa_notas')
       .select('id, autor, texto, created_at')
-      .eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(200),
+      .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(200),
     supabase.from('wa_eventos')
       .select('id, tipo, detalle, autor, created_at')
-      .eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(200),
+      .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(200),
   ]) : [{ data: [] }, { data: [] }, { data: [] }] as any;
+  const hayMas = (msjDesc || []).length > PAGINA;
+  const mensajes = (msjDesc || []).slice(0, PAGINA).reverse();
+  const notas = (notasDesc || []).reverse();
+  const eventos = (eventosDesc || []).reverse();
+  if (before) return json({ mensajes, hay_mas: hayMas });
 
   // Ventana de 24 h desde el último entrante de WhatsApp.
   const ultimoEntrante = [...(mensajes || [])].reverse().find((m: any) => m.direccion === 'entrante');
@@ -111,11 +123,13 @@ export const GET: APIRoute = async ({ url }) => {
   if (conv.id && (conv.no_leidos || 0) > 0) {
     await supabase.from('wa_conversaciones').update({ no_leidos: 0 }).eq('id', conv.id);
     conv.no_leidos = 0;
+    // Palomitas azules para el cliente: el último entrante se marca leído en Meta.
+    if (ultimoEntrante?.kapso_message_id) marcarLeido(ultimoEntrante.kapso_message_id).catch(() => {});
   }
   const sinLeer = convsEmail.filter(c => !c.leida).map(c => c.id);
   if (sinLeer.length) await supabase.from('email_conversations').update({ leida: true }).in('id', sinLeer);
 
-  return json({ conversacion: conv, mensajes: mensajes || [], correos, eventos: eventos || [], notas: notas || [], ventana, canales });
+  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales });
 };
 
 export const PUT: APIRoute = async ({ request }) => {
@@ -137,7 +151,15 @@ export const PUT: APIRoute = async ({ request }) => {
   if ('estado' in b && ['active', 'ended'].includes(b.estado)) cambios.estado = b.estado;
   if ('estado_crm' in b && ['abierta', 'pendiente', 'resuelta'].includes(b.estado_crm)) {
     cambios.estado_crm = b.estado_crm;
-    eventos.push({ tipo: 'estado', detalle: `Marcada como ${b.estado_crm}` });
+    if (b.estado_crm === 'resuelta') {
+      // Nota de cierre categorizada: de aquí salen las métricas de "por qué se cierra".
+      cambios.cierre_categoria = b.cierre_categoria ? String(b.cierre_categoria).slice(0, 80) : null;
+      cambios.cierre_nota = b.cierre_nota ? String(b.cierre_nota).slice(0, 1000) : null;
+      eventos.push({ tipo: 'estado', detalle: `Marcada como resuelta${cambios.cierre_categoria ? ` · ${cambios.cierre_categoria}` : ''}${cambios.cierre_nota ? ` — ${cambios.cierre_nota}` : ''}` });
+    } else {
+      if (b.estado_crm === 'abierta') { cambios.cierre_categoria = null; cambios.cierre_nota = null; }
+      eventos.push({ tipo: 'estado', detalle: `Marcada como ${b.estado_crm}` });
+    }
   }
   if ('snooze_until' in b) {
     cambios.snooze_until = b.snooze_until || null;

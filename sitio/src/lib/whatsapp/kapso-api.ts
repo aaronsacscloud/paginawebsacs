@@ -80,6 +80,16 @@ export async function listarNumeros() {
   return llamar(PLATFORM, '/whatsapp/phone_numbers');
 }
 
+/** Una página del historial de mensajes del número (cursor `paging.next` → after). */
+export async function listarMensajesKapso(after?: string | null, limit = 100): Promise<{ data: any[]; next: string | null }> {
+  if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
+  const res = await fetch(`${PLATFORM}/whatsapp/messages?phone_number_id=${PHONE_NUMBER_ID}&limit=${limit}${after ? `&after=${encodeURIComponent(after)}` : ''}`,
+    { headers: { 'X-API-Key': API_KEY } });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new KapsoError(res.status, j?.error || j);
+  return { data: j?.data || [], next: j?.paging?.next || null };
+}
+
 // ── Webhooks ──
 
 const EVENTOS = [
@@ -108,14 +118,41 @@ export async function registrarWebhook(url: string, secreto: string) {
 // ── Envío (Meta passthrough) ──
 
 /** Texto libre. Fuera de la ventana de 24 h Kapso devuelve 422: se propaga. */
-export async function enviarTexto(telefono: string, texto: string) {
+export async function enviarTexto(telefono: string, texto: string, citaWamid?: string | null) {
   return meta(`/${PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', to: telefono,
       type: 'text', text: { body: texto },
+      ...(citaWamid ? { context: { message_id: citaWamid } } : {}),
     }),
   });
+}
+
+/** Confirmación de lectura (palomitas azules) y, opcional, "escribiendo…". */
+export async function marcarLeido(wamid: string, escribiendo = false) {
+  return meta(`/${PHONE_NUMBER_ID}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({
+      messaging_product: 'whatsapp', status: 'read', message_id: wamid,
+      ...(escribiendo ? { typing_indicator: { type: 'text' } } : {}),
+    }),
+  });
+}
+
+/**
+ * Media ENTRANTE: el id de Meta se cambia por una URL temporal y el binario se
+ * baja con la API key (el navegador no la tiene, por eso esto vive en el
+ * servidor y /api/crm/whatsapp/media lo sirve como proxy).
+ */
+export async function descargarMedia(mediaId: string): Promise<{ bytes: ArrayBuffer; mime: string } | null> {
+  if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
+  const info = await meta(`/${mediaId}`);
+  const url = info?.url;
+  if (!url) return null;
+  const res = await fetch(url, { headers: { 'X-API-Key': API_KEY } });
+  if (!res.ok) return null;
+  return { bytes: await res.arrayBuffer(), mime: res.headers.get('content-type') || info?.mime_type || 'application/octet-stream' };
 }
 
 /** Plantilla aprobada. `params` son los valores del BODY, en orden {{1}}..{{n}}. */
@@ -135,8 +172,9 @@ export async function enviarPlantilla(telefono: string, nombre: string, idioma: 
 }
 
 /** Imagen o documento por LINK público (WhatsApp lo descarga de ahí). */
-export async function enviarMediaLink(telefono: string, clase: 'image' | 'document' | 'video', link: string, nombre?: string, caption?: string) {
+export async function enviarMediaLink(telefono: string, clase: 'image' | 'document' | 'video', link: string, nombre?: string, caption?: string, citaWamid?: string | null) {
   const cuerpo: any = { messaging_product: 'whatsapp', to: telefono, type: clase };
+  if (citaWamid) cuerpo.context = { message_id: citaWamid };
   cuerpo[clase] = clase === 'document' ? { link, filename: nombre || 'documento' } : { link };
   if (caption) cuerpo[clase].caption = caption;
   return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
@@ -178,11 +216,20 @@ export async function listarPlantillasMeta(): Promise<any[]> {
 export async function crearPlantillaMeta(p: {
   nombre: string; idioma: string; categoria: string;
   cuerpo: string; header?: string | null; footer?: string | null; botones?: { texto: string }[];
+  ejemplos?: string[];   // un valor de muestra por {{n}} del cuerpo (Meta lo EXIGE si hay variables)
 }) {
   if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
   const components: any[] = [];
-  if (p.header) components.push({ type: 'HEADER', format: 'TEXT', text: p.header });
-  components.push({ type: 'BODY', text: p.cuerpo });
+  if (p.header) {
+    const h: any = { type: 'HEADER', format: 'TEXT', text: p.header };
+    const nh = (p.header.match(/\{\{\d+\}\}/g) || []).length;
+    if (nh) h.example = { header_text: Array.from({ length: nh }, (_, i) => p.ejemplos?.[i] || `Ejemplo ${i + 1}`) };
+    components.push(h);
+  }
+  const vars = Array.from(new Set((p.cuerpo.match(/\{\{(\d+)\}\}/g) || []).map(v => Number(v.replace(/\D/g, ''))))).sort((a, b) => a - b);
+  const body: any = { type: 'BODY', text: p.cuerpo };
+  if (vars.length) body.example = { body_text: [vars.map((n, i) => (p.ejemplos?.[n - 1] || p.ejemplos?.[i] || `Ejemplo ${n}`).slice(0, 100))] };
+  components.push(body);
   if (p.footer) components.push({ type: 'FOOTER', text: p.footer });
   const botones = (p.botones || []).filter(b => b.texto?.trim()).slice(0, 3);
   if (botones.length) components.push({ type: 'BUTTONS', buttons: botones.map(b => ({ type: 'QUICK_REPLY', text: b.texto.trim().slice(0, 20) })) });

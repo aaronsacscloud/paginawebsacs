@@ -13,7 +13,7 @@ export const C = {
   sky300: '#7DD3FC',
   azul: '#7DA6F5', azulTinta: '#2C5FC4', azulAgua: '#E3EDFD', azulBorde: '#cfdefa',
   ambar700: '#B45309', ambar500: '#F59E0B', ambar400: '#FBBF24', ambar300: '#FCD34D', ambar200: '#FDE68A', ambar100: '#FEF3C7', ambar50: '#FFFBEB',
-  rojo500: '#EF4444', rojo400: '#F87171', rojo300: '#FCA5A5', rojo200: '#FECACA', rojo50: '#FEF2F2',
+  rojo700: '#B91C1C', rojo500: '#EF4444', rojo400: '#F87171', rojo300: '#FCA5A5', rojo200: '#FECACA', rojo50: '#FEF2F2',
   g50: '#F9FAFB', g100: '#F3F4F6', g200: '#E5E7EB', g300: '#D1D5DB', g400: '#9CA3AF', g500: '#6B7280', g700: '#374151', g900: '#111827',
 };
 
@@ -93,6 +93,12 @@ export const spinner = (px = 24, color = C.morado): CSSProperties => ({
 
 /** CSS global del inbox (keyframes + scrollbars finos). Inyectar una vez. */
 export const CSS_INBOX = `
+.wa-citar{opacity:0;transition:opacity .15s}
+.wa-fila-accion{opacity:0;transition:opacity .15s}
+.wa-fila-hover:hover .wa-fila-accion{opacity:1}
+.wa-fila-accion:hover{background:#EEECFE;color:#5B4BD6}
+.wa-msg:hover .wa-citar{opacity:1}
+
   @keyframes girar { to { transform: rotate(360deg); } }
   @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
   @keyframes ping { 75%,100% { transform: scale(2); opacity: 0; } }

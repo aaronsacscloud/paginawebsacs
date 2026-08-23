@@ -48,6 +48,7 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(20,15,40,.45)', zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', width: 'min(500px, 94vw)', maxHeight: '86dvh', overflowY: 'auto' }}>
         <b style={{ fontSize: '0.95rem' }}>Automatización del inbox</b>
+        <ImportarHistorial />
         {!a ? <div style={{ padding: 20, fontSize: '0.78rem', color: '#a5a2af' }}>Cargando…</div> : (<>
           <div style={{ marginTop: 16 }}>
             <Toggle on={!!a.bienvenida_activa} onChange={v => setA({ ...a, bienvenida_activa: v })} label="Mensaje de bienvenida" />
@@ -108,6 +109,41 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
           </div>
         </>)}
       </div>
+    </div>
+  );
+}
+
+/** Backfill del historial que Kapso ya tenía antes del webhook (página por página). */
+function ImportarHistorial() {
+  const [estado, setEstado] = useState<'idle' | 'corriendo' | 'listo' | 'error'>('idle');
+  const [n, setN] = useState(0);
+  const [msg, setMsg] = useState('');
+  const correr = async () => {
+    setEstado('corriendo'); setN(0); setMsg('');
+    let after: string | null = null; let total = 0; let paginas = 0;
+    try {
+      do {
+        const r: any = await fetch('/api/crm/whatsapp/importar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ after }) }).then(x => x.json());
+        if (r.error) throw new Error(r.error);
+        total += r.importados || 0; setN(total); after = r.next || null; paginas++;
+        if (!r.vistos) break;
+      } while (after && paginas < 200);
+      setEstado('listo'); setMsg(`Listo: ${total} mensajes nuevos importados (${paginas} páginas).`);
+    } catch (e: any) { setEstado('error'); setMsg(e?.message || 'Falló la importación'); }
+  };
+  return (
+    <div style={{ marginTop: 14, border: '1px solid #ececec', borderRadius: 10, padding: '10px 12px', background: '#fafafa' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Importar historial de Kapso</div>
+          <div style={{ fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.4 }}>Trae al inbox las conversaciones anteriores a la conexión del webhook. Se puede repetir: no duplica.</div>
+        </div>
+        <button disabled={estado === 'corriendo'} onClick={correr}
+          style={{ border: 'none', borderRadius: 8, padding: '7px 12px', background: estado === 'corriendo' ? '#ddd' : '#9B8CFA', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+          {estado === 'corriendo' ? `Importando… ${n}` : 'Importar'}
+        </button>
+      </div>
+      {msg && <div style={{ marginTop: 6, fontSize: '0.72rem', color: estado === 'error' ? '#C0554E' : '#1E8A63' }}>{msg}</div>}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ url }) => {
       .select('conversation_id, direccion, created_at')
       .gte('created_at', desde).order('created_at', { ascending: true }).limit(10000),
     supabase.from('wa_conversaciones')
-      .select('id, created_at, estado_crm, asignado_a, no_leidos'),
+      .select('id, created_at, estado_crm, asignado_a, no_leidos, cierre_categoria'),
     supabase.from('team_members').select('id, nombre').eq('activo', true),
   ]);
 
@@ -67,8 +67,14 @@ export const GET: APIRoute = async ({ url }) => {
     resueltas: (convs || []).filter(c => c.asignado_a === m.id && c.estado_crm === 'resuelta').length,
   })).filter(a => a.asignadas > 0);
 
+  // Motivos de cierre (nota de cierre categorizada al resolver).
+  const cierres: Record<string, number> = {};
+  for (const c of convs || []) if (c.estado_crm === 'resuelta') cierres[c.cierre_categoria || 'Sin categoría'] = (cierres[c.cierre_categoria || 'Sin categoría'] || 0) + 1;
+  const porCierre = Object.entries(cierres).map(([categoria, n]) => ({ categoria, n })).sort((a, b) => b.n - a.n);
+
   return json({
     rango: { dias, desde },
+    por_cierre: porCierre,
     totales,
     por_dia: Object.entries(porDia).map(([dia, v]) => ({ dia, ...v })),
     por_agente: porAgente,

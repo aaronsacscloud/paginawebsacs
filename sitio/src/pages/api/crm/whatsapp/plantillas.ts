@@ -103,6 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
       header: b.header ? String(b.header).trim() : null,
       footer: b.footer ? String(b.footer).trim() : null,
       botones: Array.isArray(b.botones) ? b.botones : [],
+      ejemplos: Array.isArray(b.ejemplos) ? b.ejemplos.map((x: any) => String(x || '').trim()).filter(Boolean) : [],
     });
     await supabase.from('wa_plantillas').insert({
       meta_template_id: creada?.id ? String(creada.id) : null,

@@ -52,14 +52,21 @@ export default function InboxPro() {
       || (filtrosAdHoc ? { modo: mostrar === 'todas' ? 'todas' : mostrar === 'solo_contactos' ? 'solo_contactos' : 'con_conversacion', ...filtrosAdHoc } : null)
       || (mostrar === 'todas' ? { modo: 'todas' } : mostrar === 'solo_contactos' ? { modo: 'solo_contactos' } : null);
     if (vista) p.set('vista', JSON.stringify(vista));
+    p.set('orden', orden);
     return p.toString();
-  }, [mostrar, vistaActiva, filtrosAdHoc]);
+  }, [mostrar, vistaActiva, filtrosAdHoc, orden]);
 
-  const cargarLista = useCallback(async (f: Filtros) => {
-    const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+  const [totalLista, setTotalLista] = useState(0);
+  const [hayMasLista, setHayMasLista] = useState(false);
+  const paginasRef = useRef(1);   // cuántas páginas de 50 hay cargadas (el polling las conserva)
+  const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
+    const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
+    setTotalLista(j.total_filtrado || 0); setHayMasLista(!!j.hay_mas);
   }, [armarQS]);
+  const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
+  useEffect(() => { paginasRef.current = 1; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
   const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
     if (!a.wa && !a.email) return;   // fila virtual: no hay hilo que cargar
@@ -111,6 +118,35 @@ export default function InboxPro() {
     document.title = n > 0 ? `(${n}) Inbox — Sacs CRM` : 'Sacs CRM';
   }, [counts?.no_leidas]);
 
+  // Permiso de notificaciones: se pide en el primer gesto del usuario (el
+  // navegador lo exige); sin esto la rama de Notification era código muerto.
+  useEffect(() => {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'default') return;
+    const pedir = () => { Notification.requestPermission().catch(() => {}); window.removeEventListener('pointerdown', pedir); };
+    window.addEventListener('pointerdown', pedir, { once: true });
+    return () => window.removeEventListener('pointerdown', pedir);
+  }, []);
+
+  // Atajos globales: j/k navegan la lista, Escape cierra el hilo (en móvil, vuelve).
+  const listaRef = useRef<any[] | null>(null); listaRef.current = lista;
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const l = listaRef.current || [];
+      if (e.key === 'j' || e.key === 'k') {
+        e.preventDefault();
+        const i = l.findIndex((c: any) => c.id === activaRef.current?.id);
+        const n = e.key === 'j' ? Math.min(l.length - 1, i + 1) : Math.max(0, i - 1);
+        if (l[n]) abrir(l[n]);
+      } else if (e.key === 'Escape' && activaRef.current && !document.querySelector('[role="dialog"]')) {
+        setActiva(null);
+      }
+    };
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+  }, []);
+
   // Deep-links: ?wa_conv=<id> | ?wa_search=<tel> (una sola vez).
   const deepLink = useRef(false);
   useEffect(() => {
@@ -139,11 +175,27 @@ export default function InboxPro() {
   const waId = () => activaRef.current?.wa || null;
 
   const api = {
-    enviarTexto: async (texto: string) => {
+    enviarTexto: async (texto: string, cita?: string | null) => {
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: waId(), texto }),
+        body: JSON.stringify({ conversation_id: waId(), texto, cita: cita || undefined }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      refrescar(); return r;
+    },
+    cargarMasHilo: async (before: string) => {
+      const a = activaRef.current; if (!a?.wa) return;
+      const j = await fetch(`/api/crm/whatsapp/hilo?id=${a.wa}&before=${encodeURIComponent(before)}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+      if (!j || j.error) return;
+      setHilo((h: any) => h ? { ...h, mensajes: [...(j.mensajes || []), ...(h.mensajes || [])], hay_mas: !!j.hay_mas } : h);
+    },
+    reintentar: async (m: any) => {
+      // Vuelve a mandar el mismo contenido como mensaje nuevo (Meta no reintenta por wamid).
+      const body: any = { conversation_id: waId() };
+      if (m.tipo === 'text' || m.tipo === 'template') body.texto = m.cuerpo;
+      else if (m.media_url) Object.assign(body, { media_url: m.media_url, clase: m.tipo, nombre: m.filename || m.cuerpo || 'archivo', caption: m.filename ? undefined : m.cuerpo, mime: m.mime });
+      else return { error: 'Este mensaje no se puede reintentar' };
+      const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
     },
     enviarPlantilla: async (plantilla: any, telefono?: string) => {
@@ -155,11 +207,30 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     refrescar,
-    enviarArchivo: async (file: File, caption?: string, voz?: boolean) => {
+    enviarArchivo: async (file: File, caption?: string, voz?: boolean, cita?: string | null) => {
+      const esAudio = voz || file.type.startsWith('audio/');
+      // Archivos grandes (> 4 MB): directo del navegador a Storage con URL
+      // firmada y luego se manda por link — la función serverless no los aguanta.
+      if (!esAudio && file.size > 4 * 1024 * 1024) {
+        const firma = await fetch('/api/crm/whatsapp/subir-url', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: file.name, mime: file.type, conversation_id: waId() }),
+        }).then(x => x.json()).catch(e => ({ error: String(e) }));
+        if (firma?.error || !firma?.signed_url) return { error: firma?.error || 'No se pudo preparar la subida' };
+        const up = await fetch(firma.signed_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' }, body: file }).catch(() => null);
+        if (!up || !up.ok) return { error: `La subida directa falló (${up?.status || 'sin red'})` };
+        const clase = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
+        const r = await fetch('/api/crm/whatsapp/enviar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: waId(), media_url: firma.public_url, clase, nombre: file.name, mime: file.type, caption: caption || undefined, cita: cita || undefined }),
+        }).then(x => x.json()).catch(e => ({ error: String(e) }));
+        refrescar(); return r;
+      }
       const fd = new FormData();
       fd.append('file', file); fd.append('conversation_id', waId() || '');
       if (caption) fd.append('caption', caption);
       if (voz) fd.append('voz', '1');
+      if (cita) fd.append('cita', cita);
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', body: fd })
         .then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
@@ -232,6 +303,11 @@ export default function InboxPro() {
     equipo, yo, onNuevo: () => setNuevoChat(true), orden, setOrden, mostrar, setMostrar,
     campos, filtrosAdHoc, setFiltrosAdHoc,
     onMasivo: () => { window.location.href = '/admin/crm?tab=wa-masivos'; },
+    totalLista, hayMasLista, cargarMasLista,
+    onAsignar: async (c: any, asignadoA: string | null) => {
+      await fetch('/api/crm/whatsapp/hilo', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.wa_id, asignado_a: asignadoA }) }).catch(() => null);
+      refrescar();
+    },
   };
 
   // ── Móvil: lista → hilo apilado; sidebar y detalle en Sheets ──

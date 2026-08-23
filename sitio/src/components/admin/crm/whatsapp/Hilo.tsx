@@ -9,73 +9,11 @@ import { lifecycleDe } from '../../../../lib/crm/lifecycle';
 import { C, L, burbuja, separador, etiquetaDia } from './estilo';
 import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Iconos';
 import { Avatar, IconoCanal } from './ListaConversaciones';
-import EstadoEntrega from './EstadoEntrega';
-import Composer from './Composer';
+import Composer, { SelectorPlantilla } from './Composer';
+import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 
-const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-const esImagen = (url?: string | null, tipo?: string | null) =>
-  tipo === 'image' || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url || '');
-
-/** URLs → links (portado). */
-function Linkify({ texto, claro }: { texto: string; claro?: boolean }) {
-  const partes = texto.split(/(https?:\/\/[^\s]+)/g);
-  return (<>
-    {partes.map((p, i) => /^https?:\/\//.test(p)
-      ? <a key={i} href={p} target="_blank" rel="noreferrer" style={{ color: claro ? '#fff' : C.azulTinta, textDecoration: 'underline', wordBreak: 'break-all' }}>{p}</a>
-      : <span key={i}>{p}</span>)}
-  </>);
-}
-
-function Resaltado({ texto, q, claro }: { texto: string; q: string; claro?: boolean }) {
-  if (!q) return <Linkify texto={texto} claro={claro} />;
-  const partes = texto.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig'));
-  return (<>
-    {partes.map((p, i) => p.toLowerCase() === q.toLowerCase()
-      ? <mark key={i} className="wa-mark">{p}</mark>
-      : <Linkify key={i} texto={p} claro={claro} />)}
-  </>);
-}
-
-/** Player de audio propio (portado de MessageBubble:81-171). */
-function PlayerAudio({ src, claro }: { src: string; claro?: boolean }) {
-  const ref = useRef<HTMLAudioElement>(null);
-  const [sonando, setSonando] = useState(false);
-  const [dur, setDur] = useState(0);
-  const [t, setT] = useState(0);
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-  return (
-    <span className="wa-audio" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 200, maxWidth: 260 }}>
-      <audio ref={ref} src={src} preload="metadata"
-        onLoadedMetadata={e => setDur((e.target as HTMLAudioElement).duration || 0)}
-        onTimeUpdate={e => setT((e.target as HTMLAudioElement).currentTime)}
-        onEnded={() => setSonando(false)} />
-      <button onClick={() => { const a = ref.current!; if (sonando) { a.pause(); setSonando(false); } else { a.play(); setSonando(true); } }}
-        style={{
-          width: 36, height: 36, borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-          background: claro ? 'rgba(255,255,255,.25)' : C.emerald500, color: '#fff',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-        {sonando
-          ? <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
-          : <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>}
-      </button>
-      <span style={{ flex: 1, position: 'relative', height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-        onClick={e => {
-          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const pct = (e.clientX - r.left) / r.width;
-          if (ref.current && dur) { ref.current.currentTime = pct * dur; setT(pct * dur); }
-        }}>
-        <span style={{ width: '100%', height: 6, borderRadius: 999, background: claro ? 'rgba(255,255,255,.3)' : C.g200, overflow: 'hidden', display: 'block' }}>
-          <span style={{ display: 'block', height: '100%', width: `${dur ? (t / dur) * 100 : 0}%`, background: claro ? '#fff' : C.emerald500 }} />
-        </span>
-        <span className="wa-thumb" style={{ position: 'absolute', left: `calc(${dur ? (t / dur) * 100 : 0}% - 6px)`, width: 12, height: 12, borderRadius: 999, background: claro ? '#fff' : C.emerald600, boxShadow: '0 1px 3px rgba(0,0,0,.25)' }} />
-      </span>
-      <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: claro ? 'rgba(255,255,255,.85)' : C.g500, flexShrink: 0 }}>
-        {sonando || t > 0 ? fmt(t) : fmt(dur)}
-      </span>
-    </span>
-  );
-}
+// Borradores por conversación (viven mientras la pestaña esté abierta).
+const BORRADORES = new Map<string, string>();
 
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
@@ -89,10 +27,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [matchIdx, setMatchIdx] = useState(0);
   const [resaltada, setResaltada] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
+  const [cita, setCita] = useState<any>(null);            // mensaje que se va a citar al responder
+  const [cierre, setCierre] = useState(false);            // modal de nota de cierre
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [modalPlantillaVirtual, setModalPlantillaVirtual] = useState(false);
+  useEffect(() => { setCita(null); }, [hilo?.conversacion?.id]);
 
   // Línea de tiempo unificada: mensajes + correos + notas + eventos + reacciones.
-  const { timeline, reacciones } = useMemo(() => {
-    if (!hilo) return { timeline: [], reacciones: new Map() };
+  const { timeline, reacciones, porWamid } = useMemo(() => {
+    if (!hilo) return { timeline: [], reacciones: new Map(), porWamid: new Map() };
     const msjsCrudos = (hilo.mensajes || []);
     const reac = new Map<string, string[]>();
     const msjs: any[] = [];
@@ -110,7 +53,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     const eventos = (hilo.eventos || []).map((e: any) => ({ ...e, _clase: 'evento', _t: e.created_at }));
     const timeline = [...msjs, ...notas, ...correos, ...eventos].sort((a, b) =>
       String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)));
-    return { timeline, reacciones: reac };
+    return { timeline, reacciones: reac, porWamid: new Map<string, any>(msjs.filter(m => m.kapso_message_id).map(m => [m.kapso_message_id, m])) };
   }, [hilo]);
 
   // Búsqueda en el hilo (Cmd+F portado).
@@ -130,13 +73,14 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   };
   useEffect(() => { if (matches.length) irAMatch(matchIdx); }, [matchIdx, matches.length]);
 
-  const nRef = useRef(0);
+  const ultimoRef = useRef('');
   useEffect(() => {
-    if (timeline.length !== nRef.current) {
-      nRef.current = timeline.length;
+    const ult = timeline.length ? `${timeline[timeline.length - 1]._clase}-${timeline[timeline.length - 1].id}` : '';
+    if (ult !== ultimoRef.current) {
+      ultimoRef.current = ult;
       if (!buscando) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
     }
-  }, [timeline.length]);
+  }, [timeline]);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setLightbox(null); setBuscando(false); } };
     window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
@@ -161,12 +105,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             <p style={{ fontSize: 12, color: C.g500, lineHeight: 1.55, margin: '0 0 10px' }}>
               WhatsApp solo permite iniciar con una <b>plantilla aprobada</b>; cuando el contacto responda, el chat queda abierto 24 horas.
             </p>
-            <button onClick={() => api.enviarPlantilla && document.dispatchEvent(new CustomEvent('wa-abrir-plantillas'))}
+            <button onClick={() => setModalPlantillaVirtual(true)}
               style={{ border: 'none', borderRadius: 8, padding: '9px 18px', background: C.emerald600, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               Elegir plantilla
             </button>
           </div>
         </div>
+        {modalPlantillaVirtual && (
+          <SelectorPlantilla telefono={String(filaActiva.telefono || '')} api={api} onClose={() => setModalPlantillaVirtual(false)} />
+        )}
       </div>
     );
   }
@@ -176,7 +123,6 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const etapa = lifecycleDe(conv?.contacts?.lifecycle_stage);
   const nombre = conv?.contacts ? `${conv.contacts.nombre || ''} ${conv.contacts.apellido || ''}`.trim() : null;
   let diaPrevio = '';
-  let resueltaPrevia = false;
 
   return (
     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
@@ -194,7 +140,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
-        {conv.id && <select value={conv.estado_crm || 'abierta'} onChange={e => api.patchConversacion({ estado_crm: e.target.value })}
+        {conv.id && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
@@ -236,6 +182,17 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
       {/* ── Mensajes ── */}
       <div ref={scrollRef} className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {hilo.hay_mas && (
+          <button disabled={cargandoMas} onClick={async () => {
+            const primero = (hilo.mensajes || [])[0];
+            if (!primero || !api.cargarMasHilo) return;
+            const el = scrollRef.current; const h0 = el?.scrollHeight || 0;
+            setCargandoMas(true); await api.cargarMasHilo(primero.created_at); setCargandoMas(false);
+            requestAnimationFrame(() => { if (el) el.scrollTop += (el.scrollHeight - h0); });
+          }} style={{ alignSelf: 'center', border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '5px 14px', fontSize: 11, fontWeight: 700, color: C.g500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {cargandoMas ? 'Cargando…' : 'Cargar mensajes anteriores'}
+          </button>
+        )}
         {timeline.map((item: any) => {
           const dia = etiquetaDia(item._t);
           const sepDia = dia !== diaPrevio; diaPrevio = dia;
@@ -244,7 +201,6 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           const clave = `${item._clase}-${item.id}`;
           const conRing = resaltada === clave;
           const chips = item._clase === 'mensaje' && item.kapso_message_id ? reacciones.get(item.kapso_message_id) : null;
-          if (esBoundary) { resueltaPrevia = true; }
           const sep = separador(false);
           const sepOscuro = separador(true);
           return (
@@ -292,56 +248,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   </span>
                 </span>
               ) : (
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: item.direccion === 'entrante' ? 'flex-start' : 'flex-end', gap: 2 }}>
-                  {item.direccion === 'saliente' && (
-                    <span style={{ fontSize: 10, color: C.g400, padding: '0 4px' }}>Agente</span>
-                  )}
-                  <span style={{
-                    ...(item.direccion === 'entrante' ? burbuja.entrante : burbuja.salienteWa),
-                    boxShadow: conRing ? `0 0 0 2px ${C.morado}, 0 0 0 4px #fff` : 'none', transition: 'box-shadow .3s',
-                  }}>
-                    {item.transcript ? (<>
-                      <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .8, marginBottom: 3 }}>NOTA DE VOZ · transcripción</span>
-                      {item.media_url && <PlayerAudio src={item.media_url} claro={item.direccion === 'saliente'} />}
-                      <span style={{ whiteSpace: 'pre-wrap', display: 'block', marginTop: item.media_url ? 6 : 0 }}>
-                        <Resaltado texto={item.transcript} q={q} claro={item.direccion === 'saliente'} />
-                      </span>
-                    </>) : item.tipo === 'audio' && item.media_url ? (
-                      <PlayerAudio src={item.media_url} claro={item.direccion === 'saliente'} />
-                    ) : null}
-                    {item.media_url && esImagen(item.media_url, item.tipo) && (
-                      <img src={item.media_url} alt="" onClick={() => setLightbox(item.media_url)}
-                        style={{ borderRadius: 10, maxHeight: 256, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: item.cuerpo ? 6 : 0 }} />
-                    )}
-                    {item.media_url && !esImagen(item.media_url, item.tipo) && item.tipo !== 'audio' && !item.transcript && (
-                      <a href={item.media_url} target="_blank" rel="noreferrer"
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, background: item.direccion === 'saliente' ? 'rgba(255,255,255,.15)' : C.g50, borderRadius: 8, padding: '8px 10px', textDecoration: 'none', color: item.direccion === 'saliente' ? '#fff' : C.azulTinta, fontSize: 12, fontWeight: 700, marginBottom: item.cuerpo ? 6 : 0 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 2h8l4 4v16H6z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /><path d="M14 2v4h4" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg>
-                        {item.cuerpo || 'Documento'} · Descargar
-                      </a>
-                    )}
-                    {!item.transcript && item.cuerpo && !(item.media_url && !esImagen(item.media_url, item.tipo) && item.tipo !== 'audio') && (
-                      <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={item.direccion === 'saliente'} /></span>
-                    )}
-                    {!item.transcript && !item.cuerpo && !item.media_url && (
-                      <span style={{ opacity: .6 }}>[{item.tipo || 'mensaje'}]</span>
-                    )}
-                    <span style={{ display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end', marginTop: 3 }}>
-                      <span style={{ fontSize: 10, color: item.direccion === 'saliente' ? '#A7F3D0' : C.g400 }}>{horaDe(item._t)}</span>
-                      <EstadoEntrega status={item.status} direccion={item.direccion} error={item.error} />
-                    </span>
-                  </span>
-                  {chips && chips.length > 0 && (
-                    <span style={{ display: 'flex', gap: 3, marginTop: -6, zIndex: 1, padding: '0 6px' }}>
-                      {chips.map((emoji: string, i: number) => (
-                        <span key={i} style={{ background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 999, padding: '1px 6px', fontSize: 12, boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>{emoji}</span>
-                      ))}
-                    </span>
-                  )}
-                  {item.error && item.status === 'failed' && (
-                    <span style={{ fontSize: 10, color: C.rojo500, padding: '0 4px' }}>{item.error.slice(0, 90)}</span>
-                  )}
-                </span>
+                <BurbujaMensaje item={item} q={q} conRing={conRing} chips={chips} porWamid={porWamid}
+                  onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined}
+                  onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined} />
               )}
             </span>
           );
@@ -357,11 +266,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       </div>
 
       {/* ── Composer ── */}
-      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
+      <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
+        cita={cita} onQuitarCita={() => setCita(null)}
+        borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label }} />
 
       {/* ── Lightbox ── */}
+      {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
+        const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
+        if (!r?.error) setCierre(false);
+        return r;
+      }} />}
       {lightbox && (
         <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.8)', zIndex: 990, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <button onClick={() => setLightbox(null)} style={{ position: 'absolute', top: 16, right: 20, border: 'none', background: 'none', color: '#fff', fontSize: 26, cursor: 'pointer' }}>✕</button>
@@ -402,5 +318,43 @@ function MenuHilo({ conv, api, abierto, setAbierto }: { conv: any; api: any; abi
         </span>
       )}
     </span>
+  );
+}
+
+/** Modal de cierre: categoría obligatoria + nota opcional (alimenta métricas). */
+function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolver: (categoria: string, nota: string) => Promise<any> }) {
+  const [cats, setCats] = useState<{ id: number; nombre: string }[]>([]);
+  const [cat, setCat] = useState('');
+  const [nota, setNota] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCats(j.categorias || [])).catch(() => {});
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); };
+    window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
+  }, []);
+  return (
+    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 'min(440px, 100%)', padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
+        <b style={{ fontSize: 14, display: 'block' }}>Resolver conversación</b>
+        <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 14px' }}>¿Cómo terminó? La categoría alimenta las métricas del inbox.</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          {cats.map(c => (
+            <button key={c.id} onClick={() => setCat(c.nombre)}
+              style={{ border: `1px solid ${cat === c.nombre ? C.emerald500 : C.g200}`, background: cat === c.nombre ? C.emerald50 : '#fff', color: cat === c.nombre ? C.emerald700 : C.g700, borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{c.nombre}</button>
+          ))}
+        </div>
+        <textarea value={nota} onChange={e => setNota(e.target.value)} rows={3} placeholder="Nota de cierre (opcional): qué se acordó, qué sigue…"
+          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
+        {error && <p style={{ color: C.rojo500, fontSize: 11, margin: '6px 0 0' }}>{error}</p>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+          <button onClick={onCerrar} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+          <button disabled={!cat || ocupado} onClick={async () => { setOcupado(true); setError(''); const r = await onResolver(cat, nota.trim()); setOcupado(false); if (r?.error) setError(r.error); }}
+            style={{ border: 'none', background: !cat ? C.g200 : C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: !cat ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+            {ocupado ? 'Resolviendo…' : 'Marcar resuelta'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -9,6 +9,7 @@
 //    replay ni en un cambio de status.
 //  - Número sin contacto: se espeja igual (contact_id null), sin activity y
 //    sin tocar last_contact_at — no se inventan contactos.
+import { etiquetaTipo } from './parse';
 import { supabase } from '../supabase';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { notificar } from '../crm/notificaciones';
@@ -86,14 +87,23 @@ export async function registrarMensaje(o: {
   mediaUrl?: string | null;
   status?: string | null;
   timestamp?: string | null;          // del payload de Kapso
-  metadata?: any;                     // reacciones: { reacciona_a: wamid }
+  metadata?: any;                     // reacciones: { reacciona_a: wamid }, citas: { cita:{wamid} }
+  mediaId?: string | null;
+  mime?: string | null;
+  filename?: string | null;
+  autorId?: string | null;            // quién lo mandó (salientes desde el CRM)
+  autor?: string | null;
+  silencioso?: boolean;               // backfill de historial: solo inserta
 }): Promise<{ inserted: boolean; conversationId?: string }> {
   const conv = await upsertConversacion({
     kapsoConversationId: o.kapsoConversationId, telefono: o.telefono,
   });
   if (!conv) return { inserted: false };
 
-  const texto = o.cuerpo || o.transcript || (o.tipo && o.tipo !== 'text' ? `[${o.tipo}]` : '') || '';
+  const texto = o.cuerpo || o.transcript || (o.tipo && o.tipo !== 'text' ? `[${etiquetaTipo(o.tipo)}]` : '') || '';
+  // Hora REAL del mensaje (replays y entregas fuera de orden no deben mandar
+  // la conversación al tope con hora inventada).
+  const enviadoAt = o.timestamp ? new Date(Number(o.timestamp) * 1000 || o.timestamp).toISOString() : null;
 
   // onConflict-ignore sobre la UNIQUE: el replay de Kapso no duplica ni
   // dispara activity.
@@ -106,9 +116,14 @@ export async function registrarMensaje(o: {
       cuerpo: o.cuerpo || null,
       transcript: o.transcript || null,
       media_url: o.mediaUrl || null,
+      media_id: o.mediaId || null,
+      mime: o.mime || null,
+      filename: o.filename || null,
+      autor_id: o.autorId || null,
+      autor: o.autor || null,
       status: o.status || (o.direccion === 'entrante' ? 'received' : 'sent'),
       metadata: o.metadata || null,
-      enviado_at: o.timestamp ? new Date(Number(o.timestamp) * 1000 || o.timestamp).toISOString() : null,
+      enviado_at: enviadoAt,
     }, { onConflict: 'kapso_message_id', ignoreDuplicates: true })
     .select('id');
   if (error) console.error('[wa-espejo] insert mensaje:', error.message);
@@ -116,8 +131,13 @@ export async function registrarMensaje(o: {
   if (!inserted) return { inserted: false, conversationId: conv.id };
   if (o.tipo === 'reaction') return { inserted: true, conversationId: conv.id };   // ni preview, ni no-leídos, ni activity
 
-  await supabase.from('wa_conversaciones').update({
-    ultimo_mensaje_at: new Date().toISOString(),
+  // Solo avanza el "último mensaje" si este es más nuevo que el que ya hay.
+  const { data: prev } = await supabase.from('wa_conversaciones').select('ultimo_mensaje_at').eq('id', conv.id).maybeSingle();
+  const cuando = enviadoAt || new Date().toISOString();
+  const esViejo = !!(prev?.ultimo_mensaje_at && new Date(prev.ultimo_mensaje_at) > new Date(cuando));
+  if (o.silencioso) return { inserted: true, conversationId: conv.id };   // backfill: ni campana ni no-leídos
+  if (!esViejo) await supabase.from('wa_conversaciones').update({
+    ultimo_mensaje_at: cuando,
     ultimo_mensaje_texto: texto.slice(0, 200) || null,
     ultima_direccion: o.direccion,
     estado: 'active',

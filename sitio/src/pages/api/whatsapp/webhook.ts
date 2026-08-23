@@ -19,6 +19,8 @@
 import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { registrarMensaje, actualizarStatus, upsertConversacion } from '../../../lib/whatsapp/espejo';
+import { parsearMensaje } from '../../../lib/whatsapp/parse';
+import { marcarLeido } from '../../../lib/whatsapp/kapso-api';
 import { alRecibirMensaje } from '../../../lib/whatsapp/automatizacion';
 import { telefonoWhatsApp } from '../../../lib/telefono';
 import { supabase } from '../../../lib/supabase';
@@ -68,23 +70,47 @@ export const POST: APIRoute = async ({ request, url }) => {
       case 'whatsapp.message.received':
       case 'whatsapp.message.sent': {
         if (!msj.id || !telefono) return ok();
+        const entrante = evento === 'whatsapp.message.received';
+        const p = parsearMensaje(msj);
         const r = await registrarMensaje({
           kapsoMessageId: String(msj.id),
           kapsoConversationId: conv.id ? String(conv.id) : null,
           telefono,
-          direccion: evento === 'whatsapp.message.received' ? 'entrante' : 'saliente',
-          tipo: msj.type || kapso.message_type || 'text',
-          cuerpo: msj.text?.body || msj.reaction?.emoji || kapso.content || null,
+          direccion: entrante ? 'entrante' : 'saliente',
+          tipo: p.tipo,
+          cuerpo: p.cuerpo,
           transcript: kapso.transcript || null,   // Kapso transcribe las notas de voz
-          mediaUrl: kapso.media_url || null,
+          mediaUrl: p.mediaUrl, mediaId: p.mediaId, mime: p.mime, filename: p.filename,
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
-          metadata: msj.type === 'reaction' ? { reacciona_a: msj.reaction?.message_id || msj.kapso?.reacted_message_id || null, emoji: msj.reaction?.emoji || kapso.content || null } : null,
+          metadata: p.metadata,
+          status: entrante ? 'received' : (kapso.status || 'sent'),
         });
-        // Automatización (bienvenida / fuera de horario / round-robin): SOLO
-        // entrantes NUEVOS — un replay o un saliente jamás la disparan.
-        if (evento === 'whatsapp.message.received' && r.inserted && r.conversationId) {
+        if (entrante && r.inserted && r.conversationId) {
+          // Automatización (bienvenida / fuera de horario / round-robin): SOLO
+          // entrantes NUEVOS — un replay o un saliente jamás la disparan.
           await alRecibirMensaje(r.conversationId).catch(e => console.warn('[wa-auto]', e));
+          // "Escribiendo…" hacia el cliente: señal de que alguien lo vio llegar.
+          // La confirmación de LECTURA real la manda el hilo al abrirse.
+          await marcarLeido(String(msj.id), true).catch(() => {});
         }
+        return ok();
+      }
+
+      case 'whatsapp.message.deleted':
+      case 'whatsapp.message.revoked': {
+        // El cliente borró el mensaje "para todos": se conserva la fila (auditoría)
+        // pero el hilo lo enseña como "Mensaje eliminado".
+        if (!msj.id) return ok();
+        await supabase.from('wa_mensajes').update({ borrado_at: new Date().toISOString() }).eq('kapso_message_id', String(msj.id));
+        return ok();
+      }
+      case 'whatsapp.message.edited':
+      case 'whatsapp.message.updated': {
+        if (!msj.id) return ok();
+        const p = parsearMensaje(msj);
+        if (p.cuerpo) await supabase.from('wa_mensajes')
+          .update({ cuerpo: p.cuerpo, metadata: { ...(p.metadata || {}), editado: true } })
+          .eq('kapso_message_id', String(msj.id));
         return ok();
       }
 

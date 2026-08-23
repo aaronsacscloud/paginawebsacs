@@ -43,12 +43,17 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
-export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto }: {
+export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
+  cita?: any; onQuitarCita?: () => void;
+  borradorInicial?: string; onBorrador?: (t: string) => void;
 }) {
   const waDisponible = canales?.whatsapp !== false;
   const correoOk = !!canales?.correo?.ok;
-  const [texto, setTexto] = useState('');
+  const [texto, setTextoRaw] = useState(borradorInicial || '');
+  // Borrador por conversación: lo que se teclea sobrevive a cambiar de chat.
+  const setTexto = (v: string | ((t: string) => string)) => setTextoRaw(t => { const n = typeof v === 'function' ? v(t) : v; onBorrador?.(n); return n; });
+  useEffect(() => { if (cita) areaRef.current?.focus(); }, [cita]);
   const [asunto, setAsunto] = useState('');
   const [modo, setModo] = useState<Modo>(waDisponible ? 'wa' : 'correo');
   const [comentario, setComentario] = useState(false);     // modo comentario (reemplaza la card)
@@ -111,7 +116,6 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     const lim = LIMITES[cls]; const mb = f.size / 1048576;
     const errs: string[] = [];
     if (mb > lim) errs.push(`Archivo excede ${lim} MB (límite para ${cls})`);
-    if (mb > 4) errs.push('Máximo 4 MB por el servidor de SACS');
     return errs;
   };
   const agregarArchivos = (files: FileList | null) => {
@@ -140,12 +144,13 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       if (staged.some(s => s.errores.length)) { setOcupado(false); setError('Corrige los archivos marcados en rojo.'); return; }
       // Solo el primer archivo lleva el caption (regla de WhatsApp).
       for (let i = 0; i < staged.length; i++) {
-        r = await api.enviarArchivo(staged[i].file, i === 0 ? t : undefined);
+        r = await api.enviarArchivo(staged[i].file, i === 0 ? t : undefined, false, i === 0 ? (cita?.kapso_message_id || null) : null);
         if (r?.error) break;
       }
       if (!r?.error) setStaged([]);
-    } else r = await api.enviarTexto(t);
+    } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
     setOcupado(false);
+    if (!r?.error) onQuitarCita?.();
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
     if (r?.error) { setError(r.error); return; }
     setTexto(''); areaRef.current?.focus();
@@ -241,6 +246,16 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
 
       <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative' }}>
         <FilaCanal />
+        {cita && modo === 'wa' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.emerald50, borderBottom: `1px solid #A7F3D0`, fontSize: 11 }}>
+            <span style={{ width: 3, alignSelf: 'stretch', background: C.emerald500, borderRadius: 2 }} />
+            <span style={{ minWidth: 0, flex: 1 }}>
+              <b style={{ display: 'block', fontSize: 10, color: C.emerald700 }}>Respondiendo a {cita.direccion === 'saliente' ? (cita.autor || 'Equipo SACS') : 'cliente'}</b>
+              <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g500 }}>{cita.transcript || cita.cuerpo || cita.filename || cita.tipo}</span>
+            </span>
+            <button onClick={onQuitarCita} aria-label="Quitar cita" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 13 }}>✕</button>
+          </div>
+        )}
 
         {modo === 'wa' && cerrada && (
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: C.ambar50, borderBottom: `1px solid ${C.ambar200}`, padding: '8px 12px', fontSize: 12, color: C.ambar700 }}>

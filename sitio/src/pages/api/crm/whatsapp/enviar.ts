@@ -15,22 +15,27 @@ import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarM
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
+import { getSessionFromRequest } from '../../../../lib/auth/session';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
+// Los MIME que WhatsApp acepta (docs de Meta). Lo que no esté aquí se manda
+// como documento genérico si es application/* o text/*.
 const MIMES: Record<string, 'image' | 'document' | 'audio' | 'video'> = {
-  'image/png': 'image', 'image/jpeg': 'image', 'image/webp': 'image',
-  'audio/ogg': 'audio', 'audio/mpeg': 'audio', 'audio/mp4': 'audio', 'audio/aac': 'audio', 'audio/webm': 'audio',
-  'video/mp4': 'video', 'video/3gpp': 'video',
-  'application/pdf': 'document',
-  'application/msword': 'document',
+  'image/png': 'image', 'image/jpeg': 'image', 'image/webp': 'image', 'image/gif': 'document',
+  'audio/ogg': 'audio', 'audio/mpeg': 'audio', 'audio/mp4': 'audio', 'audio/aac': 'audio', 'audio/amr': 'audio', 'audio/webm': 'audio',
+  'video/mp4': 'video', 'video/3gpp': 'video', 'video/quicktime': 'document',
+  'application/pdf': 'document', 'text/plain': 'document', 'text/csv': 'document',
+  'application/msword': 'document', 'application/vnd.ms-excel': 'document', 'application/vnd.ms-powerpoint': 'document',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
-  'text/csv': 'document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'document',
+  'application/zip': 'document', 'application/x-zip-compressed': 'document', 'application/json': 'document',
 };
+const claseDeMime = (m: string) => MIMES[m] || ((m.startsWith('application/') || m.startsWith('text/')) ? 'document' : undefined);
 const MAX_BYTES = 4 * 1024 * 1024; // el límite real de la función serverless es ~4.5 MB
 
 /** El teléfono E.164 de la conversación (o del body) y su id de espejo. */
@@ -54,6 +59,10 @@ const errorKapso = (e: any) => {
 
 export const POST: APIRoute = async ({ request }) => {
   const ct = request.headers.get('content-type') || '';
+  // Quién manda: queda en el espejo (columna autor) para que el hilo no diga "Agente".
+  let autorId: string | null = null, autor: string | null = null;
+  try { const u: any = await getSessionFromRequest(request); autorId = u?.id || null; autor = u?.nombre || u?.name || u?.email || null; } catch { /* sin sesión */ }
+  const firma = { autorId, autor };
 
   // ── Archivo (multipart) ──
   if (ct.includes('multipart/form-data')) {
@@ -64,7 +73,7 @@ export const POST: APIRoute = async ({ request }) => {
     const esVoz = String(form.get('voz') || '') === '1';
     if (!file || !convIdIn) return json({ error: 'Faltan file y conversation_id' }, 400);
     const mimeBase = (file.type || '').split(';')[0].trim().toLowerCase();
-    const clase = MIMES[mimeBase];
+    const clase = claseDeMime(mimeBase);
     if (!clase) return json({ error: `Tipo no permitido: ${file.type}` }, 400);
     if (file.size > MAX_BYTES) return json({ error: 'Máximo 4 MB (límite del servidor)' }, 400);
 
@@ -85,10 +94,17 @@ export const POST: APIRoute = async ({ request }) => {
         const mediaId = await subirMediaKapso(bytes, mime, mime === 'audio/ogg' ? 'voz.ogg' : file.name || 'audio');
         const r = await enviarMediaId(destino.telefono, 'audio', mediaId, { voice: esVoz });
         const wamid = r?.messages?.[0]?.id;
-        // Espejo: sin URL pública (el binario vive en Meta) — el hilo lo muestra como [audio].
+        // Copia en Storage para que el agente pueda volver a escucharla en el hilo.
+        let link: string | null = null;
+        try {
+          const path = `wa/${destino.convId}/${Date.now()}_${mime === 'audio/ogg' ? 'voz.ogg' : (file.name || 'audio')}`.replace(/[^\w./-]+/g, '_');
+          const { error: eUp } = await supabase.storage.from('quotes').upload(path, bytes, { contentType: mime, upsert: false });
+          if (!eUp) link = supabase.storage.from('quotes').getPublicUrl(path).data.publicUrl;
+        } catch { /* sin copia: el mensaje igual se mandó */ }
         if (wamid) await registrarMensaje({
-          kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
-          tipo: 'audio', cuerpo: esVoz ? 'Nota de voz' : (file.name || 'Audio'), status: 'sent',
+          kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
+          tipo: 'audio', cuerpo: esVoz ? 'Nota de voz' : (file.name || 'Audio'), status: 'sent', mediaUrl: link, mime,
+          metadata: esVoz ? { voz: true } : null,
         });
         return json({ ok: true, message_id: wamid || null, media_id: mediaId });
       } catch (e: any) { return errorKapso(e); }
@@ -105,11 +121,11 @@ export const POST: APIRoute = async ({ request }) => {
     const link = pub.publicUrl;
 
     try {
-      const r = await enviarMediaLink(destino.telefono, clase as 'image' | 'document', link, nombre, caption);
+      const r = await enviarMediaLink(destino.telefono, clase as 'image' | 'document', link, nombre, caption, String(form.get('cita') || '') || null);
       const wamid = r?.messages?.[0]?.id;
       if (wamid) await registrarMensaje({
-        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
-        tipo: clase, cuerpo: caption || (clase === 'document' ? nombre : null), mediaUrl: link, status: 'sent',
+        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
+        tipo: clase, cuerpo: caption || (clase === 'document' ? nombre : null), mediaUrl: link, mime: mimeBase, filename: nombre, status: 'sent',
       });
       return json({ ok: true, message_id: wamid || null, media_url: link });
     } catch (e: any) {
@@ -127,11 +143,11 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.media_url) {
     const clase = (['image', 'document', 'video'].includes(b.clase) ? b.clase : 'document') as 'image' | 'document' | 'video';
     try {
-      const r = await enviarMediaLink(destino.telefono, clase, String(b.media_url), String(b.nombre || 'archivo'), b.caption ? String(b.caption) : undefined);
+      const r = await enviarMediaLink(destino.telefono, clase, String(b.media_url), String(b.nombre || 'archivo'), b.caption ? String(b.caption) : undefined, b.cita || null);
       const wamid = r?.messages?.[0]?.id;
       if (wamid) await registrarMensaje({
-        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
-        tipo: clase, cuerpo: b.caption || b.nombre || null, mediaUrl: String(b.media_url), status: 'sent',
+        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
+        tipo: clase, cuerpo: b.caption || b.nombre || null, mediaUrl: String(b.media_url), mime: b.mime || null, filename: b.nombre || null, status: 'sent',
       });
       return json({ ok: true, message_id: wamid || null });
     } catch (e: any) { return errorKapso(e); }
@@ -148,7 +164,7 @@ export const POST: APIRoute = async ({ request }) => {
       let cuerpo = p?.cuerpo || `[plantilla ${b.plantilla.nombre}]`;
       params.forEach((v: string, i: number) => { cuerpo = cuerpo.replaceAll(`{{${i + 1}}}`, v); });
       if (wamid) await registrarMensaje({
-        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
+        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
         tipo: 'template', cuerpo, status: 'sent',
       });
       return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
@@ -158,11 +174,12 @@ export const POST: APIRoute = async ({ request }) => {
   const texto = String(b.texto || '').trim();
   if (!texto) return json({ error: 'Falta texto' }, 400);
   try {
-    const r = await enviarTexto(destino.telefono, texto);
+    const cita = b.cita ? String(b.cita) : null;
+    const r = await enviarTexto(destino.telefono, texto, cita);
     const wamid = r?.messages?.[0]?.id;
     if (wamid) await registrarMensaje({
-      kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
-      tipo: 'text', cuerpo: texto, status: 'sent',
+      kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
+      tipo: 'text', cuerpo: texto, status: 'sent', metadata: cita ? { cita: { wamid: cita } } : null,
     });
     return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
   } catch (e: any) { return errorKapso(e); }

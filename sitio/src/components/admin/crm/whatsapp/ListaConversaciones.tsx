@@ -73,7 +73,7 @@ function RadioFila({ activo, label, onClick }: { activo: boolean; label: string;
   );
 }
 
-export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo }: {
+export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar }: {
   lista: any[]; filtros: Filtros; setFiltros: (f: Filtros) => void;
   activaId: string | null; onAbrir: (c: any) => void; mobile?: boolean; equipo: any[]; yo: any;
   onNuevo?: () => void; onFiltros?: () => void;
@@ -84,8 +84,18 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
   setFiltrosAdHoc: (f: { logica: 'AND' | 'OR'; condiciones: Condicion[] } | null) => void;
   onMasivo?: () => void;
   counts?: any;
+  totalLista?: number; hayMasLista?: boolean; cargarMasLista?: () => Promise<void>;
+  onAsignar?: (c: any, asignadoA: string | null) => Promise<void>;
 }) {
   const [popover, setPopover] = useState(false);
+  const [menuFila, setMenuFila] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  useEffect(() => {
+    if (!menuFila) return;
+    const cerrar = () => setMenuFila(null);
+    window.addEventListener('click', cerrar); window.addEventListener('keydown', cerrar);
+    return () => { window.removeEventListener('click', cerrar); window.removeEventListener('keydown', cerrar); };
+  }, [menuFila]);
   const [buscando, setBuscando] = useState(false);
   const [modalFiltros, setModalFiltros] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -213,6 +223,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
           const resuelta = c.estado_crm === 'resuelta';
           return (
             <button key={c.id} onClick={() => onAbrir(c)} className="wa-fila-hover"
+              onContextMenu={e => { if (!c.wa_id || !onAsignar) return; e.preventDefault(); setMenuFila({ id: c.id, x: e.clientX, y: e.clientY }); }}
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',
                 borderBottom: `1px solid ${C.g50}`, cursor: 'pointer', fontFamily: 'inherit',
@@ -234,6 +245,11 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                   <span style={{ marginLeft: 'auto', fontSize: 11, color: c.no_leidos ? C.moradoTinta : C.g400, fontWeight: c.no_leidos ? 700 : 400, flexShrink: 0 }}>
                     {c.virtual ? <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px' }}>CRM</span> : horaRelativa(c.ultimo_mensaje_at)}
                   </span>
+                  {c.wa_id && onAsignar && (
+                    <span role="button" className="wa-fila-accion" title="Asignar" aria-label="Asignar"
+                      onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuFila({ id: c.id, x: r.left, y: r.bottom + 4 }); }}
+                      style={{ width: 18, height: 18, borderRadius: 6, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: C.g400, flexShrink: 0, fontSize: 13, lineHeight: 1 }}>⋯</span>
+                  )}
                 </span>
                 {etapa && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
@@ -259,7 +275,34 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
             </button>
           );
         })}
+        {(hayMasLista || (totalLista || 0) > 0) && lista.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 12px', fontSize: 11, color: C.g400 }}>
+            <span>{lista.length} de {totalLista || lista.length}</span>
+            {hayMasLista && cargarMasLista && (
+              <button disabled={cargandoMas} onClick={async () => { setCargandoMas(true); await cargarMasLista(); setCargandoMas(false); }}
+                style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {cargandoMas ? 'Cargando…' : 'Cargar más'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
+      {menuFila && (() => {
+        const c = lista.find(x => x.id === menuFila.id); if (!c) return null;
+        return (
+          <div role="menu" onClick={e => e.stopPropagation()}
+            style={{ position: 'fixed', left: Math.min(menuFila.x, window.innerWidth - 220), top: Math.min(menuFila.y, window.innerHeight - 260), width: 208, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', zIndex: 70, padding: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', padding: '4px 8px' }}>Asignar a</div>
+            {[{ id: '', nombre: 'Sin asignar' }, ...equipo].map((m: any) => (
+              <button key={m.id || 'nadie'} onClick={() => { onAsignar?.(c, m.id || null); setMenuFila(null); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', border: 'none', background: c.asignado_a === (m.id || null) ? C.moradoAgua : 'none', borderRadius: 6, padding: '6px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: C.g700 }}>
+                <span style={{ width: 18, height: 18, borderRadius: 999, background: m.id ? C.morado : C.g200, color: '#fff', fontSize: 9, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{m.id ? m.nombre[0] : '—'}</span>
+                {m.nombre}{yo && m.id === yo.id ? ' (yo)' : ''}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Filtros avanzados */}
       {modalFiltros && (

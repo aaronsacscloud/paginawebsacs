@@ -154,7 +154,10 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
   if ((form.footer || '').length > LIM.footer) errores.push(`Pie excede ${LIM.footer}`);
   if (!varsOk) errores.push('Las variables deben ser {{1}}, {{2}}… en orden y sin huecos');
   if ((form.botones || []).some((b: any) => !b.texto?.trim())) errores.push('Hay un botón sin texto');
+  const ejemplos: string[] = form.ejemplos || [];
+  if (vars.some((_, i) => !(ejemplos[i] || '').trim())) errores.push('Meta exige un ejemplo por cada variable');
   const puede = errores.length === 0;
+  const setEjemplo = (i: number, v: string) => { const e = [...ejemplos]; e[i] = v; setForm({ ...form, ejemplos: e }); };
   const setBoton = (i: number, texto: string) => setForm({ ...form, botones: form.botones.map((b: any, j: number) => j === i ? { ...b, texto: texto.slice(0, LIM.boton) } : b) });
 
   return (
@@ -185,6 +188,21 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
         {vars.length > 0 && (
           <div style={{ marginTop: 6, fontSize: 11, color: C.g500, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
             Variables: {vars.map(v => <span key={v} style={{ fontSize: 10, fontWeight: 700, background: varsOk ? C.moradoAgua : C.rojo50, color: varsOk ? C.moradoTinta : C.rojo500, borderRadius: 999, padding: '1px 7px' }}>{`{{${v}}}`}</span>)}
+          </div>
+        )}
+        {vars.length > 0 && varsOk && (
+          <div style={{ marginTop: 8, border: `1px solid ${C.g100}`, borderRadius: 8, padding: '8px 10px', background: C.g50 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g500, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Ejemplos para Meta (obligatorios)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 6 }}>
+              {vars.map((v, i) => (
+                <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                  <span style={{ fontWeight: 700, color: C.moradoTinta, flexShrink: 0 }}>{`{{${v}}}`}</span>
+                  <input value={ejemplos[i] || ''} onChange={e => setEjemplo(i, e.target.value)} placeholder={i === 0 ? 'María' : 'valor de ejemplo'}
+                    style={{ ...inp, padding: '5px 8px', fontSize: 12, borderColor: (ejemplos[i] || '').trim() ? C.g200 : C.rojo300 }} />
+                </label>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: C.g400, marginTop: 6 }}>Meta revisa la plantilla con estos valores; sin ellos la rechaza de inmediato.</div>
           </div>
         )}
 

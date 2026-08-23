@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ url }) => {
   const conversaciones = [];
   for (const conv of todas.slice(0, 20)) {
     const { data: mensajes } = await supabase.from('wa_mensajes')
-      .select('id, direccion, tipo, cuerpo, transcript, media_url, status, error, enviado_at, created_at')
+      .select('id, direccion, tipo, cuerpo, transcript, media_url, media_id, mime, filename, autor, status, error, enviado_at, created_at, metadata, borrado_at')
       .eq('conversation_id', conv.id)
       .order('created_at', { ascending: true }).limit(200);
     const c = (contactos || []).find(x => x.id === conv.contact_id) || contactoPorTel[conv.telefono] || null;

@@ -222,5 +222,12 @@ export const GET: APIRoute = async ({ request, url }) => {
       String(c.telefono || '').includes(qTel || search.replace(/\D/g, '') || '∅'));
   }
 
-  return json({ conversaciones: lista.slice(offset, offset + limit), counts, total_filtrado: lista.length });
+  // Orden en el servidor: con paginación, ordenar la página en el front mentía.
+  const orden = url.searchParams.get('orden') || 'recientes';
+  if (orden === 'antiguas') lista.reverse();
+  if (orden === 'az' || orden === 'za') {
+    lista.sort((a: any, b: any) => String(a.contacto?.nombre || a.telefono || '').localeCompare(String(b.contacto?.nombre || b.telefono || ''), 'es'));
+    if (orden === 'za') lista.reverse();
+  }
+  return json({ conversaciones: lista.slice(offset, offset + limit), counts, total_filtrado: lista.length, hay_mas: offset + limit < lista.length });
 };

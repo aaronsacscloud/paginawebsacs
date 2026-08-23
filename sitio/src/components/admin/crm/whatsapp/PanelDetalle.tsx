@@ -10,6 +10,7 @@ import { useCatalogoEtiquetas } from '../Etiquetas';
 import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
 import { Corazones } from '../ui/Cargando';
+import { srcMedia } from './Burbuja';
 import { C, L, label } from './estilo';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
@@ -166,7 +167,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
   const proxima = bookings.filter(b => new Date(b.fecha) >= new Date(Date.now() - 86400000)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))[0] || null;
   const timeline: any[] = (d360?.timeline || dCon?.activities || []).slice(0, 12);
   const resumen = d360?.resumen || null;
-  const media = (hilo.mensajes || []).filter((m: any) => m.media_url);
+  const media = (hilo.mensajes || []).filter((m: any) => (m.media_url || m.media_id) && !m.borrado_at).map((m: any) => ({ ...m, _src: srcMedia(m), _dl: srcMedia(m, true) }));
   const notas = hilo.notas || [];
 
   const crear = async () => {
@@ -366,7 +367,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
 
   const [filtroAdj, setFiltroAdj] = useState('todos');
   const TabAdjuntos = () => {
-    const esImg = (m: any) => m.tipo === 'image' || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(m.media_url || '');
+    const esImg = (m: any) => m.tipo === 'image' || m.tipo === 'sticker' || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(m.media_url || '');
     const lista = media.filter((m: any) => filtroAdj === 'todos' || (filtroAdj === 'fotos' ? esImg(m) : filtroAdj === 'audio' ? m.tipo === 'audio' : !esImg(m) && m.tipo !== 'audio'));
     const fotos = lista.filter(esImg); const otros = lista.filter((m: any) => !esImg(m));
     return (
@@ -386,13 +387,13 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
         {fotos.length > 0 && <>
           <div style={{ ...label(10), marginBottom: 6 }}>Fotos</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
-            {fotos.map((m: any) => <a key={m.id} href={m.media_url} target="_blank" rel="noreferrer"><img src={m.media_url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} /></a>)}
+            {fotos.map((m: any) => <a key={m.id} href={m._src} target="_blank" rel="noreferrer"><img src={m._src} loading="lazy" alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} /></a>)}
           </div>
         </>}
         {otros.map((m: any) => (
-          <a key={m.id} href={m.media_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontSize: 12, color: C.g700, textDecoration: 'none', borderBottom: `1px solid ${C.g50}` }}>
+          <a key={m.id} href={m._dl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontSize: 12, color: C.g700, textDecoration: 'none', borderBottom: `1px solid ${C.g50}` }}>
             <span style={{ fontSize: 16 }}>{m.tipo === 'audio' ? '🎵' : '📄'}</span>
-            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.cuerpo || m.tipo}</span>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.filename || m.cuerpo || m.tipo}</span>
             <span style={{ fontSize: 10, color: C.g400 }}>{fecha(m.created_at)}</span>
           </a>
         ))}

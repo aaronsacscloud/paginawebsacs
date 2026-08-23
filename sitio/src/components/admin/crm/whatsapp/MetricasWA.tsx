@@ -71,6 +71,22 @@ export default function MetricasWA() {
         </div>
       </div>
 
+      {/* Motivos de cierre */}
+      <div style={S.card}>
+        <div style={S.kl}>Motivos de cierre</div>
+        {!(d.por_cierre || []).length && <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#a5a2af' }}>Aún no hay conversaciones resueltas con categoría.</div>}
+        {(d.por_cierre || []).map((c: any) => {
+          const total = (d.por_cierre || []).reduce((a: number, x: any) => a + x.n, 0) || 1;
+          return (
+            <div key={c.categoria} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 40px', alignItems: 'center', gap: 10, marginTop: 8, fontSize: '0.78rem' }}>
+              <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.categoria}</span>
+              <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden' }}><div style={{ width: `${(c.n / total) * 100}%`, height: '100%', background: '#9B8CFA' }} /></div>
+              <b style={{ color: '#5B4BD6', textAlign: 'right' }}>{c.n}</b>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Por agente */}
       <div style={S.card}>
         <div style={S.kl}>Carga por agente</div>
