@@ -86,7 +86,8 @@ export const POST: APIRoute = async ({ request }) => {
       let customerId = cfg?.kapso_customer_id || null;
       if (!customerId) { const c = await crearClienteKapso(String(b.nombre || 'Cliente Sacscloud'), b.external_id || undefined); customerId = c?.id || c?.data?.id; await supabase.from('wa_config').update({ kapso_customer_id: customerId }).eq('id', 1); }
       const l = await crearSetupLink(customerId, b.success_url || 'https://www.sacscloud.com/admin/crm?tab=wa-ajustes&conectado=1');
-      return json({ ok: true, link: l?.url || l?.data?.url || l, customer_id: customerId });
+      const obj = l?.data || l; const link = obj?.url || obj?.setup_url || obj?.link || obj?.hosted_url || (obj?.token ? `https://app.kapso.ai/setup/${obj.token}` : null);
+      return json({ ok: true, link: link || obj, expira: obj?.expires_at || null, customer_id: customerId });
     }
     return json({ error: 'Acción desconocida' }, 400);
   } catch (e: any) { return fallo(e); }

@@ -42,7 +42,7 @@ export const logsApi = (params: Record<string, string> = {}) => req(PLATFORM, `/
 export const numerosKapso = () => req(PLATFORM, '/whatsapp/phone_numbers');
 // 47) setup links (el cliente conecta SU WhatsApp)
 export const clientesKapso = () => req(PLATFORM, '/customers?per_page=50');
-export const crearClienteKapso = (nombre: string, externalId?: string) => req(PLATFORM, '/customers', { method: 'POST', body: JSON.stringify({ customer: { name: nombre, external_id: externalId || `sacs-${nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${Date.now().toString(36)}` } }) });
+export const crearClienteKapso = (nombre: string, externalId?: string) => req(PLATFORM, '/customers', { method: 'POST', body: JSON.stringify({ customer: { name: nombre, external_customer_id: externalId || `sacs-${nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${Date.now().toString(36)}` } }) });
 export const crearSetupLink = (customerId: string, successUrl?: string) => req(PLATFORM, `/customers/${customerId}/setup_links`, { method: 'POST', body: JSON.stringify({ setup_link: { ...(successUrl ? { success_redirect_url: successUrl } : {}) } }) });
 export const setupLinks = (customerId: string) => req(PLATFORM, `/customers/${customerId}/setup_links`);
 
