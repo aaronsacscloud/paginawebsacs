@@ -1,3 +1,4 @@
+import { GoogleCalendarPanel } from './GoogleCalendarPanel';
 import { useState, useEffect, useCallback, useContext, createContext } from 'react';
 
 // ─── Types ───
@@ -1515,97 +1516,6 @@ function DisponibilidadView({ variant }: { variant: SchedulingHubVariant }) {
 // Panel de conexión con Google Calendar — visible en admin y partner.
 // Reusa /api/scheduling/google/status, /auth, /disconnect. Auto-resuelve
 // team_member_id basado en cookie sacs_session.
-function GoogleCalendarPanel() {
-  const schedFetch = useSchedFetch();
-  const [status, setStatus] = useState<{ connected: boolean; connected_at: string | null } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const r = await schedFetch('/api/scheduling/google/status', { credentials: 'include' });
-      const d = await r.json();
-      setStatus({ connected: !!d.connected, connected_at: d.connected_at || null });
-    } catch {
-      setStatus({ connected: false, connected_at: null });
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const connect = () => {
-    // Redirige al flow OAuth pasando la URL actual como return_url para que
-    // el callback regrese al mismo portal (admin o partner) donde inició.
-    const ret = encodeURIComponent(window.location.pathname + window.location.hash);
-    window.location.href = `/api/scheduling/google/auth?return_url=${ret}`;
-  };
-
-  const disconnect = async () => {
-    if (!confirm('¿Desconectar tu Google Calendar? Las nuevas citas ya no se sincronizarán automáticamente.')) return;
-    setBusy(true);
-    try {
-      await schedFetch('/api/scheduling/google/disconnect', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div style={{ padding: '24px 24px 0' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-        padding: '14px 16px', borderRadius: 12,
-        background: status?.connected ? 'rgba(42,181,160,0.07)' : '#fafbfd',
-        border: `1px solid ${status?.connected ? 'rgba(42,181,160,0.30)' : '#e8eaf0'}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-            background: '#fff', border: '1px solid #e5e5e5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {/* Google "G" simplificado */}
-            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden>
-              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
-              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
-              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
-              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
-            </svg>
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>
-              Google Calendar
-            </div>
-            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              {loading
-                ? 'Comprobando…'
-                : status?.connected
-                  ? `Conectado · las citas se crean automáticamente con Google Meet`
-                  : 'Conecta tu calendar para auto-sync y crear Google Meet en cada cita'}
-            </div>
-          </div>
-        </div>
-        {!loading && (
-          status?.connected
-            ? <button onClick={disconnect} disabled={busy} style={{ ...btn, background: '#fff', color: '#666', border: '1px solid #ddd', opacity: busy ? 0.6 : 1 }}>
-                {busy ? 'Desconectando…' : 'Desconectar'}
-              </button>
-            : <button onClick={connect} style={{ ...btn, background: '#4B7BE5', color: '#fff' }}>
-                Conectar
-              </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // Editor de horarios semanales + overrides (lo que era DisponibilidadView original).
 function DisponibilidadSchedule() {
   const schedFetch = useSchedFetch();

@@ -19,13 +19,16 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const { data } = await supabase
     .from('calendar_connections')
-    .select('calendar_id, activo, created_at, token_expires_at')
+    .select('email, calendar_id, activo, created_at, token_expires_at')
     .eq('team_member_id', teamMemberId)
     .eq('provider', 'google')
     .maybeSingle();
 
   return new Response(JSON.stringify({
     connected: !!(data && data.activo),
+    // Con qué cuenta quedó: al cambiar de calendario es lo único que confirma
+    // que la conexión es la que se quería y no la anterior.
+    email: data?.email || null,
     calendar_id: data?.calendar_id || null,
     connected_at: data?.created_at || null,
     token_expires_at: data?.token_expires_at || null,

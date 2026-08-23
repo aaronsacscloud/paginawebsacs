@@ -9,6 +9,7 @@ import MarcaTab from './crm/MarcaTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import UsuariosPermisos from './crm/UsuariosPermisos';
 import MiPerfil from './crm/MiPerfil';
+import { GoogleCalendarPanel } from '../scheduling/GoogleCalendarPanel';
 import CotizacionesDashboard from './crm/CotizacionesDashboard';
 import RegistrarPagoModal, { resumenCierre } from './crm/RegistrarPagoModal';
 import { plans as plansData } from '../../data/plans';
@@ -3672,6 +3673,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   editor: <PipelinesConfig initialTipo="oportunidad" sinTitulo /> },
               ]},
               { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [] },
+            ]},
+            { g: 'Reuniones', mods: [
+              { id: 'agenda', nom: 'Agenda', sub: 'Con qué calendario se sincroniza tu agenda.', items: [
+                { id: 'google-calendar', ico: 'campos', t: 'Google Calendar',
+                  d: 'Con qué cuenta de Google se crean los eventos y las ligas de Meet de las reuniones que agendas. Cambiarla aquí es lo mismo que hacerlo desde Reuniones, pero sin salir de Configuración.',
+                  editor: <GoogleCalendarPanel /> },
+              ]},
             ]},
             { g: 'Facturación', mods: [
               { id: 'catalogo', nom: 'Planes y plugins', sub: 'Lo único que se puede vender, escrito una sola vez.', items: [
