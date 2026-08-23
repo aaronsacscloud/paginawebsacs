@@ -46,7 +46,7 @@ export default function TabWhatsApp360({ companyId }: { companyId: string }) {
             {conv.contacto && <span style={{ fontSize: '0.72rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>}
             <Tag tono={conv.estado === 'active' ? 'ok' : 'gris'}>{conv.estado === 'active' ? 'activa' : 'terminada'}</Tag>
             <span style={{ flex: 1 }} />
-            <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(conv.telefono)}`}
+            <a href={`/admin/crm?tab=whatsapp&wa_conv=${conv.id}`}
               style={{ ...S.btnA, textDecoration: 'none', display: 'inline-block' }}>
               Responder en el Inbox
             </a>

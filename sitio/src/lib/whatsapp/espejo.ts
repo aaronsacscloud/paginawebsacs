@@ -10,7 +10,8 @@
 //  - Número sin contacto: se espeja igual (contact_id null), sin activity y
 //    sin tocar last_contact_at — no se inventan contactos.
 import { supabase } from '../supabase';
-import { telefonoWhatsApp } from '../telefono';
+import { telefonoWhatsApp, telefonoLegible } from '../telefono';
+import { notificar } from '../crm/notificaciones';
 
 /** El contacto (y su empresa) dueño de un teléfono, o nulls. */
 export async function ligarContacto(telefono: string): Promise<{ contactId: string | null; companyId: string | null }> {
@@ -118,6 +119,24 @@ export async function registrarMensaje(o: {
     ultima_direccion: o.direccion,
     estado: 'active',
   }).eq('id', conv.id);
+
+  if (o.direccion === 'entrante') {
+    // No-leídos con RPC-less increment: leer+escribir es carrera aceptable
+    // aquí (el peor caso es un contador ±1 que se corrige al abrir el hilo).
+    const { data: c } = await supabase.from('wa_conversaciones')
+      .select('no_leidos, telefono').eq('id', conv.id).maybeSingle();
+    await supabase.from('wa_conversaciones')
+      .update({ no_leidos: (c?.no_leidos ?? 0) + 1 }).eq('id', conv.id);
+    // Campana del CRM. Idempotente por clave = wamid: el replay no re-suena.
+    await notificar({
+      clave: `wa_${o.kapsoMessageId}`,
+      tipo: 'wa_mensaje',
+      titulo: `WhatsApp de ${telefonoLegible(c?.telefono || o.telefono)}: ${(texto || '').slice(0, 80)}`,
+      company_id: conv.companyId || null,
+      destino: 'whatsapp',
+      metadata: { conversation_id: conv.id },
+    });
+  }
 
   // El hilo también vive en la ficha del contacto — pero solo si HAY contacto.
   if (conv.contactId) {

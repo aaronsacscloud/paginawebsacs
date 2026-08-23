@@ -31,7 +31,7 @@ export function useCatalogoEtiquetas() {
 }
 
 /** Mapa entidad_id → etiquetas, para pintar una lista entera sin N consultas. */
-export function useMapaEtiquetas(entidad: 'company' | 'deal' | 'subscription') {
+export function useMapaEtiquetas(entidad: 'company' | 'deal' | 'subscription' | 'contact') {
   const [mapa, setMapa] = useState<Record<string, Etiqueta[]>>({});
   const cargar = () => fetch(`/api/crm/etiquetas?entidad=${entidad}&mapa=1`).then(r => r.json()).then(j => setMapa(j.mapa || {})).catch(() => {});
   useEffect(() => { cargar(); }, [entidad]);
@@ -51,7 +51,7 @@ export function ChipsEtiquetas({ etiquetas, max }: { etiquetas?: Etiqueta[] | nu
 }
 
 export default function Etiquetas({ entidad, id, compacto, onCambio }: {
-  entidad: 'company' | 'deal' | 'subscription';
+  entidad: 'company' | 'deal' | 'subscription' | 'contact';
   id: string;
   compacto?: boolean;
   onCambio?: () => void;

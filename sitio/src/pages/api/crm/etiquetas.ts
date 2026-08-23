@@ -15,7 +15,7 @@ import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
-const ENTIDADES = ['company', 'deal', 'subscription'];
+const ENTIDADES = ['company', 'deal', 'subscription', 'contact'];
 const sinTabla = (m?: string) => /relation .* does not exist|schema cache|could not find the table/i.test(m || '');
 
 export const GET: APIRoute = async ({ url }) => {

@@ -1,12 +1,12 @@
-// La sección WhatsApp del CRM (arquitectura híbrida con Kapso).
+// La sección WhatsApp del CRM.
 //
-// El chat vive en el inbox embebido de Kapso; Masivos y Plantillas son
-// pantallas propias sobre su API. El gate de configuración va primero, como
-// en Email: mientras falte una env o el webhook, cada pantalla lo dice en vez
-// de fallar en silencio.
+// El Inbox es PROPIO (InboxPro, estilo respond.io) sobre el espejo wa_* que
+// alimentan los webhooks de Kapso; Kapso queda solo como transporte. El gate
+// de configuración va primero, como en Email: mientras falte una env o el
+// webhook, cada pantalla lo dice en vez de fallar en silencio.
 import { useEffect, useState } from 'react';
 import { S, Aviso, FOCO } from '../email/ui';
-import InboxEmbed from './InboxEmbed';
+import InboxPro from './InboxPro';
 import Masivos from './Masivos';
 import Plantillas from './Plantillas';
 
@@ -21,13 +21,18 @@ const SECCIONES: Array<{ id: Sec; label: string }> = [
 export default function WhatsAppTab() {
   const [sec, setSec] = useState<Sec>('inbox');
   const [setup, setSetup] = useState<any>(null);
-  // El deep-link de la ficha 360: /admin/crm?tab=whatsapp&wa_search=+521...
-  const [buscar] = useState<string | null>(() => {
-    try { return new URLSearchParams(window.location.search).get('wa_search'); } catch { return null; }
-  });
+  const [sinLeer, setSinLeer] = useState(0);
 
   const revisar = () => fetch('/api/crm/whatsapp/setup').then(r => r.json()).then(setSetup).catch(() => setSetup({ faltantes: [] }));
   useEffect(() => { revisar(); }, []);
+  useEffect(() => {
+    // Contador del sub-tab (patrón Bandeja de EmailTab).
+    const traer = () => fetch('/api/crm/whatsapp/inbox?limit=1').then(r => r.json())
+      .then(j => setSinLeer(j.counts?.no_leidas || 0)).catch(() => {});
+    traer();
+    const t = setInterval(() => { if (!document.hidden) traer(); }, 30000);
+    return () => clearInterval(t);
+  }, [sec]);
 
   const faltan: string[] = setup?.faltantes || [];
   const sinWebhook = setup && !setup.webhook_registrado && !faltan.length;
@@ -53,6 +58,9 @@ export default function WhatsAppTab() {
                 boxShadow: sec === s.id ? 'inset 0 -3px 0 #9B8CFA' : 'none',
               }}>
               {s.label}
+              {s.id === 'inbox' && sinLeer > 0 && (
+                <span style={{ marginLeft: 6, background: '#9B8CFA', color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: '0.6rem', fontWeight: 800 }}>{sinLeer}</span>
+              )}
             </button>
           ))}
         </div>
@@ -78,7 +86,7 @@ export default function WhatsAppTab() {
         </div>
       )}
 
-      {sec === 'inbox' && <InboxEmbed buscar={buscar} />}
+      {sec === 'inbox' && <InboxPro />}
       {sec === 'masivos' && <Masivos />}
       {sec === 'plantillas' && <Plantillas />}
     </div>
