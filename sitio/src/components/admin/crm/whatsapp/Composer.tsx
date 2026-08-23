@@ -45,13 +45,15 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
-export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente }: {
+export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [] }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
   cita?: any; onQuitarCita?: () => void;
   borradorInicial?: string; onBorrador?: (t: string) => void;
   onEscribir?: () => void;                 // 6) presencia "escribiendo…"
   siguiente?: () => boolean;               // 2) abrir la siguiente sin responder
+  sugerencias?: any[];                     // L4: temas relevantes de la etapa del contacto
 }) {
+  const [preselTema, setPreselTema] = useState<string | null>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
   const [remotos, setRemotos] = useState<{ url: string; nombre: string; clase: string; mime?: string }[]>([]);   // 8) adjuntos por URL (snippets/biblioteca)
@@ -289,6 +291,20 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         </div>
       )}
 
+      {sugerencias.length > 0 && modo === 'wa' && !comentario && (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', margin: '0 0 6px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Temas de la etapa</span>
+          {sugerencias.slice(0, 5).map((t: any, i: number) => (
+            <button key={i} onClick={() => {
+              if (t.tipo === 'plantilla') { setPreselTema(t.ref); setModalPlantilla(true); }
+              else { const sn = snippets.find((x: any) => x.atajo === t.ref); if (sn) usarSnippet(sn); }
+            }} title={t.tipo === 'plantilla' ? 'Plantilla aprobada (sirve aunque la ventana esté cerrada)' : 'Snippet: llena el mensaje'}
+              style={{ border: `1px solid ${t.tipo === 'plantilla' ? '#A7F3D0' : '#c9bcf7'}`, background: t.tipo === 'plantilla' ? C.emerald50 : C.moradoAgua, color: t.tipo === 'plantilla' ? C.emerald700 : C.moradoTinta, borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {t.titulo || t.ref}
+            </button>
+          ))}
+        </div>
+      )}
       <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative' }}>
         <FilaCanal />
         {cita && modo === 'wa' && (
@@ -492,7 +508,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       </div>
 
       <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
-      {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => setModalPlantilla(false)} contacto={contacto} />}
+      {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => { setModalPlantilla(false); setPreselTema(null); }} contacto={contacto} preseleccion={preselTema} />}
       {modalInteractivo && <ModalInteractivo equipo={equipo} yo={api.yo?.()} contacto={contacto} catalogId={catalogId} onCerrar={() => setModalInteractivo(false)}
         onEnviar={async (body) => {
           const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, cita: cita?.kapso_message_id || undefined, ...body }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -825,7 +841,7 @@ export function valorVariable(campo: string, contacto: any, yo: any): string {
   }
 }
 
-export function SelectorPlantilla({ telefono, api, onClose, contacto }: { telefono: string; api: any; onClose: () => void; contacto?: any }) {
+export function SelectorPlantilla({ telefono, api, onClose, contacto, preseleccion }: { telefono: string; api: any; onClose: () => void; contacto?: any; preseleccion?: string | null }) {
   const [headerUrl, setHeaderUrl] = useState('');
   const [otp, setOtp] = useState('');
   const [lista, setLista] = useState<any[] | null>(null);
@@ -838,7 +854,12 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto }: { telefo
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => setLista(j.plantillas || [])).catch(() => setLista([]));
+    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
+      const l = j.plantillas || []; setLista(l);
+      // Tema de etapa: llega preseleccionada y con las variables ya resueltas.
+      const pre = preseleccion ? l.find((p: any) => p.nombre === preseleccion && p.status === 'APPROVED') : null;
+      if (pre) { setSel(pre); setHeaderUrl(pre.header_media_url || ''); setParams(Array.from({ length: pre.variables || 0 }, (_, i) => valorVariable((pre.variables_map || [])[i] || '', contacto, api.yo?.()))); }
+    }).catch(() => setLista([]));
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
   }, []);

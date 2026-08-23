@@ -5,7 +5,7 @@
 // Data del CRM: company360 + contacts/[id]. Sin memoria IA ni SACS3.
 import { useEffect, useRef, useState } from 'react';
 import { telefonoLegible } from '../../../../lib/telefono';
-import { LIFECYCLE, lifecycleDe } from '../../../../lib/crm/lifecycle';
+import { useLifecycle, lifecycleDe } from '../../../../lib/crm/lifecycle';
 import { useCatalogoEtiquetas } from '../Etiquetas';
 import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
@@ -136,8 +136,14 @@ function CampoTelefono({ etiqueta, valor, onGuardar }: { etiqueta: string; valor
 
 const ESTADO_SUB: Record<string, [string, string]> = { activa: [C.emerald50, C.emerald700], pausada: [C.ambar50, C.ambar700], cancelada: [C.rojo50, '#C0554E'] };
 
-export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
-  const conv = hilo.conversacion;
+export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api: any; filaActiva?: any }) {
+  // Fila VIRTUAL (contacto sin conversación): el panel funciona igual, con los
+  // datos del CRM; hilo llega null y todo lo de mensajes queda vacío.
+  const conv = hilo?.conversacion || (filaActiva?.virtual ? {
+    id: null, telefono: filaActiva.telefono, contact_id: filaActiva.contact_id, company_id: filaActiva.company_id,
+    contacts: filaActiva.contacto ? { id: filaActiva.contacto.id, nombre: filaActiva.contacto.nombre, email: filaActiva.contacto.email, lifecycle_stage: filaActiva.contacto.lifecycle_stage, tipo: filaActiva.contacto.tipo } : null,
+    companies: filaActiva.empresa ? { id: filaActiva.empresa.id, nombre: filaActiva.empresa.nombre, nombre_comercial: filaActiva.empresa.nombre, plan: filaActiva.empresa.plan, mrr: filaActiva.empresa.mrr } : null,
+  } : null);
   const contactoBase = conv?.contacts || null;
   const [tab, setTab] = useState<Tab>('info');
   const [abiertoPanel, setAbiertoPanel] = useState(true);
@@ -152,6 +158,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
   const [filtroAct, setFiltroAct] = useState<string>('todo');   // 18
   const cacheId = useRef<string | null>(null);
   const yo = hilo?.yo || null;
+  const etapasCat = useLifecycle();
   // 21) Un CS ve el dinero solo de sus cuentas; founder ve todo.
   const ocultarDinero = yo?.rol === 'cs' && ctx?.contacto?.owner_id && ctx.contacto.owner_id !== yo.id;
 
@@ -181,8 +188,8 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
   const proxima = bookings.filter(b => new Date(b.fecha) >= new Date(Date.now() - 86400000)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))[0] || null;
   const timeline: any[] = (d360?.timeline || dCon?.activities || []).slice(0, 12);
   const resumen = d360?.resumen || null;
-  const media = (hilo.mensajes || []).filter((m: any) => (m.media_url || m.media_id) && !m.borrado_at).map((m: any) => ({ ...m, _src: srcMedia(m), _dl: srcMedia(m, true) }));
-  const notas = hilo.notas || [];
+  const media = (hilo?.mensajes || []).filter((m: any) => (m.media_url || m.media_id) && !m.borrado_at).map((m: any) => ({ ...m, _src: srcMedia(m), _dl: srcMedia(m, true) }));
+  const notas = hilo?.notas || [];
 
   const crear = async () => {
     if (!alta?.empresa.trim()) { setMsg('El nombre de la empresa es obligatorio.'); return; }
@@ -226,7 +233,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
               {ctx.salud.tickets_abiertos > 0 && <span style={tag(C.ambar100, C.ambar700)}>{ctx.salud.tickets_abiertos} ticket{ctx.salud.tickets_abiertos === 1 ? '' : 's'} de soporte</span>}
               {ctx.salud.soporte_estancado && <span style={tag(C.rojo50, C.rojo700)}>Soporte estancado</span>}
               {ctx.salud.health_score != null && <span style={tag(C.g100, C.g500)}>Salud {ctx.salud.health_score}/100</span>}
-              {hilo.marketing?.stopped && <span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span>}
+              {hilo?.marketing?.stopped && <span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span>}
             </div>
           )}
         </>) : contactoBase ? (
@@ -298,7 +305,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
             <div style={divisor} /><Campo etiqueta="Email" valor={contactoBase.email} onGuardar={guardar('email')} type="email" copiable />
             <div style={divisor} /><CampoTelefono etiqueta="WhatsApp" valor={conv.telefono?.startsWith('+') ? conv.telefono : null} onGuardar={guardar('whatsapp')} />
             <div style={divisor} /><Campo etiqueta="Puesto" valor={contacto?.puesto} onGuardar={guardar('puesto')} />
-            <div style={divisor} /><Campo etiqueta="Etapa" valor={contactoBase.lifecycle_stage} opciones={LIFECYCLE.map(s => ({ v: s.id, l: s.label }))} onGuardar={guardar('lifecycle_stage')} />
+            <div style={divisor} /><Campo etiqueta="Etapa" valor={contactoBase.lifecycle_stage} opciones={etapasCat.map(s => ({ v: s.id, l: `${(s as any).emoji || ''} ${s.label}`.trim() }))} onGuardar={guardar('lifecycle_stage')} />
             <div style={divisor} /><Campo etiqueta="Origen" valor={contacto?.fuente} readOnly />
           </div>
         </Seccion>

@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { C, L, label } from './estilo';
 import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
-import { LIFECYCLE } from '../../../../lib/crm/lifecycle';
+import EtapasModal from './EtapasModal';
+import { useLifecycle, cargarLifecycle } from '../../../../lib/crm/lifecycle';
 import { catalogoCampos, type CampoFiltro } from '../../../../lib/whatsapp/filtros';
 import { CrearSeccionModal, CrearVistaModal } from './VistaModales';
 import { useCatalogoEtiquetas } from '../Etiquetas';
@@ -32,6 +33,7 @@ const num: React.CSSProperties = { marginLeft: 'auto', fontSize: 11, color: C.g4
 
 export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   const { cat } = useCatalogoEtiquetas();
+  const etapasCat = useLifecycle();
   const [giros, setGiros] = useState<{ v: string; l: string }[]>([]);
   const [cierres, setCierres] = useState<{ v: string; l: string }[]>([]);
   useEffect(() => { fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCierres((j.categorias || []).map((c: any) => ({ v: c.nombre, l: c.nombre })))).catch(() => {}); }, []);
@@ -43,6 +45,7 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   }, []);
   return useMemo(() => catalogoCampos({
     etiquetas: (cat || []).map((e: any) => ({ v: e.id, l: e.nombre })),
+    etapas: etapasCat.map(e => ({ v: e.id, l: e.label })),
     equipo: equipo.map((m: any) => ({ v: m.id, l: m.nombre })),
     giros, cierres,
     fuentes: [
@@ -65,6 +68,11 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   const [modalSeccion, setModalSeccion] = useState<any | 'nueva' | null>(null);
   const [modalVista, setModalVista] = useState<{ vista?: any; seccionId?: string | null; prefill?: any } | null>(null);
   const [ajustes, setAjustes] = useState(false);
+  const [gestorEtapas, setGestorEtapas] = useState(false);
+  const [tabVistas, setTabVistas] = useState<'todas' | 'mias' | 'equipo'>('todas');
+  const [menuVista, setMenuVista] = useState<string | null>(null);
+  const etapas = useLifecycle();
+  useEffect(() => { if (!menuVista) return; const c = () => setMenuVista(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, [menuVista]);
   const campos = useCamposFiltro(equipo);
 
   const cargar = () => {
@@ -72,6 +80,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
     fetch('/api/crm/vistas?tabla=wa_inbox').then(r => r.json()).then(j => setVistas(j.data || [])).catch(() => {});
   };
   useEffect(() => { cargar(); }, []);
+  useEffect(() => { if (tick > 0 && tick % 4 === 0) cargarLifecycle(true); }, [tick]);   // conteos de etapas cada ~1 min
 
   // Contadores por vista: en fila, sin tumbar el server. Se recalculan con
   // cada `tick` del polling (22) y la vista que SUBE se resalta 4 s.
@@ -107,10 +116,10 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
     await fetch('/api/crm/whatsapp/secciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }).catch(() => {});
     setModalSeccion(null); cargar();
   };
-  const guardarVista = async (v: { id?: string; nombre: string; config: any; compartida?: boolean }) => {
+  const guardarVista = async (v: { id?: string; nombre: string; config: any; compartida?: boolean; compartida_con?: string[] }) => {
     await fetch('/api/crm/vistas', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: v.id, tabla: 'wa_inbox', nombre: v.nombre, config: v.config, compartida: v.compartida !== false }),
+      body: JSON.stringify({ id: v.id, tabla: 'wa_inbox', nombre: v.nombre, config: v.config, compartida: v.compartida !== false, compartida_con: v.compartida_con || [] }),
     }).catch(() => {});
     setModalVista(null); cargar();
   };
@@ -133,7 +142,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   };
 
   // Vistas viejas (v3, sin condiciones) se agrupan como "sin grupo" igual.
-  const visibles = vistas.filter(v => v.compartida !== false || !yo || !v.owner_id || v.owner_id === yo.id);
+  const visibles = vistas.filter(v => v.compartida !== false || !yo || !v.owner_id || v.owner_id === yo.id || (v.compartida_con || []).includes(yo.id));
   const vistasDe = (seccionId: string | null) => visibles.filter(v => (v.config?.seccion_id || null) === seccionId);
   const dueno = (v: any) => !v.owner_id ? null : (yo && v.owner_id === yo.id) ? 'yo' : (equipo.find((m: any) => m.id === v.owner_id)?.nombre?.split(' ')[0] || null);
 
@@ -168,55 +177,86 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
       ))}
 
       <div className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 8 }}>
-        <div style={{ ...label(10), padding: '14px 12px 5px' }}>Ciclo de vida</div>
-        {LIFECYCLE.filter(e => (counts.por_etapa?.[e.id] || 0) > 0 || filtros.etapa === e.id).map(e => (
-          <button key={e.id} style={fila(!vistaActiva && filtros.etapa === e.id)}
-            onClick={() => { onVista(null); setFiltros({ ...filtros, etapa: filtros.etapa === e.id ? '' : e.id }); }}>
-            <span style={{ width: 8, height: 8, borderRadius: 999, background: e.fg, opacity: .55, flexShrink: 0 }} />
-            {e.label}
-            <span style={num}>{counts.por_etapa?.[e.id] || 0}</span>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 5px' }}>
+          <span style={label(10)}>Ciclo de vida</span>
+          <span style={{ marginLeft: 6, fontSize: 10, color: C.g300 }}>{etapas.reduce((a, e) => a + (e.n || 0), 0)}</span>
+          <button onClick={() => setGestorEtapas(true)} title="Configurar etapas del ciclo de vida" aria-label="Configurar etapas"
+            style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 2, display: 'inline-flex' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
           </button>
-        ))}
-
-        {/* Grupos de vistas custom con acciones en hover */}
-        {[{ id: null, emoji: '👁️', nombre: 'Vistas' } as any, ...secciones].map(sec => {
-          const lista = vistasDe(sec.id);
-          if (sec.id === null && !lista.length && secciones.length) return null;
+        </div>
+        {etapas.map(e => {
+          const activaEtapa = vistaActiva?.id === `etapa:${e.id}`;
           return (
-            <div key={sec.id || 'base'} className="wa-grupo">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '14px 12px 3px' }}>
-                {sec.id === null ? <IcoOjo size={13} style={{ color: C.g400 }} /> : <span style={{ fontSize: 12 }}>{sec.emoji}</span>}
-                <span style={label(10)}>{sec.nombre}</span>
-              </div>
-              <div className="wa-hover-reveal" style={{ display: 'flex', gap: 5, padding: '0 12px 4px' }}>
-                {sec.id !== null && (
-                  <button onClick={() => setModalSeccion(sec)}
-                    style={{ fontSize: 10, fontWeight: 700, border: 'none', background: C.g100, color: C.g500, borderRadius: 999, padding: '2px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>editar</button>
-                )}
-                <button onClick={() => setModalVista({ seccionId: sec.id })}
-                  style={{ fontSize: 10, fontWeight: 700, border: 'none', background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '2px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>+ vista</button>
-              </div>
-              {!lista.length && <div style={{ padding: '2px 12px 4px', fontSize: 11, color: C.g400 }}>Sin vistas en este grupo.</div>}
-              {lista.map(v => (
-                <div key={v.id} style={{ display: 'flex', alignItems: 'center' }} className="wa-grupo">
+            <button key={e.id} style={fila(activaEtapa)}
+              onClick={() => activaEtapa ? onVista(null) : onVista({ id: `etapa:${e.id}`, nombre: e.label, _etapa: e.id, config: { modo: 'todas', logica: 'AND', condiciones: [{ campo: 'etapa', op: 'es', valor: e.id }] } })}
+              title={`${e.label}: ${e.n ?? 0} contactos (con o sin conversación)`}>
+              <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{e.emoji}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.label}</span>
+              <span style={num}>{e.n ?? counts.por_etapa?.[e.id] ?? 0}</span>
+            </button>
+          );
+        })}
+
+        {/* ── VISTAS: header fijo con acciones visibles + tabs Todas/Mías/Equipo ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '16px 12px 4px' }}>
+          <IcoOjo size={13} style={{ color: C.g400 }} />
+          <span style={label(10)}>Vistas</span>
+          <span style={{ fontSize: 10, color: C.g300 }}>{visibles.length}</span>
+          <button onClick={() => setModalVista({ seccionId: null })} title="Nueva vista"
+            style={{ marginLeft: 'auto', border: 'none', background: C.moradoAgua, color: C.moradoTinta, borderRadius: 6, width: 20, height: 20, cursor: 'pointer', fontSize: 13, fontWeight: 800, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+        </div>
+        <div style={{ display: 'flex', gap: 2, padding: '2px 12px 6px' }}>
+          {([['todas', 'Todas'], ['mias', 'Mías'], ['equipo', 'Del equipo']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setTabVistas(v)}
+              style={{ border: 'none', background: tabVistas === v ? C.g900 : 'transparent', color: tabVistas === v ? '#fff' : C.g400, borderRadius: 999, padding: '2px 9px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+          ))}
+        </div>
+        {[{ id: null, emoji: null, nombre: null } as any, ...secciones].map(sec => {
+          const base = vistasDe(sec.id).filter(v =>
+            tabVistas === 'todas' ? true : tabVistas === 'mias' ? (!v.owner_id || v.owner_id === yo?.id) : (v.owner_id && v.owner_id !== yo?.id));
+          if (!base.length && sec.id !== null) return null;
+          return (
+            <div key={sec.id || 'base'}>
+              {sec.id !== null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px 2px' }}>
+                  <span style={{ fontSize: 12 }}>{sec.emoji}</span>
+                  <span style={label(10)}>{sec.nombre}</span>
+                  <button onClick={() => setModalSeccion(sec)} title="Editar grupo" style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 10, fontFamily: 'inherit' }}>editar</button>
+                </div>
+              )}
+              {sec.id === null && !base.length && <div style={{ padding: '2px 12px 4px', fontSize: 11, color: C.g400 }}>{tabVistas === 'equipo' ? 'El equipo no ha compartido vistas.' : 'Crea tu primera vista con el botón +.'}</div>}
+              {base.map(v => (
+                <div key={v.id} style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                   <button style={{ ...fila(vistaActiva?.id === v.id), flex: 1, minWidth: 0 }}
                     onClick={() => onVista(vistaActiva?.id === v.id ? null : v)}
-                    onDoubleClick={() => setModalVista({ vista: v, seccionId: sec.id })}
-                    title={`${v.nombre} · doble clic para editar`}>
+                    title={`${v.nombre}${v.config?.descripcion ? ` — ${v.config.descripcion}` : ''}`}>
                     <span style={{ fontSize: 13 }}>{v.config?.emoji || '⭐'}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.nombre}</span>
-                    {v.compartida === false && <span title="Vista personal (solo tú la ves)" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '0 5px' }}>privada</span>}
-                    {v.compartida !== false && dueno(v) && dueno(v) !== 'yo' && <span title={`Creada por ${dueno(v)}`} style={{ fontSize: 9, color: C.g400 }}>{dueno(v)}</span>}
-                    {v.config?.modo === 'solo_contactos' && <span title="Solo contactos sin conversación" style={{ fontSize: 10 }}>📋</span>}
-                    {v.config?.modo === 'todas' && <span title="Incluye contactos sin conversación" style={{ fontSize: 10 }}>👥</span>}
+                    {v.compartida === false && !(v.compartida_con || []).length && <span title="Privada: solo tú la ves" style={{ display: 'inline-flex', flexShrink: 0, color: C.g400 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg></span>}
+                    {(v.compartida_con || []).length > 0 && <span title={`Compartida con ${(v.compartida_con || []).length} personas`} style={{ fontSize: 9, fontWeight: 700, color: C.azulTinta, flexShrink: 0 }}>{(v.compartida_con || []).length}p</span>}
+                    {dueno(v) && dueno(v) !== 'yo' && <span title={`Creada por ${dueno(v)}`} style={{ width: 14, height: 14, borderRadius: 999, background: C.g100, color: C.g500, fontSize: 8, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{dueno(v)![0]}</span>}
                     <span style={{ ...num, ...(subio[v.id] ? { background: C.moradoAgua, color: C.moradoTinta, fontWeight: 800 } : {}) }}>{contadores[v.id] ?? ''}</span>
                   </button>
-                  <span className="wa-hover-reveal" style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: .8 }}>
-                    <button title="Subir" onClick={() => mover(v, -1, lista)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 9, padding: 0 }}>▲</button>
-                    <button title="Bajar" onClick={() => mover(v, 1, lista)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 9, padding: 0 }}>▼</button>
-                  </span>
-                  <button className="wa-hover-reveal" title="Borrar vista" onClick={() => borrarVista(v.id)}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 11, padding: '0 8px 0 0' }}>✕</button>
+                  <button onClick={e => { e.stopPropagation(); setMenuVista(menuVista === v.id ? null : v.id); }} title="Opciones de la vista" aria-label={`Opciones de ${v.nombre}`}
+                    style={{ border: 'none', background: menuVista === v.id ? C.g100 : 'none', borderRadius: 6, cursor: 'pointer', color: C.g400, fontSize: 13, padding: '2px 6px', marginRight: 4 }}>⋯</button>
+                  {menuVista === v.id && (
+                    <div role="menu" onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 6, top: '90%', zIndex: 60, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', width: 190, padding: 4 }}>
+                      {[
+                        ['Editar', () => { setMenuVista(null); setModalVista({ vista: v, seccionId: v.config?.seccion_id || null }); }],
+                        ['Duplicar', async () => { setMenuVista(null); await guardarVista({ nombre: `${v.nombre} (copia)`, config: v.config, compartida: false }); }],
+                        ['Subir', () => { setMenuVista(null); mover(v, -1, base); }],
+                        ['Bajar', () => { setMenuVista(null); mover(v, 1, base); }],
+                      ].map(([l, fn]: any) => (
+                        <button key={l} onClick={fn} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', fontSize: 12, color: C.g700, borderRadius: 6 }}
+                          onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{l}</button>
+                      ))}
+                      <div style={{ borderTop: `1px solid ${C.g100}`, margin: '4px 0' }} />
+                      <button onClick={() => { setMenuVista(null); if (confirm(`¿Borrar la vista "${v.nombre}"?`)) borrarVista(v.id); }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', fontSize: 12, color: C.rojo700, borderRadius: 6 }}
+                        onMouseEnter={e => (e.currentTarget.style.background = C.rojo50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Borrar…</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -241,9 +281,10 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
       )}
       {modalVista && (
         <CrearVistaModal vista={modalVista.vista || null} seccionId={modalVista.seccionId} campos={campos} prefill={modalVista.prefill || null}
-          onGuardar={guardarVista} onClose={() => setModalVista(null)} />
+          equipo={equipo} onGuardar={guardarVista} onClose={() => setModalVista(null)} />
       )}
       {ajustes && <AjustesWA onClose={() => setAjustes(false)} />}
+      {gestorEtapas && <EtapasModal onCerrar={() => { setGestorEtapas(false); cargarLifecycle(true); }} />}
     </div>
   );
 }

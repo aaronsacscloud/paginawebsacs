@@ -424,7 +424,7 @@ export default function InboxPro() {
         )}
         {!isCompact && (
           <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
-            {conv ? <PanelDetalle hilo={hilo} api={api} />
+            {conv || filaActiva?.virtual ? <PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} />
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
         )}

@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
-  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion)';
+  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
   const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
@@ -80,6 +80,9 @@ export const GET: APIRoute = async ({ request, url }) => {
     sucursales: c.companies?.sucursales ?? null, giro: c.companies?.giro || null,
     estado_cuenta: c.companies?.estado_cuenta || null, sacs_account: c.companies?.sacs_account || null,
     fecha_renovacion: c.companies?.fecha_renovacion || null, next_followup: c.contacts?.next_followup || null,
+    owner_id: c.contacts?.owner_id || null, dias_sin_venta: c.companies?.dias_sin_venta ?? null,
+    ultima_venta_at: c.companies?.ultima_venta_at || null, last_payment_at: c.companies?.last_payment_at || null,
+    health_score: c.companies?.health_score ?? null,
     ultimo_saliente_at: c.ultimo_saliente_at || null, cierre_categoria: c.cierre_categoria || null,
     etiquetas: [] as string[], etiquetas_conv: [] as string[],
   });
@@ -141,7 +144,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   // Contactos SIN conversación (filas virtuales) cuando la vista los pide.
   if (vista && (vista.modo === 'todas' || vista.modo === 'solo_contactos')) {
     const { data: cts } = await supabase.from('contacts')
-      .select('id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, whatsapp, telefono, company_id, companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account)')
+      .select('id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, whatsapp, telefono, company_id, companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)')
       .is('archived_at', null).limit(600);
     for (const ct of cts || []) {
       const clave = `ct:${ct.id}`;
@@ -241,7 +244,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (vista) {
     if (vista.modo === 'solo_contactos') lista = lista.filter(c => c.virtual);
     else if (vista.modo !== 'todas') lista = lista.filter(c => !c.virtual);
-    lista = lista.filter(c => cumpleVista(c, vista!));
+    lista = lista.filter(c => cumpleVista(c, vista!, user?.id || null));
   } else lista = lista.filter(c => !c.virtual);
   if (search) {
     const q = search.toLowerCase();

@@ -87,3 +87,25 @@ create table if not exists wa_numeros (
 );
 alter table wa_conversaciones add column if not exists phone_number_id text;
 alter table wa_config add column if not exists salud jsonb, add column if not exists salud_at timestamptz, add column if not exists kapso_customer_id text;
+-- L1: catálogo configurable de etapas del ciclo de vida (encima de contacts.lifecycle_stage)
+create table if not exists crm_lifecycle_etapas (
+  id text primary key,
+  nombre text not null,
+  emoji text not null default '·',
+  color text not null default '#9B8CFA',
+  orden int not null default 0,
+  tipo text not null default 'abierta' check (tipo in ('abierta','ganada','perdida')),
+  sugerencias jsonb not null default '[]'::jsonb,
+  activo boolean not null default true,
+  created_at timestamptz not null default now()
+);
+insert into crm_lifecycle_etapas (id, nombre, emoji, color, orden, tipo) values
+  ('suscriptor','Suscriptor','📰','#6B7280',1,'abierta'),
+  ('lead','Nuevo lead','✨','#6B7280',2,'abierta'),
+  ('lead_calificado','Calificado','✅','#5B4BD6',3,'abierta'),
+  ('oportunidad','Oportunidad','🎯','#2C5FC4',4,'abierta'),
+  ('cliente','Cliente','💚','#1E8A63',5,'ganada'),
+  ('evangelista','Evangelista','⭐','#1E8A63',6,'ganada'),
+  ('churned','Perdido','🌙','#C0554E',7,'perdida')
+on conflict (id) do nothing;
+alter table crm_vistas add column if not exists compartida_con uuid[];

@@ -5,7 +5,8 @@
 // Estructura portada de sacs_inbox (grupo → campo → operadores → valores
 // dinámicos), con los grupos del CONTEXTO CRM: Bandeja / Lead / Cliente.
 
-export type Condicion = { campo: string; op: string; valor: string };
+export type Condicion = {
+  _yo?: string | null; campo: string; op: string; valor: string };
 export type ConfigVista = {
   seccion_id?: string | null;
   emoji?: string;
@@ -40,6 +41,7 @@ export function catalogoCampos(din: {
   giros?: { v: string; l: string }[];
   fuentes?: { v: string; l: string }[];
   cierres?: { v: string; l: string }[];
+  etapas?: { v: string; l: string }[];
 } = {}): CampoFiltro[] {
   return [
     // ── Bandeja ──
@@ -49,9 +51,8 @@ export function catalogoCampos(din: {
     { id: 'canal', label: 'Canal', grupo: 'Bandeja', ops: OPS.esSolo, valores: [{ v: 'wa', l: 'WhatsApp' }, { v: 'email', l: 'Correo' }] },
     { id: 'no_leidos', label: 'No leídos', grupo: 'Bandeja', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Con pendientes' }, { v: 'no', l: 'Al día' }] },
     // ── Lead ──
-    { id: 'etapa', label: 'Etapa del ciclo', grupo: 'Lead', ops: OPS.es, valores: [
-      { v: 'suscriptor', l: 'Suscriptor' }, { v: 'lead', l: 'Nuevo lead' }, { v: 'lead_calificado', l: 'Calificado' },
-      { v: 'oportunidad', l: 'Oportunidad' }, { v: 'cliente', l: 'Cliente' }, { v: 'evangelista', l: 'Evangelista' }, { v: 'churned', l: 'Perdido' }] },
+    { id: 'etapa', label: 'Etapa del ciclo', grupo: 'Lead', ops: OPS.es, valores: din.etapas || [
+      { v: 'lead', l: 'Nuevo lead' }, { v: 'cliente', l: 'Cliente' }, { v: 'churned', l: 'Perdido' }] },
     { id: 'tipo', label: 'Tipo de contacto', grupo: 'Lead', ops: OPS.es, valores: [{ v: 'lead', l: 'Lead' }, { v: 'cliente', l: 'Cliente' }, { v: 'partner', l: 'Partner' }, { v: 'churned', l: 'Perdido' }] },
     { id: 'fuente', label: 'Origen / fuente', grupo: 'Lead', ops: OPS.es, valores: din.fuentes || [] },
     { id: 'etiqueta', label: 'Etiqueta', grupo: 'Lead', ops: [{ id: 'tiene', label: 'tiene' }, { id: 'no_tiene', label: 'no tiene' }], valores: din.etiquetas || [] },
@@ -72,6 +73,11 @@ export function catalogoCampos(din: {
     { id: 'sucursales', label: 'Sucursales', grupo: 'Cliente', ops: [...OPS.num, { id: 'igual', label: 'igual a' }], valores: [] },
     { id: 'giro', label: 'Giro', grupo: 'Cliente', ops: OPS.es, valores: din.giros || [] },
     { id: 'con_cuenta', label: 'Cuenta SACS ligada', grupo: 'Cliente', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
+    { id: 'dueno', label: 'Dueño del contacto', grupo: 'Lead', ops: OPS.es, valores: [{ v: 'yo', l: 'Yo' }, { v: 'nadie', l: 'Sin dueño' }, ...(din.equipo || [])] },
+    { id: 'dias_sin_venta', label: 'Días sin vender (SACS)', grupo: 'Actividad SACS', ops: [{ id: 'mayor', label: 'más de' }, { id: 'menor', label: 'menos de' }], valores: [] },
+    { id: 'ultima_venta', label: 'Última venta en SACS', grupo: 'Actividad SACS', ops: OPS.hace, valores: [] },
+    { id: 'ultimo_pago', label: 'Último pago a Sacscloud', grupo: 'Actividad SACS', ops: OPS.hace, valores: [] },
+    { id: 'salud', label: 'Salud de la cuenta (0-100)', grupo: 'Actividad SACS', ops: [{ id: 'menor', label: 'menor a' }, { id: 'mayor', label: 'mayor a' }], valores: [] },
   ];
 }
 
@@ -143,6 +149,28 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
       const lim = h / 24;
       return c.op === 'en_menos' ? (dias >= 0 && dias < lim) : dias > lim;
     }
+    case 'dueno': {
+      const d = fila._extra?.owner_id || null;
+      ok = c.valor === 'nadie' ? !d : c.valor === 'yo' ? (!!c._yo && d === c._yo) : d === c.valor;
+      break;
+    }
+    case 'dias_sin_venta': {
+      const n = parseFloat(c.valor); const v = fila._extra?.dias_sin_venta;
+      if (isNaN(n) || v == null) return false;
+      return c.op === 'mayor' ? v > n : v < n;
+    }
+    case 'ultima_venta': case 'ultimo_pago': {
+      const f = c.campo === 'ultima_venta' ? fila._extra?.ultima_venta_at : fila._extra?.last_payment_at;
+      const h = parseHoras(c.valor); if (h == null) return true;
+      if (!f) return c.op === 'hace_mas';   // nunca = hace infinito
+      const edad = (ahora - new Date(f).getTime()) / 3600e3;
+      return c.op === 'hace_menos' ? edad < h : edad > h;
+    }
+    case 'salud': {
+      const n = parseFloat(c.valor); const v = fila._extra?.health_score;
+      if (isNaN(n) || v == null) return false;
+      return c.op === 'mayor' ? v > n : v < n;
+    }
     case 'plan': ok = fila.empresa?.plan === c.valor; break;
     case 'estado_cuenta': ok = (fila._extra?.estado_cuenta || fila.empresa?.estado_cuenta) === c.valor; break;
     case 'mrr': {
@@ -166,6 +194,6 @@ export function cumpleVista(fila: any, cfg: ConfigVista): boolean {
   const conds = (cfg.condiciones || []).filter(c => c.campo && c.op);
   if (!conds.length) return true;
   return (cfg.logica === 'OR')
-    ? conds.some(c => cumpleCondicion(fila, c))
-    : conds.every(c => cumpleCondicion(fila, c));
+    ? conds.some(c => cumpleCondicion(fila, { ...c, _yo: yoId }))
+    : conds.every(c => cumpleCondicion(fila, { ...c, _yo: yoId }));
 }

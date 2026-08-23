@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Cargando from '../ui/Cargando';
 import { telefonoLegible } from '../../../../lib/telefono';
-import { lifecycleDe } from '../../../../lib/crm/lifecycle';
+import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
 import { C, L, burbuja, separador, etiquetaDia } from './estilo';
 import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Iconos';
 import { Avatar, IconoCanal } from './ListaConversaciones';
@@ -31,7 +31,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [cita, setCita] = useState<any>(null);            // mensaje que se va a citar al responder
   const [cierre, setCierre] = useState(false);            // modal de nota de cierre
   const [cargandoMas, setCargandoMas] = useState(false);
-  const [modalPlantillaVirtual, setModalPlantillaVirtual] = useState(false);
+  const [modalPlantillaVirtual, setModalPlantillaVirtual] = useState<{ presel?: string | null } | false>(false);
+  const etapasCat = useLifecycle();
+  const sugerenciasDe = (stage?: string | null) => (etapasCat.find(e => e.id === stage) as any)?.sugerencias || [];
   const [reenviar, setReenviar] = useState<any>(null);       // 12) mensaje a reenviar
   const [, setReloj] = useState(0);                            // 5) re-render del contador de ventana
   useEffect(() => { const t = setInterval(() => setReloj(x => x + 1), 30000); return () => clearInterval(t); }, []);
@@ -115,14 +117,25 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             <p style={{ fontSize: 12, color: C.g500, lineHeight: 1.55, margin: '0 0 10px' }}>
               WhatsApp solo permite iniciar con una <b>plantilla aprobada</b>; cuando el contacto responda, el chat queda abierto 24 horas.
             </p>
-            <button onClick={() => setModalPlantillaVirtual(true)}
+            <button onClick={() => setModalPlantillaVirtual({})}
               style={{ border: 'none', borderRadius: 8, padding: '9px 18px', background: C.emerald600, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               Elegir plantilla
             </button>
+            {sugerenciasDe(filaActiva.contacto?.lifecycle_stage).filter((t: any) => t.tipo === 'plantilla').length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Temas de su etapa</div>
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {sugerenciasDe(filaActiva.contacto?.lifecycle_stage).filter((t: any) => t.tipo === 'plantilla').slice(0, 4).map((t: any, i: number) => (
+                    <button key={i} onClick={() => setModalPlantillaVirtual({ presel: t.ref })}
+                      style={{ border: `1px solid #A7F3D0`, background: '#fff', color: C.emerald700, borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t.titulo || t.ref}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         {modalPlantillaVirtual && (
-          <SelectorPlantilla telefono={String(filaActiva.telefono || '')} api={api} onClose={() => setModalPlantillaVirtual(false)} contacto={{ nombre: filaActiva.contacto?.nombre, email: filaActiva.contacto?.email, empresa: filaActiva.empresa?.nombre, plan: filaActiva.empresa?.plan, telefono: String(filaActiva.telefono || '') }} />
+          <SelectorPlantilla telefono={String(filaActiva.telefono || '')} api={api} onClose={() => setModalPlantillaVirtual(false)} preseleccion={(modalPlantillaVirtual as any).presel || null} contacto={{ nombre: filaActiva.contacto?.nombre, email: filaActiva.contacto?.email, empresa: filaActiva.empresa?.nombre, plan: filaActiva.empresa?.plan, telefono: String(filaActiva.telefono || '') }} />
         )}
       </div>
     );
@@ -307,6 +320,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {/* ── Composer ── */}
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
+        sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
         borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label, telefono: telefonoLegible(conv.telefono), mrr: conv.companies?.mrr, fecha_renovacion: conv.companies?.fecha_renovacion, sucursales: conv.companies?.sucursales }} />

@@ -27,4 +27,38 @@ export const LIFECYCLE: LifecycleStage[] = [
 ];
 
 export const lifecycleDe = (id?: string | null): LifecycleStage | null =>
-  LIFECYCLE.find(e => e.id === id) || null;
+  (CATALOGO as LifecycleStage[] | null || LIFECYCLE).find(e => e.id === id) || null;
+
+// ── Catálogo DINÁMICO (crm_lifecycle_etapas) con las estáticas como fallback ──
+// Los componentes usan useLifecycle(); lifecycleDe() consulta el mismo cache.
+export type EtapaDinamica = LifecycleStage & { emoji: string; color: string; tipo: 'abierta' | 'ganada' | 'perdida'; orden: number; n?: number; sugerencias?: any[] };
+
+const aTinta = (hex: string) => hex;
+const aPastel = (hex: string) => {
+  const h = hex.replace('#', ''); if (h.length !== 6) return '#f4f4f6';
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, 0.13)`;
+};
+
+let CATALOGO: EtapaDinamica[] | null = null;
+let cargando: Promise<void> | null = null;
+const subs = new Set<() => void>();
+
+export async function cargarLifecycle(force = false): Promise<void> {
+  if (CATALOGO && !force) return;
+  if (cargando && !force) return cargando;
+  cargando = fetch('/api/crm/lifecycle-etapas').then(r => r.json()).then(j => {
+    if (Array.isArray(j.etapas) && j.etapas.length) {
+      CATALOGO = j.etapas.map((e: any) => ({ id: e.id, label: e.nombre, emoji: e.emoji || '·', color: e.color || '#9B8CFA', bg: aPastel(e.color || '#9B8CFA'), fg: aTinta(e.color || '#6B7280'), tipo: e.tipo || 'abierta', orden: e.orden, n: e.n, sugerencias: e.sugerencias || [] }));
+      subs.forEach(f => f());
+    }
+  }).catch(() => { /* fallback estático */ }).finally(() => { cargando = null; });
+  return cargando;
+}
+
+import { useEffect, useState } from 'react';
+export function useLifecycle(): EtapaDinamica[] {
+  const [, setN] = useState(0);
+  useEffect(() => { const f = () => setN(x => x + 1); subs.add(f); cargarLifecycle(); return () => { subs.delete(f); }; }, []);
+  return CATALOGO || LIFECYCLE.map(e => ({ ...e, emoji: '·', color: e.fg, tipo: e.id === 'cliente' || e.id === 'evangelista' ? 'ganada' as const : e.id === 'churned' ? 'perdida' as const : 'abierta' as const, orden: 0 }));
+}

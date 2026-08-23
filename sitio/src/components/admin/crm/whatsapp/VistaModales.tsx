@@ -210,16 +210,19 @@ const MODOS = [
   { v: 'solo_contactos', l: '📋 Sin conversación' },
 ] as const;
 
-export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose, prefill }: {
-  vista?: { id: string; nombre: string; config: ConfigVista; compartida?: boolean } | null;
+export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose, prefill, equipo = [] }: {
+  vista?: { id: string; nombre: string; config: ConfigVista; compartida?: boolean; compartida_con?: string[] } | null;
   seccionId?: string | null;
   campos: CampoFiltro[];
-  onGuardar: (v: { id?: string; nombre: string; config: ConfigVista; compartida?: boolean }) => Promise<void>;
+  onGuardar: (v: { id?: string; nombre: string; config: ConfigVista; compartida?: boolean; compartida_con?: string[] }) => Promise<void>;
   onClose: () => void;
   prefill?: Partial<ConfigVista> | null;   // 27) desde "Filtros avanzados → Guardar como vista"
+  equipo?: any[];
 }) {
   const base: Partial<ConfigVista> = vista?.config || prefill || {};
-  const [compartida, setCompartida] = useState(vista ? vista.compartida !== false : true);
+  const [compartir, setCompartir] = useState<'privada' | 'equipo' | 'elegidos'>(vista ? ((vista.compartida_con || []).length ? 'elegidos' : vista.compartida !== false ? 'equipo' : 'privada') : 'equipo');
+  const [elegidos, setElegidos] = useState<string[]>(vista?.compartida_con || []);
+  const [descripcion, setDescripcion] = useState((base as any).descripcion || '');
   const [emoji, setEmoji] = useState(base.emoji || '⭐');
   const [emojiAbierto, setEmojiAbierto] = useState(false);
   const [nombre, setNombre] = useState(vista?.nombre || '');
@@ -278,17 +281,38 @@ export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose, 
             <PreviewVista config={config} />
           </div>
         </div>
-        <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.g100}`, display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
-          <label style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: C.g700, cursor: 'pointer' }}>
-            <input type="checkbox" checked={compartida} onChange={e => setCompartida(e.target.checked)} />
-            Compartir con el equipo
-            <span style={{ fontSize: 10, color: C.g400 }}>{compartida ? 'todos la ven' : 'solo tú la ves'}</span>
-          </label>
-          <button style={btn()} onClick={onClose}>Cancelar</button>
-          <button style={{ ...btn(true), opacity: nombre.trim() ? 1 : .4 }} disabled={!nombre.trim() || ocupado}
-            onClick={async () => { setOcupado(true); await onGuardar({ id: vista?.id, nombre: nombre.trim(), config, compartida }); setOcupado(false); }}>
-            {vista ? 'Guardar' : 'Crear vista'}
-          </button>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.g100}` }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 300, flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5 }}>Quién puede verla</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {([['privada', 'Privada', 'Solo tú'], ['equipo', 'Equipo', 'Todos la ven'], ['elegidos', 'Elegidos', 'Solo quienes marques']] as const).map(([v, l, d]) => (
+                  <button key={v} onClick={() => setCompartir(v)} title={d}
+                    style={{ flex: 1, border: `1px solid ${compartir === v ? C.morado : C.g200}`, background: compartir === v ? C.moradoAgua : '#fff', color: compartir === v ? C.moradoTinta : C.g500, borderRadius: 8, padding: '6px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+                ))}
+              </div>
+              {compartir === 'elegidos' && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
+                  {equipo.map((m: any) => (
+                    <button key={m.id} onClick={() => setElegidos(e => e.includes(m.id) ? e.filter(x => x !== m.id) : [...e, m.id])}
+                      style={{ border: `1px solid ${elegidos.includes(m.id) ? C.morado : C.g200}`, background: elegidos.includes(m.id) ? C.moradoAgua : '#fff', color: elegidos.includes(m.id) ? C.moradoTinta : C.g500, borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{m.nombre}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ minWidth: 240, flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5 }}>Descripción (opcional)</div>
+              <input value={descripcion} onChange={e => setDescripcion(e.target.value)} maxLength={120} placeholder="Para qué sirve esta vista"
+                style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+            <button style={btn()} onClick={onClose}>Cancelar</button>
+            <button style={{ ...btn(true), opacity: nombre.trim() ? 1 : .4 }} disabled={!nombre.trim() || ocupado}
+              onClick={async () => { setOcupado(true); await onGuardar({ id: vista?.id, nombre: nombre.trim(), config: { ...config, descripcion: descripcion.trim() || undefined } as any, compartida: compartir !== 'privada', compartida_con: compartir === 'elegidos' ? elegidos : [] }); setOcupado(false); }}>
+              {vista ? 'Guardar' : 'Crear vista'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

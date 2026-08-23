@@ -30,6 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
   // 23) vistas personales vs del equipo (owner_id + compartida) y orden manual.
   const extra: any = {};
   if ('compartida' in b) extra.compartida = !!b.compartida;
+  if ('compartida_con' in b) extra.compartida_con = Array.isArray(b.compartida_con) && b.compartida_con.length ? b.compartida_con.slice(0, 30) : null;
   if ('orden' in b) extra.orden = Number(b.orden) || 0;
   let r;
   if (b.id) {
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
   } else {
     let owner_id: string | null = null;
     try { const { getCurrentUser } = await import('../../../lib/auth/scope'); owner_id = (await getCurrentUser(request))?.id || null; } catch { /* sin dueño */ }
-    r = await supabase.from('crm_vistas').insert({ tabla: b.tabla, nombre: b.nombre, config, owner_id, compartida: 'compartida' in b ? !!b.compartida : true, ...('orden' in b ? { orden: extra.orden } : {}) }).select().single();
+    r = await supabase.from('crm_vistas').insert({ tabla: b.tabla, nombre: b.nombre, config, owner_id, compartida: 'compartida' in b ? !!b.compartida : true, ...(extra.compartida_con !== undefined ? { compartida_con: extra.compartida_con } : {}), ...('orden' in b ? { orden: extra.orden } : {}) }).select().single();
   }
   if (r.error) {
     if (faltaTabla(r.error.message)) return json({ error: 'Falta correr scripts/migration-2026-07-crm-vistas.sql en Supabase.' }, 500);
