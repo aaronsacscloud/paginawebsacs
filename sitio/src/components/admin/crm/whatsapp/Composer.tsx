@@ -56,7 +56,6 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [popProgramar, setPopProgramar] = useState(false);
   const [programados, setProgramados] = useState<any[]>([]);
   const [sugerirSiguiente, setSugerirSiguiente] = useState(false);
-  useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
   // Elegir un snippet (desde "/" o desde el popup): texto + su adjunto si lo tiene.
   const usarSnippet = (r: any) => {
@@ -77,6 +76,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
+  useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const [pop, setPop] = useState<Popup>(null);
   const [modalPlantilla, setModalPlantilla] = useState(false);
   const [biblioteca, setBiblioteca] = useState(false);
