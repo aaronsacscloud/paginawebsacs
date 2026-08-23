@@ -86,6 +86,7 @@ export async function registrarMensaje(o: {
   mediaUrl?: string | null;
   status?: string | null;
   timestamp?: string | null;          // del payload de Kapso
+  metadata?: any;                     // reacciones: { reacciona_a: wamid }
 }): Promise<{ inserted: boolean; conversationId?: string }> {
   const conv = await upsertConversacion({
     kapsoConversationId: o.kapsoConversationId, telefono: o.telefono,
@@ -106,12 +107,14 @@ export async function registrarMensaje(o: {
       transcript: o.transcript || null,
       media_url: o.mediaUrl || null,
       status: o.status || (o.direccion === 'entrante' ? 'received' : 'sent'),
+      metadata: o.metadata || null,
       enviado_at: o.timestamp ? new Date(Number(o.timestamp) * 1000 || o.timestamp).toISOString() : null,
     }, { onConflict: 'kapso_message_id', ignoreDuplicates: true })
     .select('id');
   if (error) console.error('[wa-espejo] insert mensaje:', error.message);
   const inserted = !!ins?.length;
   if (!inserted) return { inserted: false, conversationId: conv.id };
+  if (o.tipo === 'reaction') return { inserted: true, conversationId: conv.id };   // ni preview, ni no-leídos, ni activity
 
   await supabase.from('wa_conversaciones').update({
     ultimo_mensaje_at: new Date().toISOString(),

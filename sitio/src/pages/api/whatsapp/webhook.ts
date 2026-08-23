@@ -74,10 +74,11 @@ export const POST: APIRoute = async ({ request, url }) => {
           telefono,
           direccion: evento === 'whatsapp.message.received' ? 'entrante' : 'saliente',
           tipo: msj.type || kapso.message_type || 'text',
-          cuerpo: msj.text?.body || kapso.content || null,
+          cuerpo: msj.text?.body || msj.reaction?.emoji || kapso.content || null,
           transcript: kapso.transcript || null,   // Kapso transcribe las notas de voz
           mediaUrl: kapso.media_url || null,
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
+          metadata: msj.type === 'reaction' ? { reacciona_a: msj.reaction?.message_id || msj.kapso?.reacted_message_id || null, emoji: msj.reaction?.emoji || kapso.content || null } : null,
         });
         // Automatización (bienvenida / fuera de horario / round-robin): SOLO
         // entrantes NUEVOS — un replay o un saliente jamás la disparan.
