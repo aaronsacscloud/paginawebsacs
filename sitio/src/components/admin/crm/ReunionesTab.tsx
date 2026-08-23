@@ -231,10 +231,13 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   /* Reuniones que ya pasaron y siguen sin resolver. Es la razón por la que la
      tasa de asistencia no se puede creer, así que se enseña y se puede cerrar
      desde aquí en vez de esconderse en el segmento "Pasadas". */
+  // Obedece el filtro por tipo igual que la lista y el calendario: si tocar
+  // "Demo" no cambiara este bloque, la tarjeta filtraría a medias.
   const pendientes = useMemo(() => data.filter(b => {
     const e = normalizaEstado(b.estado);
+    if (fTipo && b.event_types?.id !== fTipo) return false;
     return b.fecha < hoy && (e === 'agendada' || e === 'confirmada');
-  }).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))), [data, hoy]);
+  }).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))), [data, hoy, fTipo]);
 
   /* Lo que ve el calendario: los mismos filtros de arriba MENOS el segmento
      —el calendario ya acota por mes, y cruzarlo con "esta semana" dejaría el
@@ -259,8 +262,9 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
 
   const deHoy = useMemo(() => data.filter(b => {
     const e = normalizaEstado(b.estado);
+    if (fTipo && b.event_types?.id !== fTipo) return false;
     return b.fecha === hoy && e !== 'cancelada' && e !== 'reagendada';
-  }).sort((a, b) => String(a.hora_inicio || '').localeCompare(String(b.hora_inicio || ''))), [data, hoy]);
+  }).sort((a, b) => String(a.hora_inicio || '').localeCompare(String(b.hora_inicio || ''))), [data, hoy, fTipo]);
 
   const kpis = useMemo(() => {
     const est = (b: any) => normalizaEstado(b.estado);
