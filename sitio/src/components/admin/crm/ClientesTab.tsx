@@ -91,6 +91,87 @@ function KpiCard({ franja, label, value, valueColor, sub, style, onClick, activo
   );
 }
 
+// Catálogo cerrado de motivos de baja — el mismo de todo el CRM.
+const RAZONES_BAJA: [string, string][] = [
+  ['precio', 'Precio / presupuesto'],
+  ['no_implemento', 'No lo implementó'],
+  ['no_uso', 'Dejó de usarlo'],
+  ['cerro_negocio', 'Cerró el negocio'],
+  ['competencia', 'Se fue con la competencia'],
+  ['mal_servicio', 'Mal servicio / soporte'],
+  ['feature_falta', 'Le faltó una función'],
+  ['otro', 'Otro'],
+];
+
+/**
+ * Capturar de un jalón por qué se fueron varios exclientes.
+ *
+ * De los 35, 17 se fueron sin motivo: se cancelaron antes de que el campo se
+ * pidiera, y entre ellos están los tres que más ARR se llevaron. Hacerlo uno
+ * por uno —abrir la ficha, abrir cada licencia— es la razón por la que nunca
+ * se hace.
+ */
+function MotivoBajaMasivo({ ids, onCerrar, onListo }: { ids: string[]; onCerrar: () => void; onListo: (msg: string) => void }) {
+  const [razon, setRazon] = useState('');
+  const [detalle, setDetalle] = useState('');
+  const [sobrescribir, setSobrescribir] = useState(false);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const exigeDetalle = razon === 'otro' || razon === 'competencia';
+
+  async function guardar() {
+    if (!razon) { setErr('Elige el motivo.'); return; }
+    if (exigeDetalle && !detalle.trim()) { setErr(razon === 'competencia' ? '¿A qué competidor se fueron?' : 'Agrega el detalle.'); return; }
+    setBusy(true); setErr('');
+    const j = await fetch('/api/crm/arr/motivo-baja', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_ids: ids, razon, detalle: detalle.trim(), sobrescribir }),
+    }).then(r => r.json()).catch(() => ({ error: 'Respuesta inválida' }));
+    if (j?.error) { setErr(j.error); setBusy(false); return; }
+    onListo(j.aviso || `Motivo capturado en ${j.actualizadas} licencia(s) de ${j.cuentas} cuenta(s)` +
+      (j.respetadas ? ` · ${j.respetadas} ya tenían motivo y no se tocaron` : ''));
+  }
+
+  const inp = { width: '100%', border: '1.5px solid #e4dffb', borderRadius: 9, padding: '9px 11px', fontSize: '0.82rem', fontFamily: 'inherit', background: '#fdfcff', boxSizing: 'border-box' as const };
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(16,24,40,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: 'min(520px,100%)', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,.3)' }}>
+        <div style={{ padding: '20px 22px 0' }}>
+          <div style={{ fontSize: '1.02rem', fontWeight: 800, color: '#C0554E' }}>Por qué se fueron</div>
+          <div style={{ fontSize: '0.82rem', color: '#666', marginTop: 5 }}>
+            Se aplica a <b>{ids.length}</b> excliente{ids.length === 1 ? '' : 's'} y a todas sus licencias canceladas.
+          </div>
+        </div>
+        <div style={{ padding: '14px 22px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <select value={razon} onChange={e => setRazon(e.target.value)} autoFocus style={inp}>
+            <option value="">Elige el motivo…</option>
+            {RAZONES_BAJA.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <textarea value={detalle} onChange={e => setDetalle(e.target.value)} rows={3}
+            placeholder={razon === 'competencia' ? '¿A qué competidor se fueron?' : 'Detalle (opcional, pero es lo que sirve después)'}
+            style={{ ...inp, resize: 'vertical' }} />
+          <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer' }}>
+            <input type="checkbox" checked={sobrescribir} onChange={e => setSobrescribir(e.target.checked)} style={{ marginTop: 3 }} />
+            <span style={{ fontSize: '0.79rem', color: '#4a4558', lineHeight: 1.5 }}>
+              Sobrescribir los que ya tienen motivo
+              <div style={{ color: '#8a8a92', fontSize: '0.73rem' }}>Sin esto solo se llenan los huecos — un motivo capturado es un dato que alguien preguntó.</div>
+            </span>
+          </label>
+          {err && <div style={{ fontSize: '0.82rem', color: '#b93333', fontWeight: 700 }}>{err}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 22px 20px' }}>
+          <button onClick={onCerrar} style={{ ...S.btnSmall, minHeight: 40, padding: '0 16px' }}>Cancelar</button>
+          <button onClick={guardar} disabled={busy}
+            style={{ border: 'none', borderRadius: 9, minHeight: 40, padding: '0 18px', background: '#C0554E', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit', opacity: busy ? .6 : 1 }}>
+            {busy ? 'Guardando…' : 'Guardar motivo'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
   const [tot, setTot] = useState<any>(null);
@@ -101,6 +182,10 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   // Qué lista se está viendo. Arranca en clientes: los exclientes se consultan,
   // no se trabajan todos los días.
   const [verExclientes, setVerExclientes] = useState(false);
+  // Selección para capturar el motivo de baja de varios de un jalón.
+  const [selEx, setSelEx] = useState<Set<string>>(new Set());
+  const [motivoMasivo, setMotivoMasivo] = useState(false);
+  const [avisoEx, setAvisoEx] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
@@ -487,7 +572,17 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   // A quien ya se fue no le preguntas por su próxima factura ni por su salud:
   // le preguntas cuándo se fue, por qué, cuánto se llevó y cuánto llegó a
   // pagar. Eso es lo que decide si vale la pena intentar recuperarlo.
+  const alternarSelEx = (id: string) => setSelEx(s2 => { const n = new Set(s2); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
   const colsExcliente: ColDef[] = [
+    {
+      key: 'sel', label: '', width: 38, fija: true, ftype: 'text', val: () => '',
+      render: c => (
+        <td style={{ ...T.td, width: 38 }} onClick={e => { e.stopPropagation(); alternarSelEx(c.id); }}>
+          <input type="checkbox" checked={selEx.has(c.id)} onChange={() => {}} style={{ cursor: 'pointer' }} />
+        </td>
+      ),
+    },
     cols[0], // Cliente, con su cuenta SACS
     {
       key: 'baja_at', label: 'Se fue el', width: 120, ftype: 'date',
@@ -619,7 +714,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           valueColor={CL.rojoTinta}
           sub={<>{money(tot?.arr_perdido)} de ARR perdido · pagaron {money(tot?.pagaron_antes)}</>}
           activo={verExclientes}
-          onClick={() => setVerExclientes(v => !v)} />
+          onClick={() => { setVerExclientes(v => !v); setSelEx(new Set()); }} />
         </>); })()}
       </div>
 
@@ -629,12 +724,47 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           <span style={{ fontSize: '0.78rem', color: '#C0554E' }}>
             Cancelaron todas sus licencias. No cuentan como clientes ni suman al ARR — su historia se conserva para intentar recuperarlos.
           </span>
-          <button onClick={() => setVerExclientes(false)}
+          <button onClick={() => { setVerExclientes(false); setSelEx(new Set()); }}
             style={{ marginLeft: 'auto', border: '1px solid #f0c4c0', background: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700, color: '#8c2f28', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
             ← Volver a clientes
           </button>
         </div>
       )}
+
+      {/* ── Captura en lote del motivo de baja ──
+          17 de los 35 se fueron sin motivo. Uno por uno —abrir la ficha, abrir
+          cada licencia— es la razón por la que nunca se captura. */}
+      {verExclientes && (() => {
+        const sinMotivo = exclientes.filter((c: any) => !c.baja_motivo);
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: selEx.size ? '#EEECFE' : '#fbfaff', border: `1px solid ${selEx.size ? '#ddd6fb' : '#eeecf3'}`, borderRadius: 11, padding: '10px 14px', marginBottom: 14 }}>
+            {selEx.size > 0 ? (
+              <>
+                <b style={{ fontSize: '0.82rem', color: '#5B4BD6' }}>{selEx.size} seleccionado{selEx.size === 1 ? '' : 's'}</b>
+                <button onClick={() => setMotivoMasivo(true)}
+                  style={{ border: 'none', background: '#C0554E', color: '#fff', borderRadius: 8, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Capturar por qué se fueron
+                </button>
+                <button onClick={() => setSelEx(new Set())}
+                  style={{ marginLeft: 'auto', border: 'none', background: 'none', color: '#7a6fc9', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Quitar selección</button>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: '0.79rem', color: '#7a7684' }}>
+                  Palomea varios para capturar de un jalón por qué se fueron.
+                  {sinMotivo.length > 0 && <> Hoy hay <b style={{ color: '#C0554E' }}>{sinMotivo.length} sin motivo</b>.</>}
+                </span>
+                {sinMotivo.length > 0 && (
+                  <button onClick={() => setSelEx(new Set(sinMotivo.map((c: any) => c.id)))}
+                    style={{ marginLeft: 'auto', border: '1px solid #ddd6fb', background: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    Seleccionar los {sinMotivo.length} sin motivo
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         <TablaEnterprise
@@ -725,6 +855,19 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       </div>
 
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+
+      {motivoMasivo && (
+        <MotivoBajaMasivo ids={Array.from(selEx)}
+          onCerrar={() => setMotivoMasivo(false)}
+          onListo={(msg) => {
+            setMotivoMasivo(false); setSelEx(new Set());
+            setAvisoEx(msg); setTimeout(() => setAvisoEx(''), 6000);
+            load();
+          }} />
+      )}
+      {avisoEx && (
+        <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 1200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{avisoEx}</div>
+      )}
       {showNuevo && <NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} />}
       <Toast toast={toast} />
     </div>
