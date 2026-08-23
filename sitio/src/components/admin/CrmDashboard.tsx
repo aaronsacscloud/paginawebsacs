@@ -103,6 +103,8 @@ const CHISPA = (px: number) => `<svg width="${px}" height="${px}" viewBox="0 0 2
   + `<stop offset="0%" stop-color="#9B8CFA"/><stop offset="100%" stop-color="#D9538E"/></linearGradient></defs>`
   + `<path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="url(#chispa-${px})"/></svg>`;
 
+const ICONO_FLECHA = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+
 const ICONO_PLEGAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="11 17 6 12 11 7"/><line x1="18" y1="7" x2="18" y2="17"/></svg>';
 // Los renglones del pie pesan como los del menú: mismo alto y mismo tipo de
 // letra. Antes eran ligas de 11 px que había que buscar.
@@ -163,33 +165,38 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    // "Marketing" agrupaba un solo renglón. Un grupo de uno no agrupa nada.
+    /* WhatsApp deja de ser CUATRO renglones sueltos del menú: sus pantallas
+       —conversaciones, masivos, métricas, configuración— son vistas del mismo
+       canal, no cuatro módulos. Eran 4 de las 19 entradas. */
+    label: 'WhatsApp', sec: 'automatizacion',
+    items: [
+      { id: 'whatsapp' as Tab, label: 'Conversaciones', icon: 'whatsapp' },
+      { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
+      { id: 'wa-metricas' as Tab, label: 'Métricas', icon: 'wa-metricas' },
+      { id: 'wa-config' as Tab, label: 'Configuración', icon: 'wa-plantillas' },
+    ],
+  },
+  {
+    // Se queda con lo que de verdad CORRE SOLO. Antes cargaba también con todo
+    // WhatsApp, que es un canal que se atiende a mano.
     label: 'Automatización', sec: 'automatizacion',
     items: [
       // Email vive junto a las automatizaciones porque es la misma pregunta
       // ("qué le llega solo al cliente"), vista desde el canal.
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
-      { id: 'whatsapp' as Tab, label: 'WhatsApp', icon: 'whatsapp' },
-      { id: 'wa-masivos' as Tab, label: 'Masivos WhatsApp', icon: 'wa-masivos' },
-
-      { id: 'wa-metricas' as Tab, label: 'Métricas WhatsApp', icon: 'wa-metricas' },
-      // Plantillas, snippets, etiquetas, archivos, etapas, motivos, automatización
-      // y el número viven JUNTOS: todo el catálogo personalizable en un lugar.
-      { id: 'wa-config' as Tab, label: 'Configuración WhatsApp', icon: 'wa-plantillas' },
-      // Outbound = mensajes DENTRO de SACS3 (banners/modales/tarjetas) — el
-      // canal hermano del email: misma pregunta, visto desde adentro del producto.
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
       { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
       { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
     ],
   },
   {
-    label: 'Colaboradores', sec: 'colaboradores',
+    // "Colaboradores" no decía qué había adentro. Son los partners y lo que se
+    // les paga; "Mi desempeño" se viene con ellos porque es el mismo tablero.
+    label: 'Partners', sec: 'colaboradores',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
       { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'content-review' as Tab, label: 'Revisar contenido', icon: 'automations' },
-      // "Mi desempeño" no tiene nada de IA: es tu marcador.
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
     ],
   },
@@ -267,6 +274,15 @@ export default function CrmDashboard() {
   // Las secciones que esta persona puede ver. Mientras carga se muestra todo:
   // parpadear el menú completo y luego recortarlo se lee como un error.
   const permisos = (yo?.permisos || null) as Record<string, string> | null;
+  /* Acordeón: UN grupo abierto a la vez. Con los 19 módulos desplegados el
+     menú medía 25 renglones y había que hacer scroll dentro de él para llegar
+     a Partners. Así siempre mide lo mismo. */
+  const grupoDeTab = (t: Tab) => NAV_SECTIONS.find(g => g.items.some(i => i.id === t))?.label || null;
+  const [grupoAbierto, setGrupoAbierto] = useState<string | null>(() => grupoDeTab(getInitialTab()));
+  // Al cambiar de pantalla (buscador global, atajo, link) se abre su grupo: si
+  // no, el menú se queda enseñando otro y uno no sabe dónde está parado.
+  useEffect(() => { const g = grupoDeTab(tab); if (g) setGrupoAbierto(g); }, [tab]);
+
   const seccionesVisibles = NAV_SECTIONS.filter(sec => {
     const k = (sec as any).sec as string | undefined;
     if (!k || !permisos) return true;
@@ -513,15 +529,45 @@ export default function CrmDashboard() {
                   gastar un renglón de texto. */}
               {si > 0 && !sidebarCollapsed && <div style={{ height: 1, background: '#ece7fa', margin: '6px 12px 2px' }} />}
               {si > 0 && sidebarCollapsed && <div style={{ height: 1, background: '#e7e0f7', margin: '7px auto', width: 26 }} />}
-              {!sidebarCollapsed && section.label && (
-                <div style={{
-                  padding: '10px 18px 3px', fontSize: '0.54rem', fontWeight: 800,
-                  color: '#b0a8c9', textTransform: 'uppercase',
-                  letterSpacing: '0.13em',
-                }}>{section.label}</div>
-              )}
-              {section.items.map(item => {
+              {/* El título del grupo deja de ser un rótulo muerto y se vuelve
+                  el botón que lo abre. Cerrado, un punto morado dice cuál
+                  contiene la pantalla en la que estás — sin eso uno se pierde
+                  al plegar. */}
+              {!sidebarCollapsed && section.label && (() => {
+                const abierto = grupoAbierto === section.label;
+                const tieneActivo = section.items.some(i => i.id === tab);
+                return (
+                  <button
+                    onClick={() => setGrupoAbierto(abierto ? null : section.label!)}
+                    aria-expanded={abierto}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 11,
+                      width: 'calc(100% - 16px)', margin: '1px 8px', padding: '8px 10px',
+                      border: 'none', background: 'transparent', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: 'inherit', fontSize: '0.79rem', textAlign: 'left' as const,
+                      fontWeight: tieneActivo ? 800 : 700,
+                      color: tieneActivo ? '#4C3BD0' : '#4b4560',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    <span style={{ display: 'flex', width: 20, flexShrink: 0, justifyContent: 'center', color: tieneActivo ? '#7C6BF0' : '#a49dbd' }}
+                      dangerouslySetInnerHTML={{ __html: ICONS[section.items[0]?.icon] || '' }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>{section.label}</span>
+                    {tieneActivo && !abierto && (
+                      <span style={{ width: 6, height: 6, borderRadius: 99, background: '#9B8CFA', flexShrink: 0 }} />
+                    )}
+                    <span style={{ display: 'flex', width: 14, flexShrink: 0, color: '#b3aecb', transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .18s ease' }}
+                      dangerouslySetInnerHTML={{ __html: ICONO_FLECHA }} />
+                  </button>
+                );
+              })()}
+              {(sidebarCollapsed || !section.label || grupoAbierto === section.label) && section.items.map(item => {
                 const isActive = tab === item.id;
+                /* Dentro de un grupo abierto, el renglón se sangra y cambia su
+                   icono por un punto: con el icono puesto se veía igual que la
+                   cabecera y no se entendía que colgaba de ella. */
+                const enGrupo = !sidebarCollapsed && !!section.label;
                 return (
                   <button
                     key={item.id}
@@ -537,7 +583,7 @@ export default function CrmDashboard() {
                       display: 'flex', alignItems: 'center',
                       gap: sidebarCollapsed ? 0 : 11,
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      padding: sidebarCollapsed ? 0 : '7px 10px',
+                      padding: sidebarCollapsed ? 0 : (enGrupo ? '7px 10px 7px 38px' : '7px 10px'),
                       margin: sidebarCollapsed ? '2px auto' : '1px 8px',
                       minHeight: sidebarCollapsed ? 40 : 38,
                       borderRadius: sidebarCollapsed ? 11 : 9,
@@ -560,7 +606,9 @@ export default function CrmDashboard() {
                     {isActive && !sidebarCollapsed && (
                       <span style={{ position: 'absolute', left: -8, top: 6, bottom: 6, width: 3, borderRadius: '0 3px 3px 0', background: 'linear-gradient(180deg,#9B8CFA,#D9538E)' }} />
                     )}
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1, color: isActive ? '#7C6BF0' : '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    {enGrupo
+                      ? <span style={{ position: 'absolute', left: 22, top: '50%', transform: 'translateY(-50%)', width: 5, height: 5, borderRadius: 99, background: isActive ? '#9B8CFA' : '#c9c4d8', flexShrink: 0 }} />
+                      : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1, color: isActive ? '#7C6BF0' : '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />}
                     {!sidebarCollapsed && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
                         compromiso con fecha que ya pasó. Poner números en todos
