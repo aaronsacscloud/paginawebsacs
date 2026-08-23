@@ -133,8 +133,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36, height: 36 }}>←</button>}
         <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7 }}>
-          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{nombre || telefonoLegible(conv.telefono)}</b>
-          {etapa && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
+          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: mobile ? 90 : 0, flex: mobile ? 1 : undefined }}>{nombre || telefonoLegible(conv.telefono)}</b>
+          {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {!mobile && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
           {conv.id && hilo.ventana?.expira_at && (() => {
             const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
