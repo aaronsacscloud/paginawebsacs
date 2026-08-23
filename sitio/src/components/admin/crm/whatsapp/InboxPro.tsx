@@ -10,6 +10,7 @@ import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 import ListaConversaciones from './ListaConversaciones';
+import Llamadas from './Llamadas';
 import Hilo from './Hilo';
 import PanelDetalle from './PanelDetalle';
 import NuevoChat from './NuevoChat';
@@ -220,6 +221,10 @@ export default function InboxPro() {
     },
     listaActual: () => lista || [],
     yo: () => yo,
+    enviarInteractivo: async (interactivo: any) => {
+      const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), interactivo }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      refrescar(); return r;
+    },
     reaccionar: async (wamid: string, emoji: string) => {
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), reaccion: { wamid, emoji } }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
@@ -391,6 +396,7 @@ export default function InboxPro() {
         display: 'flex', background: '#fff', borderTop: `1px solid ${C.g200}`,
         overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
       }}>
+        <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         <ListaConversaciones {...propsLista} />

@@ -116,6 +116,35 @@ export async function registrarWebhook(url: string, secreto: string) {
   });
 }
 
+/** Webhook `kind: meta`: Kapso reenvía el payload CRUDO de Meta (trae `calls`, que los eventos kapso no cubren). */
+export async function registrarWebhookMeta(url: string, secreto: string) {
+  return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`, {
+    method: 'POST',
+    body: JSON.stringify({ whatsapp_webhook: { url, kind: 'meta', secret_key: secreto, active: true, events: [] } }),
+  });
+}
+
+// ── Etapa C: llamadas (Calling API vía Kapso) ──
+export async function ajustesLlamadas() { return meta(`/${PHONE_NUMBER_ID}/settings`); }
+export async function configurarLlamadas(calling: any) {
+  return meta(`/${PHONE_NUMBER_ID}/settings`, { method: 'POST', body: JSON.stringify({ calling }) });
+}
+export async function permisoLlamada(userWaId: string) {
+  return meta(`/${PHONE_NUMBER_ID}/call_permissions?user_wa_id=${encodeURIComponent(userWaId)}`);
+}
+/** action: connect (to + sdp offer) | pre_accept | accept (call_id + sdp answer) | reject | terminate */
+export async function accionLlamada(body: { action: 'connect' | 'pre_accept' | 'accept' | 'reject' | 'terminate'; call_id?: string; to?: string; sdp?: string; sdp_type?: 'offer' | 'answer' }) {
+  const b: any = { messaging_product: 'whatsapp', action: body.action };
+  if (body.call_id) b.call_id = body.call_id;
+  if (body.to) b.to = body.to;
+  if (body.sdp) b.session = { sdp_type: body.sdp_type || (body.action === 'connect' ? 'offer' : 'answer'), sdp: body.sdp };
+  return meta(`/${PHONE_NUMBER_ID}/calls`, { method: 'POST', body: JSON.stringify(b) });
+}
+export async function listarLlamadasKapso(params: Record<string, string> = {}) {
+  const qs = new URLSearchParams({ limit: '50', ...params }).toString();
+  return meta(`/${PHONE_NUMBER_ID}/calls?${qs}`);
+}
+
 // ── Envío (Meta passthrough) ──
 
 /** Texto libre. Fuera de la ventana de 24 h Kapso devuelve 422: se propaga. */

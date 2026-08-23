@@ -49,6 +49,7 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', width: 'min(500px, 94vw)', maxHeight: '86dvh', overflowY: 'auto' }}>
         <b style={{ fontSize: '0.95rem' }}>Automatización del inbox</b>
         <ImportarHistorial />
+        <AjustesLlamadas />
         {!a ? <div style={{ padding: 20, fontSize: '0.78rem', color: '#a5a2af' }}>Cargando…</div> : (<>
           <div style={{ marginTop: 16 }}>
             <Toggle on={!!a.bienvenida_activa} onChange={v => setA({ ...a, bienvenida_activa: v })} label="Mensaje de bienvenida" />
@@ -149,6 +150,38 @@ function ImportarHistorial() {
         </button>
       </div>
       {msg && <div style={{ marginTop: 6, fontSize: '0.72rem', color: estado === 'error' ? '#C0554E' : '#1E8A63' }}>{msg}</div>}
+    </div>
+  );
+}
+
+/** Calling API: activar que el cliente nos llame desde WhatsApp (y, donde Meta lo permita, llamar nosotros). */
+function AjustesLlamadas() {
+  const [a, setA] = useState<any>(null);
+  const [msg, setMsg] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(() => { fetch('/api/crm/whatsapp/llamadas?ajustes=1').then(r => r.json()).then(j => setA(j.ajustes?.calling || j.error || null)).catch(() => {}); }, []);
+  const guardar = async (calling: any) => {
+    setOcupado(true); setMsg('');
+    const r = await fetch('/api/crm/whatsapp/llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'configurar', calling }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r.error) { setMsg(r.error); return; }
+    setA(calling); setMsg('Guardado en Meta.');
+  };
+  const activo = a && typeof a === 'object' && a.status === 'ENABLED';
+  return (
+    <div style={{ marginTop: 14, border: '1px solid #ececec', borderRadius: 10, padding: '10px 12px', background: '#fafafa' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Llamadas de WhatsApp</div>
+          <div style={{ fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.4 }}>{typeof a === 'string' ? a : activo ? 'Activas: el cliente ve el botón de llamar en el chat y aquí timbra.' : 'Apagadas: el cliente no puede llamar a este número.'}</div>
+        </div>
+        {a && typeof a === 'object' && (
+          <button disabled={ocupado} onClick={() => guardar(activo ? { status: 'DISABLED' } : { status: 'ENABLED', call_icon_visibility: 'DEFAULT', callback_permission_status: 'DISABLED' })}
+            style={{ border: 'none', borderRadius: 8, padding: '7px 12px', background: activo ? '#eee' : '#9B8CFA', color: activo ? '#333' : '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>{activo ? 'Desactivar' : 'Activar'}</button>
+        )}
+      </div>
+      {activo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: 6 }}>Llamadas salientes del negocio: {a.callback_permission_status === 'ENABLED' ? 'habilitadas' : 'no disponibles para números de EE. UU. (restricción de Meta)'}.</div>}
+      {msg && <div style={{ marginTop: 6, fontSize: '0.72rem', color: /Guardado/.test(msg) ? '#1E8A63' : '#C0554E' }}>{msg}</div>}
     </div>
   );
 }

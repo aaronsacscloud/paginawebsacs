@@ -60,3 +60,20 @@ $$;
 alter table wa_config add column if not exists catalog_id text; alter table wa_config add column if not exists ubicaciones jsonb default '[]'::jsonb;
 -- Etapa B: plantillas con media, calidad, mapa de variables
 alter table wa_plantillas add column if not exists header_tipo text default 'TEXT', add column if not exists header_media_url text, add column if not exists header_handle text, add column if not exists calidad text, add column if not exists calidad_at timestamptz, add column if not exists variables_map jsonb, add column if not exists status_at timestamptz, add column if not exists ejemplos jsonb, add column if not exists tipo_especial text;
+-- Etapa C: llamadas de WhatsApp
+create table if not exists wa_llamadas (
+  id uuid primary key default gen_random_uuid(),
+  call_id text unique not null,
+  conversation_id uuid references wa_conversaciones(id) on delete set null,
+  telefono text not null,
+  direccion text not null check (direccion in ('entrante','saliente')),
+  estado text not null default 'timbrando',   -- timbrando | aceptada | rechazada | terminada | fallida | perdida
+  sdp_offer text, sdp_answer text,
+  atendida_por uuid, atendida_por_nombre text,
+  started_at timestamptz not null default now(), answered_at timestamptz, ended_at timestamptz,
+  duracion_seg int, motivo text, payload jsonb,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create index if not exists wa_llamadas_conv on wa_llamadas (conversation_id, started_at desc);
+create index if not exists wa_llamadas_estado on wa_llamadas (estado) where estado='timbrando';
+alter table wa_config add column if not exists webhook_meta_id text, add column if not exists calling jsonb;

@@ -11,6 +11,7 @@ import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Icono
 import { Avatar, IconoCanal } from './ListaConversaciones';
 import Composer, { SelectorPlantilla } from './Composer';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
+import { BotonLlamar } from './Llamadas';
 
 // Borradores por conversación (viven mientras la pestaña esté abierta).
 const BORRADORES = new Map<string, string>();
@@ -177,6 +178,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="pendiente">Pendiente</option>
           <option value="resuelta">Resuelta</option>
         </select>}
+        {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
         <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
           style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
           <IcoBuscar size={15} />
@@ -248,7 +250,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   <span style={sepOscuro.linea} />
                 </span>
               ) : item._clase === 'evento' ? (
-                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : 'transparent', borderRadius: 999, padding: item.tipo === 'reunion' ? '2px 10px' : 0 }}>
+                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : 'transparent', borderRadius: 999, padding: item.tipo === 'reunion' || item.tipo === 'llamada' ? '2px 10px' : 0 }}>
                   {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>
