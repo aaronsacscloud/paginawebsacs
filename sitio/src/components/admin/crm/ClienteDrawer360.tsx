@@ -71,6 +71,9 @@ const D = {
   kv: { fontSize: '1.05rem', fontWeight: 800, color: '#1a1a1a', marginTop: 2 } as const,
   input: { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
+  // Etiqueta de campo dentro de una fila de edición: versalitas pequeñas, para
+  // que se lea qué es cada caja sin robarle altura a la fila.
+  lblMini: { fontSize: '0.62rem', fontWeight: 700, color: '#999', letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 4 } as const,
   btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
   mi: { display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 600, color: '#1a1a1a', cursor: 'pointer', fontFamily: 'inherit' } as const,
   miSub: { display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 } as const,
@@ -1654,43 +1657,61 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 {subs.map((s: any) => (
                   editId === s.id ? (
                     <tr key={s.id}>
-                      {/* El nombre de un plan puede ser larguísimo ("Licencia
-                          Vitalicia Fideliza · 5 sucursales + personalizaciones")
-                          y empujaba el resto de la fila fuera del panel: el
-                          campo de pagado y el botón de guardar quedaban donde no
-                          se alcanzan. Se recorta con puntos suspensivos. */}
-                      <td style={{ ...D.td, maxWidth: 230 }}>
-                        <button onClick={() => setPicker('edit')} title="Elegir del catálogo de planes y plugins"
-                          style={{ ...D.input, width: '100%', maxWidth: 230, minWidth: 150, minHeight: 40, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre_plan || '— elegir plan —'}</span>
-                          <span style={{ color: '#999', fontWeight: 400 }}>▾</span>
-                        </button>
-                      </td>
-                      <td style={D.td}><select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug && x.slug === f.plan_slug); setF({ ...f, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? f.precio) : f.precio }); }} style={{ ...D.input, minWidth: 96 }}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
-                      <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={{ ...D.input, minWidth: 122 }}>{ESTADOS_SUB.filter(x => x !== 'pausada' || f.estado === 'pausada').map(x => <option key={x} value={x}>{x}</option>)}</select></td>
-                      <td style={D.td}><input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: 100 }} /></td>
-                      <td style={D.td}>
-                        {/* Las dos fechas juntas: desde cuándo la tiene y
-                            cuándo se le vuelve a cobrar. Una vitalicia no tiene
-                            la segunda y el campo lo dice en vez de pedir un
-                            dato que no existe. */}
-                        <input type="date" value={f.fecha_inicio} onChange={e => setF({ ...f, fecha_inicio: e.target.value })}
-                          style={{ ...D.input, marginBottom: 4 }} title="Desde cuándo tiene esta licencia" />
-                        {f.ciclo === 'vitalicia'
-                          ? <div style={{ fontSize: '0.66rem', color: '#a5a2af' }}>pago único · sin próxima factura</div>
-                          : <input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })}
-                              style={D.input} title="Próxima factura" />}
-                      </td>
-                      <td style={D.td} colSpan={2}>
-                        {/* Lo que ya pagó. En las vitalicias legacy —cobradas
-                            antes de que existiera el CRM— es la única forma de
-                            que el dinero exista en el sistema. */}
-                        <input type="number" value={f.total_pagado} onChange={e => setF({ ...f, total_pagado: e.target.value })}
-                          placeholder="Pagado" style={{ ...D.input, width: 110 }} title="Cuánto ha pagado en total por esta licencia" />
-                      </td>
-                      <td style={D.td}>
-                        <button style={{ ...D.btnG, color: '#1A8F7A', fontWeight: 800 }} disabled={busy} onClick={() => guardar(s)}>✓</button>{' '}
-                        <button style={D.btnG} onClick={() => setEditId(null)}>✕</button>
+                      {/* Editar NO cabe en la fila. Con el nombre del plan, los
+                          dos selects, el precio, las dos fechas y lo pagado, la
+                          tabla se iba 300 px fuera del panel y el botón de
+                          guardar quedaba donde no se alcanza. Así que la fila se
+                          convierte en un formulario que ocupa el ancho completo
+                          y envuelve: cada campo con su etiqueta, que además dice
+                          qué es "pagado" sin tener que adivinarlo. */}
+                      <td colSpan={8} style={{ padding: '14px 12px', background: '#FBFAFF', borderTop: '1px solid #ddd6fb', borderBottom: '1px solid #ddd6fb' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{ flex: '1 1 240px', minWidth: 200 }}>
+                            <div style={D.lblMini}>Licencia</div>
+                            <button onClick={() => setPicker('edit')} title="Elegir del catálogo, o escribir un nombre propio"
+                              style={{ ...D.input, width: '100%', minHeight: 40, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+                              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre_plan || '— elegir plan —'}</span>
+                              <span style={{ color: '#999', fontWeight: 400 }}>▾</span>
+                            </button>
+                          </div>
+                          <div style={{ width: 110 }}>
+                            <div style={D.lblMini}>Ciclo</div>
+                            <select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug && x.slug === f.plan_slug); setF({ ...f, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? f.precio) : f.precio }); }} style={{ ...D.input, width: '100%' }}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select>
+                          </div>
+                          <div style={{ width: 135 }}>
+                            <div style={D.lblMini}>Estado</div>
+                            <select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={{ ...D.input, width: '100%' }}>{ESTADOS_SUB.filter(x => x !== 'pausada' || f.estado === 'pausada').map(x => <option key={x} value={x}>{x}</option>)}</select>
+                          </div>
+                          <div style={{ width: 110 }}>
+                            <div style={D.lblMini}>{f.ciclo === 'vitalicia' ? 'Precio' : 'Precio / ARR'}</div>
+                            <input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: '100%' }} />
+                          </div>
+                          <div style={{ width: 150 }}>
+                            {/* Estimada vale: es mejor "más o menos febrero de
+                                2025" que un guion. Sin fecha, la licencia no
+                                entra en ninguna cohorte ni en la antigüedad. */}
+                            <div style={D.lblMini}>Desde (o estimada)</div>
+                            <input type="date" value={f.fecha_inicio} onChange={e => setF({ ...f, fecha_inicio: e.target.value })} style={{ ...D.input, width: '100%' }} />
+                          </div>
+                          <div style={{ width: 150 }}>
+                            <div style={D.lblMini}>Próxima factura</div>
+                            {f.ciclo === 'vitalicia'
+                              ? <div style={{ fontSize: '0.7rem', color: '#a5a2af', padding: '11px 0' }}>pago único · no renueva</div>
+                              : <input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={{ ...D.input, width: '100%' }} />}
+                          </div>
+                          <div style={{ width: 130 }}>
+                            {/* En las vitalicias legacy —cobradas antes de que
+                                existiera el CRM— capturarlo aquí es la única
+                                forma de que ese dinero exista en el sistema. */}
+                            <div style={D.lblMini}>Cuánto pagó</div>
+                            <input type="number" value={f.total_pagado} onChange={e => setF({ ...f, total_pagado: e.target.value })}
+                              placeholder="0" style={{ ...D.input, width: '100%' }} title="Total pagado por esta licencia" />
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 18 }}>
+                            <button style={{ ...D.btn, fontWeight: 800 }} disabled={busy} onClick={() => guardar(s)}>{busy ? 'Guardando…' : 'Guardar'}</button>
+                            <button style={D.btnG} onClick={() => setEditId(null)}>Cancelar</button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ) : (
