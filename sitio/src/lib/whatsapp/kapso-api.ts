@@ -436,14 +436,20 @@ export async function crearBroadcast(nombre: string, templateId: string) {
   });
 }
 
-/** Kapso acepta hasta 1000 por request; aquí se trocea lo que venga. */
+/** Kapso acepta hasta 1000 por request; aquí se trocea lo que venga.
+ *  El body va ENVUELTO en whatsapp_broadcast y el campo se llama `components`
+ *  (con `recipients` a pelo o `template_components` responde missing_parameter). */
 export async function agregarDestinatarios(broadcastId: string, destinatarios: Array<{
-  phone_number: string; template_components?: any;
+  phone_number: string; template_components?: any; components?: any;
 }>) {
-  for (let i = 0; i < destinatarios.length; i += 1000) {
+  const normal = destinatarios.map(d => ({
+    phone_number: d.phone_number,
+    ...((d.components || d.template_components) ? { components: d.components || d.template_components } : {}),
+  }));
+  for (let i = 0; i < normal.length; i += 1000) {
     await platform(`/whatsapp/broadcasts/${broadcastId}/recipients`, {
       method: 'POST',
-      body: JSON.stringify({ recipients: destinatarios.slice(i, i + 1000) }),
+      body: JSON.stringify({ whatsapp_broadcast: { recipients: normal.slice(i, i + 1000) } }),
     });
   }
 }
