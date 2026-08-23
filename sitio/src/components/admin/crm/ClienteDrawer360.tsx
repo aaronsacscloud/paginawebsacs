@@ -257,11 +257,13 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 </div>
               ))}
               {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
+              {/* Ligar la cuenta de SACS es un trámite de una sola vez y estorbaba
+                  debajo de las licencias, donde no pinta nada. Ahora solo aparece
+                  cuando NO hay ninguna ligada —el único caso en que hace falta— y
+                  aquí, en Actividad, que es de donde salen esos datos. */}
+              {tab === 'resumen' && !co?.sacs_account && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'subs' && (<>
-                <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
-                <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
-              </>)}
+              {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
@@ -532,7 +534,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
       {!act && (
         <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>
-          {co?.sacs_account ? 'Sin datos sincronizados aún — sincroniza desde Suscripciones.' : 'Liga la cuenta de SACS en Suscripciones para ver su actividad real.'}
+          {co?.sacs_account ? 'Sin datos sincronizados aún — la sincronización corre cada noche a las 3 a.m.' : 'Liga la cuenta de SACS aquí abajo para ver su actividad real.'}
         </div>
       )}
 
