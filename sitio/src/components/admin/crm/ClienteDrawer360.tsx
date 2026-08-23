@@ -1654,9 +1654,14 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 {subs.map((s: any) => (
                   editId === s.id ? (
                     <tr key={s.id}>
-                      <td style={D.td}>
+                      {/* El nombre de un plan puede ser larguísimo ("Licencia
+                          Vitalicia Fideliza · 5 sucursales + personalizaciones")
+                          y empujaba el resto de la fila fuera del panel: el
+                          campo de pagado y el botón de guardar quedaban donde no
+                          se alcanzan. Se recorta con puntos suspensivos. */}
+                      <td style={{ ...D.td, maxWidth: 230 }}>
                         <button onClick={() => setPicker('edit')} title="Elegir del catálogo de planes y plugins"
-                          style={{ ...D.input, minWidth: 150, minHeight: 40, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+                          style={{ ...D.input, width: '100%', maxWidth: 230, minWidth: 150, minHeight: 40, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
                           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre_plan || '— elegir plan —'}</span>
                           <span style={{ color: '#999', fontWeight: 400 }}>▾</span>
                         </button>
