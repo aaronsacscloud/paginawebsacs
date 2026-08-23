@@ -64,11 +64,13 @@ const {
       </ol>
 
       <div class="pm-vista">
-        {puntos.map((p, i) => (
-          <figure class:list={['pm-shot', { on: i === 0 }]} data-shot={i}>
-            <img src={p.img} alt={p.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
-          </figure>
-        ))}
+        <div class="pm-marco">
+          {puntos.map((p, i) => (
+            <figure class:list={['pm-shot', { on: i === 0 }]} data-shot={i}>
+              <img src={p.img} alt={p.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+            </figure>
+          ))}
+        </div>
       </div>
     </div>
 
@@ -93,7 +95,7 @@ const {
   .pm-head h2 span { color: #7BA0F0; }
   .pm-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: #A1A1AA; }
 
-  .pm-maq { display: grid; grid-template-columns: 1fr 1.35fr; gap: 32px; align-items: start; }
+  .pm-maq { display: grid; grid-template-columns: 1fr 1.55fr; gap: clamp(26px, 4vw, 52px); align-items: start; }
 
   .pm-lista { list-style: none; margin: 0; padding: 0; }
   .pm-lista li { border-bottom: 1px solid rgba(255,255,255,.12); }
@@ -127,10 +129,18 @@ const {
   .pm-vista { position: sticky; top: 96px; }
   .pm-shot { display: none; margin: 0; }
   .pm-shot.on { display: block; }
+  .pm-marco {
+    padding: clamp(18px, 2.6vw, 34px);
+    border-radius: var(--radius-2xl, 24px);
+    background:
+      radial-gradient(120% 90% at 15% 0%, rgba(123,160,240,.22) 0%, rgba(123,160,240,0) 58%),
+      linear-gradient(160deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.03) 100%);
+    border: 1px solid rgba(255,255,255,.12);
+  }
   .pm-shot img {
     width: 100%; height: auto; display: block; border-radius: var(--radius-lg, 16px);
-    border: 1px solid rgba(255,255,255,.14);
-    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.35);
   }
 
   .pm-pie {
