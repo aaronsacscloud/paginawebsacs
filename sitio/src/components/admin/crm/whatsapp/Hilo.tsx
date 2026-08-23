@@ -37,7 +37,10 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
     if (!hilo) return [];
     const msjs = (hilo.mensajes || []).map((m: any) => ({ ...m, _clase: 'mensaje', _t: m.enviado_at || m.created_at }));
     const notas = (hilo.notas || []).map((n: any) => ({ ...n, _clase: 'nota', _t: n.created_at }));
-    return [...msjs, ...notas].sort((a, b) => String(a._t).localeCompare(String(b._t)));
+    // Desempate por created_at: dos mensajes en el mismo segundo (texto + nota
+    // de voz seguidos) se veían en orden aleatorio.
+    return [...msjs, ...notas].sort((a, b) =>
+      String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)));
   }, [hilo]);
 
   // Auto-scroll al fondo cuando cambia el número de items (mensaje nuevo).

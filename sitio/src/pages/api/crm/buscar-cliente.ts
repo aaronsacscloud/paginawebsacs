@@ -191,7 +191,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (contacto || b?.email) {
     const { data: ct } = await supabase.from('contacts').insert({
       nombre: contacto || empresa, email: b.email || null, whatsapp: b.whatsapp || null,
-      company_id: co.id, tipo: esCliente ? 'cliente' : 'prospecto',
+      // 'prospecto' NO está en el CHECK de contacts.tipo (lead|cliente|partner|
+      // churned): el insert fallaba en silencio y el alta mínima creaba la
+      // empresa SIN contacto. Encontrado por el QA del inbox de WhatsApp.
+      company_id: co.id, tipo: esCliente ? 'cliente' : 'lead',
       lifecycle_stage: esCliente ? 'cliente' : 'oportunidad',
     }).select('id').maybeSingle();
     contactId = ct?.id || null;

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
-import { useIsMobile } from '../../../../lib/ui/mobile';
+import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import RailInbox from './RailInbox';
 import ListaConversaciones from './ListaConversaciones';
 import Hilo from './Hilo';
@@ -34,6 +34,11 @@ export default function InboxPro() {
   const [detalleMobile, setDetalleMobile] = useState(false);
   const [nuevoChat, setNuevoChat] = useState(false);
   const [error, setError] = useState('');
+
+  // En móvil el hilo es una vista APILADA: el botón atrás físico debe regresar
+  // a la lista, no sacar del CRM. (El Sheet del detalle ya trae su propio
+  // useDrawerHistory; este cubre la transición lista→hilo.)
+  useDrawerHistory(isMobile && !!activaId, () => setActivaId(null));
 
   // ── Carga ──
   const cargarLista = useCallback(async (f: Filtros) => {
