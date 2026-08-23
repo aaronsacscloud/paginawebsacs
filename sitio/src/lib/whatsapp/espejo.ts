@@ -124,6 +124,9 @@ export async function registrarMensaje(o: {
       status: o.status || (o.direccion === 'entrante' ? 'received' : 'sent'),
       metadata: o.metadata || null,
       enviado_at: enviadoAt,
+      // created_at = cuándo PASÓ (no cuándo lo espejamos): el hilo pagina por
+      // created_at y un backfill que entra de nuevo→viejo lo dejaría al revés.
+      ...(enviadoAt ? { created_at: enviadoAt } : {}),
     }, { onConflict: 'kapso_message_id', ignoreDuplicates: true })
     .select('id');
   if (error) console.error('[wa-espejo] insert mensaje:', error.message);
