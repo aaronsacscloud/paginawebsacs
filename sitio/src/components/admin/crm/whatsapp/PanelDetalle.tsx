@@ -11,7 +11,7 @@ import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
 import { Corazones } from '../ui/Cargando';
 import { srcMedia } from './Burbuja';
-import { C, L, label } from './estilo';
+import { C, L, label, horaRelativa } from './estilo';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
 const money = (n: any) => (n || n === 0) ? `$${Math.round(Number(n)).toLocaleString('es-MX')}` : '—';
@@ -146,7 +146,12 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
   const [msg, setMsg] = useState('');
   const [d360, setD360] = useState<any>(null);
   const [dCon, setDCon] = useState<any>(null);
+  const [ctx, setCtx] = useState<any>(null);            // /panel: salud, desde_ultimo, otros, sugerencias, sacs, propiedades
+  const [filtroAct, setFiltroAct] = useState<string>('todo');   // 18
   const cacheId = useRef<string | null>(null);
+  const yo = hilo?.yo || null;
+  // 21) Un CS ve el dinero solo de sus cuentas; founder ve todo.
+  const ocultarDinero = yo?.rol === 'cs' && ctx?.contacto?.owner_id && ctx.contacto.owner_id !== yo.id;
 
   useEffect(() => {
     const k = `${conv?.id}|${conv?.company_id}|${conv?.contact_id}`;
@@ -154,7 +159,14 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
     cacheId.current = k; setD360(null); setDCon(null);
     if (conv.company_id) fetch(`/api/crm/arr/company360?id=${conv.company_id}`).then(r => r.json()).then(setD360).catch(() => {});
     if (conv.contact_id) fetch(`/api/crm/contacts/${conv.contact_id}`).then(r => r.json()).then(setDCon).catch(() => {});
+    setCtx(null);
+    const qs = conv.id ? `wa_id=${conv.id}` : conv.contact_id ? `contact_id=${conv.contact_id}` : conv.company_id ? `company_id=${conv.company_id}` : '';
+    if (qs) fetch(`/api/crm/whatsapp/panel?${qs}`).then(r => r.json()).then(setCtx).catch(() => {});
   }, [conv?.id, conv?.company_id, conv?.contact_id]);
+  const ligar = async (contactId: string, companyId?: string | null) => {
+    await api.patchConversacion({ contact_id: contactId, company_id: companyId || null });
+    cacheId.current = null;
+  };
 
   const contacto = dCon?.contact || dCon || contactoBase;
   const empresa = d360?.company || conv?.companies || null;
@@ -197,19 +209,60 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
           {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
         </div>
         {etapa && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: etapa.fg, opacity: .6 }} /><span style={{ fontSize: 12, fontWeight: 600 }}>{etapa.label}</span></div>}
-        {empresa ? (
-          <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-            <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(resumen?.mrr ?? empresa.mrr)} MRR</span>
+        {empresa ? (<>
+          <div style={{ display: 'flex', gap: 12, fontSize: 12, alignItems: 'center' }}>
+            {ctx?.salud && <span title={`Salud de la cuenta: ${ctx.salud.nivel}`} style={{ width: 10, height: 10, borderRadius: 999, background: ctx.salud.nivel === 'rojo' ? C.rojo500 : ctx.salud.nivel === 'ambar' ? C.ambar400 : C.emerald500, flexShrink: 0 }} />}
+            {!ocultarDinero && <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(resumen?.mrr ?? empresa.mrr)} MRR</span>}
             <span style={{ color: C.g500 }}>{empresa.plan || 'sin plan'}</span>
             <span style={{ color: C.g500 }}>{subs.length} suscripción{subs.length === 1 ? '' : 'es'}</span>
           </div>
-        ) : contactoBase ? (
+          {ctx?.salud && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              {ctx.salud.dias_renovacion != null && <span style={tag(ctx.salud.dias_renovacion < 0 ? C.rojo50 : ctx.salud.dias_renovacion <= 15 ? C.ambar100 : C.g100, ctx.salud.dias_renovacion < 0 ? C.rojo700 : ctx.salud.dias_renovacion <= 15 ? C.ambar700 : C.g500)}>
+                {ctx.salud.dias_renovacion < 0 ? `Renovación vencida hace ${-ctx.salud.dias_renovacion} d` : `Renueva en ${ctx.salud.dias_renovacion} d`}</span>}
+              {ctx.salud.last_payment_at && !ocultarDinero && <span style={tag(C.g100, C.g500)}>Último pago {fecha(ctx.salud.last_payment_at)}</span>}
+              {ctx.salud.tickets_abiertos > 0 && <span style={tag(C.ambar100, C.ambar700)}>{ctx.salud.tickets_abiertos} ticket{ctx.salud.tickets_abiertos === 1 ? '' : 's'} de soporte</span>}
+              {ctx.salud.soporte_estancado && <span style={tag(C.rojo50, C.rojo700)}>Soporte estancado</span>}
+              {ctx.salud.health_score != null && <span style={tag(C.g100, C.g500)}>Salud {ctx.salud.health_score}/100</span>}
+            </div>
+          )}
+        </>) : contactoBase ? (
           <div style={{ fontSize: 12, color: C.g500 }}>{contacto?.fuente ? `Origen: ${contacto.fuente}` : 'Sin origen registrado'}</div>
         ) : null}
       </div>
 
       {/* Clasificación: etiquetas toggle con borde punteado */}
       {(empresa || contactoBase) && <Clasificacion entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} />}
+
+      {/* 14) Qué pasó desde nuestro último mensaje */}
+      {ctx?.desde_ultimo && (ctx.desde_ultimo.pagos.n > 0 || ctx.desde_ultimo.correos_abiertos > 0 || ctx.desde_ultimo.reuniones > 0 || ctx.desde_ultimo.correos_recibidos > 0 || ctx.desde_ultimo.uso_sacs.length > 0) && (
+        <div style={{ margin: '8px 16px 0', borderRadius: 12, border: `1px solid ${C.azulBorde}`, background: C.azulAgua, padding: '9px 12px', fontSize: 12 }}>
+          <div style={{ ...label(10), color: C.azulTinta, marginBottom: 4 }}>Desde tu último mensaje ({horaRelativa(ctx.desde_ultimo.desde)})</div>
+          <ul style={{ margin: 0, paddingLeft: 16, color: C.g700, lineHeight: 1.6 }}>
+            {ctx.desde_ultimo.pagos.n > 0 && <li>{ocultarDinero ? `Pagó ${ctx.desde_ultimo.pagos.n} vez${ctx.desde_ultimo.pagos.n === 1 ? '' : 'es'}` : `Pagó ${money(ctx.desde_ultimo.pagos.monto)}${ctx.desde_ultimo.pagos.n > 1 ? ` en ${ctx.desde_ultimo.pagos.n} pagos` : ''}`}</li>}
+            {ctx.desde_ultimo.correos_abiertos > 0 && <li>Abrió {ctx.desde_ultimo.correos_abiertos} correo{ctx.desde_ultimo.correos_abiertos === 1 ? '' : 's'}{ctx.desde_ultimo.clics > 0 ? ` y dio ${ctx.desde_ultimo.clics} clic${ctx.desde_ultimo.clics === 1 ? '' : 's'}` : ''}</li>}
+            {ctx.desde_ultimo.correos_recibidos > 0 && <li>Te escribió por correo</li>}
+            {ctx.desde_ultimo.reuniones > 0 && <li>Agendó {ctx.desde_ultimo.reuniones} reunión{ctx.desde_ultimo.reuniones === 1 ? '' : 'es'}</li>}
+            {ctx.desde_ultimo.uso_sacs.length > 0 && <li>Usó SACS: {ctx.desde_ultimo.uso_sacs.join(', ')}</li>}
+          </ul>
+        </div>
+      )}
+
+      {/* 16) Número desconocido: pistas para ligarlo */}
+      {!contactoBase && ctx?.sugerencias?.length > 0 && (
+        <div style={{ margin: '8px 16px 0', borderRadius: 12, border: `1px solid ${C.ambar200}`, background: C.ambar50, padding: '9px 12px' }}>
+          <div style={{ ...label(10), color: C.ambar700, marginBottom: 6 }}>¿Quién es? Pistas del CRM</div>
+          {ctx.sugerencias.map((sg: any) => (
+            <div key={sg.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12 }}>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <b style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sg.nombre || sg.email}{sg.empresa ? ` · ${sg.empresa}` : ''}</b>
+                <span style={{ fontSize: 10, color: C.g500 }}>{sg.motivo}</span>
+              </span>
+              <button onClick={() => ligar(sg.id, sg.company_id)} style={{ border: 'none', background: C.ambar400, color: '#fff', borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Es este</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Alta mínima */}
       {!contactoBase && !empresa && (
@@ -253,8 +306,8 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
             <Campo etiqueta="Nombre comercial" valor={empresa.nombre_comercial || empresa.nombre} onGuardar={guardarEmpresa('nombre_comercial')} />
             <div style={divisor} /><Campo etiqueta="Plan" valor={empresa.plan} readOnly />
             <div style={divisor} /><Campo etiqueta="Estado" valor={empresa.estado_cuenta} readOnly />
-            <div style={divisor} /><Campo etiqueta="MRR" valor={String(resumen?.mrr ?? empresa.mrr ?? '')} readOnly formato={money} />
-            <div style={divisor} /><Campo etiqueta="ARR" valor={String(resumen?.arr ?? empresa.arr ?? '')} readOnly formato={money} />
+            {!ocultarDinero && <><div style={divisor} /><Campo etiqueta="MRR" valor={String(resumen?.mrr ?? empresa.mrr ?? '')} readOnly formato={money} />
+            <div style={divisor} /><Campo etiqueta="ARR" valor={String(resumen?.arr ?? empresa.arr ?? '')} readOnly formato={money} /></>}
             <div style={divisor} /><Campo etiqueta="Sucursales" valor={empresa.sucursales != null ? String(empresa.sucursales) : null} onGuardar={guardarEmpresa('sucursales')} />
             <div style={divisor} /><Campo etiqueta="Giro" valor={empresa.giro} onGuardar={guardarEmpresa('giro')} />
             <div style={divisor} /><Campo etiqueta="Cuenta SACS" valor={empresa.sacs_account} readOnly copiable />
@@ -269,6 +322,49 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
           </div>
         </Seccion>
       )}
+      {ctx?.otros_contactos?.length > 0 && (
+        <Seccion id="g-otros" titulo="Otros contactos de la cuenta" n={ctx.otros_contactos.length}>
+          {ctx.otros_contactos.map((oc: any) => (
+            <div key={oc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12 }}>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <b style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{oc.nombre || oc.email || oc.whatsapp}{oc.es_principal ? ' · principal' : ''}</b>
+                <span style={{ fontSize: 10, color: C.g400 }}>{[oc.puesto || oc.rol, oc.whatsapp || oc.telefono, oc.email].filter(Boolean).join(' · ')}</span>
+              </span>
+              {oc.wa_id ? <a href={`/admin/crm?tab=whatsapp&wa_conv=${oc.wa_id}`} style={{ fontSize: 10, fontWeight: 700, color: C.emerald700, textDecoration: 'none', flexShrink: 0 }}>Ver chat</a>
+                : (oc.whatsapp || oc.telefono) ? <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(oc.whatsapp || oc.telefono)}`} style={{ fontSize: 10, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none', flexShrink: 0 }}>Escribir</a> : null}
+              {conv.id && <button title="Ligar esta conversación a este contacto" onClick={() => ligar(oc.id, empresa?.id)} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '1px 7px', fontSize: 10, color: C.g500, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Es quien escribe</button>}
+            </div>
+          ))}
+        </Seccion>
+      )}
+      {ctx?.sacs && (
+        <Seccion id="g-sacs" titulo="Cuenta SACS" n={ctx.sacs.modulos_activos.length}>
+          <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+            <span style={tag(C.moradoAgua, C.moradoTinta)}>{ctx.sacs.cuenta}</span>
+            {ctx.sacs.cuentas.length > 1 && <span style={tag(C.g100, C.g500)}>+{ctx.sacs.cuentas.length - 1} cuenta{ctx.sacs.cuentas.length - 1 === 1 ? '' : 's'}</span>}
+            {ctx.sacs.dias_sin_venta != null && <span style={tag(ctx.sacs.dias_sin_venta > 7 ? C.ambar100 : C.emerald50, ctx.sacs.dias_sin_venta > 7 ? C.ambar700 : C.emerald700)}>{ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : `${ctx.sacs.dias_sin_venta} d sin vender`}</span>}
+            {ctx.sacs.lealtad?.activo && <span style={tag(C.g100, C.g500)}>Lealtad {ctx.sacs.lealtad.tipo}</span>}
+          </div>
+          {ctx.sacs.modulos_activos.map((m: any) => (
+            <div key={m.modulo} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '3px 0', fontSize: 12 }}>
+              <span style={{ color: C.g700 }}>{m.modulo}</span>
+              <span style={{ color: C.g400, fontVariantNumeric: 'tabular-nums' }}>{m.docs_30d} en 30 d{m.ultimo ? ` · ${fecha(m.ultimo)}` : ''}</span>
+            </div>
+          ))}
+          {!ctx.sacs.modulos_activos.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin uso registrado todavía.</div>}
+        </Seccion>
+      )}
+      {(() => {
+        const props = { ...(ctx?.propiedades?.empresa || {}), ...(ctx?.propiedades?.contacto || {}) };
+        const pares = Object.entries(props).filter(([, v]) => v != null && v !== '' && typeof v !== 'object');
+        return pares.length ? (
+          <Seccion id="g-props" titulo="Más datos" n={pares.length}>
+            <div style={caja}>
+              {pares.map(([k, v], i) => (<span key={k}>{i > 0 && <div style={divisor} />}<Campo etiqueta={k.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} valor={String(v)} readOnly copiable /></span>))}
+            </div>
+          </Seccion>
+        ) : null;
+      })()}
       {contactoBase && (
         <Seccion id="g-seguimiento" titulo="Seguimiento" abiertaDefault>
           <div style={caja}>
@@ -280,9 +376,23 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
     </div>
   );
 
+  const CHIPS_ACT = [['todo', 'Todo'], ['wa', 'WhatsApp'], ['correo', 'Correo'], ['reunion', 'Reuniones'], ['pago', 'Pagos'], ['nota', 'Notas']];
+  const tipoDe = (t: any): string => {
+    const k = `${t.tipo || ''} ${t.titulo || ''}`.toLowerCase();
+    if (/whatsapp|wa_/.test(k)) return 'wa'; if (/correo|email|mail/.test(k)) return 'correo'; if (/reuni|booking|cita|meet/.test(k)) return 'reunion';
+    if (/pago|cobro|factura|suscrip/.test(k)) return 'pago'; if (/nota|comentario/.test(k)) return 'nota'; return 'otro';
+  };
+  const timelineFiltrado = (d360?.timeline || dCon?.activities || []).filter((t: any) => filtroAct === 'todo' || tipoDe(t) === filtroAct).slice(0, 60);
+  const porMes: Record<string, any[]> = {};
+  for (const t of timelineFiltrado) { const m = new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }); (porMes[m] = porMes[m] || []).push(t); }
   const TabActividad = () => (
     <div>
-      {empresa && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '10px 16px 0' }}>
+        {CHIPS_ACT.map(([v, l]) => (
+          <button key={v} onClick={() => setFiltroAct(v)} style={{ border: `1px solid ${filtroAct === v ? C.g900 : C.g200}`, background: filtroAct === v ? C.g900 : '#fff', color: filtroAct === v ? '#fff' : C.g500, borderRadius: 999, padding: '2px 9px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+        ))}
+      </div>
+      {empresa && !ocultarDinero && (
         <Seccion id="a-subs" titulo="Suscripciones" n={subs.length} abiertaDefault>
           {!subs.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin suscripciones.</div>}
           {subs.map(su => { const [bg, fg] = ESTADO_SUB[su.estado] || [C.g100, C.g500]; return (
@@ -325,16 +435,21 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
           ) : <div style={{ fontSize: 12, color: C.g300 }}>Sin reunión agendada.</div>}
         </Seccion>
       )}
-      {timeline.length > 0 && (
-        <Seccion id="a-timeline" titulo="Actividad reciente" n={timeline.length} abiertaDefault>
-          {timeline.map((t: any, i: number) => (
-            <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, lineHeight: 1.45 }}>
-              <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{fecha(t.fecha || t.created_at)}</span>
-              <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
+      {timelineFiltrado.length > 0 ? (
+        <Seccion id="a-timeline" titulo="Actividad reciente" n={timelineFiltrado.length} abiertaDefault>
+          {Object.entries(porMes).map(([mes, items]) => (
+            <div key={mes}>
+              <div style={{ ...label(10), margin: '8px 0 2px' }}>{mes}</div>
+              {items.map((t: any, i: number) => (
+                <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, lineHeight: 1.45 }}>
+                  <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{fecha(t.fecha || t.created_at)}</span>
+                  <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
+                </div>
+              ))}
             </div>
           ))}
         </Seccion>
-      )}
+      ) : filtroAct !== 'todo' ? <div style={{ padding: '12px 16px', fontSize: 12, color: C.g400 }}>Nada de este tipo en la actividad.</div> : null}
     </div>
   );
 

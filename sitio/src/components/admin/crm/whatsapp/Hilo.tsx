@@ -31,6 +31,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [cierre, setCierre] = useState(false);            // modal de nota de cierre
   const [cargandoMas, setCargandoMas] = useState(false);
   const [modalPlantillaVirtual, setModalPlantillaVirtual] = useState(false);
+  const [reenviar, setReenviar] = useState<any>(null);       // 12) mensaje a reenviar
+  const [, setReloj] = useState(0);                            // 5) re-render del contador de ventana
+  useEffect(() => { const t = setInterval(() => setReloj(x => x + 1), 30000); return () => clearInterval(t); }, []);
   useEffect(() => { setCita(null); }, [hilo?.conversacion?.id]);
 
   // Línea de tiempo unificada: mensajes + correos + notas + eventos + reacciones.
@@ -133,6 +136,23 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>
+          {conv.id && hilo.ventana?.expira_at && (() => {
+            const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
+            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Ventana cerrada</span>;
+            const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
+            const urgente = ms < 4 * 3600e3;
+            return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
+              style={{ fontSize: 9, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '2px 7px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+              {urgente ? 'Cierra en ' : 'Ventana '}{h > 0 ? `${h} h ` : ''}{m} min
+            </span>;
+          })()}
+          {(hilo.presencia || []).map((p: any) => (
+            <span key={p.user_id} title={p.escribiendo ? `${p.nombre} está escribiendo…` : `${p.nombre} también tiene abierto este chat`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, background: p.escribiendo ? C.moradoAgua : C.g100, color: p.escribiendo ? C.moradoTinta : C.g500, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>
+              <span style={{ width: 6, height: 6, borderRadius: 999, background: p.escribiendo ? C.morado : C.g400 }} className={p.escribiendo ? 'wa-pulso' : ''} />
+              {(p.nombre || '').split(' ')[0]}{p.escribiendo ? ' escribe…' : ''}
+            </span>
+          ))}
         </span>
         {conv.id && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
@@ -180,6 +200,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         </div>
       )}
 
+      {conv.alerta && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, color: C.rojo700, flexShrink: 0 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>{conv.alerta}</span>
+          {hilo.canales?.correo?.ok && <span style={{ fontSize: 11, color: C.rojo700, opacity: .8 }}>Prueba por correo</span>}
+        </div>
+      )}
       {/* ── Mensajes ── */}
       <div ref={scrollRef} className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {hilo.hay_mas && (
@@ -217,8 +244,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   <span style={sepOscuro.linea} />
                 </span>
               ) : item._clase === 'evento' ? (
-                <span style={{ alignSelf: 'center', fontSize: 11, color: C.g400, fontStyle: 'italic' }}>
+                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : 'transparent', borderRadius: 999, padding: item.tipo === 'reunion' ? '2px 10px' : 0 }}>
                   {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
+                  {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>
               ) : item._clase === 'nota' ? (
                 <span style={{ ...burbuja.nota, boxShadow: conRing ? `0 0 0 2px ${C.morado}` : 'none', transition: 'box-shadow .3s' }}>
@@ -249,7 +277,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 </span>
               ) : (
                 <BurbujaMensaje item={item} q={q} conRing={conRing} chips={chips} porWamid={porWamid}
-                  onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined}
+                  onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined} />
               )}
             </span>
@@ -267,12 +295,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
       {/* ── Composer ── */}
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
-        cita={cita} onQuitarCita={() => setCita(null)}
+        cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label }} />
 
       {/* ── Lightbox ── */}
+      {reenviar && <ModalReenviar mensaje={reenviar} api={api} onCerrar={() => setReenviar(null)} />}
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
         const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
         if (!r?.error) setCierre(false);
@@ -353,6 +382,47 @@ function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolve
             style={{ border: 'none', background: !cat ? C.g200 : C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 700, cursor: !cat ? 'default' : 'pointer', fontFamily: 'inherit' }}>
             {ocupado ? 'Resolviendo…' : 'Marcar resuelta'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 12) Reenviar un mensaje a otra conversación del inbox. */
+function ModalReenviar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCerrar: () => void }) {
+  const [q, setQ] = useState('');
+  const [ocupado, setOcupado] = useState<string | null>(null);
+  const [hecho, setHecho] = useState<string[]>([]);
+  const [error, setError] = useState('');
+  const lista: any[] = (api.listaActual?.() || []).filter((c: any) => c.wa_id);
+  const filtrada = lista.filter(c => !q.trim() || `${c.contacto?.nombre || ''} ${c.empresa?.nombre || ''} ${c.telefono}`.toLowerCase().includes(q.toLowerCase())).slice(0, 30);
+  useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); }; window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc); }, []);
+  return (
+    <div role="dialog" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 'min(440px, 100%)', maxHeight: '80dvh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
+        <div style={{ padding: '14px 18px 8px' }}>
+          <b style={{ fontSize: 14 }}>Reenviar a…</b>
+          <div style={{ marginTop: 6, fontSize: 11, color: C.g500, background: C.g50, borderRadius: 8, padding: '6px 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resumenMensaje(mensaje)}</div>
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar conversación…"
+            style={{ width: '100%', boxSizing: 'border-box', marginTop: 8, border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+          {error && <p style={{ color: C.rojo500, fontSize: 11, margin: '6px 0 0' }}>{error}</p>}
+        </div>
+        <div className="wa-scroll" style={{ overflowY: 'auto', padding: '0 8px 8px' }}>
+          {filtrada.map(c => (
+            <button key={c.id} disabled={!!ocupado || hecho.includes(c.id)} onClick={async () => {
+              setOcupado(c.id); setError('');
+              const r = await api.reenviar(mensaje, c.wa_id); setOcupado(null);
+              if (r?.error) setError(r.ventana_cerrada ? `${c.contacto?.nombre || c.telefono}: ventana cerrada, necesita plantilla` : r.error); else setHecho(h => [...h, c.id]);
+            }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: hecho.includes(c.id) ? C.emerald50 : 'none', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <Avatar nombre={c.contacto?.nombre} telefono={String(c.telefono || '?')} size={28} canal="wa" />
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <b style={{ fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.contacto?.nombre || telefonoLegible(c.telefono)}</b>
+                <span style={{ fontSize: 10, color: C.g400 }}>{c.empresa?.nombre || telefonoLegible(c.telefono)}</span>
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: hecho.includes(c.id) ? C.emerald700 : C.moradoTinta }}>{hecho.includes(c.id) ? 'Enviado' : ocupado === c.id ? 'Enviando…' : 'Enviar'}</span>
+            </button>
+          ))}
+          {!filtrada.length && <div style={{ padding: 16, fontSize: 12, color: C.g400, textAlign: 'center' }}>Sin conversaciones que coincidan.</div>}
         </div>
       </div>
     </div>

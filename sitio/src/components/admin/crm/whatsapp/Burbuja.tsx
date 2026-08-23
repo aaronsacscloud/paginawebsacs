@@ -97,12 +97,15 @@ const IcoResponder = () => <svg width="13" height="13" viewBox="0 0 24 24" fill=
 
 const ETIQUETA_INTERACTIVO: Record<string, string> = { button_reply: 'Eligió el botón', list_reply: 'Eligió de la lista', button: 'Eligió el botón' };
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar }: {
+const IcoReenviar = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m15 7 5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 12H10a6 6 0 0 0-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
+
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar }: {
   item: any; q: string; conRing: boolean; chips?: string[] | null;
   porWamid: Map<string, any>;
   onLightbox: (src: string) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
+  onReenviar?: (item: any) => void;
 }) {
   const saliente = item.direccion === 'saliente';
   const claro = saliente;
@@ -213,11 +216,17 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
             <EstadoEntrega status={item.status} direccion={item.direccion} error={item.error} />
           </span>
         </span>
-        {onCitar && !item.borrado_at && item.kapso_message_id && (
-          <button className="wa-citar" onClick={() => onCitar(item)} title="Responder citando este mensaje" aria-label="Responder"
-            style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)', flexShrink: 0 }}>
-            <IcoResponder />
-          </button>
+        {!item.borrado_at && item.kapso_message_id && (onCitar || onReenviar) && (
+          <span className="wa-citar" style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+            {onCitar && <button onClick={() => onCitar(item)} title="Responder citando este mensaje" aria-label="Responder"
+              style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
+              <IcoResponder />
+            </button>}
+            {onReenviar && (item.cuerpo || item.transcript || item.media_url) && <button onClick={() => onReenviar(item)} title="Reenviar a otra conversación" aria-label="Reenviar"
+              style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
+              <IcoReenviar />
+            </button>}
+          </span>
         )}
       </span>
       {chips && chips.length > 0 && (

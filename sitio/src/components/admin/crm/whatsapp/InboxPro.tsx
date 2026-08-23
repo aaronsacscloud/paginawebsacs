@@ -82,8 +82,10 @@ export default function InboxPro() {
 
   const filtrosRef = useRef(filtros); filtrosRef.current = filtros;
   useEffect(() => { cargarLista(filtros); }, [filtros, cargarLista]);
+  const [tick, setTick] = useState(0);
+  const guardarVistaRef = useRef<((cfg: any) => void) | null>(null);
   useEffect(() => {
-    const t = setInterval(() => { if (!document.hidden) cargarLista(filtrosRef.current); }, 15000);
+    const t = setInterval(() => { if (!document.hidden) { cargarLista(filtrosRef.current); setTick(x => x + 1); } }, 15000);
     const onFocus = () => cargarLista(filtrosRef.current);
     window.addEventListener('focus', onFocus);
     return () => { clearInterval(t); window.removeEventListener('focus', onFocus); };
@@ -94,7 +96,12 @@ export default function InboxPro() {
     if (!activa) { setHilo(null); return; }
     setHilo(null);
     if (activa.wa || activa.email) cargarHilo(activa);
-    const t = setInterval(() => { if (!document.hidden && activaRef.current) cargarHilo(activaRef.current); }, 5000);
+    const t = setInterval(() => {
+      if (!document.hidden && activaRef.current) {
+        cargarHilo(activaRef.current);
+        if (activaRef.current.wa) fetch('/api/crm/whatsapp/presencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: activaRef.current.wa }) }).catch(() => {});
+      }
+    }, 5000);
     return () => clearInterval(t);
   }, [activa?.id, cargarHilo]);
 
@@ -135,7 +142,11 @@ export default function InboxPro() {
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const l = listaRef.current || [];
-      if (e.key === 'j' || e.key === 'k') {
+      if (e.key === 'n' && activaRef.current) {
+        e.preventDefault();
+        const sig = l.filter((c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && c.id !== activaRef.current?.id)[0];
+        if (sig) abrir(sig);
+      } else if (e.key === 'j' || e.key === 'k') {
         e.preventDefault();
         const i = l.findIndex((c: any) => c.id === activaRef.current?.id);
         const n = e.key === 'j' ? Math.min(l.length - 1, i + 1) : Math.max(0, i - 1);
@@ -181,6 +192,33 @@ export default function InboxPro() {
         body: JSON.stringify({ conversation_id: waId(), texto, cita: cita || undefined }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
+    },
+    escribiendo: () => {
+      const a = activaRef.current; if (!a?.wa) return;
+      fetch('/api/crm/whatsapp/presencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: a.wa, escribiendo: true }) }).catch(() => {});
+    },
+    programar: async (o: { tipo: 'envio' | 'recordatorio'; ejecutar_at: string; payload: any }) => {
+      const r = await fetch('/api/crm/whatsapp/programados', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), ...o }) })
+        .then(x => x.json()).catch(e => ({ error: String(e) }));
+      refrescar(); return r;
+    },
+    cancelarProgramado: async (id: string) => {
+      await fetch('/api/crm/whatsapp/programados', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {});
+      refrescar();
+    },
+    listarProgramados: async () => fetch(`/api/crm/whatsapp/programados?conversation_id=${waId()}`).then(x => x.json()).then(j => j.programados || []).catch(() => []),
+    reenviar: async (m: any, destinoConvId: string) => {
+      const body: any = { conversation_id: destinoConvId };
+      if (m.media_url) Object.assign(body, { media_url: m.media_url, clase: m.tipo === 'sticker' ? 'image' : m.tipo, nombre: m.filename || m.cuerpo || 'archivo', caption: m.filename ? undefined : m.cuerpo, mime: m.mime });
+      else body.texto = m.transcript || m.cuerpo;
+      if (!body.texto && !body.media_url) return { error: 'Este mensaje no se puede reenviar (la media vive solo en Meta)' };
+      return fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    },
+    listaActual: () => lista || [],
+    siguienteSinResponder: () => {
+      const l = (lista || []).filter((c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && c.id !== activaRef.current?.id);
+      if (l[0]) abrir(l[0]);
+      return !!l[0];
     },
     cargarMasHilo: async (before: string) => {
       const a = activaRef.current; if (!a?.wa) return;
@@ -304,6 +342,7 @@ export default function InboxPro() {
     campos, filtrosAdHoc, setFiltrosAdHoc,
     onMasivo: () => { window.location.href = '/admin/crm?tab=wa-masivos'; },
     totalLista, hayMasLista, cargarMasLista,
+    onGuardarVista: (cfg: any) => guardarVistaRef.current?.(cfg),
     onAsignar: async (c: any, asignadoA: string | null) => {
       await fetch('/api/crm/whatsapp/hilo', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.wa_id, asignado_a: asignadoA }) }).catch(() => null);
       refrescar();
@@ -328,8 +367,8 @@ export default function InboxPro() {
         )}
         {nuevoChat && <NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} />}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
-          <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)}
-            vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} />
+          <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
+            vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         </Sheet>
       </div>
     );
@@ -343,8 +382,8 @@ export default function InboxPro() {
         display: 'flex', background: '#fff', borderTop: `1px solid ${C.g200}`,
         overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
       }}>
-        <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros}
-          vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} />
+        <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
+          vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         <ListaConversaciones {...propsLista} />
         {activa ? (
           <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api}

@@ -3,7 +3,7 @@
 // con acciones que se revelan en hover, colapso a 64px y footer discreto.
 import { useEffect, useMemo, useState } from 'react';
 import { C, L, label } from './estilo';
-import { IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
+import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
 import { LIFECYCLE } from '../../../../lib/crm/lifecycle';
 import { catalogoCampos, type CampoFiltro } from '../../../../lib/whatsapp/filtros';
 import { CrearSeccionModal, CrearVistaModal } from './VistaModales';
@@ -12,6 +12,7 @@ import AjustesWA from './AjustesWA';
 import type { Filtros } from './InboxPro';
 
 const BANDEJAS = [
+  { id: 'accion', label: 'Requiere mi acción', Ico: IcoRayo },
   { id: 'todas', label: 'Todas', Ico: IcoInbox },
   { id: 'mias', label: 'Míos', Ico: IcoUsuario },
   { id: 'sin_asignar', label: 'Sin asignar', Ico: IcoUsuarioMas },
@@ -51,16 +52,18 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   }), [cat, equipo, giros, cierres]);
 }
 
-export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo }: {
+export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo, yo, tick = 0, onGuardarVistaExterna }: {
   counts: any; filtros: Filtros; setFiltros: (f: Filtros) => void;
-  vistaActiva: any; onVista: (v: any | null) => void; equipo: any[];
+  vistaActiva: any; onVista: (v: any | null) => void; equipo: any[]; yo?: any; tick?: number;
+  onGuardarVistaExterna?: (abrir: (cfg: any) => void) => void;
 }) {
+  const [subio, setSubio] = useState<Record<string, boolean>>({});
   const [colapsado, setColapsado] = useState(false);
   const [secciones, setSecciones] = useState<any[]>([]);
   const [vistas, setVistas] = useState<any[]>([]);
   const [contadores, setContadores] = useState<Record<string, number>>({});
   const [modalSeccion, setModalSeccion] = useState<any | 'nueva' | null>(null);
-  const [modalVista, setModalVista] = useState<{ vista?: any; seccionId?: string | null } | null>(null);
+  const [modalVista, setModalVista] = useState<{ vista?: any; seccionId?: string | null; prefill?: any } | null>(null);
   const [ajustes, setAjustes] = useState(false);
   const campos = useCamposFiltro(equipo);
 
@@ -70,7 +73,8 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   };
   useEffect(() => { cargar(); }, []);
 
-  // Contadores por vista: en fila, sin tumbar el server.
+  // Contadores por vista: en fila, sin tumbar el server. Se recalculan con
+  // cada `tick` del polling (22) y la vista que SUBE se resalta 4 s.
   useEffect(() => {
     let vivo = true;
     (async () => {
@@ -79,23 +83,41 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         const j = await fetch(`/api/crm/whatsapp/inbox?vista=${encodeURIComponent(JSON.stringify(v.config))}&limit=1`)
           .then(r => r.json()).catch(() => null);
         if (!vivo) return;
-        if (j) setContadores(prev => ({ ...prev, [v.id]: j.total_filtrado ?? 0 }));
+        if (j) setContadores(prev => {
+          const n = j.total_filtrado ?? 0;
+          if (prev[v.id] != null && n > prev[v.id]) { setSubio(s => ({ ...s, [v.id]: true })); setTimeout(() => setSubio(s => ({ ...s, [v.id]: false })), 4000); }
+          return { ...prev, [v.id]: n };
+        });
       }
     })();
     return () => { vivo = false; };
-  }, [JSON.stringify(vistas.map(v => v.id))]);
+  }, [JSON.stringify(vistas.map(v => v.id)), tick]);
+  // 27) "Guardar como vista" desde el modal de filtros avanzados.
+  useEffect(() => { onGuardarVistaExterna?.((cfg: any) => setModalVista({ seccionId: null, prefill: cfg })); }, []);
 
   const bandeja = (id: string) => { onVista(null); setFiltros({ ...filtros, filtro: id, etapa: '' }); };
   const guardarSeccion = async (s: any) => {
     await fetch('/api/crm/whatsapp/secciones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }).catch(() => {});
     setModalSeccion(null); cargar();
   };
-  const guardarVista = async (v: { id?: string; nombre: string; config: any }) => {
+  const guardarVista = async (v: { id?: string; nombre: string; config: any; compartida?: boolean }) => {
     await fetch('/api/crm/vistas', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: v.id, tabla: 'wa_inbox', nombre: v.nombre, config: v.config }),
+      body: JSON.stringify({ id: v.id, tabla: 'wa_inbox', nombre: v.nombre, config: v.config, compartida: v.compartida !== false }),
     }).catch(() => {});
     setModalVista(null); cargar();
+  };
+  // 23) orden manual: intercambia `orden` con la vecina.
+  const mover = async (v: any, dir: -1 | 1, lista: any[]) => {
+    const i = lista.findIndex(x => x.id === v.id); const j = i + dir;
+    if (j < 0 || j >= lista.length) return;
+    const a = lista[i], b = lista[j];
+    const oa = a.orden ?? i, ob = b.orden ?? j;
+    await Promise.all([
+      fetch('/api/crm/vistas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, tabla: 'wa_inbox', nombre: a.nombre, config: a.config, orden: oa === ob ? (dir < 0 ? ob - 1 : ob + 1) : ob }) }),
+      fetch('/api/crm/vistas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.id, tabla: 'wa_inbox', nombre: b.nombre, config: b.config, orden: oa === ob ? ob : oa }) }),
+    ]).catch(() => {});
+    cargar();
   };
   const borrarVista = async (id: string) => {
     await fetch('/api/crm/vistas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {});
@@ -104,7 +126,9 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   };
 
   // Vistas viejas (v3, sin condiciones) se agrupan como "sin grupo" igual.
-  const vistasDe = (seccionId: string | null) => vistas.filter(v => (v.config?.seccion_id || null) === seccionId);
+  const visibles = vistas.filter(v => v.compartida !== false || !yo || !v.owner_id || v.owner_id === yo.id);
+  const vistasDe = (seccionId: string | null) => visibles.filter(v => (v.config?.seccion_id || null) === seccionId);
+  const dueno = (v: any) => !v.owner_id ? null : (yo && v.owner_id === yo.id) ? 'yo' : (equipo.find((m: any) => m.id === v.owner_id)?.nombre?.split(' ')[0] || null);
 
   if (colapsado) {
     return (
@@ -174,10 +198,16 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
                     title="Doble clic para editar">
                     <span style={{ fontSize: 13 }}>{v.config?.emoji || '⭐'}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.nombre}</span>
+                    {v.compartida === false && <span title="Vista personal (solo tú la ves)" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '0 5px' }}>privada</span>}
+                    {v.compartida !== false && dueno(v) && dueno(v) !== 'yo' && <span title={`Creada por ${dueno(v)}`} style={{ fontSize: 9, color: C.g400 }}>{dueno(v)}</span>}
                     {v.config?.modo === 'solo_contactos' && <span title="Solo contactos sin conversación" style={{ fontSize: 10 }}>📋</span>}
                     {v.config?.modo === 'todas' && <span title="Incluye contactos sin conversación" style={{ fontSize: 10 }}>👥</span>}
-                    <span style={num}>{contadores[v.id] ?? ''}</span>
+                    <span style={{ ...num, ...(subio[v.id] ? { background: C.moradoAgua, color: C.moradoTinta, fontWeight: 800 } : {}) }}>{contadores[v.id] ?? ''}</span>
                   </button>
+                  <span className="wa-hover-reveal" style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: .8 }}>
+                    <button title="Subir" onClick={() => mover(v, -1, lista)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 9, padding: 0 }}>▲</button>
+                    <button title="Bajar" onClick={() => mover(v, 1, lista)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 9, padding: 0 }}>▼</button>
+                  </span>
                   <button className="wa-hover-reveal" title="Borrar vista" onClick={() => borrarVista(v.id)}
                     style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 11, padding: '0 8px 0 0' }}>✕</button>
                 </div>
@@ -203,7 +233,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
           onGuardar={guardarSeccion} onClose={() => setModalSeccion(null)} />
       )}
       {modalVista && (
-        <CrearVistaModal vista={modalVista.vista || null} seccionId={modalVista.seccionId} campos={campos}
+        <CrearVistaModal vista={modalVista.vista || null} seccionId={modalVista.seccionId} campos={campos} prefill={modalVista.prefill || null}
           onGuardar={guardarVista} onClose={() => setModalVista(null)} />
       )}
       {ajustes && <AjustesWA onClose={() => setAjustes(false)} />}

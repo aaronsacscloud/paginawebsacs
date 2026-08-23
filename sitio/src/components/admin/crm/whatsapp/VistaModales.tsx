@@ -210,14 +210,16 @@ const MODOS = [
   { v: 'solo_contactos', l: '📋 Sin conversación' },
 ] as const;
 
-export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose }: {
-  vista?: { id: string; nombre: string; config: ConfigVista } | null;
+export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose, prefill }: {
+  vista?: { id: string; nombre: string; config: ConfigVista; compartida?: boolean } | null;
   seccionId?: string | null;
   campos: CampoFiltro[];
-  onGuardar: (v: { id?: string; nombre: string; config: ConfigVista }) => Promise<void>;
+  onGuardar: (v: { id?: string; nombre: string; config: ConfigVista; compartida?: boolean }) => Promise<void>;
   onClose: () => void;
+  prefill?: Partial<ConfigVista> | null;   // 27) desde "Filtros avanzados → Guardar como vista"
 }) {
-  const base = vista?.config || {};
+  const base: Partial<ConfigVista> = vista?.config || prefill || {};
+  const [compartida, setCompartida] = useState(vista ? vista.compartida !== false : true);
   const [emoji, setEmoji] = useState(base.emoji || '⭐');
   const [emojiAbierto, setEmojiAbierto] = useState(false);
   const [nombre, setNombre] = useState(vista?.nombre || '');
@@ -276,10 +278,15 @@ export function CrearVistaModal({ vista, seccionId, campos, onGuardar, onClose }
             <PreviewVista config={config} />
           </div>
         </div>
-        <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.g100}`, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.g100}`, display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+          <label style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: C.g700, cursor: 'pointer' }}>
+            <input type="checkbox" checked={compartida} onChange={e => setCompartida(e.target.checked)} />
+            Compartir con el equipo
+            <span style={{ fontSize: 10, color: C.g400 }}>{compartida ? 'todos la ven' : 'solo tú la ves'}</span>
+          </label>
           <button style={btn()} onClick={onClose}>Cancelar</button>
           <button style={{ ...btn(true), opacity: nombre.trim() ? 1 : .4 }} disabled={!nombre.trim() || ocupado}
-            onClick={async () => { setOcupado(true); await onGuardar({ id: vista?.id, nombre: nombre.trim(), config }); setOcupado(false); }}>
+            onClick={async () => { setOcupado(true); await onGuardar({ id: vista?.id, nombre: nombre.trim(), config, compartida }); setOcupado(false); }}>
             {vista ? 'Guardar' : 'Crear vista'}
           </button>
         </div>

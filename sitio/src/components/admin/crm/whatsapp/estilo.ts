@@ -94,6 +94,8 @@ export const spinner = (px = 24, color = C.morado): CSSProperties => ({
 /** CSS global del inbox (keyframes + scrollbars finos). Inyectar una vez. */
 export const CSS_INBOX = `
 .wa-citar{opacity:0;transition:opacity .15s}
+@keyframes wa-pulso{0%,100%{opacity:1}50%{opacity:.3}}
+.wa-pulso{animation:wa-pulso 1.2s infinite}
 .wa-fila-accion{opacity:0;transition:opacity .15s}
 .wa-fila-hover:hover .wa-fila-accion{opacity:1}
 .wa-fila-accion:hover{background:#EEECFE;color:#5B4BD6}

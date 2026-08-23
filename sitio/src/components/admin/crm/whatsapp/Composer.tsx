@@ -6,12 +6,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Corazones } from '../ui/Cargando';
 import { C, toolBtn, popup } from './estilo';
-import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer } from './Iconos';
+import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 
 type Modo = 'wa' | 'correo' | 'nota';
-type Popup = null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar';
+type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar';
 
 // ── Catálogos portados ──
 const EMOJI_CATS: { id: string; icono: string; nombre: string; lista: string[] }[] = [
@@ -43,11 +43,21 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
-export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador }: {
+export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
   cita?: any; onQuitarCita?: () => void;
   borradorInicial?: string; onBorrador?: (t: string) => void;
+  onEscribir?: () => void;                 // 6) presencia "escribiendo…"
+  siguiente?: () => boolean;               // 2) abrir la siguiente sin responder
 }) {
+  const ultimoPingRef = useRef(0);
+  const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
+  const [remotos, setRemotos] = useState<{ url: string; nombre: string; clase: string; mime?: string }[]>([]);   // 8) adjuntos por URL (snippets/biblioteca)
+  const [popProgramar, setPopProgramar] = useState(false);
+  const [programados, setProgramados] = useState<any[]>([]);
+  const [sugerirSiguiente, setSugerirSiguiente] = useState(false);
+  const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
+  useEffect(() => { cargarProgramados(); }, [canales?.wa_id]);
   const waDisponible = canales?.whatsapp !== false;
   const correoOk = !!canales?.correo?.ok;
   const [texto, setTextoRaw] = useState(borradorInicial || '');
@@ -133,8 +143,8 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       if (r?.error) { setError(r.error); return; }
       setTexto(''); setComentario(false); return;
     }
-    if (!t && !staged.length) return;
-    setOcupado(true); setError(''); setAviso('');
+    if (!t && !staged.length && !remotos.length) return;
+    setOcupado(true); setError(''); setAviso(''); setSugerirSiguiente(false);
     let r: any;
     if (modo === 'correo') {
       if (necesitaAsunto && !asunto.trim()) { setOcupado(false); setError('Un correo nuevo necesita asunto.'); return; }
@@ -148,9 +158,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         if (r?.error) break;
       }
       if (!r?.error) setStaged([]);
+    } else if (remotos.length) {
+      // 8) adjuntos por URL (snippet con archivo / biblioteca): el caption va en el primero.
+      for (let i = 0; i < remotos.length; i++) {
+        const a = remotos[i];
+        r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, media_url: a.url, clase: a.clase, nombre: a.nombre, mime: a.mime, caption: i === 0 ? (t || undefined) : undefined, cita: i === 0 ? (cita?.kapso_message_id || undefined) : undefined }) })
+          .then(x => x.json()).catch(e => ({ error: String(e) }));
+        if (r?.error) break;
+      }
+      if (!r?.error) { setRemotos([]); api.refrescar?.(); }
     } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
     setOcupado(false);
-    if (!r?.error) onQuitarCita?.();
+    if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente) setSugerirSiguiente(true); }
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
     if (r?.error) { setError(r.error); return; }
     setTexto(''); areaRef.current?.focus();
@@ -282,7 +302,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           {({ grabando, iniciar }) => (<>
             {!grabando && (
               <textarea ref={areaRef} value={texto} rows={1}
-                onChange={e => { setTexto(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
                   bloqueadoWa ? 'Ventana de 24h cerrada — envía una plantilla'
@@ -317,6 +337,36 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
             )}
             {error && <div style={{ padding: '6px 12px', fontSize: 11, color: C.rojo500, background: C.rojo50, borderTop: `1px solid ${C.rojo200}` }}>{error}</div>}
             {aviso && <div style={{ padding: '6px 12px', fontSize: 11, color: C.emerald700, background: C.emerald50 }}>{aviso}</div>}
+            {sugerirSiguiente && siguiente && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 11, color: C.moradoTinta, background: C.moradoAgua }}>
+                <span>Enviado.</span>
+                <button onClick={() => { if (!siguiente()) setAviso('No quedan conversaciones sin responder.'); setSugerirSiguiente(false); }}
+                  style={{ border: 'none', background: C.morado, color: '#fff', borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Siguiente sin responder</button>
+                <kbd style={{ fontSize: 9, border: `1px solid ${C.g200}`, borderRadius: 4, padding: '0 4px', color: C.g500, background: '#fff' }}>n</kbd>
+                <button onClick={() => setSugerirSiguiente(false)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400 }}>✕</button>
+              </div>
+            )}
+            {programados.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '6px 12px', background: C.g50, borderBottom: `1px solid ${C.g100}` }}>
+                {programados.map(p => (
+                  <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 600, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 999, padding: '2px 8px', color: C.g700 }}>
+                    {p.tipo === 'envio' ? 'Programado' : 'Recordatorio'} · {new Date(p.ejecutar_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {p.tipo === 'envio' && <span style={{ color: C.g400, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.payload?.texto || p.payload?.nombre}</span>}
+                    <button onClick={() => { api.cancelarProgramado(p.id); setProgramados(l => l.filter(x => x.id !== p.id)); }} title="Cancelar" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 0 }}>✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {remotos.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '6px 12px 0' }}>
+                {remotos.map((a, i) => (
+                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, background: C.emerald50, border: `1px solid #A7F3D0`, borderRadius: 999, padding: '3px 9px', color: C.emerald700 }}>
+                    <IcoClip size={12} /> {a.nombre}
+                    <button onClick={() => setRemotos(r => r.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.emerald700, padding: 0 }}>✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Toolbar */}
             {!grabando && (bloqueadoWa ? (
@@ -339,22 +389,39 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 <span style={{ flex: 1 }} />
                 {iaProcesando && <span style={{ fontSize: 11, color: C.moradoTinta, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Corazones size={8} /> Procesando con IA…</span>}
                 <span style={{ fontSize: 11, color: C.g400, marginRight: 6 }}>Presiona "Enter"</span>
-                <button onClick={enviar} disabled={ocupado || (!texto.trim() && !staged.length) || bloqueadoCorreo}
-                  style={{ width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: (texto.trim() || staged.length) && !bloqueadoCorreo ? C.morado : C.g200, color: (texto.trim() || staged.length) && !bloqueadoCorreo ? '#fff' : C.g400 }}>
+                {modo === 'wa' && canales?.wa_id && (
+                  <button onClick={() => setPopProgramar(p => !p)} title="Programar envío / recordarme si no contesta" aria-label="Programar"
+                    style={{ width: 26, height: 32, borderRadius: 8, border: `1px solid ${popProgramar ? C.morado : C.g200}`, background: popProgramar ? C.moradoAgua : '#fff', color: popProgramar ? C.moradoTinta : C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </button>
+                )}
+                <button onClick={enviar} disabled={ocupado || (!texto.trim() && !staged.length && !remotos.length) || bloqueadoCorreo}
+                  style={{ width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? C.morado : C.g200, color: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? '#fff' : C.g400 }}>
                   {ocupado ? <Corazones size={8} color="#fff" /> : <IcoEnviar size={15} />}
                 </button>
 
                 {/* Popups */}
                 {pop === 'ia' && <PopIA onAccion={transformar} />}
+                {pop === 'cotizacion' && <PopCotizaciones waId={canales?.wa_id} onElegir={(txt) => { insertarEnCursor((texto.trim() ? '\n' : '') + txt); setPop(null); }} />}
+                {pop === 'agendar' && <PopAgendar contacto={contacto} telefono={telefono} onElegir={(txt) => { insertarEnCursor((texto.trim() ? '\n' : '') + txt); setPop(null); }} />}
+                {popProgramar && <PopProgramar soloRecordatorio={!texto.trim() && !staged.length && !remotos.length} onCerrar={() => setPopProgramar(false)}
+                  onProgramar={async (tipo, cuando, nota) => {
+                    const payload = tipo === 'envio' ? (remotos[0] ? { media_url: remotos[0].url, clase: remotos[0].clase, nombre: remotos[0].nombre, caption: resolver(texto.trim()) || null } : { texto: resolver(texto.trim()), cita: cita?.kapso_message_id || null }) : { nota };
+                    const r = await api.programar({ tipo, ejecutar_at: cuando, payload });
+                    if (r?.error) { setError(r.error); return; }
+                    setPopProgramar(false); cargarProgramados();
+                    if (tipo === 'envio') { setTexto(''); setRemotos([]); onQuitarCita?.(); setAviso('Mensaje programado.'); } else setAviso('Te avisamos si no contesta.');
+                  }} />}
                 {pop === 'emoji' && <PopEmoji onElegir={e => insertarEnCursor(e)} left={32} />}
                 {pop === 'variables' && <PopVariables onElegir={k => insertarEnCursor(`{{${k}}}`)} left={60} />}
                 {pop === 'snippets' && (
                   <PopSnippets snippets={snippets} resolver={resolver}
-                    onElegir={s => { setTexto(s.texto); api.marcarUsoRespuesta?.(s.id); setPop(null); areaRef.current?.focus(); }}
+                    onElegir={s => { setTexto(s.texto); if (s.media_url) setRemotos(r => [...r, { url: s.media_url, nombre: s.titulo || s.atajo || 'archivo', clase: s.media_tipo || 'document' }]); api.marcarUsoRespuesta?.(s.id); setPop(null); areaRef.current?.focus(); }}
                     onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
                 )}
                 {pop === 'adjuntar' && (
-                  <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }} />
+                  <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
+                    onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')} />
                 )}
               </div>
             ))}
@@ -544,7 +611,7 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
   );
 }
 
-function PopAdjuntar({ onSubir, onBiblioteca }: { onSubir: () => void; onBiblioteca: () => void }) {
+function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar }: { onSubir: () => void; onBiblioteca: () => void; onCotizacion?: () => void; onAgendar?: () => void }) {
   const item = (icono: React.ReactNode, t: string, s: string, onClick: () => void) => (
     <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 12px' }}
       onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -556,6 +623,8 @@ function PopAdjuntar({ onSubir, onBiblioteca }: { onSubir: () => void; onBibliot
     <div style={popup(224, 116)}>
       {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoClip size={15} /></span>, 'Subir desde computadora', 'Selecciona un archivo', onSubir)}
       {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.emerald50, color: C.emerald700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoMarcador size={15} /></span>, 'Biblioteca de medios', 'Archivos pre-configurados', onBiblioteca)}
+      {onCotizacion && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.azulAgua, color: C.azulTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoDoc size={15} /></span>, 'Cotización del CRM', 'Manda el link de una cotización', onCotizacion)}
+      {onAgendar && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.ambar100, color: C.ambar700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCalendario size={15} /></span>, 'Link para agendar', 'Prellenado con sus datos', onAgendar)}
     </div>
   );
 }
@@ -774,6 +843,115 @@ export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string
             {ocupado ? <Corazones size={8} color="#fff" /> : 'Enviar'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── 9) Cotizaciones del CRM ─────────────────────────
+function PopCotizaciones({ waId, onElegir }: { waId?: string | null; onElegir: (texto: string) => void }) {
+  const [lista, setLista] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (!waId) { setLista([]); return; }
+    fetch(`/api/crm/whatsapp/panel?wa_id=${waId}`).then(r => r.json()).then(j => setLista(j.cotizaciones || [])).catch(() => setLista([]));
+  }, [waId]);
+  const money = (n: any, m?: string) => `$${Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}${m && m !== 'MXN' ? ` ${m}` : ''}`;
+  const est: Record<string, string> = { borrador: 'Borrador', enviada: 'Enviada', aceptada: 'Aceptada', rechazada: 'Rechazada', pagada: 'Pagada', vencida: 'Vencida' };
+  return (
+    <div style={popup(340, 150)}>
+      <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Cotizaciones de esta cuenta</div>
+      {lista === null && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>Cargando…</div>}
+      {lista?.length === 0 && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>No hay cotizaciones. Créala desde el panel (Acciones → Nueva cotización).</div>}
+      {(lista || []).map(c => (
+        <button key={c.id} onClick={() => onElegir(`Te comparto la cotización ${c.numero || ''} por ${money(c.total, c.moneda)}${c.plan ? ` (${c.plan})` : ''}: https://www.sacscloud.com/cotizacion/${c.id}${c.link_pago ? `\nPuedes pagar aquí: ${c.link_pago}` : ''}`)}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '8px 12px' }}
+          onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <b style={{ fontSize: 12, display: 'block' }}>{c.numero || 'Cotización'} · {money(c.total, c.moneda)}</b>
+            <span style={{ fontSize: 10, color: C.g400 }}>{new Date(c.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}{c.plan ? ` · ${c.plan}` : ''}{c.vigencia ? ` · vigente al ${new Date(c.vigencia + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}` : ''}</span>
+          </span>
+          <span style={{ fontSize: 9, fontWeight: 700, background: c.estado === 'aceptada' || c.estado === 'pagada' ? C.emerald50 : C.g100, color: c.estado === 'aceptada' || c.estado === 'pagada' ? C.emerald700 : C.g500, borderRadius: 999, padding: '1px 7px' }}>{est[c.estado] || c.estado}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ───────────────────────── 10) Link para agendar ─────────────────────────
+function PopAgendar({ contacto, telefono, onElegir }: { contacto?: any; telefono: string; onElegir: (texto: string) => void }) {
+  const [tipos, setTipos] = useState<any[] | null>(null);
+  useEffect(() => { fetch('/api/crm/whatsapp/agendar-links').then(r => r.json()).then(j => setTipos(j.tipos || [])).catch(() => setTipos([])); }, []);
+  const qs = new URLSearchParams();
+  if (contacto?.nombre) qs.set('nombre', contacto.nombre);
+  if (contacto?.email) qs.set('email', contacto.email);
+  if (telefono) qs.set('whatsapp', telefono.replace(/\D/g, ''));
+  if (contacto?.empresa) qs.set('empresa', contacto.empresa);
+  qs.set('utm_source', 'whatsapp'); qs.set('utm_medium', 'inbox');
+  return (
+    <div style={popup(320, 150)}>
+      <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Agendar · el link ya lleva sus datos</div>
+      {tipos === null && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>Cargando…</div>}
+      {(tipos || []).map(t => (
+        <button key={t.slug} onClick={() => onElegir(`Agenda aquí tu ${t.nombre.toLowerCase()}${t.duracion ? ` (${t.duracion} min)` : ''}: https://www.sacscloud.com/agendar/${t.slug}?${qs.toString()}`)}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '8px 12px' }}
+          onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+          <span style={{ width: 28, height: 28, borderRadius: 8, background: C.ambar100, color: C.ambar700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCalendario size={14} /></span>
+          <span style={{ minWidth: 0 }}><b style={{ fontSize: 12, display: 'block' }}>{t.nombre}</b><span style={{ fontSize: 10, color: C.g400 }}>{t.duracion ? `${t.duracion} min · ` : ''}{t.host || ''}</span></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ───────────────────────── 3/4) Programar / recordatorio ─────────────────────────
+function PopProgramar({ soloRecordatorio, onCerrar, onProgramar }: { soloRecordatorio: boolean; onCerrar: () => void; onProgramar: (tipo: 'envio' | 'recordatorio', cuandoISO: string, nota: string) => Promise<void> }) {
+  const [tipo, setTipo] = useState<'envio' | 'recordatorio'>(soloRecordatorio ? 'recordatorio' : 'envio');
+  const [custom, setCustom] = useState('');
+  const [nota, setNota] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const opciones = (() => {
+    const ahora = new Date();
+    const a = (d: Date, h: number) => { const x = new Date(d); x.setHours(h, 0, 0, 0); return x; };
+    const manana = new Date(ahora); manana.setDate(manana.getDate() + 1);
+    const lunes = new Date(ahora); lunes.setDate(lunes.getDate() + ((8 - lunes.getDay()) % 7 || 7));
+    const en2h = new Date(ahora.getTime() + 2 * 3600e3);
+    const en2d = new Date(ahora); en2d.setDate(en2d.getDate() + 2);
+    return tipo === 'envio'
+      ? [{ l: 'En 2 horas', d: en2h }, { l: 'Mañana 9:00', d: a(manana, 9) }, { l: 'Mañana 17:00', d: a(manana, 17) }, { l: 'Lunes 9:00', d: a(lunes, 9) }]
+      : [{ l: 'Si no contesta mañana', d: a(manana, 9) }, { l: 'En 2 días', d: a(en2d, 9) }, { l: 'El lunes', d: a(lunes, 9) }];
+  })();
+  const fmt = (d: Date) => d.toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const ir = async (d: Date) => { setOcupado(true); await onProgramar(tipo, d.toISOString(), nota.trim()); setOcupado(false); };
+  return (
+    <div style={{ ...popup(300, 80), right: 0, left: 'auto' }}>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${C.g100}` }}>
+        {(['envio', 'recordatorio'] as const).map(t => (
+          <button key={t} disabled={t === 'envio' && soloRecordatorio} onClick={() => setTipo(t)}
+            style={{ flex: 1, border: 'none', borderBottom: `2px solid ${tipo === t ? C.morado : 'transparent'}`, background: 'none', padding: '9px 6px', fontSize: 11, fontWeight: 700, color: tipo === t ? C.moradoTinta : (t === 'envio' && soloRecordatorio ? C.g300 : C.g500), cursor: 'pointer', fontFamily: 'inherit' }}>
+            {t === 'envio' ? 'Enviar después' : 'Si no contesta'}
+          </button>
+        ))}
+      </div>
+      <div style={{ padding: 10 }}>
+        {tipo === 'envio' && soloRecordatorio && <div style={{ fontSize: 11, color: C.g400, marginBottom: 6 }}>Escribe el mensaje primero.</div>}
+        {tipo === 'recordatorio' && (
+          <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Qué te recordamos (ej. insistir con la cotización)"
+            style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none', marginBottom: 8 }} />
+        )}
+        {opciones.map(o => (
+          <button key={o.l} disabled={ocupado} onClick={() => ir(o.d)}
+            style={{ display: 'flex', justifyContent: 'space-between', width: '100%', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 6px', fontSize: 12, color: C.g700, borderRadius: 6 }}
+            onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+            <b>{o.l}</b><span style={{ color: C.g400, fontSize: 11 }}>{fmt(o.d)}</span>
+          </button>
+        ))}
+        <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+          <input type="datetime-local" value={custom} onChange={e => setCustom(e.target.value)}
+            style={{ flex: 1, border: `1px solid ${C.g200}`, borderRadius: 8, padding: '5px 8px', fontSize: 11, fontFamily: 'inherit' }} />
+          <button disabled={!custom || ocupado} onClick={() => custom && ir(new Date(custom))}
+            style={{ border: 'none', background: custom ? C.morado : C.g200, color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: custom ? 'pointer' : 'default', fontFamily: 'inherit' }}>OK</button>
+        </div>
+        <div style={{ fontSize: 10, color: C.g400, marginTop: 6 }}>{tipo === 'envio' ? 'Si la ventana de 24 h ya cerró a esa hora, no se envía y te avisamos en el hilo.' : 'Se cancela solo si el cliente contesta antes.'}</div>
       </div>
     </div>
   );

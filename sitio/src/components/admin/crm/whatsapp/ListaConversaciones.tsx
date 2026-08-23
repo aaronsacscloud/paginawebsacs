@@ -73,7 +73,7 @@ function RadioFila({ activo, label, onClick }: { activo: boolean; label: string;
   );
 }
 
-export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar }: {
+export default function ListaConversaciones({ lista, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros, orden, setOrden, mostrar, setMostrar, campos, filtrosAdHoc, setFiltrosAdHoc, onMasivo, totalLista, hayMasLista, cargarMasLista, onAsignar, onGuardarVista }: {
   lista: any[]; filtros: Filtros; setFiltros: (f: Filtros) => void;
   activaId: string | null; onAbrir: (c: any) => void; mobile?: boolean; equipo: any[]; yo: any;
   onNuevo?: () => void; onFiltros?: () => void;
@@ -86,6 +86,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
   counts?: any;
   totalLista?: number; hayMasLista?: boolean; cargarMasLista?: () => Promise<void>;
   onAsignar?: (c: any, asignadoA: string | null) => Promise<void>;
+  onGuardarVista?: (cfg: any) => void;
 }) {
   const [popover, setPopover] = useState(false);
   const [menuFila, setMenuFila] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -245,6 +246,11 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                   <span style={{ marginLeft: 'auto', fontSize: 11, color: c.no_leidos ? C.moradoTinta : C.g400, fontWeight: c.no_leidos ? 700 : 400, flexShrink: 0 }}>
                     {c.virtual ? <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px' }}>CRM</span> : horaRelativa(c.ultimo_mensaje_at)}
                   </span>
+                  {c.mencion && <span title="Te mencionaron en una nota" style={{ fontSize: 9, fontWeight: 800, background: C.moradoAgua, color: C.moradoTinta, borderRadius: 999, padding: '1px 5px', flexShrink: 0 }}>@</span>}
+                  {c.alerta && <span title={c.alerta} style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0, display: 'inline-block' }} />}
+                  {!c.alerta && c.ventana_expira_at && c.ultima_direccion === 'entrante' && (() => { const r = new Date(c.ventana_expira_at).getTime() - Date.now(); return r > 0 && r < 4 * 3600e3; })() && (
+                    <span title={`La ventana de 24 h cierra en ${Math.max(1, Math.round((new Date(c.ventana_expira_at).getTime() - Date.now()) / 60000))} min`} style={{ width: 8, height: 8, borderRadius: 999, background: C.ambar400, flexShrink: 0, display: 'inline-block' }} />
+                  )}
                   {c.wa_id && onAsignar && (
                     <span role="button" className="wa-fila-accion" title="Asignar" aria-label="Asignar"
                       onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuFila({ id: c.id, x: r.left, y: r.bottom + 4 }); }}
@@ -310,7 +316,8 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(672px, 94vw)', maxHeight: '80dvh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,.2)' }}>
             <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.g100}` }}><b style={{ fontSize: 15 }}>Filtros avanzados</b></div>
             <div className="wa-scroll" style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
-              <FiltrosAdHocEditor campos={campos} inicial={filtrosAdHoc} onListo={(f) => { setFiltrosAdHoc(f); setModalFiltros(false); }} onLimpiar={() => { setFiltrosAdHoc(null); setModalFiltros(false); }} onCancelar={() => setModalFiltros(false)} />
+              <FiltrosAdHocEditor campos={campos} inicial={filtrosAdHoc} onListo={(f) => { setFiltrosAdHoc(f); setModalFiltros(false); }} onLimpiar={() => { setFiltrosAdHoc(null); setModalFiltros(false); }} onCancelar={() => setModalFiltros(false)}
+                onGuardarVista={onGuardarVista ? (f) => { setModalFiltros(false); onGuardarVista({ ...f, modo: mostrar === 'todas' ? 'todas' : mostrar === 'solo_contactos' ? 'solo_contactos' : 'con_conversacion' }); } : undefined} />
             </div>
           </div>
         </div>
@@ -319,9 +326,10 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
   );
 }
 
-function FiltrosAdHocEditor({ campos, inicial, onListo, onLimpiar, onCancelar }: {
+function FiltrosAdHocEditor({ campos, inicial, onListo, onLimpiar, onCancelar, onGuardarVista }: {
   campos: CampoFiltro[]; inicial: { logica: 'AND' | 'OR'; condiciones: Condicion[] } | null;
   onListo: (f: { logica: 'AND' | 'OR'; condiciones: Condicion[] }) => void; onLimpiar: () => void; onCancelar: () => void;
+  onGuardarVista?: (f: { logica: 'AND' | 'OR'; condiciones: Condicion[] }) => void;
 }) {
   const [logica, setLogica] = useState<'AND' | 'OR'>(inicial?.logica || 'AND');
   const [condiciones, setCondiciones] = useState<Condicion[]>(
@@ -331,6 +339,7 @@ function FiltrosAdHocEditor({ campos, inicial, onListo, onLimpiar, onCancelar }:
       <BuilderCondiciones campos={campos} condiciones={condiciones} logica={logica} onCambio={(c, l) => { setCondiciones(c); setLogica(l); }} />
       <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
         <button onClick={onLimpiar} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, color: C.g400, fontWeight: 600 }}>Limpiar filtros</button>
+        {onGuardarVista && <button onClick={() => onGuardarVista({ logica, condiciones })} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, color: C.moradoTinta, fontWeight: 700 }}>Guardar como vista</button>}
         <span style={{ flex: 1 }} />
         <button onClick={onCancelar} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 16px', background: '#fff', fontSize: 13, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
         <button onClick={() => onListo({ logica, condiciones })} style={{ border: 'none', borderRadius: 8, padding: '8px 16px', background: C.morado, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Aplicar</button>
