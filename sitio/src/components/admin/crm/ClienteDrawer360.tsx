@@ -689,7 +689,11 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
                   <div style={{ paddingLeft: 14, marginLeft: 4, borderLeft: '2px solid #f0eff5', marginBottom: 6 }}>
                     {hijos.map(h => {
                       const n = Number(h[campoDocs] || 0);
-                      const pct = Math.round((n / totalHijos) * 100);
+                      const crudo = (n / totalHijos) * 100;
+                      const pct = Math.round(crudo);
+                      // 214 devoluciones sobre 61,001 ventas es 0.35%: redondeado
+                      // a "0%" se lee como que no hubo ninguna.
+                      const pctTxt = n > 0 && pct === 0 ? '<1%' : pct + '%';
                       const ojo = /Devolucion|Cancelacion|Devoluciones|Cancelaciones/i.test(h.modulo) && pct >= 5;
                       return (
                         <div key={h.modulo} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
@@ -698,7 +702,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
                             <span style={{ display: 'block', height: '100%', borderRadius: 9, background: ojo ? '#EF7A72' : '#ddd6fb', width: `${Math.min(100, pct)}%`, transition: 'width .35s ease' }} />
                           </div>
                           <div style={{ fontSize: '0.7rem', fontWeight: 700, width: 62, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: ojo ? '#C0554E' : '#6b6b74' }}>{n.toLocaleString('es-MX')}</div>
-                          <div style={{ fontSize: '0.66rem', width: 40, textAlign: 'right', color: '#b3afbd', fontVariantNumeric: 'tabular-nums' }}>{pct}%</div>
+                          <div style={{ fontSize: '0.66rem', width: 40, textAlign: 'right', color: '#b3afbd', fontVariantNumeric: 'tabular-nums' }}>{pctTxt}</div>
                         </div>
                       );
                     })}
