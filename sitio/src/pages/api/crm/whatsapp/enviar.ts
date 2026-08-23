@@ -11,7 +11,7 @@
 // 422 de Kapso se traduce a { ventana_cerrada: true } y el mensaje NO se espeja.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError, enviarInteractivo, enviarUbicacion, enviarContacto, enviarSticker, enviarReaccion, type Interactivo } from '../../../../lib/whatsapp/kapso-api';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
@@ -146,6 +146,57 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const destino = await resolverDestino(b);
   if (!destino) return json({ error: 'Destino inválido (conversation_id o teléfono utilizable)' }, 400);
+
+  // ── Etapa A: interactivos, ubicación, contacto, sticker, reacción ──
+  const cita = b.cita ? String(b.cita) : null;
+  if (b.interactivo?.tipo) {
+    const i = b.interactivo as Interactivo;
+    try {
+      const r = await enviarInteractivo(destino.telefono, i, cita);
+      const wamid = r?.messages?.[0]?.id;
+      const etiqueta: Record<string, string> = { botones: 'Botones', lista: 'Lista', cta_url: 'Botón con link', pedir_ubicacion: 'Solicitud de ubicación', pedir_contacto: 'Solicitud de contacto', permiso_llamada: 'Solicitud de permiso para llamar', catalogo: 'Catálogo', carrusel: 'Carrusel', producto: 'Producto', productos: 'Productos' };
+      if (wamid) await registrarMensaje({
+        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
+        tipo: 'interactive', cuerpo: (i as any).cuerpo || etiqueta[i.tipo], status: 'sent',
+        metadata: { interactivo: i.tipo, enviado: i, ...(cita ? { cita: { wamid: cita } } : {}) },
+      });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
+  if (b.ubicacion?.lat != null) {
+    try {
+      const u = { lat: Number(b.ubicacion.lat), lng: Number(b.ubicacion.lng), nombre: b.ubicacion.nombre, direccion: b.ubicacion.direccion };
+      const r = await enviarUbicacion(destino.telefono, u, cita);
+      const wamid = r?.messages?.[0]?.id;
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma, tipo: 'location', cuerpo: u.nombre || u.direccion || 'Ubicación', status: 'sent', metadata: { lat: u.lat, lng: u.lng, nombre: u.nombre || null, direccion: u.direccion || null } });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
+  if (b.contacto?.nombre) {
+    try {
+      const r = await enviarContacto(destino.telefono, b.contacto, cita);
+      const wamid = r?.messages?.[0]?.id;
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma, tipo: 'contacts', cuerpo: `${b.contacto.nombre} ${b.contacto.apellido || ''}`.trim(), status: 'sent', metadata: { contactos: [{ nombre: `${b.contacto.nombre} ${b.contacto.apellido || ''}`.trim(), telefonos: [b.contacto.telefono].filter(Boolean) }] } });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
+  if (b.sticker_url) {
+    try {
+      const r = await enviarSticker(destino.telefono, { link: String(b.sticker_url) });
+      const wamid = r?.messages?.[0]?.id;
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma, tipo: 'sticker', cuerpo: null, mediaUrl: String(b.sticker_url), mime: 'image/webp', status: 'sent' });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
+  if (b.reaccion?.wamid) {
+    try {
+      const emoji = String(b.reaccion.emoji || '');
+      const r = await enviarReaccion(destino.telefono, String(b.reaccion.wamid), emoji);
+      const wamid = r?.messages?.[0]?.id;
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma, tipo: 'reaction', cuerpo: emoji || null, status: 'sent', metadata: { reacciona_a: String(b.reaccion.wamid), emoji, quitar: !emoji } });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
 
   // ── Media desde la biblioteca (URL pública ya existente) ──
   if (b.media_url) {

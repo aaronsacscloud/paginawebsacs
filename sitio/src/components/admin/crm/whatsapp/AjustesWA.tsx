@@ -93,6 +93,11 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
           </div>
 
           <div style={{ marginTop: 18 }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block' }}>Catálogo de Meta (ID)</label>
+            <p style={{ margin: '2px 0 6px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>Para mandar productos y el botón "Ver catálogo" desde el chat. Está en Meta Commerce Manager → Catálogo → Configuración.</p>
+            <input style={inp} value={a.catalog_id || ''} onChange={e => setA({ ...a, catalog_id: e.target.value })} placeholder="Ej. 1234567890123456" />
+          </div>
+          <div style={{ marginTop: 18 }}>
             <Toggle on={!!a.asignacion_rr} onChange={v => setA({ ...a, asignacion_rr: v })} label="Asignación automática (round-robin)" />
             <p style={{ margin: '4px 0 0 43px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
               Cada conversación nueva sin dueño se reparte al siguiente del equipo.

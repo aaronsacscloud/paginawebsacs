@@ -40,11 +40,14 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const { timeline, reacciones, porWamid } = useMemo(() => {
     if (!hilo) return { timeline: [], reacciones: new Map(), porWamid: new Map() };
     const msjsCrudos = (hilo.mensajes || []);
-    const reac = new Map<string, string[]>();
+    const reac = new Map<string, { emoji: string; dir: string }[]>();
     const msjs: any[] = [];
     for (const m of msjsCrudos) {
       if (m.tipo === 'reaction' && m.metadata?.reacciona_a) {
-        const arr = reac.get(m.metadata.reacciona_a) || []; arr.push(m.cuerpo || '👍'); reac.set(m.metadata.reacciona_a, arr);
+        // Una reacción nueva de la misma dirección reemplaza la anterior (así lo hace WhatsApp); emoji vacío = quitar.
+        const arr = (reac.get(m.metadata.reacciona_a) || []).filter((x: any) => x.dir !== m.direccion);
+        if (m.cuerpo && !m.metadata?.quitar) arr.push({ emoji: m.cuerpo, dir: m.direccion });
+        reac.set(m.metadata.reacciona_a, arr);
         continue;
       }
       msjs.push({ ...m, _clase: 'mensaje', _t: m.enviado_at || m.created_at });
@@ -278,7 +281,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               ) : (
                 <BurbujaMensaje item={item} q={q} conRing={conRing} chips={chips} porWamid={porWamid}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
-                  onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined} />
+                  onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
+                  onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined} />
               )}
             </span>
           );

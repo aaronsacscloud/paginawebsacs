@@ -57,3 +57,4 @@ returns table(conversation_id uuid, n bigint) language sql stable as $$
   where l.user_id = uid
   group by l.conversation_id;
 $$;
+alter table wa_config add column if not exists catalog_id text; alter table wa_config add column if not exists ubicaciones jsonb default '[]'::jsonb;

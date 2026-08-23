@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Corazones } from '../ui/Cargando';
 import { C, toolBtn, popup } from './estilo';
+import ModalInteractivo from './Interactivos';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
@@ -54,6 +55,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
   const [remotos, setRemotos] = useState<{ url: string; nombre: string; clase: string; mime?: string }[]>([]);   // 8) adjuntos por URL (snippets/biblioteca)
   const [popProgramar, setPopProgramar] = useState(false);
+  const [modalInteractivo, setModalInteractivo] = useState(false);
+  const [catalogId, setCatalogId] = useState<string | null>(null);
+  useEffect(() => { fetch('/api/crm/whatsapp/ajustes').then(r => r.json()).then(j => setCatalogId(j?.catalog_id || null)).catch(() => {}); }, []);
   const [programados, setProgramados] = useState<any[]>([]);
   const [sugerirSiguiente, setSugerirSiguiente] = useState(false);
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
@@ -412,6 +416,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 <button title="Snippets" style={toolBtn(pop === 'snippets')} onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={18} /></button>
                 {modo === 'wa' && <button title="Adjuntar" style={toolBtn(pop === 'adjuntar')} onClick={() => setPop(pop === 'adjuntar' ? null : 'adjuntar')}><IcoClip size={18} /></button>}
                 {modo === 'wa' && <button title="Plantillas" style={toolBtn(false)} onClick={() => setModalPlantilla(true)}><BadgeWhatsApp size={18} /></button>}
+                {modo === 'wa' && !bloqueadoWa && <button title="Mensaje interactivo: botones, lista, link, ubicación, contacto, carrusel, producto" aria-label="Interactivo" style={toolBtn(false)} onClick={() => setModalInteractivo(true)}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="14" width="8" height="6" rx="2" /><rect x="13" y="14" width="8" height="6" rx="2" /></svg>
+                </button>}
                 {modo === 'wa' && (<>
                   <span style={{ width: 1, height: 18, background: C.g200, margin: '0 4px' }} />
                   <button title="Grabar nota de voz" style={toolBtn(false)} onClick={iniciar}><IcoMic size={18} /></button>
@@ -485,10 +492,18 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
 
       <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
       {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => setModalPlantilla(false)} />}
+      {modalInteractivo && <ModalInteractivo equipo={equipo} yo={api.yo?.()} contacto={contacto} catalogId={catalogId} onCerrar={() => setModalInteractivo(false)}
+        onEnviar={async (body) => {
+          const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, cita: cita?.kapso_message_id || undefined, ...body }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+          if (!r?.error) { onQuitarCita?.(); api.refrescar?.(); if (modo === 'wa' && siguiente) setSugerirSiguiente(true); }
+          return r;
+        }} />}
       {biblioteca && <Biblioteca onClose={() => setBiblioteca(false)} onElegir={async (a) => {
         setBiblioteca(false); setOcupado(true);
         const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, media_url: a.url, clase: a.tipo, nombre: a.nombre, caption: texto.trim() || undefined }) })
+          body: JSON.stringify(a.categoria === 'sticker' || /\.webp(\?|$)/i.test(a.url) && a.tipo === 'image'
+            ? { conversation_id: canales?.wa_id || undefined, telefono, sticker_url: a.url }
+            : { conversation_id: canales?.wa_id || undefined, telefono, media_url: a.url, clase: a.tipo, nombre: a.nombre, caption: texto.trim() || undefined }) })
           .then(x => x.json()).catch(e => ({ error: String(e) }));
         fetch('/api/crm/whatsapp/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uso: a.id }) }).catch(() => {});
         setOcupado(false);

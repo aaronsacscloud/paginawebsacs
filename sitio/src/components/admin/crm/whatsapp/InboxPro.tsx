@@ -219,6 +219,11 @@ export default function InboxPro() {
       return fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     },
     listaActual: () => lista || [],
+    yo: () => yo,
+    reaccionar: async (wamid: string, emoji: string) => {
+      const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), reaccion: { wamid, emoji } }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      refrescar(); return r;
+    },
     siguienteSinResponder: () => {
       const l = (lista || []).filter((c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && c.id !== activaRef.current?.id);
       if (l[0]) abrir(l[0]);

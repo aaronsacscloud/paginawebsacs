@@ -10,7 +10,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 
 export const GET: APIRoute = async () => {
   const { data } = await supabase.from('wa_config')
-    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr')
+    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr, catalog_id, ubicaciones')
     .eq('id', 1).maybeSingle();
   return json({ ajustes: data || {} });
 };
@@ -19,6 +19,8 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const cambios: any = { id: 1, updated_at: new Date().toISOString() };
   if ('bienvenida_activa' in b) cambios.bienvenida_activa = !!b.bienvenida_activa;
+  if ('catalog_id' in b) cambios.catalog_id = String(b.catalog_id || '').trim() || null;
+  if ('ubicaciones' in b) cambios.ubicaciones = Array.isArray(b.ubicaciones) ? b.ubicaciones.slice(0, 20) : [];
   if ('bienvenida_texto' in b) cambios.bienvenida_texto = String(b.bienvenida_texto || '').slice(0, 1000) || null;
   if ('fuera_activa' in b) cambios.fuera_activa = !!b.fuera_activa;
   if ('fuera_texto' in b) cambios.fuera_texto = String(b.fuera_texto || '').slice(0, 1000) || null;

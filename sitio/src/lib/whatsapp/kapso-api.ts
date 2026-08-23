@@ -129,6 +129,82 @@ export async function enviarTexto(telefono: string, texto: string, citaWamid?: s
   });
 }
 
+// ── Etapa A: mensajes interactivos y especiales (formato Cloud API) ──
+
+const mensaje = (telefono: string, cuerpo: any, citaWamid?: string | null) =>
+  meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono, ...cuerpo, ...(citaWamid ? { context: { message_id: citaWamid } } : {}) }) });
+
+export type Interactivo =
+  | { tipo: 'botones'; cuerpo: string; header?: string | null; footer?: string | null; botones: { id: string; titulo: string }[] }
+  | { tipo: 'lista'; cuerpo: string; header?: string | null; footer?: string | null; boton: string; secciones: { titulo?: string; filas: { id: string; titulo: string; descripcion?: string }[] }[] }
+  | { tipo: 'cta_url'; cuerpo: string; header?: string | null; footer?: string | null; texto_boton: string; url: string }
+  | { tipo: 'pedir_ubicacion'; cuerpo: string }
+  | { tipo: 'pedir_contacto'; cuerpo: string }
+  | { tipo: 'permiso_llamada'; cuerpo: string }
+  | { tipo: 'catalogo'; cuerpo: string; thumbnail_product_retailer_id?: string | null }
+  | { tipo: 'carrusel'; cuerpo: string; tarjetas: { imagen: string; cuerpo: string; texto_boton: string; url?: string; id?: string }[] }
+  | { tipo: 'producto'; cuerpo?: string | null; footer?: string | null; catalog_id: string; product_retailer_id: string }
+  | { tipo: 'productos'; cuerpo: string; header: string; footer?: string | null; catalog_id: string; secciones: { titulo: string; product_retailer_ids: string[] }[] };
+
+const recorta = (t: string, n: number) => String(t || '').trim().slice(0, n);
+
+/** Construye el objeto `interactive` de Meta a partir de nuestra forma simple (con los límites de Meta aplicados). */
+export function armarInteractivo(i: Interactivo): any {
+  const header = (h?: string | null) => h ? { header: { type: 'text', text: recorta(h, 60) } } : {};
+  const footer = (f?: string | null) => f ? { footer: { text: recorta(f, 60) } } : {};
+  switch (i.tipo) {
+    case 'botones':
+      return { type: 'button', ...header(i.header), body: { text: recorta(i.cuerpo, 1024) }, ...footer(i.footer),
+        action: { buttons: i.botones.slice(0, 3).map((b, n) => ({ type: 'reply', reply: { id: recorta(b.id || `b${n + 1}`, 256), title: recorta(b.titulo, 20) } })) } };
+    case 'lista':
+      return { type: 'list', ...header(i.header), body: { text: recorta(i.cuerpo, 4096) }, ...footer(i.footer),
+        action: { button: recorta(i.boton || 'Elegir', 20), sections: i.secciones.slice(0, 10).map(s => ({ ...(s.titulo ? { title: recorta(s.titulo, 24) } : {}),
+          rows: s.filas.slice(0, 10).map((r, n) => ({ id: recorta(r.id || `r${n + 1}`, 200), title: recorta(r.titulo, 24), ...(r.descripcion ? { description: recorta(r.descripcion, 72) } : {}) })) })) } };
+    case 'cta_url':
+      return { type: 'cta_url', ...header(i.header), body: { text: recorta(i.cuerpo, 1024) }, ...footer(i.footer),
+        action: { name: 'cta_url', parameters: { display_text: recorta(i.texto_boton || 'Abrir', 20), url: i.url } } };
+    case 'pedir_ubicacion':
+      return { type: 'location_request_message', body: { text: recorta(i.cuerpo, 1024) }, action: { name: 'send_location' } };
+    case 'pedir_contacto':
+      return { type: 'request_contact_info', body: { text: recorta(i.cuerpo, 1024) }, action: { name: 'request_contact_info' } };
+    case 'permiso_llamada':
+      return { type: 'call_permission_request', body: { text: recorta(i.cuerpo, 1024) }, action: { name: 'call_permission_request' } };
+    case 'catalogo':
+      return { type: 'catalog_message', body: { text: recorta(i.cuerpo, 1024) }, action: { name: 'catalog_message', ...(i.thumbnail_product_retailer_id ? { parameters: { thumbnail_product_retailer_id: i.thumbnail_product_retailer_id } } : {}) } };
+    case 'carrusel':
+      return { type: 'carousel', body: { text: recorta(i.cuerpo, 1024) }, action: { cards: i.tarjetas.slice(0, 10).map((t, n) => ({
+        card_index: n, type: t.url ? 'cta_url' : 'quick_reply', header: { type: 'image', image: { link: t.imagen } }, body: { text: recorta(t.cuerpo, 160) },
+        action: t.url ? { name: 'cta_url', parameters: { display_text: recorta(t.texto_boton || 'Ver', 20), url: t.url } }
+          : { buttons: [{ type: 'quick_reply', quick_reply: { id: recorta(t.id || `c${n + 1}`, 256), title: recorta(t.texto_boton || 'Elegir', 20) } }] },
+      })) } };
+    case 'producto':
+      return { type: 'product', ...(i.cuerpo ? { body: { text: recorta(i.cuerpo, 1024) } } : {}), ...footer(i.footer), action: { catalog_id: i.catalog_id, product_retailer_id: i.product_retailer_id } };
+    case 'productos':
+      return { type: 'product_list', header: { type: 'text', text: recorta(i.header, 60) }, body: { text: recorta(i.cuerpo, 1024) }, ...footer(i.footer),
+        action: { catalog_id: i.catalog_id, sections: i.secciones.slice(0, 10).map(s => ({ title: recorta(s.titulo, 24), product_items: s.product_retailer_ids.slice(0, 30).map(id => ({ product_retailer_id: id })) })) } };
+  }
+}
+
+export const enviarInteractivo = (telefono: string, i: Interactivo, citaWamid?: string | null) =>
+  mensaje(telefono, { type: 'interactive', interactive: armarInteractivo(i) }, citaWamid);
+
+export const enviarUbicacion = (telefono: string, u: { lat: number; lng: number; nombre?: string; direccion?: string }, citaWamid?: string | null) =>
+  mensaje(telefono, { type: 'location', location: { latitude: u.lat, longitude: u.lng, ...(u.nombre ? { name: recorta(u.nombre, 100) } : {}), ...(u.direccion ? { address: recorta(u.direccion, 200) } : {}) } }, citaWamid);
+
+export const enviarContacto = (telefono: string, c: { nombre: string; apellido?: string; telefono?: string; email?: string; empresa?: string; puesto?: string }, citaWamid?: string | null) =>
+  mensaje(telefono, { type: 'contacts', contacts: [{
+    name: { formatted_name: `${c.nombre} ${c.apellido || ''}`.trim(), first_name: c.nombre, ...(c.apellido ? { last_name: c.apellido } : {}) },
+    ...(c.telefono ? { phones: [{ phone: c.telefono, type: 'WORK', wa_id: c.telefono.replace(/\D/g, '') }] } : {}),
+    ...(c.email ? { emails: [{ email: c.email, type: 'WORK' }] } : {}),
+    ...(c.empresa || c.puesto ? { org: { ...(c.empresa ? { company: c.empresa } : {}), ...(c.puesto ? { title: c.puesto } : {}) } } : {}),
+  }] }, citaWamid);
+
+export const enviarSticker = (telefono: string, ref: { link?: string; id?: string }) =>
+  mensaje(telefono, { type: 'sticker', sticker: ref.id ? { id: ref.id } : { link: ref.link } });
+
+export const enviarReaccion = (telefono: string, wamid: string, emoji: string) =>
+  mensaje(telefono, { type: 'reaction', reaction: { message_id: wamid, emoji } });   // emoji '' = quitar
+
 /** Confirmación de lectura (palomitas azules) y, opcional, "escribiendo…". */
 export async function marcarLeido(wamid: string, escribiendo = false) {
   return meta(`/${PHONE_NUMBER_ID}/messages`, {

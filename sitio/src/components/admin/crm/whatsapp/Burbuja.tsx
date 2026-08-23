@@ -99,14 +99,18 @@ const ETIQUETA_INTERACTIVO: Record<string, string> = { button_reply: 'Eligió el
 
 const IcoReenviar = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m15 7 5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 12H10a6 6 0 0 0-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar }: {
-  item: any; q: string; conRing: boolean; chips?: string[] | null;
+const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
+
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar }: {
+  item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   onLightbox: (src: string) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
   onReenviar?: (item: any) => void;
+  onReaccionar?: (item: any, emoji: string) => void;
 }) {
+  const [pickReac, setPickReac] = useState(false);
   const saliente = item.direccion === 'saliente';
   const claro = saliente;
   const src = srcMedia(item);
@@ -175,6 +179,23 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
         ))}
       </span>
     );
+  } else if (tipo === 'interactive' && item.direccion === 'saliente' && item.metadata?.enviado) {
+    const e = item.metadata.enviado;
+    const btn = (t: string, k: string | number) => <span key={k} style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontWeight: 700, marginTop: 4 }}>{t}</span>;
+    contenido = (<>
+      {e.header && <b style={{ display: 'block', marginBottom: 3 }}>{e.header}</b>}
+      {e.cuerpo && <span style={{ whiteSpace: 'pre-wrap', display: 'block' }}><Resaltado texto={e.cuerpo} q={q} claro={claro} /></span>}
+      {e.footer && <span style={{ display: 'block', fontSize: 10, opacity: .75, marginTop: 3 }}>{e.footer}</span>}
+      {e.tipo === 'botones' && e.botones?.map((b: any, i: number) => btn(b.titulo, i))}
+      {e.tipo === 'lista' && <>{btn(`≡ ${e.boton || 'Elegir'}`, 'l')}<span style={{ display: 'block', fontSize: 10, opacity: .75, marginTop: 3 }}>{e.secciones?.reduce((a: number, s: any) => a + (s.filas?.length || 0), 0)} opciones</span></>}
+      {e.tipo === 'cta_url' && btn(`↗ ${e.texto_boton || 'Abrir'}`, 'u')}
+      {e.tipo === 'pedir_ubicacion' && btn('Enviar ubicación', 'p')}
+      {e.tipo === 'pedir_contacto' && btn('Compartir mi contacto', 'pc')}
+      {e.tipo === 'permiso_llamada' && btn('Permitir llamadas', 'pl')}
+      {e.tipo === 'catalogo' && btn('Ver catálogo', 'cat')}
+      {e.tipo === 'carrusel' && <span style={{ display: 'flex', gap: 4, marginTop: 4, overflowX: 'auto' }}>{e.tarjetas?.map((t: any, i: number) => <span key={i} style={{ flexShrink: 0, width: 96, background: 'rgba(255,255,255,.15)', borderRadius: 8, overflow: 'hidden' }}><img src={t.imagen} alt="" style={{ width: 96, height: 64, objectFit: 'cover', display: 'block' }} /><span style={{ display: 'block', fontSize: 10, padding: '3px 5px', lineHeight: 1.3 }}>{t.cuerpo}</span></span>)}</span>}
+      {(e.tipo === 'producto' || e.tipo === 'productos') && btn(e.tipo === 'producto' ? 'Ver producto' : 'Ver productos', 'pr')}
+    </>);
   } else if (tipo === 'interactive' || tipo === 'button') {
     contenido = (<>
       <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>{ETIQUETA_INTERACTIVO[item.metadata?.interactivo] || 'Respuesta'}</span>
@@ -222,6 +243,18 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
               style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
               <IcoResponder />
             </button>}
+            {onReaccionar && item.direccion === 'entrante' && (
+              <span style={{ position: 'relative', display: 'inline-flex' }}>
+                <button onClick={() => setPickReac(p => !p)} title="Reaccionar" aria-label="Reaccionar"
+                  style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)', fontSize: 13 }}>☺</button>
+                {pickReac && (
+                  <span style={{ position: 'absolute', bottom: '110%', left: 0, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 999, padding: '3px 6px', display: 'flex', gap: 2, boxShadow: '0 6px 20px rgba(0,0,0,.15)', zIndex: 5 }}>
+                    {EMOJIS_RAPIDOS.map(e => <button key={e} onClick={() => { setPickReac(false); onReaccionar(item, e); }} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, padding: '0 2px' }}>{e}</button>)}
+                    {chips?.some(c => c.dir === 'saliente') && <button onClick={() => { setPickReac(false); onReaccionar(item, ''); }} title="Quitar mi reacción" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 11, color: C.g400, padding: '0 4px' }}>quitar</button>}
+                  </span>
+                )}
+              </span>
+            )}
             {onReenviar && (item.cuerpo || item.transcript || item.media_url) && <button onClick={() => onReenviar(item)} title="Reenviar a otra conversación" aria-label="Reenviar"
               style={{ border: 'none', background: '#fff', borderRadius: 999, width: 24, height: 24, cursor: 'pointer', color: C.g400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.12)' }}>
               <IcoReenviar />
@@ -231,8 +264,8 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
       </span>
       {chips && chips.length > 0 && (
         <span style={{ display: 'flex', gap: 3, marginTop: -6, zIndex: 1, padding: '0 6px' }}>
-          {chips.map((emoji: string, i: number) => (
-            <span key={i} style={{ background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 999, padding: '1px 6px', fontSize: 12, boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>{emoji}</span>
+          {chips.map((c, i) => (
+            <span key={i} title={c.dir === 'saliente' ? 'Tu reacción' : 'Reacción del cliente'} style={{ background: '#fff', border: `1px solid ${c.dir === 'saliente' ? C.emerald500 : C.g200}`, borderRadius: 999, padding: '1px 6px', fontSize: 12, boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>{c.emoji}</span>
           ))}
         </span>
       )}
