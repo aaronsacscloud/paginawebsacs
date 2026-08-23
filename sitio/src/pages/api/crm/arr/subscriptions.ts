@@ -216,6 +216,25 @@ export const PUT: APIRoute = async ({ request }) => {
     if (body[k] === undefined) delete upd[k];
   }
 
+  // ── Los campos de VALOR tampoco se pisan si no vienen ──
+  // `normalizar()` arma el registro completo desde cero, así que un PUT PARCIAL
+  // —cancelar, por ejemplo, que solo manda id/estado/razón— dejaba
+  // `nombre_plan` en '', `ciclo` en 'mensual' y precio/mrr/arr en 0. Se perdía
+  // QUÉ tenía contratado el cliente y CUÁNTO, que es justo lo que el reporte de
+  // bajas necesita para decir cuánto MRR se fue: por eso el tablero decía
+  // "3 bajas · $0 de ARR".
+  const cicloEf = body.ciclo === undefined ? prev.ciclo : upd.ciclo;
+  const precioEf = body.precio === undefined ? Number(prev.precio) || 0 : upd.precio;
+  const mrrEf = cicloEf === 'anual' ? precioEf / 12 : cicloEf === 'vitalicia' ? 0 : precioEf;
+  upd.ciclo = cicloEf;
+  upd.precio = precioEf;
+  upd.mrr = Math.round(mrrEf * 100) / 100;
+  upd.arr = Math.round(mrrEf * 12 * 100) / 100;
+  if (body.nombre_plan === undefined) upd.nombre_plan = prev.nombre_plan;
+  if (body.monto_proximo === undefined) {
+    upd.monto_proximo = cicloEf === 'vitalicia' ? null : (prev.monto_proximo ?? precioEf ?? null);
+  }
+
   // ── Cancelación: hoy vs al vencer ──
   // "Al vencer" solo tiene sentido si hay un periodo pagado corriendo (activa):
   // sigue activa hasta que el cron la apague en proxima_factura. Si no está
