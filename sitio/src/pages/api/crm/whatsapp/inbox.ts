@@ -179,6 +179,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   );
   const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
+    if (c.virtual) continue;   // los contactos sin conversación no inflan las bandejas
     if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
     counts.todas++;
     if (requiereAccion(c)) counts.accion++;
