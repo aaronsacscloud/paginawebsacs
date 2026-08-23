@@ -5,6 +5,7 @@
 // de la derecha imita el teléfono para que el agente vea lo que verá el cliente.
 import { useEffect, useState } from 'react';
 import { C } from './estilo';
+import SubirImagen from '../ui/SubirImagen';
 
 type Tab = 'botones' | 'lista' | 'cta_url' | 'pedir_ubicacion' | 'pedir_contacto' | 'ubicacion' | 'contacto' | 'carrusel' | 'producto' | 'catalogo';
 const TABS: { id: Tab; l: string; d: string }[] = [
@@ -205,7 +206,8 @@ export default function ModalInteractivo({ onCerrar, onEnviar, equipo, yo, conta
               {tarjetas.map((t, i) => (
                 <div key={i} style={{ border: `1px solid ${C.g100}`, borderRadius: 10, padding: 10, marginTop: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}><b style={{ fontSize: 11 }}>Tarjeta {i + 1}</b>{tarjetas.length > 2 && <button onClick={() => setTarjetas(tarjetas.filter((_, j) => j !== i))} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400 }}>✕</button>}</div>
-                  <input style={inp} value={t.imagen} onChange={e => setTarjetas(tarjetas.map((x, j) => j === i ? { ...x, imagen: e.target.value } : x))} placeholder="URL de la imagen (https, jpg/png)" />
+                  <SubirImagen valor={t.imagen} preset="carrusel" carpeta="carrusel" alto={100}
+                    onCambio={u => setTarjetas(tarjetas.map((x, j) => j === i ? { ...x, imagen: u || '' } : x))} />
                   <input style={{ ...inp, marginTop: 6 }} value={t.cuerpo} maxLength={160} onChange={e => setTarjetas(tarjetas.map((x, j) => j === i ? { ...x, cuerpo: e.target.value } : x))} placeholder="Texto de la tarjeta" />
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 6, marginTop: 6 }}>
                     <input style={inp} value={t.texto_boton} maxLength={20} onChange={e => setTarjetas(tarjetas.map((x, j) => j === i ? { ...x, texto_boton: e.target.value } : x))} placeholder="Botón" />

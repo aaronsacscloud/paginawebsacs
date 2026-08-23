@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Cargando from '../ui/Cargando';
 import { S, Aviso } from '../email/ui';
 import { C } from './estilo';
+import SubirImagen from '../ui/SubirImagen';
 
 const inp: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 11px', fontSize: 13, fontFamily: 'inherit', background: '#fff' };
 const label = (): React.CSSProperties => ({ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', margin: '10px 0 4px' });
@@ -112,15 +113,18 @@ function Perfil() {
   useEffect(() => { fetch('/api/crm/whatsapp/numero?perfil=1').then(r => r.json()).then(j => setP({ about: '', address: '', description: '', email: '', websites: [], vertical: 'OTHER', ...(j.perfil || {}) })).catch(() => setP({})); }, []);
   if (!p) return <div style={S.card}><Cargando texto="Cargando perfil…" /></div>;
   const guardar = async () => { setMsg(''); const r = await fetch('/api/crm/whatsapp/numero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'perfil', about: p.about, address: p.address, description: p.description, email: p.email, websites: p.websites, vertical: p.vertical }) }).then(x => x.json()); setMsg(r.error || 'Perfil guardado en Meta.'); };
-  const subirFoto = async () => { setMsg(''); const r = await fetch('/api/crm/whatsapp/numero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'foto', url: foto }) }).then(x => x.json()); setMsg(r.error || 'Foto actualizada.'); };
+  const subirFotoCon = async (url: string) => { setMsg(''); const r = await fetch('/api/crm/whatsapp/numero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'foto', url }) }).then(x => x.json()); setMsg(r.error || 'Foto actualizada en WhatsApp.'); };
   return (
     <div style={S.card}>
       <b style={{ fontSize: 13 }}>Perfil del negocio</b>
       <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 0' }}>Lo que el cliente ve al tocar el nombre en WhatsApp.</p>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
-        {p.profile_picture_url ? <img src={p.profile_picture_url} alt="" style={{ width: 48, height: 48, borderRadius: 999, objectFit: 'cover' }} /> : <span style={{ width: 48, height: 48, borderRadius: 999, background: C.g100, display: 'inline-block' }} />}
-        <input style={inp} value={foto} onChange={e => setFoto(e.target.value)} placeholder="URL pública de la foto (jpg/png cuadrada)" />
-        <button style={S.btnG} onClick={subirFoto}>Subir</button>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginTop: 8 }}>
+        {p.profile_picture_url ? <img src={p.profile_picture_url} alt="" style={{ width: 56, height: 56, borderRadius: 999, objectFit: 'cover', flexShrink: 0 }} /> : <span style={{ width: 56, height: 56, borderRadius: 999, background: C.g100, display: 'inline-block', flexShrink: 0 }} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <SubirImagen valor={foto || null} preset="perfil" carpeta="perfil" alto={110} etiqueta="Foto de perfil"
+            ayuda="Se recorta cuadrada a 640×640 y se comprime; así la pide WhatsApp"
+            onCambio={u => { setFoto(u || ''); if (u) setTimeout(() => subirFotoCon(u), 50); }} />
+        </div>
       </div>
       <label style={label()}>Frase (about) · {(p.about || '').length}/139</label><input style={inp} maxLength={139} value={p.about || ''} onChange={e => setP({ ...p, about: e.target.value })} placeholder="El sistema para tu negocio" />
       <label style={label()}>Descripción · {(p.description || '').length}/512</label><textarea style={{ ...inp, minHeight: 60 }} maxLength={512} value={p.description || ''} onChange={e => setP({ ...p, description: e.target.value })} />

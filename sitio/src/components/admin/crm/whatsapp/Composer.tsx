@@ -8,6 +8,7 @@ import { Corazones } from '../ui/Cargando';
 import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
+import { optimizarImagen } from '../../../../lib/crm/imagen';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
@@ -155,10 +156,17 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     if (mb > lim) errs.push(`Archivo excede ${lim} MB (límite para ${cls})`);
     return errs;
   };
-  const agregarArchivos = (files: FileList | null) => {
+  const agregarArchivos = async (files: FileList | null) => {
     if (!files) return;
-    setStaged(s => [...s, ...Array.from(files).map(f => ({ file: f, url: URL.createObjectURL(f), errores: validar(f) }))]);
     setPop(null);
+    for (const f of Array.from(files)) {
+      let file = f;
+      if (/^image\//.test(f.type) && !/svg|gif/.test(f.type)) {
+        // Optimiza en el navegador: llega ligera a WhatsApp y no topa el límite de 5 MB.
+        try { const o = await optimizarImagen(f, 'libre'); file = new File([o.blob], o.nombre, { type: o.mime }); } catch { /* se manda tal cual */ }
+      }
+      setStaged(s => [...s, { file, url: URL.createObjectURL(file), errores: validar(file) }]);
+    }
   };
 
   const enviar = async () => {
@@ -760,7 +768,13 @@ function Biblioteca({ onClose, onElegir }: { onClose: () => void; onElegir: (a: 
   const fmtB = (b: number) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`;
   const subir = async (f: File | null) => {
     if (!f) return; setSubiendo(true);
-    const fd = new FormData(); fd.append('file', f); fd.append('nombre', f.name);
+    // Las imágenes se optimizan en el navegador antes de subir (nada de 8 MB
+    // de una foto de celular ocupando la biblioteca y tardando en enviarse).
+    let blob: Blob = f, nombre = f.name;
+    if (/^image\//.test(f.type) && !/svg/.test(f.type)) {
+      try { const o = await optimizarImagen(f, 'libre'); blob = o.blob; nombre = o.nombre; } catch { /* si falla, se sube tal cual */ }
+    }
+    const fd = new FormData(); fd.append('file', new File([blob], nombre, { type: blob.type || f.type })); fd.append('nombre', nombre);
     await fetch('/api/crm/whatsapp/media', { method: 'POST', body: fd }).catch(() => {});
     setSubiendo(false); cargar();
   };

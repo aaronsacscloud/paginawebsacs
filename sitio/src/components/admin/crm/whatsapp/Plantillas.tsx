@@ -7,6 +7,7 @@ import Cargando, { Corazones } from '../ui/Cargando';
 import { S, Tag, Aviso, Vacio, chip } from '../email/ui';
 import { C, label } from './estilo';
 import MockupWhatsApp from './MockupWhatsApp';
+import SubirImagen from '../ui/SubirImagen';
 
 const TONO: Record<string, string> = { APPROVED: 'ok', PENDING: 'aviso', REJECTED: 'malo', PAUSED: 'malo', DISABLED: 'gris' };
 const MOTIVO: Record<string, string> = {
@@ -261,11 +262,18 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
           <input style={{ ...inp, borderColor: (form.header || '').length > LIM.header ? C.rojo300 : C.g200 }} value={form.header} onChange={e => setForm({ ...form, header: e.target.value })} />
         </>)}
         {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && (<>
-          <div style={{ fontSize: 11, color: C.g500, marginTop: 8 }}>Archivo de muestra para Meta (URL pública). Al enviar puedes cambiarlo por otro.</div>
+          <div style={{ fontSize: 11, color: C.g500, marginTop: 8 }}>Archivo de muestra para Meta. Al enviar puedes cambiarlo por otro.</div>
+          {ht === 'IMAGE' ? (
+            <div style={{ marginTop: 4 }}>
+              <SubirImagen valor={form.header_media_url || null} preset="plantilla_header" carpeta="plantillas" alto={120}
+                ayuda="Se ajusta a 1200×628 (el formato que Meta muestra en el encabezado)"
+                onCambio={u => setForm({ ...form, header_media_url: u || '' })} />
+            </div>
+          ) : (
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-            <input style={inp} value={form.header_media_url || ''} onChange={e => setForm({ ...form, header_media_url: e.target.value })} placeholder={ht === 'IMAGE' ? 'https://…/portada.jpg' : ht === 'VIDEO' ? 'https://…/demo.mp4' : 'https://…/brochure.pdf'} />
+            <input style={inp} value={form.header_media_url || ''} onChange={e => setForm({ ...form, header_media_url: e.target.value })} placeholder={ht === 'VIDEO' ? 'https://…/demo.mp4' : 'https://…/brochure.pdf'} />
             <button style={{ ...S.btnG, whiteSpace: 'nowrap' }} onClick={() => { const i = document.createElement('input'); i.type = 'file'; i.accept = ht === 'IMAGE' ? 'image/*' : ht === 'VIDEO' ? 'video/mp4' : '.pdf'; i.onchange = async () => { const f = i.files?.[0]; if (!f) return; const fd = new FormData(); fd.append('file', f); fd.append('nombre', f.name); fd.append('categoria', 'plantillas'); const r = await fetch('/api/crm/whatsapp/media', { method: 'POST', body: fd }).then(x => x.json()).catch(() => null); if (r?.archivo?.url || r?.url) setForm({ ...form, header_media_url: r.archivo?.url || r.url }); }; i.click(); }}>Subir</button>
-          </div>
+          </div>)}
         </>)}
         {ht === 'LOCATION' && <div style={{ fontSize: 11, color: C.g500, marginTop: 6 }}>La ubicación se elige al enviar (lat/lng + nombre).</div>}
 
@@ -416,10 +424,16 @@ function EditorSnippet({ form, setForm, onGuardado, onCancelar }: { form: any; s
               <button key={t.v} onClick={() => setForm({ ...form, media_tipo: t.v })} style={{ border: `1px solid ${form.media_tipo === t.v ? C.emerald500 : C.g200}`, background: form.media_tipo === t.v ? C.emerald50 : '#fff', color: form.media_tipo === t.v ? C.emerald700 : C.g500, borderRadius: 8, padding: '5px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t.l}</button>
             ))}</div></div>
         </div>
-        {form.media_tipo !== 'text' && (<>
+        {form.media_tipo === 'image' ? (
+          <div style={{ margin: '12px 0 4px' }}>
+            <SubirImagen valor={form.media_url || null} preset="libre" carpeta="snippets" alto={120} etiqueta="Imagen del snippet"
+              ayuda="Se optimiza sola (lado largo 1600 px) y se sube; también puedes pegar una URL"
+              onCambio={u => setForm({ ...form, media_url: u || '' })} />
+          </div>
+        ) : form.media_tipo !== 'text' ? (<>
           <label style={{ ...label(), display: 'block', margin: '12px 0 4px' }}>URL del archivo</label>
           <input style={inp} value={form.media_url || ''} onChange={e => setForm({ ...form, media_url: e.target.value })} placeholder="https://…" />
-        </>)}
+        </>) : null}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Encabezado</label><Contador n={(form.header || '').length} max={LIM.header} /></div>
         <input style={{ ...inp, borderColor: (form.header || '').length > LIM.header ? C.rojo300 : C.g200 }} value={form.header || ''} onChange={e => setForm({ ...form, header: e.target.value })} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Texto</label><Contador n={(form.texto || '').length} max={LIM.cuerpo} /></div>
