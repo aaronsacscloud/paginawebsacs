@@ -79,8 +79,15 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
     let vivo = true;
     (async () => {
       for (const v of vistas) {
-        if (!v.config?.condiciones) continue;
-        const j = await fetch(`/api/crm/whatsapp/inbox?vista=${encodeURIComponent(JSON.stringify(v.config))}&limit=1`)
+        // Vistas v3 (sin condiciones) guardan filtros planos: se cuentan con su propio formato.
+        let qs: string;
+        if (v.config?.condiciones) qs = `vista=${encodeURIComponent(JSON.stringify(v.config))}`;
+        else {
+          const p = new URLSearchParams();
+          for (const k of ['filtro', 'etapa', 'plan', 'tipo', 'estado', 'asignado', 'etiqueta', 'sin_contacto', 'search']) if (v.config?.[k]) p.set(k, String(v.config[k]));
+          qs = p.toString();
+        }
+        const j = await fetch(`/api/crm/whatsapp/inbox?${qs}&limit=1`)
           .then(r => r.json()).catch(() => null);
         if (!vivo) return;
         if (j) setContadores(prev => {
@@ -195,7 +202,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
                   <button style={{ ...fila(vistaActiva?.id === v.id), flex: 1, minWidth: 0 }}
                     onClick={() => onVista(vistaActiva?.id === v.id ? null : v)}
                     onDoubleClick={() => setModalVista({ vista: v, seccionId: sec.id })}
-                    title="Doble clic para editar">
+                    title={`${v.nombre} · doble clic para editar`}>
                     <span style={{ fontSize: 13 }}>{v.config?.emoji || '⭐'}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.nombre}</span>
                     {v.compartida === false && <span title="Vista personal (solo tú la ves)" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '0 5px' }}>privada</span>}

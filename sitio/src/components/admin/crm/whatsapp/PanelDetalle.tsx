@@ -442,7 +442,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
               <div style={{ ...label(10), margin: '8px 0 2px' }}>{mes}</div>
               {items.map((t: any, i: number) => (
                 <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, lineHeight: 1.45 }}>
-                  <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{fecha(t.fecha || t.created_at)}</span>
+                  <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums', width: 44 }}>{new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
                   <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
                 </div>
               ))}
