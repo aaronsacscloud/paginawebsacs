@@ -213,7 +213,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               {esBoundary ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
                   <span style={sepOscuro.linea} />
-                  <span style={sepOscuro.chip}>✓ Conversación resuelta{item.autor ? ` · ${item.autor}` : ''}</span>
+                  <span style={{ ...sepOscuro.chip, maxWidth: 520, whiteSpace: 'normal', textAlign: 'center' }}>✓ Resuelta{item.autor ? ` por ${item.autor}` : ''}{String(item.detalle || '').replace(/^Marcada como resuelta/i, '')}</span>
                   <span style={sepOscuro.linea} />
                 </span>
               ) : item._clase === 'evento' ? (

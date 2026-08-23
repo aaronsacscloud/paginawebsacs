@@ -147,7 +147,8 @@ export async function marcarLeido(wamid: string, escribiendo = false) {
  */
 export async function descargarMedia(mediaId: string): Promise<{ bytes: ArrayBuffer; mime: string } | null> {
   if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
-  const info = await meta(`/${mediaId}`);
+  // Kapso necesita saber de qué número es la media para enrutar a Meta.
+  const info = await meta(`/${mediaId}?phone_number_id=${PHONE_NUMBER_ID}`);
   const url = info?.url;
   if (!url) return null;
   const res = await fetch(url, { headers: { 'X-API-Key': API_KEY } });

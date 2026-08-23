@@ -110,6 +110,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   const tipo = item.tipo || 'text';
   const cita = item.metadata?.cita?.wamid ? porWamid.get(item.metadata.cita.wamid) : null;
   const fondoSuave = saliente ? 'rgba(255,255,255,.15)' : C.g50;
+  const [mediaRota, setMediaRota] = useState(false);
   const tinta = saliente ? '#fff' : C.azulTinta;
 
   let contenido: any;
@@ -125,14 +126,14 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     contenido = src ? <PlayerAudio src={src} claro={claro} /> : <span style={{ opacity: .7 }}>{item.metadata?.voz ? 'Nota de voz' : 'Audio'} (sin archivo)</span>;
   } else if (tipo === 'image' || tipo === 'sticker') {
     contenido = (<>
-      {src ? <img src={src} alt={item.cuerpo || ''} onClick={() => onLightbox(src)} loading="lazy"
+      {src && !mediaRota ? <img src={src} alt={item.cuerpo || ''} onClick={() => onLightbox(src)} loading="lazy" onError={() => setMediaRota(true)}
         style={{ borderRadius: 10, maxHeight: tipo === 'sticker' ? 140 : 256, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: item.cuerpo ? 6 : 0, background: tipo === 'sticker' ? 'transparent' : C.g100 }} />
-        : <span style={{ opacity: .7 }}>Imagen no disponible</span>}
+        : <span style={{ opacity: .7, fontStyle: 'italic' }}>{tipo === 'sticker' ? 'Sticker' : 'Imagen'} no disponible (Meta la conserva 30 días)</span>}
       {item.cuerpo && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
     </>);
   } else if (tipo === 'video') {
     contenido = (<>
-      {src ? <video src={src} controls preload="metadata" style={{ borderRadius: 10, maxHeight: 256, maxWidth: '100%', display: 'block', marginBottom: item.cuerpo ? 6 : 0, background: '#000' }} />
+      {src && !mediaRota ? <video src={src} controls preload="metadata" onError={() => setMediaRota(true)} style={{ borderRadius: 10, maxHeight: 256, maxWidth: '100%', display: 'block', marginBottom: item.cuerpo ? 6 : 0, background: '#000' }} />
         : <span style={{ opacity: .7 }}>Video no disponible</span>}
       {item.cuerpo && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
     </>);

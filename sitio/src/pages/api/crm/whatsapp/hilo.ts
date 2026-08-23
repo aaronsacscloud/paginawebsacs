@@ -99,7 +99,10 @@ export const GET: APIRoute = async ({ url }) => {
   if (before) return json({ mensajes, hay_mas: hayMas });
 
   // Ventana de 24 h desde el último entrante de WhatsApp.
-  const ultimoEntrante = [...(mensajes || [])].reverse().find((m: any) => m.direccion === 'entrante');
+  // Por HORA REAL del mensaje, no por orden de llegada: un replay viejo que
+  // entra al final no puede cerrar la ventana.
+  const entrantes = (mensajes || []).filter((m: any) => m.direccion === 'entrante');
+  const ultimoEntrante = entrantes.reduce((u: any, m: any) => (!u || new Date(m.enviado_at || m.created_at) > new Date(u.enviado_at || u.created_at)) ? m : u, null as any);
   const base = ultimoEntrante ? new Date(ultimoEntrante.enviado_at || ultimoEntrante.created_at).getTime() : 0;
   const expira = base + 24 * 3600 * 1000;
   const ventana = { abierta: base > 0 && Date.now() < expira, expira_at: base ? new Date(expira).toISOString() : null };
