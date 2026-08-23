@@ -49,9 +49,9 @@ export async function sincronizarAsignacionKapso(kapsoConversationId: string | n
     return { ok: true };
   }
   const { data: tm } = await supabase.from('team_members').select('email, nombre').eq('id', teamMemberId).maybeSingle();
-  const u = (await usuariosKapso()).find(x => x.email?.toLowerCase() === (tm?.email || '').toLowerCase());
+  const u: any = (await usuariosKapso()).find(x => x.email?.toLowerCase() === (tm?.email || '').toLowerCase());
   if (!u) return { ok: false, motivo: `${tm?.nombre || 'El agente'} no es usuario del proyecto en Kapso (${tm?.email}); invítalo en Kapso con ese correo para que el inbox de Kapso también lo vea asignado.` };
-  const body = { assignment: { user_id: u.id, notes: nota || 'Asignado desde el CRM de Sacscloud' } };
+  const body = { assignment: { user_id: u.user_id || u.id, notes: nota || 'Asignado desde el CRM de Sacscloud' } };
   const r = activa
     ? await req(PLATFORM, `/whatsapp/conversations/${kapsoConversationId}/assignments/${activa.id}`, { method: 'PATCH', body: JSON.stringify(body) })
     : await req(PLATFORM, `/whatsapp/conversations/${kapsoConversationId}/assignments`, { method: 'POST', body: JSON.stringify(body) });
@@ -97,5 +97,12 @@ export async function bloqueadosKapso(): Promise<string[]> {
 export async function bloquearKapso(telefono: string, bloquear: boolean): Promise<{ ok: boolean; motivo?: string }> {
   const tel = dig(telefono); if (!tel) return { ok: false, motivo: 'Teléfono inválido' };
   const r = await req(META, `/${PHONE_NUMBER_ID}/block_users`, { method: bloquear ? 'POST' : 'DELETE', body: JSON.stringify({ messaging_product: 'whatsapp', block_users: [{ user: tel }] }) });
+  // Meta responde 200 aunque falle: hay que mirar failed_users. El caso típico
+  // es 131047: solo se puede bloquear a quien escribió en las últimas 24 h.
+  const fallidos: any[] = r.data?.block_users?.failed_users || [];
+  if (fallidos.length) {
+    const code = fallidos[0]?.errors?.[0]?.code;
+    return { ok: false, motivo: code === 131047 ? 'WhatsApp solo permite bloquear a un número que te escribió en las últimas 24 horas.' : (fallidos[0]?.errors?.[0]?.message || 'Meta rechazó el bloqueo') };
+  }
   return r.ok ? { ok: true } : { ok: false, motivo: JSON.stringify(r.data).slice(0, 200) };
 }
