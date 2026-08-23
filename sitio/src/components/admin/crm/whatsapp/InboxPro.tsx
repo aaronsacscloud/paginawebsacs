@@ -196,12 +196,14 @@ export default function InboxPro() {
   }
 
   // ── Escritorio: 4 zonas (3 si el ancho no da para el detalle) ──
+  // Pantalla COMPLETA: el inbox es una app, no una tarjeta — ocupa todo lo
+  // que el shell deja (paddingTop 22 del contenido) sin marco ni sub-tabs.
   return (
-    <div style={{ maxWidth: 1440, margin: '0 auto', padding: '16px 18px 0' }}>
+    <div style={{ width: '100%' }}>
       <div style={{
-        display: 'grid', gap: 0, background: '#fff', border: '1px solid #eeeef1', borderRadius: 12,
-        overflow: 'hidden', height: 'calc(100dvh - 170px)', minHeight: 480,
-        gridTemplateColumns: isCompact ? '196px 300px minmax(0,1fr)' : '196px 316px minmax(0,1fr) 308px',
+        display: 'grid', gap: 0, background: '#fff', borderTop: '1px solid #eeeef1',
+        overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
+        gridTemplateColumns: isCompact ? '208px 310px minmax(0,1fr)' : '216px 330px minmax(0,1fr) 320px',
       }}>
         <RailInbox counts={counts} filtros={filtros} setFiltros={setFiltros} />
         <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}

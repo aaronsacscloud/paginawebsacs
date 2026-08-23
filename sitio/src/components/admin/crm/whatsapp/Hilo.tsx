@@ -59,7 +59,7 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
   let diaPrevio = '';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, borderLeft: mobile ? 'none' : '1px solid #f0eff3', height: mobile ? 'calc(100dvh - 120px)' : undefined }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, borderLeft: mobile ? 'none' : '1px solid #f0eff3', height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderBottom: '1px solid #f0eff3', background: '#fdfcff', flexWrap: 'wrap' }}>
         {onBack && (
