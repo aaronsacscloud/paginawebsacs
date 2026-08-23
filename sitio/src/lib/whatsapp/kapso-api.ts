@@ -92,10 +92,15 @@ export async function listarWebhooks() {
   return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`);
 }
 
-export async function registrarWebhook(url: string) {
+export async function registrarWebhook(url: string, secreto: string) {
+  // El wrapper es `whatsapp_webhook` (con `webhook` responde missing_parameter).
+  // `secret_key` se manda explícito para que la firma X-Webhook-Signature se
+  // verifique contra NUESTRO KAPSO_WEBHOOK_SECRET y no contra uno generado.
   return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`, {
     method: 'POST',
-    body: JSON.stringify({ webhook: { url, events: EVENTOS, active: true } }),
+    body: JSON.stringify({
+      whatsapp_webhook: { url, kind: 'kapso', secret_key: secreto, active: true, events: EVENTOS },
+    }),
   });
 }
 

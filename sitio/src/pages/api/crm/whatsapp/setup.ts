@@ -80,7 +80,7 @@ export const POST: APIRoute = async () => {
     const lista = await listarWebhooks().catch(() => []);
     const items = Array.isArray(lista) ? lista : (lista?.webhooks ?? []);
     const yaEsta = items.find((w: any) => String(w.url || '').startsWith(destino.split('?')[0]));
-    if (!yaEsta) await registrarWebhook(destino);
+    if (!yaEsta) await registrarWebhook(destino, (import.meta.env.KAPSO_WEBHOOK_SECRET || '').trim());
 
     await supabase.from('wa_config').upsert({
       id: 1, webhook_registrado_at: new Date().toISOString(), updated_at: new Date().toISOString(),
