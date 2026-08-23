@@ -22,8 +22,8 @@ export const L = {
   header: 44,           // h-11: TODOS los headers de columna, alineados al píxel
   sidebar: 224,         // w-56
   sidebarColapsado: 64, // w-16
-  lista: 320,           // w-80
-  detalle: 340,         // antes 288: los datos del cliente se partían (teléfono, próximo paso)
+  lista: 300,           // cede 20px al detalle
+  detalle: 400,         // los datos de Info necesitan aire (antes 288 → 340 → 400)
   railito: 44,          // w-11: barra de iconos del panel derecho
 };
 
