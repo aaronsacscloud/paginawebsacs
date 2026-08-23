@@ -162,12 +162,49 @@ export const GET: APIRoute = async ({ request, url }) => {
     });
     eventos.sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
   }
+  // 11) Campañas EN el hilo: los masivos de WhatsApp y los correos de campaña
+  // aparecen en la conversación a la hora en que le llegaron a ESTE contacto,
+  // y los programados que aún no salen se avisan aparte (banner del hilo).
+  const campanasProximas: any[] = [];
+  if (conv.telefono) {
+    const { data: dests } = await supabase.from('wa_broadcast_destinatarios')
+      .select('id, telefono, status, delivered_at, read_at, error_message, broadcast_id, wa_broadcasts(id, nombre, plantilla_nombre, status, scheduled_at, created_at, sent_at)')
+      .eq('telefono', conv.telefono).limit(25);
+    for (const d of dests || []) {
+      const bc: any = (d as any).wa_broadcasts;
+      if (!bc || bc.status === 'borrador') continue;
+      if (bc.status === 'programado' && bc.scheduled_at) {
+        if (new Date(bc.scheduled_at) > new Date()) campanasProximas.push({ destinatario_id: d.id, broadcast_id: bc.id, nombre: bc.nombre, plantilla: bc.plantilla_nombre, scheduled_at: bc.scheduled_at });
+        continue;
+      }
+      const cuando = d.delivered_at || bc.sent_at || bc.scheduled_at || bc.created_at;
+      const que = d.status === 'failed' ? `no le llegó${d.error_message ? ` (${d.error_message})` : ''}`
+        : d.status === 'suppressed' ? 'se omitió (pidió no recibir marketing)'
+        : (d as any).read_at ? 'le llegó y lo leyó' : d.delivered_at ? 'le llegó' : d.status === 'sent' ? 'se le envió' : 'pendiente de salir';
+      eventos.push({ id: `bc-${d.id}`, tipo: 'campana', created_at: cuando, autor: null,
+        detalle: `Masivo «${bc.nombre}»${bc.plantilla_nombre ? ` · plantilla ${bc.plantilla_nombre}` : ''}: ${que}` });
+    }
+  }
+  if (conv.contact_id) {
+    const { data: envs } = await supabase.from('email_sends')
+      .select('id, estado, sent_at, opened_at, clicked_at, created_at, email_templates(nombre, asunto)')
+      .eq('contact_id', conv.contact_id).order('created_at', { ascending: false }).limit(15);
+    for (const en of envs || []) {
+      if (['queued', 'failed'].includes(String(en.estado))) continue;
+      const t: any = (en as any).email_templates;
+      const que = en.clicked_at ? 'lo abrió y dio clic' : en.opened_at ? 'lo abrió' : en.estado === 'bounced' ? 'rebotó' : 'enviado';
+      eventos.push({ id: `em-${en.id}`, tipo: 'campana', created_at: en.sent_at || en.created_at, autor: null,
+        detalle: `Correo «${t?.asunto || t?.nombre || 'campaña'}»: ${que}` });
+    }
+  }
+  eventos.sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
+
   const sinLeer = convsEmail.filter(c => !c.leida).map(c => c.id);
   if (sinLeer.length) await supabase.from('email_conversations').update({ leida: true }).in('id', sinLeer);
 
   let marketing: any = null;
   if (conv.id && conv.telefono) marketing = await preferenciasMarketingKapso(conv.telefono).catch(() => null);
-  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, marketing, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
+  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, marketing, campanas_proximas: campanasProximas, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
 };
 
 export const PUT: APIRoute = async ({ request }) => {

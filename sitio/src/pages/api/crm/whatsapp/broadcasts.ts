@@ -16,8 +16,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import {
   crearBroadcast, agregarDestinatarios, enviarBroadcast, programarBroadcast,
-  obtenerBroadcast, listarDestinatarios, resolverTemplateId, sanearParam, KapsoError,
-} from '../../../../lib/whatsapp/kapso-api';
+  obtenerBroadcast, listarDestinatarios, resolverTemplateId, sanearParam, KapsoError, limpiarDestinatarios } from '../../../../lib/whatsapp/kapso-api';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 
 export const prerender = false;
@@ -143,6 +142,40 @@ export const POST: APIRoute = async ({ request }) => {
         status: 'enviando', sent_at: new Date().toISOString(), last_synced_at: null,
       }).eq('id', masivo.id);
       return json({ ok: true, status: 'enviando' });
+    } catch (e: any) {
+      return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
+    }
+  }
+
+  // ── Quitar UN destinatario de un masivo aún no enviado ──
+  // Kapso solo puede borrar TODOS los destinatarios, así que: limpiar → volver a
+  // agregar a todos menos este → reprogramar si estaba programado.
+  if (b.accion === 'quitar_destinatario') {
+    const { data: masivo } = await supabase.from('wa_broadcasts').select('*').eq('id', b.id).maybeSingle();
+    if (!masivo?.kapso_broadcast_id) return json({ error: 'Masivo no encontrado' }, 404);
+    if (!['borrador', 'programado'].includes(masivo.status)) return json({ error: `El masivo ya está ${masivo.status}: no se puede quitar a nadie` }, 409);
+    const tel = String(b.telefono || '');
+    if (!tel) return json({ error: 'Falta telefono' }, 400);
+    const { data: dests } = await supabase.from('wa_broadcast_destinatarios').select('*').eq('broadcast_id', masivo.id);
+    const quedan = (dests || []).filter(d => d.telefono !== tel);
+    if (quedan.length === (dests || []).length) return json({ error: 'Ese teléfono no está en el masivo' }, 404);
+    try {
+      await limpiarDestinatarios(masivo.kapso_broadcast_id);
+      if (quedan.length) await agregarDestinatarios(masivo.kapso_broadcast_id, quedan.map(d => ({
+        phone_number: d.telefono,
+        ...((d.params || []).length ? { template_components: [{ type: 'body', parameters: (d.params as string[]).map(pp => ({ type: 'text', text: pp })) }] } : {}),
+      })));
+      // El clear regresó el broadcast a draft: si estaba programado, se reprograma igual.
+      if (masivo.status === 'programado' && masivo.scheduled_at && quedan.length) {
+        await programarBroadcast(masivo.kapso_broadcast_id, masivo.scheduled_at);
+      }
+      await supabase.from('wa_broadcast_destinatarios').delete().eq('broadcast_id', masivo.id).eq('telefono', tel);
+      const sinNadie = !quedan.length;
+      await supabase.from('wa_broadcasts').update({
+        total: quedan.length,
+        ...(sinNadie ? { status: 'borrador', scheduled_at: null } : {}),
+      }).eq('id', masivo.id);
+      return json({ ok: true, quedan: quedan.length, ...(sinNadie ? { aviso: 'El masivo quedó sin destinatarios y volvió a borrador' } : {}) });
     } catch (e: any) {
       return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
     }

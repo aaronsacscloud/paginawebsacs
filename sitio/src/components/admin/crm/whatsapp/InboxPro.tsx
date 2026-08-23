@@ -79,6 +79,7 @@ export default function InboxPro() {
   useEffect(() => { paginasRef.current = 1; filtroCambio.current = true; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
   const activaRef = useRef(activa); activaRef.current = activa;
+  const hiloRef = useRef<any>(null);
   const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
     if (!a.wa && !a.email) return;   // fila virtual: no hay hilo que cargar
     const qs = a.wa ? `id=${a.wa}` : `email_id=${a.email}`;
@@ -87,6 +88,7 @@ export default function InboxPro() {
     // se descarta, si no pisa el hilo nuevo y el composer manda al chat equivocado.
     const act = activaRef.current;
     if (!act || (a.wa && act.wa !== a.wa) || (!a.wa && a.email && act.email !== a.email)) return;
+    if (j && !j.error) { hiloRef.current = j; } 
     if (j && !j.error) setHilo((prev: any) => {
       // Conserva los ecos optimistas que el servidor todavía no refleja (evita
       // que tu mensaje "parpadee" si el poll llega antes que el espejo).
@@ -206,6 +208,12 @@ export default function InboxPro() {
   const waId = () => activaRef.current?.wa || null;
 
   const api = {
+    quitarDeMasivo: async (broadcastId: string) => {
+      const tel = (listaRef.current || []).find((c: any) => c.id === activaRef.current?.id)?.telefono || hiloRef.current?.conversacion?.telefono;
+      const r = await fetch('/api/crm/whatsapp/broadcasts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'quitar_destinatario', id: broadcastId, telefono: tel }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      if (!r?.error) refrescar();
+      return r;
+    },
     enviarTexto: async (texto: string, cita?: string | null) => {
       // Eco optimista: la burbuja aparece YA (status pending); el refetch la
       // sustituye por la real con su wamid y sus palomitas.

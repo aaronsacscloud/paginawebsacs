@@ -223,6 +223,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         </div>
       )}
 
+      {(hilo?.campanas_proximas || []).map((cp: any) => (
+        <div key={cp.destinatario_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: C.moradoAgua, borderBottom: `1px solid #e2dcfb`, fontSize: 12, color: C.moradoTinta }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <b>Está en el masivo «{cp.nombre}»</b> programado para {new Date(cp.scheduled_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}{cp.plantilla ? ` · plantilla ${cp.plantilla}` : ''}
+          </span>
+          <button onClick={async () => { if (confirm(`¿Quitar a este contacto del masivo «${cp.nombre}»? Ya no le llegará ese envío.`)) { const r = await api.quitarDeMasivo?.(cp.broadcast_id); if (r?.error) alert(r.error); } }}
+            style={{ border: '1px solid #cfc5f6', background: '#fff', color: C.moradoTinta, borderRadius: 999, padding: '3px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Quitarlo de ese envío</button>
+        </div>
+      ))}
       {conv.alerta && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, color: C.rojo700, flexShrink: 0 }}>
           <span style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0 }} />
@@ -267,7 +276,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   <span style={sepOscuro.linea} />
                 </span>
               ) : item._clase === 'evento' ? (
-                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
+                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
                   {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>

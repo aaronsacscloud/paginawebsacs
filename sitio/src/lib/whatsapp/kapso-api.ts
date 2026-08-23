@@ -446,6 +446,11 @@ export async function agregarDestinatarios(broadcastId: string, destinatarios: A
   }
 }
 
+/** Borra TODOS los destinatarios (Kapso no tiene DELETE individual).
+ *  Si estaba programado, Kapso lo regresa a draft y limpia scheduled_at. */
+export const limpiarDestinatarios = (broadcastId: string) =>
+  platform(`/whatsapp/broadcasts/${broadcastId}/recipients`, { method: 'DELETE' });
+
 export const enviarBroadcast = (broadcastId: string) =>
   platform(`/whatsapp/broadcasts/${broadcastId}/send`, { method: 'POST' });
 
