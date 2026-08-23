@@ -44,7 +44,7 @@ export default function ModalInteractivo({ onCerrar, onEnviar, equipo, yo, conta
   const [sku, setSku] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<any>(null);
-  useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); }; window.addEventListener('keydown', esc, true); return () => window.removeEventListener('keydown', esc, true); }, []);
+  useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCerrar(); } }; window.addEventListener('keydown', esc, true); return () => window.removeEventListener('keydown', esc, true); }, []);
 
   const url_ok = (u: string) => /^https?:\/\/\S+$/i.test(u.trim());
   const errores: string[] = [];
