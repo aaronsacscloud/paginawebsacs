@@ -1689,6 +1689,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // aparte para que nadie lo sume al ARR. Se cuenta lo efectivamente pagado.
   const vitalicias = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')));
   const unicoPagado = vitalicias.reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
+  const sinCobro = vitalicias.filter((x: any) => !(Number(x.total_pagado) > 0) && Number(x.precio) > 0);
+  const vitaliciasSinCobro = sinCobro.length;
+  const vitaliciasValor = sinCobro.reduce((a: number, x: any) => a + Number(x.precio || 0), 0);
 
   return (
     <div>
@@ -1706,9 +1709,18 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}>
           <div style={D.kl}>Pagos únicos</div>
           <div style={{ ...D.kv, color: unicoPagado > 0 ? '#1E8A63' : '#1a1a1a' }}>{unicoPagado > 0 ? money(unicoPagado) : '—'}</div>
-          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
-            {vitalicias.length ? `${vitalicias.length} vitalicia${vitalicias.length === 1 ? '' : 's'} · no suma al ARR` : 'no suma al ARR'}
-          </div>
+          {/* Una vitalicia con precio pero sin "cuánto pagó" capturado deja la
+              cifra en cero, y en $0 la tarjeta parecía decir que no hay pagos
+              únicos cuando lo que falta es el dato. Se dice cuál falta. */}
+          {unicoPagado === 0 && vitaliciasSinCobro > 0 ? (
+            <div style={{ fontSize: '0.68rem', color: '#9a6a10', fontWeight: 600 }}>
+              {vitaliciasSinCobro} vitalicia{vitaliciasSinCobro === 1 ? '' : 's'} de {money(vitaliciasValor)} sin pago capturado
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+              {vitalicias.length ? `${vitalicias.length} vitalicia${vitalicias.length === 1 ? '' : 's'} · no suma al ARR` : 'no suma al ARR'}
+            </div>
+          )}
         </div>
       </div>
       {archivosSub && (
