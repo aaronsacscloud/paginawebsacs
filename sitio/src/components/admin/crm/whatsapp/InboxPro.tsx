@@ -68,10 +68,15 @@ export default function InboxPro() {
   const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
   useEffect(() => { paginasRef.current = 1; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
+  const activaRef = useRef(activa); activaRef.current = activa;
   const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
     if (!a.wa && !a.email) return;   // fila virtual: no hay hilo que cargar
     const qs = a.wa ? `id=${a.wa}` : `email_id=${a.email}`;
     const j = await fetch(`/api/crm/whatsapp/hilo?${qs}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+    // Respuesta tardía de OTRA conversación (el usuario ya cambió de chat):
+    // se descarta, si no pisa el hilo nuevo y el composer manda al chat equivocado.
+    const act = activaRef.current;
+    if (!act || (a.wa && act.wa !== a.wa) || (!a.wa && a.email && act.email !== a.email)) return;
     if (j && !j.error) setHilo(j);
   }, []);
 
@@ -91,7 +96,6 @@ export default function InboxPro() {
     return () => { clearInterval(t); window.removeEventListener('focus', onFocus); };
   }, [cargarLista]);
 
-  const activaRef = useRef(activa); activaRef.current = activa;
   useEffect(() => {
     if (!activa) { setHilo(null); return; }
     setHilo(null);
