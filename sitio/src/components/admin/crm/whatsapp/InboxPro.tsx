@@ -19,14 +19,20 @@ import Hilo from './Hilo';
 import PanelDetalle from './PanelDetalle';
 import NuevoChat from './NuevoChat';
 
-export type Filtros = { filtro: string; etapa: string; search: string };
+export type Filtros = {
+  filtro: string; etapa: string; search: string;
+  // Filtros "de cliente" (mismos catálogos que la sección Clientes):
+  tipo: string; plan: string; etiqueta: string; asignado: string; estado: string; sin_contacto: string;
+};
+export const FILTROS_BASE: Filtros = { filtro: 'todas', etapa: '', search: '', tipo: '', plan: '', etiqueta: '', asignado: '', estado: '', sin_contacto: '' };
 
 export default function InboxPro() {
   const isMobile = useIsMobile();
   const isCompact = useIsMobile(1200);       // sin detalle fijo entre 900 y 1200
   const [yo, setYo] = useState<any>(null);
   const [equipo, setEquipo] = useState<any[]>([]);
-  const [filtros, setFiltros] = useState<Filtros>({ filtro: 'todas', etapa: '', search: '' });
+  const [filtros, setFiltros] = useState<Filtros>(FILTROS_BASE);
+  const [filtrosMobile, setFiltrosMobile] = useState(false);
   const [lista, setLista] = useState<any[] | null>(null);
   const [counts, setCounts] = useState<any>({});
   const [activaId, setActivaId] = useState<string | null>(null);
@@ -42,7 +48,7 @@ export default function InboxPro() {
 
   // ── Carga ──
   const cargarLista = useCallback(async (f: Filtros) => {
-    const qs = new URLSearchParams({ filtro: f.filtro, etapa: f.etapa, search: f.search }).toString();
+    const qs = new URLSearchParams(Object.fromEntries(Object.entries(f).filter(([, v]) => v)) as any).toString();
     const j = await fetch(`/api/crm/whatsapp/inbox?${qs}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
@@ -180,7 +186,8 @@ export default function InboxPro() {
       <div style={{ background: '#fff', minHeight: 'calc(100dvh - 120px)' }}>
         {!activaId ? (
           <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}
-            activaId={null} onAbrir={abrir} mobile equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)} />
+            activaId={null} onAbrir={abrir} mobile equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)}
+            onFiltros={() => setFiltrosMobile(true)} />
         ) : (
           <>
             <Hilo hilo={hilo} equipo={equipo} api={api} mobile
@@ -191,6 +198,9 @@ export default function InboxPro() {
           </>
         )}
         {nuevoChat && <NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} />}
+        <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Filtros y vistas" width={340}>
+          <RailInbox counts={counts} filtros={filtros} setFiltros={f => { setFiltros(f); }} equipo={equipo} />
+        </Sheet>
       </div>
     );
   }
@@ -205,7 +215,7 @@ export default function InboxPro() {
         overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
         gridTemplateColumns: isCompact ? '212px 320px minmax(0,1fr)' : '224px 348px minmax(0,1fr) 336px',
       }}>
-        <RailInbox counts={counts} filtros={filtros} setFiltros={setFiltros} />
+        <RailInbox counts={counts} filtros={filtros} setFiltros={setFiltros} equipo={equipo} />
         <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}
           activaId={activaId} onAbrir={abrir} equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)} />
         {activaId ? (

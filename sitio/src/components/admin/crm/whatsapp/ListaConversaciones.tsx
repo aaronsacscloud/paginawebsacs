@@ -39,9 +39,9 @@ const FILTROS_MOBILE = [
   { id: 'sin_asignar', label: 'Sin asignar' }, { id: 'no_leidas', label: 'No leídas' },
 ];
 
-export default function ListaConversaciones({ lista, counts, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo }: {
+export default function ListaConversaciones({ lista, counts, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros }: {
   lista: any[]; counts: any; filtros: Filtros; setFiltros: (f: Filtros) => void;
-  activaId: string | null; onAbrir: (id: string) => void; mobile?: boolean; equipo: any[]; yo: any; onNuevo?: () => void;
+  activaId: string | null; onAbrir: (id: string) => void; mobile?: boolean; equipo: any[]; yo: any; onNuevo?: () => void; onFiltros?: () => void;
 }) {
   // Búsqueda con debounce: el estado local escribe fluido, el filtro llega 300 ms después.
   const [q, setQ] = useState(filtros.search);
@@ -66,6 +66,16 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
         </div>
         {mobile && (
           <div className="crm-scroll-x" style={{ display: 'flex', gap: 6, marginTop: 8, paddingBottom: 2 }}>
+            {onFiltros && (
+              <button onClick={onFiltros}
+                style={{
+                  border: '1px solid #c9bcf7', background: '#f7f4ff', color: '#5B4BD6',
+                  borderRadius: 20, padding: '5px 11px', fontSize: '0.72rem', fontWeight: 800,
+                  whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                }}>
+                Filtros
+              </button>
+            )}
             {FILTROS_MOBILE.map(f => (
               <button key={f.id} onClick={() => setFiltros({ ...filtros, filtro: f.id })}
                 style={{

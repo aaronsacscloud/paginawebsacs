@@ -1,8 +1,12 @@
 // WHATSAPP · La lista del inbox: conversaciones + contadores del rail.
 //
 // GET ?filtro=todas|mias|sin_asignar|no_leidas & etapa=<lifecycle_stage>
-//     & search= & limit=50 & offset=0
+//     & search= & tipo= & plan= & etiqueta=<uuid> & asignado=<uuid|nadie>
+//     & estado=active|ended & sin_contacto=1 & limit=50 & offset=0
 // → { conversaciones: [{...conv, contacto, empresa}], counts }
+//
+// Los filtros "de cliente" (tipo, plan, etiqueta) reusan la MISMA data del
+// CRM que ve Clientes: nada de catálogos paralelos.
 //
 // Los counts se calculan SIEMPRE sobre el universo completo (no sobre la
 // página): el rail dice cuánto hay en cada cajón aunque estés viendo otro.
@@ -21,6 +25,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   const filtro = url.searchParams.get('filtro') || 'todas';
   const etapa = url.searchParams.get('etapa') || '';
   const search = (url.searchParams.get('search') || '').trim();
+  const tipo = url.searchParams.get('tipo') || '';
+  const plan = url.searchParams.get('plan') || '';
+  const etiqueta = url.searchParams.get('etiqueta') || '';
+  const asignado = url.searchParams.get('asignado') || '';
+  const estado = url.searchParams.get('estado') || '';
+  const sinContacto = url.searchParams.get('sin_contacto') === '1';
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
@@ -57,6 +67,17 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
   }
 
+  // Etiquetas de la empresa (solo si el filtro las pide: una query extra).
+  let conEtiqueta: Set<string> | null = null;
+  if (etiqueta) {
+    const ids = [...new Set(todas.map(c => c.company_id).filter(Boolean))];
+    const { data: asig } = ids.length
+      ? await supabase.from('crm_etiqueta_asignaciones')
+          .select('entidad_id').eq('etiqueta_id', etiqueta).eq('entidad', 'company').in('entidad_id', ids)
+      : { data: [] as any[] };
+    conEtiqueta = new Set((asig || []).map((a: any) => a.entidad_id));
+  }
+
   // Filtro + búsqueda en memoria: el universo cabe (limit 1000) y evita
   // duplicar la lógica de joins en SQL.
   let lista = todas;
@@ -64,6 +85,13 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado === 'active');
   if (filtro === 'no_leidas') lista = lista.filter(c => c.no_leidos > 0);
   if (etapa) lista = lista.filter(c => c.contacto?.lifecycle_stage === etapa);
+  if (tipo) lista = lista.filter(c => c.contacto?.tipo === tipo);
+  if (plan) lista = lista.filter(c => c.empresa?.plan === plan);
+  if (conEtiqueta) lista = lista.filter(c => c.company_id && conEtiqueta!.has(c.company_id));
+  if (asignado === 'nadie') lista = lista.filter(c => !c.asignado_a);
+  else if (asignado) lista = lista.filter(c => c.asignado_a === asignado);
+  if (estado) lista = lista.filter(c => c.estado === estado);
+  if (sinContacto) lista = lista.filter(c => !c.contact_id);
   if (search) {
     const q = search.toLowerCase();
     const qTel = telefonoWhatsApp(search);
