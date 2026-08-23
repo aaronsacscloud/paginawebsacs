@@ -412,9 +412,6 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
             {cancelArmed === b.id ? '¿Confirmar?' : 'Cancelar'}
           </button>
         </>}
-        {b.google_meet_link && (
-          <button style={{ ...bs, color: '#3764c4' }} onClick={() => { navigator.clipboard?.writeText(b.google_meet_link); avisar('Link de Meet copiado'); }}>Meet ⧉</button>
-        )}
         {/* Lo que casi nunca se usa no merece un botón permanente. Se ancla
             FIJO porque la tabla se desplaza y un panel absoluto se recorta. */}
         <button style={{ ...bs, padding: '4px 8px', color: '#a5a2af' }} title="Más acciones"
@@ -422,7 +419,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
             ev.stopPropagation();
             if (menuFila?.id === b.id) { setMenuFila(null); return; }
             const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-            const alto = 96;
+            const alto = b.google_meet_link ? 210 : 96;
             const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
             setMenuFila({ id: b.id, x: r.right, y });
           }}>⋮</button>
@@ -430,6 +427,18 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
           <>
             <div onClick={() => setMenuFila(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
             <div style={{ position: 'fixed', left: Math.max(8, menuFila.x - 232), top: menuFila.y, zIndex: 1401, width: 232, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+              {b.google_meet_link && (<>
+                <a href={b.google_meet_link} target="_blank" rel="noreferrer" onClick={() => setMenuFila(null)}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#241d43', textDecoration: 'none' }}>
+                  Entrar a la reunión
+                  <span style={{ display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 }}>Abre el Meet</span>
+                </a>
+                <button onClick={() => { navigator.clipboard?.writeText(b.google_meet_link); setMenuFila(null); avisar('Link de Meet copiado'); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Copiar el link
+                </button>
+                <div style={{ height: 1, background: '#f1f1f5', margin: '5px 4px' }} />
+              </>)}
               <button disabled={busyId === b.id} onClick={() => borrar(b)}
                 style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#C0554E', cursor: 'pointer', fontFamily: 'inherit' }}>
                 Eliminar reunión
