@@ -3365,9 +3365,11 @@ function SeccionCotizaciones({ companyId, principal, flash, reload }: any) {
     <div>
       {/* El botón encabeza la pestaña, no compite con las tarjetas: metido
           entre ellas se leía como una más y quedaba a distinta altura. */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ ...D.hM, marginBottom: 0, flex: 1 }}>Cotizado y vendido<span style={D.hNota}>de aquí salen las suscripciones de arriba</span></div>
-        <button style={D.btn} onClick={() => setEligiendo(true)}>+ Nueva oportunidad</button>
+      {/* gap real entre el título y el botón: la nota se alinea a la derecha del
+          bloque de título y sin separación se metía DEBAJO del botón. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ ...D.hM, marginBottom: 0, flex: 1, minWidth: 0 }}>Cotizado y vendido<span style={D.hNota}>el antes de cada licencia</span></div>
+        <button style={{ ...D.btn, flexShrink: 0 }} onClick={() => setEligiendo(true)}>+ Nueva oportunidad</button>
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
         <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
