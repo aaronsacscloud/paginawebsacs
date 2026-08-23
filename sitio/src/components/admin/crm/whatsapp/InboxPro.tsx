@@ -78,7 +78,12 @@ export default function InboxPro() {
     // se descarta, si no pisa el hilo nuevo y el composer manda al chat equivocado.
     const act = activaRef.current;
     if (!act || (a.wa && act.wa !== a.wa) || (!a.wa && a.email && act.email !== a.email)) return;
-    if (j && !j.error) setHilo(j);
+    if (j && !j.error) setHilo((prev: any) => {
+      // Conserva los ecos optimistas que el servidor todavía no refleja (evita
+      // que tu mensaje "parpadee" si el poll llega antes que el espejo).
+      const ecos = (prev?.mensajes || []).filter((m: any) => m._eco && !(j.mensajes || []).some((s: any) => s.cuerpo === m.cuerpo && s.direccion === 'saliente' && Math.abs(new Date(s.created_at).getTime() - new Date(m.created_at).getTime()) < 60e3));
+      return ecos.length ? { ...j, mensajes: [...j.mensajes, ...ecos] } : j;
+    });
   }, []);
 
   useEffect(() => {
@@ -92,9 +97,10 @@ export default function InboxPro() {
   const guardarVistaRef = useRef<((cfg: any) => void) | null>(null);
   useEffect(() => {
     const t = setInterval(() => { if (!document.hidden) { cargarLista(filtrosRef.current); setTick(x => x + 1); } }, 15000);
-    const onFocus = () => cargarLista(filtrosRef.current);
+    const onFocus = () => { cargarLista(filtrosRef.current); if (activaRef.current) cargarHilo(activaRef.current); };
     window.addEventListener('focus', onFocus);
-    return () => { clearInterval(t); window.removeEventListener('focus', onFocus); };
+    document.addEventListener('visibilitychange', onFocus);
+    return () => { clearInterval(t); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
   }, [cargarLista]);
 
   useEffect(() => {
@@ -106,7 +112,7 @@ export default function InboxPro() {
         cargarHilo(activaRef.current);
         if (activaRef.current.wa) fetch('/api/crm/whatsapp/presencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: activaRef.current.wa }) }).catch(() => {});
       }
-    }, 5000);
+    }, 3000);
     return () => clearInterval(t);
   }, [activa?.id, cargarHilo]);
 
@@ -192,6 +198,10 @@ export default function InboxPro() {
 
   const api = {
     enviarTexto: async (texto: string, cita?: string | null) => {
+      // Eco optimista: la burbuja aparece YA (status pending); el refetch la
+      // sustituye por la real con su wamid y sus palomitas.
+      const eco = { id: `eco-${Date.now()}`, kapso_message_id: null, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'pending', created_at: new Date().toISOString(), enviado_at: new Date().toISOString(), autor: yo?.nombre || null, metadata: cita ? { cita: { wamid: cita } } : null, _eco: true };
+      setHilo((h: any) => h ? { ...h, mensajes: [...(h.mensajes || []), eco] } : h);
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversation_id: waId(), texto, cita: cita || undefined }),

@@ -58,8 +58,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       ...m, _clase: 'correo', _t: m.created_at, _asunto: m.asunto || h.conversacion?.asunto || '',
     })));
     const eventos = (hilo.eventos || []).map((e: any) => ({ ...e, _clase: 'evento', _t: e.created_at }));
+    // Orden estable: hora real → created_at (ms) → id. Los timestamps de WhatsApp
+    // van al SEGUNDO: sin el desempate fino, tu envío y la respuesta del cliente
+    // dentro del mismo segundo se volteaban entre un poll y otro.
     const timeline = [...msjs, ...notas, ...correos, ...eventos].sort((a, b) =>
-      String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)));
+      String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id)));
     return { timeline, reacciones: reac, porWamid: new Map<string, any>(msjs.filter(m => m.kapso_message_id).map(m => [m.kapso_message_id, m])) };
   }, [hilo]);
 

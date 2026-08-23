@@ -364,7 +364,9 @@ export default function CrmDashboard() {
           la contenga: lo que pasó solo tiene que verse sin ir a buscarlo. */}
       {/* En el inbox el railito del detalle vive en la esquina: la campana se
           recorre a la izquierda para no taparlo. */}
-      {(isMobile || sidebarCollapsed) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} desplazada={!isMobile && tab === 'whatsapp'} />}
+      {/* En el inbox NO va la campana flotante (tapaba el railito); las notificaciones
+          de WhatsApp ya suenan/avisan dentro del propio inbox. */}
+      {(isMobile || sidebarCollapsed) && !(tab === 'whatsapp' && !isMobile) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
       {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setMobileSearchOpen(true)} style={{
