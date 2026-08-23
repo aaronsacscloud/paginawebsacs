@@ -3679,12 +3679,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'agenda', ico: 'agenda', t: 'Tipos de reunión, disponibilidad y ligas', v: 'Agenda',
                   d: 'Los tipos que se pueden agendar contigo —consultoría, capacitación, demo—, con su duración, su color y la liga que le mandas al cliente. Y los horarios en que te pueden reservar. Vivía colgado de Reuniones, pero es un ajuste que se toca una vez, no trabajo del día.',
                   editor: <SchedulingTab /> },
-              ]},
-            ]},
-            { g: 'Reuniones', mods: [
-              { id: 'agenda', nom: 'Agenda', sub: 'Con qué calendario se sincroniza tu agenda.', items: [
-                { id: 'google-calendar', ico: 'campos', t: 'Google Calendar',
-                  d: 'Con qué cuenta de Google se crean los eventos y las ligas de Meet de las reuniones que agendas. Cambiarla aquí es lo mismo que hacerlo desde Reuniones, pero sin salir de Configuración.',
+                /* Conectar el calendario vive AQUÍ y no en un grupo aparte:
+                   llegó a haber dos entradas de Reuniones en Configuración
+                   —una por cada cosa— y son el mismo ajuste. Va suelto además
+                   del hub porque cambiar de cuenta es lo que más se hace y no
+                   debería exigir entrar a toda la agenda y buscarlo. */
+                { id: 'google-calendar', ico: 'agenda', t: 'Google Calendar',
+                  d: 'Con qué cuenta de Google se crean los eventos y las ligas de Meet. Ojo: la conexión es por persona del equipo, así que la que valga es la que conectes desde tu propia sesión.',
                   editor: <GoogleCalendarPanel /> },
               ]},
             ]},
