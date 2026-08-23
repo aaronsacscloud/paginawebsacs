@@ -96,7 +96,11 @@ const UBICACION_OPTIONS = [
   { value: 'telefono', label: 'Telefono' },
   { value: 'presencial', label: 'Presencial' },
 ];
-const PRESET_COLORS = ['#4B7BE5', '#2AB5A0', '#6C5CE7', '#E8A838', '#DC2626', '#059669'];
+// La paleta del CRM (lib/crm/paleta.ts), no colores sueltos. Los de antes
+// —#4B7BE5, #2AB5A0, #DC2626, #059669— eran del sitio público y de Tailwind:
+// un tipo de reunión pintado así se veía de otro producto. Morados y rosas
+// primero, que son la firma de la marca.
+const PRESET_COLORS = ['#9B8CFA', '#5B4BD6', '#D9538E', '#EFA6CA', '#7DA6F5', '#4FBF95', '#E8A838'];
 
 const DEFAULT_EMAIL_CONFIG: Record<string, any> = {
   confirmation: { subject: '\u2705 Tu demo con SACS est\u00e1 confirmada', heading: '\u00a1Tu demo est\u00e1 confirmada!', body: 'Hola {{nombre}}, tu reuni\u00f3n con SACS ha sido agendada.', show_meet_link: true, show_reschedule_link: true, show_cancel_link: true },
