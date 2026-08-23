@@ -69,6 +69,14 @@ export const META: Record<string, Def> = {
   '80007': D('Límite de la API alcanzado', 'Se superó el límite de llamadas a la API de WhatsApp Business.', 'Espera y reintenta; en masivos, baja el ritmo.', 'limite', true),
   '4': D('Límite de la app alcanzado', 'La app superó su cuota de llamadas a Meta.', 'Espera unos minutos.', 'limite', true),
   '33': D('Número del negocio inválido', 'El phone_number_id no existe o no pertenece a la cuenta.', 'Revisa KAPSO_PHONE_NUMBER_ID en Ajustes.', 'cuenta'),
+  // Subcódigos de Meta al crear plantillas (llegan como error_subcode con code 100)
+  'sub:2388293': D('Demasiadas variables para el texto', 'Meta exige cierta proporción de palabras fijas por cada variable: el cuerpo es muy corto para tantas {{n}}.', 'Alarga el texto del cuerpo o quita variables.', 'plantilla'),
+  'sub:2388024': D('Ya existe una plantilla con ese nombre', 'Meta no admite dos plantillas con el mismo nombre e idioma.', 'Cambia el nombre (p. ej. agrega _v2).', 'plantilla'),
+  'sub:2388023': D('Nombre de plantilla inválido', 'Solo minúsculas, números y guión bajo.', 'Corrige el nombre.', 'plantilla'),
+  'sub:2388043': D('Variable al inicio o al final', 'Meta no permite que el cuerpo empiece o termine con una variable.', 'Pon texto antes de la primera {{1}} y después de la última.', 'plantilla'),
+  'sub:2388042': D('Variables con saltos de línea', 'Hay una variable pegada a un salto de línea o con formato no permitido.', 'Deja un espacio entre texto y variable; sin saltos dentro del {{n}}.', 'plantilla'),
+  'sub:2388295': D('Encabezado de media inválido', 'El archivo de muestra no cumple (tipo/tamaño) o el handle expiró.', 'Sube una imagen jpg/png ≤5 MB, video mp4 ≤16 MB o PDF ≤100 MB y vuelve a crear.', 'plantilla'),
+  'sub:2388275': D('Demasiados botones', 'Superaste el máximo de botones que Meta permite para esta combinación.', 'Máximo 10 en total; 2 de link, 1 de llamada, 1 de copiar código.', 'plantilla'),
   '2494010': D('Meta decidió no entregar', 'Meta descartó el mensaje por control de calidad ("healthy ecosystem").', 'No insistas: espera a que el cliente escriba o usa una plantilla de utilidad.', 'limite'),
 };
 
@@ -102,10 +110,12 @@ function desarmar(x: any): { codigo: string | null; mensaje: string; detalle: st
   if (typeof e === 'string') return { codigo: null, mensaje: e, detalle: '', next: String(x.next_steps || '') };
   const errs = Array.isArray(x.errors) ? x.errors : Array.isArray(e?.errors) ? e.errors : null;
   if (errs?.length) return desarmar(errs[0]);
+  // Meta a veces explica en error_user_title/msg (p. ej. al crear plantillas); el subcode afina el caso.
+  const sub = e?.error_subcode != null ? String(e.error_subcode) : null;
   return {
-    codigo: e?.code != null ? String(e.code) : null,
+    codigo: sub && META[`sub:${sub}`] ? `sub:${sub}` : (e?.code != null ? String(e.code) : null),
     mensaje: String(e?.message || e?.title || ''),
-    detalle: String(e?.error_data?.details || e?.details || ''),
+    detalle: String(e?.error_data?.details || e?.details || e?.error_user_msg || ''),
     next: String(x.next_steps || ''),
   };
 }
