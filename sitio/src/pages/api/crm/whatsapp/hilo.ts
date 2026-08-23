@@ -126,14 +126,18 @@ export const GET: APIRoute = async ({ request, url }) => {
   };
 
   // ── Marcar leído: personal (wa_lecturas) + global (compat) ──
+  // Abrir el hilo NO toca el contador global (es "sin responder" del equipo):
+  // solo registra MI lectura. Así el chat que abre Aaron sigue nuevo para Luis.
   if (conv.id) {
-    if (yo) await supabase.from('wa_lecturas').upsert({ conversation_id: conv.id, user_id: yo.id, leido_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
-    if ((conv.no_leidos || 0) > 0) {
-      await supabase.from('wa_conversaciones').update({ no_leidos: 0 }).eq('id', conv.id);
-      conv.no_leidos = 0;
-      // Palomitas azules para el cliente: el último entrante se marca leído en Meta.
-      if (ultimoEntrante?.kapso_message_id) marcarLeido(ultimoEntrante.kapso_message_id).catch(() => {});
+    let yaLeido = false;
+    if (yo) {
+      const { data: lec } = await supabase.from('wa_lecturas').select('leido_at').eq('conversation_id', conv.id).eq('user_id', yo.id).maybeSingle();
+      yaLeido = !!(lec?.leido_at && conv.ultimo_entrante_at && lec.leido_at >= conv.ultimo_entrante_at);
+      await supabase.from('wa_lecturas').upsert({ conversation_id: conv.id, user_id: yo.id, leido_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
     }
+    conv.no_leidos = 0;   // para ESTE usuario, ya lo vio
+    // Palomitas azules para el cliente: el último entrante se marca leído en Meta (una vez por entrante nuevo).
+    if (!yaLeido && ultimoEntrante?.kapso_message_id) marcarLeido(ultimoEntrante.kapso_message_id).catch(() => {});
   }
 
   // 6) Presencia: quién más tiene abierto este hilo (últimos 20 s) y si escribe.

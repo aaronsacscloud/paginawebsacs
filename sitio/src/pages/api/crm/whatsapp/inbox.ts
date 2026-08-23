@@ -53,8 +53,8 @@ export const GET: APIRoute = async ({ request, url }) => {
   ]);
   if (error) return json({ error: error.message }, 500);
   const leidoAt = new Map<string, string>((lecturas || []).map((l: any) => [l.conversation_id, l.leido_at]));
-  // Conteo personal: entrantes desde mi última lectura. Si nunca la abrí, el
-  // contador global sigue valiendo (no inflar con historial importado).
+  // Conteo personal: entrantes desde mi última lectura. Si nunca la abrí, vale
+  // el contador global (= entrantes desde nuestra última respuesta).
   const pendientesPersonal = new Map<string, number>();
   if (user && leidoAt.size) {
     const { data: n } = await supabase.rpc('wa_no_leidos_por_usuario', { uid: user.id });

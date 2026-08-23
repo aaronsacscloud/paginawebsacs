@@ -150,6 +150,9 @@ export async function registrarMensaje(o: {
     ultima_direccion: o.direccion,
     estado: 'active',
     ...(o.direccion === 'entrante' ? { alerta: null } : {}),
+    // El contador GLOBAL = entrantes desde nuestra última respuesta: se
+    // reinicia al contestar (no al abrir). El no-leído personal vive en wa_lecturas.
+    ...(o.direccion === 'saliente' && !o.silencioso ? { no_leidos: 0 } : {}),
   }).eq('id', conv.id);
 
   if (o.direccion === 'entrante') {
