@@ -66,17 +66,16 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
           <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.05rem', minWidth: 40, height: 40 }}>←</button>
         )}
         <Avatar nombre={nombre} telefono={conv.telefono} size={36} />
-        <span style={{ minWidth: 0 }}>
+        <span style={{ minWidth: 0, flex: 1 }}>
           <b style={{ fontSize: '0.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-.01em' }}>
             {nombre || telefonoLegible(conv.telefono)}
           </b>
           <span style={{ fontSize: '0.7rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>
         </span>
-        {etapa && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px' }}>{etapa.label}</span>}
-        <span style={{ flex: 1 }} />
+        {etapa && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px', flexShrink: 0 }}>{etapa.label}</span>}
         <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
-          style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 7px', fontSize: '0.7rem', fontFamily: 'inherit', background: '#fff', color: '#555', maxWidth: 130 }}>
+          style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 7px', fontSize: '0.7rem', fontFamily: 'inherit', background: '#fff', color: '#555', maxWidth: 118, flexShrink: 0 }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>
