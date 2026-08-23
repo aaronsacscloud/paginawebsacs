@@ -57,7 +57,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     let payload: any;
     try { payload = JSON.parse(raw); } catch { return ok(); }
 
-    const evento = String(payload?.event || payload?.event_type || '');
+    // Payload v2 de Kapso: el nombre del evento viaja en el header X-Webhook-Event,
+    // NO en el cuerpo (el cuerpo es { message, conversation, phone_number_id, … }).
+    // Leerlo solo del cuerpo hacía que TODO evento real cayera en `default` con 200.
+    const evento = String(request.headers.get('x-webhook-event') || request.headers.get('x-kapso-event') || payload?.event || payload?.event_type || '');
     const msj = payload?.message || {};
     const conv = payload?.conversation || {};
     const kapso = msj?.kapso || {};
