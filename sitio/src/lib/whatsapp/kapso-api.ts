@@ -10,9 +10,10 @@
 // la apikey en el body. Ese cliente sigue vivo para los envíos transaccionales
 // existentes; este es el nuevo, para todo lo del Inbox.
 
-const API_KEY = (import.meta.env.KAPSO_API_KEY || '').trim();
-const PHONE_NUMBER_ID = (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim();
-const BUSINESS_ACCOUNT_ID = (import.meta.env.KAPSO_BUSINESS_ACCOUNT_ID || '').trim();
+const ENV: any = (import.meta as any).env || process.env || {};
+const API_KEY = (ENV.KAPSO_API_KEY || '').trim();
+const PHONE_NUMBER_ID = (ENV.KAPSO_PHONE_NUMBER_ID || '').trim();
+const BUSINESS_ACCOUNT_ID = (ENV.KAPSO_BUSINESS_ACCOUNT_ID || '').trim();
 
 const PLATFORM = 'https://api.kapso.ai/platform/v1';
 const META = 'https://api.kapso.ai/meta/whatsapp/v24.0';
