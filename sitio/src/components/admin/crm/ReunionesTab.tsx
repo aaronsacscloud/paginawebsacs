@@ -685,19 +685,8 @@ export default function ReunionesTab({ onOpenContact, onIrAgenda }: { onOpenCont
       ) : (
         <>
           <CalendarioMes mes={calMes} setMes={setCalMes} bookings={paraCalendario} hoy={hoy} onOpen={abrirInvitado} isMobile={isMobile} />
-          {/* Sin leyenda el color es decoración. Con ella, el mes se lee de un
-              vistazo: dónde están las demos y dónde las capacitaciones. */}
-          {resumenTipos.length > 0 && (
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 11, padding: '10px 4px 0', borderTop: '1px solid #f5f4f8' }}>
-              {resumenTipos.map(t => (
-                <button key={t.id} onClick={() => setFTipo(fTipo === t.id ? '' : t.id)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: fTipo && fTipo !== t.id ? '#c9c7d0' : '#6b7280' }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 3, background: t.color, display: 'inline-block' }} />
-                  {t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* La leyenda la pinta CalendarioMes: tenerla también aquí la
+              duplicaba al pie del mes. */}
         </>
       )}
 
