@@ -154,6 +154,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   const [drawerCompanyId, setDrawerCompanyId] = useState<string | null>(null);
   const [reagendar, setReagendar] = useState<any>(null);
   const [cancelArmed, setCancelArmed] = useState<string | null>(null);
+  const [menuFila, setMenuFila] = useState<{ id: string; x: number; y: number } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [calMes, setCalMes] = useState(() => hoyStr().slice(0, 7)); // YYYY-MM
@@ -375,8 +376,31 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     );
   };
 
+  /* Borrar ≠ cancelar. Una cancelada pasó de verdad y se queda en el historial;
+     una de PRUEBA nunca existió y solo ensucia la agenda, el conteo por tipo y
+     la tasa de asistencia. Por eso vive escondida en el ⋮ y pregunta antes. */
+  async function borrar(b: any, forzar = false) {
+    const quien = b.invitado_company_nombre || b.invitee_nombre || 'esta reunión';
+    if (!forzar && !confirm(`¿Borrar la reunión de ${quien} del ${fmtDate(b.fecha)}?\n\nSe borra de verdad, no se cancela. Úsalo solo para reuniones de prueba.`)) return;
+    setBusyId(b.id);
+    const r = await adminFetch(`/api/scheduling/reuniones?id=${b.id}${forzar ? '&forzar=1' : ''}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    setBusyId(null);
+    if (j?.requiere_confirmacion) {
+      if (confirm(j.error + '\n\n¿Borrarla de todos modos?')) return borrar(b, true);
+      return;
+    }
+    if (!r.ok || j?.error) { avisar(j?.error || 'No se pudo borrar'); return; }
+    avisar(j.mejoras_desligadas ? `Reunión borrada · ${j.mejoras_desligadas} compromiso(s) conservado(s)` : 'Reunión borrada');
+    setMenuFila(null);
+    await load();
+  }
+
   const filaAcciones = (b: any) => {
-    const activa = b.estado === 'confirmada' || b.estado === 'pendiente';
+    // Normalizado: con el literal, una 'agendada' —el estado con el que nace
+    // una reserva desde la página— se quedaba SIN botones para marcarla.
+    const e = normalizaEstado(b.estado);
+    const activa = e === 'agendada' || e === 'confirmada';
     const bs = isMobile ? { ...S.btnSmall, minHeight: 44, padding: '10px 14px', fontSize: '0.8rem' } : S.btnSmall;
     return (
       <div style={{ display: 'flex', gap: isMobile ? 8 : 6, flexWrap: 'wrap' }}>
@@ -390,6 +414,29 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         </>}
         {b.google_meet_link && (
           <button style={{ ...bs, color: '#3764c4' }} onClick={() => { navigator.clipboard?.writeText(b.google_meet_link); avisar('Link de Meet copiado'); }}>Meet ⧉</button>
+        )}
+        {/* Lo que casi nunca se usa no merece un botón permanente. Se ancla
+            FIJO porque la tabla se desplaza y un panel absoluto se recorta. */}
+        <button style={{ ...bs, padding: '4px 8px', color: '#a5a2af' }} title="Más acciones"
+          onClick={ev => {
+            ev.stopPropagation();
+            if (menuFila?.id === b.id) { setMenuFila(null); return; }
+            const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+            const alto = 96;
+            const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
+            setMenuFila({ id: b.id, x: r.right, y });
+          }}>⋮</button>
+        {menuFila?.id === b.id && (
+          <>
+            <div onClick={() => setMenuFila(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
+            <div style={{ position: 'fixed', left: Math.max(8, menuFila.x - 232), top: menuFila.y, zIndex: 1401, width: 232, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+              <button disabled={busyId === b.id} onClick={() => borrar(b)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#C0554E', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Eliminar reunión
+                <span style={{ display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 }}>Para las de prueba. Cancelar es otra cosa.</span>
+              </button>
+            </div>
+          </>
         )}
       </div>
     );
@@ -721,7 +768,7 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
             {celdas.map((fecha, i) => {
-              if (!fecha) return <div key={i} style={{ aspectRatio: '1 / 0.82' }} />;
+              if (!fecha) return <div key={i} style={{ height: 56 }} />;
               const esHoy = fecha === hoy;
               const esSel = fecha === sel;
               const delDia = porDia[fecha] || [];
@@ -729,8 +776,8 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
                 <button key={i} onClick={() => setSel(fecha)}
                   title={delDia.length ? `${delDia.length} ${delDia.length === 1 ? 'reunión' : 'reuniones'}` : 'Sin reuniones'}
                   style={{
-                    aspectRatio: '1 / 0.82', borderRadius: 11, cursor: 'pointer', fontFamily: 'inherit',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                    height: 56, borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', padding: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
                     border: '1.5px solid ' + (esSel ? '#9B8CFA' : esHoy ? '#9B8CFA' : 'transparent'),
                     background: esSel ? '#9B8CFA' : 'transparent',
                     transition: 'background .13s, border-color .13s',
