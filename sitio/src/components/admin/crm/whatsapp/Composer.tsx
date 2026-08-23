@@ -86,10 +86,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { if (!waDisponible && modo === 'wa') setModo('correo'); }, [waDisponible]);
+  // Escape cierra popups del composer y NO debe llegar al atajo global que
+  // cierra el chat: se captura antes (fase capture) solo cuando hay algo abierto.
+  const hayAlgoAbierto = !!pop || popProgramar || comentario || modalPlantilla || biblioteca;
+  const abiertoRef = useRef(hayAlgoAbierto); abiertoRef.current = hayAlgoAbierto;
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPop(null); if (comentario) setComentario(false); } };
-    window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc);
-  }, [comentario]);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !abiertoRef.current) return;
+      e.stopPropagation();
+      setPop(null); setPopProgramar(false); setModalPlantilla(false); setBiblioteca(false);
+      setComentario(false);
+    };
+    window.addEventListener('keydown', esc, true); return () => window.removeEventListener('keydown', esc, true);
+  }, []);
   useEffect(() => {
     const abrir = () => setModalPlantilla(true);
     document.addEventListener('wa-abrir-plantillas', abrir); return () => document.removeEventListener('wa-abrir-plantillas', abrir);
