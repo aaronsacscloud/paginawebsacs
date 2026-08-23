@@ -10,6 +10,7 @@
 //  - Número sin contacto: se espeja igual (contact_id null), sin activity y
 //    sin tocar last_contact_at — no se inventan contactos.
 import { etiquetaTipo } from './parse';
+import { explicarError } from './errores';
 import { supabase } from '../supabase';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { notificar } from '../crm/notificaciones';
@@ -209,19 +210,12 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
   // 11) Número no alcanzable: Meta lo dice por código; la conversación queda
   // con una alerta visible hasta que el cliente vuelva a escribir.
   if (status === 'failed' && error) {
-    const codigo = (error.match(/^(\d{5,6})/) || [])[1];
-    const ALERTAS: Record<string, string> = {
-      '131026': 'Número no alcanzable: no tiene WhatsApp o bloqueó al negocio',
-      '131049': 'Meta limitó los mensajes de marketing a este número',
-      '131050': 'El cliente pidió no recibir mensajes de marketing (opt-out)',
-      '131047': 'Más de 24 h sin respuesta: solo se puede escribir con plantilla',
-      '131056': 'Meta frena el envío: demasiados mensajes a este número en poco tiempo',
-      '130472': 'Este número está en un experimento de Meta y no recibe plantillas de marketing',
-    };
-    const alerta = codigo ? ALERTAS[codigo] : null;
-    if (alerta) {
+    const x = explicarError(error);
+    // Solo los fallos que hablan del CLIENTE o de su permiso quedan como alerta
+    // de la conversación (un error de plantilla o de red no es culpa del número).
+    if (['numero', 'permiso', 'limite'].includes(x.tipo)) {
       const { data: m } = await supabase.from('wa_mensajes').select('conversation_id').eq('id', msj.id).maybeSingle();
-      if (m?.conversation_id) await supabase.from('wa_conversaciones').update({ alerta }).eq('id', m.conversation_id);
+      if (m?.conversation_id) await supabase.from('wa_conversaciones').update({ alerta: `${x.titulo}: ${x.que_hacer}` }).eq('id', m.conversation_id);
     }
   }
 }

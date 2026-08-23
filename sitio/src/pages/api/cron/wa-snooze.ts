@@ -12,6 +12,7 @@ import { telefonoLegible } from '../../../lib/telefono';
 import { enviarTexto, enviarMediaLink, listarMensajesKapso, KapsoError } from '../../../lib/whatsapp/kapso-api';
 import { registrarMensaje } from '../../../lib/whatsapp/espejo';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
+import { explicarError } from '../../../lib/whatsapp/errores';
 
 export const prerender = false;
 
@@ -75,8 +76,10 @@ export const GET: APIRoute = async ({ request }) => {
         recordados++;
       }
     } catch (e: any) {
-      await supabase.from('wa_programados').update({ estado: e instanceof KapsoError && e.status === 422 ? 'fallido' : 'fallido', resultado: String(e?.message || e).slice(0, 300), ejecutado_at: new Date().toISOString() }).eq('id', p.id);
-      await supabase.from('wa_eventos').insert({ conversation_id: p.conversation_id, tipo: 'programado', detalle: `El mensaje programado NO se envió: ${e instanceof KapsoError && e.status === 422 ? 'ventana de 24 h cerrada' : String(e?.message || e).slice(0, 120)}`, autor: null });
+      const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined);
+      await supabase.from('wa_programados').update({ estado: 'fallido', resultado: `${x.titulo} · ${x.crudo}`.slice(0, 300), ejecutado_at: new Date().toISOString() }).eq('id', p.id);
+      await supabase.from('wa_eventos').insert({ conversation_id: p.conversation_id, tipo: 'programado', detalle: `El mensaje programado NO se envió: ${x.titulo}. ${x.que_hacer}`, autor: null });
+      await notificar({ clave: `wa_prog_fallo_${p.id}`, tipo: 'wa_snooze', destino: 'whatsapp', titulo: `Falló un mensaje programado: ${x.titulo}`, metadata: { conversation_id: p.conversation_id, para: p.autor_id } });
     }
   }
 

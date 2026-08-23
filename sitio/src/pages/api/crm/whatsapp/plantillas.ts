@@ -16,6 +16,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { listarPlantillasMeta, crearPlantillaMeta, enviarPlantilla, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
+import { explicarError } from '../../../../lib/whatsapp/errores';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -76,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
         (Array.isArray(b.params) ? b.params : []).map(sanearParam));
       return json({ ok: true, message_id: r?.messages?.[0]?.id || null });
     } catch (e: any) {
-      return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
+      { const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined); return json({ error: `${x.titulo}. ${x.que_hacer}`, error_detalle: x }, 502); }
     }
   }
 
@@ -114,6 +115,6 @@ export const POST: APIRoute = async ({ request }) => {
     });
     return json({ ok: true, status: creada?.status || 'PENDING' });
   } catch (e: any) {
-    return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
+    { const x = explicarError(e instanceof KapsoError ? e.detalle : e, e instanceof KapsoError ? e.status : undefined); return json({ error: `${x.titulo}. ${x.que_hacer}`, error_detalle: x }, 502); }
   }
 };

@@ -5,18 +5,7 @@
 import { useState } from 'react';
 import { C } from './estilo';
 
-export const ERROR_LABELS: Record<string, string> = {
-  '131042': 'Problema de pago en la cuenta de WhatsApp Business',
-  '131047': 'Más de 24h sin respuesta, se requiere plantilla',
-  '131026': 'El mensaje no pudo ser entregado',
-  '131051': 'Tipo de mensaje no soportado',
-  '131053': 'Error al subir el archivo multimedia',
-  '131009': 'Parámetro inválido',
-  '130472': 'Número no registrado en WhatsApp',
-  '131021': 'Destino no válido',
-  '131048': 'Spam detectado por Meta',
-  '131056': 'Demasiados mensajes al mismo número',
-};
+import { explicarError } from '../../../../lib/whatsapp/errores';
 
 const Reloj = () => (
   <svg width={14} height={14} style={{ color: C.emerald300 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,8 +32,7 @@ const IconoError = () => (
 function Fallo({ error }: { error?: string | null }) {
   const [tip, setTip] = useState(false);
   if (!error) return <IconoError />;
-  const codigo = error.match(/\b(\d{6})\b/)?.[1] || null;
-  const label = codigo ? ERROR_LABELS[codigo] : null;
+  const x = explicarError(error);
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 2, cursor: 'help' }}
       onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}>
@@ -56,9 +44,10 @@ function Fallo({ error }: { error?: string | null }) {
           background: C.g900, color: '#fff', fontSize: 12, borderRadius: 8, padding: '8px 12px',
           boxShadow: '0 8px 24px rgba(0,0,0,.25)', pointerEvents: 'none', lineHeight: 1.45,
         }}>
-          {label && <span style={{ display: 'block', fontWeight: 600, marginBottom: 2 }}>{label}</span>}
-          {codigo && <span style={{ display: 'block', color: C.g400, fontSize: 10 }}>Código: {codigo}</span>}
-          {!label && <span style={{ display: 'block', marginTop: 2 }}>{error.slice(0, 160)}</span>}
+          <span style={{ display: 'block', fontWeight: 700, marginBottom: 3 }}>{x.titulo}</span>
+          <span style={{ display: 'block', color: '#e5e7eb' }}>{x.que_paso}</span>
+          <span style={{ display: 'block', marginTop: 4, color: '#A7F3D0' }}>Qué hacer: {x.que_hacer}</span>
+          <span style={{ display: 'block', marginTop: 4, color: C.g400, fontSize: 10 }}>{x.codigo ? `Código Meta ${x.codigo}` : 'Sin código'} · {x.crudo.slice(0, 120)}</span>
         </span>
       )}
     </span>
@@ -79,9 +68,4 @@ export default function EstadoEntrega({ status, direccion, error }: {
   }
 }
 
-/** "131026 Message Undeliverable" → texto en español si el código está mapeado. */
-export function errorLegible(error?: string | null): string {
-  if (!error) return 'No se pudo enviar';
-  const codigo = (error.match(/^(\d{5,6})/) || [])[1];
-  return (codigo && ERROR_LABELS[codigo]) ? ERROR_LABELS[codigo] : error;
-}
+export function errorLegible(error?: string | null): string { return explicarError(error || '').titulo; }

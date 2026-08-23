@@ -74,7 +74,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [modo, setModo] = useState<Modo>(waDisponible ? 'wa' : 'correo');
   const [comentario, setComentario] = useState(false);     // modo comentario (reemplaza la card)
   const [ocupado, setOcupado] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setErrorRaw] = useState('');
+  const [errorDet, setErrorDet] = useState<any>(null);
+  const setError = (m: string, det: any = null) => { setErrorRaw(m); setErrorDet(det); };
   const [aviso, setAviso] = useState('');
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const [pop, setPop] = useState<Popup>(null);
@@ -158,7 +160,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     if (comentario) {
       if (!t) return;
       setOcupado(true); const r = await api.crearNota(t); setOcupado(false);
-      if (r?.error) { setError(r.error); return; }
+      if (r?.error) { setError(r.error, r.error_detalle || null); return; }
       setTexto(''); setComentario(false); return;
     }
     if (!t && !staged.length && !remotos.length) return;
@@ -190,7 +192,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     setOcupado(false);
     if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente) setSugerirSiguiente(true); }
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
-    if (r?.error) { setError(r.error); return; }
+    if (r?.error) { setError(r.error, r.error_detalle || null); return; }
     setTexto(''); areaRef.current?.focus();
   };
 
@@ -199,14 +201,14 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     setPop(null); setIaProcesando(true); setError('');
     const r = await api.ia({ accion: 'transformar', texto, instruccion });
     setIaProcesando(false);
-    if (r?.error) { setError(r.error); return; }
+    if (r?.error) { setError(r.error, r.error_detalle || null); return; }
     if (r?.texto) setTexto(r.texto);
   };
   const resumir = async () => {
     setIaProcesando(true); setError('');
     const r = await api.ia({ accion: 'resumir' });
     setIaProcesando(false);
-    if (r?.error) { setError(r.error); return; }
+    if (r?.error) { setError(r.error, r.error_detalle || null); return; }
     setResumen(r);
   };
 
@@ -315,7 +317,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           let f = new File([blob], 'voz.ogg', { type: blob.type || 'audio/ogg' });
           const r = await api.enviarArchivo(f, undefined, true);
           setOcupado(false);
-          if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error);
+          if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error, r.error_detalle || null);
         }} onMicError={m => setError(m)}>
           {({ grabando, iniciar }) => (<>
             {!grabando && (
@@ -353,7 +355,17 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 })}
               </div>
             )}
-            {error && <div style={{ padding: '6px 12px', fontSize: 11, color: C.rojo500, background: C.rojo50, borderTop: `1px solid ${C.rojo200}` }}>{error}</div>}
+            {error && (
+              <div style={{ padding: '8px 12px', fontSize: 11, color: C.rojo700, background: C.rojo50, borderTop: `1px solid ${C.rojo200}`, lineHeight: 1.45 }}>
+                {errorDet ? (<>
+                  <b style={{ display: 'block', fontSize: 12 }}>{errorDet.titulo}{errorDet.codigo ? <span style={{ fontWeight: 400, color: C.rojo500, marginLeft: 6, fontSize: 10 }}>Meta {errorDet.codigo}</span> : null}</b>
+                  <span style={{ display: 'block' }}>{errorDet.que_paso}</span>
+                  <span style={{ display: 'block', color: C.g700 }}><b>Qué hacer:</b> {errorDet.que_hacer}</span>
+                  <details style={{ marginTop: 3 }}><summary style={{ cursor: 'pointer', fontSize: 10, color: C.g400 }}>Detalle técnico</summary><code style={{ fontSize: 10, color: C.g500, wordBreak: 'break-all' }}>{errorDet.crudo}</code></details>
+                </>) : error}
+                <button onClick={() => setError('')} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', color: C.rojo500 }}>✕</button>
+              </div>
+            )}
             {aviso && <div style={{ padding: '6px 12px', fontSize: 11, color: C.emerald700, background: C.emerald50 }}>{aviso}</div>}
             {sugerirSiguiente && siguiente && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 11, color: C.moradoTinta, background: C.moradoAgua }}>
@@ -426,7 +438,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   onProgramar={async (tipo, cuando, nota) => {
                     const payload = tipo === 'envio' ? (remotos[0] ? { media_url: remotos[0].url, clase: remotos[0].clase, nombre: remotos[0].nombre, caption: resolver(texto.trim()) || null } : { texto: resolver(texto.trim()), cita: cita?.kapso_message_id || null }) : { nota };
                     const r = await api.programar({ tipo, ejecutar_at: cuando, payload });
-                    if (r?.error) { setError(r.error); return; }
+                    if (r?.error) { setError(r.error, r.error_detalle || null); return; }
                     setPopProgramar(false); cargarProgramados();
                     if (tipo === 'envio') { setTexto(''); setRemotos([]); onQuitarCita?.(); setAviso('Mensaje programado.'); } else setAviso('Te avisamos si no contesta.');
                   }} />}
@@ -480,7 +492,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           .then(x => x.json()).catch(e => ({ error: String(e) }));
         fetch('/api/crm/whatsapp/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uso: a.id }) }).catch(() => {});
         setOcupado(false);
-        if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error); else { setTexto(''); api.refrescar?.(); }
+        if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error, r.error_detalle || null); else { setTexto(''); api.refrescar?.(); }
       }} />}
       {nuevoSnippet && (
         <ModalSnippetRapido inicial={nuevoSnippet} onClose={() => setNuevoSnippet(null)} onGuardado={() => { setNuevoSnippet(null); cargarSnippets(); }} />
@@ -807,7 +819,7 @@ export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string
     setOcupado(true); setError('');
     const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params }, telefono);
     setOcupado(false);
-    if (r?.error) { setError(r.error); return; }
+    if (r?.error) { setError(r.error_detalle ? `${r.error_detalle.titulo}. ${r.error_detalle.que_hacer}` : r.error); return; }
     onClose();
   };
   return (

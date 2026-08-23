@@ -20,6 +20,7 @@ import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { registrarMensaje, actualizarStatus, upsertConversacion } from '../../../lib/whatsapp/espejo';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
+import { explicarError } from '../../../lib/whatsapp/errores';
 import { marcarLeido } from '../../../lib/whatsapp/kapso-api';
 import { alRecibirMensaje } from '../../../lib/whatsapp/automatizacion';
 import { telefonoWhatsApp } from '../../../lib/telefono';
@@ -130,10 +131,12 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (!msj.id) return ok();
         const status = evento.split('.').pop() as string;
         // En failed, Kapso acumula los errores de Meta en kapso.statuses[].errors.
-        const errores = (kapso.statuses || [])
-          .flatMap((s: any) => s?.errors || [])
-          .map((e: any) => [e.code, e.title || e.message].filter(Boolean).join(' '))
-          .join('; ') || null;
+        // failed: se guarda "<código> <título en español> · <detalle de Meta>" (el
+        // detalle crudo va después del separador para soporte).
+        const errs = (kapso.statuses || []).flatMap((s: any) => s?.errors || []);
+        const errores = errs.length
+          ? errs.map((e: any) => { const x = explicarError(e); return `${x.codigo ? x.codigo + ' ' : ''}${x.titulo}${x.crudo ? ' · ' + x.crudo.slice(0, 200) : ''}`; }).join(' | ')
+          : (status === 'failed' ? 'Meta no dio detalle del fallo' : null);
         await actualizarStatus(String(msj.id), status, status === 'failed' ? errores : null);
         return ok();
       }

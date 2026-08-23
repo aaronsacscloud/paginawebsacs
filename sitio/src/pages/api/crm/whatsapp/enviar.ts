@@ -13,6 +13,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
+import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
@@ -52,9 +53,16 @@ async function resolverDestino(b: { conversation_id?: string; telefono?: string 
   return conv ? { convId: conv.id, telefono: tel } : null;
 }
 
+// El error que ve el agente: título + qué pasó + qué hacer, nunca el JSON de Meta.
 const errorKapso = (e: any) => {
-  if (e instanceof KapsoError && e.status === 422) return json({ ventana_cerrada: true, error: 'La ventana de 24 horas está cerrada: usa una plantilla aprobada.' }, 422);
-  return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
+  const st = e instanceof KapsoError ? e.status : undefined;
+  const x = explicarError(e instanceof KapsoError ? e.detalle : e, st);
+  const ventana = x.codigo === '131047' || x.tipo === 'ventana';
+  return json({
+    error: `${x.titulo}. ${x.que_hacer}`,
+    error_detalle: x,
+    ventana_cerrada: ventana,
+  }, ventana ? 422 : (st && st >= 400 && st < 600 ? st : 502));
 };
 
 export const POST: APIRoute = async ({ request }) => {
