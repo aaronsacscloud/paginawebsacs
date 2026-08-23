@@ -37,11 +37,16 @@ export const POST: APIRoute = async ({ request, url }) => {
       for (const ch of entry?.changes || [entry]) {
         const v = ch?.value || ch;
         const calls: any[] = v?.calls || [];
+        const nuestro = String(v?.metadata?.display_phone_number || v?.metadata?.phone_number_id || '').replace(/\D/g, '');
         const statuses: any[] = (v?.statuses || []).filter((s: any) => s?.type === 'call' || String(s?.id || '').startsWith('wacid.'));
         for (const c of calls) {
           const callId = String(c.id || ''); if (!callId) continue;
           const entrante = String(c.direction || 'USER_INITIATED').toUpperCase() !== 'BUSINESS_INITIATED';
-          const tel = String(entrante ? c.from : c.to || '');
+          // El teléfono del CLIENTE es el que NO es nuestro número (en terminate,
+          // from/to se invierten según quién colgó y creaba conversaciones fantasma).
+          const dig = (x: any) => String(x || '').replace(/\D/g, '');
+          const candidatos = [c.from, c.to].filter(Boolean);
+          const tel = String(candidatos.find(x => nuestro && dig(x) !== nuestro && !nuestro.endsWith(dig(x))) || (entrante ? c.from : c.to) || '');
           const conv = tel ? await upsertConversacion({ telefono: tel }) : null;
           const evento = String(c.event || '').toLowerCase();
           const sdp = c.session?.sdp_type === 'offer' ? c.session.sdp : c.session?.sdp_type === 'answer' ? null : null;
