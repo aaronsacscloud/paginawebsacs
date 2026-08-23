@@ -365,6 +365,25 @@ Cómo se les habla:
 
 ### Oficio
 
+- **Simple, y como habla esa gente.** El texto tiene que sonar a alguien del
+  ramo hablando en México, no a un consultor explicando. Frase corta, una idea
+  por oración, cero incisos entre rayas — y **el título del bloque se entiende
+  solo, sin leer el párrafo**. Dos que hubo que rehacer en papelería: *"La lista
+  no es un producto: son renglones"* (cierto, e ilegible sin el párrafo) y la
+  cuenta de la copiadora, que se explicaba como contrato de renta cuando un
+  papelero dice *"a cómo me sale la copia con todo y renta"*. La precisión del
+  oficio no está peleada con la simpleza: son las palabras del piso, en frases
+  cortas. Léelo en voz alta como si estuvieras del otro lado del mostrador.
+- **Si el giro se apoya en un MÓDULO COMPLETO que ya existe, se enseña el
+  módulo.** Sección dedicada con el patrón acordeón + **captura real del
+  sistema** (como `ProductFeatureShowcase` en `producto/[slug].astro`), no una
+  maqueta dibujada a mano. Una maqueta subvalora un desarrollo real y envejece.
+  Para listas escolares las capturas salen de la cuenta `dibujotecnico`.
+- **La imagen tiene que decir lo que dice la etiqueta.** En `SuiteVariantes` de
+  papelería las cinco columnas de rayado enseñaban la misma pasta lisa: si la
+  casilla dice "blanco" la foto va en blanco, y si dice "raya" se ven las rayas.
+  Sin eso la rejilla es decorado, no argumento.
+
 - **Una palabra, un significado.** En zapatería, *remesa* nombraba dos cosas
   distintas —lo que manda el proveedor de León y lo que se mueve entre tus
   propias tiendas— y encima no es la palabra que se usa en México. Quedó
