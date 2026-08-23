@@ -182,6 +182,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // ── Crear ──
+  const _V = 'v11.1';   // marcador de despliegue (diagnóstico)
   const nombre = String(b.nombre || '').trim();
   if (!nombre) return json({ error: 'Falta el nombre del masivo' }, 400);
   const { data: plantilla } = await supabase.from('wa_plantillas')
@@ -232,8 +233,8 @@ export const POST: APIRoute = async ({ request }) => {
       } : {}),
     })));
 
-    return json({ ok: true, id: fila!.id, total: listos.length, descartados });
+    return json({ ok: true, id: fila!.id, total: listos.length, descartados, _v: _V });
   } catch (e: any) {
-    return json({ error: e instanceof KapsoError ? e.message : String(e) }, 502);
+    return json({ error: e instanceof KapsoError ? e.message : String(e), _v: _V }, 502);
   }
 };
