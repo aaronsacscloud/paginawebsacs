@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ESTADOS, normalizaEstado } from '../../../lib/crm/reuniones';
+import KpiCard from './ui/KpiCard';
 import Cargando from './ui/Cargando';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -137,12 +138,14 @@ function adminFetch(input: string, init?: RequestInit) {
   return fetch(input, { ...init, headers, credentials: 'same-origin' });
 }
 
-export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: string) => void }) {
+export default function ReunionesTab({ onOpenContact, onIrAgenda }: { onOpenContact?: (id: string) => void; onIrAgenda?: () => void }) {
   const isMobile = useIsMobile();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vista, setVista] = useState<'lista' | 'calendario'>('lista');
+  // El calendario abre la pestaña. Una agenda se lee en una cuadrícula de mes;
+  // la tabla es para buscar algo concreto, y eso viene después.
+  const [vista, setVista] = useState<'lista' | 'calendario'>('calendario');
   // Arranca en la semana y no en 'proximas': lo primero que se pregunta al
   // entrar es qué hay estos días, y con la agenda vacía a futuro 'proximas'
   // dejaba la pestaña en blanco aunque la semana tuviera diez reuniones.
@@ -155,6 +158,13 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   const [reagendar, setReagendar] = useState<any>(null);
   const [cancelArmed, setCancelArmed] = useState<string | null>(null);
   const [menuFila, setMenuFila] = useState<{ id: string; x: number; y: number } | null>(null);
+  // Agendar arranca por el CLIENTE: una reunión sin cuenta detrás no alimenta
+  // nada —ni su ficha, ni consultoría, ni el reporte— y es la basura que ya
+  // hay que andar borrando. Elegido el cliente, se abre su ficha en Reuniones,
+  // que es donde el alta ya existe y funciona.
+  const [eligiendoCliente, setEligiendoCliente] = useState(false);
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [resCliente, setResCliente] = useState<any[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [calMes, setCalMes] = useState(() => hoyStr().slice(0, 7)); // YYYY-MM
@@ -213,6 +223,18 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     // pasadas: más recientes primero; resto cronológico
     return segmento === 'pasadas' ? [...rows].reverse() : rows;
   }, [data, segmento, fEstado, fHost, fTipo, search, hoy, iniSemana, finSemana]);
+
+  /* Cuántas trae cada pestaña. Mismas reglas que `filtered`, pero SIN los
+     filtros de búsqueda/host/tipo: el número de la pestaña dice qué hay ahí,
+     no qué queda después de filtrar. */
+  const conteoSegmento = (sg: Segmento) => {
+    const est = (b: any) => normalizaEstado(b.estado);
+    if (sg === 'hoy') return data.filter(b => b.fecha === hoy).length;
+    if (sg === 'semana') return data.filter(b => b.fecha >= iniSemana && b.fecha <= finSemana).length;
+    if (sg === 'proximas') return data.filter(b => b.fecha >= hoy && (est(b) === 'confirmada' || est(b) === 'agendada')).length;
+    if (sg === 'pasadas') return data.filter(b => b.fecha < hoy || est(b) === 'asistio' || est(b) === 'no_asistio').length;
+    return data.length;
+  };
 
   const eventTypes = useMemo(() => {
     const m = new Map<string, any>();
@@ -456,43 +478,66 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
 
   return (
     <div style={{ padding: '18px 24px' }}>
-      {/* Qué se está agendando: una tarjeta por tipo. Se toca y filtra todo lo
-          de abajo —lista y calendario—, así que la pregunta "¿cuántas demos
-          traigo?" se contesta y se explora en el mismo gesto. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(178px,1fr))', gap: 10, marginBottom: 12 }}>
+      {/* La página se presenta, como Clientes y Cotizaciones: título, cuánto hay
+          y las acciones a la derecha. Era la única del CRM que entraba directo a
+          las tarjetas, y sin saber dónde estabas parado. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 800, margin: 0, letterSpacing: '-0.015em' }}>Reuniones</h1>
+          <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
+            {data.length} totales · {filtered.length} en vista
+            {fTipo && resumenTipos.find(t => t.id === fTipo) ? ` · ${resumenTipos.find(t => t.id === fTipo)!.nombre}` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Herramienta como ícono, destino en contorno azul, y la acción que
+              manda en morado sólido al final. El orden es el de Cotizaciones. */}
+          <button onClick={load} title="Recargar" aria-label="Recargar"
+            style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid #e0e0e0', background: '#fff', color: '#666', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem' }}>↻</button>
+          {onIrAgenda && (
+            <button onClick={onIrAgenda}
+              style={{ border: '1.5px solid #7DA6F5', background: '#fff', color: '#2C5FC4', borderRadius: 12, padding: '9px 20px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Horarios y tipos
+            </button>
+          )}
+          <button onClick={() => setEligiendoCliente(true)}
+            style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            + Agendar reunión
+          </button>
+        </div>
+      </div>
+
+      {/* Una tarjeta por tipo, con el KpiCard compartido del CRM. Antes era una
+          tarjeta propia de este módulo: otro tamaño de número y sin el "· ver"
+          que anuncia que filtra. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 230px),1fr))', gap: 14, marginBottom: 18 }}>
         {resumenTipos.map(t => {
-          const on = fTipo === t.id;
           const pct = (x: number) => (t.n ? (x / t.n) * 100 : 0);
           return (
-            <button key={t.id} onClick={() => setFTipo(on ? '' : t.id)} title={t.nombre}
-              aria-pressed={on}
-              style={{
-                background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${t.color}`,
-                borderRadius: 10, padding: '12px 14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: on ? `0 0 0 2px ${t.color}55` : 'none',
-              }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
-              </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-.03em', color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{t.n}</div>
-              <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 2, lineHeight: 1.4 }}>
+            <KpiCard key={t.id}
+              label={t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
+              valor={t.n}
+              color={t.color}
+              franja={t.color}
+              activo={fTipo === t.id}
+              onClick={() => setFTipo(fTipo === t.id ? '' : t.id)}
+              sub={<>
                 {t.asistio > 0 && <><b style={{ color: '#1E8A63' }}>{t.asistio}</b> se {t.asistio === 1 ? 'presentó' : 'presentaron'}</>}
                 {t.falto > 0 && <> · <b style={{ color: '#C0554E' }}>{t.falto}</b> {t.falto === 1 ? 'falta' : 'faltas'}</>}
                 {t.asistio === 0 && t.falto === 0 && 'sin resolver'}
-                {t.pend > 0 && <div style={{ color: '#9a6a10', fontWeight: 700 }}>{t.pend} sin marcar</div>}
-              </div>
-              {/* La barra dice de un vistazo si ese tipo se está cerrando o se
-                  está quedando a medias: gris es lo que nadie resolvió. */}
-              <div style={{ display: 'flex', height: 4, borderRadius: 99, overflow: 'hidden', marginTop: 7, background: '#f0eff4' }}>
-                <span style={{ width: pct(t.asistio) + '%', background: '#4FBF95' }} />
-                <span style={{ width: pct(t.falto) + '%', background: '#EF7A72' }} />
-                <span style={{ width: pct(t.pend) + '%', background: '#dcd9e4' }} />
-              </div>
-            </button>
+                {t.pend > 0 && <> · <b style={{ color: '#9a6a10' }}>{t.pend} sin marcar</b></>}
+              </>}
+              barra={[
+                { pct: pct(t.asistio), color: '#4FBF95' },
+                { pct: pct(t.falto), color: '#EF7A72' },
+                { pct: pct(t.pend), color: '#dcd9e4' },
+              ]} />
           );
         })}
         {!resumenTipos.length && (
-          <div style={{ ...S.kpi, color: '#a5a2af', fontSize: '0.82rem' }}>Todavía no hay reuniones agendadas.</div>
+          <div style={{ background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '14px 16px', color: '#a5a2af', fontSize: '0.82rem' }}>
+            Todavía no hay reuniones agendadas.
+          </div>
         )}
       </div>
 
@@ -527,17 +572,29 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         </div>
       )}
 
-      {/* Segmentos + vista */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-        {(['hoy', 'semana', 'proximas', 'pasadas', 'todas'] as Segmento[]).map(s => (
-          <button key={s} style={S.seg(segmento === s)} onClick={() => setSegmento(s)}>
-            {{ hoy: 'Hoy', semana: 'Esta semana', proximas: 'Próximas', pasadas: 'Pasadas', todas: 'Todas' }[s]}
-          </button>
-        ))}
+      {/* Pestañas con contador, como Cotizaciones. Eran píldoras —otro lenguaje—
+          y sin número: había que entrar a cada una para saber si traía algo. */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #eeeef1' }}>
+        {(['hoy', 'semana', 'proximas', 'pasadas', 'todas'] as Segmento[]).map(sg => {
+          const on = segmento === sg;
+          const n = conteoSegmento(sg);
+          return (
+            <button key={sg} onClick={() => setSegmento(sg)}
+              style={{
+                padding: '9px 15px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                background: on ? '#EEECFE' : 'transparent', color: on ? '#5B4BD6' : '#666',
+                borderRadius: '9px 9px 0 0', borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+                fontWeight: on ? 800 : 600, fontSize: '0.83rem', marginBottom: -1,
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+              }}>
+              {{ hoy: 'Hoy', semana: 'Esta semana', proximas: 'Próximas', pasadas: 'Pasadas', todas: 'Todas' }[sg]}
+              <span style={{ fontSize: '0.66rem', fontWeight: 800, background: on ? '#fff' : '#f5f4f8', color: on ? '#5B4BD6' : '#a5a2af', borderRadius: 20, padding: '1px 7px' }}>{n}</span>
+            </button>
+          );
+        })}
         <div style={{ flex: 1 }} />
-        <button style={S.seg(vista === 'lista')} onClick={() => setVista('lista')}>☰ Lista</button>
         <button style={S.seg(vista === 'calendario')} onClick={() => setVista('calendario')}>▦ Calendario</button>
-        <button style={{ ...S.btnSmall, padding: '6px 12px' }} onClick={load}>↻</button>
+        <button style={S.seg(vista === 'lista')} onClick={() => setVista('lista')}>☰ Lista</button>
       </div>
 
       {/* Filtros */}
@@ -644,6 +701,41 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         </>
       )}
 
+      {eligiendoCliente && (
+        <div onClick={e => { if (e.target === e.currentTarget) setEligiendoCliente(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '80px 20px 20px' }}>
+          <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 'min(460px, 100%)', maxHeight: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa' }}>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#241d43' }}>¿Con qué cliente?</div>
+              <div style={{ fontSize: '0.75rem', color: '#8a8590', marginTop: 2 }}>La reunión se agenda desde su ficha, para que quede ligada a su cuenta.</div>
+            </div>
+            <div style={{ padding: '12px 17px' }}>
+              <input autoFocus value={buscaCliente} placeholder="Buscar cliente…"
+                onChange={async e => {
+                  const q = e.target.value; setBuscaCliente(q);
+                  if (q.trim().length < 2) { setResCliente([]); return; }
+                  try {
+                    const j = await adminFetch('/api/crm/search?q=' + encodeURIComponent(q)).then(r => r.json());
+                    setResCliente((j.results || []).filter((r: any) => r.type === 'company').slice(0, 8));
+                  } catch { setResCliente([]); }
+                }}
+                style={{ ...S.input, width: '100%', padding: '10px 12px', fontSize: '0.9rem' }} />
+            </div>
+            <div style={{ overflowY: 'auto', padding: '0 8px 12px' }}>
+              {resCliente.map((r: any) => (
+                <button key={r.id} onClick={() => { setEligiendoCliente(false); setBuscaCliente(''); setResCliente([]); setDrawerCompanyId(r.id); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', borderRadius: 9, padding: '10px 11px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#241d43' }}>{r.nombre}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{r.plan || r.email || 'cliente'}</div>
+                </button>
+              ))}
+              {buscaCliente.trim().length >= 2 && !resCliente.length && (
+                <div style={{ padding: '12px 11px', fontSize: '0.8rem', color: '#a5a2af' }}>Sin clientes que coincidan con “{buscaCliente}”.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
       {reagendar && <ReagendarModal booking={reagendar} onClose={() => setReagendar(null)} onDone={() => { setReagendar(null); avisar('Reunión reagendada ✓'); load(); }} onError={(m) => avisar('Error: ' + m)} />}
 

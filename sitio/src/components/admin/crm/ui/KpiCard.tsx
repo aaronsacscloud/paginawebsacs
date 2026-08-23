@@ -18,7 +18,7 @@ export const KPI_S = {
   ks: { fontSize: '0.6875rem', color: '#888', marginTop: 2, lineHeight: 1.45 } as const,
 };
 
-export default function KpiCard({ label, valor, color, sub, onClick, franja, activo }: {
+export default function KpiCard({ label, valor, color, sub, onClick, franja, activo, barra }: {
   label: string;
   valor: ReactNode;
   color?: string;
@@ -27,6 +27,11 @@ export default function KpiCard({ label, valor, color, sub, onClick, franja, act
   franja?: string;
   /** La tarjeta está aplicada como filtro: se marca para saber qué se está viendo. */
   activo?: boolean;
+  /** Reparto del total en tramos de color, como una barra fina al pie. Nació en
+   *  Reuniones —cuántas se presentaron, cuántas faltaron, cuántas nadie marcó—.
+   *  Vive AQUÍ y no allá: una tarjeta con barra propia en un solo módulo es
+   *  justo la duplicación que este componente existe para evitar. */
+  barra?: { pct: number; color: string }[];
 }) {
   return (
     <div onClick={onClick}
@@ -45,6 +50,11 @@ export default function KpiCard({ label, valor, color, sub, onClick, franja, act
         {sub}
         {onClick ? <span style={{ color: '#9B8CFA', fontWeight: 700 }}>{sub ? ' · ' : ''}{activo ? 'quitar' : 'ver'}</span> : null}
       </div>
+      {barra && barra.length > 0 && (
+        <div style={{ display: 'flex', height: 3, borderRadius: 99, overflow: 'hidden', marginTop: 9, background: '#f0eff4' }}>
+          {barra.map((t, i) => <span key={i} style={{ width: `${t.pct}%`, background: t.color }} />)}
+        </div>
+      )}
     </div>
   );
 }

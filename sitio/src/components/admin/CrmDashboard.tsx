@@ -95,6 +95,14 @@ const iniciales = (n?: string | null) => {
   const p = t.split(/[\s@.]+/).filter(Boolean);
   return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || t.slice(0, 2).toUpperCase();
 };
+/* La chispa de la marca. Sin caja: el símbolo solo, en el degradado de la
+ * firma (morado → rosa). Se genera por tamaño porque el id del degradado tiene
+ * que ser único — dos SVG con el mismo id y el segundo hereda el del primero. */
+const CHISPA = (px: number) => `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true">`
+  + `<defs><linearGradient id="chispa-${px}" x1="0" y1="0" x2="1" y2="1">`
+  + `<stop offset="0%" stop-color="#9B8CFA"/><stop offset="100%" stop-color="#D9538E"/></linearGradient></defs>`
+  + `<path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="url(#chispa-${px})"/></svg>`;
+
 const ICONO_PLEGAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="11 17 6 12 11 7"/><line x1="18" y1="7" x2="18" y2="17"/></svg>';
 // Los renglones del pie pesan como los del menú: mismo alto y mismo tipo de
 // letra. Antes eran ligas de 11 px que había que buscar.
@@ -401,7 +409,13 @@ export default function CrmDashboard() {
           justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 9,
           borderBottom: '1px solid #ece7fa', minHeight: 56,
         }}>
-          <span style={{ width: 29, height: 29, borderRadius: 99, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', flexShrink: 0 }} />
+          {/* La chispa. Antes era un círculo con degradado y NADA adentro:
+              ocupaba el lugar de un logo sin serlo, y plegado el menú se
+              quedaba sin marca. Va sin caja —el símbolo solo, en el degradado
+              de la firma— porque el papel del menú ya es lila y una caja más
+              encima lo ensucia. */}
+          <span style={{ width: 29, height: 29, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            dangerouslySetInnerHTML={{ __html: CHISPA(27) }} />
           {!sidebarCollapsed && (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '0.98rem', fontWeight: 700, color: '#241d43', lineHeight: 1.1 }}>
@@ -421,37 +435,10 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
-          {/* Una sola flecha, siempre en el mismo lugar: abre y cierra desde
-              arriba. Antes había dos —una arriba solo cuando estaba plegado y
-              otra abajo en la barra— y se sentían como dos controles distintos. */}
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              aria-label="Plegar menú" title="Plegar menú"
-              style={{
-                marginLeft: 'auto', width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                background: '#fff', border: 'none', boxShadow: '0 1px 2px rgba(40,20,90,.10)',
-                color: '#8e88a8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-              dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }}
-            />
-          )}
+          {/* El control de plegar se fue AL PIE. Aquí arriba quedaba pegado a
+              "Cerrar sesión" del otro extremo y se confundían: ahora están en
+              lados opuestos del menú. */}
         </div>
-        {/* Plegado, la flecha se convierte en el propio botón de abrir, debajo
-            del distintivo: el riel no tiene dónde poner nada más. */}
-        {sidebarCollapsed && !isMobile && (
-          <button
-            onClick={() => setSidebarCollapsed(false)}
-            aria-label="Abrir menú" title="Abrir menú"
-            style={{
-              width: 44, height: 34, margin: '6px auto 0', borderRadius: 10, border: 'none',
-              background: '#fff', boxShadow: '0 1px 2px rgba(40,20,90,.10)', color: '#8e88a8',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transform: 'scaleX(-1)',
-            }}
-            dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }}
-          />
-        )}
 
         {/* Search (sidebar) */}
         {!sidebarCollapsed && (
@@ -603,9 +590,22 @@ export default function CrmDashboard() {
               </button>
             </div>
 
+            {/* Salir va aquí, DESPUÉS de configuración y como un renglón más:
+                arriba estaba pegada a la flecha de plegar y se confundían. */}
+            <button
+              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+              style={{ ...pieFila, color: '#B24C57' }}>
+              <span style={{ ...pieIcono, color: '#B24C57', opacity: .85 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+            </button>
+            </div>
+
             {/* Quién entró. El día que haya más de una persona en el CRM, saber
-                con qué cuenta estás parado deja de ser un adorno. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', margin: '6px 10px', borderRadius: 11, background: '#fff', boxShadow: '0 1px 3px rgba(40,20,90,.08)' }}>
+                con qué cuenta estás parado deja de ser un adorno. Se le da clic
+                para ir a tu perfil: el bloque estaba ahí sin hacer nada. */}
+            <button
+              onClick={() => switchTab('config' as Tab)}
+              title="Ver mi perfil"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 20px)', textAlign: 'left', padding: '9px 12px', margin: '6px 10px', borderRadius: 11, background: '#fff', border: 'none', boxShadow: '0 1px 3px rgba(40,20,90,.08)', cursor: 'pointer', fontFamily: 'inherit' }}>
               {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
               <span style={{
                 width: 32, height: 32, borderRadius: 9, flexShrink: 0,
@@ -626,25 +626,28 @@ export default function CrmDashboard() {
                   </span>
                 )}
               </span>
-            </div>
+            </button>
 
-            {/* Salir es la última salida y va sola, alineada con todo lo demás
-                del menú: pegada a la izquierda, no escondida en la esquina. */}
+            {/* La última franja es el control de plegar, con su texto: es lo
+                que estaba arriba y se confundía con salir. */}
             <button
-              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '11px 18px', borderTop: '1px solid #e7e0f7', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#B24C57', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit', textAlign: 'left' }}>
-              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+              onClick={() => setSidebarCollapsed(true)}
+              aria-label="Plegar menú"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 14px', borderTop: '1px solid #e7e0f7', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#4b4560', fontSize: '0.74rem', fontWeight: 700, fontFamily: 'inherit' }}>
+              <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar menú
             </button>
           </div>
         ) : !isMobile && (
-          /* Plegado, la salida sigue a mano al pie del riel. La campana no se
-             repite aquí: plegado ya flota arriba a la derecha. */
+          /* Plegado, el pie es el botón de ABRIR. Salir no se repite aquí: es
+             una acción de una vez al día y, con el riel angosto, un icono rojo
+             suelto se lee como una alerta. La campana tampoco: plegado ya
+             flota arriba a la derecha. */
           <div style={{ borderTop: '1px solid #e7e0f7', padding: '6px 0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <button
-              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-              aria-label="Cerrar sesión" title="Cerrar sesión"
-              style={{ width: 44, height: 38, borderRadius: 11, border: 'none', background: 'none', cursor: 'pointer', color: '#B24C57', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />
+              onClick={() => setSidebarCollapsed(false)}
+              aria-label="Abrir menú" title="Abrir menú"
+              style={{ width: 44, height: 38, borderRadius: 11, border: 'none', background: 'none', cursor: 'pointer', color: '#8e88a8', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'scaleX(-1)' }}
+              dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />
           </div>
         )}
       </div>
@@ -682,25 +685,24 @@ export default function CrmDashboard() {
           /* Reuniones y Agenda eran dos entradas del menú, en grupos distintos,
              para el mismo tema: las juntas que ya tienes y los horarios en que
              te pueden agendar. Ahora es una sola con dos vistas. */
+          /* La tira de dos pestañas se fue: ninguna otra página del CRM tiene
+             una encima del título, y dejaba a Reuniones sin cabecera propia.
+             Ahora "Horarios y tipos" es el botón de destino de su cabecera
+             —como "Dashboard" en Cotizaciones— y del otro lado hay un regreso. */
           <div>
-            <div style={{ display: 'flex', gap: 6, padding: '18px 24px 0' }}>
-              {([['reuniones', 'Reuniones'], ['agenda', 'Horarios y tipos']] as const).map(([id, l]) => {
-                const on = tab === id;
-                return (
-                  <button key={id} onClick={() => switchTab(id as Tab)} style={{
-                    padding: '9px 16px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    background: on ? '#EEECFE' : 'transparent', color: on ? '#5B4BD6' : '#666',
-                    borderRadius: '9px 9px 0 0', borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
-                    fontWeight: on ? 800 : 500, fontSize: '0.8125rem', marginBottom: -1,
-                  }}>{l}</button>
-                );
-              })}
-            </div>
-            <div style={{ borderTop: '1px solid #ececec' }}>
-              {tab === 'reuniones'
-                ? <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
-                : <SchedulingTab />}
-            </div>
+            {tab === 'reuniones' ? (
+              <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} onIrAgenda={() => switchTab('agenda' as Tab)} />
+            ) : (
+              <>
+                <div style={{ padding: '18px 24px 0' }}>
+                  <button onClick={() => switchTab('reuniones' as Tab)}
+                    style={{ border: '1px solid #ddd6fb', background: '#fff', color: '#5B4BD6', borderRadius: 9, padding: '8px 13px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    ← Reuniones
+                  </button>
+                </div>
+                <SchedulingTab />
+              </>
+            )}
           </div>
         ) : tab === 'email' ? (
           <ErrorBoundary><EmailTab /></ErrorBoundary>
