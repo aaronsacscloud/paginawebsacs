@@ -82,8 +82,8 @@ export const GET: APIRoute = async ({ url }) => {
   // ── Audiencia para el wizard ──
   if (url.searchParams.get('audiencia') === '1') {
     const { data: contactos } = await supabase.from('contacts')
-      .select('id, nombre, apellido, whatsapp, telefono, tipo, company_id, companies(nombre)')
-      .is('archived_at', null).limit(3000);
+      .select('id, nombre, apellido, whatsapp, telefono, tipo, company_id, wa_optout, companies(nombre)')
+      .is('archived_at', null).eq('wa_optout', false).limit(3000);
     const audiencia = (contactos || [])
       .map((c: any) => ({
         contact_id: c.id,

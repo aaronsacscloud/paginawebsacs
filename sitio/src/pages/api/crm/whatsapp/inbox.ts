@@ -1,8 +1,9 @@
 // WHATSAPP · La lista del inbox: conversaciones + contadores del rail.
 //
-// GET ?filtro=todas|mias|sin_asignar|no_leidas & etapa=<lifecycle_stage>
+// GET ?filtro=todas|mias|sin_asignar|no_leidas|pospuestas & etapa=<lifecycle>
 //     & search= & tipo= & plan= & etiqueta=<uuid> & asignado=<uuid|nadie>
-//     & estado=active|ended & sin_contacto=1 & limit=50 & offset=0
+//     & estado=abierta|pendiente|resuelta & sin_contacto=1 & limit=50 & offset=0
+//     (la búsqueda también entra a TODO el historial de wa_mensajes)
 // → { conversaciones: [{...conv, contacto, empresa}], counts }
 //
 // Los filtros "de cliente" (tipo, plan, etiqueta) reusan la MISMA data del
@@ -45,6 +46,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     id: c.id, telefono: c.telefono, estado: c.estado,
     ultimo_mensaje_at: c.ultimo_mensaje_at, ultimo_mensaje_texto: c.ultimo_mensaje_texto,
     ultima_direccion: c.ultima_direccion, no_leidos: c.no_leidos || 0,
+    estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
     asignado_a: c.asignado_a, contact_id: c.contact_id, company_id: c.company_id,
     contacto: c.contacts ? {
       id: c.contacts.id,
@@ -58,10 +60,14 @@ export const GET: APIRoute = async ({ request, url }) => {
   }));
 
   // Contadores del rail sobre el universo.
-  const counts: any = { todas: todas.length, mias: 0, sin_asignar: 0, no_leidas: 0, por_etapa: {} as Record<string, number> };
+  const ahora = new Date().toISOString();
+  const pospuesta = (c: any) => c.snooze_until && c.snooze_until > ahora;
+  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, pospuestas: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
+    if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
+    counts.todas++;
     if (user && c.asignado_a === user.id) counts.mias++;
-    if (!c.asignado_a && c.estado === 'active') counts.sin_asignar++;
+    if (!c.asignado_a && c.estado_crm !== 'resuelta') counts.sin_asignar++;
     if (c.no_leidos > 0) counts.no_leidas++;
     const e = c.contacto?.lifecycle_stage;
     if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
@@ -81,8 +87,10 @@ export const GET: APIRoute = async ({ request, url }) => {
   // Filtro + búsqueda en memoria: el universo cabe (limit 1000) y evita
   // duplicar la lógica de joins en SQL.
   let lista = todas;
+  if (filtro === 'pospuestas') lista = lista.filter(pospuesta);
+  else lista = lista.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
   if (filtro === 'mias' && user) lista = lista.filter(c => c.asignado_a === user.id);
-  if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado === 'active');
+  if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
   if (filtro === 'no_leidas') lista = lista.filter(c => c.no_leidos > 0);
   if (etapa) lista = lista.filter(c => c.contacto?.lifecycle_stage === etapa);
   if (tipo) lista = lista.filter(c => c.contacto?.tipo === tipo);
@@ -90,15 +98,22 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (conEtiqueta) lista = lista.filter(c => c.company_id && conEtiqueta!.has(c.company_id));
   if (asignado === 'nadie') lista = lista.filter(c => !c.asignado_a);
   else if (asignado) lista = lista.filter(c => c.asignado_a === asignado);
-  if (estado) lista = lista.filter(c => c.estado === estado);
+  if (estado) lista = lista.filter(c => (c.estado_crm || 'abierta') === estado);
   if (sinContacto) lista = lista.filter(c => !c.contact_id);
   if (search) {
     const q = search.toLowerCase();
     const qTel = telefonoWhatsApp(search);
+    // Además de los campos visibles, se busca en TODO el historial de
+    // mensajes (índice trigram en wa_mensajes.cuerpo).
+    const { data: hits } = await supabase.from('wa_mensajes')
+      .select('conversation_id').or(`cuerpo.ilike.%${q.replace(/[%,()]/g, '')}%,transcript.ilike.%${q.replace(/[%,()]/g, '')}%`)
+      .limit(400);
+    const enHistorial = new Set((hits || []).map((h: any) => h.conversation_id));
     lista = lista.filter(c =>
       (c.contacto?.nombre || '').toLowerCase().includes(q) ||
       (c.empresa?.nombre || '').toLowerCase().includes(q) ||
       (c.ultimo_mensaje_texto || '').toLowerCase().includes(q) ||
+      enHistorial.has(c.id) ||
       c.telefono.includes(qTel || search.replace(/\D/g, '') || '∅'));
   }
 

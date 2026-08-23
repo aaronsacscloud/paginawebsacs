@@ -19,6 +19,15 @@ function horaRelativa(iso: string): string {
   return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 }
 
+/** SLA: cuánto lleva el cliente esperando respuesta. */
+function slaDe(c: any): { label: string; bg: string; fg: string } | null {
+  if (c.ultima_direccion !== 'entrante' || c.estado_crm === 'resuelta') return null;
+  const h = (Date.now() - new Date(c.ultimo_mensaje_at).getTime()) / 3600e3;
+  if (h < 1) return null;
+  const label = h < 24 ? `sin responder ${Math.floor(h)} h` : `sin responder ${Math.floor(h / 24)} d`;
+  return h >= 4 ? { label, bg: '#FEF0EF', fg: '#C0554E' } : { label, bg: '#FFF6E3', fg: '#9A6B15' };
+}
+
 export function Avatar({ nombre, telefono, size = 38 }: { nombre?: string | null; telefono: string; size?: number }) {
   const base = (nombre || telefono).trim();
   const iniciales = nombre
@@ -135,6 +144,11 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
                   )}
                 </span>
                 <span style={{ display: 'flex', gap: 5, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {(() => { const sla = slaDe(c); return sla ? (
+                    <span style={{ fontSize: '0.58rem', fontWeight: 800, background: sla.bg, color: sla.fg, borderRadius: 20, padding: '2px 8px' }}>{sla.label}</span>
+                  ) : null; })()}
+                  {c.estado_crm === 'pendiente' && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#FFF6E3', color: '#9A6B15', borderRadius: 20, padding: '2px 8px' }}>pendiente</span>}
+                  {c.estado_crm === 'resuelta' && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#EAF8F2', color: '#1E8A63', borderRadius: 20, padding: '2px 8px' }}>resuelta</span>}
                   {etapa && (
                     <span style={{ fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px' }}>
                       {etapa.label}

@@ -86,6 +86,7 @@ const EVENTOS = [
   'whatsapp.message.received', 'whatsapp.message.sent', 'whatsapp.message.delivered',
   'whatsapp.message.read', 'whatsapp.message.failed',
   'whatsapp.conversation.created', 'whatsapp.conversation.ended',
+  'whatsapp.contact.marketing_preference_changed',
 ];
 
 export async function listarWebhooks() {

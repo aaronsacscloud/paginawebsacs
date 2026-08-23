@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { LIFECYCLE } from '../../../../lib/crm/lifecycle';
 import { useCatalogoEtiquetas } from '../Etiquetas';
+import AjustesWA from './AjustesWA';
 import type { Filtros } from './InboxPro';
 import { FILTROS_BASE } from './InboxPro';
 
@@ -13,6 +14,7 @@ const FILTROS_BANDEJA = [
   { id: 'mias', label: 'Mías' },
   { id: 'sin_asignar', label: 'Sin asignar' },
   { id: 'no_leidas', label: 'No leídas' },
+  { id: 'pospuestas', label: 'Pospuestas' },
 ];
 
 // El catálogo de planes es el de Clientes (PLAN_BADGE); los ids son los del
@@ -49,6 +51,7 @@ export default function RailInbox({ counts, filtros, setFiltros, equipo = [] }: 
 }) {
   const [vistas, setVistas] = useState<any[]>([]);
   const [guardando, setGuardando] = useState(false);
+  const [ajustes, setAjustes] = useState(false);
   const { cat } = useCatalogoEtiquetas();
 
   const cargarVistas = () => fetch('/api/crm/vistas?tabla=wa_inbox').then(r => r.json())
@@ -88,7 +91,7 @@ export default function RailInbox({ counts, filtros, setFiltros, equipo = [] }: 
         <button key={f.id} style={fila(filtros.filtro === f.id && !filtros.etapa)}
           onClick={() => setFiltros({ ...filtros, filtro: f.id, etapa: '' })}>
           {f.label}
-          <span style={num}>{f.id === 'todas' ? counts.todas ?? '' : f.id === 'mias' ? counts.mias ?? '' : f.id === 'sin_asignar' ? counts.sin_asignar ?? '' : counts.no_leidas ?? ''}</span>
+          <span style={num}>{(counts as any)[f.id === 'no_leidas' ? 'no_leidas' : f.id] ?? ''}</span>
         </button>
       ))}
 
@@ -137,8 +140,9 @@ export default function RailInbox({ counts, filtros, setFiltros, equipo = [] }: 
         </select>
         <select style={sel(!!filtros.estado)} value={filtros.estado} onChange={e => set('estado', e.target.value)} aria-label="Estado">
           <option value="">Estado: todas</option>
-          <option value="active">Abiertas</option>
-          <option value="ended">Cerradas</option>
+          <option value="abierta">Abiertas</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="resuelta">Resueltas</option>
         </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '4px 7px', fontSize: '0.73rem', color: filtros.sin_contacto ? '#5B4BD6' : '#555', fontWeight: filtros.sin_contacto ? 700 : 500, cursor: 'pointer' }}>
           <input type="checkbox" checked={filtros.sin_contacto === '1'}
@@ -167,6 +171,13 @@ export default function RailInbox({ counts, filtros, setFiltros, equipo = [] }: 
           Combina bandeja, etapa y filtros de cliente, y guárdalo como vista.
         </div>
       )}
+
+      <button onClick={() => setAjustes(true)}
+        style={{ ...fila(false), marginTop: 14, color: '#8a8a92' }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.8" /><path d="M12 2.8v3M12 18.2v3M21.2 12h-3M5.8 12h-3M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1M18.5 18.5l-2.1-2.1M7.6 7.6 5.5 5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        Automatización
+      </button>
+      {ajustes && <AjustesWA onClose={() => setAjustes(false)} />}
     </div>
   );
 }

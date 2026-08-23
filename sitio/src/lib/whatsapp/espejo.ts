@@ -86,7 +86,7 @@ export async function registrarMensaje(o: {
   mediaUrl?: string | null;
   status?: string | null;
   timestamp?: string | null;          // del payload de Kapso
-}): Promise<{ inserted: boolean }> {
+}): Promise<{ inserted: boolean; conversationId?: string }> {
   const conv = await upsertConversacion({
     kapsoConversationId: o.kapsoConversationId, telefono: o.telefono,
   });
@@ -111,7 +111,7 @@ export async function registrarMensaje(o: {
     .select('id');
   if (error) console.error('[wa-espejo] insert mensaje:', error.message);
   const inserted = !!ins?.length;
-  if (!inserted) return { inserted: false };
+  if (!inserted) return { inserted: false, conversationId: conv.id };
 
   await supabase.from('wa_conversaciones').update({
     ultimo_mensaje_at: new Date().toISOString(),
@@ -123,10 +123,12 @@ export async function registrarMensaje(o: {
   if (o.direccion === 'entrante') {
     // No-leídos con RPC-less increment: leer+escribir es carrera aceptable
     // aquí (el peor caso es un contador ±1 que se corrige al abrir el hilo).
+    // Un mensaje del cliente REABRE lo resuelto y despierta lo pospuesto:
+    // nada de contestar a una conversación que el rail ya no enseña.
     const { data: c } = await supabase.from('wa_conversaciones')
       .select('no_leidos, telefono').eq('id', conv.id).maybeSingle();
     await supabase.from('wa_conversaciones')
-      .update({ no_leidos: (c?.no_leidos ?? 0) + 1 }).eq('id', conv.id);
+      .update({ no_leidos: (c?.no_leidos ?? 0) + 1, estado_crm: 'abierta', snooze_until: null }).eq('id', conv.id);
     // Campana del CRM. Idempotente por clave = wamid: el replay no re-suena.
     await notificar({
       clave: `wa_${o.kapsoMessageId}`,
@@ -153,7 +155,7 @@ export async function registrarMensaje(o: {
         .update({ last_contact_at: new Date().toISOString() }).eq('id', conv.contactId);
     }
   }
-  return { inserted: true };
+  return { inserted: true, conversationId: conv.id };
 }
 
 /**

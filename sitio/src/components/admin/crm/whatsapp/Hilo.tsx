@@ -1,6 +1,6 @@
 // WHATSAPP · El hilo: header con asignación, burbujas con estados ✓✓,
 // separadores por día, notas internas intercaladas (ámbar) y el composer.
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Cargando from '../ui/Cargando';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe } from '../../../../lib/crm/lifecycle';
@@ -79,10 +79,20 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>
-        <button onClick={() => api.patchConversacion({ estado: conv.estado === 'active' ? 'ended' : 'active' })}
-          style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 10px', fontSize: '0.7rem', fontWeight: 700, background: '#fff', color: conv.estado === 'active' ? '#555' : '#1E8A63', cursor: 'pointer', fontFamily: 'inherit' }}>
-          {conv.estado === 'active' ? 'Cerrar' : 'Reabrir'}
-        </button>
+        <select value={conv.estado_crm || 'abierta'} onChange={e => api.patchConversacion({ estado_crm: e.target.value })}
+          aria-label="Estado" title="Estado de la conversación"
+          style={{
+            border: '1px solid', borderRadius: 8, padding: '5px 7px', fontSize: '0.7rem', fontWeight: 700,
+            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+            borderColor: conv.estado_crm === 'resuelta' ? '#bfe6d6' : conv.estado_crm === 'pendiente' ? '#f3e3bd' : '#e2e4e9',
+            background: conv.estado_crm === 'resuelta' ? '#EAF8F2' : conv.estado_crm === 'pendiente' ? '#FFF6E3' : '#fff',
+            color: conv.estado_crm === 'resuelta' ? '#1E8A63' : conv.estado_crm === 'pendiente' ? '#9A6B15' : '#555',
+          }}>
+          <option value="abierta">Abierta</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="resuelta">Resuelta</option>
+        </select>
+        <MenuSnooze conv={conv} api={api} />
         {onVerDetalle && (
           <button onClick={onVerDetalle} style={{ border: '1.5px solid #7DA6F5', borderRadius: 8, padding: '5px 10px', fontSize: '0.7rem', fontWeight: 700, background: '#fff', color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit' }}>
             Detalle
@@ -116,8 +126,11 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
                 }}>
                   {item.transcript ? (<>
                     <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6', display: 'block' }}>NOTA DE VOZ · transcripción</span>
+                    {item.media_url && <audio controls preload="none" src={item.media_url} style={{ width: 230, height: 34, display: 'block', margin: '4px 0' }} />}
                     <span style={{ whiteSpace: 'pre-wrap' }}>{item.transcript}</span>
-                  </>) : null}
+                  </>) : item.tipo === 'audio' && item.media_url ? (
+                    <audio controls preload="none" src={item.media_url} style={{ width: 230, height: 34, display: 'block' }} />
+                  ) : null}
                   {item.media_url && esImagen(item.media_url, item.tipo) && (
                     <a href={item.media_url} target="_blank" rel="noreferrer" style={{ display: 'block', marginBottom: item.cuerpo ? 6 : 0 }}>
                       <img src={item.media_url} alt="imagen" style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, display: 'block' }} />
@@ -152,7 +165,56 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
       </div>
 
       {/* ── Composer ── */}
-      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} />
+      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} />
     </div>
+  );
+}
+
+/** Posponer (snooze) + exportar, en un solo menú compacto. */
+function MenuSnooze({ conv, api }: { conv: any; api: any }) {
+  const [abierto, setAbierto] = useState(false);
+  const posponer = async (hasta: Date) => {
+    setAbierto(false);
+    await api.patchConversacion({ snooze_until: hasta.toISOString(), no_leidos: 0 });
+  };
+  const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
+  const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
+  const dormida = conv.snooze_until && new Date(conv.snooze_until) > new Date();
+  return (
+    <span style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setAbierto(a => !a)} title={dormida ? `Pospuesta hasta ${new Date(conv.snooze_until).toLocaleString('es-MX')}` : 'Posponer / más acciones'}
+        style={{ border: '1px solid', borderColor: dormida ? '#f3e3bd' : '#e2e4e9', borderRadius: 8, padding: '5px 9px', fontSize: '0.7rem', fontWeight: 700, background: dormida ? '#FFF6E3' : '#fff', color: dormida ? '#9A6B15' : '#555', cursor: 'pointer', fontFamily: 'inherit' }}>
+        {dormida ? 'Pospuesta' : '⋯'}
+      </button>
+      {abierto && (
+        <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />
+      )}
+      {abierto && (
+        <span style={{ position: 'absolute', right: 0, top: '110%', zIndex: 941, background: '#fff', border: '1px solid #e8e7ee', borderRadius: 10, boxShadow: '0 6px 20px rgba(40,20,90,.12)', minWidth: 190, display: 'block', overflow: 'hidden' }}>
+          <span style={{ display: 'block', padding: '7px 12px 3px', fontSize: '0.58rem', fontWeight: 800, color: '#b3b1bb', textTransform: 'uppercase', letterSpacing: '.06em' }}>Posponer hasta</span>
+          {[
+            { l: 'En 3 horas', f: () => new Date(Date.now() + 3 * 3600e3) },
+            { l: 'Mañana 9:00', f: manana9 },
+            { l: 'Lunes 9:00', f: lunes9 },
+          ].map(o => (
+            <button key={o.l} onClick={() => posponer(o.f())}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: '0.76rem', color: '#555' }}>
+              {o.l}
+            </button>
+          ))}
+          {dormida && (
+            <button onClick={() => { setAbierto(false); api.patchConversacion({ snooze_until: null }); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: '0.76rem', color: '#9A6B15', fontWeight: 700 }}>
+              Despertar ahora
+            </button>
+          )}
+          <span style={{ display: 'block', borderTop: '1px solid #f0eff3' }} />
+          <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
+            style={{ display: 'block', padding: '8px 12px', fontSize: '0.76rem', color: '#2C5FC4', fontWeight: 700, textDecoration: 'none' }}>
+            Exportar conversación (.txt)
+          </a>
+        </span>
+      )}
+    </span>
   );
 }

@@ -53,6 +53,8 @@ export const PUT: APIRoute = async ({ request }) => {
   // Whitelist explícita: lo que el inbox puede tocar de una conversación.
   if ('asignado_a' in b) cambios.asignado_a = b.asignado_a || null;
   if ('estado' in b && ['active', 'ended'].includes(b.estado)) cambios.estado = b.estado;
+  if ('estado_crm' in b && ['abierta', 'pendiente', 'resuelta'].includes(b.estado_crm)) cambios.estado_crm = b.estado_crm;
+  if ('snooze_until' in b) cambios.snooze_until = b.snooze_until || null;
   if ('no_leidos' in b) cambios.no_leidos = Math.max(0, Number(b.no_leidos) || 0);
   // Ligar la conversación a un contacto recién creado (adopción manual).
   if ('contact_id' in b) cambios.contact_id = b.contact_id || null;

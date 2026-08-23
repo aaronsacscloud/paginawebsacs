@@ -11,6 +11,7 @@ import OutboundTab from './crm/outbound/OutboundTab';
 import WhatsAppTab from './crm/whatsapp/WhatsAppTab';
 import WaMasivos from './crm/whatsapp/Masivos';
 import WaPlantillas from './crm/whatsapp/Plantillas';
+import MetricasWA from './crm/whatsapp/MetricasWA';
 import SchedulingTab from './crm/SchedulingTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
@@ -48,7 +49,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'outbound' | 'soporte';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'outbound' | 'soporte';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -73,6 +74,7 @@ const ICONS: Record<string, string> = {
   mejoras: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" fill="currentColor" opacity=".18"/><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   oportunidades: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg>',
   whatsapp: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.4-1.15A8.5 8.5 0 1 0 12 3.5z" fill="currentColor" opacity=".18"/><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.4-1.15A8.5 8.5 0 1 0 12 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.8 12h.01M12 12h.01M15.2 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  'wa-metricas': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="12" width="4" height="8" rx="1" fill="currentColor" opacity=".18"/><rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" opacity=".18"/><rect x="4" y="12" width="4" height="8" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="7" width="4" height="13" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="16" y="3" width="4" height="17" rx="1" stroke="currentColor" stroke-width="1.8"/></svg>',
   'wa-masivos': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 10v4l10 4V6L4 10z" fill="currentColor" opacity=".18"/><path d="M4 10v4l10 4V6L4 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5M6.5 14.5V18a1.5 1.5 0 0 0 3 0v-2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   'wa-plantillas': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2.5" fill="currentColor" opacity=".18"/><rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" opacity=".18"/><rect x="4" y="7" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -161,6 +163,7 @@ const NAV_SECTIONS = [
       { id: 'whatsapp' as Tab, label: 'WhatsApp', icon: 'whatsapp' },
       { id: 'wa-masivos' as Tab, label: 'Masivos WhatsApp', icon: 'wa-masivos' },
       { id: 'wa-plantillas' as Tab, label: 'Plantillas WhatsApp', icon: 'wa-plantillas' },
+      { id: 'wa-metricas' as Tab, label: 'Métricas WhatsApp', icon: 'wa-metricas' },
       // Outbound = mensajes DENTRO de SACS3 (banners/modales/tarjetas) — el
       // canal hermano del email: misma pregunta, visto desde adentro del producto.
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
@@ -698,6 +701,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><WaMasivos /></ErrorBoundary>
         ) : tab === 'wa-plantillas' ? (
           <ErrorBoundary><WaPlantillas /></ErrorBoundary>
+        ) : tab === 'wa-metricas' ? (
+          <ErrorBoundary><MetricasWA /></ErrorBoundary>
         ) : tab === 'outbound' ? (
           <ErrorBoundary><OutboundTab /></ErrorBoundary>
         ) : tab === 'automations' ? (

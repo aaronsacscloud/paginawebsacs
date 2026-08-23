@@ -19,6 +19,9 @@
 import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { registrarMensaje, actualizarStatus, upsertConversacion } from '../../../lib/whatsapp/espejo';
+import { alRecibirMensaje } from '../../../lib/whatsapp/automatizacion';
+import { telefonoWhatsApp } from '../../../lib/telefono';
+import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 const ok = () => new Response('OK', { status: 200 });
@@ -65,7 +68,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       case 'whatsapp.message.received':
       case 'whatsapp.message.sent': {
         if (!msj.id || !telefono) return ok();
-        await registrarMensaje({
+        const r = await registrarMensaje({
           kapsoMessageId: String(msj.id),
           kapsoConversationId: conv.id ? String(conv.id) : null,
           telefono,
@@ -76,6 +79,21 @@ export const POST: APIRoute = async ({ request, url }) => {
           mediaUrl: kapso.media_url || null,
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
         });
+        // Automatización (bienvenida / fuera de horario / round-robin): SOLO
+        // entrantes NUEVOS — un replay o un saliente jamás la disparan.
+        if (evento === 'whatsapp.message.received' && r.inserted && r.conversationId) {
+          await alRecibirMensaje(r.conversationId).catch(e => console.warn('[wa-auto]', e));
+        }
+        return ok();
+      }
+
+      case 'whatsapp.contact.marketing_preference_changed': {
+        // El cliente pidió (o quitó) el alto a marketing: se respeta en
+        // masivos y Nuevo chat vía contacts.wa_optout.
+        const tel = telefonoWhatsApp(telefono);
+        const stopped = payload?.marketing_preference === 'stopped' || payload?.preference === 'stopped'
+          || payload?.contact?.marketing_preference === 'stopped';
+        if (tel) await supabase.from('contacts').update({ wa_optout: !!stopped }).eq('whatsapp', tel);
         return ok();
       }
 

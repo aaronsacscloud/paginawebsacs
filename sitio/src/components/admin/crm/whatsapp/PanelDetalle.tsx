@@ -149,6 +149,15 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
             <Etiquetas entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} compacto />
           </div>
         )}
+        <div style={{ marginTop: 8 }}>
+          <label style={L}>Etiquetas de la conversación</label>
+          <Etiquetas entidad="wa_conversacion" id={conv.id} compacto />
+        </div>
+        {contacto?.wa_optout && (
+          <div style={{ marginTop: 8 }}>
+            <span style={tag('#FEF0EF', '#C0554E')}>Pidió no recibir marketing</span>
+          </div>
+        )}
       </div>
 
       {/* ── Desconocido: alta mínima ── */}
