@@ -7,6 +7,7 @@ import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import TabOutbound from './outbound/TabOutbound';
 import TabSoporte from './soporte/TabSoporte';
+import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
@@ -98,7 +99,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -222,6 +223,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   Consultoría
                   {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
+                <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>WhatsApp</button>
                 <button style={D.tab(tab === 'outbound')} onClick={() => irA('outbound')}>Outbound</button>
                 <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
                   Soporte
@@ -259,6 +261,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
+              {tab === 'whatsapp' && <TabWhatsApp360 companyId={companyId} />}
               {tab === 'outbound' && <TabOutbound companyId={companyId} />}
               {tab === 'soporte' && <TabSoporte companyId={companyId} />}
             </div>
@@ -1296,6 +1299,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
   const [pausaSub, setPausaSub] = useState<any>(null);
+  const [bajaSub, setBajaSub] = useState<any>(null);
   const [cobrando, setCobrando] = useState<string | null>(null);
   // Link de domiciliación recién creado en el alta: se queda a la vista hasta
   // que lo mandas, porque el link es TODO el trámite (sin él no pasa nada).
@@ -1741,6 +1745,15 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                               <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>
                                 Editar suscripción
                               </button>
+                              {/* La baja es de la LICENCIA, no del cliente: hay
+                                  cuentas que cancelan el plan base y se quedan
+                                  con plugins recurrentes, y esos también hay
+                                  que poder darlos de baja por separado. */}
+                              {s.estado !== 'cancelada' && (
+                                <button style={{ ...D.mi, color: '#C0554E' }} onClick={() => { setMenuSub(null); setBajaSub(s); }}>
+                                  Cancelar suscripción<small style={D.miSub}>pide el motivo · sale del ARR</small>
+                                </button>
+                              )}
                             </div>
                           </>
                         )}
@@ -1772,6 +1785,10 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       {pausaSub && (
         <PausaModal sub={pausaSub} onCancel={() => setPausaSub(null)}
           onDone={() => { setPausaSub(null); flash(pausaSub.estado === 'pausada' ? 'Licencia reactivada' : 'Licencia pausada'); reload(); }} />
+      )}
+      {bajaSub && (
+        <CancelarSubModal sub={bajaSub} onCancel={() => setBajaSub(null)}
+          onDone={() => { setBajaSub(null); flash(`${bajaSub.nombre_plan} dada de baja`); reload(); }} />
       )}
       {picker && (
         <PlanPickerModal
@@ -1953,6 +1970,111 @@ function PausaModal({ sub, onCancel, onDone }: { sub: any; onCancel: () => void;
           <button onClick={guardar} disabled={busy}
             style={{ ...D.btn, minHeight: 44, padding: '0 18px', background: reactivando ? '#1A8F7A' : '#a06600' }}>
             {busy ? '…' : (reactivando ? 'Reactivar' : 'Pausar licencia')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ Cancelar una licencia ═══
+ * Distinto de pausar: pausar congela algo que el cliente ya pagó y va a
+ * retomar; cancelar es una BAJA — sale del ARR y cuenta como churn.
+ *
+ * Se cancela una LICENCIA, no un cliente: hay cuentas que dan de baja el plan
+ * base y se quedan con plugins recurrentes, y esos también hay que poder
+ * cancelarlos por separado. Por eso vive en el menú de cada renglón y no en un
+ * botón de la cuenta.
+ *
+ * El motivo es obligatorio y de catálogo cerrado: "se fueron 3" no se puede
+ * accionar, "3 por precio" sí. El detalle libre se guarda pegado con un guion
+ * —"Precio / presupuesto — subió mucho la renovación"— que es el formato que
+ * ya leen el tablero de bajas y el reporte de churn. */
+const RAZONES_BAJA: [string, string][] = [
+  ['precio', 'Precio / presupuesto'],
+  ['no_implemento', 'No lo implementó'],
+  ['no_uso', 'Dejó de usarlo'],
+  ['cerro_negocio', 'Cerró el negocio'],
+  ['competencia', 'Se fue con la competencia'],
+  ['mal_servicio', 'Mal servicio / soporte'],
+  ['feature_falta', 'Le faltó una función'],
+  ['otro', 'Otro'],
+];
+
+function CancelarSubModal({ sub, onCancel, onDone }: { sub: any; onCancel: () => void; onDone: () => void }) {
+  const [razon, setRazon] = useState('');
+  const [detalle, setDetalle] = useState('');
+  const [alVencer, setAlVencer] = useState(false);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const etiqueta = RAZONES_BAJA.find(r => r[0] === razon)?.[1] || '';
+  const exigeDetalle = razon === 'otro' || razon === 'competencia';
+
+  async function guardar() {
+    if (!razon) { setErr('Elige el motivo — es lo que permite atacar la causa del churn.'); return; }
+    if (exigeDetalle && !detalle.trim()) {
+      setErr(razon === 'competencia' ? '¿A qué competidor se fue?' : 'Agrega el detalle de la baja.'); return;
+    }
+    setBusy(true); setErr('');
+    // Mismo formato que ya guarda el resto del CRM: etiqueta — detalle.
+    const texto = detalle.trim() ? `${etiqueta} — ${detalle.trim()}` : razon;
+    // Las dos formas van con estado 'cancelada': el servidor es quien decide.
+    // Con `cancela_al_vencer` la deja ACTIVA con la bandera puesta y el cron la
+    // baja el día de la renovación; sin ella la cancela hoy y sella la fecha.
+    // Mandar solo la bandera no haría nada: el servidor solo la mira cuando
+    // reconoce una cancelación nueva.
+    const body: any = { id: sub.id, estado: 'cancelada', razon_cancelacion: texto, ...(alVencer ? { cancela_al_vencer: true } : {}) };
+    const j = await fetch('/api/crm/arr/subscriptions', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(r => r.json()).catch(() => ({ error: 'Respuesta inválida' }));
+    if (j?.error) { setErr(j.error); setBusy(false); return; }
+    onDone();
+  }
+
+  const wrap = { position: 'fixed' as const, inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,.5)' };
+  const box = { background: '#fff', borderRadius: 16, width: 'min(520px, 100%)', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 60px rgba(0,0,0,.3)' };
+
+  return (
+    <div style={wrap} onClick={onCancel}>
+      <div style={box} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '20px 22px 0' }}>
+          <div style={{ fontSize: '1.02rem', fontWeight: 800, color: '#C0554E' }}>Dar de baja esta licencia</div>
+          <div style={{ fontSize: '0.82rem', color: '#666', marginTop: 5 }}>
+            {sub.nombre_plan} · {money(sub.precio || sub.arr)} — sale del ARR y cuenta como baja del mes.
+            Solo se cancela ESTA licencia; las demás del cliente siguen igual.
+          </div>
+        </div>
+        <div style={{ padding: '14px 22px 0' }}>
+          <label style={D.lbl}>¿Por qué se va? *</label>
+          <select value={razon} onChange={e => setRazon(e.target.value)} autoFocus style={{ ...D.input, height: 44 }}>
+            <option value="">Elige el motivo…</option>
+            {RAZONES_BAJA.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+
+          <label style={{ ...D.lbl, marginTop: 10 }}>
+            {exigeDetalle ? 'Cuéntanos qué pasó *' : 'Detalle (opcional, pero es lo que sirve después)'}
+          </label>
+          <textarea value={detalle} onChange={e => setDetalle(e.target.value)} rows={3}
+            placeholder={razon === 'competencia' ? '¿A qué competidor se fue y por qué?' : 'Lo que dijo el cliente, con sus palabras.'}
+            style={{ ...D.input, height: 'auto', padding: '10px 12px', resize: 'vertical' }} />
+
+          <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={alVencer} onChange={e => setAlVencer(e.target.checked)} style={{ marginTop: 3 }} />
+            <span style={{ fontSize: '0.8rem', color: '#4a4558', lineHeight: 1.5 }}>
+              <b>No cancelar todavía: que se dé de baja al vencer</b>
+              <div style={{ color: '#8a8a92', fontSize: '0.75rem' }}>
+                Ya pagó su periodo. Sigue activa y sumando ARR hasta {sub.proxima_factura ? fmtDate(sub.proxima_factura) : 'su próxima factura'}, y ese día se cancela sola.
+              </div>
+            </span>
+          </label>
+
+          {err && <div style={{ marginTop: 10, fontSize: '0.82rem', color: '#b93333', fontWeight: 700 }}>{err}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 22px 20px' }}>
+          <button onClick={onCancel} style={{ ...D.btnG, minHeight: 44, padding: '0 16px' }}>Mejor no</button>
+          <button onClick={guardar} disabled={busy}
+            style={{ ...D.btn, minHeight: 44, padding: '0 18px', background: '#C0554E' }}>
+            {busy ? '…' : alVencer ? 'Programar la baja' : 'Dar de baja'}
           </button>
         </div>
       </div>

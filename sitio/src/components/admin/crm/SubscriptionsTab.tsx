@@ -101,6 +101,10 @@ export default function SubscriptionsTab() {
   // del ingreso recurrente. La lista operativa sigue a un clic.
   const [vista, setVista] = useState<'finanzas' | 'subs' | 'riesgo' | 'cobranza' | 'conciliacion' | 'inteligencia'>('finanzas');
   const [editSub, setEditSub] = useState<Sub | null>(null);
+  // Menú de acciones de una suscripción: posición fija desde el botón, porque
+  // uno absolute dentro de la tabla lo recorta el overflow.
+  const [menuSub, setMenuSub] = useState<{ sub: any; x: number; y: number } | null>(null);
+  const [editModo, setEditModo] = useState<'' | 'cancelar'>('');
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
 
   // Link formal para el cliente (estado de suscripción + PDF), con opción de
@@ -404,8 +408,12 @@ export default function SubscriptionsTab() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1E8A63' : h >= 40 ? '#a06600' : '#C0554E', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px', background: '#4FBF95', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={e => { e.stopPropagation(); setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>Pago</button>
-                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); setLinkSub(s); }}>🔗 Link</button>
-                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
+                        {/* En móvil también manda el menú: tres botones no caben
+                            y las acciones que faltaban —la baja, sobre todo— no
+                            tendrían dónde ir. */}
+                        <button title="Más acciones" aria-label="Más acciones de la suscripción"
+                          onClick={e => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuSub({ sub: s, x: r.right, y: r.bottom + 4 }); }}
+                          style={{ border: '1px solid #e6e3ee', background: '#fff', borderRadius: 8, cursor: 'pointer', minWidth: 44, minHeight: 44, color: '#6f6b7d', fontSize: 16, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
                       </div>
                     </div>
                   </div>
@@ -414,13 +422,21 @@ export default function SubscriptionsTab() {
             </div>
           ) : (
             <div className="crm-scroll-x">
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+              {/* ── Cinco columnas, no catorce ──
+                  Con "Cobro, Precio, ARR, Últ. venta, Soporte, Salud" la tabla
+                  medía 900px de ancho mínimo, se recorría de lado y las
+                  acciones quedaban fuera de la pantalla. Todo eso no se COMPARA
+                  renglón contra renglón: se consulta de una suscripción a la
+                  vez, y para eso están los tres puntitos. Aquí queda lo que sí
+                  se lee de corrido. */}
               <thead><tr>
-                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Cobro', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Soporte', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
+                {['Cliente', 'Plan', 'Próx. factura', 'Pagos', 'Total pagado', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.map(s => {
                   const dias = s.companies?.dias_sin_venta;
+                  const vencida = !!(s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago'));
                   return (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => s.company_id && setDetailId(s.company_id)}>
                       <td style={S.td}>{(() => {
@@ -432,70 +448,49 @@ export default function SubscriptionsTab() {
                           {cliente && cliente !== cuenta ? <div style={{ fontSize: '0.72rem', color: '#999', whiteSpace: 'nowrap' }}>{cliente}</div> : null}
                         </>);
                       })()}</td>
-                      <td style={S.td}>{(() => {
-                        const cat = (s as any).plan_id ? planById.get((s as any).plan_id) : null;
-                        if (cat) {
-                          const base = String(cat.nombre).replace(/^Plan /, '');
-                          const distinto = s.nombre_plan && s.nombre_plan.toLowerCase().trim() !== base.toLowerCase();
-                          return (<>
-                            <div style={{ whiteSpace: 'nowrap' }}>{base}</div>
-                            {distinto ? <div style={{ fontSize: '0.7rem', color: '#bbb' }}>{s.nombre_plan}</div> : null}
-                          </>);
-                        }
-                        return <span>{s.nombre_plan || '—'} <span style={{ fontSize: '0.6rem', color: '#c08a4a', border: '1px solid #eedcc4', borderRadius: 4, padding: '0 4px', verticalAlign: 'middle' }} title="Sin plan de catálogo — falta normalizar">sin catálogo</span></span>;
-                      })()}</td>
-                      <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'vitalicia' ? 'rgba(160,102,0,0.12)' : s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'vitalicia' ? '#a06600' : s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
-                      <td style={S.td}><Estado e={s.estado} /></td>
-                      {/* Cómo se le cobra. Que se vea en la tabla y no solo al
-                          abrir al cliente es lo que permite contestar de un
-                          vistazo "¿a cuántos les cobro yo a mano?" — que es la
-                          pregunta que decide a quién domiciliar primero. */}
-                      <td style={S.td}>{(s as any).mp_preapproval_id ? (<>
-                        <span style={{ ...S.badge, background: 'rgba(42,181,160,.15)', color: '#1E8A63' }}
-                          title={'Se le cobra solo por Mercado Pago' + ((s as any).mp_payer_email ? ' · paga ' + (s as any).mp_payer_email : '')}>auto</span>
-                        {(s as any).mp_desfase_at && (s as any).mp_monto_cobrado != null ? (
-                          <div style={{ fontSize: '0.65rem', color: '#E54B4B', fontWeight: 700, whiteSpace: 'nowrap', marginTop: 2 }}
-                            title={`Mercado Pago está cobrando ${fmt((s as any).mp_monto_cobrado)} y aquí dice ${fmt(s.precio)}. Mientras no coincidan, el ARR reportado está mal.`}>
-                            ⚠ cobra {fmt((s as any).mp_monto_cobrado)}
-                          </div>
-                        ) : null}
-                      </>) : (
-                        <span style={{ fontSize: '0.7rem', color: '#bbb', whiteSpace: 'nowrap' }} title="No está domiciliada: se le cobra a mano">manual</span>
-                      )}</td>
-                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>{s.ciclo === 'vitalicia' ? ' único' : '/' + sufCiclo(s.ciclo)}</span>{(() => {
-                        if (s.ciclo === 'vitalicia') return null;
-                        const pl = Number((s as any).precio_lista) || 0, pr = Number(s.precio) || 0;
-                        if (pl > 0 && pr > 0 && pr < pl) { const d = Math.round((1 - pr / pl) * 100); if (d > 0) return <span style={{ marginLeft: 5, fontSize: '0.6rem', color: '#a06600', background: '#fff5e6', borderRadius: 4, padding: '0 4px', fontWeight: 700 }} title={`Lista ${fmt(pl)}/${sufCiclo(s.ciclo)}`}>−{d}%</span>; }
-                        return null;
-                      })()}</td>
-                      <td style={{ ...S.td, fontWeight: 700 }}>{s.ciclo === 'vitalicia' ? <span style={{ color: '#bbb', fontWeight: 400 }} title="Pago único — no cuenta como ARR">— (único)</span> : fmt(s.arr)}</td>
+
+                      {/* El plan carga con lo suyo: ciclo, estado y si se cobra
+                          solo. Son tres datos del MISMO hecho, no tres columnas. */}
+                      <td style={S.td}>
+                        {(() => {
+                          const cat = (s as any).plan_id ? planById.get((s as any).plan_id) : null;
+                          if (cat) {
+                            const base = String(cat.nombre).replace(/^Plan /, '');
+                            const distinto = s.nombre_plan && s.nombre_plan.toLowerCase().trim() !== base.toLowerCase();
+                            return (<>
+                              <div style={{ fontWeight: 600 }}>{base}</div>
+                              {distinto ? <div style={{ fontSize: '0.7rem', color: '#bbb' }}>{s.nombre_plan}</div> : null}
+                            </>);
+                          }
+                          return <div style={{ fontWeight: 600 }}>{s.nombre_plan || '—'} <span style={{ fontSize: '0.6rem', color: '#c08a4a', border: '1px solid #eedcc4', borderRadius: 4, padding: '0 4px', verticalAlign: 'middle' }} title="Sin plan de catálogo — falta normalizar">sin catálogo</span></div>;
+                        })()}
+                        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                          <span style={{ ...S.badge, background: s.ciclo === 'vitalicia' ? 'rgba(160,102,0,0.12)' : s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'vitalicia' ? '#a06600' : s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span>
+                          <Estado e={s.estado} />
+                          {(s as any).mp_preapproval_id && (
+                            <span style={{ ...S.badge, background: 'rgba(42,181,160,.15)', color: '#1E8A63' }} title="Se le cobra solo por Mercado Pago">auto</span>
+                          )}
+                          {(s as any).mp_desfase_at && (s as any).mp_monto_cobrado != null && (
+                            <span style={{ fontSize: '0.62rem', color: '#E54B4B', fontWeight: 700, whiteSpace: 'nowrap' }}
+                              title={`Mercado Pago está cobrando ${fmt((s as any).mp_monto_cobrado)} y aquí dice ${fmt(s.precio)}. Mientras no coincidan, el ARR reportado está mal.`}>⚠ cobra {fmt((s as any).mp_monto_cobrado)}</span>
+                          )}
+                        </div>
+                      </td>
+
                       {/* Pausada: no hay fecha de cobro corriendo, así que no se
                           enseña una fecha vieja (menos aún en rojo de vencida). */}
-                      <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#C0554E' : '#333' }}>
-                        {s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
-                      <td style={S.td}>{s.pagos_realizados}</td>
-                      <td style={S.td}>{fmt(s.total_pagado)}</td>
-                      <td style={{ ...S.td, color: dias != null && dias > 15 ? '#C0554E' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
-                        {s.companies?.ultima_venta_at ? fmtDate(s.companies.ultima_venta_at) + (dias != null ? ` (${dias}d)` : '') : '—'}
+                      <td style={{ ...S.td, color: vencida ? '#C0554E' : '#333', whiteSpace: 'nowrap' }}>
+                        {s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}
+                        <div style={{ fontSize: '0.7rem', color: '#aaa' }}>
+                          {s.ciclo === 'vitalicia' ? 'pago único' : `${fmt(s.precio)}/${sufCiclo(s.ciclo)}`}
+                        </div>
                       </td>
-                      <td style={S.td}>{(() => {
-                        const ab = Number((s.companies as any)?.soporte_abiertos || 0);
-                        if (!ab) return <span style={{ color: '#cbd5e1' }}>—</span>;
-                        const seria = (s.companies as any)?.soporte_estancado === true || (s.companies as any)?.soporte_sentimiento === 'urgente' || (s.companies as any)?.soporte_sentimiento === 'negativo';
-                        const col = seria ? '#C0554E' : '#a06600';
-                        const tit = `${ab} ticket(s) abierto(s)` + ((s.companies as any)?.soporte_estancado ? ' · estancado' : '') + ((s.companies as any)?.soporte_sentimiento ? ` · ${(s.companies as any).soporte_sentimiento}` : '');
-                        return <span title={tit} style={{ fontWeight: 800, color: col, background: seria ? '#fdecec' : '#fff6e6', borderRadius: 6, padding: '1px 7px' }}>{ab}{seria ? ' ⚠' : ''}</span>;
-                      })()}</td>
-                      <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1E8A63' : h >= 40 ? '#a06600' : '#C0554E'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
-                      <td style={S.td} onClick={e => e.stopPropagation()}>
-                        <button style={{ ...S.btnSmall, marginRight: 4, background: '#4FBF95', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>Pago</button>
-                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
-                          <button style={{ ...S.btnSmall, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
-                            title="Genera el link de cobro del periodo (tarjeta, OXXO o transferencia) y lo deja listo para WhatsApp"
-                            disabled={cobrandoMP === s.id} onClick={() => cobrarMP(s)}>{cobrandoMP === s.id ? '…' : '💳 Cobrar'}</button>
-                        )}
-                        <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF, con opción de descuento pronto pago" onClick={() => setLinkSub(s)}>🔗 Link</button>
-                        <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
+                      <td style={S.td}>{s.pagos_realizados}</td>
+                      <td style={{ ...S.td, fontWeight: 700 }}>{fmt(s.total_pagado)}</td>
+                      <td style={{ ...S.td, width: 44, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                        <button title="Más acciones" aria-label="Más acciones de la suscripción"
+                          onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuSub({ sub: s, x: r.right, y: r.bottom + 4 }); }}
+                          style={{ border: '1px solid #e6e3ee', background: '#fff', borderRadius: 8, cursor: 'pointer', width: 30, height: 30, lineHeight: 1, color: '#6f6b7d', fontSize: 15, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
                       </td>
                     </tr>
                   );
@@ -659,7 +654,75 @@ export default function SubscriptionsTab() {
       {/* onCreated recarga sin cerrar: si hubo domiciliación, el modal se queda
           enseñando el link (mandarlo es parte del alta, no un extra). */}
       {showNueva && <NuevaSuscripcionModal onClose={() => setShowNueva(false)} onCreated={() => load()} />}
-      {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}
+      {editSub && <EditarSubModal sub={editSub} modoInicial={editModo}
+        onClose={() => { setEditSub(null); setEditModo(''); }}
+        onDone={() => { setEditSub(null); setEditModo(''); load(); }} />}
+
+      {/* ── Más acciones de una suscripción ──
+          Antes la fila llevaba cuatro botones (Pago · Cobrar · Link · Editar) y
+          aun así faltaba lo importante: dar de baja. Aquí caben todas, y
+          arriba va el contexto que dejó de ser columna —precio, ARR, última
+          venta, salud— porque eso se consulta de una, no se compara. */}
+      {menuSub && (() => {
+        const s: any = menuSub.sub;
+        const cerrar = () => setMenuSub(null);
+        const dias = s.companies?.dias_sin_venta;
+        const salud = s.companies?.health_score;
+        const ab = Number(s.companies?.soporte_abiertos || 0);
+        const item = (label: string, onClick: () => void, sub?: string, off?: boolean, color?: string) => (
+          <button key={label} disabled={off} onClick={() => { onClick(); cerrar(); }}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent',
+              padding: '9px 13px', fontSize: '0.8rem', fontFamily: 'inherit',
+              color: off ? '#c3c1cb' : (color || '#3f3b4d'), cursor: off ? 'default' : 'pointer', borderRadius: 8,
+            }}
+            onMouseEnter={e => { if (!off) (e.currentTarget as HTMLElement).style.background = '#f6f4fb'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+            {label}
+            {sub && <div style={{ fontSize: '0.68rem', color: '#a3a3ab', marginTop: 1 }}>{sub}</div>}
+          </button>
+        );
+        return (
+          <>
+            <div onClick={cerrar} style={{ position: 'fixed', inset: 0, zIndex: 970 }} />
+            <div style={{
+              position: 'fixed', top: Math.min(menuSub.y, (typeof window !== 'undefined' ? window.innerHeight : 900) - 380),
+              left: Math.max(12, menuSub.x - 262), width: 262, zIndex: 971,
+              background: '#fff', border: '1px solid #e9e6f1', borderRadius: 12, padding: 5,
+              boxShadow: '0 14px 40px rgba(16,24,40,.16)',
+            }}>
+              <div style={{ padding: '9px 13px 10px', borderBottom: '1px solid #f2f0f7', marginBottom: 4 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{s.nombre_plan}</div>
+                <div style={{ fontSize: '0.7rem', color: '#8a8a92', marginTop: 3, lineHeight: 1.55 }}>
+                  {s.ciclo === 'vitalicia' ? `${fmt(s.precio)} pago único` : `${fmt(s.precio)}/${sufCiclo(s.ciclo)} · ${fmt(s.arr)} de ARR`}
+                  <br />
+                  {s.companies?.ultima_venta_at ? `Última venta ${fmtDate(s.companies.ultima_venta_at)}${dias != null ? ` (${dias}d)` : ''}` : 'Sin ventas registradas'}
+                  {salud != null && <> · salud <b style={{ color: salud >= 70 ? '#1E8A63' : salud >= 40 ? '#a06600' : '#C0554E' }}>{salud}</b></>}
+                  {ab > 0 && <> · <span style={{ color: '#C0554E', fontWeight: 700 }}>{ab} ticket(s)</span></>}
+                </div>
+              </div>
+              {item('Registrar pago', () => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }, 'activa el ARR y recorre la fecha')}
+              {item('Cobrar por Mercado Pago', () => cobrarMP(s), 'link del periodo, listo para WhatsApp',
+                s.estado === 'cancelada' || s.estado === 'pausada')}
+              {item('Link de pago formal', () => setLinkSub(s), 'con PDF y descuento pronto pago')}
+              {item('Estado de cuenta', () => {
+                const u = `${window.location.origin}/estado-cuenta/${s.id}`;
+                window.open(u, '_blank', 'noopener');
+                try { navigator.clipboard?.writeText(u); } catch { /* sin https no hay portapapeles */ }
+              }, 'lo que se le manda al cliente')}
+              <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
+              {item('Editar suscripción', () => { setEditModo(''); setEditSub(s); })}
+              {item('Abrir ficha del cliente', () => s.company_id && setDetailId(s.company_id), undefined, !s.company_id)}
+              {s.estado !== 'cancelada' && (
+                <>
+                  <div style={{ height: 1, background: '#f2f0f7', margin: '4px 8px' }} />
+                  {item('Cancelar suscripción', () => { setEditModo('cancelar'); setEditSub(s); }, 'pide el motivo · sale del ARR', false, '#C0554E')}
+                </>
+              )}
+            </div>
+          </>
+        );
+      })()}
       {linkSub && <LinkClienteModal sub={linkSub} onClose={() => setLinkSub(null)} />}
       {showMeta && <MetaModal meta={meta} onClose={() => setShowMeta(false)} onDone={() => { setShowMeta(false); load(); }} />}
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
@@ -1124,9 +1187,15 @@ const TRANSICIONES_UI: Record<string, string[]> = {
   cancelada: ['cancelada', 'activa'],
 };
 
-function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => void; onDone: () => void }) {
+/** `modoInicial='cancelar'` abre el modal ya en la baja: se llega desde el menú
+ *  de la fila, donde el usuario YA decidió cancelar y no tiene por qué buscar
+ *  el estado en un desplegable. */
+function EditarSubModal({ sub, onClose, onDone, modoInicial }: { sub: Sub; onClose: () => void; onDone: () => void; modoInicial?: '' | 'cancelar' }) {
   const [form, setForm] = useState<any>({
-    id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo, estado: sub.estado,
+    // Llegando desde "Cancelar suscripción" el modal abre ya en la baja: quien
+    // hizo clic ahí ya decidió, no tiene por qué buscar el estado en un menú.
+    id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo,
+    estado: modoInicial === 'cancelar' && sub.estado !== 'cancelada' ? 'cancelada' : sub.estado,
     contact_id: sub.contact_id, company_id: sub.company_id,
     precio: sub.precio, plan_id: (sub as any).plan_id || '', precio_lista: (sub as any).precio_lista ?? null,
     fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
