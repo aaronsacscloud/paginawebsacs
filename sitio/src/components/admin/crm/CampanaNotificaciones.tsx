@@ -31,7 +31,7 @@ function hace(iso: string): string {
   return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
 }
 
-export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { onIrA?: (tab: string) => void; enMenu?: boolean; desplazada?: boolean }) {
+export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string) => void }) {
   const isMobile = useIsMobile();
   const [abierto, setAbierto] = useState(false);
   // Dónde nace el panel cuando la campana vive en el menú: se ancla al botón,
@@ -81,11 +81,13 @@ export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { o
     if (n.destino && onIrA) { setAbierto(false); onIrA(n.destino); }
   }
 
+  // El panel sale PEGADO al renglón del menú. La variante suelta arriba a la
+  // derecha era de la campana flotante, que ya no existe.
   const panel: any = isMobile
     ? { position: 'fixed', top: 64, left: 8, right: 8, maxHeight: '72vh' }
-    : enMenu && ancla
+    : ancla
       ? { position: 'fixed', left: ancla.left, bottom: ancla.bottom, width: 400, maxHeight: '72vh' }
-      : { position: 'fixed', top: 60, right: 16, width: 400, maxHeight: '78vh' };
+      : { position: 'fixed', left: 230, bottom: 12, width: 400, maxHeight: '78vh' };
 
   const alternar = (e: any) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -106,9 +108,11 @@ export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { o
 
   return (
     <>
-      {enMenu ? (
-        /* Dentro del menú se comporta como un renglón más: mismo alto, mismo
-           tipo de letra. Es un lugar del CRM, no un botón flotando encima. */
+      {/* La campana es un RENGLÓN del menú, con el mismo alto y la misma letra
+          que los demás. Hubo una versión flotante —fija arriba a la derecha
+          cuando el menú estaba plegado o en mobile— y se eliminó: tapaba el
+          contenido de la pantalla que se estaba usando. Un aviso no puede
+          estorbarle al trabajo que anuncia. */}
         <button onClick={alternar} aria-label="Notificaciones"
           style={{
             display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38, textAlign: 'left',
@@ -130,23 +134,6 @@ export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { o
             }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
           )}
         </button>
-      ) : (
-        <button onClick={() => { setAbierto(a => !a); if (!abierto) cargar(); }} aria-label="Notificaciones"
-          style={{
-            position: 'fixed', top: desplazada ? 6 : 12, right: desplazada ? 4 : 12, zIndex: 108, width: desplazada ? 36 : 44, height: desplazada ? 36 : 44,
-            background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', color: '#1a1a1a',
-          }}>
-          {icono}
-          {noLeidas > 0 && (
-            <span style={{
-              position: 'absolute', top: -5, right: -5, minWidth: 19, height: 19, padding: '0 5px',
-              background: '#b93333', color: '#fff', borderRadius: 99, fontSize: '0.65rem', fontWeight: 800,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-            }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
-          )}
-        </button>
-      )}
 
       {abierto && (
         <>

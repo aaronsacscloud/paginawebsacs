@@ -359,14 +359,10 @@ export default function CrmDashboard() {
           </svg>
         </button>
       )}
-      {/* La campana vive en el pie del menú, junto a quién eres. Solo vuelve a
-          flotar cuando el menú está plegado o en mobile, donde no hay pie que
-          la contenga: lo que pasó solo tiene que verse sin ir a buscarlo. */}
-      {/* En el inbox el railito del detalle vive en la esquina: la campana se
-          recorre a la izquierda para no taparlo. */}
-      {/* En el inbox NO va la campana flotante (tapaba el railito); las notificaciones
-          de WhatsApp ya suenan/avisan dentro del propio inbox. */}
-      {(isMobile || sidebarCollapsed) && !(tab === 'whatsapp' && !isMobile) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
+      {/* La campana NO flota. Vivía suelta arriba a la derecha cuando el menú
+          estaba plegado o en mobile, y ahí tapaba contenido de la pantalla que
+          se estaba usando —el railito del inbox fue solo el caso más visible—.
+          Su único lugar es el pie del menú, junto a quién eres. */}
       {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setMobileSearchOpen(true)} style={{
@@ -596,7 +592,7 @@ export default function CrmDashboard() {
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #e7e0f7', background: 'rgba(255,255,255,.5)' }}>
             <div style={{ padding: '6px 0 2px' }}>
-              {!isMobile && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} enMenu />}
+              <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />
 
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
