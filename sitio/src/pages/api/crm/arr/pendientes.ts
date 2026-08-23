@@ -34,6 +34,17 @@ const PLANES = [
 
 const fecha = (d: any) => (d ? String(d).slice(0, 10) : '');
 
+/** Un renglón que se vuelve a cobrar: plan del catálogo o "extra" recurrente. */
+const esRecurrente = (i: any) => {
+  if (i.tipo === 'plan') return true;
+  if (i.recurrente === true) return true;
+  if (i.recurrente === false) return false;
+  return /(licencia|renovaci[oó]n|plan\b|suscrip|mensualidad|anualidad|vende|controla|fideliza|automatiza)/i
+    .test(String(i.nombre || i.titulo || ''));
+};
+/** anual o mensual, mire donde mire el renglón. */
+const cicloDe = (i: any) => (i.periodo === 'mensual' || i.periodo_extra === 'mensual') ? 'mensual' : 'anual';
+
 export const GET: APIRoute = async ({ url }) => {
   const id = url.searchParams.get('id') || '';
 
@@ -111,13 +122,15 @@ export const GET: APIRoute = async ({ url }) => {
       .filter((q: any) => !conSub.has(q.id))
       .map((q: any) => {
         const its = Array.isArray(q.items) ? q.items : [];
-        const plan = its.find((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+        const plan = its.find(esRecurrente);
         if (!plan) return null;
-        const arr = plan.periodo === 'mensual' ? Number(plan.subtotal || 0) * 12 : Number(plan.subtotal || 0);
+        const cic = cicloDe(plan);
+        const base = Number(plan.subtotal ?? plan.monto ?? 0);
+        const arr = cic === 'mensual' ? base * 12 : base;
         return {
           id: q.id,
           titulo: `${q.numero} · ${q.empresa || 'sin empresa'}`,
-          detalle: `${plan.nombre || 'plan'} ${plan.periodo} · ${Math.round(arr).toLocaleString('es-MX')} de ARR${q.company_id ? '' : ' · sin cliente ligado'}`,
+          detalle: `${plan.nombre || 'plan'} ${cic} · ${Math.round(arr).toLocaleString('es-MX')} de ARR${q.company_id ? '' : ' · sin cliente ligado'}`,
           opciones: [{ v: 'crear', l: 'Crear la licencia que faltó' }, { v: 'ignorar', l: 'No corresponde (no es recurrente)' }],
         };
       }).filter(Boolean);
@@ -213,10 +226,13 @@ export const PUT: APIRoute = async ({ request }) => {
       if (!cid) { omitidas.push(c.id); continue; }
 
       const its = Array.isArray(q.items) ? q.items : [];
-      const plan = its.find((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+      const plan = its.find(esRecurrente);
       if (!plan) { omitidas.push(c.id); continue; }
-      const precio = Number(plan.subtotal || 0);
-      const mrr = plan.periodo === 'mensual' ? precio : precio / 12;
+      const cic = cicloDe(plan);
+      // Solo la parte recurrente: si la cotización llevaba también una
+      // integración de pago único, esa no es ARR y no puede entrar al precio.
+      const precio = Number(plan.subtotal ?? plan.monto ?? 0);
+      const mrr = cic === 'mensual' ? precio : precio / 12;
       // La fecha de inicio es la de la venta, no la de hoy: si no, la cohorte
       // y la vida media del cliente quedan mal para siempre.
       const inicio = String(q.aceptado_fecha || q.created_at || new Date().toISOString()).slice(0, 10);
@@ -224,7 +240,7 @@ export const PUT: APIRoute = async ({ request }) => {
       const { error } = await supabase.from('subscriptions').insert({
         company_id: cid, quote_id: q.id,
         nombre_plan: String(plan.titulo || plan.nombre || 'Licencia SACS').slice(0, 160),
-        ciclo: plan.periodo, estado: 'activa', precio,
+        ciclo: cic, estado: 'activa', precio,
         mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
         fecha_inicio: inicio, monto_proximo: precio,
         ...(q.partner_id ? { partner_id: q.partner_id } : {}),

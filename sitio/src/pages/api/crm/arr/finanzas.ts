@@ -70,40 +70,52 @@ export const GET: APIRoute = async ({ url }) => {
          implementaciones, desarrollos a la medida—.
      Un pago sin cotización ni suscripción no se puede clasificar y NO se
      cuenta: aparece en los pendientes para que alguien lo ligue. */
-  /* Qué licencia nació de cada cotización: es la señal más fuerte de que ese
-     pago era recurrente, más fuerte que el tipo del renglón —que se captura a
-     mano y a veces trae la licencia escrita como "extra"—. */
-  const cicloPorCotizacion: Record<string, string> = {};
-  (subsRes.data || []).forEach((s: any) => { if (s.quote_id) cicloPorCotizacion[s.quote_id] = s.ciclo; });
+  /* ── Qué parte de un pago es recurrente y qué parte no ──
+     El renglón de la cotización YA lo dice: trae `recurrente` y
+     `periodo_extra`. Lo estaba ignorando y clasificaba la cotización completa,
+     que falla en las mixtas —Re-born vendió una licencia Fideliza de $35,100
+     (recurrente) junto con una integración de Tienda Nube de $27,777 (única) en
+     el mismo documento—.
 
-  /* Y el último recurso: leer el concepto. "Renovación Plan Controla" y
-     "Licencia Fideliza 3 Sucursales" se capturaron como renglón extra y sin
-     esto entrarían como pago único —dos casos reales de julio, $80,427 mal
-     clasificados—. */
-  const SUENA_A_LICENCIA = /(licencia|renovaci[oó]n|plan\b|suscrip|mensualidad|anualidad|vende|controla|fideliza|automatiza)/i;
-
-  const esNoRecurrente = (p: any) => {
-    // Lo que alguien clasificó a mano manda sobre lo que se puede deducir.
-    if (p.clasificacion === 'unico') return true;
-    if (p.clasificacion === 'recurrente') return false;
-
-    // Colgado de una licencia: vitalicia es pago único, el resto es recurrente.
-    if (p.subscription_id) return cicloDeSub[p.subscription_id] === 'vitalicia';
-
-    const its = Array.isArray(p.quotes?.items) ? p.quotes.items : null;
-    if (!its) return false;                       // sin origen: no se clasifica
-
-    // De esa cotización nació una licencia: manda su ciclo.
-    const cicloNacido = p.quote_id ? cicloPorCotizacion[p.quote_id] : null;
-    if (cicloNacido) return cicloNacido === 'vitalicia';
-
-    if (its.some((i: any) => i.tipo === 'plan')) return false;   // vendió plan
-    // Nadie marcó el renglón como plan, pero el concepto lo dice.
-    if (its.some((i: any) => SUENA_A_LICENCIA.test(String(i.nombre || i.titulo || '')))) return false;
-    return true;
+     Así que se clasifica POR RENGLÓN y el pago se reparte en esa proporción.
+     Un abono a una cotización mixta es parte licencia y parte desarrollo, y
+     mandarlo entero a un lado u otro es equivocarse en los dos. */
+  const esRenglonRecurrente = (i: any) => {
+    if (i.tipo === 'plan') return true;
+    if (i.recurrente === true) return true;
+    if (i.recurrente === false) return false;
+    // Sin el dato, el concepto: "Renovación Plan Controla" es una licencia
+    // aunque nadie haya marcado la casilla.
+    return /(licencia|renovaci[oó]n|plan\b|suscrip|mensualidad|anualidad|vende|controla|fideliza|automatiza)/i
+      .test(String(i.nombre || i.titulo || ''));
   };
+
+  /** Qué fracción del total de una cotización NO se vuelve a cobrar. */
+  const fraccionUnica = (its: any[]): number => {
+    const tot = its.reduce((a: number, i: any) => a + num(i.subtotal ?? i.monto), 0);
+    if (tot <= 0) return 0;
+    const unico = its.filter(i => !esRenglonRecurrente(i))
+      .reduce((a: number, i: any) => a + num(i.subtotal ?? i.monto), 0);
+    return unico / tot;
+  };
+
   const sinOrigen = pagosTodos.filter((p: any) => !p.subscription_id && !p.quotes && !p.clasificacion);
-  const pagos = pagosTodos.filter(esNoRecurrente);
+
+  /** Cuánto de este pago es ingreso que no se vuelve a cobrar. */
+  const montoNoRecurrente = (p: any): number => {
+    if (p.clasificacion === 'unico') return num(p.monto);
+    if (p.clasificacion === 'recurrente') return 0;
+    // Colgado de una licencia: vitalicia es pago único, el resto recurrente.
+    if (p.subscription_id) return cicloDeSub[p.subscription_id] === 'vitalicia' ? num(p.monto) : 0;
+    const its = Array.isArray(p.quotes?.items) ? p.quotes.items : null;
+    if (!its || !its.length) return 0;            // sin origen: no se clasifica
+    return num(p.monto) * fraccionUnica(its);
+  };
+
+  // Los pagos que llevan ALGO no recurrente, con su parte ya calculada.
+  const pagos = pagosTodos
+    .map((p: any) => ({ ...p, monto_unico: r0(montoNoRecurrente(p)) }))
+    .filter((p: any) => p.monto_unico > 0);
 
   // Recurrente = activas que no son vitalicias.
   const recurrentes = subs.filter((s: any) => s.ciclo !== 'vitalicia');
@@ -140,7 +152,7 @@ export const GET: APIRoute = async ({ url }) => {
       bajas: bajas.length,
       arr_bajas: r0(bajas.reduce((a: number, s: any) => a + num(s.arr), 0)),
       unicos: unicos.length,
-      monto_unicos: r0(unicos.reduce((a: number, p: any) => a + num(p.monto), 0)),
+      monto_unicos: r0(unicos.reduce((a: number, p: any) => a + num(p.monto_unico), 0)),
     });
     if (serie.length > 60) break;   // tope de seguridad
   }
@@ -238,15 +250,15 @@ export const GET: APIRoute = async ({ url }) => {
   let unicosSinCliente = 0, montoSinCliente = 0;
   pagos.forEach((p: any) => {
     const cid = p.company_id || p.quotes?.company_id || null;
-    if (!cid) { unicosSinCliente++; montoSinCliente += num(p.monto); return; }
+    if (!cid) { unicosSinCliente++; montoSinCliente += num(p.monto_unico); return; }
     extras[cid] = extras[cid] || { monto: 0, n: 0 };
-    extras[cid].monto += num(p.monto); extras[cid].n++;
+    extras[cid].monto += num(p.monto_unico); extras[cid].n++;
   });
 
   const arrPorCuenta: Record<string, number> = {};
   activas.forEach((s: any) => { if (s.company_id) arrPorCuenta[s.company_id] = (arrPorCuenta[s.company_id] || 0) + num(s.arr); });
 
-  const totalUnicos = r0(pagos.reduce((a: number, p: any) => a + num(p.monto), 0));
+  const totalUnicos = r0(pagos.reduce((a: number, p: any) => a + num(p.monto_unico), 0));
 
   /* ── Los pagos únicos, medidos en serio ──
      No son ARR y nunca deben sumarse a él, pero son la otra mitad de lo que
@@ -258,7 +270,7 @@ export const GET: APIRoute = async ({ url }) => {
        · ¿en qué meses del año se compran? (para saber cuándo ofrecer) */
   const vitaliciasIds = new Set(subs.filter((s: any) => s.ciclo === 'vitalicia').map((s: any) => s.id));
   const pagosVitalicios = pagos.filter((p: any) => p.subscription_id && vitaliciasIds.has(p.subscription_id));
-  const vitaliciasMonto = r0(pagosVitalicios.reduce((a: number, p: any) => a + num(p.monto), 0));
+  const vitaliciasMonto = r0(pagosVitalicios.reduce((a: number, p: any) => a + num(p.monto_unico), 0));
 
   // Estacionalidad: en qué mes del año se compran extras. Con dos años de
   // datos esto deja de ser anécdota y se vuelve calendario comercial.
@@ -267,7 +279,7 @@ export const GET: APIRoute = async ({ url }) => {
     const m = Number(String(p.fecha || '').slice(5, 7));
     if (!m) return;
     porMesAnio[m] = porMesAnio[m] || { n: 0, monto: 0 };
-    porMesAnio[m].n++; porMesAnio[m].monto += num(p.monto);
+    porMesAnio[m].n++; porMesAnio[m].monto += num(p.monto_unico);
   });
   const estacionalidad = Array.from({ length: 12 }, (_, i) => ({
     mes: i + 1, n: porMesAnio[i + 1]?.n || 0, monto: r0(porMesAnio[i + 1]?.monto || 0),
@@ -375,14 +387,17 @@ export const GET: APIRoute = async ({ url }) => {
   const sinSub = (cotsPagadas || []).filter((q: any) => {
     if (idsConSub.has(q.id)) return false;
     const its = Array.isArray(q.items) ? q.items : [];
-    // Solo cuenta si vendió un PLAN recurrente: una cotización de plugins o de
-    // una implementación no genera ARR y no debería aparecer como faltante.
-    return its.some((i: any) => i.tipo === 'plan' && (i.periodo === 'anual' || i.periodo === 'mensual'));
+    // Cuenta si vendió algo RECURRENTE, sea un renglón tipo plan o un "extra"
+    // marcado como recurrente anual —así se capturó la Fideliza de Re-born—.
+    // Una cotización de solo plugins no genera ARR y no debe aparecer aquí.
+    return its.some((i: any) => esRenglonRecurrente(i));
   });
   const arrNoContado = sinSub.reduce((a: number, q: any) => {
     const its = Array.isArray(q.items) ? q.items : [];
-    return a + its.filter((i: any) => i.tipo === 'plan')
-      .reduce((b: number, i: any) => b + (i.periodo === 'mensual' ? num(i.subtotal) * 12 : num(i.subtotal)), 0);
+    return a + its.filter(esRenglonRecurrente).reduce((b: number, i: any) => {
+      const mensual = i.periodo === 'mensual' || i.periodo_extra === 'mensual';
+      return b + (mensual ? num(i.subtotal ?? i.monto) * 12 : num(i.subtotal ?? i.monto));
+    }, 0);
   }, 0);
 
   // ── Datos por completar ───────────────────────────────────────────────────
