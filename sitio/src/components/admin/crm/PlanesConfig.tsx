@@ -33,7 +33,9 @@ const MODALIDADES: { v: 'mensual' | 'anual' | 'vitalicio'; l: string; ayuda: str
 
 const E = {
   card: { background: '#fff', border: `1px solid ${P.linea}`, borderRadius: 12, padding: 16, marginBottom: 12 } as const,
-  input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fff' },
+  // fontFamily explícito: un <textarea> no hereda la del documento y la
+  // descripción salía en monoespaciada, como si fuera código.
+  input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fff' },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
   btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: P.violeta, color: '#fff' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
