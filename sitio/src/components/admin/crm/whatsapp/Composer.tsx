@@ -406,7 +406,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 </>)}
                 <span style={{ flex: 1 }} />
                 {iaProcesando && <span style={{ fontSize: 11, color: C.moradoTinta, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Corazones size={8} /> Procesando con IA…</span>}
-                <span style={{ fontSize: 11, color: C.g400, marginRight: 6 }}>Presiona "Enter"</span>
+                <span className="wa-solo-desktop" style={{ fontSize: 11, color: C.g400, marginRight: 6 }}>Presiona "Enter"</span>
                 {modo === 'wa' && canales?.wa_id && (
                   <button onClick={() => setPopProgramar(p => !p)} title="Programar envío / recordarme si no contesta" aria-label="Programar"
                     style={{ width: 26, height: 32, borderRadius: 8, border: `1px solid ${popProgramar ? C.morado : C.g200}`, background: popProgramar ? C.moradoAgua : '#fff', color: popProgramar ? C.moradoTinta : C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>

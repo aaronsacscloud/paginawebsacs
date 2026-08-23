@@ -132,10 +132,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {/* ── Header h-44 ── */}
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36, height: 36 }}>←</button>}
-        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7 }}>
-          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nombre || telefonoLegible(conv.telefono)}</b>
+        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7, flexWrap: mobile ? 'wrap' : 'nowrap', rowGap: 2 }}>
+          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: mobile ? 150 : undefined }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
-          <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>
+          {!mobile && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
           {conv.id && hilo.ventana?.expira_at && (() => {
             const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
             if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Ventana cerrada</span>;
@@ -156,7 +156,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         </span>
         {conv.id && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
-          style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: 110, flexShrink: 0, cursor: 'pointer' }}>
+          style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, flexShrink: 0, cursor: 'pointer' }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
@@ -164,7 +164,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
-            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, maxWidth: mobile ? 84 : undefined,
             borderColor: conv.estado_crm === 'resuelta' ? '#A7F3D0' : conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
             background: conv.estado_crm === 'resuelta' ? C.emerald50 : conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
             color: conv.estado_crm === 'resuelta' ? C.emerald700 : conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
