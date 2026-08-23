@@ -133,6 +133,13 @@ export async function enviarPlantilla(telefono: string, nombre: string, idioma: 
   });
 }
 
+/** Imagen o documento por LINK público (WhatsApp lo descarga de ahí). */
+export async function enviarMediaLink(telefono: string, clase: 'image' | 'document', link: string, nombre?: string) {
+  const cuerpo: any = { messaging_product: 'whatsapp', to: telefono, type: clase };
+  cuerpo[clase] = clase === 'document' ? { link, filename: nombre || 'documento' } : { link };
+  return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+}
+
 // ── Plantillas (Meta passthrough) ──
 
 export async function listarPlantillasMeta(): Promise<any[]> {
