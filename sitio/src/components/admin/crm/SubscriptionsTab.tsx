@@ -202,7 +202,14 @@ export default function SubscriptionsTab() {
   const vitStats = useMemo(() => {
     const vit = subs.filter(s => s.ciclo === 'vitalicia');
     const usando = vit.filter(s => { const d = s.companies?.dias_sin_venta; return d != null && d <= 30; }).length;
-    return { total: vit.length, cobrado: vit.reduce((a, s) => a + Number(s.total_pagado || 0), 0), activas: vit.filter(s => s.estado === 'activa').length, usando };
+    // Lo COBRADO y lo CONTRATADO son dos cosas distintas y hay que decir las
+    // dos. Estas 32 licencias valen medio millón, pero el pago casi nunca está
+    // capturado: son legacy, se cobraron antes del CRM. Mostrar solo lo
+    // capturado hace creer que produjeron $7,777 en total.
+    const cobrado = vit.reduce((a, s) => a + Number(s.total_pagado || 0), 0);
+    const contratado = vit.reduce((a, s) => a + Number(s.precio || 0), 0);
+    const sinPago = vit.filter(s => !Number(s.total_pagado || 0)).length;
+    return { total: vit.length, cobrado, contratado, sinPago, activas: vit.filter(s => s.estado === 'activa').length, usando };
   }, [subs]);
 
   const k = summary?.kpis;
@@ -350,12 +357,14 @@ export default function SubscriptionsTab() {
             </div>
             <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
               <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Cobrado de vitalicias</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div>
+              <div style={kpiCard}><div style={S.kLabel}>Vitalicias · contratado</div><div style={S.kValue}>{fmt(vitStats.contratado)}</div>
               {/* $0 con licencias vendidas no es que no hayan pagado: es que sus
                   pagos nunca se capturaron. Decir "sin pagos capturados" evita
                   que alguien concluya que ese dinero no entró. */}
-              <div style={S.kSub}>{vitStats.cobrado > 0 ? 'solo estas licencias · el resto de lo no recurrente está en el Panel financiero'
-                : (vitStats.total > 0 ? `sin pagos capturados en ${vitStats.total} licencias` : 'ingreso reconocido, no ARR')}</div></div>
+              <div style={S.kSub}>
+                {fmt(vitStats.cobrado)} con pago capturado
+                {vitStats.sinPago > 0 && <> · <b style={{ color: '#9a6a10' }}>{vitStats.sinPago} sin registrar</b></>}
+              </div></div>
               <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1E8A63' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
             </div>

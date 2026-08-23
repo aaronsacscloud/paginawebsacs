@@ -46,6 +46,34 @@ export const GET: APIRoute = async ({ url }) => {
   if (companyId) q = q.eq('company_id', companyId);
   const { data, error } = await q.limit(1000);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  /* `total_pagado` es un contador que alguien tiene que mantener, y no siempre
+     se mantiene: el Programa Partners de Super Carnes tiene su pago cobrado y
+     ligado a la cotización que lo originó, pero el campo decía 0 y la licencia
+     aparecía como si no hubiera producido un peso.
+     Aquí se recalcula desde los pagos REALES —los de la suscripción y los de
+     su cotización— porque el dinero está en la tabla de pagos, no en un
+     contador. Solo se sobreescribe cuando lo real es mayor: si alguien capturó
+     un abono a mano en el campo, no se le borra. */
+  const subIds = (data || []).map((s: any) => s.id);
+  const cotIds = (data || []).map((s: any) => s.quote_id).filter(Boolean);
+  if (subIds.length) {
+    const [porSub, porCot] = await Promise.all([
+      supabase.from('payments').select('subscription_id, monto, estado').in('subscription_id', subIds.slice(0, 500)),
+      cotIds.length ? supabase.from('payments').select('quote_id, monto, estado').in('quote_id', cotIds.slice(0, 500)) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const suma: Record<string, number> = {};
+    ((porSub as any).data || []).filter((p: any) => p.estado !== 'reembolsado')
+      .forEach((p: any) => { suma[p.subscription_id] = (suma[p.subscription_id] || 0) + Number(p.monto || 0); });
+    const porCotizacion: Record<string, number> = {};
+    ((porCot as any).data || []).filter((p: any) => p.estado !== 'reembolsado')
+      .forEach((p: any) => { porCotizacion[p.quote_id] = (porCotizacion[p.quote_id] || 0) + Number(p.monto || 0); });
+    (data || []).forEach((s: any) => {
+      const real = (suma[s.id] || 0) + (s.quote_id ? (porCotizacion[s.quote_id] || 0) : 0);
+      if (real > Number(s.total_pagado || 0)) s.total_pagado = Math.round(real * 100) / 100;
+    });
+  }
+
   // Fresco siempre: la lista y el KPI se leen juntos tras guardar.
   return new Response(JSON.stringify({ data }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, max-age=0' } });
 };
