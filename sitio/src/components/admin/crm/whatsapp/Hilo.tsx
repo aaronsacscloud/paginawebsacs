@@ -357,7 +357,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       </div>
 
       {/* ── Composer ── */}
-      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} canales={hilo.canales} />
+      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
+        canales={{ ...hilo.canales, wa_id: conv.id }}
+        contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label }} />
 
       {/* ── Lightbox ── */}
       {lightbox && (

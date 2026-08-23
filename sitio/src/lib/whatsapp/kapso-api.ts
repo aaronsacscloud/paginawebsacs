@@ -135,9 +135,35 @@ export async function enviarPlantilla(telefono: string, nombre: string, idioma: 
 }
 
 /** Imagen o documento por LINK público (WhatsApp lo descarga de ahí). */
-export async function enviarMediaLink(telefono: string, clase: 'image' | 'document', link: string, nombre?: string) {
+export async function enviarMediaLink(telefono: string, clase: 'image' | 'document' | 'video', link: string, nombre?: string, caption?: string) {
   const cuerpo: any = { messaging_product: 'whatsapp', to: telefono, type: clase };
   cuerpo[clase] = clase === 'document' ? { link, filename: nombre || 'documento' } : { link };
+  if (caption) cuerpo[clase].caption = caption;
+  return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+}
+
+/** Sube un binario a Meta vía Kapso y devuelve el media id. */
+export async function subirMediaKapso(bytes: Uint8Array | ArrayBuffer, mime: string, nombre = 'archivo'): Promise<string> {
+  if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
+  const fd = new FormData();
+  fd.append('messaging_product', 'whatsapp');
+  fd.append('type', mime);
+  fd.append('file', new Blob([bytes as any], { type: mime }), nombre);
+  const res = await fetch(`${META}/${PHONE_NUMBER_ID}/media`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: fd });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new KapsoError(res.status, j?.error || j);
+  const id = j?.id || j?.data?.id;
+  if (!id) throw new KapsoError(502, 'Kapso no devolvió media id');
+  return String(id);
+}
+
+/** Envía media por ID de Meta. audio + voice:true = nota de voz. */
+export async function enviarMediaId(telefono: string, clase: 'image' | 'document' | 'audio' | 'video', mediaId: string, o: { caption?: string; filename?: string; voice?: boolean } = {}) {
+  const cuerpo: any = { messaging_product: 'whatsapp', to: telefono, type: clase };
+  cuerpo[clase] = { id: mediaId };
+  if (o.caption && clase !== 'audio') cuerpo[clase].caption = o.caption;
+  if (o.filename && clase === 'document') cuerpo[clase].filename = o.filename;
+  if (o.voice && clase === 'audio') cuerpo[clase].voice = true;
   return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
@@ -151,13 +177,15 @@ export async function listarPlantillasMeta(): Promise<any[]> {
 
 export async function crearPlantillaMeta(p: {
   nombre: string; idioma: string; categoria: string;
-  cuerpo: string; header?: string | null; footer?: string | null;
+  cuerpo: string; header?: string | null; footer?: string | null; botones?: { texto: string }[];
 }) {
   if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
   const components: any[] = [];
   if (p.header) components.push({ type: 'HEADER', format: 'TEXT', text: p.header });
   components.push({ type: 'BODY', text: p.cuerpo });
   if (p.footer) components.push({ type: 'FOOTER', text: p.footer });
+  const botones = (p.botones || []).filter(b => b.texto?.trim()).slice(0, 3);
+  if (botones.length) components.push({ type: 'BUTTONS', buttons: botones.map(b => ({ type: 'QUICK_REPLY', text: b.texto.trim().slice(0, 20) })) });
   return meta(`/${BUSINESS_ACCOUNT_ID}/message_templates`, {
     method: 'POST',
     body: JSON.stringify({

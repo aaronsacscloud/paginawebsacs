@@ -26,8 +26,11 @@ export const POST: APIRoute = async ({ request }) => {
   const atajo = String(b.atajo || '').trim().toLowerCase().replace(/^\//, '').replace(/[^a-z0-9_-]/g, '');
   const texto = String(b.texto || '').trim();
   if (!atajo || !texto) return json({ error: 'Faltan atajo y texto' }, 400);
+  const fila: any = { atajo, texto };
+  for (const k of ['titulo', 'categoria', 'header', 'footer', 'media_url', 'media_tipo']) if (k in b) fila[k] = b[k] ? String(b[k]).slice(0, 1024) : null;
+  if ('botones' in b) fila.botones = Array.isArray(b.botones) ? b.botones.slice(0, 3) : null;
   const { data, error } = await supabase.from('wa_respuestas')
-    .upsert({ atajo, texto }, { onConflict: 'atajo' }).select('*').single();
+    .upsert(fila, { onConflict: 'atajo' }).select('*').single();
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true, respuesta: data });
 };

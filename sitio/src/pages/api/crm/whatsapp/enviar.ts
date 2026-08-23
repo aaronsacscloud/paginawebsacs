@@ -11,7 +11,8 @@
 // 422 de Kapso se traduce a { ventana_cerrada: true } y el mensaje NO se espeja.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { enviarTexto, enviarPlantilla, enviarMediaLink, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 
@@ -20,8 +21,10 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
-const MIMES: Record<string, 'image' | 'document'> = {
+const MIMES: Record<string, 'image' | 'document' | 'audio' | 'video'> = {
   'image/png': 'image', 'image/jpeg': 'image', 'image/webp': 'image',
+  'audio/ogg': 'audio', 'audio/mpeg': 'audio', 'audio/mp4': 'audio', 'audio/aac': 'audio', 'audio/webm': 'audio',
+  'video/mp4': 'video', 'video/3gpp': 'video',
   'application/pdf': 'document',
   'application/msword': 'document',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
@@ -57,13 +60,39 @@ export const POST: APIRoute = async ({ request }) => {
     const form = await request.formData();
     const file = form.get('file') as File | null;
     const convIdIn = String(form.get('conversation_id') || '');
+    const caption = String(form.get('caption') || '').trim() || undefined;
+    const esVoz = String(form.get('voz') || '') === '1';
     if (!file || !convIdIn) return json({ error: 'Faltan file y conversation_id' }, 400);
-    const clase = MIMES[file.type];
+    const mimeBase = (file.type || '').split(';')[0].trim().toLowerCase();
+    const clase = MIMES[mimeBase];
     if (!clase) return json({ error: `Tipo no permitido: ${file.type}` }, 400);
     if (file.size > MAX_BYTES) return json({ error: 'Máximo 4 MB (límite del servidor)' }, 400);
 
     const destino = await resolverDestino({ conversation_id: convIdIn });
     if (!destino) return json({ error: 'Conversación no encontrada' }, 404);
+
+    // ── Nota de voz: sube a Meta por ID (voice:true) con transcoding si hace falta ──
+    if (esVoz || clase === 'audio') {
+      let bytes: Uint8Array = new Uint8Array(await file.arrayBuffer());
+      let mime = mimeBase;
+      // Chrome/macOS graba audio/mp4;codecs=opus → WhatsApp lo rechaza como nota de voz.
+      if (esMP4(bytes)) {
+        const ogg = mp4OpusAOgg(bytes);
+        if (ogg) { bytes = ogg as Uint8Array; mime = 'audio/ogg'; }
+      }
+      if (mime === 'audio/webm') return json({ error: 'audio/webm no es compatible con WhatsApp. Graba en ogg/opus o mp4.' }, 400);
+      try {
+        const mediaId = await subirMediaKapso(bytes, mime, mime === 'audio/ogg' ? 'voz.ogg' : file.name || 'audio');
+        const r = await enviarMediaId(destino.telefono, 'audio', mediaId, { voice: esVoz });
+        const wamid = r?.messages?.[0]?.id;
+        // Espejo: sin URL pública (el binario vive en Meta) — el hilo lo muestra como [audio].
+        if (wamid) await registrarMensaje({
+          kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
+          tipo: 'audio', cuerpo: esVoz ? 'Nota de voz' : (file.name || 'Audio'), status: 'sent',
+        });
+        return json({ ok: true, message_id: wamid || null, media_id: mediaId });
+      } catch (e: any) { return errorKapso(e); }
+    }
 
     // Bucket público: WhatsApp descarga el archivo por link (patrón upload-logo).
     const nombre = file.name.replace(/[^\w.\-]+/g, '_').slice(-80);
@@ -76,11 +105,11 @@ export const POST: APIRoute = async ({ request }) => {
     const link = pub.publicUrl;
 
     try {
-      const r = await enviarMediaLink(destino.telefono, clase, link, nombre);
+      const r = await enviarMediaLink(destino.telefono, clase as 'image' | 'document', link, nombre, caption);
       const wamid = r?.messages?.[0]?.id;
       if (wamid) await registrarMensaje({
         kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
-        tipo: clase, cuerpo: clase === 'document' ? nombre : null, mediaUrl: link, status: 'sent',
+        tipo: clase, cuerpo: caption || (clase === 'document' ? nombre : null), mediaUrl: link, status: 'sent',
       });
       return json({ ok: true, message_id: wamid || null, media_url: link });
     } catch (e: any) {
@@ -93,6 +122,20 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const destino = await resolverDestino(b);
   if (!destino) return json({ error: 'Destino inválido (conversation_id o teléfono utilizable)' }, 400);
+
+  // ── Media desde la biblioteca (URL pública ya existente) ──
+  if (b.media_url) {
+    const clase = (['image', 'document', 'video'].includes(b.clase) ? b.clase : 'document') as 'image' | 'document' | 'video';
+    try {
+      const r = await enviarMediaLink(destino.telefono, clase, String(b.media_url), String(b.nombre || 'archivo'), b.caption ? String(b.caption) : undefined);
+      const wamid = r?.messages?.[0]?.id;
+      if (wamid) await registrarMensaje({
+        kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente',
+        tipo: clase, cuerpo: b.caption || b.nombre || null, mediaUrl: String(b.media_url), status: 'sent',
+      });
+      return json({ ok: true, message_id: wamid || null });
+    } catch (e: any) { return errorKapso(e); }
+  }
 
   if (b.plantilla?.nombre) {
     try {

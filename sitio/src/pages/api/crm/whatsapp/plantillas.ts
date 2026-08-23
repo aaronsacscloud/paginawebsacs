@@ -102,11 +102,13 @@ export const POST: APIRoute = async ({ request }) => {
       nombre, idioma, categoria, cuerpo,
       header: b.header ? String(b.header).trim() : null,
       footer: b.footer ? String(b.footer).trim() : null,
+      botones: Array.isArray(b.botones) ? b.botones : [],
     });
     await supabase.from('wa_plantillas').insert({
       meta_template_id: creada?.id ? String(creada.id) : null,
       nombre, idioma, categoria, cuerpo,
       header: b.header || null, footer: b.footer || null,
+      botones: Array.isArray(b.botones) && b.botones.length ? b.botones : null,
       variables: vars.n, status: creada?.status || 'PENDING',
     });
     return json({ ok: true, status: creada?.status || 'PENDING' });

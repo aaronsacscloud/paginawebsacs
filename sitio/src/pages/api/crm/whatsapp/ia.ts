@@ -40,6 +40,32 @@ Responde ÚNICAMENTE un JSON válido, sin markdown:
 export const POST: APIRoute = async ({ request }) => {
   if (!hasApiKey()) return json({ error: 'Falta ANTHROPIC_API_KEY en el entorno' }, 503);
   let b: any; try { b = await request.json(); } catch { return json({ error: 'Body inválido' }, 400); }
+
+  // ── transformar: edita el TEXTO del composer (tono/traducir/ortografía/simplificar) ──
+  if (b.accion === 'transformar') {
+    const texto = String(b.texto || '').trim().slice(0, 3000);
+    const instr = String(b.instruccion || '').trim().slice(0, 200);
+    if (!texto || !instr) return json({ error: 'Faltan texto e instrucción' }, 400);
+    let ownerId: string | null = null;
+    try { const u = await getSessionFromRequest(request); ownerId = (u as any)?.id || null; } catch { /* sin dueño */ }
+    const run_id = await createAgentRun({ agent_name: 'wa-inbox-transformar', trigger_type: 'user', owner_id: ownerId, input: { instr, largo: texto.length }, model: MODELS.sonnet } as any);
+    const t0 = Date.now();
+    try {
+      const msg = await anthropic.messages.create({
+        model: MODELS.sonnet, max_tokens: 900,
+        system: `Eres editor de mensajes de un equipo comercial de SacsCloud (México). Te dan un mensaje y UNA instrucción de edición. Devuelve ÚNICAMENTE el mensaje editado, sin comillas, sin explicaciones, sin emojis nuevos. Conserva el sentido y los datos (montos, fechas, nombres). Si la instrucción es traducir, traduce fielmente.`,
+        messages: [{ role: 'user', content: `Instrucción: ${instr}\n\nMensaje:\n${texto}` }],
+      });
+      const out = (msg.content || []).map((x: any) => x.type === 'text' ? x.text : '').join('').trim();
+      const usage = calculateCost(MODELS.sonnet, msg.usage as any);
+      await finishAgentRun({ run_id, status: 'completed', output: { largo: out.length }, usage, latency_ms: Date.now() - t0 } as any);
+      return json({ texto: out, cost_usd: usage.cost_usd });
+    } catch (e: any) {
+      await finishAgentRun({ run_id, status: 'failed', error: e?.message || String(e), latency_ms: Date.now() - t0 } as any);
+      return json({ error: 'La IA falló: ' + (e?.message || 'error del modelo') }, 502);
+    }
+  }
+
   const accion = b.accion === 'borrador' ? 'borrador' : 'resumir';
 
   // ── Juntar el contexto: conversación de ambos canales + panel ──

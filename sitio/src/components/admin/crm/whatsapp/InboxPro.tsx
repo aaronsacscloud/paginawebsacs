@@ -154,10 +154,12 @@ export default function InboxPro() {
       if (r.conversation_id && r.conversation_id !== activaRef.current?.wa) setActiva({ id: r.conversation_id, wa: r.conversation_id, email: null });
       refrescar(); return r;
     },
-    enviarArchivo: async (file: File, caption?: string) => {
+    refrescar,
+    enviarArchivo: async (file: File, caption?: string, voz?: boolean) => {
       const fd = new FormData();
       fd.append('file', file); fd.append('conversation_id', waId() || '');
       if (caption) fd.append('caption', caption);
+      if (voz) fd.append('voz', '1');
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', body: fd })
         .then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
