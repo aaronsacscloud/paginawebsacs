@@ -314,8 +314,8 @@ export const planoPapeleria = [
     nombre: 'Piso de venta',
     simbolo: 'gondolas',
     foto: '/images/plano-pap-piso.webp',
-    alt: 'Pasillo de una papelería con góndolas de cuadernos y una mamá recorriendo con su lista',
-    pie: 'El papá camina la lista en la mano. Aquí se decide si la completa o no.',
+    alt: 'Pasillo de una papelería con góndolas de cuadernos y un papá recorriendo con su lista',
+    pie: 'Camina la lista en la mano. Aquí se decide si la completa o no.',
     pregunta: '«¿Por qué el anaquel se ve lleno y el cuaderno de cuadro chico ya no hay?»',
     caja: { x: 68, y: 82, w: 216, h: 166 },
     items: [
@@ -368,7 +368,7 @@ export const planoPapeleria = [
     fuera: true,
     simbolo: 'paquetes',
     foto: '/images/plano-pap-linea.webp',
-    alt: 'Rincón de empaque y fotografía de una papelería, con una lista escolar sobre la mesa',
+    alt: 'Empleada leyendo en su celular la foto de una lista que llegó de noche, con el inventario abierto en la tablet',
     pie: 'La lista llega como foto de WhatsApp a las once de la noche. Ahí también se vende.',
     pregunta: '«¿Cuántas listas nos mandaron por WhatsApp que nunca contestamos?»',
     caja: { x: 480, y: 148, w: 158, h: 156 },
@@ -455,3 +455,29 @@ export const listaPapeleria = [
     ],
   },
 ];
+
+/**
+ * La matriz del cuaderno, para SuiteVariantes.
+ *
+ * Es el caso de libro del giro: "un cuaderno" no es un producto, es forma ×
+ * rayado. Y la forma es mexicana —profesional, francesa, italiana—, no ISO:
+ * quien escribe A4 en un catálogo de papelería ya perdió al lector.
+ *
+ * Los ceros no son huecos: en italiana no se hace doble raya, y el blanco de
+ * dibujo casi no se pide en profesional. Un cero en una casilla que ese
+ * formato no lleva es normal, igual que en la corrida de calzado.
+ */
+export const variantesPapeleria = {
+  ejeA: ['Raya', 'Cuadro 7 mm', 'Cuadro 5 mm', 'Doble raya', 'Blanco'],
+  matriz: [
+    [42, 68, 96, 0, 14],
+    [31, 55, 40, 22, 0],
+    [18, 47, 12, 0, 26],
+  ],
+  filas: [
+    { nombre: 'Profesional', img: '/images/prod-cuaderno-profesional.webp', alt: 'Cuaderno profesional cosido, de pasta lisa' },
+    { nombre: 'Francesa', img: '/images/prod-cuaderno-francesa.webp', alt: 'Cuaderno forma francesa cosido, de pasta lisa' },
+    { nombre: 'Italiana', img: '/images/prod-cuaderno-italiana.webp', alt: 'Cuaderno forma italiana, apaisado, cosido' },
+  ],
+  leyendas: ['En anaquel', 'Queda una o dos', 'Sin existencia'],
+};

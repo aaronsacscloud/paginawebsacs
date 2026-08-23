@@ -21,6 +21,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GiroBanner from '../../components/giros/GiroBanner.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
 import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
 import SuiteSalida from '../../components/suite/SuiteSalida.astro';
@@ -34,7 +35,7 @@ import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import {
   seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
-  listaPapeleria,
+  listaPapeleria, variantesPapeleria,
 } from '../../data/giros/papeleria';
 
 const titulo = 'Suite para Papelerías';
@@ -74,6 +75,21 @@ const desc =
       'Y la copiadora no es un producto: es una <b>renta con costo por clic</b>.',
     ]}
     cierre="Ningún sistema genérico entiende esto: aquí la unidad no es el producto, es el renglón que escribió un maestro — y un renglón se puede surtir con dos o tres artículos distintos, porque ninguna escuela puede imponer marca ni proveedor. Cada pantalla que sigue está hecha con esa lógica."
+  />
+
+  <!-- ── Un cuaderno no es un producto: es forma × rayado ── -->
+  <SuiteVariantes
+    eyebrow="Un modelo, quince claves"
+    titulo="Las 15 claves que hay<br />detrás de"
+    resalte="“un cuaderno”"
+    sub="Tres formas por cinco rayados. Y el papá no pide “un cuaderno”: pide profesional de cuadro chico, que es una de las quince — la que se acaba primero y la que nadie ve venir."
+    ejeA={variantesPapeleria.ejeA}
+    matriz={variantesPapeleria.matriz}
+    filas={variantesPapeleria.filas}
+    leyendas={variantesPapeleria.leyendas}
+    unidad="claves"
+    genero="f"
+    remate="que comprar, guardar y contar"
   />
 
   <!-- ── La comparación que hace el propio visitante ── -->

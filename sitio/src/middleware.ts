@@ -128,6 +128,11 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
   { pre: '/api/agents/', sec: 'automatizacion' },
   { pre: '/api/crm/email', sec: 'automatizacion' },
   { pre: '/api/crm/outbound', sec: 'automatizacion' },
+  // El historial de WhatsApp de un cliente es de CUENTAS (la ficha 360 lo
+  // pide), no de automatización: el orden importa porque gana el primer
+  // prefijo que coincide — igual que contacto-senales.
+  { pre: '/api/crm/whatsapp/por-cliente', sec: 'cuentas' },
+  { pre: '/api/crm/whatsapp', sec: 'automatizacion' },
   // Colaboradores
   { pre: '/api/partners/', sec: 'colaboradores' },
   { pre: '/api/crm/comisiones', sec: 'colaboradores' },
