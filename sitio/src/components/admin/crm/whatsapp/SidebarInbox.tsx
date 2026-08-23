@@ -32,6 +32,8 @@ const num: React.CSSProperties = { marginLeft: 'auto', fontSize: 11, color: C.g4
 export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   const { cat } = useCatalogoEtiquetas();
   const [giros, setGiros] = useState<{ v: string; l: string }[]>([]);
+  const [cierres, setCierres] = useState<{ v: string; l: string }[]>([]);
+  useEffect(() => { fetch('/api/crm/whatsapp/cierre-categorias').then(r => r.json()).then(j => setCierres((j.categorias || []).map((c: any) => ({ v: c.nombre, l: c.nombre })))).catch(() => {}); }, []);
   useEffect(() => {
     fetch('/api/crm/propiedades?entidad=company').then(r => r.json()).then(j => {
       const g = (j.data || j.propiedades || []).find?.((p: any) => p.key === 'giro_negocio');
@@ -41,12 +43,12 @@ export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   return useMemo(() => catalogoCampos({
     etiquetas: (cat || []).map((e: any) => ({ v: e.id, l: e.nombre })),
     equipo: equipo.map((m: any) => ({ v: m.id, l: m.nombre })),
-    giros,
+    giros, cierres,
     fuentes: [
       { v: 'web', l: 'Sitio web' }, { v: 'tiktok', l: 'TikTok Ads' }, { v: 'agenda', l: 'Agendador' },
       { v: 'whatsapp', l: 'WhatsApp' }, { v: 'referido', l: 'Referido' }, { v: 'import', l: 'Importado' },
     ],
-  }), [cat, equipo, giros]);
+  }), [cat, equipo, giros, cierres]);
 }
 
 export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva, onVista, equipo }: {

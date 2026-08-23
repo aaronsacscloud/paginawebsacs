@@ -39,6 +39,7 @@ export function catalogoCampos(din: {
   equipo?: { v: string; l: string }[];
   giros?: { v: string; l: string }[];
   fuentes?: { v: string; l: string }[];
+  cierres?: { v: string; l: string }[];
 } = {}): CampoFiltro[] {
   return [
     // ── Bandeja ──
@@ -56,6 +57,11 @@ export function catalogoCampos(din: {
     { id: 'etiqueta', label: 'Etiqueta', grupo: 'Lead', ops: [{ id: 'tiene', label: 'tiene' }, { id: 'no_tiene', label: 'no tiene' }], valores: din.etiquetas || [] },
     { id: 'creado', label: 'Contacto creado', grupo: 'Lead', ops: OPS.hace, valores: [] },
     { id: 'ultima_actividad', label: 'Último mensaje', grupo: 'Lead', ops: OPS.hace, valores: [] },
+    { id: 'ultima_respuesta', label: 'Nuestra última respuesta', grupo: 'Bandeja', ops: OPS.hace, valores: [] },
+    { id: 'ventana', label: 'Ventana de 24 h', grupo: 'Bandeja', ops: OPS.esSolo, valores: [{ v: 'abierta', l: 'Abierta' }, { v: 'por_cerrar', l: 'Cierra en menos de 4 h' }, { v: 'cerrada', l: 'Cerrada' }] },
+    { id: 'cierre_categoria', label: 'Motivo de cierre', grupo: 'Bandeja', ops: OPS.es, valores: din.cierres || [] },
+    { id: 'etiqueta_conv', label: 'Etiqueta de la conversación', grupo: 'Bandeja', ops: [{ id: 'tiene', label: 'tiene' }, { id: 'no_tiene', label: 'no tiene' }], valores: din.etiquetas || [] },
+    { id: 'renovacion', label: 'Próxima renovación', grupo: 'Cliente', ops: [{ id: 'en_menos', label: 'en menos de' }, { id: 'en_mas', label: 'en más de' }, { id: 'vencida', label: 'ya venció' }], valores: [] },
     // ── Cliente ──
     { id: 'plan', label: 'Plan', grupo: 'Cliente', ops: OPS.es, valores: [
       { v: 'vende', l: 'Vende' }, { v: 'controla', l: 'Controla' }, { v: 'fideliza', l: 'Fideliza' },
@@ -114,6 +120,28 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
       const h = parseHoras(c.valor); if (h == null) return true;
       const edad = (ahora - new Date(fila.ultimo_mensaje_at).getTime()) / 3600e3;
       return c.op === 'hace_menos' ? edad < h : edad > h;
+    }
+    case 'ultima_respuesta': {
+      const h = parseHoras(c.valor); if (h == null) return true;
+      if (!fila._extra?.ultimo_saliente_at) return c.op === 'hace_mas';   // nunca respondimos = hace infinito
+      const edad = (ahora - new Date(fila._extra.ultimo_saliente_at).getTime()) / 3600e3;
+      return c.op === 'hace_menos' ? edad < h : edad > h;
+    }
+    case 'ventana': {
+      const exp = fila.ventana_expira_at ? new Date(fila.ventana_expira_at).getTime() : 0;
+      const restante = exp - ahora;
+      ok = c.valor === 'abierta' ? restante > 0 : c.valor === 'por_cerrar' ? (restante > 0 && restante < 4 * 3600e3) : restante <= 0;
+      break;
+    }
+    case 'cierre_categoria': ok = (fila._extra?.cierre_categoria || '') === c.valor; break;
+    case 'etiqueta_conv': ok = (fila._extra?.etiquetas_conv || []).includes(c.valor); break;
+    case 'renovacion': {
+      const f = fila._extra?.fecha_renovacion; if (!f) return false;
+      const dias = (new Date(f).getTime() - ahora) / 86400e3;
+      if (c.op === 'vencida') return dias < 0;
+      const h = parseHoras(c.valor); if (h == null) return true;
+      const lim = h / 24;
+      return c.op === 'en_menos' ? (dias >= 0 && dias < lim) : dias > lim;
     }
     case 'plan': ok = fila.empresa?.plan === c.valor; break;
     case 'estado_cuenta': ok = (fila._extra?.estado_cuenta || fila.empresa?.estado_cuenta) === c.valor; break;

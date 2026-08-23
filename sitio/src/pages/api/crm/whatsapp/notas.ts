@@ -15,21 +15,24 @@ export const POST: APIRoute = async ({ request }) => {
   const texto = String(b.texto || '').trim();
   if (!b.conversation_id || !texto) return json({ error: 'Faltan conversation_id y texto' }, 400);
   const user = await getCurrentUser(request);
+  // Menciones: "@Nombre" → ids (se guardan para la bandeja "Requiere mi acción").
+  const menciones = [...texto.matchAll(/@([\wáéíóúñÁÉÍÓÚÑ]+)/g)].map(m => m[1].toLowerCase());
+  const { data: equipo } = menciones.length ? await supabase.from('team_members').select('id, nombre').eq('activo', true) : { data: [] as any[] };
+  const mencionados = (equipo || []).filter(m => { const primer = (m.nombre || '').split(' ')[0].toLowerCase(); return primer && menciones.includes(primer); });
+  const { data: convN } = await supabase.from('wa_conversaciones').select('contact_id').eq('id', b.conversation_id).maybeSingle();
   const { data, error } = await supabase.from('wa_notas').insert({
     conversation_id: b.conversation_id,
+    contact_id: convN?.contact_id || null,    // 19) la nota es del contacto
     autor: user?.nombre || user?.email || 'equipo',
     texto: texto.slice(0, 2000),
+    menciones: mencionados.map(m => m.id),
   }).select('id, autor, texto, created_at').single();
   if (error) return json({ error: error.message }, 500);
 
-  // Menciones: "@Nombre" avisa por la campana a quien fue nombrado. La
-  // campana del CRM es un feed común, así que el título carga el nombre.
-  const menciones = [...texto.matchAll(/@([\wáéíóúñÁÉÍÓÚÑ]+)/g)].map(m => m[1].toLowerCase());
-  if (menciones.length) {
-    const { data: equipo } = await supabase.from('team_members').select('id, nombre').eq('activo', true);
-    for (const m of equipo || []) {
-      const primer = (m.nombre || '').split(' ')[0].toLowerCase();
-      if (primer && menciones.includes(primer)) {
+  // La campana del CRM es un feed común, así que el título carga el nombre.
+  if (mencionados.length) {
+    for (const m of mencionados) {
+      {
         await notificar({
           clave: `wa_mencion_${data!.id}_${m.id}`,
           tipo: 'wa_mencion',

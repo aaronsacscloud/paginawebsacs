@@ -144,6 +144,7 @@ export async function registrarMensaje(o: {
     ultimo_mensaje_texto: texto.slice(0, 200) || null,
     ultima_direccion: o.direccion,
     estado: 'active',
+    ...(o.direccion === 'entrante' ? { ultimo_entrante_at: cuando, alerta: null } : { ultimo_saliente_at: cuando }),
   }).eq('id', conv.id);
 
   if (o.direccion === 'entrante') {
@@ -197,4 +198,22 @@ export async function actualizarStatus(kapsoMessageId: string, status: string, e
   if ((RANGO[status] ?? -1) <= (RANGO[msj.status] ?? -1)) return;
   await supabase.from('wa_mensajes')
     .update({ status, ...(error ? { error } : {}) }).eq('id', msj.id);
+  // 11) Número no alcanzable: Meta lo dice por código; la conversación queda
+  // con una alerta visible hasta que el cliente vuelva a escribir.
+  if (status === 'failed' && error) {
+    const codigo = (error.match(/^(\d{5,6})/) || [])[1];
+    const ALERTAS: Record<string, string> = {
+      '131026': 'Número no alcanzable: no tiene WhatsApp o bloqueó al negocio',
+      '131049': 'Meta limitó los mensajes de marketing a este número',
+      '131050': 'El cliente pidió no recibir mensajes de marketing (opt-out)',
+      '131047': 'Más de 24 h sin respuesta: solo se puede escribir con plantilla',
+      '131056': 'Meta frena el envío: demasiados mensajes a este número en poco tiempo',
+      '130472': 'Este número está en un experimento de Meta y no recibe plantillas de marketing',
+    };
+    const alerta = codigo ? ALERTAS[codigo] : null;
+    if (alerta) {
+      const { data: m } = await supabase.from('wa_mensajes').select('conversation_id').eq('id', msj.id).maybeSingle();
+      if (m?.conversation_id) await supabase.from('wa_conversaciones').update({ alerta }).eq('id', m.conversation_id);
+    }
+  }
 }

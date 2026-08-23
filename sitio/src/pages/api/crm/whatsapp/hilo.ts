@@ -17,7 +17,8 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const yo = await getCurrentUser(request).catch(() => null);
   const id = url.searchParams.get('id');
   const emailId = url.searchParams.get('email_id');
   if (!id && !emailId) return json({ error: 'Falta id o email_id' }, 400);
@@ -85,9 +86,11 @@ export const GET: APIRoute = async ({ url }) => {
     .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(PAGINA + 1);
   const [{ data: msjDesc }, { data: notasDesc }, { data: eventosDesc }] = conv.id ? await Promise.all([
     before ? qMsj.lt('created_at', before) : qMsj,
-    supabase.from('wa_notas')
-      .select('id, autor, texto, created_at')
-      .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(200),
+    // 19) Las notas son del CONTACTO: se ven desde cualquier hilo suyo.
+    (conv.contact_id
+      ? supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id').or(`conversation_id.eq.${conv.id},contact_id.eq.${conv.contact_id}`)
+      : supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id').eq('conversation_id', conv.id)
+    ).order('created_at', { ascending: false }).limit(200),
     supabase.from('wa_eventos')
       .select('id, tipo, detalle, autor, created_at')
       .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(200),
@@ -95,7 +98,7 @@ export const GET: APIRoute = async ({ url }) => {
   const hayMas = (msjDesc || []).length > PAGINA;
   const mensajes = (msjDesc || []).slice(0, PAGINA).reverse();
   const notas = (notasDesc || []).reverse();
-  const eventos = (eventosDesc || []).reverse();
+  const eventos: any[] = (eventosDesc || []).reverse();
   if (before) return json({ mensajes, hay_mas: hayMas });
 
   // Ventana de 24 h desde el último entrante de WhatsApp.
@@ -103,7 +106,7 @@ export const GET: APIRoute = async ({ url }) => {
   // entra al final no puede cerrar la ventana.
   const entrantes = (mensajes || []).filter((m: any) => m.direccion === 'entrante');
   const ultimoEntrante = entrantes.reduce((u: any, m: any) => (!u || new Date(m.enviado_at || m.created_at) > new Date(u.enviado_at || u.created_at)) ? m : u, null as any);
-  const base = ultimoEntrante ? new Date(ultimoEntrante.enviado_at || ultimoEntrante.created_at).getTime() : 0;
+  const base = Math.max(ultimoEntrante ? new Date(ultimoEntrante.enviado_at || ultimoEntrante.created_at).getTime() : 0, conv.ultimo_entrante_at ? new Date(conv.ultimo_entrante_at).getTime() : 0);
   const expira = base + 24 * 3600 * 1000;
   const ventana = { abierta: base > 0 && Date.now() < expira, expira_at: base ? new Date(expira).toISOString() : null };
 
@@ -122,17 +125,42 @@ export const GET: APIRoute = async ({ url }) => {
     },
   };
 
-  // ── Marcar leído en ambos canales ──
-  if (conv.id && (conv.no_leidos || 0) > 0) {
-    await supabase.from('wa_conversaciones').update({ no_leidos: 0 }).eq('id', conv.id);
-    conv.no_leidos = 0;
-    // Palomitas azules para el cliente: el último entrante se marca leído en Meta.
-    if (ultimoEntrante?.kapso_message_id) marcarLeido(ultimoEntrante.kapso_message_id).catch(() => {});
+  // ── Marcar leído: personal (wa_lecturas) + global (compat) ──
+  if (conv.id) {
+    if (yo) await supabase.from('wa_lecturas').upsert({ conversation_id: conv.id, user_id: yo.id, leido_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
+    if ((conv.no_leidos || 0) > 0) {
+      await supabase.from('wa_conversaciones').update({ no_leidos: 0 }).eq('id', conv.id);
+      conv.no_leidos = 0;
+      // Palomitas azules para el cliente: el último entrante se marca leído en Meta.
+      if (ultimoEntrante?.kapso_message_id) marcarLeido(ultimoEntrante.kapso_message_id).catch(() => {});
+    }
+  }
+
+  // 6) Presencia: quién más tiene abierto este hilo (últimos 20 s) y si escribe.
+  let presencia: any[] = [];
+  if (conv.id) {
+    const hace20 = new Date(Date.now() - 20e3).toISOString();
+    const { data: pres } = await supabase.from('wa_presencia').select('user_id, nombre, visto_at, escribiendo_at')
+      .eq('conversation_id', conv.id).gte('visto_at', hace20);
+    presencia = (pres || []).filter(p => !yo || p.user_id !== yo.id)
+      .map(p => ({ ...p, escribiendo: !!p.escribiendo_at && (Date.now() - new Date(p.escribiendo_at).getTime()) < 8e3 }));
+  }
+
+  // 10) Reuniones del contacto como eventos del hilo (agendadas / canceladas).
+  if (conv.contact_id) {
+    const { data: bks } = await supabase.from('bookings').select('id, fecha, hora_inicio, estado, asunto, created_at, google_meet_link, event_type_id')
+      .eq('contact_id', conv.contact_id).order('created_at', { ascending: false }).limit(10);
+    for (const b of bks || []) eventos.push({
+      id: `bk-${b.id}`, tipo: 'reunion', created_at: b.created_at, autor: null,
+      detalle: `${b.estado === 'cancelada' ? 'Reunión cancelada' : 'Reunión agendada'}: ${new Date(b.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })} ${String(b.hora_inicio || '').slice(0, 5)}${b.asunto ? ` · ${b.asunto}` : ''}`,
+      meet: b.google_meet_link || null,
+    });
+    eventos.sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
   }
   const sinLeer = convsEmail.filter(c => !c.leida).map(c => c.id);
   if (sinLeer.length) await supabase.from('email_conversations').update({ leida: true }).in('id', sinLeer);
 
-  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales });
+  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
 };
 
 export const PUT: APIRoute = async ({ request }) => {
