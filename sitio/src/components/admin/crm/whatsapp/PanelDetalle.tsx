@@ -565,10 +565,13 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
             )) : <b style={{ fontSize: 13, paddingLeft: 8 }}>{TABS.find(t => t.id === tab)?.t}</b>}
           </div>
           <div className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            {tab === 'info' && (subInfo === 'info' ? <TabInfo /> : <TabActividad />)}
-            {tab === 'acciones' && <TabAcciones />}
-            {tab === 'adjuntos' && <TabAdjuntos />}
-            {tab === 'notas' && <TabNotas />}
+            {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
+                elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
+                en cada polling (Clasificación parpadeaba). */}
+            {tab === 'info' && (subInfo === 'info' ? TabInfo() : TabActividad())}
+            {tab === 'acciones' && TabAcciones()}
+            {tab === 'adjuntos' && TabAdjuntos()}
+            {tab === 'notas' && TabNotas()}
           </div>
           {/* Footer fijo de etiquetas */}
           {(empresa || contactoBase) && <FooterEtiquetas entidad="wa_conversacion" id={conv.id || conv.email_only_id} />}
