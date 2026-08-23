@@ -118,7 +118,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           </div>
         </div>
         {modalPlantillaVirtual && (
-          <SelectorPlantilla telefono={String(filaActiva.telefono || '')} api={api} onClose={() => setModalPlantillaVirtual(false)} />
+          <SelectorPlantilla telefono={String(filaActiva.telefono || '')} api={api} onClose={() => setModalPlantillaVirtual(false)} contacto={{ nombre: filaActiva.contacto?.nombre, email: filaActiva.contacto?.email, empresa: filaActiva.empresa?.nombre, plan: filaActiva.empresa?.plan, telefono: String(filaActiva.telefono || '') }} />
         )}
       </div>
     );
@@ -146,7 +146,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             const urgente = ms < 4 * 3600e3;
             return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
               style={{ fontSize: 9, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '2px 7px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-              {urgente ? 'Cierra en ' : 'Ventana '}{h > 0 ? `${h} h ` : ''}{m} min
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: '-1px', marginRight: 3 }}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+              {urgente ? 'cierra en ' : ''}{h > 0 ? `${h} h ` : ''}{m} min
             </span>;
           })()}
           {(hilo.presencia || []).map((p: any) => (
@@ -302,7 +303,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
-        contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label }} />
+        contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label, telefono: telefonoLegible(conv.telefono), mrr: conv.companies?.mrr, fecha_renovacion: conv.companies?.fecha_renovacion, sucursales: conv.companies?.sucursales }} />
 
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}

@@ -28,13 +28,13 @@ export const GET: APIRoute = async ({ request, url }) => {
   let soloEmail: any = null;
   if (id) {
     const { data } = await supabase.from('wa_conversaciones')
-      .select('*, contacts(id, nombre, apellido, email, lifecycle_stage, tipo, company_id, wa_optout), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta)')
+      .select('*, contacts(id, nombre, apellido, email, lifecycle_stage, tipo, company_id, wa_optout), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, fecha_renovacion, rfc, razon_social, sacs_account)')
       .eq('id', id).maybeSingle();
     conv = data;
     if (!conv) return json({ error: 'Conversación no encontrada' }, 404);
   } else {
     const { data } = await supabase.from('email_conversations')
-      .select('*, contacts(id, nombre, apellido, email, lifecycle_stage, tipo, company_id, wa_optout), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta)')
+      .select('*, contacts(id, nombre, apellido, email, lifecycle_stage, tipo, company_id, wa_optout), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, fecha_renovacion, rfc, razon_social, sacs_account)')
       .eq('id', emailId).maybeSingle();
     soloEmail = data;
     if (!soloEmail) return json({ error: 'Conversación no encontrada' }, 404);

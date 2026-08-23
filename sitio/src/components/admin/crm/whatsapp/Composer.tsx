@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Corazones } from '../ui/Cargando';
 import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
+import MockupWhatsApp from './MockupWhatsApp';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
@@ -491,7 +492,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       </div>
 
       <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
-      {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => setModalPlantilla(false)} />}
+      {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => setModalPlantilla(false)} contacto={contacto} />}
       {modalInteractivo && <ModalInteractivo equipo={equipo} yo={api.yo?.()} contacto={contacto} catalogId={catalogId} onCerrar={() => setModalInteractivo(false)}
         onEnviar={async (body) => {
           const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: canales?.wa_id || undefined, telefono, cita: cita?.kapso_message_id || undefined, ...body }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -811,7 +812,22 @@ function ModalSnippetRapido({ inicial, onClose, onGuardado }: { inicial: { atajo
 }
 
 // ───────────────────────── Selector de plantillas ─────────────────────────
-export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string; api: any; onClose: () => void }) {
+/** Resuelve el dato del CRM que va en una variable (variables_map de la plantilla). */
+export function valorVariable(campo: string, contacto: any, yo: any): string {
+  const c = contacto || {};
+  switch (campo) {
+    case 'primer_nombre': return String(c.nombre || '').split(' ')[0] || '';
+    case 'nombre': return c.nombre || ''; case 'empresa': return c.empresa || ''; case 'plan': return c.plan || ''; case 'email': return c.email || '';
+    case 'telefono': return c.telefono || ''; case 'etapa': return c.etapa || ''; case 'mrr': return c.mrr != null ? `$${Number(c.mrr).toLocaleString('es-MX')}` : '';
+    case 'fecha_renovacion': return c.fecha_renovacion ? new Date(c.fecha_renovacion + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
+    case 'sucursales': return c.sucursales != null ? String(c.sucursales) : ''; case 'agente': return yo?.nombre || '';
+    default: return '';
+  }
+}
+
+export function SelectorPlantilla({ telefono, api, onClose, contacto }: { telefono: string; api: any; onClose: () => void; contacto?: any }) {
+  const [headerUrl, setHeaderUrl] = useState('');
+  const [otp, setOtp] = useState('');
   const [lista, setLista] = useState<any[] | null>(null);
   const [tab, setTab] = useState<'aprobadas' | 'todas'>('aprobadas');
   const [q, setQ] = useState('');
@@ -832,7 +848,7 @@ export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string
     && (!q || `${p.nombre} ${p.cuerpo}`.toLowerCase().includes(q.toLowerCase())));
   const enviar = async () => {
     setOcupado(true); setError('');
-    const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params }, telefono);
+    const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params, header_media_url: headerUrl || undefined, otp: otp || undefined }, telefono);
     setOcupado(false);
     if (r?.error) { setError(r.error_detalle ? `${r.error_detalle.titulo}. ${r.error_detalle.que_hacer}` : r.error); return; }
     onClose();
@@ -863,7 +879,7 @@ export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string
           {visibles.map(p => {
             const ok = p.status === 'APPROVED';
             return (
-              <button key={p.id} disabled={!ok} onClick={() => { setSel(p); setParams(Array(p.variables || 0).fill('')); }}
+              <button key={p.id} disabled={!ok} onClick={() => { setSel(p); setHeaderUrl(p.header_media_url || ''); setOtp(''); setParams(Array.from({ length: p.variables || 0 }, (_, i) => valorVariable((p.variables_map || [])[i] || '', contacto, api.yo?.()))); }}
                 style={{ display: 'block', width: '100%', textAlign: 'left', cursor: ok ? 'pointer' : 'not-allowed', fontFamily: 'inherit', borderRadius: 10, padding: '9px 12px', opacity: ok ? 1 : .5, border: sel?.id === p.id ? `2px solid ${C.morado}` : `1px solid ${C.g200}`, background: sel?.id === p.id ? C.moradoSuave : '#fff', marginBottom: 6 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <b style={{ fontSize: 13 }}>{p.nombre}</b>
@@ -875,12 +891,32 @@ export function SelectorPlantilla({ telefono, api, onClose }: { telefono: string
               </button>
             );
           })}
-          {sel && params.map((v, i) => (
-            <div key={i} style={{ margin: '8px 4px 0' }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>{`Variable {{${i + 1}}}`}</label>
-              <input value={v} onChange={e => { const p = [...params]; p[i] = e.target.value; setParams(p); }} style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
+          {sel && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(String(sel.header_tipo || '').toUpperCase()) && (
+            <div style={{ margin: '8px 4px 0' }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>{sel.header_tipo === 'IMAGE' ? 'Imagen' : sel.header_tipo === 'VIDEO' ? 'Video' : 'Documento'} del encabezado (URL pública)</label>
+              <input value={headerUrl} onChange={e => setHeaderUrl(e.target.value)} placeholder="https://…" style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${headerUrl ? C.g200 : C.rojo300}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
             </div>
-          ))}
+          )}
+          {sel && sel.tipo_especial === 'otp' ? (
+            <div style={{ margin: '8px 4px 0' }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>Código a enviar</label>
+              <input value={otp} onChange={e => setOtp(e.target.value.replace(/\s/g, '').slice(0, 15))} placeholder="123456" style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
+            </div>
+          ) : sel && params.map((v, i) => {
+            const campo = (sel.variables_map || [])[i];
+            return (
+              <div key={i} style={{ margin: '8px 4px 0' }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, display: 'block', marginBottom: 3 }}>{`Variable {{${i + 1}}}`}{campo && <span style={{ fontWeight: 500, color: C.emerald700, marginLeft: 6 }}>· del CRM ({campo.replace(/_/g, ' ')})</span>}</label>
+                <input value={v} onChange={e => { const p = [...params]; p[i] = e.target.value; setParams(p); }} style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${!v.trim() ? C.rojo300 : C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
+              </div>
+            );
+          })}
+          {sel && (
+            <div style={{ margin: '12px 4px 0' }}>
+              <MockupWhatsApp header={sel.header_tipo === 'TEXT' ? sel.header : null} headerMedia={['IMAGE', 'VIDEO', 'DOCUMENT', 'LOCATION'].includes(String(sel.header_tipo || '').toUpperCase()) ? { tipo: sel.header_tipo, url: headerUrl } : null}
+                cuerpo={(sel.tipo_especial === 'otp' ? [otp || '{{1}}'] : params).reduce((t: string, v: string, i: number) => t.replaceAll(`{{${i + 1}}}`, v || `{{${i + 1}}}`), sel.cuerpo || '')} footer={sel.footer} botones={sel.botones || []} />
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C.g100}`, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 14px', background: '#fff', fontSize: 12, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>

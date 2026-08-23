@@ -8,7 +8,20 @@ import { S, Tag, Aviso, Vacio, chip } from '../email/ui';
 import { C, label } from './estilo';
 import MockupWhatsApp from './MockupWhatsApp';
 
-const TONO: Record<string, string> = { APPROVED: 'ok', PENDING: 'aviso', REJECTED: 'malo' };
+const TONO: Record<string, string> = { APPROVED: 'ok', PENDING: 'aviso', REJECTED: 'malo', PAUSED: 'malo', DISABLED: 'gris' };
+const MOTIVO: Record<string, string> = {
+  INVALID_FORMAT: 'Formato inválido: faltan ejemplos de variables, están mal numeradas o hay saltos/espacios raros.',
+  ABUSIVE_CONTENT: 'Contenido que Meta considera abusivo o engañoso.',
+  INCORRECT_CATEGORY: 'La categoría no corresponde al contenido (marketing disfrazado de utilidad, o al revés).',
+  SCAM: 'Meta lo consideró posible fraude.',
+  TAG_CONTENT_MISMATCH: 'El contenido no coincide con la categoría.',
+};
+/** Dato del CRM que puede ir en cada {{n}} (prellenado al enviar y en masivos). */
+export const CAMPOS_VARIABLE = [
+  { v: '', l: 'Escribir a mano' }, { v: 'primer_nombre', l: 'Primer nombre' }, { v: 'nombre', l: 'Nombre completo' }, { v: 'empresa', l: 'Empresa' },
+  { v: 'plan', l: 'Plan' }, { v: 'email', l: 'Email' }, { v: 'telefono', l: 'Teléfono' }, { v: 'etapa', l: 'Etapa' }, { v: 'mrr', l: 'MRR' },
+  { v: 'fecha_renovacion', l: 'Fecha de renovación' }, { v: 'sucursales', l: 'Sucursales' }, { v: 'agente', l: 'Nombre del agente' },
+];
 const LIM = { cuerpo: 1024, header: 60, footer: 60, boton: 20, botones: 3 };
 const extraerVars = (t: string) => [...new Set([...t.matchAll(/\{\{([^}]+)\}\}/g)].map(m => m[1]))];
 
@@ -42,6 +55,12 @@ function PlantillasMeta() {
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState<{ tono: string; texto: string } | null>(null);
   const [prueba, setPrueba] = useState<any>(null);
+  const [mapa, setMapa] = useState<any>(null);
+  const borrar = async (p: any) => {
+    if (!confirm(`¿Borrar la plantilla "${p.nombre}" en Meta? Se pierde la aprobación y no se puede deshacer.`)) return;
+    const r = await fetch('/api/crm/whatsapp/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: p.nombre }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    if (r.error) setMsg({ tono: 'malo', texto: r.error }); else { setMsg({ tono: 'ok', texto: `"${p.nombre}" borrada en Meta.` }); cargar(); }
+  };
   const [q, setQ] = useState('');
   const [orden, setOrden] = useState<{ k: string; dir: 1 | -1 }>({ k: 'created_at', dir: -1 });
   const [pag, setPag] = useState(0);
@@ -83,23 +102,37 @@ function PlantillasMeta() {
           <input value={q} onChange={e => { setQ(e.target.value); setPag(0); }} placeholder="Buscar plantilla…" style={{ ...inp, width: 260 }} />
           <span style={{ flex: 1 }} />
           <button style={S.btnG} onClick={cargar}>Sincronizar</button>
-          <button style={S.btnP} onClick={() => setForm({ nombre: '', idioma: 'es_MX', categoria: 'UTILITY', cuerpo: '', header: '', footer: '', botones: [] })}>Nueva plantilla</button>
+          <button style={S.btnP} onClick={() => setForm({ nombre: '', idioma: 'es_MX', categoria: 'UTILITY', cuerpo: '', header: '', footer: '', botones: [], header_tipo: 'TEXT', header_media_url: '', ejemplos: [], variables_map: [], otp_expira_min: 10 })}>Nueva plantilla</button>
         </div>
         {!lista.length ? <Vacio titulo="Sin plantillas todavía" texto="Las plantillas son los mensajes pre-aprobados por Meta: sirven fuera de la ventana de 24 horas y para los masivos." /> : (
           <div className="crm-scroll-x" style={{ ...S.card, padding: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
-              <thead><tr>{th('nombre', 'Nombre')}{th('categoria', 'Categoría')}{th('idioma', 'Idioma')}{th('status', 'Estado')}<th style={S.th}>Cuerpo</th><th style={S.th}></th></tr></thead>
+              <thead><tr>{th('nombre', 'Nombre')}{th('categoria', 'Categoría')}{th('idioma', 'Idioma')}{th('status', 'Estado')}{th('calidad', 'Calidad')}<th style={S.th}>Cuerpo</th><th style={S.th}></th></tr></thead>
               <tbody>
                 {pagina.map(p => (
                   <tr key={p.id}>
                     <td style={{ ...S.td, fontWeight: 700, fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{p.nombre}</td>
                     <td style={S.td}><Tag tono={p.categoria === 'MARKETING' ? 'acento' : 'info'}>{p.categoria}</Tag></td>
                     <td style={S.td}>{p.idioma}</td>
-                    <td style={S.td}><Tag tono={TONO[p.status] || 'gris'}>{p.status}</Tag>{p.status === 'REJECTED' && p.rechazo_motivo && <div style={{ fontSize: 10, color: C.rojo500, marginTop: 2 }}>{p.rechazo_motivo}</div>}</td>
-                    <td style={{ ...S.td, maxWidth: 320, color: C.g500, fontSize: 12 }}><span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.cuerpo}</span></td>
+                    <td style={S.td}>
+                      <Tag tono={TONO[p.status] || 'gris'}>{p.status === 'APPROVED' ? 'Aprobada' : p.status === 'REJECTED' ? 'Rechazada' : p.status === 'PENDING' ? 'En revisión' : p.status === 'PAUSED' ? 'Pausada' : p.status === 'DISABLED' ? 'Deshabilitada' : p.status}</Tag>
+                      {p.status === 'REJECTED' && <div style={{ fontSize: 10, color: C.rojo500, marginTop: 3, maxWidth: 220, lineHeight: 1.4 }} title={p.rechazo_motivo || ''}>{MOTIVO[p.rechazo_motivo] || p.rechazo_motivo || 'Meta no dio motivo'}</div>}
+                      {p.status_at && <div style={{ fontSize: 10, color: C.g400, marginTop: 2 }}>{new Date(p.status_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</div>}
+                    </td>
+                    <td style={S.td}>
+                      {p.calidad && p.calidad !== 'UNKNOWN' ? <span title={`Calidad según Meta: ${p.calidad}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: p.calidad === 'GREEN' ? C.emerald700 : p.calidad === 'YELLOW' ? C.ambar700 : C.rojo700 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: p.calidad === 'GREEN' ? C.emerald500 : p.calidad === 'YELLOW' ? C.ambar400 : C.rojo500 }} />{p.calidad === 'GREEN' ? 'Alta' : p.calidad === 'YELLOW' ? 'Media' : 'Baja'}</span>
+                        : <span style={{ fontSize: 10, color: C.g300 }} title="Meta la califica cuando ya se ha usado">Sin datos</span>}
+                      {(p.header_tipo && p.header_tipo !== 'TEXT') && <div style={{ fontSize: 9, fontWeight: 700, color: C.g500, marginTop: 3 }}>{p.header_tipo === 'IMAGE' ? 'Imagen' : p.header_tipo === 'VIDEO' ? 'Video' : p.header_tipo === 'DOCUMENT' ? 'Documento' : 'Ubicación'} en encabezado</div>}
+                      {p.tipo_especial === 'otp' && <div style={{ fontSize: 9, fontWeight: 700, color: C.g500, marginTop: 3 }}>Código OTP</div>}
+                    </td>
+                    <td style={{ ...S.td, maxWidth: 300, color: C.g500, fontSize: 12 }}><span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.cuerpo}</span>
+                      {Array.isArray(p.botones) && p.botones.length > 0 && <div style={{ marginTop: 3, display: 'flex', gap: 4, flexWrap: 'wrap' }}>{p.botones.map((b: any, i: number) => <span key={i} style={{ fontSize: 9, fontWeight: 700, border: `1px solid ${C.g200}`, borderRadius: 999, padding: '0 6px', color: C.g500 }}>{b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : ''}{b.texto || b.tipo}</span>)}</div>}
+                    </td>
                     <td style={{ ...S.td, whiteSpace: 'nowrap' }}>
                       {p.status === 'APPROVED' && <button style={S.btnA} onClick={() => setPrueba({ plantilla: p, telefono: '', params: Array(p.variables || 0).fill('') })}>Probar</button>}
-                      {p.status === 'APPROVED' && <button style={{ ...S.btnG, marginLeft: 6 }} onClick={() => setForm({ nombre: `${p.nombre}_v2`, idioma: p.idioma, categoria: p.categoria, cuerpo: p.cuerpo, header: p.header || '', footer: p.footer || '', botones: p.botones || [] })}>Nueva versión</button>}
+                      {p.status === 'APPROVED' && <button style={{ ...S.btnG, marginLeft: 6 }} onClick={() => setForm({ nombre: `${p.nombre}_v2`, idioma: p.idioma, categoria: p.categoria, cuerpo: p.cuerpo, header: p.header || '', footer: p.footer || '', botones: p.botones || [], header_tipo: p.header_tipo || 'TEXT', header_media_url: p.header_media_url || '', ejemplos: p.ejemplos || [], variables_map: p.variables_map || [] })}>Nueva versión</button>}
+                      {p.variables > 0 && <button style={{ ...S.btnG, marginLeft: 6 }} title="Qué dato del CRM va en cada variable" onClick={() => setMapa(p)}>Variables</button>}
+                      <button style={{ ...S.btnG, marginLeft: 6, color: C.rojo500 }} title="Borrar en Meta" onClick={() => borrar(p)}>Borrar</button>
                     </td>
                   </tr>
                 ))}
@@ -117,6 +150,27 @@ function PlantillasMeta() {
 
       {form && <EditorPlantilla form={form} setForm={setForm} onCrear={crear} guardando={guardando} onCancelar={() => { setForm(null); setMsg(null); }} />}
 
+      {mapa && (
+        <div onClick={() => setMapa(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,15,40,.45)', zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: 20, width: 'min(460px, 94vw)' }}>
+            <b style={{ fontSize: 14 }}>Variables de "{mapa.nombre}"</b>
+            <p style={{ fontSize: 12, color: C.g500, margin: '4px 0 12px' }}>Qué dato del CRM se rellena solo en cada variable al enviarla desde el chat o en un masivo.</p>
+            <div style={{ fontSize: 12, background: C.g50, borderRadius: 8, padding: '8px 10px', marginBottom: 10, whiteSpace: 'pre-wrap' }}>{mapa.cuerpo}</div>
+            {Array.from({ length: mapa.variables || 0 }, (_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontWeight: 700, color: C.moradoTinta, width: 40, fontSize: 12 }}>{`{{${i + 1}}}`}</span>
+                <select style={inp} value={(mapa.variables_map || [])[i] || ''} onChange={e => { const m = [...(mapa.variables_map || [])]; m[i] = e.target.value; setMapa({ ...mapa, variables_map: m }); }}>
+                  {CAMPOS_VARIABLE.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                </select>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <button style={S.btnG} onClick={() => setMapa(null)}>Cancelar</button>
+              <button style={S.btnP} onClick={async () => { await fetch('/api/crm/whatsapp/plantillas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: mapa.id, variables_map: mapa.variables_map || [] }) }); setMapa(null); cargar(); }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
       {prueba && (
         <div style={{ ...S.card, maxWidth: 520 }}>
           <h3 style={{ margin: '0 0 10px', fontSize: '0.95rem' }}>Probar «{prueba.plantilla.nombre}»</h3>
@@ -148,14 +202,22 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
   const varsOk = vars.every((v, i) => v === String(i + 1));   // Meta: {{1}},{{2}}… ascendentes
   const errores: string[] = [];
   if (!/^[a-z0-9_]+$/.test(form.nombre || '')) errores.push('El nombre solo admite minúsculas, números y guión bajo');
-  if (!form.cuerpo?.trim()) errores.push('Falta el cuerpo');
+  const esAuth = form.categoria === 'AUTHENTICATION';
+  const ht = form.header_tipo || 'TEXT';
+  if (!esAuth && !form.cuerpo?.trim()) errores.push('Falta el cuerpo');
+  if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && !/^https?:\/\/\S+/.test(form.header_media_url || '')) errores.push('El encabezado de media necesita la URL pública de un archivo de muestra');
+  for (const b of form.botones || []) {
+    if (b.tipo === 'URL' && !/^https?:\/\/\S+/.test(b.url || '')) errores.push(`El botón "${b.texto || 'URL'}" necesita una URL válida`);
+    if (b.tipo === 'PHONE_NUMBER' && !/^\+?\d{8,15}$/.test((b.telefono || '').replace(/[\s-]/g, ''))) errores.push(`El botón "${b.texto || 'Llamar'}" necesita un teléfono con lada`);
+  }
   if ((form.cuerpo || '').length > LIM.cuerpo) errores.push(`Cuerpo excede ${LIM.cuerpo} caracteres`);
   if ((form.header || '').length > LIM.header) errores.push(`Encabezado excede ${LIM.header}`);
   if ((form.footer || '').length > LIM.footer) errores.push(`Pie excede ${LIM.footer}`);
   if (!varsOk) errores.push('Las variables deben ser {{1}}, {{2}}… en orden y sin huecos');
   if ((form.botones || []).some((b: any) => !b.texto?.trim())) errores.push('Hay un botón sin texto');
   const ejemplos: string[] = form.ejemplos || [];
-  if (vars.some((_, i) => !(ejemplos[i] || '').trim())) errores.push('Meta exige un ejemplo por cada variable');
+  if (!esAuth && vars.some((_, i) => !(ejemplos[i] || '').trim())) errores.push('Meta exige un ejemplo por cada variable');
+  const setBotonCampo = (i: number, campo: string, v: string) => setForm({ ...form, botones: form.botones.map((b: any, j: number) => j === i ? { ...b, [campo]: v } : b) });
   const puede = errores.length === 0;
   const setEjemplo = (i: number, v: string) => { const e = [...ejemplos]; e[i] = v; setForm({ ...form, ejemplos: e }); };
   const setBoton = (i: number, texto: string) => setForm({ ...form, botones: form.botones.map((b: any, j: number) => j === i ? { ...b, texto: texto.slice(0, LIM.boton) } : b) });
@@ -171,7 +233,7 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
         <div style={{ fontSize: 10, color: C.g400, marginTop: 3 }}>Solo letras minúsculas, números y guiones bajos (se corrige solo).</div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          {[{ id: 'UTILITY', l: 'Utilidad' }, { id: 'MARKETING', l: 'Marketing' }].map(c => (
+          {[{ id: 'UTILITY', l: 'Utilidad' }, { id: 'MARKETING', l: 'Marketing' }, { id: 'AUTHENTICATION', l: 'Autenticación (OTP)' }].map(c => (
             <button key={c.id} style={chip(form.categoria === c.id)} onClick={() => setForm({ ...form, categoria: c.id })}>{c.l}</button>
           ))}
           <select style={{ ...inp, width: 'auto' }} value={form.idioma} onChange={e => setForm({ ...form, idioma: e.target.value })}>
@@ -179,8 +241,33 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
           </select>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Encabezado (opcional)</label><Contador n={(form.header || '').length} max={LIM.header} /></div>
-        <input style={{ ...inp, borderColor: (form.header || '').length > LIM.header ? C.rojo300 : C.g200 }} value={form.header} onChange={e => setForm({ ...form, header: e.target.value })} />
+        {esAuth ? (
+          <div style={{ marginTop: 12, background: C.g50, border: `1px solid ${C.g100}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: C.g700, lineHeight: 1.5 }}>
+            <b>Plantilla de código (OTP).</b> Meta fija el texto ("<i>{'{{1}}'} es tu código de verificación</i>") y el botón "Copiar código"; no se edita.
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <label style={{ fontSize: 11 }}>Caduca en</label><input type="number" min={1} max={90} style={{ ...inp, width: 70 }} value={form.otp_expira_min || 10} onChange={e => setForm({ ...form, otp_expira_min: Number(e.target.value) })} /><span style={{ fontSize: 11 }}>min</span>
+              <label style={{ fontSize: 11, marginLeft: 10, display: 'flex', alignItems: 'center', gap: 4 }}><input type="checkbox" checked={form.otp_recomendacion !== false} onChange={e => setForm({ ...form, otp_recomendacion: e.target.checked })} /> Aviso "no compartas este código"</label>
+            </div>
+          </div>
+        ) : (<>
+        <label style={{ ...label(), display: 'block', marginTop: 12, marginBottom: 4 }}>Encabezado</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {[['TEXT', 'Texto'], ['IMAGE', 'Imagen'], ['VIDEO', 'Video'], ['DOCUMENT', 'Documento'], ['LOCATION', 'Ubicación'], ['NONE', 'Sin encabezado']].map(([v, l]) => (
+            <button key={v} style={chip((v === 'NONE' ? !form.header && ht === 'TEXT' : ht === v && (v !== 'TEXT' || !!form.header)))} onClick={() => setForm({ ...form, header_tipo: v === 'NONE' ? 'TEXT' : v, ...(v === 'NONE' ? { header: '' } : {}) })}>{l}</button>
+          ))}
+        </div>
+        {ht === 'TEXT' && (<>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8 }}><span style={{ fontSize: 11, color: C.g500 }}>Texto del encabezado (opcional)</span><Contador n={(form.header || '').length} max={LIM.header} /></div>
+          <input style={{ ...inp, borderColor: (form.header || '').length > LIM.header ? C.rojo300 : C.g200 }} value={form.header} onChange={e => setForm({ ...form, header: e.target.value })} />
+        </>)}
+        {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && (<>
+          <div style={{ fontSize: 11, color: C.g500, marginTop: 8 }}>Archivo de muestra para Meta (URL pública). Al enviar puedes cambiarlo por otro.</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+            <input style={inp} value={form.header_media_url || ''} onChange={e => setForm({ ...form, header_media_url: e.target.value })} placeholder={ht === 'IMAGE' ? 'https://…/portada.jpg' : ht === 'VIDEO' ? 'https://…/demo.mp4' : 'https://…/brochure.pdf'} />
+            <button style={{ ...S.btnG, whiteSpace: 'nowrap' }} onClick={() => { const i = document.createElement('input'); i.type = 'file'; i.accept = ht === 'IMAGE' ? 'image/*' : ht === 'VIDEO' ? 'video/mp4' : '.pdf'; i.onchange = async () => { const f = i.files?.[0]; if (!f) return; const fd = new FormData(); fd.append('file', f); fd.append('nombre', f.name); fd.append('categoria', 'plantillas'); const r = await fetch('/api/crm/whatsapp/media', { method: 'POST', body: fd }).then(x => x.json()).catch(() => null); if (r?.archivo?.url || r?.url) setForm({ ...form, header_media_url: r.archivo?.url || r.url }); }; i.click(); }}>Subir</button>
+          </div>
+        </>)}
+        {ht === 'LOCATION' && <div style={{ fontSize: 11, color: C.g500, marginTop: 6 }}>La ubicación se elige al enviar (lat/lng + nombre).</div>}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Cuerpo</label><Contador n={(form.cuerpo || '').length} max={LIM.cuerpo} /></div>
         <textarea style={{ ...inp, minHeight: 120, resize: 'vertical', borderColor: (form.cuerpo || '').length > LIM.cuerpo || !varsOk ? C.rojo300 : C.g200 }} value={form.cuerpo}
@@ -203,23 +290,44 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
               ))}
             </div>
             <div style={{ fontSize: 10, color: C.g400, marginTop: 6 }}>Meta revisa la plantilla con estos valores; sin ellos la rechaza de inmediato.</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.g500, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 6px' }}>Se rellena solo con (opcional)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 6 }}>
+              {vars.map((v, i) => (
+                <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                  <span style={{ fontWeight: 700, color: C.moradoTinta, flexShrink: 0 }}>{`{{${v}}}`}</span>
+                  <select style={{ ...inp, padding: '5px 8px', fontSize: 12 }} value={(form.variables_map || [])[i] || ''} onChange={e => { const m = [...(form.variables_map || [])]; m[i] = e.target.value; setForm({ ...form, variables_map: m }); }}>
+                    {CAMPOS_VARIABLE.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+                  </select>
+                </label>
+              ))}
+            </div>
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 12 }}><label style={label()}>Pie (opcional)</label><Contador n={(form.footer || '').length} max={LIM.footer} /></div>
         <input style={{ ...inp, borderColor: (form.footer || '').length > LIM.footer ? C.rojo300 : C.g200 }} value={form.footer} onChange={e => setForm({ ...form, footer: e.target.value })} />
 
-        <label style={{ ...label(), display: 'block', marginTop: 12, marginBottom: 4 }}>Botones de respuesta rápida (máx. {LIM.botones})</label>
+        <label style={{ ...label(), display: 'block', marginTop: 12, marginBottom: 4 }}>Botones (respuesta rápida, link, llamada, copiar código, catálogo)</label>
         {(form.botones || []).map((b: any, i: number) => (
-          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-            <input style={{ ...inp, flex: 1 }} maxLength={LIM.boton} value={b.texto} onChange={e => setBoton(i, e.target.value)} placeholder={`Botón ${i + 1}`} />
-            <span style={{ fontSize: 10, color: C.g400, alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{(b.texto || '').length}/{LIM.boton}</span>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '130px 1fr auto', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+            <select style={inp} value={b.tipo || 'QUICK_REPLY'} onChange={e => setBotonCampo(i, 'tipo', e.target.value)}>
+              <option value="QUICK_REPLY">Respuesta rápida</option><option value="URL">Abrir link</option><option value="PHONE_NUMBER">Llamar</option><option value="COPY_CODE">Copiar código</option><option value="CATALOG">Ver catálogo</option><option value="MPM">Ver productos</option>
+            </select>
+            <div style={{ display: 'flex', gap: 6, minWidth: 0 }}>
+              {b.tipo !== 'COPY_CODE' && <input style={{ ...inp, flex: 1 }} maxLength={LIM.boton} value={b.texto || ''} onChange={e => setBoton(i, e.target.value)} placeholder={b.tipo === 'URL' ? 'Ver cotización' : b.tipo === 'PHONE_NUMBER' ? 'Llámanos' : `Botón ${i + 1}`} />}
+              {b.tipo === 'URL' && <input style={{ ...inp, flex: 1.5 }} value={b.url || ''} onChange={e => setBotonCampo(i, 'url', e.target.value)} placeholder="https://www.sacscloud.com/… (usa {{1}} para parte dinámica)" />}
+              {b.tipo === 'PHONE_NUMBER' && <input style={{ ...inp, flex: 1 }} value={b.telefono || ''} onChange={e => setBotonCampo(i, 'telefono', e.target.value)} placeholder="+52 55 3663 4392" />}
+              {b.tipo === 'COPY_CODE' && <input style={{ ...inp, flex: 1 }} value={b.ejemplo || ''} onChange={e => setBotonCampo(i, 'ejemplo', e.target.value)} placeholder="Código de ejemplo (ej. SACS20)" />}
+              {b.tipo === 'URL' && /\{\{1\}\}/.test(b.url || '') && <input style={{ ...inp, flex: .8 }} value={b.ejemplo || ''} onChange={e => setBotonCampo(i, 'ejemplo', e.target.value)} placeholder="Ejemplo de {{1}}" />}
+            </div>
             <button onClick={() => setForm({ ...form, botones: form.botones.filter((_: any, j: number) => j !== i) })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400 }}>✕</button>
           </div>
         ))}
-        {(form.botones || []).length < LIM.botones && (
-          <button onClick={() => setForm({ ...form, botones: [...(form.botones || []), { texto: '' }] })} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: C.moradoTinta, padding: 0 }}>+ Agregar botón</button>
+        {(form.botones || []).length < 10 && (
+          <button onClick={() => setForm({ ...form, botones: [...(form.botones || []), { tipo: 'QUICK_REPLY', texto: '' }] })} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: C.moradoTinta, padding: 0 }}>+ Agregar botón</button>
         )}
+        <div style={{ fontSize: 10, color: C.g400, marginTop: 4 }}>Meta permite hasta 10 botones: máx. 2 de link, 1 de llamada y 1 de copiar código.</div>
+        </>)}
 
         {errores.length > 0 && (form.nombre || form.cuerpo) && (
           <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 11, color: C.rojo500, lineHeight: 1.6 }}>{errores.map(e => <li key={e}>{e}</li>)}</ul>
@@ -231,7 +339,9 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
       </div>
       <div style={{ position: 'sticky', top: 20 }}>
         <div style={{ ...label(10), textAlign: 'center', marginBottom: 10 }}>Así lo verá el cliente</div>
-        <MockupWhatsApp header={form.header} cuerpo={form.cuerpo || ''} footer={form.footer} botones={form.botones || []} />
+        <MockupWhatsApp header={esAuth ? null : (ht === 'TEXT' ? form.header : null)} headerMedia={esAuth ? null : (['IMAGE', 'VIDEO', 'DOCUMENT', 'LOCATION'].includes(ht) ? { tipo: ht, url: form.header_media_url } : null)}
+          cuerpo={esAuth ? '{{1}} es tu código de verificación. Por tu seguridad, no lo compartas.' : (form.cuerpo || '')} footer={esAuth ? (form.otp_expira_min ? `Este código caduca en ${form.otp_expira_min} minutos.` : null) : form.footer}
+          botones={esAuth ? [{ texto: 'Copiar código', tipo: 'COPY_CODE' }] : (form.botones || [])} />
       </div>
     </div>
   );

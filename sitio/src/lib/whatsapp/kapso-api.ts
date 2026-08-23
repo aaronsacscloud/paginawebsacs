@@ -234,11 +234,18 @@ export async function descargarMedia(mediaId: string): Promise<{ bytes: ArrayBuf
 }
 
 /** Plantilla aprobada. `params` son los valores del BODY, en orden {{1}}..{{n}}. */
-export async function enviarPlantilla(telefono: string, nombre: string, idioma: string, params: string[]) {
-  const components = params.length ? [{
-    type: 'body',
-    parameters: params.map((p) => ({ type: 'text', text: p })),
-  }] : [];
+export async function enviarPlantilla(telefono: string, nombre: string, idioma: string, params: string[], extra?: {
+  headerMedia?: { tipo: 'image' | 'video' | 'document'; link: string; filename?: string } | null;
+  botonUrlParam?: string | null;    // valor para {{1}} de un botón URL dinámico
+  otp?: string | null;              // plantilla de autenticación: el código va en body y en el botón
+}) {
+  const components: any[] = [];
+  if (extra?.headerMedia) components.push({ type: 'header', parameters: [{ type: extra.headerMedia.tipo, [extra.headerMedia.tipo]: { link: extra.headerMedia.link, ...(extra.headerMedia.tipo === 'document' && extra.headerMedia.filename ? { filename: extra.headerMedia.filename } : {}) } }] });
+  if (extra?.otp) {
+    components.push({ type: 'body', parameters: [{ type: 'text', text: extra.otp }] });
+    components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.otp }] });
+  } else if (params.length) components.push({ type: 'body', parameters: params.map((p) => ({ type: 'text', text: p })) });
+  if (extra?.botonUrlParam) components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.botonUrlParam }] });
   return meta(`/${PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
     body: JSON.stringify({
@@ -287,36 +294,73 @@ export async function enviarMediaId(telefono: string, clase: 'image' | 'document
 
 export async function listarPlantillasMeta(): Promise<any[]> {
   if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
-  const r = await meta(`/${BUSINESS_ACCOUNT_ID}/message_templates?limit=100`);
+  const r = await meta(`/${BUSINESS_ACCOUNT_ID}/message_templates?limit=100&fields=id,name,status,language,category,quality_score,rejected_reason,components`);
   return Array.isArray(r) ? r : (r?.data ?? []);
 }
 
+/** Sube una URL pública a Meta como "resumable asset" y devuelve el handle (h:…) que exige el HEADER de media de una plantilla. */
+export async function ingestarHandle(url: string, mime?: string | null, filename?: string | null): Promise<string> {
+  const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: PHONE_NUMBER_ID, source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
+  const h = r?.handle || r?.h || r?.media_handle || r?.data?.handle || r?.upload_handle;
+  if (!h) throw new KapsoError(502, { error: `Kapso no devolvió handle: ${JSON.stringify(r).slice(0, 200)}` });
+  return String(h);
+}
+
+export type BotonPlantilla = { tipo?: 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER' | 'COPY_CODE' | 'CATALOG' | 'MPM'; texto: string; url?: string; telefono?: string; ejemplo?: string };
+
 export async function crearPlantillaMeta(p: {
   nombre: string; idioma: string; categoria: string;
-  cuerpo: string; header?: string | null; footer?: string | null; botones?: { texto: string }[];
+  cuerpo: string; header?: string | null; footer?: string | null; botones?: BotonPlantilla[];
   ejemplos?: string[];   // un valor de muestra por {{n}} del cuerpo (Meta lo EXIGE si hay variables)
+  headerTipo?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'LOCATION' | null;
+  headerHandle?: string | null;   // h:… (ya ingerido)
+  autenticacion?: { expiraMin?: number; recomendacion?: boolean } | null;   // categoría AUTHENTICATION: el cuerpo lo pone Meta
 }) {
   if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
   const components: any[] = [];
-  if (p.header) {
+  const ht = (p.headerTipo || 'TEXT').toUpperCase();
+  if (ht === 'TEXT' && p.header) {
     const h: any = { type: 'HEADER', format: 'TEXT', text: p.header };
     const nh = (p.header.match(/\{\{\d+\}\}/g) || []).length;
     if (nh) h.example = { header_text: Array.from({ length: nh }, (_, i) => p.ejemplos?.[i] || `Ejemplo ${i + 1}`) };
     components.push(h);
+  } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht)) {
+    if (!p.headerHandle) throw new KapsoError(400, { error: 'El encabezado de media necesita un archivo (handle de Meta)' });
+    components.push({ type: 'HEADER', format: ht, example: { header_handle: [p.headerHandle] } });
+  } else if (ht === 'LOCATION') {
+    components.push({ type: 'HEADER', format: 'LOCATION' });
   }
-  const vars = Array.from(new Set((p.cuerpo.match(/\{\{(\d+)\}\}/g) || []).map(v => Number(v.replace(/\D/g, ''))))).sort((a, b) => a - b);
-  const body: any = { type: 'BODY', text: p.cuerpo };
-  if (vars.length) body.example = { body_text: [vars.map((n, i) => (p.ejemplos?.[n - 1] || p.ejemplos?.[i] || `Ejemplo ${n}`).slice(0, 100))] };
-  components.push(body);
-  if (p.footer) components.push({ type: 'FOOTER', text: p.footer });
-  const botones = (p.botones || []).filter(b => b.texto?.trim()).slice(0, 3);
-  if (botones.length) components.push({ type: 'BUTTONS', buttons: botones.map(b => ({ type: 'QUICK_REPLY', text: b.texto.trim().slice(0, 20) })) });
+  if (p.categoria === 'AUTHENTICATION') {
+    components.push({ type: 'BODY', add_security_recommendation: p.autenticacion?.recomendacion !== false });
+    if (p.autenticacion?.expiraMin) components.push({ type: 'FOOTER', code_expiration_minutes: Math.min(90, Math.max(1, p.autenticacion.expiraMin)) });
+    components.push({ type: 'BUTTONS', buttons: [{ type: 'OTP', otp_type: 'COPY_CODE' }] });
+  } else {
+    const vars = Array.from(new Set((p.cuerpo.match(/\{\{(\d+)\}\}/g) || []).map(v => Number(v.replace(/\D/g, ''))))).sort((a, b) => a - b);
+    const body: any = { type: 'BODY', text: p.cuerpo };
+    if (vars.length) body.example = { body_text: [vars.map((n, i) => (p.ejemplos?.[n - 1] || p.ejemplos?.[i] || `Ejemplo ${n}`).slice(0, 100))] };
+    components.push(body);
+    if (p.footer) components.push({ type: 'FOOTER', text: p.footer });
+    const botones = (p.botones || []).filter(b => b.texto?.trim() || b.tipo === 'CATALOG' || b.tipo === 'MPM').slice(0, 10);
+    if (botones.length) components.push({ type: 'BUTTONS', buttons: botones.map(b => {
+      const t = (b.tipo || 'QUICK_REPLY').toUpperCase(); const texto = (b.texto || '').trim().slice(0, 25);
+      if (t === 'URL') { const url = String(b.url || '').trim(); return { type: 'URL', text: texto.slice(0, 20), url, ...(/\{\{1\}\}/.test(url) ? { example: [b.ejemplo || 'ejemplo'] } : {}) }; }
+      if (t === 'PHONE_NUMBER') return { type: 'PHONE_NUMBER', text: texto.slice(0, 20), phone_number: String(b.telefono || '').replace(/[^\d+]/g, '') };
+      if (t === 'COPY_CODE') return { type: 'COPY_CODE', example: b.ejemplo || 'CODIGO10' };
+      if (t === 'CATALOG') return { type: 'CATALOG', text: texto || 'Ver catálogo' };
+      if (t === 'MPM') return { type: 'MPM', text: texto || 'Ver productos' };
+      return { type: 'QUICK_REPLY', text: texto.slice(0, 20) };
+    }) });
+  }
   return meta(`/${BUSINESS_ACCOUNT_ID}/message_templates`, {
     method: 'POST',
-    body: JSON.stringify({
-      name: p.nombre, language: p.idioma, category: p.categoria, components,
-    }),
+    body: JSON.stringify({ name: p.nombre, language: p.idioma, category: p.categoria, components }),
   });
+}
+
+/** Borra una plantilla (por nombre: todas sus traducciones). */
+export async function borrarPlantillaMeta(nombre: string) {
+  if (!BUSINESS_ACCOUNT_ID) throw new KapsoError(0, 'Falta KAPSO_BUSINESS_ACCOUNT_ID');
+  return meta(`/${BUSINESS_ACCOUNT_ID}/message_templates?name=${encodeURIComponent(nombre)}`, { method: 'DELETE' });
 }
 
 /**

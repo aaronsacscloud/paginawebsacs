@@ -58,3 +58,5 @@ returns table(conversation_id uuid, n bigint) language sql stable as $$
   group by l.conversation_id;
 $$;
 alter table wa_config add column if not exists catalog_id text; alter table wa_config add column if not exists ubicaciones jsonb default '[]'::jsonb;
+-- Etapa B: plantillas con media, calidad, mapa de variables
+alter table wa_plantillas add column if not exists header_tipo text default 'TEXT', add column if not exists header_media_url text, add column if not exists header_handle text, add column if not exists calidad text, add column if not exists calidad_at timestamptz, add column if not exists variables_map jsonb, add column if not exists status_at timestamptz, add column if not exists ejemplos jsonb, add column if not exists tipo_especial text;

@@ -105,7 +105,11 @@ export const GET: APIRoute = async ({ request }) => {
     await supabase.from('wa_config').update({ resync_at: new Date().toISOString() }).eq('id', 1);
   } catch (e) { console.warn('[wa-resync]', e); }
 
-  return new Response(JSON.stringify({ despertadas: (vencidas || []).length, enviados, recordados, resync }), {
+  // ── Etapa B: estado/calidad de plantillas (aprobada, rechazada, pausada) → campana ──
+  let plantillas = 0;
+  try { const { sincronizarPlantillas } = await import('../crm/whatsapp/plantillas'); plantillas = (await sincronizarPlantillas()).cambios.length; } catch (e) { console.warn('[wa-tpl-sync]', e); }
+
+  return new Response(JSON.stringify({ despertadas: (vencidas || []).length, enviados, recordados, resync, plantillas }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };

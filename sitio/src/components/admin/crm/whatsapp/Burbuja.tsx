@@ -203,9 +203,18 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     </>);
   } else if (tipo === 'unsupported') {
     contenido = <span style={{ fontStyle: 'italic', opacity: .7 }}>{item.cuerpo || 'Mensaje no compatible'}</span>;
+  } else if (tipo === 'template') {
+    const botones: any[] = item.metadata?.botones || [];
+    const esImg = src && /image/.test(item.mime || '') || (src && /\.(png|jpe?g|webp)(\?|$)/i.test(src));
+    contenido = (<>
+      <span style={{ fontSize: 9, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>PLANTILLA{item.metadata?.plantilla ? ` · ${item.metadata.plantilla}` : ''}</span>
+      {src && esImg && !mediaRota && <img src={src} alt="" onClick={() => onLightbox(src)} onError={() => setMediaRota(true)} style={{ borderRadius: 10, maxHeight: 200, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: 6 }} />}
+      {src && !esImg && <a href={src} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, background: fondoSuave, borderRadius: 8, padding: '8px 10px', textDecoration: 'none', color: tinta, fontSize: 12, fontWeight: 700, marginBottom: 6 }}><IcoDoc />{/video/.test(item.mime || '') ? 'Video' : 'Documento'} del encabezado</a>}
+      <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo || ''} q={q} claro={claro} /></span>
+      {botones.map((b: any, i: number) => <span key={i} style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontWeight: 700, marginTop: 4 }}>{b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : ''}{b.texto || b.tipo}</span>)}
+    </>);
   } else if (item.cuerpo) {
     contenido = (<>
-      {tipo === 'template' && <span style={{ fontSize: 9, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>PLANTILLA</span>}
       <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>
     </>);
   } else if (src) {

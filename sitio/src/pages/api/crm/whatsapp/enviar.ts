@@ -215,16 +215,27 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.plantilla?.nombre) {
     try {
       const params = (Array.isArray(b.plantilla.params) ? b.plantilla.params : []).map(sanearParam);
-      const r = await enviarPlantilla(destino.telefono, String(b.plantilla.nombre), String(b.plantilla.idioma || 'es_MX'), params);
+      const { data: p } = await supabase.from('wa_plantillas')
+        .select('cuerpo, header_tipo, header_media_url, botones, tipo_especial').eq('nombre', b.plantilla.nombre).eq('idioma', String(b.plantilla.idioma || 'es_MX')).maybeSingle();
+      // Encabezado de media: el de la petición o el guardado al crear la plantilla.
+      const ht = String(p?.header_tipo || 'TEXT').toUpperCase();
+      const link = b.plantilla.header_media_url || p?.header_media_url || null;
+      const headerMedia = ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht)
+        ? (link ? { tipo: ht.toLowerCase() as 'image' | 'video' | 'document', link: String(link), filename: b.plantilla.header_filename || undefined } : null) : null;
+      if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(ht) && !headerMedia) return json({ error: 'Esta plantilla lleva un archivo en el encabezado: elige la imagen/documento a enviar.', falta_header: true }, 400);
+      const botonUrl = (p?.botones || []).find((x: any) => x.tipo === 'URL' && /\{\{1\}\}/.test(x.url || ''));
+      const r = await enviarPlantilla(destino.telefono, String(b.plantilla.nombre), String(b.plantilla.idioma || 'es_MX'), p?.tipo_especial === 'otp' ? [] : params, {
+        headerMedia, botonUrlParam: botonUrl ? String(b.plantilla.boton_url_param || params[params.length - 1] || '') : null,
+        otp: p?.tipo_especial === 'otp' ? String(b.plantilla.otp || params[0] || '') : null,
+      });
       const wamid = r?.messages?.[0]?.id;
       // El cuerpo espejado es la plantilla con sus params — legible en el hilo.
-      const { data: p } = await supabase.from('wa_plantillas')
-        .select('cuerpo').eq('nombre', b.plantilla.nombre).limit(1).maybeSingle();
       let cuerpo = p?.cuerpo || `[plantilla ${b.plantilla.nombre}]`;
-      params.forEach((v: string, i: number) => { cuerpo = cuerpo.replaceAll(`{{${i + 1}}}`, v); });
+      (p?.tipo_especial === 'otp' ? [String(b.plantilla.otp || params[0] || '')] : params).forEach((v: string, i: number) => { cuerpo = cuerpo.replaceAll(`{{${i + 1}}}`, v); });
       if (wamid) await registrarMensaje({
         kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
-        tipo: 'template', cuerpo, status: 'sent',
+        tipo: 'template', cuerpo, status: 'sent', mediaUrl: headerMedia?.link || null, mime: headerMedia ? (headerMedia.tipo === 'image' ? 'image/jpeg' : headerMedia.tipo === 'video' ? 'video/mp4' : 'application/pdf') : null,
+        metadata: { plantilla: b.plantilla.nombre, botones: p?.botones || null },
       });
       return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
     } catch (e: any) { return errorKapso(e); }

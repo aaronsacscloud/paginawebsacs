@@ -4,8 +4,9 @@
 // botones como cards blancas con texto azul.
 import { C } from './estilo';
 
-export default function MockupWhatsApp({ header, cuerpo, footer, botones = [], nombreNegocio = 'Sacscloud' }: {
-  header?: string | null; cuerpo: string; footer?: string | null; botones?: { texto: string }[]; nombreNegocio?: string;
+export default function MockupWhatsApp({ header, cuerpo, footer, botones = [], nombreNegocio = 'Sacscloud', headerMedia }: {
+  header?: string | null; cuerpo: string; footer?: string | null; botones?: { texto: string; tipo?: string }[]; nombreNegocio?: string;
+  headerMedia?: { tipo: string; url?: string | null } | null;
 }) {
   const partes = cuerpo.split(/(\{\{[^}]+\}\})/g);
   return (
@@ -21,6 +22,14 @@ export default function MockupWhatsApp({ header, cuerpo, footer, botones = [], n
         ) : (
           <div style={{ position: 'relative', background: '#fff', borderRadius: 8, padding: '7px 9px', maxWidth: '88%', boxShadow: '0 1px 1px rgba(0,0,0,.08)' }}>
             <span style={{ position: 'absolute', left: -6, top: 8, width: 12, height: 12, background: '#fff', transform: 'rotate(45deg)' }} />
+            {headerMedia && (
+              <div style={{ marginBottom: 6, borderRadius: 6, overflow: 'hidden', background: '#e9e9e9' }}>
+                {headerMedia.tipo === 'IMAGE' && headerMedia.url ? <img src={headerMedia.url} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ height: headerMedia.tipo === 'DOCUMENT' ? 44 : 110, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 11, color: C.g500 }}>
+                    {headerMedia.tipo === 'VIDEO' ? '▶ Video' : headerMedia.tipo === 'DOCUMENT' ? `Documento${headerMedia.url ? ' · ' + headerMedia.url.split('/').pop()?.slice(0, 24) : ''}` : headerMedia.tipo === 'LOCATION' ? '📍 Ubicación' : 'Imagen'}
+                  </div>}
+              </div>
+            )}
             {header && <b style={{ fontSize: 12, display: 'block', marginBottom: 3 }}>{header}</b>}
             <span style={{ fontSize: 12, lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
               {partes.map((p, i) => /^\{\{[^}]+\}\}$/.test(p)
@@ -31,8 +40,10 @@ export default function MockupWhatsApp({ header, cuerpo, footer, botones = [], n
             <span style={{ fontSize: 9, color: C.g400, display: 'flex', justifyContent: 'flex-end', gap: 3, marginTop: 3 }}>12:00 p.m. <span style={{ color: '#53BDEB' }}>✓✓</span></span>
           </div>
         )}
-        {cuerpo.trim() && botones.filter(b => b.texto).map((b, i) => (
-          <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 8, marginTop: 4, maxWidth: '88%', textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#027EB5', boxShadow: '0 1px 1px rgba(0,0,0,.08)' }}>{b.texto}</div>
+        {cuerpo.trim() && botones.filter(b => b.texto || b.tipo === 'COPY_CODE' || b.tipo === 'CATALOG' || b.tipo === 'MPM').map((b, i) => (
+          <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 8, marginTop: 4, maxWidth: '88%', textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#027EB5', boxShadow: '0 1px 1px rgba(0,0,0,.08)' }}>
+            {b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : b.tipo === 'COPY_CODE' ? '⧉ ' : ''}{b.texto || (b.tipo === 'COPY_CODE' ? 'Copiar código' : b.tipo === 'CATALOG' ? 'Ver catálogo' : 'Ver productos')}
+          </div>
         ))}
       </div>
       <div style={{ background: '#F0F0F0', padding: '8px 10px', display: 'flex', gap: 6, alignItems: 'center' }}>
