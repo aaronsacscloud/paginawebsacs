@@ -114,3 +114,15 @@ alter table contacts drop constraint if exists contacts_lifecycle_stage_check;
 alter table contacts add constraint contacts_lifecycle_stage_fk
   foreign key (lifecycle_stage) references crm_lifecycle_etapas(id);
 update contacts set lifecycle_stage='demo_agendada_qa' where id='fe715b87-ba50-4f8b-acf7-2f6510fd2607';
+-- Vistas predeterminadas del inbox (del equipo, editables/borrables como cualquiera)
+insert into crm_vistas (tabla, nombre, config, compartida, orden)
+select 'wa_inbox', v.nombre, v.config::jsonb, true, v.orden from (values
+ ('Sin respuesta +4 h', '{"emoji":"⏰","modo":"con_conversacion","logica":"AND","descripcion":"El cliente habló y nadie ha contestado en más de 4 horas","condiciones":[{"campo":"sin_respuesta","op":"hace_mas","valor":"4 h"}]}', 1),
+ ('Ventana por cerrar', '{"emoji":"⏳","modo":"con_conversacion","logica":"AND","descripcion":"Quedan menos de 4 h para poder escribir libre; después solo plantilla","condiciones":[{"campo":"ventana","op":"es","valor":"por_cerrar"}]}', 2),
+ ('Renovaciones 30 días', '{"emoji":"📅","modo":"todas","logica":"AND","descripcion":"Clientes cuya renovación cae en los próximos 30 días (incluye sin conversación)","condiciones":[{"campo":"renovacion","op":"en_menos","valor":"30 días"}]}', 3),
+ ('Clientes sin vender 7 días', '{"emoji":"😴","modo":"todas","logica":"AND","descripcion":"Cuentas conectadas a SACS sin ventas en una semana: llámales antes de que se enfríen","condiciones":[{"campo":"etapa","op":"es","valor":"cliente"},{"campo":"dias_sin_venta","op":"mayor","valor":"7"}]}', 4),
+ ('Cuentas en riesgo', '{"emoji":"🚨","modo":"todas","logica":"AND","descripcion":"Salud menor a 50: renovación vencida, sin uso o con tickets estancados","condiciones":[{"campo":"salud","op":"menor","valor":"50"}]}', 5),
+ ('Leads nuevos de la semana', '{"emoji":"✨","modo":"todas","logica":"AND","descripcion":"Contactos creados en los últimos 7 días en etapa de lead","condiciones":[{"campo":"etapa","op":"es","valor":"lead"},{"campo":"creado","op":"hace_menos","valor":"7 días"}]}', 6),
+ ('Sin dueño asignado', '{"emoji":"🙋","modo":"todas","logica":"AND","descripcion":"Contactos activos que nadie del equipo tiene a su cargo","condiciones":[{"campo":"dueno","op":"es","valor":"nadie"},{"campo":"etapa","op":"no_es","valor":"churned"}]}', 7)
+) as v(nombre, config, orden)
+where not exists (select 1 from crm_vistas x where x.tabla='wa_inbox' and x.nombre=v.nombre);

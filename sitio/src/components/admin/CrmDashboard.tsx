@@ -660,7 +660,9 @@ export default function CrmDashboard() {
         maxWidth: isMobile ? '100%' : `calc(100% - ${mainMarginLeft}px)`,
         marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease',
         display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden',
-        paddingTop: isMobile ? 64 : 22, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
+        // El inbox de WhatsApp va a PANTALLA COMPLETA: sin la franja de 22px del shell.
+        paddingTop: isMobile ? 64 : (tab === 'whatsapp' ? 0 : 22), paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
+        transitionProperty: 'margin-left, width, max-width, padding-top',
       }}>
         {/* Content */}
         {tab === 'dashboard' ? (

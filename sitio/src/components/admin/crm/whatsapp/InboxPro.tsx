@@ -60,14 +60,23 @@ export default function InboxPro() {
   const [totalLista, setTotalLista] = useState(0);
   const [hayMasLista, setHayMasLista] = useState(false);
   const paginasRef = useRef(1);   // cuántas páginas de 50 hay cargadas (el polling las conserva)
+  const filtroCambio = useRef(false);   // el ÚLTIMO cambio vino de un filtro/vista (no del polling)
   const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
     const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
     setTotalLista(j.total_filtrado || 0); setHayMasLista(!!j.hay_mas);
+    // Cambió la vista/filtro y el chat abierto ya no pertenece a la lista →
+    // se cierra el hilo. Sin esto quedaba un spinner eterno (peor con filas
+    // virtuales, que no tienen hilo que cargar).
+    if (filtroCambio.current) {
+      filtroCambio.current = false;
+      const act = activaRef.current;
+      if (act && !(j.conversaciones || []).some((c: any) => c.id === act.id)) setActiva(null);
+    }
   }, [armarQS]);
   const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
-  useEffect(() => { paginasRef.current = 1; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
+  useEffect(() => { paginasRef.current = 1; filtroCambio.current = true; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
   const activaRef = useRef(activa); activaRef.current = activa;
   const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
@@ -410,7 +419,7 @@ export default function InboxPro() {
       <style>{CSS_INBOX}</style>
       <div style={{
         display: 'flex', background: '#fff', borderTop: `1px solid ${C.g200}`,
-        overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
+        overflow: 'hidden', height: '100dvh', minHeight: 480,
       }}>
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
@@ -420,7 +429,7 @@ export default function InboxPro() {
           <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} />
         ) : (
-          <VacioHilo onNuevo={() => setNuevoChat(true)} />
+          <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
         )}
         {!isCompact && (
           <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
@@ -440,7 +449,7 @@ export default function InboxPro() {
 }
 
 /** Empty state del hilo con atajos en <kbd> (portado). */
-function VacioHilo({ onNuevo }: { onNuevo: () => void }) {
+function VacioHilo({ onNuevo, total = -1, conFiltro = false, onLimpiar }: { onNuevo: () => void; total?: number; conFiltro?: boolean; onLimpiar?: () => void }) {
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -461,9 +470,30 @@ function VacioHilo({ onNuevo }: { onNuevo: () => void }) {
         background: 'linear-gradient(135deg, rgba(155,140,250,0.10), rgba(125,166,245,0.14))',
         border: '1.5px solid rgba(155,140,250,0.18)', fontSize: 30,
       }}>💬</div>
-      <p style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em', margin: '14px 0 4px', color: C.g900 }}>Elige una conversación</p>
-      <p style={{ fontSize: 12, color: C.g400, marginBottom: 14 }}>o empieza una nueva con un contacto del CRM</p>
-      <p style={{ display: 'flex', gap: 14, fontSize: 11, color: C.g500 }}>
+      {total === 0 ? (
+        <>
+          <p style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em', margin: '14px 0 4px', color: C.g900 }}>
+            {conFiltro ? 'Esta vista no tiene contactos' : 'Aún no hay conversaciones'}
+          </p>
+          <p style={{ fontSize: 12, color: C.g400, marginBottom: 14, maxWidth: 340, textAlign: 'center', lineHeight: 1.5 }}>
+            {conFiltro ? 'Ningún contacto cumple los filtros de esta vista en este momento. Ajusta los filtros o vuelve a Todas.' : 'Cuando un cliente te escriba (o inicies un chat) aparecerá aquí.'}
+          </p>
+          {conFiltro && onLimpiar && (
+            <button onClick={onLimpiar} style={{
+              padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              background: '#9B8CFA', color: '#fff', fontSize: 12, fontWeight: 700,
+            }}>Ver todas las conversaciones</button>
+          )}
+        </>
+      ) : (
+        <>
+          <p style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.02em', margin: '14px 0 4px', color: C.g900 }}>Ningún contacto seleccionado</p>
+          <p style={{ fontSize: 12, color: C.g400, marginBottom: 14, maxWidth: 340, textAlign: 'center', lineHeight: 1.5 }}>
+            {total > 0 ? `Elige uno de los ${total === 1 ? 'contactos' : total + ' contactos'} de la lista para ver su conversación y su información.` : 'Elige un contacto de la lista o empieza una conversación nueva.'}
+          </p>
+        </>
+      )}
+      <p style={{ display: 'flex', gap: 14, fontSize: 11, color: C.g500, marginTop: 4 }}>
         <span><span style={kbd}>N</span>&nbsp; Nuevo chat</span>
       </p>
     </div>
