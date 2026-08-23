@@ -907,6 +907,8 @@ function EtapaSelector({ co, reload, flash, compacto, comoChip }: any) {
 const SUCURSALES_OPTS = Array.from({ length: 50 }, (_, i) => i + 1);
 const MAS_DE_50 = 51;
 
+const PLURAL_CICLO: Record<string, string> = { anual: 'anuales', mensual: 'mensuales', vitalicia: 'vitalicias' };
+
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
 function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash, irA }: any) {
@@ -1096,7 +1098,19 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             un camino a la pestaña que de verdad las administra. */}
         {(activas.length > 0 || renov || arr > 0) && (
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 14, paddingTop: 13, borderTop: '1px solid #f4f3f7' }}>
-            {dato('Licencias', activas.length ? `${activas.length} ${ciclos.length ? ciclos.join(' + ') : 'activa' + (activas.length === 1 ? '' : 's')}` : '—')}
+            {/* "2 anual" no se dice. Con un solo ciclo se pluraliza; con varios
+                el conteo va arriba y los ciclos abajo, que es lo legible. */}
+            <div>
+              <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Licencias</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#241d43' }}>
+                {activas.length
+                  ? (ciclos.length === 1
+                      ? `${activas.length} ${activas.length === 1 ? ciclos[0] : PLURAL_CICLO[ciclos[0] as string] || ciclos[0]}`
+                      : `${activas.length} ${activas.length === 1 ? 'licencia' : 'licencias'}`)
+                  : '—'}
+              </div>
+              {ciclos.length > 1 && <div style={{ fontSize: '0.66rem', color: '#8a8590' }}>{ciclos.join(' + ')}</div>}
+            </div>
             {dato('Renovación', renov ? fmtDate(renov) : '—')}
             <div>
               <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR</div>

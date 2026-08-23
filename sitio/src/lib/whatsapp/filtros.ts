@@ -190,7 +190,7 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
   return neg ? !ok : ok;
 }
 
-export function cumpleVista(fila: any, cfg: ConfigVista): boolean {
+export function cumpleVista(fila: any, cfg: ConfigVista, yoId?: string | null): boolean {
   const conds = (cfg.condiciones || []).filter(c => c.campo && c.op);
   if (!conds.length) return true;
   return (cfg.logica === 'OR')
