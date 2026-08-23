@@ -301,7 +301,7 @@ export async function listarPlantillasMeta(): Promise<any[]> {
 /** Sube una URL pública a Meta como "resumable asset" y devuelve el handle (h:…) que exige el HEADER de media de una plantilla. */
 export async function ingestarHandle(url: string, mime?: string | null, filename?: string | null): Promise<string> {
   const r = await platform('/whatsapp/media', { method: 'POST', body: JSON.stringify({ media_ingest: { phone_number_id: PHONE_NUMBER_ID, source: url, delivery: 'meta_resumable_asset', ...(mime ? { mime_type: mime } : {}), ...(filename ? { filename } : {}) } }) });
-  const h = r?.handle || r?.h || r?.media_handle || r?.data?.handle || r?.upload_handle;
+  const h = r?.target?.handle || r?.data?.target?.handle || r?.handle || r?.data?.handle;
   if (!h) throw new KapsoError(502, { error: `Kapso no devolvió handle: ${JSON.stringify(r).slice(0, 200)}` });
   return String(h);
 }
