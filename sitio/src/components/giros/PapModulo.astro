@@ -1,0 +1,167 @@
+---
+/**
+ * PapModulo — la sección dedicada del módulo de Listas Escolares.
+ *
+ * Regla del dueño: cuando el giro se apoya en un MÓDULO COMPLETO que ya existe
+ * en SACS, se enseña el módulo — con capturas reales del sistema, no con una
+ * maqueta dibujada a mano. Una maqueta subvalora el desarrollo y envejece; la
+ * pantalla de verdad es además la prueba de que existe.
+ *
+ * Las capturas salen de la cuenta dibujotecnico, que opera sus listas en
+ * producción: cuatro colegios, doce y quince grados, kits vendidos y cobrados
+ * por Stripe, MercadoPago, tarjeta y efectivo en tienda.
+ *
+ * El patrón es el de la portada y el de producto/[slug]: la lista de
+ * funcionalidades a la izquierda, que se abren una a la vez, y la captura a la
+ * derecha. La primera viene abierta — si el script no corre, se ve una.
+ */
+export interface PuntoModulo {
+  titulo: string;
+  texto: string;
+  img: string;
+  alt: string;
+}
+interface Props {
+  eyebrow?: string;
+  titulo?: string;
+  resalte?: string;
+  sub?: string;
+  puntos: PuntoModulo[];
+  pie?: string;
+}
+const {
+  eyebrow = 'Módulo completo, no una promesa',
+  titulo = 'Listas Escolares',
+  resalte = 'ya está corriendo.',
+  sub = 'Estas son pantallas del sistema, con la temporada de una papelería real: cuatro colegios, kits vendidos, cobrados y pendientes de pago.',
+  puntos,
+  pie = 'Se cotiza aparte del plan, y se configura contigo antes de que empiece la temporada.',
+} = Astro.props;
+---
+
+<section class="pm">
+  <div class="pm-inner">
+
+    <header class="pm-head">
+      <p class="pm-eyebrow">{eyebrow}</p>
+      <h2>{titulo} <span>{resalte}</span></h2>
+      <p class="pm-sub">{sub}</p>
+    </header>
+
+    <div class="pm-maq">
+      <ol class="pm-lista">
+        {puntos.map((p, i) => (
+          <li>
+            <button type="button" class:list={['pm-p', { on: i === 0 }]} data-p={i} aria-expanded={i === 0}>
+              <span class="pm-p-cab">
+                <b>{p.titulo}</b>
+                <i aria-hidden="true"></i>
+              </span>
+              <span class="pm-p-txt">{p.texto}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div class="pm-vista">
+        {puntos.map((p, i) => (
+          <figure class:list={['pm-shot', { on: i === 0 }]} data-shot={i}>
+            <img src={p.img} alt={p.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+          </figure>
+        ))}
+      </div>
+    </div>
+
+    <p class="pm-pie">{pie}</p>
+  </div>
+</section>
+
+<style>
+  .pm { background: var(--color-bg-dark, #1A1A1A); color: #fff; padding: clamp(72px, 9vw, 112px) 0; }
+  .pm-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+
+  .pm-head { max-width: 760px; margin-bottom: clamp(34px, 4vw, 48px); }
+  .pm-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #7BA0F0; margin: 0 0 16px;
+  }
+  .pm-head h2 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; margin: 0 0 16px; color: #fff;
+  }
+  .pm-head h2 span { color: #7BA0F0; }
+  .pm-sub { margin: 0; font-size: 0.9375rem; line-height: 1.65; color: #A1A1AA; }
+
+  .pm-maq { display: grid; grid-template-columns: 1fr 1.35fr; gap: 32px; align-items: start; }
+
+  .pm-lista { list-style: none; margin: 0; padding: 0; }
+  .pm-lista li { border-bottom: 1px solid rgba(255,255,255,.12); }
+  .pm-p {
+    width: 100%; text-align: left; background: none; border: none; cursor: pointer; font: inherit;
+    padding: 20px 0; color: #fff;
+  }
+  .pm-p-cab { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .pm-p b {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1rem, 1.6vw, 1.25rem); font-weight: 700; letter-spacing: -.01em;
+    color: #A1A1AA; transition: color .25s ease;
+  }
+  .pm-p.on b { color: #fff; }
+  .pm-p i {
+    flex: none; width: 16px; height: 16px; position: relative;
+  }
+  .pm-p i::before, .pm-p i::after {
+    content: ''; position: absolute; background: #A1A1AA; transition: opacity .25s ease, background .25s ease;
+  }
+  .pm-p i::before { left: 0; top: 7px; width: 16px; height: 2px; }
+  .pm-p i::after { left: 7px; top: 0; width: 2px; height: 16px; }
+  .pm-p.on i::after { opacity: 0; }
+  .pm-p.on i::before { background: #7BA0F0; }
+  .pm-p-txt {
+    display: none; margin-top: 10px; font-size: 0.9375rem; line-height: 1.6; color: #A1A1AA;
+  }
+  .pm-p.on .pm-p-txt { display: block; }
+  .pm-p:focus-visible { outline: 2px solid #7BA0F0; outline-offset: 3px; }
+
+  .pm-vista { position: sticky; top: 96px; }
+  .pm-shot { display: none; margin: 0; }
+  .pm-shot.on { display: block; }
+  .pm-shot img {
+    width: 100%; height: auto; display: block; border-radius: var(--radius-lg, 16px);
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  }
+
+  .pm-pie {
+    margin: 34px 0 0; padding-top: 26px; border-top: 1px solid rgba(255,255,255,.12);
+    font-size: 13px; color: #A1A1AA;
+  }
+
+  @media (max-width: 900px) {
+    .pm-maq { grid-template-columns: 1fr; gap: 22px; }
+    .pm-vista { position: static; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pm-p b, .pm-p i::before, .pm-p i::after { transition: none; } }
+</style>
+
+<script>
+  {
+    const bloque = document.querySelector<HTMLElement>('.pm');
+    if (bloque) {
+      const puntos = Array.from(bloque.querySelectorAll<HTMLElement>('[data-p]'));
+      const shots = Array.from(bloque.querySelectorAll<HTMLElement>('[data-shot]'));
+      puntos.forEach((b) => {
+        b.addEventListener('click', () => {
+          const i = b.dataset.p;
+          puntos.forEach((o) => {
+            const on = o.dataset.p === i;
+            o.classList.toggle('on', on);
+            o.setAttribute('aria-expanded', String(on));
+          });
+          shots.forEach((s) => s.classList.toggle('on', s.dataset.shot === i));
+        });
+      });
+    }
+  }
+</script>

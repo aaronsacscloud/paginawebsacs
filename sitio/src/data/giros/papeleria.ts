@@ -43,9 +43,9 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'renglon',
     tag: 'Listas escolares',
-    titulo: 'La lista no es un producto: son renglones',
+    titulo: 'El colegio no pide una marca: pide un cuaderno así',
     texto:
-      'El colegio escribe "1 cuaderno profesional cuadro chico 100 h cosido". Eso no es un artículo: es un renglón que se puede surtir con dos o tres. Cada renglón se amarra a sus equivalentes —económico, sugerido, premium— y el papá elige, que además es lo que la ley exige: ninguna escuela puede imponer marca ni proveedor.',
+      'La lista dice "1 cuaderno profesional cuadro chico 100 h cosido". Eso no es un producto de tu catálogo: es una descripción. Tú le amarras dos o tres cuadernos que cumplen, y el cliente escoge cuál se lleva. Así tiene que ser: la escuela no puede obligarlo a una marca ni a comprar contigo.',
     bullets: [
       'Captura por colegio y grado, heredando la lista del ciclo anterior',
       'Cada renglón con sus artículos equivalentes y su nivel de precio',
@@ -69,7 +69,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'quitar',
     tag: 'Listas escolares',
-    titulo: '“Esa ya la tengo”',
+    titulo: '“Esa ya la tengo en casa”',
     texto:
       'El papá llega con la lista y tres cosas de la casa. Puede quitarlas del kit y el precio baja solo, con el renglón marcado como no surtido — para que en la mesa de armado nadie lo empaque. Lo que se quita se descuenta antes de la caja, no se discute en la caja.',
     bullets: [
@@ -94,7 +94,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'faltante',
     tag: 'Multisucursal',
-    titulo: 'El faltante de $12 que se lleva la lista de $2,800',
+    titulo: 'Te falta un cuaderno y se va la lista completa',
     texto:
       'Falta un renglón y el papá se va a completar a otro lado — y se lleva la lista entera, no el renglón. En más de la mitad de los casos la pieza sí existe en la cadena, en la sucursal de enfrente, que entrega mañana contra los cinco días del proveedor.',
     bullets: [
@@ -116,7 +116,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'compra',
     tag: 'Compras',
-    titulo: 'La lista llegó en mayo y la compra se puso en marzo',
+    titulo: 'Compraste en marzo y la lista llegó en mayo',
     texto:
       'Los dos hechos están al revés, y por eso se compra lo que no piden y falta lo que sí. Con las listas capturadas, la demanda se explota sola: renglón por alumnos por colegio, menos lo que ya tienes en las sucursales, y lo que queda es la orden de compra.',
     bullets: [
@@ -137,7 +137,7 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'saldo',
     tag: 'Inventario',
-    titulo: 'Lo que sobra en octubre no caduca: se queda parado',
+    titulo: 'Lo que sobra en octubre te lo comes hasta julio',
     texto:
       'Un cuaderno no se echa a perder. El problema es el capital detenido y el metro de anaquel que ocupa hasta el julio siguiente. Y hay dos sobrantes distintos: el genérico, que regresa a piso y se vende todo el año, y el específico de un colegio, que si no se remata en septiembre ya se remató en pérdida.',
     bullets: [
@@ -160,9 +160,9 @@ export const seccionesPapeleria: SuiteSeccion[] = [
   {
     id: 'servicios',
     tag: 'Servicios',
-    titulo: 'La copiadora no es un producto: es un contrato',
+    titulo: 'A cómo te sale la copia, con todo y renta',
     texto:
-      'Copias, engargolado, enmicado y empastado sostienen el valle de octubre a febrero, con margen alto. Pero la copiadora se renta y se paga por clic, así que el margen del rincón no es precio menos costo: es precio menos clic —que ya trae tóner y servicio—, menos el arillo, y menos el excedente cuando te pasas de los clics que la renta incluye.',
+      'De octubre a febrero el que sostiene la caja es el rincón de la copiadora. Pero la copiadora es rentada: cada copia te cuesta su clic, y si te pasas de los que trae la renta, pagas el excedente. Aquí ves qué te queda de verdad, ya descontado todo.',
     bullets: [
       'Los servicios se cobran en la misma caja y en el mismo ticket',
       'Costeo y utilidad por servicio, no sólo por producto',
@@ -468,16 +468,47 @@ export const listaPapeleria = [
  * formato no lleva es normal, igual que en la corrida de calzado.
  */
 export const variantesPapeleria = {
-  ejeA: ['Raya', 'Cuadro 7 mm', 'Cuadro 5 mm', 'Doble raya', 'Blanco'],
+  ejeA: ['Profesional', 'Francesa', 'Italiana'],
   matriz: [
-    [42, 68, 96, 0, 14],
-    [31, 55, 40, 22, 0],
-    [18, 47, 12, 0, 26],
+    [42, 31, 18],
+    [68, 55, 47],
+    [96, 40, 12],
+    [0, 22, 0],
+    [14, 0, 26],
   ],
   filas: [
-    { nombre: 'Profesional', img: '/images/prod-cuaderno-profesional.webp', alt: 'Cuaderno profesional cosido, de pasta lisa' },
-    { nombre: 'Francesa', img: '/images/prod-cuaderno-francesa.webp', alt: 'Cuaderno forma francesa cosido, de pasta lisa' },
-    { nombre: 'Italiana', img: '/images/prod-cuaderno-italiana.webp', alt: 'Cuaderno forma italiana, apaisado, cosido' },
+    { nombre: 'Raya', img: '/images/prod-rayado-raya.webp', alt: 'Cuaderno abierto de raya' },
+    { nombre: 'Cuadro 7 mm', img: '/images/prod-rayado-cuadro-grande.webp', alt: 'Cuaderno abierto de cuadro grande' },
+    { nombre: 'Cuadro 5 mm', img: '/images/prod-rayado-cuadro-chico.webp', alt: 'Cuaderno abierto de cuadro chico' },
+    { nombre: 'Doble raya', img: '/images/prod-rayado-doble-raya.webp', alt: 'Cuaderno abierto de doble raya' },
+    { nombre: 'Blanco', img: '/images/prod-rayado-blanco.webp', alt: 'Cuaderno abierto de hojas blancas' },
   ],
   leyendas: ['En anaquel', 'Queda una o dos', 'Sin existencia'],
 };
+
+/**
+ * Los puntos del módulo, con capturas reales del sistema (cuenta dibujotecnico).
+ *
+ * Se describen con los nombres que usa SACS —lista, kit, grado, plantilla,
+ * conciliación— porque son los que el papelero va a ver el día que entre.
+ */
+export const moduloPapeleria = [
+  {
+    titulo: 'Una lista por colegio y por temporada',
+    texto: 'Cada colegio con sus grados, sus kits vendidos, lo que ya está pagado y lo que sigue pendiente. Y el ingreso, separado por forma de pago: en línea, tarjeta o efectivo en tienda.',
+    img: '/images/sacs-listas-listado.webp',
+    alt: 'Listado de listas escolares en SACS: cuatro colegios con grados, kits vendidos, pagados, pendientes e ingreso',
+  },
+  {
+    titulo: 'La lista se arma en nueve pasos',
+    texto: 'Escuela, grados, kits, plantilla, descuentos, venta en línea, fechas, el aviso legal y el resumen. Se llena una vez y el año que entra se hereda: sólo tocas los renglones que el colegio cambió.',
+    img: '/images/sacs-listas-pasos.webp',
+    alt: 'Asistente de nueva lista escolar en SACS, con sus nueve pasos',
+  },
+  {
+    titulo: 'Lo que cobró la escuela, cuadrado',
+    texto: 'Cuando el colegio junta los pedidos y cobra en la escuela, ese dinero no pasa por tu caja. El reporte lo saca aparte —sólo efectivo y tarjeta— para cuadrarlo contra lo que entregaste.',
+    img: '/images/sacs-listas-conciliacion.webp',
+    alt: 'Reporte de conciliación de cobros de la escuela en SACS, con rango de fechas',
+  },
+];

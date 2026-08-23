@@ -30,12 +30,13 @@ import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuitePlano from '../../components/suite/SuitePlano.astro';
 import PapLista from '../../components/giros/PapLista.astro';
+import PapModulo from '../../components/giros/PapModulo.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import {
   seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
-  listaPapeleria, variantesPapeleria,
+  listaPapeleria, variantesPapeleria, moduloPapeleria,
 } from '../../data/giros/papeleria';
 
 const titulo = 'Suite para Papelerías';
@@ -79,17 +80,17 @@ const desc =
 
   <!-- ── Un cuaderno no es un producto: es forma × rayado ── -->
   <SuiteVariantes
-    eyebrow="Un modelo, quince claves"
-    titulo="Las 15 claves que hay<br />detrás de"
+    eyebrow="Un modelo, quince cuadernos"
+    titulo="Los 15 cuadernos que hay<br />detrás de"
     resalte="“un cuaderno”"
-    sub="Tres formas por cinco rayados. Y el papá no pide “un cuaderno”: pide profesional de cuadro chico, que es una de las quince — la que se acaba primero y la que nadie ve venir."
+    sub="Cinco rayados por tres formas. Nadie pide “un cuaderno”: piden el de cuadro chico, profesional — que es uno de los quince, y el primero que se acaba."
     ejeA={variantesPapeleria.ejeA}
     matriz={variantesPapeleria.matriz}
     filas={variantesPapeleria.filas}
     leyendas={variantesPapeleria.leyendas}
-    unidad="claves"
-    genero="f"
-    remate="que comprar, guardar y contar"
+    unidad="cuadernos"
+    genero="m"
+    remate="que comprar, acomodar y contar"
   />
 
   <!-- ── La comparación que hace el propio visitante ── -->
@@ -187,6 +188,9 @@ const desc =
     intro="Baja para ver cada pieza. Todos los ejemplos son de una papelería real: el renglón de la lista, el papá que quita lo que ya tiene, el faltante que se busca en la otra tienda y el sobrante de octubre."
     secciones={seccionesPapeleria}
   />
+
+  <!-- ── El módulo real, con capturas del sistema ── -->
+  <PapModulo puntos={moduloPapeleria} />
 
   <!-- ── El bloque propio: fuera de una papelería no significa nada ── -->
   <PapLista
