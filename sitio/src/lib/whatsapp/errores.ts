@@ -69,6 +69,12 @@ export const META: Record<string, Def> = {
   '80007': D('Límite de la API alcanzado', 'Se superó el límite de llamadas a la API de WhatsApp Business.', 'Espera y reintenta; en masivos, baja el ritmo.', 'limite', true),
   '4': D('Límite de la app alcanzado', 'La app superó su cuota de llamadas a Meta.', 'Espera unos minutos.', 'limite', true),
   '33': D('Número del negocio inválido', 'El phone_number_id no existe o no pertenece a la cuenta.', 'Revisa KAPSO_PHONE_NUMBER_ID en Ajustes.', 'cuenta'),
+  // Llamadas (Calling API)
+  '131014': D('La llamada ya no existe', 'Meta no reconoce esa llamada: ya terminó, el cliente colgó antes de contestar, o pasaron más de 30 s timbrando.', 'Si el cliente sigue ahí, pídele que vuelva a llamar.', 'otro'),
+  '138000': D('Llamadas no activadas', 'La Calling API no está activada para este número.', 'Actívala en Ajustes → Llamadas de WhatsApp.', 'cuenta'),
+  '138013': D('Llamadas salientes no disponibles', 'Meta no permite que el negocio inicie llamadas desde este número (país o elegibilidad de la cuenta).', 'El cliente sí puede llamarte; pídele que toque el teléfono en el chat.', 'cuenta'),
+  '138001': D('Sin permiso para llamar', 'El cliente no ha dado permiso para recibir llamadas del negocio.', 'Manda la solicitud de permiso (1 por día, 2 por semana).', 'permiso'),
+  '138002': D('Límite de llamadas alcanzado', 'Se superó el máximo de llamadas a este cliente (5 por día).', 'Intenta mañana o pídele que te llame.', 'limite'),
   // Subcódigos de Meta al crear plantillas (llegan como error_subcode con code 100)
   'sub:2388293': D('Demasiadas variables para el texto', 'Meta exige cierta proporción de palabras fijas por cada variable: el cuerpo es muy corto para tantas {{n}}.', 'Alarga el texto del cuerpo o quita variables.', 'plantilla'),
   'sub:2388024': D('Ya existe una plantilla con ese nombre', 'Meta no admite dos plantillas con el mismo nombre e idioma.', 'Cambia el nombre (p. ej. agrega _v2).', 'plantilla'),
