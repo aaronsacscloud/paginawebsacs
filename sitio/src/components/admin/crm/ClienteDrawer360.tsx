@@ -212,27 +212,29 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={cerrar} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
               </div>
               <div style={D.tabbar}>
-                {/* Seis pestañas. Contactos entra en Info general, y "Resumen"
-                    con "Actividad en SACS" se juntan: las dos contaban lo mismo
-                    desde dos lados. */}
+                {/* El orden es el de la conversación con el cliente: quién es,
+                    qué compró, cómo lo está usando, qué le prometimos, cuándo lo
+                    vimos y qué le sigue vendiendo. Los tres canales —WhatsApp,
+                    Soporte, Outbound— van al final: se consultan cuando ya
+                    sabes qué buscas, no al abrir la ficha. */}
                 <button style={D.tab(tab === 'info')} onClick={() => irA('info')}>Info general</button>
                 <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
-                <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
                 <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>
                   Consultoría
                   {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
-                <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>WhatsApp</button>
-                <button style={D.tab(tab === 'outbound')} onClick={() => irA('outbound')}>Outbound</button>
-                <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
-                  Soporte
-                  {ticketsAbiertos > 0 && <span title="Tickets abiertos" style={{ display: 'inline-block', minWidth: 16, textAlign: 'center', fontSize: '0.6rem', fontWeight: 800, background: '#E9B949', color: '#fff', borderRadius: 99, padding: '1px 5px', marginLeft: 5, verticalAlign: 'middle' }}>{ticketsAbiertos}</span>}
-                </button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
+                <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
+                <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>WhatsApp</button>
+                <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
+                  Soporte
+                  {ticketsAbiertos > 0 && <span title="Tickets abiertos" style={{ display: 'inline-block', minWidth: 16, textAlign: 'center', fontSize: '0.6rem', fontWeight: 800, background: '#E9B949', color: '#fff', borderRadius: 99, padding: '1px 5px', marginLeft: 5, verticalAlign: 'middle' }}>{ticketsAbiertos}</span>}
+                </button>
+                <button style={D.tab(tab === 'outbound')} onClick={() => irA('outbound')}>Outbound</button>
               </div>
             </div>
             <div style={D.body}>
@@ -1490,6 +1492,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setBusy(true);
     const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0 };
     if (f.proxima_factura) body.proxima_factura = f.proxima_factura;
+    // Vacío es un dato: significa "no lo sé", y hay que poder dejarlo así.
+    body.fecha_inicio = f.fecha_inicio || null;
+    if (f.total_pagado !== '' && f.total_pagado != null) body.total_pagado = parseFloat(f.total_pagado) || 0;
     body.plan_id = f.plan_id || null; // uuid o nada: si cambió a un plan sin uuid, se limpia el viejo
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
@@ -1644,7 +1649,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         <div className="crm-scroll-x">
           {subs.length > 0 && (
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
-              <thead><tr>{['Plan', 'Ciclo', 'Estado', 'Precio/ARR', 'Próx. factura', 'Pagos', 'Acumulado', ''].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
+              <thead><tr>{['Plan', 'Ciclo', 'Estado', 'Precio/ARR', 'Desde · próx. factura', 'Pagos', 'Pagado', ''].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
               <tbody>
                 {subs.map((s: any) => (
                   editId === s.id ? (
@@ -1659,8 +1664,25 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}><select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug && x.slug === f.plan_slug); setF({ ...f, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? f.precio) : f.precio }); }} style={D.input}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
                       <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={D.input}>{ESTADOS_SUB.filter(x => x !== 'pausada' || f.estado === 'pausada').map(x => <option key={x} value={x}>{x}</option>)}</select></td>
                       <td style={D.td}><input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: 100 }} /></td>
-                      <td style={D.td}><input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={D.input} /></td>
-                      <td style={D.td} colSpan={2}></td>
+                      <td style={D.td}>
+                        {/* Las dos fechas juntas: desde cuándo la tiene y
+                            cuándo se le vuelve a cobrar. Una vitalicia no tiene
+                            la segunda y el campo lo dice en vez de pedir un
+                            dato que no existe. */}
+                        <input type="date" value={f.fecha_inicio} onChange={e => setF({ ...f, fecha_inicio: e.target.value })}
+                          style={{ ...D.input, marginBottom: 4 }} title="Desde cuándo tiene esta licencia" />
+                        {f.ciclo === 'vitalicia'
+                          ? <div style={{ fontSize: '0.66rem', color: '#a5a2af' }}>pago único · sin próxima factura</div>
+                          : <input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })}
+                              style={D.input} title="Próxima factura" />}
+                      </td>
+                      <td style={D.td} colSpan={2}>
+                        {/* Lo que ya pagó. En las vitalicias legacy —cobradas
+                            antes de que existiera el CRM— es la única forma de
+                            que el dinero exista en el sistema. */}
+                        <input type="number" value={f.total_pagado} onChange={e => setF({ ...f, total_pagado: e.target.value })}
+                          placeholder="Pagado" style={{ ...D.input, width: 110 }} title="Cuánto ha pagado en total por esta licencia" />
+                      </td>
                       <td style={D.td}>
                         <button style={{ ...D.btnG, color: '#1A8F7A', fontWeight: 800 }} disabled={busy} onClick={() => guardar(s)}>✓</button>{' '}
                         <button style={D.btnG} onClick={() => setEditId(null)}>✕</button>
@@ -1742,8 +1764,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                                 {s.estado === 'pausada' ? 'Reactivar suscripción' : 'Pausar suscripción'}
                                 <small style={D.miSub}>{s.estado === 'pausada' ? 'pide desde cuándo quedó activa' : 'deja de sumar ARR; pide el motivo'}</small>
                               </button>
-                              <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>
-                                Editar suscripción
+                              <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '', fecha_inicio: s.fecha_inicio || '', total_pagado: s.total_pagado ?? '' }); }}>
+                                Editar suscripción<small style={D.miSub}>plan, precio, desde cuándo y cuánto pagó</small>
                               </button>
                               {/* La baja es de la LICENCIA, no del cliente: hay
                                   cuentas que cancelan el plan base y se quedan
