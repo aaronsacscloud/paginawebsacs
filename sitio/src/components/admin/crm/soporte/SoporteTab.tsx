@@ -651,62 +651,48 @@ export default function SoporteTab() {
       onRango={(a: string, b: string) => { setDesde(a); setHasta(b); }} />
   );
 
-  const marco = (hijo: any, conSelector = true) => (
-    <div className="sop" style={S.wrap}>
-      <Encabezado periodo={conSelector && d ? d.periodo : undefined}>{conSelector ? selector : null}</Encabezado>
-      <BarraVistas vista={vista} setVista={setVista} pendientes={pendientes} />
-      {hijo}
-      {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} />}
-    </div>
-  );
-
-  // Estas dos no dependen del periodo ni del dashboard: se sirven de inmediato.
-  if (vista === 'chat') return marco(<Hallazgos onAbrirCliente={(id) => setCliente(id)} onCambio={() => setRecarga(r => r + 1)} sinTope />, false);
-  if (vista === 'capacitacion') return marco(<Capacitacion onAbrirCliente={(id) => setCliente(id)} />, false);
-
-  if (err) return marco(<Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso>);
-  if (!d) return marco(<Cargando que="el panel de soporte" />);
-
-  const T = d.totales || {}, K = d.kpis || {}, per = d.periodo || {};
-  if (!T.total) return marco(<Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." />);
-
-  const etiqueta = per.personalizado ? `${fechaCorta(per.desde)} – ${fechaCorta(per.hasta)}` : `últimos ${per.dias} días`;
+  const T = d?.totales || {}, K = d?.kpis || {}, per = d?.periodo || {};
+  const etiqueta = per.personalizado ? `${fechaCorta(per.desde)} – ${fechaCorta(per.hasta)}` : `últimos ${per.dias || dias} días`;
   const sinResolver = K.sin_resolver || {};
   const hayAlarma = (sinResolver.estancados || 0) > 0;
 
-  // ── Vista de CALIFICACIÓN: las dos encuestas, su cobertura y a quién llamar.
-  if (vista === 'calificacion') return marco(
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <RatingIntercom intercom={d.csat?.intercom || {}} etiqueta={etiqueta} />
-      <div className="sop-2">
-        <Calificacion csat={d.csat || {}} etiqueta={etiqueta} />
-        <Cobertura csat={d.csat || {}} onAbrir={(id) => setCliente(id)} />
-      </div>
+  // ── Orden de la pantalla: título → CARTAS → pestañas → contenido.
+  // Es el de Cotizaciones. Los cinco KPIs describen el estado del soporte
+  // completo, no el de una vista: por eso viven arriba de la barra y se quedan
+  // fijos al cambiar de pestaña. Mientras carga el tablero se pintan huecos en
+  // vez de desaparecer — si la fila se cae y vuelve, todo lo de abajo salta.
+  const filaKpis = (!d || !T.total) ? (
+    <div className="sop-kpis" style={{ marginBottom: 18 }}>
+      {[0, 1, 2, 3, 4].map(i => (
+        <div key={i} style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: '3px solid #ece9f8', borderRadius: 12, padding: '16px 18px' }}>
+          <div style={{ height: 9, width: '55%', background: '#f3f2f7', borderRadius: 4 }} />
+          <div style={{ height: 22, width: '45%', background: '#f3f2f7', borderRadius: 4, marginTop: 9 }} />
+          <div style={{ height: 9, width: '80%', background: '#f8f7fb', borderRadius: 4, marginTop: 9 }} />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="sop-kpis" style={{ marginBottom: 18 }}>
+      <Kpi barra={AZUL} t="Entraron" v={K.entraron?.valor ?? 0}
+        hijo={<><Delta v={K.entraron?.valor} a={K.entraron?.anterior} neutro /> · antes {K.entraron?.anterior ?? 0}</>} />
+      <Kpi barra={VERDE} t="Resueltos" v={<span style={{ color: VERDE_TINTA }}>{K.resueltos?.valor ?? 0}</span>}
+        hijo={<><Delta v={K.resueltos?.valor} a={K.resueltos?.anterior} /> · antes {K.resueltos?.anterior ?? 0}</>} />
+      <Kpi barra={hayAlarma ? ROJO : MORADO} t="Sin resolver" v={sinResolver.valor ?? 0}
+        hijo={<>
+          {hayAlarma
+            ? <span style={{ color: ROJO, fontWeight: 800 }}>{sinResolver.estancados} estancado{sinResolver.estancados === 1 ? '' : 's'} +48 h</span>
+            : <span style={{ color: VERDE_TINTA, fontWeight: 800 }}>ninguno estancado</span>}
+          {sinResolver.sin_1a_respuesta > 0 && <> · {sinResolver.sin_1a_respuesta} sin 1ª respuesta</>}
+        </>} />
+      <Kpi barra={MORADO} t="1ª respuesta" v={K.frt?.valor != null ? `${K.frt.valor} h` : '—'}
+        hijo={<><Delta v={K.frt?.valor} a={K.frt?.anterior} invertido /> · sobre {K.frt?.n ?? 0} ticket{K.frt?.n === 1 ? '' : 's'}</>} />
+      <Kpi barra={MORADO_SUAVE} t="Resolución" v={K.resolucion?.valor != null ? `${K.resolucion.valor} h` : '—'}
+        hijo={<><Delta v={K.resolucion?.valor} a={K.resolucion?.anterior} invertido /> · sobre {K.resolucion?.n ?? 0} resuelto{K.resolucion?.n === 1 ? '' : 's'}</>} />
     </div>
   );
 
-  return marco(
+  const tablero = () => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Cinco KPIs, ni uno más: los cinco de la fila caben de un vistazo. La
-            calificación no es uno de ellos — tiene sección propia abajo. */}
-        <div className="sop-kpis">
-          <Kpi barra={AZUL} t="Entraron" v={K.entraron?.valor ?? 0}
-            hijo={<><Delta v={K.entraron?.valor} a={K.entraron?.anterior} neutro /> · antes {K.entraron?.anterior ?? 0}</>} />
-          <Kpi barra={VERDE} t="Resueltos" v={<span style={{ color: VERDE_TINTA }}>{K.resueltos?.valor ?? 0}</span>}
-            hijo={<><Delta v={K.resueltos?.valor} a={K.resueltos?.anterior} /> · antes {K.resueltos?.anterior ?? 0}</>} />
-          <Kpi barra={hayAlarma ? ROJO : MORADO} t="Sin resolver" v={sinResolver.valor ?? 0}
-            hijo={<>
-              {hayAlarma
-                ? <span style={{ color: ROJO, fontWeight: 800 }}>{sinResolver.estancados} estancado{sinResolver.estancados === 1 ? '' : 's'} +48 h</span>
-                : <span style={{ color: VERDE_TINTA, fontWeight: 800 }}>ninguno estancado</span>}
-              {sinResolver.sin_1a_respuesta > 0 && <> · {sinResolver.sin_1a_respuesta} sin 1ª respuesta</>}
-            </>} />
-          <Kpi barra={MORADO} t="1ª respuesta" v={K.frt?.valor != null ? `${K.frt.valor} h` : '—'}
-            hijo={<><Delta v={K.frt?.valor} a={K.frt?.anterior} invertido /> · sobre {K.frt?.n ?? 0} ticket{K.frt?.n === 1 ? '' : 's'}</>} />
-          <Kpi barra={MORADO_SUAVE} t="Resolución" v={K.resolucion?.valor != null ? `${K.resolucion.valor} h` : '—'}
-            hijo={<><Delta v={K.resolucion?.valor} a={K.resolucion?.anterior} invertido /> · sobre {K.resolucion?.n ?? 0} resuelto{K.resolucion?.n === 1 ? '' : 's'}</>} />
-        </div>
-
         <TopClientes filas={d.top_clientes || []} etiqueta={etiqueta} onAbrir={(id) => setCliente(id)} />
 
         <div className="sop-2">
@@ -767,5 +753,35 @@ export default function SoporteTab() {
           )}
         </div>
       </div>
+  );
+
+  const contenido = (() => {
+    // Estas dos no dependen del periodo ni del dashboard: se sirven de inmediato.
+    if (vista === 'chat') return <Hallazgos onAbrirCliente={(id) => setCliente(id)} onCambio={() => setRecarga(r => r + 1)} sinTope />;
+    if (vista === 'capacitacion') return <Capacitacion onAbrirCliente={(id) => setCliente(id)} />;
+    if (err) return <Aviso tono="malo" titulo="No se pudo cargar el dashboard">{err}</Aviso>;
+    if (!d) return <Cargando que="el panel de soporte" />;
+    if (!T.total) return <Vacio titulo="Sin tickets de soporte todavía" texto="Cuando entren conversaciones de Intercom aparecerán aquí, ligadas a cada cliente." />;
+    if (vista === 'calificacion') return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <RatingIntercom intercom={d.csat?.intercom || {}} etiqueta={etiqueta} />
+        <div className="sop-2">
+          <Calificacion csat={d.csat || {}} etiqueta={etiqueta} />
+          <Cobertura csat={d.csat || {}} onAbrir={(id) => setCliente(id)} />
+        </div>
+      </div>
+    );
+    return tablero();
+  })();
+
+
+  return (
+    <div className="sop" style={S.wrap}>
+      <Encabezado periodo={d ? per : undefined}>{selector}</Encabezado>
+      {filaKpis}
+      <BarraVistas vista={vista} setVista={setVista} pendientes={pendientes} />
+      {contenido}
+      {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} />}
+    </div>
   );
 }
