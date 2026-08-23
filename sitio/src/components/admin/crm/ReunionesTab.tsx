@@ -127,7 +127,10 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vista, setVista] = useState<'lista' | 'calendario'>('lista');
-  const [segmento, setSegmento] = useState<Segmento>('proximas');
+  // Arranca en la semana y no en 'proximas': lo primero que se pregunta al
+  // entrar es qué hay estos días, y con la agenda vacía a futuro 'proximas'
+  // dejaba la pestaña en blanco aunque la semana tuviera diez reuniones.
+  const [segmento, setSegmento] = useState<Segmento>('semana');
   const [fEstado, setFEstado] = useState('');
   const [fHost, setFHost] = useState('');
   const [fTipo, setFTipo] = useState('');
@@ -200,6 +203,65 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     return Array.from(m.values());
   }, [data]);
 
+  /* ── Qué se está agendando ──
+     Antes arriba había cuatro números que no decían de QUÉ eran las reuniones:
+     con "Próximas 3" no se sabe si son tres demos de venta o tres capacitaciones
+     que ya se pagaron. Una tarjeta por tipo, con su color del catálogo, y dentro
+     el desenlace: cuántas se presentaron, cuántas faltaron y cuántas nadie marcó.
+     Se cuentan TODAS menos las canceladas —cancelar con aviso no es una reunión
+     que salió mal, es una que no ocurrió—. */
+  const resumenTipos = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const b of data) {
+      const t = b.event_types;
+      if (!t) continue;
+      const e = normalizaEstado(b.estado);
+      if (e === 'cancelada' || e === 'reagendada') continue;
+      const row = m.get(t.id) || { id: t.id, nombre: t.nombre, color: t.color || '#9B8CFA', n: 0, asistio: 0, falto: 0, pend: 0 };
+      row.n++;
+      if (e === 'asistio') row.asistio++;
+      else if (e === 'no_asistio') row.falto++;
+      // Ya pasó y nadie dijo si llegó: ni éxito ni falta, un dato que falta.
+      else if (b.fecha < hoy) row.pend++;
+      m.set(t.id, row);
+    }
+    return Array.from(m.values()).sort((a, b) => b.n - a.n);
+  }, [data, hoy]);
+
+  /* Reuniones que ya pasaron y siguen sin resolver. Es la razón por la que la
+     tasa de asistencia no se puede creer, así que se enseña y se puede cerrar
+     desde aquí en vez de esconderse en el segmento "Pasadas". */
+  const pendientes = useMemo(() => data.filter(b => {
+    const e = normalizaEstado(b.estado);
+    return b.fecha < hoy && (e === 'agendada' || e === 'confirmada');
+  }).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))), [data, hoy]);
+
+  /* Lo que ve el calendario: los mismos filtros de arriba MENOS el segmento
+     —el calendario ya acota por mes, y cruzarlo con "esta semana" dejaría el
+     resto del mes en blanco sin que nadie entienda por qué—. */
+  const paraCalendario = useMemo(() => {
+    let rows = data.filter(b => {
+      const e = normalizaEstado(b.estado);
+      return e !== 'cancelada' && e !== 'reagendada';
+    });
+    if (fTipo) rows = rows.filter(b => b.event_types?.id === fTipo);
+    if (fEstado) rows = rows.filter(b => normalizaEstado(b.estado) === fEstado);
+    if (fHost === 'mias') rows = rows.filter(b => b.host_es_mio);
+    else if (fHost === 'partners') rows = rows.filter(b => b.host_es_partner);
+    else if (fHost) rows = rows.filter(b => b.host_id === fHost);
+    if (search) {
+      const q = search.toLowerCase();
+      rows = rows.filter(b => [b.invitee_nombre, b.invitee_email, b.invitee_empresa, b.invitado_company_nombre, b.host_nombre]
+        .filter(Boolean).join(' ').toLowerCase().includes(q));
+    }
+    return rows;
+  }, [data, fTipo, fEstado, fHost, search]);
+
+  const deHoy = useMemo(() => data.filter(b => {
+    const e = normalizaEstado(b.estado);
+    return b.fecha === hoy && e !== 'cancelada' && e !== 'reagendada';
+  }).sort((a, b) => String(a.hora_inicio || '').localeCompare(String(b.hora_inicio || ''))), [data, hoy]);
+
   const kpis = useMemo(() => {
     const est = (b: any) => normalizaEstado(b.estado);
     // Activa = todavía va a pasar. 'agendada' entra: es el estado con el que
@@ -252,6 +314,47 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     else if (b.invitado_contact_id && onOpenContact) onOpenContact(b.invitado_contact_id);
   }
 
+  /* Un renglón compacto de reunión, para los bloques de arriba (Hoy y lo que
+     falta marcar). Lo que manda es el CLIENTE, no el invitado: esta pestaña se
+     nutre de clientes y desde aquí se llega a su ficha de un clic. */
+  const Fila = ({ b, marcar: conMarcar }: { b: any; marcar?: boolean }) => {
+    const e = normalizaEstado(b.estado);
+    const est = ESTADOS[e];
+    const t = b.event_types;
+    const cliente = b.invitado_company_nombre || b.invitee_empresa || null;
+    const puedeAbrir = !!(b.invitado_company_id || b.invitado_contact_id);
+    const bs = isMobile ? { ...S.btnSmall, minHeight: 40, padding: '8px 12px' } : S.btnSmall;
+    return (
+      <div style={{ display: 'flex', gap: 11, alignItems: 'center', padding: '9px 0', borderTop: '1px solid #f5f4f8' }}>
+        <div style={{ width: 76, flexShrink: 0 }}>
+          <div style={{ fontSize: '0.79rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fmtTime(b.hora_inicio)}</div>
+          <div style={{ fontSize: '0.63rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.04em' }}>{fmtDate(b.fecha).replace(/ \d{4}$/, '')}</div>
+        </div>
+        <span style={{ width: 8, height: 8, borderRadius: 99, background: t?.color || '#c9c7d0', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {cliente
+              ? (puedeAbrir
+                ? <button onClick={() => abrirInvitado(b)} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#5B4BD6', textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer' }}>{cliente}</button>
+                : cliente)
+              : <span style={{ color: '#a5a2af', fontWeight: 600 }}>sin cliente ligado</span>}
+          </div>
+          <div style={{ fontSize: '0.71rem', color: '#a5a2af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {b.invitee_nombre || '—'}{t?.nombre ? ' · ' + t.nombre : ''}
+          </div>
+        </div>
+        {conMarcar
+          ? (
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button disabled={busyId === b.id} style={{ ...bs, color: '#1E8A63', borderColor: '#bfe8df', fontWeight: 700 }} onClick={() => marcar(b, 'asistio')}>Se presentó</button>
+              <button disabled={busyId === b.id} style={{ ...bs, color: '#C0554E', borderColor: '#f7c9c5', fontWeight: 700 }} onClick={() => marcar(b, 'no_asistio')}>No llegó</button>
+            </div>
+          )
+          : <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0 }}>{est.label}</span>}
+      </div>
+    );
+  };
+
   const filaAcciones = (b: any) => {
     const activa = b.estado === 'confirmada' || b.estado === 'pendiente';
     const bs = isMobile ? { ...S.btnSmall, minHeight: 44, padding: '10px 14px', fontSize: '0.8rem' } : S.btnSmall;
@@ -277,12 +380,76 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
 
   return (
     <div style={{ padding: '18px 24px' }}>
-      {/* KPIs */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        {[['Hoy', kpis.hoy], ['Esta semana', kpis.semana], ['Próximas', kpis.proximas], ['Se presentaron', kpis.realizadas], ['Tasa no-show', kpis.noShowPct + '%']].map(([l, v]) => (
-          <div key={String(l)} style={S.kpi}><div style={S.kLabel}>{l}</div><div style={S.kValue}>{v}</div></div>
-        ))}
+      {/* Qué se está agendando: una tarjeta por tipo. Se toca y filtra todo lo
+          de abajo —lista y calendario—, así que la pregunta "¿cuántas demos
+          traigo?" se contesta y se explora en el mismo gesto. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(178px,1fr))', gap: 10, marginBottom: 12 }}>
+        {resumenTipos.map(t => {
+          const on = fTipo === t.id;
+          const pct = (x: number) => (t.n ? (x / t.n) * 100 : 0);
+          return (
+            <button key={t.id} onClick={() => setFTipo(on ? '' : t.id)} title={t.nombre}
+              aria-pressed={on}
+              style={{
+                background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${t.color}`,
+                borderRadius: 10, padding: '12px 14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+                boxShadow: on ? `0 0 0 2px ${t.color}55` : 'none',
+              }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
+              </div>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-.03em', color: t.color, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{t.n}</div>
+              <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 2, lineHeight: 1.4 }}>
+                {t.asistio > 0 && <><b style={{ color: '#1E8A63' }}>{t.asistio}</b> se {t.asistio === 1 ? 'presentó' : 'presentaron'}</>}
+                {t.falto > 0 && <> · <b style={{ color: '#C0554E' }}>{t.falto}</b> {t.falto === 1 ? 'falta' : 'faltas'}</>}
+                {t.asistio === 0 && t.falto === 0 && 'sin resolver'}
+                {t.pend > 0 && <div style={{ color: '#9a6a10', fontWeight: 700 }}>{t.pend} sin marcar</div>}
+              </div>
+              {/* La barra dice de un vistazo si ese tipo se está cerrando o se
+                  está quedando a medias: gris es lo que nadie resolvió. */}
+              <div style={{ display: 'flex', height: 4, borderRadius: 99, overflow: 'hidden', marginTop: 7, background: '#f0eff4' }}>
+                <span style={{ width: pct(t.asistio) + '%', background: '#4FBF95' }} />
+                <span style={{ width: pct(t.falto) + '%', background: '#EF7A72' }} />
+                <span style={{ width: pct(t.pend) + '%', background: '#dcd9e4' }} />
+              </div>
+            </button>
+          );
+        })}
+        {!resumenTipos.length && (
+          <div style={{ ...S.kpi, color: '#a5a2af', fontSize: '0.82rem' }}>Todavía no hay reuniones agendadas.</div>
+        )}
       </div>
+
+      {/* Hoy, siempre a la vista: no debería hacer falta elegir un filtro para
+          saber a quién ves en las próximas horas. */}
+      <div style={{ ...S.card, marginBottom: 12, borderColor: deHoy.length ? '#ddd6fb' : '#ececec' }}>
+        <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.9px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: deHoy.length ? 8 : 0 }}>
+          Hoy
+          <span style={{ marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#a5a2af' }}>
+            {deHoy.length ? `${deHoy.length} reunión${deHoy.length === 1 ? '' : 'es'}` : 'nada agendado'}
+          </span>
+        </div>
+        {!deHoy.length
+          ? <div style={{ fontSize: '0.82rem', color: '#a5a2af' }}>Sin reuniones hoy.</div>
+          : deHoy.map(b => <Fila key={b.id} b={b} />)}
+      </div>
+
+      {/* Lo que ya pasó y nadie cerró. Sin esto la tasa de asistencia miente y
+          nadie sabe por qué. */}
+      {pendientes.length > 0 && (
+        <div style={{ ...S.card, marginBottom: 12, borderColor: '#E8A838', background: '#FFFDF8' }}>
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.9px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: '#9a6a10' }}>
+            Ya pasaron y nadie las marcó
+            <span style={{ marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#9a6a10' }}>
+              {pendientes.length} · mientras sigan así, la tasa de asistencia no cuadra
+            </span>
+          </div>
+          {pendientes.slice(0, 6).map(b => <Fila key={b.id} b={b} marcar />)}
+          {pendientes.length > 6 && (
+            <div style={{ fontSize: '0.72rem', color: '#9a6a10', paddingTop: 8 }}>y {pendientes.length - 6} más en “Pasadas”.</div>
+          )}
+        </div>
+      )}
 
       {/* Segmentos + vista */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
@@ -383,7 +550,22 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
           </div>
         </div>
       ) : (
-        <CalendarioMes mes={calMes} setMes={setCalMes} bookings={data.filter(b => b.estado !== 'cancelada' && b.estado !== 'reagendada')} hoy={hoy} onOpen={abrirInvitado} isMobile={isMobile} />
+        <>
+          <CalendarioMes mes={calMes} setMes={setCalMes} bookings={paraCalendario} hoy={hoy} onOpen={abrirInvitado} isMobile={isMobile} />
+          {/* Sin leyenda el color es decoración. Con ella, el mes se lee de un
+              vistazo: dónde están las demos y dónde las capacitaciones. */}
+          {resumenTipos.length > 0 && (
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 11, padding: '10px 4px 0', borderTop: '1px solid #f5f4f8' }}>
+              {resumenTipos.map(t => (
+                <button key={t.id} onClick={() => setFTipo(fTipo === t.id ? '' : t.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, color: fTipo && fTipo !== t.id ? '#c9c7d0' : '#6b7280' }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: t.color, display: 'inline-block' }} />
+                  {t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
