@@ -671,13 +671,28 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
 
   const totalMes = Object.values(porDia).reduce((a, l) => a + l.length, 0);
   const hoyMes = hoy.slice(0, 7);
+  const conEventos = Object.keys(porDia).sort();
+  /* El día abierto en el panel. Arranca en hoy si hoy tiene algo; si no, en el
+     primer día del mes que sí tenga: abrir el panel vacío en un mes viejo hace
+     pensar que no hay nada en todo el mes. */
+  const [sel, setSel] = useState<string>(() => (porDia[hoy] ? hoy : conEventos[0] || hoy));
+  useEffect(() => { setSel(porDia[hoy] ? hoy : conEventos[0] || `${mes}-01`); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mes]);
+
+  const delSel = (porDia[sel] || []).slice().sort((x, y) => (x.hora_inicio || '').localeCompare(y.hora_inicio || ''));
+  const selD = sel ? new Date(sel + 'T12:00:00') : null;
+  const DIA_LARGO = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  // La leyenda es lo que vuelve legibles los puntos: sin ella, un punto ámbar
+  // no dice nada. Solo los tipos que de verdad aparecen este mes.
+  const tiposDelMes: [string, string][] = [];
+  Object.values(porDia).flat().forEach((b: any) => {
+    const n = b.event_types?.nombre; const c = b.event_types?.color || '#9B8CFA';
+    if (n && !tiposDelMes.some(t => t[0] === n)) tiposDelMes.push([n, c]);
+  });
 
   return (
     <div style={S.card}>
-      {/* El morado es el hilo: encabezado, día de hoy y el filo de cada
-          reunión. El ámbar de antes competía con el aviso de "ya pasaron y
-          nadie las marcó", que sí tiene que llamar la atención. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <button style={S.btnSmall} onClick={() => nav(-1)} aria-label="Mes anterior">‹</button>
         <div>
           <div style={{ fontWeight: 800, fontSize: '1rem', color: '#241d43', letterSpacing: '-.01em' }}>{MES_LARGO[m - 1]} {y}</div>
@@ -685,55 +700,91 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
         </div>
         <button style={S.btnSmall} onClick={() => nav(1)} aria-label="Mes siguiente">›</button>
         {mes !== hoyMes && <button style={S.btnSec} onClick={() => setMes(hoyMes)}>Ir a hoy</button>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 13, flexWrap: 'wrap', fontSize: '0.68rem', color: '#8a8590' }}>
+          {tiposDelMes.map(([n, c]) => (
+            <span key={n} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <i style={{ width: 8, height: 8, borderRadius: '50%', background: c, display: 'inline-block' }} />{n.replace(/^Reunión de |^Sesión de /i, '')}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 5, minWidth: 780 }}>
-          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, i) => (
-            <div key={d} style={{ fontSize: '0.62rem', fontWeight: 800, color: i > 4 ? '#c9c6d2' : '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em', padding: '2px 6px 6px' }}>{d}</div>
-          ))}
-          {celdas.map((fecha, i) => {
-            const esHoy = fecha === hoy;
-            const finde = i % 7 > 4;
-            const delDia = porDia[fecha || ''] || [];
-            return (
-              <div key={i} style={{
-                minHeight: 96, borderRadius: 10, padding: '6px 7px',
-                border: esHoy ? '1.5px solid #9B8CFA' : '1px solid #f0eff5',
-                background: esHoy ? '#F8F6FF' : !fecha ? '#fbfbfc' : finde ? '#fcfcfd' : '#fff',
-              }}>
-                {fecha && <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: esHoy ? 800 : 700,
-                      color: esHoy ? '#fff' : delDia.length ? '#241d43' : '#c9c6d2',
-                      background: esHoy ? '#9B8CFA' : 'transparent',
-                      borderRadius: 99, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    }}>{Number(fecha.slice(-2))}</span>
-                    {delDia.length > 2 && <span style={{ fontSize: '0.6rem', color: '#b3afbd', marginLeft: 'auto' }}>{delDia.length}</span>}
+      {/* Mes a la izquierda, el día abierto a la derecha. El mes deja de ser
+          una pared de etiquetas: cada día enseña puntos del color de sus
+          reuniones y el detalle vive en el panel. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 292px', gap: 16, alignItems: 'start' }}>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
+            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, i) => (
+              <div key={d} style={{ fontSize: '0.6rem', fontWeight: 800, color: i > 4 ? '#c9c6d2' : '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', textAlign: 'center', padding: '4px 0' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+            {celdas.map((fecha, i) => {
+              if (!fecha) return <div key={i} style={{ aspectRatio: '1 / 0.82' }} />;
+              const esHoy = fecha === hoy;
+              const esSel = fecha === sel;
+              const delDia = porDia[fecha] || [];
+              return (
+                <button key={i} onClick={() => setSel(fecha)}
+                  title={delDia.length ? `${delDia.length} ${delDia.length === 1 ? 'reunión' : 'reuniones'}` : 'Sin reuniones'}
+                  style={{
+                    aspectRatio: '1 / 0.82', borderRadius: 11, cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                    border: '1.5px solid ' + (esSel ? '#9B8CFA' : esHoy ? '#9B8CFA' : 'transparent'),
+                    background: esSel ? '#9B8CFA' : 'transparent',
+                    transition: 'background .13s, border-color .13s',
+                  }}>
+                  <span style={{
+                    fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums',
+                    fontWeight: esSel || esHoy ? 800 : delDia.length ? 700 : 600,
+                    color: esSel ? '#fff' : esHoy ? '#5B4BD6' : delDia.length ? '#241d43' : '#c9c6d2',
+                  }}>{Number(fecha.slice(-2))}</span>
+                  <span style={{ display: 'flex', gap: 3, height: 7, alignItems: 'center' }}>
+                    {delDia.slice(0, 4).map((b: any) => (
+                      <i key={b.id} style={{
+                        width: 6, height: 6, borderRadius: '50%', display: 'inline-block',
+                        background: b.event_types?.color || '#9B8CFA',
+                        boxShadow: esSel ? '0 0 0 1.5px rgba(255,255,255,.7)' : 'none',
+                      }} />
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ background: '#f7f6fa', border: '1px solid #f0eff5', borderRadius: 12, padding: 14, minHeight: 260 }}>
+          <div style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#a5a2af' }}>
+            {selD ? DIA_LARGO[selD.getDay()] : ''}{sel === hoy ? ' · hoy' : ''}
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43', marginBottom: 12 }}>
+            {selD ? `${selD.getDate()} de ${MES_LARGO[m - 1].toLowerCase()}` : ''}
+          </div>
+          {delSel.length === 0
+            ? <div style={{ fontSize: '0.79rem', color: '#a5a2af', textAlign: 'center', padding: '26px 0' }}>Sin reuniones este día.</div>
+            : delSel.map((b: any) => {
+              const est = ESTADOS[normalizaEstado(b.estado)];
+              return (
+                <div key={b.id} onClick={() => onOpen(b)}
+                  style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${b.event_types?.color || '#9B8CFA'}`, borderRadius: 10, padding: '9px 11px', marginBottom: 7, cursor: 'pointer' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#5B4BD6', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtTime(b.hora_inicio)}{b.hora_fin ? ` – ${fmtTime(b.hora_fin)}` : ''}
                   </div>
-                  {delDia.slice(0, 3).map(b => {
-                    const est = ESTADOS[normalizaEstado(b.estado)];
-                    // El TIPO de reunión pinta el filo (es lo que distingue una
-                    // capacitación de una consultoría de un vistazo) y el ESTADO
-                    // el fondo, que es semántico: verde vino, rojo faltó.
-                    return (
-                      <div key={b.id} onClick={() => onOpen(b)} title={`${fmtTime(b.hora_inicio)} · ${b.invitee_nombre} · ${b.event_types?.nombre || ''} (${est.label})`}
-                        style={{
-                          fontSize: '0.63rem', padding: '3px 6px', borderRadius: 6, marginBottom: 3,
-                          background: est.bg, color: est.color, fontWeight: 700, cursor: 'pointer',
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          borderLeft: `3px solid ${b.event_types?.color || '#9B8CFA'}`,
-                        }}>
-                        {fmtTime(b.hora_inicio).replace(':00', '')} {b.invitee_nombre}
-                      </div>
-                    );
-                  })}
-                  {delDia.length > 3 && <div style={{ fontSize: '0.61rem', color: '#8a8590', fontWeight: 700, paddingLeft: 2 }}>+{delDia.length - 3} más</div>}
-                </>}
-              </div>
-            );
-          })}
+                  <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#241d43', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {b.invitee_nombre || '—'}
+                  </div>
+                  <div style={{ fontSize: '0.69rem', color: '#8a8590', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span>{(b.event_types?.nombre || '').replace(/^Reunión de |^Sesión de /i, '')}</span>
+                    <span style={{ ...S.badge, background: est.bg, color: est.color, fontSize: '0.62rem' }}>{est.label}</span>
+                  </div>
+                  {b.invitado_company_nombre && (
+                    <div style={{ fontSize: '0.67rem', color: '#b3afbd', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.invitado_company_nombre}</div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </div>
     </div>
