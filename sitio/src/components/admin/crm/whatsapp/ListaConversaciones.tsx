@@ -97,13 +97,13 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',
                 borderBottom: '1px solid #f7f6fa', cursor: 'pointer', fontFamily: 'inherit',
-                padding: '11px 12px', background: activa ? '#f7f4ff' : '#fff', alignItems: 'flex-start',
+                padding: '12px 14px', background: activa ? '#f7f4ff' : '#fff', alignItems: 'flex-start',
                 borderLeft: activa ? '3px solid #9B8CFA' : '3px solid transparent',
               }}>
               <Avatar nombre={c.contacto?.nombre} telefono={c.telefono} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <b style={{ fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <b style={{ fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.contacto?.nombre || telefonoLegible(c.telefono)}
                   </b>
                   <span style={{ marginLeft: 'auto', fontSize: '0.64rem', color: c.no_leidos ? '#5B4BD6' : '#a5a2af', fontWeight: c.no_leidos ? 800 : 500, flexShrink: 0 }}>
@@ -112,7 +112,7 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                   <span style={{
-                    flex: 1, minWidth: 0, fontSize: '0.73rem', color: c.no_leidos ? '#333' : '#8a8a92',
+                    flex: 1, minWidth: 0, fontSize: '0.76rem', color: c.no_leidos ? '#333' : '#8a8a92',
                     fontWeight: c.no_leidos ? 600 : 400,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>

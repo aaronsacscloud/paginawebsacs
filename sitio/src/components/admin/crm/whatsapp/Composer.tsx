@@ -75,7 +75,7 @@ export default function Composer({ ventana, api, telefono }: { ventana: any; api
           disabled={modo === 'mensaje' && cerrada}
           style={{
             flex: 1, resize: 'none', border: '1.5px solid', borderColor: modo === 'nota' ? '#f3e3bd' : '#e4dffb',
-            borderRadius: 10, padding: '9px 12px', fontSize: '0.82rem', fontFamily: 'inherit',
+            borderRadius: 10, padding: '10px 13px', fontSize: '0.85rem', fontFamily: 'inherit',
             background: modo === 'nota' ? '#fffdf6' : (cerrada ? '#f7f7f9' : '#fdfcff'), lineHeight: 1.45, maxHeight: 120,
           }} />
         <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.csv,.xlsx" hidden

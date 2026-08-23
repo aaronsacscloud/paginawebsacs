@@ -14,7 +14,7 @@ const FILTROS = [
 const fila = (activo: boolean): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 8,
-  padding: '7px 10px', fontSize: '0.78rem',
+  padding: '8px 11px', fontSize: '0.8rem',
   background: activo ? '#EEECFE' : 'transparent',
   color: activo ? '#5B4BD6' : '#555', fontWeight: activo ? 800 : 600,
 });

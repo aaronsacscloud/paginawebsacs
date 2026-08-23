@@ -43,7 +43,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
       <div style={{ ...bloque, display: 'flex', gap: 11, alignItems: 'center' }}>
         <Avatar nombre={nombre} telefono={conv.telefono} size={46} />
         <div style={{ minWidth: 0 }}>
-          <b style={{ fontSize: '0.9rem', display: 'block' }}>{nombre || 'Número desconocido'}</b>
+          <b style={{ fontSize: '0.95rem', display: 'block', letterSpacing: '-.01em' }}>{nombre || 'Número desconocido'}</b>
           <span style={{ fontSize: '0.72rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>
           {etapa && (
             <span style={{ display: 'inline-block', marginLeft: 7, fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px' }}>{etapa.label}</span>

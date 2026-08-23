@@ -61,16 +61,16 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, borderLeft: mobile ? 'none' : '1px solid #f0eff3', height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderBottom: '1px solid #f0eff3', background: '#fdfcff', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: '1px solid #f0eff3', background: '#fdfcff', flexWrap: 'wrap' }}>
         {onBack && (
           <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.05rem', minWidth: 40, height: 40 }}>←</button>
         )}
-        <Avatar nombre={nombre} telefono={conv.telefono} size={32} />
+        <Avatar nombre={nombre} telefono={conv.telefono} size={36} />
         <span style={{ minWidth: 0 }}>
-          <b style={{ fontSize: '0.84rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <b style={{ fontSize: '0.95rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-.01em' }}>
             {nombre || telefonoLegible(conv.telefono)}
           </b>
-          <span style={{ fontSize: '0.66rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>
+          <span style={{ fontSize: '0.7rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>
         </span>
         {etapa && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px' }}>{etapa.label}</span>}
         <span style={{ flex: 1 }} />
@@ -92,7 +92,7 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
       </div>
 
       {/* ── Mensajes ── */}
-      <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 16px', background: '#faf9fd', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 22px', background: '#faf9fd', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {timeline.map((item: any) => {
           const dia = diaDe(item._t);
           const sep = dia !== diaPrevio; diaPrevio = dia;
@@ -111,7 +111,7 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
               ) : (
                 <span style={{
                   alignSelf: item.direccion === 'entrante' ? 'flex-start' : 'flex-end',
-                  maxWidth: '78%', borderRadius: 12, padding: '8px 11px', fontSize: '0.81rem', lineHeight: 1.5,
+                  maxWidth: 'min(78%, 560px)', borderRadius: 12, padding: '9px 12px', fontSize: '0.84rem', lineHeight: 1.55,
                   background: item.direccion === 'entrante' ? '#fff' : '#EEECFE',
                   border: '1px solid', borderColor: item.direccion === 'entrante' ? '#eeeef1' : '#e2dcfb',
                 }}>

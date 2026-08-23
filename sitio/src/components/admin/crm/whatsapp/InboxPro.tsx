@@ -203,7 +203,7 @@ export default function InboxPro() {
       <div style={{
         display: 'grid', gap: 0, background: '#fff', borderTop: '1px solid #eeeef1',
         overflow: 'hidden', height: 'calc(100dvh - 22px)', minHeight: 480,
-        gridTemplateColumns: isCompact ? '208px 310px minmax(0,1fr)' : '216px 330px minmax(0,1fr) 320px',
+        gridTemplateColumns: isCompact ? '212px 320px minmax(0,1fr)' : '224px 348px minmax(0,1fr) 336px',
       }}>
         <RailInbox counts={counts} filtros={filtros} setFiltros={setFiltros} />
         <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}
