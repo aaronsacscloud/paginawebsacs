@@ -258,7 +258,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {!timeline.length && (
           <span style={{ alignSelf: 'center', marginTop: 30, fontSize: 12, color: C.g400 }}>Todavía no hay mensajes.</span>
         )}
-        {conv.estado_crm === 'resuelta' && timeline.length > 0 && (
+        {conv.estado_crm === 'resuelta' && timeline.length > 0 && !(timeline[timeline.length - 1]._clase === 'evento' && /resuelta/i.test(timeline[timeline.length - 1].detalle || '')) && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
             <span style={separador(true).linea} /><span style={separador(true).chip}>✓ Conversación resuelta</span><span style={separador(true).linea} />
           </span>
