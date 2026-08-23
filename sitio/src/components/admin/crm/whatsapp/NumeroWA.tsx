@@ -110,8 +110,25 @@ function Perfil() {
   const [p, setP] = useState<any>(null);
   const [msg, setMsg] = useState('');
   const [foto, setFoto] = useState('');
-  useEffect(() => { fetch('/api/crm/whatsapp/numero?perfil=1').then(r => r.json()).then(j => setP({ about: '', address: '', description: '', email: '', websites: [], vertical: 'OTHER', ...(j.perfil || {}) })).catch(() => setP({})); }, []);
-  if (!p) return <div style={S.card}><Cargando texto="Cargando perfil…" /></div>;
+  const [fallo, setFallo] = useState(false);
+  const [intento, setIntento] = useState(0);
+  useEffect(() => {
+    setFallo(false); setP(null);
+    // Meta a veces tarda: a los 8 s el "cargando" se vuelve un error honesto con Reintentar.
+    const tope = setTimeout(() => setFallo(true), 8000);
+    fetch('/api/crm/whatsapp/numero?perfil=1').then(r => r.json())
+      .then(j => { clearTimeout(tope); setP({ about: '', address: '', description: '', email: '', websites: [], vertical: 'OTHER', ...(j.perfil || {}) }); })
+      .catch(() => { clearTimeout(tope); setFallo(true); });
+    return () => clearTimeout(tope);
+  }, [intento]);
+  if (!p && fallo) return (
+    <div style={S.card}>
+      <b style={{ fontSize: 13 }}>Perfil del negocio</b>
+      <p style={{ fontSize: 12, color: C.g500, margin: '6px 0 10px' }}>No se pudo cargar el perfil desde Meta (suele ser un tardío de su API, no algo tuyo).</p>
+      <button style={S.btnG} onClick={() => setIntento(x => x + 1)}>Reintentar</button>
+    </div>
+  );
+  if (!p) return <div style={S.card}><Cargando texto="Cargando el perfil de Meta…" /></div>;
   const guardar = async () => { setMsg(''); const r = await fetch('/api/crm/whatsapp/numero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'perfil', about: p.about, address: p.address, description: p.description, email: p.email, websites: p.websites, vertical: p.vertical }) }).then(x => x.json()); setMsg(r.error || 'Perfil guardado en Meta.'); };
   const subirFotoCon = async (url: string) => { setMsg(''); const r = await fetch('/api/crm/whatsapp/numero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'foto', url }) }).then(x => x.json()); setMsg(r.error || 'Foto actualizada en WhatsApp.'); };
   return (

@@ -107,11 +107,14 @@ function EtiquetasCatalogo() {
           <div key={e.id} style={{ ...S.card, borderLeft: `3px solid ${e.color || '#9B8CFA'}`, display: 'flex', alignItems: 'center', gap: 9 }}>
             <span style={{ width: 10, height: 10, borderRadius: 99, background: e.color || '#9B8CFA', flexShrink: 0 }} />
             <span style={{ minWidth: 0, flex: 1 }}>
-              <b style={{ fontSize: 13, display: 'block' }}>{e.nombre}</b>
-              <span style={{ fontSize: 10.5, color: '#999' }}>{e.uso?.total ? `${e.uso.total} uso${e.uso.total === 1 ? '' : 's'}` : 'Sin usar'}{e.descripcion ? ` · ${e.descripcion}` : ''}</span>
+              <b style={{ fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.nombre}</b>
+              <span title={e.descripcion || undefined} style={{ fontSize: 10.5, color: '#999', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.uso?.total ? `${e.uso.total} uso${e.uso.total === 1 ? '' : 's'}` : 'Sin usar'}{e.descripcion ? ` · ${e.descripcion}` : ''}</span>
             </span>
-            <button title="Editar" onClick={() => setForm({ ...e })} style={btnMini}>Editar</button>
-            <button title="Borrar" onClick={() => borrar(e)} style={{ ...btnMini, color: '#C0554E' }}>Borrar</button>
+            {/* Columna FIJA de acciones: la descripción larga no debe envolver los botones */}
+            <span style={{ display: 'inline-flex', gap: 6, flexShrink: 0 }}>
+              <button title="Editar" onClick={() => setForm({ ...e })} style={btnMini}>Editar</button>
+              <button title="Borrar" onClick={() => borrar(e)} style={{ ...btnMini, color: '#C0554E' }}>Borrar</button>
+            </span>
           </div>
         ))}
       </div>

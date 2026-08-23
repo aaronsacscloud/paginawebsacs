@@ -43,7 +43,7 @@ function TarjetaKpi({ color, tinta, etiqueta, cifra, sub, onClick }: { color: st
         {activa && <span aria-hidden style={{ marginLeft: 'auto', color: C.g300, fontSize: 10 }}>›</span>}
       </span>
       <b style={{ display: 'block', fontSize: 14.5, color: tinta, letterSpacing: '-0.01em', margin: '2px 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{cifra}</b>
-      {sub && <span style={{ display: 'block', fontSize: 10, color: C.g400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</span>}
+      {sub && <span title={sub} style={{ display: 'block', fontSize: 10, color: C.g400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</span>}
     </button>
   );
 }
@@ -271,12 +271,12 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             <TarjetaKpi color={C.morado} etiqueta="Conversión" tinta={C.moradoTinta} cifra={etapa?.label || 'Sin etapa'}
               sub={contacto?.proximo_paso ? `Sigue: ${contacto.proximo_paso}` : 'Sin próximo paso definido'} onClick={() => setDetalle('conversion')} />
             {!ocultarDinero && <TarjetaKpi color={C.emerald500} etiqueta="Pipeline" tinta={C.emerald700} cifra={money(pipelineTotal)}
-              sub={dealsAbiertos.length ? `${dealsAbiertos.length} oportunidad${dealsAbiertos.length === 1 ? '' : 'es'} abierta${dealsAbiertos.length === 1 ? '' : 's'}` : 'Sin oportunidades: crea una'} onClick={() => setDetalle('oportunidad')} />}
+              sub={dealsAbiertos.length ? `${dealsAbiertos.length} oportunidad${dealsAbiertos.length === 1 ? '' : 'es'} abierta${dealsAbiertos.length === 1 ? '' : 's'}` : 'Sin oportunidades abiertas'} onClick={() => setDetalle('oportunidad')} />}
             <TarjetaKpi color={C.azul} etiqueta="Origen" tinta={C.azulTinta} cifra={contacto?.fuente || 'Sin origen'}
               sub={utm.length ? `${utm.length} dato${utm.length === 1 ? '' : 's'} de campaña` : contacto?.created_at ? `Creado ${fecha(contacto.created_at)}` : 'Sin datos de campaña'} onClick={() => setDetalle('origen')} />
             <TarjetaKpi color={C.ambar400} etiqueta="Interacción" tinta={C.ambar700}
-              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensajes` : proxima ? 'Reunión agendada' : 'Sin actividad'}
-              sub={proxima ? `Reunión ${fecha(proxima.fecha)}` : timeline.length ? `${timeline.length} eventos en el CRM` : 'Aún sin interacciones'} onClick={() => setDetalle('interacciones')} />
+              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}` : proxima ? 'Reunión agendada' : timeline.length ? 'Actividad en el CRM' : 'Sin actividad'}
+              sub={proxima ? `Reunión ${fecha(proxima.fecha)}` : timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : 'Aún sin interacciones'} onClick={() => setDetalle('interacciones')} />
           </>)}
         </div>
       )}
