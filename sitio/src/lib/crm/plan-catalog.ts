@@ -35,7 +35,11 @@ export function matchPlan(plans: PlanRow[], texto: string | null | undefined): P
   // Tolerancia a typos/truncados: contiene la RAÍZ del slug (primeros 6 chars).
   // "control(a)" → contro, "fideliz(a)" → fideli, "soporte…" → soport. Raíces
   // distintivas, no producen falsos positivos con los otros planes.
-  const byStem = ordered.find(p => p.slug.length >= 6 && t.includes(p.slug.slice(0, 6)));
+  // OJO: los plugins quedan fuera de esta regla. Sus slugs empiezan todos por
+  // 'plugin_', así que su raíz de 6 letras es la MISMA ('plugin') y cualquier
+  // texto que mencione la palabra caería en el primer plugin de la lista. El
+  // paso anterior (slug con espacios: "plugin premium") ya los cubre bien.
+  const byStem = ordered.find(p => !p.slug.startsWith('plugin_') && p.slug.length >= 6 && t.includes(p.slug.slice(0, 6)));
   return byStem || null;
 }
 

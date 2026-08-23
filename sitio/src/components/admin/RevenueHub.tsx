@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
+import PlanesConfig from './crm/PlanesConfig';
 import MotivosLead from './crm/MotivosLead';
 import MarcaTab from './crm/MarcaTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
@@ -119,6 +120,7 @@ const CFG_ICONOS: Record<string, string> = {
   doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg>',
   banco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M3 20h18M9 10v8M15 10v8" stroke-linecap="round"/></svg>',
   tarjeta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h3" stroke-linecap="round"/></svg>',
+  catalogo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5-8 4.5-8-4.5z" stroke-linejoin="round"/><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 01-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 015.4-5.4z" stroke-linejoin="round"/></svg>',
 };
 
@@ -587,6 +589,19 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [extendForm, setExtendForm] = useState<any>(null); // { id, numero, vigencia, days }
     const [extending, setExtending] = useState(false);
 
+    // El catálogo de plugins (Configuración → Planes y plugins). El botón
+    // "+ Plugin" abría un renglón EN BLANCO: el nombre se tecleaba a mano en
+    // cada venta y por eso hay 64 nombres distintos para 15 conceptos. Ahora
+    // se elige del catálogo y el concepto entra homologado, con su descripción
+    // y su precio de lista.
+    const [catPlugins, setCatPlugins] = useState<any[]>([]);
+    const [pickerPlugin, setPickerPlugin] = useState(false);
+    useEffect(() => {
+      fetch('/api/crm/arr/plans').then(r => r.json())
+        .then(j => setCatPlugins((j.data || []).filter((p: any) => p.categoria === 'plugin')))
+        .catch(() => {});
+    }, []);
+
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json())
         .then(d => setQuotes(Array.isArray(d) ? d : []))
@@ -653,7 +668,31 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // concepto — un plugin llamado "conector con Shopify" pegaba de casualidad,
     // y uno llamado "enlace con su ERP" se comisionaba como personalización.
     const addPluginItem = () => {
-      setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'plugin', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+      // Sin catálogo cargado no se bloquea la venta: cae al renglón libre de
+      // siempre. Peor que un nombre a mano es no poder cotizar.
+      if (!catPlugins.length) {
+        setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'plugin', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+        return;
+      }
+      setPickerPlugin(true);
+    };
+
+    /** Mete un plugin del catálogo como concepto, ya con su modalidad de cobro.
+     *  `precio_es_total` avisa que el monto YA es el del periodo: sin él, un
+     *  plugin de $9,900 al año se multiplicaría por 10 (la regla de los planes,
+     *  donde el monto se captura mensual y el año son 10 meses). */
+    const elegirPlugin = (p: any, modalidad: string) => {
+      const precio = modalidad === 'vitalicio' ? p.precio_vitalicio
+        : modalidad === 'anual' ? p.precio_anual : p.precio_mensual;
+      const monto = Number(precio) || 0;
+      setQf({ ...qf, items: [...items, {
+        tipo: 'extra', categoria_comision: 'plugin',
+        nombre: p.nombre, descripcion: p.descripcion || '', plan_slug: p.slug,
+        monto, subtotal: monto, precio_es_total: true,
+        periodo_extra: modalidad === 'vitalicio' ? 'unico' : modalidad,
+        recurrente: modalidad !== 'vitalicio',
+      }] });
+      setPickerPlugin(false);
     };
     const addPersonalizacionItem = () => {
       setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'personalizacion', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
@@ -700,7 +739,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} placeholder="Ej. Implementación" style={S.input} /></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Monto</label><input type="number" value={item.monto || ''} onChange={e => updateItem(idx, 'monto', e.target.value)} style={S.input} /></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
-                          <div><label style={{ ...S.label, marginTop: 0 }}>Periodo</label><select value={item.periodo_extra || (item.recurrente ? 'mensual' : 'unico')} onChange={e => updateItem(idx, 'periodo_extra', e.target.value)} style={S.input}><option value="unico">Unico</option><option value="mensual">Mensual</option><option value="anual">Anual (×10 meses)</option></select></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Periodo</label><select value={item.periodo_extra || (item.recurrente ? 'mensual' : 'unico')} onChange={e => updateItem(idx, 'periodo_extra', e.target.value)} style={S.input}><option value="unico">{item.precio_es_total ? 'Vitalicio / único' : 'Unico'}</option><option value="mensual">Mensual</option><option value="anual">{item.precio_es_total ? 'Anual' : 'Anual (×10 meses)'}</option></select></div>
                         </div>
                         <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6 }}>
                           <input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} />
@@ -744,7 +783,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         const base = parseFloat(arr[idx].monto) || 0;
         const pe = arr[idx].periodo_extra || (arr[idx].recurrente ? 'mensual' : 'unico');
         arr[idx].recurrente = pe === 'mensual' || pe === 'anual';
-        arr[idx].subtotal = pe === 'anual' ? base * 10 : base;
+        // El ×10 es la regla de los PLANES: el monto se captura mensual y el
+        // año son 10 meses (2 gratis). Un plugin del catálogo trae el precio ya
+        // del periodo, así que multiplicarlo cobraría diez veces de más.
+        arr[idx].subtotal = pe === 'anual' && !arr[idx].precio_es_total ? base * 10 : base;
       }
       setQf({ ...qf, items: arr });
     };
@@ -2465,6 +2507,51 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Extra</button>
               </div>
 
+              {/* Catálogo de plugins. Se elige el concepto Y cómo se cobra en
+                  el mismo gesto: cada plugin solo ofrece las modalidades que
+                  tiene declaradas en Configuración, así no se cuela un
+                  vitalicio en algo que se renueva. */}
+              {pickerPlugin && (
+                <div onClick={() => setPickerPlugin(false)}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(20,18,32,.45)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                  <div onClick={e => e.stopPropagation()}
+                    style={{ background: '#fff', borderRadius: 14, width: 'min(520px,100%)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 60px -20px rgba(20,18,32,.5)' }}>
+                    <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0eef8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#241d43' }}>Elegir plugin</div>
+                        <div style={{ fontSize: '0.72rem', color: '#8a8590', marginTop: 1 }}>Se agrega con su descripción y su precio de lista. Los puedes cambiar después.</div>
+                      </div>
+                      <button onClick={() => setPickerPlugin(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a5a2af', fontSize: '1.05rem' }}>✕</button>
+                    </div>
+                    <div style={{ overflowY: 'auto', padding: '6px 0' }}>
+                      {catPlugins.map((p: any) => (
+                        <div key={p.slug} style={{ padding: '11px 18px', borderBottom: '1px solid #f7f6fb' }}>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#241d43' }}>{p.nombre}</div>
+                          {p.descripcion && <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{p.descripcion}</div>}
+                          <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
+                            {(p.modalidades || ['anual']).map((m: string) => {
+                              const precio = m === 'vitalicio' ? p.precio_vitalicio : m === 'anual' ? p.precio_anual : p.precio_mensual;
+                              const etiqueta = m === 'vitalicio' ? 'Vitalicio' : m === 'anual' ? 'Anual' : 'Mensual';
+                              return (
+                                <button key={m} onClick={() => elegirPlugin(p, m)}
+                                  style={{ ...S.btnSmall, borderColor: '#ddd6fb', color: '#5B4BD6', fontWeight: 700 }}>
+                                  {etiqueta} · {precio ? fmt(Number(precio)) : 'a la medida'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      {!catPlugins.length && (
+                        <div style={{ padding: '18px', textAlign: 'center', color: '#a5a2af', fontSize: '0.8rem' }}>
+                          No hay plugins en el catálogo. Se dan de alta en Configuración → Planes y plugins.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ── Promociones y cortesías ──
                   Sección aparte, no un botón más en la fila de conceptos. Una
                   promoción no es un concepto: es un concepto con precio tachado.
@@ -3587,6 +3674,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [] },
             ]},
             { g: 'Facturación', mods: [
+              { id: 'catalogo', nom: 'Planes y plugins', sub: 'Lo único que se puede vender, escrito una sola vez.', items: [
+                { id: 'planes', ico: 'catalogo', t: 'Catálogo de licencias y plugins', v: 'Catálogo',
+                  d: 'Nombre, a qué se refiere, cómo se cobra —mensual, anual o vitalicio— y precio de lista. De aquí salen las opciones de la cotización, de la oportunidad y de la suscripción, así que las tres dicen lo mismo.',
+                  editor: <PlanesConfig sinTitulo /> },
+              ]},
               { id: 'cotizaciones', nom: 'Cotizaciones', sub: 'Cómo sale el documento que recibe un cliente.', items: [
                 { id: 'folio', ico: 'folio', t: 'Folio',
                   d: 'El número con el que arranca la siguiente. De ahí en adelante son consecutivos y no se repiten.',

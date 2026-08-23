@@ -156,7 +156,11 @@ const SIN_SECCION = new Set([
 // del cliente y el tablero de oportunidades piden estas rutas para saber qué
 // columnas pintar: si se gatean como Configuración, quien solo opera cuentas ve
 // la pantalla vacía. Se gatea la escritura, no la lectura.
-const LECTURA_LIBRE = new Set(['/api/crm/propiedades', '/api/crm/pipelines']);
+// El catálogo de planes y plugins entra por la misma razón: la cotización y
+// el modal de oportunidad lo piden para pintar sus selectores, y quien opera
+// cuentas sin permiso de Facturación se quedaría sin nada que elegir.
+// La ESCRITURA sigue exigiendo Facturación con nivel edit.
+const LECTURA_LIBRE = new Set(['/api/crm/propiedades', '/api/crm/pipelines', '/api/crm/arr/plans']);
 
 function seccionDe(path: string): Seccion | null {
   if (SIN_SECCION.has(path)) return null;
