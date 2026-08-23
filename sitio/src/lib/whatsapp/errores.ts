@@ -131,7 +131,7 @@ export function explicarError(raw: any, httpStatus?: number): ErrorLegible {
   const crudo = [codigo, mensaje, detalle].filter(Boolean).join(' · ') || (typeof raw === 'string' ? raw : JSON.stringify(raw));
   let def: Def | null = codigo ? META[codigo] || null : null;
   if (!def) for (const k of KAPSO) if (k.re.test(mensaje) || k.re.test(detalle) || k.re.test(next)) { def = k.def; break; }
-  if (!def && httpStatus === 422) def = META['131047'];
+  if (!def && httpStatus === 422) def = /window|24/i.test(mensaje + next) ? META['131047'] : D('Datos rechazados por Kapso', mensaje || 'Kapso no aceptó la petición.', 'Revisa el detalle técnico: suele ser un campo obligatorio o un valor inválido.', 'otro');
   if (!def && httpStatus === 401) def = KAPSO[3].def;
   if (!def && httpStatus === 404 && /config|phone/i.test(mensaje)) def = KAPSO.find(k => /configuration/.test(k.re.source))!.def;
   if (!def && httpStatus === 429) def = KAPSO[4].def;

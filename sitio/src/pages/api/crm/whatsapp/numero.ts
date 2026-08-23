@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ url }) => {
     if (p.get('numeros')) {
       const enKapso = await numerosKapso().catch(() => []);
       const { data: locales } = await supabase.from('wa_numeros').select('*');
-      const lista = (Array.isArray(enKapso) ? enKapso : []).map((n: any) => { const l = (locales || []).find(x => x.phone_number_id === n.phone_number_id); return { phone_number_id: n.phone_number_id, display_phone_number: n.display_phone_number, nombre: n.display_name || n.name, name_status: n.name_status, calls_enabled: n.calls_enabled, business_account_id: n.business_account_id, kind: n.kind, activo: l ? l.activo : n.phone_number_id === (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim(), es_default: l ? l.es_default : n.phone_number_id === (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim(), webhook_id: l?.webhook_id || null }; });
+      const lista = (Array.isArray(enKapso) ? enKapso : []).filter((n: any) => n.kind !== 'sandbox' && n.display_phone_number).map((n: any) => { const l = (locales || []).find(x => x.phone_number_id === n.phone_number_id); return { phone_number_id: n.phone_number_id, display_phone_number: n.display_phone_number, nombre: n.display_name || n.name, name_status: n.name_status, calls_enabled: n.calls_enabled, business_account_id: n.business_account_id, kind: n.kind, activo: l ? l.activo : n.phone_number_id === (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim(), es_default: l ? l.es_default : n.phone_number_id === (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim(), webhook_id: l?.webhook_id || null }; });
       return json({ numeros: lista, default_env: (import.meta.env.KAPSO_PHONE_NUMBER_ID || '').trim() });
     }
     if (p.get('setup')) {
