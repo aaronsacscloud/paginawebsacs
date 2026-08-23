@@ -8,6 +8,7 @@
 //   asignación/estado/snooze dejan su EVENTO de sistema en el hilo.
 import type { APIRoute } from 'astro';
 import { marcarLeido } from '../../../../lib/whatsapp/kapso-api';
+import { sincronizarEstadoKapso, sincronizarAsignacionKapso, sincronizarContactoKapso, preferenciasMarketingKapso } from '../../../../lib/whatsapp/kapso-sync';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { resolverTenant, puedeEnviar } from '../../../../lib/email/tenant';
@@ -164,7 +165,9 @@ export const GET: APIRoute = async ({ request, url }) => {
   const sinLeer = convsEmail.filter(c => !c.leida).map(c => c.id);
   if (sinLeer.length) await supabase.from('email_conversations').update({ leida: true }).in('id', sinLeer);
 
-  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
+  let marketing: any = null;
+  if (conv.id && conv.telefono) marketing = await preferenciasMarketingKapso(conv.telefono).catch(() => null);
+  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, marketing, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
 };
 
 export const PUT: APIRoute = async ({ request }) => {
@@ -213,8 +216,21 @@ export const PUT: APIRoute = async ({ request }) => {
 
   const { error } = await supabase.from('wa_conversaciones').update(cambios).eq('id', b.id);
   if (error) return json({ error: error.message }, 500);
+  // Etapa E: Kapso se entera (estado, asignación, contacto ligado). Best effort.
+  const avisos: string[] = [];
+  const { data: cv } = await supabase.from('wa_conversaciones').select('kapso_conversation_id, telefono, contact_id, company_id, contacts(nombre, apellido, lifecycle_stage), companies(nombre, nombre_comercial, plan)').eq('id', b.id).maybeSingle();
+  if (cv) {
+    if ('estado_crm' in cambios) sincronizarEstadoKapso(cv.kapso_conversation_id, cambios.estado_crm).catch(() => {});
+    if ('asignado_a' in cambios) { const r = await sincronizarAsignacionKapso(cv.kapso_conversation_id, cambios.asignado_a).catch(() => ({ ok: false, motivo: 'Kapso no respondió' })); if (!r.ok && r.motivo && !/sin kapso_conversation_id/.test(r.motivo)) avisos.push(r.motivo); }
+    if ('contact_id' in cambios && cv.contact_id) {
+      const c: any = cv.contacts, e: any = cv.companies;
+      sincronizarContactoKapso(cv.telefono, { nombre: c ? `${c.nombre || ''} ${c.apellido || ''}`.trim() : null, empresa: e?.nombre_comercial || e?.nombre || null, etapa: c?.lifecycle_stage || null, contact_id: cv.contact_id, company_id: cv.company_id, plan: e?.plan || null }).catch(() => {});
+      // Las notas del hilo pasan a ser del contacto recién ligado.
+      await supabase.from('wa_notas').update({ contact_id: cv.contact_id }).eq('conversation_id', b.id).is('contact_id', null);
+    }
+  }
   for (const e of eventos) {
     await supabase.from('wa_eventos').insert({ conversation_id: b.id, tipo: e.tipo, detalle: e.detalle, autor });
   }
-  return json({ ok: true });
+  return json({ ok: true, avisos });
 };

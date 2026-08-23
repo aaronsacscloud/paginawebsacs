@@ -98,7 +98,12 @@ const EVENTOS = [
   'whatsapp.message.read', 'whatsapp.message.failed',
   'whatsapp.conversation.created', 'whatsapp.conversation.ended',
   'whatsapp.contact.marketing_preference_changed',
+  'whatsapp.conversation.inactive', 'whatsapp.contact.identity_changed',
 ];
+/** Actualiza eventos e inactividad del webhook kapso existente (Etapa E). */
+export async function actualizarWebhook(webhookId: string, inactivityMinutes = 60) {
+  return platform(`/whatsapp/webhooks/${webhookId}`, { method: 'PATCH', body: JSON.stringify({ whatsapp_webhook: { events: EVENTOS, inactivity_minutes: Math.min(1440, Math.max(1, inactivityMinutes)) } }) });
+}
 
 export async function listarWebhooks() {
   return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`);

@@ -23,7 +23,8 @@ import { parsearMensaje } from '../../../lib/whatsapp/parse';
 import { explicarError } from '../../../lib/whatsapp/errores';
 import { marcarLeido } from '../../../lib/whatsapp/kapso-api';
 import { alRecibirMensaje } from '../../../lib/whatsapp/automatizacion';
-import { telefonoWhatsApp } from '../../../lib/telefono';
+import { telefonoWhatsApp, telefonoLegible } from '../../../lib/telefono';
+import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
@@ -65,7 +66,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     // se deduce de la dirección del mensaje.
     const direccion: 'entrante' | 'saliente' =
       kapso.direction === 'outbound' ? 'saliente' : 'entrante';
-    const telefono = String(conv.phone_number || (direccion === 'entrante' ? msj.from : msj.to) || '');
+    const telefono = String(conv.phone_number || payload?.contact?.phone_number || payload?.contact?.wa_id || (direccion === 'entrante' ? msj.from : msj.to) || '');
+    const conv_id = () => conv.id ? String(conv.id) : null;
 
     switch (evento) {
       case 'whatsapp.message.received':
@@ -112,6 +114,33 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (p.cuerpo) await supabase.from('wa_mensajes')
           .update({ cuerpo: p.cuerpo, metadata: { ...(p.metadata || {}), editado: true } })
           .eq('kapso_message_id', String(msj.id));
+        return ok();
+      }
+
+      case 'whatsapp.conversation.inactive': {
+        // X minutos sin mensajes (configurable en Kapso). Si el cliente fue el
+        // último en hablar, es una conversación que se nos está enfriando.
+        if (!telefono) return ok();
+        const conv = await upsertConversacion({ kapsoConversationId: conv_id(), telefono });
+        if (!conv) return ok();
+        const { data: c } = await supabase.from('wa_conversaciones').select('ultima_direccion, estado_crm, asignado_a, contacts(nombre, apellido)').eq('id', conv.id).maybeSingle();
+        const mins = payload?.inactivity_minutes || payload?.conversation?.inactivity_minutes || null;
+        await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'inactiva', autor: null, detalle: `Sin actividad${mins ? ` ${mins} min` : ''}${c?.ultima_direccion === 'entrante' ? ' · el cliente sigue sin respuesta' : ''}` });
+        if (c?.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') {
+          const nombre = (c as any).contacts ? `${(c as any).contacts.nombre || ''} ${(c as any).contacts.apellido || ''}`.trim() : telefonoLegible(telefono);
+          await notificar({ clave: `wa_inactiva_${conv.id}_${new Date().toISOString().slice(0, 13)}`, tipo: 'wa_snooze', destino: 'whatsapp', titulo: `${nombre} lleva${mins ? ` ${mins} min` : ' rato'} esperando respuesta`, metadata: { conversation_id: conv.id, para: c.asignado_a || null } });
+        }
+        return ok();
+      }
+      case 'whatsapp.contact.identity_changed': {
+        // El cliente reinstaló WhatsApp o cambió de teléfono: nuevo BSUID. Se avisa
+        // y se deja rastro en el hilo; el número sigue siendo el ancla del espejo.
+        if (!telefono) return ok();
+        const conv = await upsertConversacion({ telefono });
+        if (conv) {
+          await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'identidad', autor: null, detalle: 'WhatsApp reporta que el cliente cambió de identidad (reinstaló la app o cambió de dispositivo). Si no contesta, confirma el número.' });
+          await supabase.from('wa_conversaciones').update({ alerta: 'El cliente cambió de identidad en WhatsApp: confirma que el número siga siendo suyo' }).eq('id', conv.id);
+        }
         return ok();
       }
 

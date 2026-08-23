@@ -50,6 +50,7 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
         <b style={{ fontSize: '0.95rem' }}>Automatización del inbox</b>
         <ImportarHistorial />
         <AjustesLlamadas />
+        <AjustesInactividad />
         {!a ? <div style={{ padding: 20, fontSize: '0.78rem', color: '#a5a2af' }}>Cargando…</div> : (<>
           <div style={{ marginTop: 16 }}>
             <Toggle on={!!a.bienvenida_activa} onChange={v => setA({ ...a, bienvenida_activa: v })} label="Mensaje de bienvenida" />
@@ -182,6 +183,29 @@ function AjustesLlamadas() {
       </div>
       {activo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: 6 }}>Llamadas salientes del negocio: {a.callback_permission_status === 'ENABLED' ? 'habilitadas' : 'no disponibles para números de EE. UU. (restricción de Meta)'}.</div>}
       {msg && <div style={{ marginTop: 6, fontSize: '0.72rem', color: /Guardado/.test(msg) ? '#1E8A63' : '#C0554E' }}>{msg}</div>}
+    </div>
+  );
+}
+
+/** Etapa E: aviso cuando una conversación lleva X minutos sin actividad (evento de Kapso). */
+function AjustesInactividad() {
+  const [min, setMin] = useState(60);
+  const [msg, setMsg] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const guardar = async () => {
+    setOcupado(true); setMsg('');
+    const r = await fetch('/api/crm/whatsapp/contacto-kapso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'webhook', inactivity_minutes: min }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false); setMsg(r.error ? r.error : `Kapso avisará a los ${min} min sin actividad (y cuando un cliente cambie de identidad).`);
+  };
+  return (
+    <div style={{ marginTop: 14, border: '1px solid #ececec', borderRadius: 10, padding: '10px 12px', background: '#fafafa' }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Aviso de conversación fría</div>
+      <div style={{ fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.4 }}>Si el cliente escribió y nadie contesta en este tiempo, suena la campana y queda en el hilo.</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <input type="number" min={5} max={1440} value={min} onChange={e => setMin(Number(e.target.value))} style={{ ...inp, width: 90 }} /><span style={{ fontSize: '0.75rem' }}>minutos</span>
+        <button disabled={ocupado} onClick={guardar} style={{ border: 'none', borderRadius: 8, padding: '7px 12px', background: '#9B8CFA', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar en Kapso</button>
+      </div>
+      {msg && <div style={{ marginTop: 6, fontSize: '0.72rem', color: /avisará/.test(msg) ? '#1E8A63' : '#C0554E' }}>{msg}</div>}
     </div>
   );
 }

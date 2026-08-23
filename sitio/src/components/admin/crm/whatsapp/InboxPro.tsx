@@ -221,6 +221,11 @@ export default function InboxPro() {
     },
     listaActual: () => lista || [],
     yo: () => yo,
+    accionKapso: async (o: any) => {
+      const r = await fetch('/api/crm/whatsapp/contacto-kapso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), ...o }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      if (o.accion === 'gdpr' && !r?.error) { setActiva(null); setHilo(null); }
+      refrescar(); return r;
+    },
     enviarInteractivo: async (interactivo: any) => {
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: waId(), interactivo }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar(); return r;
@@ -316,6 +321,7 @@ export default function InboxPro() {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: waId(), ...cambios }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      if (Array.isArray(r?.avisos) && r.avisos.length) setError(r.avisos.join(' · '));
       refrescar(); return r;
     },
     guardarContacto: async (contactId: string, cambios: any) => {

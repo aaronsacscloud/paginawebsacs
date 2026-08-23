@@ -226,6 +226,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
               {ctx.salud.tickets_abiertos > 0 && <span style={tag(C.ambar100, C.ambar700)}>{ctx.salud.tickets_abiertos} ticket{ctx.salud.tickets_abiertos === 1 ? '' : 's'} de soporte</span>}
               {ctx.salud.soporte_estancado && <span style={tag(C.rojo50, C.rojo700)}>Soporte estancado</span>}
               {ctx.salud.health_score != null && <span style={tag(C.g100, C.g500)}>Salud {ctx.salud.health_score}/100</span>}
+              {hilo.marketing?.stopped && <span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span>}
             </div>
           )}
         </>) : contactoBase ? (

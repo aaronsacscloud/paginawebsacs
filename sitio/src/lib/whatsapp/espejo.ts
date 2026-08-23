@@ -11,6 +11,7 @@
 //    sin tocar last_contact_at — no se inventan contactos.
 import { etiquetaTipo } from './parse';
 import { explicarError } from './errores';
+import { sincronizarContactoKapso } from './kapso-sync';
 import { supabase } from '../supabase';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { notificar } from '../crm/notificaciones';

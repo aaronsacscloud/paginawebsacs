@@ -151,6 +151,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               {urgente ? 'cierra en ' : ''}{h > 0 ? `${h} h ` : ''}{m} min
             </span>;
           })()}
+          {hilo.marketing?.stopped && <span title="El cliente pidió no recibir mensajes de marketing (Meta lo registra). Solo plantillas de utilidad o responder cuando él escriba." style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Sin marketing</span>}
           {(hilo.presencia || []).map((p: any) => (
             <span key={p.user_id} title={p.escribiendo ? `${p.nombre} está escribiendo…` : `${p.nombre} también tiene abierto este chat`}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, background: p.escribiendo ? C.moradoAgua : C.g100, color: p.escribiendo ? C.moradoTinta : C.g500, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>
@@ -250,7 +251,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   <span style={sepOscuro.linea} />
                 </span>
               ) : item._clase === 'evento' ? (
-                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : 'transparent', borderRadius: 999, padding: item.tipo === 'reunion' || item.tipo === 'llamada' ? '2px 10px' : 0 }}>
+                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
                   {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>
@@ -369,6 +370,18 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver }: { conv
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
             style={{ display: 'block', padding: '9px 12px', fontSize: 12, color: C.azulTinta, fontWeight: 700, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
+          <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
+          <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'resincronizar' }); if (r?.error) alert(r.error); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.g700 }}>Enviar datos del CRM a Kapso</button>
+          {/bloqueado/i.test(conv.alerta || '') ? (
+            <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'desbloquear' }); if (r?.error) alert(r.error); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.emerald700, fontWeight: 700 }}>Desbloquear número</button>
+          ) : (
+            <button onClick={async () => { setAbierto(false); if (!confirm('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.rojo700 }}>Bloquear número (spam)</button>
+          )}
+          <button onClick={async () => { setAbierto(false); if (!confirm('BORRADO GDPR: se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número. No se puede deshacer. ¿Continuar?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.rojo700 }}>Borrar datos del cliente (GDPR)</button>
         </span>
       )}
     </span>
