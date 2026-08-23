@@ -6,8 +6,11 @@
 //
 // Lo vencido va primero y en rojo. Una promesa que no llegó hace más daño que
 // una que nunca se hizo, y es lo único de esta pantalla que se atiende hoy.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+// La bandeja de soporte ya tenía su pantalla: se reusa tal cual en vez de
+// escribir otra lista de aceptar/descartar que se separaría con el tiempo.
+import Hallazgos from './soporte/Hallazgos';
 import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
 import Cargando, { Corazones } from './ui/Cargando';
 import KpiCard from './ui/KpiCard';
@@ -66,6 +69,14 @@ const VISTAS: { id: string; l: string; f: (m: any) => boolean; agrupa?: boolean 
   // pendiente suelto que pidieron por WhatsApp. La categoría `pendiente` casi no
   // se usa (1 de 40) porque hasta ahora no había dónde capturarla suelta.
   { id: 'ideas',    l: 'Ideas pendientes', f: m => m.estado === 'idea' || ['pendiente', 'otro'].includes(m.categoria) },
+  /* Lo que salió de leer el chat de soporte y espera que lo aceptes o lo
+     descartes. Era un aviso morado ENCIMA del título y de las cuatro cifras:
+     una bandeja de entrada pesando más que la página entera, y saliendo hasta
+     en Capacitaciones, donde no tiene nada que ver. Aquí tiene su pantalla y
+     el resto de las vistas se quedan limpias. `f` no se usa —la lista la pinta
+     el componente de Soporte, no las mejoras—, pero se declara para no romper
+     el tipo de VISTAS. */
+  { id: 'revisar',  l: 'Por revisar',      f: () => false },
 ];
 
 // ── El estado, ahora como filtro ──
@@ -172,44 +183,6 @@ function Desplegable({ etiqueta, valor, opciones, onCambio }: {
  * a buscarla a otra pantalla. Solo aparece cuando hay algo: un aviso que está
  * siempre deja de leerse en una semana.
  */
-function AvisoHallazgos() {
-  const [r, setR] = useState<any>(null);
-  useEffect(() => {
-    let vivo = true;
-    fetch('/api/crm/soporte/hallazgos?estado=pendiente')
-      .then(x => x.json()).then(j => { if (vivo && !j.error) setR(j.resumen || null); })
-      .catch(() => {});
-    return () => { vivo = false; };
-  }, []);
-  const n = r?.pendientes || 0;
-  if (!n) return null;
-  const t = r?.por_tipo || {};
-  // El desglose tiene que sumar el total o el aviso se contradice solo: decía
-  // "85 revisiones" y enumeraba 31 porque las dudas no estaban en la lista.
-  const partes = [
-    t.duda ? `${t.duda} ${t.duda === 1 ? 'duda de capacitación' : 'dudas de capacitación'}` : '',
-    t.mejora ? `${t.mejora} ${t.mejora === 1 ? 'mejora' : 'mejoras'}` : '',
-    t.oportunidad ? `${t.oportunidad} ${t.oportunidad === 1 ? 'oportunidad' : 'oportunidades'}` : '',
-    t.riesgo ? `${t.riesgo} de riesgo` : '',
-    t.testimonio ? `${t.testimonio} ${t.testimonio === 1 ? 'testimonio' : 'testimonios'}` : '',
-  ].filter(Boolean);
-  return (
-    <div style={{ background: '#EEECFE', border: '1px solid #cdbdf7', borderRadius: 11, padding: '12px 15px', marginBottom: 14, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-      <div style={{ flex: 1, minWidth: 240, fontSize: '0.8rem', color: '#5B4BD6', lineHeight: 1.55 }}>
-        <b>Tienes {n} {n === 1 ? 'revisión pendiente' : 'revisiones pendientes'} de lo que los clientes pidieron por soporte</b>
-        {partes.length > 0 && <> — {partes.join(', ')}.</>}
-        <div style={{ fontSize: '0.72rem', color: '#6d4bc7', opacity: 0.85, marginTop: 2 }}>
-          Salieron de leer el chat de Intercom anoche. Acepta las que apliquen y se crean aquí o en la bandeja de oportunidades.
-        </div>
-      </div>
-      <button onClick={() => window.dispatchEvent(new CustomEvent('sacs-ir-tab', { detail: 'soporte' }))}
-        style={{ border: 'none', borderRadius: 9, padding: '8px 16px', background: '#5B4BD6', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-        Revisarlas
-      </button>
-    </div>
-  );
-}
-
 export default function MejorasTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
@@ -228,6 +201,20 @@ export default function MejorasTab() {
   const [fEstado, setFEstado] = useState<string>('todo');
   const [fOrigen, setFOrigen] = useState<string>('todo');   // de dónde salió
   const [verSemana, setVerSemana] = useState(false);
+  /* El resumen de la bandeja de soporte, solo para el contador de la pestaña.
+     Cuenta lo que PIDE TU DECISIÓN —mejora, oportunidad, riesgo— y no el total:
+     de 86 pendientes, 55 son dudas de clientes ("cómo cambio la contraseña"),
+     que no se autorizan, se contestan con capacitación. El aviso viejo decía 86
+     y te reclamaba atención sobre el triple de lo que de verdad resuelves. */
+  const [hall, setHall] = useState<any>(null);
+  const cargarHallazgos = useCallback(() => {
+    fetch('/api/crm/soporte/hallazgos?estado=pendiente')
+      .then(x => x.json()).then(j => { if (!j.error) setHall(j.resumen || null); })
+      .catch(() => {});
+  }, []);
+  useEffect(() => { cargarHallazgos(); }, [cargarHallazgos]);
+  const porTipo = hall?.por_tipo || {};
+  const nDecidir = (porTipo.mejora || 0) + (porTipo.oportunidad || 0) + (porTipo.riesgo || 0);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -656,7 +643,6 @@ export default function MejorasTab() {
         @media (max-width: 1100px) { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 620px)  { .cons-alertas { grid-template-columns:1fr; } }
       `}</style>
-      <AvisoHallazgos />
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
@@ -690,7 +676,7 @@ export default function MejorasTab() {
       {/* ── Las vistas ── */}
       <div className="crm-scroll-x" style={{ display: 'flex', gap: 2, borderBottom: '1px solid #ececf2', marginBottom: 16 }}>
         {VISTAS.map(v => {
-          const n = (rows || []).filter(v.f).length;
+          const n = v.id === 'revisar' ? nDecidir : (rows || []).filter(v.f).length;
           const on = vista === v.id;
           // Cuántas de esta vista van tarde: el conteo en rojo dice dónde arde.
           const urge = (rows || []).filter(m => v.f(m) && idsVencidas.has(m.id)).length > 0;
@@ -712,6 +698,21 @@ export default function MejorasTab() {
           );
         })}
       </div>
+
+      {/* La bandeja de soporte, en su propia vista. Todo lo de abajo —filtros,
+          agrupación por cuenta, la lista de mejoras— es de las mejoras y aquí
+          no aplica, así que se sale antes. */}
+      {vista === 'revisar' ? (
+        <>
+          <div style={{ fontSize: '0.79rem', color: '#6b7280', lineHeight: 1.55, marginBottom: 12 }}>
+            Lo que salió de leer el chat de soporte anoche. <b style={{ color: '#241d43' }}>{nDecidir} piden tu decisión</b>
+            {porTipo.duda ? <> · {porTipo.duda} son dudas de clientes, que no se autorizan: se contestan con capacitación</> : null}
+            {porTipo.testimonio ? <> · {porTipo.testimonio} {porTipo.testimonio === 1 ? 'testimonio' : 'testimonios'}</> : null}.
+            Al aceptar una, se crea aquí en Consultoría o en la bandeja de oportunidades.
+          </div>
+          <Hallazgos sinTope onAbrirCliente={(id: string) => setAbierto(id)} onCambio={() => { cargar(); cargarHallazgos(); }} />
+        </>
+      ) : (<>
 
       {vista === 'todo' && repetidas.length > 0 && (
         <div style={{ ...S.card, background: '#f6f9ff', borderColor: '#cfe0fa' }}>
@@ -811,6 +812,8 @@ export default function MejorasTab() {
           })
           : lista.map(m => renglon(m, true))}
       </div>
+
+      </>)}
 
       {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
       {aviso && (
