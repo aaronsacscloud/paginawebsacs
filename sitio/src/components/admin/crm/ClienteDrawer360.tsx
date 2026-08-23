@@ -414,8 +414,17 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [co?.id]);
 
-  const [periodo, setPeriodo] = useState<'30d' | '12m'>('30d');
-  const [ventana, setVentana] = useState<'7d' | '30d'>('30d');
+  /* UN SOLO PERIODO para toda la pestaña. Antes había tres ventanas sueltas
+     —Facturación con 30d/12m, "Cómo lo está usando" con 7d/30d y dos bloques
+     con la ventana clavada en el título— así que se podían estar viendo cuatro
+     tramos de tiempo distintos en la misma pantalla sin darse cuenta.
+     El 12 meses se quitó a propósito: era `total_30d × 12`, una proyección, no
+     lo que el cliente facturó. Vuelve cuando el puente guarde cierres
+     mensuales de verdad. */
+  const [periodo, setPeriodo] = useState<'7d' | '30d'>('30d');
+  const es7 = periodo === '7d';
+  const diasPeriodo = es7 ? 7 : 30;
+  const campoDocs: 'docs_7d' | 'docs_30d' = es7 ? 'docs_7d' : 'docs_30d';
   const uso = co?.uso_sacs || null;
   const tend = act?.tendencia_pct;
 
@@ -429,15 +438,24 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const t30 = Number(act?.total_30d || 0);
   const v30 = Number(act?.ventas_30d || 0);
   const v7 = Number(act?.ventas_7d || 0);
+  // `total_7d` es nuevo en el puente: una cuenta que no se ha vuelto a
+  // sincronizar no lo trae todavía, y en ese caso vale más un guion que un
+  // importe de otra ventana disfrazado de semana.
+  const t7 = act?.total_7d != null ? Number(act.total_7d) : null;
+  const montoP = es7 ? t7 : t30;
+  const ventasP = es7 ? v7 : v30;
+  const tendP = es7 ? (act?.tendencia_7d_pct ?? null) : (act?.tendencia_pct ?? null);
+  const etiquetaPeriodo = es7 ? 'los últimos 7 días' : 'los últimos 30 días';
+  const etiquetaPrevio = es7 ? 'la semana anterior' : 'el mes anterior';
 
   const modulos: any[] = Array.isArray(uso?.modulos) ? uso.modulos : [];
-  const top5 = modulos.filter(m => Number(m.docs_30d || 0) > 0)
-    .sort((a, b) => Number(b.docs_30d || 0) - Number(a.docs_30d || 0)).slice(0, 5);
+  const top5 = modulos.filter(m => Number(m[campoDocs] || 0) > 0)
+    .sort((a, b) => Number(b[campoDocs] || 0) - Number(a[campoDocs] || 0)).slice(0, 5);
   // La barra se mide contra el SEGUNDO lugar: con el punto de venta en 66,850 y
   // el resto por debajo de 500, medir contra el primero dejaría todo lo demás
   // como una raya y no se distinguiría transferencias de cortes de caja.
-  const tope = Math.max(1, Number(top5[1]?.docs_30d || top5[0]?.docs_30d || 1));
-  const docs = (nombre: string, campo: 'docs_7d' | 'docs_30d' = 'docs_7d') =>
+  const tope = Math.max(1, Number(top5[1]?.[campoDocs] || top5[0]?.[campoDocs] || 1));
+  const docs = (nombre: string, campo: 'docs_7d' | 'docs_30d' = campoDocs) =>
     Number(modulos.find(m => m.modulo === nombre)?.[campo] || 0);
 
   const familias = FAMILIAS.map(f => {
@@ -445,18 +463,22 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
     return {
       nombre: FAM_LABEL[f] || f, total: items.length,
       usa: items.filter(m => m.usa).length,
-      mov: items.reduce((a, m) => a + Number(m.docs_30d || 0), 0),
+      mov: items.reduce((a, m) => a + Number(m[campoDocs] || 0), 0),
     };
   }).filter(f => f.total > 0);
   const nunca = modulos.filter(m => !m.usa && !Number(m.docs_30d || 0)).map(m => m.modulo);
 
+  /* Todo sale de la MATRIZ de módulos, que trae las dos ventanas. Antes la
+     mitad venía de `uso.transferencias.total_7d` y compañía, que solo existen a
+     7 días: por eso este bloque se llamaba "Últimos 7 días" y no obedecía al
+     resto de la pantalla. */
   const sietes: [string, number][] = uso ? [
     ['Ventas en piso', docs('Punto de venta')],
-    ['Transferencias', Number(uso?.transferencias?.total_7d || 0)],
-    ['Facturas timbradas', Number(uso?.facturacion?.timbradas_7d || 0)],
-    ['Clientes nuevos', Number(uso?.clientes?.nuevos_7d || 0)],
+    ['Transferencias', docs('Transferencias')],
+    ['Facturas timbradas', docs('Facturación electrónica')],
+    ['Clientes nuevos', docs('Catálogo de clientes')],
     ['Pedidos / eCommerce', docs('Pedidos / eCommerce')],
-    ['Conteos físicos', Number(uso?.conteos?.total_7d || 0)],
+    ['Conteos físicos', docs('Conteos físicos')],
     ['Apartados', docs('Apartados')],
     ['Órdenes de compra', docs('Órdenes de compra')],
   ] : [];
@@ -473,6 +495,23 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
   return (
     <div>
+      {/* El control manda sobre TODA la pestaña y se queda pegado al hacer
+          scroll: si se va con el scroll, abajo no se sabe qué tramo se está
+          leyendo. */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 3, display: 'flex', alignItems: 'center', gap: 12,
+        flexWrap: 'wrap', background: '#fff', border: '1px solid #eeeef1', borderRadius: 12,
+        padding: '10px 14px', marginBottom: 12,
+      }}>
+        <span style={{ fontSize: '0.64rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#a5a2af' }}>Periodo</span>
+        <span style={cajaSeg}>
+          {(['7d', '30d'] as const).map(k => (
+            <button key={k} onClick={() => setPeriodo(k)} style={seg(periodo === k)}>{k === '7d' ? '7 días' : '30 días'}</button>
+          ))}
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#a5a2af' }}>Todo lo de abajo es de {etiquetaPeriodo}</span>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 16 }}>
         <div style={kpi}>
           <div style={D.kl}>Sucursales vendiendo</div>
@@ -490,23 +529,20 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
         </div>
         <div style={kpi}>
           <div style={D.kl}>Facturación</div>
-          <div style={{ ...num, marginTop: 5, color: '#1E8A63' }}>{money(periodo === '12m' ? t30 * 12 : t30)}</div>
-          <div style={{ marginTop: 7 }}>
-            <span style={cajaSeg}>
-              {(['30d', '12m'] as const).map(k => (
-                <button key={k} onClick={() => setPeriodo(k)} style={seg(periodo === k)}>{k === '30d' ? '30 días' : '12 meses'}</button>
-              ))}
-            </span>
+          <div style={{ ...num, marginTop: 5, color: montoP == null ? '#c2c0c9' : '#1E8A63' }}>{montoP == null ? '—' : money(montoP)}</div>
+          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
+            {montoP == null
+              ? 'el importe de la semana se calcula en la próxima sincronización'
+              : (tendP != null
+                  ? <><b style={{ color: tendP >= 0 ? '#1E8A63' : '#C0554E' }}>{tendP >= 0 ? '↑' : '↓'}{Math.abs(Math.round(tendP))}%</b> vs. {etiquetaPrevio}</>
+                  : <>en {etiquetaPeriodo}</>)}
           </div>
-          {/* En una cuenta de eventos el mes suelto engaña: el anual es una
-              proyección del último mes, y se dice que lo es. */}
-          {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 4 }}>proyectado del último mes</div>}
         </div>
         <div style={kpi}>
           <div style={D.kl}>Ventas</div>
-          <div style={{ ...num, marginTop: 5 }}>{v30.toLocaleString('es-MX')}</div>
+          <div style={{ ...num, marginTop: 5 }}>{ventasP.toLocaleString('es-MX')}</div>
           <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
-            {tend != null ? <><b style={{ color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '↑' : '↓'}{Math.abs(Math.round(tend))}%</b> vs. mes anterior</> : 'en 30 días'}
+            {tendP != null ? <><b style={{ color: tendP >= 0 ? '#1E8A63' : '#C0554E' }}>{tendP >= 0 ? '↑' : '↓'}{Math.abs(Math.round(tendP))}%</b> vs. {etiquetaPrevio}</> : <>en {etiquetaPeriodo}</>}
           </div>
         </div>
       </div>
@@ -540,16 +576,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
       {act && (
         <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
-          <div style={D.h}>
-            Cómo lo está usando
-            <span style={{ marginLeft: 'auto' }}>
-              <span style={cajaSeg}>
-                {(['7d', '30d'] as const).map(k => (
-                  <button key={k} onClick={() => setVentana(k)} style={seg(ventana === k)}>{k === '7d' ? '7 días' : '30 días'}</button>
-                ))}
-              </span>
-            </span>
-          </div>
+          <div style={D.h}>Cómo lo está usando</div>
           {/* Estos números vienen del cron; si el cron se cae, siguen pintándose
               igual y se leen como si fueran de hoy (pasó 6 días en jul-2026). */}
           <DatosDesactualizados syncAt={co.actividad_sync_at} />
@@ -560,20 +587,20 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
           )}
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div>
-              <div style={num}>{(ventana === '7d' ? v7 : v30).toLocaleString('es-MX')}</div>
+              <div style={num}>{ventasP.toLocaleString('es-MX')}</div>
               <div style={cap}>Ventas</div>
             </div>
             <div>
-              <div style={num}>{Math.round((ventana === '7d' ? v7 / 7 : v30 / 30)).toLocaleString('es-MX')}</div>
+              <div style={num}>{Math.round(ventasP / diasPeriodo).toLocaleString('es-MX')}</div>
               <div style={cap}>Por día</div>
             </div>
             <div>
-              <div style={{ ...num, color: '#1E8A63' }}>{money(t30)}</div>
-              <div style={cap}>Monto 30 días</div>
+              <div style={{ ...num, color: montoP == null ? '#c2c0c9' : '#1E8A63' }}>{montoP == null ? '—' : money(montoP)}</div>
+              <div style={cap}>Monto del periodo</div>
             </div>
-            {tend != null && (
+            {tendP != null && (
               <div>
-                <div style={{ ...num, color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '+' : ''}{Math.round(tend)}%</div>
+                <div style={{ ...num, color: tendP >= 0 ? '#1E8A63' : '#C0554E' }}>{tendP >= 0 ? '+' : ''}{Math.round(tendP)}%</div>
                 <div style={cap}>Tendencia</div>
               </div>
             )}
@@ -600,19 +627,15 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
       {top5.length > 0 && (
         <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
           <div style={D.h}>Los módulos que más usa</div>
-          <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', color: '#c2c0c9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', paddingBottom: 4, borderBottom: '1px solid #f4f3f7' }}>
-            <span style={{ width: 184 }} /><span style={{ flex: 1 }} />
-            <span style={{ width: 74, textAlign: 'right' }}>30 días</span>
-            <span style={{ width: 74, textAlign: 'right' }}>7 días</span>
-          </div>
+          {/* Una sola columna: la del periodo elegido. Las dos columnas fijas
+              (30 días y 7 días) contradecían al control de arriba. */}
           {top5.map((m, i) => (
             <div key={m.modulo} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0' }}>
               <div style={{ fontSize: '0.79rem', fontWeight: 700, width: 184, flexShrink: 0 }}>{m.modulo}</div>
               <div style={{ flex: 1, height: 8, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden' }}>
-                <span style={{ display: 'block', height: '100%', borderRadius: 9, background: i === 0 ? '#9B8CFA' : i < 3 ? '#b8a8fb' : '#d4cafd', width: `${Math.min(100, (Number(m.docs_30d) / tope) * 100)}%` }} />
+                <span style={{ display: 'block', height: '100%', borderRadius: 9, background: i === 0 ? '#9B8CFA' : i < 3 ? '#b8a8fb' : '#d4cafd', width: `${Math.min(100, (Number(m[campoDocs]) / tope) * 100)}%`, transition: 'width .35s ease' }} />
               </div>
-              <div style={{ fontSize: '0.77rem', fontWeight: 800, width: 74, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m.docs_30d).toLocaleString('es-MX')}</div>
-              <div style={{ fontSize: '0.7rem', color: '#b3afbd', width: 74, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m.docs_7d || 0).toLocaleString('es-MX')}</div>
+              <div style={{ fontSize: '0.77rem', fontWeight: 800, width: 82, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m[campoDocs] || 0).toLocaleString('es-MX')}</div>
             </div>
           ))}
           <div style={{ fontSize: '0.68rem', color: '#c2c0c9', marginTop: 9 }}>
@@ -623,7 +646,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
       {uso && (
         <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
-          <div style={D.h}>Últimos 7 días</div>
+          <div style={D.h}>Movimiento en {etiquetaPeriodo}</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', borderTop: '1px solid #f4f3f7' }}>
             {sietes.map(([l, v]) => (
               <div key={l} style={{ padding: '13px 4px 3px' }}>

@@ -11,8 +11,10 @@ import { supabase } from '../supabase';
 
 export type Actividad = {
   ultima_venta?: string | null;
-  ventas_7d?: number; ventas_30d?: number; total_30d?: number;
+  ventas_7d?: number; total_7d?: number; ventas_30d?: number; total_30d?: number;
   ventas_30d_prev?: number; total_30d_prev?: number; tendencia_pct?: number | null;
+  // La semana contra la semana anterior: la tendencia del periodo de 7 días.
+  ventas_7d_prev?: number; total_7d_prev?: number; tendencia_7d_pct?: number | null;
   modulos?: string[];
   usuarios?: number; usuarios_operando?: number; ultimo_usuario_at?: string | null;
   sucursales?: number;                   // las que OPERAN (venta en 30d)
@@ -127,11 +129,22 @@ export function agregarActividad(porCuenta: Record<string, Actividad | null | un
 
   const total30 = suma(partes, 'total_30d');
   const prev30 = suma(partes, 'total_30d_prev');
+  const total7 = suma(partes, 'total_7d');
+  const prev7 = suma(partes, 'total_7d_prev');
   const modulos = Array.from(new Set(partes.flatMap(p => p.modulos || []))).sort();
 
   return {
     ultima_venta: maxFecha(partes, 'ultima_venta'),
     ventas_7d: suma(partes, 'ventas_7d'),
+    total_7d: total7,
+    ventas_7d_prev: suma(partes, 'ventas_7d_prev'),
+    total_7d_prev: prev7,
+    // La tendencia se recalcula sobre los MONTOS sumados, no se promedian los
+    // porcentajes de cada cuenta (un 200% sobre $500 no pesa lo mismo que un
+    // −5% sobre $400,000).
+    tendencia_7d_pct: (prev7 != null && prev7 > 0 && total7 != null)
+      ? Math.round(((total7 - prev7) / prev7) * 1000) / 10
+      : null,
     ventas_30d: suma(partes, 'ventas_30d'),
     total_30d: total30,
     ventas_30d_prev: suma(partes, 'ventas_30d_prev'),
