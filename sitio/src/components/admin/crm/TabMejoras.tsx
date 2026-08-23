@@ -129,7 +129,10 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
      vuelve a ofrecer: se dice cuántas hay abajo y se acabó la duplicación.
      Se ordenan por peso, que es como el motor las prioriza. */
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
-  const tiposYaIdea = new Set(rows.filter(m => m.senal_tipo && m.estado !== 'descartada').map(m => m.senal_tipo));
+  // Cuenta CUALQUIER renglón con ese tipo, incluido el descartado: descartar una
+  // sugerencia es un renglón 'descartada' con su senal_tipo —no aparece en
+  // ninguna lista— y así "no aplica" también la calla, sin tabla nueva.
+  const tiposYaIdea = new Set(rows.filter(m => m.senal_tipo).map(m => m.senal_tipo));
   const sugerencias = senales.filter(s => !tiposYaIdea.has(s.tipo));
   const sugYaEnLista = senales.length - sugerencias.length;
 
@@ -147,6 +150,19 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       titulo: sn.accion.replace(/^ofr[eé]cele\s+/i, '').replace(/\.$/, '').trim().slice(0, 200),
       descripcion: `${sn.titulo}. ${sn.detalle}`,
       estado: 'idea', categoria, senal_tipo: sn.tipo, visible_cliente: true, origen: 'manual',
+    });
+  }
+
+  /** "No aplica" / "ya la tengo": se guarda un renglón DESCARTADO con el tipo
+   *  de la señal. No sale en ninguna lista y el motor deja de proponerla. Es lo
+   *  que resuelve las duplicadas viejas, que se capturaron a mano y por eso no
+   *  traen `senal_tipo`. */
+  async function descartarSenal(sn: any) {
+    if (!confirm(`Dejar de sugerir "${sn.titulo}".\n\n¿Es porque ya la tienes en la lista o porque no aplica para este cliente?\n\nEn los dos casos se deja de ofrecer.`)) return;
+    await guardar({
+      titulo: sn.accion.replace(/^ofr[eé]cele\s+/i, '').replace(/\.$/, '').trim().slice(0, 200),
+      descripcion: `Sugerencia descartada: ${sn.titulo}`,
+      estado: 'descartada', categoria: 'otro', senal_tipo: sn.tipo, visible_cliente: false, origen: 'manual',
     });
   }
 
@@ -210,7 +226,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
      adorno: dice que es un recorrido, no tres listas sueltas que compiten.
      Antes eran cuatro bloques del mismo peso —incluido uno de señales que
      repetía lo de abajo— y no había forma de saber por dónde empezar. */
-  const Hito = ({ n, titulo, color, resumen, children }: any) => (
+  const Hito = ({ n, titulo, color, resumen, accion, children }: any) => (
     <div style={{ position: 'relative', marginBottom: 18 }}>
       <span style={{
         position: 'absolute', left: -24, top: 4, width: 14, height: 14, borderRadius: 99,
@@ -221,6 +237,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
           {n} · {titulo}
         </span>
         <span style={{ fontSize: '0.7rem', color: '#a5a2af', marginLeft: 'auto' }}>{resumen}</span>
+        {accion}
       </div>
       <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
         {children}
@@ -283,14 +300,14 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
       </div>
 
       <div style={{ position: 'relative', paddingLeft: 26 }}>
-        <span style={{ position: 'absolute', left: 7, top: 6, bottom: 20, width: 2, background: '#ececec' }} />
+        {/* El hilo en el lila del sistema y no en gris: sobre el fondo de la
+            ficha un #ececec desaparece y los tres puntos quedan sueltos. */}
+        <span style={{ position: 'absolute', left: 7, top: 6, bottom: 24, width: 2, background: '#ddd6fb', borderRadius: 2 }} />
 
         {/* 1 · Lo que le debes */}
         <Hito n={1} titulo="Por hacer" color="#9B8CFA"
-          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada comprometido'}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: porHacer ? 2 : 8 }}>
-            <button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>
-          </div>
+          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada comprometido'}
+          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>}>
           {porHacer === 0 && (
             <div style={{ color: '#999', fontSize: '0.82rem' }}>
               Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí.
@@ -309,10 +326,8 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
         {/* 2 · Lo que le puedes vender: las sugerencias del sistema y tus ideas
             en la MISMA lista. Eran dos bloques que decían lo mismo. */}
         <Hito n={2} titulo="Por vender" color="#7DA6F5"
-          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-            <button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>
-          </div>
+          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}
+          accion={<button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>}>
 
           {(sugerencias.length > 0 || sugYaEnLista > 0) && (
             <div style={{ border: '1px dashed #cfe0fa', background: '#E3EDFD', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
@@ -332,7 +347,10 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
                     <div style={{ fontSize: '0.73rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{sn.detalle}</div>
                     <div style={{ fontSize: '0.73rem', color: '#241d43', marginTop: 3 }}><b>{sn.nivel === 'riesgo' ? 'Hacer:' : 'Ofrecerle:'}</b> {sn.accion}</div>
                   </div>
-                  <button style={{ ...S.btnAzul, flexShrink: 0 }} onClick={() => adoptarSenal(sn)}>Agregar a la lista</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
+                    <button style={S.btnAzul} onClick={() => adoptarSenal(sn)}>Agregar a la lista</button>
+                    <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => descartarSenal(sn)} title="Ya la tienes en la lista, o no aplica para este cliente">No sugerirla</button>
+                  </div>
                 </div>
               ))}
               {sugYaEnLista > 0 && (
