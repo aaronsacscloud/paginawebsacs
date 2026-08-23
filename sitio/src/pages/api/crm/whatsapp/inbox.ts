@@ -16,6 +16,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
+import { cumpleVista, type ConfigVista } from '../../../../lib/whatsapp/filtros';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -33,10 +34,13 @@ export const GET: APIRoute = async ({ request, url }) => {
   const asignado = url.searchParams.get('asignado') || '';
   const estado = url.searchParams.get('estado') || '';
   const sinContacto = url.searchParams.get('sin_contacto') === '1';
+  // Vista custom (builder): ?vista=<json urlencoded> {modo, logica, condiciones}
+  let vista: ConfigVista | null = null;
+  try { const raw = url.searchParams.get('vista'); if (raw) vista = JSON.parse(raw); } catch { vista = null; }
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
-  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo), companies(id, nombre, nombre_comercial, plan, mrr)';
+  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account)';
   const [{ data: convsWa, error }, { data: convsEm }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
@@ -54,6 +58,12 @@ export const GET: APIRoute = async ({ request, url }) => {
     id: c.companies.id, nombre: c.companies.nombre_comercial || c.companies.nombre,
     plan: c.companies.plan, mrr: c.companies.mrr,
   } : null;
+  const extraDe = (c: any) => ({
+    fuente: c.contacts?.fuente || null, creado: c.contacts?.created_at || null,
+    sucursales: c.companies?.sucursales ?? null, giro: c.companies?.giro || null,
+    estado_cuenta: c.companies?.estado_cuenta || null, sacs_account: c.companies?.sacs_account || null,
+    etiquetas: [] as string[],
+  });
 
   // ── Filas base de WhatsApp ──
   const porClave = new Map<string, any>();
@@ -67,6 +77,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
       asignado_a: c.asignado_a, contact_id: c.contact_id, company_id: c.company_id,
       contacto: contactoDe(c), empresa: empresaDe(c),
+      _extra: extraDe(c),
     };
     const clave = c.contact_id ? `ct:${c.contact_id}` : `wa:${c.id}`;
     const previa = porClave.get(clave);
@@ -102,11 +113,32 @@ export const GET: APIRoute = async ({ request, url }) => {
         estado_crm: ce.estado === 'cerrada' ? 'resuelta' : 'abierta', snooze_until: null,
         asignado_a: ce.asignado_a || null, contact_id: ce.contact_id, company_id: ce.company_id,
         contacto: contactoDe(ce), empresa: empresaDe(ce),
+        _extra: extraDe(ce),
+      });
+    }
+  }
+  // Contactos SIN conversación (filas virtuales) cuando la vista los pide.
+  if (vista && (vista.modo === 'todas' || vista.modo === 'solo_contactos')) {
+    const { data: cts } = await supabase.from('contacts')
+      .select('id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, whatsapp, telefono, company_id, companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account)')
+      .is('archived_at', null).limit(600);
+    for (const ct of cts || []) {
+      const clave = `ct:${ct.id}`;
+      if (porClave.has(clave)) continue;   // ya tiene conversación
+      const wrap = { contacts: ct, companies: ct.companies };
+      porClave.set(clave, {
+        id: `virtual:${ct.id}`, wa_id: null, email_id: null, canales: [], virtual: true,
+        telefono: ct.whatsapp || ct.telefono || ct.email || '', estado: 'active',
+        ultimo_mensaje_at: ct.created_at, ultimo_mensaje_texto: null,
+        ultima_direccion: null, ultimo_canal: null, no_leidos: 0,
+        estado_crm: 'abierta', snooze_until: null,
+        asignado_a: null, contact_id: ct.id, company_id: ct.company_id,
+        contacto: contactoDe(wrap), empresa: empresaDe(wrap), _extra: extraDe(wrap),
       });
     }
   }
   const todas = [...porClave.values()]
-    .sort((a, b) => String(b.ultimo_mensaje_at).localeCompare(String(a.ultimo_mensaje_at)));
+    .sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || '')));
 
   // ── Contadores del rail sobre el universo unificado ──
   const ahora = new Date().toISOString();
@@ -120,6 +152,21 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (c.no_leidos > 0) counts.no_leidas++;
     const e = c.contacto?.lifecycle_stage;
     if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
+  }
+
+  // Etiquetas: si la vista o el filtro las usan, se cargan y se pegan a _extra.
+  const vistaUsaEtiquetas = !!vista?.condiciones?.some(c => c.campo === 'etiqueta');
+  if (vistaUsaEtiquetas) {
+    const ids = [...new Set(todas.map(c => c.company_id).filter(Boolean))];
+    const { data: asig } = ids.length
+      ? await supabase.from('crm_etiqueta_asignaciones')
+          .select('etiqueta_id, entidad_id').eq('entidad', 'company').in('entidad_id', ids)
+      : { data: [] as any[] };
+    const mapa = new Map<string, string[]>();
+    for (const a of asig || []) {
+      const arr = mapa.get(a.entidad_id) || []; arr.push(a.etiqueta_id); mapa.set(a.entidad_id, arr);
+    }
+    for (const c of todas) if (c.company_id) c._extra.etiquetas = mapa.get(c.company_id) || [];
   }
 
   // Etiquetas de la empresa (solo si el filtro las pide: una query extra).
@@ -148,6 +195,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   else if (asignado) lista = lista.filter(c => c.asignado_a === asignado);
   if (estado) lista = lista.filter(c => (c.estado_crm || 'abierta') === estado);
   if (sinContacto) lista = lista.filter(c => !c.contact_id);
+  if (vista) {
+    if (vista.modo === 'solo_contactos') lista = lista.filter(c => c.virtual);
+    else if (vista.modo !== 'todas') lista = lista.filter(c => !c.virtual);
+    lista = lista.filter(c => cumpleVista(c, vista!));
+  } else lista = lista.filter(c => !c.virtual);
   if (search) {
     const q = search.toLowerCase();
     const qLimpio = q.replace(/[%,()]/g, '');

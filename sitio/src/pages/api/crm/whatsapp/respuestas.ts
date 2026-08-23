@@ -17,6 +17,12 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
+  // Contador de uso (chip "Popular" del composer): fire-and-forget del front.
+  if (b.uso) {
+    const { data } = await supabase.from('wa_respuestas').select('usage_count').eq('id', b.uso).maybeSingle();
+    await supabase.from('wa_respuestas').update({ usage_count: (data?.usage_count || 0) + 1 }).eq('id', b.uso);
+    return json({ ok: true });
+  }
   const atajo = String(b.atajo || '').trim().toLowerCase().replace(/^\//, '').replace(/[^a-z0-9_-]/g, '');
   const texto = String(b.texto || '').trim();
   if (!atajo || !texto) return json({ error: 'Faltan atajo y texto' }, 400);
