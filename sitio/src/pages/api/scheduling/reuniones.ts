@@ -212,7 +212,18 @@ export const POST: APIRoute = async ({ request }) => {
   const quiereGoogle = b?.google_calendar !== false;
   let enGoogle = 0;
   let falloGoogle = 0;
+  /* La conexión con Google es POR PERSONA del equipo, no de la cuenta. Si
+     agendas tú y el calendario está conectado bajo otro usuario, no hay a qué
+     agenda escribir. Antes eso pasaba en silencio —la reunión se guardaba y
+     nunca aparecía en el calendario— y era imposible saber por qué. */
+  let sinConexion = false;
   if (quiereGoogle && creadas?.length) {
+    const hostId = fila.host_id;
+    const { data: conexion } = await supabase.from('calendar_connections')
+      .select('email').eq('team_member_id', hostId).eq('provider', 'google').eq('activo', true).maybeSingle();
+    if (!conexion) sinConexion = true;
+  }
+  if (quiereGoogle && !sinConexion && creadas?.length) {
     const hostId = fila.host_id;
     const resumen = fila.asunto || tipo.nombre;
     const desc = [fila.invitee_empresa, fila.invitee_notas].filter(Boolean).join('\n\n');
@@ -245,7 +256,7 @@ export const POST: APIRoute = async ({ request }) => {
     data: creadas?.[0] || null,
     creadas: creadas?.length || 0,
     serie_id: serieId,
-    google: { creados: enGoogle, fallidos: falloGoogle, pedido: quiereGoogle },
+    google: { creados: enGoogle, fallidos: falloGoogle, pedido: quiereGoogle, sin_conexion: sinConexion },
   }, 201);
 };
 

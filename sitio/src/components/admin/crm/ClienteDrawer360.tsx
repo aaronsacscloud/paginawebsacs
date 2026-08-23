@@ -3108,7 +3108,9 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
     setGuardando(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo agendar.'); return; }
     // Que Google falle no invalida lo agendado: se dice y ya.
-    if (r.google?.pedido && r.google?.fallidos > 0) {
+    if (r.google?.sin_conexion) {
+      alert(`Se ${r.creadas === 1 ? 'agendó la reunión' : `agendaron ${r.creadas} reuniones`}, pero no se crearon en Google Calendar: tu usuario no tiene calendario conectado.\n\nLa conexión es por persona del equipo. Conéctala en Configuración → Reuniones → Agenda y las próximas sí caerán en tu agenda.`);
+    } else if (r.google?.pedido && r.google?.fallidos > 0) {
       alert(`Se agendaron ${r.creadas}, pero ${r.google.fallidos} no se pudieron crear en Google Calendar.\n\nRevisa la conexión en Configuración → Reuniones → Agenda.`);
     }
     onListo();
