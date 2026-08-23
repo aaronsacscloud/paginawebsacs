@@ -26,6 +26,28 @@ const TABS: { id: Tab; Ico: any; t: string; accent?: boolean }[] = [
   { id: 'notas', Ico: IcoBurbuja, t: 'Notas' },
 ];
 
+// ── Tarjeta KPI del panel: franja de color, etiqueta versalitas, cifra en tinta.
+//    Clickeable: abre el detalle de esa tarjeta (breadcrumb ← Resumen). ──
+function TarjetaKpi({ color, tinta, etiqueta, cifra, sub, onClick }: { color: string; tinta: string; etiqueta: string; cifra: string; sub?: string; onClick?: () => void }) {
+  const activa = !!onClick;
+  return (
+    <button onClick={onClick} disabled={!activa} style={{
+      textAlign: 'left', fontFamily: 'inherit', background: '#fff', borderRadius: 10,
+      border: `1px solid ${C.g100}`, borderLeft: `3px solid ${color}`, padding: '9px 11px',
+      cursor: activa ? 'pointer' : 'default', display: 'block', width: '100%', minWidth: 0,
+    }}
+      onMouseEnter={e => { if (activa) { e.currentTarget.style.borderColor = '#d5cdf9'; e.currentTarget.style.borderLeftColor = color; e.currentTarget.style.background = 'rgba(249,248,255,.8)'; } }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = C.g100; e.currentTarget.style.borderLeftColor = color; e.currentTarget.style.background = '#fff'; }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: C.g400 }}>{etiqueta}</span>
+        {activa && <span aria-hidden style={{ marginLeft: 'auto', color: C.g300, fontSize: 10 }}>›</span>}
+      </span>
+      <b style={{ display: 'block', fontSize: 14.5, color: tinta, letterSpacing: '-0.01em', margin: '2px 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{cifra}</b>
+      {sub && <span style={{ display: 'block', fontSize: 10, color: C.g400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</span>}
+    </button>
+  );
+}
+
 // ── CollapsibleSection (portado) ──
 function Seccion({ id, titulo, n, abiertaDefault, children }: { id: string; titulo: string; n?: number | null; abiertaDefault?: boolean; children: React.ReactNode }) {
   const KEY = 'wa_panel_secciones';
@@ -148,6 +170,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const [tab, setTab] = useState<Tab>('info');
   const [abiertoPanel, setAbiertoPanel] = useState(true);
   const [subInfo, setSubInfo] = useState<'info' | 'actividad'>('info');
+  const [detalle, setDetalle] = useState<string | null>(null);   // drill-down de una tarjeta (breadcrumb ← Resumen)
   const [ficha, setFicha] = useState(false);
   const [alta, setAlta] = useState<{ empresa: string; contacto: string; email: string } | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -165,7 +188,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   useEffect(() => {
     const k = `${conv?.id}|${conv?.company_id}|${conv?.contact_id}`;
     if (!conv || cacheId.current === k) return;
-    cacheId.current = k; setD360(null); setDCon(null);
+    cacheId.current = k; setD360(null); setDCon(null); setDetalle(null);
     if (conv.company_id) fetch(`/api/crm/arr/company360?id=${conv.company_id}`).then(r => r.json()).then(setD360).catch(() => {});
     if (conv.contact_id) fetch(`/api/crm/contacts/${conv.contact_id}`).then(r => r.json()).then(setDCon).catch(() => {});
     setCtx(null);
@@ -188,6 +211,15 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const proxima = bookings.filter(b => new Date(b.fecha) >= new Date(Date.now() - 86400000)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))[0] || null;
   const timeline: any[] = (d360?.timeline || dCon?.activities || []).slice(0, 12);
   const resumen = d360?.resumen || null;
+  // TODO el panel se mide en ARR: si el 360 no lo trae, se anualiza el MRR.
+  const arr = (resumen?.arr ?? empresa?.arr ?? null) != null ? Number(resumen?.arr ?? empresa?.arr) : (Number(resumen?.mrr ?? empresa?.mrr) || 0) * 12;
+  const arrSub = (su: any) => su.ciclo === 'anual' ? Number(su.precio) || 0 : (Number(su.precio) || 0) * 12;
+  const subsActivas = (d360?.subscriptions || []).filter((x: any) => x && String(x.estado || '').match(/activ|trial|prueba/i));
+  // Cliente = paga (subs activas o ARR > 0); lo demás es lead en conversión.
+  const esCliente = subsActivas.length > 0 || arr > 0;
+  const dealsAbiertos = (dCon?.deals || d360?.deals || []).filter((x: any) => x && !['ganado', 'perdido', 'won', 'lost'].includes(String(x.stage || x.etapa || '').toLowerCase()));
+  const pipelineTotal = dealsAbiertos.reduce((t: number, x: any) => t + (Number(x.monto ?? x.amount) || 0), 0);
+  const utm = Object.entries({ ...(ctx?.propiedades?.contacto || {}) }).filter(([k]) => /^(utm_|tiktok|fbclid|gclid|referr)/i.test(k));
   const media = (hilo?.mensajes || []).filter((m: any) => (m.media_url || m.media_id) && !m.borrado_at).map((m: any) => ({ ...m, _src: srcMedia(m), _dl: srcMedia(m, true) }));
   const notas = hilo?.notas || [];
 
@@ -211,35 +243,44 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
 
   const TabInfo = () => (
     <div>
-      {/* Card de contexto */}
-      <div style={{ margin: '12px 16px 4px', borderRadius: 12, border: `1px solid ${C.g100}`, background: 'rgba(249,250,251,.5)', padding: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-          <span style={label(10)}>{empresa ? 'Cliente' : contactoBase ? 'Lead' : 'Desconocido'}</span>
-          {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
-        </div>
-        {etapa && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: etapa.fg, opacity: .6 }} /><span style={{ fontSize: 12, fontWeight: 600 }}>{etapa.label}</span></div>}
-        {empresa ? (<>
-          <div style={{ display: 'flex', gap: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap', whiteSpace: 'nowrap' }}>
-            {ctx?.salud && <span title={`Salud de la cuenta: ${ctx.salud.nivel}`} style={{ width: 9, height: 9, borderRadius: 999, background: ctx.salud.nivel === 'rojo' ? C.rojo500 : ctx.salud.nivel === 'ambar' ? C.ambar400 : C.emerald500, flexShrink: 0 }} />}
-            {!ocultarDinero && <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(resumen?.mrr ?? empresa.mrr)}<span style={{ fontWeight: 500, fontSize: 10 }}> MRR</span></span>}
-            <span style={{ color: C.g300 }}>·</span><span style={{ color: C.g500 }}>{empresa.plan || 'sin plan'}</span>
-            <span style={{ color: C.g300 }}>·</span><span style={{ color: C.g500 }}>{subs.length} sub{subs.length === 1 ? '' : 's'}</span>
-          </div>
-          {ctx?.salud && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
-              {ctx.salud.dias_renovacion != null && <span style={tag(ctx.salud.dias_renovacion < 0 ? C.rojo50 : ctx.salud.dias_renovacion <= 15 ? C.ambar100 : C.g100, ctx.salud.dias_renovacion < 0 ? C.rojo700 : ctx.salud.dias_renovacion <= 15 ? C.ambar700 : C.g500)}>
-                {ctx.salud.dias_renovacion < 0 ? `Renovación vencida hace ${-ctx.salud.dias_renovacion} d` : `Renueva en ${ctx.salud.dias_renovacion} d`}</span>}
-              {ctx.salud.last_payment_at && !ocultarDinero && <span style={tag(C.g100, C.g500)}>Último pago {fecha(ctx.salud.last_payment_at)}</span>}
-              {ctx.salud.tickets_abiertos > 0 && <span style={tag(C.ambar100, C.ambar700)}>{ctx.salud.tickets_abiertos} ticket{ctx.salud.tickets_abiertos === 1 ? '' : 's'} de soporte</span>}
-              {ctx.salud.soporte_estancado && <span style={tag(C.rojo50, C.rojo700)}>Soporte estancado</span>}
-              {ctx.salud.health_score != null && <span style={tag(C.g100, C.g500)}>Salud {ctx.salud.health_score}/100</span>}
-              {hilo?.marketing?.stopped && <span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span>}
-            </div>
-          )}
-        </>) : contactoBase ? (
-          <div style={{ fontSize: 12, color: C.g500 }}>{contacto?.fuente ? `Origen: ${contacto.fuente}` : 'Sin origen registrado'}</div>
-        ) : null}
+      {/* Encabezado: quién es (lead vs cliente) */}
+      <div style={{ margin: '12px 16px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: esCliente ? C.emerald700 : C.moradoTinta, background: esCliente ? C.emerald50 : C.moradoAgua, borderRadius: 999, padding: '3px 10px' }}>
+          {empresa || contactoBase ? (esCliente ? 'Cliente' : 'Lead') : 'Desconocido'}
+        </span>
+        {etapa && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: C.g700 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: etapa.fg, opacity: .65 }} />{etapa.label}</span>}
+        {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
       </div>
+
+      {/* Tarjetas-resumen: cada una abre su detalle (breadcrumb para volver).
+          Cliente: lo que importa es la CUENTA (ARR, uso, renovación).
+          Lead: lo que importa es la CONVERSIÓN (etapa, pipeline, origen). */}
+      {(empresa || contactoBase) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '0 16px 4px' }}>
+          {esCliente ? (<>
+            {!ocultarDinero && <TarjetaKpi color={C.emerald500} etiqueta="ARR" cifra={money(arr)} sub={`${subsActivas.length} suscripción${subsActivas.length === 1 ? '' : 'es'} activa${subsActivas.length === 1 ? '' : 's'}`} tinta={C.emerald700} onClick={() => setDetalle('suscripciones')} />}
+            <TarjetaKpi color={ctx?.salud?.nivel === 'rojo' ? C.rojo500 : ctx?.salud?.nivel === 'ambar' ? C.ambar400 : C.emerald500} etiqueta="Salud" tinta={ctx?.salud?.nivel === 'rojo' ? C.rojo700 : ctx?.salud?.nivel === 'ambar' ? C.ambar700 : C.emerald700}
+              cifra={ctx?.salud?.dias_renovacion != null ? (ctx.salud.dias_renovacion < 0 ? `Vencida ${-ctx.salud.dias_renovacion} d` : `Renueva ${ctx.salud.dias_renovacion} d`) : ctx?.salud?.health_score != null ? `${ctx.salud.health_score}/100` : '—'}
+              sub={ctx?.salud?.tickets_abiertos ? `${ctx.salud.tickets_abiertos} ticket${ctx.salud.tickets_abiertos === 1 ? '' : 's'} abiertos` : 'Sin tickets abiertos'} onClick={() => setDetalle('salud')} />
+            <TarjetaKpi color={C.morado} etiqueta="Uso de SACS" tinta={C.moradoTinta}
+              cifra={ctx?.sacs ? (ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : ctx.sacs.dias_sin_venta != null ? `${ctx.sacs.dias_sin_venta} d sin vender` : `${ctx.sacs.modulos_activos.length} módulos`) : 'Sin cuenta'}
+              sub={ctx?.sacs ? `${ctx.sacs.modulos_activos.length} módulo${ctx.sacs.modulos_activos.length === 1 ? '' : 's'} activos` : 'No ligada a SACS'} onClick={() => ctx?.sacs && setDetalle('sacs')} />
+            <TarjetaKpi color={C.azul} etiqueta="Cotizaciones" tinta={C.azulTinta}
+              cifra={String((d360?.quotes || []).length || 0)} sub={(d360?.quotes || []).length ? money((d360.quotes || []).reduce((t: number, q: any) => t + (Number(q.total) || 0), 0)) + ' cotizado' : 'Ninguna aún'} onClick={() => (d360?.quotes || []).length && setDetalle('cotizaciones')} />
+          </>) : (<>
+            <TarjetaKpi color={C.morado} etiqueta="Conversión" tinta={C.moradoTinta} cifra={etapa?.label || 'Sin etapa'}
+              sub={contacto?.proximo_paso ? `Sigue: ${contacto.proximo_paso}` : 'Sin próximo paso definido'} onClick={() => setDetalle('conversion')} />
+            {!ocultarDinero && <TarjetaKpi color={C.emerald500} etiqueta="Pipeline" tinta={C.emerald700} cifra={money(pipelineTotal)}
+              sub={dealsAbiertos.length ? `${dealsAbiertos.length} oportunidad${dealsAbiertos.length === 1 ? '' : 'es'} abierta${dealsAbiertos.length === 1 ? '' : 's'}` : 'Sin oportunidades: crea una'} onClick={() => setDetalle('oportunidad')} />}
+            <TarjetaKpi color={C.azul} etiqueta="Origen" tinta={C.azulTinta} cifra={contacto?.fuente || 'Sin origen'}
+              sub={utm.length ? `${utm.length} dato${utm.length === 1 ? '' : 's'} de campaña` : contacto?.created_at ? `Creado ${fecha(contacto.created_at)}` : 'Sin datos de campaña'} onClick={() => setDetalle('origen')} />
+            <TarjetaKpi color={C.ambar400} etiqueta="Interacción" tinta={C.ambar700}
+              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensajes` : proxima ? 'Reunión agendada' : 'Sin actividad'}
+              sub={proxima ? `Reunión ${fecha(proxima.fecha)}` : timeline.length ? `${timeline.length} eventos en el CRM` : 'Aún sin interacciones'} onClick={() => setDetalle('interacciones')} />
+          </>)}
+        </div>
+      )}
+      {hilo?.marketing?.stopped && <div style={{ margin: '4px 16px 0' }}><span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span></div>}
 
       {/* Clasificación: etiquetas toggle con borde punteado */}
       {(empresa || contactoBase) && <Clasificacion entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} />}
@@ -316,8 +357,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             <Campo etiqueta="Nombre comercial" valor={empresa.nombre_comercial || empresa.nombre} onGuardar={guardarEmpresa('nombre_comercial')} />
             <div style={divisor} /><Campo etiqueta="Plan" valor={empresa.plan} readOnly />
             <div style={divisor} /><Campo etiqueta="Estado" valor={empresa.estado_cuenta} readOnly />
-            {!ocultarDinero && <><div style={divisor} /><Campo etiqueta="MRR" valor={String(resumen?.mrr ?? empresa.mrr ?? '')} readOnly formato={money} />
-            <div style={divisor} /><Campo etiqueta="ARR" valor={String(resumen?.arr ?? empresa.arr ?? '')} readOnly formato={money} /></>}
+            {!ocultarDinero && <><div style={divisor} /><Campo etiqueta="ARR" valor={String(arr || '')} readOnly formato={money} /></>}
             <div style={divisor} /><Campo etiqueta="Sucursales" valor={empresa.sucursales != null ? String(empresa.sucursales) : null} onGuardar={guardarEmpresa('sucursales')} />
             <div style={divisor} /><Campo etiqueta="Giro" valor={empresa.giro} onGuardar={guardarEmpresa('giro')} />
             <div style={divisor} /><Campo etiqueta="Cuenta SACS" valor={empresa.sacs_account} readOnly copiable />
@@ -383,6 +423,129 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </div>
         </Seccion>
       )}
+    </div>
+  );
+
+  // ── Drill-down de una tarjeta: breadcrumb "← Resumen › X" y el detalle completo ──
+  const TITULO_DETALLE: Record<string, string> = {
+    suscripciones: 'Suscripciones y ARR', salud: 'Salud de la cuenta', sacs: 'Uso de SACS', cotizaciones: 'Cotizaciones',
+    conversion: 'Conversión del lead', oportunidad: 'Pipeline', origen: 'Origen del lead', interacciones: 'Interacciones',
+  };
+  const DetalleInfo = () => (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px 6px', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
+        <button onClick={() => setDetalle(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: C.moradoTinta, padding: 0 }}>← Resumen</button>
+        <span style={{ color: C.g300, fontSize: 11 }}>›</span>
+        <b style={{ fontSize: 12.5 }}>{TITULO_DETALLE[detalle!] || 'Detalle'}</b>
+      </div>
+      <div style={{ padding: '4px 16px 16px' }}>
+        {detalle === 'suscripciones' && (<>
+          <div style={{ background: C.emerald50, borderRadius: 10, padding: '10px 13px', marginBottom: 10 }}>
+            <span style={{ ...label(9), color: C.emerald700 }}>ARR total</span>
+            <b style={{ display: 'block', fontSize: 20, color: C.emerald700, fontVariantNumeric: 'tabular-nums' }}>{money(arr)}</b>
+            <span style={{ fontSize: 10.5, color: C.g500 }}>= lo que esta cuenta paga al año con sus planes actuales</span>
+          </div>
+          {!subs.length && <div style={{ fontSize: 12, color: C.g400 }}>Sin suscripciones registradas.</div>}
+          {subs.map((su: any) => { const [bg, fg] = ESTADO_SUB[su.estado] || [C.g100, C.g500]; return (
+            <div key={su.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <span style={{ minWidth: 0, flex: 1 }}><b style={{ display: 'block' }}>{su.nombre_plan}</b>
+                <span style={{ fontSize: 10, color: C.g400 }}>{su.ciclo === 'anual' ? 'anual' : 'mensual'}{su.proxima_renovacion ? ` · renueva ${fecha(su.proxima_renovacion)}` : ''}</span></span>
+              <span style={tag(bg, fg)}>{su.estado}</span>
+              <span style={{ color: C.emerald700, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(arrSub(su))}<span style={{ fontWeight: 500, fontSize: 9, color: C.g400 }}>/año</span></span>
+            </div>); })}
+          <a href="/admin/crm?tab=suscripciones" style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>Ver en Suscripciones →</a>
+        </>)}
+        {detalle === 'salud' && ctx?.salud && (<>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+            {ctx.salud.health_score != null && <span style={tag(C.g100, C.g700)}>Salud {ctx.salud.health_score}/100</span>}
+            {ctx.salud.dias_renovacion != null && <span style={tag(ctx.salud.dias_renovacion < 0 ? C.rojo50 : ctx.salud.dias_renovacion <= 15 ? C.ambar100 : C.emerald50, ctx.salud.dias_renovacion < 0 ? C.rojo700 : ctx.salud.dias_renovacion <= 15 ? C.ambar700 : C.emerald700)}>{ctx.salud.dias_renovacion < 0 ? `Renovación vencida hace ${-ctx.salud.dias_renovacion} d` : `Renueva en ${ctx.salud.dias_renovacion} d`}</span>}
+            {ctx.salud.soporte_estancado && <span style={tag(C.rojo50, C.rojo700)}>Soporte estancado</span>}
+          </div>
+          <div style={{ fontSize: 12, color: C.g700, lineHeight: 1.7 }}>
+            {!ocultarDinero && ctx.salud.last_payment_at && <div>Último pago: <b>{fecha(ctx.salud.last_payment_at)}</b></div>}
+            <div>Tickets de soporte abiertos: <b>{ctx.salud.tickets_abiertos || 0}</b></div>
+            {ctx.sacs?.dias_sin_venta != null && <div>Días sin vender en SACS: <b>{ctx.sacs.dias_sin_venta}</b></div>}
+          </div>
+          <a href="/admin/crm?tab=soporte" style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>Ver soporte →</a>
+        </>)}
+        {detalle === 'sacs' && ctx?.sacs && (<>
+          <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+            <span style={tag(C.moradoAgua, C.moradoTinta)}>{ctx.sacs.cuenta}</span>
+            {ctx.sacs.cuentas.length > 1 && <span style={tag(C.g100, C.g500)}>+{ctx.sacs.cuentas.length - 1} cuenta{ctx.sacs.cuentas.length - 1 === 1 ? '' : 's'}</span>}
+            {ctx.sacs.dias_sin_venta != null && <span style={tag(ctx.sacs.dias_sin_venta > 7 ? C.ambar100 : C.emerald50, ctx.sacs.dias_sin_venta > 7 ? C.ambar700 : C.emerald700)}>{ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : `${ctx.sacs.dias_sin_venta} d sin vender`}</span>}
+            {ctx.sacs.lealtad?.activo && <span style={tag(C.g100, C.g500)}>Lealtad {ctx.sacs.lealtad.tipo}</span>}
+          </div>
+          {ctx.sacs.modulos_activos.map((m: any) => (
+            <div key={m.modulo} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '4px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <span style={{ color: C.g700 }}>{m.modulo}</span>
+              <span style={{ color: C.g400, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{Number(m.docs_30d || 0).toLocaleString('es-MX')} <span style={{ color: C.g300 }}>/30 d</span>{m.ultimo ? ` · ${new Date(m.ultimo + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}` : ''}</span>
+            </div>
+          ))}
+          {!ctx.sacs.modulos_activos.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin uso registrado todavía.</div>}
+        </>)}
+        {detalle === 'cotizaciones' && (<>
+          {(d360?.quotes || []).map((q: any) => (
+            <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <span>{q.numero || String(q.id).slice(0, 6)}</span>
+              {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
+              <span style={{ marginLeft: 'auto', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(q.total)}</span>
+            </div>
+          ))}
+          <a href={`/admin/crm?tab=cotizaciones${empresa ? `&company_id=${empresa.id}` : ''}`} style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>Ver en Cotizaciones →</a>
+        </>)}
+        {detalle === 'conversion' && (<>
+          <p style={{ fontSize: 11.5, color: C.g500, margin: '0 0 10px', lineHeight: 1.5 }}>El camino es lead → oportunidad → cliente. Define SIEMPRE el siguiente paso: un lead sin próximo paso se enfría.</p>
+          <div style={{ borderRadius: 12, border: `1px solid ${C.g100}`, overflow: 'hidden' }}>
+            <Campo etiqueta="Etapa" valor={contactoBase?.lifecycle_stage} opciones={etapasCat.map(s => ({ v: s.id, l: `${(s as any).emoji || ''} ${s.label}`.trim() }))} onGuardar={guardar('lifecycle_stage')} />
+            <div style={{ borderTop: `1px solid ${C.g100}` }} /><Campo etiqueta="Próximo paso" valor={contacto?.proximo_paso} onGuardar={guardar('proximo_paso')} placeholder="¿Qué sigue?" />
+            <div style={{ borderTop: `1px solid ${C.g100}` }} /><Campo etiqueta="Siguiente seguimiento" valor={contacto?.next_followup ? String(contacto.next_followup).slice(0, 10) : null} type="date" onGuardar={guardar('next_followup')} formato={fecha} placeholder="Agendar" />
+          </div>
+          {proxima && <div style={{ background: C.moradoAgua, borderRadius: 9, padding: '8px 11px', fontSize: 12, marginTop: 10 }}><b style={{ color: C.moradoTinta }}>Próxima reunión:</b> {fecha(proxima.fecha)} {proxima.hora_inicio ? `· ${proxima.hora_inicio}` : ''}</div>}
+        </>)}
+        {detalle === 'oportunidad' && (<>
+          <div style={{ background: C.emerald50, borderRadius: 10, padding: '10px 13px', marginBottom: 10 }}>
+            <span style={{ ...label(9), color: C.emerald700 }}>Pipeline abierto</span>
+            <b style={{ display: 'block', fontSize: 20, color: C.emerald700, fontVariantNumeric: 'tabular-nums' }}>{money(pipelineTotal)}</b>
+            <span style={{ fontSize: 10.5, color: C.g500 }}>{dealsAbiertos.length ? `en ${dealsAbiertos.length} oportunidad${dealsAbiertos.length === 1 ? '' : 'es'} abierta${dealsAbiertos.length === 1 ? '' : 's'}` : 'sin oportunidades abiertas'}</span>
+          </div>
+          {dealsAbiertos.map((d: any) => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre || d.title || 'Oportunidad'}</span>
+              {(d.pipeline_stage || d.stage) && <span style={tag(C.azulAgua, C.azulTinta)}>{d.pipeline_stage || d.stage}</span>}
+              <span style={{ color: C.emerald700, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(d.monto ?? d.amount)}</span>
+            </div>
+          ))}
+          <a href="/admin/crm?tab=oportunidades" style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>{dealsAbiertos.length ? 'Ver en Oportunidades →' : 'Crear oportunidad →'}</a>
+        </>)}
+        {detalle === 'origen' && (<>
+          <div style={{ fontSize: 12, color: C.g700, lineHeight: 1.8, marginBottom: 8 }}>
+            <div>Fuente: <b>{contacto?.fuente || 'sin registrar'}</b></div>
+            {contacto?.created_at && <div>En el CRM desde: <b>{fecha(contacto.created_at)}</b></div>}
+          </div>
+          {utm.length > 0 && (
+            <div style={{ borderRadius: 12, border: `1px solid ${C.g100}`, overflow: 'hidden' }}>
+              {utm.map(([k, v], i) => (<span key={k}>{i > 0 && <div style={{ borderTop: `1px solid ${C.g100}` }} />}<Campo etiqueta={k.replace(/_/g, ' ')} valor={String(v)} readOnly copiable /></span>))}
+            </div>
+          )}
+          {!utm.length && <div style={{ fontSize: 11.5, color: C.g400 }}>Sin datos de campaña (UTM). Los leads de anuncios los traen solos.</div>}
+        </>)}
+        {detalle === 'interacciones' && (<>
+          <div style={{ fontSize: 12, color: C.g700, lineHeight: 1.8, marginBottom: 8 }}>
+            <div>Mensajes en este chat: <b>{hilo?.mensajes?.length || 0}</b></div>
+            {ctx?.desde_ultimo?.correos_abiertos > 0 && <div>Correos abiertos: <b>{ctx.desde_ultimo.correos_abiertos}</b></div>}
+            <div>Reuniones: <b>{bookings.length}</b>{proxima ? ` · próxima ${fecha(proxima.fecha)}` : ''}</div>
+          </div>
+          {timeline.length > 0 && (<>
+            <div style={{ ...label(10), margin: '8px 0 4px' }}>Últimos eventos</div>
+            {timeline.slice(0, 10).map((t: any, i: number) => (
+              <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 12, lineHeight: 1.45 }}>
+                <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums', width: 44 }}>{new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
+                <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
+              </div>
+            ))}
+          </>)}
+        </>)}
+      </div>
     </div>
   );
 
@@ -575,7 +738,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
                 elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
                 en cada polling (Clasificación parpadeaba). */}
-            {tab === 'info' && (subInfo === 'info' ? TabInfo() : TabActividad())}
+            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : TabActividad())}
             {tab === 'acciones' && TabAcciones()}
             {tab === 'adjuntos' && TabAdjuntos()}
             {tab === 'notas' && TabNotas()}
