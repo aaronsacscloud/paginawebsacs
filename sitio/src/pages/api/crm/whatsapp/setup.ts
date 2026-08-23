@@ -5,7 +5,7 @@
 //        https://www.sacscloud.com/api/whatsapp/webhook?k=<KAPSO_WEBHOOK_SECRET>
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { kapsoConfigurado, listarWebhooks, registrarWebhook, KapsoError } from '../../../../lib/whatsapp/kapso-api';
+import { kapsoConfigurado, listarWebhooks, registrarWebhook, listarNumeros, KapsoError } from '../../../../lib/whatsapp/kapso-api';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -41,8 +41,26 @@ export const GET: APIRoute = async () => {
     }
   }
 
+  // Descubrimiento: si faltan los IDs pero la API key sí está, se listan los
+  // números del proyecto para copiarlos a env sin ir al dashboard de Kapso.
+  let numeros: any[] | null = null;
+  if (envs.KAPSO_API_KEY && (!envs.KAPSO_PHONE_NUMBER_ID || !envs.KAPSO_BUSINESS_ACCOUNT_ID)) {
+    try {
+      const r = await listarNumeros();
+      const items = Array.isArray(r) ? r : (r?.phone_numbers ?? []);
+      numeros = items.map((n: any) => ({
+        id: n.id, numero: n.phone_number || n.display_phone_number || null,
+        business_account_id: n.whatsapp_business_account_id || n.business_account_id || null,
+        nombre: n.name || n.verified_name || null,
+      }));
+    } catch (e: any) {
+      numeros = [{ error: e instanceof KapsoError ? e.message : String(e) }];
+    }
+  }
+
   return json({
     faltantes,
+    numeros,
     webhook_registrado: !!(webhook && !webhook.error),
     webhook,
     embed: cfg ? {

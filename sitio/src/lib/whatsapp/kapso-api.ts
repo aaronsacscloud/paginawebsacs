@@ -19,6 +19,11 @@ const META = 'https://api.kapso.ai/meta/whatsapp/v24.0';
 
 export const kapsoConfigurado = () => !!(API_KEY && PHONE_NUMBER_ID);
 
+/** El parámetro de plantilla como Meta lo acepta: sin saltos ni tabs, nunca
+ *  vacío (un parámetro vacío al enviar es 400; se sustituye por "—"). */
+export const sanearParam = (v: any): string =>
+  (String(v ?? '').replace(/[\n\r\t]+/g, ' ').replace(/ {4,}/g, '   ').trim()) || '—';
+
 class KapsoError extends Error {
   status: number;
   detalle: any;
@@ -67,6 +72,12 @@ export async function crearEmbed(opts: { allowedOrigins: string[]; expiresAt?: s
       },
     }),
   });
+}
+
+/** Los números de WhatsApp del proyecto: para DESCUBRIR el phone_number_id
+ *  y el business_account_id desde el diagnóstico cuando aún no están en env. */
+export async function listarNumeros() {
+  return llamar(PLATFORM, '/whatsapp/phone_numbers');
 }
 
 // ── Webhooks ──
@@ -140,6 +151,24 @@ export async function crearPlantillaMeta(p: {
       name: p.nombre, language: p.idioma, category: p.categoria, components,
     }),
   });
+}
+
+/**
+ * El id de plantilla que Broadcasts espera es el del CATÁLOGO de Kapso (su
+ * cache de las plantillas de Meta), no el de Meta. Se resuelve por
+ * nombre+idioma; si el listado de Kapso no está disponible, se intenta con el
+ * id de Meta como último recurso.
+ */
+export async function resolverTemplateId(nombre: string, idioma: string, metaId?: string | null): Promise<string | null> {
+  try {
+    const r = await platform(`/whatsapp/templates?phone_number_id=${PHONE_NUMBER_ID}`);
+    const items = Array.isArray(r) ? r : (r?.templates ?? []);
+    const t = items.find((x: any) =>
+      (x.name === nombre || x.template_name === nombre) &&
+      (!x.language || x.language === idioma || x.language_code === idioma));
+    if (t?.id) return String(t.id);
+  } catch { /* el listado puede no existir en el plan: se cae al id de Meta */ }
+  return metaId || null;
 }
 
 // ── Broadcasts (Platform) ──
