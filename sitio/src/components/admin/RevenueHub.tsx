@@ -4,6 +4,8 @@ import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
 import PlanesConfig from './crm/PlanesConfig';
+// El hub de agenda ya viene lazy: no engorda el bundle de Cotizaciones.
+import SchedulingTab from './crm/SchedulingTab';
 import MotivosLead from './crm/MotivosLead';
 import MarcaTab from './crm/MarcaTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
@@ -121,6 +123,7 @@ const CFG_ICONOS: Record<string, string> = {
   doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg>',
   banco: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M3 20h18M9 10v8M15 10v8" stroke-linecap="round"/></svg>',
   tarjeta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h3" stroke-linecap="round"/></svg>',
+  agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4" stroke-linecap="round"/></svg>',
   catalogo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5-8 4.5-8-4.5z" stroke-linejoin="round"/><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 01-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 015.4-5.4z" stroke-linejoin="round"/></svg>',
 };
@@ -3672,7 +3675,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   d: 'Hasta ganarse o perderse, y los motivos de pérdida.',
                   editor: <PipelinesConfig initialTipo="oportunidad" sinTitulo /> },
               ]},
-              { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [] },
+              { id: 'reuniones', nom: 'Reuniones', sub: 'Cómo se agenda contigo.', items: [
+                { id: 'agenda', ico: 'agenda', t: 'Tipos de reunión, disponibilidad y ligas', v: 'Agenda',
+                  d: 'Los tipos que se pueden agendar contigo —consultoría, capacitación, demo—, con su duración, su color y la liga que le mandas al cliente. Y los horarios en que te pueden reservar. Vivía colgado de Reuniones, pero es un ajuste que se toca una vez, no trabajo del día.',
+                  editor: <SchedulingTab /> },
+              ]},
             ]},
             { g: 'Reuniones', mods: [
               { id: 'agenda', nom: 'Agenda', sub: 'Con qué calendario se sincroniza tu agenda.', items: [

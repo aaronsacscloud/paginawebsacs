@@ -138,7 +138,7 @@ function adminFetch(input: string, init?: RequestInit) {
   return fetch(input, { ...init, headers, credentials: 'same-origin' });
 }
 
-export default function ReunionesTab({ onOpenContact, onIrAgenda }: { onOpenContact?: (id: string) => void; onIrAgenda?: () => void }) {
+export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: string) => void }) {
   const isMobile = useIsMobile();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -490,16 +490,10 @@ export default function ReunionesTab({ onOpenContact, onIrAgenda }: { onOpenCont
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* Herramienta como ícono, destino en contorno azul, y la acción que
-              manda en morado sólido al final. El orden es el de Cotizaciones. */}
-          <button onClick={load} title="Recargar" aria-label="Recargar"
-            style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid #e0e0e0', background: '#fff', color: '#666', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem' }}>↻</button>
-          {onIrAgenda && (
-            <button onClick={onIrAgenda}
-              style={{ border: '1.5px solid #7DA6F5', background: '#fff', color: '#2C5FC4', borderRadius: 12, padding: '9px 20px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Horarios y tipos
-            </button>
-          )}
+          {/* Una sola acción. El ↻ se fue —la lista ya se recarga después de cada
+              cambio, así que era un botón que no hacía falta apretar— y los tipos
+              de reunión y la disponibilidad viven en Configuración → Reuniones:
+              son ajustes que se tocan una vez, no trabajo del día. */}
           <button onClick={() => setEligiendoCliente(true)}
             style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             + Agendar reunión

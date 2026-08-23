@@ -690,13 +690,15 @@ export default function CrmDashboard() {
              —como "Dashboard" en Cotizaciones— y del otro lado hay un regreso. */
           <div>
             {tab === 'reuniones' ? (
-              <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} onIrAgenda={() => switchTab('agenda' as Tab)} />
+              <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
             ) : (
               <>
                 <div style={{ padding: '18px 24px 0' }}>
-                  <button onClick={() => switchTab('reuniones' as Tab)}
+                  {/* Su casa es Configuración → Reuniones; ahí es donde regresa.
+                      Esta ruta se queda viva para los enlaces que ya existían. */}
+                  <button onClick={() => switchTab('config' as Tab)}
                     style={{ border: '1px solid #ddd6fb', background: '#fff', color: '#5B4BD6', borderRadius: 9, padding: '8px 13px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    ← Reuniones
+                    ← Configuración
                   </button>
                 </div>
                 <SchedulingTab />
