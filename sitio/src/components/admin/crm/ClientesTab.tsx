@@ -70,12 +70,23 @@ const T = {
 // Misma tarjeta que en Cotizaciones: franja lateral de 3 px, título chico en
 // mayúsculas, número grande y una línea secundaria. Sin el ícono en cuadrito de
 // color — allá no existe y aquí solo agregaba peso.
-function KpiCard({ franja, label, value, valueColor, sub, style }: { franja: string; label: string; value: any; valueColor?: string; sub: any; style?: any }) {
+/** Con `onClick` la tarjeta es una puerta —cambia lo que se está viendo— y lo
+ *  dice al pasar el mouse. Sin él es solo un número. */
+function KpiCard({ franja, label, value, valueColor, sub, style, onClick, activo }: { franja: string; label: string; value: any; valueColor?: string; sub: any; style?: any; onClick?: () => void; activo?: boolean }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #ececf0', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px', ...style }}>
+    <div onClick={onClick}
+      onMouseEnter={e => { if (onClick && !activo) (e.currentTarget as HTMLElement).style.boxShadow = '0 3px 12px rgba(16,24,40,.10)'; }}
+      onMouseLeave={e => { if (!activo) (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+      style={{
+        background: '#fff', border: '1px solid #ececf0', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px',
+        cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .12s',
+        ...(activo ? { boxShadow: `0 0 0 2px ${franja}66` } : {}), ...style,
+      }}>
       <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.08em', color: '#9c99a6' }}>{label}</div>
       <div style={{ fontSize: '1.32rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', color: valueColor || '#1a1a1a' }}>{value}</div>
-      <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>{sub}</div>
+      <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>
+        {sub}{onClick ? <span style={{ color: '#5B4BD6', fontWeight: 700 }}> · {activo ? 'volver a clientes' : 'ver'}</span> : null}
+      </div>
     </div>
   );
 }
@@ -87,6 +98,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [error, setError] = useState<string | null>(null);
   const { props: campos } = useCampos('company');
   const [rangoRenov, setRangoRenov] = useState<RangoRenov>(null);
+  // Qué lista se está viendo. Arranca en clientes: los exclientes se consultan,
+  // no se trabajan todos los días.
+  const [verExclientes, setVerExclientes] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
@@ -178,12 +192,20 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   // Periodo de renovación: se aplica sobre la PRÓXIMA FACTURA, que es la que
   // contesta "¿a quién le toca pagar en este periodo?". Un cliente sin fecha
   // —sin suscripción activa— no puede caer dentro de ningún rango.
-  const dataEtiquetada = rangoRenov
-    ? data.filter((c: any) => {
+  // ── Clientes y exclientes son dos listas, no una ──
+  // Un excliente no se borra: su historia es justo lo que hace falta para
+  // intentar recuperarlo. Pero tampoco puede contarse ni ordenarse junto a
+  // quien te paga: son dos seguimientos distintos.
+  const clientes = data.filter((c: any) => !c.es_excliente);
+  const exclientes = data.filter((c: any) => c.es_excliente);
+  const base = verExclientes ? exclientes : clientes;
+
+  const dataEtiquetada = rangoRenov && !verExclientes
+    ? base.filter((c: any) => {
         const f = String(c.proxima_factura || '').slice(0, 10);
         return !!f && f >= rangoRenov.desde && f <= rangoRenov.hasta;
       })
-    : data;
+    : base;
 
   const cols: ColDef[] = [
     {
@@ -461,6 +483,57 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     }),
   ];
 
+  // ── Las columnas de un excliente son otras ──
+  // A quien ya se fue no le preguntas por su próxima factura ni por su salud:
+  // le preguntas cuándo se fue, por qué, cuánto se llevó y cuánto llegó a
+  // pagar. Eso es lo que decide si vale la pena intentar recuperarlo.
+  const colsExcliente: ColDef[] = [
+    cols[0], // Cliente, con su cuenta SACS
+    {
+      key: 'baja_at', label: 'Se fue el', width: 120, ftype: 'date',
+      val: c => String(c.baja_at || '').slice(0, 10),
+      render: c => <td style={T.td}>{c.baja_at ? fmtDate(String(c.baja_at).slice(0, 10)) : '—'}</td>,
+    },
+    {
+      key: 'baja_motivo', label: 'Por qué se fue', width: 300, ftype: 'text',
+      val: c => String(c.baja_motivo || '').toLowerCase(),
+      render: c => {
+        const m = String(c.baja_motivo || '');
+        if (!m) return <td style={{ ...T.td, color: '#c0bece' }}>sin motivo capturado</td>;
+        // El formato del CRM es "Etiqueta — detalle": la etiqueta se lee de un
+        // vistazo y el detalle explica, sin cortar ninguno de los dos.
+        const [et, ...resto] = m.split('—');
+        const det = resto.join('—').trim();
+        return (
+          <td style={T.td} title={m}>
+            <div style={{ fontWeight: 600 }}>{et.trim()}</div>
+            {det && <div style={{ fontSize: '0.72rem', color: '#8a8a92', lineHeight: 1.4, maxHeight: 34, overflow: 'hidden' }}>{det}</div>}
+          </td>
+        );
+      },
+    },
+    {
+      key: 'arr_perdido', label: 'ARR que se llevó', width: 130, ftype: 'number', num: true,
+      val: c => Number(c.arr_perdido || 0),
+      render: c => <td style={{ ...T.td, textAlign: 'right', fontWeight: 700, color: '#C0554E' }}>{money(c.arr_perdido)}</td>,
+    },
+    {
+      key: 'pagado_historico', label: 'Llegó a pagar', width: 130, ftype: 'number', num: true,
+      val: c => Number(c.pagado_historico || 0),
+      render: c => <td style={{ ...T.td, textAlign: 'right' }}>{money(c.pagado_historico)}</td>,
+    },
+    {
+      key: 'subs_canceladas', label: 'Licencias', width: 90, ftype: 'number', num: true,
+      val: c => Number(c.subs_canceladas || 0),
+      render: c => <td style={{ ...T.td, textAlign: 'right', color: '#8a8a92' }}>{c.subs_canceladas}</td>,
+    },
+    {
+      key: 'ultima_venta', label: 'Última venta en SACS', width: 160, ftype: 'date',
+      val: c => String(c.ultima_venta_at || '').slice(0, 10),
+      render: c => <td style={{ ...T.td, color: '#8a8a92' }}>{c.ultima_venta_at ? fmtDate(String(c.ultima_venta_at).slice(0, 10)) : '—'}</td>,
+    },
+  ];
+
   // Tres filtros afuera y el resto en "Más filtros". Las etiquetas dicen la
   // DIMENSIÓN, no el valor por omisión: "Todos" no contestaba ninguna pregunta.
   const quick: QuickDef[] = [
@@ -517,7 +590,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Clientes</h1>
           <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 2 }}>
-            {tot?.clientes ?? 0} totales · {tot?.activos ?? 0} con ARR activo
+            {verExclientes
+              ? <>{tot?.exclientes ?? 0} exclientes · {money(tot?.arr_perdido)} de ARR perdido</>
+              : <>{tot?.clientes ?? 0} clientes · {tot?.activos ?? 0} con ARR activo</>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{cabeceraAcciones}</div>
@@ -530,28 +605,50 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
         {(() => { const kStyle = isMobile ? { minWidth: '82vw', scrollSnapAlign: 'start' as const, flexShrink: 0 } : undefined; return (<>
         <KpiCard style={kStyle} franja={CL.violeta} label="Clientes" value={tot?.clientes ?? '—'}
-          sub={<>{tot?.activos ?? 0} con ARR activo · {Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0))} sin ARR</>} />
+          sub={<>{tot?.activos ?? 0} con ARR activo · {Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0))} sin ARR</>}
+          onClick={verExclientes ? () => setVerExclientes(false) : undefined} />
         <KpiCard style={kStyle} franja={CL.verde} label="ARR" value={money(tot?.arr)} valueColor={CL.verdeTinta}
           sub={kpis.arrPend > 0 ? <>{money(kpis.arrPend)} pendiente de activar</> : 'todo activo'} />
         <KpiCard style={kStyle} franja={CL.rojo} label="Requieren atención" value={kpis.riesgo + kpis.vencidas} valueColor={CL.rojoTinta}
           sub={<>{kpis.riesgo} sin vender 3+ días · {kpis.vencidas} con renovación vencida</>} />
         <KpiCard style={kStyle} franja={CL.azul} label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
           sub={<>{money(tot?.vitalicias_pagado)} cobrado · fuera del ARR</>} />
+        {/* Los que ya se fueron. Se hace clic y se entra a ver qué pasó: el
+            motivo con el que se fue cada uno y cuánto ARR se llevó. */}
+        <KpiCard style={kStyle} franja={CL.rojo} label="Exclientes" value={tot?.exclientes ?? 0}
+          valueColor={CL.rojoTinta}
+          sub={<>{money(tot?.arr_perdido)} de ARR perdido · pagaron {money(tot?.pagaron_antes)}</>}
+          activo={verExclientes}
+          onClick={() => setVerExclientes(v => !v)} />
         </>); })()}
       </div>
 
+      {verExclientes && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FEF0EF', border: '1px solid #f7d9d6', borderRadius: 11, padding: '11px 14px', marginBottom: 14 }}>
+          <b style={{ fontSize: '0.82rem', color: '#8c2f28' }}>Estás viendo exclientes</b>
+          <span style={{ fontSize: '0.78rem', color: '#C0554E' }}>
+            Cancelaron todas sus licencias. No cuentan como clientes ni suman al ARR — su historia se conserva para intentar recuperarlos.
+          </span>
+          <button onClick={() => setVerExclientes(false)}
+            style={{ marginLeft: 'auto', border: '1px solid #f0c4c0', background: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700, color: '#8c2f28', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            ← Volver a clientes
+          </button>
+        </div>
+      )}
+
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         <TablaEnterprise
-          tabla="clientes"
+          key={verExclientes ? 'exclientes' : 'clientes'}
+          tabla={verExclientes ? 'exclientes' : 'clientes'}
           data={dataEtiquetada}
-          cols={cols}
-          quick={quick}
+          cols={verExclientes ? colsExcliente : cols}
+          quick={verExclientes ? [] : quick}
           vistasBase={vistasBase}
           sinVistas
-          quickExtra={<FiltroRenovacion valor={rangoRenov} onCambio={setRangoRenov} />}
+          quickExtra={verExclientes ? undefined : <FiltroRenovacion valor={rangoRenov} onCambio={setRangoRenov} />}
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
-          searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1400}
+          searchPlaceholder={verExclientes ? 'Buscar excliente, cuenta o motivo…' : 'Buscar cliente, cuenta o contacto…'}
+          minWidth={verExclientes ? 1000 : 1400}
           headerTint
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
           mobileCard={(c: any) => (

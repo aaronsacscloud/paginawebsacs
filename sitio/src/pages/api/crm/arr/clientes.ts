@@ -89,6 +89,18 @@ export const GET: APIRoute = async () => {
       // Pausadas: NO suman ARR (no están en `activas`) pero tampoco son un
       // cliente muerto — la licencia ya está pagada y hay que poder verlas.
       const pausadas = subs.filter((s: any) => s.estado === 'pausada');
+      // ── Excliente: tuvo licencias y NINGUNA sigue viva ──
+      // No es "sin ARR": un cliente puede estar sin ARR por vencido, pausado o
+      // con una vitalicia. Excliente es que TODO se canceló, que es lo único
+      // que de verdad lo saca de la cartera.
+      const vivas = subs.filter((s: any) => ['activa', 'pendiente_pago', 'programada', 'pausada'].includes(s.estado));
+      const canceladas = subs.filter((s: any) => s.estado === 'cancelada');
+      const esExcliente = subs.length > 0 && vivas.length === 0;
+      // La baja más reciente manda: es la fecha en que dejó de ser cliente y el
+      // motivo con el que se fue.
+      const ultimaBaja = canceladas
+        .slice()
+        .sort((a: any, b: any) => String(b.cancelada_at || '').localeCompare(String(a.cancelada_at || '')))[0] || null;
       // Principal si existe la marca; si no, el primero (comportamiento previo).
       // Con varios contactos manda el Dueño. Hoy solo 9 lo tienen marcado, así
       // que en la mayoría cae al principal — que es el comportamiento pedido.
@@ -109,6 +121,15 @@ export const GET: APIRoute = async () => {
         nombre_comercial: c.nombre_comercial || null,
         cuentas: cuentasPorEmpresa[c.id]?.length ? cuentasPorEmpresa[c.id] : (c.sacs_account ? [String(c.sacs_account)] : []),
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
+        // Lo que la pantalla necesita para separarlos y para contar qué pasó.
+        es_excliente: esExcliente,
+        baja_at: ultimaBaja?.cancelada_at || null,
+        baja_motivo: ultimaBaja?.razon_cancelacion || null,
+        baja_plan: ultimaBaja?.nombre_plan || null,
+        // Lo que se perdió con él y lo que llegó a pagar antes de irse.
+        arr_perdido: r2(canceladas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),
+        pagado_historico: r2(subs.reduce((a: number, s: any) => a + Number(s.total_pagado || 0), 0)),
+        subs_canceladas: canceladas.length,
         pipeline_stage: c.pipeline_stage ?? null,
         sucursales: c.sucursales,
         // Campos personalizados: esta fila se arma a mano, así que lo que no se
@@ -175,7 +196,12 @@ export const GET: APIRoute = async () => {
     .sort((a: any, b: any) => (b.arr - a.arr) || (b.arr_pendiente - a.arr_pendiente));
 
   const tot = {
-    clientes: data.length,
+    // Los exclientes NO son clientes: se cuentan aparte para que "146 totales"
+    // deje de mezclar a quien te paga con quien ya se fue.
+    clientes: data.filter((c: any) => !c.es_excliente).length,
+    exclientes: data.filter((c: any) => c.es_excliente).length,
+    arr_perdido: r2(data.filter((c: any) => c.es_excliente).reduce((a: number, c: any) => a + Number(c.arr_perdido || 0), 0)),
+    pagaron_antes: r2(data.filter((c: any) => c.es_excliente).reduce((a: number, c: any) => a + Number(c.pagado_historico || 0), 0)),
     activos: data.filter((c: any) => c.subs_activas > 0).length,
     arr: r2(data.reduce((a: number, c: any) => a + c.arr, 0)),
     // Vitalicias (ingreso ÚNICO, fuera del ARR): clientes y total pagado de por vida.
