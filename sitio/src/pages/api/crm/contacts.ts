@@ -5,6 +5,7 @@ import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
 import { etapaDeLead } from '../../../lib/crm/lead-etapa';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { detectaHistorial, norm as normTxt, tel10, claveEmpresa, type Indices } from '../../../lib/crm/lead-historial';
+import { resolverUnLead } from '../../../lib/crm/resolver-conocidos';
 
 export const prerender = false;
 
@@ -193,7 +194,14 @@ export const POST: APIRoute = async ({ request }) => {
     automatico: true,
   });
 
-  return new Response(JSON.stringify(data), { status: 201 });
+  // Si esta persona YA es cliente —o ya lo fue— no tiene por qué aparecer en la
+  // lista de leads ni un solo día. Se resuelve aquí mismo, al entrar. Es
+  // best-effort: si falla, el lead queda creado igual y el barrido nocturno lo
+  // agarra. Nunca se tumba el alta por esto.
+  let resuelto: any = null;
+  try { resuelto = await resolverUnLead(data.id); } catch { /* el alta manda */ }
+
+  return new Response(JSON.stringify({ ...data, resuelto }), { status: 201 });
 };
 
 export const PUT: APIRoute = async ({ request }) => {

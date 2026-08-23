@@ -104,7 +104,16 @@ export const GET: APIRoute = async () => {
       nombre_comercial: co?.nombre_comercial || null,
       whatsapp: (s as any).contacts?.whatsapp || co?.contacts?.[0]?.whatsapp || null,
     };
-    if (s.estado === 'activa' || s.estado === 'pendiente_pago' || s.estado === 'programada') {
+    // ── Las vitalicias NO se proyectan ──
+    // Un pago único no vuelve a suceder: o ya entró, o entrará una sola vez.
+    // Caían en la rama de abajo —que es la de "cobra TODOS los meses"— y como
+    // además no tienen próxima factura, arrancaban en el mes 0 y se repetían
+    // los doce. Eso metía $378,799 de "pendiente" FANTASMA en cada mes
+    // ($4.5 millones inventados en el año) y $265,257 más de "contratado".
+    // El ingreso único vive en el Panel financiero, que es donde no se
+    // confunde con recurrencia.
+    const esVitalicia = s.ciclo === 'vitalicia';
+    if (!esVitalicia && (s.estado === 'activa' || s.estado === 'pendiente_pago' || s.estado === 'programada')) {
       if (s.ciclo === 'anual') {
         // renovación anual: cae en su mes de próxima factura
         if (s.proxima_factura) {

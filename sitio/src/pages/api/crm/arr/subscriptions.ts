@@ -135,6 +135,13 @@ function normalizar(body: any) {
   if (body.trial_fin !== undefined) out.trial_fin = body.trial_fin || null;
   if (body.plazo_meses !== undefined) out.plazo_meses = body.plazo_meses ? Number(body.plazo_meses) : null;
   if (body.incremento_anual_pct !== undefined) out.incremento_anual_pct = body.incremento_anual_pct ? Number(body.incremento_anual_pct) : null;
+  /* Lo que el cliente ya pagó por esta licencia. En las vitalicias legacy
+     —cobradas antes de que existiera el CRM— capturarlo a mano es la única
+     forma de que ese dinero exista en el sistema; hoy 30 de 32 están en cero.
+     Solo entra si viene: no mandarlo NO significa borrarlo. */
+  if (body.total_pagado !== undefined && body.total_pagado !== null && body.total_pagado !== '') {
+    out.total_pagado = Number(body.total_pagado) || 0;
+  }
   return out;
 }
 

@@ -2,6 +2,10 @@
   "installCommand": "npm ci --include=dev",
   "crons": [
     {
+      "path": "/api/cron/wa-snooze",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/email-campanas",
       "schedule": "*/5 * * * *"
     },
@@ -64,6 +68,10 @@
     {
       "path": "/api/cron/soporte-oportunidades",
       "schedule": "15 9 * * *"
+    },
+    {
+      "path": "/api/cron/leads-conocidos",
+      "schedule": "45 9 * * *"
     }
   ]
 }

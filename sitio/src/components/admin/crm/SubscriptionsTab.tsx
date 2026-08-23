@@ -111,7 +111,10 @@ export default function SubscriptionsTab() {
   // descuento pronto pago con timer. El modal maneja copiar/abrir y la oferta.
   const [linkSub, setLinkSub] = useState<Sub | null>(null);
   const [fCiclo, setFCiclo] = useState('');
-  const [fEstado, setFEstado] = useState('');
+  // Abre en ACTIVAS: la lista existe para ver quién tiene licencia viva y
+  // cuándo se le cobra. Las canceladas se consultan, no se trabajan — y sin
+  // este arranque las primeras pantallas eran puras bajas de 2025.
+  const [fEstado, setFEstado] = useState('activa');
   const [fPlan, setFPlan] = useState('');
   const [fCliente, setFCliente] = useState('');
   const [fStale, setFStale] = useState(false);
@@ -174,6 +177,11 @@ export default function SubscriptionsTab() {
   const esStale = (s: Sub) => s.estado === 'pendiente_pago' && (s.pagos_realizados || 0) === 0 && !!s.proxima_factura && s.proxima_factura < hace60;
 
   const filtered = useMemo(() => subs.filter(s => {
+    // ── Suscripciones = licencias que se renuevan ──
+    // Una vitalicia es un pago único: no tiene ciclo que cobrar ni próxima
+    // factura, así que en una lista cuya pregunta es "a quién le toca pagar"
+    // solo hace ruido. Su lugar es el Panel financiero.
+    if (s.ciclo === 'vitalicia') return false;
     if (fCiclo && s.ciclo !== fCiclo) return false;
     if (fEstado && s.estado !== fEstado) return false;
     // Plan filtra por CATÁLOGO (plan_id) — agrupa todas las variantes de texto
@@ -198,19 +206,6 @@ export default function SubscriptionsTab() {
   const nSinPlan = useMemo(() => subs.filter(s => !(s as any).plan_id).length, [subs]);
   const planById = useMemo(() => { const m = new Map<string, any>(); plans.forEach((p: any) => m.set(p.id, p)); return m; }, [plans]);
   const stalePend = useMemo(() => subs.filter(esStale), [subs, hace60]);
-  // Segmento Vitalicias legacy (pago único, fuera de ARR) — oportunidad de recurrencia.
-  const vitStats = useMemo(() => {
-    const vit = subs.filter(s => s.ciclo === 'vitalicia');
-    const usando = vit.filter(s => { const d = s.companies?.dias_sin_venta; return d != null && d <= 30; }).length;
-    // Lo COBRADO y lo CONTRATADO son dos cosas distintas y hay que decir las
-    // dos. Estas 32 licencias valen medio millón, pero el pago casi nunca está
-    // capturado: son legacy, se cobraron antes del CRM. Mostrar solo lo
-    // capturado hace creer que produjeron $7,777 en total.
-    const cobrado = vit.reduce((a, s) => a + Number(s.total_pagado || 0), 0);
-    const contratado = vit.reduce((a, s) => a + Number(s.precio || 0), 0);
-    const sinPago = vit.filter(s => !Number(s.total_pagado || 0)).length;
-    return { total: vit.length, cobrado, contratado, sinPago, activas: vit.filter(s => s.estado === 'activa').length, usando };
-  }, [subs]);
 
   const k = summary?.kpis;
   const meta = summary?.meta;
@@ -239,15 +234,20 @@ export default function SubscriptionsTab() {
       <option value="">Todos los estados</option>
       {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
     </select>
-    {(fCliente || fPlan || fCiclo || fEstado || search || fStale) && (
-      <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, ...(isMobile ? { height: 44, width: '100%' } : { alignSelf: 'center' }) }} title="Limpiar filtros">✕ Limpiar</button>
+    {(fCliente || fPlan || fCiclo || fEstado !== 'activa' || search || fStale) && (
+      <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado('activa'); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, ...(isMobile ? { height: 44, width: '100%' } : { alignSelf: 'center' }) }} title="Limpiar filtros">✕ Limpiar</button>
     )}
   </>);
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      {/* ── KPIs + meta ── */}
-      <div style={kpiCarril}>
+      {/* ── KPIs + meta: SOLO en Panel financiero ──
+          El ARR, lo que está en riesgo, las bajas y la meta son la lectura
+          financiera del negocio; ahí viven. Suscripciones es una lista de
+          trabajo: quién tiene licencia y cuándo se le cobra. Con las cuatro
+          tarjetas encima, media pantalla se iba antes de llegar a la lista, y
+          el mismo número aparecía en dos pestañas. */}
+      {vista === 'finanzas' && <div style={kpiCarril}>
         {/* ARR activo con su desglose ADENTRO.
             Anuales y Mensuales no son tres cifras que compiten: son las dos
             mitades de la primera. En tres tarjetas iguales se leían como tres
@@ -313,7 +313,7 @@ export default function SubscriptionsTab() {
             <div style={S.kSub}>{fmt(k?.arr_activo)} de {fmt(meta.monto)}</div>
           </>) : <div style={{ ...S.kSub, marginTop: 8 }}>Sin meta configurada — da clic en ⚙</div>}
         </div>
-      </div>
+      </div>}
 
       {/* ── Barra de acciones + sub-vistas ── */}
       <div style={isMobile
@@ -347,29 +347,11 @@ export default function SubscriptionsTab() {
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
       {vista === 'finanzas' && <FinanzasARR onCuenta={(id: string) => setDetailId(id)} />}
 
+      {/* Las vitalicias son pago ÚNICO: no son una suscripción mensual ni anual,
+          así que su bloque se fue al Panel financiero, que es donde vive el
+          ingreso no recurrente. Aquí solo estorbaba antes de la lista. */}
       {vista === 'subs' && (
         <>
-        {vitStats.total > 0 && (
-          <div style={{ ...S.card, borderLeft: '4px solid #a06600' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ fontWeight: 800 }}>♾️ Vitalicias legacy <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· pago único, fuera de ARR — oportunidad de recurrencia</span></div>
-              <button onClick={() => { setFCiclo(fCiclo === 'vitalicia' ? '' : 'vitalicia'); }} style={{ ...S.btnSmall, background: fCiclo === 'vitalicia' ? '#9B8CFA' : '#fff', color: fCiclo === 'vitalicia' ? '#fff' : '#333' }}>{fCiclo === 'vitalicia' ? 'Ver todas' : `Ver los ${vitStats.total} →`}</button>
-            </div>
-            <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
-              <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Vitalicias · contratado</div><div style={S.kValue}>{fmt(vitStats.contratado)}</div>
-              {/* $0 con licencias vendidas no es que no hayan pagado: es que sus
-                  pagos nunca se capturaron. Decir "sin pagos capturados" evita
-                  que alguien concluya que ese dinero no entró. */}
-              <div style={S.kSub}>
-                {fmt(vitStats.cobrado)} con pago capturado
-                {vitStats.sinPago > 0 && <> · <b style={{ color: '#9a6a10' }}>{vitStats.sinPago} sin registrar</b></>}
-              </div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1E8A63' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
-            </div>
-          </div>
-        )}
         <div style={S.card}>
           {stalePend.length > 0 && (
             <div style={{ marginBottom: 10, padding: '8px 12px', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, fontSize: 13, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
