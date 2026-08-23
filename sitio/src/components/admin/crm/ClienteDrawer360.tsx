@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
-import NuevaOportunidadModal from './NuevaOportunidadModal';
 import Etiquetas from './Etiquetas';
 import { CamposFicha } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
@@ -821,7 +820,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
 /* Selector de ETAPA del pipeline de clientes (se movió aquí desde la tabla).
  * Carga el catálogo de etapas de /api/crm/pipelines y guarda pipeline_stage. */
-function EtapaSelector({ co, reload, flash }: any) {
+function EtapaSelector({ co, reload, flash, compacto }: any) {
   const [stages, setStages] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
@@ -841,9 +840,19 @@ function EtapaSelector({ co, reload, flash }: any) {
     if (!r.ok || j.error) alert(j.error || 'No se pudo cambiar la etapa.'); else { flash('Etapa actualizada'); reload(); }
   }
   const actual = stages.find(s => s.key === co.pipeline_stage);
+  /* `compacto` = solo el selector, sin tarjeta ni encabezado propios. La etapa
+     dejó de vivir sola: va dentro de Contrato, porque en qué momento está la
+     relación y qué tiene contratado son la misma pregunta. */
+  const Caja = ({ children }: any) => compacto
+    ? <div>{children}</div>
+    : (
+      <div style={D.cardM}>
+        <div style={D.hM}>Etapa del cliente<span style={D.hNota}>en qué momento de la relación está</span></div>
+        {children}
+      </div>
+    );
   return (
-    <div style={D.cardM}>
-      <div style={D.hM}>Etapa del cliente<span style={D.hNota}>en qué momento de la relación está</span></div>
+    <Caja>
       {stages.length === 0 ? (
         <div style={{ color: '#999', fontSize: '0.82rem' }}>Configura las etapas en Configuración → Pipelines.</div>
       ) : (
@@ -856,7 +865,7 @@ function EtapaSelector({ co, reload, flash }: any) {
           {saving && <span style={{ color: '#999', fontSize: '0.8rem' }}>guardando…</span>}
         </div>
       )}
-    </div>
+    </Caja>
   );
 }
 
@@ -874,6 +883,10 @@ const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Ca
 function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
+  /* La ficha se LEE por defecto y se edita cuando lo pides. Antes se abría con
+     ocho cajas de texto aunque solo vinieras a ver quién es el cliente, y eso
+     es lo que la hacía pesada de mirar. */
+  const [editando, setEditando] = useState(false);
   // Ciudades que ya se usaron: autocompletar con lo real evita que la misma
   // ciudad se escriba de cuatro formas, sin tener que mantener un catálogo.
   const [ciudadesUsadas, setCiudadesUsadas] = useState<string[]>([]);
@@ -937,6 +950,16 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
   const planes = Array.from(new Set(activas.map((x: any) => x.nombre_plan).filter(Boolean)));
 
   const props = co.propiedades || {};
+  /* Un dato escrito, no una caja. Lo vacío se dice ("sin capturar") en gris:
+     un guion no distingue "no tiene" de "no lo hemos preguntado". */
+  const leido = (k: string, v: any) => (
+    <div key={k}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: '#a5a2af' }}>{k}</div>
+      <div style={{ fontSize: '0.88rem', fontWeight: v ? 700 : 500, marginTop: 3, color: v ? '#241d43' : '#a5a2af', wordBreak: 'break-word' as const }}>
+        {v || 'sin capturar'}
+      </div>
+    </div>
+  );
   const dato = (k: string, v: any, color?: string) => (
     <div style={{ flex: '1 1 130px', minWidth: 120 }}>
       <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#9c99a6' }}>{k}</div>
@@ -944,96 +967,165 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
     </div>
   );
 
+  const iniciales = String(co.nombre_comercial || co.nombre || '?').trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
+  const lugar = [co.ciudad, co.estado_geo].filter(Boolean).join(', ');
+  const sucTxt = Number(f.sucursales) > 1 ? `${f.sucursales} sucursales` : '1 sucursal';
+  const resumen = [lugar, sucTxt].filter(Boolean).join(' · ');
+  const COLOR_ESTADO: Record<string, [string, string]> = {
+    activo: ['#EAF8F2', '#1E8A63'], prospecto: ['#E3EDFD', '#2C5FC4'],
+    pausado: ['#FFF4E5', '#9a6a10'], churned: ['#FEF0EF', '#C0554E'],
+  };
+  const [colEstadoBg, colEstadoTx] = COLOR_ESTADO[f.estado_cuenta] || ['#f4f3f7', '#6b7280'];
+  const chip = (txt: any, bg = '#f4f3f7', col = '#6b7280') => (
+    <span style={{ fontSize: '0.66rem', fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: bg, color: col }}>{txt}</span>
+  );
+  const resumenLink = { cursor: 'pointer', listStyle: 'none' as const, fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6' };
+  const separador = { marginTop: 14, borderTop: '1px solid #f4f3f7', paddingTop: 12 };
+  const rejilla = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px 16px' } as const;
+
   return (
     <div>
-      {/* Contactos vive aquí y no en su propia pestaña: para ver el correo de
-          alguien había que cambiar de pantalla. */}
+      {/* ── LA EMPRESA ───────────────────────────────────────────────────
+          Contactos e Identidad eran dos tarjetas separadas siendo lo mismo:
+          quién es este cliente. Y arriba de todo había ocho cajas de texto
+          abiertas aunque solo vinieras a leer. Ahora la ficha se lee escrita y
+          los campos salen al pedir Editar. */}
       <div style={D.cardM}>
-        <div style={D.hM}>Contactos<span style={D.hNota}>{(contactos || []).length} en esta cuenta</span></div>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEECFE', color: '#4536BE', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>{iniciales}</div>
+          <div style={{ flex: 1, minWidth: 190 }}>
+            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.015em', lineHeight: 1.2 }}>
+              {co.nombre_comercial || co.nombre}
+            </div>
+            {resumen && <div style={{ fontSize: '0.78rem', color: '#8a8590', marginTop: 3 }}>{resumen}</div>}
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+              {chip('Cuenta ' + f.estado_cuenta, colEstadoBg, colEstadoTx)}
+              {co.sacs_account ? chip(co.sacs_account) : null}
+            </div>
+          </div>
+          {!editando && <button style={D.btnG} onClick={() => setEditando(true)}>Editar</button>}
+        </div>
+
+        {/* Lo fiscal y lo secundario, plegado: está a un clic, no estorbando. */}
+        <details open={editando} style={separador}>
+          <summary style={resumenLink}>{editando ? 'Datos de la empresa' : 'Ver datos fiscales y de contacto'}</summary>
+
+          {!editando ? (
+            <div style={{ marginTop: 13, ...rejilla }}>
+              {leido('Razón social', f.razon_social)}
+              {leido('RFC', f.rfc)}
+              {leido('Sitio web', f.sitio_web)}
+              {leido('Ciudad', f.ciudad)}
+              {leido('Estado', f.estado_geo)}
+              {leido('Sucursales', f.sucursales)}
+              {leido('Estado de la cuenta', f.estado_cuenta)}
+              {/* El perfil del negocio describe a la EMPRESA —giro, subgiro,
+                  colaboradores—, así que su sitio es este y no un cajón aparte
+                  llamado "Gestión interna", que no decía qué guardaba. */}
+              <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Perfil del negocio']} soloLectura />
+            </div>
+          ) : (
+            <div style={{ marginTop: 13 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
+                {campo('Nombre *', 'nombre')}
+                {campo('Razón social', 'razon_social')}
+                {campo('RFC', 'rfc')}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
+                {campo('Sitio web', 'sitio_web', 'https://…')}
+                <div>
+                  <label style={D.lbl}>Ciudad</label>
+                  <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.inputM} placeholder="empieza a escribir…" />
+                  <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
+                </div>
+                <div>
+                  <label style={D.lbl}>Estado</label>
+                  <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.inputM}>
+                    <option value="">—</option>
+                    {ESTADOS_MX.map(x => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, alignItems: 'start' }}>
+                <div>
+                  <label style={D.lbl}>Sucursales</label>
+                  <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.inputM}>
+                    {SUCURSALES_OPTS.map(n => <option key={n} value={n}>{n}</option>)}
+                    <option value={MAS_DE_50}>Más de 50</option>
+                  </select>
+                  {Number(f.sucursales) > 50 && <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>guardado: {f.sucursales}</div>}
+                </div>
+                <div>
+                  <label style={D.lbl}>Estado de la cuenta</label>
+                  <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.inputM}>
+                    {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={separador}>
+                <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Perfil del negocio']} onGuardado={reload} />
+              </div>
+              {barraGuardado}
+              {!dirty && (
+                <div style={separador}>
+                  <button style={D.btnG} onClick={() => setEditando(false)}>Terminar de editar</button>
+                </div>
+              )}
+            </div>
+          )}
+        </details>
+      </div>
+
+      {/* ── PERSONAS ─────────────────────────────────────────────────────
+          Vive aquí y no en su propia pestaña: para ver el correo de alguien
+          había que cambiar de pantalla. */}
+      <div style={D.cardM}>
+        <div style={D.hM}>Personas<span style={D.hNota}>{(contactos || []).length} en esta cuenta</span></div>
         <TabContactos companyId={companyId} contactos={contactos} reload={reload} flash={flash} compacto />
       </div>
 
-      <EtapaSelector co={co} reload={reload} flash={flash} />
-
+      {/* ── CONTRATO Y RELACIÓN ──────────────────────────────────────────
+          Al final, porque es la conclusión y no la portada. La etapa se junta
+          aquí: si tiene contrato vivo y actividad, es un cliente activo —eran
+          dos formas de decir lo mismo en dos tarjetas distintas. */}
       <div style={D.cardA}>
-        <div style={D.hA}>Contrato
+        <div style={D.hA}>Contrato y relación
           <span style={D.hNota}>no se captura · se calcula de sus suscripciones y pagos</span>
         </div>
-        {/* Rejilla pareja: el nombre del plan ocupaba tres renglones y empujaba
-            las demás columnas. Ahora va en pastillas —una por suscripción— en
-            una celda de doble ancho. */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
+        <div style={{ ...rejilla, alignItems: 'start' }}>
           <div style={{ gridColumn: 'span 2' }}>
-            <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Plan</div>
+            <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Plan</div>
             <div style={{ marginTop: 3 }}>
               {planes.length
                 ? planes.map((n: any) => (
-                  <span key={n} style={{ display: 'inline-block', background: '#EEECFE', color: '#4536BE', borderRadius: 20, padding: '3px 10px', fontSize: '0.66rem', fontWeight: 800, margin: '3px 4px 0 0' }}>{n}</span>
+                  <span key={n} style={{ display: 'inline-block', background: '#EEECFE', color: '#4536BE', borderRadius: 20, padding: '3px 10px', fontSize: '0.66rem', fontWeight: 800, margin: '2px 4px 0 0' }}>{n}</span>
                 ))
-                : <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>{co.plan || '—'}</span>}
+                : <span style={{ fontSize: '0.88rem', fontWeight: 800 }}>{co.plan || '—'}</span>}
             </div>
           </div>
           {dato('Ciclo', ciclos.length ? ciclos.join(' + ') : '—')}
           {dato('Sucursales', co.sucursales || 1)}
           {dato('Renovación', renov ? fmtDate(renov) : '—')}
           <div>
-            <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR · Cobrado</div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
+            <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR · Cobrado</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
             {cobrado > 0 && <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E8A63' }}>{money(cobrado)} cobrado</div>}
             {unicos > 0 && <div style={{ fontSize: '0.68rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
           </div>
         </div>
-      </div>
 
-      <div style={D.cardM}>
-        <div style={D.hM}>Identidad</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
-          {campo('Nombre *', 'nombre')}
-          {campo('Razón social', 'razon_social')}
-          {campo('RFC', 'rfc')}
+        <div style={separador}>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6', marginBottom: 6 }}>Etapa</div>
+          <EtapaSelector co={co} reload={reload} flash={flash} compacto />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
-          {/* "Giro" en texto libre YA NO se captura aquí: lo sustituye el campo
-              de lista "Giro de negocio" de arriba. Dejarlo abierto reintroducía
-              el problema que se acaba de arreglar — "moda", "Moda" y "Ropa"
-              volverían a ser tres giros. El valor viejo se conserva en la base
-              y se muestra solo como referencia mientras quede alguno. */}
-          {campo('Sitio web', 'sitio_web', 'https://…')}
-          <div>
-            <label style={D.lbl}>Ciudad</label>
-            <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.inputM} placeholder="empieza a escribir…" />
-            <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
-          </div>
-          <div>
-            <label style={D.lbl}>Estado</label>
-            <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.inputM}>
-              <option value="">—</option>
-              {ESTADOS_MX.map(x => <option key={x} value={x}>{x}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, alignItems: 'start' }}>
-          <div>
-            <label style={D.lbl}>Sucursales</label>
-            <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.inputM}>
-              {SUCURSALES_OPTS.map(n => <option key={n} value={n}>{n}</option>)}
-              <option value={MAS_DE_50}>Más de 50</option>
-            </select>
-            {Number(f.sucursales) > 50 && <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>guardado: {f.sucursales}</div>}
-          </div>
-          <div>
-            <label style={D.lbl}>Estado de la cuenta</label>
-            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.inputM}>
-              {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
-            </select>
-          </div>
-        </div>
-        {barraGuardado}
-      </div>
 
-      <div style={D.cardM}>
-        <div style={D.hM}>Gestión interna<span style={D.hNota}>solo para el equipo · es lo que se filtra en la lista</span></div>
-        <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} onGuardado={reload} />
+        {/* Acompañamiento y origen describen la RELACIÓN, no a la empresa. */}
+        <details style={separador}>
+          <summary style={resumenLink}>Cómo se acompaña esta cuenta</summary>
+          <div style={{ marginTop: 13 }}>
+            <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Gestión de la cuenta']} onGuardado={reload} />
+          </div>
+        </details>
       </div>
     </div>
   );
@@ -1432,9 +1524,22 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // dentro de un contenedor con desplazamiento horizontal, y eso recorta
   // cualquier panel absoluto — por eso solo se veía la primera opción.
   const [menuSub, setMenuSub] = useState<{ id: string; x: number; y: number } | null>(null);
-  // Menú "+ Acciones". Se ancla FIJO igual que el de cada fila y por lo mismo:
-  // la tarjeta se desplaza y un panel absoluto se recorta.
+  // El menú de la pestaña. Se ancla FIJO igual que el de cada fila y por lo
+  // mismo: la tarjeta se desplaza y un panel absoluto se recorta.
   const [menuAcc, setMenuAcc] = useState<{ x: number; y: number } | null>(null);
+
+  /* Lo cotizado se carga AQUÍ y no en su sección, porque dos de las cinco
+     cifras de arriba salen de estos datos. Si cada bloque pidiera lo suyo, la
+     tarjeta "Cotizado" y la lista dirían números distintos mientras cargan. */
+  const [deals, setDeals] = useState<any[] | null>(null);
+  const [sueltas, setSueltas] = useState<any[]>([]);
+  function cargarCotizado() {
+    fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
+      .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
+    fetch('/api/crm/deals/cotizaciones?company_id=' + companyId).then(r => r.json())
+      .then(j => setSueltas(j.propias || [])).catch(() => setSueltas([]));
+  }
+  useEffect(() => { setDeals(null); setSueltas([]); cargarCotizado(); }, [companyId]);
   // Estado de cuenta. Antes salía siempre con TODAS las suscripciones; ahora se
   // elige cuáles entran, porque mandarle el total de todo a quien le estás
   // cobrando una sola invita a la pregunta equivocada.
@@ -1689,6 +1794,49 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // aparte para que nadie lo sume al ARR. Se cuenta lo efectivamente pagado.
   const vitalicias = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')));
   const unicoPagado = vitalicias.reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
+
+  /* ── Lo que está sobre la mesa ──
+     Una oportunidad ABIERTA es la que no se ganó ni se perdió. Las ganadas no
+     se cuentan aquí: ya son las licencias de arriba, y sumarlas sería contar el
+     mismo dinero dos veces. Las cotizaciones SUELTAS —sin oportunidad detrás—
+     también cuentan mientras sigan vivas: se le cotizó igual. */
+  const esGanada = (k: string) => /ganad/i.test(k || '');
+  const esPerdida = (k: string) => /perdid/i.test(k || '');
+  const COT_VIVA = ['draft', 'sent', 'accepted'];
+  const listaDeals = deals || [];
+  const dealsAbiertas = listaDeals.filter((d: any) => !esGanada(d.stage) && !esPerdida(d.stage));
+  const dealsPerdidas = listaDeals.filter((d: any) => esPerdida(d.stage));
+  const sueltasVivas = (sueltas || []).filter((q: any) => COT_VIVA.includes(String(q.estado || '')));
+  const sueltasRech = (sueltas || []).filter((q: any) => String(q.estado || '') === 'rejected');
+
+  const cotizado = dealsAbiertas.reduce((a: number, d: any) => a + Number(d.valor_total || 0), 0)
+    + sueltasVivas.reduce((a: number, q: any) => a + Number(q.total || 0), 0);
+  const nCotizado = dealsAbiertas.length + sueltasVivas.length;
+  const rechazado = dealsPerdidas.reduce((a: number, d: any) => a + Number(d.valor_total || 0), 0)
+    + sueltasRech.reduce((a: number, q: any) => a + Number(q.total || 0), 0);
+  const nRechazado = dealsPerdidas.length + sueltasRech.length;
+  const nResueltas = listaDeals.filter((d: any) => esGanada(d.stage) || esPerdida(d.stage)).length
+    + (sueltas || []).filter((q: any) => !COT_VIVA.includes(String(q.estado || ''))).length;
+
+  /* Las tarjetas y la lista leen del MISMO arreglo, ya normalizado: una
+     oportunidad y una cotización suelta se pintan igual porque para quien mira
+     la ficha son lo mismo —algo que se cotizó y todavía no se resuelve—. */
+  const abiertos = [
+    ...dealsAbiertas.map((d: any) => ({
+      key: 'd' + d.id, id: d.id, tipo: 'deal', quote_id: d.quote_id || null,
+      titulo: d.nombre || 'Oportunidad',
+      meta: fmtDate(d.created_at),
+      etiqueta: d.quote_id ? 'con cotización' : 'sin documento',
+      monto: Number(d.valor_total || 0),
+    })),
+    ...sueltasVivas.map((q: any) => ({
+      key: 'q' + q.id, id: q.id, tipo: 'suelta', quote_id: q.id,
+      titulo: q.numero || 'Cotización',
+      meta: [fmtDate(q.created_at), q.contacto].filter(Boolean).join(' · '),
+      etiqueta: ESTADO_COT[q.estado] || q.estado,
+      monto: Number(q.total || 0),
+    })),
+  ].sort((a, b) => b.monto - a.monto);
   const sinCobro = vitalicias.filter((x: any) => !(Number(x.total_pagado) > 0) && Number(x.precio) > 0);
   const vitaliciasSinCobro = sinCobro.length;
   const vitaliciasValor = sinCobro.reduce((a: number, x: any) => a + Number(x.precio || 0), 0);
@@ -1696,17 +1844,17 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' , flex: '1 1 150px' }}>
           <div style={D.kl}>ARR de la cuenta</div>
           <div style={{ ...D.kv, color: '#5B4BD6' }}>{arrAct > 0 ? money(arrAct) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{activas.length} licencia{activas.length === 1 ? '' : 's'} activa{activas.length === 1 ? '' : 's'}</div>
         </div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' , flex: '1 1 150px' }}>
           <div style={D.kl}>Equivale al mes</div>
           <div style={{ ...D.kv, color: '#2C5FC4' }}>{mrrAct > 0 ? money(mrrAct) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>MRR · el anual repartido entre 12</div>
         </div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95', flex: '1 1 150px' }}>
           <div style={D.kl}>Pagos únicos</div>
           <div style={{ ...D.kv, color: unicoPagado > 0 ? '#1E8A63' : '#1a1a1a' }}>{unicoPagado > 0 ? money(unicoPagado) : '—'}</div>
           {/* Una vitalicia con precio pero sin "cuánto pagó" capturado deja la
@@ -1722,6 +1870,24 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
             </div>
           )}
         </div>
+        {/* Las dos de la mesa: lo que se cotizó y sigue vivo, y lo que se cayó.
+            Van en la misma fila y del mismo tamaño —son cifras de la cuenta
+            igual que las otras tres— pero en azul y rojo, que es lo que ya
+            significan en el resto del CRM: por decidirse, y perdido. */}
+        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5', flex: '1 1 150px' }}>
+          <div style={D.kl}>Cotizado</div>
+          <div style={{ ...D.kv, color: cotizado > 0 ? '#2C5FC4' : '#1a1a1a' }}>{cotizado > 0 ? money(cotizado) : '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+            {deals === null ? 'cargando…' : nCotizado ? `${nCotizado} sobre la mesa` : 'nada pendiente'}
+          </div>
+        </div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72', flex: '1 1 150px' }}>
+          <div style={D.kl}>Rechazado</div>
+          <div style={{ ...D.kv, color: rechazado > 0 ? '#C0554E' : '#1a1a1a' }}>{rechazado > 0 ? money(rechazado) : '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+            {deals === null ? 'cargando…' : nRechazado ? `${nRechazado} no ${nRechazado === 1 ? 'prosperó' : 'prosperaron'}` : 'ninguna se ha caído'}
+          </div>
+        </div>
       </div>
       {archivosSub && (
         <ArchivosSuscripcion subId={archivosSub.id} nombre={archivosSub.nombre_plan}
@@ -1730,32 +1896,41 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       <div style={D.cardM}>
         {/* Encabezado con el destello morado y los botones en la escala del
             sistema: morado el que crea, contorno azul lo importante. */}
-        {/* Un solo botón para TODO lo accionable. Antes eran cuatro en fila más
-            un aviso morado permanente por unificar fechas: entre el título y la
-            tabla se iban dos renglones enteros y lo importante —las licencias—
-            empezaba a media pantalla. Lo que urge no desaparece: el punto en el
-            botón lo delata y el motivo se lee dentro del menú. */}
-        <div style={{ ...D.hM, marginBottom: 9 }}>Suscripciones del cliente</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-          <button style={{ ...D.btnAzul, display: 'inline-flex', alignItems: 'center', gap: 7 }}
-            title="Estado de cuenta, unificar fechas, Mercado Pago…"
+        {/* UN solo control para toda la pestaña, pegado al título. Antes eran
+            cuatro botones en fila más un aviso morado permanente por unificar
+            fechas: entre el encabezado y la tabla se iban dos renglones y las
+            licencias —lo único que se viene a ver— empezaban a media pantalla.
+            Lo que urge no se pierde: el punto ámbar sobre el botón lo delata y
+            el motivo se lee dentro del menú. */}
+        <div style={{ ...D.hM, marginBottom: 12 }}>
+          Suscripciones del cliente
+          <span style={D.hNota}>{subs.length} registrada{subs.length === 1 ? '' : 's'}</span>
+          <button
+            title="Agregar, estado de cuenta, unificar fechas, Mercado Pago…"
             onClick={e => {
               if (menuAcc) { setMenuAcc(null); return; }
               const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const alto = 250;
+              const alto = 290;
               const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
-              setMenuAcc({ x: r.left, y });
-            }}>
-            + Acciones
-            {unificables.length > 0 && <span title="Hay licencias con fechas de cobro distintas" style={{ width: 7, height: 7, borderRadius: 99, background: '#E8A838', display: 'inline-block' }} />}
+              setMenuAcc({ x: r.right, y });
+            }}
+            style={{ ...D.btnG, position: 'relative' as const, width: 34, height: 34, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
+            ⋮
+            {unificables.length > 0 && (
+              <span title="Hay licencias con fechas de cobro distintas"
+                style={{ position: 'absolute' as const, top: -3, right: -3, width: 8, height: 8, borderRadius: 99, background: '#E8A838', border: '1.5px solid #fff' }} />
+            )}
           </button>
-          <button style={{ ...D.btn, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
         </div>
 
         {menuAcc && (
           <>
             <div onClick={() => setMenuAcc(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
-            <div style={{ position: 'fixed', left: menuAcc.x, top: menuAcc.y, zIndex: 1401, width: 290, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+            <div style={{ position: 'fixed', left: Math.max(8, menuAcc.x - 290), top: menuAcc.y, zIndex: 1401, width: 290, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+              <button style={{ ...D.mi, color: '#5B4BD6' }} onClick={() => { setMenuAcc(null); setAdding(true); }}>
+                Agregar suscripción<span style={D.miSub}>Alta de una licencia o un plugin</span>
+              </button>
+              <div style={D.miSep} />
               <button style={D.mi} onClick={() => { setMenuAcc(null); setEdoCuenta('ver'); }}>
                 Estado de cuenta<span style={D.miSub}>Eliges qué licencias entran</span>
               </button>
@@ -1865,7 +2040,12 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 hasta que él lo autorice con su cuenta de Mercado Pago{nf.proxima_factura ? `, y el primer cargo sale hasta el ${fmtDate(nf.proxima_factura)}` : ''}. Solo funciona con tarjeta.
               </div>
             )}
-            <button style={D.btn} disabled={busy} onClick={crear}>{busy ? '…' : (nf.cobro === 'mp' ? 'Crear y generar liga de domiciliación' : 'Crear suscripción')}</button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button style={D.btn} disabled={busy} onClick={crear}>{busy ? '…' : (nf.cobro === 'mp' ? 'Crear y generar liga de domiciliación' : 'Crear suscripción')}</button>
+              {/* Cancelar vive en el formulario: al mudarse "agregar" al menú,
+                  ya no queda ningún botón afuera que lo cierre. */}
+              <button style={D.btnG} onClick={() => { setAdding(false); setNf({ ...NF_VACIO }); }}>Cancelar</button>
+            </div>
           </div>
         )}
 
@@ -2100,9 +2280,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         </div>
       </div>
 
-      {/* Lo cotizado y lo vendido, debajo de las licencias: es el ANTES de cada
-          una de ellas. Era la pestaña Oportunidades, que se quitó. */}
-      <SeccionCotizaciones companyId={companyId} principal={principal} flash={flash} reload={reload} />
+      {/* Lo cotizado, debajo de las licencias: es el ANTES de cada una. */}
+      <SeccionCotizaciones abiertos={abiertos} resueltos={nResueltas} companyId={companyId}
+        flash={flash} cargar={cargarCotizado} reload={reload} />
 
       {unificar && (
         <UnificarFechas grupo={unificar} companyId={companyId} principalWa={principal?.whatsapp}
@@ -3025,90 +3205,12 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
 
 /* ─────────── Elegir de dónde sale la oportunidad ───────────
  * Casi ninguna oportunidad nace de la nada: nace de algo que ya se cotizó. Por
- * eso el alta empieza por buscar la cotización de la cuenta y solo si no está
- * se abre el formulario en blanco —al revés se capturaba a mano lo que ya
- * existía, con otro monto y otra fecha. */
+ * eso lo cotizado se lee del documento y no se recaptura a mano: al revés se
+ * escribía dos veces lo mismo, con otro monto y otra fecha. */
 const ESTADO_COT: Record<string, string> = {
   draft: 'borrador', sent: 'enviada', accepted: 'aceptada', paid: 'pagada',
   expired: 'vencida', rejected: 'rechazada',
 };
-
-function ElegirCotizacionModal({ companyId, busyId, onUsar, onDesdeCero, onClose }: any) {
-  const [q, setQ] = useState('');
-  const [propias, setPropias] = useState<any[] | null>(null);
-  const [huerfanas, setHuerfanas] = useState<any[]>([]);
-
-  useEffect(() => {
-    let vivo = true;
-    // Se busca contra el servidor y no en memoria: las cotizaciones que valen
-    // son justo las que NO están ligadas a esta cuenta todavía.
-    const t = setTimeout(() => {
-      fetch(`/api/crm/deals/cotizaciones?company_id=${companyId}&q=${encodeURIComponent(q)}`)
-        .then(r => r.json())
-        .then(j => { if (!vivo) return; setPropias(j.propias || []); setHuerfanas(j.huerfanas || []); })
-        .catch(() => { if (vivo) { setPropias([]); setHuerfanas([]); } });
-    }, q ? 260 : 0);
-    return () => { vivo = false; clearTimeout(t); };
-  }, [companyId, q]);
-
-  const fila = (c: any, ajena: boolean) => (
-    <div key={c.id} style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', padding: '9px 0', borderTop: '1px solid #f2f1f6' }}>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
-          {c.numero} · {money(c.total)}
-          <span style={{ ...D.badge, marginLeft: 7, background: c.estado === 'paid' ? '#EAF8F2' : '#F4F4F6', color: c.estado === 'paid' ? '#1E8A63' : '#6B7280' }}>{ESTADO_COT[c.estado] || c.estado}</span>
-        </div>
-        <div style={{ fontSize: '0.73rem', color: '#8a8590' }}>
-          {fmtDate(c.pagado_fecha || c.created_at)}{c.empresa ? ' · ' + c.empresa : ''}{c.contacto ? ' · ' + c.contacto : ''}
-          {ajena && <span style={{ color: '#9a6a10' }}> · sin cliente ligado</span>}
-        </div>
-      </div>
-      <a href={`/cotizacion/${c.id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }}>Ver</a>
-      <button style={{ ...D.btn, fontSize: '0.76rem' }} disabled={busyId === c.id} onClick={() => onUsar(c)}>
-        {busyId === c.id ? '…' : 'Usar esta'}
-      </button>
-    </div>
-  );
-
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 970, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 560, maxWidth: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 9 }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Nueva oportunidad</h3>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
-        </div>
-        <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
-          <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 10 }}>
-            Búscala entre lo que ya se cotizó: así hereda el monto, las líneas y la fecha real. Solo salen las
-            que todavía no tienen oportunidad.
-          </div>
-          <input value={q} onChange={e => setQ(e.target.value)} autoFocus
-            placeholder="Número de cotización, empresa o correo…"
-            style={{ ...D.inputM, marginBottom: 12 }} />
-
-          {propias === null ? <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Buscando…</div> : (<>
-            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase', letterSpacing: '.06em' }}>De esta cuenta</div>
-            {propias.length ? propias.map((c: any) => fila(c, false))
-              : <div style={{ fontSize: '0.78rem', color: '#a5a2af', padding: '8px 0' }}>Todo lo cotizado de esta cuenta ya tiene su oportunidad.</div>}
-
-            {huerfanas.length > 0 && (<>
-              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 16 }}>Sin cliente ligado</div>
-              <div style={{ fontSize: '0.73rem', color: '#a5a2af', lineHeight: 1.5, marginBottom: 2 }}>
-                Se hicieron antes de que existiera la ficha. Al usarlas quedan ligadas a este cliente.
-              </div>
-              {huerfanas.map((c: any) => fila(c, true))}
-            </>)}
-          </>)}
-        </div>
-        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button style={D.btnG} onClick={onDesdeCero}>No está cotizada · crear desde cero</button>
-          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onClose}>Cancelar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 /* ═══ Unificar fechas de cobro ═══
@@ -3338,219 +3440,163 @@ function SenalesVenta({ co, subs = [] }: any) {
   );
 }
 
-/* ─────────── Cotizado y vendido: vive DENTRO de Suscripciones ───────────
+/* ─────────── Cotizado: lo que hay sobre la mesa ───────────
  *
- * Antes era la pestaña "Oportunidades". Se mudó aquí porque es lo mismo que
- * las licencias: dinero de esta cuenta —lo que se le cotizó, lo que aceptó y
- * los pagos únicos que salieron de ahí—. Separado, había que saltar de pestaña
- * para entender de dónde venía una suscripción.
+ * Era la pestaña "Oportunidades" con su tablero: selector de etapa, "convertir
+ * a cotización", "marcar ganada" y los porcentajes del embudo. Eso es gestión
+ * del módulo de Cotizaciones, no de la ficha de un cliente. Aquí importan dos
+ * cosas: CUÁNTO hay sobre la mesa y poder llegar al documento.
+ *
+ * Por eso no hay "+ nueva oportunidad": todo lo que llega aquí llegó porque se
+ * cotizó, y cotizar YA es la oportunidad. Y no hay "marcar ganada": cobrar la
+ * cotización la gana sola —mark-paid llama a cerrarCotizacionPagada, que crea
+ * el cliente, la suscripción y el pago único, de forma idempotente—.
+ *
+ * La lista enseña solo lo ABIERTO: lo ganado ya está arriba convertido en
+ * licencias y lo rechazado se cuenta en su tarjeta.
  */
-function SeccionCotizaciones({ companyId, principal, flash, reload }: any) {
-  const [deals, setDeals] = useState<any[] | null>(null);
-  const [stages, setStages] = useState<any[]>([]);
+function SeccionCotizaciones({ abiertos, resueltos, companyId, flash, cargar, reload }: any) {
   const [busyId, setBusyId] = useState('');
-  const [showNew, setShowNew] = useState(false);
-  const [eligiendo, setEligiendo] = useState(false);
-  // Cotizado que no llegó a ser oportunidad. Es la mitad que faltaba: la
-  // pestaña decía "$0 ganado" en cuentas que ya habían cobrado.
-  const [sueltas, setSueltas] = useState<any[]>([]);
-
-  function cargar() {
-    fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
-      .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
-    fetch('/api/crm/deals/cotizaciones?company_id=' + companyId).then(r => r.json())
-      .then(j => setSueltas(j.propias || [])).catch(() => setSueltas([]));
+  const [menu, setMenu] = useState<{ key: string; x: number; y: number } | null>(null);
+  const [stages, setStages] = useState<any[]>([]);
+  useEffect(() => {
     fetch('/api/crm/pipelines').then(r => r.json())
-      .then(pj => { const o = (pj.data || []).find((p: any) => p.tipo === 'oportunidad'); setStages(o?.stages || []); }).catch(() => {});
-  }
-  useEffect(() => { setDeals(null); cargar(); }, [companyId]);
+      .then(pj => { const o = (pj.data || []).find((p: any) => p.tipo === 'oportunidad'); setStages(o?.stages || []); })
+      .catch(() => {});
+  }, []);
 
-  const stageBy: Record<string, any> = {}; stages.forEach(s => stageBy[s.key] = s);
-  const isWon = (k: string) => /ganad/i.test(k || '');
-  const isLost = (k: string) => /perdid/i.test(k || '');
+  const ligaDe = (quoteId: string) => (typeof window !== 'undefined' ? `${window.location.origin}/cotizacion/${quoteId}` : '');
 
-  async function cambiarStage(d: any, stage: string) {
-    if (!stage || stage === d.stage) return;
-    // Ganar desde aquí también avisa si el registro todavía no es cliente: el
-    // cierre crea un cliente nuevo, y eso se confirma, no se descubre después.
-    if (isWon(stage)) {
-      try {
-        const p = await fetch(`/api/crm/deals/cierre-preview?deal_id=${d.id}`).then(r => r.json());
-        if (p && !p.error && p.convierte_lead) {
-          const ok = confirm([`“${p.cliente}” todavía no es cliente: al ganar esta oportunidad se va a CONVERTIR.`, '', 'Esto es lo que va a pasar:', ...(p.pasos || []).map((x: string) => '· ' + x), '', '¿Confirmas?'].join('\n'));
-          if (!ok) return;
-        }
-      } catch { /* si el preview falla, no se bloquea el cierre */ }
-    }
-    // Perder exige motivo (lo valida el servidor): se pregunta antes para no
-    // chocar contra un 400 y perder el clic.
-    let motivo: string | undefined;
-    if (isLost(stage)) {
-      const m = prompt(`¿Por qué se perdió "${d.nombre}"?\n\nSugeridos: precio · se fue con competidor · no era el momento · falta una función · no contestó · presupuesto`, '');
-      if (m === null) return;
-      if (!m.trim()) { alert('Sin motivo no se puede marcar perdida.'); return; }
-      motivo = m.trim();
-    }
-    setBusyId(d.id);
-    const r = await fetch('/api/crm/deals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, stage, ...(motivo ? { motivo_perdida: motivo } : {}) }) });
-    const j = await r.json().catch(() => ({}));
-    setBusyId('');
-    if (!r.ok || j.error) { alert(j.error || 'No se pudo mover la oportunidad.'); return; }
-    // Se dice lo que de verdad quedó creado, no lo que se supone que pasa.
-    const c = j?.cierre;
-    const hechos = [c?.cliente_creado && 'cliente creado', c?.sub_creada && 'suscripción generada', c?.unico_creado && 'pago único registrado'].filter(Boolean).join(' · ');
-    flash(isWon(stage) ? (hechos ? 'Ganada · ' + hechos : 'Oportunidad ganada') + (c?.avisos?.length ? ' · ⚠ ' + c.avisos[0] : '') : 'Etapa actualizada');
-    cargar(); reload?.();
-  }
-  async function crearDesdeCotizacion(q: any) {
-    setBusyId(q.id);
-    const r = await fetch('/api/crm/deals/cotizaciones', {
+  /** Abre el documento. Si la oportunidad todavía no tiene, se le genera en el
+   *  momento —el mismo endpoint del viejo botón "convertir a cotización"— y se
+   *  abre esa. La ventana se pide DENTRO del gesto: iOS bloquea las de después. */
+  async function abrirCotizacion(it: any) {
+    if (it.quote_id) { window.open(`/cotizacion/${it.quote_id}`, '_blank', 'noopener'); return; }
+    setBusyId(it.key);
+    const w = window.open('', '_blank');
+    const r = await fetch('/api/crm/deals/convertir-cotizacion', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quote_id: q.id, company_id: companyId }),
+      body: JSON.stringify({ deal_id: it.id }),
     });
     const j = await r.json().catch(() => ({}));
     setBusyId('');
-    if (!r.ok || j.error) { alert(j.error || 'No se pudo crear la oportunidad.'); return; }
-    const c = j?.cierre;
-    const hechos = [c?.cliente_creado && 'cliente creado', c?.sub_creada && 'suscripción generada', c?.unico_creado && 'pago único registrado'].filter(Boolean).join(' · ');
-    flash(`Oportunidad de ${q.numero} creada${hechos ? ' · ' + hechos : ''}`);
-    setEligiendo(false); cargar(); reload?.();
+    if (!r.ok || !j.url) { if (w) w.close(); flash?.(j.error || 'No se pudo generar la cotización.'); return; }
+    if (w) w.location.href = j.url; else window.location.href = j.url;
+    flash?.('Cotización creada'); cargar?.(); reload?.();
   }
 
-  async function convertir(d: any) {
-    setBusyId(d.id);
-    const w = window.open('', '_blank'); // síncrono en el gesto (iOS)
-    const r = await fetch('/api/crm/deals/convertir-cotizacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deal_id: d.id }) });
+  /** Rechazar exige motivo (lo valida el servidor): se pregunta antes para no
+   *  chocar contra un 400 y perder el clic. */
+  async function rechazar(it: any) {
+    const perdida = stages.find((s: any) => /perdid/i.test(s.key || ''));
+    if (!perdida) { flash?.('El pipeline de oportunidades no tiene etapa de perdida.'); return; }
+    const m = prompt(`¿Por qué se rechazó "${it.titulo}"?\n\nSugeridos: precio · se fue con competidor · no era el momento · falta una función · no contestó · presupuesto`, '');
+    if (m === null) return;
+    if (!m.trim()) { alert('Sin motivo no se puede marcar rechazada.'); return; }
+    setBusyId(it.key);
+    const r = await fetch('/api/crm/deals', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: it.id, stage: perdida.key, motivo_perdida: m.trim() }),
+    });
     const j = await r.json().catch(() => ({}));
     setBusyId('');
-    if (!r.ok || !j.url) { if (w) w.close(); flash(j.error || 'No se pudo convertir a cotización.'); return; }
-    if (w) w.location.href = j.url; else window.location.href = j.url;
-    flash('Cotización creada'); cargar(); reload?.();
+    if (!r.ok || j.error) { alert(j.error || 'No se pudo marcar rechazada.'); return; }
+    flash?.('Marcada como rechazada'); cargar?.(); reload?.();
   }
 
-  if (deals === null) return <Cargando texto="Cargando lo cotizado…" />;
+  /** Una cotización suelta —sin oportunidad detrás—. Registrarla es lo que hace
+   *  que ese dinero exista en los números de la cuenta. */
+  async function adoptar(it: any) {
+    setBusyId(it.key);
+    const r = await fetch('/api/crm/deals/cotizaciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quote_id: it.id, company_id: companyId }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setBusyId('');
+    if (!r.ok || j.error) { alert(j.error || 'No se pudo registrar.'); return; }
+    flash?.('Registrada como oportunidad'); cargar?.(); reload?.();
+  }
 
-  const abiertas = deals.filter(d => !isWon(d.stage) && !isLost(d.stage));
-  const pipeline = abiertas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
-  const ponderado = abiertas.reduce((a, d) => a + Number(d.valor_total || 0) * (Number(d.probabilidad || 0) / 100), 0);
-  const ganadas = deals.filter(d => isWon(d.stage));
-  // Un pago único no es MRR. Sumarlos juntos hacía que una implementación de
-  // $80,000 se leyera como recurrencia que no existe.
-  const mrrDe = (d: any) => Number(d.mrr ?? d.valor_mensual ?? 0);
-  // Las oportunidades creadas antes del desglose por línea traen mrr y único en
-  // cero con el valor completo en valor_total: sin respaldo, una venta ganada de
-  // $44,505 se leía como "$0 ganado". Se cuentan como pago ÚNICO, que es lo que
-  // no infla: inventarles recurrencia sí movería el ARR.
-  const unicoDe = (d: any) => {
-    const u = Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
-    if (u > 0) return u;
-    return Number(d.mrr ?? d.valor_mensual ?? 0) > 0 ? 0 : Number(d.valor_total || 0);
-  };
-  // ── Cuántas se pagan y cuántas se rechazan ──
-  // Sobre las RESUELTAS: las abiertas todavía no ganaron ni perdieron y
-  // meterlas hundiría los dos porcentajes sin que haya pasado nada.
-  const perdidas = deals.filter(d => isLost(d.stage));
-  const resueltas = ganadas.length + perdidas.length;
-  const pctGana = resueltas ? Math.round((ganadas.length / resueltas) * 100) : 0;
-  const pctPierde = resueltas ? 100 - pctGana : 0;
-  const montoPerdido = perdidas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
+  function abrirMenu(e: any, key: string) {
+    e.stopPropagation();
+    if (menu?.key === key) { setMenu(null); return; }
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const alto = 200;
+    const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
+    setMenu({ key, x: r.right, y });
+  }
+
+  const it0 = menu ? abiertos.find((x: any) => x.key === menu.key) : null;
 
   return (
-    <div>
-      {/* El botón encabeza la pestaña, no compite con las tarjetas: metido
-          entre ellas se leía como una más y quedaba a distinta altura. */}
-      {/* gap real entre el título y el botón: la nota se alinea a la derecha del
-          bloque de título y sin separación se metía DEBAJO del botón. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ ...D.hM, marginBottom: 0, flex: 1, minWidth: 0 }}>Cotizado y vendido<span style={D.hNota}>el antes de cada licencia</span></div>
-        <button style={{ ...D.btn, flexShrink: 0 }} onClick={() => setEligiendo(true)}>+ Nueva oportunidad</button>
-      </div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}><div style={D.kl}>Se pagan</div><div style={D.kv}>{resueltas ? pctGana + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{ganadas.length} de {resueltas} resueltas</div></div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72' }}><div style={D.kl}>Rechazadas</div><div style={{ ...D.kv, color: resueltas && pctPierde > 0 ? '#C0554E' : '#1a1a1a' }}>{resueltas ? pctPierde + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{perdidas.length}{montoPerdido > 0 ? ' · ' + money(montoPerdido) : ''}</div></div>
-      </div>
+    <div style={D.cardM}>
+      <div style={D.hM}>Cotizado<span style={D.hNota}>se toca y abre la cotización</span></div>
 
-      {/* Cotizado que no llegó a ser oportunidad. Va ARRIBA de la lista: es lo
-          que está mal y hay que resolver, no un archivo que se consulta. */}
-      {sueltas.length > 0 && (
-        <div style={{ background: '#FEF6E7', border: '1.5px solid #f6e2bc', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
-          <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#9a6a10', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-            Cotizado sin oportunidad ({sueltas.length})
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#8a6a2a', lineHeight: 1.5, margin: '3px 0 9px' }}>
-            Se le cotizó y no quedó registrado aquí, así que no cuenta en lo ganado ni en los porcentajes.
-          </div>
-          {sueltas.map((q: any) => (
-            <div key={q.id} style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4e6cd' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-                  {q.numero} · {money(q.total)}
-                  <span style={{ ...D.badge, marginLeft: 7, background: q.estado === 'paid' ? '#EAF8F2' : '#F4F4F6', color: q.estado === 'paid' ? '#1E8A63' : '#6B7280' }}>{ESTADO_COT[q.estado] || q.estado}</span>
-                </div>
-                <div style={{ fontSize: '0.73rem', color: '#8a8590' }}>
-                  {fmtDate(q.pagado_fecha || q.created_at)}{q.contacto ? ' · ' + q.contacto : ''}
-                </div>
-              </div>
-              <a href={`/cotizacion/${q.id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }}>Ver</a>
-              <button style={{ ...D.btn, fontSize: '0.76rem' }} disabled={busyId === q.id} onClick={() => crearDesdeCotizacion(q)}>
-                {busyId === q.id ? '…' : 'Crear oportunidad'}
-              </button>
-            </div>
-          ))}
+      {!abiertos.length && (
+        <div style={{ color: '#a5a2af', fontSize: '0.82rem', padding: '2px 0 4px' }}>
+          Nada sobre la mesa. Lo que se le cotice aparece aquí.
         </div>
       )}
 
-      {deals.length === 0 ? (
-        <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades registradas.</div>
-      ) : deals.map((d: any) => {
-        const st = stageBy[d.stage];
-        const won = isWon(d.stage), lost = isLost(d.stage);
-        return (
-          <div key={d.id} style={D.card}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{d.nombre}</div>
-                {d.descripcion && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 2 }}>{d.descripcion}</div>}
-                <div style={{ fontSize: '0.8rem', color: '#16181d', marginTop: 4 }}>
-                  MRR <b>{money(mrrDe(d))}</b> · ARR <b>{money(mrrDe(d) * 12)}</b>
-                  {unicoDe(d) > 0 ? <span style={{ color: '#6C5CE7' }}> · pago único {money(unicoDe(d))}</span> : null}
-                </div>
-              </div>
-              <span style={{ ...D.badge, background: won ? '#e6f6f2' : lost ? '#fdf2f2' : '#eef2ff', color: won ? '#1A8F7A' : lost ? '#b93333' : (st?.color || '#3730a3') }}>
-                {st?.label || d.stage}
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
-              <select value={d.stage} disabled={busyId === d.id} onChange={e => cambiarStage(d, e.target.value)} style={{ ...D.input, width: 'auto', padding: '5px 8px', fontSize: '0.78rem' }}>
-                {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-              </select>
-              {d.quote_id
-                ? <a href={`/cotizacion/${d.quote_id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.78rem' }}>Ver cotización →</a>
-                : <button style={{ ...D.btnG, fontSize: '0.78rem' }} disabled={busyId === d.id} onClick={() => convertir(d)}>{busyId === d.id ? '…' : 'Convertir a cotización'}</button>}
-              {!won && !lost && <button style={{ ...D.btn, background: '#1A8F7A', fontSize: '0.78rem' }} disabled={busyId === d.id} onClick={() => { const g = stages.find(s => isWon(s.key)); if (g) cambiarStage(d, g.key); }}>Marcar ganada</button>}
+      {abiertos.map((it: any) => (
+        <div key={it.key} role="button" tabIndex={0}
+          onClick={() => abrirCotizacion(it)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirCotizacion(it); } }}
+          title={it.quote_id ? 'Abrir la cotización' : 'Generar la cotización y abrirla'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '13px 15px', cursor: 'pointer',
+            border: '1px solid #ececec', borderLeft: `3px solid ${it.quote_id ? '#7DA6F5' : '#E8A838'}`,
+            borderRadius: 11, marginBottom: 9, background: '#fff',
+            opacity: busyId === it.key ? 0.55 : 1,
+          }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.89rem', fontWeight: 700, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.titulo}</div>
+            <div style={{ fontSize: '0.73rem', color: '#a5a2af', marginTop: 3, display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+              <span>{it.meta}</span>
+              <span style={{ ...D.badge, background: it.quote_id ? '#E3EDFD' : '#FFF4E5', color: it.quote_id ? '#2C5FC4' : '#9a6a10', fontSize: '0.66rem' }}>{it.etiqueta}</span>
             </div>
           </div>
-        );
-      })}
+          <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
+            <div style={{ fontSize: '1.12rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' as const }}>{money(it.monto)}</div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' }}>sobre la mesa</div>
+          </div>
+          <button onClick={e => abrirMenu(e, it.key)} title="Más acciones"
+            style={{ ...D.btnG, padding: '6px 10px', flexShrink: 0 }}>⋮</button>
+        </div>
+      ))}
 
-      {/* El alta completa (catálogo, personalizado, descuentos, MRR/único) ya
-          cuelga del cliente: por eso no hace falta contacto principal. */}
-      {eligiendo && (
-        <ElegirCotizacionModal
-          companyId={companyId}
-          busyId={busyId}
-          onUsar={crearDesdeCotizacion}
-          onDesdeCero={() => { setEligiendo(false); setShowNew(true); }}
-          onClose={() => setEligiendo(false)}
-        />
+      {/* Lo cerrado no se lista: lo ganado ya son las licencias de arriba y lo
+          rechazado tiene su tarjeta. Se dice que existe y dónde se mira. */}
+      {resueltos > 0 && (
+        <div style={{ fontSize: '0.72rem', color: '#a5a2af', paddingTop: 4 }}>
+          {resueltos} más ya {resueltos === 1 ? 'cerrada' : 'cerradas'} · el detalle vive en Cotizaciones
+        </div>
       )}
-      {showNew && (
-        <NuevaOportunidadModal
-          companyIdInicial={companyId}
-          onClose={() => setShowNew(false)}
-          onCreated={() => { setShowNew(false); cargar(); reload?.(); }}
-        />
+
+      {menu && it0 && (
+        <>
+          <div onClick={() => setMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
+          <div style={{ position: 'fixed', left: menu.x - 262, top: menu.y, zIndex: 1401, width: 262, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+            <button style={{ ...D.mi, color: '#5B4BD6' }} onClick={() => { setMenu(null); abrirCotizacion(it0); }}>
+              {it0.quote_id ? 'Ver la cotización' : 'Generar la cotización'}
+              <span style={D.miSub}>{it0.quote_id ? 'Abre el documento' : 'Se crea y se abre'}</span>
+            </button>
+            {it0.quote_id && (
+              <button style={D.mi} onClick={() => { setMenu(null); try { navigator.clipboard?.writeText(ligaDe(it0.quote_id)); flash?.('Link copiado'); } catch { /* sin portapapeles */ } }}>
+                Copiar el link del cliente<span style={D.miSub}>El mismo que recibe por WhatsApp</span>
+              </button>
+            )}
+            <div style={D.miSep} />
+            {it0.tipo === 'suelta'
+              ? <button style={D.mi} onClick={() => { setMenu(null); adoptar(it0); }}>
+                  Registrarla como oportunidad<span style={D.miSub}>Para que cuente en los números de la cuenta</span>
+                </button>
+              : <button style={{ ...D.mi, color: '#C0554E' }} onClick={() => { setMenu(null); rechazar(it0); }}>
+                  Marcar como rechazada<span style={D.miSub}>Pide el motivo</span>
+                </button>}
+          </div>
+        </>
       )}
     </div>
   );

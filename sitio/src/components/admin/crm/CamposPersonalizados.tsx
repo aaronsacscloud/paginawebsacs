@@ -293,13 +293,23 @@ export default function CamposConfig({ entidad = 'company', sinTitulo }: { entid
 }
 
 /* ─────────── En la ficha del cliente ─────────── */
-export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardado }: {
+export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardado, grupos, soloLectura }: {
   entidad?: 'company' | 'deal' | 'subscription' | 'contact';
   entidadId: string;
   valores?: Record<string, any> | null;
   onGuardado?: () => void;
+  /** Solo estos grupos. Sirve para repartir los campos por la ficha —el perfil
+   *  del negocio con la empresa, el acompañamiento con el contrato— en vez de
+   *  amontonarlos todos en un cajón llamado "Gestión interna". */
+  grupos?: string[];
+  /** Pinta los valores como texto, no como formulario. Una ficha llena de
+   *  cajas vacías se lee como un formulario a medio llenar. */
+  soloLectura?: boolean;
 }) {
-  const { props } = useCampos(entidad);
+  const { props: todas } = useCampos(entidad);
+  const props = grupos && grupos.length
+    ? todas.filter(p => grupos.includes(p.grupo || 'General'))
+    : todas;
   const [v, setV] = useState<Record<string, any>>(valores || {});
   const [sucio, setSucio] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -324,7 +334,7 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
   }
 
   if (!props.length) return null;
-  const grupos = Array.from(new Set(props.map(p => p.grupo || 'General')));
+  const gruposVisibles = Array.from(new Set(props.map(p => p.grupo || 'General')));
   // Los "importantes" sin dato se señalan sin bloquear nada: es el aviso de
   // Pipedrive, que sirve justo porque no impide guardar.
   const faltan = props.filter(p => p.importante && (v[p.key] === undefined || v[p.key] === ''));
@@ -374,6 +384,47 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
     }
   };
 
+  /* Cómo se LEE un valor: un select guarda la clave, no la etiqueta, así que
+     mostrar el crudo enseñaría "joyeria_accesorios" en vez de "Joyería y
+     accesorios". */
+  const texto = (p: Prop): string => {
+    const val = v[p.key];
+    if (val === undefined || val === null || val === '') return '';
+    if (p.tipo === 'booleano') return val ? 'Sí' : 'No';
+    if (p.tipo === 'select') {
+      const opts = p.depende_de
+        ? ((p.opciones_por_padre || {})[String(v[p.depende_de] || '')] || [])
+        : (p.opciones || []);
+      return (opts.find(o => o.v === val)?.l) || String(val);
+    }
+    if (p.tipo === 'multiselect') {
+      const arr: string[] = Array.isArray(val) ? val : [];
+      return arr.map(x => (p.opciones || []).find(o => o.v === x)?.l || x).join(' · ');
+    }
+    if (p.tipo === 'moneda') return '$' + Number(val).toLocaleString('es-MX');
+    if (p.tipo === 'porcentaje') return val + '%';
+    if (p.tipo === 'numero') return Number(val).toLocaleString('es-MX');
+    return String(val);
+  };
+
+  if (soloLectura) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px 16px' }}>
+        {props.map(p => {
+          const t = texto(p);
+          return (
+            <div key={p.id}>
+              <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#a5a2af' }}>{p.etiqueta}</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: t ? 700 : 500, marginTop: 3, color: t ? '#241d43' : '#a5a2af', wordBreak: 'break-word' }}>
+                {t || 'sin capturar'}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div>
       {faltan.length > 0 && (
@@ -381,9 +432,11 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
           ⚑ Faltan datos importantes: {faltan.map(p => p.etiqueta).join(', ')}
         </div>
       )}
-      {grupos.map(g => (
+      {gruposVisibles.map(g => (
         <div key={g} style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>{g}</div>
+          {gruposVisibles.length > 1 && (
+            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px' }}>{g}</div>
+          )}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {props.filter(p => (p.grupo || 'General') === g).map(p => (
               <div key={p.id} style={{ flex: p.tipo === 'texto_largo' || p.tipo === 'multiselect' ? '1 1 100%' : '1 1 200px' }}>
