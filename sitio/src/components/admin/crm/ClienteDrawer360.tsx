@@ -1404,7 +1404,7 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
 /* ─────────── 📋 Suscripciones (lista editable + alta) ─────────── */
 // `cobro` no es columna de subscriptions: solo decide si, además de dar de alta
 // la licencia, se crea la domiciliación en Mercado Pago en el mismo paso.
-const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada', cobro: 'manual', payer_email: '' };
+const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', sucursales: 1, proxima_factura: '', estado: 'programada', cobro: 'manual', payer_email: '' };
 const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function TabSubs({ companyId, subs, reload, flash, principal }: any) {
@@ -1584,10 +1584,29 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // y solo sirve para buscar tarifas aquí; `plan_id` es el UUID de la tabla plans
   // y es lo ÚNICO que puede viajar a subscriptions.plan_id (columna uuid). Los
   // planes del fallback y los plugins no tienen uuid → van sin plan_id.
+  /* Lo que costaría de lista esa licencia para N sucursales.
+   * No se impone: se propone al elegir el plan y se enseña debajo del precio
+   * para poder comparar. Una cuenta puede tener descuento pactado, y el precio
+   * bueno es el que se acordó, no el del catálogo. Null = el plan no tiene
+   * precio de lista para ese ciclo (es "a la medida"). */
+  function listaPor(cur: any, ciclo?: string, suc?: any): number | null {
+    const c = ciclo ?? cur.ciclo;
+    const p = planes.find((x: any) => (x.slug && x.slug === cur.plan_slug) || (x.id && cur.plan_id && x.id === cur.plan_id));
+    if (!p) return null;
+    const base = c === 'vitalicia' ? p.precio_vitalicio : c === 'mensual' ? p.precio_mensual : p.precio_anual;
+    if (base == null || base === '') return null;
+    const n = Math.max(1, Math.round(Number(suc ?? cur.sucursales) || 1));
+    return Number(base) * n;
+  }
+
   function aplicarPlan(p: any, destino: 'nuevo' | 'edit') {
     const set = destino === 'nuevo' ? setNf : setF;
     const cur: any = destino === 'nuevo' ? nf : f;
-    const tarifa = cur.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual;
+    const base = cur.ciclo === 'vitalicia' ? p.precio_vitalicio : cur.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual;
+    const suc = Math.max(1, Math.round(Number(cur.sucursales) || 1));
+    // El precio propuesto ya viene multiplicado por las sucursales: es lo que
+    // de verdad se le va a cobrar, no la tarifa unitaria.
+    const tarifa = base == null || base === '' ? null : Number(base) * suc;
     set({ ...cur, plan_slug: p.slug || '', plan_id: p.id || '', nombre_plan: p.nombre, precio: tarifa ?? cur.precio ?? '' });
     setPicker(null);
   }
@@ -1614,7 +1633,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     // que las subs dadas de alta desde aquí nacían SIN contacto —a diferencia de
     // las que se crean en la sección de Suscripciones, que sí lo llevan—. De ahí
     // cuelgan el estado de cuenta, los recordatorios y la cobranza.
-    const body: any = { company_id: companyId, contact_id: principal?.id || null, nombre_plan: nf.nombre_plan, plan_id: nf.plan_id || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
+    const body: any = { company_id: companyId, contact_id: principal?.id || null, nombre_plan: nf.nombre_plan, plan_id: nf.plan_id || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado, sucursales: nf.sucursales };
     if (nf.proxima_factura) body.proxima_factura = nf.proxima_factura;
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
@@ -1646,7 +1665,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   }
   async function guardar(s: any) {
     setBusy(true);
-    const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0 };
+    const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0, sucursales: f.sucursales === '' ? null : f.sucursales };
     if (f.proxima_factura) body.proxima_factura = f.proxima_factura;
     // Vacío es un dato: significa "no lo sé", y hay que poder dejarlo así.
     body.fecha_inicio = f.fecha_inicio || null;
@@ -1792,9 +1811,19 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nf.nombre_plan || '— elegir plan —'}</span>
                 <span style={{ color: '#999' }}>▾</span>
               </button>
-              <select value={nf.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === nf.plan_slug); setNf({ ...nf, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? nf.precio) : nf.precio, cobro: c === 'vitalicia' ? 'manual' : nf.cobro }); }} style={{ ...D.input, flex: '0 1 120px' }}>
+              <select value={nf.ciclo} onChange={e => { const c = e.target.value; const l = listaPor(nf, c); setNf({ ...nf, ciclo: c, precio: l ?? nf.precio, cobro: c === 'vitalicia' ? 'manual' : nf.cobro }); }} style={{ ...D.input, flex: '0 1 120px' }}>
                 {CICLOS.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
+              <input type="number" min="1" step="1" value={nf.sucursales}
+                onChange={e => {
+                  const suc = e.target.value;
+                  const l = listaPor(nf, nf.ciclo, suc);
+                  // Se re-propone el precio solo si el que hay es el de lista de
+                  // ANTES: si ya lo tocaste a mano, se respeta.
+                  const previo = listaPor(nf, nf.ciclo, nf.sucursales);
+                  setNf({ ...nf, sucursales: suc, precio: (l != null && (nf.precio === '' || Number(nf.precio) === previo)) ? l : nf.precio });
+                }}
+                title="Cuántas sucursales cubre esta licencia" placeholder="Sucursales" style={{ ...D.input, flex: '0 1 110px' }} />
               <input type="number" value={nf.precio} onChange={e => setNf({ ...nf, precio: e.target.value })} placeholder="Precio" style={{ ...D.input, flex: '0 1 110px' }} />
               <input type="date" value={nf.proxima_factura} onChange={e => setNf({ ...nf, proxima_factura: e.target.value })} style={{ ...D.input, flex: '0 1 150px' }} title="Próxima factura" />
               <select value={nf.estado} onChange={e => setNf({ ...nf, estado: e.target.value })} style={{ ...D.input, flex: '0 1 150px' }}>
@@ -1888,8 +1917,38 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                             <select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={{ ...D.input, width: '100%' }}>{ESTADOS_SUB.filter(x => x !== 'pausada' || f.estado === 'pausada').map(x => <option key={x} value={x}>{x}</option>)}</select>
                           </div>
                           <div style={{ width: 110 }}>
+                            <div style={D.lblMini}>Sucursales</div>
+                            <input type="number" min="1" step="1" value={f.sucursales ?? ''}
+                              onChange={e => {
+                                const suc = e.target.value;
+                                const l = listaPor(f, f.ciclo, suc);
+                                const previo = listaPor(f, f.ciclo, f.sucursales);
+                                // Igual que en el alta: solo se re-propone si el
+                                // precio que hay es exactamente el de lista viejo.
+                                setF({ ...f, sucursales: suc, precio: (l != null && Number(f.precio) === previo) ? l : f.precio });
+                              }}
+                              placeholder="—" title="Cuántas sucursales cubre esta licencia" style={{ ...D.input, width: '100%' }} />
+                            <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.35 }}>cuántas paga</div>
+                          </div>
+                          <div style={{ width: 140 }}>
                             <div style={D.lblMini}>{f.ciclo === 'vitalicia' ? 'Precio' : 'Precio / ARR'}</div>
                             <input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: '100%' }} />
+                            {/* Contraste con el catálogo: la única forma de saber
+                                si de verdad está pagando por las sucursales que
+                                dice cubrir. No corrige nada —el precio bueno es
+                                el pactado— solo lo dice. */}
+                            {(() => {
+                              const l = listaPor(f);
+                              if (l == null) return <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3 }}>sin precio de lista</div>;
+                              const dif = Math.round((Number(f.precio) || 0) - l);
+                              const igual = Math.abs(dif) < 1;
+                              return (
+                                <div style={{ fontSize: '0.66rem', marginTop: 3, lineHeight: 1.35, color: igual ? '#1E8A63' : '#9a6a10' }}>
+                                  lista {money(l)}
+                                  {igual ? ' · coincide' : dif < 0 ? ` · paga ${money(Math.abs(dif))} menos` : ` · paga ${money(dif)} más`}
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div style={{ width: 150 }}>
                             {/* Estimada vale: es mejor "más o menos febrero de
@@ -1923,6 +1982,15 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                     <tr key={s.id}>
                       <td style={{ ...D.td, fontWeight: 700 }}>
                         {s.nombre_plan}
+                        {/* Debajo del nombre y no en su propia columna: la tabla
+                            ya tiene ocho y una novena la manda fuera del panel.
+                            Además se lee con el plan, que es donde significa
+                            algo: "Fideliza · 3 sucursales". */}
+                        {s.sucursales > 0 && (
+                          <div style={{ fontSize: '0.68rem', fontWeight: 600, color: '#8a8590', whiteSpace: 'nowrap' }}>
+                            {s.sucursales} sucursal{s.sucursales === 1 ? '' : 'es'}
+                          </div>
+                        )}
                         {s.mp_preapproval_id && (
                           <span title={'Se le cobra solo por Mercado Pago' + (s.mp_payer_email ? ' · ' + s.mp_payer_email : '')}
                             style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: 'rgba(42,181,160,.15)', color: '#1A8F7A', whiteSpace: 'nowrap' }}>auto</span>
@@ -1995,7 +2063,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                                 {s.estado === 'pausada' ? 'Reactivar suscripción' : 'Pausar suscripción'}
                                 <small style={D.miSub}>{s.estado === 'pausada' ? 'pide desde cuándo quedó activa' : 'deja de sumar ARR; pide el motivo'}</small>
                               </button>
-                              <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '', fecha_inicio: s.fecha_inicio || '', total_pagado: s.total_pagado ?? '' }); }}>
+                              <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', sucursales: s.sucursales ?? '', proxima_factura: s.proxima_factura || '', fecha_inicio: s.fecha_inicio || '', total_pagado: s.total_pagado ?? '' }); }}>
                                 Editar suscripción<small style={D.miSub}>plan, precio, desde cuándo y cuánto pagó</small>
                               </button>
                               {/* La baja es de la LICENCIA, no del cliente: hay
@@ -2355,8 +2423,15 @@ function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: a
     ['Plugins y módulos', lista.filter(p => p.categoria === 'plugin')],
     ['Otros', lista.filter(p => p.categoria && p.categoria !== 'plan' && p.categoria !== 'plugin')],
   ];
-  const precio = (p: any) => (ciclo === 'mensual' ? p.precio_mensual : p.precio_anual);
-  const sufijo = ciclo === 'mensual' ? '/mes' : ciclo === 'anual' ? '/año' : '';
+  // Una vitalicia tiene su propio precio en el catálogo. Antes se le enseñaba el
+  // ANUAL, así que un plugin de pago único se cotizaba con la cifra equivocada.
+  const precio = (p: any) => (ciclo === 'mensual' ? p.precio_mensual : ciclo === 'vitalicia' ? p.precio_vitalicio : p.precio_anual);
+  const sufijo = ciclo === 'mensual' ? '/mes' : ciclo === 'anual' ? '/año' : ' pago único';
+  // Qué modalidad pide este alta contra las que el concepto declara en
+  // Configuración. No se esconde lo que no cuadra —hay licencias viejas que se
+  // vendieron de otra forma y hay que poder registrarlas— pero sí se avisa.
+  const modalidadPedida = ciclo === 'vitalicia' ? 'vitalicio' : ciclo;
+  const ofrece = (p: any) => !Array.isArray(p.modalidades) || !p.modalidades.length || p.modalidades.includes(modalidadPedida);
 
   const wrap = { position: 'fixed' as const, inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,.5)' };
   const box = { background: '#fff', borderRadius: 16, width: 'min(680px, 100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column' as const, boxShadow: '0 24px 60px rgba(0,0,0,.3)' };
@@ -2386,11 +2461,18 @@ function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: a
                   return (
                     <button key={p.slug || p.nombre} onClick={() => onPick(p)}
                       style={{ textAlign: 'left', padding: '10px 12px', minHeight: 62, borderRadius: 11, cursor: 'pointer',
-                        border: sel ? '1.5px solid #1A8F7A' : '1px solid #e6e7eb', background: sel ? '#f2fbf8' : '#fff' }}>
+                        border: sel ? '1.5px solid #1A8F7A' : '1px solid #e6e7eb', background: sel ? '#f2fbf8' : '#fff',
+                        opacity: ofrece(p) ? 1 : 0.62 }}>
                       <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1a1a' }}>{p.nombre}</div>
                       <div style={{ fontSize: '0.75rem', marginTop: 3, color: pr ? '#1A8F7A' : '#a06600', fontWeight: 700 }}>
                         {pr ? money(pr) + sufijo : 'A la medida'}
                       </div>
+                      {!ofrece(p) && (
+                        <div style={{ fontSize: '0.66rem', marginTop: 2, color: '#9a6a10', fontWeight: 600 }}>no se vende {ciclo}</div>
+                      )}
+                      {p.descripcion && (
+                        <div style={{ fontSize: '0.68rem', marginTop: 4, color: '#8a8590', lineHeight: 1.4 }}>{p.descripcion}</div>
+                      )}
                     </button>
                   );
                 })}

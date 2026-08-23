@@ -128,6 +128,14 @@ function normalizar(body: any) {
   const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (body.plan_id !== undefined) out.plan_id = ES_UUID.test(String(body.plan_id || '')) ? body.plan_id : null;
   if (body.precio_lista !== undefined) out.precio_lista = Number(body.precio_lista) || null;
+  // Cuántas sucursales cubre ESTA licencia. Va aparte de companies.sucursales
+  // —cuántas tiene el negocio— porque una cuenta puede pagar dos licencias de
+  // distinto tamaño. Vacío se guarda como null: "no lo sé" es un dato, y
+  // asumir 1 haría que un precio por 3 sucursales pareciera estar mal.
+  if (body.sucursales !== undefined) {
+    const n = Math.round(Number(body.sucursales));
+    out.sucursales = Number.isFinite(n) && n > 0 ? n : null;
+  }
   if (body.razon_pausa !== undefined) out.razon_pausa = body.razon_pausa || null;
   if (body.pausa_espera !== undefined) out.pausa_espera = body.pausa_espera || null;
   // trials y multi-año (SQL-5)
@@ -230,7 +238,7 @@ export const PUT: APIRoute = async ({ request }) => {
   // (reasignar la sub a la empresa/contacto correcto desde el modal). Si no vienen,
   // se conservan — el normalizar() los dejaba en null y la sub perdía su vínculo,
   // cortando dunning/recordatorios en silencio.
-  for (const k of ['company_id', 'contact_id', 'fecha_inicio', 'proxima_factura', 'notas', 'stripe_subscription_id', 'razon_cancelacion', 'plan_id', 'precio_lista'] as const) {
+  for (const k of ['company_id', 'contact_id', 'fecha_inicio', 'proxima_factura', 'notas', 'stripe_subscription_id', 'razon_cancelacion', 'plan_id', 'precio_lista', 'sucursales'] as const) {
     if (body[k] === undefined) delete upd[k];
   }
 
