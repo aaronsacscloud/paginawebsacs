@@ -415,6 +415,11 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </Seccion>
         ) : null;
       })()}
+      {(ctx?.llamadas || []).some((l: any) => l.minuta) && (
+        <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta).length} abiertaDefault>
+          {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
+        </Seccion>
+      )}
       {contactoBase && (
         <Seccion id="g-seguimiento" titulo="Seguimiento" abiertaDefault>
           <div style={caja}>
@@ -834,6 +839,26 @@ function FooterEtiquetas({ entidad, id }: { entidad: string; id: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/** Una llamada con minuta en el panel derecho: fecha, duración, expandir. */
+function MinutaPanel({ l }: { l: any }) {
+  const [abierta, setAbierta] = useState(false);
+  const dur = l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : '—';
+  return (
+    <div style={{ border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.emerald500}`, borderRadius: 10, marginBottom: 6, overflow: 'hidden' }}>
+      <button onClick={() => setAbierta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', textAlign: 'left' }}>
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 11.5, display: 'block' }}>{l.direccion === 'saliente' ? 'Llamada realizada' : 'Llamada recibida'} · {dur}</b>
+          <span style={{ fontSize: 10, color: C.g400 }}>{fecha(l.ended_at || l.created_at)}{l.atendida_por_nombre ? ` · ${l.atendida_por_nombre}` : ''}</span>
+        </span>
+        <span style={{ color: C.g300, fontSize: 10 }}>{abierta ? '▲' : '▼'}</span>
+      </button>
+      {abierta && <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 10px', fontSize: 11.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', maxHeight: 260, overflowY: 'auto' }}>{String(l.minuta).replace(/^## /gm, '').replace(/^- /gm, '• ')}</div>}
+      {l.siguiente_paso && <div style={{ borderTop: `1px solid ${C.g100}`, background: C.moradoAgua, padding: '5px 10px', fontSize: 10.5, color: C.moradoTinta }}><b>Siguiente:</b> {l.siguiente_paso}</div>}
     </div>
   );
 }

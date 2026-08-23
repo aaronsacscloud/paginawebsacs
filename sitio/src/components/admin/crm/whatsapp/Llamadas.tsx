@@ -17,7 +17,7 @@ async function esperarIce(pc: RTCPeerConnection, ms = 2500) {
   await new Promise<void>(res => { const t = setTimeout(res, ms); pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } }); });
 }
 
-type Activa = { call_id: string; telefono: string; nombre?: string | null; direccion: 'entrante' | 'saliente'; desde: number; pc: RTCPeerConnection; stream: MediaStream };
+type Activa = { call_id: string; telefono: string; nombre?: string | null; direccion: 'entrante' | 'saliente'; desde: number; pc: RTCPeerConnection; stream: MediaStream; rec?: MediaRecorder | null; chunks?: Blob[]; actx?: AudioContext | null };
 
 /** Tono de llamada con WebAudio (sin archivos). */
 function useTono(activo: boolean) {
@@ -46,6 +46,8 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
   const [seg, setSeg] = useState(0);
   const [mute, setMute] = useState(false);
   const [error, setError] = useState('');
+  const [minutando, setMinutando] = useState<string | null>(null);
+  const [minutaLista, setMinutaLista] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const activaRef = useRef<Activa | null>(null); activaRef.current = activa;
   useTono(timbrando.length > 0 && !activa);
@@ -72,21 +74,36 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     const pc = new RTCPeerConnection({ iceServers: ICE });
     stream.getTracks().forEach(tr => pc.addTrack(tr, stream));
-    pc.ontrack = ev => { if (audioRef.current) { audioRef.current.srcObject = ev.streams[0]; audioRef.current.play().catch(() => {}); } };
+    // Grabación para la minuta: se mezclan MI micrófono y la voz del cliente
+    // en un AudioContext y ESO es lo que graba el MediaRecorder.
+    const actx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const destino = actx.createMediaStreamDestination();
+    try { actx.createMediaStreamSource(stream).connect(destino); } catch { /* sin mic no hay mezcla */ }
+    const chunks: Blob[] = [];
+    let rec: MediaRecorder | null = null;
+    try {
+      rec = new MediaRecorder(destino.stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm', audioBitsPerSecond: 32000 });
+      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+      rec.start(2000);
+    } catch { rec = null; }
+    pc.ontrack = ev => {
+      if (audioRef.current) { audioRef.current.srcObject = ev.streams[0]; audioRef.current.play().catch(() => {}); }
+      try { actx.createMediaStreamSource(ev.streams[0]).connect(destino); } catch { /* stream remoto raro */ }
+    };
     pc.onconnectionstatechange = () => { if (['failed', 'disconnected', 'closed'].includes(pc.connectionState) && activaRef.current?.pc === pc) setTimeout(() => { if (activaRef.current?.pc === pc && pc.connectionState !== 'connected') colgar(false); }, 4000); };
-    return { pc, stream };
+    return { pc, stream, rec, chunks, actx };
   };
 
   const contestar = async (l: any) => {
     setError('');
     try {
-      const { pc, stream } = await prepararPC();
+      const { pc, stream, rec, chunks, actx } = await prepararPC();
       await pc.setRemoteDescription({ type: 'offer', sdp: l.sdp_offer });
       const ans = await pc.createAnswer(); await pc.setLocalDescription(ans); await esperarIce(pc);
       const r = await fetch('/api/crm/whatsapp/llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'aceptar', call_id: l.call_id, sdp: pc.localDescription?.sdp }) }).then(x => x.json());
       if (r?.error) { pc.close(); stream.getTracks().forEach(t => t.stop()); setError(r.error); return; }
       const nombre = l.wa_conversaciones?.contacts ? `${l.wa_conversaciones.contacts.nombre || ''} ${l.wa_conversaciones.contacts.apellido || ''}`.trim() : null;
-      setActiva({ call_id: l.call_id, telefono: l.telefono, nombre, direccion: 'entrante', desde: Date.now(), pc, stream });
+      setActiva({ call_id: l.call_id, telefono: l.telefono, nombre, direccion: 'entrante', desde: Date.now(), pc, stream, rec, chunks, actx });
       setTimbrando(t => t.filter(x => x.call_id !== l.call_id));
       if (l.conversation_id) onAbrir?.(l.conversation_id);
     } catch (e: any) { setError(/Permission|NotAllowed/i.test(String(e)) ? 'El navegador no dio acceso al micrófono. Permítelo en el candado de la barra de direcciones.' : String(e?.message || e)); }
@@ -97,9 +114,29 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
   };
   const colgar = async (avisar = true) => {
     const a = activaRef.current; if (!a) return;
-    try { a.pc.close(); a.stream.getTracks().forEach(t => t.stop()); } catch { /* nada */ }
+    const duro = Math.round((Date.now() - a.desde) / 1000);
+    // Cerrar la grabadora ANTES de matar los streams para no perder el final.
+    let blob: Blob | null = null;
+    if (a.rec && a.rec.state !== 'inactive') {
+      try {
+        await new Promise<void>(res => { a.rec!.onstop = () => res(); a.rec!.stop(); setTimeout(res, 1500); });
+        blob = new Blob(a.chunks || [], { type: 'audio/webm' });
+      } catch { blob = null; }
+    }
+    try { a.pc.close(); a.stream.getTracks().forEach(t => t.stop()); a.actx?.close(); } catch { /* nada */ }
     setActiva(null);
     if (avisar) await fetch('/api/crm/whatsapp/llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'terminar', call_id: a.call_id }) }).catch(() => {});
+    // Minuta automática: solo si de verdad se habló (≥20 s y hay audio).
+    if (blob && blob.size > 12_000 && duro >= 20) {
+      setMinutando(a.call_id);
+      const fd = new FormData();
+      fd.append('audio', new File([blob], `${a.call_id}.webm`, { type: 'audio/webm' }));
+      fd.append('call_id', a.call_id);
+      const r = await fetch('/api/crm/whatsapp/minuta', { method: 'POST', body: fd }).then(x => x.json()).catch(e => ({ error: String(e) }));
+      setMinutando(null);
+      if (r?.error) setError(`La llamada terminó bien, pero la minuta falló: ${r.error}`);
+      else { setMinutaLista(true); setTimeout(() => setMinutaLista(false), 6000); document.dispatchEvent(new CustomEvent('wa-refrescar-hilo')); }
+    }
   };
   const toggleMute = () => { const a = activaRef.current; if (!a) return; a.stream.getAudioTracks().forEach(t => { t.enabled = mute; }); setMute(!mute); };
 
@@ -109,11 +146,11 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
       const { conversation_id, telefono, nombre } = ev.detail || {};
       setError('');
       try {
-        const { pc, stream } = await prepararPC();
+        const { pc, stream, rec, chunks, actx } = await prepararPC();
         const offer = await pc.createOffer({ offerToReceiveAudio: true }); await pc.setLocalDescription(offer); await esperarIce(pc);
         const r = await fetch('/api/crm/whatsapp/llamadas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'llamar', conversation_id, sdp: pc.localDescription?.sdp }) }).then(x => x.json());
         if (r?.error || !r?.call_id) { pc.close(); stream.getTracks().forEach(t => t.stop()); setError(r?.error || 'Meta no devolvió id de llamada'); return; }
-        setActiva({ call_id: r.call_id, telefono, nombre, direccion: 'saliente', desde: Date.now(), pc, stream });
+        setActiva({ call_id: r.call_id, telefono, nombre, direccion: 'saliente', desde: Date.now(), pc, stream, rec, chunks, actx });
       } catch (e: any) { setError(/Permission|NotAllowed/i.test(String(e)) ? 'El navegador no dio acceso al micrófono.' : String(e?.message || e)); }
     };
     document.addEventListener('wa-llamar', h); return () => document.removeEventListener('wa-llamar', h);
@@ -125,7 +162,7 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
   return (
     <>
       <audio ref={audioRef} autoPlay />
-      {(timbrando.length > 0 || activa || error) && (
+      {(timbrando.length > 0 || activa || error || minutando || minutaLista) && (
         <div style={{ position: 'fixed', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 120, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
           {timbrando.map(l => (
             <div key={l.call_id} role="alert" style={{ display: 'flex', alignItems: 'center', gap: 12, background: C.g900, color: '#fff', borderRadius: 14, padding: '10px 14px', boxShadow: '0 12px 40px rgba(0,0,0,.35)', minWidth: 360 }}>
@@ -151,9 +188,24 @@ export default function Llamadas({ onAbrir }: { onAbrir?: (conversationId: strin
               {btn(C.rojo500, 'Colgar', () => colgar(true))}
             </div>
           )}
+          {minutando && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: C.g900, color: '#fff', borderRadius: 12, padding: '8px 14px', fontSize: 12 }}>
+              <span className="wa-pulso" style={{ width: 8, height: 8, borderRadius: 999, background: C.morado }} />
+              Generando la minuta de la llamada… (transcribe y redacta; puede tardar ~1 min)
+            </div>
+          )}
+          {minutaLista && (
+            <div style={{ background: C.emerald50, color: C.emerald700, border: `1px solid #bfe8d8`, borderRadius: 10, padding: '8px 12px', fontSize: 12, fontWeight: 700 }}>
+              Minuta lista: quedó en la conversación y en la ficha del contacto
+            </div>
+          )}
           {error && (
             <div style={{ background: C.rojo50, color: C.rojo700, border: `1px solid ${C.rojo200}`, borderRadius: 10, padding: '8px 12px', fontSize: 12, maxWidth: 420 }}>
-              {error} <button onClick={() => setError('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.rojo700, marginLeft: 6 }}>✕</button>
+              {error}
+              {/(pago|payment|131042|saldo|billing)/i.test(error) && (
+                <a href="https://business.facebook.com/billing_hub/accounts" target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginLeft: 8, color: C.rojo700, fontWeight: 800 }}>Pagar en Meta ↗</a>
+              )}
+              <button onClick={() => setError('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.rojo700, marginLeft: 6 }}>✕</button>
             </div>
           )}
         </div>
@@ -185,6 +237,9 @@ export function BotonLlamar({ conversationId, telefono, nombre, api }: { convers
       {pop && (
         <span style={{ position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', width: 280, display: 'block', padding: 12, fontSize: 12 }}>
           <b style={{ display: 'block', marginBottom: 6 }}>Llamadas de WhatsApp</b>
+          <span style={{ display: 'block', fontSize: 10.5, color: C.g400, lineHeight: 1.5, marginBottom: 6 }}>
+            El flujo: 1) le pides permiso desde el chat → 2) el cliente acepta en su WhatsApp → 3) ya puedes llamarlo. Límites de Meta: 1 solicitud cada 24 h (2 por semana) y 5 llamadas al día por cliente. Al colgar, la minuta se genera sola.
+          </span>
           {cargando ? <span style={{ color: C.g400 }}>Consultando permiso…</span> : permiso?.no_disponible ? (<>
             <span style={{ display: 'block', color: C.g700, lineHeight: 1.45 }}>{permiso.motivo}</span>
             <span style={{ display: 'block', color: C.g500, marginTop: 6, lineHeight: 1.45 }}>Él sí puede llamarte: toca el teléfono arriba de este chat en su WhatsApp y aquí te timbra.</span>
@@ -192,6 +247,11 @@ export function BotonLlamar({ conversationId, telefono, nombre, api }: { convers
               style={{ marginTop: 8, border: 'none', background: C.emerald600, color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>Pedirle que nos llame</button>
           </>) : (<>
             <span style={{ display: 'block', color: C.g700 }}>Permiso: <b>{estado === 'temporary' ? `concedido hasta ${new Date((permiso.permiso.permission.expiration_time || 0) * 1000).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'sin permiso'}</b></span>
+            {!puedeLlamar && !puedePedir && estado !== 'temporary' && (
+              <span style={{ display: 'block', fontSize: 10.5, color: C.ambar700, background: C.ambar50, borderRadius: 8, padding: '5px 8px', marginTop: 6, lineHeight: 1.45 }}>
+                Meta no deja pedir permiso ahora (tope de solicitudes: 1 cada 24 h, 2 por semana). Mientras, mándale un mensaje pidiéndole que nos llame él.
+              </span>
+            )}
             <span style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <button disabled={!puedeLlamar} onClick={() => { setPop(false); document.dispatchEvent(new CustomEvent('wa-llamar', { detail: { conversation_id: conversationId, telefono, nombre } })); }}
                 style={{ flex: 1, border: 'none', background: puedeLlamar ? C.emerald600 : C.g200, color: '#fff', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: puedeLlamar ? 'pointer' : 'default', fontFamily: 'inherit' }}>Llamar</button>

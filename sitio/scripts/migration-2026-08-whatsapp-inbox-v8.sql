@@ -126,3 +126,10 @@ select 'wa_inbox', v.nombre, v.config::jsonb, true, v.orden from (values
  ('Sin dueño asignado', '{"emoji":"🙋","modo":"todas","logica":"AND","descripcion":"Contactos activos que nadie del equipo tiene a su cargo","condiciones":[{"campo":"dueno","op":"es","valor":"nadie"},{"campo":"etapa","op":"no_es","valor":"churned"}]}', 7)
 ) as v(nombre, config, orden)
 where not exists (select 1 from crm_vistas x where x.tabla='wa_inbox' and x.nombre=v.nombre);
+-- Minuta automática de llamadas (grabación en el navegador → Whisper → Claude)
+alter table wa_llamadas
+  add column if not exists grabacion_path text,
+  add column if not exists transcript text,
+  add column if not exists minuta text,
+  add column if not exists minuta_at timestamptz,
+  add column if not exists siguiente_paso text;

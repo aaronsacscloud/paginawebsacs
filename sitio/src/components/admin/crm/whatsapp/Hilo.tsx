@@ -275,6 +275,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   <span style={{ ...sepOscuro.chip, maxWidth: 520, whiteSpace: 'normal', textAlign: 'center' }}>✓ Resuelta{item.autor ? ` por ${item.autor}` : ''}{String(item.detalle || '').replace(/^Marcada como resuelta/i, '')}</span>
                   <span style={sepOscuro.linea} />
                 </span>
+              ) : item._clase === 'evento' && item.tipo === 'minuta' ? (
+                <MinutaCard item={item} />
               ) : item._clase === 'evento' ? (
                 <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
                   {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
@@ -488,6 +490,38 @@ function ModalReenviar({ mensaje, api, onCerrar, actualId }: { mensaje: any; api
           ))}
           {!filtrada.length && <div style={{ padding: 16, fontSize: 12, color: C.g400, textAlign: 'center' }}>Sin conversaciones que coincidan.</div>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+/** Minuta de llamada en el hilo: resumen colapsado, click para leerla entera. */
+function MinutaCard({ item }: { item: any }) {
+  const [abierta, setAbierta] = useState(false);
+  return (
+    <div style={{ alignSelf: 'center', width: 'min(560px, 92%)', margin: '2px 0' }}>
+      <div style={{ background: '#fff', border: `1px solid #d9e9e2`, borderLeft: `3px solid ${C.emerald500}`, borderRadius: 12, overflow: 'hidden' }}>
+        <button onClick={() => setAbierta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 13px', textAlign: 'left' }}>
+          <span style={{ width: 26, height: 26, borderRadius: 999, background: C.emerald50, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" stroke={C.emerald700} strokeWidth="1.8" strokeLinejoin="round" /></svg>
+          </span>
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <b style={{ fontSize: 12, color: C.g900, display: 'block' }}>{item.detalle}</b>
+            <span style={{ fontSize: 10.5, color: C.g400 }}>{abierta ? 'Ocultar minuta' : 'Ver la minuta completa'}{item.autor ? ` · atendió ${item.autor}` : ''}</span>
+          </span>
+          <span style={{ color: C.g300, fontSize: 11, flexShrink: 0 }}>{abierta ? '▲' : '▼'}</span>
+        </button>
+        {abierta && (
+          <div style={{ borderTop: `1px solid ${C.g100}`, padding: '10px 14px', fontSize: 12, color: C.g700, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+            {String(item.minuta || '').replace(/^## /gm, '').replace(/^- /gm, '• ')}
+          </div>
+        )}
+        {item.siguiente_paso && (
+          <div style={{ borderTop: `1px solid ${C.g100}`, background: C.moradoAgua, padding: '7px 14px', fontSize: 11.5, color: C.moradoTinta }}>
+            <b>Siguiente paso:</b> {item.siguiente_paso}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -98,6 +98,12 @@ export default function InboxPro() {
   }, []);
 
   useEffect(() => {
+    const h = () => { if (activaRef.current) cargarHilo(activaRef.current); };
+    document.addEventListener('wa-refrescar-hilo', h);
+    return () => document.removeEventListener('wa-refrescar-hilo', h);
+  }, [cargarHilo]);
+
+  useEffect(() => {
     fetch('/api/auth/yo').then(r => r.json()).then(setYo).catch(() => {});
     fetch('/api/crm/whatsapp/equipo').then(r => r.json()).then(j => setEquipo(j.equipo || [])).catch(() => {});
   }, []);

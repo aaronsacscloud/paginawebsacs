@@ -151,7 +151,17 @@ export const GET: APIRoute = async ({ url }) => {
     };
   }
 
+  // Llamadas con minuta: el seguimiento de lo hablado, para el panel derecho.
+  let llamadas: any[] = [];
+  if (conv?.id) {
+    const { data: lls } = await supabase.from('wa_llamadas')
+      .select('call_id, direccion, estado, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre')
+      .eq('conversation_id', conv.id).order('created_at', { ascending: false }).limit(8);
+    llamadas = lls || [];
+  }
+
   return json({
+    llamadas,
     salud, desde_ultimo, otros_contactos, sugerencias, cotizaciones, sacs,
     propiedades: { empresa: empresa?.propiedades || null, contacto: contacto?.propiedades || null },
     contacto: contacto ? { owner_id: contacto.owner_id, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,

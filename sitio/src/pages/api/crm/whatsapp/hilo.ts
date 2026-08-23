@@ -162,6 +162,21 @@ export const GET: APIRoute = async ({ request, url }) => {
     });
     eventos.sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
   }
+  // 10b) Minutas de llamadas: evento expandible a la hora en que terminó la llamada.
+  if (conv.id) {
+    const { data: lls } = await supabase.from('wa_llamadas')
+      .select('call_id, direccion, duracion_seg, ended_at, created_at, minuta, siguiente_paso, atendida_por_nombre')
+      .eq('conversation_id', conv.id).not('minuta', 'is', null).order('created_at', { ascending: false }).limit(10);
+    for (const l of lls || []) {
+      const dur = l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)} min ${l.duracion_seg % 60} s` : '';
+      eventos.push({
+        id: `min-${l.call_id}`, tipo: 'minuta', created_at: l.ended_at || l.created_at, autor: l.atendida_por_nombre,
+        detalle: `Minuta de la llamada ${l.direccion === 'saliente' ? 'realizada' : 'recibida'}${dur ? ` (${dur})` : ''}`,
+        minuta: l.minuta, siguiente_paso: l.siguiente_paso || null,
+      });
+    }
+  }
+
   // 11) Campañas EN el hilo: los masivos de WhatsApp y los correos de campaña
   // aparecen en la conversación a la hora en que le llegaron a ESTE contacto,
   // y los programados que aún no salen se avisan aparte (banner del hilo).
