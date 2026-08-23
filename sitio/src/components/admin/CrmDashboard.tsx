@@ -332,6 +332,9 @@ export default function CrmDashboard() {
   const revenueTab = (['cotizaciones', 'config'].includes(tab)) ? tab : 'dashboard';
   // En mobile, cuando expanded el sidebar es overlay (no empuja el contenido)
   const mobileExpanded = isMobile && !sidebarCollapsed;
+  // En mobile no hay pie de menú donde vivir: las notificaciones entran como
+  // un renglón de la hoja "Más" y esta bandera abre su panel.
+  const [notifOpen, setNotifOpen] = useState(false);
   const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 64) : 220;
   const mainMarginLeft = isMobile ? 0 : sidebarWidth;
 
@@ -592,7 +595,7 @@ export default function CrmDashboard() {
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #e7e0f7', background: 'rgba(255,255,255,.5)' }}>
             <div style={{ padding: '6px 0 2px' }}>
-              <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />
+              {!isMobile && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
 
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
@@ -813,10 +816,17 @@ export default function CrmDashboard() {
                 onClick: () => switchTab(i.id),
               }))
           ),
+          { label: 'Notificaciones', onClick: () => { setMasOpen(false); setNotifOpen(true); } },
           { label: '🔑 Cambiar contraseña', onClick: () => { window.location.href = '/admin/cambiar-password'; } },
           { label: '⎋ Cerrar sesión', danger: true, onClick: async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; } },
         ]}
       />
+      {/* El panel de notificaciones en mobile: sin renglón propio, lo abre la
+          hoja "Más". Antes lo abría una campana flotante que tapaba la pantalla. */}
+      {isMobile && (
+        <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)}
+          abiertoDesdeFuera={notifOpen} onCerrar={() => setNotifOpen(false)} />
+      )}
       <Sheet open={mobileSearchOpen} onClose={() => { setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]); }} title="Buscar" zIndex={920}>
         <input
           ref={mobileSearchRef}

@@ -31,9 +31,21 @@ function hace(iso: string): string {
   return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
 }
 
-export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string) => void }) {
+/* `abiertoDesdeFuera` existe por el mobile: ahí el menú es una hoja de opciones
+   que solo acepta renglones de datos, así que no puede montar este componente
+   como botón. La hoja abre el panel y la campana se dibuja SIN su renglón. */
+export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerrar }: {
+  onIrA?: (tab: string) => void; abiertoDesdeFuera?: boolean; onCerrar?: () => void;
+}) {
   const isMobile = useIsMobile();
-  const [abierto, setAbierto] = useState(false);
+  const controlado = abiertoDesdeFuera !== undefined;
+  const [abiertoLocal, setAbiertoLocal] = useState(false);
+  const abierto = controlado ? !!abiertoDesdeFuera : abiertoLocal;
+  const setAbierto = (v: boolean | ((a: boolean) => boolean)) => {
+    const next = typeof v === 'function' ? v(abierto) : v;
+    if (controlado) { if (!next) onCerrar?.(); return; }
+    setAbiertoLocal(next);
+  };
   // Dónde nace el panel cuando la campana vive en el menú: se ancla al botón,
   // no a la esquina de la pantalla. Un panel fijo arriba a la derecha, con el
   // botón abajo a la izquierda, obliga a cruzar la vista de punta a punta.
@@ -83,6 +95,9 @@ export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string)
 
   // El panel sale PEGADO al renglón del menú. La variante suelta arriba a la
   // derecha era de la campana flotante, que ya no existe.
+  // Abierto desde la hoja del mobile nadie llamó a `cargar`: se hace aquí.
+  useEffect(() => { if (controlado && abierto) cargar(); }, [controlado, abierto, cargar]);
+
   const panel: any = isMobile
     ? { position: 'fixed', top: 64, left: 8, right: 8, maxHeight: '72vh' }
     : ancla
@@ -113,6 +128,7 @@ export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string)
           cuando el menú estaba plegado o en mobile— y se eliminó: tapaba el
           contenido de la pantalla que se estaba usando. Un aviso no puede
           estorbarle al trabajo que anuncia. */}
+      {!controlado && (
         <button onClick={alternar} aria-label="Notificaciones"
           style={{
             display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38, textAlign: 'left',
@@ -134,6 +150,7 @@ export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string)
             }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
           )}
         </button>
+      )}
 
       {abierto && (
         <>
