@@ -11,7 +11,7 @@
 // 422 de Kapso se traduce a { ventana_cerrada: true } y el mensaje NO se espeja.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError, enviarInteractivo, enviarUbicacion, enviarContacto, enviarSticker, enviarReaccion, type Interactivo } from '../../../../lib/whatsapp/kapso-api';
+import { usarNumero, enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKapso, enviarMediaId, sanearParam, KapsoError, enviarInteractivo, enviarUbicacion, enviarContacto, enviarSticker, enviarReaccion, type Interactivo } from '../../../../lib/whatsapp/kapso-api';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
@@ -40,13 +40,15 @@ const claseDeMime = (m: string) => MIMES[m] || ((m.startsWith('application/') ||
 const MAX_BYTES = 4 * 1024 * 1024; // el límite real de la función serverless es ~4.5 MB
 
 /** El teléfono E.164 de la conversación (o del body) y su id de espejo. */
-async function resolverDestino(b: { conversation_id?: string; telefono?: string }) {
+async function resolverDestino(b: { conversation_id?: string; telefono?: string; phone_number_id?: string | null }) {
   if (b.conversation_id) {
     const { data } = await supabase.from('wa_conversaciones')
-      .select('id, telefono').eq('id', b.conversation_id).maybeSingle();
+      .select('id, telefono, phone_number_id').eq('id', b.conversation_id).maybeSingle();
     if (!data) return null;
+    usarNumero(data.phone_number_id || null);   // multi-número: se responde desde el número por el que escribió
     return { convId: data.id as string, telefono: data.telefono as string };
   }
+  usarNumero(b.phone_number_id || null);
   const tel = telefonoWhatsApp(b.telefono);
   if (!tel) return null;
   const conv = await upsertConversacion({ telefono: tel });

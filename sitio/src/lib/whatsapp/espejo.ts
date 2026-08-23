@@ -80,6 +80,7 @@ export async function upsertConversacion(o: {
  */
 export async function registrarMensaje(o: {
   kapsoMessageId: string;
+  phoneNumberId?: string | null;     // multi-número: por cuál número entró/salió
   kapsoConversationId?: string | null;
   telefono: string;                   // el del CLIENTE, venga de from o to
   direccion: 'entrante' | 'saliente';
@@ -101,6 +102,7 @@ export async function registrarMensaje(o: {
     kapsoConversationId: o.kapsoConversationId, telefono: o.telefono,
   });
   if (!conv) return { inserted: false };
+  if (o.phoneNumberId) await supabase.from('wa_conversaciones').update({ phone_number_id: o.phoneNumberId }).eq('id', conv.id).is('phone_number_id', null);
 
   const texto = o.cuerpo || o.transcript || (o.tipo && o.tipo !== 'text' ? `[${etiquetaTipo(o.tipo)}]` : '') || '';
   // Hora REAL del mensaje (replays y entregas fuera de orden no deben mandar

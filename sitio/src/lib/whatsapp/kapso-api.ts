@@ -109,11 +109,11 @@ export async function listarWebhooks() {
   return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`);
 }
 
-export async function registrarWebhook(url: string, secreto: string) {
+export async function registrarWebhook(url: string, secreto: string, phoneNumberId?: string | null) {
   // El wrapper es `whatsapp_webhook` (con `webhook` responde missing_parameter).
   // `secret_key` se manda explícito para que la firma X-Webhook-Signature se
   // verifique contra NUESTRO KAPSO_WEBHOOK_SECRET y no contra uno generado.
-  return platform(`/whatsapp/phone_numbers/${PHONE_NUMBER_ID}/webhooks`, {
+  return platform(`/whatsapp/phone_numbers/${phoneNumberId || PHONE_NUMBER_ID}/webhooks`, {
     method: 'POST',
     body: JSON.stringify({
       whatsapp_webhook: { url, kind: 'kapso', secret_key: secreto, active: true, events: EVENTOS },
@@ -154,7 +154,7 @@ export async function listarLlamadasKapso(params: Record<string, string> = {}) {
 
 /** Texto libre. Fuera de la ventana de 24 h Kapso devuelve 422: se propaga. */
 export async function enviarTexto(telefono: string, texto: string, citaWamid?: string | null) {
-  return meta(`/${PHONE_NUMBER_ID}/messages`, {
+  return meta(`/${PN()}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', to: telefono,
@@ -166,8 +166,14 @@ export async function enviarTexto(telefono: string, texto: string, citaWamid?: s
 
 // ── Etapa A: mensajes interactivos y especiales (formato Cloud API) ──
 
+/** Número desde el que se manda: el de la conversación (multi-número) o el default del entorno. */
+export const numeroPara = (pn?: string | null) => pn || PHONE_NUMBER_ID;
+let PN_ACTUAL: string | null = null;
+/** Fija el número para las llamadas siguientes de ESTA petición (enviar.ts lo pone a partir de la conversación). */
+export const usarNumero = (pn?: string | null) => { PN_ACTUAL = pn || null; };
+const PN = () => PN_ACTUAL || PHONE_NUMBER_ID;
 const mensaje = (telefono: string, cuerpo: any, citaWamid?: string | null) =>
-  meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono, ...cuerpo, ...(citaWamid ? { context: { message_id: citaWamid } } : {}) }) });
+  meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono, ...cuerpo, ...(citaWamid ? { context: { message_id: citaWamid } } : {}) }) });
 
 export type Interactivo =
   | { tipo: 'botones'; cuerpo: string; header?: string | null; footer?: string | null; botones: { id: string; titulo: string }[] }
@@ -242,7 +248,7 @@ export const enviarReaccion = (telefono: string, wamid: string, emoji: string) =
 
 /** Confirmación de lectura (palomitas azules) y, opcional, "escribiendo…". */
 export async function marcarLeido(wamid: string, escribiendo = false) {
-  return meta(`/${PHONE_NUMBER_ID}/messages`, {
+  return meta(`/${PN()}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', status: 'read', message_id: wamid,
@@ -259,7 +265,7 @@ export async function marcarLeido(wamid: string, escribiendo = false) {
 export async function descargarMedia(mediaId: string): Promise<{ bytes: ArrayBuffer; mime: string } | null> {
   if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
   // Kapso necesita saber de qué número es la media para enrutar a Meta.
-  const info = await meta(`/${mediaId}?phone_number_id=${PHONE_NUMBER_ID}`);
+  const info = await meta(`/${mediaId}?phone_number_id=${PN()}`);
   const url = info?.url;
   if (!url) return null;
   const res = await fetch(url, { headers: { 'X-API-Key': API_KEY } });
@@ -280,7 +286,7 @@ export async function enviarPlantilla(telefono: string, nombre: string, idioma: 
     components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.otp }] });
   } else if (params.length) components.push({ type: 'body', parameters: params.map((p) => ({ type: 'text', text: p })) });
   if (extra?.botonUrlParam) components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: extra.botonUrlParam }] });
-  return meta(`/${PHONE_NUMBER_ID}/messages`, {
+  return meta(`/${PN()}/messages`, {
     method: 'POST',
     body: JSON.stringify({
       messaging_product: 'whatsapp', to: telefono,
@@ -296,7 +302,7 @@ export async function enviarMediaLink(telefono: string, clase: 'image' | 'docume
   if (citaWamid) cuerpo.context = { message_id: citaWamid };
   cuerpo[clase] = clase === 'document' ? { link, filename: nombre || 'documento' } : { link };
   if (caption) cuerpo[clase].caption = caption;
-  return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+  return meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
 /** Sube un binario a Meta vía Kapso y devuelve el media id. */
@@ -306,7 +312,7 @@ export async function subirMediaKapso(bytes: Uint8Array | ArrayBuffer, mime: str
   fd.append('messaging_product', 'whatsapp');
   fd.append('type', mime);
   fd.append('file', new Blob([bytes as any], { type: mime }), nombre);
-  const res = await fetch(`${META}/${PHONE_NUMBER_ID}/media`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: fd });
+  const res = await fetch(`${META}/${PN()}/media`, { method: 'POST', headers: { 'X-API-Key': API_KEY }, body: fd });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new KapsoError(res.status, j?.error || j);
   const id = j?.id || j?.data?.id;
@@ -321,7 +327,7 @@ export async function enviarMediaId(telefono: string, clase: 'image' | 'document
   if (o.caption && clase !== 'audio') cuerpo[clase].caption = o.caption;
   if (o.filename && clase === 'document') cuerpo[clase].filename = o.filename;
   if (o.voice && clase === 'audio') cuerpo[clase].voice = true;
-  return meta(`/${PHONE_NUMBER_ID}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
+  return meta(`/${PN()}/messages`, { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
 // ── Plantillas (Meta passthrough) ──

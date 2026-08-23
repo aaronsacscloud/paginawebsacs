@@ -78,6 +78,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         const r = await registrarMensaje({
           kapsoMessageId: String(msj.id),
           kapsoConversationId: conv.id ? String(conv.id) : null,
+          phoneNumberId: kapso.phone_number_id || payload?.phone_number_id || conv.phone_number_id || null,
           telefono,
           direccion: entrante ? 'entrante' : 'saliente',
           tipo: p.tipo,

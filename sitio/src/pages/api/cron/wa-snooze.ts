@@ -109,7 +109,22 @@ export const GET: APIRoute = async ({ request }) => {
   let plantillas = 0;
   try { const { sincronizarPlantillas } = await import('../crm/whatsapp/plantillas'); plantillas = (await sincronizarPlantillas()).cambios.length; } catch (e) { console.warn('[wa-tpl-sync]', e); }
 
-  return new Response(JSON.stringify({ despertadas: (vencidas || []).length, enviados, recordados, resync, plantillas }), {
+  // ── Etapa F: salud y calidad del número → campana cuando empeora ──
+  let saludNivel: string | null = null;
+  try {
+    const { saludNumero, infoNumero, resumirSalud } = await import('../../../lib/whatsapp/kapso-numero');
+    const [sal, inf] = await Promise.all([saludNumero().catch(() => null), infoNumero().catch(() => null)]);
+    const res = resumirSalud(sal, inf); saludNivel = res.nivel;
+    const { data: cfg } = await supabase.from('wa_config').select('salud').eq('id', 1).maybeSingle();
+    const prevNivel = cfg?.salud?.nivel || null;
+    await supabase.from('wa_config').update({ salud: { ...res, info: inf, checks: sal?.checks || null }, salud_at: new Date().toISOString() }).eq('id', 1);
+    if (prevNivel && prevNivel !== res.nivel && res.nivel !== 'verde') {
+      const peor = res.puntos.find(p => p.nivel === 'malo') || res.puntos.find(p => p.nivel === 'aviso');
+      await notificar({ clave: `wa_salud_${res.nivel}_${new Date().toISOString().slice(0, 10)}`, tipo: 'wa_plantilla', destino: 'wa-numero', titulo: `Número de WhatsApp: ${res.titulo}${peor ? ` — ${peor.texto}` : ''}`, metadata: { nivel: res.nivel } });
+    }
+  } catch (e) { console.warn('[wa-salud]', e); }
+
+  return new Response(JSON.stringify({ despertadas: (vencidas || []).length, enviados, recordados, resync, plantillas, salud: saludNivel }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };

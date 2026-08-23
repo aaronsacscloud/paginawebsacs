@@ -77,3 +77,13 @@ create table if not exists wa_llamadas (
 create index if not exists wa_llamadas_conv on wa_llamadas (conversation_id, started_at desc);
 create index if not exists wa_llamadas_estado on wa_llamadas (estado) where estado='timbrando';
 alter table wa_config add column if not exists webhook_meta_id text, add column if not exists calling jsonb;
+-- Etapa F: varios números + salud
+create table if not exists wa_numeros (
+  phone_number_id text primary key,
+  display_phone_number text, nombre text, business_account_id text,
+  activo boolean not null default true, es_default boolean not null default false,
+  webhook_id text, calidad text, tier text, salud jsonb, salud_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table wa_conversaciones add column if not exists phone_number_id text;
+alter table wa_config add column if not exists salud jsonb, add column if not exists salud_at timestamptz, add column if not exists kapso_customer_id text;
