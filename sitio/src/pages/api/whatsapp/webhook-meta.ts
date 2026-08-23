@@ -67,7 +67,7 @@ export const POST: APIRoute = async ({ request, url }) => {
               motivo: st || null, updated_at: fin,
             }).eq('call_id', callId);
             if (conv?.id) await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'llamada', autor: null,
-              detalle: estado === 'terminada' || estado === 'aceptada' ? `Llamada de WhatsApp ${entrante ? 'recibida' : 'realizada'}${c.duration ? ` · ${Math.round(Number(c.duration) / 60)} min ${Number(c.duration) % 60} s` : ''}` : `Llamada ${entrante ? 'entrante' : 'saliente'} ${estado === 'perdida' ? 'perdida' : estado}` });
+              detalle: estado === 'terminada' || estado === 'aceptada' ? `Llamada de WhatsApp ${entrante ? 'recibida' : 'realizada'}${c.duration ? ` · ${Math.floor(Number(c.duration) / 60)} min ${Number(c.duration) % 60} s` : ''}` : `Llamada ${entrante ? 'entrante' : 'saliente'} ${estado === 'perdida' ? 'perdida' : estado}` });
           }
         }
         for (const s of statuses) {
