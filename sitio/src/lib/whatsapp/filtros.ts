@@ -69,7 +69,9 @@ export function catalogoCampos(din: {
       { v: 'automatiza', l: 'Automatiza' }, { v: 'personalizada', l: 'Personalizada' }, { v: 'soporte_premium', l: 'Soporte premium' }] },
     { id: 'estado_cuenta', label: 'Estado de la cuenta', grupo: 'Cliente', ops: OPS.es, valores: [
       { v: 'prospecto', l: 'Prospecto' }, { v: 'activo', l: 'Activo' }, { v: 'vencido', l: 'Vencido' }, { v: 'cancelado', l: 'Cancelado' }] },
-    { id: 'mrr', label: 'MRR', grupo: 'Cliente', ops: OPS.num, valores: [] },
+    // TODO el CRM se mide en ARR. El id 'arr' compara mrr×12; 'mrr' sigue
+    // existiendo (oculto) para no romper las vistas guardadas con ese campo.
+    { id: 'arr', label: 'ARR (MXN/año)', grupo: 'Cliente', ops: OPS.num, valores: [] },
     { id: 'sucursales', label: 'Sucursales', grupo: 'Cliente', ops: [...OPS.num, { id: 'igual', label: 'igual a' }], valores: [] },
     { id: 'giro', label: 'Giro', grupo: 'Cliente', ops: OPS.es, valores: din.giros || [] },
     { id: 'con_cuenta', label: 'Cuenta SACS ligada', grupo: 'Cliente', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
@@ -173,9 +175,14 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
     }
     case 'plan': ok = fila.empresa?.plan === c.valor; break;
     case 'estado_cuenta': ok = (fila._extra?.estado_cuenta || fila.empresa?.estado_cuenta) === c.valor; break;
-    case 'mrr': {
+    case 'mrr': {   // legado: vistas guardadas antes del cambio a ARR
       const n = parseFloat(c.valor); if (isNaN(n)) return true;
       const v = Number(fila.empresa?.mrr || 0);
+      return c.op === 'mayor' ? v > n : v < n;
+    }
+    case 'arr': {   // la medida oficial: mrr anualizado (o arr directo si existe)
+      const n = parseFloat(c.valor); if (isNaN(n)) return true;
+      const v = Number(fila.empresa?.arr ?? (Number(fila.empresa?.mrr || 0) * 12));
       return c.op === 'mayor' ? v > n : v < n;
     }
     case 'sucursales': {

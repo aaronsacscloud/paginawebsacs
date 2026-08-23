@@ -33,7 +33,8 @@ export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
 
   return (
     <div style={{ ...S.wrap, display: 'flex', gap: 22, alignItems: 'flex-start' }}>
-      <nav style={{ width: 228, flexShrink: 0, position: 'sticky', top: 34 }}>
+      {/* OJO: crm.astro esconde todo <nav> del sitio con display:none — aside, no nav */}
+      <aside style={{ width: 228, flexShrink: 0, position: 'sticky', top: 34 }}>
         <p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '2px 0 8px 10px' }}>Configuración WhatsApp</p>
         {SECCIONES.map(s => (
           <button key={s.id} onClick={() => setSec(s.id)} style={{
@@ -45,7 +46,7 @@ export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
             <span style={{ fontSize: 10.5, color: sec === s.id ? '#7C6BF0' : '#999', display: 'block', marginTop: 1 }}>{s.desc}</span>
           </button>
         ))}
-      </nav>
+      </aside>
       <div style={{ flex: 1, minWidth: 0 }}>
         {sec === 'plantillas' && <PlantillasMeta />}
         {sec === 'snippets' && <Snippets />}
