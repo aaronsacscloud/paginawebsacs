@@ -264,7 +264,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   cuando NO hay ninguna ligada —el único caso en que hace falta— y
                   aquí, en Actividad, que es de donde salen esos datos. */}
               {tab === 'resumen' && !co?.sacs_account && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} irA={irA} />}
+              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {/* Las señales de venta encabezan Consultoría: son las IDEAS de qué
@@ -911,7 +911,7 @@ const PLURAL_CICLO: Record<string, string> = { anual: 'anuales', mensual: 'mensu
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
-function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash, irA }: any) {
+function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   /* La ficha se LEE por defecto y se edita cuando lo pides. Antes se abría con
@@ -1123,10 +1123,6 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                 {unicos > 0 && <div style={{ fontSize: '0.66rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
               </div>
             )}
-            <button onClick={() => irA?.('subs')}
-              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#5B4BD6', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-              Ver en Suscripciones ›
-            </button>
           </div>
         )}
 
