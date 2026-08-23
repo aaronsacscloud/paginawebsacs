@@ -393,6 +393,24 @@ function DatosDesactualizados({ syncAt }: { syncAt?: string | null }) {
 const FAMILIAS = ['Ventas', 'Inventario', 'Clientes', 'Programas', 'Cortes', 'Administración'];
 const FAM_LABEL: Record<string, string> = { Programas: 'Fidelización', Cortes: 'Cortes de caja' };
 
+/* Precio de lista de los plugins que el puente sabe detectar. Sirve para que,
+ * cuando se descubra que una cuenta está usando algo que no contrató, el
+ * número de la conversación esté a la vista y no haya que ir a buscarlo.
+ * Fuente: sacs3 → src/views/sacs-plugins/src/data/plugins.json. Si allá cambia
+ * un precio, aquí queda viejo — es un apoyo comercial, no la cotización. */
+const PLUGINS_PRECIO: Record<string, string> = {
+  'empleados': 'desde $5,900 por sucursal/año',
+  'bancos': 'desde $5,900',
+  'mermas': 'desde $3,900',
+  'gastos': 'desde $3,900',
+  'lotes-caducidades': 'desde $5,900',
+  'nivelacion-inventario': 'desde $6,900',
+  'listas-escolares': 'desde $5,900',
+  'cross-selling': 'desde $3,000',
+  'impulse-campaigns': 'desde $6,900',
+  'orden-servicio': 'desde $5,900',
+};
+
 function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const dias = co?.dias_sin_venta;
   // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
@@ -449,7 +467,14 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const etiquetaPrevio = es7 ? 'la semana anterior' : 'el mes anterior';
 
   const modulos: any[] = Array.isArray(uso?.modulos) ? uso.modulos : [];
-  const top5 = modulos.filter(m => Number(m[campoDocs] || 0) > 0)
+  /* La matriz ahora trae HIJOS (lo que se hace dentro de un módulo: cambios,
+     devoluciones, cancelaciones…). Se separan de los padres porque sumarlos
+     junto con ellos contaría dos veces la misma operación. */
+  const padres = modulos.filter(m => !m.padre);
+  const hijosDe = (nombre: string) => modulos
+    .filter(m => m.padre === nombre && Number(m[campoDocs] || 0) > 0)
+    .sort((a, b) => Number(b[campoDocs] || 0) - Number(a[campoDocs] || 0));
+  const top5 = padres.filter(m => Number(m[campoDocs] || 0) > 0)
     .sort((a, b) => Number(b[campoDocs] || 0) - Number(a[campoDocs] || 0)).slice(0, 5);
   // La barra se mide contra el SEGUNDO lugar: con el punto de venta en 66,850 y
   // el resto por debajo de 500, medir contra el primero dejaría todo lo demás
@@ -458,15 +483,31 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const docs = (nombre: string, campo: 'docs_7d' | 'docs_30d' = campoDocs) =>
     Number(modulos.find(m => m.modulo === nombre)?.[campo] || 0);
 
+  /* ── Módulos de paga: qué contrató contra qué usa ──────────────────────
+     Las dos direcciones importan y las dos son dinero:
+      · usa y NO contrató → se le está dando gratis algo que se vende.
+      · contrató y NO usa → no le ve valor; es lo primero que recorta. */
+  const contratados: string[] = Array.isArray(uso?.plugins) ? uso.plugins : [];
+  const dePaga = padres.filter(m => m.plugin).map(m => ({
+    modulo: m.modulo,
+    plugin: m.plugin as string,
+    contratado: contratados.includes(m.plugin),
+    movimientos: Number(m[campoDocs] || 0),
+    historico: Number(m.total || 0),
+    ultimo: m.ultimo || null,
+  }));
+  const usaSinPagar = dePaga.filter(x => !x.contratado && x.movimientos > 0);
+  const pagaSinUsar = dePaga.filter(x => x.contratado && x.movimientos === 0);
+
   const familias = FAMILIAS.map(f => {
-    const items = modulos.filter(m => m.familia === f);
+    const items = padres.filter(m => m.familia === f);
     return {
       nombre: FAM_LABEL[f] || f, total: items.length,
       usa: items.filter(m => m.usa).length,
       mov: items.reduce((a, m) => a + Number(m[campoDocs] || 0), 0),
     };
   }).filter(f => f.total > 0);
-  const nunca = modulos.filter(m => !m.usa && !Number(m.docs_30d || 0)).map(m => m.modulo);
+  const nunca = padres.filter(m => !m.usa && !Number(m.docs_30d || 0)).map(m => m.modulo);
 
   /* Todo sale de la MATRIZ de módulos, que trae las dos ventanas. Antes la
      mitad venía de `uso.transferencias.total_7d` y compañía, que solo existen a
@@ -629,17 +670,45 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
           <div style={D.h}>Los módulos que más usa</div>
           {/* Una sola columna: la del periodo elegido. Las dos columnas fijas
               (30 días y 7 días) contradecían al control de arriba. */}
-          {top5.map((m, i) => (
-            <div key={m.modulo} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0' }}>
-              <div style={{ fontSize: '0.79rem', fontWeight: 700, width: 184, flexShrink: 0 }}>{m.modulo}</div>
-              <div style={{ flex: 1, height: 8, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden' }}>
-                <span style={{ display: 'block', height: '100%', borderRadius: 9, background: i === 0 ? '#9B8CFA' : i < 3 ? '#b8a8fb' : '#d4cafd', width: `${Math.min(100, (Number(m[campoDocs]) / tope) * 100)}%`, transition: 'width .35s ease' }} />
+          {top5.map((m, i) => {
+            const hijos = hijosDe(m.modulo);
+            const totalHijos = hijos.reduce((a, h) => a + Number(h[campoDocs] || 0), 0) || 1;
+            return (
+              <div key={m.modulo}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0' }}>
+                  <div style={{ fontSize: '0.79rem', fontWeight: 700, width: 184, flexShrink: 0 }}>{m.modulo}</div>
+                  <div style={{ flex: 1, height: 8, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', borderRadius: 9, background: i === 0 ? '#9B8CFA' : i < 3 ? '#b8a8fb' : '#d4cafd', width: `${Math.min(100, (Number(m[campoDocs]) / tope) * 100)}%`, transition: 'width .35s ease' }} />
+                  </div>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 800, width: 82, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m[campoDocs] || 0).toLocaleString('es-MX')}</div>
+                </div>
+                {/* Qué se hace DENTRO del módulo. Un total de 12,332 en punto de
+                    venta no distingue una operación sana de una con 400
+                    devoluciones; el % es sobre el propio módulo. */}
+                {hijos.length > 0 && (
+                  <div style={{ paddingLeft: 14, marginLeft: 4, borderLeft: '2px solid #f0eff5', marginBottom: 6 }}>
+                    {hijos.map(h => {
+                      const n = Number(h[campoDocs] || 0);
+                      const pct = Math.round((n / totalHijos) * 100);
+                      const ojo = /Devolucion|Cancelacion|Devoluciones|Cancelaciones/i.test(h.modulo) && pct >= 5;
+                      return (
+                        <div key={h.modulo} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                          <div style={{ fontSize: '0.73rem', color: ojo ? '#C0554E' : '#6b6b74', fontWeight: ojo ? 700 : 600, width: 170, flexShrink: 0 }}>{h.modulo}</div>
+                          <div style={{ flex: 1, height: 5, background: '#f7f6fa', borderRadius: 9, overflow: 'hidden' }}>
+                            <span style={{ display: 'block', height: '100%', borderRadius: 9, background: ojo ? '#EF7A72' : '#ddd6fb', width: `${Math.min(100, pct)}%`, transition: 'width .35s ease' }} />
+                          </div>
+                          <div style={{ fontSize: '0.7rem', fontWeight: 700, width: 62, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: ojo ? '#C0554E' : '#6b6b74' }}>{n.toLocaleString('es-MX')}</div>
+                          <div style={{ fontSize: '0.66rem', width: 40, textAlign: 'right', color: '#b3afbd', fontVariantNumeric: 'tabular-nums' }}>{pct}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div style={{ fontSize: '0.77rem', fontWeight: 800, width: 82, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m[campoDocs] || 0).toLocaleString('es-MX')}</div>
-            </div>
-          ))}
+            );
+          })}
           <div style={{ fontSize: '0.68rem', color: '#c2c0c9', marginTop: 9 }}>
-            La barra compara contra el segundo lugar, no contra el primero: si no, todo lo demás sería una raya.
+            La barra compara contra el segundo lugar, no contra el primero: si no, todo lo demás sería una raya. El porcentaje de cada renglón de abajo es sobre su propio módulo.
           </div>
         </div>
       )}
@@ -655,6 +724,52 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Módulos de PAGA: lo contratado contra lo usado ──────────────────
+          Las dos direcciones son dinero. Que use algo que no contrató es una
+          venta esperando; que pague algo que no usa es lo primero que va a
+          recortar en la renovación. Van juntas porque la pregunta es la misma:
+          ¿lo que cobramos coincide con lo que le sirve? */}
+      {dePaga.length > 0 && (usaSinPagar.length > 0 || pagaSinUsar.length > 0) && (
+        <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
+          <div style={D.h}>Módulos de paga</div>
+
+          {usaSinPagar.length > 0 && (
+            <div style={{ marginBottom: pagaSinUsar.length > 0 ? 14 : 0 }}>
+              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#9a6a10', marginBottom: 7 }}>
+                Lo está usando y no lo tiene contratado
+              </div>
+              {usaSinPagar.map(x => (
+                <div key={x.plugin} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FFF4E5', border: '1px solid #f0dfba', borderRadius: 10, padding: '9px 12px', marginBottom: 6 }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1a1a1a' }}>{x.modulo}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#9a6a10' }}>
+                    {x.movimientos.toLocaleString('es-MX')} movimiento{x.movimientos === 1 ? '' : 's'} en {etiquetaPeriodo}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.7rem', fontWeight: 700, color: '#9a6a10' }}>
+                    {PLUGINS_PRECIO[x.plugin] || 'plugin de paga'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {pagaSinUsar.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#6b6b74', marginBottom: 7 }}>
+                Lo paga y no lo tocó en {etiquetaPeriodo}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {pagaSinUsar.map(x => (
+                  <span key={x.plugin} title={x.historico > 0 ? 'Último uso: ' + (x.ultimo || 'sin fecha') : 'Nunca lo ha usado'}
+                    style={{ fontSize: '0.72rem', fontWeight: 700, background: x.historico > 0 ? '#f6f5f9' : '#FEF0EF', color: x.historico > 0 ? '#6b6b74' : '#C0554E', border: '1px solid ' + (x.historico > 0 ? '#eceaf1' : '#f6d5d2'), borderRadius: 20, padding: '4px 11px' }}>
+                    {x.modulo}{x.historico > 0 ? '' : ' · nunca'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
