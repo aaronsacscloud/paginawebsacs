@@ -426,10 +426,12 @@ export async function resolverTemplateId(nombre: string, idioma: string, metaId?
 // ── Broadcasts (Platform) ──
 
 export async function crearBroadcast(nombre: string, templateId: string) {
+  // Kapso envuelve el body en `whatsapp_broadcast` (con `broadcast` responde
+  // "missing_parameter") y la plantilla va como `whatsapp_template_id`.
   return platform('/whatsapp/broadcasts', {
     method: 'POST',
     body: JSON.stringify({
-      broadcast: { name: nombre, phone_number_id: PHONE_NUMBER_ID, template_id: templateId },
+      whatsapp_broadcast: { name: nombre, phone_number_id: PHONE_NUMBER_ID, whatsapp_template_id: templateId },
     }),
   });
 }
