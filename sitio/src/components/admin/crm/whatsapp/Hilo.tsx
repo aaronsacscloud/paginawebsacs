@@ -204,7 +204,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, color: C.rojo700, flexShrink: 0 }}>
           <span style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0 }} />
           <span style={{ flex: 1 }}>{conv.alerta}</span>
-          {hilo.canales?.correo?.ok && <span style={{ fontSize: 11, color: C.rojo700, opacity: .8 }}>Prueba por correo</span>}
+          {hilo.canales?.correo?.ok && <button onClick={() => document.dispatchEvent(new CustomEvent('wa-modo-correo'))} style={{ border: `1px solid ${C.rojo200}`, background: '#fff', color: C.rojo700, borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Escribir por correo</button>}
         </div>
       )}
       {/* ── Mensajes ── */}
@@ -301,7 +301,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label }} />
 
       {/* ── Lightbox ── */}
-      {reenviar && <ModalReenviar mensaje={reenviar} api={api} onCerrar={() => setReenviar(null)} />}
+      {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
         const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
         if (!r?.error) setCierre(false);
@@ -389,12 +389,12 @@ function ModalCierre({ onCerrar, onResolver }: { onCerrar: () => void; onResolve
 }
 
 /** 12) Reenviar un mensaje a otra conversación del inbox. */
-function ModalReenviar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCerrar: () => void }) {
+function ModalReenviar({ mensaje, api, onCerrar, actualId }: { mensaje: any; api: any; onCerrar: () => void; actualId?: string | null }) {
   const [q, setQ] = useState('');
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [hecho, setHecho] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const lista: any[] = (api.listaActual?.() || []).filter((c: any) => c.wa_id);
+  const lista: any[] = (api.listaActual?.() || []).filter((c: any) => c.wa_id && c.wa_id !== actualId);
   const filtrada = lista.filter(c => !q.trim() || `${c.contacto?.nombre || ''} ${c.empresa?.nombre || ''} ${c.telefono}`.toLowerCase().includes(q.toLowerCase())).slice(0, 30);
   useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); }; window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc); }, []);
   return (

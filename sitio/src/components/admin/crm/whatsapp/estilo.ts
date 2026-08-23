@@ -118,6 +118,14 @@ export const CSS_INBOX = `
 `;
 
 /** Hora relativa corta para la lista. */
+/** "hace 2 h", "hace 3 d" — para textos corridos. */
+export function haceCuanto(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return 'hace un momento';
+  if (ms < 3_600_000) return `hace ${Math.floor(ms / 60_000)} min`;
+  if (ms < 86_400_000) return `hace ${Math.floor(ms / 3_600_000)} h`;
+  return `hace ${Math.floor(ms / 86_400_000)} d`;
+}
 export function horaRelativa(iso: string): string {
   const d = new Date(iso); const ms = Date.now() - d.getTime();
   if (ms < 60_000) return 'ahora';

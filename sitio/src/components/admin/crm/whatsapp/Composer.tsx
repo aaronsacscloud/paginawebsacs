@@ -101,8 +101,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   }, []);
   useEffect(() => {
     const abrir = () => setModalPlantilla(true);
-    document.addEventListener('wa-abrir-plantillas', abrir); return () => document.removeEventListener('wa-abrir-plantillas', abrir);
-  }, []);
+    const correo = () => { if (correoOk) { setModo('correo'); areaRef.current?.focus(); } };
+    document.addEventListener('wa-abrir-plantillas', abrir); document.addEventListener('wa-modo-correo', correo);
+    return () => { document.removeEventListener('wa-abrir-plantillas', abrir); document.removeEventListener('wa-modo-correo', correo); };
+  }, [correoOk]);
 
   // Snippets (respuestas rápidas completas)
   const [snippets, setSnippets] = useState<any[]>([]);

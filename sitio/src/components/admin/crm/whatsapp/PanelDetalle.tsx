@@ -11,7 +11,7 @@ import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
 import { Corazones } from '../ui/Cargando';
 import { srcMedia } from './Burbuja';
-import { C, L, label, horaRelativa } from './estilo';
+import { C, L, label, haceCuanto } from './estilo';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
 const money = (n: any) => (n || n === 0) ? `$${Math.round(Number(n)).toLocaleString('es-MX')}` : '—';
@@ -237,7 +237,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
       {/* 14) Qué pasó desde nuestro último mensaje */}
       {ctx?.desde_ultimo && (ctx.desde_ultimo.pagos.n > 0 || ctx.desde_ultimo.correos_abiertos > 0 || ctx.desde_ultimo.reuniones > 0 || ctx.desde_ultimo.correos_recibidos > 0 || ctx.desde_ultimo.uso_sacs.length > 0) && (
         <div style={{ margin: '8px 16px 0', borderRadius: 12, border: `1px solid ${C.azulBorde}`, background: C.azulAgua, padding: '9px 12px', fontSize: 12 }}>
-          <div style={{ ...label(10), color: C.azulTinta, marginBottom: 4 }}>Desde tu último mensaje ({horaRelativa(ctx.desde_ultimo.desde)})</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}><span style={{ ...label(10), color: C.azulTinta }}>Desde tu último mensaje</span><span style={{ fontSize: 10, color: C.azulTinta, opacity: .8 }}>{haceCuanto(ctx.desde_ultimo.desde)}</span></div>
           <ul style={{ margin: 0, paddingLeft: 16, color: C.g700, lineHeight: 1.6 }}>
             {ctx.desde_ultimo.pagos.n > 0 && <li>{ocultarDinero ? `Pagó ${ctx.desde_ultimo.pagos.n} vez${ctx.desde_ultimo.pagos.n === 1 ? '' : 'es'}` : `Pagó ${money(ctx.desde_ultimo.pagos.monto)}${ctx.desde_ultimo.pagos.n > 1 ? ` en ${ctx.desde_ultimo.pagos.n} pagos` : ''}`}</li>}
             {ctx.desde_ultimo.correos_abiertos > 0 && <li>Abrió {ctx.desde_ultimo.correos_abiertos} correo{ctx.desde_ultimo.correos_abiertos === 1 ? '' : 's'}{ctx.desde_ultimo.clics > 0 ? ` y dio ${ctx.desde_ultimo.clics} clic${ctx.desde_ultimo.clics === 1 ? '' : 's'}` : ''}</li>}
@@ -323,7 +323,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
         </Seccion>
       )}
       {ctx?.otros_contactos?.length > 0 && (
-        <Seccion id="g-otros" titulo="Otros contactos de la cuenta" n={ctx.otros_contactos.length}>
+        <Seccion id="g-otros" titulo="Otros contactos" n={ctx.otros_contactos.length}>
           {ctx.otros_contactos.map((oc: any) => (
             <div key={oc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12 }}>
               <span style={{ minWidth: 0, flex: 1 }}>
@@ -348,7 +348,7 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
           {ctx.sacs.modulos_activos.map((m: any) => (
             <div key={m.modulo} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '3px 0', fontSize: 12 }}>
               <span style={{ color: C.g700 }}>{m.modulo}</span>
-              <span style={{ color: C.g400, fontVariantNumeric: 'tabular-nums' }}>{m.docs_30d} en 30 d{m.ultimo ? ` · ${fecha(m.ultimo)}` : ''}</span>
+              <span style={{ color: C.g400, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{Number(m.docs_30d || 0).toLocaleString('es-MX')} <span style={{ color: C.g300 }}>/30 d</span>{m.ultimo ? ` · ${new Date(m.ultimo + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}` : ''}</span>
             </div>
           ))}
           {!ctx.sacs.modulos_activos.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin uso registrado todavía.</div>}

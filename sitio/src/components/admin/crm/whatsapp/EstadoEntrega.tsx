@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { C } from './estilo';
 
-const ERROR_LABELS: Record<string, string> = {
+export const ERROR_LABELS: Record<string, string> = {
   '131042': 'Problema de pago en la cuenta de WhatsApp Business',
   '131047': 'Más de 24h sin respuesta, se requiere plantilla',
   '131026': 'El mensaje no pudo ser entregado',
@@ -77,4 +77,11 @@ export default function EstadoEntrega({ status, direccion, error }: {
     case 'failed': return <Fallo error={error} />;
     default: return null;
   }
+}
+
+/** "131026 Message Undeliverable" → texto en español si el código está mapeado. */
+export function errorLegible(error?: string | null): string {
+  if (!error) return 'No se pudo enviar';
+  const codigo = (error.match(/^(\d{5,6})/) || [])[1];
+  return (codigo && ERROR_LABELS[codigo]) ? ERROR_LABELS[codigo] : error;
 }

@@ -6,7 +6,7 @@
 // "responder" (cita) en hover.
 import { useRef, useState } from 'react';
 import { C, burbuja } from './estilo';
-import EstadoEntrega from './EstadoEntrega';
+import EstadoEntrega, { errorLegible } from './EstadoEntrega';
 
 export const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 export const esImagen = (url?: string | null, tipo?: string | null) =>
@@ -238,7 +238,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
       )}
       {item.status === 'failed' && (
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
-          <span style={{ fontSize: 10, color: C.rojo500 }}>{(item.error || 'No se pudo enviar').slice(0, 90)}</span>
+          <span style={{ fontSize: 10, color: C.rojo500 }} title={item.error || ''}>{errorLegible(item.error).slice(0, 90)}</span>
           {onReintentar && saliente && (tipo === 'text' || src) && (
             <button onClick={() => onReintentar(item)} style={{ border: `1px solid ${C.rojo200}`, background: C.rojo50, color: C.rojo700, borderRadius: 999, padding: '1px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Reintentar</button>
           )}

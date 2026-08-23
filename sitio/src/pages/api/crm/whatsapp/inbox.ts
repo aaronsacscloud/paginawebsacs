@@ -180,7 +180,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     if (requiereAccion(c)) counts.accion++;
     if (user && c.asignado_a === user.id) counts.mias++;
     if (!c.asignado_a && c.estado_crm !== 'resuelta') counts.sin_asignar++;
-    if (c.no_leidos > 0) counts.no_leidas++;
+    if (c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') counts.no_leidas++;   // "Sin respuesta": el cliente habló y nadie contestó
     const e = c.contacto?.lifecycle_stage;
     if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
   }
@@ -227,7 +227,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   else lista = lista.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
   if (filtro === 'mias' && user) lista = lista.filter(c => c.asignado_a === user.id);
   if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
-  if (filtro === 'no_leidas') lista = lista.filter(c => c.no_leidos > 0);
+  if (filtro === 'no_leidas') lista = lista.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
   if (filtro === 'accion') lista = lista.filter(requiereAccion);
   if (etapa) lista = lista.filter(c => c.contacto?.lifecycle_stage === etapa);
   if (tipo) lista = lista.filter(c => c.contacto?.tipo === tipo);
