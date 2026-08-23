@@ -920,7 +920,9 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto }: { telefo
         </div>
         <div style={{ display: 'flex', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C.g100}`, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 14px', background: '#fff', fontSize: 12, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
-          <button disabled={!sel || ocupado} onClick={enviar} style={{ border: 'none', borderRadius: 8, padding: '8px 16px', background: C.emerald600, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sel ? 1 : .5 }}>
+          <button disabled={!sel || ocupado || (sel?.tipo_especial === 'otp' ? !otp.trim() : params.some(v => !String(v || '').trim())) || (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(String(sel?.header_tipo || '').toUpperCase()) && !/^https?:\/\//.test(headerUrl))}
+            title={sel && params.some(v => !String(v || '').trim()) ? 'Llena todas las variables' : ''}
+            onClick={enviar} style={{ border: 'none', borderRadius: 8, padding: '8px 16px', background: C.emerald600, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sel && !params.some(v => !String(v || '').trim()) ? 1 : .5 }}>
             {ocupado ? <Corazones size={8} color="#fff" /> : 'Enviar'}
           </button>
         </div>
