@@ -52,20 +52,45 @@ const MOTIVOS_REAGENDA = [
   'Se subestimó el trabajo',
 ];
 
-// ── Las vistas ──
-// Separan por NATURALEZA del trabajo, no por estado interno: una capacitación
-// no se cotiza ni se entrega como una personalización. "Pendientes" es la
-// excepción a propósito —es el estado— porque es la pregunta con la que se abre
-// la pantalla: qué le debo a mis clientes. La categoría `pendiente` existe pero
-// solo la usa 1 de 40 renglones; si la vista fuera esa, nacería vacía.
-const VISTAS: { id: string; l: string; f: (m: any) => boolean; agrupa?: boolean; urge?: boolean }[] = [
-  { id: 'todo',       l: 'Todo',                        f: () => true, agrupa: true },
-  { id: 'pend',       l: 'Pendientes',                  f: esPendiente, urge: true },
-  { id: 'mejoras',    l: 'Mejoras y personalizaciones', f: m => ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria) },
-  { id: 'capacita',   l: 'Capacitaciones',              f: m => m.categoria === 'capacitacion' },
-  { id: 'ideas',      l: 'Ideas',                       f: m => m.estado === 'idea' },
-  { id: 'entregadas', l: 'Entregadas',                  f: m => m.estado === 'entregada' },
+// ── Las vistas son el TIPO de trabajo, no el estado ──
+// Una capacitación no se cotiza, no se entrega ni se mide como una
+// personalización: son oficios distintos y por eso separan bien. El estado
+// —idea, en proceso, entregada— es transversal a los tres, así que va de
+// FILTRO: si fuera vista, cada cosa aparecería repetida en dos pestañas y no se
+// sabría cuál es la buena.
+const VISTAS: { id: string; l: string; f: (m: any) => boolean; agrupa?: boolean }[] = [
+  { id: 'todo',     l: 'Todo',             f: () => true, agrupa: true },
+  { id: 'mejoras',  l: 'Mejoras',          f: m => ['personalizacion', 'plugin', 'modulo', 'ajuste'].includes(m.categoria) },
+  { id: 'capacita', l: 'Capacitaciones',   f: m => m.categoria === 'capacitacion' },
+  // Lo que todavía no es trabajo definido: la idea que salió en una junta y el
+  // pendiente suelto que pidieron por WhatsApp. La categoría `pendiente` casi no
+  // se usa (1 de 40) porque hasta ahora no había dónde capturarla suelta.
+  { id: 'ideas',    l: 'Ideas pendientes', f: m => m.estado === 'idea' || ['pendiente', 'otro'].includes(m.categoria) },
 ];
+
+// ── El estado, ahora como filtro ──
+// Con dos cortes que no son estados sino MEDIDAS: se entregó dentro de la
+// fecha o después. Es lo único que dice si las fechas que pactas en la junta
+// son realistas o son un deseo.
+const entregadaATiempo = (m: any) => m.estado === 'entregada' && m.fecha_compromiso && m.fecha_entrega && m.fecha_entrega <= m.fecha_compromiso;
+const entregadaTarde   = (m: any) => m.estado === 'entregada' && m.fecha_compromiso && m.fecha_entrega && m.fecha_entrega > m.fecha_compromiso;
+
+const FILTROS_ESTADO: { v: string; l: string; f: (m: any) => boolean }[] = [
+  { v: 'todo',       l: 'Cualquier estado', f: () => true },
+  { v: 'pendientes', l: 'Por entregar',     f: esPendiente },
+  { v: 'idea',       l: 'Idea',             f: m => m.estado === 'idea' },
+  { v: 'cotizada',   l: 'Cotizada',         f: m => m.estado === 'cotizada' },
+  { v: 'en_proceso', l: 'En proceso',       f: m => m.estado === 'en_proceso' },
+  { v: 'entregada',  l: 'Entregada',        f: m => m.estado === 'entregada' },
+  { v: 'a_tiempo',   l: 'Entregada a tiempo', f: entregadaATiempo },
+  { v: 'tarde',      l: 'Entregada tarde',    f: entregadaTarde },
+  { v: 'descartada', l: 'Descartada',       f: m => m.estado === 'descartada' },
+];
+
+const ORIGENES: Record<string, string> = {
+  junta: 'De una junta', whatsapp: 'De WhatsApp', soporte: 'De soporte',
+  llamada: 'De una llamada', manual: 'Capturado a mano',
+};
 
 const S = {
   wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
@@ -199,8 +224,9 @@ export default function MejorasTab() {
   // Edición de la fecha de entrega: qué renglón, la fecha nueva y por qué.
   const [editFecha, setEditFecha] = useState<{ id: string; fecha: string; motivo: string } | null>(null);
   const [editLiga, setEditLiga] = useState<{ id: string; url: string } | null>(null);
-  const [tipo, setTipo] = useState<string>('todo');
-  const [origen, setOrigen] = useState<string>('todo');   // salió de juntas recientes
+  // El TIPO se volvió la vista; aquí quedan los dos cortes transversales.
+  const [fEstado, setFEstado] = useState<string>('todo');
+  const [fOrigen, setFOrigen] = useState<string>('todo');   // de dónde salió
   const [verSemana, setVerSemana] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
@@ -331,19 +357,29 @@ export default function MejorasTab() {
       s: 'trabajo hecho que no puedes enseñar', f: (m: any) => m.estado === 'entregada' && !m.url },
   ];
 
+  // Puntualidad de entrega: solo cuenta lo entregado que SÍ tenía fecha
+  // pactada. Meter en el promedio lo que nunca tuvo fecha inflaría el número
+  // premiando justo lo que no se comprometió.
+  const punt = useMemo(() => {
+    const r = rows || [];
+    const conFecha = r.filter(m => m.estado === 'entregada' && m.fecha_compromiso && m.fecha_entrega);
+    const aTiempo = conFecha.filter(entregadaATiempo).length;
+    const tarde = conFecha.filter(entregadaTarde).length;
+    return { total: conFecha.length, aTiempo, tarde, pct: conFecha.length ? Math.round(100 * aTiempo / conFecha.length) : null };
+  }, [rows]);
+
   const lista = useMemo(() => {
     let r = rows || [];
     const v = VISTAS.find(x => x.id === vista) || VISTAS[0];
     r = r.filter(v.f);
     const al = ALERTAS.find(a => a.id === alerta);
     if (al) r = r.filter(al.f);
-    if (tipo !== 'todo') r = r.filter(m => (m.categoria || 'otro') === tipo);
-    // Lo que nació en juntas recientes: la lista de seguimiento de después de
-    // las reuniones, que hoy había que armar a ojo.
-    if (origen !== 'todo') {
-      const desde = enDias(-Number(origen));
-      r = r.filter(m => m.bookings?.fecha && m.bookings.fecha >= desde);
-    }
+    const fe = FILTROS_ESTADO.find(x => x.v === fEstado);
+    if (fe && fEstado !== 'todo') r = r.filter(fe.f);
+    // De dónde salió. Antes este filtro era "juntas de los últimos 7/30 días",
+    // que contestaba una pregunta de tiempo, no de origen: lo que el cliente
+    // pide por WhatsApp no salía por ningún lado.
+    if (fOrigen !== 'todo') r = r.filter(m => (m.origen || (m.booking_id ? 'junta' : 'manual')) === fOrigen);
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter(m => `${m.titulo} ${m.descripcion || ''} ${m.companies?.nombre_comercial || m.companies?.nombre || ''}`.toLowerCase().includes(t));
     // Las ideas se ordenan por monto: lo primero que quieres ver es dónde está
@@ -355,7 +391,7 @@ export default function MejorasTab() {
       if (va !== vb) return va - vb;
       return String(a.fecha_compromiso || '9999').localeCompare(String(b.fecha_compromiso || '9999'));
     });
-  }, [rows, vista, alerta, tipo, origen, busca, idsVencidas, idsSemana]);
+  }, [rows, vista, alerta, fEstado, fOrigen, busca, idsVencidas, idsSemana]);
 
   // Agrupado por cuenta: al salir de tres juntas seguidas lo que quieres ver es
   // "Live Shows: 4 pendientes", no cuatro renglones perdidos entre los de otros.
@@ -426,6 +462,9 @@ export default function MejorasTab() {
     const venc = idsVencidas.has(m.id);
     const reag: any[] = Array.isArray(m.reagendas) ? m.reagendas : [];
     const nReag = reag.length;
+    // Narrowing: dentro del panel se lee el editor de ESTE renglón o nada.
+    const edF = editFecha && editFecha.id === m.id ? editFecha : null;
+    const edL = editLiga && editLiga.id === m.id ? editLiga : null;
     const c = cat(m.categoria);
     const iAct = PASOS.indexOf(m.estado);
     const fechaTxt = m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}`
@@ -507,16 +546,16 @@ export default function MejorasTab() {
 
             {/* Editor de la fecha. El motivo es obligatorio cuando ya había una:
                 sin él, el rastro no explica nada tres meses después. */}
-            {editFecha?.id === m.id && (
+            {edF && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, padding: '11px 13px' }}>
                 <span style={{ width: '100%', fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>
                   {m.fecha_compromiso ? 'Mover la fecha de entrega' : 'Poner fecha de entrega'}
                 </span>
-                <input type="date" autoFocus value={editFecha.fecha}
+                <input type="date" autoFocus value={edF.fecha}
                   onChange={e => setEditFecha(f => (f ? { ...f, fecha: e.target.value } : f))}
                   style={{ border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }} />
                 {m.fecha_compromiso && (
-                  <select value={editFecha.motivo} onChange={e => setEditFecha(f => (f ? { ...f, motivo: e.target.value } : f))}
+                  <select value={edF.motivo} onChange={e => setEditFecha(f => (f ? { ...f, motivo: e.target.value } : f))}
                     style={{ border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }}>
                     <option value="">¿Por qué se mueve?</option>
                     {MOTIVOS_REAGENDA.map(x => <option key={x} value={x}>{x}</option>)}
@@ -534,10 +573,10 @@ export default function MejorasTab() {
             )}
 
             {/* La liga de lo entregado. Sin ella una entrega no se puede enseñar. */}
-            {editLiga?.id === m.id && (
+            {edL && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, padding: '11px 13px' }}>
                 <span style={{ width: '100%', fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>Liga de lo entregado</span>
-                <input autoFocus value={editLiga.url} onChange={e => setEditLiga(l => (l ? { ...l, url: e.target.value } : l))}
+                <input autoFocus value={edL.url} onChange={e => setEditLiga(l => (l ? { ...l, url: e.target.value } : l))}
                   placeholder="https://… el video, el módulo publicado, el documento"
                   style={{ flex: '1 1 260px', border: '1.5px solid #e4dffb', borderRadius: 8, padding: '6px 9px', fontSize: '0.78rem', fontFamily: 'inherit', background: '#fdfcff' }} />
                 <button onClick={() => guardaLiga(m)} disabled={guardando === m.id}
@@ -638,9 +677,14 @@ export default function MejorasTab() {
             activo={alerta === a.id}
             onClick={a.n ? () => setAlerta(alerta === a.id ? '' : a.id) : undefined} />
         ))}
-        <KpiCard label="Sobre la mesa" franja="#7DA6F5" color="#2C5FC4"
-          valor={money(k.potencial)} sub={`${k.ideas} ideas en ${k.cuentasConIdeas} cuentas`}
-          onClick={() => { setVista('ideas'); setAlerta(''); }} />
+        {/* La medida que pediste: de lo que ya se entregó CON fecha pactada,
+            cuánto llegó dentro. Es lo único que dice si las fechas que pactas
+            en la junta son realistas o son un deseo. */}
+        <KpiCard label="Entregado a tiempo" franja="#4FBF95"
+          color={punt.pct == null ? '#1a1a1a' : punt.pct >= 80 ? '#1E8A63' : punt.pct >= 50 ? '#9a6a10' : '#C0554E'}
+          valor={punt.pct == null ? '—' : `${punt.pct}%`}
+          sub={punt.total ? `${punt.aTiempo} de ${punt.total} con fecha pactada${punt.tarde ? ` · ${punt.tarde} tarde` : ''}` : 'ninguna entrega tenía fecha pactada'}
+          onClick={punt.tarde ? () => { setVista('todo'); setAlerta(''); setFEstado('tarde'); } : undefined} />
       </div>
 
       {/* ── Las vistas ── */}
@@ -648,7 +692,8 @@ export default function MejorasTab() {
         {VISTAS.map(v => {
           const n = (rows || []).filter(v.f).length;
           const on = vista === v.id;
-          const urge = v.urge && vencidas.length > 0;
+          // Cuántas de esta vista van tarde: el conteo en rojo dice dónde arde.
+          const urge = (rows || []).filter(m => v.f(m) && idsVencidas.has(m.id)).length > 0;
           return (
             <button key={v.id} onClick={() => { setVista(v.id); setAlerta(''); }}
               style={{
@@ -688,13 +733,21 @@ export default function MejorasTab() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o mejora…"
             style={{ minWidth: 260, padding: '8px 12px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.78rem', outline: 'none', background: '#fdfcff', fontFamily: 'inherit' }} />
-          <Desplegable etiqueta="Tipo" valor={tipo} onCambio={setTipo}
-            opciones={[{ v: 'todo', l: 'Todos' }, ...Object.entries(CATS).map(([k, v]) => ({ v: k, l: v.label }))]} />
-          <Desplegable etiqueta="Salió de" valor={origen} onCambio={setOrigen}
-            opciones={[{ v: 'todo', l: 'Cualquier junta' }, { v: '7', l: 'Juntas de 7 días' }, { v: '30', l: 'Juntas de 30 días' }]} />
+          {/* El estado es transversal a los tres tipos, así que es filtro y no
+              vista. Las dos últimas opciones no son estados sino la MEDIDA de
+              si la fecha que se pactó se cumplió. */}
+          <Desplegable etiqueta="Estado" valor={fEstado} onCambio={setFEstado}
+            opciones={FILTROS_ESTADO.map(f => ({ v: f.v, l: f.l }))} />
+          <Desplegable etiqueta="Salió de" valor={fOrigen} onCambio={setFOrigen}
+            opciones={[{ v: 'todo', l: 'Cualquier origen' }, ...Object.entries(ORIGENES).map(([k, l]) => ({ v: k, l }))]} />
           {alerta && (
             <button onClick={() => setAlerta('')} style={S.chip(true)}>
               {ALERTAS.find(a => a.id === alerta)?.k} ✕
+            </button>
+          )}
+          {(fEstado !== 'todo' || fOrigen !== 'todo') && (
+            <button onClick={() => { setFEstado('todo'); setFOrigen('todo'); }} style={S.chip(true)}>
+              Quitar filtros ✕
             </button>
           )}
           <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} de {rows.length}</span>

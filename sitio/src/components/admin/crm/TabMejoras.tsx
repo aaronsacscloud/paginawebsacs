@@ -32,6 +32,11 @@ const CATS_COLOR: Record<string, { label: string; bg: string; fg: string }> = {
   otro:            { label: 'otro',            bg: '#F4F4F6', fg: '#6B7280' },
 };
 const cat = (k: string) => CATS_COLOR[k] || CATS_COLOR.otro;
+// De dónde nació el compromiso. Mismo vocabulario que la vista global.
+const ORIGENES_L: Record<string, string> = {
+  junta: 'De una junta', whatsapp: 'De WhatsApp', soporte: 'De soporte',
+  llamada: 'De una llamada', manual: 'Capturado a mano',
+};
 const CATS: Record<string, string> = Object.fromEntries(Object.entries(CATS_COLOR).map(([k, v]) => [k, v.label]));
 
 const S = {
@@ -263,7 +268,7 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
   const [f, setF] = useState<any>({
     titulo: '', descripcion: '', estado: 'idea', categoria: 'personalizacion',
     valor: 0, cortesia: false, visible_cliente: true, booking_id: '', fecha_entrega: '', fecha_compromiso: '',
-    modo: 'junta', url: '', modulo: '', ...m,
+    modo: 'junta', url: '', modulo: '', origen: '', ...m,
   });
   const [guardando, setGuardando] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -344,14 +349,29 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
                 onChange={e => set(esEntregada ? 'fecha_entrega' : 'fecha_compromiso', e.target.value)} style={S.input} /></div>
           </div>
 
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>{esCap ? '¿En qué junta se dio?' : '¿De qué junta salió?'}</div>
-            <select value={f.booking_id || ''} onChange={e => set('booking_id', e.target.value)} style={S.input}>
-              <option value="">{esCap ? 'No fue en una junta' : 'No salió de una junta'}</option>
-              {reuniones.map((r: any) => (
-                <option key={r.id} value={r.id}>{fmtDate(r.fecha)} · {r.asunto || r.event_types?.nombre || 'Reunión'}</option>
-              ))}
+          {/* ── De dónde salió ──
+              Antes solo se podía decir "de esta junta" o nada. Lo que el cliente
+              pide por WhatsApp entre junta y junta —que es la mitad de lo que se
+              promete— no tenía dónde quedar, y por eso se perdía. Elegir una
+              junta pone el origen en 'junta' solo. */}
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿De dónde salió?</div>
+            <select value={f.booking_id ? 'junta' : (f.origen || 'manual')}
+              onChange={e => { const v = e.target.value; set('origen', v); if (v !== 'junta') set('booking_id', ''); }}
+              style={S.input}>
+              {Object.entries(ORIGENES_L).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           </div>
+
+          {(f.origen === 'junta' || f.booking_id) && (
+            <div style={{ marginBottom: 10 }}><div style={S.lbl}>{esCap ? '¿En qué junta se dio?' : '¿De qué junta salió?'}</div>
+              <select value={f.booking_id || ''} onChange={e => set('booking_id', e.target.value)} style={S.input}>
+                <option value="">Elige la junta…</option>
+                {reuniones.map((r: any) => (
+                  <option key={r.id} value={r.id}>{fmtDate(r.fecha)} · {r.asunto || r.event_types?.nombre || 'Reunión'}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {!esCap && !esPend && (
             <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', marginBottom: 7, cursor: 'pointer' }}>

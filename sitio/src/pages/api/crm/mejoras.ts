@@ -20,6 +20,10 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 
 export const ESTADOS_MEJORA = ['idea', 'cotizada', 'en_proceso', 'entregada', 'descartada'] as const;
 const CATEGORIAS = ['personalizacion', 'plugin', 'ajuste', 'modulo', 'capacitacion', 'pendiente', 'otro'];
+// De dónde nació el compromiso. La junta se deriva sola de booking_id; los
+// demás los captura quien lo da de alta —lo que el cliente pidió por WhatsApp
+// es el que más se pierde hoy, porque no queda en ningún lado.
+export const ORIGENES = ['junta', 'whatsapp', 'soporte', 'llamada', 'manual'];
 
 // Lo prometido que ya venció. Las cuentas no se pierden por lo que no
 // prometiste: se pierden por lo que prometiste y no llegó. Solo cuentan las
@@ -61,6 +65,11 @@ function limpia(b: any) {
   if ('modo' in b) p.modo = ['junta', 'video', 'agendada'].includes(b.modo) ? b.modo : null;
   // Liga del recurso: el video que se le mandó al cliente para eso que pidió.
   if ('url' in b) p.url = String(b.url || '').trim() || null;
+  // De dónde salió el compromiso. Lista cerrada: es un filtro, y en texto libre
+  // "whatsapp", "WhatsApp" y "wa" serían tres orígenes distintos.
+  // Solo si trae un valor válido: el formulario manda '' cuando nadie lo tocó,
+  // y con `null` un simple "editar el título" borraría el origen que ya tenía.
+  if (b?.origen && ORIGENES.includes(b.origen)) p.origen = b.origen;
   if ('fecha_entrega' in b) p.fecha_entrega = b.fecha_entrega || null;
   if ('fecha_compromiso' in b) p.fecha_compromiso = b.fecha_compromiso || null;
   return p;
@@ -103,6 +112,8 @@ export const POST: APIRoute = async ({ request }) => {
   // Entregada sin fecha no sirve para nada: el reporte por periodo se arma con
   // esa fecha y sin ella la mejora no aparece en ningún rango.
   if (p.estado === 'entregada' && !p.fecha_entrega) p.fecha_entrega = new Date().toISOString().slice(0, 10);
+  // Si nació ligado a una junta, el origen no se pregunta: se deduce.
+  if (!p.origen) p.origen = p.booking_id ? 'junta' : 'manual';
 
   const { data, error } = await supabase.from('mejoras')
     .insert({ ...p, company_id: companyId, creado_por: user.nombre || user.email || 'CRM' })
