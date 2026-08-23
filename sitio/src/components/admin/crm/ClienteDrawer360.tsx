@@ -976,6 +976,11 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
     pausado: ['#FFF4E5', '#9a6a10'], churned: ['#FEF0EF', '#C0554E'],
   };
   const [colEstadoBg, colEstadoTx] = COLOR_ESTADO[f.estado_cuenta] || ['#f4f3f7', '#6b7280'];
+  // "Cuenta activo" no se dice. Cada estado tiene su forma de leerse.
+  const TXT_ESTADO: Record<string, string> = {
+    activo: 'Cuenta activa', prospecto: 'Prospecto',
+    pausado: 'Cuenta pausada', churned: 'Excliente',
+  };
   const chip = (txt: any, bg = '#f4f3f7', col = '#6b7280') => (
     <span style={{ fontSize: '0.66rem', fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: bg, color: col }}>{txt}</span>
   );
@@ -999,7 +1004,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             </div>
             {resumen && <div style={{ fontSize: '0.78rem', color: '#8a8590', marginTop: 3 }}>{resumen}</div>}
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
-              {chip('Cuenta ' + f.estado_cuenta, colEstadoBg, colEstadoTx)}
+              {chip(TXT_ESTADO[f.estado_cuenta] || f.estado_cuenta, colEstadoBg, colEstadoTx)}
               {co.sacs_account ? chip(co.sacs_account) : null}
             </div>
           </div>
@@ -1429,10 +1434,15 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
         </div>
       )}
       <div style={compacto ? { marginTop: -4 } : D.card}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-          {!compacto && <div style={D.h}>Contactos de este cliente</div>}
-          <button style={{ ...D.btnG, marginLeft: 'auto', border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar contacto'}</button>
-        </div>
+        {/* Dentro de la ficha el botón va DESPUÉS de la lista: arriba se comía
+            un renglón entero para nada y dejaba un hueco entre el título y la
+            primera persona. Agregar es lo último que haces, no lo primero. */}
+        {!compacto && (
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+            <div style={D.h}>Contactos de este cliente</div>
+            <button style={{ ...D.btnG, marginLeft: 'auto', border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar contacto'}</button>
+          </div>
+        )}
 
         {adding && (
           <div style={{ background: '#fafafa', border: '1px dashed #ddd', borderRadius: 10, padding: 12, marginBottom: 12 }}>
@@ -1488,6 +1498,11 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
             )}
           </div>
         ))}
+        {compacto && (
+          <div style={{ marginTop: 10 }}>
+            <button style={{ ...D.btnG, border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar persona'}</button>
+          </div>
+        )}
       </div>
     </div>
   );
