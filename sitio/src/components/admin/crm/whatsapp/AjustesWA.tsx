@@ -19,7 +19,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   );
 }
 
-export default function AjustesWA({ onClose }: { onClose: () => void }) {
+export default function AjustesWA({ onClose, inline = false }: { onClose?: () => void; inline?: boolean }) {
   const [a, setA] = useState<any>(null);
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState('');
@@ -41,12 +41,15 @@ export default function AjustesWA({ onClose }: { onClose: () => void }) {
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setGuardando(false);
     if (r?.error) { setMsg(r.error); return; }
-    onClose();
+    if (inline) { setMsg('Guardado ✓'); setTimeout(() => setMsg(''), 2500); } else onClose?.();
   };
 
+  // Modal desde el rail del inbox, o sección inline en Configuración WhatsApp.
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(20,15,40,.45)', zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', width: 'min(500px, 94vw)', maxHeight: '86dvh', overflowY: 'auto' }}>
+    <div onClick={inline ? undefined : onClose} style={inline ? undefined : { position: 'fixed', inset: 0, background: 'rgba(20,15,40,.45)', zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={inline
+        ? { background: '#fff', borderRadius: 12, padding: '20px 22px', width: '100%', maxWidth: 560, border: '1px solid #ececec' }
+        : { background: '#fff', borderRadius: 14, padding: '20px 22px', width: 'min(500px, 94vw)', maxHeight: '86dvh', overflowY: 'auto' }}>
         <b style={{ fontSize: '0.95rem' }}>Automatización del inbox</b>
         <ImportarHistorial />
         <AjustesLlamadas />

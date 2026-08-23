@@ -11,13 +11,18 @@ const COLORES = ['#6B7280', '#5B4BD6', '#2C5FC4', '#1E8A63', '#9a6a10', '#C0554E
 const inp: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' };
 const lab: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 4px' };
 
-export default function EtapasModal({ onCerrar }: { onCerrar: () => void }) {
+export default function EtapasModal({ onCerrar, inline = false }: { onCerrar?: () => void; inline?: boolean }) {
   const [etapas, setEtapas] = useState<any[] | null>(null);
   const [edit, setEdit] = useState<any>(null);          // etapa en edición (o {nueva:true})
   const [archivar, setArchivar] = useState<any>(null);  // etapa a archivar (pide destino si tiene contactos)
   const [msg, setMsg] = useState('');
   const cargar = () => fetch('/api/crm/lifecycle-etapas').then(r => r.json()).then(j => setEtapas(j.etapas || [])).catch(() => setEtapas([]));
-  useEffect(() => { cargar(); const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCerrar(); } }; window.addEventListener('keydown', esc, true); return () => window.removeEventListener('keydown', esc, true); }, []);
+  useEffect(() => {
+    cargar();
+    if (inline) return;   // como sección no hay modal que cerrar con Escape
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onCerrar?.(); } };
+    window.addEventListener('keydown', esc, true); return () => window.removeEventListener('keydown', esc, true);
+  }, []);
   const refrescarTodo = () => { cargar(); cargarLifecycle(true); };
 
   const mover = async (i: number, dir: -1 | 1) => {
@@ -36,13 +41,17 @@ export default function EtapasModal({ onCerrar }: { onCerrar: () => void }) {
   };
   const TIPO: Record<string, [string, string]> = { abierta: ['En proceso', C.g500], ganada: ['Ganada', C.emerald700], perdida: ['Perdida', C.rojo700] };
 
+  // El mismo cuerpo sirve como modal (desde el engrane del inbox) y como
+  // sección de Configuración WhatsApp (inline: sin overlay ni ✕).
   return (
-    <div role="dialog" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(640px, 96vw)', maxHeight: '88dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,.25)' }}>
+    <div role={inline ? undefined : 'dialog'} onClick={inline ? undefined : onCerrar} style={inline ? undefined : { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={inline
+        ? { background: '#fff', borderRadius: 12, width: '100%', maxWidth: 720, border: `1px solid ${C.g200}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+        : { background: '#fff', borderRadius: 16, width: 'min(640px, 96vw)', maxHeight: '88dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,.25)' }}>
         <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.g100}`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <b style={{ fontSize: 15 }}>Ciclo de vida</b>
           <span style={{ fontSize: 11, color: C.g400 }}>La etapa es del CONTACTO (una a la vez) y aplica aunque no haya conversación.</span>
-          <button onClick={onCerrar} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 16 }}>✕</button>
+          {!inline && <button onClick={onCerrar} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 16 }}>✕</button>}
         </div>
         <div className="wa-scroll" style={{ overflowY: 'auto', padding: '10px 20px', flex: 1 }}>
           {!etapas ? <div style={{ padding: 20, fontSize: 12, color: C.g400 }}>Cargando…</div> : etapas.map((e, i) => (

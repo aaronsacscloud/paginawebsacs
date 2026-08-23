@@ -675,7 +675,7 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
       </div>
       <div style={{ padding: '8px 12px', borderTop: `1px solid ${C.g100}`, display: 'flex', justifyContent: 'space-between' }}>
         <button onClick={onNuevo} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>+ Nuevo snippet</button>
-        <a href="/admin/crm?tab=wa-plantillas" style={{ fontSize: 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none' }}>Gestionar snippets →</a>
+        <a href="/admin/crm?tab=wa-config&sec=snippets" style={{ fontSize: 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none' }}>Gestionar snippets →</a>
       </div>
     </div>
   );

@@ -10,9 +10,8 @@ import EmailTab from './crm/email/EmailTab';
 import OutboundTab from './crm/outbound/OutboundTab';
 import WhatsAppTab from './crm/whatsapp/WhatsAppTab';
 import WaMasivos from './crm/whatsapp/Masivos';
-import WaPlantillas from './crm/whatsapp/Plantillas';
+import ConfigWhatsApp from './crm/whatsapp/ConfigWhatsApp';
 import MetricasWA from './crm/whatsapp/MetricasWA';
-import NumeroWA from './crm/whatsapp/NumeroWA';
 import SchedulingTab from './crm/SchedulingTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
@@ -50,7 +49,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'outbound' | 'soporte';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'soporte';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -164,9 +163,11 @@ const NAV_SECTIONS = [
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
       { id: 'whatsapp' as Tab, label: 'WhatsApp', icon: 'whatsapp' },
       { id: 'wa-masivos' as Tab, label: 'Masivos WhatsApp', icon: 'wa-masivos' },
-      { id: 'wa-plantillas' as Tab, label: 'Plantillas WhatsApp', icon: 'wa-plantillas' },
+
       { id: 'wa-metricas' as Tab, label: 'Métricas WhatsApp', icon: 'wa-metricas' },
-      { id: 'wa-numero' as Tab, label: 'Número WhatsApp', icon: 'wa-numero' },
+      // Plantillas, snippets, etiquetas, archivos, etapas, motivos, automatización
+      // y el número viven JUNTOS: todo el catálogo personalizable en un lugar.
+      { id: 'wa-config' as Tab, label: 'Configuración WhatsApp', icon: 'wa-plantillas' },
       // Outbound = mensajes DENTRO de SACS3 (banners/modales/tarjetas) — el
       // canal hermano del email: misma pregunta, visto desde adentro del producto.
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
@@ -707,12 +708,14 @@ export default function CrmDashboard() {
           <ErrorBoundary><WhatsAppTab /></ErrorBoundary>
         ) : tab === 'wa-masivos' ? (
           <ErrorBoundary><WaMasivos /></ErrorBoundary>
+        ) : tab === 'wa-config' ? (
+          <ErrorBoundary><ConfigWhatsApp /></ErrorBoundary>
         ) : tab === 'wa-plantillas' ? (
-          <ErrorBoundary><WaPlantillas /></ErrorBoundary>
+          <ErrorBoundary><ConfigWhatsApp inicial="plantillas" /></ErrorBoundary>
         ) : tab === 'wa-metricas' ? (
           <ErrorBoundary><MetricasWA /></ErrorBoundary>
         ) : tab === 'wa-numero' ? (
-          <ErrorBoundary><NumeroWA /></ErrorBoundary>
+          <ErrorBoundary><ConfigWhatsApp inicial="numero" /></ErrorBoundary>
         ) : tab === 'outbound' ? (
           <ErrorBoundary><OutboundTab /></ErrorBoundary>
         ) : tab === 'automations' ? (

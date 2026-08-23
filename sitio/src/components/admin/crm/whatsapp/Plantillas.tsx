@@ -50,7 +50,7 @@ export default function Plantillas() {
 }
 
 // ═══════════════════════ Plantillas de Meta ═══════════════════════
-function PlantillasMeta() {
+export function PlantillasMeta() {
   const [d, setD] = useState<any>(null);
   const [form, setForm] = useState<any>(null);
   const [guardando, setGuardando] = useState(false);
@@ -356,7 +356,7 @@ function EditorPlantilla({ form, setForm, onCrear, guardando, onCancelar }: { fo
 }
 
 // ═══════════════════════ Snippets ═══════════════════════
-function Snippets() {
+export function Snippets() {
   const [lista, setLista] = useState<any[] | null>(null);
   const [form, setForm] = useState<any>(null);
   const [q, setQ] = useState('');
