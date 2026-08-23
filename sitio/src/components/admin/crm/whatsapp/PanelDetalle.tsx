@@ -275,7 +275,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             <TarjetaKpi color={C.azul} etiqueta="Origen" tinta={C.azulTinta} cifra={contacto?.fuente || 'Sin origen'}
               sub={utm.length ? `${utm.length} dato${utm.length === 1 ? '' : 's'} de campaña` : contacto?.created_at ? `Creado ${fecha(contacto.created_at)}` : 'Sin datos de campaña'} onClick={() => setDetalle('origen')} />
             <TarjetaKpi color={C.ambar400} etiqueta="Interacción" tinta={C.ambar700}
-              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}` : proxima ? 'Reunión agendada' : timeline.length ? 'Actividad en el CRM' : 'Sin actividad'}
+              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}` : proxima ? 'Reunión agendada' : timeline.length ? 'Activo en CRM' : 'Sin actividad'}
               sub={proxima ? `Reunión ${fecha(proxima.fecha)}` : timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : 'Aún sin interacciones'} onClick={() => setDetalle('interacciones')} />
           </>)}
         </div>
