@@ -588,7 +588,6 @@ export default function CrmDashboard() {
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
               </button>
-            </div>
 
             {/* Salir va aquí, DESPUÉS de configuración y como un renglón más:
                 arriba estaba pegada a la flecha de plegar y se confundían. */}
