@@ -23,7 +23,7 @@ export const L = {
   sidebar: 224,         // w-56
   sidebarColapsado: 64, // w-16
   lista: 320,           // w-80
-  detalle: 288,         // w-72
+  detalle: 340,         // antes 288: los datos del cliente se partían (teléfono, próximo paso)
   railito: 44,          // w-11: barra de iconos del panel derecho
 };
 

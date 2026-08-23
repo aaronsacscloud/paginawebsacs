@@ -78,12 +78,14 @@ function Campo({ etiqueta, valor, onGuardar, type = 'text', opciones, readOnly, 
   }
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClick={() => !readOnly && setEditando(true)}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 12px', cursor: readOnly ? 'default' : 'pointer', background: hover && !readOnly ? 'rgba(249,250,251,.7)' : 'transparent' }}>
-      <span style={{ fontSize: 11, fontWeight: 500, color: C.g400, flexShrink: 0 }}>{etiqueta}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: mostrado ? C.g900 : C.g300, fontStyle: mostrado ? 'normal' : 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSizeAdjust: mostrado ? undefined : undefined }}>
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 12px', cursor: readOnly ? 'default' : 'pointer', background: hover && !readOnly ? 'rgba(249,250,251,.7)' : 'transparent' }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: C.g400, textTransform: 'uppercase', letterSpacing: '.04em' }}>{etiqueta}</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: mostrado ? C.g900 : C.g300, fontStyle: mostrado ? 'normal' : 'italic', overflowWrap: 'anywhere', lineHeight: 1.35 }}>
           {mostrado || placeholder}
         </span>
+      </span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
         {copiable && valor && (
           <button onClick={e => { e.stopPropagation(); navigator.clipboard?.writeText(valor); setCopiado(true); setTimeout(() => setCopiado(false), 1200); }} title="Copiar"
             style={{ border: 'none', background: 'none', cursor: 'pointer', color: copiado ? C.emerald600 : C.g300, padding: 0, display: 'inline-flex' }}><IcoCopiar size={12} /></button>
@@ -122,12 +124,12 @@ function CampoTelefono({ etiqueta, valor, onGuardar }: { etiqueta: string; valor
   }
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClick={() => setEditando(true)}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 12px', cursor: 'pointer', background: hover ? 'rgba(249,250,251,.7)' : 'transparent' }}>
-      <span style={{ fontSize: 11, fontWeight: 500, color: C.g400 }}>{etiqueta}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: valor ? C.g900 : C.g300, fontStyle: valor ? 'normal' : 'italic' }}>{valor ? `${LADAS.find(l => l.c === ladaIni)?.b || ''} ${telefonoLegible(valor)}` : 'Sin datos'}</span>
-        <span style={{ color: hover ? C.g500 : C.g300, display: 'inline-flex' }}><IcoLapiz size={12} /></span>
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 12px', cursor: 'pointer', background: hover ? 'rgba(249,250,251,.7)' : 'transparent' }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: C.g400, textTransform: 'uppercase', letterSpacing: '.04em' }}>{etiqueta}</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: valor ? C.g900 : C.g300, fontStyle: valor ? 'normal' : 'italic', whiteSpace: 'nowrap' }}>{valor ? `${LADAS.find(l => l.c === ladaIni)?.b || ''} ${telefonoLegible(valor)}` : 'Sin datos'}</span>
       </span>
+      <span style={{ color: hover ? C.g500 : C.g300, display: 'inline-flex', flexShrink: 0 }}><IcoLapiz size={12} /></span>
     </div>
   );
 }
@@ -325,14 +327,14 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
       {ctx?.otros_contactos?.length > 0 && (
         <Seccion id="g-otros" titulo="Otros contactos" n={ctx.otros_contactos.length}>
           {ctx.otros_contactos.map((oc: any) => (
-            <div key={oc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12 }}>
-              <span style={{ minWidth: 0, flex: 1 }}>
-                <b style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{oc.nombre || oc.email || oc.whatsapp}{oc.es_principal ? ' · principal' : ''}</b>
-                <span style={{ fontSize: 10, color: C.g400 }}>{[oc.puesto || oc.rol, oc.whatsapp || oc.telefono, oc.email].filter(Boolean).join(' · ')}</span>
+            <div key={oc.id} style={{ padding: '7px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <b style={{ display: 'block' }}>{oc.nombre || oc.email || oc.whatsapp}{oc.es_principal ? <span style={{ fontSize: 9, fontWeight: 700, color: C.moradoTinta, background: C.moradoAgua, borderRadius: 999, padding: '0 6px', marginLeft: 6 }}>principal</span> : null}</b>
+              <span style={{ fontSize: 11, color: C.g500, display: 'block', lineHeight: 1.4 }}>{[oc.puesto || oc.rol, oc.whatsapp || oc.telefono, oc.email].filter(Boolean).join(' · ')}</span>
+              <span style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+                {oc.wa_id ? <a href={`/admin/crm?tab=whatsapp&wa_conv=${oc.wa_id}`} style={{ fontSize: 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none' }}>Ver chat</a>
+                  : (oc.whatsapp || oc.telefono) ? <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(oc.whatsapp || oc.telefono)}`} style={{ fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>Escribir</a> : null}
+                {conv.id && <button title="Ligar esta conversación a este contacto" onClick={() => ligar(oc.id, empresa?.id)} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '2px 9px', fontSize: 10, color: C.g500, cursor: 'pointer', fontFamily: 'inherit' }}>Es quien escribe</button>}
               </span>
-              {oc.wa_id ? <a href={`/admin/crm?tab=whatsapp&wa_conv=${oc.wa_id}`} style={{ fontSize: 10, fontWeight: 700, color: C.emerald700, textDecoration: 'none', flexShrink: 0 }}>Ver chat</a>
-                : (oc.whatsapp || oc.telefono) ? <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(oc.whatsapp || oc.telefono)}`} style={{ fontSize: 10, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none', flexShrink: 0 }}>Escribir</a> : null}
-              {conv.id && <button title="Ligar esta conversación a este contacto" onClick={() => ligar(oc.id, empresa?.id)} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 999, padding: '1px 7px', fontSize: 10, color: C.g500, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Es quien escribe</button>}
             </div>
           ))}
         </Seccion>
