@@ -214,7 +214,18 @@ export const PUT: APIRoute = async ({ request }) => {
     if (!body.proxima_factura) return new Response(JSON.stringify({ error: 'Al reactivar indica la fecha en que se le va a cobrar (proxima_factura).' }), { status: 400 });
   }
 
-  const upd: any = normalizar(body);
+  /* Un PUT parcial NO puede reescribir lo que no le mandaron. `normalizar()`
+     está escrito para un alta —rellena con valores por omisión: estado
+     'programada', precio 0, ciclo 'mensual'— y al reusarlo aquí, mandar solo
+     {id, total_pagado} le cambiaba el estado a la licencia y le ponía el
+     precio en cero. Un caso real: a una vitalicia activa de $206,480 la dejó
+     en 'programada'. Estos cuatro se toman de lo que ya había cuando no
+     vienen; mrr/arr se recalculan solos porque salen de ciclo y precio. */
+  const base = { ...body };
+  for (const k of ['nombre_plan', 'ciclo', 'estado', 'precio', 'monto_proximo'] as const) {
+    if (base[k] === undefined) base[k] = (prev as any)[k];
+  }
+  const upd: any = normalizar(base);
   // company_id/contact_id: solo se tocan si el cliente los MANDÓ explícitamente
   // (reasignar la sub a la empresa/contacto correcto desde el modal). Si no vienen,
   // se conservan — el normalizar() los dejaba en null y la sub perdía su vínculo,
