@@ -597,7 +597,10 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         if (!m) return <td style={{ ...T.td, color: '#c0bece' }}>sin motivo capturado</td>;
         // El formato del CRM es "Etiqueta — detalle": la etiqueta se lee de un
         // vistazo y el detalle explica, sin cortar ninguno de los dos.
-        const [et, ...resto] = m.split('—');
+        const [crudo, ...resto] = m.split('—');
+        // Los motivos viejos se guardaron como slug ('no_uso'): se traducen al
+        // vuelo en vez de enseñarle al usuario el nombre interno del campo.
+        const et = RAZONES_BAJA.find(([v]) => v === crudo.trim())?.[1] || crudo;
         const det = resto.join('—').trim();
         return (
           <td style={T.td} title={m}>
