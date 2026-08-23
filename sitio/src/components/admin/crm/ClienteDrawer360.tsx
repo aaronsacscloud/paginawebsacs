@@ -84,7 +84,10 @@ const D = {
   mi: { display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 600, color: '#1a1a1a', cursor: 'pointer', fontFamily: 'inherit' } as const,
   miSub: { display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 } as const,
   miSep: { height: 1, background: '#f1f1f5', margin: '5px 4px' } as const,
-  btnAzul: { padding: '7px 13px', border: '1.5px solid #7DA6F5', borderRadius: 9, fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
+  /* Secundario: fondo blanco, BORDE y LETRA morados. El principal es morado
+     sólido (D.btn). Antes esto era azul y metía un tercer acento que competía
+     con el color del sistema. */
+  btnAzul: { padding: '7px 13px', border: '1.5px solid #9B8CFA', borderRadius: 9, fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#5B4BD6', fontFamily: 'inherit' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
   th: { textAlign: 'left' as const, padding: '7px 9px', fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, borderBottom: '1px solid #eee' },
@@ -1543,7 +1546,7 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
         {!compacto && (
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
             <div style={D.h}>Contactos de este cliente</div>
-            <button style={{ ...D.btnG, marginLeft: 'auto', border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar contacto'}</button>
+            <button style={{ ...D.btnAzul, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar contacto'}</button>
           </div>
         )}
 
@@ -1631,7 +1634,7 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
         ))}
         {compacto && (
           <div style={{ marginTop: 10 }}>
-            <button style={{ ...D.btnG, border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar persona'}</button>
+            <button style={D.btnAzul} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar persona'}</button>
           </div>
         )}
       </div>
@@ -3039,8 +3042,13 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
 function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onListo }: any) {
   const hoy = new Date();
   const manana = new Date(hoy.getTime() + 86400000).toISOString().slice(0, 10);
-  const conCategoria = tipos.filter((t: any) => t.categoria && t.categoria !== 'otro');
-  const lista = conCategoria.length ? conCategoria : tipos;
+  /* TODOS los tipos activos, sin excepción. Antes se descartaba el que tuviera
+     `categoria: 'otro'` y eso escondía justo dos: "Demo personalizada" y
+     "Sesión de configuración". El cliente podía reservarlos desde su liga
+     pública y aquí no se podían registrar: el mismo catálogo ofrecía siete
+     cosas por un lado y cinco por el otro. Lo que se ofrece afuera se tiene
+     que poder agendar adentro. */
+  const lista = tipos;
   const [tipoId, setTipoId] = useState(lista[0]?.id || '');
   const [fecha, setFecha] = useState(manana);
   const [hora, setHora] = useState('10:00');

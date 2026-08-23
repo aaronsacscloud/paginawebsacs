@@ -92,8 +92,24 @@ const S = {
   th: { textAlign: 'left' as const, padding: '8px 10px', fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.4px', borderBottom: '1px solid #f0f0f0' },
   td: { padding: '9px 10px', fontSize: '0.8125rem', color: '#333', borderBottom: '1px solid #f7f7f7', verticalAlign: 'middle' as const },
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.68rem', fontWeight: 700 } as const,
-  btnSmall: { padding: '4px 10px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.72rem', cursor: 'pointer', whiteSpace: 'nowrap' as const } as const,
-  seg: (on: boolean) => ({ padding: '6px 14px', borderRadius: 99, border: '1px solid ' + (on ? '#1a1a1a' : '#ddd'), background: on ? '#1a1a1a' : '#fff', color: on ? '#fff' : '#555', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }) as const,
+  /* JERARQUÍA DE BOTONES (regla del CRM, ver la skill crm-design-system):
+      · principal   → morado sólido, letra blanca. Uno por pantalla.
+      · secundario  → fondo blanco, BORDE y LETRA morados.
+      · terciario   → gris, para lo que casi nunca se toca.
+     Aquí todo era negro, que no es de la paleta y además ponía "Esta semana"
+     al mismo nivel visual que la acción principal de la pantalla. */
+  btnPrim: { padding: '7px 15px', border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 9, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
+  btnSec: { padding: '7px 14px', border: '1.5px solid #9B8CFA', background: '#fff', color: '#5B4BD6', borderRadius: 9, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
+  btnSmall: { padding: '5px 11px', border: '1.5px solid #ddd6fb', background: '#fff', color: '#5B4BD6', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
+  /* El segmento elegido es el morado; los demás quedan neutros. Si todos
+     llevaran borde morado no se distinguiría cuál está activo. */
+  seg: (on: boolean) => ({
+    padding: '6px 14px', borderRadius: 99,
+    border: '1.5px solid ' + (on ? '#9B8CFA' : '#e6e5ec'),
+    background: on ? '#9B8CFA' : '#fff',
+    color: on ? '#fff' : '#6b7280',
+    fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+  }) as const,
 };
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -625,8 +641,8 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
               return (
                 <div key={f}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6, position: 'sticky', top: 0, background: '#fff', zIndex: 1, padding: '2px 0' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.82rem', color: esHoy ? '#92400E' : '#333' }}>{DIA_SEM[d.getDay()]} {Number(f.slice(-2))} {MESES[m - 1]}</span>
-                    {esHoy && <span style={{ ...S.badge, background: '#FEF3C7', color: '#92400E' }}>hoy</span>}
+                    <span style={{ fontWeight: 800, fontSize: '0.82rem', color: esHoy ? '#5B4BD6' : '#333' }}>{DIA_SEM[d.getDay()]} {Number(f.slice(-2))} {MESES[m - 1]}</span>
+                    {esHoy && <span style={{ ...S.badge, background: '#EEECFE', color: '#5B4BD6' }}>hoy</span>}
                     <span style={{ fontSize: '0.7rem', color: '#bbb', marginLeft: 'auto' }}>{porDia[f].length}</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -653,35 +669,71 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
     );
   }
 
+  const totalMes = Object.values(porDia).reduce((a, l) => a + l.length, 0);
+  const hoyMes = hoy.slice(0, 7);
+
   return (
     <div style={S.card}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <button style={S.btnSmall} onClick={() => nav(-1)}>‹ Anterior</button>
-        <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{MES_LARGO[m - 1]} {y}</div>
-        <button style={S.btnSmall} onClick={() => nav(1)}>Siguiente ›</button>
+      {/* El morado es el hilo: encabezado, día de hoy y el filo de cada
+          reunión. El ámbar de antes competía con el aviso de "ya pasaron y
+          nadie las marcó", que sí tiene que llamar la atención. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <button style={S.btnSmall} onClick={() => nav(-1)} aria-label="Mes anterior">‹</button>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#241d43', letterSpacing: '-.01em' }}>{MES_LARGO[m - 1]} {y}</div>
+          <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{totalMes} {totalMes === 1 ? 'reunión' : 'reuniones'}</div>
+        </div>
+        <button style={S.btnSmall} onClick={() => nav(1)} aria-label="Mes siguiente">›</button>
+        {mes !== hoyMes && <button style={S.btnSec} onClick={() => setMes(hoyMes)}>Ir a hoy</button>}
       </div>
+
       <div style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, minWidth: 720 }}>
-          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
-            <div key={d} style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', padding: '4px 6px' }}>{d}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 5, minWidth: 780 }}>
+          {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, i) => (
+            <div key={d} style={{ fontSize: '0.62rem', fontWeight: 800, color: i > 4 ? '#c9c6d2' : '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em', padding: '2px 6px 6px' }}>{d}</div>
           ))}
-          {celdas.map((fecha, i) => (
-            <div key={i} style={{ minHeight: 84, border: '1px solid #f0f0f0', borderRadius: 8, padding: 6, background: fecha === hoy ? '#FFFBEB' : fecha ? '#fff' : '#fafafa' }}>
-              {fecha && <>
-                <div style={{ fontSize: '0.7rem', fontWeight: fecha === hoy ? 800 : 600, color: fecha === hoy ? '#92400E' : '#bbb', marginBottom: 4 }}>{Number(fecha.slice(-2))}</div>
-                {(porDia[fecha] || []).slice(0, 3).map(b => {
-                  const est = ESTADOS[normalizaEstado(b.estado)];
-                  return (
-                    <div key={b.id} onClick={() => onOpen(b)} title={`${fmtTime(b.hora_inicio)} · ${b.invitee_nombre} (${est.label})`}
-                      style={{ fontSize: '0.64rem', padding: '2px 6px', borderRadius: 5, marginBottom: 3, background: est.bg, color: est.color, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {fmtTime(b.hora_inicio)} {b.invitee_nombre}
-                    </div>
-                  );
-                })}
-                {(porDia[fecha] || []).length > 3 && <div style={{ fontSize: '0.62rem', color: '#999' }}>+{(porDia[fecha] || []).length - 3} más</div>}
-              </>}
-            </div>
-          ))}
+          {celdas.map((fecha, i) => {
+            const esHoy = fecha === hoy;
+            const finde = i % 7 > 4;
+            const delDia = porDia[fecha || ''] || [];
+            return (
+              <div key={i} style={{
+                minHeight: 96, borderRadius: 10, padding: '6px 7px',
+                border: esHoy ? '1.5px solid #9B8CFA' : '1px solid #f0eff5',
+                background: esHoy ? '#F8F6FF' : !fecha ? '#fbfbfc' : finde ? '#fcfcfd' : '#fff',
+              }}>
+                {fecha && <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: esHoy ? 800 : 700,
+                      color: esHoy ? '#fff' : delDia.length ? '#241d43' : '#c9c6d2',
+                      background: esHoy ? '#9B8CFA' : 'transparent',
+                      borderRadius: 99, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{Number(fecha.slice(-2))}</span>
+                    {delDia.length > 2 && <span style={{ fontSize: '0.6rem', color: '#b3afbd', marginLeft: 'auto' }}>{delDia.length}</span>}
+                  </div>
+                  {delDia.slice(0, 3).map(b => {
+                    const est = ESTADOS[normalizaEstado(b.estado)];
+                    // El TIPO de reunión pinta el filo (es lo que distingue una
+                    // capacitación de una consultoría de un vistazo) y el ESTADO
+                    // el fondo, que es semántico: verde vino, rojo faltó.
+                    return (
+                      <div key={b.id} onClick={() => onOpen(b)} title={`${fmtTime(b.hora_inicio)} · ${b.invitee_nombre} · ${b.event_types?.nombre || ''} (${est.label})`}
+                        style={{
+                          fontSize: '0.63rem', padding: '3px 6px', borderRadius: 6, marginBottom: 3,
+                          background: est.bg, color: est.color, fontWeight: 700, cursor: 'pointer',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          borderLeft: `3px solid ${b.event_types?.color || '#9B8CFA'}`,
+                        }}>
+                        {fmtTime(b.hora_inicio).replace(':00', '')} {b.invitee_nombre}
+                      </div>
+                    );
+                  })}
+                  {delDia.length > 3 && <div style={{ fontSize: '0.61rem', color: '#8a8590', fontWeight: 700, paddingLeft: 2 }}>+{delDia.length - 3} más</div>}
+                </>}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -60,20 +60,37 @@ import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 Dentro: etiqueta en versalitas 0.625rem gris `#999`, cifra 1.375–1.6rem peso
 800 en su tinta, y una línea secundaria de 0.6875rem en `#888`.
 
-## 3. Pestañas
+## 3. Los botones tienen jerarquía, y se ve
+
+```
+Principal    fondo #9B8CFA sólido, letra blanca      · uno por pantalla
+Secundario   fondo blanco, borde y letra MORADOS     · 1.5px #9B8CFA / texto #5B4BD6
+Terciario    fondo blanco, borde y letra grises      · lo que casi nunca se toca
+Destructivo  letra #C0554E, borde #f0c4bd            · nunca relleno
+```
+
+**Nunca negro.** Un botón negro no está en la paleta y además grita más que el
+principal: pasó en Reuniones, donde "Esta semana" pesaba lo mismo que la acción
+de la pantalla. En un grupo de segmentos, el ELEGIDO va en morado sólido y los
+demás quedan neutros — si todos llevan borde morado, ninguno se ve activo.
+
+El azul no es un botón secundario: es un color de dato (franjas de tarjeta,
+cifras neutras). Si lo usas en un botón, compite con el morado del sistema.
+
+## 4. Pestañas
 
 Activa con fondo `#EEECFE`, radio `9px 9px 0 0`, borde inferior de 2 px en
 `#9B8CFA`, texto `#5B4BD6` peso 800. Inactiva en `#666` peso 500. Contador en
 pastilla pegado al texto.
 
-## 4. Espaciado
+## 5. Espaciado
 
 - El contenido del CRM **nunca toca el borde de la ventana**: el contenedor
   pone 22 px arriba en escritorio.
 - Rejilla de tarjetas: `gap: 10–13px`.
 - Una tarjeta respira con `padding: 15px 17px`.
 
-## 5. Los documentos que recibe el cliente
+## 6. Los documentos que recibe el cliente
 
 Cotización, acuse de pago, estado de cuenta y minuta comparten forma:
 
@@ -89,7 +106,7 @@ Cotización, acuse de pago, estado de cuenta y minuta comparten forma:
 - **El PDF es la misma página impresa**: conserva los colores con
   `print-color-adjust: exact` y esconde los botones con `.no-print`.
 
-## 6. Estados de carga
+## 7. Estados de carga
 
 Uno solo en todo el CRM: los **tres corazones** de
 `components/admin/crm/ui/Cargando.tsx`.
@@ -102,7 +119,7 @@ Uno solo en todo el CRM: los **tres corazones** de
 Nunca un "Cargando…" suelto. A los 8 s el componente avisa que tarda, a los 20
 ofrece reintentar, y respeta `prefers-reduced-motion`.
 
-## 7. Sin emoji en la interfaz
+## 8. Sin emoji en la interfaz
 
 Nada de iconos decorativos: SVG de trazo o jerarquía tipográfica. La única
 excepción es ⚠️ para un riesgo real.
@@ -113,6 +130,7 @@ excepción es ⚠️ para un riesgo real.
 
 1. ¿Los morados salen de `paleta.ts` o los escribiste a mano?
 2. ¿Las tarjetas llevan su franja de color?
+2b. ¿El botón principal es morado sólido y los secundarios de puro borde morado? ¿Queda algún negro?
 3. ¿El verde significa que entró dinero y el rojo que se fue?
 4. ¿Hay algún `Cargando…` que no sea el componente?
 5. ¿La pantalla respira arriba?
