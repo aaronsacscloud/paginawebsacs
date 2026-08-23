@@ -57,7 +57,7 @@ const {
                 <b>{p.titulo}</b>
                 <i aria-hidden="true"></i>
               </span>
-              <span class="pm-p-txt">{p.texto}</span>
+              <span class="pm-p-txt"><span>{p.texto}</span></span>
             </button>
           </li>
         ))}
@@ -121,26 +121,41 @@ const {
   .pm-p.on i::after { opacity: 0; }
   .pm-p.on i::before { background: #7BA0F0; }
   .pm-p-txt {
-    display: none; margin-top: 10px; font-size: 0.9375rem; line-height: 1.6; color: #A1A1AA;
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    font-size: 0.9375rem; line-height: 1.6; color: #A1A1AA;
+    transition: grid-template-rows .4s cubic-bezier(.25,.1,.25,1), opacity .3s ease, margin-top .4s ease;
   }
-  .pm-p.on .pm-p-txt { display: block; }
+  .pm-p-txt > span { overflow: hidden; }
+  .pm-p.on .pm-p-txt { grid-template-rows: 1fr; opacity: 1; margin-top: 10px; }
   .pm-p:focus-visible { outline: 2px solid #7BA0F0; outline-offset: 3px; }
 
   .pm-vista { position: sticky; top: 96px; }
-  .pm-shot { display: none; margin: 0; }
-  .pm-shot.on { display: block; }
+  /* Las cuatro ocupan la MISMA celda: así se cruzan sin que el bloque salte
+     de alto ni la captura aparezca de golpe. */
+  .pm-shot {
+    grid-area: 1 / 1; margin: 0;
+    opacity: 0; visibility: hidden; transform: translateY(12px) scale(.985);
+    transition: opacity .45s cubic-bezier(.25,.1,.25,1),
+                transform .45s cubic-bezier(.25,.1,.25,1),
+                visibility 0s linear .45s;
+  }
+  .pm-shot.on {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity .45s cubic-bezier(.25,.1,.25,1) .06s,
+                transform .55s cubic-bezier(.25,.1,.25,1) .06s,
+                visibility 0s;
+  }
   .pm-marco {
-    padding: clamp(18px, 2.6vw, 34px);
+    display: grid;
+    padding: clamp(20px, 3vw, 40px);
     border-radius: var(--radius-2xl, 24px);
-    background:
-      radial-gradient(120% 90% at 15% 0%, rgba(123,160,240,.22) 0%, rgba(123,160,240,0) 58%),
-      linear-gradient(160deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.03) 100%);
-    border: 1px solid rgba(255,255,255,.12);
+    background: linear-gradient(155deg, #DCE4F7 0%, #EDE7F6 52%, #F6E9E4 100%);
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
   }
   .pm-shot img {
     width: 100%; height: auto; display: block; border-radius: var(--radius-lg, 16px);
-    border: 1px solid rgba(255,255,255,.10);
-    box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.35);
+    border: 1px solid rgba(26,26,46,.10);
+    box-shadow: 0 22px 48px rgba(26,26,46,.24), 0 3px 10px rgba(26,26,46,.14);
   }
 
   .pm-pie {
@@ -152,7 +167,10 @@ const {
     .pm-maq { grid-template-columns: 1fr; gap: 22px; }
     .pm-vista { position: static; }
   }
-  @media (prefers-reduced-motion: reduce) { .pm-p b, .pm-p i::before, .pm-p i::after { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pm-p b, .pm-p i::before, .pm-p i::after, .pm-shot, .pm-p-txt { transition: none; }
+    .pm-shot { transform: none; }
+  }
 </style>
 
 <script>
