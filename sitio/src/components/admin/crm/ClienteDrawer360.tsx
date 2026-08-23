@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import Etiquetas from './Etiquetas';
-import { CamposFicha } from './CamposPersonalizados';
+import { CamposFicha, useCampos } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import TabOutbound from './outbound/TabOutbound';
@@ -264,7 +264,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   cuando NO hay ninguna ligada —el único caso en que hace falta— y
                   aquí, en Actividad, que es de donde salen esos datos. */}
               {tab === 'resumen' && !co?.sacs_account && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} irA={irA} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {/* Las señales de venta encabezan Consultoría: son las IDEAS de qué
@@ -820,9 +820,10 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
 /* Selector de ETAPA del pipeline de clientes (se movió aquí desde la tabla).
  * Carga el catálogo de etapas de /api/crm/pipelines y guarda pipeline_stage. */
-function EtapaSelector({ co, reload, flash, compacto }: any) {
+function EtapaSelector({ co, reload, flash, compacto, comoChip }: any) {
   const [stages, setStages] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [abierto, setAbierto] = useState(false);
   useEffect(() => {
     let alive = true;
     fetch('/api/crm/pipelines').then(r => r.json()).then(pj => {
@@ -840,9 +841,37 @@ function EtapaSelector({ co, reload, flash, compacto }: any) {
     if (!r.ok || j.error) alert(j.error || 'No se pudo cambiar la etapa.'); else { flash('Etapa actualizada'); reload(); }
   }
   const actual = stages.find(s => s.key === co.pipeline_stage);
-  /* `compacto` = solo el selector, sin tarjeta ni encabezado propios. La etapa
-     dejó de vivir sola: va dentro de Contrato, porque en qué momento está la
-     relación y qué tiene contratado son la misma pregunta. */
+  /* `comoChip` = una pastilla al lado del estado de la cuenta, que es donde uno
+     busca "¿cómo va esta relación?". Se convierte en selector al darle clic:
+     la etapa se consulta muchas más veces de las que se cambia, y un <select>
+     permanente pesa como un formulario abierto. */
+  if (comoChip) {
+    if (!stages.length) return null;
+    const col = actual?.color || '#6b7280';
+    if (!abierto) {
+      return (
+        <button onClick={() => setAbierto(true)} title="Clic para cambiar la etapa"
+          style={{ fontSize: '0.66rem', fontWeight: 700, borderRadius: 20, padding: '3px 10px', cursor: 'pointer',
+            fontFamily: 'inherit', background: actual ? col + '1f' : '#f4f3f7', color: actual ? col : '#a5a2af',
+            border: '1px dashed transparent' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = col; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent'; }}>
+          {actual ? actual.label : 'sin etapa'}
+        </button>
+      );
+    }
+    return (
+      <select autoFocus value={co.pipeline_stage || ''} disabled={saving}
+        onBlur={() => setAbierto(false)}
+        onChange={e => { cambiar(e.target.value); setAbierto(false); }}
+        style={{ fontSize: '0.7rem', fontWeight: 700, borderRadius: 20, padding: '2px 8px', fontFamily: 'inherit',
+          color: col, borderColor: col, border: '1px solid ' + col, background: '#fff' }}>
+        <option value="">— sin etapa —</option>
+        {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
+      </select>
+    );
+  }
+  /* `compacto` = solo el selector, sin tarjeta ni encabezado propios. */
   const Caja = ({ children }: any) => compacto
     ? <div>{children}</div>
     : (
@@ -880,7 +909,7 @@ const MAS_DE_50 = 51;
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
-function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
+function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash, irA }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   /* La ficha se LEE por defecto y se edita cuando lo pides. Antes se abría con
@@ -971,9 +1000,23 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
     .reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
   const renov = activas.map((x: any) => x.proxima_factura).filter(Boolean).sort()[0] || co.fecha_renovacion || null;
   const ciclos = Array.from(new Set(activas.map((x: any) => x.ciclo).filter(Boolean)));
-  const planes = Array.from(new Set(activas.map((x: any) => x.nombre_plan).filter(Boolean)));
 
   const props = co.propiedades || {};
+  /* El giro y el subgiro clasifican al cliente, así que van arriba y no
+     escondidos tras un clic. En la base viven como CLAVE
+     ('merchandising_de_eventos'), así que hay que traducirlos con el catálogo
+     de campos o el encabezado enseñaría el guion bajo. */
+  const { props: catalogo } = useCampos('company');
+  const etiquetaDe = (key: string): string => {
+    const val = props[key];
+    if (!val) return '';
+    const def: any = catalogo.find((x: any) => x.key === key);
+    if (!def) return '';
+    const opts = def.depende_de
+      ? ((def.opciones_por_padre || {})[String(props[def.depende_de] || '')] || [])
+      : (def.opciones || []);
+    return (opts.find((o: any) => o.v === val)?.l) || String(val).replace(/_/g, ' ');
+  };
   /* Un dato escrito, no una caja. Lo vacío se dice ("sin capturar") en gris:
      un guion no distingue "no tiene" de "no lo hemos preguntado". */
   const leido = (k: string, v: any) => (
@@ -994,7 +1037,10 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
   const iniciales = String(co.nombre_comercial || co.nombre || '?').trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase();
   const lugar = [co.ciudad, co.estado_geo].filter(Boolean).join(', ');
   const sucTxt = Number(f.sucursales) > 1 ? `${f.sucursales} sucursales` : '1 sucursal';
-  const resumen = [lugar, sucTxt].filter(Boolean).join(' · ');
+  // El subtítulo es a QUÉ SE DEDICA: es lo primero que quieres saber al abrir
+  // una ficha, y hasta ahora había que desplegar una sección para verlo.
+  const resumen = [etiquetaDe('giro_negocio'), etiquetaDe('subgiro')].filter(Boolean).join(' · ');
+  const colaboradores = props.numero_colaboradores ? Number(props.numero_colaboradores).toLocaleString('es-MX') + ' colaboradores' : '';
   const COLOR_ESTADO: Record<string, [string, string]> = {
     activo: ['#EAF8F2', '#1E8A63'], prospecto: ['#E3EDFD', '#2C5FC4'],
     pausado: ['#FFF4E5', '#9a6a10'], churned: ['#FEF0EF', '#C0554E'],
@@ -1027,13 +1073,48 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
               {co.nombre_comercial || co.nombre}
             </div>
             {resumen && <div style={{ fontSize: '0.78rem', color: '#8a8590', marginTop: 3 }}>{resumen}</div>}
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
               {chip(TXT_ESTADO[f.estado_cuenta] || f.estado_cuenta, colEstadoBg, colEstadoTx)}
+              {/* La etapa era un selector suelto en su propia tarjeta. Aquí, al
+                  lado del estado de la cuenta, es donde uno busca "¿cómo va esta
+                  relación?". Se abre al darle clic. */}
+              <EtapaSelector co={co} reload={reload} flash={flash} comoChip />
+              {lugar ? chip(lugar) : null}
+              {chip(sucTxt)}
+              {colaboradores ? chip(colaboradores) : null}
               {co.sacs_account ? chip(co.sacs_account) : null}
             </div>
           </div>
           {!editando && <button style={D.btnG} onClick={() => setEditando(true)}>Editar</button>}
         </div>
+
+        {/* ── El contrato, sin tarjeta propia ──────────────────────────────
+            Eran seis columnas con el mismo peso que el resto de la ficha para
+            datos que NO se capturan aquí: salen de las suscripciones y los
+            pagos. Y con tres licencias de ciclos distintos, "anual + vitalicia"
+            en una celda no dice nada. Queda lo que sí se lee de un vistazo, y
+            un camino a la pestaña que de verdad las administra. */}
+        {(activas.length > 0 || renov || arr > 0) && (
+          <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 14, paddingTop: 13, borderTop: '1px solid #f4f3f7' }}>
+            {dato('Licencias', activas.length ? `${activas.length} ${ciclos.length ? ciclos.join(' + ') : 'activa' + (activas.length === 1 ? '' : 's')}` : '—')}
+            {dato('Renovación', renov ? fmtDate(renov) : '—')}
+            <div>
+              <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
+            </div>
+            {cobrado > 0 && (
+              <div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Cobrado</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 3, color: '#1E8A63' }}>{money(cobrado)}</div>
+                {unicos > 0 && <div style={{ fontSize: '0.66rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
+              </div>
+            )}
+            <button onClick={() => irA?.('subs')}
+              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#5B4BD6', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+              Ver en Suscripciones ›
+            </button>
+          </div>
+        )}
 
         {/* Lo fiscal y lo secundario, plegado: está a un clic, no estorbando. */}
         <details open={editando} style={separador}>
@@ -1114,43 +1195,8 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
         <TabContactos companyId={companyId} contactos={contactos} reload={reload} flash={flash} compacto />
       </div>
 
-      {/* ── CONTRATO Y RELACIÓN ──────────────────────────────────────────
-          Al final, porque es la conclusión y no la portada. La etapa se junta
-          aquí: si tiene contrato vivo y actividad, es un cliente activo —eran
-          dos formas de decir lo mismo en dos tarjetas distintas. */}
-      <div style={D.cardA}>
-        <div style={D.hA}>Contrato y relación
-          <span style={D.hNota}>no se captura · se calcula de sus suscripciones y pagos</span>
-        </div>
-        <div style={{ ...rejilla, alignItems: 'start' }}>
-          <div style={{ gridColumn: 'span 2' }}>
-            <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Plan</div>
-            <div style={{ marginTop: 3 }}>
-              {planes.length
-                ? planes.map((n: any) => (
-                  <span key={n} style={{ display: 'inline-block', background: '#EEECFE', color: '#4536BE', borderRadius: 20, padding: '3px 10px', fontSize: '0.66rem', fontWeight: 800, margin: '2px 4px 0 0' }}>{n}</span>
-                ))
-                : <span style={{ fontSize: '0.88rem', fontWeight: 800 }}>{co.plan || '—'}</span>}
-            </div>
-          </div>
-          {dato('Ciclo', ciclos.length ? ciclos.join(' + ') : '—')}
-          {dato('Sucursales', co.sucursales || 1)}
-          {dato('Renovación', renov ? fmtDate(renov) : '—')}
-          <div>
-            <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR · Cobrado</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
-            {cobrado > 0 && <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E8A63' }}>{money(cobrado)} cobrado</div>}
-            {unicos > 0 && <div style={{ fontSize: '0.68rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
-          </div>
-        </div>
-
-        <div style={separador}>
-          <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6', marginBottom: 6 }}>Etapa</div>
-          <EtapaSelector co={co} reload={reload} flash={flash} compacto />
-        </div>
-
-        {/* Acompañamiento y origen describen la RELACIÓN, no a la empresa. */}
-        <details style={separador}>
+      <div style={D.cardM}>
+        <details>
           <summary style={resumenLink}>Cómo se acompaña esta cuenta</summary>
           <div style={{ marginTop: 13 }}>
             <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Gestión de la cuenta']} onGuardado={reload} />
