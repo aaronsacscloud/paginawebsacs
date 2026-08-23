@@ -70,9 +70,9 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   const [ajustes, setAjustes] = useState(false);
   const [gestorEtapas, setGestorEtapas] = useState(false);
   const [tabVistas, setTabVistas] = useState<'todas' | 'mias' | 'equipo'>('todas');
-  const [menuVista, setMenuVista] = useState<string | null>(null);
+  const [menuVista, setMenuVista] = useState<{ vista: any; lista: any[] } | null>(null);
   const etapas = useLifecycle();
-  useEffect(() => { if (!menuVista) return; const c = () => setMenuVista(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, [menuVista]);
+
   const campos = useCamposFiltro(equipo);
 
   const cargar = () => {
@@ -238,25 +238,8 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
                     {dueno(v) && dueno(v) !== 'yo' && <span title={`Creada por ${dueno(v)}`} style={{ width: 14, height: 14, borderRadius: 999, background: C.g100, color: C.g500, fontSize: 8, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{dueno(v)![0]}</span>}
                     <span style={{ ...num, ...(subio[v.id] ? { background: C.moradoAgua, color: C.moradoTinta, fontWeight: 800 } : {}) }}>{contadores[v.id] ?? ''}</span>
                   </button>
-                  <button onClick={e => { e.stopPropagation(); setMenuVista(menuVista === v.id ? null : v.id); }} title="Opciones de la vista" aria-label={`Opciones de ${v.nombre}`}
-                    style={{ border: 'none', background: menuVista === v.id ? C.g100 : 'none', borderRadius: 6, cursor: 'pointer', color: C.g400, fontSize: 13, padding: '2px 6px', marginRight: 4 }}>⋯</button>
-                  {menuVista === v.id && (
-                    <div role="menu" onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 6, top: '90%', zIndex: 60, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,.15)', width: 190, padding: 4 }}>
-                      {[
-                        ['Editar', () => { setMenuVista(null); setModalVista({ vista: v, seccionId: v.config?.seccion_id || null }); }],
-                        ['Duplicar', async () => { setMenuVista(null); await guardarVista({ nombre: `${v.nombre} (copia)`, config: v.config, compartida: false }); }],
-                        ['Subir', () => { setMenuVista(null); mover(v, -1, base); }],
-                        ['Bajar', () => { setMenuVista(null); mover(v, 1, base); }],
-                      ].map(([l, fn]: any) => (
-                        <button key={l} onClick={fn} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', fontSize: 12, color: C.g700, borderRadius: 6 }}
-                          onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>{l}</button>
-                      ))}
-                      <div style={{ borderTop: `1px solid ${C.g100}`, margin: '4px 0' }} />
-                      <button onClick={() => { setMenuVista(null); if (confirm(`¿Borrar la vista "${v.nombre}"?`)) borrarVista(v.id); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', fontSize: 12, color: C.rojo700, borderRadius: 6 }}
-                        onMouseEnter={e => (e.currentTarget.style.background = C.rojo50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Borrar…</button>
-                    </div>
-                  )}
+                  <button onClick={e => { e.stopPropagation(); setMenuVista({ vista: v, lista: base }); }} title="Opciones de la vista" aria-label={`Opciones de ${v.nombre}`}
+                    style={{ border: 'none', background: 'none', borderRadius: 6, cursor: 'pointer', color: C.g400, fontSize: 13, padding: '2px 6px', marginRight: 4 }}>⋯</button>
                 </div>
               ))}
             </div>
@@ -285,6 +268,39 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
       )}
       {ajustes && <AjustesWA onClose={() => setAjustes(false)} />}
       {gestorEtapas && <EtapasModal onCerrar={() => { setGestorEtapas(false); cargarLifecycle(true); }} />}
+      {menuVista && (() => {
+        const v = menuVista.vista; const cerrar = () => setMenuVista(null);
+        const opcion = (titulo: string, sub: string, onClick: () => void, rojo = false) => (
+          <button key={titulo} onClick={onClick}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '10px 14px', borderRadius: 10 }}
+            onMouseEnter={e => (e.currentTarget.style.background = rojo ? C.rojo50 : C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+            <b style={{ fontSize: 13, color: rojo ? C.rojo700 : C.g900 }}>{titulo}</b>
+            <span style={{ fontSize: 11, color: C.g400 }}>{sub}</span>
+          </button>
+        );
+        return (
+          <div role="dialog" onClick={cerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(400px, 94vw)', boxShadow: '0 24px 60px rgba(0,0,0,.25)', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.g100}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>{v.config?.emoji || '⭐'}</span>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <b style={{ fontSize: 14, display: 'block' }}>{v.nombre}</b>
+                  <span style={{ fontSize: 11, color: C.g400, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.config?.descripcion || `${contadores[v.id] ?? '—'} contactos · ${v.compartida === false && !(v.compartida_con || []).length ? 'privada' : (v.compartida_con || []).length ? 'compartida con elegidos' : 'del equipo'}`}</span>
+                </span>
+                <button onClick={cerrar} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 15 }}>✕</button>
+              </div>
+              <div style={{ padding: 6 }}>
+                {opcion('Editar', 'Nombre, filtros, con quién se comparte', () => { cerrar(); setModalVista({ vista: v, seccionId: v.config?.seccion_id || null }); })}
+                {opcion('Duplicar', 'Crea una copia privada para ajustarla', async () => { cerrar(); await guardarVista({ nombre: `${v.nombre} (copia)`, config: v.config, compartida: false }); })}
+                {opcion('Subir', 'Un lugar arriba en la lista', () => { cerrar(); mover(v, -1, menuVista.lista); })}
+                {opcion('Bajar', 'Un lugar abajo en la lista', () => { cerrar(); mover(v, 1, menuVista.lista); })}
+                <div style={{ borderTop: `1px solid ${C.g100}`, margin: '4px 8px' }} />
+                {opcion('Borrar vista', 'No borra contactos ni conversaciones', () => { cerrar(); if (confirm(`¿Borrar la vista "${v.nombre}"?`)) borrarVista(v.id); }, true)}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
