@@ -57,6 +57,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [programados, setProgramados] = useState<any[]>([]);
   const [sugerirSiguiente, setSugerirSiguiente] = useState(false);
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
+  // Elegir un snippet (desde "/" o desde el popup): texto + su adjunto si lo tiene.
+  const usarSnippet = (r: any) => {
+    setTexto(r.texto);
+    if (r.media_url) setRemotos(rs => rs.some(x => x.url === r.media_url) ? rs : [...rs, { url: r.media_url, nombre: r.titulo || r.atajo || 'archivo', clase: r.media_tipo || 'document' }]);
+    api.marcarUsoRespuesta?.(r.id); setPop(null); areaRef.current?.focus();
+  };
   useEffect(() => { cargarProgramados(); }, [canales?.wa_id]);
   const waDisponible = canales?.whatsapp !== false;
   const correoOk = !!canales?.correo?.ok;
@@ -416,7 +422,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 {pop === 'variables' && <PopVariables onElegir={k => insertarEnCursor(`{{${k}}}`)} left={60} />}
                 {pop === 'snippets' && (
                   <PopSnippets snippets={snippets} resolver={resolver}
-                    onElegir={s => { setTexto(s.texto); if (s.media_url) setRemotos(r => [...r, { url: s.media_url, nombre: s.titulo || s.atajo || 'archivo', clase: s.media_tipo || 'document' }]); api.marcarUsoRespuesta?.(s.id); setPop(null); areaRef.current?.focus(); }}
+                    onElegir={usarSnippet}
                     onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
                 )}
                 {pop === 'adjuntar' && (
@@ -433,7 +439,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {slash.length > 0 && (
         <div style={{ marginTop: 6, border: `1px solid #e2dcfb`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 4px 14px rgba(40,20,90,.08)', background: '#fff' }}>
           {slash.map(r => (
-            <button key={r.id} onClick={() => { setTexto(r.texto); api.marcarUsoRespuesta?.(r.id); areaRef.current?.focus(); }}
+            <button key={r.id} onClick={() => usarSnippet(r)}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', padding: '8px 12px', borderBottom: `1px solid ${C.g50}` }}>
               <b style={{ fontSize: 12, color: C.moradoTinta }}>/{r.atajo}</b>
               <span style={{ display: 'block', fontSize: 12, color: C.g500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolver(r.texto)}</span>
