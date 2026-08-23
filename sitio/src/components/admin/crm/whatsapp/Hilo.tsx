@@ -132,8 +132,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {/* ── Header h-44 ── */}
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36, height: 36 }}>←</button>}
-        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7, flexWrap: mobile ? 'wrap' : 'nowrap', rowGap: 2 }}>
-          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: mobile ? 150 : undefined }}>{nombre || telefonoLegible(conv.telefono)}</b>
+        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7 }}>
+          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {!mobile && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
           {conv.id && hilo.ventana?.expira_at && (() => {
@@ -154,13 +154,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             </span>
           ))}
         </span>
-        {conv.id && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
+        {conv.id && !mobile && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
           style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, flexShrink: 0, cursor: 'pointer' }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
-        {conv.id && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
+        {conv.id && !mobile && <select value={conv.estado_crm || 'abierta'} onChange={e => e.target.value === 'resuelta' ? setCierre(true) : api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
@@ -177,7 +177,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
           <IcoBuscar size={15} />
         </button>
-        {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} />}
+        {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} />}
         {onVerDetalle && (
           <button onClick={onVerDetalle} style={{ border: `1px solid ${C.azulBorde}`, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#fff', color: C.azulTinta, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Detalle</button>
         )}
@@ -318,7 +318,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }
 
 /** Menú ⋯ del hilo: posponer / exportar. */
-function MenuHilo({ conv, api, abierto, setAbierto }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void }) {
+function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void }) {
   const posponer = async (hasta: Date) => { setAbierto(false); await api.patchConversacion({ snooze_until: hasta.toISOString(), no_leidos: 0 }); };
   const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
   const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
@@ -332,6 +332,24 @@ function MenuHilo({ conv, api, abierto, setAbierto }: { conv: any; api: any; abi
       {abierto && <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />}
       {abierto && (
         <span style={{ position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', minWidth: 190, display: 'block', overflow: 'hidden' }}>
+          {equipo && (<>
+            <span style={{ display: 'block', padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Estado</span>
+            <span style={{ display: 'flex', gap: 4, padding: '0 10px 6px' }}>
+              {(['abierta', 'pendiente', 'resuelta'] as const).map(e => (
+                <button key={e} onClick={() => { setAbierto(false); e === 'resuelta' ? onResolver?.() : api.patchConversacion({ estado_crm: e }); }}
+                  style={{ flex: 1, border: `1px solid ${(conv.estado_crm || 'abierta') === e ? C.morado : C.g200}`, background: (conv.estado_crm || 'abierta') === e ? C.moradoAgua : '#fff', color: (conv.estado_crm || 'abierta') === e ? C.moradoTinta : C.g500, borderRadius: 999, padding: '4px 0', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' }}>{e}</button>
+              ))}
+            </span>
+            <span style={{ display: 'block', padding: '4px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Asignar a</span>
+            <span style={{ display: 'block', padding: '0 10px 6px' }}>
+              <select value={conv.asignado_a || ''} onChange={e => { setAbierto(false); api.patchConversacion({ asignado_a: e.target.value || null }); }}
+                style={{ width: '100%', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', background: '#fff' }}>
+                <option value="">Sin asignar</option>
+                {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+              </select>
+            </span>
+            <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
+          </>)}
           <span style={{ display: 'block', padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Posponer hasta</span>
           {[{ l: 'En 3 horas', f: () => new Date(Date.now() + 3 * 3600e3) }, { l: 'Mañana 9:00', f: manana9 }, { l: 'Lunes 9:00', f: lunes9 }].map(o => (
             <button key={o.l} onClick={() => posponer(o.f())}
