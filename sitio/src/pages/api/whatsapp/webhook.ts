@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           direccion: entrante ? 'entrante' : 'saliente',
           tipo: p.tipo,
           cuerpo: p.cuerpo,
-          transcript: kapso.transcript || null,   // Kapso transcribe las notas de voz
+          transcript: typeof kapso.transcript === 'object' ? (kapso.transcript?.text || null) : (kapso.transcript || null),   // Kapso transcribe las notas de voz (a veces como {text})
           mediaUrl: p.mediaUrl, mediaId: p.mediaId, mime: p.mime, filename: p.filename,
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
           metadata: p.metadata,

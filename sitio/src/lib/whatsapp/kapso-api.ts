@@ -266,9 +266,11 @@ export async function descargarMedia(mediaId: string): Promise<{ bytes: ArrayBuf
   if (!API_KEY) throw new KapsoError(0, 'Falta KAPSO_API_KEY');
   // Kapso necesita saber de qué número es la media para enrutar a Meta.
   const info = await meta(`/${mediaId}?phone_number_id=${PN()}`);
-  const url = info?.url;
+  // El binario se baja por el download_url de Kapso (token en la URL, SIN header;
+  // el `url` de lookaside exige token de Meta y con la API key da 401).
+  const url = info?.download_url || info?.url;
   if (!url) return null;
-  const res = await fetch(url, { headers: { 'X-API-Key': API_KEY } });
+  const res = await fetch(url, info?.download_url ? undefined : { headers: { 'X-API-Key': API_KEY } });
   if (!res.ok) return null;
   return { bytes: await res.arrayBuffer(), mime: res.headers.get('content-type') || info?.mime_type || 'application/octet-stream' };
 }

@@ -95,7 +95,7 @@ export const GET: APIRoute = async ({ request }) => {
       const p = parsearMensaje(msj);
       const r = await registrarMensaje({
         kapsoMessageId: String(msj.id), kapsoConversationId: kapso.whatsapp_conversation_id ? String(kapso.whatsapp_conversation_id) : null,
-        telefono, direccion: entrante ? 'entrante' : 'saliente', tipo: p.tipo, cuerpo: p.cuerpo, transcript: kapso.transcript || null,
+        telefono, direccion: entrante ? 'entrante' : 'saliente', tipo: p.tipo, cuerpo: p.cuerpo, transcript: typeof kapso.transcript === 'object' ? (kapso.transcript?.text || null) : (kapso.transcript || null),
         mediaUrl: p.mediaUrl, mediaId: p.mediaId, mime: p.mime, filename: p.filename,
         timestamp: msj.timestamp ? String(msj.timestamp) : null, metadata: p.metadata,
         status: entrante ? 'received' : (kapso.status || 'sent'),
