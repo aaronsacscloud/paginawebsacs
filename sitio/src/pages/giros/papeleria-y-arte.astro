@@ -88,6 +88,7 @@ const desc =
     matriz={variantesPapeleria.matriz}
     filas={variantesPapeleria.filas}
     leyendas={variantesPapeleria.leyendas}
+    anchoCelda="230px"
     unidad="cuadernos"
     genero="m"
     remate="que comprar, acomodar y contar"
@@ -190,7 +191,14 @@ const desc =
   />
 
   <!-- ── El módulo real, con capturas del sistema ── -->
-  <PapModulo puntos={moduloPapeleria} />
+  <PapModulo
+    eyebrow="El circuito completo, ya funcionando"
+    titulo="Del colegio a tu caja,"
+    resalte="sin un solo Excel."
+    sub="Estas son pantallas del sistema, con la temporada de una papelería real. Así se mueve una lista escolar: la capturas una vez, el papá la compra desde su teléfono, recoge donde le quede, y al final cuadras con el colegio lo que él cobró."
+    puntos={moduloPapeleria}
+    pie="El módulo se cotiza aparte del plan, y se configura contigo en abril — antes de que llegue la temporada."
+  />
 
   <!-- ── El bloque propio: fuera de una papelería no significa nada ── -->
   <PapLista

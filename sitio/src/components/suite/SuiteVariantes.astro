@@ -34,6 +34,8 @@ interface Props {
   matriz: number[][];
   /** Qué es una casilla en este giro. */
   unidad?: string;
+  /** Ancho de cada celda; súbelo cuando hay pocas columnas. */
+  anchoCelda?: string;
   /** Qué se hace con cada una; cámbialo si la unidad no es un objeto físico. */
   remate?: string;
   /** El género de la unidad, para que concuerden "distintos" y "agotados". */
@@ -49,6 +51,7 @@ const {
   filas,
   matriz,
   unidad = 'pares',
+  anchoCelda = '122px',
   remate = 'que comprar, guardar y contar',
   genero = 'm',
   leyendas = ['Con existencia', 'Último', 'Agotado'],
@@ -60,7 +63,7 @@ const agotadas = genero === 'f' ? 'agotadas' : 'agotados';
 const enCero = matriz.flat().filter((n) => n === 0).length;
 ---
 
-<section class="vr" data-celdas={String(celdas)} style={`--cols:${ejeA.length}`}>
+<section class="vr" data-celdas={String(celdas)} style={`--cols:${ejeA.length};--ancho-celda:${anchoCelda}`}>
   <div class="vr-inner">
 
     <header class="vr-head">
@@ -167,7 +170,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
   /* ── La retícula que sale de él ── */
   .vr-rejilla { width: 100%; display: grid; gap: clamp(14px, 2vw, 24px); }
   .vr-fila { display: grid; gap: 8px; justify-items: center; }
-  .vr-fila-rot { width: 100%; max-width: calc(var(--cols, 11) * 122px); }
+  .vr-fila-rot { width: 100%; max-width: calc(var(--cols, 11) * var(--ancho-celda, 122px)); }
   .vr-fila-rot {
     font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
     color: var(--color-text-tertiary, #8C8C8C);
@@ -179,7 +182,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
   .vr-celdas {
     display: grid; grid-template-columns: repeat(var(--cols, 11), minmax(0, 1fr));
     gap: clamp(5px, .7vw, 10px);
-    max-width: calc(var(--cols, 11) * 122px); margin: 0 auto;
+    max-width: calc(var(--cols, 11) * var(--ancho-celda, 122px)); margin: 0 auto;
   }
 
   .vr-celda {
@@ -190,7 +193,11 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
     transition: opacity .45s ease, transform .55s cubic-bezier(.25,.46,.45,.94);
     transition-delay: calc(var(--i) * 9ms);
   }
-  .vr-celda img { width: 100%; height: auto; display: block; }
+  .vr-celda img {
+    width: 100%; height: auto; display: block;
+    aspect-ratio: 1 / 1; object-fit: contain;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
   .vr-celda b {
     font-size: 12px; font-weight: 800; color: var(--color-text-primary, #1a1a2e);
     font-variant-numeric: tabular-nums;

@@ -494,21 +494,27 @@ export const variantesPapeleria = {
  */
 export const moduloPapeleria = [
   {
-    titulo: 'Una lista por colegio y por temporada',
-    texto: 'Cada colegio con sus grados, sus kits vendidos, lo que ya está pagado y lo que sigue pendiente. Y el ingreso, separado por forma de pago: en línea, tarjeta o efectivo en tienda.',
+    titulo: '1 · Tú capturas la lista, una vez',
+    texto: 'Das de alta el colegio, sus grados y el kit de cada uno. Le pones precio cerrado o dejas que se arme suelto, decides si lleva descuento por pronto pago y hasta cuándo se vende. El año que entra se hereda: sólo tocas lo que el colegio cambió.',
     img: '/images/sacs-listas-listado.webp',
-    alt: 'Listado de listas escolares en SACS: cuatro colegios con grados, kits vendidos, pagados, pendientes e ingreso',
+    alt: 'Listado de listas escolares en SACS: cuatro colegios con sus grados, kits vendidos, pagados y pendientes',
   },
   {
-    titulo: 'La lista se arma en nueve pasos',
-    texto: 'Escuela, grados, kits, plantilla, descuentos, venta en línea, fechas, el aviso legal y el resumen. Se llena una vez y el año que entra se hereda: sólo tocas los renglones que el colegio cambió.',
-    img: '/images/sacs-listas-pasos.webp',
-    alt: 'Asistente de nueva lista escolar en SACS, con sus nueve pasos',
+    titulo: '2 · El papá compra desde su teléfono',
+    texto: 'La lista tiene su propia página, con el escudo del colegio. El papá entra, escoge el grado de su hijo, quita lo que ya tiene en casa y paga con tarjeta. No pisa la tienda ni hace fila en agosto.',
+    img: '/images/sacs-listas-vitrina.webp',
+    alt: 'Página pública de una lista escolar con el escudo del colegio y el botón de comprar el kit',
   },
   {
-    titulo: 'Lo que cobró la escuela, cuadrado',
-    texto: 'Cuando el colegio junta los pedidos y cobra en la escuela, ese dinero no pasa por tu caja. El reporte lo saca aparte —sólo efectivo y tarjeta— para cuadrarlo contra lo que entregaste.',
+    titulo: '3 · Recoge donde le quede',
+    texto: 'Tú armas el paquete con el nombre del alumno y él lo recoge en tu papelería o el día de entrega en la escuela. Con su folio sigue el pedido y sabe cuándo está listo, sin llamarte.',
+    img: '/images/sacs-listas-seguimiento.webp',
+    alt: 'Pantalla pública de seguimiento de un pedido de lista escolar, con folio',
+  },
+  {
+    titulo: '4 · Cuadras con el colegio',
+    texto: 'Lo que se pagó en línea entra directo a tu cuenta. Lo que el colegio cobró en la escuela —efectivo y tarjeta— no pasa por tu caja, así que sale en su propio reporte para cuadrarlo contra lo que entregaste y liquidar lo que le toca.',
     img: '/images/sacs-listas-conciliacion.webp',
-    alt: 'Reporte de conciliación de cobros de la escuela en SACS, con rango de fechas',
+    alt: 'Reporte de conciliación de los cobros que hizo la escuela, con rango de fechas',
   },
 ];
