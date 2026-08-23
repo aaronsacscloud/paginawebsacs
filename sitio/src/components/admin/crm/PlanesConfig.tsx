@@ -324,7 +324,7 @@ function Editor({ f, setF, toggleModalidad, guardar, cerrar, busy, usos = 0, nom
           <div style={{ fontSize: '0.78rem', color: usos ? P.ambarTinta : P.texto, lineHeight: 1.5 }}>
             {usos > 0 ? (
               <>
-                <b>{usos} suscripción{usos === 1 ? '' : 'es'}</b> usa{usos === 1 ? '' : 'n'} este concepto. Cambiar el nombre aquí
+                <b>{usos} {usos === 1 ? 'suscripción' : 'suscripciones'}</b> usa{usos === 1 ? '' : 'n'} este concepto. Cambiar el nombre aquí
                 no reescribe lo ya cobrado: cada movimiento conserva el texto con el que se vendió, que es el que dice su contrato.
               </>
             ) : (

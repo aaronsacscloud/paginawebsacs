@@ -180,7 +180,7 @@ export const DELETE: APIRoute = async ({ url }) => {
   const { count } = await supabase.from('subscriptions')
     .select('id', { count: 'exact', head: true }).eq('plan_id', id);
   if (count && count > 0) {
-    return json({ error: `Lo usan ${count} suscripción${count === 1 ? '' : 'es'}. Desactívalo en vez de borrarlo: deja de ofrecerse y sigue explicando lo ya vendido.` }, 409);
+    return json({ error: `Lo usan ${count} ${count === 1 ? 'suscripción' : 'suscripciones'}. Desactívalo en vez de borrarlo: deja de ofrecerse y sigue explicando lo ya vendido.` }, 409);
   }
   const { error } = await supabase.from('plans').delete().eq('id', id);
   if (error) return json({ error: error.message }, 500);
