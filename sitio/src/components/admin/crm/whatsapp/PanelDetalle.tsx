@@ -210,11 +210,11 @@ export default function PanelDetalle({ hilo, api }: { hilo: any; api: any }) {
         </div>
         {etapa && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: etapa.fg, opacity: .6 }} /><span style={{ fontSize: 12, fontWeight: 600 }}>{etapa.label}</span></div>}
         {empresa ? (<>
-          <div style={{ display: 'flex', gap: 12, fontSize: 12, alignItems: 'center' }}>
-            {ctx?.salud && <span title={`Salud de la cuenta: ${ctx.salud.nivel}`} style={{ width: 10, height: 10, borderRadius: 999, background: ctx.salud.nivel === 'rojo' ? C.rojo500 : ctx.salud.nivel === 'ambar' ? C.ambar400 : C.emerald500, flexShrink: 0 }} />}
-            {!ocultarDinero && <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(resumen?.mrr ?? empresa.mrr)} MRR</span>}
-            <span style={{ color: C.g500 }}>{empresa.plan || 'sin plan'}</span>
-            <span style={{ color: C.g500 }}>{subs.length} suscripción{subs.length === 1 ? '' : 'es'}</span>
+          <div style={{ display: 'flex', gap: 6, fontSize: 12, alignItems: 'center', flexWrap: 'wrap', whiteSpace: 'nowrap' }}>
+            {ctx?.salud && <span title={`Salud de la cuenta: ${ctx.salud.nivel}`} style={{ width: 9, height: 9, borderRadius: 999, background: ctx.salud.nivel === 'rojo' ? C.rojo500 : ctx.salud.nivel === 'ambar' ? C.ambar400 : C.emerald500, flexShrink: 0 }} />}
+            {!ocultarDinero && <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(resumen?.mrr ?? empresa.mrr)}<span style={{ fontWeight: 500, fontSize: 10 }}> MRR</span></span>}
+            <span style={{ color: C.g300 }}>·</span><span style={{ color: C.g500 }}>{empresa.plan || 'sin plan'}</span>
+            <span style={{ color: C.g300 }}>·</span><span style={{ color: C.g500 }}>{subs.length} sub{subs.length === 1 ? '' : 's'}</span>
           </div>
           {ctx?.salud && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>

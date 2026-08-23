@@ -133,7 +133,7 @@ export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { o
       ) : (
         <button onClick={() => { setAbierto(a => !a); if (!abierto) cargar(); }} aria-label="Notificaciones"
           style={{
-            position: 'fixed', top: desplazada ? 3 : 12, right: desplazada ? 4 : 12, zIndex: 108, width: desplazada ? 36 : 44, height: desplazada ? 36 : 44,
+            position: 'fixed', top: desplazada ? 6 : 12, right: desplazada ? 4 : 12, zIndex: 108, width: desplazada ? 36 : 44, height: desplazada ? 36 : 44,
             background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', color: '#1a1a1a',
           }}>

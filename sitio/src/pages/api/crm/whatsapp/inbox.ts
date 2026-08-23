@@ -169,6 +169,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const hoy = ahora.slice(0, 10);
   const requiereAccion = (c: any) => !c.virtual && c.estado_crm !== 'resuelta' && (
     (c.ultima_direccion === 'entrante' && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
+    (!!c.alerta && (!c.asignado_a || (user && c.asignado_a === user.id))) ||   // el último envío falló: alguien tiene que decidir
     c.mencion ||
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
