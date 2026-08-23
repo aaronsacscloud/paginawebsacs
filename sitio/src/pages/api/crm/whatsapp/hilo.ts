@@ -76,7 +76,7 @@ export const GET: APIRoute = async ({ url }) => {
   // ── Mensajes de WhatsApp + notas + eventos (solo con ancla de WhatsApp) ──
   const [{ data: mensajes }, { data: notas }, { data: eventos }] = conv.id ? await Promise.all([
     supabase.from('wa_mensajes')
-      .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, status, error, enviado_at, created_at')
+      .select('id, kapso_message_id, direccion, tipo, cuerpo, transcript, media_url, status, error, enviado_at, created_at, metadata')
       .eq('conversation_id', conv.id).order('created_at', { ascending: true }).limit(500),
     supabase.from('wa_notas')
       .select('id, autor, texto, created_at')
