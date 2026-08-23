@@ -91,6 +91,8 @@ const KAPSO: { re: RegExp; def: Def }[] = [
   { re: /outside the 24-hour window|24.?hour/i, def: META['131047'] },
   { re: /template.*(not found|does not exist)/i, def: META['132001'] },
   { re: /failed to download media|could not (download|fetch) (the )?media|media.*(404|403|unreachable)/i, def: D('No se pudo descargar el archivo', 'Kapso/Meta intentaron bajar el archivo de la URL que diste y no estaba disponible (404, privado o caído).', 'Usa una URL pública https que abra en el navegador sin login; si es de tu biblioteca, súbela de nuevo.', 'media') },
+  { re: /already a pending display name request/i, def: D('Ya hay una solicitud de nombre en revisión', 'Meta solo admite una solicitud de display name a la vez por número.', 'Espera la respuesta de Meta (1-3 días) antes de pedir otro nombre.', 'cuenta') },
+  { re: /external customer can't be blank/i, def: D('Falta el identificador del cliente', 'Kapso exige un external_customer_id al crear el cliente.', 'Es un error del sistema: repórtalo.', 'otro') },
   { re: /configuration not found|phone number.*not found/i, def: D('Número no configurado en Kapso', 'Kapso no encuentra el número (phone_number_id) para esta petición.', 'Revisa que el número esté conectado en Kapso y el ID en Ajustes.', 'cuenta') },
   { re: /invalid api key|unauthorized|401/i, def: D('API key de Kapso inválida', 'Kapso rechazó la credencial.', 'Revisa KAPSO_API_KEY en las variables del entorno.', 'cuenta') },
   { re: /rate limit|too many requests|429/i, def: D('Demasiadas peticiones a Kapso', 'Se superó el límite de llamadas por minuto.', 'Espera unos segundos y reintenta.', 'limite', true) },
