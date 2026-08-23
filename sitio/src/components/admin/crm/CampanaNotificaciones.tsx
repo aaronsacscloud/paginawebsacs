@@ -31,7 +31,7 @@ function hace(iso: string): string {
   return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
 }
 
-export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab: string) => void; enMenu?: boolean }) {
+export default function CampanaNotificaciones({ onIrA, enMenu, desplazada }: { onIrA?: (tab: string) => void; enMenu?: boolean; desplazada?: boolean }) {
   const isMobile = useIsMobile();
   const [abierto, setAbierto] = useState(false);
   // Dónde nace el panel cuando la campana vive en el menú: se ancla al botón,
@@ -133,7 +133,7 @@ export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab:
       ) : (
         <button onClick={() => { setAbierto(a => !a); if (!abierto) cargar(); }} aria-label="Notificaciones"
           style={{
-            position: 'fixed', top: 12, right: 12, zIndex: 108, width: 44, height: 44,
+            position: 'fixed', top: desplazada ? 2 : 12, right: desplazada ? 340 : 12, zIndex: 108, width: desplazada ? 38 : 44, height: desplazada ? 38 : 44,
             background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', color: '#1a1a1a',
           }}>

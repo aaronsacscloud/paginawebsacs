@@ -359,7 +359,9 @@ export default function CrmDashboard() {
       {/* La campana vive en el pie del menú, junto a quién eres. Solo vuelve a
           flotar cuando el menú está plegado o en mobile, donde no hay pie que
           la contenga: lo que pasó solo tiene que verse sin ir a buscarlo. */}
-      {(isMobile || sidebarCollapsed) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
+      {/* En el inbox el railito del detalle vive en la esquina: la campana se
+          recorre a la izquierda para no taparlo. */}
+      {(isMobile || sidebarCollapsed) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} desplazada={!isMobile && tab === 'whatsapp'} />}
       {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setMobileSearchOpen(true)} style={{
