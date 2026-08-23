@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
+import { computarSenales } from '../../../lib/crm/senales';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -51,14 +52,20 @@ const S = {
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
 };
 
-export default function TabMejoras({ companyId, cliente, flash }: any) {
+export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }: any) {
   // `cliente` es el nombre que va al abrir la cotización desde una idea.
+  // `co` y `subs` son para las SEÑALES: antes vivían en un bloque aparte arriba
+  // de la pestaña y decían la misma venta que las ideas de abajo. Ahora entran
+  // aquí, dentro de "Por vender", y la que ya tiene idea deja de ofrecerse.
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
   const [verTodo, setVerTodo] = useState(false);
+  // Las sugerencias se muestran de a una: son contexto para leer, no una
+  // lista para recorrer, y con tres abiertas empujaban las ideas fuera.
+  const [verSug, setVerSug] = useState(false);
 
   const cargar = () => fetch('/api/crm/mejoras?company_id=' + companyId)
     .then(r => r.json()).then(j => { setRows(j.data || []); setVencidas(j.vencidas || []); }).catch(() => setRows([]));
@@ -117,7 +124,34 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
   const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const estaSemana = rows.filter(m => abierto(m) && m.fecha_compromiso && m.fecha_compromiso <= en7).length;
 
+  /* ── Sugerencias del sistema ──
+     Salen del uso real de la cuenta. La que ya se capturó como idea NO se
+     vuelve a ofrecer: se dice cuántas hay abajo y se acabó la duplicación.
+     Se ordenan por peso, que es como el motor las prioriza. */
+  const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
+  const tiposYaIdea = new Set(rows.filter(m => m.senal_tipo && m.estado !== 'descartada').map(m => m.senal_tipo));
+  const sugerencias = senales.filter(s => !tiposYaIdea.has(s.tipo));
+  const sugYaEnLista = senales.length - sugerencias.length;
+
+  /* Una sugerencia se vuelve idea con un clic: se guarda con su `senal_tipo`
+     para que el motor deje de proponerla. La categoría se deduce de la acción
+     —"ofrécele el plugin X" es un plugin— y si no se reconoce, queda como otro. */
+  async function adoptarSenal(sn: any) {
+    const t = (sn.accion + ' ' + sn.titulo).toLowerCase();
+    const categoria = /plugin/.test(t) ? 'plugin'
+      : /capacita|video|entrena/.test(t) ? 'capacitacion'
+      : /plan|licencia|sucursal|fideliza|automatiza|controla/.test(t) ? 'modulo'
+      : 'otro';
+    // `guardar` ya avisa y recarga; aquí no se repite el mensaje.
+    await guardar({
+      titulo: sn.accion.replace(/^ofr[eé]cele\s+/i, '').replace(/\.$/, '').trim().slice(0, 200),
+      descripcion: `${sn.titulo}. ${sn.detalle}`,
+      estado: 'idea', categoria, senal_tipo: sn.tipo, visible_cliente: true, origen: 'manual',
+    });
+  }
+
   const potencial = ideas.reduce((a, m) => a + Number(m.valor || 0), 0);
+  const ideasSinMonto = ideas.filter(m => !(Number(m.valor) > 0)).length;
   const cobrado = entregadas.reduce((a, m) => a + (m.cortesia ? 0 : Number(m.valor || 0)), 0);
   const anio = new Date().getFullYear();
   const delAnio = entregadas.filter(m => String(m.fecha_entrega || '').startsWith(String(anio)));
@@ -170,10 +204,34 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
     window.open('/admin/revenue?' + q.toString(), '_blank', 'noopener');
   }
 
+  /* ── El riel ──
+     Tres hitos en el orden en que se trabaja la cuenta: lo que le debes, lo
+     que le puedes vender y lo que ya quedó atrás. La línea vertical no es
+     adorno: dice que es un recorrido, no tres listas sueltas que compiten.
+     Antes eran cuatro bloques del mismo peso —incluido uno de señales que
+     repetía lo de abajo— y no había forma de saber por dónde empezar. */
+  const Hito = ({ n, titulo, color, resumen, children }: any) => (
+    <div style={{ position: 'relative', marginBottom: 18 }}>
+      <span style={{
+        position: 'absolute', left: -24, top: 4, width: 14, height: 14, borderRadius: 99,
+        background: '#fff', border: `3px solid ${color}`, boxSizing: 'border-box',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.09em', color: '#1a1a1a' }}>
+          {n} · {titulo}
+        </span>
+        <span style={{ fontSize: '0.7rem', color: '#a5a2af', marginLeft: 'auto' }}>{resumen}</span>
+      </div>
+      <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 16px' }}>
+        {children}
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      {/* Lo prometido que ya venció va ARRIBA de todo: una promesa que no llegó
-          hace más daño que una que nunca se hizo. */}
+      {/* Lo prometido que ya venció va ARRIBA de todo, antes de las cifras: una
+          promesa que no llegó hace más daño que una que nunca se hizo. */}
       {vencidas.length > 0 && (
         <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '11px 13px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
           <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>⚠️</span>
@@ -186,76 +244,126 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+      {/* Las cifras siguen el mismo orden que los hitos. "Sobre la mesa" en $0
+          se leía como "no hay nada que vender" cuando lo que falta es capturar
+          el monto: si ninguna idea lo tiene, se dice eso en vez de un cero. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 11 }}>
         {[
-          ['Por hacer', String(porHacer), estaSemana ? `${estaSemana} vencen esta semana` : 'nada urgente', porHacer ? '#9a6a10' : '#1a1a1a'],
-          ['Entregado este año', String(esteAnio), delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'sin entregas', '#1a1a1a'],
-          ['Cobrado', money(cobrado), `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`, '#1E8A63'],
-          ['Sobre la mesa', '~' + money(potencial), `${ideas.length} ideas sin cerrar`, '#2C5FC4'],
-        ].map(([l, v, sub, col]: any) => (
-          <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '13px 15px', minWidth: 140, flex: 1 }}>
+          ['Por hacer', String(porHacer), estaSemana ? `${estaSemana} vencen esta semana` : 'nada urgente', porHacer ? '#9a6a10' : '#1a1a1a', '#E8A838', false],
+          ['Sobre la mesa',
+            potencial > 0 ? '~' + money(potencial) : '—',
+            potencial > 0
+              ? `${ideas.length} idea${ideas.length === 1 ? '' : 's'} sin cerrar`
+              : ideas.length ? `${ideasSinMonto} idea${ideasSinMonto === 1 ? '' : 's'} sin monto · no se puede estimar` : 'sin ideas todavía',
+            '#2C5FC4', '#7DA6F5', potencial === 0 && ideas.length > 0],
+          ['Entregado este año', String(esteAnio), delAnio[0]?.fecha_entrega ? `último el ${fmtDate(delAnio[0].fecha_entrega)}` : 'sin entregas', '#1a1a1a', '#4FBF95', false],
+          ['Cobrado', money(cobrado), `${entregadas.filter((m: any) => m.cortesia).length} fueron cortesía`, '#1E8A63', '#4FBF95', false],
+        ].map(([l, v, sub, col, franja, ojo]: any) => (
+          <div key={l} style={{ background: '#fff', border: '1px solid #eeeef1', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px' }}>
             <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>{l}</div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: 4, letterSpacing: '-.02em', color: col }}>{v}</div>
-            <div style={{ fontSize: '0.66rem', color: '#8a8a8a', marginTop: 3 }}>{sub}</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: 3, letterSpacing: '-.03em', color: col }}>{v}</div>
+            <div style={{ fontSize: '0.66rem', marginTop: 2, lineHeight: 1.35, color: ojo ? '#9a6a10' : '#8a8a8a', fontWeight: ojo ? 600 : 400 }}>{sub}</div>
           </div>
         ))}
       </div>
 
-      {/* ── Por hacer ── */}
-      <div style={S.card}>
-        <div style={S.h}>
-          Por hacer
-          <span style={S.nota}>{porHacer ? `${porHacer} · lo más próximo primero` : ''}</span>
-          <button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>
+      {/* El reporte sube junto a las cifras: es lo que se le enseña al cliente
+          y estaba hasta el fondo, después de tres listas. Una tira, no una
+          tarjeta que compita con los hitos. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.16))',
+        border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 15px', marginBottom: 18,
+      }}>
+        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6' }}>Reporte ejecutivo</div>
+        <div style={{ fontSize: '0.73rem', color: '#6b7280', flex: 1, minWidth: 200, lineHeight: 1.45 }}>
+          Junta entregas, capacitaciones y pendientes con lo que SACS sabe de la cuenta.
         </div>
-        {porHacer === 0 && (
-          <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>
-            Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí.
+        <button style={{ ...S.btn, flexShrink: 0 }} onClick={() => setReporte(true)}>Generar reporte</button>
+      </div>
+
+      <div style={{ position: 'relative', paddingLeft: 26 }}>
+        <span style={{ position: 'absolute', left: 7, top: 6, bottom: 20, width: 2, background: '#ececec' }} />
+
+        {/* 1 · Lo que le debes */}
+        <Hito n={1} titulo="Por hacer" color="#9B8CFA"
+          resumen={porHacer ? `${porHacer} · lo más próximo primero` : 'nada comprometido'}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: porHacer ? 2 : 8 }}>
+            <button style={S.btn} onClick={() => setEditando({ estado: 'en_proceso', categoria: 'personalizacion', visible_cliente: true })}>+ Agregar</button>
           </div>
-        )}
-        {grupos.map(g => (
-          <div key={g.k}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 4px' }}>
-              {g.l} · {g.filas.length}
+          {porHacer === 0 && (
+            <div style={{ color: '#999', fontSize: '0.82rem' }}>
+              Nada pendiente con este cliente. Lo que salga de la próxima junta aparece aquí.
             </div>
-            {g.filas.map((m: any) => <Renglon key={m.id} m={m} />)}
-          </div>
-        ))}
-      </div>
-
-      {/* Las ideas van aparte: no son trabajo comprometido, son dinero sobre la
-          mesa. Mezclarlas con lo pendiente haría que la lista nunca se vacíe. */}
-      <div style={S.cardA}>
-        <div style={S.h}>
-          Ideas por vender
-          <span style={S.nota}>{ideas.length ? `${ideas.length} · ~${money(potencial)} potencial` : ''}</span>
-          <button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>
-        </div>
-        {ideas.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>Lo que se te ocurra en una junta y le pueda interesar al cliente va aquí. De ahí sale la siguiente venta.</div>}
-        {ideas.map(m => <Renglon key={m.id} m={m} />)}
-      </div>
-
-      {/* Lo entregado se resume al año: el histórico completo se lee una vez y
-          su lugar natural es el reporte. */}
-      <div style={{ ...S.card, borderColor: '#eeeef1' }}>
-        <div style={S.h}>
-          Ya entregado
-          <span style={S.nota}>{verTodo ? `${entregadas.length} en total` : `este año · ${esteAnio}`}</span>
-          {entregadas.length > esteAnio && (
-            <button style={S.btnG} onClick={() => setVerTodo(v => !v)}>{verTodo ? 'Solo este año' : `Ver todo (${entregadas.length})`}</button>
           )}
-        </div>
-        {entregadas.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>Todavía no se le ha entregado nada a este cliente.</div>}
-        {(verTodo ? entregadas : delAnio).map(m => <Renglon key={m.id} m={m} />)}
-      </div>
+          {grupos.map(g => (
+            <div key={g.k}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.07em', margin: '11px 0 4px' }}>
+                {g.l} · {g.filas.length}
+              </div>
+              {g.filas.map((m: any) => <Renglon key={m.id} m={m} />)}
+            </div>
+          ))}
+        </Hito>
 
-      <div style={{ ...S.card, background: '#faf8ff', borderColor: '#e6ddfa' }}>
-        <div style={S.h}>Reporte ejecutivo del periodo</div>
-        <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 10 }}>
-          Junta todo lo de arriba —entregas, capacitaciones, videos y pendientes— con lo que SACS ya sabe de la cuenta:
-          qué módulos empezó a usar y cómo cambió su operación.
-        </div>
-        <button style={S.btn} onClick={() => setReporte(true)}>Generar reporte</button>
+        {/* 2 · Lo que le puedes vender: las sugerencias del sistema y tus ideas
+            en la MISMA lista. Eran dos bloques que decían lo mismo. */}
+        <Hito n={2} titulo="Por vender" color="#7DA6F5"
+          resumen={`${ideas.length} idea${ideas.length === 1 ? '' : 's'}${sugerencias.length ? ` · ${sugerencias.length} sugerencia${sugerencias.length === 1 ? '' : 's'}` : ''}`}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <button style={S.btn} onClick={() => setEditando({ estado: 'idea', categoria: 'personalizacion' })}>+ Agregar idea</button>
+          </div>
+
+          {(sugerencias.length > 0 || sugYaEnLista > 0) && (
+            <div style={{ border: '1px dashed #cfe0fa', background: '#E3EDFD', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#2C5FC4', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Sugerencias del sistema · {sugerencias.length}
+                {sugerencias.length > 1 && (
+                  <button onClick={() => setVerSug(v => !v)}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.66rem', fontWeight: 700, color: '#2C5FC4', textDecoration: 'underline', textTransform: 'none', letterSpacing: 0 }}>
+                    {verSug ? 'Ver menos' : `Ver ${sugerencias.length - 1} más`}
+                  </button>
+                )}
+              </div>
+              {(verSug ? sugerencias : sugerencias.slice(0, 1)).map((sn: any, i: number) => (
+                <div key={sn.tipo} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', paddingTop: 9, marginTop: i ? 9 : 0, borderTop: i ? '1px solid #cfe0fa' : 'none' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.81rem', fontWeight: 700, color: sn.nivel === 'riesgo' ? '#C0554E' : '#241d43' }}>{sn.titulo}</div>
+                    <div style={{ fontSize: '0.73rem', color: '#6b7280', marginTop: 2, lineHeight: 1.45 }}>{sn.detalle}</div>
+                    <div style={{ fontSize: '0.73rem', color: '#241d43', marginTop: 3 }}><b>{sn.nivel === 'riesgo' ? 'Hacer:' : 'Ofrecerle:'}</b> {sn.accion}</div>
+                  </div>
+                  <button style={{ ...S.btnAzul, flexShrink: 0 }} onClick={() => adoptarSenal(sn)}>Agregar a la lista</button>
+                </div>
+              ))}
+              {sugYaEnLista > 0 && (
+                <div style={{ fontSize: '0.7rem', color: '#2C5FC4', paddingTop: 9, marginTop: 9, borderTop: '1px solid #cfe0fa' }}>
+                  {sugYaEnLista} sugerencia{sugYaEnLista === 1 ? '' : 's'} más ya {sugYaEnLista === 1 ? 'está' : 'están'} en la lista · no se repite{sugYaEnLista === 1 ? '' : 'n'}
+                </div>
+              )}
+            </div>
+          )}
+
+          {ideas.length === 0 && sugerencias.length === 0 && (
+            <div style={{ color: '#999', fontSize: '0.82rem' }}>
+              Lo que se te ocurra en una junta y le pueda interesar al cliente va aquí. De ahí sale la siguiente venta.
+            </div>
+          )}
+          {ideas.map(m => <Renglon key={m.id} m={m} />)}
+        </Hito>
+
+        {/* 3 · Lo que ya quedó atrás. Solo la última: es historia, se consulta.
+            La lista completa empujaba fuera de pantalla lo que sí hay que hacer. */}
+        <Hito n={3} titulo="Ya entregado" color="#4FBF95"
+          resumen={entregadas.length ? `${entregadas.length} en total` : 'sin entregas'}>
+          {entregadas.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Todavía no se le ha entregado nada a este cliente.</div>}
+          {(verTodo ? entregadas : entregadas.slice(0, 1)).map(m => <Renglon key={m.id} m={m} />)}
+          {entregadas.length > 1 && (
+            <button onClick={() => setVerTodo(v => !v)}
+              style={{ width: '100%', marginTop: 10, border: '1px dashed #ececec', background: '#f5f4f8', borderRadius: 10, padding: 9, fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {verTodo ? 'Ver solo la última' : `Ver las ${entregadas.length - 1} entregas anteriores`}
+            </button>
+          )}
+        </Hito>
       </div>
 
       {editando && <EditorMejora m={editando} reuniones={reuniones} onCerrar={() => setEditando(null)} onGuardar={guardar} />}

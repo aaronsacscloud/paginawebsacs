@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { computarSenales } from '../../../lib/crm/senales';
 import Etiquetas from './Etiquetas';
 import { CamposFicha, useCampos } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
@@ -267,11 +266,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
-              {/* Las señales de venta encabezan Consultoría: son las IDEAS de qué
-                  ofrecerle, que es de lo que trata acompañar a la cuenta. Vivían en
-                  Oportunidades, que ya no existe como pestaña. */}
-              {tab === 'mejoras' && <SenalesVenta co={co} subs={subs} />}
-              {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
+              {/* Las señales ya no son un bloque aparte: entran DENTRO de
+                  Consultoría, en "Por vender", junto a las ideas capturadas. Como
+                  bloque propio decían la misma venta dos veces —arriba la señal,
+                  abajo la idea que la atiende—. */}
+              {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} co={co} subs={subs} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
               {tab === 'whatsapp' && <TabWhatsApp360 companyId={companyId} />}
               {tab === 'outbound' && <TabOutbound companyId={companyId} />}
@@ -3533,44 +3532,6 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
               </button>}
           <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onCerrar}>Cerrar</button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────── Qué venderle: las ideas que salen de su uso ───────────
- *
- * Vivía al final de Oportunidades. Esa pestaña se quitó y sus dos mitades se
- * repartieron por lo que SON: lo cotizado y lo vendido se fue a Suscripciones
- * —ahí está el dinero— y estas ideas se vinieron a Consultoría, que es donde
- * se decide qué proponerle a la cuenta.
- */
-function SenalesVenta({ co, subs = [] }: any) {
-  const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
-  const [verTodas, setVerTodas] = useState(false);
-  // Si no hay señales el bloque no aparece: una tarjeta que dice "sin señales"
-  // ocupa lo mismo que una con contenido y no enseña nada.
-  if (!senales.length) return null;
-  return (
-    <div style={D.cardM}>
-      <div style={D.hM}>Qué venderle y atender<span style={D.hNota}>del uso real de su cuenta en SACS</span></div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {(verTodas ? senales : senales.slice(0, 2)).map((s: any, i: number) => (
-          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
-            <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
-              <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
-              <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
-            </div>
-          </div>
-        ))}
-        {senales.length > 2 && (
-          <button onClick={() => setVerTodas(v => !v)}
-            style={{ width: '100%', border: '1px dashed #ddd6fb', background: '#faf8ff', borderRadius: 10, padding: 9, fontSize: '0.76rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {verTodas ? 'Ver menos' : `Ver ${senales.length - 2} señal${senales.length - 2 === 1 ? '' : 'es'} más`}
-          </button>
-        )}
       </div>
     </div>
   );

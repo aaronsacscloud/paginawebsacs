@@ -70,6 +70,10 @@ function limpia(b: any) {
   // Solo si trae un valor válido: el formulario manda '' cuando nadie lo tocó,
   // y con `null` un simple "editar el título" borraría el origen que ya tenía.
   if (b?.origen && ORIGENES.includes(b.origen)) p.origen = b.origen;
+  // De qué señal del sistema nació. Con esto la señal deja de ofrecerse en
+  // cuanto existe la idea que la atiende: es lo que evita decir la misma
+  // venta dos veces —arriba como señal, abajo como idea—.
+  if ('senal_tipo' in b) p.senal_tipo = String(b.senal_tipo || '').trim().slice(0, 60) || null;
   if ('fecha_entrega' in b) p.fecha_entrega = b.fecha_entrega || null;
   if ('fecha_compromiso' in b) p.fecha_compromiso = b.fecha_compromiso || null;
   return p;
