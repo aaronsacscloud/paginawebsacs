@@ -10,7 +10,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { telefonoLegible } from '../../../lib/telefono';
 import { enviarTexto, enviarMediaLink, listarMensajesKapso, KapsoError } from '../../../lib/whatsapp/kapso-api';
-import { registrarMensaje } from '../../../lib/whatsapp/espejo';
+import { registrarMensaje, actualizarStatus } from '../../../lib/whatsapp/espejo';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
 import { explicarError } from '../../../lib/whatsapp/errores';
 
@@ -101,6 +101,12 @@ export const GET: APIRoute = async ({ request }) => {
         status: entrante ? 'received' : (kapso.status || 'sent'),
       });
       if (r.inserted) resync++;   // NO silencioso: si el webhook lo perdió, debe sonar
+      // Reconciliar estado: si Kapso dice failed/read/delivered y el espejo va atrás, se corrige (con el error de Meta).
+      if (!entrante && kapso.status) {
+        const errs = (kapso.statuses || []).flatMap((s: any) => s?.errors || []);
+        const err = errs.length ? errs.map((e: any) => { const x = explicarError(e); return `${x.codigo ? x.codigo + ' ' : ''}${x.titulo} · ${x.crudo.slice(0, 200)}`; }).join(' | ') : null;
+        await actualizarStatus(String(msj.id), kapso.status, kapso.status === 'failed' ? err : null);
+      }
     }
     await supabase.from('wa_config').update({ resync_at: new Date().toISOString() }).eq('id', 1);
   } catch (e) { console.warn('[wa-resync]', e); }

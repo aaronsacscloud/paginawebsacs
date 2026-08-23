@@ -163,7 +163,11 @@ export const POST: APIRoute = async ({ request, url }) => {
         // En failed, Kapso acumula los errores de Meta en kapso.statuses[].errors.
         // failed: se guarda "<código> <título en español> · <detalle de Meta>" (el
         // detalle crudo va después del separador para soporte).
-        const errs = (kapso.statuses || []).flatMap((s: any) => s?.errors || []);
+        // Los errores pueden venir en kapso.statuses[].errors, message.errors, kapso.errors o payload.errors.
+        const errs = [
+          ...(kapso.statuses || []).flatMap((s: any) => s?.errors || []),
+          ...(msj.errors || []), ...(kapso.errors || []), ...(payload?.errors || []), ...(payload?.status?.errors || []),
+        ];
         const errores = errs.length
           ? errs.map((e: any) => { const x = explicarError(e); return `${x.codigo ? x.codigo + ' ' : ''}${x.titulo}${x.crudo ? ' · ' + x.crudo.slice(0, 200) : ''}`; }).join(' | ')
           : (status === 'failed' ? 'Meta no dio detalle del fallo' : null);
