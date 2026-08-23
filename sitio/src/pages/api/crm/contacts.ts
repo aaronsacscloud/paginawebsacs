@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
 import { etapaDeLead } from '../../../lib/crm/lead-etapa';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
+import { detectaHistorial, norm as normTxt, tel10, claveEmpresa, type Indices } from '../../../lib/crm/lead-historial';
 
 export const prerender = false;
 
@@ -63,6 +64,34 @@ export const GET: APIRoute = async ({ request, url }) => {
     for (const b of (books.data || [])) dame(b.contact_id).reuniones.push({ estado: normalizaEstado(b.estado), fecha: b.fecha });
     for (const q of (qs.data || [])) dame(q.contact_id).cotizaciones++;
 
+    // ── ¿Ya lo conocíamos? ────────────────────────────────────────────────
+    // Índices de clientes y cancelados para cruzar por correo, teléfono y
+    // nombre de empresa. Son TRES consultas para todo el lote: sin esto, el
+    // cruce costaría una consulta por lead y nadie lo pondría en la lista.
+    const ix: Indices = { porCorreo: new Map(), porTelefono: new Map(), empresas: new Map(), porNombreEmpresa: new Map() };
+    const [viejos, emps, subs] = await Promise.all([
+      supabase.from('contacts').select('id, email, whatsapp, telefono, company_id, lifecycle_stage')
+        .in('lifecycle_stage', ['cliente', 'churned']).is('archived_at', null).limit(2000),
+      supabase.from('companies').select('id, nombre, nombre_comercial, estado_cuenta, arr').is('archived_at', null).limit(2000),
+      supabase.from('subscriptions').select('company_id').eq('estado', 'activa').limit(2000),
+    ]);
+    const conSubActiva = new Set((subs.data || []).map((s2: any) => s2.company_id));
+    for (const e of (emps.data || [])) {
+      const activa = conSubActiva.has(e.id);
+      ix.empresas.set(e.id, { nombre: e.nombre_comercial || e.nombre, estado_cuenta: e.estado_cuenta, arr: e.arr, activa });
+      // Solo entran al índice por nombre las que son o fueron clientes: si
+      // entraran los prospectos, dos leads del mismo giro se marcarían entre sí.
+      if (activa || ['activo', 'vencido', 'cancelado'].includes(String(e.estado_cuenta))) {
+        const k = claveEmpresa(e.nombre_comercial || e.nombre);
+        if (k.length >= 4 && !ix.porNombreEmpresa.has(k)) ix.porNombreEmpresa.set(k, { company_id: e.id, nombre: e.nombre_comercial || e.nombre, estado_cuenta: e.estado_cuenta, activa });
+      }
+    }
+    for (const v of (viejos.data || [])) {
+      const reg = { lifecycle: v.lifecycle_stage, company_id: v.company_id, contact_id: v.id };
+      const em = normTxt(v.email); if (em && !ix.porCorreo.has(em)) ix.porCorreo.set(em, reg);
+      const tl = tel10(v.whatsapp || v.telefono); if (tl.length === 10 && !ix.porTelefono.has(tl)) ix.porTelefono.set(tl, reg);
+    }
+
     filas = filas.map((c: any) => {
       const x = porContacto.get(c.id) || { llamadas: 0, correos: 0, whatsapp: 0, reuniones: [], cotizaciones: 0 };
       const toques = x.llamadas + x.correos + x.whatsapp;
@@ -71,7 +100,13 @@ export const GET: APIRoute = async ({ request, url }) => {
         toques, last_contact_at: c.last_contact_at, reuniones: x.reuniones,
         cotizaciones: x.cotizaciones, etapa_manual: c.etapa_manual,
       });
-      return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual,
+      const esLead = ['lead', 'lead_calificado', 'oportunidad'].includes(String(c.lifecycle_stage));
+      const empresa = Array.isArray(c.companies) ? c.companies[0] : c.companies;
+      const historial = esLead ? detectaHistorial({
+        id: c.id, email: c.email, whatsapp: c.whatsapp, telefono: c.telefono,
+        company_id: c.company_id, empresa_nombre: empresa?.nombre || null,
+      }, ix) : null;
+      return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial,
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
         n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones };
     });

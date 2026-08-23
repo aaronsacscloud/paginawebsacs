@@ -14,6 +14,7 @@ import { normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
+import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -169,6 +170,23 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
         <div style={D.body}>
           {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
+          {/* ── ¿Ya lo conocíamos? ──
+              Va ARRIBA de todo y no en una pestaña: si este lead ya paga o ya
+              fue cliente, es lo primero que cambia lo que haces con él. Tres
+              leads llevaban meses en la lista sin que nada lo dijera. */}
+          {c.historial && (() => {
+            const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
+            return (
+              <div style={{ background: h.bg, border: `1px solid ${h.fg}33`, borderRadius: 11, padding: '12px 15px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', textTransform: 'uppercase', letterSpacing: '.05em', background: '#fff', color: h.fg }}>{h.label}</span>
+                  <b style={{ fontSize: '0.82rem', color: h.fg }}>{c.historial.titulo}</b>
+                </div>
+                {c.historial.detalle && <div style={{ fontSize: '0.77rem', color: h.fg, opacity: .88, marginTop: 5, lineHeight: 1.55 }}>{c.historial.detalle}</div>}
+              </div>
+            );
+          })()}
+
           {/* ── Etapa · se mueve sola ── */}
           <div style={D.cardM}>
             <div style={D.h}>
@@ -181,22 +199,28 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
               {RUTA_VISIBLE.map((k, i) => {
                 const idx = RUTA_VISIBLE.indexOf(evaluacion?.etapa as Etapa);
                 const perdido = evaluacion?.etapa === 'perdido';
-                const est = perdido ? 'off' : i < idx ? 'ok' : i === idx ? 'now' : 'off';
+                const paso = !!evaluacion?.hitos?.[k];
+                // Solo se palomea lo que OCURRIÓ. Un peldaño anterior que nunca
+                // pasó se dibuja punteado: el lead se lo saltó, y decir que
+                // pasó sería inventar su historia.
+                const est = perdido ? 'off' : paso ? 'ok' : i === idx ? 'now' : i < idx ? 'saltado' : 'off';
                 const col = est === 'ok' ? '#4FBF95' : est === 'now' ? '#9B8CFA' : '#f1f0f5';
                 // El peldaño que un humano adelantó se marca: así se distingue
                 // lo que pasó de lo que alguien dijo que pasó.
                 const aMano = evaluacion?.manual === k && evaluacion?.porHechos !== k;
                 return (
                   <div key={k} style={{ flex: 1, textAlign: 'center', position: 'relative', minWidth: 0 }}>
-                    {i > 0 && <span style={{ position: 'absolute', top: 13, left: '-50%', width: '100%', height: 2, background: est === 'off' ? '#f1f0f5' : '#cdeadd' }} />}
+                    {i > 0 && <span style={{ position: 'absolute', top: 13, left: '-50%', width: '100%', height: 2, background: est === 'off' || est === 'saltado' ? '#f1f0f5' : '#cdeadd' }} />}
                     <div style={{
                       position: 'relative', width: 26, height: 26, borderRadius: 99, margin: '0 auto',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
-                      background: est === 'ok' ? col : '#fff', border: `2px solid ${col}`,
-                      color: est === 'ok' ? '#fff' : est === 'now' ? '#5B4BD6' : '#b3afbd',
+                      background: est === 'ok' ? col : '#fff',
+                      border: est === 'saltado' ? '2px dashed #ded9ea' : `2px solid ${col}`,
+                      color: est === 'ok' ? '#fff' : est === 'now' ? '#5B4BD6' : '#c9c4dc',
                     }}>{est === 'ok' ? '✓' : i + 1}</div>
                     <div style={{ fontSize: '0.68rem', fontWeight: est === 'now' ? 800 : 700, marginTop: 6, color: est === 'ok' ? '#3f3b4d' : est === 'now' ? '#5B4BD6' : '#a5a2af' }}>{ETAPA_LABEL[k]}</div>
                     {aMano && <div style={{ fontSize: '0.58rem', color: '#b3afbd', marginTop: 1 }}>a mano</div>}
+                    {est === 'saltado' && <div style={{ fontSize: '0.58rem', color: '#c9c4dc', marginTop: 1 }}>se saltó</div>}
                   </div>
                 );
               })}

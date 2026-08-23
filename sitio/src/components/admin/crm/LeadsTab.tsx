@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
 import LeadDrawer from './LeadDrawer';
+import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
@@ -55,6 +56,7 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 // lo que todavía se puede convertir.
 const VISTAS = [
   { v: 'abiertos', l: 'Abiertos' },
+  { v: 'conocidos', l: 'Ya los conocíamos' },
   { v: 'lead', l: 'Nuevos' },
   { v: 'lead_calificado', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
@@ -125,7 +127,7 @@ export default function LeadsTab() {
   }
 
   const cargar = () => {
-    fetch('/api/crm/contacts?limit=500').then(r => r.json())
+    fetch('/api/crm/contacts?limit=500&con_etapa=1').then(r => r.json())
       .then(j => setRows(j.data || j.contacts || [])).catch(() => setRows([]));
     fetch('/api/crm/leads/resumen?dias=30').then(r => r.json()).then(setRes).catch(() => {});
   };
@@ -134,6 +136,10 @@ export default function LeadsTab() {
   const lista = useMemo(() => {
     let r = (rows || []).filter((c: any) => c.lifecycle_stage !== 'cliente' || etapa === 'todos');
     if (etapa === 'abiertos') r = r.filter((c: any) => ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage));
+    // Leads que ya son clientes, que lo fueron, o cuya empresa se llama igual
+    // que una que sí paga. Se agrupan aparte porque no se trabajan como un
+    // lead frío: uno hay que reetiquetarlo y otro hay que reactivarlo.
+    else if (etapa === 'conocidos') r = r.filter((c: any) => !!c.historial);
     else if (etapa !== 'todos') r = r.filter((c: any) => c.lifecycle_stage === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
@@ -178,6 +184,7 @@ export default function LeadsTab() {
     const t = busca.trim().toLowerCase();
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
     const cae = (c: any, k: string) => k === 'todos' ? true
+      : k === 'conocidos' ? !!c.historial
       : k === 'abiertos' ? ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage)
       : c.lifecycle_stage === k;
     const out: Record<string, number> = {};
@@ -467,6 +474,10 @@ export default function LeadsTab() {
                         <div style={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => setVerContacto(c.id)}>
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                         </div>
+                        {c.historial && (() => {
+                          const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
+                          return <span title={c.historial.titulo} style={{ display: 'inline-block', marginTop: 3, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: h.bg, color: h.fg }}>{h.label}</span>;
+                        })()}
                         {c.puesto && <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.puesto}</div>}
                       </td>
                       <td style={S.td}>{c.companies?.nombre || <span style={{ color: '#c9c7d0' }}>—</span>}</td>

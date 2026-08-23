@@ -53,8 +53,24 @@ const esAsistio = (e?: string | null) => String(e || '').toLowerCase().startsWit
  * que no es "ganado", manda `perdido` — ahí sí retrocede, porque cerrar es una
  * decisión humana explícita y no un descuido.
  */
-export function etapaDeLead(h: HechosLead): { etapa: Etapa; porHechos: Etapa; manual: Etapa | null } {
-  if (h.lifecycle_stage === 'cliente') return { etapa: 'cliente', porHechos: 'cliente', manual: null };
+export function etapaDeLead(h: HechosLead): { etapa: Etapa; porHechos: Etapa; manual: Etapa | null; hitos: Partial<Record<Etapa, boolean>> } {
+  // Qué peldaños OCURRIERON de verdad, uno por uno. Un lead puede saltarse
+  // pasos —hay quien llega directo a cotización sin que nadie lo llame— y un
+  // stepper que palomea todo lo anterior estaría inventando una historia que no
+  // pasó. Caso real: una lead con dos cotizaciones, cero llamadas y cero demos
+  // aparecía con "Contactado" y "Demo hecha" en verde.
+  const reus0 = h.reuniones || [];
+  const hitos: Partial<Record<Etapa, boolean>> = {
+    nuevo: true,
+    contactado: (h.toques || 0) > 0 || !!h.last_contact_at,
+    calificado: h.calificacion === 'bueno',
+    agendado: reus0.length > 0,
+    demo_hecha: reus0.some(r => esAsistio(r.estado)),
+    cotizado: (h.cotizaciones || 0) > 0,
+    negociando: h.etapa_manual === 'negociando',
+    cliente: h.lifecycle_stage === 'cliente',
+  };
+  if (h.lifecycle_stage === 'cliente') return { etapa: 'cliente', porHechos: 'cliente', manual: null, hitos };
 
   let porHechos: Etapa = 'nuevo';
   const sube = (e: Etapa) => { if (ORDEN[e] > ORDEN[porHechos]) porHechos = e; };
@@ -73,7 +89,7 @@ export function etapaDeLead(h: HechosLead): { etapa: Etapa; porHechos: Etapa; ma
   if (h.lifecycle_stage === 'churned' || h.calificacion === 'no_califica' || (h.desenlace && h.desenlace !== 'ganado')) {
     etapa = 'perdido';
   }
-  return { etapa, porHechos, manual };
+  return { etapa, porHechos, manual, hitos };
 }
 
 /** Lo que falta para el siguiente peldaño, en una frase. Sirve para que la
