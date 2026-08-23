@@ -109,3 +109,8 @@ insert into crm_lifecycle_etapas (id, nombre, emoji, color, orden, tipo) values
   ('churned','Perdido','🌙','#C0554E',7,'perdida')
 on conflict (id) do nothing;
 alter table crm_vistas add column if not exists compartida_con uuid[];
+-- El CHECK fijo impedía etapas personalizadas. La validación pasa a FK contra el catálogo.
+alter table contacts drop constraint if exists contacts_lifecycle_stage_check;
+alter table contacts add constraint contacts_lifecycle_stage_fk
+  foreign key (lifecycle_stage) references crm_lifecycle_etapas(id);
+update contacts set lifecycle_stage='demo_agendada_qa' where id='fe715b87-ba50-4f8b-acf7-2f6510fd2607';
