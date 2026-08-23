@@ -135,16 +135,21 @@ export async function registrarMensaje(o: {
   if (o.tipo === 'reaction') return { inserted: true, conversationId: conv.id };   // ni preview, ni no-leídos, ni activity
 
   // Solo avanza el "último mensaje" si este es más nuevo que el que ya hay.
-  const { data: prev } = await supabase.from('wa_conversaciones').select('ultimo_mensaje_at').eq('id', conv.id).maybeSingle();
+  const { data: prev } = await supabase.from('wa_conversaciones').select('ultimo_mensaje_at, ultimo_entrante_at, ultimo_saliente_at').eq('id', conv.id).maybeSingle();
   const cuando = enviadoAt || new Date().toISOString();
   const esViejo = !!(prev?.ultimo_mensaje_at && new Date(prev.ultimo_mensaje_at) > new Date(cuando));
+  // Los relojes por dirección avanzan SIEMPRE que este mensaje sea más nuevo
+  // que el último de su dirección (aunque no sea el último del hilo).
+  const campoDir = o.direccion === 'entrante' ? 'ultimo_entrante_at' : 'ultimo_saliente_at';
+  const prevDir = (prev as any)?.[campoDir];
+  if (!prevDir || new Date(prevDir) < new Date(cuando)) await supabase.from('wa_conversaciones').update({ [campoDir]: cuando }).eq('id', conv.id);
   if (o.silencioso) return { inserted: true, conversationId: conv.id };   // backfill: ni campana ni no-leídos
   if (!esViejo) await supabase.from('wa_conversaciones').update({
     ultimo_mensaje_at: cuando,
     ultimo_mensaje_texto: texto.slice(0, 200) || null,
     ultima_direccion: o.direccion,
     estado: 'active',
-    ...(o.direccion === 'entrante' ? { ultimo_entrante_at: cuando, alerta: null } : { ultimo_saliente_at: cuando }),
+    ...(o.direccion === 'entrante' ? { alerta: null } : {}),
   }).eq('id', conv.id);
 
   if (o.direccion === 'entrante') {
