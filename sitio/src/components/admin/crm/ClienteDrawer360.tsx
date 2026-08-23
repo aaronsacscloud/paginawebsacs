@@ -33,9 +33,13 @@ const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(metaWa(p)).r
 
 const D = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 } as const,
-  panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(940px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
+  // Ancho: la ficha creció (contactos, consultoría, los tres canales) y a
+  // 940 px la tabla de suscripciones se leía apretada y las pestañas ya no
+  // cabían de un vistazo. 1240 deja respirar la tabla sin tapar la lista de
+  // clientes que queda detrás.
+  panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(1240px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
   head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '16px 22px 0' },
-  // Una sola fila con scroll horizontal (9 pestañas). En desktop (940px) caben
+  // Una sola fila con scroll horizontal (8 pestañas). En desktop (1240px) caben
   // igual; nowrap no cambia nada visible y arregla el wrap en mobile.
   tabbar: { display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap' as const, overflowX: 'auto' as const, WebkitOverflowScrolling: 'touch' as const },
   // La activa se marca con FONDO, no solo con la línea, igual que en
@@ -102,7 +106,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -231,7 +235,6 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
                 </button>
-                <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'whatsapp')} onClick={() => irA('whatsapp')}>WhatsApp</button>
                 <button style={D.tab(tab === 'soporte')} onClick={() => irA('soporte')}>
                   Soporte
@@ -264,8 +267,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'resumen' && !co?.sacs_account && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
-              {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
+              {/* Las señales de venta encabezan Consultoría: son las IDEAS de qué
+                  ofrecerle, que es de lo que trata acompañar a la cuenta. Vivían en
+                  Oportunidades, que ya no existe como pestaña. */}
+              {tab === 'mejoras' && <SenalesVenta co={co} subs={subs} />}
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
               {tab === 'whatsapp' && <TabWhatsApp360 companyId={companyId} />}
@@ -1426,6 +1432,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // dentro de un contenedor con desplazamiento horizontal, y eso recorta
   // cualquier panel absoluto — por eso solo se veía la primera opción.
   const [menuSub, setMenuSub] = useState<{ id: string; x: number; y: number } | null>(null);
+  // Menú "+ Acciones". Se ancla FIJO igual que el de cada fila y por lo mismo:
+  // la tarjeta se desplaza y un panel absoluto se recorta.
+  const [menuAcc, setMenuAcc] = useState<{ x: number; y: number } | null>(null);
   // Estado de cuenta. Antes salía siempre con TODAS las suscripciones; ahora se
   // elige cuáles entran, porque mandarle el total de todo a quien le estás
   // cobrando una sola invita a la pregunta equivocada.
@@ -1649,8 +1658,40 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { setEditId(null); flash('Suscripción actualizada'); reload(); }
   }
 
+  // ── Lo que genera la cuenta ──
+  // Mismas fórmulas que la ficha de Info general, a propósito: dos pantallas
+  // de la misma ficha con dos ARR distintos se leen como un error del sistema.
+  // Solo cuentan las ACTIVAS: una cancelada ya no genera nada, y sumarla
+  // pintaría un ARR que no se va a cobrar.
+  const activas = (subs || []).filter((x: any) => x.estado === 'activa');
+  const arrAct = activas.reduce((a: number, x: any) => a + Number(x.arr || 0), 0);
+  const mrrAct = activas.reduce((a: number, x: any) => a + Number(x.mrr || 0), 0);
+  // Un pago único —vitalicia o pago de una sola vez— NO es recurrencia: va
+  // aparte para que nadie lo sume al ARR. Se cuenta lo efectivamente pagado.
+  const vitalicias = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')));
+  const unicoPagado = vitalicias.reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
+
   return (
     <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
+          <div style={D.kl}>ARR de la cuenta</div>
+          <div style={{ ...D.kv, color: '#5B4BD6' }}>{arrAct > 0 ? money(arrAct) : '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{activas.length} licencia{activas.length === 1 ? '' : 's'} activa{activas.length === 1 ? '' : 's'}</div>
+        </div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}>
+          <div style={D.kl}>Equivale al mes</div>
+          <div style={{ ...D.kv, color: '#2C5FC4' }}>{mrrAct > 0 ? money(mrrAct) : '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>MRR · el anual repartido entre 12</div>
+        </div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}>
+          <div style={D.kl}>Pagos únicos</div>
+          <div style={{ ...D.kv, color: unicoPagado > 0 ? '#1E8A63' : '#1a1a1a' }}>{unicoPagado > 0 ? money(unicoPagado) : '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
+            {vitalicias.length ? `${vitalicias.length} vitalicia${vitalicias.length === 1 ? '' : 's'} · no suma al ARR` : 'no suma al ARR'}
+          </div>
+        </div>
+      </div>
       {archivosSub && (
         <ArchivosSuscripcion subId={archivosSub.id} nombre={archivosSub.nombre_plan}
           onCerrar={() => setArchivosSub(null)} onCambio={() => reload()} />
@@ -1658,39 +1699,59 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
       <div style={D.cardM}>
         {/* Encabezado con el destello morado y los botones en la escala del
             sistema: morado el que crea, contorno azul lo importante. */}
-        {/* El título arriba y las acciones en su propio renglón, arrancando en el
-            mismo borde que la tabla: con cuatro botones colgados del título, el
-            de crear se despegaba solo al segundo renglón y quedaba a media
-            altura. Así aguanta que se agreguen más. */}
+        {/* Un solo botón para TODO lo accionable. Antes eran cuatro en fila más
+            un aviso morado permanente por unificar fechas: entre el título y la
+            tabla se iban dos renglones enteros y lo importante —las licencias—
+            empezaba a media pantalla. Lo que urge no desaparece: el punto en el
+            botón lo delata y el motivo se lee dentro del menú. */}
         <div style={{ ...D.hM, marginBottom: 9 }}>Suscripciones del cliente</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button style={D.btnAzul} title="Elegir qué suscripciones entran y generar el estado de cuenta" onClick={() => setEdoCuenta('ver')}>Estado de cuenta</button>
-            {unificables.length > 0 && (
-              <button style={D.btnAzul} title="Juntar las licencias en una sola fecha de cobro"
-                onClick={() => setUnificar(unificables[0])}>Unificar fechas</button>
-            )}
-            {principal?.whatsapp && <button style={D.btnAzul} title="Elegir qué entra y mandarlo por WhatsApp" onClick={() => setEdoCuenta('wa')}>Enviar por WhatsApp</button>}
-            <button style={D.btnAzul}
-              title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
-              disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : 'Buscar en Mercado Pago'}</button>
-          </div>
+          <button style={{ ...D.btnAzul, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+            title="Estado de cuenta, unificar fechas, Mercado Pago…"
+            onClick={e => {
+              if (menuAcc) { setMenuAcc(null); return; }
+              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              const alto = 250;
+              const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
+              setMenuAcc({ x: r.left, y });
+            }}>
+            + Acciones
+            {unificables.length > 0 && <span title="Hay licencias con fechas de cobro distintas" style={{ width: 7, height: 7, borderRadius: 99, background: '#E8A838', display: 'inline-block' }} />}
+          </button>
           <button style={{ ...D.btn, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
         </div>
 
-        {unificables.map((g: any) => (
-          <div key={g.ciclo} style={{ background: '#EEECFE', border: '1px solid #ddd6fb', borderRadius: 10, padding: '9px 12px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '0.78rem', color: '#5B4BD6', lineHeight: 1.5, flex: 1, minWidth: 220 }}>
-              <b>{g.subs.length} licencias {g.ciclo === 'mensual' ? 'mensuales' : 'anuales'} con {g.anclas.length} fechas distintas.</b>{' '}
-              {g.propuesta
-                ? (g.propuesta.estado === 'autorizada'
-                  ? 'El cliente ya autorizó juntarlas: falta aplicarlo.'
-                  : 'Ya hay una propuesta enviada, esperando su autorización.')
-                : 'Se pueden juntar en un solo cobro: lo que ya pagó de más se le abona.'}
+        {menuAcc && (
+          <>
+            <div onClick={() => setMenuAcc(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
+            <div style={{ position: 'fixed', left: menuAcc.x, top: menuAcc.y, zIndex: 1401, width: 290, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
+              <button style={D.mi} onClick={() => { setMenuAcc(null); setEdoCuenta('ver'); }}>
+                Estado de cuenta<span style={D.miSub}>Eliges qué licencias entran</span>
+              </button>
+              {principal?.whatsapp && (
+                <button style={D.mi} onClick={() => { setMenuAcc(null); setEdoCuenta('wa'); }}>
+                  Enviarlo por WhatsApp<span style={D.miSub}>A {principal.nombre || 'el contacto principal'}</span>
+                </button>
+              )}
+              {unificables.length > 0 && <div style={D.miSep} />}
+              {unificables.map((g: any) => (
+                <button key={g.ciclo} style={D.mi} onClick={() => { setMenuAcc(null); setUnificar(g); }}>
+                  Unificar fechas de cobro
+                  <span style={D.miSub}>
+                    {g.subs.length} licencias {g.ciclo === 'mensual' ? 'mensuales' : 'anuales'} con {g.anclas.length} fechas distintas · {g.propuesta
+                      ? (g.propuesta.estado === 'autorizada' ? 'ya autorizó, falta aplicarlo' : 'propuesta enviada, esperando')
+                      : 'lo que pagó de más se le abona'}
+                  </span>
+                </button>
+              ))}
+              <div style={D.miSep} />
+              <button style={D.mi} disabled={buscandoMP} onClick={() => { setMenuAcc(null); buscarEnMP(); }}>
+                {buscandoMP ? 'Buscando…' : 'Buscar en Mercado Pago'}
+                <span style={D.miSub}>Cobros suyos que no estén vinculados aquí</span>
+              </button>
             </div>
-            <button style={{ ...D.btnAzul, fontSize: '0.76rem' }} onClick={() => setUnificar(g)}>Unificar fechas</button>
-          </div>
-        ))}
+          </>
+        )}
 
         {mpHallado && (
           <div style={{ background: '#FAFAF8', border: '1px solid #e6e3dc', borderRadius: 10, padding: 12, marginBottom: 12 }}>
@@ -1958,6 +2019,10 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           )}
         </div>
       </div>
+
+      {/* Lo cotizado y lo vendido, debajo de las licencias: es el ANTES de cada
+          una de ellas. Era la pestaña Oportunidades, que se quitó. */}
+      <SeccionCotizaciones companyId={companyId} principal={principal} flash={flash} reload={reload} />
 
       {unificar && (
         <UnificarFechas grupo={unificar} companyId={companyId} principalWa={principal?.whatsapp}
@@ -3141,11 +3206,53 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
   );
 }
 
-/* ─────────── 🎯 Oportunidades del cliente (deals) ─────────── */
-function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }: any) {
+/* ─────────── Qué venderle: las ideas que salen de su uso ───────────
+ *
+ * Vivía al final de Oportunidades. Esa pestaña se quitó y sus dos mitades se
+ * repartieron por lo que SON: lo cotizado y lo vendido se fue a Suscripciones
+ * —ahí está el dinero— y estas ideas se vinieron a Consultoría, que es donde
+ * se decide qué proponerle a la cuenta.
+ */
+function SenalesVenta({ co, subs = [] }: any) {
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
+  const [verTodas, setVerTodas] = useState(false);
+  // Si no hay señales el bloque no aparece: una tarjeta que dice "sin señales"
+  // ocupa lo mismo que una con contenido y no enseña nada.
+  if (!senales.length) return null;
+  return (
+    <div style={D.cardM}>
+      <div style={D.hM}>Qué venderle y atender<span style={D.hNota}>del uso real de su cuenta en SACS</span></div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {(verTodas ? senales : senales.slice(0, 2)).map((s: any, i: number) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
+            <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
+              <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
+              <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
+            </div>
+          </div>
+        ))}
+        {senales.length > 2 && (
+          <button onClick={() => setVerTodas(v => !v)}
+            style={{ width: '100%', border: '1px dashed #ddd6fb', background: '#faf8ff', borderRadius: 10, padding: 9, fontSize: '0.76rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {verTodas ? 'Ver menos' : `Ver ${senales.length - 2} señal${senales.length - 2 === 1 ? '' : 'es'} más`}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Cotizado y vendido: vive DENTRO de Suscripciones ───────────
+ *
+ * Antes era la pestaña "Oportunidades". Se mudó aquí porque es lo mismo que
+ * las licencias: dinero de esta cuenta —lo que se le cotizó, lo que aceptó y
+ * los pagos únicos que salieron de ahí—. Separado, había que saltar de pestaña
+ * para entender de dónde venía una suscripción.
+ */
+function SeccionCotizaciones({ companyId, principal, flash, reload }: any) {
   const [deals, setDeals] = useState<any[] | null>(null);
-  const [verTodasSenales, setVerTodasSenales] = useState(false);
   const [stages, setStages] = useState<any[]>([]);
   const [busyId, setBusyId] = useState('');
   const [showNew, setShowNew] = useState(false);
@@ -3227,7 +3334,7 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
     flash('Cotización creada'); cargar(); reload?.();
   }
 
-  if (deals === null) return <Cargando texto="Cargando oportunidades…" />;
+  if (deals === null) return <Cargando texto="Cargando lo cotizado…" />;
 
   const abiertas = deals.filter(d => !isWon(d.stage) && !isLost(d.stage));
   const pipeline = abiertas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
@@ -3245,8 +3352,6 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
     if (u > 0) return u;
     return Number(d.mrr ?? d.valor_mensual ?? 0) > 0 ? 0 : Number(d.valor_total || 0);
   };
-  const mrrGanado = ganadas.reduce((a, d) => a + mrrDe(d), 0);
-  const unicoGanado = ganadas.reduce((a, d) => a + unicoDe(d), 0);
   // ── Cuántas se pagan y cuántas se rechazan ──
   // Sobre las RESUELTAS: las abiertas todavía no ganaron ni perdieron y
   // meterlas hundiría los dos porcentajes sin que haya pasado nada.
@@ -3261,13 +3366,11 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
       {/* El botón encabeza la pestaña, no compite con las tarjetas: metido
           entre ellas se leía como una más y quedaba a distinta altura. */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ ...D.hM, marginBottom: 0, flex: 1 }}>Oportunidades del cliente</div>
+        <div style={{ ...D.hM, marginBottom: 0, flex: 1 }}>Cotizado y vendido<span style={D.hNota}>de aquí salen las suscripciones de arriba</span></div>
         <button style={D.btn} onClick={() => setEligiendo(true)}>+ Nueva oportunidad</button>
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
         <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>MRR / ARR ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>Pago único ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(unicoGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>no suma al ARR</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}><div style={D.kl}>Se pagan</div><div style={D.kv}>{resueltas ? pctGana + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{ganadas.length} de {resueltas} resueltas</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72' }}><div style={D.kl}>Rechazadas</div><div style={{ ...D.kv, color: resueltas && pctPierde > 0 ? '#C0554E' : '#1a1a1a' }}>{resueltas ? pctPierde + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{perdidas.length}{montoPerdido > 0 ? ' · ' + money(montoPerdido) : ''}</div></div>
       </div>
@@ -3303,7 +3406,7 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
       )}
 
       {deals.length === 0 ? (
-        <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades.</div>
+        <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades registradas.</div>
       ) : deals.map((d: any) => {
         const st = stageBy[d.stage];
         const won = isWon(d.stage), lost = isLost(d.stage);
@@ -3353,40 +3456,6 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
           onCreated={() => { setShowNew(false); cargar(); reload?.(); }}
         />
       )}
-      {/* ── Qué venderle y atender ──
-          Vive en Oportunidades y no en Actividad: las señales salen del uso
-          real de la cuenta y todas terminan en lo mismo —venderle algo o
-          atenderlo—. Van DEBAJO de las oportunidades ya abiertas: primero lo
-          que está en curso, después lo que podría abrirse.
-          Si no hay señales el bloque no aparece: una tarjeta que dice "sin
-          señales" ocupa lo mismo que una con contenido y no enseña nada. */}
-      {senales.length > 0 && (
-        <div style={D.cardM}>
-          <div style={D.hM}>Qué venderle y atender<span style={D.hNota}>del uso real de su cuenta en SACS</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(verTodasSenales ? senales : senales.slice(0, 2)).map((s: any, i: number) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
-                <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
-                </div>
-              </div>
-            ))}
-            {/* Con cuatro o más, la sección empujaba la lista de oportunidades
-                fuera de la pantalla. Son contexto para leer, no una lista para
-                recorrer. */}
-            {senales.length > 2 && (
-              <button onClick={() => setVerTodasSenales(v => !v)}
-                style={{ width: '100%', border: '1px dashed #ddd6fb', background: '#faf8ff', borderRadius: 10, padding: 9, fontSize: '0.76rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
-                {verTodasSenales ? 'Ver menos' : `Ver ${senales.length - 2} señal${senales.length - 2 === 1 ? '' : 'es'} más`}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
