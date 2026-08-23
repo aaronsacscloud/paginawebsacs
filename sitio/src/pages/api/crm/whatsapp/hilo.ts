@@ -60,11 +60,17 @@ export const GET: APIRoute = async ({ url }) => {
     convsEmail = data || [];
   }
   const correos: any[] = [];
+  // autor de email_messages es UUID de team_members: se resuelve a nombre aquí.
+  const { data: equipo } = await supabase.from('team_members').select('id, nombre');
+  const nombreDe = (uid?: string | null) => (equipo || []).find(m => m.id === uid)?.nombre || null;
   for (const ce of convsEmail) {
     const { data: msjs } = await supabase.from('email_messages')
       .select('id, direccion, de_email, para_email, asunto, cuerpo_texto, adjuntos, autor, created_at')
       .eq('conversation_id', ce.id).order('created_at', { ascending: true }).limit(200);
-    correos.push({ conversacion: { id: ce.id, asunto: ce.asunto, estado: ce.estado, email: ce.email }, mensajes: msjs || [] });
+    correos.push({
+      conversacion: { id: ce.id, asunto: ce.asunto, estado: ce.estado, email: ce.email },
+      mensajes: (msjs || []).map(m => ({ ...m, autor: nombreDe(m.autor) })),
+    });
   }
 
   // ── Mensajes de WhatsApp + notas + eventos (solo con ancla de WhatsApp) ──

@@ -92,14 +92,17 @@ export const POST: APIRoute = async ({ request }) => {
   });
   if (!r.enviado) return json({ error: 'No se pudo enviar: ' + (r.detalle || r.motivo) }, 400);
 
-  await supabase.from('email_messages').insert({
+  const { error: eMsj } = await supabase.from('email_messages').insert({
     conversation_id: convEmail.id, direccion: 'saliente',
     de_email: t.from_email, para_email: email, asunto,
     cuerpo_texto: texto, cuerpo_html: html, send_id: r.sendId,
     in_reply_to: ultimo?.message_id || null,
     referencias: [ultimo?.referencias, ultimo?.message_id].filter(Boolean).join(' ') || null,
-    autor: user?.nombre || user?.email || null,
+    // OJO: autor es UUID (team_members.id), no nombre — un texto aquí revienta
+    // el insert en silencio (22P02). Encontrado en el QA v5.
+    autor: user?.id || null,
   });
+  if (eMsj) console.error('[enviar-correo] espejo del saliente falló:', eMsj.message);
   await supabase.from('email_conversations')
     .update({ leida: true, ultimo_mensaje_at: new Date().toISOString() }).eq('id', convEmail.id);
   if (contactId) {
