@@ -887,6 +887,13 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
      ocho cajas de texto aunque solo vinieras a ver quién es el cliente, y eso
      es lo que la hacía pesada de mirar. */
   const [editando, setEditando] = useState(false);
+  /* Los campos dinámicos (perfil del negocio) traían su PROPIO botón
+     "Guardar información", así que editando la ficha salían dos botones de
+     guardar y había que adivinar cuál guardaba qué. Ahora el padre lleva sus
+     valores y un solo botón guarda las dos cosas. `semilla` fuerza a
+     remontarlos al descartar, para que vuelvan a lo guardado. */
+  const [propsF, setPropsF] = useState<Record<string, any> | null>(null);
+  const [semilla, setSemilla] = useState(0);
   // Ciudades que ya se usaron: autocompletar con lo real evita que la misma
   // ciudad se escriba de cuatro formas, sin tener que mantener un catálogo.
   const [ciudadesUsadas, setCiudadesUsadas] = useState<string[]>([]);
@@ -900,27 +907,44 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
   // media captura.
   const original = useRef<any>(null);
   if (!original.current) original.current = { ...f };
-  const dirty = JSON.stringify(f) !== JSON.stringify(original.current);
+  const propsSucio = propsF != null && JSON.stringify(propsF) !== JSON.stringify(co.propiedades || {});
+  const dirty = JSON.stringify(f) !== JSON.stringify(original.current) || propsSucio;
   const [guardado, setGuardado] = useState(false);
   useEffect(() => { setSucio?.((s: any) => ({ ...s, info: dirty })); }, [dirty]);
 
   async function guardar() {
     if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
     setSaving(true);
+    // Los datos de la empresa y sus campos de perfil viven en dos tablas y en
+    // dos endpoints, pero para quien captura son UNA pantalla: un solo botón.
     const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
     const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) { setSaving(false); alert(j.error || 'No se pudo guardar.'); return; }
+    const huboProps = propsSucio && !!propsF;
+    if (huboProps) {
+      const rp = await fetch('/api/crm/propiedades?valores=1', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entidad: 'company', entidad_id: co.id, valores: propsF }),
+      });
+      const jp = await rp.json().catch(() => ({}));
+      if (!rp.ok || jp.error) { setSaving(false); alert(jp.error || 'Los datos de la empresa se guardaron, pero el perfil del negocio no.'); return; }
+    }
     setSaving(false);
-    if (!r.ok || j.error) { alert(j.error || 'No se pudo guardar.'); return; }
     original.current = { ...f };
     setSucio?.((s: any) => ({ ...s, info: false }));
     setGuardado(true);
     setTimeout(() => setGuardado(false), 2600);
+    /* Recargar la ficha entera se siente como si te sacara de la pantalla, así
+       que solo se hace cuando de verdad hace falta: los datos de la empresa ya
+       se ven de `f`, pero los del perfil se leen de `co.propiedades` y sin
+       recargar el modo lectura seguiría enseñando lo viejo. */
+    if (huboProps) { setPropsF(null); reload(); }
   }
   const barraGuardado = (dirty || guardado) ? (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12, paddingTop: 11, borderTop: dirty ? '1px dashed #e6ddfa' : '1px solid #eaf6f1' }}>
       {dirty ? (<>
         <span style={{ fontSize: '0.74rem', color: '#5B4BD6', fontWeight: 700, flex: 1 }}>Cambios sin guardar</span>
-        <button style={D.btnG} onClick={() => { setF({ ...original.current }); }}>Descartar</button>
+        <button style={D.btnG} onClick={() => { setF({ ...original.current }); setPropsF(null); setSemilla(x => x + 1); }}>Descartar</button>
         <button disabled={saving} onClick={guardar}
           style={{ border: 'none', borderRadius: 9, padding: '7px 15px', background: '#9B8CFA', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
           {saving ? 'Guardando…' : 'Guardar cambios'}
@@ -1068,7 +1092,8 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
                 </div>
               </div>
               <div style={separador}>
-                <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} grupos={['Perfil del negocio']} onGuardado={reload} />
+                <CamposFicha key={'perfil-' + semilla} entidad="company" entidadId={co.id} valores={co.propiedades}
+                  grupos={['Perfil del negocio']} sinBoton alCambiar={setPropsF} />
               </div>
               {barraGuardado}
               {!dirty && (
@@ -1355,6 +1380,18 @@ function AccederCuenta({ account, uid, label }: { account: string; uid?: string;
 /* ─────────── 👤 Contactos (multi-contacto: lista + alta + principal) ─────────── */
 function TabContactos({ companyId, contactos, reload, flash, compacto = false }: any) {
   const [editId, setEditId] = useState<string | null>(null);
+  /* Un menú en vez de cuatro botones por renglón. Con cuatro, la columna de
+     acciones pesaba más que el nombre, y encima NO eran los mismos en cada
+     fila —la principal no puede "hacerse principal"— así que los botones
+     bailaban de posición y había que releerlos. Es el mismo ⋮ de las
+     suscripciones: un solo gesto en toda la ficha. */
+  const [menuId, setMenuId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!menuId) return;
+    const cerrar = () => setMenuId(null);
+    window.addEventListener('click', cerrar);
+    return () => window.removeEventListener('click', cerrar);
+  }, [menuId]);
   const [f, setF] = useState<any>({});
   const [adding, setAdding] = useState(false);
   const [nf, setNf] = useState<any>({ nombre: '', email: '', whatsapp: '', telefono: '', rol: '' });
@@ -1490,10 +1527,38 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
                   {c.rol && <span style={{ ...D.badge, background: '#f3f4f6', color: '#555', marginLeft: 6 }}>{c.rol}</span>}
                   <div style={{ fontSize: '0.76rem', color: '#888' }}>{c.email || 'sin correo'} · {c.whatsapp || c.telefono || 'sin teléfono'}</div>
                 </div>
-                {c.whatsapp && <a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A' }}>💬</a>}
-                <button style={D.btnG} onClick={() => { setEditId(c.id); setF({ nombre: c.nombre || '', email: c.email || '', whatsapp: c.whatsapp || '', telefono: c.telefono || '', rol: c.rol || '' }); }}>✏️ Editar</button>
-                {!c.es_principal && !sinMigracion && <button style={D.btnG} onClick={() => marcarPrincipal(c)}>★ Hacer principal</button>}
-                {contactos.length > 1 && <button style={{ ...D.btnG, color: '#b93333' }} onClick={() => quitar(c)}>Quitar</button>}
+                <div style={{ position: 'relative' }}>
+                  <button style={{ ...D.btnG, padding: '5px 10px' }} title="Acciones"
+                    onClick={e => { e.stopPropagation(); setMenuId(menuId === c.id ? null : c.id); }}>⋮</button>
+                  {menuId === c.id && (
+                    <div onClick={e => e.stopPropagation()}
+                      style={{ position: 'absolute', right: 0, top: 32, zIndex: 30, minWidth: 218, background: '#fff', border: '1px solid #ececec', borderRadius: 11, boxShadow: '0 8px 26px rgba(36,29,67,.16)', padding: 5 }}>
+                      {c.whatsapp && (
+                        <a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.mi, textDecoration: 'none' }} onClick={() => setMenuId(null)}>
+                          Escribir por WhatsApp<span style={D.miSub}>{c.whatsapp}</span>
+                        </a>
+                      )}
+                      {c.email && (
+                        <button style={D.mi} onClick={() => { navigator.clipboard?.writeText(c.email); setMenuId(null); flash('Correo copiado'); }}>
+                          Copiar correo<span style={D.miSub}>{c.email}</span>
+                        </button>
+                      )}
+                      {(c.whatsapp || c.email) && <div style={D.miSep} />}
+                      <button style={D.mi} onClick={() => { setMenuId(null); setEditId(c.id); setF({ nombre: c.nombre || '', email: c.email || '', whatsapp: c.whatsapp || '', telefono: c.telefono || '', rol: c.rol || '' }); }}>Editar datos</button>
+                      {!c.es_principal && !sinMigracion && (
+                        <button style={D.mi} onClick={() => { setMenuId(null); marcarPrincipal(c); }}>
+                          Hacer principal<span style={D.miSub}>es a quien se le escribe por omisión</span>
+                        </button>
+                      )}
+                      {contactos.length > 1 && (<>
+                        <div style={D.miSep} />
+                        <button style={{ ...D.mi, color: '#C0554E' }} onClick={() => { setMenuId(null); quitar(c); }}>
+                          Quitar de este cliente<span style={D.miSub}>no se borra del CRM</span>
+                        </button>
+                      </>)}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

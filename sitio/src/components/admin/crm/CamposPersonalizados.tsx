@@ -293,7 +293,7 @@ export default function CamposConfig({ entidad = 'company', sinTitulo }: { entid
 }
 
 /* ─────────── En la ficha del cliente ─────────── */
-export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardado, grupos, soloLectura }: {
+export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardado, grupos, soloLectura, sinBoton, alCambiar }: {
   entidad?: 'company' | 'deal' | 'subscription' | 'contact';
   entidadId: string;
   valores?: Record<string, any> | null;
@@ -305,6 +305,12 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
   /** Pinta los valores como texto, no como formulario. Una ficha llena de
    *  cajas vacías se lee como un formulario a medio llenar. */
   soloLectura?: boolean;
+  /** Sin su propio botón de guardar: quien lo embebe ya tiene uno. Dos botones
+   *  de "guardar" en la misma pantalla obligan a adivinar cuál guarda qué. */
+  sinBoton?: boolean;
+  /** Reporta los valores al padre en cada tecla, para que ese único botón
+   *  pueda guardar también estos campos. */
+  alCambiar?: (v: Record<string, any>) => void;
 }) {
   const { props: todas } = useCampos(entidad);
   const props = grupos && grupos.length
@@ -317,7 +323,10 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
 
   useEffect(() => { setV(valores || {}); setSucio(false); }, [valores, entidadId]);
 
-  const set = (k: string, val: any) => { setV(p => ({ ...p, [k]: val })); setSucio(true); };
+  const set = (k: string, val: any) => {
+    setV(p => { const n = { ...p, [k]: val }; alCambiar?.(n); return n; });
+    setSucio(true);
+  };
 
   async function guardar() {
     setBusy(true);
@@ -451,10 +460,12 @@ export function CamposFicha({ entidad = 'company', entidadId, valores, onGuardad
           </div>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button style={{ ...E.btn, opacity: sucio ? 1 : 0.45 }} disabled={!sucio || busy} onClick={guardar}>{busy ? 'Guardando…' : 'Guardar información'}</button>
-        {msg && <span style={{ fontSize: '0.78rem', color: '#1A8F7A' }}>{msg}</span>}
-      </div>
+      {!sinBoton && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button style={{ ...E.btn, opacity: sucio ? 1 : 0.45 }} disabled={!sucio || busy} onClick={guardar}>{busy ? 'Guardando…' : 'Guardar información'}</button>
+          {msg && <span style={{ fontSize: '0.78rem', color: '#1A8F7A' }}>{msg}</span>}
+        </div>
+      )}
     </div>
   );
 }
