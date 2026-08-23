@@ -10,6 +10,8 @@ import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { isPartner } from '../../../lib/scheduling/scope';
 import { alertasInasistencia, ESTADOS } from '../../../lib/crm/reuniones';
+import { fechasDeSerie, revisarRegla, MAX_SESIONES, type ReglaSerie } from '../../../lib/scheduling/recurrencia';
+import { createCalendarEvent } from '../../../lib/google-calendar';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -149,6 +151,22 @@ export const POST: APIRoute = async ({ request }) => {
   fin.setMinutes(fin.getMinutes() + dur);
   const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
+  /* ── ¿Una o una serie? ────────────────────────────────────────────────
+     La regla se expande AQUÍ y cada sesión nace como su propia fila: así
+     conserva su estado, su minuta y su evento de Google, y cancelar una no
+     arrastra a las demás. */
+  let fechas = [fecha];
+  let regla: ReglaSerie | null = null;
+  if (b?.repeticion) {
+    const mal = revisarRegla(b.repeticion);
+    if (mal) return json({ error: mal }, 400);
+    regla = b.repeticion as ReglaSerie;
+    fechas = fechasDeSerie(fecha, regla);
+    if (!fechas.length) return json({ error: 'Esa regla no genera ninguna fecha.' }, 400);
+    if (fechas.length > MAX_SESIONES) fechas = fechas.slice(0, MAX_SESIONES);
+  }
+  const serieId = fechas.length > 1 ? crypto.randomUUID() : null;
+
   const fila: any = {
     event_type_id: eventTypeId,
     host_id: b?.host_id || user.id,
@@ -169,9 +187,66 @@ export const POST: APIRoute = async ({ request }) => {
     origen: 'crm',
     estado_hist: [{ estado: ESTADOS[String(b?.estado || '')] ? String(b.estado) : 'agendada', at: new Date().toISOString(), por: user.nombre || user.email || 'CRM' }],
   };
-  const { data: creada, error } = await supabase.from('bookings').insert(fila).select('*').single();
+  const filas = fechas.map((f, i) => ({
+    ...fila,
+    fecha: f,
+    serie_id: serieId,
+    serie_indice: serieId ? i + 1 : null,
+    serie_total: serieId ? fechas.length : null,
+    serie_regla: serieId ? regla : null,
+  }));
+
+  const { data: creadas, error } = await supabase.from('bookings').insert(filas).select('*');
   if (error) return json({ error: error.message }, 500);
-  return json({ ok: true, data: creada }, 201);
+
+  /* ── El evento en Google ──────────────────────────────────────────────
+     Este camino —capturar la reunión desde la ficha— NUNCA llamaba a Google:
+     por eso las reuniones se veían en el CRM y no en la agenda. Se crea un
+     evento POR SESIÓN (no una serie recurrente de Google) porque el CRM ya
+     trata cada sesión por separado: mover o cancelar una no debe tocar el
+     resto.
+
+     De a 5 en paralelo: 52 llamadas en fila se pasarían del tiempo de la
+     petición. Si Google falla, la reunión YA quedó guardada — se avisa cuántas
+     no se pudieron crear en vez de tirar todo. */
+  const quiereGoogle = b?.google_calendar !== false;
+  let enGoogle = 0;
+  let falloGoogle = 0;
+  if (quiereGoogle && creadas?.length) {
+    const hostId = fila.host_id;
+    const resumen = fila.asunto || tipo.nombre;
+    const desc = [fila.invitee_empresa, fila.invitee_notas].filter(Boolean).join('\n\n');
+    const iso = (f: string, hhmm: string) => `${f}T${hhmm.length === 5 ? hhmm : hhmm.slice(0, 5)}:00`;
+    for (let i = 0; i < creadas.length; i += 5) {
+      const lote = creadas.slice(i, i + 5);
+      const res = await Promise.all(lote.map(async (bk: any) => {
+        try {
+          const ev = await createCalendarEvent(hostId, {
+            summary: resumen,
+            description: desc,
+            startDateTime: iso(bk.fecha, bk.hora_inicio),
+            endDateTime: iso(bk.fecha, bk.hora_fin),
+            timezone: 'America/Mexico_City',
+            attendeeEmail: fila.invitee_email || undefined,
+          });
+          if (!ev?.eventId) return null;
+          await supabase.from('bookings')
+            .update({ google_event_id: ev.eventId, google_meet_link: ev.meetLink || bk.google_meet_link || null })
+            .eq('id', bk.id);
+          return ev.eventId;
+        } catch { return null; }
+      }));
+      res.forEach(r => { if (r) enGoogle++; else falloGoogle++; });
+    }
+  }
+
+  return json({
+    ok: true,
+    data: creadas?.[0] || null,
+    creadas: creadas?.length || 0,
+    serie_id: serieId,
+    google: { creados: enGoogle, fallidos: falloGoogle, pedido: quiereGoogle },
+  }, 201);
 };
 
 // ── PATCH: estado, grabación y minuta ───────────────────────────────────────

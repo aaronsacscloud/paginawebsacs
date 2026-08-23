@@ -1,6 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Etiquetas from './Etiquetas';
 import { CamposFicha, useCampos } from './CamposPersonalizados';
+// El MISMO cálculo que corre en el servidor: si el front adivinara las fechas
+// por su cuenta, la vista previa acabaría prometiendo días distintos a los que
+// se agendan.
+import { fechasDeSerie as previewSerie, describirSerie, MAX_SESIONES } from '../../../lib/scheduling/recurrencia';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import TabMejoras from './TabMejoras';
 import TabOutbound from './outbound/TabOutbound';
@@ -907,6 +911,13 @@ const SUCURSALES_OPTS = Array.from({ length: 50 }, (_, i) => i + 1);
 const MAS_DE_50 = 51;
 
 const PLURAL_CICLO: Record<string, string> = { anual: 'anuales', mensual: 'mensuales', vitalicia: 'vitalicias' };
+
+/** "cada miércoles · 16:00 · 5 sesiones" para el tooltip de una sesión. */
+const descripcionSerie = (r: any): string => {
+  if (!r?.serie_regla) return `Sesión ${r?.serie_indice} de ${r?.serie_total}`;
+  try { return describirSerie(r.serie_regla, r.serie_total || 1, r.hora_inicio); }
+  catch { return `Sesión ${r?.serie_indice} de ${r?.serie_total}`; }
+};
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
@@ -2930,7 +2941,11 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
             : (e === 'cancelada' || e === 'reagendada') ? { bg: '#f4f4f6', bd: '#eceaef', tx: '#8a8a92' }
             : { bg: '#faf8ff', bd: '#ede6fb', tx: '#5B4BD6' };
           return (
-            <div key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderTop: '1px solid #f5f4f8', flexWrap: 'wrap' }}>
+            <div key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0 12px', borderTop: '1px solid #f5f4f8', flexWrap: 'wrap',
+              // Las sesiones de una serie se marcan con un filo lila: en una
+              // lista ordenada por fecha, si no, se leen como reuniones sueltas
+              // que casualmente caen cada miércoles.
+              ...(r.serie_id ? { borderLeft: '3px solid #ddd6fb', paddingLeft: 11, marginLeft: -14 } : {}) }}>
               <div style={{ flex: '0 0 62px', textAlign: 'center', background: tono.bg, border: `1px solid ${tono.bd}`, borderRadius: 9, padding: '5px 0' }}>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: tono.tx, lineHeight: 1 }}>{dd}</div>
                 <div style={{ fontSize: '0.56rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.06em' }}>{mmm}</div>
@@ -2939,6 +2954,11 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                 <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>
                   {r.asunto || r.event_types?.nombre || 'Reunión'}
                   {r.event_types?.nombre && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{r.event_types.nombre.replace(/^Reunión de |^Sesión de /i, '')}</span>}
+                  {r.serie_id && r.serie_total > 1 && (
+                    <span title={descripcionSerie(r)} style={{ fontSize: '0.58rem', fontWeight: 800, background: '#f4f3f7', color: '#6b6b74', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>
+                      sesión {r.serie_indice} de {r.serie_total}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 2 }}>
                   {String(r.hora_inicio || '').slice(0, 5)}{r.hora_fin ? ` – ${String(r.hora_fin).slice(0, 5)}` : ''}
@@ -3038,6 +3058,28 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
   const nombreCon = conId === 'otro' ? otroNombre.trim() : [contacto?.nombre, contacto?.apellido].filter(Boolean).join(' ');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  /* Repetición. Arranca apagada: la mayoría de las reuniones son una y ya, y un
+     formulario que abre pidiendo una regla obliga a decir "no" cada vez. */
+  const [frec, setFrec] = useState<'no' | 'semanal' | 'quincenal' | 'mensual'>('no');
+  const [dias, setDias] = useState<number[]>([]);
+  const [modoFin, setModoFin] = useState<'n' | 'fecha'>('n');
+  const [nSes, setNSes] = useState(4);
+  const [hastaF, setHastaF] = useState('');
+  const [aGoogle, setAGoogle] = useState(true);
+  // Al elegir una frecuencia semanal, el día de la primera fecha viene marcado:
+  // es lo que el 90% de las veces se quiere y evita un clic.
+  useEffect(() => {
+    if (frec === 'no' || frec === 'mensual' || dias.length) return;
+    const [y, m, d] = fecha.split('-').map(Number);
+    if (y) setDias([new Date(y, m - 1, d).getDay()]);
+  }, [frec]);
+  const regla: any = frec === 'no' ? null : {
+    frecuencia: frec,
+    dias: frec === 'mensual' ? undefined : dias,
+    fin: modoFin === 'n' ? { tipo: 'n', n: nSes } : { tipo: 'fecha', hasta: hastaF },
+  };
+  const fechasPrevias = (frec !== 'no' && fecha && (modoFin === 'n' || hastaF))
+    ? previewSerie(fecha, regla) : [];
 
   // Los tipos llegan por fetch: si el modal se abre antes que la respuesta, el
   // useState inicial se queda vacío y "Agendar" reclama un tipo que sí existe.
@@ -3060,10 +3102,15 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
         invitee_nombre: nombreCon || null,
         invitee_email: (conId === 'otro' ? otroEmail.trim() : contacto?.email) || null,
         asunto: asunto || null, google_meet_link: meet || null,
+        repeticion: regla, google_calendar: aGoogle,
       }),
     }).then(x => x.json()).catch(() => null);
     setGuardando(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo agendar.'); return; }
+    // Que Google falle no invalida lo agendado: se dice y ya.
+    if (r.google?.pedido && r.google?.fallidos > 0) {
+      alert(`Se agendaron ${r.creadas}, pero ${r.google.fallidos} no se pudieron crear en Google Calendar.\n\nRevisa la conexión en Configuración → Reuniones → Agenda.`);
+    }
     onListo();
   }
 
@@ -3114,12 +3161,87 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
           )}
           <div style={{ marginBottom: 10 }}><div style={D.lbl}>Asunto</div>
             <input value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Revisión de avance" style={D.inputM} /></div>
+          {/* ── Se repite ────────────────────────────────────────────────
+              Antes había que capturar doce reuniones a mano para un trimestre
+              de seguimiento. La vista previa es el punto: nadie debería
+              agendar sin ver qué días exactos va a bloquear. */}
+          <div style={{ border: '1px solid #ddd6fb', background: 'linear-gradient(135deg,#EEECFE,rgba(244,168,205,.12))', borderRadius: 11, padding: '12px 13px', marginBottom: 12 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#5B4BD6', marginBottom: 9 }}>Se repite</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: frec === 'no' ? 0 : 10 }}>
+              {([['no', 'No se repite'], ['semanal', 'Cada semana'], ['quincenal', 'Cada 2 semanas'], ['mensual', 'Cada mes']] as const).map(([v, l]) => (
+                <button key={v} onClick={() => setFrec(v)}
+                  style={{ border: '1.5px solid', borderColor: frec === v ? '#9B8CFA' : '#e2e2e8', background: frec === v ? '#9B8CFA' : '#fff', color: frec === v ? '#fff' : '#555', borderRadius: 20, padding: '5px 11px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+              ))}
+            </div>
+
+            {frec !== 'no' && frec !== 'mensual' && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={D.lbl}>Los días</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {[[1, 'L'], [2, 'M'], [3, 'M'], [4, 'J'], [5, 'V'], [6, 'S'], [0, 'D']].map(([d, l]: any) => {
+                    const on = dias.includes(d);
+                    return (
+                      <button key={d} onClick={() => setDias(on ? dias.filter(x => x !== d) : [...dias, d])}
+                        style={{ width: 32, height: 32, borderRadius: '50%', border: '1.5px solid', borderColor: on ? '#9B8CFA' : '#e2e2e8', background: on ? '#9B8CFA' : '#fff', color: on ? '#fff' : '#777', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {frec !== 'no' && (<>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+                <div><div style={D.lbl}>Termina</div>
+                  <select value={modoFin} onChange={e => setModoFin(e.target.value as any)} style={D.inputM}>
+                    <option value="n">Después de…</option>
+                    <option value="fecha">En una fecha</option>
+                  </select>
+                </div>
+                <div>
+                  {modoFin === 'n'
+                    ? <><div style={D.lbl}>Reuniones</div>
+                        <input type="number" min={2} max={MAX_SESIONES} value={nSes}
+                          onChange={e => setNSes(Math.max(1, Math.min(MAX_SESIONES, Number(e.target.value) || 1)))} style={D.inputM} /></>
+                    : <><div style={D.lbl}>Hasta el día</div>
+                        <input type="date" value={hastaF} min={fecha} onChange={e => setHastaF(e.target.value)} style={D.inputM} /></>}
+                </div>
+              </div>
+
+              <div style={{ border: '1px dashed #ddd6fb', borderRadius: 10, padding: '10px 12px', background: '#fff', marginTop: 10 }}>
+                {fechasPrevias.length === 0
+                  ? <div style={{ fontSize: '0.72rem', color: '#a5a2af' }}>Elige los días y cuándo termina para ver las fechas.</div>
+                  : (<>
+                    <div style={{ fontSize: '0.71rem', fontWeight: 800, color: '#241d43', marginBottom: 7 }}>
+                      Se {fechasPrevias.length === 1 ? 'creará 1 reunión' : `crearán ${fechasPrevias.length} reuniones`}
+                    </div>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                      {fechasPrevias.map(f => (
+                        <span key={f} style={{ fontSize: '0.69rem', fontWeight: 700, background: '#EEECFE', color: '#4536BE', borderRadius: 20, padding: '3px 9px' }}>{fmtDate(f)}</span>
+                      ))}
+                    </div>
+                  </>)}
+              </div>
+            </>)}
+          </div>
+
+          {/* Este camino nunca llamaba a Google: por eso las reuniones se veían
+              en el CRM y no en la agenda. */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 11px', border: '1px solid #ececec', borderRadius: 10, background: '#f7f6fa', marginBottom: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={aGoogle} onChange={e => setAGoogle(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+            <span style={{ fontSize: '0.76rem', color: '#4a4a52' }}>
+              Crear en <b style={{ color: '#241d43' }}>Google Calendar</b> con liga de Meet
+              <span style={{ display: 'block', fontSize: '0.68rem', color: '#a5a2af' }}>e invitar a {nombreCon || 'la persona elegida'} si tiene correo</span>
+            </span>
+          </label>
+
           <div style={{ marginBottom: 12 }}><div style={D.lbl}>Liga de la reunión (opcional)</div>
             <input value={meet} onChange={e => setMeet(e.target.value)} placeholder="https://meet.google.com/…" style={D.inputM} /></div>
 
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>{guardando ? 'Agendando…' : 'Agendar'}</button>
+            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>
+              {guardando ? 'Agendando…' : (fechasPrevias.length > 1 ? `Agendar ${fechasPrevias.length} reuniones` : 'Agendar')}
+            </button>
             <button onClick={onCerrar} style={D.btnG}>Cancelar</button>
           </div>
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 9, lineHeight: 1.45 }}>
