@@ -35,7 +35,8 @@ export default function InboxPro() {
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   const [lista, setLista] = useState<any[] | null>(null);
   const [counts, setCounts] = useState<any>({});
-  const [activaId, setActivaId] = useState<string | null>(null);
+  // La conversación activa es OMNICANAL: ancla de WhatsApp y/o hilo de correo.
+  const [activa, setActiva] = useState<{ id: string; wa: string | null; email: string | null } | null>(null);
   const [hilo, setHilo] = useState<any>(null);           // { conversacion, mensajes, notas, ventana }
   const [detalleMobile, setDetalleMobile] = useState(false);
   const [nuevoChat, setNuevoChat] = useState(false);
@@ -44,7 +45,7 @@ export default function InboxPro() {
   // En móvil el hilo es una vista APILADA: el botón atrás físico debe regresar
   // a la lista, no sacar del CRM. (El Sheet del detalle ya trae su propio
   // useDrawerHistory; este cubre la transición lista→hilo.)
-  useDrawerHistory(isMobile && !!activaId, () => setActivaId(null));
+  useDrawerHistory(isMobile && !!activa, () => setActiva(null));
 
   // ── Carga ──
   const cargarLista = useCallback(async (f: Filtros) => {
@@ -54,8 +55,9 @@ export default function InboxPro() {
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
   }, []);
 
-  const cargarHilo = useCallback(async (id: string) => {
-    const j = await fetch(`/api/crm/whatsapp/hilo?id=${id}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
+  const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
+    const qs = a.wa ? `id=${a.wa}` : `email_id=${a.email}`;
+    const j = await fetch(`/api/crm/whatsapp/hilo?${qs}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (j && !j.error) setHilo(j);
   }, []);
 
@@ -75,14 +77,34 @@ export default function InboxPro() {
   }, [cargarLista]);
 
   // Hilo activo: carga + polling 5 s.
-  const activaRef = useRef(activaId); activaRef.current = activaId;
+  const activaRef = useRef(activa); activaRef.current = activa;
   useEffect(() => {
-    if (!activaId) { setHilo(null); return; }
+    if (!activa) { setHilo(null); return; }
     setHilo(null);
-    cargarHilo(activaId);
+    cargarHilo(activa);
     const t = setInterval(() => { if (!document.hidden && activaRef.current) cargarHilo(activaRef.current); }, 5000);
     return () => clearInterval(t);
-  }, [activaId, cargarHilo]);
+  }, [activa?.id, cargarHilo]);
+
+  // ── Tiempo real percibido: beep + título cuando suben los no-leídos ──
+  const prevNoLeidas = useRef<number | null>(null);
+  useEffect(() => {
+    const n = counts?.no_leidas ?? null;
+    if (n == null) return;
+    if (prevNoLeidas.current != null && n > prevNoLeidas.current) {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.frequency.value = 880; g.gain.value = 0.04;
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.12);
+      } catch { /* sin audio */ }
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+        try { new Notification('WhatsApp · CRM SACS', { body: 'Tienes mensajes nuevos en el inbox' }); } catch { /* nada */ }
+      }
+    }
+    prevNoLeidas.current = n;
+    document.title = n > 0 ? `(${n}) Inbox — Sacs CRM` : 'Sacs CRM';
+  }, [counts?.no_leidas]);
 
   // Deep-links: ?wa_conv=<id> | ?wa_search=<tel> (una sola vez).
   const deepLink = useRef(false);
@@ -93,30 +115,31 @@ export default function InboxPro() {
       const p = new URLSearchParams(window.location.search);
       const conv = p.get('wa_conv');
       const tel = p.get('wa_search');
-      if (conv) setActivaId(conv);
+      if (conv) setActiva({ id: conv, wa: conv, email: null });
       else if (tel) {
         const limpio = tel.replace(/\D/g, '');
-        const hit = lista.find((c: any) => c.telefono.replace(/\D/g, '').endsWith(limpio.slice(-10)));
-        if (hit) setActivaId(hit.id);
+        const hit = lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)));
+        if (hit) setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id });
         else setFiltros(f => ({ ...f, search: tel }));
       }
     } catch { /* SSR o URL rara: el inbox abre normal */ }
   }, [lista]);
 
-  const abrir = (id: string) => {
-    setActivaId(id);
+  const abrir = (c: any) => {
+    setActiva({ id: c.id, wa: c.wa_id ?? c.id, email: c.email_id ?? null });
     // Optimista: el badge se apaga al abrir, sin esperar el GET.
-    setLista(l => (l || []).map(c => c.id === id ? { ...c, no_leidos: 0 } : c));
+    setLista(l => (l || []).map(x => x.id === c.id ? { ...x, no_leidos: 0 } : x));
   };
 
   // ── Acciones (las ejecuta el dueño de los datos) ──
   const refrescar = () => { if (activaRef.current) cargarHilo(activaRef.current); cargarLista(filtrosRef.current); };
+  const waId = () => activaRef.current?.wa || null;
 
   const api = {
     enviarTexto: async (texto: string) => {
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: activaId, texto }),
+        body: JSON.stringify({ conversation_id: waId(), texto }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar();
       return r;
@@ -124,15 +147,15 @@ export default function InboxPro() {
     enviarPlantilla: async (plantilla: any, telefono?: string) => {
       const r = await fetch('/api/crm/whatsapp/enviar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(telefono ? { telefono, plantilla } : { conversation_id: activaId, plantilla }),
+        body: JSON.stringify(telefono ? { telefono, plantilla } : { conversation_id: waId(), plantilla }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
-      if (r.conversation_id && r.conversation_id !== activaId) setActivaId(r.conversation_id);
+      if (r.conversation_id && r.conversation_id !== activaRef.current?.wa) setActiva({ id: r.conversation_id, wa: r.conversation_id, email: null });
       refrescar();
       return r;
     },
     enviarArchivo: async (file: File) => {
       const fd = new FormData();
-      fd.append('file', file); fd.append('conversation_id', activaId || '');
+      fd.append('file', file); fd.append('conversation_id', waId() || '');
       const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', body: fd })
         .then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar();
@@ -141,7 +164,7 @@ export default function InboxPro() {
     crearNota: async (texto: string) => {
       const r = await fetch('/api/crm/whatsapp/notas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: activaId, texto }),
+        body: JSON.stringify({ conversation_id: waId(), texto }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar();
       return r;
@@ -149,7 +172,7 @@ export default function InboxPro() {
     patchConversacion: async (cambios: any) => {
       const r = await fetch('/api/crm/whatsapp/hilo', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activaId, ...cambios }),
+        body: JSON.stringify({ id: waId(), ...cambios }),
       }).then(x => x.json()).catch(e => ({ error: String(e) }));
       refrescar();
       return r;
@@ -184,14 +207,14 @@ export default function InboxPro() {
   if (isMobile) {
     return (
       <div style={{ background: '#fff', minHeight: 'calc(100dvh - 120px)' }}>
-        {!activaId ? (
+        {!activa ? (
           <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}
             activaId={null} onAbrir={abrir} mobile equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)}
             onFiltros={() => setFiltrosMobile(true)} />
         ) : (
           <>
             <Hilo hilo={hilo} equipo={equipo} api={api} mobile
-              onBack={() => setActivaId(null)} onVerDetalle={() => setDetalleMobile(true)} />
+              onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
               {conv && <PanelDetalle hilo={hilo} api={api} />}
             </Sheet>
@@ -217,8 +240,8 @@ export default function InboxPro() {
       }}>
         <RailInbox counts={counts} filtros={filtros} setFiltros={setFiltros} equipo={equipo} />
         <ListaConversaciones lista={lista} counts={counts} filtros={filtros} setFiltros={setFiltros}
-          activaId={activaId} onAbrir={abrir} equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)} />
-        {activaId ? (
+          activaId={activa?.id || null} onAbrir={abrir} equipo={equipo} yo={yo} onNuevo={() => setNuevoChat(true)} />
+        {activa ? (
           <Hilo hilo={hilo} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} />
         ) : (

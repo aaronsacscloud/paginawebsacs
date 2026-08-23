@@ -43,6 +43,12 @@ export function Avatar({ nombre, telefono, size = 38 }: { nombre?: string | null
   );
 }
 
+export const IconoCanal = ({ canal, size = 12 }: { canal: string; size?: number }) => canal === 'email' ? (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-label="correo"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="#7DA6F5" strokeWidth="2" /><path d="m4 7 8 6 8-6" stroke="#7DA6F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+) : (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-label="whatsapp"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.4-1.15A8.5 8.5 0 1 0 12 3.5z" stroke="#4FBF95" strokeWidth="2" strokeLinejoin="round" /></svg>
+);
+
 const FILTROS_MOBILE = [
   { id: 'todas', label: 'Todas' }, { id: 'mias', label: 'Mías' },
   { id: 'sin_asignar', label: 'Sin asignar' }, { id: 'no_leidas', label: 'No leídas' },
@@ -50,7 +56,7 @@ const FILTROS_MOBILE = [
 
 export default function ListaConversaciones({ lista, counts, filtros, setFiltros, activaId, onAbrir, mobile, equipo, yo, onNuevo, onFiltros }: {
   lista: any[]; counts: any; filtros: Filtros; setFiltros: (f: Filtros) => void;
-  activaId: string | null; onAbrir: (id: string) => void; mobile?: boolean; equipo: any[]; yo: any; onNuevo?: () => void; onFiltros?: () => void;
+  activaId: string | null; onAbrir: (c: any) => void; mobile?: boolean; equipo: any[]; yo: any; onNuevo?: () => void; onFiltros?: () => void;
 }) {
   // Búsqueda con debounce: el estado local escribe fluido, el filtro llega 300 ms después.
   const [q, setQ] = useState(filtros.search);
@@ -112,7 +118,7 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
           const activa = c.id === activaId;
           const asignado = equipo.find((m: any) => m.id === c.asignado_a);
           return (
-            <button key={c.id} onClick={() => onAbrir(c.id)}
+            <button key={c.id} onClick={() => onAbrir(c)}
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',
                 borderBottom: '1px solid #f7f6fa', cursor: 'pointer', fontFamily: 'inherit',
@@ -125,6 +131,9 @@ export default function ListaConversaciones({ lista, counts, filtros, setFiltros
                   <b style={{ fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.contacto?.nombre || telefonoLegible(c.telefono)}
                   </b>
+                  <span style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+                    {(c.canales || ['wa']).map((k: string) => <IconoCanal key={k} canal={k} />)}
+                  </span>
                   <span style={{ marginLeft: 'auto', fontSize: '0.64rem', color: c.no_leidos ? '#5B4BD6' : '#a5a2af', fontWeight: c.no_leidos ? 800 : 500, flexShrink: 0 }}>
                     {horaRelativa(c.ultimo_mensaje_at)}
                   </span>

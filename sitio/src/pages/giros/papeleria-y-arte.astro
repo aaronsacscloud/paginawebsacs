@@ -29,14 +29,13 @@ import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import SuiteCasos from '../../components/suite/SuiteCasos.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuitePlano from '../../components/suite/SuitePlano.astro';
-import PapLista from '../../components/giros/PapLista.astro';
 import PapModulo from '../../components/giros/PapModulo.astro';
 import SuiteProceso from '../../components/suite/SuiteProceso.astro';
 import SuitePlanes from '../../components/suite/SuitePlanes.astro';
 import CtaDudas from '../../components/CtaDudas.astro';
 import {
   seccionesPapeleria, cortinaPapeleria, casosPapeleria, pasosPapeleria, planoPapeleria,
-  listaPapeleria, variantesPapeleria, moduloPapeleria,
+  variantesPapeleria, moduloPapeleria,
 } from '../../data/giros/papeleria';
 
 const titulo = 'Suite para Papelerías';
@@ -198,14 +197,6 @@ const desc =
     sub="Estas son pantallas del sistema, con la temporada de una papelería real. Así se mueve una lista escolar: la capturas una vez, el papá la compra desde su teléfono, recoge donde le quede, y al final cuadras con el colegio lo que él cobró."
     puntos={moduloPapeleria}
     pie="El módulo se cotiza aparte del plan, y se configura contigo en abril — antes de que llegue la temporada."
-  />
-
-  <!-- ── El bloque propio: fuera de una papelería no significa nada ── -->
-  <PapLista
-    colegio="Colegio del Valle"
-    grado="Secundaria 1º"
-    alumna="Sofía"
-    renglones={listaPapeleria}
   />
 
   <!-- ── La suite entera, contada como el plano de la tienda ── -->

@@ -7,7 +7,7 @@ import { Avatar } from './ListaConversaciones';
 import { SelectorPlantilla } from './Composer';
 
 export default function NuevoChat({ lista, api, onAbrir, onClose }: {
-  lista: any[]; api: any; onAbrir: (id: string) => void; onClose: () => void;
+  lista: any[]; api: any; onAbrir: (c: any) => void; onClose: () => void;
 }) {
   const [audiencia, setAudiencia] = useState<any[] | null>(null);
   const [q, setQ] = useState('');
@@ -27,7 +27,7 @@ export default function NuevoChat({ lista, api, onAbrir, onClose }: {
 
   const elegir = (a: any) => {
     const existente = lista.find(c => c.telefono === a.telefono);
-    if (existente) { onAbrir(existente.id); onClose(); return; }
+    if (existente) { onAbrir(existente); onClose(); return; }
     setTelPlantilla(a.telefono);
   };
 

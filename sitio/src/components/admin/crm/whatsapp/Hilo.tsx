@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Cargando from '../ui/Cargando';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe } from '../../../../lib/crm/lifecycle';
-import { Avatar } from './ListaConversaciones';
+import { Avatar, IconoCanal } from './ListaConversaciones';
 import Composer from './Composer';
 
 // Palomitas SVG (sin emoji): una = enviado, dos = entregado, dos azules = leído.
@@ -37,9 +37,13 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
     if (!hilo) return [];
     const msjs = (hilo.mensajes || []).map((m: any) => ({ ...m, _clase: 'mensaje', _t: m.enviado_at || m.created_at }));
     const notas = (hilo.notas || []).map((n: any) => ({ ...n, _clase: 'nota', _t: n.created_at }));
+    const correos = (hilo.correos || []).flatMap((h: any) => (h.mensajes || []).map((m: any) => ({
+      ...m, _clase: 'correo', _t: m.created_at, _asunto: m.asunto || h.conversacion?.asunto || '',
+    })));
+    const eventos = (hilo.eventos || []).map((e: any) => ({ ...e, _clase: 'evento', _t: e.created_at }));
     // Desempate por created_at: dos mensajes en el mismo segundo (texto + nota
     // de voz seguidos) se veían en orden aleatorio.
-    return [...msjs, ...notas].sort((a, b) =>
+    return [...msjs, ...notas, ...correos, ...eventos].sort((a, b) =>
       String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)));
   }, [hilo]);
 
@@ -73,13 +77,13 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
           <span style={{ fontSize: '0.7rem', color: '#8a8a92' }}>{telefonoLegible(conv.telefono)}</span>
         </span>
         {etapa && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 20, padding: '2px 8px', flexShrink: 0 }}>{etapa.label}</span>}
-        <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
+        {conv.id && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
           style={{ border: '1px solid #e2e4e9', borderRadius: 8, padding: '5px 7px', fontSize: '0.7rem', fontFamily: 'inherit', background: '#fff', color: '#555', maxWidth: 118, flexShrink: 0 }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-        </select>
-        <select value={conv.estado_crm || 'abierta'} onChange={e => api.patchConversacion({ estado_crm: e.target.value })}
+        </select>}
+        {conv.id && <select value={conv.estado_crm || 'abierta'} onChange={e => api.patchConversacion({ estado_crm: e.target.value })}
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '5px 7px', fontSize: '0.7rem', fontWeight: 700,
@@ -91,8 +95,8 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
           <option value="abierta">Abierta</option>
           <option value="pendiente">Pendiente</option>
           <option value="resuelta">Resuelta</option>
-        </select>
-        <MenuSnooze conv={conv} api={api} />
+        </select>}
+        {conv.id && <MenuSnooze conv={conv} api={api} />}
         {onVerDetalle && (
           <button onClick={onVerDetalle} style={{ border: '1.5px solid #7DA6F5', borderRadius: 8, padding: '5px 10px', fontSize: '0.7rem', fontWeight: 700, background: '#fff', color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit' }}>
             Detalle
@@ -112,7 +116,30 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
                   {dia}
                 </span>
               )}
-              {item._clase === 'nota' ? (
+              {item._clase === 'evento' ? (
+                <span style={{ alignSelf: 'center', fontSize: '0.66rem', color: '#a5a2af', padding: '2px 0', fontStyle: 'italic' }}>
+                  {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
+                </span>
+              ) : item._clase === 'correo' ? (
+                <span style={{
+                  alignSelf: item.direccion === 'entrante' ? 'flex-start' : 'flex-end',
+                  maxWidth: 'min(82%, 620px)', borderRadius: 12, padding: '9px 12px', fontSize: '0.82rem', lineHeight: 1.55,
+                  background: '#fff', border: '1px solid #cfdefa',
+                  borderLeft: item.direccion === 'entrante' ? '3px solid #7DA6F5' : '1px solid #cfdefa',
+                  borderRight: item.direccion === 'saliente' ? '3px solid #7DA6F5' : '1px solid #cfdefa',
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <IconoCanal canal="email" />
+                    <b style={{ fontSize: '0.74rem', color: '#2C5FC4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item._asunto || 'Correo'}</b>
+                  </span>
+                  <span style={{ whiteSpace: 'pre-wrap', display: 'block', maxHeight: 220, overflow: 'hidden' }}>{(item.cuerpo_texto || '').slice(0, 1200)}</span>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 }}>
+                    {item.autor && <span style={{ fontSize: '0.6rem', color: '#8a8a92' }}>{item.autor}</span>}
+                    <span style={{ fontSize: '0.58rem', color: '#a5a2af' }}>{horaDe(item._t)}</span>
+                    {item.direccion === 'saliente' && <span style={{ fontSize: '0.56rem', fontWeight: 800, background: '#E3EDFD', color: '#2C5FC4', borderRadius: 20, padding: '1px 7px' }}>correo</span>}
+                  </span>
+                </span>
+              ) : item._clase === 'nota' ? (
                 <span style={{ alignSelf: 'center', maxWidth: '86%', background: '#FFF6E3', border: '1px solid #f3e3bd', borderRadius: 10, padding: '7px 12px', fontSize: '0.75rem', color: '#7a5a15', lineHeight: 1.5 }}>
                   <b style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 2 }}>Nota interna · {item.autor}</b>
                   {item.texto}
@@ -165,7 +192,7 @@ export default function Hilo({ hilo, equipo, api, mobile, onBack, onVerDetalle }
       </div>
 
       {/* ── Composer ── */}
-      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} />
+      <Composer ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} canales={hilo.canales} />
     </div>
   );
 }
