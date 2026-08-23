@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ESTADOS, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando from './ui/Cargando';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -69,16 +70,12 @@ function ChipOrigen({ b }: { b: any }) {
   );
 }
 
-const ESTADOS: Record<string, { label: string; bg: string; color: string }> = {
-  pendiente:  { label: 'Pendiente',  bg: '#FEF3C7', color: '#92400E' },
-  confirmada: { label: 'Confirmada', bg: '#DBEAFE', color: '#1D4ED8' },
-  realizada:  { label: 'Asistió',    bg: '#D1FAE5', color: '#065F46' },
-  no_show:    { label: 'No asistió', bg: '#FEE2E2', color: '#B91C1C' },
-  cancelada:  { label: 'Cancelada',  bg: '#F3F4F6', color: '#6B7280' },
-  // reschedule.ts deja el booking viejo en 'reagendada' — sin esta llave el
-  // badge caía a "Pendiente" y salían filas duplicadas en Próximas/calendario.
-  reagendada: { label: 'Reagendada', bg: '#EDE9FE', color: '#5B21B6' },
-};
+/* Los estados NO se declaran aquí. Esta pestaña tenía su propio diccionario
+   —pendiente/realizada/no_show— mientras la base guarda el vocabulario de
+   `lib/crm/reuniones`: agendada/confirmada/asistio/no_asistio. Nada empataba,
+   así que "Realizadas" decía 0 con 17 reuniones asistidas, la tasa de no-show
+   daba 0% con una falta real, y las 'agendada' se caían de Próximas.
+   Se lee SIEMPRE por `normalizaEstado`, que además traduce lo viejo. */
 
 const TIPO_INVITADO: Record<string, { label: string; bg: string; color: string }> = {
   cliente:   { label: 'Cliente',   bg: 'rgba(42,181,160,0.14)', color: '#1A8F7A' },
@@ -163,19 +160,27 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   }, [data]);
 
   const hoy = hoyStr();
-  const finSemana = useMemo(() => {
+  // La semana natural de lunes a domingo, con hoy adentro. `getDay()` pone el
+  // domingo en 0, que es el caso que rompía el cálculo anterior.
+  const [iniSemana, finSemana] = useMemo(() => {
     const d = new Date(hoy + 'T12:00:00');
-    d.setDate(d.getDate() + (7 - (d.getDay() === 0 ? 7 : d.getDay())));
-    return d.toISOString().slice(0, 10);
+    const dow = d.getDay() === 0 ? 7 : d.getDay();   // lunes 1 … domingo 7
+    const lunes = new Date(d); lunes.setDate(d.getDate() - (dow - 1));
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    return [lunes.toISOString().slice(0, 10), domingo.toISOString().slice(0, 10)];
   }, [hoy]);
 
   const filtered = useMemo(() => {
     let rows = data;
+    const est = (b: any) => normalizaEstado(b.estado);
     if (segmento === 'hoy') rows = rows.filter(b => b.fecha === hoy);
-    else if (segmento === 'semana') rows = rows.filter(b => b.fecha >= hoy && b.fecha <= finSemana);
-    else if (segmento === 'proximas') rows = rows.filter(b => b.fecha >= hoy && (b.estado === 'confirmada' || b.estado === 'pendiente'));
-    else if (segmento === 'pasadas') rows = rows.filter(b => b.fecha < hoy || b.estado === 'realizada' || b.estado === 'no_show');
-    if (fEstado) rows = rows.filter(b => b.estado === fEstado);
+    // "Esta semana" es la semana COMPLETA, de lunes a domingo, no lo que queda
+    // de ella: en domingo `hoy..finSemana` era un solo día y la pestaña salía
+    // vacía con seis reuniones a la espalda.
+    else if (segmento === 'semana') rows = rows.filter(b => b.fecha >= iniSemana && b.fecha <= finSemana);
+    else if (segmento === 'proximas') rows = rows.filter(b => b.fecha >= hoy && (est(b) === 'confirmada' || est(b) === 'agendada'));
+    else if (segmento === 'pasadas') rows = rows.filter(b => b.fecha < hoy || est(b) === 'asistio' || est(b) === 'no_asistio');
+    if (fEstado) rows = rows.filter(b => est(b) === fEstado);
     if (fHost === 'mias') rows = rows.filter(b => b.host_es_mio);
     else if (fHost === 'partners') rows = rows.filter(b => b.host_es_partner);
     else if (fHost) rows = rows.filter(b => b.host_id === fHost);
@@ -187,7 +192,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     }
     // pasadas: más recientes primero; resto cronológico
     return segmento === 'pasadas' ? [...rows].reverse() : rows;
-  }, [data, segmento, fEstado, fHost, fTipo, search, hoy, finSemana]);
+  }, [data, segmento, fEstado, fHost, fTipo, search, hoy, iniSemana, finSemana]);
 
   const eventTypes = useMemo(() => {
     const m = new Map<string, any>();
@@ -196,18 +201,24 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   }, [data]);
 
   const kpis = useMemo(() => {
-    const activas = data.filter(b => b.estado === 'confirmada' || b.estado === 'pendiente');
-    const historicas = data.filter(b => b.estado === 'realizada' || b.estado === 'no_show');
-    const noShows = historicas.filter(b => b.estado === 'no_show').length;
+    const est = (b: any) => normalizaEstado(b.estado);
+    // Activa = todavía va a pasar. 'agendada' entra: es el estado con el que
+    // nace una reunión reservada desde la página, y quedaba fuera.
+    const activas = data.filter(b => est(b) === 'confirmada' || est(b) === 'agendada');
+    // El histórico son las que YA se resolvieron. Cancelar con aviso no es
+    // plantar a nadie, así que las canceladas no entran al denominador.
+    const historicas = data.filter(b => est(b) === 'asistio' || est(b) === 'no_asistio');
+    const noShows = historicas.filter(b => est(b) === 'no_asistio').length;
     return {
       hoy: activas.filter(b => b.fecha === hoy).length,
+      semana: data.filter(b => b.fecha >= iniSemana && b.fecha <= finSemana && est(b) !== 'cancelada').length,
       proximas: activas.filter(b => b.fecha >= hoy).length,
-      realizadas: data.filter(b => b.estado === 'realizada').length,
+      realizadas: historicas.filter(b => est(b) === 'asistio').length,
       noShowPct: historicas.length ? Math.round(noShows * 100 / historicas.length) : 0,
     };
-  }, [data, hoy]);
+  }, [data, hoy, iniSemana, finSemana]);
 
-  async function marcar(b: any, estado: 'realizada' | 'no_show') {
+  async function marcar(b: any, estado: 'asistio' | 'no_asistio') {
     setBusyId(b.id);
     try {
       const r = await adminFetch('/api/scheduling/bookings', {
@@ -215,7 +226,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         body: JSON.stringify({ id: b.id, estado }),
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      avisar(estado === 'realizada' ? 'Marcada como asistió ✓' : 'Marcada como no asistió');
+      avisar(estado === 'asistio' ? 'Marcada como se presentó ✓' : 'Marcada como no se presentó');
       await load();
     } catch (e: any) { avisar('Error: ' + (e?.message || 'no se pudo actualizar')); }
     setBusyId(null);
@@ -247,8 +258,8 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     return (
       <div style={{ display: 'flex', gap: isMobile ? 8 : 6, flexWrap: 'wrap' }}>
         {activa && <>
-          <button disabled={busyId === b.id} style={{ ...bs, color: '#065F46', borderColor: '#A7F3D0' }} onClick={() => marcar(b, 'realizada')}>Asistió</button>
-          <button disabled={busyId === b.id} style={{ ...bs, color: '#B91C1C', borderColor: '#FECACA' }} onClick={() => marcar(b, 'no_show')}>No asistió</button>
+          <button disabled={busyId === b.id} style={{ ...bs, color: '#065F46', borderColor: '#A7F3D0' }} onClick={() => marcar(b, 'asistio')}>Asistió</button>
+          <button disabled={busyId === b.id} style={{ ...bs, color: '#B91C1C', borderColor: '#FECACA' }} onClick={() => marcar(b, 'no_asistio')}>No asistió</button>
           <button disabled={busyId === b.id} style={bs} onClick={() => setReagendar(b)}>Reagendar</button>
           <button disabled={busyId === b.id} style={{ ...bs, color: cancelArmed === b.id ? '#fff' : '#999', background: cancelArmed === b.id ? '#B91C1C' : '#fff' }} onClick={() => cancelar(b)}>
             {cancelArmed === b.id ? '¿Confirmar?' : 'Cancelar'}
@@ -268,7 +279,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
     <div style={{ padding: '18px 24px' }}>
       {/* KPIs */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        {[['Hoy', kpis.hoy], ['Próximas', kpis.proximas], ['Realizadas', kpis.realizadas], ['Tasa no-show', kpis.noShowPct + '%']].map(([l, v]) => (
+        {[['Hoy', kpis.hoy], ['Esta semana', kpis.semana], ['Próximas', kpis.proximas], ['Se presentaron', kpis.realizadas], ['Tasa no-show', kpis.noShowPct + '%']].map(([l, v]) => (
           <div key={String(l)} style={S.kpi}><div style={S.kLabel}>{l}</div><div style={S.kValue}>{v}</div></div>
         ))}
       </div>
@@ -308,7 +319,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
       {vista === 'lista' && isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(b => {
-            const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+            const est = ESTADOS[normalizaEstado(b.estado)];
             const ti = b.invitado_tipo ? TIPO_INVITADO[b.invitado_tipo] : null;
             const clickable = !!(b.invitado_company_id || b.invitado_contact_id);
             return (
@@ -342,7 +353,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
               <thead><tr>{['Fecha', 'Hora', 'Invitado', 'Tipo', 'Evento', 'Host', 'Estado', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
               <tbody>
                 {filtered.map(b => {
-                  const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+                  const est = ESTADOS[normalizaEstado(b.estado)];
                   const ti = b.invitado_tipo ? TIPO_INVITADO[b.invitado_tipo] : null;
                   const clickable = !!(b.invitado_company_id || b.invitado_contact_id);
                   return (
@@ -434,7 +445,7 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {porDia[f].sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || '')).map(b => {
-                      const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+                      const est = ESTADOS[normalizaEstado(b.estado)];
                       return (
                         <div key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', gap: 10, alignItems: 'center', minHeight: 44, padding: '8px 12px', borderRadius: 10, border: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', borderLeft: `3px solid ${b.event_types?.color || '#999'}` }}>
                           <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#333', whiteSpace: 'nowrap', minWidth: 62 }}>{fmtTime(b.hora_inicio)}</span>
@@ -473,7 +484,7 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
               {fecha && <>
                 <div style={{ fontSize: '0.7rem', fontWeight: fecha === hoy ? 800 : 600, color: fecha === hoy ? '#92400E' : '#bbb', marginBottom: 4 }}>{Number(fecha.slice(-2))}</div>
                 {(porDia[fecha] || []).slice(0, 3).map(b => {
-                  const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+                  const est = ESTADOS[normalizaEstado(b.estado)];
                   return (
                     <div key={b.id} onClick={() => onOpen(b)} title={`${fmtTime(b.hora_inicio)} · ${b.invitee_nombre} (${est.label})`}
                       style={{ fontSize: '0.64rem', padding: '2px 6px', borderRadius: 5, marginBottom: 3, background: est.bg, color: est.color, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

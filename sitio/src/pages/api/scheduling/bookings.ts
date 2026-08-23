@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { supabase } from '../../../lib/supabase';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
@@ -68,8 +69,15 @@ export const PUT: APIRoute = async ({ request }) => {
 
   // Side effects based on estado change
   const cambioEstado = updates.estado && updates.estado !== current.estado;
+  /* Los efectos se disparan por el estado NORMALIZADO, no por la palabra que
+     llegó. Este endpoint nació con 'realizada'/'no_show' y la base ya guarda
+     'asistio'/'no_asistio' (ver lib/crm/reuniones): comparando el literal, el
+     bono del partner y el seguimiento de no-show dejaban de correr en cuanto
+     alguien marcaba con el vocabulario nuevo. Traduce en los dos sentidos, así
+     que los llamadores viejos siguen funcionando igual. */
+  const estadoNuevo = updates.estado ? normalizaEstado(String(updates.estado)) : null;
 
-  if (updates.estado === 'realizada' && cambioEstado) {
+  if (estadoNuevo === 'asistio' && cambioEstado) {
     // Update deal stage to demo_realizada
     if (current.deal_id) {
       await supabase
@@ -165,7 +173,7 @@ export const PUT: APIRoute = async ({ request }) => {
     fireSchedulingWebhooks('booking.completed', { booking: data });
   }
 
-  if (updates.estado === 'no_show' && cambioEstado) {
+  if (estadoNuevo === 'no_asistio' && cambioEstado) {
     // Follow-up automático: invitar a reagendar en 1 clic (email + WhatsApp).
     // Best-effort: si falla el envío, el no-show queda marcado igual.
     try {
