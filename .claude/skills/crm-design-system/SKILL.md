@@ -108,13 +108,18 @@ Cotización, acuse de pago, estado de cuenta y minuta comparten forma:
 
 ## 7. Estados de carga
 
-Uno solo en todo el CRM: los **tres corazones** de
-`components/admin/crm/ui/Cargando.tsx`.
+Uno solo en todo el CRM: la **chispa en órbita** de
+`components/admin/crm/ui/Cargando.tsx` —la misma chispa de la marca, girando,
+porque el giro es el lenguaje universal de "espera" y se entiende de reojo.
 
 ```tsx
 <Cargando texto="Cargando clientes…" />   // el texto dice QUÉ se trae
-<Corazones size={9} color="#fff" />        // dentro de un botón
+<Chispas size={9} color="#fff" />          // dentro de un botón: color plano
 ```
+
+`color` la pinta plana en vez del degradado: sobre un botón morado el degradado
+morado→rosa se pierde. `Corazones` sigue exportado como alias —lo importan 21
+pantallas— pero en código nuevo se usa `Chispas`.
 
 Nunca un "Cargando…" suelto. A los 8 s el componente avisa que tarda, a los 20
 ofrece reintentar, y respeta `prefers-reduced-motion`.
@@ -132,6 +137,6 @@ excepción es ⚠️ para un riesgo real.
 2. ¿Las tarjetas llevan su franja de color?
 2b. ¿El botón principal es morado sólido y los secundarios de puro borde morado? ¿Queda algún negro?
 3. ¿El verde significa que entró dinero y el rojo que se fue?
-4. ¿Hay algún `Cargando…` que no sea el componente?
+4. ¿Hay algún `Cargando…` que no sea el componente (la chispa en órbita)?
 5. ¿La pantalla respira arriba?
 6. Si es un documento del cliente: ¿cinta, firma en degradado, y **Sacscloud**?

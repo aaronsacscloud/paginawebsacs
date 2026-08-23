@@ -1,35 +1,38 @@
-// Los tres corazones que laten mientras el CRM trae algo.
+// La chispa en órbita: lo que se ve mientras el CRM trae algo.
 //
-// Un "Cargando…" pelón se lee como una pantalla trabada; el latido dice que hay
-// algo pasando. Es UN solo gesto para toda la aplicación —panel del cliente,
-// botón guardando, lista buscando— porque así se aprende una vez.
+// Un "Cargando…" pelón se lee como una pantalla trabada; el movimiento dice que
+// hay algo pasando. Es UN solo gesto para toda la aplicación —panel del
+// cliente, botón guardando, lista buscando— porque así se aprende una vez.
+//
+// Por qué una órbita y no un parpadeo: el giro es el lenguaje universal de
+// "espera", así que se entiende de reojo y a 13 px dentro de un botón, que es
+// donde más aparece. Y el símbolo que gira es la chispa de la marca, no un
+// spinner genérico.
 //
 // Dos cosas que evitan el susto de "se rompió":
 //  · A los 8 segundos el texto cambia solo a "está tardando más de lo normal".
 //  · A los 20 aparece "Reintentar" (si quien lo usa le pasó un reintento).
 //
-// Y respeta `prefers-reduced-motion`: a quien lo tenga activado, los corazones
-// se quedan quietos en tres tonos en vez de parpadear.
-import { useEffect, useState } from 'react';
+// Y respeta `prefers-reduced-motion`: a quien lo tenga activado, la chispa se
+// queda quieta en vez de girar.
+import { useEffect, useId, useState } from 'react';
 
 const CSS = `
-@keyframes sacs-latido {
-  0%, 70%, 100% { transform: scale(.82); opacity: .3; }
-  35%           { transform: scale(1.12); opacity: 1; }
-}
-.sacs-corazones { display: inline-flex; align-items: center; gap: .38em; line-height: 1; }
-.sacs-corazones svg { display: block; animation: sacs-latido 1.15s ease-in-out infinite; transform-origin: center; }
-.sacs-corazones svg:nth-child(2) { animation-delay: .16s; }
-.sacs-corazones svg:nth-child(3) { animation-delay: .32s; }
+@keyframes sacs-orbita { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes sacs-respira { 0%, 100% { transform: scale(.9); opacity: .78; } 50% { transform: scale(1.04); opacity: 1; } }
+.sacs-chispa { position: relative; display: inline-grid; place-items: center; vertical-align: middle; flex-shrink: 0; }
+.sacs-chispa .sacs-centro { display: grid; place-items: center; animation: sacs-respira 1.6s ease-in-out infinite; transform-origin: center; }
+.sacs-chispa .sacs-anillo { position: absolute; inset: 0; animation: sacs-orbita 1.5s linear infinite; transform-origin: center; }
+.sacs-chispa .sacs-anillo > * { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
 @media (prefers-reduced-motion: reduce) {
-  .sacs-corazones svg { animation: none; opacity: .35; transform: none; }
-  .sacs-corazones svg:nth-child(1) { opacity: 1; }
-  .sacs-corazones svg:nth-child(2) { opacity: .6; }
+  .sacs-chispa .sacs-centro, .sacs-chispa .sacs-anillo { animation: none; }
+  .sacs-chispa .sacs-centro { opacity: 1; transform: none; }
+  .sacs-chispa .sacs-anillo { opacity: .5; }
 }
 `;
 
 function Estilos() {
-  // Se inyecta una sola vez por documento: tres corazones en pantalla no
+  // Se inyecta una sola vez por documento: tres cargadores en pantalla no
   // necesitan tres copias de la misma animación.
   useEffect(() => {
     if (typeof document === 'undefined' || document.getElementById('sacs-cargando-css')) return;
@@ -41,22 +44,52 @@ function Estilos() {
   return null;
 }
 
-/** Los corazones solos: para un botón, un renglón o junto a un texto. */
-export function Corazones({ size = 13, color = '#9B8CFA' }: { size?: number; color?: string }) {
+const TRAZO = 'M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z';
+
+/**
+ * La chispa girando. Para un botón, un renglón o junto a un texto.
+ *
+ * `color` la pinta plana en vez del degradado de la marca: sobre un botón
+ * morado el degradado morado→rosa se pierde, y ahí se necesita blanco.
+ */
+export function Chispas({ size = 13, color }: { size?: number; color?: string }) {
+  // El id del degradado tiene que ser único por instancia: dos SVG con el mismo
+  // id y el segundo hereda el del primero (queda de un solo tono).
+  const uid = useId().replace(/:/g, '');
+  const caja = Math.round(size * 1.7);
+  const centro = size;
+  const luna = Math.max(4, Math.round(size * 0.42));
+  const relleno = color || `url(#chispa-${uid})`;
+
+  const svg = (px: number, opacidad?: number) => (
+    <svg width={px} height={px} viewBox="0 0 24 24" style={opacidad ? { opacity: opacidad } : undefined}>
+      {!color && (
+        <defs>
+          <linearGradient id={`chispa-${uid}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#9B8CFA" />
+            <stop offset="100%" stopColor="#D9538E" />
+          </linearGradient>
+        </defs>
+      )}
+      <path d={TRAZO} fill={relleno} />
+    </svg>
+  );
+
   return (
-    <span className="sacs-corazones" aria-hidden="true">
+    <span className="sacs-chispa" style={{ width: caja, height: caja }} aria-hidden="true">
       <Estilos />
-      {[0, 1, 2].map(i => (
-        <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={color}>
-          <path d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0 1 12 6.5 5.4 5.4 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9z" />
-        </svg>
-      ))}
+      <span className="sacs-centro">{svg(centro)}</span>
+      <span className="sacs-anillo">{svg(luna, 0.85)}</span>
     </span>
   );
 }
 
+/** Nombre viejo. Se conserva porque lo importan 21 pantallas; en código nuevo
+ *  usa `Chispas`, que es lo que de verdad se dibuja desde ago-2026. */
+export const Corazones = Chispas;
+
 /**
- * El bloque completo, centrado: corazones + texto + el aviso de que tarda.
+ * El bloque completo, centrado: la chispa + texto + el aviso de que tarda.
  * `onReintentar` es opcional; sin él, a los 20 s solo cambia el texto.
  */
 export default function Cargando({
@@ -72,7 +105,7 @@ export default function Cargando({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11, minHeight: alto, padding: 24 }}>
-      <Corazones size={size} />
+      <Chispas size={size} />
       <div style={{ fontSize: '0.83rem', color: '#8a8590', textAlign: 'center', lineHeight: 1.5 }}>
         {mucho ? 'Sigue sin responder.' : lento ? 'Está tardando más de lo normal…' : texto}
       </div>
