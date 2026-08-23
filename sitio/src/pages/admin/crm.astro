@@ -23,7 +23,13 @@ if (gate) return gate;
 </BaseLayout>
 
 <style is:global>
-nav, .nav, header, footer, .wa-bar, .final-cta {
+/* Esconde el cromo del sitio público dentro del CRM.
+   OJO con `header` a secas: el del sitio es <header class="nav" id="nav">, así
+   que `.nav` ya lo cubre. Tenerlo suelto en la lista tumbaba TODO <header> de
+   la página, incluido el de la ficha del contacto —que quedaba de 0×0 con su
+   nombre y su botón de cerrar adentro—: se entraba a un contacto y no había
+   forma de regresar sin salirse del CRM. */
+nav, .nav, footer, .wa-bar, .final-cta {
   display: none !important;
 }
 main { padding: 0 !important; margin: 0 !important; }

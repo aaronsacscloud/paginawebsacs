@@ -426,7 +426,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
             const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
             setMenuFila({ id: b.id, x: r.right, y });
           }}>⋮</button>
-        {menuFila?.id === b.id && (
+        {menuFila && menuFila.id === b.id && (
           <>
             <div onClick={() => setMenuFila(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
             <div style={{ position: 'fixed', left: Math.max(8, menuFila.x - 232), top: menuFila.y, zIndex: 1401, width: 232, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>

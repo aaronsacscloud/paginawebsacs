@@ -3,6 +3,7 @@ import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import ExpansionSignalsBanner from './ExpansionSignalsBanner';
 import Cargando, { Corazones } from './ui/Cargando';
+import ClienteDrawer360 from './ClienteDrawer360';
 
 // ─── Types ───
 interface Company {
@@ -47,12 +48,12 @@ interface Quote {
 
 // ─── Constants ───
 const LIFECYCLE_STAGES = [
-  { id: 'suscriptor', label: 'Suscriptor', color: '#94a3b8' },
-  { id: 'lead', label: 'Lead', color: '#6C5CE7' },
-  { id: 'lead_calificado', label: 'MQL', color: '#4B7BE5' },
+  { id: 'suscriptor', label: 'Suscriptor', color: '#a5a2af' },
+  { id: 'lead', label: 'Lead', color: '#5B4BD6' },
+  { id: 'lead_calificado', label: 'MQL', color: '#7DA6F5' },
   { id: 'oportunidad', label: 'Oportunidad', color: '#E8A838' },
-  { id: 'cliente', label: 'Cliente', color: '#2AB5A0' },
-  { id: 'evangelista', label: 'Evangelista', color: '#F39C12' },
+  { id: 'cliente', label: 'Cliente', color: '#4FBF95' },
+  { id: 'evangelista', label: 'Evangelista', color: '#E8A838' },
   { id: 'churned', label: 'Churned', color: '#999' },
 ];
 
@@ -94,28 +95,28 @@ const ACTIVITY_FILTERS = [
 ];
 
 const DEAL_STAGES: Record<string, { label: string; color: string }> = {
-  calificacion: { label: 'Calificacion', color: '#6C5CE7' },
-  demo_agendada: { label: 'Demo agendada', color: '#4B7BE5' },
+  calificacion: { label: 'Calificacion', color: '#5B4BD6' },
+  demo_agendada: { label: 'Demo agendada', color: '#7DA6F5' },
   demo_realizada: { label: 'Demo realizada', color: '#E8A838' },
-  cotizacion_enviada: { label: 'Cotizacion enviada', color: '#F39C12' },
-  negociacion: { label: 'Negociacion', color: '#2AB5A0' },
-  cerrada_ganada: { label: 'Cerrada ganada', color: '#2e7d32' },
+  cotizacion_enviada: { label: 'Cotizacion enviada', color: '#E8A838' },
+  negociacion: { label: 'Negociacion', color: '#4FBF95' },
+  cerrada_ganada: { label: 'Cerrada ganada', color: '#1E8A63' },
   cerrada_perdida: { label: 'Cerrada perdida', color: '#999' },
 };
 
 const QUOTE_STATES: Record<string, { label: string; color: string }> = {
-  borrador: { label: 'Borrador', color: '#94a3b8' },
-  enviada: { label: 'Enviada', color: '#4B7BE5' },
+  borrador: { label: 'Borrador', color: '#a5a2af' },
+  enviada: { label: 'Enviada', color: '#7DA6F5' },
   vista: { label: 'Vista', color: '#E8A838' },
-  aceptada: { label: 'Aceptada', color: '#2AB5A0' },
-  pagada: { label: 'Pagada', color: '#2e7d32' },
+  aceptada: { label: 'Aceptada', color: '#4FBF95' },
+  pagada: { label: 'Pagada', color: '#1E8A63' },
   rechazada: { label: 'Rechazada', color: '#E54B4B' },
   expirada: { label: 'Expirada', color: '#999' },
 };
 
 const ACCOUNT_STATES: Record<string, { label: string; color: string }> = {
-  activo: { label: 'Activo', color: '#2e7d32' },
-  trial: { label: 'Trial', color: '#4B7BE5' },
+  activo: { label: 'Activo', color: '#1E8A63' },
+  trial: { label: 'Trial', color: '#7DA6F5' },
   vencido: { label: 'Vencido', color: '#E54B4B' },
   suspendido: { label: 'Suspendido', color: '#E8A838' },
   cancelado: { label: 'Cancelado', color: '#999' },
@@ -124,13 +125,13 @@ const ACCOUNT_STATES: Record<string, { label: string; color: string }> = {
 // ─── Color maps ───
 function activityColor(tipo: string): string {
   const colors: Record<string, string> = {
-    nota: '#4B7BE5', llamada: '#6C5CE7', whatsapp_enviado: '#25D366',
-    whatsapp_recibido: '#25D366', email_enviado: '#1565c0', email_recibido: '#1565c0',
-    demo_agendada: '#E8A838', demo_realizada: '#F39C12',
-    cotizacion_creada: '#2AB5A0', cotizacion_enviada: '#2AB5A0',
-    cotizacion_vista: '#6C5CE7', cotizacion_aceptada: '#2e7d32',
-    pago_recibido: '#2e7d32', stage_change: '#E8A838',
-    lead_created: '#4B7BE5', page_visit: '#999', sistema: '#ccc',
+    nota: '#7DA6F5', llamada: '#5B4BD6', whatsapp_enviado: '#25D366',
+    whatsapp_recibido: '#25D366', email_enviado: '#2C5FC4', email_recibido: '#2C5FC4',
+    demo_agendada: '#E8A838', demo_realizada: '#E8A838',
+    cotizacion_creada: '#4FBF95', cotizacion_enviada: '#4FBF95',
+    cotizacion_vista: '#5B4BD6', cotizacion_aceptada: '#1E8A63',
+    pago_recibido: '#1E8A63', stage_change: '#E8A838',
+    lead_created: '#7DA6F5', page_visit: '#999', sistema: '#ccc',
   };
   return colors[tipo] || '#ccc';
 }
@@ -187,7 +188,7 @@ const daysSince = (d: string) => {
 };
 
 const avatarColor = (name: string): string => {
-  const colors = ['#4B7BE5', '#6C5CE7', '#E8A838', '#2AB5A0', '#F39C12', '#E54B4B', '#1565c0', '#25D366'];
+  const colors = ['#7DA6F5', '#5B4BD6', '#E8A838', '#4FBF95', '#E8A838', '#E54B4B', '#2C5FC4', '#25D366'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -212,6 +213,8 @@ interface Props {
 
 // ─── Main Component ───
 export default function ContactProfile({ contactId, onClose }: Props) {
+  // La ficha del cliente al que pertenece este contacto, abierta desde aquí.
+  const [verCliente, setVerCliente] = useState<string | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
   const [c360, setC360] = useState<any>(null); // pagos/suscripciones del cliente (company360)
   const [edoCuenta, setEdoCuenta] = useState<any>(null); // estado de cuenta (ledger)
@@ -408,7 +411,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
         <div style={{ textAlign: 'center' }}>
           <div style={{
             width: 40, height: 40, borderRadius: '50%',
-            border: '3px solid #e0e0e0', borderTopColor: '#4B7BE5',
+            border: '3px solid #e0e0e0', borderTopColor: '#7DA6F5',
             animation: 'spin 0.8s linear infinite', margin: '0 auto 12px',
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -438,13 +441,24 @@ export default function ContactProfile({ contactId, onClose }: Props) {
       {/* HEADER                                  */}
       {/* ════════════════════════════════════════ */}
       <header style={{
-        background: '#fff', borderBottom: '1px solid #e8e8ec',
+        background: '#fff', borderBottom: '1px solid #ececec',
         padding: isMobile ? '12px 16px' : '14px 28px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         gap: 12, flexShrink: 0,
       }}>
-        {/* Left: Avatar + info */}
+        {/* Volver, a la IZQUIERDA y con palabra. Solo había una ✕ en la esquina
+            opuesta: se entraba a un contacto desde Reuniones y la salida no se
+            veía, así que la única forma de regresar era salirse del CRM. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, minWidth: 0, flex: 1 }}>
+          <button onClick={onClose} title="Volver a donde estabas"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              minHeight: 36, padding: isMobile ? '8px 10px' : '8px 13px', borderRadius: 9,
+              border: '1px solid #ddd6fb', background: '#fff', color: '#5B4BD6',
+              fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+            ←{isMobile ? '' : ' Volver'}
+          </button>
           <div style={{
             width: isMobile ? 40 : 48, height: isMobile ? 40 : 48,
             borderRadius: '50%', background: avatarColor(fullName),
@@ -458,7 +472,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <h1 style={{
                 fontSize: isMobile ? '1rem' : '1.25rem',
-                fontWeight: 800, color: '#0f172a', margin: 0,
+                fontWeight: 800, color: '#241d43', margin: 0,
                 fontFamily: "'Sora', sans-serif",
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 maxWidth: isMobile ? 180 : 'none',
@@ -466,16 +480,21 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 {fullName}
               </h1>
               {!isMobile && contact.companies && (
-                <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
-                  {contact.companies.nombre}
-                </span>
+                /* De qué cuenta es este contacto, y cómo llegar a ella. Sin esto
+                   se aterrizaba en una ficha suelta sin saber a qué cliente
+                   pertenece ni cómo ir a verlo. */
+                <button onClick={() => setVerCliente(contact.companies!.id)}
+                  title="Abrir la ficha del cliente"
+                  style={{ background: '#EEECFE', border: 'none', borderRadius: 20, padding: '3px 11px', fontSize: '0.78rem', color: '#5B4BD6', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {contact.companies.nombre} →
+                </button>
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
               {contact.puesto && (
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{contact.puesto}</span>
+                <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>{contact.puesto}</span>
               )}
-              {contact.puesto && <span style={{ fontSize: '0.75rem', color: '#e2e8f0' }}>·</span>}
+              {contact.puesto && <span style={{ fontSize: '0.75rem', color: '#ececec' }}>·</span>}
               {/* Lifecycle badge */}
               <span style={{
                 fontSize: '0.6875rem', fontWeight: 700,
@@ -490,7 +509,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               <span style={{
                 fontSize: '0.6875rem', fontWeight: 600,
                 padding: '2px 10px', borderRadius: 20,
-                background: '#f1f5f9', color: '#64748b',
+                background: '#f5f4f8', color: '#6b7280',
               }}>
                 {contact.tipo}
               </span>
@@ -499,8 +518,8 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 <span style={{
                   fontSize: '0.6875rem', fontWeight: 700,
                   padding: '2px 10px', borderRadius: 20,
-                  background: contact.lead_score >= 70 ? '#dcfce7' : contact.lead_score >= 40 ? '#fef3c7' : '#f1f5f9',
-                  color: contact.lead_score >= 70 ? '#16a34a' : contact.lead_score >= 40 ? '#d97706' : '#94a3b8',
+                  background: contact.lead_score >= 70 ? '#EAF8F2' : contact.lead_score >= 40 ? '#FFF4E5' : '#f5f4f8',
+                  color: contact.lead_score >= 70 ? '#1E8A63' : contact.lead_score >= 40 ? '#d97706' : '#a5a2af',
                 }}>
                   {contact.lead_score} pts
                 </span>
@@ -519,7 +538,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px',
                     borderRadius: 8, border: 'none', cursor: 'pointer',
-                    background: '#dcfce7', color: '#16a34a', textDecoration: 'none',
+                    background: '#EAF8F2', color: '#1E8A63', textDecoration: 'none',
                     fontFamily: 'inherit',
                   }}>
                   <span style={{ fontSize: '0.875rem' }}>{'\u{1F4F1}'}</span> WhatsApp
@@ -531,7 +550,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px',
                     borderRadius: 8, border: 'none', cursor: 'pointer',
-                    background: '#dbeafe', color: '#2563eb', textDecoration: 'none',
+                    background: '#E3EDFD', color: '#2C5FC4', textDecoration: 'none',
                     fontFamily: 'inherit',
                   }}>
                   <span style={{ fontSize: '0.875rem' }}>{'\u{2709}\u{FE0F}'}</span> Email
@@ -543,7 +562,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px',
                     borderRadius: 8, border: 'none', cursor: 'pointer',
-                    background: '#ede9fe', color: '#7c3aed', textDecoration: 'none',
+                    background: '#EEECFE', color: '#5B4BD6', textDecoration: 'none',
                     fontFamily: 'inherit',
                   }}>
                   <span style={{ fontSize: '0.875rem' }}>{'\u{1F4DE}'}</span> Llamar
@@ -555,13 +574,13 @@ export default function ContactProfile({ contactId, onClose }: Props) {
           <button onClick={onClose} style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 36, height: 36, borderRadius: 8,
-            border: '1px solid #e2e8f0', background: '#fff',
-            cursor: 'pointer', fontSize: '1.125rem', color: '#94a3b8',
+            border: '1px solid #ececec', background: '#fff',
+            cursor: 'pointer', fontSize: '1.125rem', color: '#a5a2af',
             fontFamily: 'inherit', flexShrink: 0,
             transition: 'all 0.15s ease',
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#94a3b8'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f5f4f8'; e.currentTarget.style.color = '#4a4a52'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#a5a2af'; }}
           >
             ✕
           </button>
@@ -572,7 +591,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
       {isMobile && (
         <div style={{
           display: 'flex', gap: 8, padding: '10px 16px',
-          background: '#fff', borderBottom: '1px solid #e8e8ec',
+          background: '#fff', borderBottom: '1px solid #ececec',
           overflowX: 'auto',
         }}>
           {contact.whatsapp && (
@@ -580,7 +599,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px',
-                borderRadius: 6, background: '#dcfce7', color: '#16a34a',
+                borderRadius: 6, background: '#EAF8F2', color: '#1E8A63',
                 textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: 'inherit',
               }}>
               {'\u{1F4F1}'} WhatsApp
@@ -591,7 +610,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px',
-                borderRadius: 6, background: '#dbeafe', color: '#2563eb',
+                borderRadius: 6, background: '#E3EDFD', color: '#2C5FC4',
                 textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: 'inherit',
               }}>
               {'\u{2709}\u{FE0F}'} Email
@@ -602,7 +621,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px',
-                borderRadius: 6, background: '#ede9fe', color: '#7c3aed',
+                borderRadius: 6, background: '#EEECFE', color: '#5B4BD6',
                 textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: 'inherit',
               }}>
               {'\u{1F4DE}'} Llamar
@@ -614,16 +633,16 @@ export default function ContactProfile({ contactId, onClose }: Props) {
       {/* Mobile tab selector */}
       {isMobile && (
         <div style={{
-          display: 'flex', background: '#fff', borderBottom: '1px solid #e8e8ec',
+          display: 'flex', background: '#fff', borderBottom: '1px solid #ececec',
         }}>
           <button
             onClick={() => setMobileTab('timeline')}
             style={{
               flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
               fontSize: '0.8125rem', fontWeight: 600,
-              color: mobileTab === 'timeline' ? '#0f172a' : '#94a3b8',
+              color: mobileTab === 'timeline' ? '#241d43' : '#a5a2af',
               background: 'none',
-              borderBottom: mobileTab === 'timeline' ? '2px solid #0f172a' : '2px solid transparent',
+              borderBottom: mobileTab === 'timeline' ? '2px solid #241d43' : '2px solid transparent',
               fontFamily: 'inherit',
             }}>
             Timeline
@@ -633,9 +652,9 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             style={{
               flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer',
               fontSize: '0.8125rem', fontWeight: 600,
-              color: mobileTab === 'properties' ? '#0f172a' : '#94a3b8',
+              color: mobileTab === 'properties' ? '#241d43' : '#a5a2af',
               background: 'none',
-              borderBottom: mobileTab === 'properties' ? '2px solid #0f172a' : '2px solid transparent',
+              borderBottom: mobileTab === 'properties' ? '2px solid #241d43' : '2px solid transparent',
               fontFamily: 'inherit',
             }}>
             Propiedades
@@ -657,7 +676,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             minWidth: isMobile ? undefined : 320,
             maxWidth: isMobile ? undefined : 420,
             overflowY: 'auto', background: '#fff',
-            borderRight: isMobile ? 'none' : '1px solid #e8e8ec',
+            borderRight: isMobile ? 'none' : '1px solid #ececec',
             padding: isMobile ? '16px' : '20px',
           }}>
 
@@ -790,7 +809,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     <span key={i} style={{
                       fontSize: '0.6875rem', fontWeight: 600,
                       padding: '2px 8px', borderRadius: 4,
-                      background: '#f1f5f9', color: '#475569',
+                      background: '#f5f4f8', color: '#4a4a52',
                     }}>
                       {tag.trim()}
                     </span>
@@ -806,7 +825,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   style={{
                     width: '100%', padding: '10px 16px', borderRadius: 8,
                     border: 'none', cursor: saving ? 'default' : 'pointer',
-                    background: '#0f172a', color: '#fff',
+                    background: '#241d43', color: '#fff',
                     fontSize: '0.8125rem', fontWeight: 700,
                     fontFamily: 'inherit', marginTop: 4,
                     opacity: saving ? 0.6 : 1,
@@ -825,7 +844,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 onToggle={() => toggleSection('company')}
               >
                 <div style={{
-                  fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a',
+                  fontSize: '0.9375rem', fontWeight: 700, color: '#241d43',
                   marginBottom: 12, fontFamily: "'Sora', sans-serif",
                 }}>
                   {contact.companies.nombre}
@@ -847,7 +866,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                       <span style={{
                         fontSize: '0.75rem', fontWeight: 700,
                         padding: '2px 10px', borderRadius: 4,
-                        background: '#dbeafe', color: '#2563eb',
+                        background: '#E3EDFD', color: '#2C5FC4',
                         textTransform: 'capitalize' as const,
                       }}>
                         {contact.companies.plan}
@@ -856,12 +875,12 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   )}
                   <PropertyRow label="Sucursales">{contact.companies.sucursales}</PropertyRow>
                   <PropertyRow label="MRR">
-                    <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontWeight: 700, color: '#241d43' }}>
                       {contact.companies.mrr > 0 ? fmt(contact.companies.mrr) : '\u2014'}
                     </span>
                   </PropertyRow>
                   <PropertyRow label="ARR">
-                    <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontWeight: 700, color: '#241d43' }}>
                       {contact.companies.arr > 0 ? fmt(contact.companies.arr) : '\u2014'}
                     </span>
                   </PropertyRow>
@@ -901,49 +920,49 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   <div>
                     {edoCuenta?.resumen && (
                       Number(edoCuenta.resumen.saldo) > 0.01 ? (
-                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a', fontSize: '0.82rem', color: '#92400e', fontWeight: 600 }}>
+                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#FFF4E5', border: '1px solid #f0d9a8', fontSize: '0.82rem', color: '#92400e', fontWeight: 600 }}>
                           Estado de cuenta: saldo pendiente <strong>{fmt(Number(edoCuenta.resumen.saldo))}</strong> <span style={{ fontWeight: 400 }}>(pagado {fmt(Number(edoCuenta.resumen.total_pagado))} de {fmt(Number(edoCuenta.resumen.total_esperado))} esperado)</span>
                         </div>
                       ) : (
-                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#16a34a', fontWeight: 600 }}>
+                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#1E8A63', fontWeight: 600 }}>
                           ✓ Al día — sin saldo pendiente
                         </div>
                       )
                     )}
                     <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                      <div style={{ flex: 1, minWidth: 90, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
-                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>ARR</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{fmt(Number(c360.resumen?.arr) || 0)}</div>
+                      <div style={{ flex: 1, minWidth: 90, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>ARR</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>{fmt(Number(c360.resumen?.arr) || 0)}</div>
                       </div>
-                      <div style={{ flex: 1, minWidth: 90, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
-                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>MRR</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{fmt(Number(c360.resumen?.mrr) || 0)}</div>
+                      <div style={{ flex: 1, minWidth: 90, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>MRR</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>{fmt(Number(c360.resumen?.mrr) || 0)}</div>
                       </div>
-                      <div style={{ flex: 1, minWidth: 110, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
-                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Próx. factura</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>{c360.company?.fecha_renovacion ? new Date(c360.company.fecha_renovacion + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                      <div style={{ flex: 1, minWidth: 110, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>Próx. factura</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#241d43' }}>{c360.company?.fecha_renovacion ? new Date(c360.company.fecha_renovacion + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                       </div>
                     </div>
 
                     {(c360.subscriptions || []).length > 0 && (
                       <div style={{ marginBottom: 10 }}>
                         {(c360.subscriptions || []).map((s: any) => (
-                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.8rem' }}>
-                            <span>{s.nombre_plan} <span style={{ color: '#94a3b8' }}>· {s.ciclo} · {s.estado}</span></span>
+                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f5f4f8', fontSize: '0.8rem' }}>
+                            <span>{s.nombre_plan} <span style={{ color: '#a5a2af' }}>· {s.ciclo} · {s.estado}</span></span>
                             <span style={{ fontWeight: 700 }}>{fmt(Number(s.monto_proximo ?? s.precio) || 0)}</span>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', margin: '4px 0', textTransform: 'uppercase' }}>Pagos recientes</div>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6b7280', margin: '4px 0', textTransform: 'uppercase' }}>Pagos recientes</div>
                     {(c360.payments || []).length === 0 ? (
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Sin pagos registrados.</div>
+                      <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Sin pagos registrados.</div>
                     ) : (
                       (c360.payments || []).slice(0, 8).map((p: any) => (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', fontSize: '0.8rem', borderBottom: '1px solid #f8fafc' }}>
-                          <span>{new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} <span style={{ color: '#94a3b8' }}>· {p.metodo}</span></span>
-                          <span>{p.numero_acuse ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'none', marginRight: 8 }} title="Recibo">🧾</a> : null}<b>{fmt(Number(p.monto) || 0)}</b></span>
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', fontSize: '0.8rem', borderBottom: '1px solid #f5f4f8' }}>
+                          <span>{new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} <span style={{ color: '#a5a2af' }}>· {p.metodo}</span></span>
+                          <span>{p.numero_acuse ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" style={{ color: '#2C5FC4', textDecoration: 'none', marginRight: 8 }} title="Recibo">🧾</a> : null}<b>{fmt(Number(p.monto) || 0)}</b></span>
                         </div>
                       ))
                     )}
@@ -964,12 +983,12 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     const ds = DEAL_STAGES[d.stage];
                     return (
                       <div key={d.id} style={{
-                        background: '#f8fafc', borderRadius: 8, padding: '12px 14px',
-                        border: '1px solid #f1f5f9',
+                        background: '#f5f4f8', borderRadius: 8, padding: '12px 14px',
+                        border: '1px solid #f5f4f8',
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
-                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
+                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#241d43' }}>
                               {d.nombre}
                             </div>
                             <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -983,19 +1002,19 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                               </span>
                               {d.plan && (
                                 <span style={{
-                                  fontSize: '0.6875rem', color: '#94a3b8',
+                                  fontSize: '0.6875rem', color: '#a5a2af',
                                   textTransform: 'capitalize' as const,
                                 }}>
                                   {d.plan}
                                 </span>
                               )}
-                              <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
+                              <span style={{ fontSize: '0.6875rem', color: '#a5a2af' }}>
                                 {d.probabilidad}%
                               </span>
                             </div>
                           </div>
                           <div style={{
-                            fontSize: '0.875rem', fontWeight: 800, color: '#0f172a',
+                            fontSize: '0.875rem', fontWeight: 800, color: '#241d43',
                             fontFamily: "'Sora', sans-serif",
                           }}>
                             {fmt(d.valor_total)}
@@ -1005,11 +1024,11 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                           display: 'flex', justifyContent: 'space-between',
                           alignItems: 'center', marginTop: 8,
                         }}>
-                          <span style={{ fontSize: '0.6875rem', color: '#cbd5e1' }}>
+                          <span style={{ fontSize: '0.6875rem', color: '#ececec' }}>
                             {fmtDate(d.created_at)}
                           </span>
                           <span style={{
-                            fontSize: '0.6875rem', fontWeight: 600, color: '#4B7BE5',
+                            fontSize: '0.6875rem', fontWeight: 600, color: '#7DA6F5',
                             cursor: 'pointer',
                           }}>
                             Ver deal →
@@ -1035,16 +1054,16 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     return (
                       <a key={q.id} href={`/cotizacion/${q.id}`} target="_blank" rel="noopener"
                         style={{
-                          background: '#f8fafc', borderRadius: 8, padding: '12px 14px',
-                          border: '1px solid #f1f5f9', textDecoration: 'none', display: 'block',
+                          background: '#f5f4f8', borderRadius: 8, padding: '12px 14px',
+                          border: '1px solid #f5f4f8', textDecoration: 'none', display: 'block',
                           transition: 'border-color 0.15s ease',
                         }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = '#cbd5e1'}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = '#ececec'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = '#f5f4f8'}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
-                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
+                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#241d43' }}>
                               {q.numero ? `COT-${q.numero}` : 'Cotizacion'}
                               {q.empresa ? ` \u00B7 ${q.empresa}` : ''}
                             </div>
@@ -1057,20 +1076,20 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                               }}>
                                 {qs?.label || q.estado}
                               </span>
-                              <span style={{ fontSize: '0.6875rem', color: '#cbd5e1' }}>
+                              <span style={{ fontSize: '0.6875rem', color: '#ececec' }}>
                                 {fmtDate(q.created_at)}
                               </span>
                             </div>
                           </div>
                           <div style={{
-                            fontSize: '0.875rem', fontWeight: 800, color: '#0f172a',
+                            fontSize: '0.875rem', fontWeight: 800, color: '#241d43',
                             fontFamily: "'Sora', sans-serif",
                           }}>
                             {fmt(q.total)}
                           </div>
                         </div>
                         <div style={{
-                          fontSize: '0.6875rem', fontWeight: 600, color: '#4B7BE5',
+                          fontSize: '0.6875rem', fontWeight: 600, color: '#7DA6F5',
                           marginTop: 8, textAlign: 'right' as const,
                         }}>
                           Ver cotización →
@@ -1092,17 +1111,17 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 <MetricCard
                   label="Revenue total"
                   value={totalRevenue > 0 ? fmt(totalRevenue) : '$0'}
-                  color="#16a34a"
+                  color="#1E8A63"
                 />
                 <MetricCard
                   label="Dias desde creacion"
                   value={String(daysSince(contact.created_at))}
-                  color="#4B7BE5"
+                  color="#7DA6F5"
                 />
                 <MetricCard
                   label="Actividades"
                   value={String(contact.activities.length)}
-                  color="#6C5CE7"
+                  color="#5B4BD6"
                 />
                 <MetricCard
                   label="Paginas visitadas"
@@ -1113,10 +1132,10 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               {contact.total_time_on_site > 0 && (
                 <div style={{
                   marginTop: 8, padding: '8px 12px', borderRadius: 6,
-                  background: '#f8fafc', fontSize: '0.75rem', color: '#64748b',
+                  background: '#f5f4f8', fontSize: '0.75rem', color: '#6b7280',
                 }}>
                   Tiempo en sitio:{' '}
-                  <strong style={{ color: '#0f172a' }}>
+                  <strong style={{ color: '#241d43' }}>
                     {contact.total_time_on_site >= 60
                       ? `${Math.floor(contact.total_time_on_site / 60)}m ${contact.total_time_on_site % 60}s`
                       : `${contact.total_time_on_site}s`}
@@ -1125,20 +1144,20 @@ export default function ContactProfile({ contactId, onClose }: Props) {
               )}
               {contact.pages_visited && (
                 <div style={{ marginTop: 8 }}>
-                  <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                  <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#a5a2af', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
                     Paginas
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {contact.pages_visited.split(',').slice(0, 10).map((p, i) => (
                       <span key={i} style={{
                         fontSize: '0.625rem', padding: '2px 6px', borderRadius: 3,
-                        background: '#f1f5f9', color: '#64748b',
+                        background: '#f5f4f8', color: '#6b7280',
                       }}>
                         {p.trim()}
                       </span>
                     ))}
                     {contact.pages_visited.split(',').length > 10 && (
-                      <span style={{ fontSize: '0.625rem', color: '#94a3b8' }}>
+                      <span style={{ fontSize: '0.625rem', color: '#a5a2af' }}>
                         +{contact.pages_visited.split(',').length - 10} mas
                       </span>
                     )}
@@ -1163,7 +1182,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             {/* ── Add Activity Bar ── */}
             <div style={{
               background: '#fff', borderRadius: 12, padding: '16px 20px',
-              marginBottom: 20, border: '1px solid #e8e8ec',
+              marginBottom: 20, border: '1px solid #ececec',
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
             }}>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -1172,7 +1191,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   onChange={e => { setActivityType(e.target.value); setShowTranscript(false); }}
                   style={{
                     ...inputStyle, width: 'auto', marginBottom: 0,
-                    fontWeight: 600, color: '#0f172a',
+                    fontWeight: 600, color: '#241d43',
                   }}
                 >
                   {ACTIVITY_TYPES.map(t => (
@@ -1210,8 +1229,8 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                       onClick={() => setShowTranscript(!showTranscript)}
                       style={{
                         ...smallBtnStyle,
-                        background: showTranscript ? '#ede9fe' : '#f1f5f9',
-                        color: showTranscript ? '#7c3aed' : '#64748b',
+                        background: showTranscript ? '#EEECFE' : '#f5f4f8',
+                        color: showTranscript ? '#5B4BD6' : '#6b7280',
                       }}>
                       {showTranscript ? 'Ocultar transcripcion' : 'Pegar transcripcion'}
                     </button>
@@ -1230,7 +1249,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                         disabled={summarizing || !callTranscript.trim()}
                         style={{
                           ...smallBtnStyle,
-                          background: '#0f172a', color: '#fff',
+                          background: '#241d43', color: '#fff',
                           opacity: summarizing || !callTranscript.trim() ? 0.5 : 1,
                         }}>
                         {summarizing ? 'Generando...' : '\u{2728} Generar minuta con IA'}
@@ -1248,7 +1267,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: '0.8125rem', fontWeight: 700, padding: '10px 20px',
                     borderRadius: 8, border: 'none', cursor: 'pointer',
-                    background: '#0f172a', color: '#fff',
+                    background: '#241d43', color: '#fff',
                     fontFamily: 'inherit',
                     opacity: activitySubmitting || !activityText.trim() ? 0.5 : 1,
                     transition: 'opacity 0.15s ease',
@@ -1271,9 +1290,9 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     fontSize: '0.75rem', fontWeight: 600,
                     padding: '6px 14px', borderRadius: 20,
                     border: '1px solid',
-                    borderColor: activityFilter === f.id ? '#0f172a' : '#e2e8f0',
-                    background: activityFilter === f.id ? '#0f172a' : '#fff',
-                    color: activityFilter === f.id ? '#fff' : '#64748b',
+                    borderColor: activityFilter === f.id ? '#241d43' : '#ececec',
+                    background: activityFilter === f.id ? '#9B8CFA' : '#fff',
+                    color: activityFilter === f.id ? '#fff' : '#6b7280',
                     cursor: 'pointer', whiteSpace: 'nowrap' as const,
                     fontFamily: 'inherit',
                     transition: 'all 0.15s ease',
@@ -1287,7 +1306,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
             {filteredActivities.length === 0 ? (
               <div style={{
                 textAlign: 'center', padding: '48px 20px',
-                color: '#94a3b8', fontSize: '0.875rem',
+                color: '#a5a2af', fontSize: '0.875rem',
               }}>
                 {activityFilter === 'all'
                   ? 'Sin actividades registradas'
@@ -1298,7 +1317,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 {/* Connecting line */}
                 <div style={{
                   position: 'absolute', left: 15, top: 24, bottom: 24,
-                  width: 2, background: '#e8e8ec', borderRadius: 1,
+                  width: 2, background: '#ececec', borderRadius: 1,
                 }} />
 
                 {filteredActivities.map((a, i) => {
@@ -1331,7 +1350,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                         flex: 1, minWidth: 0, background: '#fff',
                         borderRadius: 10, padding: '14px 18px',
                         borderLeft: `3px solid ${color}`,
-                        border: `1px solid #e8e8ec`,
+                        border: `1px solid #ececec`,
                         borderLeftWidth: 3, borderLeftColor: color,
                         marginBottom: 8,
                       }}>
@@ -1340,7 +1359,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                               <span style={{
-                                fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a',
+                                fontSize: '0.8125rem', fontWeight: 700, color: '#241d43',
                               }}>
                                 {a.titulo || activityLabel(a.tipo)}
                               </span>
@@ -1348,7 +1367,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                                 <span style={{
                                   fontSize: '0.5625rem', fontWeight: 700,
                                   padding: '1px 6px', borderRadius: 3,
-                                  background: '#f1f5f9', color: '#94a3b8',
+                                  background: '#f5f4f8', color: '#a5a2af',
                                   textTransform: 'uppercase' as const, letterSpacing: '0.04em',
                                 }}>
                                   auto
@@ -1356,7 +1375,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                               )}
                             </div>
                           </div>
-                          <span style={{ fontSize: '0.6875rem', color: '#94a3b8', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
+                          <span style={{ fontSize: '0.6875rem', color: '#a5a2af', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
                             {fmtDateTime(a.created_at)}
                           </span>
                         </div>
@@ -1364,7 +1383,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                         {/* Description */}
                         {a.descripcion && (
                           <div style={{
-                            fontSize: '0.8125rem', color: '#475569',
+                            fontSize: '0.8125rem', color: '#4a4a52',
                             marginTop: 8, lineHeight: 1.6,
                             whiteSpace: 'pre-wrap' as const,
                           }}>
@@ -1382,17 +1401,17 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                               <span style={{
                                 fontSize: '0.6875rem', fontWeight: 700,
                                 padding: '2px 8px', borderRadius: 4,
-                                background: '#fee2e2', color: '#dc2626',
+                                background: '#FEF0EF', color: '#C0554E',
                               }}>
                                 {LIFECYCLE_STAGES.find(s => s.id === a.metadata.old_stage)?.label || a.metadata.old_stage}
                               </span>
                             )}
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>→</span>
+                            <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>→</span>
                             {a.metadata.new_stage && (
                               <span style={{
                                 fontSize: '0.6875rem', fontWeight: 700,
                                 padding: '2px 8px', borderRadius: 4,
-                                background: '#dcfce7', color: '#16a34a',
+                                background: '#EAF8F2', color: '#1E8A63',
                               }}>
                                 {LIFECYCLE_STAGES.find(s => s.id === a.metadata.new_stage)?.label || a.metadata.new_stage}
                               </span>
@@ -1404,27 +1423,27 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                         {isEmail && a.metadata && (
                           <div style={{
                             marginTop: 10, padding: '10px 12px', borderRadius: 6,
-                            background: '#f8fafc', fontSize: '0.75rem',
+                            background: '#f5f4f8', fontSize: '0.75rem',
                           }}>
                             {a.metadata.subject && (
                               <div style={{ marginBottom: 4 }}>
-                                <span style={{ color: '#94a3b8', fontWeight: 600 }}>Asunto: </span>
-                                <span style={{ color: '#0f172a', fontWeight: 600 }}>{a.metadata.subject}</span>
+                                <span style={{ color: '#a5a2af', fontWeight: 600 }}>Asunto: </span>
+                                <span style={{ color: '#241d43', fontWeight: 600 }}>{a.metadata.subject}</span>
                               </div>
                             )}
                             {a.metadata.to && (
                               <div style={{ marginBottom: 4 }}>
-                                <span style={{ color: '#94a3b8', fontWeight: 600 }}>Para: </span>
-                                <span style={{ color: '#475569' }}>{a.metadata.to}</span>
+                                <span style={{ color: '#a5a2af', fontWeight: 600 }}>Para: </span>
+                                <span style={{ color: '#4a4a52' }}>{a.metadata.to}</span>
                               </div>
                             )}
                             {a.metadata.status && (
                               <div>
-                                <span style={{ color: '#94a3b8', fontWeight: 600 }}>Estado: </span>
+                                <span style={{ color: '#a5a2af', fontWeight: 600 }}>Estado: </span>
                                 <span style={{
                                   fontWeight: 700,
-                                  color: a.metadata.status === 'clicked' ? '#16a34a'
-                                    : a.metadata.status === 'opened' ? '#2563eb' : '#94a3b8',
+                                  color: a.metadata.status === 'clicked' ? '#1E8A63'
+                                    : a.metadata.status === 'opened' ? '#2C5FC4' : '#a5a2af',
                                 }}>
                                   {a.metadata.status === 'sent' ? 'Enviado'
                                     : a.metadata.status === 'opened' ? 'Abierto'
@@ -1438,7 +1457,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                         {/* Call duration */}
                         {a.tipo === 'llamada' && a.metadata?.duration_minutes && (
                           <div style={{
-                            fontSize: '0.75rem', color: '#64748b', marginTop: 6,
+                            fontSize: '0.75rem', color: '#6b7280', marginTop: 6,
                           }}>
                             Duracion: {a.metadata.duration_minutes} min
                           </div>
@@ -1451,26 +1470,26 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                               onClick={() => toggleActivity(a.id)}
                               style={{
                                 ...smallBtnStyle,
-                                background: isExpanded ? '#ede9fe' : '#f1f5f9',
-                                color: isExpanded ? '#7c3aed' : '#64748b',
+                                background: isExpanded ? '#EEECFE' : '#f5f4f8',
+                                color: isExpanded ? '#5B4BD6' : '#6b7280',
                               }}>
                               {isExpanded ? '\u25B2 Ocultar minuta' : '\u25BC Ver minuta'}
                             </button>
                             {isExpanded && (
                               <div style={{
                                 marginTop: 10, padding: '14px 16px', borderRadius: 8,
-                                background: '#faf5ff', border: '1px solid #ede9fe',
+                                background: '#faf5ff', border: '1px solid #EEECFE',
                               }}>
                                 {a.metadata.summary && (
                                   <div style={{ marginBottom: 12 }}>
                                     <div style={{
                                       fontSize: '0.6875rem', fontWeight: 700,
-                                      color: '#7c3aed', textTransform: 'uppercase' as const,
+                                      color: '#5B4BD6', textTransform: 'uppercase' as const,
                                       letterSpacing: '0.04em', marginBottom: 4,
                                     }}>
                                       Resumen
                                     </div>
-                                    <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: '0.8125rem', color: '#4a4a52', lineHeight: 1.6 }}>
                                       {a.metadata.summary}
                                     </div>
                                   </div>
@@ -1479,14 +1498,14 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                                   <div style={{ marginBottom: 12 }}>
                                     <div style={{
                                       fontSize: '0.6875rem', fontWeight: 700,
-                                      color: '#7c3aed', textTransform: 'uppercase' as const,
+                                      color: '#5B4BD6', textTransform: 'uppercase' as const,
                                       letterSpacing: '0.04em', marginBottom: 4,
                                     }}>
                                       Puntos clave
                                     </div>
                                     <ul style={{
                                       margin: 0, paddingLeft: 16,
-                                      fontSize: '0.8125rem', color: '#475569', lineHeight: 1.8,
+                                      fontSize: '0.8125rem', color: '#4a4a52', lineHeight: 1.8,
                                     }}>
                                       {a.metadata.puntos_clave.map((p: string, idx: number) => (
                                         <li key={idx}>{p}</li>
@@ -1498,12 +1517,12 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                                   <div style={{ marginBottom: 12 }}>
                                     <div style={{
                                       fontSize: '0.6875rem', fontWeight: 700,
-                                      color: '#7c3aed', textTransform: 'uppercase' as const,
+                                      color: '#5B4BD6', textTransform: 'uppercase' as const,
                                       letterSpacing: '0.04em', marginBottom: 4,
                                     }}>
                                       Proximos pasos
                                     </div>
-                                    <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: '0.8125rem', color: '#4a4a52', lineHeight: 1.6 }}>
                                       {typeof a.metadata.proximos_pasos === 'string'
                                         ? a.metadata.proximos_pasos
                                         : Array.isArray(a.metadata.proximos_pasos)
@@ -1517,10 +1536,10 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                                     <span style={{
                                       fontSize: '0.6875rem', fontWeight: 700,
                                       padding: '3px 10px', borderRadius: 4,
-                                      background: a.metadata.sentimiento === 'positivo' ? '#dcfce7'
-                                        : a.metadata.sentimiento === 'negativo' ? '#fee2e2' : '#f1f5f9',
-                                      color: a.metadata.sentimiento === 'positivo' ? '#16a34a'
-                                        : a.metadata.sentimiento === 'negativo' ? '#dc2626' : '#64748b',
+                                      background: a.metadata.sentimiento === 'positivo' ? '#EAF8F2'
+                                        : a.metadata.sentimiento === 'negativo' ? '#FEF0EF' : '#f5f4f8',
+                                      color: a.metadata.sentimiento === 'positivo' ? '#1E8A63'
+                                        : a.metadata.sentimiento === 'negativo' ? '#C0554E' : '#6b7280',
                                     }}>
                                       Sentimiento: {a.metadata.sentimiento}
                                     </span>
@@ -1541,6 +1560,12 @@ export default function ContactProfile({ contactId, onClose }: Props) {
         )}
 
       </div>
+
+      {/* La ficha del cliente, abierta desde el nombre de la empresa. Va aquí,
+          encima de todo: el cajón es fijo y trae su propio z-index. */}
+      {verCliente && (
+        <ClienteDrawer360 companyId={verCliente} onClose={() => setVerCliente(null)} onChanged={() => {}} />
+      )}
     </div>
   );
 }
@@ -1551,10 +1576,10 @@ export default function ContactProfile({ contactId, onClose }: Props) {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 10px',
-  fontSize: '0.8125rem', border: '1px solid #e2e8f0',
+  fontSize: '0.8125rem', border: '1px solid #ececec',
   borderRadius: 6, outline: 'none', fontFamily: 'inherit',
   marginBottom: 0, boxSizing: 'border-box' as const,
-  color: '#0f172a', background: '#fff',
+  color: '#241d43', background: '#fff',
   transition: 'border-color 0.15s ease',
 };
 
@@ -1579,13 +1604,13 @@ function CollapsibleSection({ title, open, onToggle, children }: {
           cursor: 'pointer', fontFamily: 'inherit',
         }}>
         <span style={{
-          fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8',
+          fontSize: '0.6875rem', fontWeight: 700, color: '#a5a2af',
           textTransform: 'uppercase' as const, letterSpacing: '0.06em',
         }}>
           {title}
         </span>
         <span style={{
-          fontSize: '0.75rem', color: '#cbd5e1',
+          fontSize: '0.75rem', color: '#ececec',
           transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
           transition: 'transform 0.2s ease',
           display: 'inline-block',
@@ -1595,7 +1620,7 @@ function CollapsibleSection({ title, open, onToggle, children }: {
       </button>
       {open && (
         <div style={{
-          borderTop: '1px solid #f1f5f9', paddingTop: 12,
+          borderTop: '1px solid #f5f4f8', paddingTop: 12,
         }}>
           {children}
         </div>
@@ -1611,7 +1636,7 @@ function FormField({ label, children, inline }: {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <label style={{
-          fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8',
+          fontSize: '0.6875rem', fontWeight: 600, color: '#a5a2af',
           textTransform: 'uppercase' as const, letterSpacing: '0.04em',
           whiteSpace: 'nowrap' as const,
         }}>
@@ -1625,7 +1650,7 @@ function FormField({ label, children, inline }: {
     <div style={{ marginBottom: 10 }}>
       <label style={{
         display: 'block', fontSize: '0.6875rem', fontWeight: 600,
-        color: '#94a3b8', textTransform: 'uppercase' as const,
+        color: '#a5a2af', textTransform: 'uppercase' as const,
         letterSpacing: '0.04em', marginBottom: 4,
       }}>
         {label}
@@ -1639,9 +1664,9 @@ function PropertyRow({ label, children }: { label: string; children: React.React
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '6px 0', borderBottom: '1px solid #f8fafc',
+      padding: '6px 0', borderBottom: '1px solid #f5f4f8',
     }}>
-      <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '0.75rem', color: '#a5a2af', fontWeight: 500 }}>{label}</span>
       <span style={{ fontSize: '0.8125rem', color: '#334155', fontWeight: 600 }}>{children}</span>
     </div>
   );
@@ -1661,7 +1686,7 @@ function MetricCard({ label, value, color }: { label: string; value: string; col
         {value}
       </div>
       <div style={{
-        fontSize: '0.625rem', fontWeight: 600, color: '#94a3b8',
+        fontSize: '0.625rem', fontWeight: 600, color: '#a5a2af',
         textTransform: 'uppercase' as const, letterSpacing: '0.04em',
         marginTop: 2,
       }}>

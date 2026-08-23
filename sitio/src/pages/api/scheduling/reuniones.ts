@@ -301,3 +301,42 @@ export const PATCH: APIRoute = async ({ request }) => {
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true, data });
 };
+
+/* ── DELETE: borrar una reunión de prueba ────────────────────────────────────
+ * Cancelar y borrar NO son lo mismo. Una reunión CANCELADA pasó de verdad —se
+ * acordó y se echó para atrás— y tiene que quedar en el historial del cliente.
+ * Una de PRUEBA nunca existió, y dejarla ahí ensucia la agenda, el conteo por
+ * tipo y la tasa de asistencia.
+ *
+ * Por eso se borra de verdad, y por eso avisa antes: las que dejaron rastro
+ * —minuta escrita o mejoras que salieron de ella— no se borran en silencio.
+ */
+export const DELETE: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return json({ error: 'No autenticado' }, 401);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id requerido' }, 400);
+
+  const { data: b } = await supabase.from('bookings')
+    .select('id, asunto, fecha, minuta, company_id').eq('id', id).maybeSingle();
+  if (!b) return json({ error: 'Esa reunión ya no existe.' }, 404);
+
+  // Lo que cuelga de la reunión no se borra: se desliga. Una mejora que salió
+  // de una junta sigue siendo un compromiso con el cliente aunque la junta se
+  // borre; perderla sería borrar trabajo comprometido.
+  const { count: mejoras } = await supabase.from('mejoras')
+    .select('id', { count: 'exact', head: true }).eq('booking_id', id);
+  if (mejoras && mejoras > 0 && url.searchParams.get('forzar') !== '1') {
+    return json({
+      error: `De esta reunión salieron ${mejoras} compromiso${mejoras === 1 ? '' : 's'} en Consultoría. Bórrala solo si fue una prueba: los compromisos se quedan, pero pierden de qué junta salieron.`,
+      requiere_confirmacion: true, mejoras,
+    }, 409);
+  }
+  if (mejoras && mejoras > 0) {
+    await supabase.from('mejoras').update({ booking_id: null }).eq('booking_id', id);
+  }
+
+  const { error } = await supabase.from('bookings').delete().eq('id', id);
+  if (error) return json({ error: error.message }, 500);
+  return json({ ok: true, mejoras_desligadas: mejoras || 0 });
+};
