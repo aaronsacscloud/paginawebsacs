@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
+import MotivosLead from './crm/MotivosLead';
 import MarcaTab from './crm/MarcaTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import UsuariosPermisos from './crm/UsuariosPermisos';
@@ -3574,6 +3575,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'etapas-lead', ico: 'pipe', t: 'Etapas del lead', v: 'Pipeline', mudado: true,
                   d: 'Las columnas del embudo y qué significa cada una.',
                   editor: <PipelinesConfig initialTipo="lead" sinTitulo /> },
+                { id: 'motivos-lead', ico: 'campos', t: 'Motivos de descarte y desenlace',
+                  d: 'Por qué un lead no califica y cómo terminó. Vienen unos de fábrica y puedes agregar los tuyos.',
+                  editor: <MotivosLead /> },
               ]},
               { id: 'oportunidades', nom: 'Oportunidades', sub: 'Cómo avanza lo que se está vendiendo.', items: [
                 { id: 'etapas-op', ico: 'pipe', t: 'Etapas de la oportunidad', v: 'Pipeline', mudado: true,

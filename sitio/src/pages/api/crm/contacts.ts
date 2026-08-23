@@ -2,6 +2,8 @@ import { normalizarTelefono } from '../../../lib/telefono';
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
+import { etapaDeLead } from '../../../lib/crm/lead-etapa';
+import { normalizaEstado } from '../../../lib/crm/reuniones';
 
 export const prerender = false;
 
@@ -31,7 +33,51 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const { data, error, count } = await query;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify({ contacts: data, total: count }));
+
+  // ── Etapa y esfuerzo, solo si se piden ────────────────────────────────────
+  // `?con_etapa=1` lo usa la lista de Leads. Se enriquece aquí y no en una
+  // columna guardada porque una columna hay que mantenerla y se queda vieja:
+  // la etapa sale de hechos que ya viven en otras tablas. Son TRES consultas
+  // para todo el lote, no una por lead.
+  let filas: any[] = data || [];
+  if (url.searchParams.get('con_etapa') === '1' && filas.length) {
+    const ids = filas.map((c: any) => c.id);
+    const TOQUES = ['llamada', 'whatsapp_enviado', 'email_enviado'];
+    const [acts, books, qs] = await Promise.all([
+      supabase.from('activities').select('contact_id, tipo').in('contact_id', ids).in('tipo', TOQUES),
+      supabase.from('bookings').select('contact_id, estado, fecha').in('contact_id', ids),
+      supabase.from('quotes').select('contact_id').in('contact_id', ids),
+    ]);
+    const porContacto = new Map<string, { llamadas: number; correos: number; whatsapp: number; reuniones: any[]; cotizaciones: number }>();
+    const dame = (id: string) => {
+      let x = porContacto.get(id);
+      if (!x) { x = { llamadas: 0, correos: 0, whatsapp: 0, reuniones: [], cotizaciones: 0 }; porContacto.set(id, x); }
+      return x;
+    };
+    for (const a of (acts.data || [])) {
+      const x = dame(a.contact_id);
+      if (a.tipo === 'llamada') x.llamadas++;
+      else if (a.tipo === 'email_enviado') x.correos++;
+      else if (a.tipo === 'whatsapp_enviado') x.whatsapp++;
+    }
+    for (const b of (books.data || [])) dame(b.contact_id).reuniones.push({ estado: normalizaEstado(b.estado), fecha: b.fecha });
+    for (const q of (qs.data || [])) dame(q.contact_id).cotizaciones++;
+
+    filas = filas.map((c: any) => {
+      const x = porContacto.get(c.id) || { llamadas: 0, correos: 0, whatsapp: 0, reuniones: [], cotizaciones: 0 };
+      const toques = x.llamadas + x.correos + x.whatsapp;
+      const { etapa, porHechos, manual } = etapaDeLead({
+        lifecycle_stage: c.lifecycle_stage, calificacion: c.calificacion, desenlace: c.desenlace,
+        toques, last_contact_at: c.last_contact_at, reuniones: x.reuniones,
+        cotizaciones: x.cotizaciones, etapa_manual: c.etapa_manual,
+      });
+      return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual,
+        esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
+        n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones };
+    });
+  }
+
+  return new Response(JSON.stringify({ contacts: filas, total: count }));
 };
 
 export const POST: APIRoute = async ({ request }) => {

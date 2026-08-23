@@ -7,12 +7,13 @@
 // Arriba va la RUTA: llegó → contactado → demo agendada → se presentó → prueba
 // → cotizado → cliente. Un lead rara vez se enfría por falta de interés; se
 // enfría porque nadie supo cuál era el siguiente paso. Por eso debajo de la
-// ruta hay una sola frase que lo dice, con el botón para resolverlo ahí mismo.
+// etapa hay una sola frase que dice qué falta para el siguiente peldaño.
 import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
+import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -103,43 +104,28 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
     await cargar(); onChanged?.(); return true;
   }
 
-  // ── La ruta ──────────────────────────────────────────────────────────────
-  // Cada paso se DEDUCE de un hecho, no de una casilla que alguien palomeó:
-  // la reunión existe, la cotización existe, la suscripción existe. Una etapa
-  // capturada a mano se queda vieja; un hecho no.
-  const ruta = useMemo(() => {
-    if (!c) return [];
+  // ── La etapa ─────────────────────────────────────────────────────────────
+  // Cada peldaño se DEDUCE de un hecho, no de una casilla que alguien palomeó:
+  // hay toque, hay reunión, hay cotización, pagó. Una etapa capturada a mano se
+  // queda vieja; un hecho no. Lo capturado solo puede ADELANTAR (ver
+  // lib/crm/lead-etapa.ts, que además está probado aparte).
+  const evaluacion = useMemo(() => {
+    if (!c) return null;
     const acts: any[] = c.activities || [];
-    const books: any[] = c.bookings || [];
-    const quotes: any[] = c.quotes || [];
-    const props = c.propiedades || {};
-    const contacto = c.last_contact_at || acts.find((a: any) => ['llamada', 'whatsapp', 'email', 'nota'].includes(a.tipo))?.created_at;
-    const demo = books.slice().sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))[0];
-    const asistio = books.find((b: any) => normalizaEstado(b.estado) === 'asistio');
-    const prueba = props.prueba_inicio || null;
-    const cotizada = quotes.slice().sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)))[0];
-    const esCliente = c.lifecycle_stage === 'cliente';
-    // Prueba y demo son el MISMO paso: después de contactarlo, o pide probarlo
-    // o pide que se lo enseñen —y muchas veces la prueba va antes de la demo—.
-    // Separarlos dejaba la ruta con un hueco permanente en quien nunca hace una
-    // de las dos, y un paso que nunca se llena deja de leerse.
-    const primero = [prueba, demo?.fecha].filter(Boolean).sort()[0] || null;
-    return [
-      { k: 'llego', l: 'Llegó', f: c.created_at, ok: true },
-      { k: 'contactado', l: 'Contactado', f: contacto, ok: !!contacto },
-      {
-        k: 'interes', l: prueba && !demo ? 'Prueba gratis' : demo && !prueba ? 'Demo agendada' : 'Prueba o demo',
-        f: primero, ok: !!(prueba || demo), extra: demo,
-        detalle: prueba && demo ? 'prueba y demo' : null,
-      },
-      { k: 'asistio', l: 'Se presentó', f: asistio?.fecha, ok: !!asistio, pendiente: !!demo && !asistio && String(demo.fecha) < hoy() },
-      { k: 'cotizado', l: 'Cotizado', f: cotizada?.created_at, ok: !!cotizada },
-      { k: 'cliente', l: 'Cliente', f: esCliente ? c.updated_at : null, ok: esCliente },
-    ];
+    const books: any[] = (c.bookings || []).map((b: any) => ({ estado: normalizaEstado(b.estado), fecha: b.fecha }));
+    const cuenta = (t: string) => acts.filter((a: any) => a.tipo === t).length;
+    const esfuerzo = { llamadas: cuenta('llamada'), correos: cuenta('email_enviado'), whatsapp: cuenta('whatsapp_enviado') };
+    const toques = esfuerzo.llamadas + esfuerzo.correos + esfuerzo.whatsapp;
+    const r = etapaDeLead({
+      lifecycle_stage: c.lifecycle_stage, calificacion: c.calificacion, desenlace: c.desenlace,
+      toques, last_contact_at: c.last_contact_at, reuniones: books,
+      cotizaciones: (c.quotes || []).length, etapa_manual: c.etapa_manual,
+    });
+    return { ...r, esfuerzo, toques };
   }, [c]);
 
-  const paso = ruta.findIndex(p => !p.ok);
-  const actual = paso === -1 ? ruta.length - 1 : paso;
+  const RUTA_VISIBLE: Etapa[] = ['nuevo', 'contactado', 'calificado', 'agendado', 'demo_hecha', 'cotizado', 'negociando', 'cliente'];
+
 
   if (err) return (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24 }}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>{err}</div><button style={{ ...D.btnA, marginTop: 12 }} onClick={onClose}>Cerrar</button></div></>);
   if (!c) return (<><div style={D.overlay} onClick={onClose} /><div style={D.panel}><Cargando texto="Cargando lead…" alto={240} /></div></>);
@@ -147,7 +133,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
   const tel = c.whatsapp || c.telefono;
   const o = origenDe(origenDeRegistro(c));
-  const demo = ruta.find(p => p.k === 'interes')?.extra;
+  const demo = (c.bookings || []).slice().sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))[0];
   const sinContacto = dias(c.last_contact_at || c.created_at);
 
   return (
@@ -183,38 +169,52 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
         <div style={D.body}>
           {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
-          {/* ── Ruta del lead ── */}
+          {/* ── Etapa · se mueve sola ── */}
           <div style={D.cardM}>
             <div style={D.h}>
-              Ruta del lead
+              Etapa
               <span style={D.hr}>
-                llegó hace {dias(c.created_at)} días{sinContacto != null ? ` · ${sinContacto} sin contacto` : ''}
+                se mueve sola · llegó hace {dias(c.created_at)} días{sinContacto != null ? ` · ${sinContacto} sin contacto` : ''}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-              {ruta.map((p: any, i: number) => {
-                const est = p.ok ? 'ok' : i === actual ? 'now' : 'off';
+              {RUTA_VISIBLE.map((k, i) => {
+                const idx = RUTA_VISIBLE.indexOf(evaluacion?.etapa as Etapa);
+                const perdido = evaluacion?.etapa === 'perdido';
+                const est = perdido ? 'off' : i < idx ? 'ok' : i === idx ? 'now' : 'off';
                 const col = est === 'ok' ? '#4FBF95' : est === 'now' ? '#9B8CFA' : '#f1f0f5';
+                // El peldaño que un humano adelantó se marca: así se distingue
+                // lo que pasó de lo que alguien dijo que pasó.
+                const aMano = evaluacion?.manual === k && evaluacion?.porHechos !== k;
                 return (
-                  <div key={p.k} style={{ flex: 1, textAlign: 'center', position: 'relative', minWidth: 0 }}>
-                    {i > 0 && <span style={{ position: 'absolute', top: 13, left: '-50%', width: '100%', height: 2, background: p.ok || est === 'now' ? '#cdeadd' : '#f1f0f5' }} />}
+                  <div key={k} style={{ flex: 1, textAlign: 'center', position: 'relative', minWidth: 0 }}>
+                    {i > 0 && <span style={{ position: 'absolute', top: 13, left: '-50%', width: '100%', height: 2, background: est === 'off' ? '#f1f0f5' : '#cdeadd' }} />}
                     <div style={{
                       position: 'relative', width: 26, height: 26, borderRadius: 99, margin: '0 auto',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
                       background: est === 'ok' ? col : '#fff', border: `2px solid ${col}`,
                       color: est === 'ok' ? '#fff' : est === 'now' ? '#5B4BD6' : '#b3afbd',
                     }}>{est === 'ok' ? '✓' : i + 1}</div>
-                    <div style={{ fontSize: '0.68rem', fontWeight: est === 'now' ? 800 : 700, marginTop: 6, color: est === 'ok' ? '#3f3b4d' : est === 'now' ? '#5B4BD6' : '#a5a2af' }}>{p.l}</div>
-                    <div style={{ fontSize: '0.62rem', color: '#c2c0c9', marginTop: 2 }}>{p.f ? fmtDate(p.f) : p.pendiente ? 'falta marcar' : '—'}</div>
-                    {p.detalle && <div style={{ fontSize: '0.6rem', color: '#b3afbd' }}>{p.detalle}</div>}
+                    <div style={{ fontSize: '0.68rem', fontWeight: est === 'now' ? 800 : 700, marginTop: 6, color: est === 'ok' ? '#3f3b4d' : est === 'now' ? '#5B4BD6' : '#a5a2af' }}>{ETAPA_LABEL[k]}</div>
+                    {aMano && <div style={{ fontSize: '0.58rem', color: '#b3afbd', marginTop: 1 }}>a mano</div>}
                   </div>
                 );
               })}
             </div>
-
-            {/* Qué falta AHORA, en una frase, con el botón para resolverlo. */}
-            <SiguientePaso c={c} ruta={ruta} demo={demo} guardar={guardar} flash={flash} recargar={cargar} />
+            {evaluacion?.etapa === 'perdido' && (
+              <div style={{ marginTop: 10, background: '#FBECEA', border: '1px solid #C0554E33', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#C0554E' }}>
+                Cerrado{c.desenlace ? ` · ${c.desenlace}` : ''}{c.calificacion_motivo ? ` · ${c.calificacion_motivo}` : ''}
+              </div>
+            )}
+            {evaluacion && pasoDeEtapa(evaluacion.etapa) && (
+              <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid #f4f3f7', fontSize: '0.77rem', color: '#7d7a88', lineHeight: 1.55 }}>
+                {pasoDeEtapa(evaluacion.etapa)}
+              </div>
+            )}
           </div>
+
+          {/* ── Evaluación · lo único que se captura a mano ── */}
+          {tab === 'resumen' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} />}
 
           {tab === 'resumen' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' }}>
@@ -245,7 +245,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
                       navigator.clipboard?.writeText(u); flash('Link de agenda copiado');
                     }}>Mandar link de agenda</button>
                     {/* Muchas demos ya ocurrieron cuando alguien se acuerda de
-                        apuntarlas. Registrarla después vale igual: la ruta
+                        apuntarlas. Registrarla después vale igual: la etapa
                         avanza y deja de pedir algo que ya pasó. */}
                     <button style={D.btnA} onClick={() => setRegistrando(true)}>Registrar una que ya pasó</button>
                   </div>
@@ -374,7 +374,7 @@ function ReunionPasada({ c, onCerrar, onListo }: any) {
           <div style={{ marginTop: 9 }}><div style={D.fl}>De qué se habló</div>
             <input style={D.fi} value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Demo del punto de venta" /></div>
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 7, lineHeight: 1.45 }}>
-            Queda marcada como <b>se presentó</b> y la ruta avanza. Después puedes levantar su minuta desde Reuniones.
+            Queda marcada como <b>se presentó</b> y la etapa avanza sola. Después puedes levantar su minuta desde Reuniones.
           </div>
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginTop: 9 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -388,51 +388,119 @@ function ReunionPasada({ c, onCerrar, onListo }: any) {
 }
 
 /* La frase que dice qué falta y el botón que lo resuelve. */
-function SiguientePaso({ c, ruta, demo, guardar, flash, recargar }: any) {
-  const [busy, setBusy] = useState(false);
-  const faltaAsistencia = ruta.find((p: any) => p.k === 'asistio')?.pendiente;
-  const sinContacto = dias(c.last_contact_at || c.created_at);
+/**
+ * Evaluación: los tres campos que un humano SÍ tiene que llenar, y el esfuerzo
+ * que se cuenta solo.
+ *
+ * Es a mano a propósito. La etapa se deduce de hechos, pero si el lead vale la
+ * pena solo lo sabe quien habló con él — y el próximo paso es el campo que hoy
+ * está en 0 de 105 leads y el que convierte la lista en trabajo.
+ */
+function Evaluacion({ c, evaluacion, guardar, guardando }: any) {
+  const [motivos, setMotivos] = useState<any[]>([]);
+  const [f, setF] = useState<any>({});
+  const v = (k: string) => (f[k] !== undefined ? f[k] : (c[k] ?? '')) as any;
+  const set = (k: string, val: any) => setF((p: any) => ({ ...p, [k]: val }));
+  const sucio = Object.keys(f).length > 0;
 
-  async function marcar(estado: string) {
-    setBusy(true);
-    await fetch('/api/scheduling/reuniones', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: demo.id, estado }),
-    }).catch(() => {});
-    setBusy(false); flash(estado === 'asistio' ? 'Marcada como presentada' : 'Marcada como inasistencia'); recargar();
+  useEffect(() => {
+    fetch('/api/crm/leads/motivos?activos=1').then(r => r.json())
+      .then(j => setMotivos(j.motivos || [])).catch(() => {});
+  }, []);
+  const deDescarte = motivos.filter(m => m.tipo === 'descarte');
+  const deDesenlace = motivos.filter(m => m.tipo === 'desenlace');
+
+  const CAL = [
+    { k: 'sin_calificar', l: 'Sin calificar' },
+    { k: 'bueno', l: 'Bueno' },
+    { k: 'a_futuro', l: 'A futuro' },
+    { k: 'no_califica', l: 'No califica' },
+  ];
+  const cal = v('calificacion') || 'sin_calificar';
+  const pideMotivo = cal === 'a_futuro' || cal === 'no_califica';
+
+  async function aplicar() {
+    const patch: any = {};
+    for (const [k, val] of Object.entries(f)) patch[k] = val === '' ? null : val;
+    // Calificar sin decir por qué, cuando el veredicto es negativo, es lo que
+    // impide aprender después qué canal trae curiosos y cuál compradores.
+    if (pideMotivo && !(patch.calificacion_motivo ?? c.calificacion_motivo)) return;
+    if (patch.calificacion) { patch.calificacion_at = new Date().toISOString(); }
+    if (patch.desenlace) { patch.desenlace_at = new Date().toISOString(); }
+    if (await guardar(patch)) setF({});
   }
 
-  let texto: any = null, acciones: any = null;
-  if (faltaAsistencia && demo) {
-    texto = <>La demo fue el <b>{fmtLargo(demo.fecha)}</b> y nadie marcó si se presentó.</>;
-    acciones = (<>
-      <button style={D.btnW} disabled={busy} onClick={() => marcar('asistio')}>Sí se presentó</button>
-      <button style={{ ...D.btnA, color: '#C0554E', borderColor: '#f7c9c5' }} disabled={busy} onClick={() => marcar('no_asistio')}>No llegó</button>
-    </>);
-  } else if (!c.last_contact_at) {
-    texto = <>Nadie lo ha contactado desde que llegó, hace <b>{dias(c.created_at)} días</b>.</>;
-    acciones = <button style={D.btnP} onClick={() => guardar({ last_contact_at: new Date().toISOString() })}>Marcar contactado</button>;
-  } else if (sinContacto != null && sinContacto > 7) {
-    texto = <>Lleva <b>{sinContacto} días</b> sin contacto. Se está enfriando.</>;
-    acciones = <button style={D.btnP} onClick={() => guardar({ last_contact_at: new Date().toISOString() })}>Ya lo contacté</button>;
-  } else if (!(c.bookings || []).length && !c.propiedades?.prueba_inicio) {
-    texto = <>Ni prueba ni demo todavía. Es el paso que más mueve la aguja.</>;
-    acciones = <a style={D.btnP} href="/agendar/demo" target="_blank" rel="noreferrer">Agendar demo</a>;
-  } else if (!(c.quotes || []).length) {
-    texto = <>Ya lo viste en la demo. Falta ponerle precio.</>;
-    acciones = <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Hacer cotización</button>;
-  }
-  if (!texto) return null;
+  const e = evaluacion?.esfuerzo || { llamadas: 0, correos: 0, whatsapp: 0 };
+  const kpi = (t: string, n: number) => (
+    <div style={{ flex: 1, minWidth: 78, border: '1px solid #f0eff3', borderRadius: 10, padding: '9px 11px' }}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>{t}</div>
+      <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 2, color: n ? '#1a1a1a' : '#C0554E' }}>{n}</div>
+    </div>
+  );
 
   return (
-    <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid #f5f4f8', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: '0.78rem', color: '#6b6b74' }}>{texto}</span>
-      <span style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>{acciones}</span>
+    <div style={D.cardM}>
+      <div style={D.h}>Evaluación<span style={D.hr}>lo que sí se captura a mano</span></div>
+
+      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9c99a6', marginBottom: 5 }}>¿Vale la pena trabajarlo?</div>
+      <div style={{ display: 'inline-flex', border: '1px solid #e2e4e9', borderRadius: 9, overflow: 'hidden', flexWrap: 'wrap' }}>
+        {CAL.map(x => (
+          <button key={x.k} onClick={() => set('calificacion', x.k)}
+            style={{ padding: '6px 13px', fontSize: '0.73rem', fontWeight: 700, border: 'none', borderRight: '1px solid #f1f0f6', cursor: 'pointer', fontFamily: 'inherit',
+              background: cal === x.k ? '#EEECFE' : '#fff', color: cal === x.k ? '#5B4BD6' : '#6b7280' }}>{x.l}</button>
+        ))}
+      </div>
+
+      {pideMotivo && (
+        <div style={{ marginTop: 9 }}>
+          <div style={D.fl}>Motivo <span style={{ color: '#C0554E' }}>· obligatorio</span></div>
+          <select style={D.fi} value={v('calificacion_motivo')} onChange={ev => set('calificacion_motivo', ev.target.value)}>
+            <option value="">— elige el motivo —</option>
+            {deDescarte.map(m => <option key={m.id} value={m.clave}>{m.label}</option>)}
+          </select>
+          <div style={{ fontSize: '0.66rem', color: '#b3b1bb', marginTop: 4 }}>¿Falta uno? Se agregan en Configuración → Leads.</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 9, marginTop: 11 }}>
+        <div><div style={D.fl}>Próximo paso</div><input style={D.fi} placeholder="Llamar y confirmar giro…" value={v('proximo_paso')} onChange={ev => set('proximo_paso', ev.target.value)} /></div>
+        <div><div style={D.fl}>Cuándo</div><input type="date" style={D.fi} value={String(v('next_followup') || '').slice(0, 10)} onChange={ev => set('next_followup', ev.target.value)} /></div>
+      </div>
+
+      {(evaluacion?.etapa === 'cotizado' || evaluacion?.etapa === 'negociando' || c.desenlace) && (
+        <div style={{ marginTop: 9 }}>
+          <div style={D.fl}>Desenlace <span style={{ color: '#a5a2af' }}>· solo al cerrar</span></div>
+          <select style={D.fi} value={v('desenlace')} onChange={ev => set('desenlace', ev.target.value)}>
+            <option value="">— sigue abierto —</option>
+            {deDesenlace.map(m => <option key={m.id} value={m.clave}>{m.label}</option>)}
+          </select>
+        </div>
+      )}
+
+      {evaluacion?.etapa === 'cotizado' && !c.etapa_manual && (
+        <button onClick={() => set('etapa_manual', 'negociando')} style={{ ...D.btnA, marginTop: 9 }}>Marcar que ya están negociando</button>
+      )}
+
+      <div style={{ marginTop: 13, paddingTop: 11, borderTop: '1px solid #f4f3f7' }}>
+        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9c99a6', marginBottom: 6 }}>Esfuerzo de contacto <span style={{ fontWeight: 500, color: '#b3b1bb' }}>· se cuenta solo</span></div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {kpi('Llamadas', e.llamadas)}{kpi('Correos', e.correos)}{kpi('WhatsApp', e.whatsapp)}
+        </div>
+        {evaluacion?.toques === 0 && (
+          <div style={{ fontSize: '0.71rem', color: '#C0554E', marginTop: 8, lineHeight: 1.55 }}>Nadie lo ha tocado todavía. La etapa avanza sola en cuanto se registre el primer intento.</div>
+        )}
+      </div>
+
+      {sucio && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <button onClick={aplicar} disabled={guardando || (pideMotivo && !(f.calificacion_motivo ?? c.calificacion_motivo))} style={D.btnP}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+          <button onClick={() => setF({})} style={{ ...D.btnA, borderColor: '#e2e4e9', color: '#666' }}>Cancelar</button>
+        </div>
+      )}
     </div>
   );
 }
 
-/* Prueba gratis: se guarda en las propiedades del contacto, sin tabla nueva. */
 function PruebaGratis({ c, guardar, flash }: any) {
   const p = c.propiedades || {};
   const [abierto, setAbierto] = useState(false);
@@ -477,7 +545,7 @@ function PruebaGratis({ c, guardar, flash }: any) {
       ) : (
         <>
           <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55 }}>
-            Sin prueba activa. Si le abres una cuenta de prueba, se registra aquí con su vencimiento y aparece en la ruta.
+            Sin prueba activa. Si le abres una cuenta de prueba, se registra aquí con su vencimiento.
           </div>
           <div style={{ marginTop: 9 }}><button style={D.btnA} onClick={() => setAbierto(true)}>Registrar prueba gratis</button></div>
         </>
