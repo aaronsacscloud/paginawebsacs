@@ -29,7 +29,7 @@ if (user) {
     <aside class="auth-marca">
 
       <div class="auth-brand">
-        <span class="auth-dot"></span>
+        <svg class="auth-chispa" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z" fill="#fff"/></svg>
         <span>
           <span class="auth-brand-nm">Sacs <b>CRM</b></span>
           <span class="auth-brand-fm">by Andy Araujo</span>
@@ -42,7 +42,7 @@ if (user) {
         <ul class="auth-pilares">
           <li>Análisis</li><li>Tecnología</li><li>IA</li><li>Conexión estratégica</li>
         </ul>
-        <p class="auth-cita">“El verdadero éxito está en crecer mientras ayudas a otros a crecer.”</p>
+        <p class="auth-cita">“Nadie crece solo: cada persona a la que ayudas a avanzar termina abriéndote el camino.”</p>
       </div>
 
       <p class="auth-pie">Panel interno · Solo el equipo de SACS</p>
@@ -107,7 +107,9 @@ if (user) {
     .auth-marca > * { position: relative; z-index: 1; }
 
     .auth-brand { display: flex; align-items: center; gap: 11px; }
-    .auth-dot { width: 34px; height: 34px; border-radius: 99px; background: rgba(255,255,255,.9); flex-shrink: 0; box-shadow: 0 2px 12px rgba(0,0,0,.14); }
+    /* La chispa de la marca. Antes era un círculo con nada adentro: ocupaba
+       el lugar de un logo sin serlo. */
+    .auth-chispa { display: block; flex-shrink: 0; filter: drop-shadow(0 2px 10px rgba(0,0,0,.18)); }
     .auth-brand-nm { display: block; font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
     .auth-brand-nm b { font-size: .52rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: rgba(255,255,255,.22); padding: 3px 6px; border-radius: 5px; vertical-align: middle; }
     .auth-brand-fm { display: block; font-size: .56rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #FBD3E5; margin-top: 3px; }
@@ -115,7 +117,9 @@ if (user) {
     .auth-saludo { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 12px; }
     /* El color va explícito: la hoja global le pone tinta oscura a todos los
        h2, y una regla directa le gana a heredar el blanco del panel. */
-    .auth-frase { font-size: 2.05rem; line-height: 1.16; font-weight: 800; letter-spacing: -.025em; margin: 0; color: #fff; max-width: 15ch; text-transform: uppercase; }
+    /* Un tercio más chico y sin caja alta: a 2 rem en mayúsculas el titular
+       le ganaba a todo lo demás del panel, incluida la tarjeta de acceso. */
+    .auth-frase { font-size: 1.62rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; margin: 0; color: #fff; max-width: 17ch; }
     .auth-pilares { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
     .auth-pilares li { font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 11px; border-radius: 20px; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.22); }
     .auth-cita { margin: 20px 0 0; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.45); font-size: .92rem; line-height: 1.55; color: rgba(255,255,255,.9); font-style: italic; max-width: 34ch; }
@@ -180,7 +184,7 @@ if (user) {
       }
       .auth-wrap { grid-template-columns: 1fr; }
       .auth-marca { padding: 26px 24px 30px; gap: 20px; min-height: 62vh; }
-      .auth-frase { font-size: 1.42rem; max-width: none; }
+      .auth-frase { font-size: 1.3rem; max-width: none; }
       .auth-cita { font-size: .82rem; }
       .auth-pie { display: none; }
       .auth-lado { padding: 26px 20px 44px; align-items: flex-start; }
@@ -195,144 +199,75 @@ if (user) {
     const saludoEl = document.getElementById('saludo');
     if (saludoEl) saludoEl.textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
 
-    // ── El diente de león en vuelo ──────────────────────────────────────────
-    // La expansión, dibujada: una flor que suelta sus semillas y las manda a
-    // crecer lejos. Todo en un canvas de unas cien líneas, sin librerías: un
-    // motor 3D son cientos de kilobytes en la primera pantalla del día y a
-    // este tamaño no se notaría la diferencia.
+    // ── El campo de destellos ───────────────────────────────────────────────
+    // La expansión y la luz, dibujadas: un cielo de chispas que sube despacio y
+    // titila. Reemplaza al diente de león porque la chispa ya es la marca —el
+    // logo, el cargador— y repetirla aquí es lo que hace que una identidad se
+    // reconozca.
     //
-    // El volumen sale de dos cosas. Cada vilano es un disco que gira sobre su
-    // eje: al proyectarlo, la componente vertical se aplasta con el coseno de
-    // su inclinación —de canto se ve como una raya, de frente como un círculo—.
-    // Y cada semilla viaja en profundidad: lo cercano crece y se aclara, lo
-    // lejano se achica hasta desaparecer y vuelve a nacer en la flor.
-    (function dienteDeLeon() {
+    // Se dibuja la SILUETA EXACTA del logo con Path2D, no una estrella
+    // aproximada con curvas a mano: esa salía romboide y se leía como una
+    // figura blanca, no como un destello.
+    //
+    // Tres capas con distinta densidad, tamaño y velocidad. Eso es lo que da
+    // profundidad sin tocar 3D: lo grande y brillante se siente cerca, lo chico
+    // y tenue lejos. Sin librerías — un motor de partículas son cientos de
+    // kilobytes en la primera pantalla del día.
+    (function campoDeDestellos() {
       const cv = document.getElementById('vuelo');
       if (!cv || !cv.getContext) return;
       const ctx = cv.getContext('2d');
       const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let W = 0, H = 0, DPR = 1, flores = [], semillas = [], t0 = 0;
-      const F = 420;                              // distancia focal de la proyección
-      const esc = (z) => F / (F + z);
+      const FORMA = new Path2D('M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z');
+      let W = 0, H = 0, DPR = 1, capas = [];
+
+      // [cuántas, peso (opacidad y tamaño), velocidad]
+      const CAPAS = [[34, .22, 4], [22, .42, 8], [11, .75, 13]];
 
       function armar() {
-        const by = H + 10;                        // los tallos nacen fuera del borde
-        // El lienzo abarca la pantalla completa, pero las flores se siguen
-        // plantando sobre el panel de marca: lo que cruza son las semillas.
-        const panel = document.querySelector('.auth-marca');
-        const WF = Math.min(W, (panel && panel.clientWidth) || W);
-        const chico = WF < 640;                   // teléfono: el panel es angosto
-        flores = chico
-          ? [
-              { x: WF * 0.72, y: H * 0.30, r: Math.min(W, H) * 0.10, base: { x: WF * 0.64, y: by }, n: 40, z: 0 },
-              { x: WF * 0.52, y: H * 0.42, r: Math.min(W, H) * 0.062, base: { x: WF * 0.46, y: by }, n: 28, z: 90 },
-            ]
-          : [
-              { x: WF * 0.66, y: H * 0.58, r: Math.min(W, H) * 0.115, base: { x: WF * 0.56, y: by }, n: 44, z: 0 },
-              { x: WF * 0.52, y: H * 0.74, r: Math.min(W, H) * 0.072, base: { x: WF * 0.47, y: by }, n: 32, z: 90 },
-            ];
-        semillas = [];
-        const total = Math.round(34 * (chico ? 0.6 : 1));
-        for (let i = 0; i < total; i++) semillas.push(nueva(true));
+        capas = CAPAS.map(([n, peso, vel]) => {
+          const arr = [];
+          for (let i = 0; i < n; i++) arr.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 0.9 + Math.random() * peso * 5.5,
+            f: Math.random() * 6.3,          // desfase del titileo
+            v: peso * vel * 0.05,
+            op: peso,
+          });
+          return arr;
+        });
       }
 
-      function nueva(inicial) {
-        const f = flores[0];
-        // Salen del centro de la flor grande hacia el nor-este, como en la foto.
-        const dist = (inicial ? Math.random() : 0) * Math.hypot(W, H) * 0.9;
-        const ang = -0.72 + (Math.random() - 0.5) * 0.40;
-        return {
-          x: f.x + Math.cos(ang) * dist + (Math.random() - .5) * 40,
-          y: f.y + Math.sin(ang) * dist + (Math.random() - .5) * 40,
-          z: (Math.random() - .35) * 220,
-          vx: 0.22 + Math.random() * 0.5,
-          vy: -(0.18 + Math.random() * 0.34),
-          vz: (Math.random() - .5) * 0.22,
-          r: 7 + Math.random() * 7,
-          giro: Math.random() * Math.PI * 2,
-          vgiro: (Math.random() - .5) * 0.012,
-          inc: Math.random() * Math.PI,
-          vinc: 0.0035 + Math.random() * 0.006,
-          fase: Math.random() * Math.PI * 2,
-          n: 9 + ((Math.random() * 3) | 0),
-        };
-      }
-
-      function vilano(x, y, s, giro, inc, alfa, hilos, conTallo) {
-        const cosI = Math.cos(inc);
+      // La ruta mide 24 y su centro está en (12, 11.4): hay que recentrarla
+      // antes de escalar o las chispas orbitan alrededor de la esquina.
+      function chispa(x, y, r, alpha, giro, brillo) {
+        const k = r / 11;
         ctx.save();
-        ctx.translate(x, y);
-        ctx.globalAlpha = alfa;
-        ctx.lineWidth = Math.max(0.35, 0.85 * s / 9);
-        ctx.strokeStyle = '#fff';
-        ctx.beginPath();
-        for (let i = 0; i < hilos; i++) {
-          const a = giro + (i * Math.PI * 2) / hilos;
-          const px = Math.cos(a) * s, py = Math.sin(a) * s * cosI;
-          ctx.moveTo(0, 0);
-          ctx.quadraticCurveTo(px * 0.55, py * 0.55 - s * 0.12, px, py);
-          ctx.moveTo(px, py); ctx.lineTo(px * 1.16, py * 1.16 - s * 0.06);
-          ctx.moveTo(px, py); ctx.lineTo(px * 1.1, py * 1.1 + s * 0.1);
-        }
-        ctx.stroke();
-        if (conTallo) {
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(-s * 1.5 * Math.cos(giro * 0.3), s * 1.5 * cosI + s * 0.5);
-          ctx.stroke();
-        }
+        ctx.translate(x, y); ctx.rotate(giro); ctx.scale(k, k); ctx.translate(-12, -11.4);
+        ctx.globalAlpha = alpha; ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(255,255,255,.85)'; ctx.shadowBlur = brillo;
+        ctx.fill(FORMA);
         ctx.restore();
       }
 
-      function flor(f) {
-        const k = esc(f.z), cx = f.x, cy = f.y, R = f.r * k;
-        ctx.save();
-        ctx.globalAlpha = 0.42;
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.bezierCurveTo(cx - R * 0.5, cy + R * 2.2, f.base.x + R * 0.9, cy + R * 4.2, f.base.x, f.base.y);
-        ctx.stroke();
-        ctx.lineWidth = 0.55;
-        ctx.beginPath();
-        for (let i = 0; i < f.n; i++) {
-          const a = (i * Math.PI * 2) / f.n + i * 0.013;
-          const rr = R * (0.82 + ((i * 37) % 19) / 100);
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
-        }
-        ctx.stroke();
-        for (let i = 0; i < f.n; i += 2) {
-          const a = (i * Math.PI * 2) / f.n + i * 0.013;
-          const rr = R * (0.82 + ((i * 37) % 19) / 100);
-          vilano(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, R * 0.12, a, 1.0, 0.34, 6, false);
-        }
-        ctx.globalAlpha = 0.75;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.ellipse(cx, cy, R * 0.07, R * 0.09, 0, 0, 7); ctx.fill();
-        ctx.restore();
-      }
-
-      function cuadro(ts) {
-        const dt = Math.min(40, ts - t0) / 16.7; t0 = ts;
+      function pintar(t, dt) {
         ctx.clearRect(0, 0, W, H);
-        flores.slice().sort((a, b) => b.z - a.z).forEach(flor);
-        semillas.sort((a, b) => b.z - a.z);        // pintor: primero las lejanas
-        for (const s of semillas) {
-          if (!quieto) {
-            s.fase += 0.012 * dt;
-            s.x += (s.vx + Math.sin(s.fase) * 0.22) * dt;
-            s.y += (s.vy + Math.cos(s.fase * 0.7) * 0.12) * dt;
-            s.z += s.vz * dt;
-            s.giro += s.vgiro * dt;
-            s.inc += s.vinc * dt;
-          }
-          const k = esc(s.z);
-          if (k <= 0.15 || s.x > W + 120 || s.y < -140) Object.assign(s, nueva(false));
-          const alfa = Math.max(0, Math.min(0.85, (k - 0.45) * 1.5)) * 0.9;
-          vilano(s.x, s.y, s.r * k * 1.5, s.giro, Math.sin(s.inc), alfa, s.n, true);
+        for (const capa of capas) for (const p of capa) {
+          // Suben despacio; al salir por arriba vuelven a nacer abajo.
+          p.y -= p.v * dt * 10;
+          if (p.y < -14) { p.y = H + 14; p.x = Math.random() * W; }
+          const tit = 0.4 + 0.6 * Math.sin(t * 1.15 + p.f);
+          chispa(p.x, p.y, p.r * (0.9 + tit * 0.25), p.op * tit * 0.95, p.f + t * 0.12, 5 + tit * 5);
         }
+      }
+
+      let prev = 0;
+      function cuadro(now) {
+        const t = now / 1000;
+        const dt = Math.min(0.05, prev ? (now - prev) / 1000 : 0.016);
+        prev = now;
+        pintar(t, dt);
         requestAnimationFrame(cuadro);
       }
 
@@ -343,11 +278,14 @@ if (user) {
         cv.width = W * DPR; cv.height = H * DPR;
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         armar();
+        // Con movimiento reducido se pinta UN cuadro y ahí se queda: el cielo
+        // sigue estando, solo que quieto.
+        if (quieto) pintar(0, 0);
       }
 
       window.addEventListener('resize', medir);
       medir();
-      requestAnimationFrame(cuadro);
+      if (!quieto) requestAnimationFrame(cuadro);
     })();
 
     const form = document.getElementById('login-form');
