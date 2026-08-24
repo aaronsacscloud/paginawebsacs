@@ -33,6 +33,8 @@ const corto = (n?: number | null) => {
   if (v >= 1000) return (Number(n) < 0 ? '−$' : '$') + Math.round(v / 1000) + 'K';
   return (Number(n) < 0 ? '−$' : '$') + Math.round(v);
 };
+// Con signo delante del peso: toLocaleString deja "$-54,700", que se lee mal.
+const conSigno = (n: number) => (n < 0 ? '−' : '+') + '$' + Math.abs(Math.round(n)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const inicioDeMes = () => { const d = new Date(); return iso(new Date(d.getFullYear(), d.getMonth(), 1)); };
@@ -405,7 +407,7 @@ function BarrasArr({ r }: any) {
         <text x={p >= 0 ? x + w + 9 : x - 9} y={yy + alto / 2 + 4} fontSize="12" fontWeight="800" fill={f.col} textAnchor={p >= 0 ? 'start' : 'end'}>
           {p >= 0 ? '+' : ''}{p}%
         </text>
-        <text x={W - 4} y={yy + alto / 2 + 4} fontSize="10.5" fontWeight="600" fill="#a5a2af" textAnchor="end">{f.v >= 0 ? '+' : ''}{money(f.v)}</text>
+        <text x={W - 4} y={yy + alto / 2 + 4} fontSize="10.5" fontWeight="600" fill="#a5a2af" textAnchor="end">{conSigno(f.v)}</text>
       </g>
     );
   });
@@ -416,7 +418,7 @@ function BarrasArr({ r }: any) {
       <line x1="0" y1={y - 2} x2={W} y2={y - 2} stroke="#eceaf2" />
       <text x="4" y={y + 20} fontSize="11.5" fontWeight="800" fill="#3f3b4d">Neto del periodo</text>
       <text x={CX + 8} y={y + 20} fontSize="12" fontWeight="800" fill={MORADO}>{(r.pct?.neto ?? 0) >= 0 ? '+' : ''}{r.pct?.neto ?? 0}%</text>
-      <text x={W - 4} y={y + 20} fontSize="10.5" fontWeight="800" fill={MORADO} textAnchor="end">{r.neto >= 0 ? '+' : ''}{money(r.neto)}</text>
+      <text x={W - 4} y={y + 20} fontSize="10.5" fontWeight="800" fill={MORADO} textAnchor="end">{conSigno(r.neto)}</text>
     </svg>
   );
 }
@@ -862,7 +864,7 @@ function vistaDe(d: any, cual: string): any {
       filas: it.map((x: any) => ({
         company_id: x.company_id,
         celdas: [fmtDate(x.fecha), <b>{x.cliente}</b>,
-          <span style={{ color: esBaja ? ROJO : VERDE }}>{x.arr >= 0 ? '+' : ''}{money(x.arr)}</span>],
+          <span style={{ color: esBaja ? ROJO : VERDE }}>{conSigno(x.arr)}</span>],
       })),
     };
   }
