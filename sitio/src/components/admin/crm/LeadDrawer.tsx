@@ -888,6 +888,11 @@ function pruebaDeHito(k: Etapa, c: any): { cuando?: string | null; porque?: stri
 function RielEtapas({ c, evaluacion, ruta, sinContacto }: any) {
   const idx = ruta.indexOf(evaluacion?.etapa as Etapa);
   const perdido = evaluacion?.etapa === 'perdido';
+  // El peldaño "ahora" es el primero que NO ha pasado, no el de la etapa
+  // actual. Si se marca por la etapa, en cuanto su hito se cumple el peldaño
+  // pasa a palomeado y NADIE queda en "ahora": la línea de qué falta —la única
+  // de la ficha que dice qué hacer— desaparecía justo después de trabajarlo.
+  const idxAhora = ruta.findIndex((k: Etapa) => !evaluacion?.hitos?.[k]);
   return (
     <div style={D.cardA}>
       <div style={D.h}>
@@ -900,7 +905,7 @@ function RielEtapas({ c, evaluacion, ruta, sinContacto }: any) {
         <span style={{ position: 'absolute', left: 9, top: 6, bottom: 12, width: 2, background: '#efedf5' }} />
         {ruta.map((k: Etapa, i: number) => {
           const paso = !!evaluacion?.hitos?.[k];
-          const est = perdido ? 'off' : paso ? 'ok' : i === idx ? 'now' : i < idx ? 'saltado' : 'off';
+          const est = perdido ? 'off' : paso ? 'ok' : i === idxAhora ? 'now' : i < idx ? 'saltado' : 'off';
           const { cuando, porque } = paso ? pruebaDeHito(k, c) : {};
           // El peldaño que un humano adelantó se marca: así se distingue lo que
           // pasó de lo que alguien dijo que pasó.
@@ -925,7 +930,7 @@ function RielEtapas({ c, evaluacion, ruta, sinContacto }: any) {
               {/* En el peldaño ACTUAL no va el hecho —todavía no hay— sino lo
                   que falta para el siguiente. Es la única línea de la ficha que
                   dice qué hacer. */}
-              {est === 'now' && pasoDeEtapa(evaluacion.etapa) && (
+              {est === 'now' && evaluacion?.etapa && pasoDeEtapa(evaluacion.etapa) && (
                 <div style={{ fontSize: '0.76rem', color: '#5B4BD6', opacity: .85, marginTop: 2, lineHeight: 1.5 }}>{pasoDeEtapa(evaluacion.etapa)}</div>
               )}
               {est !== 'now' && porque && <div style={{ fontSize: '0.76rem', color: '#8a8a8a', marginTop: 2 }}>{porque}</div>}
