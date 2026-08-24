@@ -37,13 +37,16 @@ const HIJOS: { tabla: string; col: string; label: string; pesa?: boolean }[] = [
   { tabla: 'deals', col: 'contact_id', label: 'Oportunidades', pesa: true },
 ];
 
+/* Las once cuentas van EN PARALELO. En fila tardaban lo suficiente como para
+ * que el modal siguiera diciendo "Revisando qué tiene…" cuando ya querías darle
+ * a Eliminar: once viajes de ida y vuelta a la base, uno detrás de otro, para
+ * once números que no dependen entre sí. */
 async function inventario(id: string) {
-  const filas: { label: string; n: number; pesa: boolean }[] = [];
-  for (const h of HIJOS) {
+  const cuentas = await Promise.all(HIJOS.map(async h => {
     const { count } = await supabase.from(h.tabla).select('id', { count: 'exact', head: true }).eq(h.col, id);
-    if (count) filas.push({ label: h.label, n: count, pesa: !!h.pesa });
-  }
-  return filas;
+    return { label: h.label, n: count || 0, pesa: !!h.pesa };
+  }));
+  return cuentas.filter(x => x.n > 0);
 }
 
 export const POST: APIRoute = async ({ request }) => {
