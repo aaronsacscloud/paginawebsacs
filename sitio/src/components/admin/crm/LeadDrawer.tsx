@@ -888,11 +888,18 @@ function pruebaDeHito(k: Etapa, c: any): { cuando?: string | null; porque?: stri
 function RielEtapas({ c, evaluacion, ruta, sinContacto }: any) {
   const idx = ruta.indexOf(evaluacion?.etapa as Etapa);
   const perdido = evaluacion?.etapa === 'perdido';
-  // El peldaño "ahora" es el primero que NO ha pasado, no el de la etapa
-  // actual. Si se marca por la etapa, en cuanto su hito se cumple el peldaño
-  // pasa a palomeado y NADIE queda en "ahora": la línea de qué falta —la única
-  // de la ficha que dice qué hacer— desaparecía justo después de trabajarlo.
-  const idxAhora = ruta.findIndex((k: Etapa) => !evaluacion?.hitos?.[k]);
+  // El peldaño "ahora" es el SIGUIENTE al de la etapa actual.
+  //
+  // Se marcaba con la etapa misma, y la etapa deducida ES el último hito
+  // cumplido: las dos condiciones no coinciden nunca, así que nadie quedaba en
+  // "ahora" y la línea de qué falta —la única de la ficha que dice qué hacer—
+  // desaparecía justo después de trabajar el lead.
+  //
+  // Y tampoco es "el primer peldaño pendiente": un lead que se saltó la demo y
+  // ya está cotizado tiene "Calificado" pendiente, y ahí la frase quedaba
+  // contando lo que toca hacer con una cotización. Lo que sigue es lo que sigue
+  // a donde está.
+  const idxAhora = idx >= 0 ? idx + 1 : -1;
   return (
     <div style={D.cardA}>
       <div style={D.h}>
