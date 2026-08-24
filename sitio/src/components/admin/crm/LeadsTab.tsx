@@ -4,6 +4,7 @@
 // columna, el kanban es una torre que hay que recorrer para leer cuatro datos;
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
+import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
@@ -65,6 +66,10 @@ const VISTAS = [
   { v: 'todos', l: 'Todos' },
 ];
 
+// Renglones del ⋮, con el mismo lenguaje del resto del CRM.
+const D_MI: CSSProperties = { display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' };
+const D_MISUB: CSSProperties = { display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 };
+
 const S = {
   wrap: WRAP,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
@@ -90,7 +95,15 @@ const S = {
 };
 
 export default function LeadsTab() {
-  const [vista, setVista] = useState<'lista' | 'pipeline'>('lista');
+  /* Tres vistas, no una pantalla apilada. Antes esto arrancaba con cuatro
+     tarjetas, seguía con los canales y la lista salía hasta abajo: para ver un
+     lead había que pasar por un reporte entero. La Lista enseña leads, el
+     Dashboard enseña cómo va la entrada, y el Pipeline se mueve. */
+  const [vista, setVista] = useState<'lista' | 'dashboard' | 'pipeline'>('lista');
+  // Importar, exportar y el link de captura se usan una vez al mes: eran dos
+  // flechas sueltas junto al botón de crear, y ahora viven en el ⋮ con su
+  // nombre escrito y qué hacen.
+  const [menuMas, setMenuMas] = useState(false);
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
@@ -234,31 +247,64 @@ export default function LeadsTab() {
         .lead-tabla { width:100%; border-collapse:collapse; }
       `}</style>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Leads</h2>
-          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>Quién llegó, por dónde y qué falta para convertirlo</div>
+          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.015em' }}>Leads</h1>
+          <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
+            {vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
+              : vista === 'pipeline' ? `${res?.abiertos ?? 0} abiertos, repartidos por etapa`
+              : <>{res?.total ?? lista.length} en total · {lista.length} en vista</>}
+          </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button style={S.chip(vista === 'lista')} onClick={() => setVista('lista')}>Lista</button>
-          <button style={S.chip(vista === 'pipeline')} onClick={() => setVista('pipeline')}>Pipeline</button>
-          {/* Exportar, importar y etapas bajan a iconos: se usan una vez al mes
-              y ocupaban el mismo espacio que lo que se usa todos los días. */}
-          {/* Exportar arma el CSV con lo que está en pantalla —filtros
-              incluidos—: bajar "todos los leads" y filtrar en Excel es hacer
-              dos veces el mismo trabajo. */}
-          <button style={S.ico} title="Exportar lo que estás viendo" onClick={exportar}>⤓</button>
-          {/* El lead de un formulario instantáneo de TikTok nunca pasa por el
-              sitio: si se captura a mano, se pierde la campaña que lo pagó. */}
-          <button style={S.ico} title="Importar leads de TikTok Ads" onClick={() => setImportTikTok(true)}>⤒</button>
-          <button style={S.btnA} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/contacto?ref=crm`); alert('Link de captura copiado.\n\nQuien lo llene cae directo en esta lista con su origen puesto.'); }}>
-            Link de captura
-          </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Segmentado, no tres botones sueltos: son la MISMA cosa vista de
+              tres formas, y eso se dice con una sola pieza. */}
+          <div style={{ display: 'inline-flex', background: '#f5f4f8', borderRadius: 10, padding: 3 }}>
+            {([['lista', 'Lista'], ['dashboard', 'Dashboard'], ['pipeline', 'Pipeline']] as const).map(([v, l]) => {
+              const on = vista === v;
+              return (
+                <button key={v} onClick={() => setVista(v)}
+                  style={{
+                    border: 'none', background: on ? '#fff' : 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                    padding: '7px 15px', borderRadius: 8, fontSize: '0.81rem', fontWeight: 700,
+                    color: on ? '#5B4BD6' : '#6b7280', boxShadow: on ? '0 1px 3px rgba(36,29,67,.1)' : 'none',
+                  }}>{l}</button>
+              );
+            })}
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button title="Importar, exportar y link de captura"
+              onClick={() => setMenuMas(m => !m)}
+              style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid #eeeef1', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: '1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+            {menuMas && (
+              <>
+                <div onClick={() => setMenuMas(false)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
+                <div style={{ position: 'absolute', right: 0, top: 44, zIndex: 1401, width: 256, background: '#fff', border: '1px solid #eeeef1', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' }}>
+                  {/* El lead de un formulario instantáneo de TikTok nunca pasa
+                      por el sitio: capturado a mano se pierde la campaña que lo
+                      pagó. */}
+                  <button style={D_MI} onClick={() => { setMenuMas(false); setImportTikTok(true); }}>
+                    Importar de TikTok Ads<span style={D_MISUB}>Los formularios instantáneos no pasan por el sitio</span>
+                  </button>
+                  {/* Exportar arma el CSV con lo que está en pantalla —filtros
+                      incluidos—: bajar todo y filtrar en Excel es hacer dos
+                      veces el mismo trabajo. */}
+                  <button style={D_MI} onClick={() => { setMenuMas(false); exportar(); }}>
+                    Exportar lo que estás viendo<span style={D_MISUB}>Se lleva los filtros puestos</span>
+                  </button>
+                  <div style={{ height: 1, background: '#f5f4f8', margin: '5px 4px' }} />
+                  <button style={D_MI} onClick={() => { setMenuMas(false); navigator.clipboard?.writeText(`${window.location.origin}/contacto?ref=crm`); alert('Link de captura copiado.\n\nQuien lo llene cae directo en esta lista con su origen puesto.'); }}>
+                    Copiar link de captura<span style={D_MISUB}>Quien lo llene cae aquí con su origen puesto</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button style={S.btnP} onClick={() => setNuevo(true)}>+ Nuevo lead</button>
         </div>
       </div>
 
-      {vista === 'pipeline' ? <PipelineTab /> : (<>
+      {vista === 'pipeline' ? <PipelineTab /> : vista === 'dashboard' ? (<>
         <div className="lead-4" style={{ marginBottom: 14 }}>
           <div style={{ ...S.card, marginBottom: 0 }}>
             <div style={S.kl}>Leads nuevos</div>
@@ -311,6 +357,7 @@ export default function LeadsTab() {
             </div>
           </div>
         )}
+      </>) : (<>
 
         <div style={S.card}>
           {/* Las etapas son PESTAÑAS con contador, como las vistas de
@@ -436,13 +483,17 @@ export default function LeadsTab() {
             <table className="lead-tabla">
               <thead>
                 <tr>
-                  <th style={{ ...S.th, width: 92 }}>Llegó</th>
-                  <th style={{ ...S.th, minWidth: 180 }}>Lead</th>
-                  <th style={{ ...S.th, minWidth: 150 }}>Empresa</th>
-                  <th style={{ ...S.th, minWidth: 190 }}>Correo</th>
-                  <th style={{ ...S.th, minWidth: 120 }}>Teléfono</th>
-                  <th style={{ ...S.th, minWidth: 110 }}>Canal</th>
-                  <th style={{ ...S.th, width: 80 }}>Sucursales</th>
+                  {/* 92 px no alcanzaban para "09:45 p.m.": la hora se partía
+                      en otro renglón y cada fila crecía de alto. 130 la deja en
+                      una línea, y el ancho sale del correo, que traía 190 para
+                      un dato que casi siempre se trunca igual. */}
+                  <th style={{ ...S.th, width: 130 }}>Llegó</th>
+                  <th style={{ ...S.th, minWidth: 150 }}>Lead</th>
+                  <th style={{ ...S.th, minWidth: 140 }}>Empresa</th>
+                  <th style={{ ...S.th, minWidth: 210 }}>Correo</th>
+                  <th style={{ ...S.th, minWidth: 140 }}>Teléfono</th>
+                  <th style={{ ...S.th, width: 120 }}>Canal</th>
+                  <th style={{ ...S.th, width: 56 }}>Suc.</th>
                   <th style={{ ...S.th, width: 100 }}>Etapa</th>
                   <th style={{ ...S.th, width: 90 }}>Sin contacto</th>
                   <th style={{ ...S.th, width: 44 }} />
