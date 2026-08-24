@@ -269,10 +269,13 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
 
           {/* ── Seguimiento: por dónde va, registrar, y todo lo que ha pasado ── */}
           {tab === 'seguimiento' && <RielEtapas c={c} evaluacion={evaluacion} ruta={RUTA_VISIBLE} sinContacto={sinContacto} />}
+          {/* La prueba gratis va ARRIBA, no al final: es un reloj corriendo. Al
+              fondo de la pestaña, debajo de la línea de tiempo, había que
+              acordarse de bajar para enterarse de que vencía pasado mañana. */}
+          {tab === 'seguimiento' && <PruebaGratis c={c} guardar={guardar} flash={flash} />}
           {tab === 'seguimiento' && <RegistrarToque c={c} recargar={cargar} flash={flash} />}
           {tab === 'seguimiento' && <LineaDeTiempo c={c} />}
           {tab === 'seguimiento' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} setSucio={setSucio} />}
-          {tab === 'seguimiento' && <PruebaGratis c={c} guardar={guardar} flash={flash} />}
 
           {/* ── Info general: quién es y cómo alcanzarlo. Nada más. ── */}
           {tab === 'info' && (
@@ -768,39 +771,61 @@ function PruebaGratis({ c, guardar, flash }: any) {
   // alguien las registre, y poner "hoy" a fuerza falsea cuándo vence.
   const [ini, setIni] = useState(hoy());
   const [fin, setFin] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0, 10); });
-  const activa = p.prueba_inicio && (!p.prueba_fin || p.prueba_fin >= hoy());
+  // "Activa" incluye la VENCIDA a propósito: una prueba que terminó sigue
+  // siendo una prueba abierta hasta que alguien la cierre, y es justo la que
+  // hay que ver. Lo que cambia es el color, no si aparece.
+  const activa = !!p.prueba_inicio;
   const restan = p.prueba_fin ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000) : null;
+  const urge = restan != null && restan <= 3;
 
   return (
     /* Morado: las fechas de la prueba las captura una persona. */
-    <div style={D.cardM}>
-      <div style={D.h}>Prueba gratis</div>
-      {activa ? (
-        <>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-            Activa desde el {fmtLargo(p.prueba_inicio)}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: restan != null && restan <= 3 ? '#C0554E' : '#6b6b74', marginTop: 3 }}>
-            {restan != null ? (restan >= 0 ? `Termina el ${fmtLargo(p.prueba_fin)} · ${restan} días` : `Venció hace ${Math.abs(restan)} días`) : 'Sin fecha de término'}
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            <button style={D.btnA} onClick={() => { setIni(p.prueba_inicio || hoy()); setFin(p.prueba_fin || hoy()); setAbierto(true); }}>Cambiar fechas</button>
-            <button style={D.btnA} onClick={() => guardar({ propiedades: { ...p, prueba_fin: null, prueba_inicio: null } }).then(() => flash('Prueba cerrada'))}>Cerrar prueba</button>
-          </div>
-        </>
-      ) : abierto ? (
+    <div style={{ ...D.cardM, ...(activa && urge ? { borderColor: '#f0c4bd', background: '#fffbfa' } : null) }}>
+      <div style={D.h}>
+        Prueba gratis
+        {activa && restan != null && (
+          <span style={{ ...D.chip(restan < 0 ? '#FBECEA' : urge ? '#FFF4E5' : '#EAF8F2', restan < 0 ? '#C0554E' : urge ? '#9a6a10' : '#1E8A63'), letterSpacing: 0, textTransform: 'none' }}>
+            {restan < 0 ? `venció hace ${Math.abs(restan)} d` : restan === 0 ? 'termina hoy' : `quedan ${restan} d`}
+          </span>
+        )}
+      </div>
+      {/* El orden de las ramas importa y era el bug: estaba `activa ? … :
+          abierto ? …`, así que con una prueba activa la rama del formulario
+          NUNCA se alcanzaba. "Cambiar fechas" prendía un estado que nadie
+          dibujaba, y el botón se veía muerto. El formulario va primero. */}
+      {abierto ? (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
             <div><div style={D.fl}>Empieza</div><input type="date" value={ini} onChange={e => setIni(e.target.value)} style={D.fi} /></div>
             <div><div style={D.fl}>Termina</div><input type="date" value={fin} onChange={e => setFin(e.target.value)} style={D.fi} /></div>
           </div>
-          <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 6 }}>
+          <div style={{ fontSize: '0.68rem', color: fin > ini ? '#a5a2af' : '#C0554E', marginTop: 6 }}>
             {ini && fin && fin > ini ? `${Math.round((Date.parse(fin) - Date.parse(ini)) / 86400000)} días de prueba.` : 'La fecha de término tiene que ser posterior al inicio.'}
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
-            <button style={D.btnP} disabled={!(fin > ini)}
-              onClick={() => guardar({ propiedades: { ...p, prueba_inicio: ini, prueba_fin: fin } }).then(() => { setAbierto(false); flash('Prueba registrada'); })}>Guardar</button>
-            <button style={D.btnA} onClick={() => setAbierto(false)}>Cancelar</button>
+            <button style={{ ...D.btnP, opacity: fin > ini ? 1 : .5 }} disabled={!(fin > ini)}
+              onClick={() => guardar({ propiedades: { ...p, prueba_inicio: ini, prueba_fin: fin } }).then(() => { setAbierto(false); flash(activa ? 'Fechas actualizadas' : 'Prueba registrada'); })}>Guardar</button>
+            <button style={D.btnG} onClick={() => setAbierto(false)}>Cancelar</button>
+          </div>
+        </>
+      ) : activa ? (
+        <>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+            Activa desde el {fmtLargo(p.prueba_inicio)}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: urge ? '#C0554E' : '#6b6b74', marginTop: 3 }}>
+            {restan != null ? (restan >= 0 ? `Termina el ${fmtLargo(p.prueba_fin)} · ${restan} ${restan === 1 ? 'día' : 'días'}` : `Venció el ${fmtLargo(p.prueba_fin)}, hace ${Math.abs(restan)} días`) : 'Sin fecha de término'}
+          </div>
+          {/* Una prueba vencida sin cerrar es la que se olvida: el sistema no
+              sabe si compró, si se le acabó o si nadie volvió a hablarle. */}
+          {restan != null && restan < 0 && (
+            <div style={{ marginTop: 9, background: '#FBECEA', border: '1px solid #f7c9c5', borderRadius: 9, padding: '9px 12px', fontSize: '0.76rem', color: '#C0554E', lineHeight: 1.5 }}>
+              La prueba ya terminó y sigue abierta. Ciérrala o extiéndela: mientras siga así, nadie sabe en qué quedó.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            <button style={D.btnA} onClick={() => { setIni(p.prueba_inicio || hoy()); setFin(p.prueba_fin || hoy()); setAbierto(true); }}>Cambiar fechas</button>
+            <button style={D.btnG} onClick={() => guardar({ propiedades: { ...p, prueba_fin: null, prueba_inicio: null } }).then(() => flash('Prueba cerrada'))}>Cerrar prueba</button>
           </div>
         </>
       ) : (

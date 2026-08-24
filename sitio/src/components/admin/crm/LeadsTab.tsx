@@ -63,11 +63,25 @@ const VISTAS = [
   // la definición vieja la pestaña decía 95 y ahí dentro había leads de mayo:
   // "nuevo" acababa significando "sin calificar", que ya es otra pestaña.
   { v: 'nuevos', l: 'Nuevos' },
+  { v: 'prueba', l: 'En prueba' },
   { v: 'lead_calificado', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
   { v: 'churned', l: 'Perdidos' },
   { v: 'todos', l: 'Todos' },
 ];
+
+/** La prueba gratis del lead: vive en `propiedades.prueba_inicio/prueba_fin`.
+ *  Una prueba VENCIDA sigue contando como abierta hasta que alguien la cierre —
+ *  y es justo la que hay que ver: mientras siga así, nadie sabe si compró, si
+ *  se le acabó o si nadie volvió a hablarle. */
+const prueba = (c: any) => {
+  const p = c?.propiedades || {};
+  if (!p.prueba_inicio) return null;
+  const restan = p.prueba_fin
+    ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000)
+    : null;
+  return { ini: p.prueba_inicio, fin: p.prueba_fin || null, restan, urge: restan != null && restan <= 3 };
+};
 
 /** Los que todavía se pueden convertir. Un perdido de ayer llegó esta semana
  *  pero no es un lead nuevo: ya se cerró. */
@@ -170,6 +184,7 @@ export default function LeadsTab() {
     // lead frío: uno hay que reetiquetarlo y otro hay que reactivarlo.
     else if (etapa === 'conocidos') r = r.filter((c: any) => !!c.historial);
     else if (etapa === 'nuevos') r = r.filter((c: any) => esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage));
+    else if (etapa === 'prueba') r = r.filter((c: any) => !!prueba(c));
     else if (etapa !== 'todos') r = r.filter((c: any) => c.lifecycle_stage === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
@@ -216,6 +231,7 @@ export default function LeadsTab() {
     const cae = (c: any, k: string) => k === 'todos' ? true
       : k === 'conocidos' ? !!c.historial
       : k === 'nuevos' ? esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage)
+      : k === 'prueba' ? !!prueba(c)
       : k === 'abiertos' ? ABIERTOS.includes(c.lifecycle_stage)
       : c.lifecycle_stage === k;
     const out: Record<string, number> = {};
@@ -550,6 +566,20 @@ export default function LeadsTab() {
                         {c.historial && (() => {
                           const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
                           return <span title={c.historial.titulo} style={{ display: 'inline-block', marginTop: 3, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: h.bg, color: h.fg }}>{h.label}</span>;
+                        })()}
+                        {/* La alerta de la prueba viaja pegada al nombre, no en
+                            una columna suya: es un reloj corriendo y tiene que
+                            verse en TODAS las vistas, no solo en "En prueba". */}
+                        {(() => {
+                          const pr = prueba(c);
+                          if (!pr) return null;
+                          const [bg, fg, txt] = pr.restan == null ? ['#EEECFE', '#5B4BD6', 'en prueba']
+                            : pr.restan < 0 ? ['#FBECEA', '#C0554E', `prueba vencida hace ${Math.abs(pr.restan)} d`]
+                            : pr.restan === 0 ? ['#FFF4E5', '#9a6a10', 'prueba termina hoy']
+                            : pr.urge ? ['#FFF4E5', '#9a6a10', `prueba: ${pr.restan} d`]
+                            : ['#EAF8F2', '#1E8A63', `prueba: ${pr.restan} d`];
+                          return <span title={pr.fin ? `Termina el ${pr.fin}` : 'Sin fecha de término'}
+                            style={{ display: 'inline-block', marginTop: 3, marginLeft: c.historial ? 5 : 0, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: bg, color: fg }}>{txt}</span>;
                         })()}
                         {c.puesto && <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.puesto}</div>}
                       </td>
