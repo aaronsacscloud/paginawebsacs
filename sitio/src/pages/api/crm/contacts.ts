@@ -69,13 +69,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     // Índices de clientes y cancelados para cruzar por correo, teléfono y
     // nombre de empresa. Son TRES consultas para todo el lote: sin esto, el
     // cruce costaría una consulta por lead y nadie lo pondría en la lista.
-    const ix: Indices = { porCorreo: new Map(), porTelefono: new Map(), empresas: new Map(), porNombreEmpresa: new Map() };
-    const [viejos, emps, subs] = await Promise.all([
+    const ix: Indices = { porCorreo: new Map(), porTelefono: new Map(), empresas: new Map(), porNombreEmpresa: new Map(), leadPorCorreo: new Map(), leadPorTelefono: new Map() };
+    const [viejos, emps, subs, gemelos] = await Promise.all([
       supabase.from('contacts').select('id, email, whatsapp, telefono, company_id, lifecycle_stage')
         .in('lifecycle_stage', ['cliente', 'churned']).is('archived_at', null).limit(2000),
       supabase.from('companies').select('id, nombre, nombre_comercial, estado_cuenta, arr').is('archived_at', null).limit(2000),
       supabase.from('subscriptions').select('company_id').eq('estado', 'activa').limit(2000),
+      // Los propios leads, del MÁS VIEJO al más nuevo: el índice se queda con
+      // la primera ficha de cada correo y de cada teléfono, que es contra la
+      // que se compara para saber si esta persona ya nos había escrito.
+      supabase.from('contacts').select('id, nombre, email, whatsapp, telefono, created_at')
+        .in('lifecycle_stage', ['lead', 'lead_calificado', 'oportunidad']).is('archived_at', null)
+        .order('created_at', { ascending: true }).limit(4000),
     ]);
+    for (const g of (gemelos.data || [])) {
+      const reg = { contact_id: g.id, created_at: g.created_at, nombre: g.nombre };
+      const em = normTxt(g.email); if (em && !ix.leadPorCorreo!.has(em)) ix.leadPorCorreo!.set(em, reg);
+      const tl = tel10(g.whatsapp || g.telefono); if (tl.length === 10 && !ix.leadPorTelefono!.has(tl)) ix.leadPorTelefono!.set(tl, reg);
+    }
     const conSubActiva = new Set((subs.data || []).map((s2: any) => s2.company_id));
     for (const e of (emps.data || [])) {
       const activa = conSubActiva.has(e.id);
@@ -106,6 +117,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       const historial = esLead ? detectaHistorial({
         id: c.id, email: c.email, whatsapp: c.whatsapp, telefono: c.telefono,
         company_id: c.company_id, empresa_nombre: empresa?.nombre || null,
+        created_at: c.created_at,
       }, ix) : null;
       return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial,
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },

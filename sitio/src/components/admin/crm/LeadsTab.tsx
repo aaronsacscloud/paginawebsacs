@@ -59,12 +59,22 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 const VISTAS = [
   { v: 'abiertos', l: 'Abiertos' },
   { v: 'conocidos', l: 'Ya los conocíamos' },
-  { v: 'lead', l: 'Nuevos' },
+  // "Nuevos" son los de la SEMANA, no todo lo que tenga lifecycle 'lead'. Con
+  // la definición vieja la pestaña decía 95 y ahí dentro había leads de mayo:
+  // "nuevo" acababa significando "sin calificar", que ya es otra pestaña.
+  { v: 'nuevos', l: 'Nuevos' },
   { v: 'lead_calificado', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
   { v: 'churned', l: 'Perdidos' },
   { v: 'todos', l: 'Todos' },
 ];
+
+/** Llegó dentro de los últimos 7 días (hoy incluido). */
+const esDeLaSemana = (c: any) => {
+  const d = diaLocal(c.created_at);
+  if (!d) return false;
+  return d >= new Date(Date.now() - 6 * 86400000).toLocaleDateString('sv-SE');
+};
 
 // Renglones del ⋮, con el mismo lenguaje del resto del CRM.
 const D_MI: CSSProperties = { display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' };
@@ -154,6 +164,7 @@ export default function LeadsTab() {
     // que una que sí paga. Se agrupan aparte porque no se trabajan como un
     // lead frío: uno hay que reetiquetarlo y otro hay que reactivarlo.
     else if (etapa === 'conocidos') r = r.filter((c: any) => !!c.historial);
+    else if (etapa === 'nuevos') r = r.filter((c: any) => esDeLaSemana(c) && c.lifecycle_stage !== 'cliente');
     else if (etapa !== 'todos') r = r.filter((c: any) => c.lifecycle_stage === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
@@ -199,6 +210,7 @@ export default function LeadsTab() {
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
     const cae = (c: any, k: string) => k === 'todos' ? true
       : k === 'conocidos' ? !!c.historial
+      : k === 'nuevos' ? esDeLaSemana(c) && c.lifecycle_stage !== 'cliente'
       : k === 'abiertos' ? ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage)
       : c.lifecycle_stage === k;
     const out: Record<string, number> = {};

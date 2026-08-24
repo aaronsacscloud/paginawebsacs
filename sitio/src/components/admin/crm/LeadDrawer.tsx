@@ -24,6 +24,7 @@ import SenalesContacto from './email/SenalesContacto';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
 import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
+import { CANALES, RESULTADOS, resultadoDe, tipoActividad, tituloToque, quienLoHizo, esRuido, type Canal } from '../../../lib/crm/lead-toques';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -120,7 +121,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   // el lead, el mismo criterio con el que están ordenadas las pestañas del
   // cliente: quién es · en qué va · cuándo lo tocamos · cuándo lo vimos · qué
   // le ofrecimos · qué está haciendo él.
-  const [tab, setTab] = useState<'info' | 'seguimiento' | 'actividad' | 'reuniones' | 'cotizaciones' | 'senales'>('info');
+  // Actividad dejó de ser pestaña: registrar el toque y la historia van DENTRO
+  // de Seguimiento, porque son la misma conversación. Verlas aparte obligaba a
+  // cambiar de pestaña para contestar "¿ya le hablé?" mientras leías la etapa.
+  const [tab, setTab] = useState<'info' | 'seguimiento' | 'reuniones' | 'cotizaciones' | 'senales'>('info');
   const [c, setC] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -224,7 +228,6 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             {([
               ['info', 'Info general', null],
               ['seguimiento', 'Seguimiento', null],
-              ['actividad', 'Actividad', (c.activities || []).length],
               ['reuniones', 'Reuniones', (c.bookings || []).length],
               ['cotizaciones', 'Cotizaciones', (c.quotes || []).length],
               ['senales', 'Señales', null],
@@ -258,59 +261,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             );
           })()}
 
-          {/* ── Etapa · se mueve sola ──
-              Azul, no morada: no se captura, se deduce de hechos. Y dentro de
-              Seguimiento, no encima de las seis pestañas. */}
-          {tab === 'seguimiento' && <div style={D.cardA}>
-            <div style={D.h}>
-              Etapa
-              <span style={D.hr}>
-                se mueve sola · llegó hace {dias(c.created_at)} días{sinContacto != null ? ` · ${sinContacto} sin contacto` : ''}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-              {RUTA_VISIBLE.map((k, i) => {
-                const idx = RUTA_VISIBLE.indexOf(evaluacion?.etapa as Etapa);
-                const perdido = evaluacion?.etapa === 'perdido';
-                const paso = !!evaluacion?.hitos?.[k];
-                // Solo se palomea lo que OCURRIÓ. Un peldaño anterior que nunca
-                // pasó se dibuja punteado: el lead se lo saltó, y decir que
-                // pasó sería inventar su historia.
-                const est = perdido ? 'off' : paso ? 'ok' : i === idx ? 'now' : i < idx ? 'saltado' : 'off';
-                const col = est === 'ok' ? '#4FBF95' : est === 'now' ? '#9B8CFA' : '#f1f0f5';
-                // El peldaño que un humano adelantó se marca: así se distingue
-                // lo que pasó de lo que alguien dijo que pasó.
-                const aMano = evaluacion?.manual === k && evaluacion?.porHechos !== k;
-                return (
-                  <div key={k} style={{ flex: 1, textAlign: 'center', position: 'relative', minWidth: 0 }}>
-                    {i > 0 && <span style={{ position: 'absolute', top: 13, left: '-50%', width: '100%', height: 2, background: est === 'off' || est === 'saltado' ? '#f1f0f5' : '#cdeadd' }} />}
-                    <div style={{
-                      position: 'relative', width: 26, height: 26, borderRadius: 99, margin: '0 auto',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
-                      background: est === 'ok' ? col : '#fff',
-                      border: est === 'saltado' ? '2px dashed #ded9ea' : `2px solid ${col}`,
-                      color: est === 'ok' ? '#fff' : est === 'now' ? '#5B4BD6' : '#c9c4dc',
-                    }}>{est === 'ok' ? '✓' : i + 1}</div>
-                    <div style={{ fontSize: '0.68rem', fontWeight: est === 'now' ? 800 : 700, marginTop: 6, color: est === 'ok' ? '#3f3b4d' : est === 'now' ? '#5B4BD6' : '#a5a2af' }}>{ETAPA_LABEL[k]}</div>
-                    {aMano && <div style={{ fontSize: '0.58rem', color: '#b3afbd', marginTop: 1 }}>a mano</div>}
-                    {est === 'saltado' && <div style={{ fontSize: '0.58rem', color: '#c9c4dc', marginTop: 1 }}>se saltó</div>}
-                  </div>
-                );
-              })}
-            </div>
-            {evaluacion?.etapa === 'perdido' && (
-              <div style={{ marginTop: 10, background: '#FBECEA', border: '1px solid #C0554E33', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#C0554E' }}>
-                Cerrado{c.desenlace ? ` · ${c.desenlace}` : ''}{c.calificacion_motivo ? ` · ${c.calificacion_motivo}` : ''}
-              </div>
-            )}
-            {evaluacion && pasoDeEtapa(evaluacion.etapa) && (
-              <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid #f4f3f7', fontSize: '0.77rem', color: '#7d7a88', lineHeight: 1.55 }}>
-                {pasoDeEtapa(evaluacion.etapa)}
-              </div>
-            )}
-          </div>}
-
-          {/* ── Seguimiento: la etapa (arriba), lo que se captura y la prueba ── */}
+          {/* ── Seguimiento: por dónde va, registrar, y todo lo que ha pasado ── */}
+          {tab === 'seguimiento' && <RielEtapas c={c} evaluacion={evaluacion} ruta={RUTA_VISIBLE} sinContacto={sinContacto} />}
+          {tab === 'seguimiento' && <RegistrarToque c={c} recargar={cargar} flash={flash} />}
+          {tab === 'seguimiento' && <LineaDeTiempo c={c} />}
           {tab === 'seguimiento' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} setSucio={setSucio} />}
           {tab === 'seguimiento' && <PruebaGratis c={c} guardar={guardar} flash={flash} />}
 
@@ -325,7 +279,6 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
           {/* Señales: el puntaje de intención y la historia completa de las
               cinco fuentes. Es lo que se lee antes de llamar. */}
           {tab === 'senales' && <div style={{ padding: '4px 0' }}><SenalesContacto contactId={c.id} /></div>}
-          {tab === 'actividad' && <Actividad c={c} recargar={cargar} flash={flash} />}
 
           {/* ── Reuniones: agendar y lo que ya hubo, juntos ──
               Estaban partidos en dos: el botón de agendar vivía en "Resumen" y
@@ -880,58 +833,322 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
   );
 }
 
-/* Actividad: registrar y ver. Lo mismo que había, sin la columna de campos. */
-function Actividad({ c, recargar, flash }: any) {
-  const [tipo, setTipo] = useState('nota');
-  const [txt, setTxt] = useState('');
+/* ═══ El riel de etapas ═══
+ *
+ * Eran ocho puntitos en fila con una etiqueta de 11 px debajo. Decían DÓNDE va
+ * el lead y nada más; para saber por qué estaba en "Cotizado" había que salirse
+ * a Cotizaciones, y para saber quién lo contactó, a Actividad.
+ *
+ * Ahora cada peldaño enseña el HECHO que lo movió y cuándo. Deja de ser una
+ * barra de progreso y se vuelve el expediente: se lee de arriba abajo como la
+ * historia del lead, que es como se cuenta en voz alta.
+ */
+function pruebaDeHito(k: Etapa, c: any): { cuando?: string | null; porque?: string | null } {
+  const acts: any[] = c.activities || [];
+  const books: any[] = c.bookings || [];
+  const quotes: any[] = c.quotes || [];
+  // El más VIEJO de cada clase: el peldaño lo movió el primero, no el último.
+  const primero = (l: any[], f: (x: any) => boolean, fecha: (x: any) => any) =>
+    l.filter(f).sort((a, b) => String(fecha(a)).localeCompare(String(fecha(b))))[0];
+
+  switch (k) {
+    case 'nuevo': {
+      const o = origenDe(origenDeRegistro(c));
+      return { cuando: c.created_at, porque: o?.l ? `Entró por ${o.l}` : 'Entró al CRM' };
+    }
+    case 'contactado': {
+      const a = primero(acts, x => ['llamada', 'whatsapp_enviado', 'email_enviado'].includes(String(x.tipo)), x => x.created_at);
+      if (a) return { cuando: a.created_at, porque: a.titulo || 'Primer toque' };
+      // `last_contact_at` sin actividad detrás: alguien lo tocó antes de que
+      // esto se registrara. Se dice así en vez de inventar el canal.
+      return c.last_contact_at ? { cuando: c.last_contact_at, porque: 'Marcado como contactado' } : {};
+    }
+    case 'calificado':
+      return c.calificacion === 'bueno' ? { cuando: c.calificacion_at, porque: 'Lo marcaste como «Bueno»' } : {};
+    case 'agendado': {
+      const b = primero(books, () => true, x => x.fecha);
+      return b ? { cuando: b.fecha, porque: b.event_types?.nombre || b.asunto || 'Reunión agendada' } : {};
+    }
+    case 'demo_hecha': {
+      const b = primero(books, x => normalizaEstado(x.estado) === 'asistio', x => x.fecha);
+      return b ? { cuando: b.fecha, porque: `Se presentó · ${b.event_types?.nombre || b.asunto || 'reunión'}` } : {};
+    }
+    case 'cotizado': {
+      const q = primero(quotes, () => true, x => x.created_at);
+      return q ? { cuando: q.created_at, porque: `${q.numero} · $${Math.round(Number(q.total || 0)).toLocaleString('es-MX')}` } : {};
+    }
+    case 'negociando':
+      return c.etapa_manual === 'negociando' ? { porque: 'Lo marcaste a mano' } : {};
+    case 'cliente':
+      return c.lifecycle_stage === 'cliente' ? { porque: 'Ya paga' } : {};
+    default: return {};
+  }
+}
+
+function RielEtapas({ c, evaluacion, ruta, sinContacto }: any) {
+  const idx = ruta.indexOf(evaluacion?.etapa as Etapa);
+  const perdido = evaluacion?.etapa === 'perdido';
+  return (
+    <div style={D.cardA}>
+      <div style={D.h}>
+        Por dónde va
+        <span style={D.hr}>
+          se mueve sola con los hechos · llegó hace {dias(c.created_at)} días{sinContacto != null ? ` · ${sinContacto} sin contacto` : ''}
+        </span>
+      </div>
+      <div style={{ position: 'relative', paddingLeft: 30 }}>
+        <span style={{ position: 'absolute', left: 9, top: 6, bottom: 12, width: 2, background: '#efedf5' }} />
+        {ruta.map((k: Etapa, i: number) => {
+          const paso = !!evaluacion?.hitos?.[k];
+          const est = perdido ? 'off' : paso ? 'ok' : i === idx ? 'now' : i < idx ? 'saltado' : 'off';
+          const { cuando, porque } = paso ? pruebaDeHito(k, c) : {};
+          // El peldaño que un humano adelantó se marca: así se distingue lo que
+          // pasó de lo que alguien dijo que pasó.
+          const aMano = evaluacion?.manual === k && evaluacion?.porHechos !== k;
+          const esUltimo = i === ruta.length - 1;
+          return (
+            <div key={k} style={{ position: 'relative', paddingBottom: esUltimo ? 0 : 15 }}>
+              <div style={{
+                position: 'absolute', left: -30, top: 1, width: 20, height: 20, borderRadius: 99,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800,
+                background: est === 'ok' ? '#4FBF95' : '#fff',
+                border: est === 'saltado' ? '2px dashed #ded9ea' : `2px solid ${est === 'ok' ? '#4FBF95' : est === 'now' ? '#9B8CFA' : '#e8e5f0'}`,
+                color: est === 'ok' ? '#fff' : est === 'now' ? '#5B4BD6' : '#c4bfd4',
+                boxShadow: est === 'now' ? '0 0 0 4px rgba(155,140,250,.16)' : 'none',
+              }}>{est === 'ok' ? '✓' : i + 1}</div>
+              {cuando && <span style={{ float: 'right', fontSize: '0.7rem', color: '#b6b2c2', fontWeight: 600 }}>{fmtDate(cuando)}</span>}
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: est === 'ok' ? '#241d43' : est === 'now' ? '#5B4BD6' : '#c0bccd' }}>
+                {ETAPA_LABEL[k]}
+                {aMano && <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#b3afbd', marginLeft: 7 }}>a mano</span>}
+                {est === 'saltado' && <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#c9c4dc', marginLeft: 7 }}>se saltó</span>}
+              </div>
+              {/* En el peldaño ACTUAL no va el hecho —todavía no hay— sino lo
+                  que falta para el siguiente. Es la única línea de la ficha que
+                  dice qué hacer. */}
+              {est === 'now' && pasoDeEtapa(evaluacion.etapa) && (
+                <div style={{ fontSize: '0.76rem', color: '#5B4BD6', opacity: .85, marginTop: 2, lineHeight: 1.5 }}>{pasoDeEtapa(evaluacion.etapa)}</div>
+              )}
+              {est !== 'now' && porque && <div style={{ fontSize: '0.76rem', color: '#8a8a8a', marginTop: 2 }}>{porque}</div>}
+            </div>
+          );
+        })}
+      </div>
+      {perdido && (
+        <div style={{ marginTop: 12, background: '#FBECEA', border: '1px solid #C0554E33', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#C0554E' }}>
+          Cerrado{c.desenlace ? ` · ${c.desenlace}` : ''}{c.calificacion_motivo ? ` · ${c.calificacion_motivo}` : ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ Registrar un toque ═══
+ *
+ * Era una pastilla de tipo, una caja de texto y un botón. No guardaba lo único
+ * que importa de una llamada: si contestaron. Marcarle cuatro veces y que
+ * siempre mande a buzón se veía IGUAL que hablar cuatro veces con el dueño,
+ * porque las dos cosas eran "llamada" con una nota escrita a mano — y esa nota
+ * no se puede contar ni filtrar.
+ *
+ * Ahora se captura canal, cuándo, resultado y nota (opcional). El resultado es
+ * lo que convierte el historial en un dato: "le marqué 3 veces, 2 a buzón".
+ */
+function RegistrarToque({ c, recargar, flash }: any) {
+  const [canal, setCanal] = useState<Canal>('llamada');
+  const [resultado, setResultado] = useState('');
+  const [cuando, setCuando] = useState(() => {
+    // Local, no UTC: `toISOString` en México adelanta seis horas y una llamada
+    // de las 8 de la noche se guardaba al día siguiente.
+    const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    return d.toISOString().slice(0, 16);
+  });
+  const [nota, setNota] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const opciones = RESULTADOS[canal] || [];
+  const r = resultadoDe(canal, resultado);
+
+  // Cuántas veces se le ha marcado y cómo acabó cada vez. Es el dato que
+  // convierte "no contesta" en una decisión: a la quinta, ya no es el horario.
+  const intentos = useMemo(() => {
+    const tipo = tipoActividad(canal);
+    const l = (c.activities || []).filter((a: any) => a.tipo === tipo);
+    const porResultado: Record<string, number> = {};
+    for (const a of l) {
+      const v = a.metadata?.resultado;
+      if (v) porResultado[v] = (porResultado[v] || 0) + 1;
+    }
+    return { total: l.length, porResultado, ultima: l[0]?.metadata?.ocurrio_at || l[0]?.created_at || null };
+  }, [c.activities, canal]);
+
   async function registrar() {
-    if (!txt.trim()) return;
+    if (!resultado) return;
     setBusy(true);
+    const ocurrio = new Date(cuando).toISOString();
     await fetch('/api/crm/activities', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact_id: c.id, company_id: c.company_id, tipo, titulo: txt.slice(0, 80), descripcion: txt }),
+      body: JSON.stringify({
+        contact_id: c.id, company_id: c.company_id,
+        // El tipo canónico, el que SÍ cuenta como toque. La ficha guardaba
+        // `whatsapp` y `email`, que no los cuenta nadie: registrar un WhatsApp
+        // no movía la etapa ni subía el contador de esfuerzo.
+        tipo: tipoActividad(canal),
+        titulo: tituloToque(canal, resultado),
+        descripcion: nota || null,
+        metadata: { canal, resultado, ocurrio_at: ocurrio, hablamos: !!r?.hablamos },
+      }),
     }).catch(() => {});
-    // Registrar una actividad ES contactarlo: si no se apunta aquí, el lead
-    // aparece "sin seguimiento" al día siguiente de haberle hablado.
+    // Registrar un toque ES contactarlo: si no se apunta, el lead aparece "sin
+    // seguimiento" al día siguiente de haberle marcado. Cuenta el intento, haya
+    // contestado o no — el esfuerzo se hizo.
     await fetch('/api/crm/contacts', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: c.id, last_contact_at: new Date().toISOString() }),
+      body: JSON.stringify({ id: c.id, last_contact_at: ocurrio }),
     }).catch(() => {});
-    setBusy(false); setTxt(''); flash('Actividad registrada'); recargar();
+    setBusy(false); setNota(''); setResultado('');
+    flash(r?.hablamos ? 'Contacto registrado' : 'Intento registrado');
+    recargar();
   }
 
+  const pastilla = (act: boolean, color = '#9B8CFA'): any => ({
+    border: '1.5px solid', borderColor: act ? color : '#e2e2e8',
+    background: act ? color : '#fff', color: act ? '#fff' : '#3f3b4d',
+    borderRadius: 10, padding: '7px 13px', fontSize: '0.77rem', fontWeight: 700,
+    cursor: 'pointer', fontFamily: 'inherit',
+  });
+
   return (
-    <>
-      <div style={D.cardM}>
-        <div style={D.h}>Registrar</div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 9, flexWrap: 'wrap' }}>
-          {[['nota', 'Nota'], ['llamada', 'Llamada'], ['whatsapp', 'WhatsApp'], ['email', 'Correo'], ['reunion', 'Reunión']].map(([k, l]) => (
-            <button key={k} onClick={() => setTipo(k)}
-              style={{ border: '1.5px solid', borderColor: tipo === k ? '#9B8CFA' : '#e2e2e8', background: tipo === k ? '#9B8CFA' : '#fff', color: tipo === k ? '#fff' : '#555', borderRadius: 20, padding: '5px 12px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
-          ))}
-        </div>
-        <textarea value={txt} onChange={e => setTxt(e.target.value)} rows={3} placeholder="Qué pasó…"
-          style={{ ...D.fi, resize: 'vertical', fontFamily: 'inherit' }} />
-        <div style={{ marginTop: 9 }}>
-          <button style={{ ...D.btnP, opacity: busy || !txt.trim() ? .5 : 1 }} disabled={busy || !txt.trim()} onClick={registrar}>Registrar</button>
-        </div>
-      </div>
-      {/* Azul: el historial ya no se toca, solo se lee. */}
-      <div style={D.cardA}>
-        <div style={D.h}>Historial<span style={D.hr}>{(c.activities || []).length}</span></div>
-        {(c.activities || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Sin actividad.</div>}
-        {(c.activities || []).map((a: any) => (
-          <div key={a.id} style={{ display: 'flex', gap: 11, padding: '9px 0', borderTop: '1px solid #f5f4f8' }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{a.titulo || a.tipo}</div>
-              {a.descripcion && <div style={{ fontSize: '0.72rem', color: '#71717a', lineHeight: 1.5, marginTop: 2 }}>{a.descripcion}</div>}
-            </div>
-            <span style={{ fontSize: '0.66rem', color: '#c2c0c9', whiteSpace: 'nowrap' }}>{fmtDate(a.created_at)}</span>
-          </div>
+    <div style={D.cardM}>
+      <div style={D.h}>Registrar contacto<span style={D.hr}>lo que pasó, no solo que pasó</span></div>
+
+      <div style={D.fl}>Cómo lo contactaste</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {CANALES.map(x => (
+          <button key={x.v} onClick={() => { setCanal(x.v); setResultado(''); }} style={pastilla(canal === x.v)}>{x.l}</button>
         ))}
       </div>
-    </>
+
+      {/* El contador va aquí y no al final: antes de apuntar la quinta llamada,
+          saber que ya van cuatro a buzón cambia lo que haces. */}
+      {intentos.total > 0 && (
+        <div style={{ marginTop: 10, background: '#f8f7fc', borderRadius: 9, padding: '8px 11px', fontSize: '0.75rem', color: '#6b6b74', lineHeight: 1.5 }}>
+          <b style={{ color: '#241d43' }}>
+            {CANALES.find(x => x.v === canal)?.verbo} {intentos.total} {intentos.total === 1 ? 'vez' : 'veces'}
+          </b>
+          {Object.keys(intentos.porResultado).length > 0 && (
+            <> · {Object.entries(intentos.porResultado)
+              .map(([v, n]) => `${n} ${(resultadoDe(canal, v)?.l || v).toLowerCase()}`).join(' · ')}</>
+          )}
+          {intentos.ultima ? <> · la última hace {dias(intentos.ultima)} días</> : null}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 12, marginTop: 12, alignItems: 'start' }}>
+        <div>
+          <div style={D.fl}>Cuándo fue</div>
+          <input type="datetime-local" style={D.fi} value={cuando} onChange={e => setCuando(e.target.value)} />
+        </div>
+        <div>
+          <div style={D.fl}>Qué pasó <span style={{ color: '#C0554E' }}>· obligatorio</span></div>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {opciones.map(o => (
+              <button key={o.v} onClick={() => setResultado(o.v)}
+                style={pastilla(resultado === o.v, o.hablamos ? '#4FBF95' : o.malDato ? '#EF7A72' : '#E8A838')}>
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* El dato malo no es desinterés: el lead está muerto por el teléfono, y
+          eso se arregla buscando otro, no insistiendo. */}
+      {r?.malDato && (
+        <div style={{ marginTop: 10, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 9, padding: '9px 12px', fontSize: '0.76rem', color: '#C0554E', lineHeight: 1.5 }}>
+          Con el dato malo no hay por dónde. Búscale otro teléfono o correo antes de seguir insistiendo — o márcalo como «No califica» en la evaluación.
+        </div>
+      )}
+
+      <div style={{ marginTop: 11 }}>
+        <div style={D.fl}>Notas <span style={{ color: '#b3b1bb' }}>· opcional</span></div>
+        <textarea value={nota} onChange={e => setNota(e.target.value)} rows={2}
+          placeholder="Se le marcó dos veces y mandó directo a buzón…"
+          style={{ ...D.fi, resize: 'vertical', fontFamily: 'inherit' }} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 9, marginTop: 11, alignItems: 'center' }}>
+        <button style={{ ...D.btnP, opacity: busy || !resultado ? .5 : 1 }} disabled={busy || !resultado} onClick={registrar}>
+          {busy ? 'Guardando…' : 'Registrar'}
+        </button>
+        {!resultado && <span style={{ fontSize: '0.72rem', color: '#b3b1bb' }}>Falta decir qué pasó.</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ Todo lo que ha pasado ═══
+ *
+ * Una sola línea de tiempo. Eran dos, en dos pestañas: la que escribe una
+ * persona (Actividad) y la que se escribe sola (las visitas y clics de
+ * Señales). Ninguna de las dos contestaba por separado la pregunta de antes de
+ * llamar —¿quién movió la última ficha, él o yo?— porque para eso hay que ver
+ * las dos en el mismo orden.
+ */
+function LineaDeTiempo({ c }: any) {
+  const eventos = useMemo(() => {
+    const l = (c.activities || []).filter((a: any) => !esRuido(a));
+    return l.map((a: any) => ({
+      id: a.id,
+      quien: quienLoHizo(a),
+      titulo: a.titulo || a.tipo,
+      detalle: a.descripcion || null,
+      // `ocurrio_at` es cuándo pasó de verdad; `created_at`, cuándo se apuntó.
+      // Una llamada del lunes registrada el jueves va el lunes.
+      cuando: a.metadata?.ocurrio_at || a.created_at,
+    })).sort((x: any, y: any) => String(y.cuando).localeCompare(String(x.cuando)));
+  }, [c.activities]);
+
+  const marca = (quien: string) => ({
+    width: 24, height: 24, borderRadius: 7, flexShrink: 0, display: 'flex',
+    alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800,
+    background: quien === 'el' ? '#E3EDFD' : '#EEECFE', color: quien === 'el' ? '#2C5FC4' : '#5B4BD6',
+  });
+
+  let diaAnterior = '';
+  return (
+    <div style={D.cardA}>
+      <div style={D.h}>Todo lo que ha pasado<span style={D.hr}>lo tuyo y lo suyo, en una sola línea</span></div>
+      {eventos.length === 0 && <div style={{ fontSize: '0.79rem', color: '#a5a2af' }}>Todavía no hay nada registrado.</div>}
+      <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        {eventos.map((e: any) => {
+          const dia = fmtLargo(e.cuando);
+          const nuevoDia = dia !== diaAnterior;
+          diaAnterior = dia;
+          return (
+            <div key={e.id}>
+              {nuevoDia && (
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#b6b2c2', letterSpacing: '.06em', textTransform: 'uppercase', padding: '11px 0 3px' }}>{dia}</div>
+              )}
+              <div style={{ display: 'flex', gap: 11, padding: '7px 0', alignItems: 'flex-start' }}>
+                <span style={marca(e.quien)}>{e.quien === 'el' ? 'ÉL' : 'TÚ'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{e.titulo}</div>
+                  {e.detalle && <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 1, lineHeight: 1.5 }}>{e.detalle}</div>}
+                </div>
+                <span style={{ fontSize: '0.69rem', color: '#b6b2c2', whiteSpace: 'nowrap' }}>
+                  {new Date(e.cuando).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {eventos.length > 0 && (
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.72rem', color: '#8a8a8a', marginTop: 11, paddingTop: 10, borderTop: '1px solid #f5f4f8' }}>
+          <span><span style={{ ...marca('tu'), display: 'inline-flex', width: 19, height: 19, marginRight: 6, verticalAlign: '-4px' }}>TÚ</span>lo que hiciste tú</span>
+          <span><span style={{ ...marca('el'), display: 'inline-flex', width: 19, height: 19, marginRight: 6, verticalAlign: '-4px' }}>ÉL</span>lo que hizo él solo</span>
+        </div>
+      )}
+    </div>
   );
 }

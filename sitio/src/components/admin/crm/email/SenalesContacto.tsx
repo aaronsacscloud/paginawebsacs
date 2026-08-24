@@ -1,9 +1,14 @@
-// Señales de una persona: su puntaje de intención y su historia completa.
+// Señales de una persona: qué tan caliente está y por qué.
 //
-// Se monta dentro de la ficha del contacto. Antes había que cruzar cinco
-// pestañas para armar la misma historia antes de una llamada.
+// Tenía además "Todo lo que ha hecho", una línea de tiempo de correos, visitas
+// y clics. Esa se mudó a Seguimiento, mezclada con lo que registra una persona
+// —llamadas y notas—: eran DOS historias del mismo lead en dos pestañas, y la
+// pregunta de antes de llamar («¿quién movió la última ficha, él o yo?») no la
+// contestaba ninguna de las dos por separado.
+//
+// Aquí queda lo que no cabe allá: el termómetro y su desglose.
 import { useEffect, useState } from 'react';
-import { S, Tag, Cargando, fmtFecha } from './ui';
+import { S, Cargando, fmtFecha } from './ui';
 
 const TEMP: Record<string, { l: string; bg: string; fg: string }> = {
   caliente: { l: 'CALIENTE', bg: '#FEF0EF', fg: '#C0554E' },
@@ -60,29 +65,6 @@ export default function SenalesContacto({ contactId }: { contactId: string }) {
         )}
       </div>
 
-      <div style={{ ...S.card, padding: 0 }}>
-        <div style={{ padding: '13px 16px 8px' }}>
-          <div style={{ fontSize: '0.88rem', fontWeight: 800 }}>Todo lo que ha hecho</div>
-          <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 2 }}>
-            Correos, visitas, reuniones, pagos y respuestas — en una sola línea
-          </div>
-        </div>
-        <div style={{ maxHeight: 420, overflowY: 'auto', padding: '0 16px 14px' }}>
-          {(d.timeline || []).length === 0 && (
-            <div style={{ fontSize: '0.8rem', color: '#a5a2af', padding: '10px 0' }}>Todavía no hay actividad registrada.</div>
-          )}
-          {(d.timeline || []).map((e: any, i: number) => (
-            <div key={i} style={{ display: 'flex', gap: 11, padding: '8px 0', borderTop: i ? '1px solid #f7f6fa' : 'none' }}>
-              <span style={{ width: 18, textAlign: 'center', color: e.tipo === 'clic' ? '#5B4BD6' : e.tipo === 'visita' ? '#2C5FC4' : '#c9c7d0', fontWeight: 700, flexShrink: 0 }}>{e.icono}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: e.tipo === 'clic' || e.tipo === 'reunion' ? 700 : 500 }}>{e.titulo}</div>
-                {e.detalle && <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.detalle}</div>}
-              </div>
-              <span style={{ fontSize: '0.68rem', color: '#a5a2af', whiteSpace: 'nowrap' }}>{fmtFecha(e.cuando)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

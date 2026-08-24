@@ -78,7 +78,7 @@ export const GET: APIRoute = async ({ params }) => {
         : { data: [] as any[] };
       const conSub = new Set((subs || []).map((x: any) => x.company_id));
 
-      const ix: Indices = { porCorreo: new Map(), porTelefono: new Map(), empresas: new Map(), porNombreEmpresa: new Map() };
+      const ix: Indices = { porCorreo: new Map(), porTelefono: new Map(), empresas: new Map(), porNombreEmpresa: new Map(), leadPorCorreo: new Map(), leadPorTelefono: new Map() };
       for (const e of (emps || [])) {
         const activa = conSub.has(e.id);
         ix.empresas.set(e.id, { nombre: e.nombre_comercial || e.nombre, estado_cuenta: e.estado_cuenta, arr: e.arr, activa });
@@ -94,9 +94,23 @@ export const GET: APIRoute = async ({ params }) => {
         const em = normTxt(v.email); if (em && !ix.porCorreo.has(em)) ix.porCorreo.set(em, reg);
         const t2 = tel10(v.whatsapp || v.telefono); if (t2.length === 10 && !ix.porTelefono.has(t2)) ix.porTelefono.set(t2, reg);
       }
+      // Las otras fichas de lead, de la más vieja a la más nueva: contra la
+      // primera de cada correo/teléfono se decide si esta persona ya nos había
+      // escrito. Es la cuarta llave y, medida en producción, la única que
+      // encuentra algo — las tres de arriba dan cero sobre los leads abiertos.
+      const { data: gemelos } = await supabase.from('contacts')
+        .select('id, nombre, email, whatsapp, telefono, created_at')
+        .in('lifecycle_stage', ['lead', 'lead_calificado', 'oportunidad']).is('archived_at', null)
+        .order('created_at', { ascending: true }).limit(4000);
+      for (const g of (gemelos || [])) {
+        const reg = { contact_id: g.id, created_at: g.created_at, nombre: g.nombre };
+        const em = normTxt(g.email); if (em && !ix.leadPorCorreo!.has(em)) ix.leadPorCorreo!.set(em, reg);
+        const t3 = tel10(g.whatsapp || g.telefono); if (t3.length === 10 && !ix.leadPorTelefono!.has(t3)) ix.leadPorTelefono!.set(t3, reg);
+      }
       historial = detectaHistorial({
         id: String(id), email: contact.email, whatsapp: contact.whatsapp, telefono: contact.telefono,
         company_id: contact.company_id, empresa_nombre: empresa?.nombre_comercial || empresa?.nombre || null,
+        created_at: contact.created_at,
       }, ix);
     } catch { historial = null; }
   }

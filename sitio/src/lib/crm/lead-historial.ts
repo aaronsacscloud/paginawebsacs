@@ -13,7 +13,7 @@
 // la lada y el +52 vienen de mil formas; el nombre de empresa es la más débil y
 // por eso su hallazgo se presenta como "hay que confirmarlo", no como un hecho.
 
-export type TipoHistorial = 'ya_paga' | 'fue_cliente' | 'empresa_duplicada';
+export type TipoHistorial = 'ya_paga' | 'fue_cliente' | 'empresa_duplicada' | 'volvio_a_escribir' | 'ficha_repetida';
 
 export type Historial = {
   tipo: TipoHistorial;
@@ -36,6 +36,11 @@ export const claveEmpresa = (s?: string | null) => String(s || '')
   .toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export type Indices = {
+  /** La ficha MÁS VIEJA de cada correo/teléfono entre los propios leads. Sirve
+   *  para la cuarta llave: no todo el que ya conocíamos fue cliente — la
+   *  mayoría simplemente ya nos había escrito antes. */
+  leadPorCorreo?: Map<string, { contact_id: string; created_at: string; nombre?: string | null }>;
+  leadPorTelefono?: Map<string, { contact_id: string; created_at: string; nombre?: string | null }>;
   /** correo normalizado → { lifecycle, company_id, contact_id } de clientes y cancelados */
   porCorreo: Map<string, { lifecycle: string; company_id: string | null; contact_id: string }>;
   porTelefono: Map<string, { lifecycle: string; company_id: string | null; contact_id: string }>;
@@ -52,6 +57,7 @@ export type LeadMin = {
   telefono?: string | null;
   company_id?: string | null;
   empresa_nombre?: string | null;
+  created_at?: string | null;
 };
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -115,6 +121,45 @@ export function detectaHistorial(lead: LeadMin, ix: Indices): Historial | null {
         detalle: 'El correo es distinto: puede ser otra persona del mismo negocio. Hay que confirmarlo por teléfono, no darlo por hecho.' };
     }
   }
+  // 4) Ya nos había escrito. No fue cliente ni paga: es la misma persona
+  //    llenando el formulario otra vez.
+  //
+  //    Es la llave que faltaba, y la única que aquí encuentra algo: medido en
+  //    producción, las tres de arriba dan CERO sobre 102 leads abiertos —nadie
+  //    comparte correo ni teléfono con un cliente, y ninguna empresa de lead se
+  //    llama como una que paga— mientras que 12 fichas son 5 personas repetidas.
+  //    La pestaña "Ya los conocíamos" salía vacía teniendo a quién enseñar.
+  //
+  //    Se separan dos casos porque se trabajan distinto: si las fichas son del
+  //    MISMO día es un doble envío del formulario y hay que fusionarlas; si
+  //    pasaron días, la persona volvió sola — y eso es interés, no basura.
+  const gemela = (() => {
+    const e = norm(lead.email);
+    const t = tel10(lead.whatsapp || lead.telefono);
+    const porE = e && ix.leadPorCorreo ? ix.leadPorCorreo.get(e) : undefined;
+    const porT = t.length === 10 && ix.leadPorTelefono ? ix.leadPorTelefono.get(t) : undefined;
+    for (const [por, m] of [['correo', porE], ['telefono', porT]] as const) {
+      // Solo cuenta la ficha ANTERIOR: la primera vez que alguien escribe no
+      // "ya lo conocíamos". Si esta ES la más vieja, no hay hallazgo.
+      if (m && m.contact_id !== lead.id) return { por, m };
+    }
+    return null;
+  })();
+  if (gemela) {
+    const dias = lead.created_at && gemela.m.created_at
+      ? Math.round((Date.parse(lead.created_at) - Date.parse(gemela.m.created_at)) / 86400000)
+      : 0;
+    // Dos días de holgura: un formulario reenviado a medianoche cae al día
+    // siguiente y no por eso la persona "volvió".
+    return dias > 2
+      ? { tipo: 'volvio_a_escribir', por: gemela.por, contact_id: gemela.m.contact_id,
+          titulo: `Ya nos había escrito hace ${dias} días`,
+          detalle: `Mismo ${gemela.por}. Volvió por su cuenta: no es un lead frío, es alguien que sigue buscando.` }
+      : { tipo: 'ficha_repetida', por: gemela.por, contact_id: gemela.m.contact_id,
+          titulo: 'Ficha repetida el mismo día',
+          detalle: `Mismo ${gemela.por} que otra ficha. Es un doble envío del formulario — conviene fusionarlas.` };
+  }
+
   return null;
 }
 
@@ -122,4 +167,6 @@ export const HISTORIAL_ETIQUETA: Record<TipoHistorial, { label: string; bg: stri
   ya_paga: { label: 'Ya es cliente', bg: '#FBECEA', fg: '#C0554E' },
   fue_cliente: { label: 'Reactivación', bg: '#FFF6E3', fg: '#9A6B15' },
   empresa_duplicada: { label: 'Empresa duplicada', bg: '#f4f4f6', fg: '#6B7280' },
+  volvio_a_escribir: { label: 'Volvió a escribir', bg: '#EEECFE', fg: '#5B4BD6' },
+  ficha_repetida: { label: 'Ficha repetida', bg: '#f4f4f6', fg: '#6B7280' },
 };
