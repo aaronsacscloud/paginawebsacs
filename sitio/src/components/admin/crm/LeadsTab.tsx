@@ -135,6 +135,7 @@ export default function LeadsTab() {
   // tabla con scroll, un menú en flujo se recorta contra el borde.
   const [menu, setMenu] = useState<{ c: any; x: number; y: number } | null>(null);
   const [verContacto, setVerContacto] = useState<string | null>(null);
+  const [borrando, setBorrando] = useState<any>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
 
@@ -608,6 +609,12 @@ export default function LeadsTab() {
               <button style={opcion} onClick={() => { setVerContacto(c.id); setMenu(null); }}>Abrir ficha</button>
               {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
               {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
+              {/* En rojo "outline", como en la ficha del cliente: visible sin
+                  esconderse en un submenú, pero sin competir con lo que sí se
+                  hace todos los días. El candado lo pone el modal. */}
+              <div style={{ height: 1, background: '#f5f4f8', margin: '5px 4px' }} />
+              <button style={{ ...opcion, color: '#c0392b' }}
+                onClick={() => { setBorrando(c); setMenu(null); }}>Eliminar lead</button>
             </div>
           </>
         );
@@ -615,8 +622,110 @@ export default function LeadsTab() {
 
       {verContacto && <LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
         onAbrirOtro={(id: string) => setVerContacto(id)} />}
+      {borrando && <EliminarLead c={borrando} onCerrar={() => setBorrando(null)}
+        onListo={() => { setBorrando(null); cargar(); }} />}
       {nuevo && <NuevoLead onCerrar={() => setNuevo(false)} onListo={() => { setNuevo(false); cargar(); }} />}
       {importTikTok && <ImportarTikTok onCerrar={() => setImportTikTok(false)} onListo={cargar} />}
+    </div>
+  );
+}
+
+/* Borrar un lead.
+ *
+ * Nació de los leads de prueba —"Zapatería QA 3 (borrar)"— que se quedaban en
+ * la lista para siempre porque no había por dónde sacarlos.
+ *
+ * El candado NO es el mismo para todos: un lead de prueba sin nada detrás no
+ * merece que le escribas el nombre, y uno con una cotización de $47,900 no
+ * merece un solo clic. Quién pide qué lo decide el inventario que devuelve el
+ * servidor, no el botón.
+ */
+function EliminarLead({ c, onCerrar, onListo }: any) {
+  const [inv, setInv] = useState<any>(null);
+  const [texto, setTexto] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/crm/leads/eliminar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: c.id, ensayo: true }),
+    }).then(r => r.json()).then(j => { if (j.error) setError(j.error); else setInv(j); })
+      .catch(() => setError('No se pudo revisar qué tiene este lead.'));
+  }, [c.id]);
+
+  const nombre = inv?.nombre || [c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || 'este lead';
+  const pide = !!inv?.pide_confirmacion;
+  const listo = !pide || texto.trim().toLowerCase() === String(nombre).trim().toLowerCase();
+
+  async function borrar() {
+    setBusy(true); setError('');
+    const r = await fetch('/api/crm/leads/eliminar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: c.id, ensayo: false, confirmar: texto }),
+    }).then(x => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo borrar.'); return; }
+    onListo();
+  }
+
+  const fi: CSSProperties = { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 11px', fontSize: '0.79rem', background: '#fdfcff', width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' };
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 962, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 'min(460px, 96vw)' }}>
+        <div style={{ padding: '15px 19px', background: '#fff6f4', borderBottom: '1px solid #f7c9c5', display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, flex: 1, color: '#c0392b' }}>Eliminar a {nombre}</h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '16px 19px 19px' }}>
+          {!inv && !error && <Cargando texto="Revisando qué tiene…" alto={110} />}
+
+          {inv && (
+            <>
+              {(inv.inventario || []).length === 0 ? (
+                <div style={{ fontSize: '0.82rem', color: '#3f3b4d', lineHeight: 1.6 }}>
+                  No tiene nada colgando: ni actividades, ni reuniones, ni cotizaciones. Se va limpio.
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.8rem', color: '#3f3b4d', marginBottom: 9 }}>Se borra también:</div>
+                  {(inv.inventario || []).map((f: any) => (
+                    <div key={f.label} style={{ display: 'flex', gap: 10, fontSize: '0.79rem', padding: '6px 0', borderTop: '1px solid #f4f4f4' }}>
+                      <span style={{ color: f.pesa ? '#c0392b' : '#6b6b74' }}>{f.label}</span>
+                      <b style={{ marginLeft: 'auto', fontVariantNumeric: 'tabular-nums', color: f.pesa ? '#c0392b' : '#241d43' }}>{f.n}</b>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div style={{ marginTop: 13, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', fontSize: '0.76rem', color: '#C0554E', lineHeight: 1.55 }}>
+                Esto no se puede deshacer. No es archivar: la ficha desaparece de la base.
+              </div>
+
+              {pide && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
+                    Este trae dinero de por medio · escribe «{nombre}»
+                  </div>
+                  <input autoFocus style={fi} value={texto} onChange={e => setTexto(e.target.value)} placeholder={nombre} />
+                </div>
+              )}
+            </>
+          )}
+
+          {error && <div style={{ marginTop: 11, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#C0554E' }}>{error}</div>}
+
+          <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
+            <button disabled={!inv || busy || !listo} onClick={borrar}
+              style={{ border: 'none', borderRadius: 9, padding: '8px 15px', background: '#c0392b', color: '#fff', fontSize: '0.79rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: !inv || busy || !listo ? .5 : 1 }}>
+              {busy ? 'Borrando…' : 'Eliminar'}
+            </button>
+            <button onClick={onCerrar} style={{ border: '1px solid #ddd', borderRadius: 9, padding: '8px 15px', background: '#fff', fontSize: '0.79rem', fontWeight: 600, color: '#333', cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
