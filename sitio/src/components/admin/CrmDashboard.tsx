@@ -136,7 +136,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Cuentas', sec: 'cuentas',
+    label: 'Cuentas', sec: 'cuentas', icon: 'clientes',
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
@@ -147,7 +147,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Facturación', sec: 'facturacion',
+    label: 'Facturación', sec: 'facturacion', icon: 'cotizaciones',
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       // Pagos se comió a Cobranza: eran el mismo trabajo —el dinero— visto en
@@ -158,7 +158,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Acompañamiento', sec: 'acompanamiento',
+    label: 'Acompañamiento', sec: 'acompanamiento', icon: 'mejoras',
     items: [
       { id: 'mejoras' as Tab, label: 'Consultoría', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
@@ -169,7 +169,7 @@ const NAV_SECTIONS = [
     /* WhatsApp deja de ser CUATRO renglones sueltos del menú: sus pantallas
        —conversaciones, masivos, métricas, configuración— son vistas del mismo
        canal, no cuatro módulos. Eran 4 de las 19 entradas. */
-    label: 'WhatsApp', sec: 'automatizacion',
+    label: 'WhatsApp', sec: 'automatizacion', icon: 'whatsapp',
     items: [
       { id: 'whatsapp' as Tab, label: 'Conversaciones', icon: 'whatsapp' },
       { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
@@ -180,7 +180,7 @@ const NAV_SECTIONS = [
   {
     // Se queda con lo que de verdad CORRE SOLO. Antes cargaba también con todo
     // WhatsApp, que es un canal que se atiende a mano.
-    label: 'Automatización', sec: 'automatizacion',
+    label: 'Automatización', sec: 'automatizacion', icon: 'automations',
     items: [
       // Email vive junto a las automatizaciones porque es la misma pregunta
       // ("qué le llega solo al cliente"), vista desde el canal.
@@ -193,7 +193,7 @@ const NAV_SECTIONS = [
   {
     // "Colaboradores" no decía qué había adentro. Son los partners y lo que se
     // les paga; "Mi desempeño" se viene con ellos porque es el mismo tablero.
-    label: 'Partners', sec: 'colaboradores',
+    label: 'Partners', sec: 'colaboradores', icon: 'partners',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
       { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
@@ -238,6 +238,13 @@ export default function CrmDashboard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  /* El menú PLEGADO enseña un icono por GRUPO, no uno por pantalla. Pintando
+     cada renglón salían 19 iconos en una tira que ni cabía, y los grupos que el
+     menú abierto ya tiene desaparecían justo cuando más falta hacen. Tocar un
+     grupo abre este volado con sus pantallas: se llega a cualquiera sin
+     desplegar el menú, o sea sin devolver el ancho que da tenerlo plegado. */
+  const [flyGrupo, setFlyGrupo] = useState<{ label: string; y: number } | null>(null);
+  useEffect(() => { if (!sidebarCollapsed) setFlyGrupo(null); }, [sidebarCollapsed]);
   // Compromisos con fecha vencida en TODAS las cuentas. Se pide una vez al
   // entrar: es la única cifra del menú y solo aparece cuando hay algo tarde.
   const [vencidasMenu, setVencidasMenu] = useState(0);
@@ -563,7 +570,39 @@ export default function CrmDashboard() {
                   </button>
                 );
               })()}
-              {(sidebarCollapsed || !section.label || grupoAbierto === section.label) && section.items.map(item => {
+              {/* Plegado y con grupo: UN botón por grupo, no uno por pantalla. */}
+              {sidebarCollapsed && section.label && (() => {
+                const contieneActiva = section.items.some(i => i.id === tab);
+                const urge = section.items.some(i => i.id === 'mejoras') && vencidasMenu > 0;
+                const abierto = flyGrupo?.label === section.label;
+                return (
+                  <button title={section.label}
+                    onClick={e => {
+                      if (abierto) { setFlyGrupo(null); return; }
+                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setFlyGrupo({ label: section.label, y: r.top });
+                    }}
+                    style={{
+                      position: 'relative', width: 44, minHeight: 40, margin: '2px auto',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: 11, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      background: contieneActiva || abierto ? '#fff' : 'transparent',
+                      boxShadow: contieneActiva || abierto ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
+                      color: contieneActiva ? '#4C3BD0' : '#4b4560',
+                      transition: 'background .15s ease, box-shadow .15s ease',
+                    }}
+                    onMouseEnter={e => { if (!contieneActiva && !abierto) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
+                    onMouseLeave={e => { if (!contieneActiva && !abierto) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                    <span style={{ display: 'flex', width: 20, color: contieneActiva ? '#7C6BF0' : '#a49dbd' }}
+                      dangerouslySetInnerHTML={{ __html: ICONS[(section as any).icon] || ICONS[section.items[0].icon] || '' }} />
+                    {/* Sin el punto, un pendiente vencido queda invisible en
+                        cuanto se pliega el menú: el contador vive en el renglón
+                        de Consultoría, que aquí ya no se pinta. */}
+                    {urge && <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: 99, background: '#C0554E' }} />}
+                  </button>
+                );
+              })()}
+              {((sidebarCollapsed && !section.label) || (!sidebarCollapsed && (!section.label || grupoAbierto === section.label))) && section.items.map(item => {
                 const isActive = tab === item.id;
                 /* Dentro de un grupo abierto, el renglón se sangra y cambia su
                    icono por un punto: con el icono puesto se veía igual que la
@@ -845,6 +884,50 @@ export default function CrmDashboard() {
       )}
 
       {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}
+      {/* El volado del grupo. Fijo y anclado al botón: la lista del menú tiene
+          overflow y un panel absoluto adentro se recortaría. */}
+      {sidebarCollapsed && flyGrupo && (() => {
+        const sec = seccionesVisibles.find(x => x.label === flyGrupo.label);
+        if (!sec) return null;
+        const alto = 44 + sec.items.length * 34;
+        const top = Math.max(8, Math.min(flyGrupo.y, window.innerHeight - alto - 12));
+        return (
+          <>
+            <div onClick={() => setFlyGrupo(null)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />
+            <div style={{
+              position: 'fixed', left: 70, top, zIndex: 941, minWidth: 208,
+              background: '#fff', border: '1px solid #e6e0f6', borderRadius: 12,
+              boxShadow: '0 14px 34px rgba(36,29,67,.2)', padding: 7,
+            }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#a49dbd', padding: '5px 10px 4px' }}>
+                {sec.label}
+              </div>
+              {sec.items.map(item => {
+                const act = tab === item.id;
+                return (
+                  <button key={item.id}
+                    onClick={() => { setFlyGrupo(null); switchTab(item.id); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                      border: 'none', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                      fontSize: '0.81rem', fontWeight: act ? 800 : 600,
+                      background: act ? '#EEECFE' : 'transparent', color: act ? '#4C3BD0' : '#4b4560',
+                    }}
+                    onMouseEnter={e => { if (!act) (e.currentTarget as HTMLElement).style.background = '#f6f4ff'; }}
+                    onMouseLeave={e => { if (!act) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                    <span style={{ display: 'flex', width: 17, flexShrink: 0, color: act ? '#7C6BF0' : '#a49dbd' }}
+                      dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
+                    {item.id === 'mejoras' && vencidasMenu > 0 && (
+                      <span style={{ fontSize: '0.6rem', fontWeight: 800, background: '#FEF0EF', color: '#C0554E', borderRadius: 20, padding: '2px 7px' }}>{vencidasMenu}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
       {isMobile && !mobileExpanded && (
         <BottomNav
           activeId={BOTTOM_IDS.includes(tab) ? tab : '__mas'}
