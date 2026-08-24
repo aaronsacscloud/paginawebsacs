@@ -8,6 +8,7 @@
 // juego la renovación completa; en la mensual lo que importa no es el monto sino
 // cuántos meses lleva sin pagar.
 import { useEffect, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando, { Corazones } from './ui/Cargando';
 import KpiCard from './ui/KpiCard';
@@ -32,7 +33,7 @@ const SENAL: Record<string, { l: string; bg: string; fg: string }> = {
 };
 
 const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
+  wrap: WRAP,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
   // Misma escala que las tarjetas de Cotizaciones: rótulo de 10 px, número de
   // 22 y una línea de 11. Con el número a 26 px las cinco no cabían y la última

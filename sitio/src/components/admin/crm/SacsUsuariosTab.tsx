@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { Server, RefreshCw, ShieldCheck, User, LogIn } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
@@ -147,7 +148,7 @@ export default function SacsUsuariosTab() {
   ];
 
   return (
-    <div style={{ padding: '4px 12px 28px' }}>
+    <div style={WRAP}>
       <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } @media (hover: none) { .ct360 tbody tr:active td { background: #f7f9fc; } } .spin { animation: sacsspin 0.8s linear infinite; } @keyframes sacsspin { to { transform: rotate(360deg); } }`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>

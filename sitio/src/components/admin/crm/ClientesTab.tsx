@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
@@ -672,7 +673,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     // Mismo contenedor que Cotizaciones: sin esto la tabla se estira de orilla a
     // orilla del monitor y las dos pantallas del mismo módulo se ven de sistemas
     // distintos.
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
+    <div style={WRAP}>
       <style>{`
         .ct360 tbody tr { transition: background .12s ease; }
         .ct360 tbody tr:hover td { background: #f7f9fc; }

@@ -4,6 +4,7 @@
 // dirección física o el dominio, todas las pantallas lo dicen y el envío está
 // apagado. Es mejor un candado explicado que seis pantallas vacías.
 import { useEffect, useState } from 'react';
+import { WRAP } from '../../../../lib/crm/layout';
 import { S, Aviso, chip, FOCO } from './ui';
 import ConfigEmail from './ConfigEmail';
 import Campanas from './Campanas';
@@ -50,7 +51,7 @@ export default function EmailTab() {
     <div className="em-sec">
       <style>{FOCO}</style>
       <div style={{ background: '#fff', borderBottom: '1px solid #f0eff3', padding: '12px 24px 0' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        <div style={{ maxWidth: WRAP.maxWidth, margin: '0 auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {SECCIONES.map(s => (
             <button key={s.id} onClick={() => setSec(s.id)}
               aria-current={sec === s.id ? 'page' : undefined}

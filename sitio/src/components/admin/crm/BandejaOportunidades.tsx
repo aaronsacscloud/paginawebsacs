@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { S } from './SubscriptionsTab';
 
@@ -58,7 +59,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
 
   const r = d?.resumen;
   return (
-    <div style={{ padding: '4px 12px 28px' }}>
+    <div style={WRAP}>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>Por trabajar</div><div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{r?.nuevas ?? '—'}</div></div>
         <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>Contactadas</div><div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{r?.contactadas ?? '—'}</div></div>

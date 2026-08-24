@@ -13,6 +13,7 @@
 // Las vistas cargan lo suyo cuando se abren: entrar a Pagos ya no dispara seis
 // consultas de las que cinco no se van a ver.
 import { useState, useEffect } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
@@ -371,7 +372,7 @@ export default function PagosTab() {
     // borde izquierdo y la tabla llegaba hasta la orilla derecha. El resto del
     // CRM usa este marco (máximo 1280, centrado, 24 de aire), y por eso las
     // pantallas se veían de dos anchos distintos según qué pestaña abrieras.
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, width: '100%', boxSizing: 'border-box' }}>
+    <div style={WRAP}>
       {/* Las cinco tarjetas en rejilla, con los mismos cortes que Cobranza:
           nunca se apachurran ni se salen de la pantalla. */}
       <style>{`

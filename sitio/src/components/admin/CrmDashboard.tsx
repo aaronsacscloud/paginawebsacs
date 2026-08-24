@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Component } from 'react';
+import { WRAP } from '../../lib/crm/layout';
 import type { ReactNode } from 'react';
 import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
 import BottomNav from './crm/ui/BottomNav';
@@ -727,7 +728,7 @@ export default function CrmDashboard() {
         ) : tab === 'suscripciones' ? (
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
         ) : tab === 'cobros' ? (
-          <ErrorBoundary><div style={{ padding: '4px 12px 28px' }}><PasarelaMercadoPago /></div></ErrorBoundary>
+          <ErrorBoundary><div style={WRAP}><PasarelaMercadoPago /></div></ErrorBoundary>
         ) : tab === 'agenda' || tab === 'reuniones' ? (
           /* Reuniones y Agenda eran dos entradas del menú, en grupos distintos,
              para el mismo tema: las juntas que ya tienes y los horarios en que

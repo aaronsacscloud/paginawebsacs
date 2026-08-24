@@ -9,6 +9,7 @@
 // LTV varios meses de bajas: un número inventado en una pantalla que puede ver
 // un inversionista es peor que un hueco.
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando, { Corazones } from './ui/Cargando';
 
@@ -24,7 +25,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const hace = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
 
 const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
+  wrap: WRAP,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '18px 20px', marginBottom: 14 } as const,
   h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 } as const,
   hr: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,

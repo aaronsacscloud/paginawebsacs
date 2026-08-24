@@ -4,6 +4,7 @@
 // Es POR USUARIO, no por cuenta: si mañana entra otra consultora, sube su logo,
 // elige su color y sus documentos salen con su nombre sin tocar los de nadie.
 import { useEffect, useRef, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando, { Corazones } from './ui/Cargando';
 
 const D = {
@@ -67,7 +68,7 @@ export default function MarcaTab({ sinTitulo }: { sinTitulo?: boolean } = {}) {
   const inis = (marca?.iniciales || 'SC');
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+    <div style={WRAP}>
       {!sinTitulo && <h2 style={{ margin: '0 0 4px', fontSize: '1.15rem', fontWeight: 800 }}>Mi marca</h2>}
       <p style={{ margin: '0 0 20px', fontSize: '0.82rem', color: '#8d8a97', lineHeight: 1.6, maxWidth: 640 }}>
         Con esto salen las minutas que descargas y compartes con el cliente. Es tuya: cada persona del equipo

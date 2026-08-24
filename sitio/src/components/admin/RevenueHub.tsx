@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { WRAP } from '../../lib/crm/layout';
 import { createPortal } from 'react-dom';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
@@ -3614,7 +3615,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       )}
 
       {/* Content */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
+      <div style={WRAP}>
         {tab === 'dashboard' && <DashboardView />}
         {/* El dashboard ocupa el lugar de la lista, no se encima: como panel
             flotante quedaba por debajo del menú lateral y se cortaba al

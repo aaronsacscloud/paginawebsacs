@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 import FinanzasARR from './FinanzasARR';
 import InteligenciaView from './InteligenciaView';
@@ -240,7 +241,7 @@ export default function SubscriptionsTab() {
   </>);
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={WRAP}>
       {/* ── KPIs + meta: SOLO en Panel financiero ──
           El ARR, lo que está en riesgo, las bajas y la meta son la lectura
           financiera del negocio; ahí viven. Suscripciones es una lista de

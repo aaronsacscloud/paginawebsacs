@@ -6,6 +6,7 @@
 // pasó por auditoría de UI contra el código real — no inventar tonos nuevos:
 // verde/rojo SOLO para dinero o estados consumados/malos.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { WRAP } from '../../../../lib/crm/layout';
 import TablaEnterprise, { type ColDef, type VistaDef } from '../TablaEnterprise';
 import Sheet from '../ui/Sheet';
 import ActionSheet from '../ui/ActionSheet';
@@ -1014,7 +1015,7 @@ export default function OutboundTab() {
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+    <div style={WRAP}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Outbound</h1>

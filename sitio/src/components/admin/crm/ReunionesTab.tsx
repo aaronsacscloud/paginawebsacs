@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import { ESTADOS, normalizaEstado } from '../../../lib/crm/reuniones';
 import KpiCard from './ui/KpiCard';
 import Cargando from './ui/Cargando';
@@ -477,7 +478,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   return (
-    <div style={{ padding: '18px 24px' }}>
+    <div style={WRAP}>
       {/* La página se presenta, como Clientes y Cotizaciones: título, cuánto hay
           y las acciones a la derecha. Era la única del CRM que entraba directo a
           las tarjetas, y sin saber dónde estabas parado. */}

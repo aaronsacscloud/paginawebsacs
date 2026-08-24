@@ -8,6 +8,7 @@
 // los datos que hay, se dice. El bloque "Datos por completar" no es una lista
 // de errores, es lo que limita lo que este panel puede afirmar.
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { P, tarjetaKpi, CINTA } from '../../../lib/crm/paleta';
 
@@ -22,7 +23,9 @@ const etiquetaMes = (m: string, conAnio = false) => {
 const S = {
   // El aire de arriba lo pone el contenedor del CRM; aquí solo la separación
   // con la barra de pestañas.
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: '14px 0 40px' } as const,
+  // Vive DENTRO del contenedor de Suscripciones, que ya pone el aire
+  // lateral: aquí solo se iguala el tope para no descuadrarse con él.
+  wrap: { maxWidth: WRAP.maxWidth, margin: '0 auto', padding: '14px 0 40px' } as const,
   card: { background: P.papel, border: `1px solid ${P.linea}`, borderRadius: 10, padding: '16px 18px' } as const,
   k: { fontSize: '0.57rem', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#a5a2af' } as const,
   v: { fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.08, marginTop: 4, letterSpacing: '-.02em' } as const,

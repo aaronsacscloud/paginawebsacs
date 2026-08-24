@@ -5,6 +5,7 @@
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
 import LeadDrawer from './LeadDrawer';
@@ -65,7 +66,7 @@ const VISTAS = [
 ];
 
 const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
+  wrap: WRAP,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
   kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' } as const,
   kv: { fontSize: '1.75rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', lineHeight: 1 } as const,

@@ -7,6 +7,7 @@
 // Lo vencido va primero y en rojo. Una promesa que no llegó hace más daño que
 // una que nunca se hizo, y es lo único de esta pantalla que se atiende hoy.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 // La bandeja de soporte ya tenía su pantalla: se reusa tal cual en vez de
 // escribir otra lista de aceptar/descartar que se separaría con el tiempo.
@@ -104,7 +105,7 @@ const ORIGENES: Record<string, string> = {
 };
 
 const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
+  wrap: WRAP,
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
   h: { fontSize: '0.66rem', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
   nota: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,

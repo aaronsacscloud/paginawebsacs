@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WRAP } from '../../../lib/crm/layout';
 import { TrendingUp, AlertTriangle, Target, DollarSign } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import ClienteDrawer360 from './ClienteDrawer360';
@@ -119,7 +120,7 @@ export default function OportunidadesTab() {
   }
 
   return (
-    <div style={{ padding: '4px 12px 28px' }}>
+    <div style={WRAP}>
       <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } @media (hover: none) { .ct360 tbody tr:active td { background: #f7f9fc; } }`}</style>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Radar de ventas</div>

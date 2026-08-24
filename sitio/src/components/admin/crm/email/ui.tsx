@@ -1,6 +1,7 @@
 // Piezas compartidas de la sección Email. Viven aparte porque las usan las
 // seis pantallas y duplicarlas garantizaría que se separen con el tiempo.
 import type { CSSProperties, ReactNode } from 'react';
+import { WRAP } from '../../../../lib/crm/layout';
 import CargandoBase from '../ui/Cargando';
 
 /**
@@ -17,7 +18,7 @@ export const FOCO = `
 `;
 
 export const S = {
-  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as CSSProperties,
+  wrap: WRAP as CSSProperties,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px' } as CSSProperties,
   kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' } as CSSProperties,
   kv: { fontSize: '1.75rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' } as CSSProperties,
