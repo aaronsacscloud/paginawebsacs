@@ -130,6 +130,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   const [msg, setMsg] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
+  const [uniendo, setUniendo] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
   // avisar. Cada sección reporta si tiene cambios pendientes.
   const [sucio, setSucio] = useState<Record<string, boolean>>({});
@@ -257,6 +258,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
                   <b style={{ fontSize: '0.82rem', color: h.fg }}>{c.historial.titulo}</b>
                 </div>
                 {c.historial.detalle && <div style={{ fontSize: '0.77rem', color: h.fg, opacity: .88, marginTop: 5, lineHeight: 1.55 }}>{c.historial.detalle}</div>}
+                {/* Detectar el duplicado sin poder resolverlo es medio trabajo:
+                    el aviso decía "conviene fusionarlas" y no había con qué. */}
+                {(c.historial.tipo === 'ficha_repetida' || c.historial.tipo === 'volvio_a_escribir') && (
+                  <button style={{ ...D.btnP, marginTop: 10 }} onClick={() => setUniendo(true)}>Unir las fichas</button>
+                )}
               </div>
             );
           })()}
@@ -321,11 +327,166 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             </div>
           )}
         </div>
+        {uniendo && (
+          <UnirFichas c={c} onCerrar={() => setUniendo(false)}
+            onListo={(n: number) => { setUniendo(false); flash(`Se unieron ${n} fichas`); cargar(); onChanged?.(); }} />
+        )}
         {registrando && (
           <ReunionPasada c={c} onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); flash('Reunión registrada'); cargar(); }} />
         )}
       </div>
     </>
+  );
+}
+
+/* ═══ Unir fichas duplicadas ═══
+ *
+ * El aviso ya sabía decir "conviene fusionarlas" y no había con qué: detectar
+ * el duplicado sin poder resolverlo es medio trabajo.
+ *
+ * Lo que motivó el diseño salió de mirar los duplicados reales: casi todos son
+ * el MISMO correo con distinta mayúscula —Riverosbrayan154@ y
+ * riverosbrayan154@, o los tres OETDALAG/oetdalag de Ronaldo—, y la historia
+ * está partida entre las fichas: la de Brayan que tiene la reunión agendada no
+ * es la que tiene las actividades. Por eso unir no es limpiar, es recuperar la
+ * mitad de la historia que no estabas viendo.
+ */
+function UnirFichas({ c, onCerrar, onListo }: any) {
+  const [grupo, setGrupo] = useState<any[] | null>(null);
+  const [principal, setPrincipal] = useState('');
+  const [ensayo, setEnsayo] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/crm/leads/unir?id=${c.id}`).then(r => r.json())
+      .then(j => { setGrupo(j.grupo || []); setPrincipal(j.sugerida || ''); })
+      .catch(() => setError('No se pudo cargar el grupo de fichas.'));
+  }, [c.id]);
+
+  // El ensayo lo calcula la MISMA función que después une, en modo dry_run: si
+  // la vista previa la hiciera el navegador por su cuenta, podría prometer algo
+  // distinto de lo que acaba pasando.
+  const otras = (grupo || []).filter(f => f.id !== principal).map(f => f.id);
+  useEffect(() => {
+    if (!principal || !otras.length) { setEnsayo(null); return; }
+    fetch('/api/crm/leads/unir', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ principal_id: principal, otras_ids: otras, ensayo: true }),
+    }).then(r => r.json()).then(j => setEnsayo(j.resumen || null)).catch(() => setEnsayo(null));
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [principal, grupo]);
+
+  async function unir() {
+    setBusy(true); setError('');
+    const r = await fetch('/api/crm/leads/unir', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ principal_id: principal, otras_ids: otras }),
+    }).then(x => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudieron unir.'); return; }
+    onListo((otras.length + 1));
+  }
+
+  const laPrincipal = (grupo || []).find(f => f.id === principal);
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 962, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 'min(660px, 96vw)', maxHeight: '92vh', overflowY: 'auto' }}>
+        <div style={{ padding: '15px 19px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, flex: 1 }}>
+            Unir las fichas de {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}
+          </h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '17px 19px 19px' }}>
+          {!grupo && <Cargando texto="Buscando las fichas repetidas…" alto={140} />}
+          {grupo && grupo.length < 2 && (
+            <div style={{ fontSize: '0.82rem', color: '#6b6b74', lineHeight: 1.6 }}>
+              Ya no hay otra ficha con este correo ni con este teléfono. Puede que alguien las haya unido antes.
+            </div>
+          )}
+
+          {grupo && grupo.length >= 2 && (
+            <>
+              <div style={D.fl}>¿Cuál se queda?</div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(230px, 1fr))`, gap: 11 }}>
+                {grupo.map(f => {
+                  const sel = f.id === principal;
+                  return (
+                    <button key={f.id} onClick={() => setPrincipal(f.id)}
+                      style={{
+                        textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', position: 'relative',
+                        border: `1.5px solid ${sel ? '#9B8CFA' : '#e6e3ef'}`, borderRadius: 11, padding: '12px 13px',
+                        background: sel ? '#fcfbff' : '#fff', boxShadow: sel ? '0 0 0 3px rgba(155,140,250,.13)' : 'none',
+                      }}>
+                      <b style={{ fontSize: '0.82rem', display: 'block', wordBreak: 'break-all' }}>{f.email || f.whatsapp || 'Sin correo'}</b>
+                      <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 3 }}>
+                        Llegó el {fmtLargo(f.created_at)}
+                        {f.id === c.id ? ' · la que estás viendo' : ''}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#3f3b4d', marginTop: 8, paddingTop: 7, borderTop: '1px solid #f3f1f8' }}>
+                        {f.historia === 0 ? 'Sin historia' : [
+                          f.actividades ? `${f.actividades} ${f.actividades === 1 ? 'actividad' : 'actividades'}` : null,
+                          f.reuniones ? `${f.reuniones} ${f.reuniones === 1 ? 'reunión' : 'reuniones'}` : null,
+                          f.cotizaciones ? `${f.cotizaciones} ${f.cotizaciones === 1 ? 'cotización' : 'cotizaciones'}` : null,
+                        ].filter(Boolean).join(' · ')}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {ensayo && (
+                <div style={{ ...D.cardA, marginTop: 15, marginBottom: 0 }}>
+                  <div style={D.h}>Cómo queda la ficha</div>
+                  {[
+                    ['Correo', laPrincipal?.email, 'de la que se queda'],
+                    ['Llegó', fmtLargo(ensayo.llego), 'la más vieja de las dos'],
+                    ['Actividades', `+${ensayo.actividades}`, 'se suman'],
+                    ['Reuniones', `+${ensayo.reuniones}`, 'se suman'],
+                    ['Cotizaciones', `+${ensayo.cotizaciones}`, 'se suman'],
+                  ].filter(([, v]) => v && v !== '+0').map(([k, v, de]: any) => (
+                    <div key={k} style={{ display: 'flex', gap: 10, fontSize: '0.78rem', padding: '6px 0', borderTop: '1px solid #f4f4f4', alignItems: 'center' }}>
+                      <span style={{ color: '#a5a2af', minWidth: 108, flexShrink: 0 }}>{k}</span>
+                      <span style={{ color: '#241d43', minWidth: 0, wordBreak: 'break-all' }}>{v}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '0.66rem', color: '#a5a2af', flexShrink: 0 }}>{de}</span>
+                    </div>
+                  ))}
+                  {(ensayo.campos_llenados || []).length > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#1E8A63', marginTop: 9, paddingTop: 8, borderTop: '1px solid #f4f4f4', lineHeight: 1.5 }}>
+                      Se llenan campos que estaban vacíos: {[...new Set(ensayo.campos_llenados)].join(', ')}.
+                    </div>
+                  )}
+                  {(ensayo.correos_alternos || []).length > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#9a6a10', marginTop: 8, lineHeight: 1.5 }}>
+                      El otro correo no se pierde, se guarda como alterno: {ensayo.correos_alternos.join(', ')}.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ marginTop: 13, background: '#FFF4E5', border: '1px solid #f0d9ab', borderRadius: 10, padding: '10px 13px', fontSize: '0.76rem', color: '#9a6a10', lineHeight: 1.55 }}>
+                {otras.length === 1 ? 'La otra ficha' : `Las otras ${otras.length} fichas`} no se {otras.length === 1 ? 'borra' : 'borran'}: se {otras.length === 1 ? 'archiva' : 'archivan'} apuntando a esta. Dejan de salir en la lista y en los conteos, pero si esto sale mal se pueden devolver.
+              </div>
+
+              {error && (
+                <div style={{ marginTop: 11, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 9, padding: '9px 12px', fontSize: '0.77rem', color: '#C0554E' }}>{error}</div>
+              )}
+
+              <div style={{ display: 'flex', gap: 9, marginTop: 14, alignItems: 'center' }}>
+                <button style={{ ...D.btnP, opacity: busy || !principal ? .6 : 1 }} disabled={busy || !principal} onClick={unir}>
+                  {busy ? 'Uniendo…' : `Unir ${otras.length + 1} fichas`}
+                </button>
+                <button style={D.btnG} onClick={onCerrar}>Cancelar</button>
+                <span style={{ marginLeft: 'auto', fontSize: '0.71rem', color: '#a5a2af' }}>Queda en la historia de la ficha.</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
