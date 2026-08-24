@@ -159,8 +159,10 @@ export function detectaHistorial(lead: LeadMin, ix: Indices): Historial | null {
           titulo: `Ya nos había escrito hace ${dias} días`,
           detalle: `Mismo ${enPalabras(gemela.por)}. Volvió por su cuenta: no es un lead frío, es alguien que sigue buscando.` }
       : { tipo: 'ficha_repetida', por: gemela.por, contact_id: gemela.m.contact_id,
-          titulo: 'Ficha repetida el mismo día',
-          detalle: `Mismo ${enPalabras(gemela.por)} que otra ficha. Es un doble envío del formulario — conviene fusionarlas.` };
+          // El título contaba los días que NO eran: con la holgura de dos días
+          // decía "el mismo día" de un par que llegó con 48 horas de por medio.
+          titulo: dias <= 0 ? 'Ficha repetida el mismo día' : `Ficha repetida · otra de hace ${dias} ${dias === 1 ? 'día' : 'días'}`,
+          detalle: `Mismo ${enPalabras(gemela.por)} que otra ficha. Parece un doble envío del formulario — conviene fusionarlas.` };
   }
 
   return null;

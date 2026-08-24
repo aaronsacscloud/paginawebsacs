@@ -116,7 +116,7 @@ const COLOR_ETAPA: Record<Etapa, { bg: string; fg: string }> = {
   perdido: { bg: '#FEF0EF', fg: '#C0554E' },
 };
 
-export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
+export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro }: any) {
   // Abre en "quién es", no en un revoltijo. Es el orden de la conversación con
   // el lead, el mismo criterio con el que están ordenadas las pestañas del
   // cliente: quién es · en qué va · cuándo lo tocamos · cuándo lo vimos · qué
@@ -329,7 +329,15 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
         </div>
         {uniendo && (
           <UnirFichas c={c} onCerrar={() => setUniendo(false)}
-            onListo={(n: number) => { setUniendo(false); flash(`Se unieron ${n} fichas`); cargar(); onChanged?.(); }} />
+            onListo={(n: number, principalId: string) => {
+              setUniendo(false); onChanged?.();
+              // Si la que se quedó es OTRA, este cajón está mostrando una ficha
+              // que se acaba de archivar: se queda leyendo algo que ya no
+              // existe, con el aviso de duplicado todavía puesto. Hay que
+              // saltar a la que sobrevivió, que es donde está la historia.
+              if (principalId && principalId !== contactId && onAbrirOtro) onAbrirOtro(principalId);
+              else { cargar(); flash(`Se unieron ${n} fichas`); }
+            }} />
         )}
         {registrando && (
           <ReunionPasada c={c} onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); flash('Reunión registrada'); cargar(); }} />
@@ -385,7 +393,7 @@ function UnirFichas({ c, onCerrar, onListo }: any) {
     }).then(x => x.json()).catch(() => null);
     setBusy(false);
     if (!r || r.error) { setError(r?.error || 'No se pudieron unir.'); return; }
-    onListo((otras.length + 1));
+    onListo(otras.length + 1, principal);
   }
 
   const laPrincipal = (grupo || []).find(f => f.id === principal);
