@@ -432,7 +432,7 @@ function EmbudoYTiempo({ d }: any) {
                 {r.tipos.map((t: any, i: number) => (
                   <div key={t.nombre} style={{ ...S.fila, borderTop: i === 0 ? 'none' : S.fila.borderTop }}>
                     <span style={S.dot(COLORES[i % COLORES.length])} />
-                    <div style={S.fl}>{t.nombre.replace(/^Reunión de /, '')}</div>
+                    <div style={S.fl}>{titulo(t.nombre)}</div>
                     <b style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: 800 }}>{t.n}</b>
                   </div>
                 ))}
@@ -450,6 +450,9 @@ function EmbudoYTiempo({ d }: any) {
   );
 }
 const COLORES = [LILA, CIELO, MENTA, ORO, ROJO, '#C9C7D0'];
+// El embudo va de frío a cálido para que el recorrido se lea como avance.
+const EMBUDO_COL = [CIELO, LILA, MENTA, VERDE];
+const titulo = (t: string) => { const x = t.replace(/^Reunión de /, ''); return x.charAt(0).toUpperCase() + x.slice(1); };
 
 /** Embudo proporcional. El ancho ES el dato: si de 68 leads solo 9 cotizan,
  *  la caída tiene que verse, no leerse. */
@@ -465,7 +468,7 @@ function Embudo({ etapas }: any) {
         const sig = etapas[i + 1];
         return (
           <g key={e.nombre}>
-            <rect x={(FW - w) / 2} y={y} width={w} height={alto} rx="8" fill={COLORES[i % COLORES.length]} />
+            <rect x={(FW - w) / 2} y={y} width={w} height={alto} rx="8" fill={EMBUDO_COL[i % EMBUDO_COL.length]} />
             <text x={FW / 2} y={y + 27} fontSize="15" fontWeight="800" fill="#fff" textAnchor="middle">{e.n}</text>
             <text x={TX} y={y + 20} fontSize="11.5" fontWeight="700" fill="#3f3b4d">{e.nombre}</text>
             <text x={TX} y={y + 35} fontSize="8.5" fill="#b3b0bd" fontWeight="600">{e.monto != null ? money(e.monto) : e.nota}</text>
@@ -509,7 +512,7 @@ function Compromisos({ d, abrir }: any) {
   const totalCob = Math.max(1, cb.d30.monto + cb.d60.monto + cb.d90.monto);
   const proximos = [...cb.vencido.items, ...cb.d30.items].slice(0, 4);
   return (
-    <div className="tb-2">
+    <div className="tb-2" style={{ alignItems: 'start' }}>
       <div style={S.card}>
         <div style={S.titulo}>Consultoría<span style={S.der}>lo que prometiste en las juntas</span></div>
         <div style={S.lead}>Un compromiso vencido cuesta más que una junta perdida.</div>

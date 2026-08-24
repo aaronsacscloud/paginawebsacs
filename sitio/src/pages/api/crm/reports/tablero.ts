@@ -101,7 +101,7 @@ export const GET: APIRoute = async ({ url }) => {
   // Historial: los 6 meses que acaban en el corriente. Sirve para saber si el
   // mes va bien o mal, que un total suelto no dice.
   const historial = Array.from({ length: 6 }, (_, k) => {
-    const d = new Date(anio, mes - 5 + k, 1);
+    const d = new Date(anio, mes - 6 + k, 1);
     const a = d.getFullYear(), m = d.getMonth() + 1;
     const ini = `${a}-${String(m).padStart(2, '0')}-01`;
     const fin = `${a}-${String(m).padStart(2, '0')}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`;
