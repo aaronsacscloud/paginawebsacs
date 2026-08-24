@@ -1,19 +1,28 @@
 // Ficha del lead.
 //
-// Misma arquitectura que la del cliente: un cajón que se abre ENCIMA de la
-// lista, con su X y sus pestañas. La anterior era una pantalla completa que
-// tapaba el menú, y por eso se sentía que no había regreso.
+// Misma arquitectura que la del cliente —un cajón sobre la lista, con su X y
+// sus pestañas— y, desde ahora, también sus mismas REGLAS. Se apartaba de las
+// cuatro y por eso se sentía otra cosa:
 //
-// Arriba va la RUTA: llegó → contactado → demo agendada → se presentó → prueba
-// → cotizado → cliente. Un lead rara vez se enfría por falta de interés; se
-// enfría porque nadie supo cuál era el siguiente paso. Por eso debajo de la
-// etapa hay una sola frase que dice qué falta para el siguiente peldaño.
+//   1. La primera pestaña es "quién es", no un revoltijo. Abría en un "Resumen"
+//      que mezclaba etapa, evaluación, prueba, agenda, atribución y actividad.
+//   2. Nada se dibuja FUERA de las pestañas. La tarjeta Etapa estaba suelta y
+//      salía igual en Cotizaciones, en Reuniones y en Señales.
+//   3. El contorno dice si se toca: morado lo que se captura, azul lo que solo
+//      se mira porque se calcula solo. Estaba al revés en media ficha.
+//   4. El secundario es MORADO. El azul es el tercer acento que la ficha del
+//      cliente ya se quitó por competir con el color del sistema.
+//
+// La ruta —llegó → contactado → demo → cotizado → cliente— sigue mandando, pero
+// ahora vive en Seguimiento, que es su pestaña. Un lead rara vez se enfría por
+// falta de interés; se enfría porque nadie supo cuál era el siguiente paso.
 import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
+import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
@@ -24,8 +33,10 @@ const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/
 
 const D = {
   overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 },
-  panel: { position: 'fixed' as const, top: 0, right: 0, bottom: 0, width: 'min(940px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
-  head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '15px 22px 0' },
+  // El mismo ancho que la ficha del cliente. A 940 la ficha del lead era la
+  // única angosta de la app, y con dos columnas de campos se apretaba igual.
+  panel: { position: 'fixed' as const, top: 0, right: 0, bottom: 0, width: 'min(1240px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
+  head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '16px 22px 0' },
   tab: (act: boolean) => ({
     flexShrink: 0, minHeight: 42, padding: '9px 15px', border: 'none',
     background: act ? '#EEECFE' : 'transparent', borderRadius: act ? '9px 9px 0 0' : 0,
@@ -34,14 +45,24 @@ const D = {
     fontSize: '0.83rem', whiteSpace: 'nowrap' as const, marginBottom: -1, fontFamily: 'inherit',
   }) as const,
   body: { padding: '18px 22px 40px' } as const,
+  // Morado = se captura y se gestiona. Azul = solo se mira, se calcula solo.
+  // Es la regla de la ficha del cliente; el color contesta "¿esto se toca?"
+  // antes de leer una palabra.
   cardM: { background: '#fff', border: '1.5px solid #ddd6fb', borderRadius: 12, padding: '15px 16px', marginBottom: 14 } as const,
   cardA: { background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: '15px 16px', marginBottom: 14 } as const,
-  h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 11, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  // Título en negro: el contorno ya dice si se captura; teñirlo también eran
+  // dos señales para lo mismo.
+  h: { fontSize: '0.64rem', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 11, display: 'flex', alignItems: 'center', gap: 8 } as const,
   hr: { marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   fl: { fontSize: '0.62rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.05em', marginBottom: 3 } as const,
   fi: { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '7px 10px', fontSize: '0.78rem', background: '#fdfcff', width: '100%', boxSizing: 'border-box' as const, fontFamily: 'inherit', outline: 'none' } as const,
   btnP: { border: 'none', borderRadius: 9, padding: '7px 13px', background: '#9B8CFA', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
-  btnA: { border: '1.5px solid #7DA6F5', borderRadius: 9, padding: '6px 12px', background: '#fff', fontSize: '0.74rem', fontWeight: 700, color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
+  /* Secundario: fondo blanco, BORDE y LETRA morados — igual que en la ficha del
+     cliente. Estaba en azul, que es el tercer acento que allá ya se quitó por
+     competir con el color del sistema. */
+  btnA: { border: '1.5px solid #9B8CFA', borderRadius: 9, padding: '6px 12px', background: '#fff', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
+  /* Gris: para lo que no es acción de venta (cancelar, cerrar, "otro tipo"). */
+  btnG: { border: '1px solid #ddd', borderRadius: 9, padding: '6px 12px', background: '#fff', fontSize: '0.74rem', fontWeight: 600, color: '#333', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
   btnW: { border: '1.5px solid #cdeadd', borderRadius: 9, padding: '6px 12px', background: '#EAF8F2', fontSize: '0.74rem', fontWeight: 700, color: '#1E8A63', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
   chip: (bg: string, fg: string) => ({ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', fontWeight: 700, background: bg, color: fg, borderRadius: 20, padding: '3px 10px' }) as const,
 };
@@ -76,21 +97,32 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 };
 
 export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
-  const [tab, setTab] = useState<'resumen' | 'senales' | 'actividad' | 'reuniones' | 'cotizaciones'>('resumen');
+  // Abre en "quién es", no en un revoltijo. Es el orden de la conversación con
+  // el lead, el mismo criterio con el que están ordenadas las pestañas del
+  // cliente: quién es · en qué va · cuándo lo tocamos · cuándo lo vimos · qué
+  // le ofrecimos · qué está haciendo él.
+  const [tab, setTab] = useState<'info' | 'seguimiento' | 'actividad' | 'reuniones' | 'cotizaciones' | 'senales'>('info');
   const [c, setC] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
+  // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
+  // avisar. Cada sección reporta si tiene cambios pendientes.
+  const [sucio, setSucio] = useState<Record<string, boolean>>({});
+  const confirmarSalida = () => !Object.values(sucio).some(Boolean) || confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
+  const irA = (t: any) => { if (confirmarSalida()) { setSucio({}); setTab(t); } };
+  const cerrar = () => { if (confirmarSalida()) onClose(); };
 
   const cargar = () => fetch(`/api/crm/contacts/${contactId}`).then(r => r.json())
     .then(j => { if (j.error) setErr(j.error); else setC(j); }).catch(() => setErr('No se pudo cargar el lead.'));
   useEffect(() => { setC(null); setErr(''); cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [contactId]);
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') cerrar(); };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [onClose, sucio]);
 
   function flash(t: string) { setMsg(t); setTimeout(() => setMsg(''), 2400); }
 
@@ -156,13 +188,26 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
               {tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
               {c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
               <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>
-              <button onClick={onClose} aria-label="Cerrar"
+              <button onClick={cerrar} aria-label="Cerrar"
                 style={{ width: 32, height: 32, border: '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit' }}>✕</button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 2, marginTop: 12, overflowX: 'auto' }}>
-            {([['resumen', 'Resumen'], ['senales', 'Señales'], ['actividad', 'Actividad'], ['reuniones', 'Reuniones'], ['cotizaciones', 'Cotizaciones']] as const).map(([k, l]) => (
-              <button key={k} style={D.tab(tab === k)} onClick={() => setTab(k)}>{l}</button>
+          {/* El orden es el de la conversación con el lead —quién es, en qué va,
+              cuándo lo tocamos, cuándo lo vimos, qué le ofrecimos, qué hace él—
+              igual que las pestañas del cliente. Señales va al final: se
+              consulta cuando ya sabes qué buscas, no al abrir la ficha. */}
+          <div style={{ display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            {([
+              ['info', 'Info general', null],
+              ['seguimiento', 'Seguimiento', null],
+              ['actividad', 'Actividad', (c.activities || []).length],
+              ['reuniones', 'Reuniones', (c.bookings || []).length],
+              ['cotizaciones', 'Cotizaciones', (c.quotes || []).length],
+              ['senales', 'Señales', null],
+            ] as const).map(([k, l, n]) => (
+              <button key={k} style={D.tab(tab === k)} onClick={() => irA(k)}>
+                {l}{n ? ` (${n})` : ''}
+              </button>
             ))}
           </div>
         </div>
@@ -171,10 +216,12 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
           {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
           {/* ── ¿Ya lo conocíamos? ──
-              Va ARRIBA de todo y no en una pestaña: si este lead ya paga o ya
-              fue cliente, es lo primero que cambia lo que haces con él. Tres
-              leads llevaban meses en la lista sin que nada lo dijera. */}
-          {c.historial && (() => {
+              Si este lead ya paga o ya fue cliente, es lo primero que cambia lo
+              que haces con él — tres llevaban meses en la lista sin que nada lo
+              dijera. Va arriba de Info general, que es la pestaña que se abre:
+              suelto sobre las seis pestañas repetía el aviso hasta en
+              Cotizaciones, que es justo lo que se está corrigiendo. */}
+          {tab === 'info' && c.historial && (() => {
             const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
             return (
               <div style={{ background: h.bg, border: `1px solid ${h.fg}33`, borderRadius: 11, padding: '12px 15px', marginBottom: 12 }}>
@@ -187,8 +234,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
             );
           })()}
 
-          {/* ── Etapa · se mueve sola ── */}
-          <div style={D.cardM}>
+          {/* ── Etapa · se mueve sola ──
+              Azul, no morada: no se captura, se deduce de hechos. Y dentro de
+              Seguimiento, no encima de las seis pestañas. */}
+          {tab === 'seguimiento' && <div style={D.cardA}>
             <div style={D.h}>
               Etapa
               <span style={D.hr}>
@@ -235,64 +284,17 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
                 {pasoDeEtapa(evaluacion.etapa)}
               </div>
             )}
-          </div>
+          </div>}
 
-          {/* ── Evaluación · lo único que se captura a mano ── */}
-          {tab === 'resumen' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} />}
+          {/* ── Seguimiento: la etapa (arriba), lo que se captura y la prueba ── */}
+          {tab === 'seguimiento' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} setSucio={setSucio} />}
+          {tab === 'seguimiento' && <PruebaGratis c={c} guardar={guardar} flash={flash} />}
 
-          {tab === 'resumen' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' }}>
-              <div>
-                <Campos c={c} guardar={guardar} guardando={guardando} />
-              </div>
-              <div>
-                <div style={D.cardA}>
-                  <div style={D.h}>Agenda<span style={D.hr}>ligada a Reuniones</span></div>
-                  {(c.bookings || []).length === 0 && (
-                    <div style={{ fontSize: '0.78rem', color: '#8a8a8a', lineHeight: 1.55 }}>Sin reuniones. Mándale el link para que elija horario o agéndala tú.</div>
-                  )}
-                  {(c.bookings || []).slice(0, 3).map((b: any) => (
-                    <div key={b.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: '1px solid #f5f4f8' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.79rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
-                        <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{fmtDate(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}</div>
-                      </div>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.66rem', color: '#c2c0c9', whiteSpace: 'nowrap' }}>
-                        {normalizaEstado(b.estado) === 'asistio' ? 'se presentó' : String(b.fecha) < hoy() ? 'pasó' : 'próxima'}
-                      </span>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                    <a style={D.btnP} href="/agendar/demo" target="_blank" rel="noreferrer">Agendar demo</a>
-                    <button style={D.btnA} onClick={() => {
-                      const u = `${window.location.origin}/agendar/demo?email=${encodeURIComponent(c.email || '')}&nombre=${encodeURIComponent(c.nombre || '')}`;
-                      navigator.clipboard?.writeText(u); flash('Link de agenda copiado');
-                    }}>Mandar link de agenda</button>
-                    {/* Muchas demos ya ocurrieron cuando alguien se acuerda de
-                        apuntarlas. Registrarla después vale igual: la etapa
-                        avanza y deja de pedir algo que ya pasó. */}
-                    <button style={D.btnA} onClick={() => setRegistrando(true)}>Registrar una que ya pasó</button>
-                  </div>
-                </div>
-
-                <PruebaGratis c={c} guardar={guardar} flash={flash} />
-
-                <DeDondeLlego c={c} />
-
-                <div style={D.cardM}>
-                  <div style={D.h}>Lo último<span style={D.hr}>ver todo en Actividad</span></div>
-                  {(c.activities || []).slice(0, 4).map((a: any) => (
-                    <div key={a.id} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: '1px solid #f5f4f8' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700 }}>{a.titulo || a.tipo}</div>
-                        {a.descripcion && <div style={{ fontSize: '0.68rem', color: '#a5a2af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.descripcion}</div>}
-                      </div>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.66rem', color: '#c2c0c9', whiteSpace: 'nowrap' }}>{fmtDate(a.created_at)}</span>
-                    </div>
-                  ))}
-                  {(c.activities || []).length === 0 && <div style={{ fontSize: '0.78rem', color: '#a5a2af' }}>Sin actividad registrada.</div>}
-                </div>
-              </div>
+          {/* ── Info general: quién es y cómo alcanzarlo. Nada más. ── */}
+          {tab === 'info' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, alignItems: 'start' }}>
+              <div><Campos c={c} guardar={guardar} guardando={guardando} setSucio={setSucio} /></div>
+              <div><DeDondeLlego c={c} /></div>
             </div>
           )}
 
@@ -301,26 +303,32 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
           {tab === 'senales' && <div style={{ padding: '4px 0' }}><SenalesContacto contactId={c.id} /></div>}
           {tab === 'actividad' && <Actividad c={c} recargar={cargar} flash={flash} />}
 
+          {/* ── Reuniones: agendar y lo que ya hubo, juntos ──
+              Estaban partidos en dos: el botón de agendar vivía en "Resumen" y
+              la lista en su propia pestaña. Son la misma cosa. */}
           {tab === 'reuniones' && (
-            <div style={D.cardM}>
-              <div style={D.h}>Reuniones<span style={D.hr}>{(c.bookings || []).length}</span></div>
-              {(c.bookings || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Sin reuniones agendadas.</div>}
-              {(c.bookings || []).map((b: any) => (
-                <div key={b.id} style={{ display: 'flex', gap: 11, padding: '10px 0', borderTop: '1px solid #f5f4f8' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{fmtLargo(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}{b.event_types?.nombre ? ` · ${b.event_types.nombre}` : ''}</div>
+            <>
+              <Agendar c={c} etapa={evaluacion?.etapa} flash={flash} onRegistrarPasada={() => setRegistrando(true)} />
+              <div style={D.cardA}>
+                <div style={D.h}>Las que ya hubo<span style={D.hr}>{(c.bookings || []).length}</span></div>
+                {(c.bookings || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Ninguna todavía.</div>}
+                {(c.bookings || []).map((b: any) => (
+                  <div key={b.id} style={{ display: 'flex', gap: 11, padding: '10px 0', borderTop: '1px solid #f5f4f8' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{fmtLargo(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}{b.event_types?.nombre ? ` · ${b.event_types.nombre}` : ''}</div>
+                    </div>
+                    <span style={{ marginLeft: 'auto', ...D.chip(normalizaEstado(b.estado) === 'asistio' ? '#EAF8F2' : '#f4f4f6', normalizaEstado(b.estado) === 'asistio' ? '#1E8A63' : '#6B7280') }}>
+                      {normalizaEstado(b.estado) === 'asistio' ? 'se presentó' : normalizaEstado(b.estado)}
+                    </span>
                   </div>
-                  <span style={{ marginLeft: 'auto', ...D.chip(normalizaEstado(b.estado) === 'asistio' ? '#EAF8F2' : '#f4f4f6', normalizaEstado(b.estado) === 'asistio' ? '#1E8A63' : '#6B7280') }}>
-                    {normalizaEstado(b.estado) === 'asistio' ? 'se presentó' : normalizaEstado(b.estado)}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
 
           {tab === 'cotizaciones' && (
-            <div style={D.cardM}>
+            <div style={D.cardA}>
               <div style={D.h}>Cotizaciones<span style={D.hr}>{(c.quotes || []).length}</span></div>
               {(c.quotes || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Todavía no se le ha cotizado nada.</div>}
               {(c.quotes || []).map((q: any) => (
@@ -344,6 +352,79 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   );
 }
 
+/* Agendar: el tipo NO se elige, lo pone la etapa.
+ *
+ * El botón estaba fijo en `/agendar/demo`, y por eso las tres únicas reuniones
+ * que hay en la base son las tres «Demo personalizada» — no porque solo se den
+ * demos, sino porque era lo único que la ficha sabía ofrecer. A un lead ya
+ * cotizado se le seguía proponiendo la demo que ya tuvo.
+ *
+ * De los siete tipos configurados, cuatro son de cliente firmado
+ * (capacitación, consultoría, personalización, configuración) y aquí ni
+ * aparecen: ofrecerle una capacitación a alguien que no ha comprado es ruido.
+ */
+function Agendar({ c, etapa, flash, onRegistrarPasada }: any) {
+  const [tipos, setTipos] = useState<any[]>([]);
+  const [otro, setOtro] = useState(false);
+  const [manual, setManual] = useState('');
+
+  useEffect(() => {
+    fetch('/api/scheduling/event-types?activo=true').then(r => r.json())
+      .then(j => setTipos(Array.isArray(j) ? j : (j?.data || []))).catch(() => {});
+  }, []);
+
+  const sugerido = agendaDeEtapa(etapa);
+  const deLead = tipos.filter((t: any) => SLUGS_DE_LEAD.includes(t.slug));
+  const slug = manual || sugerido.slug;
+  const tipo = tipos.find((t: any) => t.slug === slug);
+  // Sin catálogo cargado todavía el slug sigue sirviendo: /agendar/<slug> es
+  // una página pública y no depende de que esta petición haya vuelto.
+  const nombre = tipo?.nombre || sugerido.slug;
+
+  const url = (abs: boolean) => {
+    const base = (abs && typeof window !== 'undefined' ? window.location.origin : '') + '/agendar/' + slug;
+    const q = new URLSearchParams();
+    if (c.email) q.set('email', c.email);
+    if (c.nombre) q.set('nombre', [c.nombre, c.apellido].filter(Boolean).join(' '));
+    return q.toString() ? `${base}?${q}` : base;
+  };
+
+  return (
+    <div style={D.cardM}>
+      <div style={D.h}>Agendar<span style={D.hr}>el tipo lo pone la etapa</span></div>
+      <div style={{ display: 'flex', gap: 9, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.05em' }}>Toca</span>
+        <b style={{ fontSize: '0.88rem' }}>{nombre}</b>
+        {tipo?.duracion_minutos ? <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>· {tipo.duracion_minutos} min</span> : null}
+        {!manual && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#FFF4E5', color: '#9a6a10', borderRadius: 5, padding: '2px 8px' }}>POR DEFAULT</span>}
+      </div>
+      <div style={{ fontSize: '0.75rem', color: '#8a8a8a', lineHeight: 1.55, marginTop: 6 }}>
+        {manual ? 'Elegido a mano para este lead.' : `Porque ${sugerido.porque}.`}
+      </div>
+
+      {otro && (
+        <div style={{ marginTop: 10 }}>
+          <div style={D.fl}>Otro tipo</div>
+          <select style={D.fi} value={manual} onChange={e => setManual(e.target.value)}>
+            <option value="">— el que toca por la etapa —</option>
+            {deLead.map((t: any) => <option key={t.id} value={t.slug}>{t.nombre}</option>)}
+          </select>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 6, marginTop: 11, flexWrap: 'wrap' }}>
+        <a style={D.btnP} href={url(false)} target="_blank" rel="noreferrer">Agendar</a>
+        <button style={D.btnA} onClick={() => { navigator.clipboard?.writeText(url(true)); flash('Link de agenda copiado'); }}>Mandarle el link</button>
+        {!otro && <button style={D.btnG} onClick={() => setOtro(true)}>Otro tipo</button>}
+        {/* Muchas reuniones ya ocurrieron cuando alguien se acuerda de
+            apuntarlas. Registrarla después vale igual: la etapa avanza y deja
+            de pedir algo que ya pasó. */}
+        <button style={D.btnG} onClick={onRegistrarPasada}>Registrar una que ya pasó</button>
+      </div>
+    </div>
+  );
+}
+
 /* Registrar una reunión que YA ocurrió: la que se acordó por WhatsApp, se dio,
  * y nadie alcanzó a agendar en el sistema. */
 function ReunionPasada({ c, onCerrar, onListo }: any) {
@@ -357,7 +438,15 @@ function ReunionPasada({ c, onCerrar, onListo }: any) {
 
   useEffect(() => {
     fetch('/api/scheduling/event-types?activo=true').then(r => r.json())
-      .then(j => { const l = Array.isArray(j) ? j : (j?.data || []); setTipos(l); if (l[0]) setTipoId(l[0].id); })
+      .then(j => {
+        const todos = Array.isArray(j) ? j : (j?.data || []);
+        // Solo los tres de lead: los otros cuatro son de cliente firmado y
+        // registrar una "capacitación" de alguien que no compró es basura.
+        const l = todos.filter((t: any) => SLUGS_DE_LEAD.includes(t.slug));
+        setTipos(l.length ? l : todos);
+        const inicial = (l.length ? l : todos)[0];
+        if (inicial) setTipoId(inicial.id);
+      })
       .catch(() => {});
   }, []);
 
@@ -420,12 +509,13 @@ function ReunionPasada({ c, onCerrar, onListo }: any) {
  * pena solo lo sabe quien habló con él — y el próximo paso es el campo que hoy
  * está en 0 de 105 leads y el que convierte la lista en trabajo.
  */
-function Evaluacion({ c, evaluacion, guardar, guardando }: any) {
+function Evaluacion({ c, evaluacion, guardar, guardando, setSucio }: any) {
   const [motivos, setMotivos] = useState<any[]>([]);
   const [f, setF] = useState<any>({});
   const v = (k: string) => (f[k] !== undefined ? f[k] : (c[k] ?? '')) as any;
   const set = (k: string, val: any) => setF((p: any) => ({ ...p, [k]: val }));
   const sucio = Object.keys(f).length > 0;
+  useEffect(() => { setSucio?.((p: any) => ({ ...p, evaluacion: sucio })); }, [sucio, setSucio]);
 
   useEffect(() => {
     fetch('/api/crm/leads/motivos?activos=1').then(r => r.json())
@@ -536,7 +626,8 @@ function PruebaGratis({ c, guardar, flash }: any) {
   const restan = p.prueba_fin ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000) : null;
 
   return (
-    <div style={D.cardA}>
+    /* Morado: las fechas de la prueba las captura una persona. */
+    <div style={D.cardM}>
       <div style={D.h}>Prueba gratis</div>
       {activa ? (
         <>
@@ -623,7 +714,8 @@ function DeDondeLlego({ c }: any) {
   ) : null;
 
   return (
-    <div style={D.cardM}>
+    /* Azul: nada de esto se captura, todo lo escribió la atribución al llegar. */
+    <div style={D.cardA}>
       <div style={D.h}>De dónde llegó{a?.paginas_vistas ? <span style={D.hr}>{a.paginas_vistas} páginas vistas</span> : null}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4 }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: o.color, flexShrink: 0 }} />
@@ -651,13 +743,14 @@ function DeDondeLlego({ c }: any) {
   );
 }
 
-function Campos({ c, guardar, guardando }: any) {
+function Campos({ c, guardar, guardando, setSucio }: any) {
   const [f, setF] = useState<any>({});
   const giros = useGiros();
   const v = (k: string) => (f[k] !== undefined ? f[k] : (c[k] ?? '')) as any;
   const set = (k: string, val: any) => setF((p: any) => ({ ...p, [k]: val }));
   const prop = (k: string) => (f[`p_${k}`] !== undefined ? f[`p_${k}`] : (c.propiedades?.[k] ?? '')) as any;
   const sucio = Object.keys(f).length > 0;
+  useEffect(() => { setSucio?.((p: any) => ({ ...p, campos: sucio })); }, [sucio, setSucio]);
 
   async function aplicar() {
     const patch: any = {};
@@ -677,9 +770,12 @@ function Campos({ c, guardar, guardando }: any) {
           <div><div style={D.fl}>Apellido</div><input style={D.fi} value={v('apellido')} onChange={e => set('apellido', e.target.value)} /></div>
         </div>
         <div style={{ marginTop: 9 }}><div style={D.fl}>Correo</div><input style={D.fi} value={v('email')} onChange={e => set('email', e.target.value)} /></div>
+        {/* Teléfono y Puesto llevan 127 leads en blanco. No se quitan —cuando
+            hay dato es el que sirve— pero se anuncian como opcionales para que
+            una caja vacía no se lea como un pendiente. */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
-          <div><div style={D.fl}>WhatsApp</div><input style={D.fi} value={v('whatsapp')} onChange={e => set('whatsapp', e.target.value)} /></div>
-          <div><div style={D.fl}>Teléfono</div><input style={D.fi} value={v('telefono')} onChange={e => set('telefono', e.target.value)} /></div>
+          <div><div style={D.fl}>WhatsApp</div><input style={D.fi} value={v('whatsapp')} onChange={e => set('whatsapp', e.target.value)} placeholder="— agregar" /></div>
+          <div><div style={D.fl}>Teléfono</div><input style={D.fi} value={v('telefono')} onChange={e => set('telefono', e.target.value)} placeholder="— agregar" /></div>
         </div>
         <div style={{ marginTop: 9 }}>
           <div style={D.fl}>Puesto</div>
@@ -691,7 +787,7 @@ function Campos({ c, guardar, guardando }: any) {
       </div>
 
       <div style={D.cardM}>
-        <div style={D.h}>Qué sabemos del negocio</div>
+        <div style={D.h}>El negocio</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
           <div>
             <div style={D.fl}>Empresa</div>
@@ -734,15 +830,15 @@ function Campos({ c, guardar, guardando }: any) {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
-          <div>
-            <div style={D.fl}>Etapa</div>
-            <select style={D.fi} value={v('lifecycle_stage')} onChange={e => set('lifecycle_stage', e.target.value)}>
-              {Object.entries(ETAPAS).map(([k, x]) => <option key={k} value={k}>{x.l}</option>)}
-            </select>
-          </div>
-          <div><div style={D.fl}>Próximo seguimiento</div><input type="date" style={D.fi} value={String(v('next_followup') || '').slice(0, 10)} onChange={e => set('next_followup', e.target.value)} /></div>
-        </div>
+        {/* Aquí había dos campos que se fueron:
+            · "Etapa", un selector para cambiarla a mano justo debajo de una
+              tarjeta que dice "se mueve sola". O se deduce de hechos o se
+              captura; las dos a la vez enseñan a desconfiar del sistema. Lo
+              que sí se puede adelantar a mano vive en Seguimiento
+              (etapa_manual), y solo para los peldaños que un humano sabe.
+            · "Próximo seguimiento", que es la MISMA columna `next_followup`
+              que ya se pide en Evaluación. Se pedía dos veces en dos
+              pestañas distintas y la última en guardarse ganaba. */}
       </div>
 
       {sucio && (
@@ -794,7 +890,8 @@ function Actividad({ c, recargar, flash }: any) {
           <button style={{ ...D.btnP, opacity: busy || !txt.trim() ? .5 : 1 }} disabled={busy || !txt.trim()} onClick={registrar}>Registrar</button>
         </div>
       </div>
-      <div style={D.cardM}>
+      {/* Azul: el historial ya no se toca, solo se lee. */}
+      <div style={D.cardA}>
         <div style={D.h}>Historial<span style={D.hr}>{(c.activities || []).length}</span></div>
         {(c.activities || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Sin actividad.</div>}
         {(c.activities || []).map((a: any) => (
