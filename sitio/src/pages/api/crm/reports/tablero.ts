@@ -29,16 +29,22 @@ export const GET: APIRoute = async ({ url }) => {
   const desde = (url.searchParams.get('desde') || masDias(-30)).slice(0, 10);
   const dias = Math.max(1, Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000));
 
-  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, bookQ, payQ] = await Promise.all([
+  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, bookQ, payQ, reuQ, mejQ, actQ] = await Promise.all([
     supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago, fecha_inicio'),
     supabase.from('companies').select('id, nombre, nombre_comercial, plan, sacs_account, dias_sin_venta, ultima_venta_at, estado_cuenta').is('archived_at', null),
-    supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, company_id, notas'),
+    supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, aceptado_fecha, company_id, notas'),
     supabase.from('deals').select('id, valor_total, stage, created_at, company_id'),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, company_id').gte('fecha', desde).lte('fecha', hasta),
     supabase.from('crm_goals').select('tipo, anio, mes, monto'),
     supabase.from('bookings').select('id, fecha, hora_inicio, asunto, estado, company_id, invitee_nombre, event_types(nombre, categoria)')
       .gte('fecha', hoy).lte('fecha', masDias(7)).order('fecha').order('hora_inicio'),
-    supabase.from('payments').select('monto, fecha, subscription_id, quote_id').gte('fecha', desde).lte('fecha', hasta).neq('estado', 'reembolsado'),
+    supabase.from('payments').select('monto, fecha, subscription_id, quote_id, company_id').gte('fecha', desde).lte('fecha', hasta).not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
+    // Las reuniones DEL PERIODO (las de arriba son las próximas, otra pregunta).
+    supabase.from('bookings').select('id, fecha, estado, event_types(nombre)').gte('fecha', desde).lte('fecha', hasta),
+    // Consultoría: los compromisos que se pactan con el cliente.
+    supabase.from('mejoras').select('id, estado, created_at, company_id, fecha_compromiso').is('archived_at', null),
+    // Facturación de la CARTERA: lo que venden los clientes dentro de SACS.
+    supabase.from('companies').select('id, actividad, estado_cuenta, created_at').is('archived_at', null),
   ]);
 
   const subs = (subsQ.data || []);
@@ -163,8 +169,130 @@ export const GET: APIRoute = async ({ url }) => {
     .map((c: any) => ({ id: c.id, nombre: c.nombre_comercial || c.nombre, dias: num(c.dias_sin_venta), arr: Math.round(porCuenta[c.id] || 0) }))
     .sort((a: any, b: any) => b.arr - a.arr).slice(0, 6);
 
+  /* ══ EL DINERO DEL PERIODO ══
+     El tablero abría con el ARR TOTAL, que casi nunca cambia y además vive en
+     Suscripciones. Lo que se necesita aquí es lo que SE MOVIÓ en el periodo
+     elegido. */
+  const cobradoPeriodo = Math.round(pagos.reduce((a: number, p: any) => a + num(p.monto), 0));
+  const arrNuevoPeriodo = Math.round(nuevo * 12);
+  const arrExpansionPeriodo = Math.round(expansion * 12);
+  // Único = pago que no cuelga de una suscripción recurrente. Es la misma
+  // regla que usa el panel financiero.
+  const subsPorId: Record<string, any> = Object.fromEntries(subs.map((x: any) => [x.id, x]));
+  const esUnico = (p: any) => !p.subscription_id || subsPorId[p.subscription_id]?.ciclo === 'vitalicia';
+  const unicosPeriodo = Math.round(pagos.filter(esUnico).reduce((a: number, p: any) => a + num(p.monto), 0));
+  const aceptadasPeriodo = quotes.filter((q: any) =>
+    (q as any).aceptado_fecha && String((q as any).aceptado_fecha).slice(0, 10) >= desde && String((q as any).aceptado_fecha).slice(0, 10) <= hasta);
+
+  /* ══ EL EMBUDO ══
+     Un lead es una empresa creada en el periodo que todavía no es cliente. */
+  const todasEmpresas = actQ.data || [];
+  const leadsPeriodo = todasEmpresas.filter((c: any) =>
+    String(c.created_at || '').slice(0, 10) >= desde && String(c.created_at || '').slice(0, 10) <= hasta && c.estado_cuenta !== 'activo').length;
+  const clientesNuevos = new Set(
+    subs.filter((x: any) => x.fecha_inicio && String(x.fecha_inicio).slice(0, 10) >= desde && String(x.fecha_inicio).slice(0, 10) <= hasta)
+      .map((x: any) => x.company_id)).size;
+
+  /* ══ DE QUIÉN VINO EL DINERO ══
+     Ya era cliente = tenía alguna licencia empezada ANTES del periodo. */
+  const eraClienteAntes = new Set(
+    subs.filter((x: any) => x.fecha_inicio && String(x.fecha_inicio).slice(0, 10) < desde).map((x: any) => x.company_id));
+  let deBase = 0, deNuevas = 0, sinLigar = 0;
+  const cuentasBase = new Set<string>(), cuentasNuevas = new Set<string>();
+  for (const p of pagos as any[]) {
+    const m = num(p.monto);
+    if (!p.company_id) { sinLigar += m; continue; }
+    if (eraClienteAntes.has(p.company_id)) { deBase += m; cuentasBase.add(p.company_id); }
+    else { deNuevas += m; cuentasNuevas.add(p.company_id); }
+  }
+
+  /* ══ LO QUE FACTURAN LOS CLIENTES ══
+     No es dinero de SACS: es lo que mueven ELLOS por el sistema. Es la salud
+     de la cartera y el argumento de la renovación. */
+  const conActividad = todasEmpresas.filter((c: any) => c.actividad && c.estado_cuenta === 'activo');
+  const factCartera = Math.round(conActividad.reduce((a: number, c: any) => a + num(c.actividad?.total_30d), 0));
+  const ventasCartera = conActividad.reduce((a: number, c: any) => a + num(c.actividad?.ventas_30d), 0);
+  const operando = conActividad.filter((c: any) => num(c.actividad?.total_30d) > 0).length;
+
+  /* ══ REUNIONES DEL PERIODO, POR TIPO ══ */
+  const reus = (reuQ.data || []) as any[];
+  const porTipo: Record<string, { n: number; fue: number }> = {};
+  for (const b of reus) {
+    const k = (b.event_types as any)?.nombre || 'Sin tipo';
+    porTipo[k] = porTipo[k] || { n: 0, fue: 0 };
+    porTipo[k].n++;
+    if (b.estado === 'asistio' || b.estado === 'completada') porTipo[k].fue++;
+  }
+  const reuFueron = reus.filter((b: any) => b.estado === 'asistio' || b.estado === 'completada').length;
+  const reuSinMarcar = reus.filter((b: any) => String(b.fecha) < hoy && ['agendada', 'confirmada'].includes(b.estado)).length;
+
+  /* ══ CONSULTORÍA ══ */
+  const mejoras = (mejQ.data || []) as any[];
+  const mejNuevas = mejoras.filter((m: any) => String(m.created_at || '').slice(0, 10) >= desde && String(m.created_at || '').slice(0, 10) <= hasta).length;
+  const mejEstado = (e: string) => mejoras.filter((m: any) => m.estado === e).length;
+  // Vencido = tiene fecha comprometida, ya pasó, y no está entregada. Sin
+  // fecha no se puede decir que esté vencido, así que no se cuenta.
+  const mejVencidas = mejoras.filter((m: any) => m.fecha_compromiso && String(m.fecha_compromiso).slice(0, 10) < hoy && m.estado !== 'entregada');
+  const mejCuentasVenc = new Set(mejVencidas.map((m: any) => m.company_id)).size;
+
+  /* ══ LA VISTA DE HOY ══
+     El tablero abre en Hoy, y un lunes temprano casi todo está en ceros. Por
+     eso Hoy no enseña el dinero del día: enseña lo que hay que atender y cómo
+     va el mes, para que la pantalla nunca aparezca vacía. */
+  const enSemana = (f?: string | null) => !!f && String(f).slice(0, 10) >= hoy && String(f).slice(0, 10) <= masDias(7);
+  const cobroHoy = cobrables.filter((s2: any) => String(s2.proxima_factura).slice(0, 10) === hoy);
+  const cobroSemana = cobrables.filter((s2: any) => enSemana(s2.proxima_factura));
+  const reuHoy = (bookQ.data || []).filter((b: any) => b.fecha === hoy);
+  const reuSemana = (bookQ.data || []).filter((b: any) => enSemana(b.fecha));
+
   return json({
     periodo: { desde, hasta, dias },
+    hoy_fecha: hoy,
+
+    // Lo del día: reuniones, cobros y lo que urge.
+    hoy: {
+      reuniones: reuHoy.length,
+      cobro_hoy: { monto: montoDe(cobroHoy), n: cobroHoy.length },
+      vencidos: { n: mejVencidas.length, cuentas: mejCuentasVenc },
+      semana: {
+        cobro: { monto: montoDe(cobroSemana), n: cobroSemana.length },
+        reuniones: reuSemana.length,
+        cotizaciones: { monto: Math.round(vivas.reduce((a: number, q: any) => a + num(q.total), 0)), n: vivas.length },
+      },
+    },
+
+    dinero: {
+      cobrado: { monto: cobradoPeriodo, n: pagos.length },
+      arr_nuevo: { monto: arrNuevoPeriodo, n: altasPeriodo, expansion: arrExpansionPeriodo },
+      unicos: { monto: unicosPeriodo, n: pagos.filter(esUnico).length },
+      aceptadas: { monto: Math.round(aceptadasPeriodo.reduce((a: number, q: any) => a + num(q.total), 0)), n: aceptadasPeriodo.length },
+      // El ledger arrancó el 19-may-2026: pedir "12 meses" antes de eso da un
+      // ARR nuevo corto, y hay que decirlo en vez de dejar creer que fue malo.
+      ledger_desde: '2026-05-19',
+    },
+
+    embudo: {
+      leads: leadsPeriodo,
+      cotizado: { monto: Math.round(enviadasPeriodo.reduce((a: number, q: any) => a + num(q.total), 0)), n: enviadasPeriodo.length },
+      aceptado: { monto: Math.round(aceptadasPeriodo.reduce((a: number, q: any) => a + num(q.total), 0)), n: aceptadasPeriodo.length },
+      clientes_nuevos: clientesNuevos,
+    },
+
+    origen: {
+      base: { monto: Math.round(deBase), cuentas: cuentasBase.size },
+      nuevas: { monto: Math.round(deNuevas), cuentas: cuentasNuevas.size },
+      sin_ligar: { monto: Math.round(sinLigar), n: pagos.filter((p: any) => !p.company_id).length },
+    },
+
+    cartera: { facturacion: factCartera, ventas: ventasCartera, operando, cuentas: conActividad.length },
+
+    acompanamiento: {
+      reuniones: { total: reus.length, fueron: reuFueron, sin_marcar: reuSinMarcar,
+        tipos: Object.entries(porTipo).map(([nombre, v]) => ({ nombre, ...v })).sort((a, b) => b.n - a.n) },
+      consultoria: { nuevas: mejNuevas, entregadas: mejEstado('entregada'), en_proceso: mejEstado('en_proceso'),
+        idea: mejEstado('idea'), vencidas: mejVencidas.length, cuentas_vencidas: mejCuentasVenc },
+    },
+
     kpis: {
       arr: Math.round(arr), arr_delta: Math.round(arrDelta),
       clientes: clientesActivos, altas: altasPeriodo, bajas: bajasPeriodo,
