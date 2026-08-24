@@ -117,9 +117,10 @@ if (user) {
     .auth-saludo { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.78); margin: 0 0 12px; }
     /* El color va explícito: la hoja global le pone tinta oscura a todos los
        h2, y una regla directa le gana a heredar el blanco del panel. */
-    /* Un tercio más chico y sin caja alta: a 2 rem en mayúsculas el titular
-       le ganaba a todo lo demás del panel, incluida la tarjeta de acceso. */
-    .auth-frase { font-size: 1.62rem; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; margin: 0; color: #fff; max-width: 17ch; }
+    /* Sin caja alta: en mayúsculas el titular le ganaba a todo el panel,
+       incluida la tarjeta de acceso. La sombra es para que no se pierda cuando
+       una estrella del fondo le pasa por detrás. */
+    .auth-frase { font-size: 2rem; line-height: 1.16; font-weight: 800; letter-spacing: -.025em; margin: 0; color: #fff; max-width: 16ch; text-shadow: 0 2px 22px rgba(40,20,90,.22); }
     .auth-pilares { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
     .auth-pilares li { font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 5px 11px; border-radius: 20px; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.22); }
     .auth-cita { margin: 20px 0 0; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.45); font-size: .92rem; line-height: 1.55; color: rgba(255,255,255,.9); font-style: italic; max-width: 34ch; }
@@ -184,7 +185,7 @@ if (user) {
       }
       .auth-wrap { grid-template-columns: 1fr; }
       .auth-marca { padding: 26px 24px 30px; gap: 20px; min-height: 62vh; }
-      .auth-frase { font-size: 1.3rem; max-width: none; }
+      .auth-frase { font-size: 1.5rem; max-width: none; }
       .auth-cita { font-size: .82rem; }
       .auth-pie { display: none; }
       .auth-lado { padding: 26px 20px 44px; align-items: flex-start; }
@@ -224,6 +225,26 @@ if (user) {
       // [reparto de la densidad, peso (opacidad y tamaño), velocidad]
       const CAPAS = [[.52, .28, 4], [.33, .55, 8], [.15, .9, 13]];
 
+      /* ANDRÓMEDA, de verdad. Ascensión recta en horas, declinación en grados y
+         magnitud aparente — nada inventado. Por eso Mirach (2.05) y Almach
+         (2.10) salen como las dos más brillantes de la figura: es como se ven
+         en el cielo. El trazo es la cadena Alpheratz → δ → Mirach → υ → Almach
+         con el ramal al norte hacia μ y ν, y la derivación a π. */
+      const ESTRELLAS = [
+        { id: 'alpheratz', ra: 0.139, dec: 29.09, mag: 2.06 },
+        { id: 'delta',     ra: 0.655, dec: 30.86, mag: 3.27 },
+        { id: 'pi',        ra: 0.611, dec: 33.72, mag: 4.34 },
+        { id: 'mirach',    ra: 1.162, dec: 35.62, mag: 2.05 },
+        { id: 'mu',        ra: 0.947, dec: 38.50, mag: 3.86 },
+        { id: 'nu',        ra: 0.831, dec: 41.08, mag: 4.53 },
+        { id: 'upsilon',   ra: 1.613, dec: 41.41, mag: 4.09 },
+        { id: 'almach',    ra: 2.065, dec: 42.33, mag: 2.10 },
+      ];
+      const TRAZOS = [['alpheratz','delta'], ['delta','mirach'], ['delta','pi'],
+                      ['mirach','mu'], ['mu','nu'], ['mirach','upsilon'], ['upsilon','almach']];
+      const CICLO = 11;              // segundos que tarda en dibujarse y desvanecerse
+      let cielo = {};                // id → posición en píxeles
+
       function armar() {
         /* La cantidad y el tamaño salen del ÁREA del panel, no de un número
            fijo. Con 67 chispas fijas el panel real —el doble de grande que
@@ -244,6 +265,58 @@ if (user) {
           });
           return arr;
         });
+
+        /* La figura va en el CUADRANTE SUPERIOR DERECHO del panel, que es donde
+           no hay texto, y conserva su proporción real: estirarla para llenar el
+           hueco la dejaría de parecer Andrómeda. Una hora de ascensión recta
+           equivale a 15 grados, y por eso se divide la declinación. */
+        let raMin = 99, raMax = -99, dcMin = 99, dcMax = -99;
+        for (const s of ESTRELLAS) {
+          raMin = Math.min(raMin, s.ra); raMax = Math.max(raMax, s.ra);
+          dcMin = Math.min(dcMin, s.dec); dcMax = Math.max(dcMax, s.dec);
+        }
+        const cajaW = W * 0.52, cajaH = H * 0.46, x0 = W * 0.44, y0 = H * 0.06;
+        const k = Math.min(cajaW / (raMax - raMin), cajaH / ((dcMax - dcMin) / 15));
+        cielo = {};
+        for (const s of ESTRELLAS) {
+          cielo[s.id] = {
+            x: x0 + (s.ra - raMin) * k,
+            y: y0 + cajaH - (s.dec - dcMin) / 15 * k,
+            // Magnitud → radio: cuanto MENOR la magnitud, más brilla.
+            r: (5.2 - (s.mag - 2) * 0.72) * escala * 0.62,
+            f: Math.random() * 6.3,
+          };
+        }
+      }
+
+      /* Se dibuja sola: las líneas se trazan una tras otra, la figura se
+         completa, se sostiene un momento y se desvanece para volver a empezar.
+         Es "conectar los puntos", que es lo que hace el CRM. */
+      function pintarAndromeda(t) {
+        const fase = (t % CICLO) / CICLO;
+        const salida = fase > 0.82 ? Math.max(0, 1 - (fase - 0.82) / 0.18) : 1;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < TRAZOS.length; i++) {
+          const A = cielo[TRAZOS[i][0]], B = cielo[TRAZOS[i][1]];
+          if (!A || !B) continue;
+          const ini = i / TRAZOS.length * 0.6, dur = 0.6 / TRAZOS.length * 1.6;
+          const k = Math.max(0, Math.min(1, (fase - ini) / dur)) * salida;
+          if (k <= 0) continue;
+          ctx.strokeStyle = 'rgba(255,255,255,.26)'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(A.x, A.y);
+          ctx.lineTo(A.x + (B.x - A.x) * k, A.y + (B.y - A.y) * k); ctx.stroke();
+        }
+        let i = 0;
+        for (const id in cielo) {
+          const p = cielo[id];
+          // Cada estrella aparece justo antes de que la línea llegue a ella.
+          const vis = Math.max(0, Math.min(1, (fase - i / ESTRELLAS.length * 0.6) / 0.08)) * salida;
+          if (vis > 0) {
+            const tit = 0.72 + 0.28 * Math.sin(t * 0.9 + p.f);
+            chispa(p.x, p.y, p.r * (0.94 + tit * 0.12), vis * tit, p.f + t * 0.05, 9 + tit * 7);
+          }
+          i++;
+        }
       }
 
       // La ruta mide 24 y su centro está en (12, 11.4): hay que recentrarla
@@ -267,8 +340,9 @@ if (user) {
           p.y -= p.v * dt * 10;
           if (p.y < -14) { p.y = H + 14; p.x = Math.random() * W; }
           const tit = 0.4 + 0.6 * Math.sin(t * 1.15 + p.f);
-          chispa(p.x, p.y, p.r * (0.9 + tit * 0.25), p.op * tit, p.f + t * 0.12, p.r > 2.6 ? 5 + tit * 6 : 0);
+          chispa(p.x, p.y, p.r * (0.9 + tit * 0.25), p.op * tit * 0.8, p.f + t * 0.12, p.r > 2.6 ? 5 + tit * 6 : 0);
         }
+        pintarAndromeda(t);
       }
 
       let prev = 0;
@@ -287,9 +361,10 @@ if (user) {
         cv.width = W * DPR; cv.height = H * DPR;
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         armar();
-        // Con movimiento reducido se pinta UN cuadro y ahí se queda: el cielo
-        // sigue estando, solo que quieto.
-        if (quieto) pintar(0, 0);
+        /* Con movimiento reducido se pinta UN cuadro y ahí se queda. Se usa el
+           instante en que la figura YA está completa —no el 0, que la dejaría
+           sin dibujar— para que Andrómeda se vea entera. */
+        if (quieto) pintar(CICLO * 0.7, 0);
       }
 
       window.addEventListener('resize', medir);
