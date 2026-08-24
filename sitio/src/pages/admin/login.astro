@@ -266,16 +266,19 @@ if (user) {
           return arr;
         });
 
-        /* La figura va en el CUADRANTE SUPERIOR DERECHO del panel, que es donde
-           no hay texto, y conserva su proporción real: estirarla para llenar el
-           hueco la dejaría de parecer Andrómeda. Una hora de ascensión recta
-           equivale a 15 grados, y por eso se divide la declinación. */
+        /* La figura va ARRIBA A LA IZQUIERDA: es la franja que queda libre
+           entre el logo y el saludo, y —lo que de verdad importa— la zona más
+           oscura del degradado. Puesta a la derecha, sobre el azul claro, el
+           trazo blanco no contrastaba y se perdía.
+           Conserva su proporción real: estirarla para llenar el hueco la
+           dejaría de parecer Andrómeda. Una hora de ascensión recta equivale a
+           15 grados, y por eso se divide la declinación. */
         let raMin = 99, raMax = -99, dcMin = 99, dcMax = -99;
         for (const s of ESTRELLAS) {
           raMin = Math.min(raMin, s.ra); raMax = Math.max(raMax, s.ra);
           dcMin = Math.min(dcMin, s.dec); dcMax = Math.max(dcMax, s.dec);
         }
-        const cajaW = W * 0.52, cajaH = H * 0.46, x0 = W * 0.44, y0 = H * 0.06;
+        const cajaW = W * 0.72, cajaH = H * 0.26, x0 = W * 0.07, y0 = H * 0.09;
         const k = Math.min(cajaW / (raMax - raMin), cajaH / ((dcMax - dcMin) / 15));
         cielo = {};
         for (const s of ESTRELLAS) {
@@ -283,7 +286,7 @@ if (user) {
             x: x0 + (s.ra - raMin) * k,
             y: y0 + cajaH - (s.dec - dcMin) / 15 * k,
             // Magnitud → radio: cuanto MENOR la magnitud, más brilla.
-            r: (5.2 - (s.mag - 2) * 0.72) * escala * 0.62,
+            r: (5.6 - (s.mag - 2) * 0.75) * escala * 0.86,
             f: Math.random() * 6.3,
           };
         }
@@ -302,7 +305,7 @@ if (user) {
           const ini = i / TRAZOS.length * 0.6, dur = 0.6 / TRAZOS.length * 1.6;
           const k = Math.max(0, Math.min(1, (fase - ini) / dur)) * salida;
           if (k <= 0) continue;
-          ctx.strokeStyle = 'rgba(255,255,255,.26)'; ctx.lineWidth = 1.2;
+          ctx.strokeStyle = 'rgba(255,255,255,.42)'; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.moveTo(A.x, A.y);
           ctx.lineTo(A.x + (B.x - A.x) * k, A.y + (B.y - A.y) * k); ctx.stroke();
         }
@@ -313,7 +316,7 @@ if (user) {
           const vis = Math.max(0, Math.min(1, (fase - i / ESTRELLAS.length * 0.6) / 0.08)) * salida;
           if (vis > 0) {
             const tit = 0.72 + 0.28 * Math.sin(t * 0.9 + p.f);
-            chispa(p.x, p.y, p.r * (0.94 + tit * 0.12), vis * tit, p.f + t * 0.05, 9 + tit * 7);
+            chispa(p.x, p.y, p.r * (0.94 + tit * 0.12), vis * Math.min(1, tit + .2), p.f + t * 0.05, 12 + tit * 9);
           }
           i++;
         }
