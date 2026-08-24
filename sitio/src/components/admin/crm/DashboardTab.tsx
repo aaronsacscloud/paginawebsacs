@@ -452,6 +452,7 @@ function EmbudoYTiempo({ d }: any) {
 const COLORES = [LILA, CIELO, MENTA, ORO, ROJO, '#C9C7D0'];
 // El embudo va de frío a cálido para que el recorrido se lea como avance.
 const EMBUDO_COL = [CIELO, LILA, MENTA, VERDE];
+const mesDe = (f: string) => new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' });
 const titulo = (t: string) => { const x = t.replace(/^Reunión de /, ''); return x.charAt(0).toUpperCase() + x.slice(1); };
 
 /** Embudo proporcional. El ancho ES el dato: si de 68 leads solo 9 cotizan,
@@ -510,7 +511,6 @@ function Dona({ tipos, total }: any) {
 function Compromisos({ d, abrir }: any) {
   const co = d.consultoria, cb = d.cobrar;
   const totalCob = Math.max(1, cb.d30.monto + cb.d60.monto + cb.d90.monto);
-  const proximos = [...cb.vencido.items, ...cb.d30.items].slice(0, 4);
   return (
     <div className="tb-2" style={{ alignItems: 'start' }}>
       <div style={S.card}>
@@ -530,47 +530,56 @@ function Compromisos({ d, abrir }: any) {
       </div>
 
       <div style={S.card}>
-        <div style={S.titulo}>ARR por cobrar<span style={S.der}>90 días hacia adelante · no depende del mes</span></div>
-        <div style={S.lead}>Ya está contratado y toca renovar. No es proyección: son fechas con nombre y monto.</div>
+        <div style={S.titulo}>ARR por cobrar<span style={S.der}>{cb.total.n} renovaciones · {money(cb.total.monto)}</span></div>
+        <div style={S.lead}>Ya está contratado y toca renovar en los próximos 90 días. No es proyección: son fechas con nombre y monto, y no depende del mes que estés viendo.</div>
+        {/* Los anchos ya descuentan las separaciones: sin eso los tres tramos
+            sumaban más de 100% y la barra se desbordaba unos píxeles. */}
         <div style={{ display: 'flex', gap: 3, height: 15, borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
-          {cb.vencido.monto > 0 && <span style={{ width: `${(cb.vencido.monto / totalCob) * 100}%`, background: ROJO }} />}
-          <span style={{ width: `${(cb.d30.monto / totalCob) * 100}%`, background: ORO }} />
-          <span style={{ width: `${(cb.d60.monto / totalCob) * 100}%`, background: LILA }} />
-          <span style={{ width: `${(cb.d90.monto / totalCob) * 100}%`, background: CIELO }} />
+          {cb.vencido.monto > 0 && <span style={{ flex: `0 0 calc(${(cb.vencido.monto / totalCob) * 100}% - 3px)`, background: ROJO }} />}
+          <span style={{ flex: `0 0 calc(${(cb.d30.monto / totalCob) * 100}% - 3px)`, background: ORO }} />
+          <span style={{ flex: `0 0 calc(${(cb.d60.monto / totalCob) * 100}% - 3px)`, background: LILA }} />
+          <span style={{ flex: 1, background: CIELO }} />
         </div>
         {cb.vencido.n > 0 && <Tramo color={ROJO} label="Vencido" n={cb.vencido.n} monto={cb.vencido.monto} nota="ya pasó la fecha" primero />}
         <Tramo color={ORO} colorTexto={AMBAR} label="En 30 días" n={cb.d30.n} monto={cb.d30.monto}
-          nota={d.cobrado.antes_de_fin_de_mes.n ? `${d.cobrado.antes_de_fin_de_mes.n} antes de que acabe el mes` : 'ninguna este mes'} primero={cb.vencido.n === 0} />
+          nota={cb.este_mes.n ? `${cb.este_mes.n} antes de que acabe ${mesDe(cb.fin_de_mes)}` : `ninguna en lo que resta de ${mesDe(cb.fin_de_mes)}`} primero={cb.vencido.n === 0} />
         <Tramo color={LILA} colorTexto={MORADO} label="En 60 días" n={cb.d60.n} monto={cb.d60.monto} />
         <Tramo color={CIELO} colorTexto={AZUL} label="En 90 días" n={cb.d90.n} monto={cb.d90.monto} />
-        {proximos.length > 0 && (
-          <div style={{ marginTop: 12, paddingTop: 11, borderTop: '1px solid #f3f2f6' }}>
-            <div style={{ ...S.eyebrow, marginBottom: 4 }}>Las que siguen</div>
-            {proximos.map((r: any) => {
-              const venc = r.fecha < d.hoy_fecha;
-              return (
-                <div key={r.id} style={S.fila}>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap', background: venc ? '#FEF0EF' : '#FEF6E7', color: venc ? ROJO : '#9a6a10' }}>
-                    {venc ? 'vencido' : fmtDate(r.fecha)}
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ ...S.fl, cursor: 'pointer' }} onClick={() => abrir(r.company_id)}>{r.cliente}</div>
-                    <div style={S.fn}>{r.plan}</div>
-                  </div>
-                  <div style={{ marginLeft: 'auto', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <b style={{ color: venc ? ROJO : '#1a1a1a', fontSize: '0.9rem' }}>{money(r.monto)}</b>
-                    {r.link && <div style={{ marginTop: 4 }}><a style={S.btnP} href={r.link} target="_blank" rel="noreferrer">Cobrar</a></div>}
-                  </div>
+
+        {/* La lista es EXACTAMENTE el subconjunto del que habla el encabezado:
+            antes enseñaba 4 de 15 y no cuadraba con ninguna cifra de arriba. */}
+        {cb.este_mes.n > 0 && (
+          <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid #f3f2f6' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+              <span style={S.eyebrow}>Antes de que acabe {mesDe(cb.fin_de_mes)}</span>
+              <span style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 800, color: AMBAR }}>{money(cb.este_mes.monto)}</span>
+            </div>
+            {cb.este_mes.items.map((r: any) => (
+              <div key={r.id} style={S.fila}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap', background: '#FEF6E7', color: '#9a6a10', flex: '0 0 auto' }}>
+                  {fmtDate(r.fecha)}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ ...S.fl, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={() => abrir(r.company_id)}>{r.cliente}</div>
+                  <div style={{ ...S.fn, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.plan}</div>
                 </div>
-              );
-            })}
+                <b style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{money(r.monto)}</b>
+                {r.link && <a style={{ ...S.btnP, flex: '0 0 auto' }} href={r.link} target="_blank" rel="noreferrer">Cobrar</a>}
+              </div>
+            ))}
           </div>
         )}
+
         <div style={S.nota}>
-          {cb.vencido.n === 0 ? 'Nada vencido. ' : `Hay ${money(cb.vencido.monto)} vencidos. `}
-          {d.cobrado.antes_de_fin_de_mes.n > 0
-            ? <>Los <b style={{ color: '#3f3b4d' }}>{money(d.cobrado.antes_de_fin_de_mes.monto)}</b> que caen antes de que acabe el mes son los que deciden si se llega a la meta.</>
+          {cb.vencido.n === 0 ? 'Nada vencido. ' : <>Hay <b style={{ color: ROJO }}>{money(cb.vencido.monto)}</b> vencidos. </>}
+          {cb.este_mes.n > 0
+            ? <>Estos {money(cb.este_mes.monto)} son los que deciden si el mes llega a la meta.</>
             : <>Ya no vence nada más este mes.</>}
+          {/* Sin fecha no entran en ningún tramo: el total de arriba se queda
+              corto y nadie las va a cobrar. Es captura, no un cero. */}
+          {cb.sin_fecha.n > 0 && (
+            <> Ojo: <b style={{ color: '#9a6a10' }}>{cb.sin_fecha.n} {cb.sin_fecha.n === 1 ? 'licencia activa' : 'licencias activas'} por {money(cb.sin_fecha.monto)}</b> no tienen fecha de renovación capturada, así que no entran en ningún tramo ni en el total.</>
+          )}
         </div>
       </div>
     </div>

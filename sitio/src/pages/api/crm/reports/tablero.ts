@@ -189,6 +189,10 @@ export const GET: APIRoute = async ({ url }) => {
   const d30 = tramo(hoy, masDias(30)), d60 = tramo(masDias(31), masDias(60)), d90 = tramo(masDias(61), masDias(90));
   const finMes = `${anio}-${String(mes).padStart(2, '0')}-${String(diasMes).padStart(2, '0')}`;
   const antesDeFinMes = cobrables.filter((s: any) => { const f = dia(s.proxima_factura); return f >= hoy && f <= finMes; });
+  // Activas SIN fecha de renovación: no caen en ningún tramo, así que el
+  // total de la tarjeta se queda corto y nadie las va a cobrar. Es un hueco
+  // de captura, no un cero, y por eso se enseña en vez de esconderse.
+  const sinFecha = activas.filter((s: any) => !s.proxima_factura);
 
   /* ══════════ 9 · LA CARTERA (foto de 30 días del cron) ══════════ */
   const conActividad = empresas.filter((c: any) => c.actividad && c.estado_cuenta === 'activo');
@@ -295,9 +299,17 @@ export const GET: APIRoute = async ({ url }) => {
 
     cobrar: {
       vencido: { monto: montoDe(vencidasCobro), n: vencidasCobro.length, items: detalle(vencidasCobro) },
-      d30: { monto: montoDe(d30), n: d30.length, items: detalle(d30) },
+      d30: { monto: montoDe(d30), n: d30.length },
       d60: { monto: montoDe(d60), n: d60.length },
       d90: { monto: montoDe(d90), n: d90.length },
+      // El total de los tres tramos, para que la barra y los renglones cuadren
+      // con una cifra en vez de dejar al ojo sumando.
+      total: { monto: montoDe([...d30, ...d60, ...d90]), n: d30.length + d60.length + d90.length },
+      // La lista ES el subconjunto del que habla la nota; antes enseñaba 4 de
+      // 15 y no cuadraba con ningún número de la tarjeta.
+      este_mes: { monto: montoDe(antesDeFinMes), n: antesDeFinMes.length, items: detalle(antesDeFinMes) },
+      sin_fecha: { monto: montoDe(sinFecha), n: sinFecha.length },
+      fin_de_mes: finMes,
     },
 
     cartera: {
