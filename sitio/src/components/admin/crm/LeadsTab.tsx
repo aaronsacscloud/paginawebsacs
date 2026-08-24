@@ -69,6 +69,10 @@ const VISTAS = [
   { v: 'todos', l: 'Todos' },
 ];
 
+/** Los que todavía se pueden convertir. Un perdido de ayer llegó esta semana
+ *  pero no es un lead nuevo: ya se cerró. */
+const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
+
 /** Llegó dentro de los últimos 7 días (hoy incluido). */
 const esDeLaSemana = (c: any) => {
   const d = diaLocal(c.created_at);
@@ -159,12 +163,12 @@ export default function LeadsTab() {
 
   const lista = useMemo(() => {
     let r = (rows || []).filter((c: any) => c.lifecycle_stage !== 'cliente' || etapa === 'todos');
-    if (etapa === 'abiertos') r = r.filter((c: any) => ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage));
+    if (etapa === 'abiertos') r = r.filter((c: any) => ABIERTOS.includes(c.lifecycle_stage));
     // Leads que ya son clientes, que lo fueron, o cuya empresa se llama igual
     // que una que sí paga. Se agrupan aparte porque no se trabajan como un
     // lead frío: uno hay que reetiquetarlo y otro hay que reactivarlo.
     else if (etapa === 'conocidos') r = r.filter((c: any) => !!c.historial);
-    else if (etapa === 'nuevos') r = r.filter((c: any) => esDeLaSemana(c) && c.lifecycle_stage !== 'cliente');
+    else if (etapa === 'nuevos') r = r.filter((c: any) => esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage));
     else if (etapa !== 'todos') r = r.filter((c: any) => c.lifecycle_stage === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
@@ -210,8 +214,8 @@ export default function LeadsTab() {
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
     const cae = (c: any, k: string) => k === 'todos' ? true
       : k === 'conocidos' ? !!c.historial
-      : k === 'nuevos' ? esDeLaSemana(c) && c.lifecycle_stage !== 'cliente'
-      : k === 'abiertos' ? ['lead', 'lead_calificado', 'oportunidad'].includes(c.lifecycle_stage)
+      : k === 'nuevos' ? esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage)
+      : k === 'abiertos' ? ABIERTOS.includes(c.lifecycle_stage)
       : c.lifecycle_stage === k;
     const out: Record<string, number> = {};
     for (const v of VISTAS) out[v.v] = base.filter((c: any) => cae(c, v.v)).length;

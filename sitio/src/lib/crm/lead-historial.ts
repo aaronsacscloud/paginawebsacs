@@ -133,6 +133,9 @@ export function detectaHistorial(lead: LeadMin, ix: Indices): Historial | null {
   //    Se separan dos casos porque se trabajan distinto: si las fichas son del
   //    MISMO día es un doble envío del formulario y hay que fusionarlas; si
   //    pasaron días, la persona volvió sola — y eso es interés, no basura.
+  // `por` viaja como clave ('telefono'), pero se imprime en una frase que lee
+  // una persona: sin esto la ficha decía "Mismo telefono".
+  const enPalabras = (k: string) => (k === 'telefono' ? 'teléfono' : k);
   const gemela = (() => {
     const e = norm(lead.email);
     const t = tel10(lead.whatsapp || lead.telefono);
@@ -154,10 +157,10 @@ export function detectaHistorial(lead: LeadMin, ix: Indices): Historial | null {
     return dias > 2
       ? { tipo: 'volvio_a_escribir', por: gemela.por, contact_id: gemela.m.contact_id,
           titulo: `Ya nos había escrito hace ${dias} días`,
-          detalle: `Mismo ${gemela.por}. Volvió por su cuenta: no es un lead frío, es alguien que sigue buscando.` }
+          detalle: `Mismo ${enPalabras(gemela.por)}. Volvió por su cuenta: no es un lead frío, es alguien que sigue buscando.` }
       : { tipo: 'ficha_repetida', por: gemela.por, contact_id: gemela.m.contact_id,
           titulo: 'Ficha repetida el mismo día',
-          detalle: `Mismo ${gemela.por} que otra ficha. Es un doble envío del formulario — conviene fusionarlas.` };
+          detalle: `Mismo ${enPalabras(gemela.por)} que otra ficha. Es un doble envío del formulario — conviene fusionarlas.` };
   }
 
   return null;
