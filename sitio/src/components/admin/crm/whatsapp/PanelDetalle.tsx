@@ -852,7 +852,7 @@ function MinutaPanel({ l }: { l: any }) {
     <div style={{ border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.emerald500}`, borderRadius: 10, marginBottom: 6, overflow: 'hidden' }}>
       <button onClick={() => setAbierta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 10px', textAlign: 'left' }}>
         <span style={{ minWidth: 0, flex: 1 }}>
-          <b style={{ fontSize: 11.5, display: 'block' }}>{l.direccion === 'saliente' ? 'Llamada realizada' : 'Llamada recibida'} · {dur}</b>
+          <b style={{ fontSize: 11.5, display: 'block' }}>{l.canal === 'telefono' ? 'Tel' : 'WA'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'} · {dur}</b>
           <span style={{ fontSize: 10, color: C.g400 }}>{fecha(l.ended_at || l.created_at)}{l.atendida_por_nombre ? ` · ${l.atendida_por_nombre}` : ''}</span>
         </span>
         <span style={{ color: C.g300, fontSize: 10 }}>{abierta ? '▲' : '▼'}</span>

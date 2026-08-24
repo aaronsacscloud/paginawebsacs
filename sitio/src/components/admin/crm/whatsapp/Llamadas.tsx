@@ -236,7 +236,13 @@ export function BotonLlamar({ conversationId, telefono, nombre, api }: { convers
       {pop && <span onClick={() => setPop(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />}
       {pop && (
         <span style={{ position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', width: 280, display: 'block', padding: 12, fontSize: 12 }}>
-          <b style={{ display: 'block', marginBottom: 6 }}>Llamadas de WhatsApp</b>
+          <b style={{ display: 'block', marginBottom: 6 }}>Llamar a este contacto</b>
+          <button onClick={() => { setPop(false); document.dispatchEvent(new CustomEvent('tel-llamar', { detail: { telefono, nombre } })); }}
+            style={{ width: '100%', marginBottom: 8, border: '1px solid #d9d3f8', background: '#F6F5FE', color: '#5B4BD6', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+            ☎ Llamada telefónica normal
+            <span style={{ display: 'block', fontWeight: 500, fontSize: 10, color: '#8a7ee0' }}>Con nuestro número de México · sin permiso previo · minuta automática</span>
+          </button>
+          <b style={{ display: 'block', margin: '2px 0 4px', fontSize: 11.5 }}>Por WhatsApp</b>
           <span style={{ display: 'block', fontSize: 10.5, color: C.g400, lineHeight: 1.5, marginBottom: 6 }}>
             El flujo: 1) le pides permiso desde el chat → 2) el cliente acepta en su WhatsApp → 3) ya puedes llamarlo. Límites de Meta: 1 solicitud cada 24 h (2 por semana) y 5 llamadas al día por cliente. Al colgar, la minuta se genera sola.
           </span>

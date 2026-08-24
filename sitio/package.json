@@ -22,6 +22,7 @@
     "@stripe/stripe-js": "^9.0.1",
     "@supabase/supabase-js": "^2.101.1",
     "@tanstack/react-table": "^8.21.3",
+    "@twilio/voice-sdk": "^2.18.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/web-push": "^3.6.4",
     "@vercel/blob": "^2.3.3",

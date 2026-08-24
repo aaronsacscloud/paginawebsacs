@@ -133,3 +133,8 @@ alter table wa_llamadas
   add column if not exists minuta text,
   add column if not exists minuta_at timestamptz,
   add column if not exists siguiente_paso text;
+-- Telefonía normal (Twilio): las llamadas comparten tabla con las de WhatsApp
+alter table wa_llamadas add column if not exists canal text not null default 'whatsapp';
+create table if not exists tel_identidades (
+  identity text primary key, user_id uuid, visto_at timestamptz not null default now()
+);

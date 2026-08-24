@@ -11,7 +11,7 @@ import EtapasModal from './EtapasModal';
 import AjustesWA from './AjustesWA';
 import NumeroWA from './NumeroWA';
 
-type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero';
+type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia';
 
 const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'plantillas', label: 'Plantillas de Meta', desc: 'Mensajes aprobados para abrir conversación' },
@@ -22,6 +22,7 @@ const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'motivos', label: 'Motivos de cierre', desc: 'Por qué se resuelve una conversación' },
   { id: 'automatizacion', label: 'Automatización', desc: 'Bienvenida, horario, asignación' },
   { id: 'numero', label: 'Número y pagos', desc: 'Salud, perfil y facturación de Meta' },
+  { id: 'telefonia', label: 'Telefonía', desc: 'Llamadas normales con número de México' },
 ];
 
 export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
@@ -56,6 +57,7 @@ export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
         {sec === 'motivos' && <MotivosCierre />}
         {sec === 'automatizacion' && <AjustesWA inline />}
         {sec === 'numero' && (<><PagosMeta /><NumeroWA /></>)}
+        {sec === 'telefonia' && <Telefonia />}
       </div>
     </div>
   );
@@ -252,6 +254,47 @@ function PagosMeta() {
         </span>
       </span>
       <a href={url} target="_blank" rel="noreferrer" style={{ ...S.btnP, textDecoration: 'none', whiteSpace: 'nowrap' }}>Abrir facturación de Meta ↗</a>
+    </div>
+  );
+}
+
+// ═════════════ Telefonía (Twilio): estado + guía de alta ═════════════
+function Telefonia() {
+  const [st, setSt] = useState<any>(null);
+  useEffect(() => { fetch('/api/crm/telefonia/setup').then(r => r.json()).then(setSt).catch(() => setSt({ configurada: false, faltantes: [] })); }, []);
+  const paso = (n: number, titulo: string, detalle: React.ReactNode) => (
+    <div style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #f2f0fa' }}>
+      <span style={{ width: 22, height: 22, borderRadius: 999, background: '#EEECFE', color: '#5B4BD6', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
+      <span style={{ minWidth: 0 }}><b style={{ fontSize: 12.5, display: 'block' }}>{titulo}</b><span style={{ fontSize: 11.5, color: '#777', lineHeight: 1.55 }}>{detalle}</span></span>
+    </div>
+  );
+  return (
+    <div>
+      <Cabecera titulo="Telefonía (llamadas normales)" texto="Llamadas de voz a cualquier teléfono, con un número de México como identificador. Al colgar, la llamada se transcribe y la minuta cae sola en la conversación, el panel y la ficha — igual que las de WhatsApp." />
+      {!st ? <Cargando texto="Revisando la configuración…" /> : st.configurada ? (
+        <div style={{ ...S.card, borderLeft: '3px solid #4FBF95', marginBottom: 14 }}>
+          <b style={{ fontSize: 13, color: '#1E8A63' }}>Telefonía activa</b>
+          <div style={{ fontSize: 12, color: '#555', marginTop: 6, lineHeight: 1.7 }}>
+            <div>Número: <b>{st.numero}</b></div>
+            {st.saldo && <div>Saldo en Twilio: <b>{st.saldo}</b></div>}
+            {st.webhook_ok === false && <div style={{ color: '#C0554E' }}>⚠️ La TwiML App no apunta a nuestro webhook de voz: las llamadas no van a conectar.</div>}
+            <div style={{ color: '#888', marginTop: 4 }}>Para llamar: abre un chat → ícono de teléfono → "Llamada telefónica normal".</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ ...S.card, borderLeft: '3px solid #E8A838', marginBottom: 14 }}>
+          <b style={{ fontSize: 13, color: '#9a6a10' }}>Falta configurar</b>
+          <p style={{ fontSize: 11.5, color: '#777', margin: '4px 0 0' }}>Variables pendientes en Vercel: {(st.faltantes || []).join(' · ') || '—'}</p>
+        </div>
+      )}
+      <div style={{ ...S.card }}>
+        <b style={{ fontSize: 13 }}>Cómo darse de alta (Twilio)</b>
+        {paso(1, 'Crear la cuenta', <>En <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noreferrer">twilio.com/try-twilio</a> con tu correo; verifica tu celular.</>)}
+        {paso(2, 'Cargar saldo', 'Console → Billing → agrega tarjeta y carga el mínimo ($20 USD). Las llamadas a celular en México cuestan ≈ $0.05 USD/min; a fijo ≈ $0.02.')}
+        {paso(3, 'Regulatory Bundle de México', 'Phone Numbers → Regulatory Compliance → New Bundle (Mexico · Local). Piden dirección en México con comprobante de domicilio menor a 1 año (CFE/Telmex) e identificación (INE/pasaporte). Aprobación: 1 a 3 días hábiles.')}
+        {paso(4, 'Comprar el número', 'Phone Numbers → Buy a Number → México → Local (ej. lada 55). Cuesta $6.25 USD/mes.')}
+        {paso(5, 'Conectarlo al CRM', 'Comparte el Account SID y Auth Token con el equipo técnico: con eso se crea la API Key, la TwiML App y se configuran los webhooks. Cinco minutos después ya marcas desde cualquier chat.')}
+      </div>
     </div>
   );
 }

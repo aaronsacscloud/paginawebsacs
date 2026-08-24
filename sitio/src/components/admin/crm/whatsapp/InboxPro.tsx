@@ -10,6 +10,7 @@ import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 import ListaConversaciones from './ListaConversaciones';
+import Telefonia from './Telefonia';
 import Llamadas from './Llamadas';
 import Hilo from './Hilo';
 import PanelDetalle from './PanelDetalle';
@@ -436,6 +437,7 @@ export default function InboxPro() {
         overflow: 'hidden', height: '100dvh', minHeight: 480,
       }}>
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
+        <Telefonia />
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         <ListaConversaciones {...propsLista} />
