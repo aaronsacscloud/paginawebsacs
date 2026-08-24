@@ -492,7 +492,7 @@ export default function TablaEnterprise({
                     title={ordenable ? (activa && sort?.dir === -1 ? 'Ordenado de mayor a menor — clic para invertir' : activa ? 'Ordenado de menor a mayor — clic para invertir' : 'Clic para ordenar por ' + c.label) : undefined}
                     style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: ordenable ? 'pointer' : 'default', userSelect: 'none',
                       ...(headerTint ? { background: '#faf8ff', color: '#6b5fa8', borderBottomColor: '#e6ddfa' } : {}),
-                      ...(c.fija ? { position: 'sticky' as const, left: 0, zIndex: 3, background: headerTint ? '#faf8ff' : '#fafafe', boxShadow: '1px 0 0 #eeedf1' } : {}) }}>
+                      ...(c.fija ? { position: 'sticky' as const, left: 0, zIndex: 3, background: headerTint ? '#faf8ff' : '#fafafe', boxShadow: '6px 0 10px -6px rgba(36,29,67,.20)', clipPath: 'inset(0 -14px 0 0)' } : {}) }}>
                     {c.label}
                     {ordenable && (
                       <span className={activa ? 'te-sort te-sort-on' : 'te-sort'} aria-hidden="true">
@@ -513,7 +513,7 @@ export default function TablaEnterprise({
                       // el contenido de las otras columnas pasando por debajo.
                       return cloneElement(celda, {
                         key: c.key,
-                        style: { ...(celda.props?.style || {}), position: 'sticky', left: 0, zIndex: 2, background: '#fff', boxShadow: '1px 0 0 #f1f1f5' },
+                        style: { ...(celda.props?.style || {}), position: 'sticky', left: 0, zIndex: 2, background: '#fff', boxShadow: '6px 0 10px -6px rgba(36,29,67,.20)', clipPath: 'inset(0 -14px 0 0)' },
                       });
                     })}
                   </tr>
