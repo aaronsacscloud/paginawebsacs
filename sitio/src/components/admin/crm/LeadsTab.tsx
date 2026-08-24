@@ -231,7 +231,11 @@ export default function LeadsTab() {
     const cae = (c: any, k: string) => k === 'todos' ? true
       : k === 'conocidos' ? !!c.historial
       : k === 'nuevos' ? esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage)
-      : k === 'prueba' ? !!prueba(c)
+      // La lista esconde a los clientes (tienen su propia pantalla), así que el
+      // contador tiene que esconderlos igual: decía "En prueba 2" y adentro
+      // había una sola fila. El único de los siete filtros al que le pasaba,
+      // porque los demás se apoyan en el lifecycle y un cliente nunca cae.
+      : k === 'prueba' ? !!prueba(c) && c.lifecycle_stage !== 'cliente'
       : k === 'abiertos' ? ABIERTOS.includes(c.lifecycle_stage)
       : c.lifecycle_stage === k;
     const out: Record<string, number> = {};
