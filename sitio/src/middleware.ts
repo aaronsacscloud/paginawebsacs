@@ -190,6 +190,11 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/email/inbound',            // SendGrid Inbound Parse (multipart, sin Origin)
   '/api/email/sendgrid-webhook',   // eventos de entrega (firma Ed25519)
   '/api/email/baja-one-click',     // RFC 8058: lo llama el proveedor de correo
+  // Twilio manda form-urlencoded SIN header Origin; cada ruta valida su propia
+  // firma X-Twilio-Signature y falla cerrado.
+  '/api/telefonia/voz',
+  '/api/telefonia/estado',
+  '/api/telefonia/grabacion',
 ]);
 
 function csrfSospechoso(request: Request, url: URL): boolean {
