@@ -24,7 +24,6 @@ const CSS = `
 .sacs-chispa .sacs-centro { display: grid; place-items: center; animation: sacs-respira 1.6s ease-in-out infinite; transform-origin: center; }
 .sacs-chispa .sacs-anillo { position: absolute; inset: 0; animation: sacs-orbita 1.5s linear infinite; transform-origin: center; }
 .sacs-chispa .sacs-anillo > * { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
-@keyframes sacs-frase { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .sacs-chispa .sacs-centro, .sacs-chispa .sacs-anillo { animation: none; }
   .sacs-chispa .sacs-centro { opacity: 1; transform: none; }
@@ -89,13 +88,9 @@ export function Chispas({ size = 13, color }: { size?: number; color?: string })
  *  usa `Chispas`, que es lo que de verdad se dibuja desde ago-2026. */
 export const Corazones = Chispas;
 
-/** La frase de la marca —la misma del acceso al CRM—. Una fija y no una que
- *  rota: la repetición es lo que hace que una frase se quede. */
-const FRASE = 'El verdadero éxito está en crecer mientras ayudas a otros a crecer.';
-
 /**
- * El bloque completo, centrado: la chispa + texto + la frase + el aviso de que
- * tarda. `onReintentar` es opcional; sin él, a los 20 s solo cambia el texto.
+ * El bloque completo, centrado: la chispa + texto + el aviso de que tarda.
+ * `onReintentar` es opcional; sin él, a los 20 s solo cambia el texto.
  *
  * `alto` por omisión ocupa media pantalla: el cargador de un módulo se quedaba
  * pegado arriba de un área vacía enorme y se veía perdido. Quien lo mete en una
@@ -112,12 +107,6 @@ export default function Cargando({
   const lento = seg >= 8;
   const mucho = seg >= 20;
 
-  /* La frase entra con retraso. Casi todas estas pantallas cargan en menos de
-     un segundo, y una frase que aparece y se va en 400 ms se lee como un
-     parpadeo, no como un mensaje: si la carga fue rápida, nunca se ve. */
-  const [conFrase, setConFrase] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setConFrase(true), 600); return () => clearTimeout(t); }, []);
-
   // En una tarjeta chica —cuando quien llama fijó un alto— la chispa se queda
   // discreta; suelta en el módulo, crece.
   const chico = typeof alto === 'number' && alto <= 240;
@@ -129,18 +118,6 @@ export default function Cargando({
       <div style={{ fontSize: chico ? '0.83rem' : '0.88rem', color: '#8a8590', textAlign: 'center', lineHeight: 1.5 }}>
         {mucho ? 'Sigue sin responder.' : lento ? 'Está tardando más de lo normal…' : texto}
       </div>
-      {!chico && conFrase && !mucho && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: '34ch', animation: 'sacs-frase .6s ease' }}>
-          <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#241d43', textAlign: 'center', lineHeight: 1.5, letterSpacing: '-.01em', textWrap: 'balance' as any }}>
-            <span style={{ color: '#5B4BD6' }}>“</span>{FRASE}<span style={{ color: '#5B4BD6' }}>”</span>
-          </div>
-          <div style={{
-            fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase',
-            background: 'linear-gradient(100deg,#7C6BF0 0%,#8E7DEF 35%,#D9538E 100%)',
-            WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
-          }}>Sacs CRM</div>
-        </div>
-      )}
       {mucho && onReintentar && (
         <button onClick={onReintentar}
           style={{ border: '1px solid #e2e0e8', borderRadius: 9, padding: '7px 14px', background: '#fff', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
