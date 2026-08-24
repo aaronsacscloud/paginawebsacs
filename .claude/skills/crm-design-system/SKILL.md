@@ -140,3 +140,26 @@ excepción es ⚠️ para un riesgo real.
 4. ¿Hay algún `Cargando…` que no sea el componente (la chispa en órbita)?
 5. ¿La pantalla respira arriba?
 6. Si es un documento del cliente: ¿cinta, firma en degradado, y **Sacscloud**?
+
+---
+
+## 8. El margen de página
+
+Uno solo, y se **importa**: `WRAP` de `sitio/src/lib/crm/layout.ts`.
+
+```tsx
+import { WRAP } from '../../../lib/crm/layout';
+<div style={WRAP}>…</div>          // tope 1560 · centrado · 24 de aire
+```
+
+Escribirlo a mano es lo que produjo tres reglas distintas conviviendo —`1280
+centrado`, `1200 sin aire`, `sin tope`— y que el título de Clientes empezara a
+74 px del menú y el de Reuniones a 24.
+
+**Por qué el tope es 1560 y no 1280.** Con la caja fija en 1280, plegar el menú
+liberaba 156 px y no aparecía ni una columna: todo se iba a margen. Con 1560 la
+caja es fluida en cualquier laptop —el margen se queda en 24, se compacta con el
+menú abierto y se abre al plegarlo— y el tope solo entra en monitores muy anchos,
+donde una tabla de nueve columnas estirada no se lee de corrido.
+
+Antes de dar por buena una pantalla: **¿usa `WRAP` o escribió su propio ancho?**
