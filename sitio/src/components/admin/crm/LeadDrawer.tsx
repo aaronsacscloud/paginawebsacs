@@ -96,6 +96,25 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   churned: { l: 'Perdido', bg: '#FEF0EF', fg: '#C0554E' },
 };
 
+/* Colores de la etapa DEDUCIDA, la de la ruta.
+ *
+ * La pastilla del encabezado salía de `lifecycle_stage`, que es una columna
+ * capturada y se queda vieja: un lead con dos cotizaciones encima seguía
+ * anunciándose como "Nuevo" mientras la ruta lo tenía en Cotizado y la agenda
+ * ya le ofrecía la reunión de cotización. Tres lugares contando tres historias
+ * del mismo lead. Ahora los tres leen lo mismo. */
+const COLOR_ETAPA: Record<Etapa, { bg: string; fg: string }> = {
+  nuevo: { bg: '#f4f4f6', fg: '#6B7280' },
+  contactado: { bg: '#EEECFE', fg: '#5B4BD6' },
+  calificado: { bg: '#EEECFE', fg: '#5B4BD6' },
+  agendado: { bg: '#E3EDFD', fg: '#2C5FC4' },
+  demo_hecha: { bg: '#E3EDFD', fg: '#2C5FC4' },
+  cotizado: { bg: '#FFF4E5', fg: '#9a6a10' },
+  negociando: { bg: '#FFF4E5', fg: '#9a6a10' },
+  cliente: { bg: '#EAF8F2', fg: '#1E8A63' },
+  perdido: { bg: '#FEF0EF', fg: '#C0554E' },
+};
+
 export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   // Abre en "quién es", no en un revoltijo. Es el orden de la conversación con
   // el lead, el mismo criterio con el que están ordenadas las pestañas del
@@ -163,7 +182,12 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   if (err) return (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24 }}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>{err}</div><button style={{ ...D.btnA, marginTop: 12 }} onClick={onClose}>Cerrar</button></div></>);
   if (!c) return (<><div style={D.overlay} onClick={onClose} /><div style={D.panel}><Cargando texto="Cargando lead…" alto={240} /></div></>);
 
-  const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+  // La pastilla dice la etapa DEDUCIDA, la misma que la ruta y la que decide
+  // qué reunión toca. `lifecycle_stage` solo entra si todavía no hay evaluación.
+  const eta = evaluacion?.etapa as Etapa | undefined;
+  const et = eta
+    ? { l: ETAPA_LABEL[eta], ...COLOR_ETAPA[eta] }
+    : (ETAPAS[c.lifecycle_stage] || ETAPAS.lead);
   const tel = c.whatsapp || c.telefono;
   const o = origenDe(origenDeRegistro(c));
   const demo = (c.bookings || []).slice().sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))[0];
@@ -800,7 +824,11 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
           <div>
-            <div style={D.fl}>De dónde llegó</div>
+            {/* Se llamaba igual que la tarjeta azul de al lado —"De dónde
+                llegó"— y parecían el mismo dato dos veces. Son dos cosas: la
+                tarjeta es lo que midió la atribución, esto es la corrección a
+                mano, que según origenes.ts le gana. */}
+            <div style={D.fl}>Corregir el origen</div>
             <select style={D.fi} value={prop('origen_cuenta')} onChange={e => set('p_origen_cuenta', e.target.value)}>
               <option value="">— sin definir —</option>
               {GRUPOS_ORIGEN.map(g => (
