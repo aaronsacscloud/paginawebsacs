@@ -221,16 +221,23 @@ if (user) {
       const FORMA = new Path2D('M12 1.6c.62 6.6 3.18 9.16 9.78 9.78-6.6.62-9.16 3.18-9.78 9.78-.62-6.6-3.18-9.16-9.78-9.78C8.82 10.76 11.38 8.2 12 1.6z');
       let W = 0, H = 0, DPR = 1, capas = [];
 
-      // [cuántas, peso (opacidad y tamaño), velocidad]
-      const CAPAS = [[34, .22, 4], [22, .42, 8], [11, .75, 13]];
+      // [reparto de la densidad, peso (opacidad y tamaño), velocidad]
+      const CAPAS = [[.52, .28, 4], [.33, .55, 8], [.15, .9, 13]];
 
       function armar() {
-        capas = CAPAS.map(([n, peso, vel]) => {
+        /* La cantidad y el tamaño salen del ÁREA del panel, no de un número
+           fijo. Con 67 chispas fijas el panel real —el doble de grande que
+           cualquier maqueta— quedaba con destellos diminutos y dispersos: se
+           veía vacío. Una cada ~9,000 px² mantiene el cielo igual de poblado
+           en cualquier pantalla. */
+        const total = Math.round((W * H) / 9000);
+        const escala = Math.max(1, Math.min(2, Math.sqrt((W * H) / 420000)));
+        capas = CAPAS.map(([parte, peso, vel]) => {
           const arr = [];
-          for (let i = 0; i < n; i++) arr.push({
+          for (let i = 0, n = Math.round(total * parte); i < n; i++) arr.push({
             x: Math.random() * W,
             y: Math.random() * H,
-            r: 0.9 + Math.random() * peso * 5.5,
+            r: (1.1 + Math.random() * peso * 6) * escala,
             f: Math.random() * 6.3,          // desfase del titileo
             v: peso * vel * 0.05,
             op: peso,
@@ -246,7 +253,9 @@ if (user) {
         ctx.save();
         ctx.translate(x, y); ctx.rotate(giro); ctx.scale(k, k); ctx.translate(-12, -11.4);
         ctx.globalAlpha = alpha; ctx.fillStyle = '#fff';
-        ctx.shadowColor = 'rgba(255,255,255,.85)'; ctx.shadowBlur = brillo;
+        // El halo se dibuja solo en las grandes: `shadowBlur` es de lo más caro
+        // del canvas y en las diminutas no se nota.
+        if (brillo > 0) { ctx.shadowColor = 'rgba(255,255,255,.85)'; ctx.shadowBlur = brillo; }
         ctx.fill(FORMA);
         ctx.restore();
       }
@@ -258,7 +267,7 @@ if (user) {
           p.y -= p.v * dt * 10;
           if (p.y < -14) { p.y = H + 14; p.x = Math.random() * W; }
           const tit = 0.4 + 0.6 * Math.sin(t * 1.15 + p.f);
-          chispa(p.x, p.y, p.r * (0.9 + tit * 0.25), p.op * tit * 0.95, p.f + t * 0.12, 5 + tit * 5);
+          chispa(p.x, p.y, p.r * (0.9 + tit * 0.25), p.op * tit, p.f + t * 0.12, p.r > 2.6 ? 5 + tit * 6 : 0);
         }
       }
 
