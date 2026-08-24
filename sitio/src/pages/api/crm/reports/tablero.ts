@@ -28,8 +28,10 @@ export const GET: APIRoute = async ({ url }) => {
   const hasta = (url.searchParams.get('hasta') || hoy).slice(0, 10);
   const desde = (url.searchParams.get('desde') || masDias(-30)).slice(0, 10);
   const dias = Math.max(1, Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000));
+  const anio = new Date().getFullYear(), mes = new Date().getMonth() + 1;
+  const mesIni = `${anio}-${String(mes).padStart(2, '0')}-01`;
 
-  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, bookQ, payQ, reuQ, mejQ, actQ] = await Promise.all([
+  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, bookQ, payQ, reuQ, mejQ, actQ, payMesQ, movMesQ] = await Promise.all([
     supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago, fecha_inicio'),
     supabase.from('companies').select('id, nombre, nombre_comercial, plan, sacs_account, dias_sin_venta, ultima_venta_at, estado_cuenta').is('archived_at', null),
     supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, aceptado_fecha, company_id, notas'),
@@ -45,6 +47,12 @@ export const GET: APIRoute = async ({ url }) => {
     supabase.from('mejoras').select('id, estado, created_at, company_id, fecha_compromiso').is('archived_at', null),
     // Facturación de la CARTERA: lo que venden los clientes dentro de SACS.
     supabase.from('companies').select('id, actividad, estado_cuenta, created_at').is('archived_at', null),
+    // El mes corriente, aparte: la meta del mes no depende del periodo que se
+    // esté mirando. Con la vista "Hoy" el periodo es un día y las tres barras
+    // salían en cero aunque el mes fuera bueno.
+    supabase.from('payments').select('monto, fecha, subscription_id').gte('fecha', mesIni).lte('fecha', hoy)
+      .not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
+    supabase.from('mrr_movements').select('tipo, mrr_delta').gte('fecha', mesIni).lte('fecha', hoy),
   ]);
 
   const subs = (subsQ.data || []);
@@ -128,7 +136,6 @@ export const GET: APIRoute = async ({ url }) => {
   const concentracion = arr > 0 ? Math.round((top5.reduce((a, [, v]) => a + v, 0) / arr) * 100) : null;
 
   // ── Metas del mes ──
-  const anio = new Date().getFullYear(), mes = new Date().getMonth() + 1;
   const goals = goalsQ.data || [];
   const meta = (tipo: string, def: number) => {
     const g = goals.find((x: any) => x.tipo === tipo && x.anio === anio && x.mes === mes);
@@ -140,10 +147,11 @@ export const GET: APIRoute = async ({ url }) => {
   // dos determinan la tercera es una invitación a que no cuadren.
   const metaUnicos = Math.max(0, metaIngresos - metaArr);
 
-  const mesIni = `${anio}-${String(mes).padStart(2, '0')}-01`;
-  const pagosMes = pagos.filter((p: any) => String(p.fecha).slice(0, 10) >= mesIni);
+  const pagosMes = (payMesQ.data || []) as any[];
+  const movsMes = (movMesQ.data || []) as any[];
   const ingresosMes = Math.round(pagosMes.reduce((a: number, p: any) => a + num(p.monto), 0));
-  const arrNuevoMes = Math.round((nuevo + expansion) * 12);
+  const arrNuevoMes = Math.round(movsMes.filter((m: any) => m.tipo === 'new' || m.tipo === 'expansion')
+    .reduce((a: number, m: any) => a + num(m.mrr_delta), 0) * 12);
   const unicosMes = Math.round(pagosMes.filter((p: any) => !p.subscription_id).reduce((a: number, p: any) => a + num(p.monto), 0));
 
   // ── Planes ──

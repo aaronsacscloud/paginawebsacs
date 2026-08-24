@@ -78,7 +78,8 @@ export default function DashboardTab() {
   if (!d) return <div style={S.wrap}><Cargando texto="Cargando tablero…" /></div>;
 
   const esHoy = rango === 'hoy';
-  const hoyTxt = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const crudo = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hoyTxt = crudo.charAt(0).toUpperCase() + crudo.slice(1);
 
   return (
     <div style={S.wrap}>
@@ -96,7 +97,7 @@ export default function DashboardTab() {
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Tablero</h2>
-          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2, textTransform: esHoy ? 'capitalize' : 'none' }}>
+          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2,  }}>
             {esHoy ? hoyTxt : `Del ${fmtDate(desde)} al ${fmtDate(hasta)} · ${d.periodo.dias} días`}
           </div>
         </div>
@@ -151,7 +152,7 @@ function Hoy({ d, abrir }: any) {
           sub={`${h.semana.cotizaciones.n} en manos del cliente`} />
       </div>
 
-      <div className="tb-2" style={{ marginBottom: 14 }}>
+      <div className="tb-2" style={{ marginBottom: 14, alignItems: 'start' }}>
         <div style={{ ...S.card, margin: 0 }}>
           <div style={S.h}>La agenda de hoy<span style={S.hr}>{h.reuniones} {h.reuniones === 1 ? 'reunión' : 'reuniones'}</span></div>
           {reuHoy.length === 0 && <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '14px 0' }}>Sin reuniones hoy.</div>}
@@ -359,7 +360,7 @@ function Metas({ d }: any) {
   );
   return (
     <div style={S.card}>
-      <div style={S.h}>Meta del mes<span style={S.hr}>quedan {m.dias_restantes} días</span></div>
+      <div style={S.h}>Meta del mes<span style={S.hr}>siempre del mes corriente · quedan {m.dias_restantes} días</span></div>
       <div className="tb-3">
         <div>
           <div style={S.kl}>Ingresos totales</div>
