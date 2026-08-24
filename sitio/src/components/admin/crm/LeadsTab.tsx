@@ -253,7 +253,11 @@ export default function LeadsTab() {
           <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
             {vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
               : vista === 'pipeline' ? `${res?.abiertos ?? 0} abiertos, repartidos por etapa`
-              : <>{res?.total ?? lista.length} en total · {lista.length} en vista</>}
+              /* `conteos.todos` y no `res.total`: el resumen no trae un total
+                 —cuenta abiertos, nuevos y convertidos— y sin él el subtítulo
+                 caía al largo de la lista filtrada y decía "102 en total" con
+                 la pestaña Abiertos puesta, teniendo 252. */
+              : <>{conteos.todos ?? lista.length} en total · {lista.length} en vista</>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
