@@ -53,18 +53,19 @@ export const GET: APIRoute = async ({ url }) => {
   const ventanaIni = [desde, mesIni, seisAtras].sort()[0];
   const ventanaFin = [hasta, hoy].sort().reverse()[0];
 
-  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, payQ, reuQ, mejQ] = await Promise.all([
+  const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, payQ, reuQ, mejQ, reuTodasQ] = await Promise.all([
     supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago, fecha_inicio'),
-    supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account, dias_sin_venta, estado_cuenta, created_at, actividad').is('archived_at', null),
+    supabase.from('companies').select('id, nombre, nombre_comercial, estado_cuenta, created_at').is('archived_at', null),
     supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, aceptado_fecha, company_id, deal_id'),
     supabase.from('deals').select('id, valor_total, stage, created_at, company_id'),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, company_id').gte('fecha', ventanaIni).lte('fecha', ventanaFin),
     supabase.from('crm_goals').select('tipo, anio, mes, monto'),
-    supabase.from('payments').select('monto, fecha, subscription_id, quote_id, company_id')
+    supabase.from('payments').select('id, monto, fecha, metodo, subscription_id, quote_id, company_id')
       .gte('fecha', ventanaIni).lte('fecha', ventanaFin)
       .not('estado', 'in', '(reembolsado,duplicado)').not('reembolsado', 'is', true),
     supabase.from('bookings').select('id, fecha, estado, event_types(nombre, categoria)').gte('fecha', desde).lte('fecha', hasta),
     supabase.from('mejoras').select('id, estado, created_at, company_id, fecha_compromiso').is('archived_at', null),
+    supabase.from('bookings').select('company_id').gte('fecha', desde),
   ]);
 
   const subs = (subsQ.data || []);
@@ -194,10 +195,6 @@ export const GET: APIRoute = async ({ url }) => {
   // de captura, no un cero, y por eso se enseña en vez de esconderse.
   const sinFecha = activas.filter((s: any) => !s.proxima_factura);
 
-  /* ══════════ 9 · LA CARTERA (foto de 30 días del cron) ══════════ */
-  const conActividad = empresas.filter((c: any) => c.actividad && c.estado_cuenta === 'activo');
-  const operando = conActividad.filter((c: any) => num(c.actividad?.total_30d) > 0).length;
-
   /* ══════════ 10 · SALUD ══════════ */
   const baseMrr = mrr - (nuevo + react);
   const nrr = baseMrr > 0 ? Math.round(((baseMrr + expansion + contraccion + churn) / baseMrr) * 100) : null;
@@ -220,6 +217,79 @@ export const GET: APIRoute = async ({ url }) => {
   const porCuenta: Record<string, number> = {};
   activas.forEach((s: any) => { porCuenta[s.company_id] = (porCuenta[s.company_id] || 0) + mrrDe(s) * 12; });
   const top5 = Object.entries(porCuenta).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  /* ══════════ A · EL DETALLE QUE ABRE CADA TARJETA ══════════
+     Una cifra sin poder abrirla obliga a irse a otro módulo a comprobarla, y
+     entonces el tablero deja de usarse. */
+  const planDe: Record<string, string> = Object.fromEntries(subs.map((x: any) => [x.id, x.nombre_plan]));
+  const numeroDe: Record<string, string> = Object.fromEntries((quotesQ.data || []).map((q: any) => [q.id, q.numero]));
+  const pagosDetalle = [...pagos]
+    .sort((a: any, b: any) => dia(b.fecha).localeCompare(dia(a.fecha)) || num(b.monto) - num(a.monto))
+    .map((p: any) => ({
+      id: p.id, fecha: dia(p.fecha), company_id: p.company_id || null,
+      cliente: p.company_id ? (empresaDe[p.company_id] || 'Cuenta') : null,
+      concepto: (p.subscription_id && planDe[p.subscription_id]) || (p.quote_id && numeroDe[p.quote_id]) || 'Cobro suelto',
+      metodo: p.metodo || 'sin método', monto: Math.round(num(p.monto)),
+    }));
+  const porMetodo: Record<string, { n: number; monto: number }> = {};
+  for (const p of pagosDetalle) {
+    porMetodo[p.metodo] = porMetodo[p.metodo] || { n: 0, monto: 0 };
+    porMetodo[p.metodo].n++; porMetodo[p.metodo].monto += p.monto;
+  }
+
+  const cotizaDetalle = (a: any[]) => a
+    .sort((x: any, y: any) => num(y.total) - num(x.total))
+    .map((q: any) => ({
+      id: q.id, numero: q.numero, empresa: q.empresa || (q.company_id ? empresaDe[q.company_id] : '') || 'Sin empresa',
+      company_id: q.company_id || null, total: Math.round(num(q.total)), estado: q.estado,
+      creada: dia(q.created_at), vigencia: q.vigencia ? dia(q.vigencia) : null,
+      aceptada: q.aceptado_fecha ? dia(q.aceptado_fecha) : null,
+      // Días esperando: lo que lleva en manos del cliente sin resolverse. Es
+      // lo que decide a cuál llamarle primero.
+      espera: q.created_at ? Math.round((Date.parse(hoy + 'T12:00:00') - Date.parse(dia(q.created_at) + 'T12:00:00')) / 86400000) : null,
+    }));
+
+  const movDetalle = (t: string) => movs.filter((m: any) => m.tipo === t)
+    .map((m: any) => ({
+      company_id: m.company_id, cliente: empresaDe[m.company_id] || 'Cuenta',
+      fecha: dia(m.fecha), arr: a12(num(m.mrr_delta)),
+    }))
+    .sort((x: any, y: any) => Math.abs(y.arr) - Math.abs(x.arr));
+
+  const clientesNuevosDetalle = subs.filter((x: any) => entre(x.fecha_inicio, desde, hasta))
+    .map((x: any) => ({
+      company_id: x.company_id, cliente: empresaDe[x.company_id] || 'Cuenta',
+      plan: x.nombre_plan, ciclo: x.ciclo, fecha: dia(x.fecha_inicio),
+      arr: x.ciclo === 'mensual' ? Math.round(num(x.monto_proximo ?? x.precio) * 12) : Math.round(num(x.monto_proximo ?? x.precio)),
+    }))
+    .sort((a: any, b: any) => b.arr - a.arr);
+
+  const leadsDetalle = empresasNuevas.filter((c: any) => c.estado_cuenta !== 'activo')
+    .map((c: any) => ({
+      company_id: c.id, cliente: c.nombre_comercial || c.nombre, fecha: dia(c.created_at),
+      estado: c.estado_cuenta || 'prospecto',
+    }))
+    .sort((a: any, b: any) => b.fecha.localeCompare(a.fecha));
+
+  /* ══════════ B · CUÁNTO CRECIÓ EL RECURRENTE, EN PORCENTAJE ══════════
+     El monto solo no dice si el movimiento fue grande: $47K sobre un ARR de
+     dos millones es 2.4%, y ese es el número que se compara entre meses. */
+  const netoArr = a12(nuevo + expansion + react + contraccion + churn);
+  const arrBase = Math.round(arr) - netoArr;          // el ARR al empezar el rango
+  const porc = (v: number) => arrBase > 0 ? Number(((v / arrBase) * 100).toFixed(2)) : null;
+
+  /* ══════════ C · LA COHORTE DEL RANGO ══════════
+     No es el embudo general: son LAS MISMAS empresas que entraron, seguidas
+     hasta dónde llegaron. Los pasos no son monótonos a propósito —se cierran
+     ventas sin junta ni cotización— y eso es justo lo que hay que ver. */
+  const cohorteIds = new Set(empresasNuevas.map((c: any) => c.id));
+  const conJunta = new Set((reuTodasQ.data || []).map((b: any) => b.company_id).filter((id: any) => cohorteIds.has(id)));
+  const conCotiza = new Set(quotes.filter((q: any) => cohorteIds.has(q.company_id)).map((q: any) => q.company_id));
+  const conAcepta = new Set(quotes.filter((q: any) => cohorteIds.has(q.company_id) && ['accepted', 'paid'].includes(q.estado)).map((q: any) => q.company_id));
+  const conLicencia = new Set(subs.filter((x: any) => cohorteIds.has(x.company_id)).map((x: any) => x.company_id));
+  // Los que compraron sin dejar rastro en el CRM: si son muchos, el proceso no
+  // se está capturando, y el embudo de arriba no significa nada.
+  const sinRastro = [...conLicencia].filter(id => !conJunta.has(id) && !conAcepta.has(id)).length;
 
   /* ══════════ 11 · META DEL MES (siempre del mes, pase lo que pase) ══════════ */
   const goals = goalsQ.data || [];
@@ -246,6 +316,9 @@ export const GET: APIRoute = async ({ url }) => {
       proyeccion: esMesActual ? proyeccion : null,
       dia_actual: diaDelMes, dias_mes: diasMes,
       antes_de_fin_de_mes: { monto: montoDe(antesDeFinMes), n: antesDeFinMes.length },
+      items: pagosDetalle,
+      metodos: Object.entries(porMetodo).map(([metodo, v]) => ({ metodo, ...v })).sort((x, y) => y.monto - x.monto),
+      sin_cliente: { n: pagosDetalle.filter(p => !p.company_id).length, monto: pagosDetalle.filter(p => !p.company_id).reduce((a, p) => a + p.monto, 0) },
     },
     historial,
 
@@ -253,6 +326,7 @@ export const GET: APIRoute = async ({ url }) => {
       total: suma([...aceptadasVivas, ...enviadasVivas]),
       aceptadas: { monto: suma(aceptadasVivas), n: aceptadasVivas.length },
       enviadas: { monto: suma(enviadasVivas), n: enviadasVivas.length },
+      items: cotizaDetalle([...aceptadasVivas, ...enviadasVivas]),
       // Se enseñan aparte, nunca sumadas: parte del pipeline YA está cotizado
       // y sumarlo contaría el mismo dinero dos veces.
       oportunidades: {
@@ -261,12 +335,23 @@ export const GET: APIRoute = async ({ url }) => {
       },
     },
 
-    generado: { monto: suma(aceptadasPeriodo), n: aceptadasPeriodo.length, mejor_semana: mejorSemana },
+    generado: { monto: suma(aceptadasPeriodo), n: aceptadasPeriodo.length, mejor_semana: mejorSemana, items: cotizaDetalle(aceptadasPeriodo) },
 
     recurrente: {
+      arr_hoy: Math.round(arr), arr_base: arrBase,
       altas: a12(nuevo), ampliaciones: a12(expansion), reactivaciones: a12(react),
-      reducciones: a12(contraccion), bajas: a12(churn),
-      neto: a12(nuevo + expansion + react + contraccion + churn),
+      reducciones: a12(contraccion), bajas: a12(churn), neto: netoArr,
+      // El mismo movimiento como proporción del ARR con el que se empezó: es
+      // lo único comparable entre un mes y otro.
+      pct: {
+        altas: porc(a12(nuevo)), ampliaciones: porc(a12(expansion)), reactivaciones: porc(a12(react)),
+        reducciones: porc(a12(contraccion)), bajas: porc(a12(churn)), neto: porc(netoArr),
+        entro: porc(a12(nuevo + expansion + react)), salio: porc(a12(contraccion + churn)),
+      },
+      movimientos: {
+        altas: movDetalle('new'), ampliaciones: movDetalle('expansion'),
+        reactivaciones: movDetalle('reactivation'), reducciones: movDetalle('contraction'), bajas: movDetalle('churn'),
+      },
       // El ledger arrancó el 19-may-2026: pedir un rango anterior da números
       // cortos, y hay que decirlo en vez de dejar creer que fue mal mes.
       ledger_desde: '2026-05-19',
@@ -275,15 +360,21 @@ export const GET: APIRoute = async ({ url }) => {
     contadores: {
       clientes_nuevos: clientesNuevos, leads, empresas_nuevas: empresasNuevas.length,
       bajas: bajasCuentas, bajas_arr: Math.abs(a12(churn)),
+      ampliaciones: new Set(movs.filter((m: any) => m.tipo === 'expansion').map((m: any) => m.company_id)).size,
       conversion: pct(clientesNuevos, empresasNuevas.length),
+      items: { clientes_nuevos: clientesNuevosDetalle, leads: leadsDetalle },
     },
 
-    embudo: [
-      { nombre: 'Leads nuevos', n: leads, nota: 'empresas que entraron' },
-      { nombre: 'Cotizados', n: cotizadasPeriodo.length, monto: suma(cotizadasPeriodo) },
-      { nombre: 'Aceptados', n: aceptadasPeriodo.length, monto: suma(aceptadasPeriodo) },
-      { nombre: 'Clientes nuevos', n: clientesNuevos, nota: 'licencia arrancada' },
-    ],
+    cohorte: {
+      pasos: [
+        { nombre: 'Entraron', n: empresasNuevas.length, nota: 'empresas nuevas en el periodo' },
+        { nombre: 'Tuvieron reunión', n: conJunta.size, nota: 'se les agendó una junta' },
+        { nombre: 'Recibieron cotización', n: conCotiza.size, nota: 'con precio en la mano' },
+        { nombre: 'Aceptaron', n: conAcepta.size, nota: 'dijeron que sí' },
+        { nombre: 'Ya son clientes', n: conLicencia.size, nota: 'con licencia activa' },
+      ],
+      base: empresasNuevas.length, sin_rastro: sinRastro,
+    },
 
     reuniones: {
       total: reus.length, fueron: reus.filter(asistio).length, para_vender: paraVender,
@@ -312,11 +403,6 @@ export const GET: APIRoute = async ({ url }) => {
       fin_de_mes: finMes,
     },
 
-    cartera: {
-      facturacion: Math.round(conActividad.reduce((a: number, c: any) => a + num(c.actividad?.total_30d), 0)),
-      ventas: conActividad.reduce((a: number, c: any) => a + num(c.actividad?.ventas_30d), 0),
-      operando, cuentas: conActividad.length,
-    },
 
     salud: {
       arr: Math.round(arr), clientes: clientesActivos,

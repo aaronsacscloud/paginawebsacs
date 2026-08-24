@@ -72,6 +72,9 @@ export default function DashboardTab() {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
+  // Qué detalle está abierto. Una cifra que no se puede abrir obliga a irse a
+  // otro módulo a comprobarla, y entonces el tablero deja de usarse.
+  const [detalle, setDetalle] = useState<string | null>(null);
 
   const cargar = () => {
     setD(null); setErr('');
@@ -96,6 +99,15 @@ export default function DashboardTab() {
           decidía 3 columnas y dejaba un hueco del ancho de una tarjeta. */}
       <style>{`
         .tb { font-variant-numeric: tabular-nums; }
+        .tb-clic { cursor:pointer; transition:box-shadow .15s, border-color .15s; }
+        .tb-clic:hover { box-shadow:0 3px 14px rgba(91,75,214,.10); border-color:#ddd8f7; }
+        .tb-velo { position:fixed; inset:0; background:rgba(23,21,31,.42); display:flex; align-items:center; justify-content:center; padding:28px; z-index:60; }
+        .tb-modal { background:#fff; border-radius:16px; width:min(960px,100%); max-height:88vh; overflow:auto; box-shadow:0 24px 70px rgba(23,21,31,.24); }
+        .tb-tabla { width:100%; border-collapse:collapse; }
+        .tb-tabla th { font-size:.6rem; font-weight:800; color:#a5a2af; text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:9px 8px; border-bottom:1px solid #f1f0f5; }
+        .tb-tabla td { padding:10px 8px; border-bottom:1px solid #f7f6fa; font-size:.79rem; }
+        .tb-tabla tr.cliqueable { cursor:pointer; }
+        .tb-tabla tr.cliqueable:hover td { background:#faf9ff; }
         .tb-flujo { display:grid; grid-template-columns:1.55fr 1fr; gap:16px; margin-bottom:16px; }
         .tb-apil  { display:grid; grid-template-rows:1fr 1fr; gap:16px; }
         .tb-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:16px; align-items:stretch; }
@@ -132,14 +144,14 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        <Dinero d={d} />
-        <Motor d={d} />
-        <EmbudoYTiempo d={d} />
+        <Dinero d={d} ver={setDetalle} />
+        <Motor d={d} ver={setDetalle} />
+        <CohorteYTiempo d={d} />
         <Compromisos d={d} abrir={setAbierto} />
-        <Cartera d={d} />
         <Salud d={d} />
       </div>
 
+      {detalle && <Detalle d={d} cual={detalle} cerrar={() => setDetalle(null)} abrir={(id: string) => { setDetalle(null); setAbierto(id); }} />}
       {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
     </div>
   );
@@ -148,7 +160,7 @@ export default function DashboardTab() {
 const FECHA = { border: '1px solid #e4dffb', background: '#fdfcff', borderRadius: 9, padding: '6px 9px', fontSize: '0.72rem', fontFamily: 'inherit' } as const;
 
 /* ════════════════ 1 · EL DINERO ════════════════ */
-function Dinero({ d }: any) {
+function Dinero({ d, ver }: any) {
   const c = d.cobrado, sm = d.sobre_la_mesa, g = d.generado;
   const pctMeta = c.meta ? Math.round((c.monto / c.meta) * 100) : null;
   const llega = c.proyeccion != null && c.meta && c.proyeccion >= c.meta;
@@ -156,7 +168,7 @@ function Dinero({ d }: any) {
 
   return (
     <div className="tb-flujo">
-      <div style={S.card}>
+      <div style={S.card} className="tb-clic" onClick={() => ver('cobrado')}>
         <div style={S.titulo}>Cobrado{c.meta ? <span style={S.der}>meta {money(c.meta)}</span> : null}</div>
         <div style={S.lead}>
           Lo que de verdad entró a la cuenta.
@@ -178,6 +190,7 @@ function Dinero({ d }: any) {
         </div>
 
         <GraficaCobranza c={c} eje={d.periodo.eje_total} />
+        <VerDetalle texto={`Ver los ${c.n} pagos, uno por uno`} />
 
         <div style={{ ...S.nota, display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: '0 0 250px' }}>
@@ -189,7 +202,7 @@ function Dinero({ d }: any) {
       </div>
 
       <div className="tb-apil">
-        <div style={{ ...S.card, borderLeft: `3px solid ${AMBAR}` }}>
+        <div style={{ ...S.card, borderLeft: `3px solid ${AMBAR}` }} className="tb-clic" onClick={() => ver('mesa')}>
           <div style={S.titulo}>Sobre la mesa hoy</div>
           <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: AMBAR, marginTop: 11 }}>{money(sm.total)}</div>
           <div style={S.pie}>{sm.aceptadas.n + sm.enviadas.n} cotizaciones vivas en manos del cliente</div>
@@ -213,9 +226,10 @@ function Dinero({ d }: any) {
                 : <>. Todavía sin cotización formal.</>}
             </div>
           )}
+          <VerDetalle texto="Ver cuáles son y desde cuándo esperan" />
         </div>
 
-        <div style={{ ...S.card, borderLeft: `3px solid ${MORADO}` }}>
+        <div style={{ ...S.card, borderLeft: `3px solid ${MORADO}` }} className="tb-clic" onClick={() => ver('generado')}>
           <div style={S.titulo}>Generado</div>
           <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, color: MORADO, marginTop: 11 }}>{money(g.monto)}</div>
           <div style={S.pie}>{g.n} {g.n === 1 ? 'cotización aceptada' : 'cotizaciones aceptadas'}. El cliente ya dijo que sí, se haya cobrado o no.</div>
@@ -226,6 +240,7 @@ function Dinero({ d }: any) {
                 : <>Repartido a lo largo del periodo. La mejor semana fue del {fmtDate(g.mejor_semana.desde)} al {fmtDate(g.mejor_semana.hasta)} con <b style={{ color: '#3f3b4d' }}>{money(g.mejor_semana.monto)}</b>.</>}
             </div>
           )}
+          <VerDetalle texto={`Ver las ${g.n} y quién las autorizó`} />
         </div>
       </div>
     </div>
@@ -305,36 +320,54 @@ function textoHistorial(meses: any[]) {
   );
 }
 
-/* ════════════════ 2 · EL MOTOR RECURRENTE ════════════════ */
-function Motor({ d }: any) {
+/* ════════════════ 2 · CUÁNTO CRECIÓ EL RECURRENTE ════════════════
+   No cuánto vendiste: cuánto subió el ingreso que se repite. Y en PORCENTAJE,
+   porque $47K sobre un ARR de dos millones es 2.4%, y ese es el número que se
+   puede comparar contra el mes pasado. */
+function Motor({ d, ver }: any) {
   const r = d.recurrente, k = d.contadores;
   const cortoLedger = d.periodo.desde < r.ledger_desde;
+  const sube = (r.pct?.neto ?? 0) >= 0;
   return (
     <div className="tb-2">
       <div style={S.card}>
-        <div style={S.titulo}>El motor recurrente<span style={S.der}>movimiento de ARR</span></div>
-        <div style={S.lead}>Vender no es lo mismo que crecer. Esto es lo que pasó con el ingreso que se repite todos los años.</div>
-        <Cascada r={r} />
+        <div style={S.titulo}>Cuánto creció el recurrente<span style={S.der}>movimiento de ARR</span></div>
+        <div style={S.lead}>No cuánto vendiste: cuánto subió el ingreso que se repite todos los años, y qué proporción del ARR representa cada movimiento.</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, margin: '2px 0 16px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={S.eyebrow}>ARR hoy</div>
+            <div style={{ fontSize: '2.05rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, marginTop: 6 }}>{money(r.arr_hoy)}</div>
+          </div>
+          <div style={{ paddingBottom: 4 }}>
+            {r.pct?.neto != null && (
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: sube ? '#EEECFE' : '#FEF0EF', color: sube ? MORADO : ROJO }}>
+                {sube ? '+' : ''}{r.pct.neto}% en el periodo
+              </span>
+            )}
+            <div style={{ ...S.pie, marginTop: 6 }}>Empezaste en {money(r.arr_base)}</div>
+          </div>
+        </div>
+        <BarrasArr r={r} />
         <div style={S.nota}>
           {cortoLedger
-            ? <>El historial de recurrencia arranca el {fmtDate(r.ledger_desde)}: lo anterior a esa fecha no está medido y el neto sale corto.</>
-            : r.neto > 0
-              ? <>Vendiste {money(d.generado.monto)} y el recurrente subió <b style={{ color: '#3f3b4d' }}>{money(r.neto)}</b>{Math.abs(r.bajas) > r.altas * 0.5 ? <>: las bajas se comieron casi todo lo que entró. <b style={{ color: ROJO }}>Retener vale más que vender.</b></> : '.'}</>
-              : r.neto < 0
-                ? <>El recurrente <b style={{ color: ROJO }}>bajó {money(Math.abs(r.neto))}</b>: se fue más de lo que entró.</>
-                : <>El recurrente quedó igual que como empezó el periodo.</>}
+            ? <>El historial de recurrencia arranca el {fmtDate(r.ledger_desde)}: lo anterior no está medido y el neto sale corto.</>
+            : r.pct?.entro != null
+              ? <>Lo que entró sumó <b style={{ color: VERDE }}>+{r.pct.entro}%</b> y lo que se fue restó <b style={{ color: ROJO }}>{r.pct.salio}%</b>.
+                {' '}{Math.abs(r.bajas + r.reducciones) > (r.altas + r.ampliaciones) * 0.5 && (r.altas + r.ampliaciones) > 0
+                  ? <>De cada $10 que entraron, <b style={{ color: '#3f3b4d' }}>${(Math.abs(r.bajas + r.reducciones) / (r.altas + r.ampliaciones) * 10).toFixed(0)} se fueron por la puerta de atrás</b>.</>
+                  : <>El saldo quedó a favor sin depender de retener.</>}</>
+              : <>Sin movimientos de recurrencia en el periodo.</>}
         </div>
       </div>
 
       <div style={{ ...S.card, display: 'flex', flexDirection: 'column' }}>
         <div style={S.titulo}>Quién entró y quién se fue</div>
-        <div style={S.lead}>Los cuatro números que explican el motor de al lado.</div>
+        <div style={S.lead}>Cada tarjeta abre la lista con nombre y monto.</div>
         <div className="tb-cuad" style={{ flex: 1 }}>
-          <Contador color={VERDE} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" />
-          <Contador color={CIELO} label="Leads nuevos" valorColor={AZUL} valor={k.leads} nota="empresas que entraron y aún no compran" />
-          <Contador color={ROJO} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)} de ARR` : 'nadie se fue'} />
-          <Contador color={LILA} label="Conversión" valorColor={MORADO} valor={k.conversion != null ? `${k.conversion}%` : '—'}
-            nota={k.empresas_nuevas ? `${k.clientes_nuevos} clientes de ${k.empresas_nuevas} empresas nuevas` : 'sin empresas nuevas que medir'} />
+          <Contador color={VERDE} label="Clientes nuevos" valor={k.clientes_nuevos} nota="licencias que arrancaron" ver={() => ver('clientes')} />
+          <Contador color={CIELO} label="Leads nuevos" valorColor={AZUL} valor={k.leads} nota="entraron y aún no compran" ver={() => ver('leads')} />
+          <Contador color={ROJO} label="Bajas" valor={k.bajas} nota={k.bajas ? `se llevaron ${money(k.bajas_arr)} de ARR` : 'nadie se fue'} ver={k.bajas ? () => ver('bajas') : undefined} />
+          <Contador color={LILA} label="Ampliaciones" valorColor={MORADO} valor={k.ampliaciones} nota="clientes que compraron más" ver={k.ampliaciones ? () => ver('ampliaciones') : undefined} />
         </div>
         <div style={S.nota}>
           Entraron {k.empresas_nuevas} empresas y {k.clientes_nuevos} {k.clientes_nuevos === 1 ? 'firmó' : 'firmaron'}, mientras {k.bajas} se {k.bajas === 1 ? 'fue' : 'fueron'}.
@@ -347,77 +380,87 @@ function Motor({ d }: any) {
   );
 }
 
-/** Cascada del ARR. Las líneas punteadas entre barras son lo que la vuelve una
- *  suma y no cinco barras sueltas. */
-function Cascada({ r }: any) {
-  const pasos = [
-    { nom: 'Altas', v: r.altas, col: MENTA },
-    { nom: 'Ampliaciones', v: r.ampliaciones, col: LILA },
-    ...(r.reactivaciones ? [{ nom: 'Reactivaciones', v: r.reactivaciones, col: CIELO }] : []),
-    { nom: 'Reducciones', v: r.reducciones, col: ORO },
-    { nom: 'Bajas', v: r.bajas, col: ROJO },
+/** Barras divergentes desde el cero. Cada una es el peso del movimiento sobre
+ *  el ARR con el que se empezó: así un mes se compara contra otro aunque el
+ *  ARR haya cambiado de tamaño. */
+function BarrasArr({ r }: any) {
+  const filas = [
+    { nom: 'Altas', v: r.altas, p: r.pct?.altas, col: MENTA },
+    { nom: 'Ampliaciones', v: r.ampliaciones, p: r.pct?.ampliaciones, col: LILA },
+    ...(r.reactivaciones ? [{ nom: 'Reactivaciones', v: r.reactivaciones, p: r.pct?.reactivaciones, col: CIELO }] : []),
+    { nom: 'Reducciones', v: r.reducciones, p: r.pct?.reducciones, col: ORO },
+    { nom: 'Bajas', v: r.bajas, p: r.pct?.bajas, col: ROJO },
   ];
-  const W = 500, H = 196, base = H - 36;
-  const bw = Math.min(60, (W - 24) / (pasos.length + 1) - 22), gap = 26;
-  // El tope se saca del pico del recorrido, no del neto: si las bajas empatan
-  // a las altas el neto es cero y todas las barras se aplastarían.
-  let acu = 0; const picos = [0];
-  pasos.forEach(x => { acu += x.v; picos.push(acu); });
-  const tope = Math.max(...picos.map(Math.abs), Math.abs(r.neto), 1) * 1.3;
-  const esc = (v: number) => (Math.abs(v) / tope) * (base - 26);
-  const Yv = (v: number) => base - (v / tope) * (base - 26);
-
-  const nodos: any[] = []; let run = 0, x = 6;
-  pasos.forEach(({ nom, v, col }) => {
-    const y0 = Yv(run), y1 = Yv(run + v);
-    const ya = Math.min(y0, y1), yb = Math.max(y0, y1);
-    nodos.push(<rect key={`r${nom}`} x={x} y={ya} width={bw} height={Math.max(3, yb - ya)} rx="3" fill={col} />);
-    nodos.push(<text key={`t${nom}`} x={x + bw / 2} y={v >= 0 ? ya - 7 : yb + 15} fontSize="11" fontWeight="800" fill={col} textAnchor="middle">{v >= 0 ? '+' : ''}{corto(v)}</text>);
-    nodos.push(<text key={`n${nom}`} x={x + bw / 2} y={base + 16} fontSize="8.5" fill="#b3b0bd" fontWeight="600" textAnchor="middle">{nom}</text>);
-    run += v;
-    nodos.push(<line key={`c${nom}`} x1={x} y1={Yv(run)} x2={x + bw + gap} y2={Yv(run)} stroke="#d6d3e2" strokeWidth="1.2" strokeDasharray="3 3" />);
-    x += bw + gap;
+  const W = 470, alto = 30, gap = 8, CX = 232, LARGO = CX - 96;
+  const tope = Math.max(0.01, ...filas.map(f => Math.abs(f.p || 0))) * 1.18;
+  const H = filas.length * (alto + gap) + 34;
+  let y = 4;
+  const nodos = filas.map(f => {
+    const p = f.p || 0, w = Math.max(2, (Math.abs(p) / tope) * LARGO);
+    const x = p >= 0 ? CX : CX - w, yy = y; y += alto + gap;
+    return (
+      <g key={f.nom}>
+        <text x="4" y={yy + alto / 2 + 4} fontSize="11.5" fontWeight="700" fill="#3f3b4d">{f.nom}</text>
+        <rect x={x} y={yy} width={w} height={alto} rx="4" fill={f.col} />
+        <text x={p >= 0 ? x + w + 9 : x - 9} y={yy + alto / 2 + 4} fontSize="12" fontWeight="800" fill={f.col} textAnchor={p >= 0 ? 'start' : 'end'}>
+          {p >= 0 ? '+' : ''}{p}%
+        </text>
+        <text x={W - 4} y={yy + alto / 2 + 4} fontSize="10.5" fontWeight="600" fill="#a5a2af" textAnchor="end">{f.v >= 0 ? '+' : ''}{money(f.v)}</text>
+      </g>
+    );
   });
-  const yN = Yv(r.neto);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }} aria-hidden="true">
-      <line x1="0" y1={base} x2={W} y2={base} stroke="#e6e4ee" />
       {nodos}
-      <rect x={x} y={Math.min(base, yN)} width={bw} height={Math.max(4, esc(r.neto))} rx="3" fill={MORADO} />
-      <text x={x + bw / 2} y={(r.neto >= 0 ? yN : base) - 7} fontSize="11" fontWeight="800" fill={MORADO} textAnchor="middle">{r.neto >= 0 ? '+' : ''}{corto(r.neto)}</text>
-      <text x={x + bw / 2} y={base + 16} fontSize="8.5" fill="#8a8590" fontWeight="800" textAnchor="middle">Neto</text>
+      <line x1={CX} y1="0" x2={CX} y2={y - gap + 4} stroke="#d8d5e4" />
+      <line x1="0" y1={y - 2} x2={W} y2={y - 2} stroke="#eceaf2" />
+      <text x="4" y={y + 20} fontSize="11.5" fontWeight="800" fill="#3f3b4d">Neto del periodo</text>
+      <text x={CX + 8} y={y + 20} fontSize="12" fontWeight="800" fill={MORADO}>{(r.pct?.neto ?? 0) >= 0 ? '+' : ''}{r.pct?.neto ?? 0}%</text>
+      <text x={W - 4} y={y + 20} fontSize="10.5" fontWeight="800" fill={MORADO} textAnchor="end">{r.neto >= 0 ? '+' : ''}{money(r.neto)}</text>
     </svg>
   );
 }
 
-function Contador({ color, label, valor, valorColor, nota }: any) {
+function Contador({ color, label, valor, valorColor, nota, ver }: any) {
   return (
-    <div style={{ ...S.mini, borderLeft: `3px solid ${color}`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div style={{ ...S.mini, borderLeft: `3px solid ${color}`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+      className={ver ? 'tb-clic' : undefined} onClick={ver}>
       <div style={S.eyebrow}>{label}</div>
       <div style={{ ...S.mv, color: valorColor || color }}>{valor}</div>
       <div style={S.ms}>{nota}</div>
+      {ver && <VerDetalle texto="Ver quiénes" chico />}
     </div>
   );
 }
 
-/* ════════════════ 3 · EMBUDO Y TIEMPO ════════════════ */
-function EmbudoYTiempo({ d }: any) {
-  const e = d.embudo, r = d.reuniones;
-  const cuello = e.slice(0, 3).map((x: any, i: number) => ({ i, caida: e[i + 1] && x.n ? e[i + 1].n / x.n : 1 }))
-    .sort((a: any, b: any) => a.caida - b.caida)[0];
+function VerDetalle({ texto, chico }: any) {
+  return (
+    <div style={{ fontSize: chico ? '0.61rem' : '0.63rem', fontWeight: 800, color: MORADO, marginTop: chico ? 7 : 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {texto} <span style={{ fontSize: '0.8em' }}>→</span>
+    </div>
+  );
+}
+
+/* ════════════════ 3 · LA COHORTE Y EL TIEMPO ════════════════ */
+function CohorteYTiempo({ d }: any) {
+  const co = d.cohorte, r = d.reuniones;
+  const clientes = co.pasos[4]?.n || 0;
   return (
     <div className="tb-2">
       <div style={S.card}>
-        <div style={S.titulo}>El embudo<span style={S.der}>del contacto al contrato</span></div>
-        <div style={S.lead}>Los saltos entre pasos dicen más que los totales. Aquí se ve dónde se atora.</div>
-        <Embudo etapas={e} />
-        <div style={S.nota}>
-          {e[0].n === 0
-            ? <>Sin leads nuevos en el periodo: el embudo arranca vacío.</>
-            : cuello && cuello.caida < 0.5
-              ? <>El cuello está entre <b style={{ color: '#3f3b4d' }}>{e[cuello.i].nombre.toLowerCase()}</b> y {e[cuello.i + 1].nombre.toLowerCase()}: solo pasa el {Math.round(cuello.caida * 100)}%.</>
-              : <>El embudo baja parejo, sin un tapón claro en ningún paso.</>}
-        </div>
+        <div style={S.titulo}>El recorrido de los que entraron<span style={S.der}>cohorte del periodo</span></div>
+        <div style={S.lead}>No es el embudo general: son <b>las mismas {co.base} empresas</b> que entraron en el periodo que elegiste, seguidas hasta dónde llegaron.</div>
+        {co.base === 0
+          ? <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '18px 0' }}>Ninguna empresa nueva en el periodo.</div>
+          : <>
+            <Cohorte pasos={co.pasos} base={co.base} />
+            <div style={S.nota}>
+              De las {co.base} que entraron, <b style={{ color: co.pasos[1].n / co.base < 0.1 ? ROJO : '#3f3b4d' }}>{co.pasos[1].n === 1 ? 'solo 1 tuvo' : `${co.pasos[1].n} tuvieron`} reunión</b> y {co.pasos[2].n} {co.pasos[2].n === 1 ? 'recibió' : 'recibieron'} cotización.
+              {/* Los pasos no son monótonos a propósito: se cierran ventas sin
+                  junta ni cotización, y eso hay que verlo, no taparlo. */}
+              {co.sin_rastro > 0 && <> <b style={{ color: '#9a6a10' }}>{co.sin_rastro} de {clientes}</b> que ya son clientes cerraron sin junta ni cotización registrada: o se vende fuera del CRM, o no se está capturando.</>}
+            </div>
+          </>}
       </div>
 
       <div style={S.card}>
@@ -450,36 +493,26 @@ function EmbudoYTiempo({ d }: any) {
   );
 }
 const COLORES = [LILA, CIELO, MENTA, ORO, ROJO, '#C9C7D0'];
-// El embudo va de frío a cálido para que el recorrido se lea como avance.
-const EMBUDO_COL = [CIELO, LILA, MENTA, VERDE];
+const COHORTE_COL = [CIELO, LILA, ORO, MENTA, VERDE];
 const mesDe = (f: string) => new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' });
 const titulo = (t: string) => { const x = t.replace(/^Reunión de /, ''); return x.charAt(0).toUpperCase() + x.slice(1); };
 
-/** Embudo proporcional. El ancho ES el dato: si de 68 leads solo 9 cotizan,
- *  la caída tiene que verse, no leerse. */
-function Embudo({ etapas }: any) {
-  const FW = 380, alto = 44, sep = 26, TX = 400;
-  const tope = Math.max(1, ...etapas.map((e: any) => e.n));
-  const H = etapas.length * (alto + sep) - sep + 10;
+/** El recorrido de la cohorte. Barras alineadas a la izquierda y no un embudo
+ *  centrado: los pasos NO son monótonos —hay clientes que nunca pasaron por
+ *  cotización— y un embudo dibujaría una mentira ordenada. */
+function Cohorte({ pasos, base }: any) {
+  const W = 630, FW = 300, alto = 30, gap = 10, X = 180;
+  const H = pasos.length * (alto + gap);
   return (
-    <svg viewBox={`0 0 630 ${H}`} style={{ width: '100%', height: H, display: 'block' }} aria-hidden="true">
-      {etapas.map((e: any, i: number) => {
-        const y = 6 + i * (alto + sep);
-        const w = Math.max(58, (e.n / tope) * FW);
-        const sig = etapas[i + 1];
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }} aria-hidden="true">
+      {pasos.map((p: any, i: number) => {
+        const y = i * (alto + gap), w = Math.max(24, (p.n / Math.max(1, base)) * FW);
         return (
-          <g key={e.nombre}>
-            <rect x={(FW - w) / 2} y={y} width={w} height={alto} rx="8" fill={EMBUDO_COL[i % EMBUDO_COL.length]} />
-            <text x={FW / 2} y={y + 27} fontSize="15" fontWeight="800" fill="#fff" textAnchor="middle">{e.n}</text>
-            <text x={TX} y={y + 20} fontSize="11.5" fontWeight="700" fill="#3f3b4d">{e.nombre}</text>
-            <text x={TX} y={y + 35} fontSize="8.5" fill="#b3b0bd" fontWeight="600">{e.monto != null ? money(e.monto) : e.nota}</text>
-            {sig && <>
-              <line x1={FW / 2} y1={y + alto + 4} x2={FW / 2} y2={y + alto + sep - 4} stroke="#dedbe8" strokeWidth="1.4" />
-              <rect x={FW / 2 + 7} y={y + alto + sep / 2 - 7} width="42" height="17" rx="8" fill="#f3f2f8" />
-              <text x={FW / 2 + 28} y={y + alto + sep / 2 + 5.5} fontSize="10" fontWeight="800" fill="#8a8590" textAnchor="middle">
-                {e.n ? Math.round((sig.n / e.n) * 100) : 0}%
-              </text>
-            </>}
+          <g key={p.nombre}>
+            <text x="4" y={y + alto / 2 + 4} fontSize="11.5" fontWeight="700" fill="#3f3b4d">{p.nombre}</text>
+            <rect x={X} y={y + 5} width={w} height={alto - 10} rx="4" fill={COHORTE_COL[i % COHORTE_COL.length]} />
+            <text x={X + w + 9} y={y + alto / 2 + 4} fontSize="12" fontWeight="800" fill={COHORTE_COL[i % COHORTE_COL.length]}>{p.n}</text>
+            <text x={X + w + 34} y={y + alto / 2 + 4} fontSize="10.5" fontWeight="600" fill="#a5a2af">{Math.round((p.n / Math.max(1, base)) * 100)}% de {base}</text>
           </g>
         );
       })}
@@ -487,6 +520,8 @@ function Embudo({ etapas }: any) {
   );
 }
 
+/** La dona de reuniones: la mezcla se lee de un vistazo, y el número del
+ *  centro evita tener que sumar los renglones de al lado. */
 function Dona({ tipos, total }: any) {
   const R = 62, GR = 17;
   let ang = -90;
@@ -510,6 +545,9 @@ function Dona({ tipos, total }: any) {
 /* ════════════════ 4 · COMPROMISOS Y COBRANZA ════════════════ */
 function Compromisos({ d, abrir }: any) {
   const co = d.consultoria, cb = d.cobrar;
+  // La lista del mes vive plegada: es el detalle que se consulta una vez por
+  // semana, no algo que haya que tener a la vista todo el tiempo.
+  const [verMes, setVerMes] = useState(false);
   const totalCob = Math.max(1, cb.d30.monto + cb.d60.monto + cb.d90.monto);
   return (
     <div className="tb-2" style={{ alignItems: 'start' }}>
@@ -549,12 +587,12 @@ function Compromisos({ d, abrir }: any) {
         {/* La lista es EXACTAMENTE el subconjunto del que habla el encabezado:
             antes enseñaba 4 de 15 y no cuadraba con ninguna cifra de arriba. */}
         {cb.este_mes.n > 0 && (
-          <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid #f3f2f6' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
-              <span style={S.eyebrow}>Antes de que acabe {mesDe(cb.fin_de_mes)}</span>
-              <span style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 800, color: AMBAR }}>{money(cb.este_mes.monto)}</span>
-            </div>
-            {cb.este_mes.items.map((r: any) => (
+          <div style={{ marginTop: 13 }}>
+            <button onClick={() => setVerMes(v => !v)}
+              style={{ border: '1.5px solid #cdc4fb', borderRadius: 9, padding: '9px 14px', background: '#fff', fontSize: '0.72rem', fontWeight: 800, color: MORADO, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
+              {verMes ? 'Ocultar' : `Ver las ${cb.este_mes.n} que caen antes de que acabe ${mesDe(cb.fin_de_mes)}`} · {money(cb.este_mes.monto)}
+            </button>
+            {verMes && cb.este_mes.items.map((r: any) => (
               <div key={r.id} style={S.fila}>
                 <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap', background: '#FEF6E7', color: '#9a6a10', flex: '0 0 auto' }}>
                   {fmtDate(r.fecha)}
@@ -599,24 +637,7 @@ function Tramo({ color, colorTexto, label, n, monto, nota, primero }: any) {
   );
 }
 
-/* ════════════════ 5 · LA CARTERA ════════════════ */
-function Cartera({ d }: any) {
-  const c = d.cartera, sinVender = c.cuentas - c.operando;
-  return (
-    <div style={{ ...S.card, marginBottom: 16 }}>
-      <div style={S.titulo}>Lo que facturan tus clientes<span style={S.der}>últimos 30 días · foto del cron, no depende del mes</span></div>
-      <div style={S.lead}>El dinero que ellos mueven dentro de SACS. No es tuyo, pero es el argumento de cada renovación.</div>
-      <div className="tb-4">
-        <Contador color={MORADO} label="Facturado por la cartera" valor={corto(c.facturacion)} nota={`${c.cuentas} cuentas activas medidas`} />
-        <Contador color={MENTA} valorColor={VERDE} label="Ventas capturadas" valor={Number(c.ventas || 0).toLocaleString('es-MX')} nota="tickets en 30 días" />
-        <Contador color={LILA} valorColor={MORADO} label="Cuentas operando" valor={<>{c.operando}<span style={{ fontSize: '1rem', color: '#a5a2af' }}> de {c.cuentas}</span></>} nota="con ventas en los últimos 30 días" />
-        <Contador color={sinVender ? ROJO : '#c9c7d0'} label="Sin vender" valor={sinVender} nota={sinVender ? 'pagan y no usan: riesgo de baja' : 'todas están vendiendo'} />
-      </div>
-    </div>
-  );
-}
-
-/* ════════════════ 6 · SALUD ════════════════ */
+/* ════════════════ 5 · SALUD ════════════════ */
 function Salud({ d }: any) {
   const s = d.salud;
   return (
@@ -671,4 +692,179 @@ function Metrica({ titulo, valor, explica, color, rosa }: any) {
       <div style={S.ms}>{explica}</div>
     </div>
   );
+}
+
+/* ════════════════ EL DETALLE ════════════════
+   Un solo componente para las seis vistas: todas son "encabezado con la cifra
+   + tabla". Seis modales distintos serían seis formas de leer lo mismo. */
+function Detalle({ d, cual, cerrar, abrir }: any) {
+  const v = vistaDe(d, cual);
+  if (!v) return null;
+  return (
+    <div className="tb-velo" onClick={cerrar} role="dialog" aria-modal="true">
+      <div className="tb-modal tb" onClick={(e: any) => e.stopPropagation()}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #f1f0f5', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div>
+              <div style={S.eyebrow}>{v.titulo}</div>
+              <div style={{ fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1, marginTop: 6, color: v.color }}>{v.cifra}</div>
+              <div style={S.pie}>{v.sub}</div>
+            </div>
+            <button onClick={cerrar} aria-label="Cerrar"
+              style={{ marginLeft: 'auto', border: '1px solid #ececf1', background: '#fff', borderRadius: 9, width: 32, height: 32, fontSize: '1rem', color: '#8a8590', cursor: 'pointer', fontFamily: 'inherit', flex: '0 0 auto' }}>×</button>
+          </div>
+          {v.resumen && v.resumen.length > 0 && (
+            <div className="tb-4" style={{ margin: '14px 0 4px' }}>
+              {v.resumen.map((r: any) => (
+                <div key={r.label} style={{ ...S.mini, borderLeft: `3px solid ${r.color}` }}>
+                  <div style={S.eyebrow}>{r.label}</div>
+                  <div style={{ ...S.mv, fontSize: '1.15rem', color: r.color }}>{r.valor}</div>
+                  <div style={S.ms}>{r.nota}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ padding: '8px 24px 22px' }}>
+          {v.filas.length === 0
+            ? <div style={{ color: '#c9c7d0', fontSize: '0.82rem', padding: '28px 0', textAlign: 'center' }}>Nada que mostrar en este periodo.</div>
+            : <table className="tb-tabla">
+              <thead><tr>{v.cols.map((c: any, i: number) => (
+                <th key={c} style={i === v.cols.length - 1 ? { textAlign: 'right' } : undefined}>{c}</th>
+              ))}</tr></thead>
+              <tbody>{v.filas.map((f: any, i: number) => (
+                <tr key={i} className={f.company_id ? 'cliqueable' : undefined} onClick={f.company_id ? () => abrir(f.company_id) : undefined}>
+                  {f.celdas.map((c: any, j: number) => (
+                    <td key={j} style={j === f.celdas.length - 1
+                      ? { textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }
+                      : j === 0 ? { color: '#8a8590', fontSize: '0.72rem', whiteSpace: 'nowrap' } : undefined}>{c}</td>
+                  ))}
+                </tr>
+              ))}</tbody>
+            </table>}
+          {v.nota && <div style={S.nota}>{v.nota}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const CHIP = (txt: string, col: string) => (
+  <span style={{ fontSize: '0.6rem', fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: col + '1f', color: col, whiteSpace: 'nowrap' }}>{txt}</span>
+);
+const COL_METODO: Record<string, string> = { transferencia: LILA, tarjeta: MENTA, mercadopago: CIELO, efectivo: ORO };
+const ETIQ_ESTADO: Record<string, [string, string]> = {
+  accepted: ['aceptada sin pagar', ORO], sent: ['esperando respuesta', CIELO],
+  parcial: ['pagada a medias', AMBAR], paid: ['pagada', VERDE],
+};
+
+/** Arma la vista pedida. Vive aparte del componente para que el JSX de arriba
+ *  sea una sola forma y no un árbol de condicionales por cada caso. */
+function vistaDe(d: any, cual: string): any {
+  const nombreMes = mesDe(d.periodo.desde);
+  if (cual === 'cobrado') {
+    const c = d.cobrado;
+    return {
+      titulo: `Cobrado en ${nombreMes}`, cifra: money(c.monto), color: MORADO,
+      sub: `${c.n} ${c.n === 1 ? 'pago' : 'pagos'}, del ${fmtDate(d.periodo.desde)} al ${fmtDate(d.periodo.hasta)}. Sin reembolsos ni duplicados.`,
+      resumen: c.metodos.slice(0, 4).map((m: any) => ({
+        label: m.metodo, color: COL_METODO[m.metodo] || '#C9C7D0', valor: money(m.monto),
+        nota: `${m.n} ${m.n === 1 ? 'pago' : 'pagos'} · ${Math.round((m.monto / Math.max(1, c.monto)) * 100)}%`,
+      })),
+      cols: ['Fecha', 'Cliente', 'Concepto', 'Método', 'Monto'],
+      filas: c.items.map((p: any) => ({
+        company_id: p.company_id,
+        celdas: [fmtDate(p.fecha), <b>{p.cliente || '(sin cliente ligado)'}</b>,
+          <span style={{ color: '#8a8590', fontSize: '0.73rem' }}>{p.concepto}</span>,
+          CHIP(p.metodo, COL_METODO[p.metodo] || '#8a8590'), money(p.monto)],
+      })),
+      nota: c.sin_cliente.n > 0
+        ? <>{c.sin_cliente.n} {c.sin_cliente.n === 1 ? 'pago' : 'pagos'} por <b style={{ color: '#3f3b4d' }}>{money(c.sin_cliente.monto)}</b> no {c.sin_cliente.n === 1 ? 'tiene' : 'tienen'} cliente ligado: conviene asignarlos para que cuenten en la ficha de la cuenta.</>
+        : null,
+    };
+  }
+  if (cual === 'mesa') {
+    const m = d.sobre_la_mesa;
+    return {
+      titulo: 'Sobre la mesa hoy', cifra: money(m.total), color: AMBAR,
+      sub: `${m.items.length} cotizaciones vivas. No dependen del periodo: una de hace meses sin responder sigue siendo dinero por cerrar.`,
+      resumen: [
+        { label: 'Aceptadas sin pagar', color: ORO, valor: money(m.aceptadas.monto), nota: `${m.aceptadas.n} · ya dijeron que sí` },
+        { label: 'Sin respuesta', color: CIELO, valor: money(m.enviadas.monto), nota: `${m.enviadas.n} · en manos del cliente` },
+        { label: 'En plática', color: LILA, valor: money(m.oportunidades.monto), nota: `${m.oportunidades.n} oportunidades · no se suman` },
+      ],
+      cols: ['Creada', 'Cotización', 'Estado', 'Esperando', 'Total'],
+      filas: m.items.map((q: any) => {
+        const [txt, col] = ETIQ_ESTADO[q.estado] || [q.estado, '#8a8590'];
+        return {
+          company_id: q.company_id,
+          celdas: [fmtDate(q.creada), <><b>{q.empresa}</b><div style={S.fn}>{q.numero}</div></>, CHIP(txt, col),
+            <span style={{ color: q.espera > 14 ? ROJO : '#8a8590', fontSize: '0.73rem', fontWeight: q.espera > 14 ? 700 : 400 }}>{q.espera} días</span>,
+            money(q.total)],
+        };
+      }),
+      nota: m.oportunidades.con_cotizacion > 0
+        ? <>Las {m.oportunidades.n} oportunidades en plática valen {money(m.oportunidades.monto)}, pero {m.oportunidades.con_cotizacion} ya salieron en estas cotizaciones: por eso no se suman al total de arriba.</>
+        : null,
+    };
+  }
+  if (cual === 'generado') {
+    const g = d.generado;
+    return {
+      titulo: `Generado en ${nombreMes}`, cifra: money(g.monto), color: MORADO,
+      sub: `${g.n} ${g.n === 1 ? 'cotización aceptada' : 'cotizaciones aceptadas'} en el periodo. El cliente ya dijo que sí, se haya cobrado o no.`,
+      cols: ['Aceptada', 'Cotización', 'Estado', 'Total'],
+      filas: g.items.map((q: any) => {
+        const [txt, col] = ETIQ_ESTADO[q.estado] || [q.estado, '#8a8590'];
+        return {
+          company_id: q.company_id,
+          celdas: [fmtDate(q.aceptada || q.creada), <><b>{q.empresa}</b><div style={S.fn}>{q.numero}</div></>, CHIP(txt, col), money(q.total)],
+        };
+      }),
+    };
+  }
+  if (cual === 'clientes') {
+    const it = d.contadores.items.clientes_nuevos;
+    return {
+      titulo: `Clientes nuevos en ${nombreMes}`, cifra: String(d.contadores.clientes_nuevos), color: VERDE,
+      sub: `Licencias que arrancaron en el periodo, por ${money(it.reduce((a: number, x: any) => a + x.arr, 0))} de ARR.`,
+      cols: ['Arrancó', 'Cliente', 'Plan', 'Ciclo', 'ARR'],
+      filas: it.map((x: any) => ({
+        company_id: x.company_id,
+        celdas: [fmtDate(x.fecha), <b>{x.cliente}</b>, <span style={{ color: '#8a8590', fontSize: '0.73rem' }}>{x.plan}</span>, CHIP(x.ciclo, LILA), money(x.arr)],
+      })),
+    };
+  }
+  if (cual === 'leads') {
+    const it = d.contadores.items.leads;
+    return {
+      titulo: `Leads nuevos en ${nombreMes}`, cifra: String(d.contadores.leads), color: AZUL,
+      sub: 'Empresas que entraron en el periodo y todavía no compran.',
+      cols: ['Entró', 'Empresa', 'Estado'],
+      filas: it.map((x: any) => ({
+        company_id: x.company_id,
+        celdas: [fmtDate(x.fecha), <b>{x.cliente}</b>, CHIP(x.estado, CIELO)],
+      })),
+      nota: <>De estos, {d.cohorte.pasos[1].n} {d.cohorte.pasos[1].n === 1 ? 'tuvo' : 'tuvieron'} reunión y {d.cohorte.pasos[2].n} {d.cohorte.pasos[2].n === 1 ? 'recibió' : 'recibieron'} cotización. Ver el recorrido completo en el tablero.</>,
+    };
+  }
+  if (cual === 'bajas' || cual === 'ampliaciones') {
+    const esBaja = cual === 'bajas';
+    const it = esBaja ? d.recurrente.movimientos.bajas : d.recurrente.movimientos.ampliaciones;
+    const total = it.reduce((a: number, x: any) => a + x.arr, 0);
+    return {
+      titulo: esBaja ? `Bajas de ${nombreMes}` : `Ampliaciones de ${nombreMes}`,
+      cifra: money(Math.abs(total)), color: esBaja ? ROJO : MORADO,
+      sub: esBaja
+        ? `${it.length} ${it.length === 1 ? 'cancelación' : 'cancelaciones'} de ARR en el periodo. El motivo se captura en la ficha de cada cuenta.`
+        : `${it.length} ${it.length === 1 ? 'ampliación' : 'ampliaciones'} de clientes que ya tenías. Es el crecimiento que no cuesta conseguir.`,
+      cols: ['Fecha', 'Cliente', 'ARR'],
+      filas: it.map((x: any) => ({
+        company_id: x.company_id,
+        celdas: [fmtDate(x.fecha), <b>{x.cliente}</b>,
+          <span style={{ color: esBaja ? ROJO : VERDE }}>{x.arr >= 0 ? '+' : ''}{money(x.arr)}</span>],
+      })),
+    };
+  }
+  return null;
 }
