@@ -27,7 +27,10 @@
 export const WRAP = {
   maxWidth: 1560,
   margin: '0 auto',
-  padding: 24,
+  /* Más aire a los lados que arriba, a propósito: el margen lateral es el que
+     se ve y el que separa del menú, y el vertical solo empuja el contenido
+     fuera de la primera pantalla. 32 y 24 en vez de 24 parejo. */
+  padding: '24px 32px',
   width: '100%',
   boxSizing: 'border-box',
 } as const;
@@ -37,7 +40,7 @@ export const WRAP = {
 export const WRAP_SIN_AIRE = {
   maxWidth: 1560,
   margin: '0 auto',
-  padding: '0 24px',
+  padding: '0 32px',
   width: '100%',
   boxSizing: 'border-box',
 } as const;
