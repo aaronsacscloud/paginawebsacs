@@ -46,6 +46,18 @@ const horaCorta = (d?: string | null) => {
   return Number.isFinite(t) ? new Date(t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '';
 };
 
+import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type EstatusLead } from '../../../lib/crm/estatus-lead';
+
+// Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
+// mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
+const FUNNEL = [
+  { g: 'pendiente', l: 'Sin tocar' },
+  { g: 'activo', l: 'Respondieron' },
+  { g: 'comprometido', l: 'Comprometidos' },
+  { g: 'frio', l: 'No contestan' },
+  { g: 'fuera', l: 'Descartados' },
+] as const;
+
 const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
   lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
@@ -144,6 +156,7 @@ export default function LeadsTab() {
   // Lo nuevo primero. Es el orden natural de una bandeja: lo de hoy arriba.
   const [orden, setOrden] = useState<'reciente' | 'frio'>('reciente');
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
+  const [estatusF, setEstatusF] = useState('');   // '' | 'g:<grupo>' | '<estatus fino>'
   const [panelFiltros, setPanelFiltros] = useState(false);
   // El menú de la fila se ancla con coordenadas de pantalla: dentro de una
   // tabla con scroll, un menú en flujo se recorta contra el borde.
@@ -154,12 +167,13 @@ export default function LeadsTab() {
   const [importTikTok, setImportTikTok] = useState(false);
 
   function exportar() {
-    const cols = ['Llegó', 'Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Sin contacto (días)'];
+    const cols = ['Llegó', 'Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Estatus', 'Sin contacto (días)'];
     const filas = lista.map((c: any) => [
       diaLocal(c.created_at),
       [c.nombre, c.apellido].filter(Boolean).join(' '), c.companies?.nombre || '', c.email || '',
       c.whatsapp || c.telefono || '', origenDe(origenDeRegistro(c)).l,
       c.sucursales_interes || c.companies?.sucursales || '', (ETAPAS[c.lifecycle_stage] || ETAPAS.lead).l,
+      pintaEstatus(c.estatus_lead, c.retenido_hasta).label,
       dias(c.last_contact_at || c.created_at) ?? '',
     ]);
     const csv = [cols, ...filas].map(f => f.map((x: any) => `"${String(x).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -176,7 +190,7 @@ export default function LeadsTab() {
   };
   useEffect(() => { cargar(); }, []);
 
-  const lista = useMemo(() => {
+  const listaBase = useMemo(() => {
     let r = (rows || []).filter((c: any) => c.lifecycle_stage !== 'cliente' || etapa === 'todos');
     if (etapa === 'abiertos') r = r.filter((c: any) => ABIERTOS.includes(c.lifecycle_stage));
     // Leads que ya son clientes, que lo fueron, o cuya empresa se llama igual
@@ -219,6 +233,19 @@ export default function LeadsTab() {
       // Lo más frío arriba: el lead sin contacto es la fuga más cara.
       : (dias(b.last_contact_at || b.created_at) || 0) - (dias(a.last_contact_at || a.created_at) || 0));
   }, [rows, etapa, origen, busca, cuando, desde, hasta, orden, sinContacto]);
+
+  // El estatus filtra AL FINAL para que los chips del funnel cuenten sobre la
+  // lista ya filtrada por pestaña/canal/búsqueda: "Respondieron 12" con TikTok
+  // puesto son los 12 de TikTok, igual que hacen los contadores de pestañas.
+  const eDe = (c: any): EstatusLead => (c.estatus_lead || 'nuevo') as EstatusLead;
+  const lista = useMemo(() => !estatusF ? listaBase
+    : estatusF.startsWith('g:') ? listaBase.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2))
+    : listaBase.filter((c: any) => eDe(c) === estatusF), [listaBase, estatusF]);
+  const conteosFunnel = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const c of listaBase) { const g = GRUPO_DE[eDe(c)] || 'pendiente'; out[g] = (out[g] || 0) + 1; }
+    return out;
+  }, [listaBase]);
 
   // Los contadores de las pestañas cuentan con los OTROS filtros ya puestos:
   // "Nuevos 71" con el canal en TikTok tiene que decir cuántos nuevos de TikTok
@@ -266,9 +293,10 @@ export default function LeadsTab() {
     cuando !== 'todo' && { k: 'cuando', l: etiquetaCuando(), quitar: () => { setCuando('todo'); setDesde(''); setHasta(''); } },
     origen !== 'todo' && { k: 'origen', l: origen === 'sin_definir' ? 'Sin definir' : origenDe(origen).l, quitar: () => setOrigen('todo') },
     sinContacto && { k: 'sc', l: `Sin contacto +${sinContacto} d`, quitar: () => setSinContacto('') },
+    (estatusF && !estatusF.startsWith('g:')) && { k: 'est', l: `Estatus: ${ESTATUS_LABEL[estatusF as EstatusLead] || estatusF}`, quitar: () => setEstatusF('') },
   ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
   const nFiltros = chips.length;
-  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); };
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); };
 
   if (rows === null) return <Cargando texto="Cargando leads…" />;
 
@@ -427,6 +455,30 @@ export default function LeadsTab() {
             })}
           </div>
 
+          {/* El funnel en chips: la 2ª dimensión del lead (estatus operativo,
+              derivado de hechos) sobre la lista que ya está filtrada. Un click
+              filtra, otro quita. El detalle fino vive en Filtros. */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+            {FUNNEL.map(f => {
+              const on = estatusF === `g:${f.g}`;
+              const n = conteosFunnel[f.g] || 0;
+              const col = COLOR_GRUPO[f.g];
+              return (
+                <button key={f.g} onClick={() => setEstatusF(on ? '' : `g:${f.g}`)} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px',
+                  borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem',
+                  fontWeight: on ? 800 : 600, whiteSpace: 'nowrap',
+                  border: `1px solid ${on ? col.tinta : '#e6e5ec'}`,
+                  background: on ? col.fondo : '#fff', color: on ? col.tinta : n === 0 ? '#c4c4cc' : '#5c5966',
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 999, background: col.tinta, opacity: n === 0 && !on ? .25 : .8 }} />
+                  {f.l}
+                  <span style={{ fontWeight: 800, fontSize: '0.68rem', color: on ? col.tinta : n === 0 ? '#c4c4cc' : '#8a8a92' }}>{n}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
               creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
               Lo aplicado se ve en pastillas que se quitan con la ✕. */}
@@ -486,6 +538,12 @@ export default function LeadsTab() {
                       <option value="sin_definir">Sin definir</option>
                     </select>
 
+                    <div style={S.fk}>Estatus del lead</div>
+                    <select value={estatusF.startsWith('g:') ? '' : estatusF} onChange={e => setEstatusF(e.target.value)} style={S.fsel}>
+                      <option value="">Cualquiera</option>
+                      {ESTATUS_LEAD.map(e => <option key={e} value={e}>{ESTATUS_LABEL[e]}</option>)}
+                    </select>
+
                     <div style={S.fk}>Sin contacto</div>
                     <select value={sinContacto} onChange={e => setSinContacto(e.target.value)} style={S.fsel}>
                       <option value="">Cualquiera</option>
@@ -536,7 +594,7 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
                   <th style={{ ...S.th, width: 100 }}>Etapa</th>
-                  <th style={{ ...S.th, width: 90 }}>Sin contacto</th>
+                  <th style={{ ...S.th, width: 118 }}>Estatus</th>
                   <th style={{ ...S.th, width: 44 }} />
                 </tr>
               </thead>
@@ -598,10 +656,20 @@ export default function LeadsTab() {
                       <td style={S.td}>{c.sucursales_interes || c.companies?.sucursales || <span style={{ color: '#c9c7d0' }}>—</span>}</td>
                       <td style={S.td}><span style={S.tag(et.bg, et.fg)}>{et.l}</span></td>
                       <td style={S.td}>
-                        {d == null ? <span style={{ color: '#c9c7d0' }}>—</span>
-                          : <span style={S.tag(d > 14 ? '#FEF0EF' : d > 7 ? '#FEF6E7' : '#EAF8F2', d > 14 ? '#C0554E' : d > 7 ? '#9a6a10' : '#1E8A63')}>
-                              {d === 0 ? 'hoy' : `${d} d`}
-                            </span>}
+                        {(() => {
+                          // La pastilla del estatus operativo (la misma del
+                          // inbox) y, debajo, los días sin contacto: qué tan
+                          // viva está la relación y hace cuánto no la tocamos.
+                          const pe = pintaEstatus(c.estatus_lead, c.retenido_hasta);
+                          return (
+                            <div>
+                              <span style={S.tag(pe.fondo, pe.tinta)}>{pe.label}</span>
+                              {d != null && d > 0 && (
+                                <div style={{ fontSize: '0.62rem', color: d > 14 ? '#C0554E' : '#a5a2af', marginTop: 3 }}>{d} d sin contacto</div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       {/* Las acciones viven en el menú de tres puntos, como en
                           Cotizaciones y Cobranza. Dos botones sueltos se comían
