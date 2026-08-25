@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { useLifecycle, lifecycleDe } from '../../../../lib/crm/lifecycle';
+import { pintaEstatus } from '../../../../lib/crm/estatus-lead';
 import { useCatalogoEtiquetas } from '../Etiquetas';
 import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
@@ -205,6 +206,10 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const empresa = d360?.company || conv?.companies || null;
   const nombre = contactoBase ? `${contactoBase.nombre || ''} ${contactoBase.apellido || ''}`.trim() : null;
   const etapa = lifecycleDe(contactoBase?.lifecycle_stage);
+  // Leads v2: la pastilla del estatus operativo (solo tiene sentido en venta).
+  const _est = (contacto as any)?.estatus_lead ?? (conv as any)?._extra?.estatus_lead;
+  const _ret = (contacto as any)?.retenido_hasta ?? (conv as any)?._extra?.retenido_hasta;
+  const estatusPill = _est ? pintaEstatus(_est, _ret) : null;
   const subs: any[] = (d360?.subscriptions || []).filter(Boolean);
   const deals: any[] = (dCon?.deals || []).filter((d: any) => !['ganado', 'perdido', 'won', 'lost'].includes(String(d.stage || d.etapa || '').toLowerCase()));
   const quotes: any[] = (d360?.quotes || dCon?.quotes || []).slice(0, 5);
@@ -250,6 +255,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           {empresa || contactoBase ? (esCliente ? 'Cliente' : 'Lead') : 'Desconocido'}
         </span>
         {etapa && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, color: C.g700 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: etapa.fg, opacity: .65 }} />{etapa.label}</span>}
+        {!esCliente && estatusPill && <span title="Estatus operativo: se deriva de los hechos (mensajes, llamadas, reuniones, cotizaciones)" style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.02em', borderRadius: 999, padding: '3px 10px', background: estatusPill.fondo, color: estatusPill.tinta }}>{estatusPill.label}</span>}
         {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
       </div>
 

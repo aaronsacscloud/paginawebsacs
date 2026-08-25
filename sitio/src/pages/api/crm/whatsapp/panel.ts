@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const [{ data: empresa }, { data: contacto }] = await Promise.all([
     companyId ? supabase.from('companies').select('id, nombre, nombre_comercial, plan, mrr, estado_cuenta, fecha_renovacion, health_score, health_factors, last_payment_at, soporte_abiertos, soporte_estancado, sacs_account, uso_sacs, actividad, ultima_venta_at, dias_sin_venta, propiedades, sucursales, giro, tipo_cuenta, pipeline_stage').eq('id', companyId).maybeSingle() : Promise.resolve({ data: null as any }),
-    contactId ? supabase.from('contacts').select('id, nombre, apellido, email, created_at, visitor_id, resumen_ia, resumen_ia_at, propiedades, next_followup, proximo_paso, owner_id, lead_score, intencion, calificacion').eq('id', contactId).maybeSingle() : Promise.resolve({ data: null as any }),
+    contactId ? supabase.from('contacts').select('id, nombre, apellido, email, created_at, visitor_id, resumen_ia, resumen_ia_at, propiedades, next_followup, proximo_paso, owner_id, lead_score, intencion, calificacion, estatus_lead, retenido_hasta').eq('id', contactId).maybeSingle() : Promise.resolve({ data: null as any }),
   ]);
 
   // ── 13) salud ──

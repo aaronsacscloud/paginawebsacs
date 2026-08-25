@@ -1,3 +1,4 @@
+import { ESTATUS_VALORES } from '../crm/estatus-lead';
 // WHATSAPP · Filtros de vistas del inbox: catálogo de campos del CRM +
 // evaluador. Compartido entre el API (server) y el front (builder/preview) —
 // sin React, sin supabase: puro.
@@ -75,6 +76,13 @@ export function catalogoCampos(din: {
     // La señal nueva: cuándo fue la última vez que ESTA persona navegó el sitio.
     // "Visitó la web hace menos de 7 días y no ha comprado" es LA vista de venta.
     { id: 'visita_web', label: 'Última visita a la web', grupo: 'Lead', ops: OPS.hace, valores: [] },
+    // ── Leads v2: el estatus operativo y el teléfono ──
+    { id: 'estatus', label: 'Estatus del lead', grupo: 'Lead', ops: OPS.es, valores: ESTATUS_VALORES },
+    { id: 'tuvo_llamada', label: 'Tuvo llamada', grupo: 'Lead', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
+    { id: 'tiene_minuta', label: 'Con minuta de llamada', grupo: 'Lead', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
+    { id: 'ultima_llamada', label: 'Última llamada', grupo: 'Lead', ops: OPS.hace, valores: [] },
+    { id: 'min_llamadas', label: 'Minutos al teléfono (total)', grupo: 'Lead', ops: OPS.num, valores: [] },
+    { id: 'retenido', label: 'Pidió tiempo (pausa)', grupo: 'Lead', ops: OPS.esSolo, valores: [{ v: 'activo', l: 'En pausa' }, { v: 'vencido', l: 'Pausa vencida' }, { v: 'no', l: 'Sin pausa' }] },
     { id: 'sucursales', label: 'Sucursales', grupo: 'Cliente', ops: [...OPS.num, { id: 'igual', label: 'igual a' }], valores: [] },
     { id: 'giro', label: 'Giro', grupo: 'Cliente', ops: OPS.es, valores: din.giros || [] },
     { id: 'con_cuenta', label: 'Cuenta SACS ligada', grupo: 'Cliente', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
@@ -202,6 +210,27 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
     }
     case 'giro': ok = (fila._extra?.giro || '') === c.valor; break;
     case 'con_cuenta': ok = (c.valor === 'si') === !!fila._extra?.sacs_account; break;
+    case 'estatus': ok = (fila._extra?.estatus_lead || 'nuevo') === c.valor; break;
+    case 'tuvo_llamada': ok = (c.valor === 'si') === ((fila._extra?.llamadas_n || 0) > 0); break;
+    case 'tiene_minuta': ok = (c.valor === 'si') === !!fila._extra?.llamada_con_minuta; break;
+    case 'ultima_llamada': {
+      const h = parseHoras(c.valor); if (h == null) return true;
+      const f = fila._extra?.ultima_llamada_at;
+      if (!f) return c.op === 'hace_mas';   // nunca llamamos = hace infinito
+      const edad = (ahora - new Date(f).getTime()) / 3600e3;
+      return c.op === 'hace_menos' ? edad < h : edad > h;
+    }
+    case 'min_llamadas': {
+      const n = parseFloat(c.valor); if (isNaN(n)) return true;
+      const v = (fila._extra?.llamadas_seg || 0) / 60;
+      return c.op === 'mayor' ? v > n : v < n;
+    }
+    case 'retenido': {
+      const f = fila._extra?.retenido_hasta;
+      const activo = !!f && new Date(f).getTime() > ahora;
+      ok = c.valor === 'activo' ? activo : c.valor === 'vencido' ? (!!f && !activo) : !f;
+      break;
+    }
     default: return true;
   }
   return neg ? !ok : ok;

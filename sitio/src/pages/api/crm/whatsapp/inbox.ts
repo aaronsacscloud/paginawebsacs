@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
-  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
+  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
   const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
@@ -83,6 +83,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     owner_id: c.contacts?.owner_id || null, dias_sin_venta: c.companies?.dias_sin_venta ?? null,
     ultima_venta_at: c.companies?.ultima_venta_at || null, last_payment_at: c.companies?.last_payment_at || null,
     health_score: c.companies?.health_score ?? null,
+    estatus_lead: c.contacts?.estatus_lead || null, respondio_at: c.contacts?.respondio_at || null,
+    retenido_hasta: c.contacts?.retenido_hasta || null,
     ultimo_saliente_at: c.ultimo_saliente_at || null, cierre_categoria: c.cierre_categoria || null,
     etiquetas: [] as string[], etiquetas_conv: [] as string[],
   });
@@ -144,7 +146,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   // Contactos SIN conversación (filas virtuales) cuando la vista los pide.
   if (vista && (vista.modo === 'todas' || vista.modo === 'solo_contactos')) {
     const { data: cts } = await supabase.from('contacts')
-      .select('id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, whatsapp, telefono, company_id, companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)')
+      .select('id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta, whatsapp, telefono, company_id, companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)')
       .is('archived_at', null).limit(600);
     for (const ct of cts || []) {
       const clave = `ct:${ct.id}`;
@@ -215,6 +217,26 @@ export const GET: APIRoute = async ({ request, url }) => {
       const mapa = new Map<string, string>();
       for (const v of vis || []) if (v.contact_id && !mapa.has(v.contact_id)) mapa.set(v.contact_id, v.created_at);
       for (const c of todas) if (c.contact_id) c._extra.ultima_visita_web = mapa.get(c.contact_id) || null;
+    }
+  }
+
+  // Llamadas (Leads v2): solo cuando la vista pregunta por el teléfono.
+  if (vista?.condiciones?.some(c => ['tuvo_llamada', 'tiene_minuta', 'ultima_llamada', 'min_llamadas'].includes(c.campo))) {
+    const ids = todas.map(c => c.wa_id).filter(Boolean);
+    const { data: ll } = ids.length
+      ? await supabase.from('wa_llamadas').select('conversation_id, created_at, duracion_seg, minuta').in('conversation_id', ids)
+      : { data: [] as any[] };
+    const mapa = new Map<string, any>();
+    for (const l of ll || []) {
+      const a = mapa.get(l.conversation_id) || { n: 0, seg: 0, minuta: false, ult: null as string | null };
+      a.n++; a.seg += l.duracion_seg || 0; a.minuta = a.minuta || !!l.minuta;
+      if (!a.ult || l.created_at > a.ult) a.ult = l.created_at;
+      mapa.set(l.conversation_id, a);
+    }
+    for (const c of todas) {
+      const a = c.wa_id ? mapa.get(c.wa_id) : null;
+      c._extra.llamadas_n = a?.n || 0; c._extra.llamadas_seg = a?.seg || 0;
+      c._extra.llamada_con_minuta = a?.minuta || false; c._extra.ultima_llamada_at = a?.ult || null;
     }
   }
 
