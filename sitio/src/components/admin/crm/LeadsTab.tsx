@@ -418,7 +418,7 @@ export default function LeadsTab() {
               return (
                 <button key={f.g} onClick={() => { setEstatusF(`g:${f.g}`); setEtapa('abiertos'); setVista('lista'); }}
                   title={`Ver los ${n} en la lista`}
-                  style={{ flex: `${Math.max(n, 1)} 1 0`, minWidth: 92, border: 'none', borderLeft: i ? '1px solid #ececec' : 'none',
+                  style={{ flex: `${Math.max(n, 1)} 1 0`, minWidth: 128, border: 'none', borderLeft: i ? '1px solid #ececec' : 'none',
                     background: '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: '10px 12px 12px' }}>
                   <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#8a8a92', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                     <span style={{ width: 7, height: 7, borderRadius: 999, background: col.tinta, opacity: .8 }} />{f.l}
