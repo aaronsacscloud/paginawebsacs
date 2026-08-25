@@ -97,7 +97,7 @@ function pestanaDe(c: any): string | null {
   // lead_calificado no se toca, solo dónde se enseña).
   const marcaR = c.propiedades?.rezagado_marcado;
   const retocado = marcaR && c.last_contact_at && Date.parse(c.last_contact_at) > Date.parse(marcaR);
-  if (marcaR && !retocado && eDeLead(c) !== 'nuevo') return 'rezagados';
+  if (marcaR && !retocado) return 'rezagados';
   if (c.lifecycle_stage === 'lead_calificado') return 'calificados';
   // Rezagado: frío (sin señal viva), llegó hace +14 días y nadie lo ha tocado
   // en +14 días. Sale solo de aquí en cuanto se le da seguimiento real.
