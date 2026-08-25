@@ -7,6 +7,7 @@ import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { ligarVisitasPrevias } from '../../../lib/email/senales';
 import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../../lib/atribucion-marketing';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
@@ -376,6 +377,9 @@ export const POST: APIRoute = async ({ request }) => {
       updates.utm_campaign = utm.utm_campaign;
     }
     if (!existingContact.visitor_id && atribucion?.vid) updates.visitor_id = atribucion.vid;
+    // Recuperar lo que navegó ANTES de agendar: esas visitas anónimas son el
+    // recorrido que lo trajo hasta la demo.
+    if (atribucion?.vid) { try { await ligarVisitasPrevias(atribucion.vid, existingContact.id); } catch { /* medir no bloquea */ } }
     if (!existingContact.fuente_detalle && bloqueAttr.primer_toque?.landing) {
       updates.fuente_detalle = bloqueAttr.primer_toque.landing;
     }
@@ -429,6 +433,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
     contact_id = newContact.id;
     isNewContact = true;
+    // El recorrido anónimo previo (páginas que vio antes de animarse a agendar)
+    // se le cuelga a su ficha nueva.
+    if (atribucion?.vid) { try { await ligarVisitasPrevias(atribucion.vid, newContact.id); } catch { /* medir no bloquea */ } }
   }
 
   // 5. Find or create company

@@ -11,7 +11,7 @@ import EtapasModal from './EtapasModal';
 import AjustesWA from './AjustesWA';
 import NumeroWA from './NumeroWA';
 
-type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia';
+type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia' | 'duplicados';
 
 const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'plantillas', label: 'Plantillas de Meta', desc: 'Mensajes aprobados para abrir conversación' },
@@ -23,6 +23,7 @@ const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'automatizacion', label: 'Automatización', desc: 'Bienvenida, horario, asignación' },
   { id: 'numero', label: 'Número y pagos', desc: 'Salud, perfil y facturación de Meta' },
   { id: 'telefonia', label: 'Telefonía', desc: 'Llamadas normales con número de México' },
+  { id: 'duplicados', label: 'Duplicados', desc: 'Contactos repetidos, para fusionar' },
 ];
 
 export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
@@ -58,6 +59,7 @@ export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
         {sec === 'automatizacion' && <AjustesWA inline />}
         {sec === 'numero' && (<><PagosMeta /><NumeroWA /></>)}
         {sec === 'telefonia' && <Telefonia />}
+        {sec === 'duplicados' && <Duplicados />}
       </div>
     </div>
   );
@@ -254,6 +256,63 @@ function PagosMeta() {
         </span>
       </span>
       <a href={url} target="_blank" rel="noreferrer" style={{ ...S.btnP, textDecoration: 'none', whiteSpace: 'nowrap' }}>Abrir facturación de Meta ↗</a>
+    </div>
+  );
+}
+
+// ═════════════ Duplicados: detectar a un clic, fusionar con dos ═════════════
+function Duplicados() {
+  const [pares, setPares] = useState<any[] | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [fusionando, setFusionando] = useState<string | null>(null);
+  const buscar = async () => {
+    setCargando(true); setMsg('');
+    const j = await fetch('/api/crm/contactos-duplicados').then(r => r.json()).catch(e => ({ error: String(e) }));
+    setCargando(false);
+    if (j?.error) { setMsg(j.error); return; }
+    setPares(j.pares || []);
+  };
+  const fusionar = async (keep: any, merge: any, par: any) => {
+    if (!confirm(`Conservar a "${keep.nombre}" y fusionarle todo lo de "${merge.nombre}" (mensajes, cotizaciones, reuniones, visitas). La ficha de "${merge.nombre}" se archiva. ¿Seguro?`)) return;
+    setFusionando(par.llave);
+    const r = await fetch('/api/crm/contacts/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keep_id: keep.id, merge_id: merge.id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setFusionando(null);
+    if (r?.error) { setMsg(r.error); return; }
+    setPares(p => (p || []).filter(x => x.llave !== par.llave));
+  };
+  const lado = (x: any, otro: any, par: any) => (
+    <div style={{ flex: 1, minWidth: 0, border: '1px solid #efedf6', borderRadius: 9, padding: '8px 10px' }}>
+      <b style={{ fontSize: 12.5, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</b>
+      <span style={{ fontSize: 10.5, color: '#888', display: 'block', lineHeight: 1.5 }}>
+        {x.empresa || 'sin empresa'}{x.tel ? ` · ${x.tel}` : ''}{x.email ? ` · ${x.email}` : ''}
+        <br />{x.msjs} mensaje{x.msjs === 1 ? '' : 's'} · desde {x.creado}
+      </span>
+      <button disabled={fusionando === par.llave} onClick={() => fusionar(x, otro, par)}
+        style={{ marginTop: 6, border: '1px solid #d9d3f8', background: '#F6F5FE', color: '#5B4BD6', borderRadius: 7, padding: '4px 10px', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        Conservar este</button>
+    </div>
+  );
+  return (
+    <div>
+      <Cabecera titulo="Contactos duplicados" texto="La misma persona con dos fichas parte su historial en dos. El detector busca por teléfono, correo y nombre+empresa; TÚ decides qué ficha sobrevive — nada se fusiona solo."
+        accion={<button style={S.btnP} onClick={buscar} disabled={cargando}>{cargando ? <Corazones size={9} color="#fff" /> : pares ? 'Buscar de nuevo' : 'Buscar duplicados'}</button>} />
+      {msg && <Aviso tono="malo">{msg}</Aviso>}
+      {pares === null && !cargando && <Vacio titulo="Sin buscar todavía" texto="El análisis corre solo cuando tú lo pides: pulsa «Buscar duplicados»." />}
+      {pares !== null && !pares.length && <Vacio titulo="Sin duplicados" texto="Ningún par de contactos comparte teléfono, correo, ni nombre con la misma empresa." />}
+      {(pares || []).map((p: any) => {
+        p.llave = p.llave || `${p.a_id}|${p.b_id}`;
+        const a = { id: p.a_id, nombre: p.a_nombre, empresa: p.a_empresa, tel: p.a_tel, email: p.a_email, msjs: p.a_msjs, creado: p.a_creado };
+        const b = { id: p.b_id, nombre: p.b_nombre, empresa: p.b_empresa, tel: p.b_tel, email: p.b_email, msjs: p.b_msjs, creado: p.b_creado };
+        return (
+          <div key={p.llave} style={{ ...S.card, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, background: p.confianza >= 90 ? '#FEF0EF' : '#FFF4E5', color: p.confianza >= 90 ? '#C0554E' : '#9a6a10', borderRadius: 999, padding: '2px 9px' }}>{p.motivo} · {p.confianza}%</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>{lado(a, b, p)}{lado(b, a, p)}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }

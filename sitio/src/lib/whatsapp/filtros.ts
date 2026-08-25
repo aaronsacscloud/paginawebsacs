@@ -72,6 +72,9 @@ export function catalogoCampos(din: {
     // TODO el CRM se mide en ARR. El id 'arr' compara mrr×12; 'mrr' sigue
     // existiendo (oculto) para no romper las vistas guardadas con ese campo.
     { id: 'arr', label: 'ARR (MXN/año)', grupo: 'Cliente', ops: OPS.num, valores: [] },
+    // La señal nueva: cuándo fue la última vez que ESTA persona navegó el sitio.
+    // "Visitó la web hace menos de 7 días y no ha comprado" es LA vista de venta.
+    { id: 'visita_web', label: 'Última visita a la web', grupo: 'Lead', ops: OPS.hace, valores: [] },
     { id: 'sucursales', label: 'Sucursales', grupo: 'Cliente', ops: [...OPS.num, { id: 'igual', label: 'igual a' }], valores: [] },
     { id: 'giro', label: 'Giro', grupo: 'Cliente', ops: OPS.es, valores: din.giros || [] },
     { id: 'con_cuenta', label: 'Cuenta SACS ligada', grupo: 'Cliente', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }] },
@@ -123,6 +126,13 @@ export function cumpleCondicion(fila: any, c: Condicion): boolean {
       const edad = (ahora - new Date(fila._extra.creado).getTime()) / 3600e3;
       ok = c.op === 'hace_menos' ? edad < h : edad > h;
       return ok;   // hace_* no usa neg
+    }
+    case 'visita_web': {
+      const h = parseHoras(c.valor); if (h == null) return true;
+      const ult = fila._extra?.ultima_visita_web;
+      if (!ult) return c.op === 'hace_mas';   // nunca visitó = "hace más de X" siempre
+      const edad = (ahora - new Date(ult).getTime()) / 3600e3;
+      return c.op === 'hace_menos' ? edad < h : edad > h;
     }
     case 'ultima_actividad': {
       const h = parseHoras(c.valor); if (h == null) return true;

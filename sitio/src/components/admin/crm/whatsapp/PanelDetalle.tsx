@@ -265,7 +265,9 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             ['Interacción', hilo?.mensajes?.length
               ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}${conv?.ultimo_mensaje_at ? ` · ${haceCuanto(conv.ultimo_mensaje_at)}` : ''}`
               : (timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : null)],
-            ['Visitas web', ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],
+            ['Visitas web', ctx?.web?.en_vivo
+              ? `● AHORA en ${ctx.web.en_vivo}`
+              : ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],
           ].map(([et, v]: any, i: number) => (
             <div key={et} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '3px 0', borderTop: i ? `1px solid ${C.g50}` : 'none' }}>
               <span style={{ fontSize: 10, color: C.g400, width: 78, flexShrink: 0 }}>{et}</span>
@@ -438,6 +440,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </Seccion>
         ) : null;
       })()}
+      {contactoBase && <ResumenIA contactId={contactoBase.id} inicial={contacto?.resumen_ia} inicialAt={contacto?.resumen_ia_at} />}
       {(ctx?.llamadas || []).some((l: any) => l.minuta) && (
         <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta).length} abiertaDefault>
           {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
@@ -974,6 +977,49 @@ function MinutaPanel({ l }: { l: any }) {
       </button>
       {abierta && <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 10px', fontSize: 11.5, color: C.g700, lineHeight: 1.55, whiteSpace: 'pre-wrap', maxHeight: 260, overflowY: 'auto' }}>{String(l.minuta).replace(/^## /gm, '').replace(/^- /gm, '• ')}</div>}
       {l.siguiente_paso && <div style={{ borderTop: `1px solid ${C.g100}`, background: C.moradoAgua, padding: '5px 10px', fontSize: 10.5, color: C.moradoTinta }}><b>Siguiente:</b> {l.siguiente_paso}</div>}
+    </div>
+  );
+}
+
+
+/** Resumen de la relación, generado SOLO cuando el usuario lo pide. */
+function ResumenIA({ contactId, inicial, inicialAt }: { contactId: string; inicial?: string | null; inicialAt?: string | null }) {
+  const [resumen, setResumen] = useState<string | null>(inicial || null);
+  const [at, setAt] = useState<string | null>(inicialAt || null);
+  const [abierto, setAbierto] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setResumen(inicial || null); setAt(inicialAt || null); setAbierto(false); }, [contactId]);
+  const generar = async () => {
+    setCargando(true); setMsg('');
+    const r = await fetch('/api/crm/contacts/resumen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setCargando(false);
+    if (r?.error) { setMsg(r.error); return; }
+    setResumen(r.resumen); setAt(r.at); setAbierto(true);
+  };
+  return (
+    <div style={{ margin: '10px 16px 0', borderRadius: 12, border: `1px solid ${C.g100}`, borderLeft: `3px solid ${C.morado}`, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 12 }}>Resumen de la relación</b>
+          <span style={{ display: 'block', fontSize: 10, color: C.g400 }}>
+            {cargando ? 'Leyendo todo el historial…' : at ? `Generado ${fecha(at)}` : 'Dos años de historia en 30 segundos'}
+          </span>
+        </span>
+        {resumen && !cargando && (
+          <button onClick={() => setAbierto(a => !a)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>{abierto ? 'Ocultar' : 'Leer'}</button>
+        )}
+        <button onClick={generar} disabled={cargando}
+          style={{ border: 'none', borderRadius: 7, padding: '5px 11px', background: cargando ? C.g100 : C.morado, color: cargando ? C.g400 : '#fff', fontSize: 11, fontWeight: 700, cursor: cargando ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+          {cargando ? <Corazones size={8} color={C.g400} /> : resumen ? 'Actualizar' : 'Generar'}
+        </button>
+      </div>
+      {msg && <div style={{ padding: '0 12px 8px', fontSize: 11, color: C.rojo700 }}>{msg}</div>}
+      {abierto && resumen && (
+        <div style={{ borderTop: `1px solid ${C.g100}`, padding: '10px 13px', fontSize: 12, color: C.g700, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 340, overflowY: 'auto' }}>
+          {resumen.replace(/^## /gm, '').replace(/\*\*/g, '')}
+        </div>
+      )}
     </div>
   );
 }

@@ -205,6 +205,19 @@ export const GET: APIRoute = async ({ request, url }) => {
     for (const c of todas) if (c.company_id) c._extra.etiquetas = mapa.get(c.company_id) || [];
   }
 
+  if (vista?.condiciones?.some(c => c.campo === 'visita_web')) {
+    const ids = todas.map(c => c.contact_id).filter(Boolean);
+    if (ids.length) {
+      // Última visita por contacto, en una sola pasada.
+      const { data: vis } = await supabase.from('contact_visits')
+        .select('contact_id, created_at').in('contact_id', ids)
+        .order('created_at', { ascending: false }).limit(2000);
+      const mapa = new Map<string, string>();
+      for (const v of vis || []) if (v.contact_id && !mapa.has(v.contact_id)) mapa.set(v.contact_id, v.created_at);
+      for (const c of todas) if (c.contact_id) c._extra.ultima_visita_web = mapa.get(c.contact_id) || null;
+    }
+  }
+
   if (vista?.condiciones?.some(c => c.campo === 'etiqueta_conv')) {
     const ids = todas.map(c => c.wa_id).filter(Boolean);
     const { data: asig } = ids.length

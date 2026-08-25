@@ -26,6 +26,22 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState('');
+  // Búsqueda EN EL ARCHIVO: lo cargado en pantalla es una ventana; si el
+  // término no aparece ahí, el servidor busca en todo el historial del hilo.
+  const [archivo, setArchivo] = useState<any[] | null>(null);
+  const [buscandoArchivo, setBuscandoArchivo] = useState(false);
+  useEffect(() => {
+    setArchivo(null);
+    if (!buscando || q.trim().length < 2 || !conv?.id) return;
+    const t = setTimeout(async () => {
+      setBuscandoArchivo(true);
+      const j = await fetch(`/api/crm/whatsapp/buscar?q=${encodeURIComponent(q.trim())}&conversation_id=${conv.id}`)
+        .then(r => r.json()).catch(() => null);
+      setBuscandoArchivo(false);
+      setArchivo(j?.resultados || []);
+    }, 450);
+    return () => clearTimeout(t);
+  }, [q, buscando, conv?.id]);
   const [matchIdx, setMatchIdx] = useState(0);
   const [resaltada, setResaltada] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
@@ -156,6 +172,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
           <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
+          {hilo?.web_en_vivo && !mobile && (
+            <span title={`Está viendo ${hilo.web_en_vivo} en este momento: es EL mejor momento para escribirle`}
+              style={{ fontSize: 9, fontWeight: 800, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '2px 8px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span className="wa-pulso" style={{ width: 6, height: 6, borderRadius: 99, background: C.emerald500, display: 'inline-block' }} />
+              en el sitio: {String(hilo.web_en_vivo).slice(0, 24)}
+            </span>
+          )}
           {/* El teléfono solo se repite si arriba va un NOMBRE; si el título ya
               es el número, mostrarlo dos veces solo quitaba aire al header. */}
           {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
@@ -223,6 +246,20 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <button disabled={!matches.length} onClick={() => setMatchIdx(i => (i + 1) % matches.length)}
             style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 2, opacity: matches.length ? 1 : .3 }}><IcoChevronAbajo size={13} /></button>
           <button onClick={() => { setBuscando(false); setQ(''); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 13 }}>✕</button>
+        </div>
+      )}
+      {buscando && q.trim().length >= 2 && (archivo?.length || 0) > matches.length && (
+        <div style={{ flexShrink: 0, background: C.moradoAgua, borderBottom: `1px solid #e2dcfb`, padding: '6px 14px', fontSize: 11.5, color: C.moradoTinta }}>
+          {buscandoArchivo ? 'Buscando en todo el historial…' : (<>
+            <b>{archivo!.length}</b> coincidencia{archivo!.length === 1 ? '' : 's'} en TODO el historial (en pantalla solo {matches.length}):
+            <span style={{ marginTop: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {archivo!.slice(0, 4).map((r: any) => (
+                <span key={r.id} style={{ fontSize: 11, color: C.g700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <b style={{ color: C.moradoTinta }}>{new Date(r.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' })}</b> · {r.es_transcripcion ? '🎙 ' : ''}{r.fragmento}
+                </span>
+              ))}
+            </span>
+          </>)}
         </div>
       )}
 

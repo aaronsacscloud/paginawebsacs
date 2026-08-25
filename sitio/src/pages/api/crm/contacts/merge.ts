@@ -19,6 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
     supabase.from('bookings').update({ contact_id: keep_id }).eq('contact_id', merge_id),
     supabase.from('automation_enrollments').update({ contact_id: keep_id }).eq('contact_id', merge_id),
     supabase.from('email_sends').update({ contact_id: keep_id }).eq('contact_id', merge_id),
+    // Sin estas dos, la fusión dejaba huérfanos justo los datos nuevos: el
+    // hilo de WhatsApp seguía colgado del contacto archivado (invisible en el
+    // inbox) y el recorrido web se partía en dos personas.
+    supabase.from('wa_conversaciones').update({ contact_id: keep_id }).eq('contact_id', merge_id),
+    supabase.from('contact_visits').update({ contact_id: keep_id }).eq('contact_id', merge_id),
+    supabase.from('wa_notas').update({ contact_id: keep_id }).eq('contact_id', merge_id),
   ]);
 
   // Archive the merged contact

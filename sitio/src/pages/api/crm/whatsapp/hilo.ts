@@ -217,9 +217,20 @@ export const GET: APIRoute = async ({ request, url }) => {
   const sinLeer = convsEmail.filter(c => !c.leida).map(c => c.id);
   if (sinLeer.length) await supabase.from('email_conversations').update({ leida: true }).in('id', sinLeer);
 
+  // ¿Está navegando el sitio AHORA? (últimos 5 min). El poll del hilo corre
+  // cada 3 s, así que el badge aparece y desaparece prácticamente en vivo.
+  let webEnVivo: string | null = null;
+  if (conv.contact_id) {
+    const { data: v } = await supabase.from('contact_visits')
+      .select('ruta, titulo, created_at').eq('contact_id', conv.contact_id)
+      .gte('created_at', new Date(Date.now() - 5 * 60e3).toISOString())
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (v) webEnVivo = v.titulo || v.ruta;
+  }
+
   let marketing: any = null;
   if (conv.id && conv.telefono) marketing = await preferenciasMarketingKapso(conv.telefono).catch(() => null);
-  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, marketing, campanas_proximas: campanasProximas, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
+  return json({ conversacion: conv, mensajes, hay_mas: hayMas, correos, eventos, notas, ventana, canales, presencia, marketing, campanas_proximas: campanasProximas, web_en_vivo: webEnVivo, yo: yo ? { id: yo.id, rol: (yo as any).rol || null } : null });
 };
 
 export const PUT: APIRoute = async ({ request }) => {

@@ -540,6 +540,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         }
       } catch {/* ignore */}
 
+      // A partir de aquí este navegador tiene dueño: el PageTracker leerá el
+      // correo y todas sus visitas futuras (y las anónimas previas) quedan en
+      // su ficha. Es la otra mitad del puente que ya hacen los links firmados.
+      try { if (formData.email) localStorage.setItem('sacs_visitor_email', formData.email.trim().toLowerCase()); } catch { /* storage bloqueado */ }
       const res = await fetch('/api/scheduling/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

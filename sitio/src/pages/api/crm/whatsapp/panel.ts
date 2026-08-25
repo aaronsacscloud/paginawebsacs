@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const [{ data: empresa }, { data: contacto }] = await Promise.all([
     companyId ? supabase.from('companies').select('id, nombre, nombre_comercial, plan, mrr, estado_cuenta, fecha_renovacion, health_score, health_factors, last_payment_at, soporte_abiertos, soporte_estancado, sacs_account, uso_sacs, actividad, ultima_venta_at, dias_sin_venta, propiedades, sucursales, giro, tipo_cuenta, pipeline_stage').eq('id', companyId).maybeSingle() : Promise.resolve({ data: null as any }),
-    contactId ? supabase.from('contacts').select('id, nombre, apellido, email, created_at, visitor_id, propiedades, next_followup, proximo_paso, owner_id, lead_score, intencion, calificacion').eq('id', contactId).maybeSingle() : Promise.resolve({ data: null as any }),
+    contactId ? supabase.from('contacts').select('id, nombre, apellido, email, created_at, visitor_id, resumen_ia, resumen_ia_at, propiedades, next_followup, proximo_paso, owner_id, lead_score, intencion, calificacion').eq('id', contactId).maybeSingle() : Promise.resolve({ data: null as any }),
   ]);
 
   // ── 13) salud ──
@@ -166,10 +166,13 @@ export const GET: APIRoute = async ({ url }) => {
       .not('ruta', 'like', '/admin%')
       .order('created_at', { ascending: false }).limit(15);
     if (vis?.length) {
+      const msUltima = Date.now() - new Date(vis[0].created_at).getTime();
       web = {
         total: vis.length,
         ultima: new Date(vis[0].created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
         paginas: vis.map(v => ({ ruta: v.titulo || v.ruta, fecha: v.created_at })),
+        // "Lo tienes EN el sitio": visita registrada hace menos de 5 minutos.
+        en_vivo: msUltima < 5 * 60e3 ? (vis[0].titulo || vis[0].ruta) : null,
       };
     }
   }
@@ -187,6 +190,6 @@ export const GET: APIRoute = async ({ url }) => {
     llamadas, web,
     salud, desde_ultimo, otros_contactos, sugerencias, cotizaciones, sacs,
     propiedades: { empresa: empresa?.propiedades || null, contacto: contacto?.propiedades || null },
-    contacto: contacto ? { owner_id: contacto.owner_id, email: (contacto as any).email, created_at: (contacto as any).created_at, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,
+    contacto: contacto ? { owner_id: contacto.owner_id, email: (contacto as any).email, created_at: (contacto as any).created_at, resumen_ia: (contacto as any).resumen_ia, resumen_ia_at: (contacto as any).resumen_ia_at, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,
   });
 };
