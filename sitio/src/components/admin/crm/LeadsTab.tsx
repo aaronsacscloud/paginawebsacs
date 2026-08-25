@@ -72,7 +72,8 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 // Rezagados): un calificado que agenda se va a Oportunidad, un rezagado que
 // responde vuelve a Campañas. "Todos" es el único traslape permitido.
 const VISTAS = [
-  { v: 'campanas', l: 'Campañas' },
+  { v: 'camp_nuevas', l: 'Campañas nuevas' },
+  { v: 'camp_seguimiento', l: 'Campañas en seguimiento' },
   { v: 'calificados', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
   { v: 'prueba', l: 'En prueba' },
@@ -97,7 +98,9 @@ function pestanaDe(c: any): string | null {
   const viejo = (diasDesde(llegoReal(c)) ?? 0) > 14;
   const abandonado = c.last_contact_at == null || (diasDesde(c.last_contact_at) ?? 0) > 14;
   if (frio && viejo && abandonado) return 'rezagados';
-  return 'campanas';
+  // Campañas se parte en DOS pestañas: lo nuevo sin contactar (la bandeja
+  // del día) y lo que ya se está trabajando.
+  return eDeLead(c) === 'nuevo' ? 'camp_nuevas' : 'camp_seguimiento';
 }
 
 /** La prueba gratis del lead: vive en `propiedades.prueba_inicio/prueba_fin`.
@@ -165,7 +168,7 @@ export default function LeadsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
-  const [etapa, setEtapa] = useState('campanas');
+  const [etapa, setEtapa] = useState('camp_nuevas');
   const [origen, setOrigen] = useState('todo');
   // Cuándo llegó. 'todo' | 'hoy' | 'ayer' | '7' | '30' | 'YYYY-MM' | 'rango'
   const [cuando, setCuando] = useState('todo');
@@ -271,11 +274,10 @@ export default function LeadsTab() {
         : x?.ultima_estado === reunionF;
     });
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
-    // Campañas se lee en 2 grupos: lo nuevo sin tocar arriba (lo más reciente
-    // primero: es la bandeja del día) y lo ya en seguimiento debajo.
-    if (etapa === 'campanas') {
-      const peso = (c: any) => eDeLead(c) === 'nuevo' ? 0 : 1;
-      r = [...r].sort((a: any, b: any) => peso(a) - peso(b) || Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
+    // En las pestañas de campaña manda la fecha REAL de llegada (la del
+    // anuncio si existe), lo más reciente arriba: es la bandeja del día.
+    if (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') {
+      r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
   }, [listaBase, estatusF, reunionF, conds, logicaF, etapa]);
@@ -749,7 +751,7 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
                   <th style={{ ...S.th, width: etapa === 'todos' ? 100 : 130 }}>{
-                    etapa === 'campanas' ? 'Campaña' : etapa === 'calificados' ? 'Señal'
+                    (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') ? 'Campaña' : etapa === 'calificados' ? 'Señal'
                     : etapa === 'oportunidad' ? 'Reunión' : etapa === 'prueba' ? 'Prueba'
                     : etapa === 'rezagados' ? 'Último intento' : 'Etapa'}</th>
                   <th style={{ ...S.th, width: 118 }}>Estatus</th>
@@ -765,16 +767,8 @@ export default function LeadsTab() {
                   const tel = c.whatsapp || c.telefono;
                   const d = dias(c.last_contact_at || c.created_at);
                   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
-                  // Campañas se lee en 2 grupos; el encabezado aparece cuando
-                  // cambia el grupo respecto de la fila anterior.
-                  const esNuevoG = eDe(c) === 'nuevo';
-                  const hdrGrupo = etapa === 'campanas' && (iFila === 0 || (eDe(lista[iFila - 1]) === 'nuevo') !== esNuevoG)
-                    ? (esNuevoG ? 'Campañas nuevas · sin contactar' : 'Campañas en seguimiento') : null;
                   return (
                     <Fragment key={c.id}>
-                    {hdrGrupo && (
-                      <tr><td colSpan={10} style={{ padding: '14px 10px 5px', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#a5a2af' }}>{hdrGrupo}</td></tr>
-                    )}
                     <tr>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
@@ -824,7 +818,7 @@ export default function LeadsTab() {
                       <td style={S.td}>{(() => {
                         // La columna cuenta lo que ESA pestaña necesita saber
                         // de cada renglón; en "Todos" vuelve a ser la Etapa.
-                        if (etapa === 'campanas') return c.campana
+                        if (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') return c.campana
                           ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
                           : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
                         if (etapa === 'calificados') return c.calificacion_motivo
