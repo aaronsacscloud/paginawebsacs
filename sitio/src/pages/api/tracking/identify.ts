@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { registrarVisita, ligarVisitasPrevias } from '../../../lib/email/senales';
+import { verificarSv } from '../../../lib/tracking/identidad';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  const { email, visitor_id: vidCuerpo, page_url, page_title, referrer, segundos } = await request.json();
+  const { email, visitor_id: vidCuerpo, page_url, page_title, referrer, segundos, sv } = await request.json();
 
   // Misma cookie que lee save-lead: si el cuerpo no trae id, la cookie sí.
   const cookieVid = /(?:^|;\s*)sacs_vid=([^;]+)/.exec(request.headers.get('cookie') || '')?.[1];
@@ -39,6 +40,11 @@ export const POST: APIRoute = async ({ request }) => {
   const mismoOrigen = !!origen && (origen === sitio || /^https?:\/\/localhost(:\d+)?$/.test(origen));
   const emailConfiable = mismoOrigen ? email : null;
 
+  // El `sv` viene firmado por nosotros en los links de correo y WhatsApp: es
+  // la ÚNICA forma de saber quién navega sin depender de que el navegador
+  // diga la verdad. Si la firma no cuadra, se ignora y la visita sigue anónima.
+  const contactIdFirmado = verificarSv(sv);
+
   // La visita se guarda SIEMPRE, se conozca o no a la persona. Antes se tiraba
   // si no había contacto: se perdía justo el recorrido más interesante, el de
   // antes de convertirse en lead. Cuando esa persona deja su correo, esas
@@ -47,6 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
     let ruta = String(page_url || '/');
     try { const u = new URL(ruta); ruta = u.pathname + (u.search || ''); } catch { /* ya venía relativa */ }
     await registrarVisita({
+      contactId: contactIdFirmado || undefined,
       visitorId: visitor_id || null, email: emailConfiable, ruta,
       titulo: page_title || null, referrer: referrer || null,
       segundos: Number.isFinite(Number(segundos)) && Number(segundos) > 0 ? Math.min(3600, Number(segundos)) : null,
@@ -55,7 +62,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Find contact
   let contact: any = null;
-  if (emailConfiable) {
+  if (contactIdFirmado) {
+    const { data } = await supabase.from('contacts').select('id, company_id, nombre, visitor_id').eq('id', contactIdFirmado).maybeSingle();
+    contact = data;
+    // Se recuerda el navegador: a partir de aquí, sus visitas de este equipo se
+    // identifican solas aunque entre por Google y sin ningún link nuestro.
+    if (contact && visitor_id && contact.visitor_id !== visitor_id) {
+      await supabase.from('contacts').update({ visitor_id }).eq('id', contact.id).then(() => {}, () => {});
+    }
+  }
+  if (!contact && emailConfiable) {
     const { data } = await supabase.from('contacts').select('id, company_id, nombre').eq('email', emailConfiable).limit(1).single();
     contact = data;
   }

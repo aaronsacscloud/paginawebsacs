@@ -107,6 +107,24 @@
     var visitante = getVisitor();
     saveVisitor(visitante);          // re-sella la cookie en cada carga
     var correoGuardado = localStorage.getItem('sacs_visitor_email');
+
+    // ── Quién es: el `sv` viene firmado en los links que NOSOTROS mandamos
+    // (correo y WhatsApp). Se guarda para que las páginas siguientes de la
+    // misma sesión sigan sabiendo de quién se trata, y se limpia de la barra
+    // de direcciones para que el usuario no lo vea ni lo comparta por error.
+    var sv = null;
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      sv = qs.get('sv');
+      if (sv) {
+        localStorage.setItem('sacs_visitor_sv', sv);
+        qs.delete('sv');
+        var limpia = window.location.pathname + (qs.toString() ? '?' + qs.toString() : '') + window.location.hash;
+        window.history.replaceState({}, '', limpia);
+      } else {
+        sv = localStorage.getItem('sacs_visitor_sv');
+      }
+    } catch (e) { /* navegador sin storage: se sigue midiendo anónimo */ }
     var entrada = Date.now();
     var reportado = false;
 
@@ -114,9 +132,10 @@
       if (reportado && !segundos) return;   // el periódico solo manda una vez
       reportado = true;
       var cuerpo = JSON.stringify({
+        sv: sv || null,
         email: correoGuardado || null,
         visitor_id: visitante && visitante.id ? visitante.id : null,
-        page_url: window.location.pathname + window.location.search,
+        page_url: window.location.pathname + window.location.search.replace(/([?&])sv=[^&]*&?/, '$1').replace(/[?&]$/, ''),
         page_title: document.title,
         referrer: document.referrer || null,
         // Cuánto se quedó: distingue el rebote de la lectura real, que es

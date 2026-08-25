@@ -18,6 +18,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { firmaDeUrl, esDominioPropio } from '../../../lib/email/tracking';
 import { registrarVisita } from '../../../lib/email/senales';
+import { conSv } from '../../../lib/tracking/identidad';
 
 export const prerender = false;
 
@@ -79,6 +80,10 @@ export const GET: APIRoute = async ({ url: reqUrl }) => {
   // envío y la campaña que la produjeron. Es lo que convierte "hizo clic" en
   // "entró a la página de precios desde la campaña de agosto" — la diferencia
   // entre una métrica y una razón para llamar.
+  // Además, el destino se lleva el `sv` del contacto: así el sitio sabe QUIÉN
+  // entró y liga esa sesión —y sus visitas anónimas previas— a su ficha. Sin
+  // esto solo sabíamos que hubo un clic, no qué recorrió después.
+  let destino = targetUrl;
   if (sid && esDominioPropio(targetUrl)) {
     try {
       const { data: send } = await supabase.from('email_sends')
@@ -90,6 +95,7 @@ export const GET: APIRoute = async ({ url: reqUrl }) => {
           ruta: u.pathname + (u.search || ''), referrer: 'email',
           sendId: sid, campaignId: send.campaign_id,
         });
+        if (send.contact_id) destino = conSv(targetUrl, send.contact_id);
       }
     } catch { /* medir no puede impedir la redirección */ }
   }
@@ -97,6 +103,6 @@ export const GET: APIRoute = async ({ url: reqUrl }) => {
   // 302 redirect to the original URL
   return new Response(null, {
     status: 302,
-    headers: { 'Location': targetUrl },
+    headers: { 'Location': destino },
   });
 };

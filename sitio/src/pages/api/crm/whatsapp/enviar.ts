@@ -15,6 +15,7 @@ import { usarNumero, enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKa
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
+import { textoConSv, conSv } from '../../../../lib/tracking/identidad';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
 
@@ -43,16 +44,16 @@ const MAX_BYTES = 4 * 1024 * 1024; // el límite real de la función serverless 
 async function resolverDestino(b: { conversation_id?: string; telefono?: string; phone_number_id?: string | null }) {
   if (b.conversation_id) {
     const { data } = await supabase.from('wa_conversaciones')
-      .select('id, telefono, phone_number_id').eq('id', b.conversation_id).maybeSingle();
+      .select('id, telefono, phone_number_id, contact_id').eq('id', b.conversation_id).maybeSingle();
     if (!data) return null;
     usarNumero(data.phone_number_id || null);   // multi-número: se responde desde el número por el que escribió
-    return { convId: data.id as string, telefono: data.telefono as string };
+    return { convId: data.id as string, telefono: data.telefono as string, contactId: (data as any).contact_id as string | null };
   }
   usarNumero(b.phone_number_id || null);
   const tel = telefonoWhatsApp(b.telefono);
   if (!tel) return null;
   const conv = await upsertConversacion({ telefono: tel });
-  return conv ? { convId: conv.id, telefono: tel } : null;
+  return conv ? { convId: conv.id, telefono: tel, contactId: (conv as any).contact_id || null } : null;
 }
 
 // El error que ve el agente: título + qué pasó + qué hacer, nunca el JSON de Meta.
@@ -153,6 +154,12 @@ export const POST: APIRoute = async ({ request }) => {
   const cita = b.cita ? String(b.cita) : null;
   if (b.interactivo?.tipo) {
     const i = b.interactivo as Interactivo;
+    // El botón con link y las tarjetas del carrusel llevan el `sv` del contacto.
+    if ((i as any).url) (i as any).url = conSv(String((i as any).url), destino.contactId);
+    if (Array.isArray((i as any).tarjetas)) {
+      (i as any).tarjetas = (i as any).tarjetas.map((t: any) => t?.url ? { ...t, url: conSv(String(t.url), destino.contactId) } : t);
+    }
+    if ((i as any).cuerpo) (i as any).cuerpo = textoConSv(String((i as any).cuerpo), destino.contactId);
     try {
       const r = await enviarInteractivo(destino.telefono, i, cita);
       const wamid = r?.messages?.[0]?.id;
@@ -247,11 +254,14 @@ export const POST: APIRoute = async ({ request }) => {
   if (!texto) return json({ error: 'Falta texto' }, 400);
   try {
     const cita = b.cita ? String(b.cita) : null;
-    const r = await enviarTexto(destino.telefono, texto, cita);
+    // Los links a NUESTRO sitio se marcan con el `sv` del contacto: así, cuando
+    // entre, el CRM sabe que fue él y qué recorrió. Los links ajenos no se tocan.
+    const textoEnviado = textoConSv(texto, destino.contactId);
+    const r = await enviarTexto(destino.telefono, textoEnviado, cita);
     const wamid = r?.messages?.[0]?.id;
     if (wamid) await registrarMensaje({
       kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
-      tipo: 'text', cuerpo: texto, status: 'sent', metadata: cita ? { cita: { wamid: cita } } : null,
+      tipo: 'text', cuerpo: textoEnviado, status: 'sent', metadata: cita ? { cita: { wamid: cita } } : null,
     });
     return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
   } catch (e: any) { return errorKapso(e); }
