@@ -9,7 +9,7 @@
 // Llave = id (UUID) de la reunión. Solo muestra lo que ya se acordó con ese
 // cliente: nada de precios, cartera ni datos de otras cuentas.
 import { supabase } from '../../lib/supabase';
-import { MINUTA_CAMPOS } from '../../lib/crm/reuniones';
+import { MINUTA_CAMPOS, MINUTA_LEAD_CAMPOS, esMinutaLead } from '../../lib/crm/reuniones';
 import { marcaDe, vinetas, folioMinuta, SELECT_MARCA } from '../../lib/crm/marca';
 import { getCurrentUser } from '../../lib/auth/scope';
 
@@ -45,7 +45,22 @@ const b: any = esEjemplo ? EJEMPLO : bReal;
 if (!b) return Astro.redirect('/404');
 
 const m: Record<string, string> = (b.minuta || {}) as any;
-const hayMinuta = MINUTA_CAMPOS.some(c => String(m?.[c.k] || '').trim());
+// Una reunión de LEAD se documenta con otras preguntas y se descarga con otro
+// nombre: no es una minuta de acuerdos, es el resumen de lo que necesita. El
+// diseño es el mismo —misma marca, mismo folio, misma firma— porque el que lo
+// abre no tiene por qué aprender dos formatos.
+const esLead = esMinutaLead(m);
+const hayMinuta = (esLead ? MINUTA_LEAD_CAMPOS : MINUTA_CAMPOS).some(c => String(m?.[c.k] || '').trim());
+// Los requerimientos que se marcaron para cotizar. Es lo que hace útil el
+// documento en un lead: el resto es contexto.
+const reqs = (esLead && Array.isArray((m as any).requerimientos)
+  ? (m as any).requerimientos.filter((r: any) => r?.incluir) : []) as any[];
+const fichaLead = (esLead ? ((m as any).ficha || {}) : {}) as Record<string, string>;
+const FICHA_ETIQ: Record<string, string> = {
+  sucursales: 'Sucursales', giro: 'Giro', sistema_actual: 'Sistema actual',
+  urgencia: 'Urgencia', presupuesto: 'Presupuesto', usuarios: 'Usuarios',
+};
+const fichaFilas = Object.entries(fichaLead).filter(([, v]) => String(v || '').trim());
 
 // En el ejemplo la marca sale de la sesión; en una minuta real, de quien dio
 // la sesión: el cliente recibe el documento de su consultora.
@@ -120,7 +135,7 @@ const sig = String(m.siguiente || '').trim();
 const sigCorte = sig.split(/\r?\n/)[0].trim();
 const sigTitulo = sigCorte.length <= 90 ? sigCorte : '';
 const sigResto = sigTitulo ? sig.slice(sigCorte.length).trim() : sig;
-const titulo = `Minuta ${tipo} · ${cliente}`;
+const titulo = `${esLead ? 'Descubrimiento' : 'Minuta'} ${tipo} · ${cliente}`;
 ---
 <html lang="es">
 <head>
@@ -217,6 +232,19 @@ const titulo = `Minuta ${tipo} · ${cliente}`;
       .sig,.cc,.acu{break-inside:avoid}
       @page{margin:12mm}
     }
+    /* ── bloques propios del descubrimiento ── */
+    .ficha{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:2px 0 18px}
+    .ficha div{border:1px solid var(--linea,#ececf1);border-radius:10px;padding:9px 12px}
+    .ficha span{display:block;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#a5a2af}
+    .ficha b{display:block;font-size:13.5px;font-weight:700;color:#1a1a1a;margin-top:3px}
+    .reqs{margin:2px 0 18px}
+    .rq{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid #f2f1f6}
+    .rq:first-child{border-top:0}
+    .rq>b{font-size:11px;font-weight:800;color:#a5a2af;padding-top:2px;flex:0 0 auto}
+    .rq .rt{font-size:13.5px;font-weight:700;color:#1a1a1a;line-height:1.35}
+    .rq .rc{font-size:12px;color:#75708a;font-style:italic;margin-top:4px;line-height:1.5}
+    .rq .rp{margin-left:auto;font-size:12.5px;font-weight:800;color:#1a1a1a;white-space:nowrap;padding-top:2px}
+    @media print{.ficha{grid-template-columns:repeat(3,1fr)}}
   </style>
 </head>
 <body style={`--hd:${A.hd};--rule:${A.rule};--fuerte:${A.fuerte};--oscuro:${A.oscuro};--suave:${A.suave};--borde:${A.borde};--tono:${A.tono}`}>
@@ -237,7 +265,7 @@ const titulo = `Minuta ${tipo} · ${cliente}`;
           {marca.linea && <div class="wsub">{marca.linea}</div>}
         </div>
         <div class="hr2">
-          <div class="t">Minuta de reunión</div>
+          <div class="t">{esLead ? "Resumen de descubrimiento" : "Minuta de reunión"}</div>
           <div class="f">{folio}</div>
           <div class="d">{fmtFecha(b.fecha)}{duracion()}</div>
         </div>
@@ -265,20 +293,46 @@ const titulo = `Minuta ${tipo} · ${cliente}`;
         </div>
       </div>
 
-      {!hayMinuta && <div class="aviso">Esta reunión todavía no tiene minuta capturada. En cuanto se documente, esta misma liga la mostrará.</div>}
+      {!hayMinuta && <div class="aviso">Esta reunión todavía no tiene {esLead ? "resumen capturado" : "minuta capturada"}. En cuanto se documente, esta misma liga la mostrará.</div>}
 
       <div class="body" data-mono={marca.iniciales}>
-        {m.reviso && <>
+        {esLead && <>
+          {MINUTA_LEAD_CAMPOS.filter(c => c.k !== 'siguiente' && String(m[c.k] || '').trim()).map((c, i) => <>
+            <div class="st"><span class="n">{i + 1}</span><span class="x">{c.label}</span><span class="ln"></span></div>
+            <div class={c.k === 'intereso' ? 'acu' : 'p'}>{m[c.k]}</div>
+          </>)}
+
+          {fichaFilas.length > 0 && <>
+            <div class="st"><span class="n">{MINUTA_LEAD_CAMPOS.filter(c => c.k !== 'siguiente' && String(m[c.k] || '').trim()).length + 1}</span><span class="x">El negocio</span><span class="ln"></span></div>
+            <div class="ficha">{fichaFilas.map(([k, v]) => <div><span>{FICHA_ETIQ[k] || k}</span><b>{v}</b></div>)}</div>
+          </>}
+
+          {reqs.length > 0 && <>
+            <div class="st"><span class="n">{MINUTA_LEAD_CAMPOS.filter(c => c.k !== 'siguiente' && String(m[c.k] || '').trim()).length + (fichaFilas.length ? 2 : 1)}</span><span class="x">Lo que necesita</span><span class="ln"></span></div>
+            <div class="reqs">
+              {reqs.map((r: any, i: number) => <div class="rq">
+                <b>{String(i + 1).padStart(2, '0')}</b>
+                <div>
+                  <div class="rt">{r.titulo}</div>
+                  {r.cita && <div class="rc">“{r.cita}”</div>}
+                </div>
+                <span class="rp">{r.incluido ? 'Incluido' : r.valor ? `$${Number(r.valor).toLocaleString('es-MX')}` : 'Por definir'}</span>
+              </div>)}
+            </div>
+          </>}
+        </>}
+
+        {!esLead && m.reviso && <>
           <div class="st"><span class="n">1</span><span class="x">Qué se revisó</span><span class="ln"></span></div>
           <div class="p">{m.reviso}</div>
         </>}
 
-        {m.acuerdos && <>
+        {!esLead && m.acuerdos && <>
           <div class="st"><span class="n">2</span><span class="x">Acuerdos</span><span class="ln"></span></div>
           <div class="acu">{m.acuerdos}</div>
         </>}
 
-        {(doCliente.length > 0 || doNos.length > 0) && <>
+        {!esLead && (doCliente.length > 0 || doNos.length > 0) && <>
           <div class="st"><span class="n">3</span><span class="x">Compromisos</span><span class="ln"></span></div>
           <div class="comp">
             <div class="cc">

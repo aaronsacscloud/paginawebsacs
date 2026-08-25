@@ -42,7 +42,7 @@ export const GET: APIRoute = async ({ params }) => {
   // presentó— y sin traerlas habría que capturar a mano algo que ya está.
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('id, fecha, hora_inicio, asunto, estado, google_meet_link, event_types(nombre, categoria)')
+    .select('id, fecha, hora_inicio, asunto, estado, google_meet_link, minuta, grabacion_url, company_id, invitee_nombre, invitee_email, invitee_whatsapp, event_types(nombre, categoria)')
     .or(`contact_id.eq.${id}` + (contact.email ? `,invitee_email.eq.${contact.email}` : ''))
     .order('fecha', { ascending: false }).limit(10);
 

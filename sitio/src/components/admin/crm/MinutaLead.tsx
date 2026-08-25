@@ -84,6 +84,10 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
   }
 
   async function guardar(irACotizar: boolean) {
+    // La pestaña se abre AQUÍ, mientras todavía hay gesto del usuario. Si se
+    // abre después del await, el navegador la bloquea sin avisar y parece que
+    // el botón no hizo nada.
+    const pestana = irACotizar ? window.open('', '_blank') : null;
     setGuardando(true); setError('');
     try {
       const minuta = { ...m, tipo: 'lead', raw: crudo || undefined, requerimientos: reqs, ficha, plan_sugerido: planSug };
@@ -91,7 +95,7 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: reunion.id, minuta }),
       }).then(x => x.json());
-      if (r.error) { setError(r.error); setGuardando(false); return; }
+      if (r.error) { pestana?.close(); setError(r.error); setGuardando(false); return; }
       onGuardado?.(minuta);
       if (irACotizar) {
         // El cotizador se abre con los conceptos ya puestos. No se crea la
@@ -99,10 +103,17 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
         const p = new URLSearchParams({ nueva: '1', reunion: reunion.id });
         if (lead?.companies?.nombre || lead?.empresa) p.set('empresa', lead.companies?.nombre || lead.empresa);
         if (lead?.company_id) p.set('company_id', lead.company_id);
-        window.open('/admin/crm?tab=cotizaciones&' + p.toString(), '_blank', 'noopener');
+        const url = '/admin/crm?tab=cotizaciones&' + p.toString();
+        // Si el navegador bloqueó la pestaña, se navega en la misma: peor
+        // llevar al cotizador que dejar al usuario sin saber qué pasó.
+        if (pestana) pestana.location.href = url; else window.location.href = url;
       }
       onClose();
-    } catch { setError('No se pudo guardar.'); setGuardando(false); }
+    } catch (e: any) {
+      pestana?.close();
+      setError('No se pudo guardar: ' + String(e?.message || e));
+      setGuardando(false);
+    }
   }
 
   return (
@@ -206,6 +217,14 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
         </div>
 
         <div style={{ borderTop: '1px solid #f4f3f7', padding: '15px 22px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#fcfcfe', position: 'sticky', bottom: 0 }}>
+          {/* Descargar: la misma página que usan las minutas de cliente, con la
+              marca y el folio. Solo aparece cuando ya hay algo guardado — una
+              minuta a medias descargada es peor que no tenerla. */}
+          {minutaLlena(guardada) && (
+            <button style={S.btnSec} onClick={() => window.open(`/minuta/${reunion.id}`, '_blank', 'noopener')}>
+              Descargar
+            </button>
+          )}
           {soloLectura ? <button style={S.btnSec} onClick={onClose}>Cerrar</button> : (<>
             <button style={{ ...S.btn, opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => guardar(true)}>
               {guardando ? 'Guardando…' : activos.length ? `Crear cotización con ${activos.length} concepto${activos.length === 1 ? '' : 's'}` : 'Guardar y cotizar'}
