@@ -769,7 +769,7 @@ export default function LeadsTab() {
                   // cambia el grupo respecto de la fila anterior.
                   const esNuevoG = eDe(c) === 'nuevo';
                   const hdrGrupo = etapa === 'campanas' && (iFila === 0 || (eDe(lista[iFila - 1]) === 'nuevo') !== esNuevoG)
-                    ? (esNuevoG ? 'Nuevos · sin contactar todavía' : 'Ya en seguimiento') : null;
+                    ? (esNuevoG ? 'Campañas nuevas · sin contactar' : 'Campañas en seguimiento') : null;
                   return (
                     <Fragment key={c.id}>
                     {hdrGrupo && (
