@@ -13,6 +13,7 @@ import { etiquetaTipo } from './parse';
 import { explicarError } from './errores';
 import { sincronizarContactoKapso } from './kapso-sync';
 import { supabase } from '../supabase';
+import { marcarRespondio, marcarContactado } from '../crm/estatus-live';
 import { telefonoWhatsApp, telefonoLegible } from '../telefono';
 import { notificar } from '../crm/notificaciones';
 
@@ -148,6 +149,17 @@ export async function registrarMensaje(o: {
   const prevDir = (prev as any)?.[campoDir];
   if (!prevDir || new Date(prevDir) < new Date(cuando)) await supabase.from('wa_conversaciones').update({ [campoDir]: cuando }).eq('id', conv.id);
   if (o.silencioso) return { inserted: true, conversationId: conv.id };   // backfill: ni campana ni no-leídos
+
+  // Leads EN VIVO: la conversación mueve el estatus del contacto al momento
+  // (el cron nocturno llega a la misma conclusión). Aquí solo entran mensajes
+  // NUEVOS y no-backfill; la automatización (sin autorId) no cuenta como toque.
+  {
+    const { data: cvv } = await supabase.from('wa_conversaciones').select('contact_id').eq('id', conv.id).maybeSingle();
+    if (cvv?.contact_id) {
+      if (o.direccion === 'entrante') await marcarRespondio(cvv.contact_id).catch(() => {});
+      else if (o.autorId) await marcarContactado(cvv.contact_id).catch(() => {});
+    }
+  }
   if (!esViejo) await supabase.from('wa_conversaciones').update({
     ultimo_mensaje_at: cuando,
     ultimo_mensaje_texto: texto.slice(0, 200) || null,

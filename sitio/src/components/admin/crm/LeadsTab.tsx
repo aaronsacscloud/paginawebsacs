@@ -72,8 +72,8 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
 // Rezagados): un calificado que agenda se va a Oportunidad, un rezagado que
 // responde vuelve a Campañas. "Todos" es el único traslape permitido.
 const VISTAS = [
-  { v: 'camp_nuevas', l: 'Campañas nuevas' },
-  { v: 'camp_seguimiento', l: 'Campañas en seguimiento' },
+  { v: 'nuevos', l: 'Leads nuevos' },
+  { v: 'contactados', l: 'Contactados' },
   { v: 'calificados', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
   { v: 'prueba', l: 'En prueba' },
@@ -81,6 +81,20 @@ const VISTAS = [
   { v: 'no_interesados', l: 'No interesados' },
   { v: 'todos', l: 'Todos' },
 ];
+
+// Qué filtro compone cada pestaña, en términos de los DOS campos del modelo:
+// lifecycle_stage (tipo de lead) + estatus_lead (el contacto). Se enseña bajo
+// la pestañera para que nadie tenga que adivinar quién cae dónde.
+const FILTRO_TAB: Record<string, string> = {
+  nuevos: 'Tipo: lead nuevo · Contacto: NO contactado — nadie le ha llamado ni escrito todavía',
+  contactados: 'Contacto: ya contactado (llamada, WhatsApp o correo) — y si el cliente responde por WhatsApp entra aquí solo, al momento',
+  calificados: 'Calificación: "califica" — la señal la captura el equipo con su motivo',
+  oportunidad: 'Reunión: agendada o tenida — agendar promueve aquí en automático',
+  prueba: 'Prueba del sistema: activa o vencida sin cerrar',
+  rezagados: 'Sin seguimiento real: +14 días sin contacto (o barrido manual) — se sale solo al contactarlo',
+  no_interesados: 'Calificación: "no le interesa" — descarte explícito con motivo',
+  todos: 'Sin filtro: todos los contactos, para buscar a cualquiera',
+};
 
 const eDeLead = (c: any) => (c.estatus_lead || 'nuevo');
 /** Cuándo llegó DE VERDAD: la fecha original del anuncio si existe, no la del import. */
@@ -112,7 +126,7 @@ function pestanaDe(c: any): string | null {
   if (frio && viejo && abandonado) return 'rezagados';
   // Campañas se parte en DOS pestañas: lo nuevo sin contactar (la bandeja
   // del día) y lo que ya se está trabajando.
-  return eDeLead(c) === 'nuevo' ? 'camp_nuevas' : 'camp_seguimiento';
+  return eDeLead(c) === 'nuevo' ? 'nuevos' : 'contactados';
 }
 
 /** La prueba gratis del lead: vive en `propiedades.prueba_inicio/prueba_fin`.
@@ -180,7 +194,7 @@ export default function LeadsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
-  const [etapa, setEtapa] = useState('camp_nuevas');
+  const [etapa, setEtapa] = useState('nuevos');
   const [origen, setOrigen] = useState('todo');
   // Cuándo llegó. 'todo' | 'hoy' | 'ayer' | '7' | '30' | 'YYYY-MM' | 'rango'
   const [cuando, setCuando] = useState('todo');
@@ -288,7 +302,7 @@ export default function LeadsTab() {
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
     // En las pestañas de campaña manda la fecha REAL de llegada (la del
     // anuncio si existe), lo más reciente arriba: es la bandeja del día.
-    if (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') {
+    if (etapa === 'nuevos' || etapa === 'contactados') {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
@@ -576,6 +590,13 @@ export default function LeadsTab() {
             );
           })()}
 
+          {FILTRO_TAB[etapa] && (
+            <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: '0.6rem', color: '#b3b1bb' }}>Filtro de esta pestaña · </span>
+              {FILTRO_TAB[etapa]}
+            </div>
+          )}
+
           {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
               creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
               Lo aplicado se ve en pastillas que se quitan con la ✕. */}
@@ -771,7 +792,7 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
                   <th style={{ ...S.th, width: etapa === 'todos' ? 100 : 130 }}>{
-                    (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') ? 'Campaña' : etapa === 'calificados' ? 'Señal'
+                    (etapa === 'nuevos' || etapa === 'contactados') ? 'Campaña' : etapa === 'calificados' ? 'Señal'
                     : etapa === 'oportunidad' ? 'Reunión' : etapa === 'prueba' ? 'Prueba'
                     : etapa === 'rezagados' ? 'Último intento'
                     : etapa === 'no_interesados' ? 'Por qué no' : 'Etapa'}</th>
@@ -839,7 +860,7 @@ export default function LeadsTab() {
                       <td style={S.td}>{(() => {
                         // La columna cuenta lo que ESA pestaña necesita saber
                         // de cada renglón; en "Todos" vuelve a ser la Etapa.
-                        if (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') return c.campana
+                        if (etapa === 'nuevos' || etapa === 'contactados') return c.campana
                           ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
                           : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
                         if (etapa === 'calificados') return c.calificacion_motivo
