@@ -203,6 +203,16 @@ export const POST: APIRoute = async ({ request }) => {
   const { data: creadas, error } = await supabase.from('bookings').insert(filas).select('*');
   if (error) return json({ error: error.message }, 500);
 
+  // Leads v2: agendar promueve a Oportunidad, también desde la ficha.
+  const cidPromo = filas[0]?.contact_id;
+  if (cidPromo) {
+    const { data: cLead } = await supabase.from('contacts').select('lifecycle_stage').eq('id', cidPromo).single();
+    if (cLead && ['lead', 'lead_calificado'].includes(cLead.lifecycle_stage)) {
+      await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', cidPromo);
+      await supabase.from('activities').insert({ contact_id: cidPromo, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión', automatico: true, metadata: { regla: 'booking_creado', actor: 'sistema' } });
+    }
+  }
+
   /* ── El evento en Google ──────────────────────────────────────────────
      Este camino —capturar la reunión desde la ficha— NUNCA llamaba a Google:
      por eso las reuniones se veían en el CRM y no en la agenda. Se crea un

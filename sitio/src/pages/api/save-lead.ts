@@ -189,6 +189,7 @@ export const POST: APIRoute = async ({ request }) => {
         // desde tráfico directo no puede borrar el anuncio que lo trajo.
         if (utm.utm_source && !existingContact.utm_source) {
           Object.assign(updates, utm);
+          if (utm.utm_campaign) updates.campana = utm.utm_campaign;
           updates.fuente_detalle = resumenAtribucion(atribucion);
           updates.propiedades = { ...(existingContact.propiedades || {}), atribucion: bloqueAtribucion(atribucion, request) };
         }
@@ -205,6 +206,7 @@ export const POST: APIRoute = async ({ request }) => {
             lifecycle_stage,
             fuente: referrerPartnerId ? 'partner-link' : 'website-form',
             fuente_detalle: resumenAtribucion(atribucion),
+            campana: utm.utm_campaign || null,
             ...utm,
             propiedades: { atribucion: bloqueAtribucion(atribucion, request) },
             lead_score: score,

@@ -51,7 +51,7 @@ export interface Resultado {
   reporte: FilaReporte[];
 }
 
-const COLS = 'id, nombre, apellido, email, whatsapp, telefono, company_id, giro, sucursales_interes, lifecycle_stage, fuente, fuente_detalle, utm_source, utm_medium, utm_campaign, propiedades';
+const COLS = 'id, nombre, apellido, email, whatsapp, telefono, company_id, giro, sucursales_interes, lifecycle_stage, fuente, fuente_detalle, utm_source, utm_medium, utm_campaign, campana, propiedades';
 
 /**
  * Importa una tanda de leads ya normalizados.
@@ -147,6 +147,7 @@ export async function importarLeadsTikTok(
       if (!existente.giro && l.giro) upd.giro = l.giro;
       if (!existente.sucursales_interes && l.sucursales) upd.sucursales_interes = l.sucursales;
       if (!existente.utm_source) { upd.utm_source = 'tiktok'; upd.utm_medium = 'paid_social'; upd.utm_campaign = l.campana; }
+      if (l.campana && !(existente as any).campana) upd.campana = l.campana;
       if (!existente.fuente_detalle) upd.fuente_detalle = resumenAnuncio(l);
 
       res.reporte.push({ ...base, accion: 'actualizado', contact_id: existente.id });
@@ -197,6 +198,7 @@ export async function importarLeadsTikTok(
       utm_source: 'tiktok',
       utm_medium: 'paid_social',
       utm_campaign: l.campana,
+      campana: l.campana,
       company_id,
       giro: l.giro,
       sucursales_interes: l.sucursales,

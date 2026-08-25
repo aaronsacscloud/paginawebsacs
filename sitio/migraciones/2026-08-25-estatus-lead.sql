@@ -19,3 +19,9 @@ create index if not exists idx_contacts_estatus on contacts (estatus_lead) where
 -- Backfill inicial: 265 contactos clasificados; 2ª corrida = 0 (idempotente).
 -- Owner: copiado de wa_conversaciones.asignado_a (solo 1: casi nada estaba asignado).
 -- Vistas: sección "Funnel de venta" + 7 vistas-hueco sembradas en crm_vistas (compartidas).
+
+-- LEADS 5 PESTAÑAS (2026-08-25, aplicado):
+-- contacts.campana (backfill de utm_campaign/tiktok.campana/atribucion) = 72;
+-- propiedades.tiktok.creado decodificado del snowflake del lead_id (8);
+-- bookings vivos promovieron lifecycle a 'oportunidad' (3, con actividad);
+-- 6 vistas predefinidas en crm_vistas tabla='leads'.

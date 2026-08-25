@@ -772,7 +772,7 @@ function PruebaGratis({ c, guardar, flash }: any) {
   // El inicio también se captura: muchas pruebas se abren días antes de que
   // alguien las registre, y poner "hoy" a fuerza falsea cuándo vence.
   const [ini, setIni] = useState(hoy());
-  const [fin, setFin] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0, 10); });
+  const [fin, setFin] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().slice(0, 10); });   // la prueba estándar dura 3 días
   // "Activa" incluye la VENCIDA a propósito: una prueba que terminó sigue
   // siendo una prueba abierta hasta que alguien la cierre, y es justo la que
   // hay que ver. Lo que cambia es el color, no si aparece.

@@ -119,7 +119,21 @@ export const GET: APIRoute = async ({ request, url }) => {
         company_id: c.company_id, empresa_nombre: empresa?.nombre || null,
         created_at: c.created_at,
       }, ix) : null;
-      return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial,
+      // Resumen de reuniones para la pestaña Oportunidad: la próxima viva,
+      // cómo terminó la última, y el hueco "no asistió sin reagendar".
+      const hoyD = new Date().toISOString().slice(0, 10);
+      const vivas = x.reuniones.filter((r: any) => r.estado !== 'cancelada' && r.estado !== 'reagendada');
+      const futuras = vivas.filter((r: any) => String(r.fecha) >= hoyD).sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+      const pasadas = vivas.filter((r: any) => String(r.fecha) < hoyD).sort((a: any, b: any) => String(b.fecha).localeCompare(String(a.fecha)));
+      const reunion = x.reuniones.length ? {
+        n: x.reuniones.length,
+        proxima: futuras[0]?.fecha || null,
+        ultima: pasadas[0]?.fecha || null,
+        ultima_estado: pasadas[0]?.estado || null,
+        canceladas: x.reuniones.filter((r: any) => r.estado === 'cancelada').length,
+        sin_reagendar: !futuras.length && pasadas[0]?.estado === 'no_asistio',
+      } : null;
+      return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial, reunion,
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
         n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones };
     });

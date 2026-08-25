@@ -496,6 +496,16 @@ export const POST: APIRoute = async ({ request }) => {
     deal_id = deal.id;
   }
 
+  // Leads v2: agendar PROMUEVE a Oportunidad (regla aprobada) con firma en
+  // la actividad — el lead con reunión ya no se trabaja como lead frío.
+  if (contact_id) {
+    const { data: cLead } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contact_id).single();
+    if (cLead && ['lead', 'lead_calificado'].includes(cLead.lifecycle_stage)) {
+      await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', contact_id);
+      await supabase.from('activities').insert({ contact_id, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión', automatico: true, metadata: { regla: 'booking_creado', actor: 'sistema' } });
+    }
+  }
+
   // 7. Create booking
   const token_cancelar = generateToken();
   const token_reagendar = generateToken();

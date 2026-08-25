@@ -5,7 +5,7 @@
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
 import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
@@ -47,6 +47,7 @@ const horaCorta = (d?: string | null) => {
 };
 
 import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type EstatusLead } from '../../../lib/crm/estatus-lead';
+import { camposLeads, cumpleCondsLead, type CondLead } from '../../../lib/crm/leads-filtros';
 
 // Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
 // mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
@@ -66,21 +67,38 @@ const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   churned: { l: 'Perdido', bg: '#FEF0EF', fg: '#C0554E' },
 };
 
-// Las pestañas de la lista. "Abiertos" primero porque es el trabajo del día:
-// lo que todavía se puede convertir.
+// Las 5 pestañas de trabajo + Todos. Cada lead vive en UNA sola (regla
+// anti-solape, prioridad Prueba > Oportunidad > Calificados > Campañas >
+// Rezagados): un calificado que agenda se va a Oportunidad, un rezagado que
+// responde vuelve a Campañas. "Todos" es el único traslape permitido.
 const VISTAS = [
-  { v: 'abiertos', l: 'Abiertos' },
-  { v: 'conocidos', l: 'Ya los conocíamos' },
-  // "Nuevos" son los de la SEMANA, no todo lo que tenga lifecycle 'lead'. Con
-  // la definición vieja la pestaña decía 95 y ahí dentro había leads de mayo:
-  // "nuevo" acababa significando "sin calificar", que ya es otra pestaña.
-  { v: 'nuevos', l: 'Nuevos' },
-  { v: 'prueba', l: 'En prueba' },
-  { v: 'lead_calificado', l: 'Calificados' },
+  { v: 'campanas', l: 'Campañas' },
+  { v: 'calificados', l: 'Calificados' },
   { v: 'oportunidad', l: 'Oportunidad' },
-  { v: 'churned', l: 'Perdidos' },
+  { v: 'prueba', l: 'En prueba' },
+  { v: 'rezagados', l: 'Rezagados' },
   { v: 'todos', l: 'Todos' },
 ];
+
+const eDeLead = (c: any) => (c.estatus_lead || 'nuevo');
+/** Cuándo llegó DE VERDAD: la fecha original del anuncio si existe, no la del import. */
+const llegoReal = (c: any) => c.propiedades?.tiktok?.creado || c.created_at;
+const diasDesde = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
+
+/** En qué pestaña vive este contacto. null = solo en Todos (clientes, perdidos). */
+function pestanaDe(c: any): string | null {
+  if (!ABIERTOS.includes(c.lifecycle_stage)) return null;
+  if (prueba(c)) return 'prueba';
+  if (c.lifecycle_stage === 'oportunidad' || (c.n_reuniones || 0) > 0) return 'oportunidad';
+  if (c.lifecycle_stage === 'lead_calificado') return 'calificados';
+  // Rezagado: frío (sin señal viva), llegó hace +14 días y nadie lo ha tocado
+  // en +14 días. Sale solo de aquí en cuanto se le da seguimiento real.
+  const frio = ['nuevo', 'contactado', 'sin_respuesta'].includes(eDeLead(c));
+  const viejo = (diasDesde(llegoReal(c)) ?? 0) > 14;
+  const abandonado = c.last_contact_at == null || (diasDesde(c.last_contact_at) ?? 0) > 14;
+  if (frio && viejo && abandonado) return 'rezagados';
+  return 'campanas';
+}
 
 /** La prueba gratis del lead: vive en `propiedades.prueba_inicio/prueba_fin`.
  *  Una prueba VENCIDA sigue contando como abierta hasta que alguien la cierre —
@@ -147,7 +165,7 @@ export default function LeadsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
-  const [etapa, setEtapa] = useState('abiertos');
+  const [etapa, setEtapa] = useState('campanas');
   const [origen, setOrigen] = useState('todo');
   // Cuándo llegó. 'todo' | 'hoy' | 'ayer' | '7' | '30' | 'YYYY-MM' | 'rango'
   const [cuando, setCuando] = useState('todo');
@@ -157,6 +175,13 @@ export default function LeadsTab() {
   const [orden, setOrden] = useState<'reciente' | 'frio'>('reciente');
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
   const [estatusF, setEstatusF] = useState('');   // '' | 'g:<grupo>' | '<estatus fino>'
+  const [reunionF, setReunionF] = useState('');   // '' | agendada | asistio | no_asistio | cancelada | sin_reagendar | nunca
+  const [conds, setConds] = useState<CondLead[]>([]);          // filtro condicional del builder
+  const [logicaF, setLogicaF] = useState<'AND' | 'OR'>('AND');
+  const [vistasLeads, setVistasLeads] = useState<any[]>([]);   // guardadas en crm_vistas tabla 'leads'
+  const [vistaId, setVistaId] = useState('');
+  const [calificando, setCalificando] = useState<any>(null);   // mini-modal "Calificar"
+  const [motivoCal, setMotivoCal] = useState('');
   const [panelFiltros, setPanelFiltros] = useState(false);
   // El menú de la fila se ancla con coordenadas de pantalla: dentro de una
   // tabla con scroll, un menú en flujo se recorta contra el borde.
@@ -189,17 +214,13 @@ export default function LeadsTab() {
     fetch('/api/crm/leads/resumen?dias=30').then(r => r.json()).then(setRes).catch(() => {});
   };
   useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    fetch('/api/crm/vistas?tabla=leads').then(r => r.json()).then(j => setVistasLeads(j.data || [])).catch(() => {});
+  }, []);
 
   const listaBase = useMemo(() => {
-    let r = (rows || []).filter((c: any) => c.lifecycle_stage !== 'cliente' || etapa === 'todos');
-    if (etapa === 'abiertos') r = r.filter((c: any) => ABIERTOS.includes(c.lifecycle_stage));
-    // Leads que ya son clientes, que lo fueron, o cuya empresa se llama igual
-    // que una que sí paga. Se agrupan aparte porque no se trabajan como un
-    // lead frío: uno hay que reetiquetarlo y otro hay que reactivarlo.
-    else if (etapa === 'conocidos') r = r.filter((c: any) => !!c.historial);
-    else if (etapa === 'nuevos') r = r.filter((c: any) => esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage));
-    else if (etapa === 'prueba') r = r.filter((c: any) => !!prueba(c));
-    else if (etapa !== 'todos') r = r.filter((c: any) => c.lifecycle_stage === etapa);
+    let r = (rows || []);
+    if (etapa !== 'todos') r = r.filter((c: any) => pestanaDe(c) === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
@@ -238,9 +259,26 @@ export default function LeadsTab() {
   // lista ya filtrada por pestaña/canal/búsqueda: "Respondieron 12" con TikTok
   // puesto son los 12 de TikTok, igual que hacen los contadores de pestañas.
   const eDe = (c: any): EstatusLead => (c.estatus_lead || 'nuevo') as EstatusLead;
-  const lista = useMemo(() => !estatusF ? listaBase
-    : estatusF.startsWith('g:') ? listaBase.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2))
-    : listaBase.filter((c: any) => eDe(c) === estatusF), [listaBase, estatusF]);
+  const lista = useMemo(() => {
+    let r = listaBase;
+    if (estatusF) r = estatusF.startsWith('g:') ? r.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2)) : r.filter((c: any) => eDe(c) === estatusF);
+    if (reunionF) r = r.filter((c: any) => {
+      const x = c.reunion;
+      return reunionF === 'nunca' ? !x
+        : reunionF === 'agendada' ? !!x?.proxima
+        : reunionF === 'sin_reagendar' ? !!x?.sin_reagendar
+        : reunionF === 'cancelada' ? (x?.canceladas || 0) > 0
+        : x?.ultima_estado === reunionF;
+    });
+    if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
+    // Campañas se lee en 2 grupos: lo nuevo sin tocar arriba (lo más reciente
+    // primero: es la bandeja del día) y lo ya en seguimiento debajo.
+    if (etapa === 'campanas') {
+      const peso = (c: any) => eDeLead(c) === 'nuevo' ? 0 : 1;
+      r = [...r].sort((a: any, b: any) => peso(a) - peso(b) || Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
+    }
+    return r;
+  }, [listaBase, estatusF, reunionF, conds, logicaF, etapa]);
   // Para la tarjeta del Dashboard: el funnel del pool ABIERTO completo, sin
   // los filtros de la lista — es la foto del negocio, no de la vista.
   const conteosFunnel = useMemo(() => {
@@ -260,16 +298,7 @@ export default function LeadsTab() {
     if (origen !== 'todo') base = base.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
-    const cae = (c: any, k: string) => k === 'todos' ? true
-      : k === 'conocidos' ? !!c.historial
-      : k === 'nuevos' ? esDeLaSemana(c) && ABIERTOS.includes(c.lifecycle_stage)
-      // La lista esconde a los clientes (tienen su propia pantalla), así que el
-      // contador tiene que esconderlos igual: decía "En prueba 2" y adentro
-      // había una sola fila. El único de los siete filtros al que le pasaba,
-      // porque los demás se apoyan en el lifecycle y un cliente nunca cae.
-      : k === 'prueba' ? !!prueba(c) && c.lifecycle_stage !== 'cliente'
-      : k === 'abiertos' ? ABIERTOS.includes(c.lifecycle_stage)
-      : c.lifecycle_stage === k;
+    const cae = (c: any, k: string) => k === 'todos' ? true : pestanaDe(c) === k;
     const out: Record<string, number> = {};
     for (const v of VISTAS) out[v.v] = base.filter((c: any) => cae(c, v.v)).length;
     return out;
@@ -299,9 +328,12 @@ export default function LeadsTab() {
     origen !== 'todo' && { k: 'origen', l: origen === 'sin_definir' ? 'Sin definir' : origenDe(origen).l, quitar: () => setOrigen('todo') },
     sinContacto && { k: 'sc', l: `Sin contacto +${sinContacto} d`, quitar: () => setSinContacto('') },
     (estatusF && !estatusF.startsWith('g:')) && { k: 'est', l: `Estatus: ${ESTATUS_LABEL[estatusF as EstatusLead] || estatusF}`, quitar: () => setEstatusF('') },
+    (estatusF && estatusF.startsWith('g:')) && { k: 'estg', l: 'Funnel filtrado', quitar: () => setEstatusF('') },
+    reunionF && { k: 'reu', l: `Reunión: ${({ agendada: 'agendada', asistio: 'asistió', no_asistio: 'no asistió', cancelada: 'cancelada', sin_reagendar: 'sin reagendar', nunca: 'nunca' } as any)[reunionF]}`, quitar: () => setReunionF('') },
+    conds.length > 0 && { k: 'conds', l: vistaId ? `Vista: ${vistasLeads.find(v => v.id === vistaId)?.nombre || 'guardada'}` : `${conds.length} condición${conds.length === 1 ? '' : 'es'}`, quitar: () => { setConds([]); setVistaId(''); } },
   ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
   const nFiltros = chips.length;
-  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); };
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setConds([]); setVistaId(''); };
 
   if (rows === null) return <Cargando texto="Cargando leads…" />;
 
@@ -431,6 +463,19 @@ export default function LeadsTab() {
               );
             })}
           </div>
+          {(() => {
+            const conR = (rows || []).filter((c: any) => ABIERTOS.includes(c.lifecycle_stage) && c.reunion);
+            if (!conR.length) return null;
+            const asis = conR.filter((c: any) => c.reunion.ultima_estado === 'asistio').length;
+            const noAsis = conR.filter((c: any) => c.reunion.ultima_estado === 'no_asistio').length;
+            const prox = conR.filter((c: any) => c.reunion.proxima).length;
+            const tasa = asis + noAsis > 0 ? Math.round((asis / (asis + noAsis)) * 100) : null;
+            return (
+              <div style={{ fontSize: '0.72rem', color: '#5c5966', marginTop: 10 }}>
+                Reuniones del pool: <b style={{ color: '#1E8A63' }}>{asis} completadas</b> · <b style={{ color: '#C0554E' }}>{noAsis} no asistieron</b> · {prox} próximas{tasa != null && <> · asistencia <b>{tasa}%</b></>}
+              </div>
+            );
+          })()}
           <div style={{ ...S.ke, marginTop: 8 }}>Se calcula solo, de los hechos: mensajes, llamadas, reuniones y cotizaciones. Click en un número para ver quiénes son.</div>
         </div>
 
@@ -488,6 +533,35 @@ export default function LeadsTab() {
             })}
           </div>
 
+          {etapa === 'oportunidad' && (() => {
+            // Los contadores de reuniones cuentan sobre la pestaña ya filtrada
+            // (mismo criterio que el Funnel): cada uno filtra al hacer click y
+            // los huecos ("sin reagendar") se vacían cuando el trabajo está hecho.
+            const n = (f: (r: any) => boolean) => listaBase.filter((c: any) => f(c.reunion)).length;
+            const grupos = [
+              { v: 'agendada', l: 'Agendadas', n: n(r => !!r?.proxima), bg: '#E3EDFD', fg: '#2C5FC4' },
+              { v: 'asistio', l: 'Completadas', n: n(r => r?.ultima_estado === 'asistio'), bg: '#EAF8F2', fg: '#1E8A63' },
+              { v: 'no_asistio', l: 'No asistieron', n: n(r => r?.ultima_estado === 'no_asistio'), bg: '#FEF0EF', fg: '#C0554E' },
+              { v: 'sin_reagendar', l: 'Sin reagendar', n: n(r => !!r?.sin_reagendar), bg: '#FFF4E5', fg: '#9a6a10' },
+              { v: 'cancelada', l: 'Canceladas', n: n(r => (r?.canceladas || 0) > 0), bg: '#f4f4f6', fg: '#6B7280' },
+            ];
+            return (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                {grupos.map(g => {
+                  const on = reunionF === g.v;
+                  return (
+                    <button key={g.v} onClick={() => setReunionF(on ? '' : g.v)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
+                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
+                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
+                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
               creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
               Lo aplicado se ve en pastillas que se quitan con la ✕. */}
@@ -498,6 +572,17 @@ export default function LeadsTab() {
                 style={{ width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
             </div>
 
+            {vistasLeads.length > 0 && (
+              <select value={vistaId} onChange={e => {
+                const v = vistasLeads.find(x => x.id === e.target.value);
+                setVistaId(e.target.value);
+                setConds(v?.config?.condiciones || []);
+                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
+              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
+                <option value="">Vistas guardadas…</option>
+                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
+              </select>
+            )}
             <div style={{ position: 'relative' }}>
               <button onClick={() => setPanelFiltros(!panelFiltros)} style={{
                 height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
@@ -561,6 +646,67 @@ export default function LeadsTab() {
                       <option value="30">Más de 30 días</option>
                     </select>
 
+                    <div style={S.fk}>Reunión</div>
+                    <select value={reunionF} onChange={e => setReunionF(e.target.value)} style={S.fsel}>
+                      <option value="">Cualquiera</option>
+                      <option value="agendada">Tiene agendada</option>
+                      <option value="asistio">Asistió a la última</option>
+                      <option value="no_asistio">No asistió</option>
+                      <option value="sin_reagendar">No asistió y sin reagendar</option>
+                      <option value="cancelada">Tuvo cancelada</option>
+                      <option value="nunca">Nunca ha tenido</option>
+                    </select>
+
+                    {/* El builder: condiciones campo·operador·valor con Y/O.
+                        Lo raro se arma una vez y se guarda como vista; lo
+                        diario ya está en el select de vistas guardadas. */}
+                    <div style={{ ...S.fk, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      Condiciones
+                      {conds.length > 1 && (
+                        <button onClick={() => setLogicaF(logicaF === 'AND' ? 'OR' : 'AND')} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 999, padding: '1px 9px', fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>{logicaF === 'AND' ? 'Y (todas)' : 'O (alguna)'}</button>
+                      )}
+                    </div>
+                    {conds.map((k, i) => {
+                      const catalogo = camposLeads({
+                        campanas: [...new Set((rows || []).map((c: any) => c.campana).filter(Boolean))] as string[],
+                        giros: [...new Set((rows || []).map((c: any) => c.giro || c.companies?.giro).filter(Boolean))] as string[],
+                      });
+                      const campo = catalogo.find(x => x.id === k.campo);
+                      const pon = (parte: Partial<CondLead>) => { const n2 = [...conds]; n2[i] = { ...n2[i], ...parte }; setConds(n2); setVistaId(''); };
+                      return (
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 5, marginBottom: 6 }}>
+                          <div style={{ display: 'grid', gap: 5 }}>
+                            <select value={k.campo} onChange={e => { const c2 = catalogo.find(x => x.id === e.target.value); pon({ campo: e.target.value, op: c2?.ops[0]?.id || 'es', valor: '' }); }} style={S.fsel}>
+                              <option value="">Elegir campo…</option>
+                              {catalogo.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}
+                            </select>
+                            {campo && (
+                              <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: 5 }}>
+                                <select value={k.op} onChange={e => pon({ op: e.target.value })} style={S.fsel}>
+                                  {campo.ops.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                                </select>
+                                {campo.valores.length
+                                  ? <select value={k.valor} onChange={e => pon({ valor: e.target.value })} style={S.fsel}><option value="">Elegir…</option>{campo.valores.map(v => <option key={v.v} value={v.v}>{v.l}</option>)}</select>
+                                  : <input value={k.valor} onChange={e => pon({ valor: e.target.value })} placeholder="Valor…" style={S.fsel} />}
+                              </div>
+                            )}
+                          </div>
+                          <button onClick={() => { setConds(conds.filter((_, j) => j !== i)); setVistaId(''); }} aria-label="Quitar condición" style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontSize: '0.9rem', fontFamily: 'inherit', alignSelf: 'start', marginTop: 6 }}>✕</button>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => setConds([...conds, { campo: '', op: 'es', valor: '' }])} style={{ ...S.mini }}>+ Añadir condición</button>
+                      {conds.some(k => k.campo && k.valor !== '') && (
+                        <button onClick={async () => {
+                          const nombre = window.prompt('Nombre de la vista:');
+                          if (!nombre?.trim()) return;
+                          const r = await fetch('/api/crm/vistas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tabla: 'leads', nombre: nombre.trim(), config: { condiciones: conds.filter(k => k.campo), logica: logicaF }, compartida: true }) }).then(x => x.json()).catch(() => null);
+                          if (r?.data?.id || r?.id) { setVistasLeads([...vistasLeads, r.data || r]); setVistaId((r.data || r).id); }
+                        }} style={{ ...S.mini, color: '#5B4BD6', fontWeight: 700 }}>Guardar como vista</button>
+                      )}
+                    </div>
+
                     {nFiltros > 0 && (
                       <button onClick={limpiarFiltros} style={{ ...S.mini, marginTop: 4 }}>Quitar todos</button>
                     )}
@@ -602,7 +748,10 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, minWidth: 140 }}>Teléfono</th>
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
-                  <th style={{ ...S.th, width: 100 }}>Etapa</th>
+                  <th style={{ ...S.th, width: etapa === 'todos' ? 100 : 130 }}>{
+                    etapa === 'campanas' ? 'Campaña' : etapa === 'calificados' ? 'Señal'
+                    : etapa === 'oportunidad' ? 'Reunión' : etapa === 'prueba' ? 'Prueba'
+                    : etapa === 'rezagados' ? 'Último intento' : 'Etapa'}</th>
                   <th style={{ ...S.th, width: 118 }}>Estatus</th>
                   <th style={{ ...S.th, width: 44 }} />
                 </tr>
@@ -611,13 +760,22 @@ export default function LeadsTab() {
                 {lista.length === 0 && (
                   <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={10}>Nada con estos filtros.</td></tr>
                 )}
-                {lista.map((c: any) => {
+                {lista.map((c: any, iFila: number) => {
                   const o = origenDe(origenDeRegistro(c));
                   const tel = c.whatsapp || c.telefono;
                   const d = dias(c.last_contact_at || c.created_at);
                   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+                  // Campañas se lee en 2 grupos; el encabezado aparece cuando
+                  // cambia el grupo respecto de la fila anterior.
+                  const esNuevoG = eDe(c) === 'nuevo';
+                  const hdrGrupo = etapa === 'campanas' && (iFila === 0 || (eDe(lista[iFila - 1]) === 'nuevo') !== esNuevoG)
+                    ? (esNuevoG ? 'Nuevos · sin contactar todavía' : 'Ya en seguimiento') : null;
                   return (
-                    <tr key={c.id}>
+                    <Fragment key={c.id}>
+                    {hdrGrupo && (
+                      <tr><td colSpan={10} style={{ padding: '14px 10px 5px', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#a5a2af' }}>{hdrGrupo}</td></tr>
+                    )}
+                    <tr>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
                       <td style={S.td}>
@@ -663,7 +821,43 @@ export default function LeadsTab() {
                         </span>
                       </td>
                       <td style={S.td}>{c.sucursales_interes || c.companies?.sucursales || <span style={{ color: '#c9c7d0' }}>—</span>}</td>
-                      <td style={S.td}><span style={S.tag(et.bg, et.fg)}>{et.l}</span></td>
+                      <td style={S.td}>{(() => {
+                        // La columna cuenta lo que ESA pestaña necesita saber
+                        // de cada renglón; en "Todos" vuelve a ser la Etapa.
+                        if (etapa === 'campanas') return c.campana
+                          ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
+                          : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
+                        if (etapa === 'calificados') return c.calificacion_motivo
+                          ? <span style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{c.calificacion_motivo}</span>
+                          : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
+                        if (etapa === 'oportunidad') {
+                          const r = c.reunion;
+                          if (!r) return <span style={{ color: '#c9c7d0' }}>—</span>;
+                          if (r.proxima) return <span style={S.tag('#E3EDFD', '#2C5FC4')}>{fechaCorta(r.proxima) === 'hoy' ? 'HOY' : r.proxima.slice(5)}</span>;
+                          if (r.ultima_estado === 'asistio') return <span style={S.tag('#EAF8F2', '#1E8A63')}>Asistió</span>;
+                          if (r.ultima_estado === 'no_asistio') return <div><span style={S.tag('#FEF0EF', '#C0554E')}>No asistió</span>{r.sin_reagendar && <div style={{ fontSize: '0.62rem', color: '#C0554E', marginTop: 3 }}>sin reagendar</div>}</div>;
+                          return <span style={S.tag('#f4f4f6', '#6B7280')}>{r.ultima_estado || 'cancelada'}</span>;
+                        }
+                        if (etapa === 'prueba') {
+                          const pr = prueba(c);
+                          if (!pr) return <span style={{ color: '#c9c7d0' }}>—</span>;
+                          const ini = Date.parse((c.propiedades?.prueba_inicio || '') + 'T12:00:00');
+                          const fin = c.propiedades?.prueba_fin ? Date.parse(c.propiedades.prueba_fin + 'T12:00:00') : null;
+                          const dia = Math.max(1, Math.floor((Date.now() - ini) / 86400000) + 1);
+                          const total = fin ? Math.max(1, Math.round((fin - ini) / 86400000)) : 3;
+                          const vencida = fin != null && fin < Date.now();
+                          return <div>
+                            <span style={S.tag(vencida ? '#FEF0EF' : '#FFF4E5', vencida ? '#C0554E' : '#9a6a10')}>{vencida ? `venció hace ${Math.floor((Date.now() - fin!) / 86400000)} d` : `día ${Math.min(dia, total)} de ${total}`}</span>
+                            <div style={{ height: 4, borderRadius: 4, background: '#f1f1f4', marginTop: 4, overflow: 'hidden', maxWidth: 90 }}><div style={{ height: '100%', width: `${Math.min(100, (dia / total) * 100)}%`, background: vencida ? '#EF7A72' : '#E8A838' }} /></div>
+                          </div>;
+                        }
+                        if (etapa === 'rezagados') {
+                          const t = c.esfuerzo?.total || 0;
+                          const u = diasDesde(c.last_contact_at);
+                          return <div style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{t === 0 ? 'nunca contactado' : `${t} toque${t === 1 ? '' : 's'}`}{u != null && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>último hace {u} d</div>}</div>;
+                        }
+                        return <span style={S.tag(et.bg, et.fg)}>{et.l}</span>;
+                      })()}</td>
                       <td style={S.td}>
                         {(() => {
                           // La pastilla del estatus operativo (la misma del
@@ -701,6 +895,7 @@ export default function LeadsTab() {
                           style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: menu?.c?.id === c.id ? '#f6f4fb' : 'none', color: menu?.c?.id === c.id ? '#5B4BD6' : '#a5a2af', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>⋮</button>
                       </td>
                     </tr>
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -711,6 +906,30 @@ export default function LeadsTab() {
 
       {/* Anclado con coordenadas de pantalla: dentro de una tabla con scroll,
           un menú en flujo se recorta contra el borde de la tarjeta. */}
+      {calificando && (
+        <>
+          <div onClick={() => setCalificando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 401, width: 'min(400px, 92vw)', background: '#fff', borderRadius: 14, boxShadow: '0 18px 50px rgba(40,20,90,.25)', padding: '20px 22px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Calificar a {[calificando.nombre, calificando.apellido].filter(Boolean).join(' ') || 'este lead'}</div>
+            <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4, lineHeight: 1.5 }}>Pasa a <b>Calificados</b>. El motivo es la señal que vio el equipo — una frase basta.</div>
+            <input autoFocus value={motivoCal} onChange={e => setMotivoCal(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setCalificando(null); }}
+              placeholder="Ej. 3 sucursales y ya usa punto de venta…"
+              style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: 12 }} />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              <button onClick={() => setCalificando(null)} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#666' }}>Cancelar</button>
+              <button onClick={async () => {
+                await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                  id: calificando.id, lifecycle_stage: 'lead_calificado', calificacion: 'califica',
+                  calificacion_motivo: motivoCal.trim() || null, calificacion_at: new Date().toISOString(),
+                }) }).catch(() => {});
+                setCalificando(null); cargar();
+              }} style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Calificar</button>
+            </div>
+          </div>
+        </>
+      )}
+
       {menu && (() => {
         const c = menu.c;
         const tel = c.whatsapp || c.telefono;
@@ -726,6 +945,9 @@ export default function LeadsTab() {
                 <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.companies?.nombre || 'sin empresa'}</div>
               </div>
               <button style={opcion} onClick={() => { setVerContacto(c.id); setMenu(null); }}>Abrir ficha</button>
+              {c.lifecycle_stage === 'lead' && (
+                <button style={{ ...opcion, color: '#5B4BD6', fontWeight: 700 }} onClick={() => { setCalificando(c); setMotivoCal(''); setMenu(null); }}>Calificar como buen lead</button>
+              )}
               {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
               {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
               {/* En rojo "outline", como en la ficha del cliente: visible sin
