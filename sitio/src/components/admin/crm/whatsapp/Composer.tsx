@@ -427,12 +427,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
               </div>
             )}
 
-            {/* Toolbar */}
-            {!grabando && (bloqueadoWa ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 12px', borderTop: `1px solid ${C.g100}` }}>
-                <button onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: 8, padding: '8px 20px', background: C.ambar200, color: C.ambar700, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
-              </div>
-            ) : (
+            {/* Toolbar. Con la ventana cerrada no se pinta nada: el banner de
+                arriba ya trae "Enviar plantilla" y repetirlo abajo era ruido. */}
+            {!grabando && (bloqueadoWa ? null : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
                 <button title="AI Prompts" style={toolBtn(pop === 'ia', true)} onClick={() => setPop(pop === 'ia' ? null : 'ia')}><IcoVarita size={18} /></button>
                 <span style={{ width: 1, height: 18, background: C.g200, margin: '0 4px' }} />
