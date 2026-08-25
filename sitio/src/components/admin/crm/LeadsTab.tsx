@@ -91,6 +91,13 @@ function pestanaDe(c: any): string | null {
   if (!ABIERTOS.includes(c.lifecycle_stage)) return null;
   if (prueba(c)) return 'prueba';
   if (c.lifecycle_stage === 'oportunidad' || (c.n_reuniones || 0) > 0) return 'oportunidad';
+  // Barrido manual (ago-2026): lo que estaba "en seguimiento" o "calificado"
+  // sin seguimiento REAL se marcó rezagado. La marca se deshace sola: un
+  // contacto posterior a ella lo regresa a su pestaña (la identidad
+  // lead_calificado no se toca, solo dónde se enseña).
+  const marcaR = c.propiedades?.rezagado_marcado;
+  const retocado = marcaR && c.last_contact_at && Date.parse(c.last_contact_at) > Date.parse(marcaR);
+  if (marcaR && !retocado && eDeLead(c) !== 'nuevo') return 'rezagados';
   if (c.lifecycle_stage === 'lead_calificado') return 'calificados';
   // Rezagado: frío (sin señal viva), llegó hace +14 días y nadie lo ha tocado
   // en +14 días. Sale solo de aquí en cuanto se le da seguimiento real.
