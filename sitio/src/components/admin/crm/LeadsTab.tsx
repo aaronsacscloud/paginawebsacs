@@ -732,13 +732,21 @@ export default function LeadsTab() {
               </span>
             ))}
 
-            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')} title="El orden de la lista"
-                style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff' }}>
-                <option value="reciente">Más recientes primero</option>
-                <option value="frio">Más fríos primero</option>
-              </select>
-              <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} leads</span>
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* El conteo en pastilla (cuántos hay en ESTA vista) y el orden
+                  con su etiqueta: antes "7 leads" flotaba suelto junto al
+                  select y no se entendía qué era ni de qué hablaba. */}
+              <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#4a4a52', background: '#f4f4f6', borderRadius: 999, padding: '6px 13px', whiteSpace: 'nowrap' }}>
+                {lista.length} {lista.length === 1 ? 'lead' : 'leads'} en la vista
+              </span>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.68rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#a5a2af' }}>
+                Ordenar
+                <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')}
+                  style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff', color: '#3f3b4d', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
+                  <option value="reciente">Más recientes primero</option>
+                  <option value="frio">Más fríos primero</option>
+                </select>
+              </label>
             </span>
           </div>
 
