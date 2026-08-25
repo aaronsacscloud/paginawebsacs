@@ -35,7 +35,13 @@ export interface Visita {
  */
 
 
+/** Rutas que NO son navegación de un prospecto: el equipo usando su propio
+ *  CRM. Eran 862 de 2,524 filas — inflaban el puntaje de intención y cualquier
+ *  métrica de tráfico del sitio. */
+const RUTA_INTERNA = /^\/(admin|api|_astro|portal-partner|email\/(baja|preferencias))(\/|$|\?)/i;
+
 export async function registrarVisita(v: Visita): Promise<void> {
+  if (RUTA_INTERNA.test(String(v.ruta || ''))) return;
   const email = v.email ? String(v.email).trim().toLowerCase() : null;
   let contactId = v.contactId || null;
 

@@ -72,6 +72,10 @@
     {
       "path": "/api/cron/leads-conocidos",
       "schedule": "45 9 * * *"
+    },
+    {
+      "path": "/api/cron/wa-media",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

@@ -653,6 +653,9 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
             <span>{q.numero || String(q.id).slice(0, 6)}</span>
             {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
+            {q.vistas > 0
+              ? <span title={q.ultima_vista_at ? `Última vez: ${fecha(q.ultima_vista_at)}` : undefined} style={tag(C.emerald50, C.emerald700)}>vista ×{q.vistas}</span>
+              : <span style={tag(C.g100, C.g400)}>sin abrir</span>}
             {!ocultarDinero && <span style={{ marginLeft: 'auto', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(q.total)}</span>}
           </div>
         )) : vacio('Sin cotizaciones.')}

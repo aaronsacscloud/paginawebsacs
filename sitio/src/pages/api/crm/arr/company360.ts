@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ url }) => {
     supabase.from('payments').select('*').eq('company_id', id).order('fecha', { ascending: false }).limit(100),
     supabase.from('activities').select('*').eq('company_id', id).order('created_at', { ascending: false }).limit(100),
     fetchContacts(),
-    supabase.from('quotes').select('id, numero, total, estado, created_at').eq('company_id', id).not('estado', 'in', '(deleted,plantilla)').order('created_at', { ascending: false }).limit(30),
+    supabase.from('quotes').select('id, numero, total, estado, created_at, vistas, ultima_vista_at').eq('company_id', id).not('estado', 'in', '(deleted,plantilla)').order('created_at', { ascending: false }).limit(30),
   ]);
 
   // Cobros de Mercado Pago que NO terminaron en un pago: los rechazos. Van

@@ -3889,3 +3889,36 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     ]).then(() => setTimeout(trigger, 350));
   })();
 </script>
+
+<script is:inline>
+// ── ¿La abrió? Avisar al CRM que ALGUIEN está viendo esta cotización. El `sv`
+// (si llegó por un link nuestro) dice quién; sin él cuenta como apertura
+// anónima. Al salir se manda el tiempo real de lectura.
+(function () {
+  try {
+    var qid = window.location.pathname.split('/').filter(Boolean).pop();
+    if (!qid || !/^[0-9a-f-]{36}$/i.test(qid)) return;
+    var qs = new URLSearchParams(window.location.search);
+    var sv = qs.get('sv') || (function () { try { return localStorage.getItem('sacs_visitor_sv'); } catch (e) { return null; } })();
+    if (qs.get('sv')) { try { localStorage.setItem('sacs_visitor_sv', qs.get('sv')); } catch (e) {} }
+    var vid = null;
+    try { var v = JSON.parse(localStorage.getItem('sacs_visitor') || 'null'); vid = v && v.id; } catch (e) {}
+    var entrada = Date.now(), avisado = false;
+    function avisar(segundos) {
+      if (avisado && !segundos) return;
+      avisado = true;
+      var cuerpo = JSON.stringify({ quote_id: qid, sv: sv, visitor_id: vid, segundos: segundos || null });
+      if (segundos && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/quotes/vista', new Blob([cuerpo], { type: 'application/json' }));
+      } else {
+        fetch('/api/quotes/vista', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: cuerpo, keepalive: true }).catch(function () {});
+      }
+    }
+    avisar(0);
+    var fin = false;
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && !fin) { fin = true; avisar(Math.round((Date.now() - entrada) / 1000)); }
+    });
+  } catch (e) { /* medir no puede romper la propuesta */ }
+})();
+</script>

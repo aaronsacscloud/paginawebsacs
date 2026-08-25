@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ params }) => {
   // Get quotes
   const { data: quotes } = await supabase
     .from('quotes')
-    .select('id, numero, empresa, total, estado, created_at')
+    .select('id, numero, empresa, total, estado, created_at, vistas, ultima_vista_at')
     .eq('contact_id', id)
     .order('created_at', { ascending: false });
 
