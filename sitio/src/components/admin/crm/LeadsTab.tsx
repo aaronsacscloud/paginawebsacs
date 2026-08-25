@@ -241,11 +241,16 @@ export default function LeadsTab() {
   const lista = useMemo(() => !estatusF ? listaBase
     : estatusF.startsWith('g:') ? listaBase.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2))
     : listaBase.filter((c: any) => eDe(c) === estatusF), [listaBase, estatusF]);
+  // Para la tarjeta del Dashboard: el funnel del pool ABIERTO completo, sin
+  // los filtros de la lista — es la foto del negocio, no de la vista.
   const conteosFunnel = useMemo(() => {
     const out: Record<string, number> = {};
-    for (const c of listaBase) { const g = GRUPO_DE[eDe(c)] || 'pendiente'; out[g] = (out[g] || 0) + 1; }
+    for (const c of rows || []) {
+      if (!ABIERTOS.includes(c.lifecycle_stage)) continue;
+      const g = GRUPO_DE[eDe(c)] || 'pendiente'; out[g] = (out[g] || 0) + 1;
+    }
     return out;
-  }, [listaBase]);
+  }, [rows]);
 
   // Los contadores de las pestañas cuentan con los OTROS filtros ya puestos:
   // "Nuevos 71" con el canal en TikTok tiene que decir cuántos nuevos de TikTok
@@ -401,6 +406,34 @@ export default function LeadsTab() {
           </div>
         </div>
 
+        {/* El funnel operativo: en qué está el pool abierto. Los números
+            cliqueables llevan a la Lista ya filtrada — aquí vive el desglose
+            que en la Lista sería una fila más de pastillas. */}
+        <div style={{ ...S.card, marginBottom: 14 }}>
+          <div style={S.kl}>Funnel operativo</div>
+          <div style={{ display: 'flex', gap: 0, marginTop: 10, borderRadius: 9, overflow: 'hidden', border: '1px solid #ececec' }}>
+            {FUNNEL.filter(f => f.g !== 'fuera').map((f, i) => {
+              const n = conteosFunnel[f.g] || 0;
+              const col = COLOR_GRUPO[f.g];
+              return (
+                <button key={f.g} onClick={() => { setEstatusF(`g:${f.g}`); setEtapa('abiertos'); setVista('lista'); }}
+                  title={`Ver los ${n} en la lista`}
+                  style={{ flex: `${Math.max(n, 1)} 1 0`, minWidth: 92, border: 'none', borderLeft: i ? '1px solid #ececec' : 'none',
+                    background: '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: '10px 12px 12px' }}>
+                  <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#8a8a92', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 999, background: col.tinta, opacity: .8 }} />{f.l}
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: col.tinta, marginTop: 2 }}>{n}</div>
+                  <div style={{ height: 4, borderRadius: 4, background: col.fondo, marginTop: 6, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: '100%', background: col.tinta, opacity: .55 }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ ...S.ke, marginTop: 8 }}>Se calcula solo, de los hechos: mensajes, llamadas, reuniones y cotizaciones. Click en un número para ver quiénes son.</div>
+        </div>
+
         {topOrigenes.length > 0 && (
           <div style={S.card}>
             <div style={S.h}>De dónde están llegando
@@ -450,30 +483,6 @@ export default function LeadsTab() {
                     background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
                     borderRadius: 20, padding: '2px 8px',
                   }}>{n}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* El funnel en chips: la 2ª dimensión del lead (estatus operativo,
-              derivado de hechos) sobre la lista que ya está filtrada. Un click
-              filtra, otro quita. El detalle fino vive en Filtros. */}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-            {FUNNEL.map(f => {
-              const on = estatusF === `g:${f.g}`;
-              const n = conteosFunnel[f.g] || 0;
-              const col = COLOR_GRUPO[f.g];
-              return (
-                <button key={f.g} onClick={() => setEstatusF(on ? '' : `g:${f.g}`)} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px',
-                  borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem',
-                  fontWeight: on ? 800 : 600, whiteSpace: 'nowrap',
-                  border: `1px solid ${on ? col.tinta : '#e6e5ec'}`,
-                  background: on ? col.fondo : '#fff', color: on ? col.tinta : n === 0 ? '#c4c4cc' : '#5c5966',
-                }}>
-                  <span style={{ width: 7, height: 7, borderRadius: 999, background: col.tinta, opacity: n === 0 && !on ? .25 : .8 }} />
-                  {f.l}
-                  <span style={{ fontWeight: 800, fontSize: '0.68rem', color: on ? col.tinta : n === 0 ? '#c4c4cc' : '#8a8a92' }}>{n}</span>
                 </button>
               );
             })}
@@ -661,9 +670,17 @@ export default function LeadsTab() {
                           // inbox) y, debajo, los días sin contacto: qué tan
                           // viva está la relación y hace cuánto no la tocamos.
                           const pe = pintaEstatus(c.estatus_lead, c.retenido_hasta);
+                          const ef = eDe(c);
+                          const activa = estatusF === ef;
                           return (
                             <div>
-                              <span style={S.tag(pe.fondo, pe.tinta)}>{pe.label}</span>
+                              {/* La pastilla ES el filtro: un click deja solo
+                                  este estatus (y sale como pastilla removible
+                                  en la fila de filtros); otro click lo quita.
+                                  Cero chrome extra en la barra. */}
+                              <span role="button" title={activa ? 'Quitar el filtro' : `Ver solo "${pe.label}"`}
+                                onClick={() => setEstatusF(activa ? '' : ef)}
+                                style={{ ...S.tag(pe.fondo, pe.tinta), cursor: 'pointer', boxShadow: activa ? `inset 0 0 0 1px ${pe.tinta}` : 'none' }}>{pe.label}</span>
                               {d != null && d > 0 && (
                                 <div style={{ fontSize: '0.62rem', color: d > 14 ? '#C0554E' : '#a5a2af', marginTop: 3 }}>{d} d sin contacto</div>
                               )}
