@@ -56,7 +56,9 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
 
-  const sucursales = Math.max(1, parseInt(String(ficha.sucursales || '1').replace(/\D/g, '') || '1', 10));
+  // El PRIMER número, no todos los dígitos pegados: "3 tiendas + 1 bodega"
+  // se volvía 31 sucursales y el total salía en $43,400 al mes.
+  const sucursales = Math.max(1, parseInt(String(ficha.sucursales || '').match(/\d+/)?.[0] || '1', 10));
   const activos = reqs.filter(r => r.incluir);
   // El total mensual solo cuenta el plan: los renglones incluidos no se cobran
   // aparte y los servicios sueltos son de una sola vez.

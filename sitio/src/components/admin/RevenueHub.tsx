@@ -565,7 +565,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           const b0 = (Array.isArray(r?.data) ? r.data[0] : Array.isArray(r) ? r[0] : null);
           const min = b0?.minuta || {};
           const reqs = (Array.isArray(min.requerimientos) ? min.requerimientos : []).filter((x: any) => x.incluir);
-          const suc = Math.max(1, parseInt(String(min.ficha?.sucursales || '1').replace(/\D/g, '') || '1', 10));
+          // El PRIMER número: "3 tiendas + 1 bodega" no son 31 sucursales.
+          const suc = Math.max(1, parseInt(String(min.ficha?.sucursales || '').match(/\d+/)?.[0] || '1', 10));
           const banco2 = bankAccounts.find((x: any) => x.es_default) || bankAccounts[0];
           const items: any[] = [];
           if (min.plan_sugerido) {
