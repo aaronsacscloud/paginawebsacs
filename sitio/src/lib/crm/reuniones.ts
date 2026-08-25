@@ -50,19 +50,43 @@ export const MINUTA_CAMPOS: { k: string; label: string; hint: string }[] = [
   { k: 'siguiente',    label: 'Siguiente paso y fecha',  hint: 'Si no hay fecha, no hay siguiente paso.' },
 ];
 
+// ── Minuta de LEAD ──────────────────────────────────────────────────────────
+// Un lead no tiene acuerdos que cumplir: tiene una necesidad que todavía no se
+// cotiza. Por eso las preguntas son otras. Lo que sale de aquí no son
+// compromisos, son renglones que van a la cotización.
+export const MINUTA_LEAD_CAMPOS: { k: string; label: string; hint: string }[] = [
+  { k: 'opera',      label: 'Cómo opera hoy',            hint: 'Tiendas, canales, con qué lo hace hoy y qué volumen mueve.' },
+  { k: 'duele',      label: 'Qué le duele',              hint: 'El problema concreto con el que llegó, en sus palabras.' },
+  { k: 'intereso',   label: 'Qué le interesó',           hint: 'Planes, módulos y funciones que pidió por su nombre. Es lo que hay que cotizar sí o sí.' },
+  { k: 'mostramos',  label: 'Qué le mostramos',          hint: 'Lo que sí se le enseñó y lo que se le prometió. Esto hay que sostenerlo.' },
+  { k: 'objeciones', label: 'Objeciones y riesgos',      hint: 'Lo que puede frenar el cierre. Escribirlo evita perseguir a quien no decide.' },
+  { k: 'decide',     label: 'Quién decide y para cuándo', hint: 'Nombre y fecha. Sin eso no hay pronóstico.' },
+  { k: 'siguiente',  label: 'Siguiente paso y fecha',    hint: 'Si no hay fecha, no hay siguiente paso.' },
+];
+
+/** Qué juego de campos toca. El tipo se guarda dentro de la propia minuta para
+ *  que una reunión vieja se siga leyendo con los campos con los que se escribió,
+ *  aunque el lead ya se haya vuelto cliente. */
+export const esMinutaLead = (m: any) => m?.tipo === 'lead';
+export const camposDe = (m: any) => esMinutaLead(m) ? MINUTA_LEAD_CAMPOS : MINUTA_CAMPOS;
+
 export const minutaVacia = () => Object.fromEntries(MINUTA_CAMPOS.map(c => [c.k, ''])) as Record<string, string>;
-export const minutaLlena = (m: any) => !!m && MINUTA_CAMPOS.some(c => String(m?.[c.k] || '').trim());
+export const minutaLeadVacia = () => ({ ...Object.fromEntries(MINUTA_LEAD_CAMPOS.map(c => [c.k, ''])), tipo: 'lead' }) as Record<string, string>;
+// Se comprueba contra los DOS juegos: si no, una minuta de lead se veía vacía
+// en cualquier pantalla que solo conociera los campos de cliente.
+export const minutaLlena = (m: any) => !!m &&
+  [...MINUTA_CAMPOS, ...MINUTA_LEAD_CAMPOS].some(c => String(m?.[c.k] || '').trim());
 
 /** La minuta en texto plano, para copiarla a un correo o a WhatsApp. */
 export function minutaTexto(b: any): string {
   const m = b?.minuta || {};
   const cab = [
-    `Minuta · ${b?.event_types?.nombre || 'Reunión'}`,
+    `${esMinutaLead(b?.minuta) ? 'Descubrimiento' : 'Minuta'} · ${b?.event_types?.nombre || 'Reunión'}`,
     `${b?.fecha || ''} ${String(b?.hora_inicio || '').slice(0, 5)}`,
     b?.invitee_nombre ? `Con: ${b.invitee_nombre}` : '',
     b?.host_nombre ? `Por: ${b.host_nombre}` : '',
   ].filter(Boolean).join('\n');
-  const cuerpo = MINUTA_CAMPOS
+  const cuerpo = camposDe(m)
     .filter(c => String(m[c.k] || '').trim())
     .map(c => `\n${c.label.toUpperCase()}\n${String(m[c.k]).trim()}`).join('\n');
   return cab + '\n' + cuerpo + (b?.grabacion_url ? `\n\nGRABACIÓN\n${b.grabacion_url}` : '');

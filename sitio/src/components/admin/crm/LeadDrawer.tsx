@@ -18,7 +18,8 @@
 // falta de interés; se enfría porque nadie supo cuál era el siguiente paso.
 import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
-import { normalizaEstado } from '../../../lib/crm/reuniones';
+import { minutaLlena, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
+import MinutaLead from './MinutaLead';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
@@ -125,6 +126,9 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
   // de Seguimiento, porque son la misma conversación. Verlas aparte obligaba a
   // cambiar de pestaña para contestar "¿ya le hablé?" mientras leías la etapa.
   const [tab, setTab] = useState<'info' | 'seguimiento' | 'reuniones' | 'cotizaciones' | 'senales'>('info');
+  // La minuta que se está levantando o consultando. Vive aquí y no dentro del
+  // renglón para que al guardar se pueda refrescar la ficha entera.
+  const [minutaDe, setMinutaDe] = useState<any>(null);
   const [c, setC] = useState<any>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -299,15 +303,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
                 <div style={D.h}>Las que ya hubo<span style={D.hr}>{(c.bookings || []).length}</span></div>
                 {(c.bookings || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Ninguna todavía.</div>}
                 {(c.bookings || []).map((b: any) => (
-                  <div key={b.id} style={{ display: 'flex', gap: 11, padding: '10px 0', borderTop: '1px solid #f5f4f8' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{fmtLargo(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}{b.event_types?.nombre ? ` · ${b.event_types.nombre}` : ''}</div>
-                    </div>
-                    <span style={{ marginLeft: 'auto', ...D.chip(normalizaEstado(b.estado) === 'asistio' ? '#EAF8F2' : '#f4f4f6', normalizaEstado(b.estado) === 'asistio' ? '#1E8A63' : '#6B7280') }}>
-                      {normalizaEstado(b.estado) === 'asistio' ? 'se presentó' : normalizaEstado(b.estado)}
-                    </span>
-                  </div>
+                  <RenglonReunion key={b.id} b={b} onMinuta={() => setMinutaDe(b)} onCambio={cargar} />
                 ))}
               </div>
             </>
@@ -341,6 +337,12 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
               if (principalId && principalId !== contactId && onAbrirOtro) onAbrirOtro(principalId);
               else { cargar(); flash(`Se unieron ${n} fichas`); }
             }} />
+        )}
+        {minutaDe && (
+          <MinutaLead reunion={minutaDe} lead={c}
+            soloLectura={normalizaEstado(minutaDe.estado) !== 'asistio'}
+            onClose={() => setMinutaDe(null)}
+            onGuardado={() => { setMinutaDe(null); cargar(); }} />
         )}
         {registrando && (
           <ReunionPasada c={c} onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); flash('Reunión registrada'); cargar(); }} />
@@ -1355,6 +1357,68 @@ function LineaDeTiempo({ c }: any) {
           <span><span style={{ ...marca('el'), display: 'inline-flex', width: 19, height: 19, marginRight: 6, verticalAlign: '-4px' }}>ÉL</span>lo que hizo él solo</span>
         </div>
       )}
+    </div>
+  );
+}
+
+/* Un renglón de la lista de reuniones del lead.
+ *
+ * Antes solo pintaba el estado. El problema es que la reunión de un lead casi
+ * siempre se marca DESPUÉS —nadie abre el CRM mientras está en la llamada—, y
+ * sin poder marcarla aquí no había manera de llegar a la minuta.
+ *
+ * En cuanto se marca "se presentó" aparece el botón de levantar la minuta:
+ * es el momento en que la persona todavía se acuerda de qué se habló. */
+function RenglonReunion({ b, onMinuta, onCambio }: any) {
+  const [guardando, setGuardando] = useState(false);
+  const e = normalizaEstado(b.estado);
+  const esFutura = String(b.fecha || '') > new Date().toISOString().slice(0, 10);
+  const tieneMinuta = minutaLlena(b.minuta);
+
+  async function marcar(nuevo: string) {
+    setGuardando(true);
+    try {
+      await fetch('/api/scheduling/reuniones', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: b.id, estado: nuevo }),
+      });
+      await onCambio?.();
+    } finally { setGuardando(false); }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</div>
+        <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>
+          {fmtLargo(b.fecha)} · {String(b.hora_inicio || '').slice(0, 5)}{b.event_types?.nombre ? ` · ${b.event_types.nombre}` : ''}
+        </div>
+        {tieneMinuta && Array.isArray(b.minuta?.requerimientos) && b.minuta.requerimientos.length > 0 && (
+          <div style={{ fontSize: '0.69rem', color: '#5B4BD6', fontWeight: 700, marginTop: 5 }}>
+            {b.minuta.requerimientos.filter((r: any) => r.incluir).length} concepto(s) para cotizar
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={D.chip(e === 'asistio' ? '#EAF8F2' : e === 'no_asistio' ? '#FEF0EF' : '#f4f4f6',
+                            e === 'asistio' ? '#1E8A63' : e === 'no_asistio' ? '#C0554E' : '#6B7280')}>
+          {e === 'asistio' ? 'se presentó' : e === 'no_asistio' ? 'no se presentó' : e}
+        </span>
+        {/* Sin marcar y ya pasó: es el caso normal, por eso los dos botones
+            están a la mano y no escondidos en un menú. */}
+        {!esFutura && (e === 'agendada' || e === 'confirmada') && (
+          <>
+            <button style={{ ...D.btnA, padding: '5px 10px', fontSize: '0.7rem', opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => marcar('asistio')}>Sí llegó</button>
+            <button style={{ ...D.btnG, padding: '5px 10px', fontSize: '0.7rem', opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => marcar('no_asistio')}>No llegó</button>
+          </>
+        )}
+        {e === 'asistio' && !tieneMinuta && (
+          <button style={{ ...D.btnP, padding: '5px 11px', fontSize: '0.7rem' }} onClick={onMinuta}>Levantar minuta</button>
+        )}
+        {tieneMinuta && (
+          <button style={{ ...D.btnA, padding: '5px 11px', fontSize: '0.7rem' }} onClick={onMinuta}>Ver minuta</button>
+        )}
+      </div>
     </div>
   );
 }

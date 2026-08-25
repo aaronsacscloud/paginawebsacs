@@ -26,12 +26,16 @@ export const GET: APIRoute = async ({ request, url }) => {
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
   const companyId = url.searchParams.get('company_id'); // reuniones de UN cliente (drawer)
+  // Una sola reunión por id: lo usa el cotizador para traer los conceptos que
+  // salieron en la minuta sin volver a capturarlos.
+  const soloId = url.searchParams.get('id');
 
   let query = supabase
     .from('bookings')
     .select('*, event_types(id, nombre, slug, color, duracion_minutos, categoria, alerta_inasistencias, requiere_minuta)')
     .order('fecha', { ascending: true })
     .order('hora_inicio', { ascending: true });
+  if (soloId) query = query.eq('id', soloId);
   if (estado) query = query.eq('estado', estado);
   if (from) query = query.gte('fecha', from);
   if (to) query = query.lte('fecha', to);

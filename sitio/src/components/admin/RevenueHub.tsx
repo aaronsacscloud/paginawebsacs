@@ -553,6 +553,43 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       if (typeof window === 'undefined') return;
       const p = new URLSearchParams(window.location.search);
       if (p.get('nueva') !== '1') return;
+      // Llegar desde la MINUTA DE UN LEAD: los conceptos ya se decidieron en la
+      // junta, así que se traen de la reunión en vez de recapturarlos. La
+      // cotización no se crea sola —el precio y el descuento los pone una
+      // persona—, solo se abre el formulario lleno.
+      const reunionId = p.get('reunion');
+      if (reunionId) {
+        window.history.replaceState({}, '', window.location.pathname + '?tab=cotizaciones');
+        (async () => {
+          const r = await fetch('/api/scheduling/reuniones?id=' + encodeURIComponent(reunionId)).then(x => x.json()).catch(() => null);
+          const b0 = (Array.isArray(r?.data) ? r.data[0] : Array.isArray(r) ? r[0] : null);
+          const min = b0?.minuta || {};
+          const reqs = (Array.isArray(min.requerimientos) ? min.requerimientos : []).filter((x: any) => x.incluir);
+          const suc = Math.max(1, parseInt(String(min.ficha?.sucursales || '1').replace(/\D/g, '') || '1', 10));
+          const banco2 = bankAccounts.find((x: any) => x.es_default) || bankAccounts[0];
+          const items: any[] = [];
+          if (min.plan_sugerido) {
+            items.push({ tipo: 'plan', nombre: min.plan_sugerido, periodo: 'anual', sucursales: String(suc), descuento_pct: 0 });
+          }
+          // Lo que ya viene dentro del plan NO se cobra aparte: entraría dos
+          // veces en el total y el prospecto lo nota.
+          for (const q of reqs) {
+            if (q.incluido || q.categoria === 'plan') continue;
+            items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: q.titulo,
+                         monto: Number(q.valor || 0), recurrente: false, descripcion: q.cita ? `Lo pidió así: "${q.cita}"` : '' });
+          }
+          setQf({
+            empresa: p.get('empresa') || '', contacto: b0?.invitee_nombre || '', email: b0?.invitee_email || '', whatsapp: b0?.invitee_whatsapp || '',
+            company_id: p.get('company_id') || b0?.company_id || null,
+            items, iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern',
+            condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || '',
+            notas: min.intereso ? `De la reunión del ${b0?.fecha || ''}: ${min.intereso}` : '',
+            ...(banco2 ? { bank_account_id: banco2.id, mostrar_banco: true } : {}),
+          });
+          setShowDrawer(true);
+        })();
+        return;
+      }
       const concepto = (p.get('concepto') || '').trim();
       const monto = Math.max(0, Number(p.get('importe') || 0));
       const banco = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0];
