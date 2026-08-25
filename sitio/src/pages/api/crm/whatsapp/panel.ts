@@ -151,6 +151,25 @@ export const GET: APIRoute = async ({ url }) => {
     };
   }
 
+  // Visitas al sitio de ESTE contacto. Hoy el rastreador guarda casi todo sin
+  // identificar (visitor_id anónimo), así que solo salen las que traen su
+  // correo o su visitor_id ligado; el panel lo dice cuando viene vacío.
+  let web: any = null;
+  if (contacto?.email) {
+    const { data: vis } = await supabase.from('contact_visits')
+      .select('ruta, titulo, created_at, origen')
+      .or(`email.eq.${contacto.email},contact_id.eq.${contactId}`)
+      .not('ruta', 'like', '/admin%')
+      .order('created_at', { ascending: false }).limit(15);
+    if (vis?.length) {
+      web = {
+        total: vis.length,
+        ultima: new Date(vis[0].created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+        paginas: vis.map(v => ({ ruta: v.titulo || v.ruta, fecha: v.created_at })),
+      };
+    }
+  }
+
   // Llamadas con minuta: el seguimiento de lo hablado, para el panel derecho.
   let llamadas: any[] = [];
   if (conv?.id) {
@@ -161,7 +180,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   return json({
-    llamadas,
+    llamadas, web,
     salud, desde_ultimo, otros_contactos, sugerencias, cotizaciones, sacs,
     propiedades: { empresa: empresa?.propiedades || null, contacto: contacto?.propiedades || null },
     contacto: contacto ? { owner_id: contacto.owner_id, next_followup: contacto.next_followup, proximo_paso: contacto.proximo_paso, lead_score: contacto.lead_score, intencion: contacto.intencion, calificacion: contacto.calificacion } : null,

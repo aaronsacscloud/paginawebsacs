@@ -253,38 +253,60 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         {empresa && <button onClick={() => setFicha(true)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>Ver ficha →</button>}
       </div>
 
-      {/* Tarjetas-resumen: cada una abre su detalle (breadcrumb para volver).
-          Cliente: lo que importa es la CUENTA (ARR, uso, renovación).
-          Lead: lo que importa es la CONVERSIÓN (etapa, pipeline, origen). */}
+      {/* Resumen compacto: los 5 datos que se leen de un vistazo. Antes eran
+          cuatro tarjetas grandes que se comían media pantalla; lo que de verdad
+          se consulta a diario son los datos de contacto de abajo. */}
       {(empresa || contactoBase) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '0 16px 4px' }}>
-          {esCliente ? (<>
-            {!ocultarDinero && <TarjetaKpi color={C.emerald500} etiqueta="ARR" cifra={money(arr)} sub={`${subsActivas.length} suscripción${subsActivas.length === 1 ? '' : 'es'} activa${subsActivas.length === 1 ? '' : 's'}`} tinta={C.emerald700} onClick={() => setDetalle('suscripciones')} />}
-            <TarjetaKpi color={ctx?.salud?.nivel === 'rojo' ? C.rojo500 : ctx?.salud?.nivel === 'ambar' ? C.ambar400 : C.emerald500} etiqueta="Salud" tinta={ctx?.salud?.nivel === 'rojo' ? C.rojo700 : ctx?.salud?.nivel === 'ambar' ? C.ambar700 : C.emerald700}
-              cifra={ctx?.salud?.dias_renovacion != null ? (ctx.salud.dias_renovacion < 0 ? `Vencida ${-ctx.salud.dias_renovacion} d` : `Renueva ${ctx.salud.dias_renovacion} d`) : ctx?.salud?.health_score != null ? `${ctx.salud.health_score}/100` : '—'}
-              sub={ctx?.salud?.tickets_abiertos ? `${ctx.salud.tickets_abiertos} ticket${ctx.salud.tickets_abiertos === 1 ? '' : 's'} abiertos` : 'Sin tickets abiertos'} onClick={() => setDetalle('salud')} />
-            <TarjetaKpi color={C.morado} etiqueta="Uso de SACS" tinta={C.moradoTinta}
-              cifra={ctx?.sacs ? (ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : ctx.sacs.dias_sin_venta != null ? `${ctx.sacs.dias_sin_venta} d sin vender` : `${ctx.sacs.modulos_activos.length} módulos`) : 'Sin cuenta'}
-              sub={ctx?.sacs ? `${ctx.sacs.modulos_activos.length} módulo${ctx.sacs.modulos_activos.length === 1 ? '' : 's'} activos` : 'No ligada a SACS'} onClick={() => ctx?.sacs && setDetalle('sacs')} />
-            <TarjetaKpi color={C.azul} etiqueta="Cotizaciones" tinta={C.azulTinta}
-              cifra={String((d360?.quotes || []).length || 0)} sub={(d360?.quotes || []).length ? money((d360.quotes || []).reduce((t: number, q: any) => t + (Number(q.total) || 0), 0)) + ' cotizado' : 'Ninguna aún'} onClick={() => (d360?.quotes || []).length && setDetalle('cotizaciones')} />
-          </>) : (<>
-            <TarjetaKpi color={C.morado} etiqueta="Conversión" tinta={C.moradoTinta} cifra={etapa?.label || 'Sin etapa'}
-              sub={contacto?.proximo_paso ? `Sigue: ${contacto.proximo_paso}` : 'Sin próximo paso definido'} onClick={() => setDetalle('conversion')} />
-            {!ocultarDinero && <TarjetaKpi color={C.emerald500} etiqueta="Pipeline" tinta={C.emerald700} cifra={money(pipelineTotal)}
-              sub={dealsAbiertos.length ? `${dealsAbiertos.length} oportunidad${dealsAbiertos.length === 1 ? '' : 'es'} abierta${dealsAbiertos.length === 1 ? '' : 's'}` : 'Sin oportunidades abiertas'} onClick={() => setDetalle('oportunidad')} />}
-            <TarjetaKpi color={C.azul} etiqueta="Origen" tinta={C.azulTinta} cifra={contacto?.fuente || 'Sin origen'}
-              sub={utm.length ? `${utm.length} dato${utm.length === 1 ? '' : 's'} de campaña` : contacto?.created_at ? `Creado ${fecha(contacto.created_at)}` : 'Sin datos de campaña'} onClick={() => setDetalle('origen')} />
-            <TarjetaKpi color={C.ambar400} etiqueta="Interacción" tinta={C.ambar700}
-              cifra={hilo?.mensajes?.length ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}` : proxima ? 'Reunión agendada' : timeline.length ? 'Activo en CRM' : 'Sin actividad'}
-              sub={proxima ? `Reunión ${fecha(proxima.fecha)}` : timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : 'Aún sin interacciones'} onClick={() => setDetalle('interacciones')} />
-          </>)}
+        <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px' }}>
+          {[
+            ['Marca', empresa?.nombre_comercial || empresa?.nombre || null],
+            ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : null],
+            ['Registro', contacto?.created_at ? fecha(contacto.created_at) : null],
+            ['Interacción', hilo?.mensajes?.length
+              ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}${conv?.ultimo_mensaje_at ? ` · ${haceCuanto(conv.ultimo_mensaje_at)}` : ''}`
+              : (timeline.length ? `${timeline.length} evento${timeline.length === 1 ? '' : 's'} en el CRM` : null)],
+            ['Visitas web', ctx?.web?.total ? `${ctx.web.total} páginas · ${ctx.web.ultima}` : null],
+          ].map(([et, v]: any, i: number) => (
+            <div key={et} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '3px 0', borderTop: i ? `1px solid ${C.g50}` : 'none' }}>
+              <span style={{ fontSize: 10, color: C.g400, width: 78, flexShrink: 0 }}>{et}</span>
+              <span style={{ fontSize: 12, color: v ? C.g900 : C.g300, fontWeight: v ? 600 : 400, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {v || (et === 'Visitas web' ? 'aún no se rastrean' : 'sin dato')}
+              </span>
+            </div>
+          ))}
         </div>
       )}
-      {hilo?.marketing?.stopped && <div style={{ margin: '4px 16px 0' }}><span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span></div>}
 
-      {/* Clasificación: etiquetas toggle con borde punteado */}
-      {(empresa || contactoBase) && <Clasificacion entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} />}
+      {/* Atajos al detalle: mismos destinos de antes, en pastillas discretas. */}
+      {(empresa || contactoBase) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, margin: '0 16px 10px' }}>
+          {(esCliente
+            ? [
+                !ocultarDinero && ['suscripciones', `ARR ${money(arr)}`, C.emerald50, C.emerald700],
+                ['salud', ctx?.salud?.dias_renovacion != null ? (ctx.salud.dias_renovacion < 0 ? `Renovación vencida` : `Renueva en ${ctx.salud.dias_renovacion} d`) : 'Salud', ctx?.salud?.nivel === 'rojo' ? C.rojo50 : ctx?.salud?.nivel === 'ambar' ? C.ambar100 : C.emerald50, ctx?.salud?.nivel === 'rojo' ? C.rojo700 : ctx?.salud?.nivel === 'ambar' ? C.ambar700 : C.emerald700],
+                ctx?.sacs && ['sacs', ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : ctx.sacs.dias_sin_venta != null ? `${ctx.sacs.dias_sin_venta} d sin vender` : 'Uso de SACS', C.moradoAgua, C.moradoTinta],
+                (d360?.quotes || []).length && ['cotizaciones', `${d360.quotes.length} cotización${d360.quotes.length === 1 ? '' : 'es'}`, C.azulAgua, C.azulTinta],
+              ]
+            : [
+                ['conversion', etapa?.label || 'Conversión', C.moradoAgua, C.moradoTinta],
+                !ocultarDinero && ['oportunidad', dealsAbiertos.length ? `Pipeline ${money(pipelineTotal)}` : 'Sin oportunidades', C.emerald50, C.emerald700],
+                ['origen', contacto?.fuente ? `Origen: ${contacto.fuente}` : 'Sin origen', C.azulAgua, C.azulTinta],
+                ['interacciones', 'Interacciones', C.ambar100, C.ambar700],
+              ]
+          ).filter(Boolean).map((x: any) => {
+            const [id, txt, bg, fg] = x;
+            return (
+              <button key={id} onClick={() => setDetalle(id)} style={{
+                border: 'none', borderRadius: 999, padding: '4px 11px', background: bg, color: fg,
+                fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', maxWidth: '100%',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{txt} ›</button>
+            );
+          })}
+        </div>
+      )}
+
+      {hilo?.marketing?.stopped && <div style={{ margin: '4px 16px 0' }}><span style={tag(C.ambar100, C.ambar700)} title="Registrado por Meta: el cliente pidió no recibir marketing por WhatsApp">Sin marketing por WhatsApp</span></div>}
 
       {/* 14) Qué pasó desde nuestro último mensaje */}
       {ctx?.desde_ultimo && (ctx.desde_ultimo.pagos.n > 0 || ctx.desde_ultimo.correos_abiertos > 0 || ctx.desde_ultimo.reuniones > 0 || ctx.desde_ultimo.correos_recibidos > 0 || ctx.desde_ultimo.uso_sacs.length > 0) && (
@@ -429,6 +451,13 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </div>
         </Seccion>
       )}
+      {/* Clasificación hasta abajo: se consulta poco y arriba tapaba los datos
+          de contacto, que son los que se usan todos los días. */}
+      {(empresa || contactoBase) && (
+        <Seccion id="g-clasif" titulo="Clasificación">
+          <Clasificacion entidad={empresa ? 'company' : 'contact'} id={empresa?.id || contactoBase?.id} />
+        </Seccion>
+      )}
     </div>
   );
 
@@ -555,80 +584,129 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
     </div>
   );
 
-  const CHIPS_ACT = [['todo', 'Todo'], ['wa', 'WhatsApp'], ['correo', 'Correo'], ['reunion', 'Reuniones'], ['pago', 'Pagos'], ['nota', 'Notas']];
-  const tipoDe = (t: any): string => {
-    const k = `${t.tipo || ''} ${t.titulo || ''}`.toLowerCase();
-    if (/whatsapp|wa_/.test(k)) return 'wa'; if (/correo|email|mail/.test(k)) return 'correo'; if (/reuni|booking|cita|meet/.test(k)) return 'reunion';
-    if (/pago|cobro|factura|suscrip/.test(k)) return 'pago'; if (/nota|comentario/.test(k)) return 'nota'; return 'otro';
-  };
-  const timelineFiltrado = (d360?.timeline || dCon?.activities || []).filter((t: any) => filtroAct === 'todo' || tipoDe(t) === filtroAct).slice(0, 60);
+  // ── Actividad: siete bloques en el orden en que se revisan al preparar una
+  // llamada. Sin chips de filtro: eran seis botones para tapar cuatro listas. ──
+  const quotesTodas: any[] = (d360?.quotes || dCon?.quotes || []);
+  const dealsTodos: any[] = (dCon?.deals || d360?.deals || []);
+  const llamadas: any[] = (ctx?.llamadas || []);
+  const timelineFull: any[] = (d360?.timeline || dCon?.activities || []);
   const porMes: Record<string, any[]> = {};
-  for (const t of timelineFiltrado) { const m = new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }); (porMes[m] = porMes[m] || []).push(t); }
+  for (const t of timelineFull.slice(0, 60)) {
+    const m = new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+    (porMes[m] = porMes[m] || []).push(t);
+  }
+  const vacio = (t: string) => <div style={{ fontSize: 11.5, color: C.g300 }}>{t}</div>;
+
   const TabActividad = () => (
-    <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '10px 16px 0' }}>
-        {CHIPS_ACT.map(([v, l]) => (
-          <button key={v} onClick={() => setFiltroAct(v)} style={{ border: `1px solid ${filtroAct === v ? C.g900 : C.g200}`, background: filtroAct === v ? C.g900 : '#fff', color: filtroAct === v ? '#fff' : C.g500, borderRadius: 999, padding: '2px 9px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
-        ))}
-      </div>
-      {empresa && !ocultarDinero && (
-        <Seccion id="a-subs" titulo="Suscripciones" n={subs.length} abiertaDefault>
-          {!subs.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin suscripciones.</div>}
-          {subs.map(su => { const [bg, fg] = ESTADO_SUB[su.estado] || [C.g100, C.g500]; return (
-            <div key={su.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12 }}>
-              <b>{su.nombre_plan}</b><span style={tag(bg, fg)}>{su.estado}</span>
-              <span style={{ marginLeft: 'auto', color: C.emerald700, fontWeight: 700 }}>{money(su.precio)}<span style={{ color: C.g400, fontWeight: 400 }}>/{su.ciclo === 'anual' ? 'año' : 'mes'}</span></span>
-            </div>); })}
-        </Seccion>
-      )}
-      {contactoBase && (
-        <Seccion id="a-deals" titulo="Oportunidades" n={deals.length}>
-          {!deals.length && <div style={{ fontSize: 12, color: C.g300 }}>Sin oportunidades abiertas.</div>}
-          {deals.slice(0, 5).map(d => (
-            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12 }}>
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre || d.title || 'Oportunidad'}</span>
-              {(d.pipeline_stage || d.stage) && <span style={tag(C.azulAgua, C.azulTinta)}>{d.pipeline_stage || d.stage}</span>}
-              <span style={{ color: C.emerald700, fontWeight: 700 }}>{money(d.monto ?? d.amount)}</span>
+    <div style={{ paddingTop: 8 }}>
+      {/* 1 · Qué ha visto de nosotros */}
+      <Seccion id="a-web" titulo="Visitas a la web y material de venta" n={(ctx?.web?.total || 0) + (ctx?.desde_ultimo?.correos_abiertos || 0) + quotesTodas.length} abiertaDefault>
+        {ctx?.web?.paginas?.length ? ctx.web.paginas.map((p: any, i: number) => (
+          <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.g700 }}>{p.ruta}</span>
+            <span style={{ color: C.g400, flexShrink: 0 }}>{fecha(p.fecha)}</span>
+          </div>
+        )) : (
+          <div style={{ background: C.ambar50, border: `1px solid ${C.ambar200}`, borderRadius: 9, padding: '8px 11px', fontSize: 11.5, color: C.ambar700, lineHeight: 1.5 }}>
+            Todavía no sabemos qué páginas ve este contacto: el rastreo del sitio guarda las visitas
+            sin ligarlas a una persona. Se arregla haciendo que los links de correos y de WhatsApp
+            marquen quién es el visitante.
+          </div>
+        )}
+        <div style={{ marginTop: 8, fontSize: 12, color: C.g700, lineHeight: 1.7 }}>
+          {ctx?.desde_ultimo?.correos_abiertos > 0 && <div>Abrió {ctx.desde_ultimo.correos_abiertos} correo{ctx.desde_ultimo.correos_abiertos === 1 ? '' : 's'}{ctx.desde_ultimo.clics > 0 ? ` y dio ${ctx.desde_ultimo.clics} clic${ctx.desde_ultimo.clics === 1 ? '' : 's'}` : ''}</div>}
+          {quotesTodas.length > 0 && <div>{quotesTodas.length} cotización{quotesTodas.length === 1 ? '' : 'es'} enviada{quotesTodas.length === 1 ? '' : 's'}{!ocultarDinero ? ` por ${money(quotesTodas.reduce((t, q) => t + (Number(q.total) || 0), 0))}` : ''}</div>}
+        </div>
+      </Seccion>
+
+      {/* 2 · Reuniones */}
+      <Seccion id="a-reuniones" titulo="Reuniones agendadas" n={bookings.length} abiertaDefault>
+        {proxima && (
+          <div style={{ background: C.moradoAgua, borderRadius: 9, padding: '8px 11px', fontSize: 12, marginBottom: 7 }}>
+            <b style={{ color: C.moradoTinta }}>Próxima:</b> {fecha(proxima.fecha)} {proxima.hora_inicio ? `· ${String(proxima.hora_inicio).slice(0, 5)}` : ''}
+            <div style={{ color: C.g500 }}>{proxima.asunto || proxima.event_types?.nombre || 'Reunión'}</div>
+          </div>
+        )}
+        {bookings.length ? bookings.slice(0, 8).map((b: any) => (
+          <div key={b.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+            <span style={{ color: C.g400, width: 62, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{fecha(b.fecha)}</span>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.asunto || b.event_types?.nombre || 'Reunión'}</span>
+            {b.estado && <span style={tag(b.estado === 'cancelada' ? C.rojo50 : C.emerald50, b.estado === 'cancelada' ? C.rojo700 : C.emerald700)}>{b.estado}</span>}
+          </div>
+        )) : vacio('Sin reuniones agendadas.')}
+      </Seccion>
+
+      {/* 3 · Oportunidades */}
+      <Seccion id="a-deals" titulo="Oportunidades" n={dealsTodos.length}>
+        {dealsTodos.length ? dealsTodos.slice(0, 8).map((d: any) => (
+          <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre || d.title || 'Oportunidad'}</span>
+            {(d.pipeline_stage || d.stage) && <span style={tag(C.azulAgua, C.azulTinta)}>{d.pipeline_stage || d.stage}</span>}
+            {!ocultarDinero && <span style={{ color: C.emerald700, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(d.monto ?? d.amount)}</span>}
+          </div>
+        )) : vacio('Sin oportunidades registradas.')}
+      </Seccion>
+
+      {/* 4 · Cotizaciones */}
+      <Seccion id="a-quotes" titulo="Cotizaciones" n={quotesTodas.length}>
+        {quotesTodas.length ? quotesTodas.slice(0, 10).map((q: any) => (
+          <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+            <span>{q.numero || String(q.id).slice(0, 6)}</span>
+            {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
+            {!ocultarDinero && <span style={{ marginLeft: 'auto', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(q.total)}</span>}
+          </div>
+        )) : vacio('Sin cotizaciones.')}
+      </Seccion>
+
+      {/* 5 · La línea de tiempo completa */}
+      <Seccion id="a-timeline" titulo="Actividad" n={timelineFull.length} abiertaDefault>
+        {contacto?.created_at && (
+          <div style={{ fontSize: 11, color: C.g400, marginBottom: 6 }}>En el CRM desde {fecha(contacto.created_at)}</div>
+        )}
+        {timelineFull.length ? Object.entries(porMes).map(([mes, items]) => (
+          <div key={mes}>
+            <div style={{ ...label(10), margin: '8px 0 2px' }}>{mes}</div>
+            {items.map((t: any, i: number) => (
+              <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, lineHeight: 1.45 }}>
+                <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums', width: 44 }}>{new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
+                <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
+              </div>
+            ))}
+          </div>
+        )) : vacio('Sin actividad registrada todavía.')}
+      </Seccion>
+
+      {/* 6 · Llamadas */}
+      <Seccion id="a-llamadas" titulo="Llamadas" n={llamadas.length}>
+        {llamadas.length ? llamadas.map((l: any) => (
+          l.minuta ? <MinutaPanel key={l.call_id} l={l} /> : (
+            <div key={l.call_id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
+              <span style={{ color: C.g400, width: 62, flexShrink: 0 }}>{fecha(l.ended_at || l.created_at)}</span>
+              <span style={{ flex: 1 }}>{l.canal === 'telefono' ? 'Telefónica' : 'WhatsApp'} · {l.direccion === 'saliente' ? 'realizada' : 'recibida'}</span>
+              <span style={tag(l.estado === 'terminada' ? C.emerald50 : C.g100, l.estado === 'terminada' ? C.emerald700 : C.g500)}>
+                {l.duracion_seg ? `${Math.floor(l.duracion_seg / 60)}:${String(l.duracion_seg % 60).padStart(2, '0')}` : l.estado}
+              </span>
+            </div>
+          )
+        )) : vacio('Sin llamadas registradas.')}
+      </Seccion>
+
+      {/* 7 · Uso de SACS (prueba gratuita o cuenta viva) */}
+      <Seccion id="a-sacs" titulo="Uso de SACS" n={ctx?.sacs?.modulos_activos?.length || null}>
+        {ctx?.sacs ? (<>
+          <div style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 7 }}>
+            <span style={tag(C.moradoAgua, C.moradoTinta)}>{ctx.sacs.cuenta}</span>
+            {ctx.sacs.dias_sin_venta != null && <span style={tag(ctx.sacs.dias_sin_venta > 7 ? C.ambar100 : C.emerald50, ctx.sacs.dias_sin_venta > 7 ? C.ambar700 : C.emerald700)}>{ctx.sacs.dias_sin_venta === 0 ? 'Vendió hoy' : `${ctx.sacs.dias_sin_venta} d sin vender`}</span>}
+          </div>
+          {ctx.sacs.modulos_activos.map((m: any) => (
+            <div key={m.modulo} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, padding: '3px 0', fontSize: 12 }}>
+              <span style={{ color: C.g700 }}>{m.modulo}</span>
+              <span style={{ color: C.g400, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{Number(m.docs_30d || 0).toLocaleString('es-MX')} <span style={{ color: C.g300 }}>/30 d</span></span>
             </div>
           ))}
-        </Seccion>
-      )}
-      {quotes.length > 0 && (
-        <Seccion id="a-quotes" titulo="Cotizaciones" n={quotes.length}>
-          {quotes.map(q => (
-            <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12 }}>
-              <span>{q.numero || String(q.id).slice(0, 6)}</span>
-              {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
-              <span style={{ marginLeft: 'auto', fontWeight: 700 }}>{money(q.total)}</span>
-            </div>
-          ))}
-        </Seccion>
-      )}
-      {(contactoBase || empresa) && (
-        <Seccion id="a-reuniones" titulo="Reuniones" n={bookings.length}>
-          {proxima ? (
-            <div style={{ background: C.moradoAgua, borderRadius: 9, padding: '8px 11px', fontSize: 12, marginBottom: 6 }}>
-              <b style={{ color: C.moradoTinta }}>Próxima:</b> {fecha(proxima.fecha)} {proxima.hora_inicio ? `· ${proxima.hora_inicio}` : ''}
-              <div style={{ color: C.g500 }}>{proxima.asunto || proxima.event_types?.nombre || 'Reunión'}</div>
-            </div>
-          ) : <div style={{ fontSize: 12, color: C.g300 }}>Sin reunión agendada.</div>}
-        </Seccion>
-      )}
-      {timelineFiltrado.length > 0 ? (
-        <Seccion id="a-timeline" titulo="Actividad reciente" n={timelineFiltrado.length} abiertaDefault>
-          {Object.entries(porMes).map(([mes, items]) => (
-            <div key={mes}>
-              <div style={{ ...label(10), margin: '8px 0 2px' }}>{mes}</div>
-              {items.map((t: any, i: number) => (
-                <div key={t.id || i} style={{ display: 'flex', gap: 8, padding: '4px 0', fontSize: 12, lineHeight: 1.45 }}>
-                  <span style={{ color: C.g400, flexShrink: 0, fontVariantNumeric: 'tabular-nums', width: 44 }}>{new Date(t.fecha || t.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
-                  <span style={{ minWidth: 0, color: C.g700 }}>{t.titulo}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </Seccion>
-      ) : filtroAct !== 'todo' ? <div style={{ padding: '12px 16px', fontSize: 12, color: C.g400 }}>Nada de este tipo en la actividad.</div> : null}
+          {!ctx.sacs.modulos_activos.length && vacio('La cuenta existe pero todavía no registra uso.')}
+        </>) : vacio('Sin cuenta de SACS ligada. Si le das una prueba gratuita, su uso aparece aquí.')}
+      </Seccion>
     </div>
   );
 
