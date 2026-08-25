@@ -10,6 +10,7 @@ import { C, L, burbuja, separador, etiquetaDia } from './estilo';
 import { IcoBuscar, IcoPuntos, IcoChevronArriba, IcoChevronAbajo } from './Iconos';
 import { Avatar, IconoCanal } from './ListaConversaciones';
 import Composer, { SelectorPlantilla } from './Composer';
+import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 
@@ -22,7 +23,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const conv = hilo?.conversacion;
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState('');
   const [matchIdx, setMatchIdx] = useState(0);
@@ -150,21 +151,23 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   return (
     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header h-44 ── */}
-      <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
+      <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36, height: 36 }}>←</button>}
-        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 7 }}>
-          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: mobile ? 90 : 0, flex: mobile ? 1 : undefined }}>{nombre || telefonoLegible(conv.telefono)}</b>
+        <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
+          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
-          {!mobile && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
+          {/* El teléfono solo se repite si arriba va un NOMBRE; si el título ya
+              es el número, mostrarlo dos veces solo quitaba aire al header. */}
+          {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
           {conv.id && hilo.ventana?.expira_at && (() => {
             const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
-            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Ventana cerrada</span>;
+            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>Ventana cerrada</span>;
             const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
             const urgente = ms < 4 * 3600e3;
             return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
-              style={{ fontSize: 9, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '2px 7px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ verticalAlign: '-1px', marginRight: 3 }}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
-              {urgente ? 'cierra en ' : ''}{h > 0 ? `${h} h ` : ''}{m} min
+              style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 11px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+              {urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min
             </span>;
           })()}
           {hilo.marketing?.stopped && <span title="El cliente pidió no recibir mensajes de marketing (Meta lo registra). Solo plantillas de utilidad o responder cuando él escriba." style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Sin marketing</span>}
@@ -343,7 +346,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         if (!r?.error) setCierre(false);
         return r;
       }} />}
-      {lightbox && (
+      {lightbox && typeof lightbox === 'object' && <VisorMedia m={lightbox} onCerrar={() => setLightbox(null)} />}
+      {false && lightbox && (
         <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.8)', zIndex: 990, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <button onClick={() => setLightbox(null)} style={{ position: 'absolute', top: 16, right: 20, border: 'none', background: 'none', color: '#fff', fontSize: 26, cursor: 'pointer' }}>✕</button>
           <img src={lightbox} alt="" style={{ maxWidth: '92vw', maxHeight: '88vh', borderRadius: 8 }} onClick={e => e.stopPropagation()} />

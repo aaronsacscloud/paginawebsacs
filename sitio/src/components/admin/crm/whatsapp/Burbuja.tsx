@@ -6,6 +6,7 @@
 // "responder" (cita) en hover.
 import { useRef, useState } from 'react';
 import { C, burbuja } from './estilo';
+import { extensionDe } from './VisorMedia';
 import EstadoEntrega, { errorLegible } from './EstadoEntrega';
 
 export const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
@@ -104,7 +105,7 @@ const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉'
 export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
-  onLightbox: (src: string) => void;
+  onLightbox: (m: any) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
   onReenviar?: (item: any) => void;
@@ -114,7 +115,17 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   const saliente = item.direccion === 'saliente';
   const claro = saliente;
   const src = srcMedia(item);
-  const tipo = item.tipo || 'text';
+  let tipo = item.tipo || 'text';
+  // Los migrados y algunos entrantes traen tipos raros ('file') o el mime en
+  // vez del tipo: se normaliza aquí para no caer al render genérico.
+  const mime = String(item.mime || '');
+  if (!['image','sticker','video','audio','document','location','contacts','interactive','template','reaction'].includes(tipo)) {
+    if (/^image\//.test(mime) || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(src || '')) tipo = 'image';
+    else if (/^video\//.test(mime) || /\.(mp4|mov|webm)(\?|$)/i.test(src || '')) tipo = 'video';
+    else if (/^audio\//.test(mime) || /\.(ogg|oga|mp3|m4a|opus|amr)(\?|$)/i.test(src || '')) tipo = 'audio';
+    else if (src) tipo = 'document';
+  }
+
   const cita = item.metadata?.cita?.wamid ? porWamid.get(item.metadata.cita.wamid) : null;
   const fondoSuave = saliente ? 'rgba(255,255,255,.15)' : C.g50;
   const [mediaRota, setMediaRota] = useState(false);
@@ -133,7 +144,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     contenido = src ? <PlayerAudio src={src} claro={claro} /> : <span style={{ opacity: .7 }}>{item.metadata?.voz ? 'Nota de voz' : 'Audio'} (sin archivo)</span>;
   } else if (tipo === 'image' || tipo === 'sticker') {
     contenido = (<>
-      {src && !mediaRota ? <img src={src} alt={item.cuerpo || ''} onClick={() => onLightbox(src)} loading="lazy" onError={() => setMediaRota(true)}
+      {src && !mediaRota ? <img src={src} alt={item.cuerpo || ''} onClick={() => onLightbox({ ...item, media_url: src })} loading="lazy" onError={() => setMediaRota(true)}
         style={{ borderRadius: 10, maxHeight: tipo === 'sticker' ? 140 : 256, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: item.cuerpo ? 6 : 0, background: tipo === 'sticker' ? 'transparent' : C.g100 }} />
         : <span style={{ opacity: .7, fontStyle: 'italic' }}>{tipo === 'sticker' ? 'Sticker' : 'Imagen'} no disponible (Meta la conserva 30 días)</span>}
       {item.cuerpo && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
@@ -145,13 +156,18 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
       {item.cuerpo && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
     </>);
   } else if (tipo === 'document') {
-    const nombre = item.filename || item.cuerpo || 'Documento';
+    const ext = extensionDe({ ...item, media_url: src });
+    const nombre = item.filename || (item.cuerpo && item.cuerpo.length < 60 ? item.cuerpo : null) || `Documento ${ext}`;
+    const verAqui = /PDF|XML|TXT|CSV/.test(ext);
     contenido = (<>
-      <a href={srcMedia(item, true) || '#'} target="_blank" rel="noreferrer" download={item.filename || undefined}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, background: fondoSuave, borderRadius: 8, padding: '8px 10px', textDecoration: 'none', color: tinta, fontSize: 12, fontWeight: 700, marginBottom: item.cuerpo && item.cuerpo !== nombre ? 6 : 0 }}>
-        <IcoDoc /><span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{nombre}</span>
-        <span style={{ fontSize: 10, opacity: .75, flexShrink: 0 }}>{src ? 'Descargar' : 'No disponible'}</span>
-      </a>
+      <button onClick={() => src && onLightbox({ ...item, media_url: src })} disabled={!src}
+        style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', background: fondoSuave, border: 'none', borderRadius: 9, padding: '8px 10px', color: saliente ? '#fff' : C.g700, cursor: src ? 'pointer' : 'default', fontFamily: 'inherit', marginBottom: item.cuerpo && item.cuerpo !== nombre ? 6 : 0 }}>
+        <span style={{ width: 30, height: 36, borderRadius: 5, background: saliente ? 'rgba(255,255,255,.22)' : C.morado, color: '#fff', fontSize: 8.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{ext}</span>
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <b style={{ fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nombre}</b>
+          <span style={{ fontSize: 10, opacity: .75 }}>{!src ? 'No disponible' : verAqui ? 'Verlo aquí mismo' : 'Abrir'}</span>
+        </span>
+      </button>
       {item.cuerpo && item.cuerpo !== nombre && <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo} q={q} claro={claro} /></span>}
     </>);
   } else if (tipo === 'location') {
@@ -208,7 +224,7 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     const esImg = src && /image/.test(item.mime || '') || (src && /\.(png|jpe?g|webp)(\?|$)/i.test(src));
     contenido = (<>
       <span style={{ fontSize: 9, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>PLANTILLA{item.metadata?.plantilla ? ` · ${item.metadata.plantilla}` : ''}</span>
-      {src && esImg && !mediaRota && <img src={src} alt="" onClick={() => onLightbox(src)} onError={() => setMediaRota(true)} style={{ borderRadius: 10, maxHeight: 200, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: 6 }} />}
+      {src && esImg && !mediaRota && <img src={src} alt="" onClick={() => onLightbox({ ...item, media_url: src })} onError={() => setMediaRota(true)} style={{ borderRadius: 10, maxHeight: 200, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: 6 }} />}
       {src && !esImg && <a href={src} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, background: fondoSuave, borderRadius: 8, padding: '8px 10px', textDecoration: 'none', color: tinta, fontSize: 12, fontWeight: 700, marginBottom: 6 }}><IcoDoc />{/video/.test(item.mime || '') ? 'Video' : 'Documento'} del encabezado</a>}
       <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo || ''} q={q} claro={claro} /></span>
       {botones.map((b: any, i: number) => <span key={i} style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontWeight: 700, marginTop: 4 }}>{b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : ''}{b.texto || b.tipo}</span>)}

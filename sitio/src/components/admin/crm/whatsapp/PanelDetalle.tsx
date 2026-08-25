@@ -11,6 +11,7 @@ import ClienteDrawer360 from '../ClienteDrawer360';
 import { Avatar } from './ListaConversaciones';
 import { Corazones } from '../ui/Cargando';
 import { srcMedia } from './Burbuja';
+import VisorMedia, { extensionDe } from './VisorMedia';
 import { C, L, label, haceCuanto } from './estilo';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
@@ -659,14 +660,20 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   );
 
   const [filtroAdj, setFiltroAdj] = useState('todos');
+  const [visorAdj, setVisorAdj] = useState<any>(null);
   const TabAdjuntos = () => {
-    const esImg = (m: any) => m.tipo === 'image' || m.tipo === 'sticker' || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(m.media_url || '');
-    const lista = media.filter((m: any) => filtroAdj === 'todos' || (filtroAdj === 'fotos' ? esImg(m) : filtroAdj === 'audio' ? m.tipo === 'audio' : !esImg(m) && m.tipo !== 'audio'));
-    const fotos = lista.filter(esImg); const otros = lista.filter((m: any) => !esImg(m));
+    const esImg = (m: any) => m.tipo === 'image' || m.tipo === 'sticker' || /^image\//.test(m.mime || '') || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(m.media_url || '');
+    const esVid = (m: any) => m.tipo === 'video' || /^video\//.test(m.mime || '');
+    const esAud = (m: any) => m.tipo === 'audio' || /^audio\//.test(m.mime || '');
+    const lista = media.filter((m: any) => filtroAdj === 'todos'
+      || (filtroAdj === 'fotos' ? (esImg(m) || esVid(m)) : filtroAdj === 'audio' ? esAud(m) : !esImg(m) && !esVid(m) && !esAud(m)));
+    const fotos = lista.filter((m: any) => esImg(m) || esVid(m));
+    const audios = lista.filter(esAud);
+    const otros = lista.filter((m: any) => !esImg(m) && !esVid(m) && !esAud(m));
     return (
       <div style={{ padding: 14 }}>
         <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
-          {[['todos', 'Todos'], ['fotos', 'Fotos'], ['docs', 'Docs'], ['audio', 'Audio']].map(([v, l]) => (
+          {[['todos', `Todos ${media.length}`], ['fotos', 'Fotos y video'], ['docs', 'Documentos'], ['audio', 'Audio']].map(([v, l]) => (
             <button key={v} onClick={() => setFiltroAdj(v)} style={{ border: 'none', borderRadius: 999, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: filtroAdj === v ? C.emerald50 : C.g100, color: filtroAdj === v ? C.emerald700 : C.g500 }}>{l}</button>
           ))}
         </div>
@@ -678,18 +685,44 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </div>
         )}
         {fotos.length > 0 && <>
-          <div style={{ ...label(10), marginBottom: 6 }}>Fotos</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
-            {fotos.map((m: any) => <a key={m.id} href={m._src} target="_blank" rel="noreferrer"><img src={m._src} loading="lazy" alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8 }} /></a>)}
+          <div style={{ ...label(10), marginBottom: 6 }}>Fotos y video · {fotos.length}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 14 }}>
+            {fotos.map((m: any) => (
+              <button key={m.id} onClick={() => setVisorAdj({ ...m, media_url: m._src })} title={fecha(m.created_at)}
+                style={{ position: 'relative', border: 'none', padding: 0, borderRadius: 8, overflow: 'hidden', cursor: 'zoom-in', background: C.g100, aspectRatio: '1' }}>
+                {esVid(m)
+                  ? <video src={m._src} preload="metadata" muted style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }} />
+                  : <img src={m._src} loading="lazy" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {esVid(m) && <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, textShadow: '0 1px 6px rgba(0,0,0,.6)' }}>▶</span>}
+              </button>
+            ))}
           </div>
         </>}
-        {otros.map((m: any) => (
-          <a key={m.id} href={m._dl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', fontSize: 12, color: C.g700, textDecoration: 'none', borderBottom: `1px solid ${C.g50}` }}>
-            <span style={{ fontSize: 16 }}>{m.tipo === 'audio' ? '🎵' : '📄'}</span>
-            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.filename || m.cuerpo || m.tipo}</span>
-            <span style={{ fontSize: 10, color: C.g400 }}>{fecha(m.created_at)}</span>
-          </a>
-        ))}
+        {audios.length > 0 && <>
+          <div style={{ ...label(10), marginBottom: 6 }}>Audio · {audios.length}</div>
+          <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {audios.map((m: any) => (
+              <span key={m.id}>
+                <audio src={m._src} controls preload="none" style={{ width: '100%', height: 32 }} />
+                <span style={{ fontSize: 10, color: C.g400 }}>{fecha(m.created_at)}{m.transcript ? ` · ${String(m.transcript).slice(0, 60)}` : ''}</span>
+              </span>
+            ))}
+          </div>
+        </>}
+        {otros.length > 0 && <div style={{ ...label(10), marginBottom: 6 }}>Documentos · {otros.length}</div>}
+        {otros.map((m: any) => {
+          const ext = extensionDe({ ...m, media_url: m._src });
+          return (
+            <button key={m.id} onClick={() => setVisorAdj({ ...m, media_url: m._src })}
+              style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: '7px 0', cursor: 'pointer', fontFamily: 'inherit', borderBottom: `1px solid ${C.g50}` }}>
+              <span style={{ width: 28, height: 34, borderRadius: 5, background: C.morado, color: '#fff', fontSize: 8, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{ext}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <b style={{ fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.filename || m.cuerpo || `Documento ${ext}`}</b>
+                <span style={{ fontSize: 10, color: C.g400 }}>{fecha(m.created_at)}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -764,6 +797,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           );
         })}
       </div>
+      {visorAdj && <VisorMedia m={visorAdj} onCerrar={() => setVisorAdj(null)} />}
       {ficha && empresa && <ClienteDrawer360 companyId={empresa.id} onClose={() => setFicha(false)} onChanged={() => { cacheId.current = null; api.refrescar?.(); }} />}
     </div>
   );

@@ -5,6 +5,7 @@
 // WhatsApp del CRM ya filtrado a este teléfono. Aquí lo que importa es leer
 // la historia junto al ARR, los deals y el resto de la ficha.
 import { useEffect, useState } from 'react';
+import VisorMedia, { MediaEnLinea } from './VisorMedia';
 import Cargando from '../ui/Cargando';
 import { S, Tag, Aviso, Vacio, fmtFecha } from '../email/ui';
 import { telefonoLegible } from '../../../../lib/telefono';
@@ -16,9 +17,15 @@ const NOMBRE_STATUS: Record<string, string> = {
   received: 'recibido', sent: 'enviado', delivered: 'entregado', read: 'leído', failed: 'falló',
 };
 
+const ETIQUETA: Record<string, string> = {
+  image: 'Imagen', video: 'Video', audio: 'Audio', document: 'Documento', sticker: 'Sticker',
+  location: 'Ubicación', contacts: 'Contacto', template: 'Plantilla',
+};
+
 export default function TabWhatsApp360({ companyId }: { companyId: string }) {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
+  const [visor, setVisor] = useState<any>(null);   // media abierta a pantalla completa
   useEffect(() => {
     let vivo = true;
     fetch(`/api/crm/whatsapp/por-cliente?company_id=${companyId}`)
@@ -39,6 +46,7 @@ export default function TabWhatsApp360({ companyId }: { companyId: string }) {
 
   return (
     <div>
+      {visor && <VisorMedia m={visor} onCerrar={() => setVisor(null)} />}
       {convs.map(conv => (
         <div key={conv.id} style={{ ...S.card, marginBottom: 12, padding: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '11px 15px', borderBottom: '1px solid #f0eff3', background: '#fdfcff' }}>
@@ -60,17 +68,15 @@ export default function TabWhatsApp360({ companyId }: { companyId: string }) {
                 borderLeft: m.direccion === 'entrante' ? '3px solid #d9d6e8' : undefined,
                 borderRight: m.direccion === 'saliente' ? '3px solid #9B8CFA' : undefined,
               }}>
+                {m.media_url && <MediaEnLinea m={m} onAbrir={setVisor} max={200} />}
                 {m.transcript ? (
                   <><span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6' }}>NOTA DE VOZ · transcripción</span>
                     <div>{m.transcript}</div></>
                 ) : m.cuerpo ? (
                   <div style={{ whiteSpace: 'pre-wrap' }}>{m.cuerpo}</div>
-                ) : (
-                  <div style={{ color: '#8a8a92' }}>[{m.tipo || 'mensaje'}]</div>
-                )}
-                {m.media_url && (
-                  <a href={m.media_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.7rem', color: '#2C5FC4', fontWeight: 700 }}>Ver adjunto</a>
-                )}
+                ) : !m.media_url ? (
+                  <div style={{ color: '#8a8a92' }}>{ETIQUETA[m.tipo] || 'Mensaje'}</div>
+                ) : null}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
                   <span style={{ fontSize: '0.6rem', color: '#a5a2af' }}>{fmtFecha(m.enviado_at || m.created_at)}</span>
                   {m.direccion === 'saliente' && (
