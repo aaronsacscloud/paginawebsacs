@@ -78,6 +78,7 @@ const VISTAS = [
   { v: 'oportunidad', l: 'Oportunidad' },
   { v: 'prueba', l: 'En prueba' },
   { v: 'rezagados', l: 'Rezagados' },
+  { v: 'no_interesados', l: 'No interesados' },
   { v: 'todos', l: 'Todos' },
 ];
 
@@ -89,6 +90,10 @@ const diasDesde = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse
 /** En qué pestaña vive este contacto. null = solo en Todos (clientes, perdidos). */
 function pestanaDe(c: any): string | null {
   if (!ABIERTOS.includes(c.lifecycle_stage)) return null;
+  // "No le interesa" es decisión humana explícita (calificacion=no_califica →
+  // estatus descartado): gana sobre todo lo demás. NO va a Rezagados a
+  // propósito: los rezagados se reciclan con campañas, los no interesados no.
+  if (c.calificacion === 'no_califica' || eDeLead(c) === 'descartado') return 'no_interesados';
   if (prueba(c)) return 'prueba';
   if (c.lifecycle_stage === 'oportunidad' || (c.n_reuniones || 0) > 0) return 'oportunidad';
   // Barrido manual (ago-2026): lo que estaba "en seguimiento" o "calificado"
@@ -768,7 +773,8 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: etapa === 'todos' ? 100 : 130 }}>{
                     (etapa === 'camp_nuevas' || etapa === 'camp_seguimiento') ? 'Campaña' : etapa === 'calificados' ? 'Señal'
                     : etapa === 'oportunidad' ? 'Reunión' : etapa === 'prueba' ? 'Prueba'
-                    : etapa === 'rezagados' ? 'Último intento' : 'Etapa'}</th>
+                    : etapa === 'rezagados' ? 'Último intento'
+                    : etapa === 'no_interesados' ? 'Por qué no' : 'Etapa'}</th>
                   <th style={{ ...S.th, width: 118 }}>Estatus</th>
                   <th style={{ ...S.th, width: 44 }} />
                 </tr>
@@ -860,6 +866,9 @@ export default function LeadsTab() {
                             <div style={{ height: 4, borderRadius: 4, background: '#f1f1f4', marginTop: 4, overflow: 'hidden', maxWidth: 90 }}><div style={{ height: '100%', width: `${Math.min(100, (dia / total) * 100)}%`, background: vencida ? '#EF7A72' : '#E8A838' }} /></div>
                           </div>;
                         }
+                        if (etapa === 'no_interesados') return c.calificacion_motivo
+                          ? <span style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{c.calificacion_motivo}</span>
+                          : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
                         if (etapa === 'rezagados') {
                           const t = c.esfuerzo?.total || 0;
                           const u = diasDesde(c.last_contact_at);
@@ -919,21 +928,29 @@ export default function LeadsTab() {
         <>
           <div onClick={() => setCalificando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 401, width: 'min(400px, 92vw)', background: '#fff', borderRadius: 14, boxShadow: '0 18px 50px rgba(40,20,90,.25)', padding: '20px 22px' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Calificar a {[calificando.nombre, calificando.apellido].filter(Boolean).join(' ') || 'este lead'}</div>
-            <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4, lineHeight: 1.5 }}>Pasa a <b>Calificados</b>. El motivo es la señal que vio el equipo — una frase basta.</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{calificando._modo === 'descartar' ? 'No le interesa a' : 'Calificar a'} {[calificando.nombre, calificando.apellido].filter(Boolean).join(' ') || 'este lead'}</div>
+            <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4, lineHeight: 1.5 }}>{calificando._modo === 'descartar' ? <>Pasa a <b>No interesados</b> y sale de las listas de trabajo. El motivo evita volver a marcarle en 3 meses.</> : <>Pasa a <b>Calificados</b>. El motivo es la señal que vio el equipo — una frase basta.</>}</div>
             <input autoFocus value={motivoCal} onChange={e => setMotivoCal(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') setCalificando(null); }}
-              placeholder="Ej. 3 sucursales y ya usa punto de venta…"
+              placeholder={calificando._modo === 'descartar' ? 'Ej. ya usa otro sistema y está contento…' : 'Ej. 3 sucursales y ya usa punto de venta…'}
               style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: 12 }} />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
               <button onClick={() => setCalificando(null)} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#666' }}>Cancelar</button>
               <button onClick={async () => {
-                await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                const esDescarte = calificando._modo === 'descartar';
+                await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(esDescarte ? {
+                  // El descarte escribe la señal Y el estatus de una vez: el
+                  // cron nocturno llega a la misma conclusión (idempotente),
+                  // pero la pestaña debe reflejarlo AHORA.
+                  id: calificando.id, calificacion: 'no_califica',
+                  calificacion_motivo: motivoCal.trim() || null, calificacion_at: new Date().toISOString(),
+                  estatus_lead: 'descartado', estatus_lead_at: new Date().toISOString(),
+                } : {
                   id: calificando.id, lifecycle_stage: 'lead_calificado', calificacion: 'califica',
                   calificacion_motivo: motivoCal.trim() || null, calificacion_at: new Date().toISOString(),
                 }) }).catch(() => {});
                 setCalificando(null); cargar();
-              }} style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Calificar</button>
+              }} style={{ border: 'none', background: calificando._modo === 'descartar' ? '#EF7A72' : '#9B8CFA', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{calificando._modo === 'descartar' ? 'No le interesa' : 'Calificar'}</button>
             </div>
           </div>
         </>
@@ -956,6 +973,9 @@ export default function LeadsTab() {
               <button style={opcion} onClick={() => { setVerContacto(c.id); setMenu(null); }}>Abrir ficha</button>
               {c.lifecycle_stage === 'lead' && (
                 <button style={{ ...opcion, color: '#5B4BD6', fontWeight: 700 }} onClick={() => { setCalificando(c); setMotivoCal(''); setMenu(null); }}>Calificar como buen lead</button>
+              )}
+              {ABIERTOS.includes(c.lifecycle_stage) && c.calificacion !== 'no_califica' && (
+                <button style={{ ...opcion, color: '#C0554E' }} onClick={() => { setCalificando({ ...c, _modo: 'descartar' }); setMotivoCal(''); setMenu(null); }}>No le interesa</button>
               )}
               {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
               {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
