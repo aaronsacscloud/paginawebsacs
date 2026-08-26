@@ -8,6 +8,17 @@ import { EMOJIS } from './VistaModales';
 import { cargarLifecycle } from '../../../../lib/crm/lifecycle';
 
 const COLORES = ['#6B7280', '#5B4BD6', '#2C5FC4', '#1E8A63', '#9a6a10', '#C0554E', '#9B8CFA', '#D9538E'];
+
+// Etapas del SISTEMA: las mueve el CRM en automático y el código depende de
+// su id, así que no se archivan (solo se les cambia nombre/emoji/color). La
+// explicación se enseña en la fila para que nadie busque cómo "moverlas".
+const AUTOMATICAS: Record<string, string> = {
+  lead: 'Aquí nace todo lead nuevo (formularios, campañas, WhatsApp).',
+  lead_calificado: 'La pone la acción "Calificar como buen lead" (con su motivo).',
+  oportunidad: 'Se promueve SOLA al agendar una reunión.',
+  cliente: 'Se convierte SOLO cuando nace su primera suscripción.',
+  churned: 'La pone el cierre o la cancelación de la cuenta.',
+};
 const inp: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' };
 const lab: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 4px' };
 
@@ -63,10 +74,14 @@ export default function EtapasModal({ onCerrar, inline = false }: { onCerrar?: (
               <span style={{ fontSize: 16, width: 24, textAlign: 'center' }}>{e.emoji}</span>
               <span style={{ minWidth: 0, flex: 1 }}>
                 <b style={{ fontSize: 13, color: e.color }}>{e.nombre}</b>
+                {AUTOMATICAS[e.id] && <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: C.moradoTinta, background: C.moradoAgua, borderRadius: 99, padding: '2px 8px', verticalAlign: 'middle' }}>automática</span>}
                 <span style={{ display: 'block', fontSize: 10, color: C.g400 }}>{e.n} contacto{e.n === 1 ? '' : 's'} · <span style={{ color: TIPO[e.tipo]?.[1] }}>{TIPO[e.tipo]?.[0]}</span>{(e.sugerencias || []).length ? ` · ${e.sugerencias.length} tema${e.sugerencias.length === 1 ? '' : 's'}` : ''}</span>
+                {AUTOMATICAS[e.id] && <span style={{ display: 'block', fontSize: 10, color: C.g400, marginTop: 2 }}>{AUTOMATICAS[e.id]}</span>}
               </span>
               <button onClick={() => setEdit({ ...e })} style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Editar</button>
-              <button onClick={() => setArchivar({ ...e, destino: '' })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 12, padding: 4 }} title="Archivar etapa">Archivar</button>
+              {AUTOMATICAS[e.id]
+                ? <span title="Etapa del sistema: el CRM la mueve en automático, no se puede archivar" style={{ fontSize: 10, color: C.g300, padding: 4, cursor: 'default' }}>Fija</span>
+                : <button onClick={() => setArchivar({ ...e, destino: '' })} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g300, fontSize: 12, padding: 4 }} title="Archivar etapa">Archivar</button>}
             </div>
           ))}
           {msg && <div style={{ color: C.rojo700, fontSize: 12, margin: '6px 0' }}>{msg}</div>}

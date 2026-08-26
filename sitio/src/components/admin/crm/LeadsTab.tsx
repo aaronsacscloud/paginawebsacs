@@ -1053,12 +1053,19 @@ export default function LeadsTab() {
           };
           return cfgEditor === campo ? (
             <div style={{ marginTop: 10, border: '1px solid #eeeef1', borderRadius: 10, padding: '10px 12px', background: '#fafafc' }}>
-              {ops.map(o => (
-                <div key={o.v} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', padding: '3px 0' }}>
-                  <span style={{ flex: 1 }}>{o.l}</span>
-                  <span role="button" onClick={() => guardarOps(ops.filter(x => x.v !== o.v))} style={{ color: '#a5a2af', cursor: 'pointer' }}>✕</span>
-                </div>
-              ))}
+              {ops.map(o => {
+                // 'discovery' mueve el estatus en automático: es del sistema y
+                // no se puede quitar — solo agregar opciones alrededor.
+                const fija = campo === 'llamada_resultado' && o.v === 'discovery';
+                return (
+                  <div key={o.v} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', padding: '3px 0' }}>
+                    <span style={{ flex: 1 }}>{o.l}</span>
+                    {fija
+                      ? <span title="Opción del sistema: pone el estatus 'Discovery hecho' en automático" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.04em', color: '#a5a2af' }}>fija</span>
+                      : <span role="button" onClick={() => guardarOps(ops.filter(x => x.v !== o.v))} style={{ color: '#a5a2af', cursor: 'pointer' }}>✕</span>}
+                  </div>
+                );
+              })}
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <input value={cfgNueva} onChange={e => setCfgNueva(e.target.value)} placeholder="Nueva opción…"
                   onKeyDown={e => { if (e.key === 'Enter' && cfgNueva.trim()) { guardarOps([...ops, { v: cfgNueva.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_'), l: cfgNueva.trim() }]); setCfgNueva(''); } }}
@@ -1091,14 +1098,42 @@ export default function LeadsTab() {
 
               {editando.campo === 'estatus' && (<>
                 <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Estatus del lead · {nombre}</div>
-                <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 4 }}>Qué tan viva está la relación. Se deriva de los HECHOS (mensajes, llamadas, reuniones, cotizaciones): si mueves uno a mano y los hechos dicen otra cosa, el recálculo nocturno lo corrige.</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 14 }}>
-                  {ESTATUS_LEAD.map(ev => {
+                <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 4 }}>Qué tan viva está la relación. Solo la TEMPERATURA se corrige a mano; los hitos los ponen los hechos.</div>
+                {/* Editables: la temperatura del contacto (+ Negociando, el único
+                    peldaño deliberadamente manual). Los hitos NO se ofrecen como
+                    botones: ponerlos a mano contradiría el registro real. */}
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af', margin: '13px 0 6px' }}>El contacto (editable)</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                  {(['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'negociando'] as EstatusLead[]).map(ev => {
                     const pv = pintaEstatus(ev);
                     return <button key={ev} onClick={() => put({ estatus_lead: ev, estatus_lead_at: new Date().toISOString() })} style={btnOp(eDe(c) === ev, pv.fondo, pv.tinta)}>{ESTATUS_LABEL[ev]}</button>;
                   })}
                 </div>
-                <button onClick={() => { setEstatusF(eDe(c)); cerrar(); }} style={{ marginTop: 14, border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '7px 13px', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>Filtrar la lista por «{pintaEstatus(eDe(c)).label}»</button>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af', margin: '13px 0 6px' }}>Hitos · los ponen los hechos, no un click</div>
+                <div style={{ display: 'grid', gap: 5 }}>
+                  {([
+                    ['descubrimiento', 'registrando la llamada con resultado "Discovery hecha"', () => { setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); }],
+                    ['agendado', 'al agendar una reunión', () => setEditando({ c, campo: 'reunion' })],
+                    ['demo_hecha', 'al marcar la reunión como "Asistió"', () => setEditando({ c, campo: 'reunion' })],
+                    ['cotizado', 'al crear su cotización', null],
+                  ] as [EstatusLead, string, (() => void) | null][]).map(([ev, como, ir]) => {
+                    const pv = pintaEstatus(ev);
+                    const actual = eDe(c) === ev;
+                    return (
+                      <div key={ev} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.73rem', color: '#8a8a92' }}>
+                        <span style={{ ...S.tag(actual ? pv.fondo : '#f7f7f9', actual ? pv.tinta : '#b3b1bb'), boxShadow: actual ? `inset 0 0 0 1px ${pv.tinta}` : 'none' }}>{ESTATUS_LABEL[ev]}</span>
+                        <span style={{ flex: 1 }}>{actual ? 'estatus actual · ' : ''}se activa {como}</span>
+                        {ir && <button onClick={ir} style={{ border: 'none', background: 'none', fontSize: '0.7rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Ir →</button>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                  <button onClick={() => { setEstatusF(eDe(c)); cerrar(); }} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '7px 13px', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>Filtrar la lista por «{pintaEstatus(eDe(c)).label}»</button>
+                  {c.calificacion !== 'no_califica' && (
+                    <button onClick={() => { setCalificando({ ...c, _modo: 'descartar' }); setMotivoCal(''); setCatDescarte(''); cerrar(); }} style={{ border: '1px solid #f0c4bd', background: '#fff', borderRadius: 9, padding: '7px 13px', fontSize: '0.74rem', fontWeight: 700, color: '#C0554E', cursor: 'pointer', fontFamily: 'inherit' }}>No le interesa…</button>
+                  )}
+                </div>
               </>)}
 
               {editando.campo === 'reunion' && (<>
