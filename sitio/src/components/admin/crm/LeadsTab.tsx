@@ -478,7 +478,9 @@ export default function LeadsTab() {
             abiertos.filter((c: any) => pestanaDe(c) === 'nuevos').sort((a: any, b: any) => Date.parse(llegoReal(a)) - Date.parse(llegoReal(b))),
             (c: any) => { const m = minsDesde(c.created_at); return <span style={S.tag(m > 120 ? '#FEF0EF' : m > 30 ? '#FFF4E5' : '#EAF8F2', m > 120 ? '#C0554E' : m > 30 ? '#9a6a10' : '#1E8A63')}>{m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h` : `${Math.floor(m / 1440)} d`} esperando</span>; }],
           ['📞 Respondieron: llámales', 'la bola está en nuestra cancha',
-            abiertos.filter((c: any) => eDe(c) === 'respondio' && !(c.retenido_hasta && Date.parse(c.retenido_hasta) > Date.now())),
+            // Solo los de la pestaña Contactados: los rezagados barridos también
+            // "respondieron" alguna vez, pero su lugar es el reciclaje, no el día.
+            abiertos.filter((c: any) => pestanaDe(c) === 'contactados' && eDe(c) === 'respondio' && !(c.retenido_hasta && Date.parse(c.retenido_hasta) > Date.now())),
             (c: any) => c.last_contact_at ? <span style={{ fontSize: '0.7rem', color: '#8a8a92' }}>último toque hace {diasDesde(c.last_contact_at)} d</span> : null],
           ['⏰ Pausas vencidas', 'pidieron tiempo y el tiempo ya pasó',
             abiertos.filter((c: any) => c.retenido_hasta && Date.parse(c.retenido_hasta) <= Date.now()),
