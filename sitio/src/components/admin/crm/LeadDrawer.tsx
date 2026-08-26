@@ -986,7 +986,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
   );
   const btnCopiar = (txt: string, k: string) => (
     <button onClick={() => copiar(txt, k)} title="Copiar"
-      style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 800, color: copiado === k ? '#1E8A63' : '#b3b1bb', fontFamily: 'inherit', padding: 0 }}>
+      style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 800, color: copiado === k ? '#1E8A63' : '#b3b1bb', fontFamily: 'inherit', padding: 0, whiteSpace: 'nowrap' }}>
       {copiado === k ? 'copiado ✓' : 'copiar'}
     </button>
   );
