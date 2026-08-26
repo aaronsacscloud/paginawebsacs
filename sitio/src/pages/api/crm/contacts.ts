@@ -47,7 +47,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     const TOQUES = ['llamada', 'whatsapp_enviado', 'email_enviado'];
     const [acts, books, qs] = await Promise.all([
       supabase.from('activities').select('contact_id, tipo').in('contact_id', ids).in('tipo', TOQUES),
-      supabase.from('bookings').select('contact_id, estado, fecha').in('contact_id', ids),
+      supabase.from('bookings').select('id, contact_id, estado, fecha').in('contact_id', ids),
       supabase.from('quotes').select('contact_id').in('contact_id', ids),
     ]);
     const porContacto = new Map<string, { llamadas: number; correos: number; whatsapp: number; reuniones: any[]; cotizaciones: number }>();
@@ -62,7 +62,21 @@ export const GET: APIRoute = async ({ request, url }) => {
       else if (a.tipo === 'email_enviado') x.correos++;
       else if (a.tipo === 'whatsapp_enviado') x.whatsapp++;
     }
-    for (const b of (books.data || [])) dame(b.contact_id).reuniones.push({ estado: normalizaEstado(b.estado), fecha: b.fecha });
+    for (const b of (books.data || [])) dame(b.contact_id).reuniones.push({ id: (b as any).id, estado: normalizaEstado(b.estado), fecha: b.fecha });
+
+    // Llamadas de WhatsApp por contacto (una consulta para el lote): la
+    // columna "Llamadas" de la tabla vive de esto.
+    const { data: llam } = await supabase.from('wa_llamadas')
+      .select('duracion_seg, minuta, created_at, wa_conversaciones!inner(contact_id)')
+      .in('wa_conversaciones.contact_id', ids);
+    const llamPor = new Map<string, { n: number; ultima: string | null; discovery: boolean }>();
+    for (const l of (llam || []) as any[]) {
+      const cid = l.wa_conversaciones?.contact_id; if (!cid) continue;
+      const x = llamPor.get(cid) || { n: 0, ultima: null, discovery: false };
+      x.n++; if (!x.ultima || l.created_at > x.ultima) x.ultima = l.created_at;
+      x.discovery = x.discovery || (!!l.minuta && (l.duracion_seg || 0) >= 180);
+      llamPor.set(cid, x);
+    }
     for (const q of (qs.data || [])) dame(q.contact_id).cotizaciones++;
 
     // ── ¿Ya lo conocíamos? ────────────────────────────────────────────────
@@ -128,12 +142,15 @@ export const GET: APIRoute = async ({ request, url }) => {
       const reunion = x.reuniones.length ? {
         n: x.reuniones.length,
         proxima: futuras[0]?.fecha || null,
+        proxima_id: (futuras[0] as any)?.id || null,
         ultima: pasadas[0]?.fecha || null,
         ultima_estado: pasadas[0]?.estado || null,
+        ultima_id: (pasadas[0] as any)?.id || null,
         canceladas: x.reuniones.filter((r: any) => r.estado === 'cancelada').length,
         sin_reagendar: !futuras.length && pasadas[0]?.estado === 'no_asistio',
       } : null;
       return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial, reunion,
+        llamadas: llamPor.get(c.id) || { n: 0, ultima: null, discovery: false },
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
         n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones };
     });

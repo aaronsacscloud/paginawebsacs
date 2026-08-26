@@ -10,6 +10,7 @@ import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
 import LeadDrawer from './LeadDrawer';
+import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
@@ -215,6 +216,13 @@ export default function LeadsTab() {
   const [pausaRazon, setPausaRazon] = useState('');
   const [pausaF, setPausaF] = useState('');                    // '' | activa | vencida
   const [catDescarte, setCatDescarte] = useState('');
+  const [editando, setEditando] = useState<{ c: any; campo: 'etapa' | 'estatus' | 'reunion' | 'llamadas' } | null>(null);
+  const [llamadaRes, setLlamadaRes] = useState('');
+  const [llamadaNota, setLlamadaNota] = useState('');
+  const [cfgCampos, setCfgCampos] = useState<Record<string, { v: string; l: string }[]>>({});
+  const [cfgEditor, setCfgEditor] = useState('');
+  const [cfgNueva, setCfgNueva] = useState('');
+  const etapasCat = useLifecycle();
   const [motivoCal, setMotivoCal] = useState('');
   const [panelFiltros, setPanelFiltros] = useState(false);
   // El menú de la fila se ancla con coordenadas de pantalla: dentro de una
@@ -250,6 +258,7 @@ export default function LeadsTab() {
   useEffect(() => { cargar(); }, []);
   useEffect(() => {
     fetch('/api/crm/vistas?tabla=leads').then(r => r.json()).then(j => setVistasLeads(j.data || [])).catch(() => {});
+    fetch('/api/crm/campos-config').then(r => r.json()).then(j => setCfgCampos(j.campos || {})).catch(() => {});
   }, []);
 
   const listaBase = useMemo(() => {
@@ -293,6 +302,8 @@ export default function LeadsTab() {
   // lista ya filtrada por pestaña/canal/búsqueda: "Respondieron 12" con TikTok
   // puesto son los 12 de TikTok, igual que hacen los contadores de pestañas.
   const eDe = (c: any): EstatusLead => (c.estatus_lead || 'nuevo') as EstatusLead;
+  const opcionesDe = (campo: string, def: { v: string; l: string }[]) =>
+    (cfgCampos[campo]?.length ? cfgCampos[campo] : def);
   const lista = useMemo(() => {
     let r = listaBase;
     if (estatusF) r = estatusF.startsWith('g:') ? r.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2)) : r.filter((c: any) => eDe(c) === estatusF);
@@ -842,18 +853,20 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, minWidth: 140 }}>Teléfono</th>
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
-                  <th style={{ ...S.th, width: etapa === 'todos' ? 100 : 130 }}>{
-                    (etapa === 'nuevos' || etapa === 'contactados') ? 'Campaña' : etapa === 'calificados' ? 'Señal'
-                    : etapa === 'oportunidad' ? 'Reunión' : etapa === 'prueba' ? 'Prueba'
+                  <th style={{ ...S.th, width: 120 }}>{
+                    etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba'
                     : etapa === 'rezagados' ? 'Último intento'
-                    : etapa === 'no_interesados' ? 'Por qué no' : 'Etapa'}</th>
-                  <th style={{ ...S.th, width: 118 }}>Estatus</th>
+                    : etapa === 'no_interesados' ? 'Por qué no' : 'Campaña'}</th>
+                  <th style={{ ...S.th, width: 96 }}>Etapa</th>
+                  <th style={{ ...S.th, width: 108 }}>Estatus</th>
+                  <th style={{ ...S.th, width: 96 }}>Reunión</th>
+                  <th style={{ ...S.th, width: 92 }}>Llamadas</th>
                   <th style={{ ...S.th, width: 44 }} />
                 </tr>
               </thead>
               <tbody>
                 {lista.length === 0 && (
-                  <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={10}>Nada con estos filtros.</td></tr>
+                  <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={13}>Nada con estos filtros.</td></tr>
                 )}
                 {lista.map((c: any, iFila: number) => {
                   const o = origenDe(origenDeRegistro(c));
@@ -911,20 +924,12 @@ export default function LeadsTab() {
                       <td style={S.td}>{(() => {
                         // La columna cuenta lo que ESA pestaña necesita saber
                         // de cada renglón; en "Todos" vuelve a ser la Etapa.
-                        if (etapa === 'nuevos' || etapa === 'contactados') return c.campana
+                        if (etapa === 'nuevos' || etapa === 'contactados' || etapa === 'oportunidad' || etapa === 'todos') return c.campana
                           ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
                           : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
                         if (etapa === 'calificados') return c.calificacion_motivo
                           ? <span style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{c.calificacion_motivo}</span>
                           : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
-                        if (etapa === 'oportunidad') {
-                          const r = c.reunion;
-                          if (!r) return <span style={{ color: '#c9c7d0' }}>—</span>;
-                          if (r.proxima) return <span style={S.tag('#E3EDFD', '#2C5FC4')}>{fechaCorta(r.proxima) === 'hoy' ? 'HOY' : r.proxima.slice(5)}</span>;
-                          if (r.ultima_estado === 'asistio') return <span style={S.tag('#EAF8F2', '#1E8A63')}>Asistió</span>;
-                          if (r.ultima_estado === 'no_asistio') return <div><span style={S.tag('#FEF0EF', '#C0554E')}>No asistió</span>{r.sin_reagendar && <div style={{ fontSize: '0.62rem', color: '#C0554E', marginTop: 3 }}>sin reagendar</div>}</div>;
-                          return <span style={S.tag('#f4f4f6', '#6B7280')}>{r.ultima_estado || 'cancelada'}</span>;
-                        }
                         if (etapa === 'prueba') {
                           const pr = prueba(c);
                           if (!pr) return <span style={{ color: '#c9c7d0' }}>—</span>;
@@ -939,7 +944,7 @@ export default function LeadsTab() {
                           </div>;
                         }
                         if (etapa === 'no_interesados') {
-                          const cat = CATS_DESCARTE.find(x => x.v === c.descarte_categoria);
+                          const cat = opcionesDe('descarte_categoria', CATS_DESCARTE).find(x => x.v === c.descarte_categoria);
                           return (cat || c.calificacion_motivo)
                             ? <div>{cat && <span style={S.tag('#f4f4f6', '#6B7280')}>{cat.l}</span>}{c.calificacion_motivo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: cat ? 3 : 0 }}>{c.calificacion_motivo}</div>}</div>
                             : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
@@ -949,8 +954,16 @@ export default function LeadsTab() {
                           const u = diasDesde(c.last_contact_at);
                           return <div style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{t === 0 ? 'nunca contactado' : `${t} toque${t === 1 ? '' : 's'}`}{u != null && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>último hace {u} d</div>}</div>;
                         }
-                        return <span style={S.tag(et.bg, et.fg)}>{et.l}</span>;
+                        return c.campana
+                          ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
+                          : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
                       })()}</td>
+                      {/* Las columnas fijas: cada celda abre su modal para VER
+                          el dato y cambiarlo entre las opciones. */}
+                      <td style={S.td}>
+                        <span role="button" onClick={() => setEditando({ c, campo: 'etapa' })} title="Cambiar la etapa del ciclo de vida"
+                          style={{ ...S.tag(et.bg, et.fg), cursor: 'pointer' }}>{et.l}</span>
+                      </td>
                       <td style={S.td}>
                         {(() => {
                           // La pastilla del estatus operativo (la misma del
@@ -965,8 +978,8 @@ export default function LeadsTab() {
                                   este estatus (y sale como pastilla removible
                                   en la fila de filtros); otro click lo quita.
                                   Cero chrome extra en la barra. */}
-                              <span role="button" title={activa ? 'Quitar el filtro' : `Ver solo "${pe.label}"`}
-                                onClick={() => setEstatusF(activa ? '' : ef)}
+                              <span role="button" title="Ver y cambiar el estatus"
+                                onClick={() => setEditando({ c, campo: 'estatus' })}
                                 style={{ ...S.tag(pe.fondo, pe.tinta), cursor: 'pointer', boxShadow: activa ? `inset 0 0 0 1px ${pe.tinta}` : 'none' }}>{pe.label}</span>
                               {d != null && d > 0 && (
                                 <div style={{ fontSize: '0.62rem', color: d > 14 ? '#C0554E' : '#a5a2af', marginTop: 3 }}>{d} d sin contacto</div>
@@ -974,6 +987,25 @@ export default function LeadsTab() {
                             </div>
                           );
                         })()}
+                      </td>
+                      <td style={S.td}>
+                        <span role="button" onClick={() => setEditando({ c, campo: 'reunion' })} title="Ver y cambiar el estado de sus reuniones" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                          {(() => {
+                            const r = c.reunion;
+                            if (!r) return <span style={{ color: '#c9c7d0' }}>—</span>;
+                            if (r.proxima) return <span style={S.tag('#E3EDFD', '#2C5FC4')}>{fechaCorta(r.proxima) === 'hoy' ? 'HOY' : r.proxima.slice(5)}</span>;
+                            if (r.ultima_estado === 'asistio') return <span style={S.tag('#EAF8F2', '#1E8A63')}>Asistió</span>;
+                            if (r.ultima_estado === 'no_asistio') return <div><span style={S.tag('#FEF0EF', '#C0554E')}>No asistió</span>{r.sin_reagendar && <div style={{ fontSize: '0.62rem', color: '#C0554E', marginTop: 3 }}>sin reagendar</div>}</div>;
+                            return <span style={S.tag('#f4f4f6', '#6B7280')}>{r.ultima_estado || 'cancelada'}</span>;
+                          })()}
+                        </span>
+                      </td>
+                      <td style={S.td}>
+                        <span role="button" onClick={() => { setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); }} title="Ver llamadas y registrar una" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                          {(c.llamadas?.n || 0) > 0 || (c.esfuerzo?.llamadas || 0) > 0
+                            ? <div><b style={{ fontSize: '0.8rem' }}>{(c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)}</b>{c.llamadas?.discovery && <span style={{ ...S.tag('#EEECFE', '#5B4BD6'), marginLeft: 5 }}>discovery</span>}{c.llamadas?.ultima && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>última hace {diasDesde(c.llamadas.ultima)} d</div>}</div>
+                            : <span style={{ color: '#c9c7d0' }}>—</span>}
+                        </span>
                       </td>
                       {/* Las acciones viven en el menú de tres puntos, como en
                           Cotizaciones y Cobranza. Dos botones sueltos se comían
@@ -999,6 +1031,148 @@ export default function LeadsTab() {
 
       {/* Anclado con coordenadas de pantalla: dentro de una tabla con scroll,
           un menú en flujo se recorta contra el borde de la tarjeta. */}
+      {editando && (() => {
+        const c = editando.c;
+        const cerrar = () => { setEditando(null); setCfgEditor(''); setCfgNueva(''); };
+        const put = async (body: any) => {
+          await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id, ...body }) }).catch(() => {});
+          cerrar(); cargar();
+        };
+        const nombre = [c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead';
+        const btnOp = (on: boolean, bg: string, fg: string): CSSProperties => ({
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999,
+          cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: on ? 800 : 600,
+          border: `1px solid ${on ? fg : '#e6e5ec'}`, background: on ? bg : '#fff', color: on ? fg : '#5c5966',
+        });
+        // Editor del catálogo configurable: agregar/quitar opciones sin código.
+        const editorOpciones = (campo: string, def: { v: string; l: string }[]) => {
+          const ops = opcionesDe(campo, def);
+          const guardarOps = async (nuevas: { v: string; l: string }[]) => {
+            setCfgCampos({ ...cfgCampos, [campo]: nuevas });
+            await fetch('/api/crm/campos-config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campo, opciones: nuevas }) }).catch(() => {});
+          };
+          return cfgEditor === campo ? (
+            <div style={{ marginTop: 10, border: '1px solid #eeeef1', borderRadius: 10, padding: '10px 12px', background: '#fafafc' }}>
+              {ops.map(o => (
+                <div key={o.v} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.76rem', padding: '3px 0' }}>
+                  <span style={{ flex: 1 }}>{o.l}</span>
+                  <span role="button" onClick={() => guardarOps(ops.filter(x => x.v !== o.v))} style={{ color: '#a5a2af', cursor: 'pointer' }}>✕</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <input value={cfgNueva} onChange={e => setCfgNueva(e.target.value)} placeholder="Nueva opción…"
+                  onKeyDown={e => { if (e.key === 'Enter' && cfgNueva.trim()) { guardarOps([...ops, { v: cfgNueva.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_'), l: cfgNueva.trim() }]); setCfgNueva(''); } }}
+                  style={{ flex: 1, height: 32, border: '1px solid #e2e4e9', borderRadius: 8, padding: '0 10px', fontSize: '0.76rem', fontFamily: 'inherit', outline: 'none' }} />
+                <button onClick={() => { if (cfgNueva.trim()) { guardarOps([...ops, { v: cfgNueva.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_'), l: cfgNueva.trim() }]); setCfgNueva(''); } }}
+                  style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 8, padding: '0 12px', fontSize: '0.74rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Agregar</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setCfgEditor(campo)} style={{ marginTop: 10, border: 'none', background: 'none', fontSize: '0.72rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>⚙ Configurar opciones…</button>
+          );
+        };
+        return (
+          <>
+            <div onClick={cerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
+            <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 401, width: 'min(440px, 92vw)', maxHeight: '84vh', overflowY: 'auto', background: '#fff', borderRadius: 14, boxShadow: '0 18px 50px rgba(40,20,90,.25)', padding: '20px 22px' }}>
+
+              {editando.campo === 'etapa' && (<>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Etapa del ciclo de vida · {nombre}</div>
+                <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 4 }}>Quién ES en la relación. La mueves tú (o una regla, como agendar → Oportunidad).</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 14 }}>
+                  {etapasCat.map(e2 => (
+                    <button key={e2.id} onClick={() => put({ lifecycle_stage: e2.id })} style={btnOp(c.lifecycle_stage === e2.id, e2.bg, e2.fg)}>
+                      {(e2 as any).emoji && (e2 as any).emoji !== '·' ? (e2 as any).emoji + ' ' : ''}{e2.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 12 }}>Estas opciones se configuran (y puedes agregar más) en WhatsApp ▸ Configuración ▸ Etapas del ciclo.</div>
+              </>)}
+
+              {editando.campo === 'estatus' && (<>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Estatus del lead · {nombre}</div>
+                <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 4 }}>Qué tan viva está la relación. Se deriva de los HECHOS (mensajes, llamadas, reuniones, cotizaciones): si mueves uno a mano y los hechos dicen otra cosa, el recálculo nocturno lo corrige.</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 14 }}>
+                  {ESTATUS_LEAD.map(ev => {
+                    const pv = pintaEstatus(ev);
+                    return <button key={ev} onClick={() => put({ estatus_lead: ev, estatus_lead_at: new Date().toISOString() })} style={btnOp(eDe(c) === ev, pv.fondo, pv.tinta)}>{ESTATUS_LABEL[ev]}</button>;
+                  })}
+                </div>
+                <button onClick={() => { setEstatusF(eDe(c)); cerrar(); }} style={{ marginTop: 14, border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '7px 13px', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>Filtrar la lista por «{pintaEstatus(eDe(c)).label}»</button>
+              </>)}
+
+              {editando.campo === 'reunion' && (<>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Reuniones · {nombre}</div>
+                {!c.reunion && <div style={{ fontSize: '0.78rem', color: '#8a8a92', marginTop: 10 }}>Sin reuniones todavía. Agenda desde su ficha (botón de abajo) o mándale el link público de agenda.</div>}
+                {c.reunion?.proxima && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af' }}>Próxima · {c.reunion.proxima}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                      {[['confirmada', 'Confirmada', '#E3EDFD', '#2C5FC4'], ['asistio', 'Asistió', '#EAF8F2', '#1E8A63'], ['no_asistio', 'No asistió', '#FEF0EF', '#C0554E'], ['cancelada', 'Cancelada', '#f4f4f6', '#6B7280']].map(([v, l, bg, fg]) => (
+                        <button key={v} onClick={async () => {
+                          await fetch('/api/scheduling/bookings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.reunion.proxima_id, estado: v }) }).catch(() => {});
+                          cerrar(); cargar();
+                        }} style={btnOp(false, bg as string, fg as string)}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {c.reunion?.ultima && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af' }}>Última · {c.reunion.ultima} · hoy: {c.reunion.ultima_estado || '—'}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                      {[['asistio', 'Asistió', '#EAF8F2', '#1E8A63'], ['no_asistio', 'No asistió', '#FEF0EF', '#C0554E'], ['cancelada', 'Cancelada', '#f4f4f6', '#6B7280']].map(([v, l, bg, fg]) => (
+                        <button key={v} onClick={async () => {
+                          await fetch('/api/scheduling/bookings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.reunion.ultima_id, estado: v }) }).catch(() => {});
+                          cerrar(); cargar();
+                        }} style={btnOp(c.reunion.ultima_estado === v, bg as string, fg as string)}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => { setVerContacto(c.id); cerrar(); }} style={{ marginTop: 14, border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '7px 13px', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>Abrir ficha completa</button>
+              </>)}
+
+              {editando.campo === 'llamadas' && (<>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Llamadas · {nombre}</div>
+                <div style={{ fontSize: '0.78rem', color: '#5c5966', marginTop: 8 }}>
+                  {((c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)) > 0
+                    ? <>{(c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)} llamada{((c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)) === 1 ? '' : 's'}{c.llamadas?.ultima ? ` · última hace ${diasDesde(c.llamadas.ultima)} d` : ''}{c.llamadas?.discovery ? ' · con discovery (3+ min y minuta)' : ''}</>
+                    : 'Sin llamadas registradas.'}
+                </div>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af', margin: '14px 0 5px' }}>Registrar llamada de ahorita</div>
+                <select value={llamadaRes} onChange={e => setLlamadaRes(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.82rem', fontFamily: 'inherit', color: llamadaRes ? '#3f3b4d' : '#a5a2af' }}>
+                  <option value="">¿Cómo salió?…</option>
+                  {opcionesDe('llamada_resultado', [{ v: 'contesto', l: 'Contestó' }, { v: 'no_contesto', l: 'No contestó' }]).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                </select>
+                <input value={llamadaNota} onChange={e => setLlamadaNota(e.target.value)} placeholder="Nota (opcional)…"
+                  style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: 8 }} />
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+                  <button disabled={!llamadaRes} onClick={async () => {
+                    const lbl = opcionesDe('llamada_resultado', []).find(o => o.v === llamadaRes)?.l || llamadaRes;
+                    await fetch('/api/crm/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                      contact_id: c.id, tipo: 'llamada', titulo: `Llamada: ${lbl}`, descripcion: llamadaNota.trim() || null, metadata: { resultado: llamadaRes },
+                    }) }).catch(() => {});
+                    // La llamada ES un toque: mueve el reloj y, si fue discovery, el estatus.
+                    await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                      id: c.id, last_contact_at: new Date().toISOString(),
+                      ...(llamadaRes === 'discovery' ? { estatus_lead: 'descubrimiento', estatus_lead_at: new Date().toISOString() } : {}),
+                    }) }).catch(() => {});
+                    cerrar(); cargar();
+                  }} style={{ border: 'none', background: llamadaRes ? '#9B8CFA' : '#d8d6e4', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: llamadaRes ? 'pointer' : 'default', fontFamily: 'inherit' }}>Registrar</button>
+                </div>
+                {editorOpciones('llamada_resultado', [{ v: 'contesto', l: 'Contestó' }, { v: 'no_contesto', l: 'No contestó' }])}
+              </>)}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+                <button onClick={cerrar} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '7px 14px', fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#666' }}>Cerrar</button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {pausando && (
         <>
           <div onClick={() => setPausando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
@@ -1040,7 +1214,7 @@ export default function LeadsTab() {
               <select value={catDescarte} onChange={e => setCatDescarte(e.target.value)}
                 style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.82rem', fontFamily: 'inherit', marginTop: 12, color: catDescarte ? '#3f3b4d' : '#a5a2af' }}>
                 <option value="">¿Por qué? (elige la categoría)…</option>
-                {CATS_DESCARTE.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
+                {opcionesDe('descarte_categoria', CATS_DESCARTE).map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
               </select>
             )}
             <input autoFocus value={motivoCal} onChange={e => setMotivoCal(e.target.value)}
