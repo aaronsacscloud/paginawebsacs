@@ -28,7 +28,7 @@ import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import { CANALES, RESULTADOS, resultadoDe, tipoActividad, tituloToque, quienLoHizo, esRuido, type Canal } from '../../../lib/crm/lead-toques';
 
-const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
+const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '').replace('-', ' ') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
 const hoy = () => new Date().toISOString().slice(0, 10);
@@ -220,7 +220,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
                 <span style={D.chip(et.bg, et.fg)}>{et.l}</span>
               </div>
               <div style={{ fontSize: '0.78rem', color: '#8a8a8a', marginTop: 2 }}>
-                {[c.companies?.nombre, c.email, tel].filter(Boolean).join(' · ')}
+                {/* En Info general el héroe ya cuenta quién es: repetir correo y
+                    teléfono a 10 px era el mismo dato dos veces. En las demás
+                    pestañas el header sí carga la identidad completa. */}
+                {(tab === 'info' ? [c.companies?.nombre] : [c.companies?.nombre, c.email, tel]).filter(Boolean).join(' · ')}
               </div>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
@@ -873,12 +876,16 @@ function SiguientePaso({ c, guardar, guardando }: any) {
   return (
     <div style={D.cardM}>
       <div style={D.h}>Siguiente paso{vencido && <span style={{ ...D.hr, background: '#FEF0EF', color: '#C0554E' }}>vencido</span>}</div>
-      <input style={D.fi} value={vPaso} onChange={e => setPaso(e.target.value)} placeholder="¿Qué sigue con este lead?…" />
-      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-        <input type="date" style={{ ...D.fi, width: 150 }} value={vFecha} onChange={e => setFecha(e.target.value)} />
-        {sucio && <button style={D.btnP} disabled={guardando}
+      {/* Captura rápida a propósito (la excepción a "se lee escrita"): el
+          siguiente paso se apunta en caliente, sin entrar a editar. */}
+      <div style={D.fl}>Qué sigue</div>
+      <input style={D.fi} value={vPaso} onChange={e => setPaso(e.target.value)} placeholder="ej. mandarle la cotización del plan Controla…" />
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'flex-end' }}>
+        <div><div style={D.fl}>Para cuándo</div>
+          <input type="date" lang="es-MX" style={{ ...D.fi, width: 150 }} value={vFecha} onChange={e => setFecha(e.target.value)} /></div>
+        <button style={{ ...D.btnP, opacity: sucio ? 1 : .45 }} disabled={!sucio || guardando}
           onClick={async () => { if (await guardar({ proximo_paso: vPaso || null, next_followup: vFecha || null })) { setPaso(null); setFecha(null); } }}>
-          {guardando ? '…' : 'Guardar'}</button>}
+          {guardando ? '…' : 'Guardar'}</button>
       </div>
     </div>
   );
@@ -1082,28 +1089,28 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
               {chip(estP.label, estP.fondo, estP.tinta, 'Estatus del lead (derivado de hechos)')}
               {chip(o.l, '#E3EDFD', '#2C5FC4', 'Por dónde llegó')}
               {/* La campaña ya vive en "De dónde llegó": repetirla aquí era ruido. */}
-              {!c.last_contact_at ? chip('nunca contactado', '#f4f3f7', '#6b7280')
-                : sinC != null && sinC > 0 ? chip(`${sinC} d sin contacto`, sinC > 14 ? '#FEF0EF' : '#f4f3f7', sinC > 14 ? '#C0554E' : '#6b7280') : null}
               {pausaActiva && c.retenido_razon ? chip(`pausa: ${c.retenido_razon}`, '#FFF4E5', '#9a6a10') : null}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
             {/* El mismo lugar en los dos modos: Editar se vuelve Guardar/Cancelar
                 y nada se recorre. El commit es inequívoco. */}
-            {!editando
-              ? <button style={D.btnA} onClick={() => setEditando(true)}>Editar</button>
-              : <>
-                  <button style={{ ...D.btnP, opacity: sucio ? 1 : .45 }} disabled={!sucio || guardando}
-                    onClick={async () => { await aplicar(); setEditando(false); }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
-                  <button style={D.btnA} onClick={() => { setF({}); setEditando(false); }}>Cancelar</button>
-                </>}
-            <button style={{ ...D.btnA, color: '#9a6a10', borderColor: '#f0dcb0' }} onClick={() => {
-              const d = new Date(); d.setDate(d.getDate() + 14);
-              setAccion(accion === 'pausa' ? '' : 'pausa'); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon('');
-            }}>Pidió tiempo</button>
-            {c.calificacion !== 'no_califica' && (
-              <button style={{ ...D.btnA, color: '#C0554E', borderColor: '#f0c4bd' }} onClick={() => { setAccion(accion === 'descarte' ? '' : 'descarte'); setCatDesc(''); setMotivoDesc(''); }}>No le interesa</button>
-            )}
+            {!editando ? (<>
+              <button style={D.btnA} onClick={() => setEditando(true)}>Editar</button>
+              <button style={{ ...D.btnA, color: '#9a6a10', borderColor: '#f0dcb0' }} onClick={() => {
+                const d = new Date(); d.setDate(d.getDate() + 14);
+                setAccion(accion === 'pausa' ? '' : 'pausa'); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon('');
+              }}>Pidió tiempo</button>
+              {c.calificacion !== 'no_califica' && (
+                <button style={{ ...D.btnA, color: '#C0554E', borderColor: '#f0c4bd' }} onClick={() => { setAccion(accion === 'descarte' ? '' : 'descarte'); setCatDesc(''); setMotivoDesc(''); }}>No le interesa</button>
+              )}
+            </>) : (<>
+              {/* Mismo rincón en los dos modos; a media captura las acciones de
+                  estatus no aplican y solo estorbarían. */}
+              <button style={{ ...D.btnP, opacity: sucio ? 1 : .45 }} disabled={!sucio || guardando}
+                onClick={async () => { await aplicar(); setEditando(false); }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+              <button style={D.btnA} onClick={() => { setF({}); setEditando(false); }}>Cancelar</button>
+            </>)}
           </div>
         </div>
 
@@ -1136,6 +1143,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         {/* ── La franja derivada: números que NO se capturan ── */}
         <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', ...separador }}>
           {dato('Llegó', fmtDate(llegoRealF), undefined, c.propiedades?.tiktok?.creado ? 'fecha real del anuncio' : undefined)}
+          {dato('Último contacto', c.last_contact_at ? `hace ${sinC} d` : 'nunca', c.last_contact_at && sinC != null && sinC > 14 ? '#C0554E' : undefined)}
           {dato('Toques', toques || '—')}
           {dato('Reuniones', (c.bookings || []).length || '—')}
           {dato('Cotizaciones', (c.quotes || []).length || '—')}
@@ -1145,7 +1153,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         {/* ── Los datos, ESCRITOS (los inputs salen al Editar) ── */}
         {!editando ? (
           <div style={{ ...separador, ...rejilla }}>
-            {leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}
+            <div style={{ gridColumn: 'span 2', minWidth: 0 }}>{leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}</div>
             {leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}
             {leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel'))}
             {leido('Puesto', c.rol || c.puesto)}
