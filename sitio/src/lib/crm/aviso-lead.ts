@@ -16,12 +16,17 @@ async function destinos(): Promise<string[]> {
   return [...new Set((data || []).map((m: any) => String(m.whatsapp).trim()).filter(Boolean))];
 }
 
-async function mandar(texto: string) {
+async function mandar(texto: string): Promise<{ tel: string; ok: boolean; error?: string }[]> {
   const tels = await destinos();
+  const res: { tel: string; ok: boolean; error?: string }[] = [];
   for (const t of tels) {
-    try { await enviarTexto(t, texto); }
-    catch (e: any) { console.warn('[aviso-lead] no se pudo avisar a', t, e?.message || e); }
+    try { await enviarTexto(t, texto); res.push({ tel: t, ok: true }); }
+    catch (e: any) {
+      console.warn('[aviso-lead] no se pudo avisar a', t, e?.message || e);
+      res.push({ tel: t, ok: false, error: String(e?.message || e).slice(0, 300) });
+    }
   }
+  return res;
 }
 
 /** Un lead nuevo, con su info básica y el link directo a su ficha. */
@@ -34,7 +39,7 @@ export async function avisarNuevoLead(c: { id: string; nombre?: string | null; a
     extra || '',
     `Verlo: ${URL_LEAD(c.id)}`,
   ].filter(Boolean);
-  await mandar(lineas.join('\n'));
+  return mandar(lineas.join('\n'));
 }
 
 /** Aviso agrupado (imports por lote): uno por lead sería spam. */
