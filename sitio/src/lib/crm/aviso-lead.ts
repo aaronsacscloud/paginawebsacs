@@ -6,7 +6,7 @@
 // vendedor debe escribirle "hola" al número del CRM de vez en cuando para
 // mantener su ventana abierta (o después migramos a plantilla UTILITY).
 import { supabase } from '../supabase';
-import { enviarTexto } from '../whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla } from '../whatsapp/kapso-api';
 
 const URL_LEAD = (id: string) => `https://www.sacscloud.com/admin/crm?tab=pipeline&lead=${id}`;
 
@@ -16,12 +16,24 @@ async function destinos(): Promise<string[]> {
   return [...new Set((data || []).map((m: any) => String(m.whatsapp).trim()).filter(Boolean))];
 }
 
-async function mandar(texto: string): Promise<{ tel: string; ok: boolean; error?: string }[]> {
+// Primero texto libre (formato bonito); si la ventana de 24 h del vendedor
+// está cerrada (422), cae a la plantilla UTILITY nuevo_lead_aviso — el aviso
+// llega SIEMPRE. Los parámetros de plantilla no admiten saltos de línea.
+async function mandar(texto: string, vars?: [string, string, string]): Promise<{ tel: string; ok: boolean; via?: string; error?: string }[]> {
   const tels = await destinos();
-  const res: { tel: string; ok: boolean; error?: string }[] = [];
+  const res: { tel: string; ok: boolean; via?: string; error?: string }[] = [];
   for (const t of tels) {
-    try { await enviarTexto(t, texto); res.push({ tel: t, ok: true }); }
+    try { await enviarTexto(t, texto); res.push({ tel: t, ok: true, via: 'texto' }); continue; }
     catch (e: any) {
+      if (vars) {
+        try {
+          await enviarPlantilla(t, 'nuevo_lead_aviso', 'es_MX', vars.map(v => String(v || '—').replace(/\s+/g, ' ').slice(0, 300)));
+          res.push({ tel: t, ok: true, via: 'plantilla' }); continue;
+        } catch (e2: any) {
+          console.warn('[aviso-lead] plantilla también falló para', t, e2?.message || e2);
+          res.push({ tel: t, ok: false, error: String(e2?.message || e2).slice(0, 300) }); continue;
+        }
+      }
       console.warn('[aviso-lead] no se pudo avisar a', t, e?.message || e);
       res.push({ tel: t, ok: false, error: String(e?.message || e).slice(0, 300) });
     }
@@ -39,19 +51,21 @@ export async function avisarNuevoLead(c: { id: string; nombre?: string | null; a
     extra || '',
     `Verlo: ${URL_LEAD(c.id)}`,
   ].filter(Boolean);
-  return mandar(lineas.join('\n'));
+  return mandar(lineas.join('\n'), [nombre, [c.whatsapp || c.telefono, c.email, c.campana || c.fuente].filter(Boolean).join(' · ') || 'sin datos', c.id]);
 }
 
 /** Aviso agrupado (imports por lote): uno por lead sería spam. */
 export async function avisarLoteLeads(n: number, nombres: string[], origen: string) {
   if (n <= 0) return;
   const lista = nombres.slice(0, 6).join(', ') + (n > 6 ? ` y ${n - 6} más` : '');
-  await mandar(`🔔 ${n} lead${n === 1 ? '' : 's'} nuevo${n === 1 ? '' : 's'} de ${origen}: ${lista}\nVerlos: https://www.sacscloud.com/admin/crm?tab=pipeline`);
+  await mandar(`🔔 ${n} lead${n === 1 ? '' : 's'} nuevo${n === 1 ? '' : 's'} de ${origen}: ${lista}\nVerlos: https://www.sacscloud.com/admin/crm?tab=pipeline`,
+    [`${n} leads de ${origen}`, lista, 'lista']);
 }
 
 /** SLA: leads sin primer toque, agrupados en un solo mensaje. */
 export async function avisarSLA(leads: { id: string; nombre: string; mins: number }[]) {
   if (!leads.length) return;
   const filas = leads.slice(0, 8).map(l => `· ${l.nombre} — ${l.mins} min sin toque`).join('\n');
-  await mandar(`⏰ *Leads esperando el primer contacto:*\n${filas}${leads.length > 8 ? `\n…y ${leads.length - 8} más` : ''}\nAtiéndelos: https://www.sacscloud.com/admin/crm?tab=pipeline`);
+  await mandar(`⏰ *Leads esperando el primer contacto:*\n${filas}${leads.length > 8 ? `\n…y ${leads.length - 8} más` : ''}\nAtiéndelos: https://www.sacscloud.com/admin/crm?tab=pipeline`,
+    [`${leads.length} lead${leads.length === 1 ? '' : 's'} sin primer toque`, leads.slice(0, 6).map(l => `${l.nombre} (${l.mins} min)`).join(' · '), 'lista']);
 }

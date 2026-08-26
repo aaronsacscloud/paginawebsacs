@@ -259,7 +259,7 @@ export default function LeadsTab() {
   // Deep-link del aviso por WhatsApp: ?lead=<id> abre la ficha directo.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('lead');
-    if (id) setVerContacto(id);
+    if (id && id.length > 20) setVerContacto(id);   // los avisos agrupados mandan 'lista'
   }, []);
   useEffect(() => {
     fetch('/api/crm/vistas?tabla=leads').then(r => r.json()).then(j => setVistasLeads(j.data || [])).catch(() => {});
