@@ -877,15 +877,38 @@ function SiguientePaso({ c, guardar, guardando }: any) {
     <div style={D.cardM}>
       <div style={D.h}>Siguiente paso{vencido && <span style={{ ...D.hr, background: '#FEF0EF', color: '#C0554E' }}>vencido</span>}</div>
       {/* Captura rápida a propósito (la excepción a "se lee escrita"): el
-          siguiente paso se apunta en caliente, sin entrar a editar. */}
+          siguiente paso se apunta en caliente, sin entrar a editar. La fecha
+          NO usa el date nativo del navegador (mm/dd/yyyy gringo, fuera de
+          tokens): chips de atajo + dd/mm/aaaa escrito. */}
       <div style={D.fl}>Qué sigue</div>
-      <input style={D.fi} value={vPaso} onChange={e => setPaso(e.target.value)} placeholder="ej. mandarle la cotización del plan Controla…" />
-      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'flex-end' }}>
-        <div><div style={D.fl}>Para cuándo</div>
-          <input type="date" lang="es-MX" style={{ ...D.fi, width: 150 }} value={vFecha} onChange={e => setFecha(e.target.value)} /></div>
+      <input style={D.fi} value={vPaso} onChange={e => setPaso(e.target.value)} placeholder="ej. mandarle la cotización…" />
+      <div style={D.fl}>Para cuándo</div>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
+        {[['Mañana', 1], ['En 3 días', 3], ['Próx. semana', 7]].map(([l, n]) => {
+          const d = new Date(); d.setDate(d.getDate() + (n as number));
+          const iso = d.toISOString().slice(0, 10);
+          const on = vFecha === iso;
+          return <button key={l as string} onClick={() => setFecha(iso)} style={{
+            border: `1px solid ${on ? '#9B8CFA' : '#e6e5ec'}`, background: on ? '#EEECFE' : '#fff',
+            color: on ? '#5B4BD6' : '#5c5966', borderRadius: 999, padding: '4px 11px',
+            fontSize: '0.7rem', fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit',
+          }}>{l}</button>;
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input style={{ ...D.fi, width: 130 }} placeholder="dd/mm/aaaa" inputMode="numeric"
+          value={vFecha ? vFecha.split('-').reverse().join('/') : ''}
+          onChange={e => {
+            const m = e.target.value.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+            if (!e.target.value) setFecha('');
+            else if (m) {
+              const y = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : String(new Date().getFullYear());
+              setFecha(`${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`);
+            } else setFecha(vFecha);   // no rompe lo ya elegido mientras teclea
+          }} />
         <button style={{ ...D.btnP, opacity: sucio ? 1 : .45 }} disabled={!sucio || guardando}
           onClick={async () => { if (await guardar({ proximo_paso: vPaso || null, next_followup: vFecha || null })) { setPaso(null); setFecha(null); } }}>
-          {guardando ? '…' : 'Guardar'}</button>
+          {guardando ? '…' : 'Guardar paso'}</button>
       </div>
     </div>
   );
@@ -895,7 +918,7 @@ function SiguientePaso({ c, guardar, guardando }: any) {
    pestaña. La historia completa sigue viviendo en Seguimiento. */
 function LoUltimo({ c }: any) {
   const acts = (c.activities || []).filter((a: any) => !esRuido(a))
-    .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 4);
+    .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 6);
   if (!acts.length) return null;
   return (
     <div style={D.cardA}>
