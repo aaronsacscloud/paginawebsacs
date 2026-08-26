@@ -6,6 +6,17 @@ import { ESTATUS_VALORES } from './estatus-lead';
 
 export type CondLead = { campo: string; op: string; valor: string };
 
+// Por qué se descartó: categorías FIJAS para poder medir en 3 meses por qué
+// se pierden los leads. El texto libre acompaña, no sustituye.
+export const CATS_DESCARTE = [
+  { v: 'ya_usa_otro', l: 'Ya usa otro sistema' },
+  { v: 'precio', l: 'Precio' },
+  { v: 'no_perfil', l: 'No es el perfil' },
+  { v: 'datos_falsos', l: 'Datos falsos / ilocalizable' },
+  { v: 'sin_respuesta', l: 'Nunca respondió' },
+  { v: 'otro', l: 'Otro' },
+];
+
 const OPS = {
   es: [{ id: 'es', label: 'es' }, { id: 'no_es', label: 'no es' }],
   esSolo: [{ id: 'es', label: 'es' }],
@@ -24,6 +35,9 @@ export function camposLeads(din: { campanas?: string[]; giros?: string[] } = {})
       { v: 'cancelada', l: 'Tuvo cancelada' }, { v: 'nunca', l: 'Nunca ha tenido' }] },
     { id: 'prueba', label: 'Prueba', ops: OPS.esSolo, valores: [
       { v: 'activa', l: 'Activa' }, { v: 'vencida', l: 'Vencida sin cerrar' }, { v: 'sin', l: 'Sin prueba' }] },
+    { id: 'pausa', label: 'Pausa (pidió tiempo)', ops: OPS.esSolo, valores: [
+      { v: 'activa', l: 'En pausa' }, { v: 'vencida', l: 'Pausa vencida' }, { v: 'sin', l: 'Sin pausa' }] },
+    { id: 'descarte', label: 'Motivo de descarte', ops: OPS.es, valores: CATS_DESCARTE },
     { id: 'telefono', label: 'Teléfono', ops: OPS.esSolo, valores: [{ v: 'si', l: 'Tiene' }, { v: 'no', l: 'No tiene' }] },
     { id: 'giro', label: 'Giro', ops: OPS.es, valores: lista(din.giros) },
     { id: 'sucursales', label: 'Sucursales', ops: OPS.num, valores: [] },
@@ -60,6 +74,12 @@ export function cumpleCondLead(c: any, k: CondLead): boolean {
         : (activa && (fin == null || fin >= Date.now()));
       break;
     }
+    case 'pausa': {
+      const f = c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
+      ok = k.valor === 'sin' ? !f : k.valor === 'activa' ? (f != null && f > Date.now()) : (f != null && f <= Date.now());
+      break;
+    }
+    case 'descarte': ok = (c.descarte_categoria || '') === k.valor; break;
     case 'telefono': ok = (k.valor === 'si') === !!(c.whatsapp || c.telefono); break;
     case 'giro': ok = (c.giro || c.companies?.giro || '') === k.valor; break;
     case 'sucursales': {

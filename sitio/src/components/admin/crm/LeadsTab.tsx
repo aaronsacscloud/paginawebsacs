@@ -47,7 +47,7 @@ const horaCorta = (d?: string | null) => {
 };
 
 import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type EstatusLead } from '../../../lib/crm/estatus-lead';
-import { camposLeads, cumpleCondsLead, type CondLead } from '../../../lib/crm/leads-filtros';
+import { camposLeads, cumpleCondsLead, CATS_DESCARTE, type CondLead } from '../../../lib/crm/leads-filtros';
 
 // Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
 // mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
@@ -210,6 +210,11 @@ export default function LeadsTab() {
   const [vistasLeads, setVistasLeads] = useState<any[]>([]);   // guardadas en crm_vistas tabla 'leads'
   const [vistaId, setVistaId] = useState('');
   const [calificando, setCalificando] = useState<any>(null);   // mini-modal "Calificar"
+  const [pausando, setPausando] = useState<any>(null);         // mini-modal "Pidió tiempo"
+  const [pausaHasta, setPausaHasta] = useState('');
+  const [pausaRazon, setPausaRazon] = useState('');
+  const [pausaF, setPausaF] = useState('');                    // '' | activa | vencida
+  const [catDescarte, setCatDescarte] = useState('');
   const [motivoCal, setMotivoCal] = useState('');
   const [panelFiltros, setPanelFiltros] = useState(false);
   // El menú de la fila se ancla con coordenadas de pantalla: dentro de una
@@ -299,6 +304,10 @@ export default function LeadsTab() {
         : reunionF === 'cancelada' ? (x?.canceladas || 0) > 0
         : x?.ultima_estado === reunionF;
     });
+    if (pausaF) r = r.filter((c: any) => {
+      const f = c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
+      return pausaF === 'activa' ? (f != null && f > Date.now()) : (f != null && f <= Date.now());
+    });
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
     // En las pestañas de campaña manda la fecha REAL de llegada (la del
     // anuncio si existe), lo más reciente arriba: es la bandeja del día.
@@ -306,7 +315,7 @@ export default function LeadsTab() {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
-  }, [listaBase, estatusF, reunionF, conds, logicaF, etapa]);
+  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa]);
   // Para la tarjeta del Dashboard: el funnel del pool ABIERTO completo, sin
   // los filtros de la lista — es la foto del negocio, no de la vista.
   const conteosFunnel = useMemo(() => {
@@ -358,10 +367,11 @@ export default function LeadsTab() {
     (estatusF && !estatusF.startsWith('g:')) && { k: 'est', l: `Estatus: ${ESTATUS_LABEL[estatusF as EstatusLead] || estatusF}`, quitar: () => setEstatusF('') },
     (estatusF && estatusF.startsWith('g:')) && { k: 'estg', l: 'Funnel filtrado', quitar: () => setEstatusF('') },
     reunionF && { k: 'reu', l: `Reunión: ${({ agendada: 'agendada', asistio: 'asistió', no_asistio: 'no asistió', cancelada: 'cancelada', sin_reagendar: 'sin reagendar', nunca: 'nunca' } as any)[reunionF]}`, quitar: () => setReunionF('') },
+    pausaF && { k: 'pau', l: pausaF === 'activa' ? 'En pausa' : 'Pausa vencida', quitar: () => setPausaF('') },
     conds.length > 0 && { k: 'conds', l: vistaId ? `Vista: ${vistasLeads.find(v => v.id === vistaId)?.nombre || 'guardada'}` : `${conds.length} condición${conds.length === 1 ? '' : 'es'}`, quitar: () => { setConds([]); setVistaId(''); } },
   ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
   const nFiltros = chips.length;
-  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setConds([]); setVistaId(''); };
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setPausaF(''); setConds([]); setVistaId(''); };
 
   if (rows === null) return <Cargando texto="Cargando leads…" />;
 
@@ -561,6 +571,40 @@ export default function LeadsTab() {
             })}
           </div>
 
+          {etapa === 'contactados' && (() => {
+            // Contactados mezcla temperaturas MUY distintas: este strip las
+            // separa de un vistazo y cada contador filtra al click. "Pausa
+            // vencida" es lista-hueco: se vacía cuando les marcas.
+            const fP = (c: any) => c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
+            const grupos = [
+              { k: 'e:respondio', l: 'Respondieron', n: listaBase.filter((c: any) => eDe(c) === 'respondio').length, bg: '#EEECFE', fg: '#5B4BD6' },
+              { k: 'e:descubrimiento', l: 'Discovery hecho', n: listaBase.filter((c: any) => eDe(c) === 'descubrimiento').length, bg: '#EEECFE', fg: '#5B4BD6' },
+              { k: 'e:contactado', l: 'Esperando respuesta', n: listaBase.filter((c: any) => eDe(c) === 'contactado').length, bg: '#f4f4f6', fg: '#6B7280' },
+              { k: 'e:sin_respuesta', l: 'No contestan', n: listaBase.filter((c: any) => eDe(c) === 'sin_respuesta').length, bg: '#FEF0EF', fg: '#C0554E' },
+              { k: 'p:activa', l: 'En pausa', n: listaBase.filter((c: any) => (fP(c) ?? 0) > Date.now()).length, bg: '#FFF4E5', fg: '#9a6a10' },
+              { k: 'p:vencida', l: 'Pausa vencida: márcales', n: listaBase.filter((c: any) => { const f = fP(c); return f != null && f <= Date.now(); }).length, bg: '#FFF4E5', fg: '#9a6a10' },
+            ];
+            const activo = (k: string) => k.startsWith('e:') ? estatusF === k.slice(2) : pausaF === k.slice(2);
+            const toca = (k: string) => k.startsWith('e:')
+              ? setEstatusF(estatusF === k.slice(2) ? '' : k.slice(2))
+              : setPausaF(pausaF === k.slice(2) ? '' : k.slice(2));
+            return (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                {grupos.map(g => {
+                  const on = activo(g.k);
+                  return (
+                    <button key={g.k} onClick={() => toca(g.k)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
+                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
+                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
+                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {etapa === 'oportunidad' && (() => {
             // Los contadores de reuniones cuentan sobre la pestaña ya filtrada
             // (mismo criterio que el Funnel): cada uno filtra al hacer click y
@@ -573,6 +617,7 @@ export default function LeadsTab() {
               { v: 'sin_reagendar', l: 'Sin reagendar', n: n(r => !!r?.sin_reagendar), bg: '#FFF4E5', fg: '#9a6a10' },
               { v: 'cancelada', l: 'Canceladas', n: n(r => (r?.canceladas || 0) > 0), bg: '#f4f4f6', fg: '#6B7280' },
             ];
+            const nCotizados = listaBase.filter((c: any) => eDe(c) === 'cotizado').length;
             return (
               <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
                 {grupos.map(g => {
@@ -586,6 +631,12 @@ export default function LeadsTab() {
                     }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
                   );
                 })}
+                <button onClick={() => setEstatusF(estatusF === 'cotizado' ? '' : 'cotizado')} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+                  cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: estatusF === 'cotizado' ? 800 : 600,
+                  border: `1px solid ${estatusF === 'cotizado' ? '#1E8A63' : '#e6e5ec'}`, background: estatusF === 'cotizado' ? '#EAF8F2' : '#fff',
+                  color: estatusF === 'cotizado' ? '#1E8A63' : nCotizados === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
+                }}>Cotizados<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{nCotizados}</span></button>
               </div>
             );
           })()}
@@ -887,9 +938,12 @@ export default function LeadsTab() {
                             <div style={{ height: 4, borderRadius: 4, background: '#f1f1f4', marginTop: 4, overflow: 'hidden', maxWidth: 90 }}><div style={{ height: '100%', width: `${Math.min(100, (dia / total) * 100)}%`, background: vencida ? '#EF7A72' : '#E8A838' }} /></div>
                           </div>;
                         }
-                        if (etapa === 'no_interesados') return c.calificacion_motivo
-                          ? <span style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{c.calificacion_motivo}</span>
-                          : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
+                        if (etapa === 'no_interesados') {
+                          const cat = CATS_DESCARTE.find(x => x.v === c.descarte_categoria);
+                          return (cat || c.calificacion_motivo)
+                            ? <div>{cat && <span style={S.tag('#f4f4f6', '#6B7280')}>{cat.l}</span>}{c.calificacion_motivo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: cat ? 3 : 0 }}>{c.calificacion_motivo}</div>}</div>
+                            : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
+                        }
                         if (etapa === 'rezagados') {
                           const t = c.esfuerzo?.total || 0;
                           const u = diasDesde(c.last_contact_at);
@@ -945,16 +999,54 @@ export default function LeadsTab() {
 
       {/* Anclado con coordenadas de pantalla: dentro de una tabla con scroll,
           un menú en flujo se recorta contra el borde de la tarjeta. */}
+      {pausando && (
+        <>
+          <div onClick={() => setPausando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 401, width: 'min(400px, 92vw)', background: '#fff', borderRadius: 14, boxShadow: '0 18px 50px rgba(40,20,90,.25)', padding: '20px 22px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{[pausando.nombre, pausando.apellido].filter(Boolean).join(' ') || 'Este lead'} pidió tiempo</div>
+            <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4, lineHeight: 1.5 }}>Su pastilla se pone en ámbar hasta la fecha; al vencer cae solo en <b>"Pausa vencida: márcales"</b>.</div>
+            <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: '#a5a2af', margin: '12px 0 4px' }}>Volver a marcarle el</div>
+            <input type="date" value={pausaHasta} onChange={e => setPausaHasta(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
+            <input value={pausaRazon} onChange={e => setPausaRazon(e.target.value)} placeholder="Razón — ej. abre segunda sucursal en octubre…"
+              style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: 8 }} />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              {pausando.retenido_hasta && (
+                <button onClick={async () => {
+                  await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pausando.id, retenido_hasta: null, retenido_razon: null }) }).catch(() => {});
+                  setPausando(null); cargar();
+                }} style={{ marginRight: 'auto', border: 'none', background: 'none', fontSize: '0.75rem', fontWeight: 700, color: '#C0554E', cursor: 'pointer', fontFamily: 'inherit' }}>Quitar pausa</button>
+              )}
+              <button onClick={() => setPausando(null)} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#666' }}>Cancelar</button>
+              <button onClick={async () => {
+                if (!pausaHasta) return;
+                await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                  id: pausando.id, retenido_hasta: pausaHasta + 'T12:00:00Z', retenido_razon: pausaRazon.trim() || null,
+                }) }).catch(() => {});
+                setPausando(null); cargar();
+              }} style={{ border: 'none', background: '#E8A838', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Pausar</button>
+            </div>
+          </div>
+        </>
+      )}
+
       {calificando && (
         <>
           <div onClick={() => setCalificando(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,12,48,.35)', zIndex: 400 }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 401, width: 'min(400px, 92vw)', background: '#fff', borderRadius: 14, boxShadow: '0 18px 50px rgba(40,20,90,.25)', padding: '20px 22px' }}>
             <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{calificando._modo === 'descartar' ? 'No le interesa a' : 'Calificar a'} {[calificando.nombre, calificando.apellido].filter(Boolean).join(' ') || 'este lead'}</div>
             <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4, lineHeight: 1.5 }}>{calificando._modo === 'descartar' ? <>Pasa a <b>No interesados</b> y sale de las listas de trabajo. El motivo evita volver a marcarle en 3 meses.</> : <>Pasa a <b>Calificados</b>. El motivo es la señal que vio el equipo — una frase basta.</>}</div>
+            {calificando._modo === 'descartar' && (
+              <select value={catDescarte} onChange={e => setCatDescarte(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.82rem', fontFamily: 'inherit', marginTop: 12, color: catDescarte ? '#3f3b4d' : '#a5a2af' }}>
+                <option value="">¿Por qué? (elige la categoría)…</option>
+                {CATS_DESCARTE.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
+              </select>
+            )}
             <input autoFocus value={motivoCal} onChange={e => setMotivoCal(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') setCalificando(null); }}
               placeholder={calificando._modo === 'descartar' ? 'Ej. ya usa otro sistema y está contento…' : 'Ej. 3 sucursales y ya usa punto de venta…'}
-              style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: 12 }} />
+              style={{ width: '100%', boxSizing: 'border-box', height: 38, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', marginTop: calificando._modo === 'descartar' ? 8 : 12 }} />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
               <button onClick={() => setCalificando(null)} style={{ border: '1px solid #e2e4e9', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#666' }}>Cancelar</button>
               <button onClick={async () => {
@@ -965,6 +1057,7 @@ export default function LeadsTab() {
                   // pero la pestaña debe reflejarlo AHORA.
                   id: calificando.id, calificacion: 'no_califica',
                   calificacion_motivo: motivoCal.trim() || null, calificacion_at: new Date().toISOString(),
+                  descarte_categoria: catDescarte || 'otro',
                   estatus_lead: 'descartado', estatus_lead_at: new Date().toISOString(),
                 } : {
                   id: calificando.id, lifecycle_stage: 'lead_calificado', calificacion: 'califica',
@@ -995,8 +1088,14 @@ export default function LeadsTab() {
               {c.lifecycle_stage === 'lead' && (
                 <button style={{ ...opcion, color: '#5B4BD6', fontWeight: 700 }} onClick={() => { setCalificando(c); setMotivoCal(''); setMenu(null); }}>Calificar como buen lead</button>
               )}
+              {ABIERTOS.includes(c.lifecycle_stage) && (
+                <button style={{ ...opcion, color: '#9a6a10' }} onClick={() => {
+                  const d = new Date(); d.setDate(d.getDate() + 14);
+                  setPausando(c); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon(''); setMenu(null);
+                }}>Pidió tiempo…</button>
+              )}
               {ABIERTOS.includes(c.lifecycle_stage) && c.calificacion !== 'no_califica' && (
-                <button style={{ ...opcion, color: '#C0554E' }} onClick={() => { setCalificando({ ...c, _modo: 'descartar' }); setMotivoCal(''); setMenu(null); }}>No le interesa</button>
+                <button style={{ ...opcion, color: '#C0554E' }} onClick={() => { setCalificando({ ...c, _modo: 'descartar' }); setMotivoCal(''); setCatDescarte(''); setMenu(null); }}>No le interesa</button>
               )}
               {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
               {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
