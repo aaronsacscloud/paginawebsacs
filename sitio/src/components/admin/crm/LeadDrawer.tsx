@@ -919,7 +919,18 @@ function SiguientePaso({ c, guardar, guardando }: any) {
 function LoUltimo({ c }: any) {
   const acts = (c.activities || []).filter((a: any) => !esRuido(a))
     .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 6);
-  if (!acts.length) return null;
+  const tel = c.whatsapp || c.telefono;
+  // El vacío con propósito: si no ha pasado nada, la tarjeta empuja el
+  // primer toque en vez de quedarse callada.
+  if (!acts.length) return (
+    <div style={D.cardA}>
+      <div style={D.h}>Lo último</div>
+      <div style={{ fontSize: '0.78rem', color: '#8a8590', lineHeight: 1.5 }}>
+        Aún no hay actividad con este lead.
+        {tel && <> El primer toque es el que abre todo — <a href={waLink(tel)} target="_blank" rel="noreferrer" style={{ color: '#5B4BD6', fontWeight: 700, textDecoration: 'none' }}>mándale el primer WhatsApp →</a></>}
+      </div>
+    </div>
+  );
   return (
     <div style={D.cardA}>
       <div style={D.h}>Lo último</div>
