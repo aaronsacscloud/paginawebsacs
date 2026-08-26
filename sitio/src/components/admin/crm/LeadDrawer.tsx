@@ -198,6 +198,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
   const et = eta
     ? { l: ETAPA_LABEL[eta], ...COLOR_ETAPA[eta] }
     : (ETAPAS[c.lifecycle_stage] || ETAPAS.lead);
+  // Select con el acabado del input: el chevron nativo del navegador
+  // desentonaba junto a los campos de texto.
+  const selE = { ...D.fi, appearance: 'none' as const, WebkitAppearance: 'none' as const,
+    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a5a2af' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
+    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: 26 };
   const tel = c.whatsapp || c.telefono;
   const o = origenDe(origenDeRegistro(c));
   const demo = (c.bookings || []).slice().sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))[0];
@@ -286,7 +291,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
           {tab === 'info' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, alignItems: 'start' }}>
               <div><Campos c={c} guardar={guardar} guardando={guardando} setSucio={setSucio} /></div>
-              <div><DeDondeLlego c={c} /></div>
+              <div>
+                <DeDondeLlego c={c} />
+                <SiguientePaso c={c} guardar={guardar} guardando={guardando} />
+                <LoUltimo c={c} />
+              </div>
             </div>
           )}
 
@@ -852,6 +861,48 @@ function PruebaGratis({ c, guardar, flash }: any) {
  * se guarda desde que agenda (propiedades.atribucion) y esto la muestra: la
  * campaña que lo trajo, la página donde cayó y con qué dispositivo.
  */
+/* El siguiente paso es LA pregunta al abrir una ficha: qué sigue y cuándo.
+   Vivía solo en Seguimiento; aquí es una captura de dos campos sin salir. */
+function SiguientePaso({ c, guardar, guardando }: any) {
+  const [paso, setPaso] = useState<string | null>(null);
+  const [fecha, setFecha] = useState<string | null>(null);
+  const vPaso = paso !== null ? paso : (c.proximo_paso || '');
+  const vFecha = fecha !== null ? fecha : (c.next_followup || '');
+  const sucio = paso !== null || fecha !== null;
+  const vencido = c.next_followup && c.next_followup < new Date().toISOString().slice(0, 10);
+  return (
+    <div style={D.cardM}>
+      <div style={D.h}>Siguiente paso{vencido && <span style={{ ...D.hr, background: '#FEF0EF', color: '#C0554E' }}>vencido</span>}</div>
+      <input style={D.fi} value={vPaso} onChange={e => setPaso(e.target.value)} placeholder="¿Qué sigue con este lead?…" />
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+        <input type="date" style={{ ...D.fi, width: 150 }} value={vFecha} onChange={e => setFecha(e.target.value)} />
+        {sucio && <button style={D.btnP} disabled={guardando}
+          onClick={async () => { if (await guardar({ proximo_paso: vPaso || null, next_followup: vFecha || null })) { setPaso(null); setFecha(null); } }}>
+          {guardando ? '…' : 'Guardar'}</button>}
+      </div>
+    </div>
+  );
+}
+
+/* Lo último que pasó: la ficha responde "¿en qué quedamos?" sin cambiar de
+   pestaña. La historia completa sigue viviendo en Seguimiento. */
+function LoUltimo({ c }: any) {
+  const acts = (c.activities || []).filter((a: any) => !esRuido(a))
+    .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 4);
+  if (!acts.length) return null;
+  return (
+    <div style={D.cardA}>
+      <div style={D.h}>Lo último</div>
+      {acts.map((a: any) => (
+        <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '5px 0', borderTop: '1px solid #f7f7fa' }}>
+          <span style={{ fontSize: '0.66rem', color: '#a5a2af', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{fmtDate(a.created_at)}</span>
+          <span style={{ fontSize: '0.78rem', color: '#3f3b4d', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={a.titulo || ''}>{a.titulo || tipoActividad(a.tipo)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DeDondeLlego({ c }: any) {
   const a = c?.propiedades?.atribucion;
   const oBase = origenDe(origenDeRegistro(c));
@@ -966,11 +1017,15 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
   };
 
   /* Un dato escrito, no una caja. Lo vacío se dice ("sin capturar") en gris. */
+  // Lo vacío es un guion quieto (title dice "sin capturar"): seis letreros de
+  // "sin capturar" en gris eran una letanía. Lo largo (correo) se corta con
+  // puntos suspensivos y el valor completo vive en el title y en "copiar".
   const leido = (k: string, val: any, extra?: any) => (
-    <div>
+    <div style={{ minWidth: 0 }}>
       <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: '#a5a2af' }}>{k}</div>
-      <div style={{ fontSize: '0.88rem', fontWeight: val ? 700 : 500, marginTop: 3, color: val ? '#241d43' : '#a5a2af', wordBreak: 'break-word' as const, display: 'flex', alignItems: 'center', gap: 6 }}>
-        {val || 'sin capturar'}{extra}
+      <div style={{ fontSize: '0.88rem', fontWeight: val ? 700 : 500, marginTop: 3, color: val ? '#241d43' : '#c9c7d0', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        <span title={val ? String(val) : 'sin capturar'} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{val || '—'}</span>
+        {extra}
       </div>
     </div>
   );
@@ -1002,6 +1057,11 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
   const dueno = equipo.find(m => m.id === c.owner_id)?.nombre || null;
   const rejilla = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px 16px' } as const;
   const separador = { marginTop: 14, borderTop: '1px solid #f4f3f7', paddingTop: 12 } as const;
+  // Select con el acabado del input: el chevron nativo del navegador
+  // desentonaba junto a los campos de texto.
+  const selE = { ...D.fi, appearance: 'none' as const, WebkitAppearance: 'none' as const,
+    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a5a2af' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
+    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: 26 };
   const tel = c.whatsapp || c.telefono;
   const pausaActiva = c.retenido_hasta && new Date(c.retenido_hasta) > new Date();
 
@@ -1021,13 +1081,22 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
               {chip(estP.label, estP.fondo, estP.tinta, 'Estatus del lead (derivado de hechos)')}
               {chip(o.l, '#E3EDFD', '#2C5FC4', 'Por dónde llegó')}
-              {c.campana ? chip(c.campana, '#f4f3f7', '#6b7280', 'Campaña') : null}
-              {sinC != null && sinC > 0 ? chip(`${sinC} d sin contacto`, sinC > 14 ? '#FEF0EF' : '#f4f3f7', sinC > 14 ? '#C0554E' : '#6b7280') : null}
+              {/* La campaña ya vive en "De dónde llegó": repetirla aquí era ruido. */}
+              {!c.last_contact_at ? chip('nunca contactado', '#f4f3f7', '#6b7280')
+                : sinC != null && sinC > 0 ? chip(`${sinC} d sin contacto`, sinC > 14 ? '#FEF0EF' : '#f4f3f7', sinC > 14 ? '#C0554E' : '#6b7280') : null}
               {pausaActiva && c.retenido_razon ? chip(`pausa: ${c.retenido_razon}`, '#FFF4E5', '#9a6a10') : null}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
-            {!editando && <button style={D.btnA} onClick={() => setEditando(true)}>Editar</button>}
+            {/* El mismo lugar en los dos modos: Editar se vuelve Guardar/Cancelar
+                y nada se recorre. El commit es inequívoco. */}
+            {!editando
+              ? <button style={D.btnA} onClick={() => setEditando(true)}>Editar</button>
+              : <>
+                  <button style={{ ...D.btnP, opacity: sucio ? 1 : .45 }} disabled={!sucio || guardando}
+                    onClick={async () => { await aplicar(); setEditando(false); }}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+                  <button style={D.btnA} onClick={() => { setF({}); setEditando(false); }}>Cancelar</button>
+                </>}
             <button style={{ ...D.btnA, color: '#9a6a10', borderColor: '#f0dcb0' }} onClick={() => {
               const d = new Date(); d.setDate(d.getDate() + 14);
               setAccion(accion === 'pausa' ? '' : 'pausa'); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon('');
@@ -1052,7 +1121,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         {accion === 'descarte' && (
           <div style={{ ...separador, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div><div style={D.fl}>¿Por qué?</div>
-              <select style={{ ...D.fi, width: 210 }} value={catDesc} onChange={e => setCatDesc(e.target.value)}>
+              <select style={{ ...selE, width: 210 }} value={catDesc} onChange={e => setCatDesc(e.target.value)}>
                 <option value="">— elegir categoría —</option>
                 {opciones('descarte_categoria', []).map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
               </select>
@@ -1077,7 +1146,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         {!editando ? (
           <div style={{ ...separador, ...rejilla }}>
             {leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}
-            {leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#1E8A63', textDecoration: 'none' }}>abrir</a></>)}
+            {leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}
             {leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel'))}
             {leido('Puesto', c.rol || c.puesto)}
             {leido('Empresa', c.companies?.nombre)}
@@ -1096,7 +1165,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
               <div><div style={D.fl}>WhatsApp</div><input style={D.fi} value={v('whatsapp')} onChange={e => set('whatsapp', e.target.value)} placeholder="— agregar" /></div>
               <div><div style={D.fl}>Teléfono</div><input style={D.fi} value={v('telefono')} onChange={e => set('telefono', e.target.value)} placeholder="— agregar" /></div>
               <div><div style={D.fl}>Puesto</div>
-                <select style={D.fi} value={v('rol') || v('puesto') || ''} onChange={e => { set('rol', e.target.value); set('puesto', e.target.value); }}>
+                <select style={selE} value={v('rol') || v('puesto') || ''} onChange={e => { set('rol', e.target.value); set('puesto', e.target.value); }}>
                   <option value="">— sin definir —</option>
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
@@ -1104,14 +1173,14 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
               <div><div style={D.fl}>Empresa</div><input style={D.fi} value={f.empresa !== undefined ? f.empresa : (c.companies?.nombre || '')} onChange={e => set('empresa', e.target.value)} placeholder="sin empresa" /></div>
               <div><div style={D.fl}>Sucursales</div><input style={D.fi} value={v('sucursales_interes')} onChange={e => set('sucursales_interes', e.target.value)} /></div>
               <div><div style={D.fl}>Giro</div>
-                <select style={D.fi} value={prop('giro_negocio') || v('giro') || ''} onChange={e => { set('p_giro_negocio', e.target.value); set('giro', e.target.value); set('p_subgiro', ''); }}>
+                <select style={selE} value={prop('giro_negocio') || v('giro') || ''} onChange={e => { set('p_giro_negocio', e.target.value); set('giro', e.target.value); set('p_subgiro', ''); }}>
                   <option value="">— sin definir —</option>
                   {giros.giros.map((x: any) => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               </div>
               {(giros.subs[prop('giro_negocio') || v('giro')] || []).length > 0 && (
                 <div><div style={D.fl}>Subgiro</div>
-                  <select style={D.fi} value={prop('subgiro')} onChange={e => set('p_subgiro', e.target.value)}>
+                  <select style={selE} value={prop('subgiro')} onChange={e => set('p_subgiro', e.target.value)}>
                     <option value="">— sin definir —</option>
                     {(giros.subs[prop('giro_negocio') || v('giro')] || []).map((x: any) => <option key={x.v} value={x.v}>{x.l}</option>)}
                   </select>
@@ -1121,19 +1190,19 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
                   cuándo quiere. Sus opciones viven en crm_campos_config (se
                   agregan más desde la tabla de Leads, ⚙ Configurar). */}
               <div><div style={D.fl}>Sistema actual</div>
-                <select style={D.fi} value={prop('sistema_actual')} onChange={e => set('p_sistema_actual', e.target.value)}>
+                <select style={selE} value={prop('sistema_actual')} onChange={e => set('p_sistema_actual', e.target.value)}>
                   <option value="">— sin definir —</option>
                   {opciones('sistema_actual', []).map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               </div>
               <div><div style={D.fl}>Urgencia</div>
-                <select style={D.fi} value={prop('urgencia')} onChange={e => set('p_urgencia', e.target.value)}>
+                <select style={selE} value={prop('urgencia')} onChange={e => set('p_urgencia', e.target.value)}>
                   <option value="">— sin definir —</option>
                   {opciones('urgencia', []).map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               </div>
               <div><div style={D.fl}>Dueño</div>
-                <select style={D.fi} value={v('owner_id') || ''} onChange={e => set('owner_id', e.target.value)}>
+                <select style={selE} value={v('owner_id') || ''} onChange={e => set('owner_id', e.target.value)}>
                   <option value="">— sin dueño —</option>
                   {equipo.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
@@ -1142,7 +1211,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
             <details style={separador}>
               <summary style={{ cursor: 'pointer', listStyle: 'none', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6' }}>Corregir el origen</summary>
               <div style={{ marginTop: 10, maxWidth: 320 }}>
-                <select style={D.fi} value={prop('origen_cuenta')} onChange={e => set('p_origen_cuenta', e.target.value)}>
+                <select style={selE} value={prop('origen_cuenta')} onChange={e => set('p_origen_cuenta', e.target.value)}>
                   <option value="">— sin definir —</option>
                   {GRUPOS_ORIGEN.map(g => (
                     <optgroup key={g} label={g}>
@@ -1152,7 +1221,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
                 </select>
               </div>
             </details>
-            {!sucio && <div style={separador}><button style={D.btnA} onClick={() => setEditando(false)}>Terminar de editar</button></div>}
+
           </div>
         )}
       </div>
