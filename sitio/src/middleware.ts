@@ -195,6 +195,7 @@ const WEBHOOKS_PUBLICOS = new Set([
   '/api/telefonia/voz',
   '/api/telefonia/estado',
   '/api/telefonia/grabacion',
+  '/api/leads/captura',            // webhook genérico de formularios; valida su propio token
 ]);
 
 function csrfSospechoso(request: Request, url: URL): boolean {

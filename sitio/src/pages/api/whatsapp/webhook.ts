@@ -91,6 +91,7 @@ export const POST: APIRoute = async ({ request, url }) => {
           timestamp: msj.timestamp ? String(msj.timestamp) : null,
           metadata: p.metadata,
           status: entrante ? 'received' : (kapso.status || 'sent'),
+          nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || null,
         });
         if (entrante && r.inserted && r.conversationId) {
           // Automatización (bienvenida / fuera de horario / round-robin): SOLO

@@ -22,6 +22,7 @@
 // La hoja debe estar COMPARTIDA (como editor) con el correo de la cuenta de
 // servicio. Sin eso Google responde 403 y no entra ni un lead.
 import type { APIRoute } from 'astro';
+import { avisarLoteLeads } from '../../../lib/crm/aviso-lead';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { leerRango, escribirCeldas, primeraPestana, letraColumna, correoDeServicio } from '../../../lib/google-sheets';
 import { mapearLead, normalizarLlave } from '../../../lib/crm/tiktok-leads';
@@ -107,6 +108,12 @@ export const GET: APIRoute = async ({ url, request }) => {
   }
 
   const r = await importarLeadsTikTok(pendientes, { dry_run, via: 'hoja' });
+
+  // Aviso por WhatsApp al equipo (agrupado: uno por lead sería spam).
+  if (!dry_run && r.creados > 0) {
+    const nombres = (r.reporte || []).filter((f: any) => f.accion === 'creado').map((f: any) => f.nombre || f.email || 'sin nombre');
+    avisarLoteLeads(r.creados, nombres, 'TikTok Ads').catch(() => {});
+  }
 
   // ── Marca de vuelta en la hoja ──────────────────────────────────────────
   let marcado: any = { intentado: false };

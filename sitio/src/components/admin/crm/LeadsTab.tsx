@@ -187,7 +187,7 @@ export default function LeadsTab() {
      tarjetas, seguía con los canales y la lista salía hasta abajo: para ver un
      lead había que pasar por un reporte entero. La Lista enseña leads, el
      Dashboard enseña cómo va la entrada, y el Pipeline se mueve. */
-  const [vista, setVista] = useState<'lista' | 'dashboard' | 'pipeline'>('lista');
+  const [vista, setVista] = useState<'lista' | 'dashboard' | 'pipeline' | 'midia'>('lista');
   // Importar, exportar y el link de captura se usan una vez al mes: eran dos
   // flechas sueltas junto al botón de crear, y ahora viven en el ⋮ con su
   // nombre escrito y qué hacen.
@@ -256,6 +256,11 @@ export default function LeadsTab() {
     fetch('/api/crm/leads/resumen?dias=30').then(r => r.json()).then(setRes).catch(() => {});
   };
   useEffect(() => { cargar(); }, []);
+  // Deep-link del aviso por WhatsApp: ?lead=<id> abre la ficha directo.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('lead');
+    if (id) setVerContacto(id);
+  }, []);
   useEffect(() => {
     fetch('/api/crm/vistas?tabla=leads').then(r => r.json()).then(j => setVistasLeads(j.data || [])).catch(() => {});
     fetch('/api/crm/campos-config').then(r => r.json()).then(j => setCfgCampos(j.campos || {})).catch(() => {});
@@ -402,7 +407,8 @@ export default function LeadsTab() {
         <div>
           <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.015em' }}>Leads</h1>
           <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
-            {vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
+            {vista === 'midia' ? 'Lo accionable de HOY, en orden de ataque — cada lista se vacía sola'
+              : vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
               : vista === 'pipeline' ? `${res?.abiertos ?? 0} abiertos, repartidos por etapa`
               /* `conteos.todos` y no `res.total`: el resumen no trae un total
                  —cuenta abiertos, nuevos y convertidos— y sin él el subtítulo
@@ -415,7 +421,7 @@ export default function LeadsTab() {
           {/* Segmentado, no tres botones sueltos: son la MISMA cosa vista de
               tres formas, y eso se dice con una sola pieza. */}
           <div style={{ display: 'inline-flex', background: '#f5f4f8', borderRadius: 10, padding: 3 }}>
-            {([['lista', 'Lista'], ['dashboard', 'Dashboard'], ['pipeline', 'Pipeline']] as const).map(([v, l]) => {
+            {([['midia', 'Mi día'], ['lista', 'Lista'], ['dashboard', 'Dashboard'], ['pipeline', 'Pipeline']] as const).map(([v, l]) => {
               const on = vista === v;
               return (
                 <button key={v} onClick={() => setVista(v)}
@@ -459,7 +465,64 @@ export default function LeadsTab() {
         </div>
       </div>
 
-      {vista === 'pipeline' ? <PipelineTab /> : vista === 'dashboard' ? (<>
+      {vista === 'midia' && (() => {
+        // La bandeja del vendedor: junta lo ACCIONABLE de las 7 pestañas en
+        // orden de ataque. Cada sección es una lista-hueco: se vacía al
+        // trabajarla, y vacía se celebra en una línea.
+        const abiertos = (rows || []).filter((c: any) => ABIERTOS.includes(c.lifecycle_stage));
+        const hoyD = new Date().toISOString().slice(0, 10);
+        const manana = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        const minsDesde = (d: string) => Math.floor((Date.now() - Date.parse(d)) / 60000);
+        const secciones: [string, string, any[], (c: any) => any][] = [
+          ['🔥 Nuevos sin primer toque', 'llegaron y nadie les ha escrito — la velocidad ES la conversión', 
+            abiertos.filter((c: any) => pestanaDe(c) === 'nuevos').sort((a: any, b: any) => Date.parse(llegoReal(a)) - Date.parse(llegoReal(b))),
+            (c: any) => { const m = minsDesde(c.created_at); return <span style={S.tag(m > 120 ? '#FEF0EF' : m > 30 ? '#FFF4E5' : '#EAF8F2', m > 120 ? '#C0554E' : m > 30 ? '#9a6a10' : '#1E8A63')}>{m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h` : `${Math.floor(m / 1440)} d`} esperando</span>; }],
+          ['📞 Respondieron: llámales', 'la bola está en nuestra cancha',
+            abiertos.filter((c: any) => eDe(c) === 'respondio' && !(c.retenido_hasta && Date.parse(c.retenido_hasta) > Date.now())),
+            (c: any) => c.last_contact_at ? <span style={{ fontSize: '0.7rem', color: '#8a8a92' }}>último toque hace {diasDesde(c.last_contact_at)} d</span> : null],
+          ['⏰ Pausas vencidas', 'pidieron tiempo y el tiempo ya pasó',
+            abiertos.filter((c: any) => c.retenido_hasta && Date.parse(c.retenido_hasta) <= Date.now()),
+            (c: any) => <span style={{ fontSize: '0.7rem', color: '#9a6a10' }}>{c.retenido_razon || 'pausa vencida'}</span>],
+          ['🔁 No asistieron, sin reagendar', 'la reunión se cayó y nadie la levantó',
+            abiertos.filter((c: any) => c.reunion?.sin_reagendar),
+            (c: any) => <span style={{ fontSize: '0.7rem', color: '#C0554E' }}>faltó el {c.reunion?.ultima}</span>],
+          ['⌛ Pruebas por vencer o vencidas', 'el reloj corre',
+            abiertos.filter((c: any) => { const f = c.propiedades?.prueba_fin; return c.propiedades?.prueba_inicio && f && f <= manana; }),
+            (c: any) => { const f = c.propiedades?.prueba_fin; const vencida = f < hoyD; return <span style={S.tag(vencida ? '#FEF0EF' : '#FFF4E5', vencida ? '#C0554E' : '#9a6a10')}>{vencida ? 'vencida' : f === hoyD ? 'vence HOY' : 'vence mañana'}</span>; }],
+        ];
+        return (
+          <div style={{ maxWidth: 860 }}>
+            {secciones.map(([titulo, sub, lista2, extra]) => (
+              <div key={titulo} style={{ ...S.card, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: lista2.length ? 10 : 0 }}>
+                  <b style={{ fontSize: '0.9rem' }}>{titulo}</b>
+                  <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{sub}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 800, color: lista2.length ? '#5B4BD6' : '#c4c4cc' }}>{lista2.length || '✓'}</span>
+                </div>
+                {lista2.length === 0
+                  ? <div style={{ fontSize: '0.76rem', color: '#c4c4cc' }}>Nada pendiente aquí.</div>
+                  : lista2.slice(0, 12).map((c: any) => {
+                      const tel2 = c.whatsapp || c.telefono;
+                      return (
+                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: '1px solid #f5f4f8', flexWrap: 'wrap' }}>
+                          <b style={{ fontSize: '0.82rem', minWidth: 140 }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || 'Sin nombre'}</b>
+                          <span style={{ fontSize: '0.72rem', color: '#8a8a92' }}>{c.companies?.nombre || c.campana || ''}</span>
+                          {extra(c)}
+                          <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                            {tel2 && <a href={waLink(tel2)} target="_blank" rel="noreferrer" style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E8A63', textDecoration: 'none', border: '1px solid #cdeee0', borderRadius: 8, padding: '4px 10px' }}>WhatsApp</a>}
+                            <button onClick={() => setVerContacto(c.id)} style={{ fontSize: '0.72rem', fontWeight: 700, color: '#5B4BD6', border: '1px solid #e2e4e9', borderRadius: 8, padding: '4px 10px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>Ficha</button>
+                          </span>
+                        </div>
+                      );
+                    })}
+                {lista2.length > 12 && <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 6 }}>…y {lista2.length - 12} más (véelos en su pestaña)</div>}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {vista === 'midia' ? null : vista === 'pipeline' ? <PipelineTab /> : vista === 'dashboard' ? (<>
         <div className="lead-4" style={{ marginBottom: 14 }}>
           <div style={{ ...S.card, marginBottom: 0 }}>
             <div style={S.kl}>Leads nuevos</div>

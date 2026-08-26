@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { ligarVisitasPrevias } from '../../lib/email/senales';
 import { google } from 'googleapis';
 import { supabase } from '../../lib/supabase';
+import { avisarNuevoLead } from '../../lib/crm/aviso-lead';
 import { getReferrerFromRequest } from '../../lib/attribution';
 // OJO: 'attribution' (arriba) resuelve qué PARTNER refirió; 'atribucion-marketing'
 // resuelve qué CANAL trajo al lead. Son dos preguntas distintas y conviven.
@@ -223,6 +224,8 @@ export const POST: APIRoute = async ({ request }) => {
           })
           .select('id')
           .single();
+        // Aviso por WhatsApp al equipo: llegó un lead por el sitio.
+        if (newContact?.id) avisarNuevoLead({ id: newContact.id, nombre: data.nombre, email, whatsapp: normalizarTelefono(data.whatsapp), campana: utm.utm_campaign || null, fuente: 'Formulario del sitio' }).catch(() => {});
         if (newContact) {
           contactId = newContact.id;
           isNewContact = true;

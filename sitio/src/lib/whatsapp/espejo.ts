@@ -97,6 +97,7 @@ export async function registrarMensaje(o: {
   filename?: string | null;
   autorId?: string | null;            // quién lo mandó (salientes desde el CRM)
   autor?: string | null;
+  nombrePerfil?: string | null;       // nombre del perfil de WhatsApp (payload contact.name)
   silencioso?: boolean;               // backfill de historial: solo inserta
 }): Promise<{ inserted: boolean; conversationId?: string }> {
   const conv = await upsertConversacion({
@@ -158,6 +159,14 @@ export async function registrarMensaje(o: {
     if (cvv?.contact_id) {
       if (o.direccion === 'entrante') await marcarRespondio(cvv.contact_id).catch(() => {});
       else if (o.autorId) await marcarContactado(cvv.contact_id).catch(() => {});
+    } else {
+      // LA PUERTA (Leads v2): número sin contacto → alta automática con
+      // triaje (entrante) o alta directa (saliente humano). Ver alta-wa.ts.
+      const { altaDesdeWhatsApp } = await import('../crm/alta-wa');
+      await altaDesdeWhatsApp(conv.id, o.telefono, {
+        direccion: o.direccion, autorId: o.autorId || null,
+        texto: o.cuerpo || o.transcript || null, nombrePerfil: o.nombrePerfil || null,
+      }).catch(e => console.warn('[alta-wa]', e?.message || e));
     }
   }
   if (!esViejo) await supabase.from('wa_conversaciones').update({
