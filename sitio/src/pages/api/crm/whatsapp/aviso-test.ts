@@ -10,6 +10,22 @@ export const prerender = false;
 const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
 
 export const GET: APIRoute = async ({ url }) => {
+  if (url.searchParams.get('leads') === 'tiktok') {
+    // Solo los REALES de TikTok de hoy y ayer (el pipeline vivo), no el
+    // import masivo de la hoja vieja.
+    const ayerCdmx = new Date(Date.now() - 6 * 3600e3); ayerCdmx.setUTCDate(ayerCdmx.getUTCDate() - 1);
+    const desde = new Date(ayerCdmx.toISOString().slice(0, 10) + 'T06:00:00Z').toISOString();
+    const { data: leads } = await supabase.from('contacts')
+      .select('id, nombre, apellido, whatsapp, telefono, email, campana, fuente, companies(nombre)')
+      .eq('lifecycle_stage', 'lead').eq('fuente', 'tiktok-lead-form').is('archived_at', null)
+      .gte('created_at', desde).order('created_at', { ascending: false }).limit(15);
+    const out: any[] = [];
+    for (const c of leads || []) {
+      const r = await avisarNuevoLead({ ...c, fuente: 'TikTok' }).catch(e => [{ ok: false, error: String(e) }]);
+      out.push({ lead: [c.nombre, c.apellido].filter(Boolean).join(' ') || c.email, envio: r });
+    }
+    return json({ enviados: out.length, detalle: out });
+  }
   if (url.searchParams.get('leads') === 'recientes') {
     // Hoy y ayer en hora de México (UTC-6): desde ayer 00:00 CDMX.
     const ayerCdmx = new Date(Date.now() - 6 * 3600e3); ayerCdmx.setUTCDate(ayerCdmx.getUTCDate() - 1);

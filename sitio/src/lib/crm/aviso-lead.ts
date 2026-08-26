@@ -16,24 +16,22 @@ async function destinos(): Promise<string[]> {
   return [...new Set((data || []).map((m: any) => String(m.whatsapp).trim()).filter(Boolean))];
 }
 
-// Primero texto libre (formato bonito); si la ventana de 24 h del vendedor
-// está cerrada (422), cae a la plantilla UTILITY nuevo_lead_aviso — el aviso
-// llega SIEMPRE. Los parámetros de plantilla no admiten saltos de línea.
+// SIEMPRE por plantilla UTILITY (nuevo_lead_aviso): el texto libre fuera de
+// ventana se "aceptaba" pero WhatsApp lo tiraba en silencio — no llegaba.
+// La plantilla entrega garantizado y no la bloquean. El texto libre queda
+// solo como respaldo si la plantilla fallara. Params sin saltos de línea.
 async function mandar(texto: string, vars?: [string, string, string]): Promise<{ tel: string; ok: boolean; via?: string; error?: string }[]> {
   const tels = await destinos();
   const res: { tel: string; ok: boolean; via?: string; error?: string }[] = [];
   for (const t of tels) {
-    try { await enviarTexto(t, texto); res.push({ tel: t, ok: true, via: 'texto' }); continue; }
+    if (vars) {
+      try {
+        await enviarPlantilla(t, 'nuevo_lead_aviso', 'es_MX', vars.map(v => String(v || '—').replace(/\s+/g, ' ').slice(0, 300)));
+        res.push({ tel: t, ok: true, via: 'plantilla' }); continue;
+      } catch (e: any) { console.warn('[aviso-lead] plantilla falló para', t, e?.message || e); }
+    }
+    try { await enviarTexto(t, texto); res.push({ tel: t, ok: true, via: 'texto' }); }
     catch (e: any) {
-      if (vars) {
-        try {
-          await enviarPlantilla(t, 'nuevo_lead_aviso', 'es_MX', vars.map(v => String(v || '—').replace(/\s+/g, ' ').slice(0, 300)));
-          res.push({ tel: t, ok: true, via: 'plantilla' }); continue;
-        } catch (e2: any) {
-          console.warn('[aviso-lead] plantilla también falló para', t, e2?.message || e2);
-          res.push({ tel: t, ok: false, error: String(e2?.message || e2).slice(0, 300) }); continue;
-        }
-      }
       console.warn('[aviso-lead] no se pudo avisar a', t, e?.message || e);
       res.push({ tel: t, ok: false, error: String(e?.message || e).slice(0, 300) });
     }
