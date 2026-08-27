@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // /api/crm/arr/subscriptions — GET lista (join company) · POST crea · PUT edita.
 // Toda mutación recalcula los agregados (mrr/arr/fecha_renovacion/estado) de la company.
 import type { APIRoute } from 'astro';
@@ -34,7 +35,7 @@ export async function recalcCompany(companyId: string) {
   }).eq('id', companyId);
 }
 
-export const GET: APIRoute = async ({ url }) => {
+const _GET: APIRoute = async ({ url }) => {
   const estado = url.searchParams.get('estado');
   const ciclo = url.searchParams.get('ciclo');
   const companyId = url.searchParams.get('company_id');
@@ -364,3 +365,6 @@ export const PUT: APIRoute = async ({ request }) => {
   }
   return new Response(JSON.stringify({ data, ...(stripeAviso ? { advertencia: stripeAviso } : {}) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 45s en la instancia.
+export const GET = conMicroCache('arr/subscriptions', 45000, _GET as any);

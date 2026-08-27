@@ -6,6 +6,7 @@ import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
 import PlanesConfig from './crm/PlanesConfig';
+import { swrGet } from '../../lib/crm/swr';
 // El hub de agenda ya viene lazy: no engorda el bundle de Cotizaciones.
 import SchedulingTab from './crm/SchedulingTab';
 import MotivosLead from './crm/MotivosLead';
@@ -340,6 +341,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // destructuring y las cotizaciones se cargaban con los datos del banco.
     fetch('/api/revenue/condiciones').then(r => r.json())
       .then(x => setCondicionesTpl(Array.isArray(x) ? x : [])).catch(() => {});
+    // REGLA DE VELOCIDAD: las cotizaciones pintan del caché de la sesión al
+    // instante; la red las refresca junto con el resto del hub.
+    try { const raw = sessionStorage.getItem('swr:/api/revenue/quotes'); if (raw) { const qc = JSON.parse(raw); if (Array.isArray(qc)) setAllQuotes(qc); } } catch { /* nada */ }
     const [d, ba, q, p] = await Promise.all([
       fetch('/api/revenue/dashboard').then(r => r.json()),
       fetch('/api/revenue/bank-accounts').then(r => r.json()),
@@ -349,6 +353,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     setDash(d);
     setBankAccounts(Array.isArray(ba) ? ba : []);
     setAllQuotes(Array.isArray(q) ? q : []);
+    try { if (Array.isArray(q)) sessionStorage.setItem('swr:/api/revenue/quotes', JSON.stringify(q)); } catch { /* nada */ }
     const map: Record<string, { nombre: string; email?: string }> = {};
     (Array.isArray(p) ? p : []).forEach((row: any) => {
       if (row?.id) map[row.id] = { nombre: row.nombre || 'Partner', email: row.email };
@@ -547,7 +552,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Cada tarjeta se abre con la lista que forma su número: un KPI que no se
     // puede desarmar termina en "¿de dónde salió esto?".
     const [panelKpi, setPanelKpi] = useState<string>('');
-    const cargarKpis = () => fetch('/api/revenue/quotes/kpis').then(r => r.json()).then(setKpis).catch(() => {});
+    const cargarKpis = () => swrGet('/api/revenue/quotes/kpis', setKpis).catch(() => {});
     useEffect(() => { cargarKpis(); }, []);
 
     // Llegar desde "Cotizar esta idea" (ficha del cliente → Mejoras). La idea

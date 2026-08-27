@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // WHATSAPP · La lista OMNICANAL del inbox: WhatsApp + correo, agrupados por
 // CONTACTO (una fila por persona con sus canales juntos; sin contacto, una
 // fila por conversación suelta). Federación pura: wa_conversaciones y
@@ -23,7 +24,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
-export const GET: APIRoute = async ({ request, url }) => {
+const _GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const filtro = url.searchParams.get('filtro') || 'todas';
   const etapa = url.searchParams.get('etapa') || '';
@@ -313,3 +314,6 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
   return json({ conversaciones: lista.slice(offset, offset + limit), counts, total_filtrado: lista.length, hay_mas: offset + limit < lista.length });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 10s en la instancia.
+export const GET = conMicroCache('wa/inbox', 10000, _GET as any);

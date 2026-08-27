@@ -1,3 +1,4 @@
+import { swrGet } from '../../../lib/crm/swr';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
 //
 // Abre en LISTA y no en el tablero. Con cuarenta leads apilados en una sola
@@ -256,8 +257,9 @@ export default function LeadsTab() {
   }
 
   const cargar = () => {
-    fetch('/api/crm/contacts?limit=500&con_etapa=1').then(r => r.json())
-      .then(j => setRows(j.data || j.contacts || [])).catch(() => setRows([]));
+    // REGLA DE VELOCIDAD: pinta el caché de la sesión al instante, revalida detrás
+    swrGet('/api/crm/contacts?limit=500&con_etapa=1',
+      j => setRows(j.data || j.contacts || [])).catch(() => setRows([]));
     fetch('/api/crm/leads/resumen?dias=30').then(r => r.json()).then(setRes).catch(() => {});
   };
   useEffect(() => { cargar(); }, []);

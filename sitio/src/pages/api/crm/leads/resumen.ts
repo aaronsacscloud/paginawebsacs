@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // GET /api/crm/leads/resumen?dias=30 — los números de la pantalla de Leads.
 //
 // Dos definiciones que cambian el resultado y por eso se escriben aquí:
@@ -18,7 +19,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 const ETAPAS_LEAD = ['lead', 'lead_calificado', 'oportunidad'];
 const hace = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 
-export const GET: APIRoute = async ({ url }) => {
+const _GET: APIRoute = async ({ url }) => {
   const dias = Math.min(365, Math.max(1, Number(url.searchParams.get('dias')) || 30));
   const desde = hace(dias);
 
@@ -80,3 +81,6 @@ export const GET: APIRoute = async ({ url }) => {
       .sort((a, b) => b.n - a.n),
   });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('leads/resumen', 60000, _GET as any);

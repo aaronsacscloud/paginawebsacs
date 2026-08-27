@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../lib/crm/micro-cache';
 // GET /api/scheduling/reuniones — vista admin de TODAS las reuniones (las del
 // founder y las de partners) enriquecidas para el tab "Reuniones" del CRM:
 //  - host resuelto (nombre del team_member)
@@ -17,7 +18,7 @@ import { createCalendarEvent } from '../../../lib/google-calendar';
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
-export const GET: APIRoute = async ({ request, url }) => {
+const _GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   if (isPartner(user)) return new Response(JSON.stringify({ error: 'Solo admin' }), { status: 403 });
@@ -356,3 +357,6 @@ export const DELETE: APIRoute = async ({ request, url }) => {
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true, mejoras_desligadas: mejoras || 0 });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('scheduling/reuniones', 60000, _GET as any);

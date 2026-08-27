@@ -1,3 +1,4 @@
+import { swrGet } from '../../../lib/crm/swr';
 // InicioMovil — la pantalla de arranque del CRM en el teléfono (goal "CRM de
 // bolsillo", M4). Responde UNA pregunta en 2 segundos: ¿cómo va el negocio y
 // qué me toca hoy?
@@ -26,35 +27,26 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
     const d1 = new Date(y, m, 1).toISOString().slice(0, 10);
     const d2 = new Date(y, m + 1, 0).toISOString().slice(0, 10);
     const h = hoy.toISOString().slice(0, 10);
-    Promise.allSettled([
-      fetch(`/api/crm/reports/tablero?desde=${d1}&hasta=${d2}`).then(r => r.json()),
-      fetch('/api/crm/cobranza').then(r => r.json()),
-      fetch('/api/crm/soporte/dashboard?dias=14').then(r => r.json()),
-      fetch(`/api/scheduling/reuniones?from=${h}&to=${h}`).then(r => r.json()),
-    ]).then(([t, c, s, r]) => {
-      if (t.status === 'fulfilled') {
-        // Shape real del tablero: { cobrado: { monto, n }, ... } — sin kpis ni meta
-        // (la meta vive en la config del tablero de escritorio; aquí el contexto
-        // de la línea 2 es el ARR, que el endpoint sí trae).
-        const v = t.value as any;
-        setCobrado(Number(v?.cobrado?.monto ?? 0));
-        setMeta(Number(v?.recurrente?.arr_hoy ?? 0));
-      }
-      if (c.status === 'fulfilled') {
-        const k = (c.value as any)?.kpis || {};
-        if (k.vencido > 0) setVenc({ monto: k.vencido, n: k.vencido_n || 0 });
-      }
-      if (s.status === 'fulfilled') {
-        const tt = (s.value as any)?.totales || {};
-        const pend = Number(tt.abiertos || 0);
-        if (pend > 0) setTickets(pend);
-      }
-      if (r.status === 'fulfilled') {
-        const lista = (r.value as any)?.reuniones || (Array.isArray(r.value) ? r.value : []);
-        setReuniones(lista.slice(0, 3));
-      }
+    // REGLA DE VELOCIDAD: cada dato pinta EN CUANTO llega (caché de la sesión
+    // primero, red detrás) — el héroe no espera al más lento de los cuatro.
+    swrGet(`/api/crm/reports/tablero?desde=${d1}&hasta=${d2}`, (v: any) => {
+      // Shape real del tablero: { cobrado: { monto, n }, ... } — sin kpis ni meta
+      setCobrado(Number(v?.cobrado?.monto ?? 0));
+      setMeta(Number(v?.recurrente?.arr_hoy ?? 0));
       setCargando(false);
-    });
+    }).catch(() => setCargando(false));
+    swrGet('/api/crm/cobranza', (c: any) => {
+      const k = c?.kpis || {};
+      setVenc(k.vencido > 0 ? { monto: k.vencido, n: k.vencido_n || 0 } : null);
+    }).catch(() => {});
+    swrGet('/api/crm/soporte/dashboard?dias=14', (sv: any) => {
+      const pend = Number(sv?.totales?.abiertos || 0);
+      setTickets(pend > 0 ? pend : null);
+    }).catch(() => {});
+    swrGet(`/api/scheduling/reuniones?from=${h}&to=${h}`, (r: any) => {
+      const lista = r?.reuniones || (Array.isArray(r) ? r : []);
+      setReuniones(lista.slice(0, 3));
+    }).catch(() => {});
   }, []);
 
   const hora = new Date().getHours();

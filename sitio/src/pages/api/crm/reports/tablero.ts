@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // GET /api/crm/reports/tablero?desde=&hasta= — todo lo que pinta el tablero.
 //
 // Un solo viaje: el tablero abre en cada sesión y con seis llamadas sueltas se
@@ -33,7 +34,7 @@ const MES_CORTO = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'
 // Cotizaciones que no cuentan para nada: borradores, plantillas y borradas.
 const VIVA = (q: any) => !['draft', 'deleted', 'plantilla'].includes(q.estado);
 
-export const GET: APIRoute = async ({ url }) => {
+const _GET: APIRoute = async ({ url }) => {
   const ahora = new Date();
   const hoy = iso(ahora);
   const anio = ahora.getFullYear(), mes = ahora.getMonth() + 1;
@@ -418,3 +419,6 @@ export const GET: APIRoute = async ({ url }) => {
     meta_mes: { meta: metaIngresos, real: ingresosMes, proyeccion, dias_restantes: Math.max(0, diasMes - diaDelMes) },
   });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('reports/tablero', 60000, _GET as any);

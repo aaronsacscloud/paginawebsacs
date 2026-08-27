@@ -13,6 +13,7 @@ import { useToast, Toast, logStageChange } from './crmHelpers';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
+import { swrGet } from '../../../lib/crm/swr';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -250,17 +251,22 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   }
 
   async function load() {
-    setLoading(true); setError(null);
+    setError(null);
+    // REGLA DE VELOCIDAD: pinta el caché al instante (y apaga el spinner), revalida detrás
+    let pinto = false;
+    const aplicar = (j: any) => {
+      if (j?.error) return;
+      setData(j.data || []); setTot(j.tot || null); setLoading(false); pinto = true;
+    };
+    setLoading(true);
     try {
-      const [j, pj] = await Promise.all([
-        fetch('/api/crm/arr/clientes').then(r => r.json()),
+      const [, pj] = await Promise.all([
+        swrGet('/api/crm/arr/clientes', aplicar),
         fetch('/api/crm/pipelines').then(r => r.json()).catch(() => ({ data: [] })),
       ]);
-      if (j.error) throw new Error(j.error);
-      setData(j.data || []); setTot(j.tot || null);
       const cli = (pj.data || []).find((p: any) => p.tipo === 'cliente');
       setStages(cli?.stages || []);
-    } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
+    } catch (e: any) { if (!pinto) setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   }
   useEffect(() => { load(); }, []);

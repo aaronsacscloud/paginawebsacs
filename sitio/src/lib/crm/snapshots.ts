@@ -14,9 +14,20 @@ export async function fotosPorEmpresa(dias = 30): Promise<Record<string, { hoy: 
   const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
   const out: Record<string, { hoy: Snap; antes: Snap }> = {};
   try {
-    const { data, error } = await supabase.from('uso_snapshots')
-      .select(CAMPOS).gte('fecha', desde).order('fecha', { ascending: true }).range(0, 49999);
-    if (error || !data) return out;
+    // REGLA DE VELOCIDAD: la RPC trae SOLO la primera y última foto por empresa
+    // (DISTINCT ON en SQL, ~284 filas) en vez de las ~3,600 del rango completo.
+    // Fallback al barrido viejo si la función no existe en esa base.
+    let data: any[] | null = null;
+    const rpc = await supabase.rpc('uso_snapshots_extremos', { dias });
+    if (!rpc.error && rpc.data) data = rpc.data as any[];
+    if (!data) {
+      const res = await supabase.from('uso_snapshots')
+        .select(CAMPOS).gte('fecha', desde).order('fecha', { ascending: true }).range(0, 49999);
+      if (res.error || !res.data) return out;
+      data = res.data as any[];
+    } else {
+      data.sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+    }
     // Primera y última fila de cada empresa: como vienen ordenadas por fecha
     // ascendente, la primera que se ve es la más vieja y la última la más nueva.
     for (const r of data as any[]) {

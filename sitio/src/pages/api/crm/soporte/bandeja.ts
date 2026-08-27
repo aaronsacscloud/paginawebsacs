@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // SOPORTE · La bandeja móvil: tickets ABIERTOS de todos los clientes, con el
 // nombre de la empresa resuelto. El dashboard agrega; esta lista es para
 // contestar "¿a quién le debo respuesta AHORA?" desde el teléfono.
@@ -11,7 +12,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 
 const ABIERTO = ['abierto', 'en_curso', 'pausado'];
 
-export const GET: APIRoute = async () => {
+const _GET: APIRoute = async () => {
   const { data, error } = await supabase.from('crm_soporte_tickets')
     .select('conversation_id, company_id, estado, asunto, vista_previa, prioridad, abierto_at, primera_respuesta_at, ultima_actividad_at, intercom_url')
     .in('estado', ABIERTO)
@@ -26,3 +27,6 @@ export const GET: APIRoute = async () => {
   }
   return json({ tickets: tickets.map(t => ({ ...t, empresa: nombres[t.company_id || ''] || null })) });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 30s en la instancia.
+export const GET = conMicroCache('soporte/bandeja', 30000, _GET as any);

@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../lib/crm/micro-cache';
 // Cobranza: solo lo que está pendiente de cobro.
 //
 // GET  → vencidas separadas por ciclo, tramos de atraso, planes de pago y lo
@@ -24,7 +25,7 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 const num = (x: any) => Number(x || 0);
 const dias = (f: string) => Math.floor((Date.parse(hoy()) - Date.parse(String(f).slice(0, 10))) / 86400000);
 
-export const GET: APIRoute = async () => {
+const _GET: APIRoute = async () => {
   const mes1 = hoy().slice(0, 8) + '01';
   // Y el corte de arriba: sin él, un pago capturado con fecha del año que viene
   // —pasa— entraba en "cobrado este mes" y el KPI cobraba $5,500 de más. Se
@@ -367,3 +368,6 @@ export const PUT: APIRoute = async ({ request }) => {
 
   return json({ ok: true });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('crm/cobranza', 60000, _GET as any);

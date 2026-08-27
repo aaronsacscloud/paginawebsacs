@@ -1,3 +1,4 @@
+import { swrGet } from '../../../lib/crm/swr';
 // Pagos — LA CASA DEL DINERO. Un solo módulo con las tres caras del mismo cobro,
 // porque son el mismo trabajo visto en tres momentos del ciclo:
 //
@@ -273,7 +274,7 @@ export default function PagosTab() {
 
   // Lo que SIEMPRE hace falta: los KPIs y el conteo de cada vista salen de aquí.
   const loadBase = () => Promise.all([
-    fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
+    swrGet('/api/crm/arr/summary', setSummary).catch(() => {}),
     fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
     // Sin escanear=1: lectura barata de la bitácora, no una salida a MP.
     fetch('/api/crm/arr/mp-cobros?dias=90').then(r => r.json()).then(setMp).catch(() => {}),

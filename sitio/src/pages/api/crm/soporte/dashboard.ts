@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // SOPORTE · Dashboard global (founder-only por middleware). Agrega
 // crm_soporte_tickets: volumen por estado/tema/sentimiento, SLA (primera
 // respuesta y resolución), CSAT, tickets sin ligar, carga por agente, quién
@@ -64,7 +65,7 @@ function resolverPeriodo(url: URL) {
   return { ini, fin, dias, personalizado: false, desde: new Date(ini - 0).toISOString().slice(0, 10), hasta: hoyMx, antIni: ini - dias * 86400_000, antFin: ini };
 }
 
-export const GET: APIRoute = async ({ url }) => {
+const _GET: APIRoute = async ({ url }) => {
   const P = resolverPeriodo(url);
   let t: any[];
   try { t = await leerTodos(); } catch (e: any) { return json({ error: e?.message || 'Error al leer tickets' }, 500); }
@@ -340,3 +341,6 @@ export const GET: APIRoute = async ({ url }) => {
     tendencia: serie,
   });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('soporte/dashboard', 60000, _GET as any);

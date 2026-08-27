@@ -6,10 +6,11 @@ import { etapaDeLead } from '../../../lib/crm/lead-etapa';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { detectaHistorial, norm as normTxt, tel10, claveEmpresa, type Indices } from '../../../lib/crm/lead-historial';
 import { resolverUnLead } from '../../../lib/crm/resolver-conocidos';
+import { conMicroCache, microCacheInvalidar } from '../../../lib/crm/micro-cache';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, url }) => {
+const _GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const search = url.searchParams.get('search') || '';
   const tipo = url.searchParams.get('tipo');
@@ -160,6 +161,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
+  microCacheInvalidar('');
   const body = await request.json();
 
   // Create or find company if empresa provided
@@ -248,6 +250,7 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
+  microCacheInvalidar('');
   const body = await request.json();
   const { id, ...updates } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
@@ -281,3 +284,6 @@ export const PUT: APIRoute = async ({ request }) => {
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   return new Response(JSON.stringify(data));
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 30s en la instancia.
+export const GET = conMicroCache('crm/contacts', 30000, _GET as any);

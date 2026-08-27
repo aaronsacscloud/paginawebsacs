@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // GET /api/revenue/quotes/kpis → los números del MES de Cotizaciones.
 //
 // Se calculan en el servidor porque casi todos necesitan los ABONOS (payments
@@ -48,7 +49,7 @@ const hoyMx = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-export const GET: APIRoute = async () => {
+const _GET: APIRoute = async () => {
   const mes = rangoMes(0);
   const previo = rangoMes(-1);
   const hoy = hoyMx();
@@ -248,3 +249,6 @@ export const GET: APIRoute = async () => {
     },
   });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 60s en la instancia.
+export const GET = conMicroCache('revenue/kpis', 60000, _GET as any);

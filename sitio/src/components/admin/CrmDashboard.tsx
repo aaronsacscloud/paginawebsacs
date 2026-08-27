@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component } from 'react';
+import { useState, useEffect, useRef, Component, lazy, Suspense } from 'react';
 import { WRAP } from '../../lib/crm/layout';
 import type { ReactNode } from 'react';
 import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
@@ -7,36 +7,39 @@ import MasScreen from './crm/ui/MasScreen';
 import InicioMovil from './crm/InicioMovil';
 import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
-import DealsTab from './crm/DealsTab';
-import AutomationsTab from './crm/AutomationsTab';
-import EmailTab from './crm/email/EmailTab';
-import OutboundTab from './crm/outbound/OutboundTab';
-import WhatsAppTab from './crm/whatsapp/WhatsAppTab';
-import WaMasivos from './crm/whatsapp/Masivos';
-import ConfigWhatsApp from './crm/whatsapp/ConfigWhatsApp';
-import MetricasWA from './crm/whatsapp/MetricasWA';
-import SchedulingTab from './crm/SchedulingTab';
-import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
-import ContactProfile from './crm/ContactProfile';
-import DashboardTab from './crm/DashboardTab';
-import PartnersTab from './crm/PartnersTab';
-import CommissionsTab from './crm/CommissionsTab';
-import ContentReviewTab from './crm/ContentReviewTab';
-import RevenueHub from './RevenueHub';
-import ClientesTab from './crm/ClientesTab';
-import LeadsTab from './crm/LeadsTab';
-import MejorasTab from './crm/MejorasTab';
-import MarcaTab from './crm/MarcaTab';
-import CobranzaTab from './crm/CobranzaTab';
-import ReunionesTab from './crm/ReunionesTab';
-import SubscriptionsTab from './crm/SubscriptionsTab';
-import PagosTab from './crm/PagosTab';
-import PipelinesConfig from './crm/PipelinesConfig';
-import AgendaHoy from './crm/AgendaHoy';
-import SacsUsuariosTab from './crm/SacsUsuariosTab';
-import OportunidadesTab from './crm/OportunidadesTab';
-import SoporteTab from './crm/soporte/SoporteTab';
+// ══ REGLA DE VELOCIDAD: cada tab es un chunk LAZY. El bundle inicial solo
+// lleva el shell (nav + Inicio móvil). Un import estático aquí regresa el
+// monolito de 2.2 MB que mataba el primer pintado. ══
+const DealsTab = lazy(() => import('./crm/DealsTab'));
+const AutomationsTab = lazy(() => import('./crm/AutomationsTab'));
+const EmailTab = lazy(() => import('./crm/email/EmailTab'));
+const OutboundTab = lazy(() => import('./crm/outbound/OutboundTab'));
+const WhatsAppTab = lazy(() => import('./crm/whatsapp/WhatsAppTab'));
+const WaMasivos = lazy(() => import('./crm/whatsapp/Masivos'));
+const ConfigWhatsApp = lazy(() => import('./crm/whatsapp/ConfigWhatsApp'));
+const MetricasWA = lazy(() => import('./crm/whatsapp/MetricasWA'));
+const SchedulingTab = lazy(() => import('./crm/SchedulingTab'));
+const PasarelaMercadoPago = lazy(() => import('./crm/PasarelaMercadoPago'));
+const ContactProfile = lazy(() => import('./crm/ContactProfile'));
+const DashboardTab = lazy(() => import('./crm/DashboardTab'));
+const PartnersTab = lazy(() => import('./crm/PartnersTab'));
+const CommissionsTab = lazy(() => import('./crm/CommissionsTab'));
+const ContentReviewTab = lazy(() => import('./crm/ContentReviewTab'));
+const RevenueHub = lazy(() => import('./RevenueHub'));
+const ClientesTab = lazy(() => import('./crm/ClientesTab'));
+const LeadsTab = lazy(() => import('./crm/LeadsTab'));
+const MejorasTab = lazy(() => import('./crm/MejorasTab'));
+const MarcaTab = lazy(() => import('./crm/MarcaTab'));
+const CobranzaTab = lazy(() => import('./crm/CobranzaTab'));
+const ReunionesTab = lazy(() => import('./crm/ReunionesTab'));
+const SubscriptionsTab = lazy(() => import('./crm/SubscriptionsTab'));
+const PagosTab = lazy(() => import('./crm/PagosTab'));
+const PipelinesConfig = lazy(() => import('./crm/PipelinesConfig'));
+const AgendaHoy = lazy(() => import('./crm/AgendaHoy'));
+const SacsUsuariosTab = lazy(() => import('./crm/SacsUsuariosTab'));
+const OportunidadesTab = lazy(() => import('./crm/OportunidadesTab'));
+const SoporteTab = lazy(() => import('./crm/soporte/SoporteTab'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -232,6 +235,17 @@ function getInitialTab(): Tab {
 // EL caso de uso móvil. La Agenda vive en Inicio ("Hoy") y en Más.
 // Pantallas móviles con cabecera propia v5 (m-hdr): sin app bar de 56px.
 // Se suman aquí conforme cada pantalla pasa el referee.
+/** Esqueleto sobrio mientras baja el chunk del tab (solo primera visita). */
+function TabCargando() {
+  return (
+    <div style={{ padding: '24px' }} aria-busy="true">
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="m-skel" style={{ height: 18, borderRadius: 6, margin: '0 0 18px', width: `${[62, 90, 78, 84][i]}%` }} />
+      ))}
+    </div>
+  );
+}
+
 const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
@@ -310,6 +324,14 @@ export default function CrmDashboard() {
   const searchRef = useRef<HTMLInputElement>(null);
   // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
   const [masOpen, setMasOpen] = useState(false);
+  // REGLA DE VELOCIDAD: los chunks de los destinos del pulgar se precargan en
+  // idle — el switch de tab nunca espera red. El resto baja al entrar.
+  useEffect(() => {
+    const idle = (cb: () => void, t: number) => ('requestIdleCallback' in window)
+      ? (window as any).requestIdleCallback(cb, { timeout: t }) : setTimeout(cb, t);
+    idle(() => { import('./crm/LeadsTab'); import('./crm/ClientesTab'); import('./crm/whatsapp/WhatsAppTab'); }, 2500);
+    idle(() => { import('./RevenueHub'); import('./crm/PagosTab'); import('./crm/soporte/SoporteTab'); import('./crm/OportunidadesTab'); }, 6000);
+  }, []);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [initialDealId, setInitialDealId] = useState<string | null>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
@@ -766,6 +788,7 @@ export default function CrmDashboard() {
         {/* Content — key={tab} remonta el contenido al navegar y dispara la
             transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
         <div key={tab} className={isMobile ? 'm-tabin' : undefined}>
+        <Suspense fallback={<TabCargando />}>
         {tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
              zonas — el Dashboard completo es de escritorio. */
@@ -888,12 +911,15 @@ export default function CrmDashboard() {
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}
+        </Suspense>
         </div>
       </div>
 
       {/* Contact Profile Overlay */}
       {profileContactId && (
-        <ContactProfile contactId={profileContactId} onClose={() => setProfileContactId(null)} />
+        <Suspense fallback={null}>
+          <ContactProfile contactId={profileContactId} onClose={() => setProfileContactId(null)} />
+        </Suspense>
       )}
 
       {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}

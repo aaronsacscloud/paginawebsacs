@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { validatePartnerQuoteBody, canPartnerEditQuote, canPartnerDeleteQuote } from '../../../lib/quotes/permissions';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../../lib/quotes/meta';
+import { conMicroCache, microCacheInvalidar } from '../../../lib/crm/micro-cache';
 
 export const prerender = false;
 
@@ -34,7 +35,7 @@ function jsonResponse(payload: any, status = 200) {
   });
 }
 
-export const GET: APIRoute = async ({ request, url }) => {
+const _GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const id = url.searchParams.get('id');
 
@@ -114,6 +115,7 @@ async function getMaxFolio(): Promise<number> {
 }
 
 export const POST: APIRoute = async ({ request }) => {
+  microCacheInvalidar('');
   const user = await getCurrentUser(request);
   const body = await request.json();
 
@@ -205,6 +207,7 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
+  microCacheInvalidar('');
   const user = await getCurrentUser(request);
   const body = await request.json();
   const { id } = body;
@@ -471,6 +474,7 @@ export const PUT: APIRoute = async ({ request }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, url }) => {
+  microCacheInvalidar('');
   const user = await getCurrentUser(request);
 
   // id por query (?id=) o por body, para flexibilidad del cliente.
@@ -536,3 +540,6 @@ export const DELETE: APIRoute = async ({ request, url }) => {
   if (error) return jsonResponse({ error: error.message }, 500);
   return jsonResponse({ ok: true, mode: 'archived' });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 30s en la instancia.
+export const GET = conMicroCache('revenue/quotes', 30000, _GET as any);

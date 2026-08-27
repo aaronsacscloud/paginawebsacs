@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // GET /api/crm/arr/summary — el corazón del hub ARR:
 // KPIs (ARR/MRR por ciclo), meta y progreso, calendario de cobros 12 meses,
 // proyección mensual (contratado / +pendientes / −riesgo), bandas de riesgo
@@ -13,7 +14,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 // debe servirse cacheado (ni por el navegador ni por el edge de Vercel).
 const NOCACHE = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, max-age=0' };
 
-export const GET: APIRoute = async () => {
+const _GET: APIRoute = async () => {
   const hoy = new Date();
   const hoyStr = hoy.toISOString().slice(0, 10);
 
@@ -187,3 +188,6 @@ export const GET: APIRoute = async () => {
   return new Response(JSON.stringify({ kpis, meta, riesgo, meses, vencidas, cobrado, actividad_sync_at: sync }, null, 2),
     { status: 200, headers: NOCACHE });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 45s en la instancia.
+export const GET = conMicroCache('arr/summary', 45000, _GET as any);

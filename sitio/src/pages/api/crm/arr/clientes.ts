@@ -1,3 +1,4 @@
+import { conMicroCache } from '../../../../lib/crm/micro-cache';
 // GET /api/crm/arr/clientes — la lista REAL de clientes: companies con sus
 // suscripciones agregadas, plan del catálogo, contacto, actividad SACS y salud.
 // Reemplaza a la tabla legacy `clients` (que tenía datos de demo).
@@ -11,7 +12,7 @@ export const prerender = false;
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-export const GET: APIRoute = async () => {
+const _GET: APIRoute = async () => {
   // `propiedades` (campos personalizados) viaja con cada cliente: es lo que
   // permite que la lista los ofrezca como columnas filtrables sin una consulta
   // por campo. Va en la cadena de reintentos por si el SQL aún no corrió.
@@ -210,3 +211,6 @@ export const GET: APIRoute = async () => {
   };
   return new Response(JSON.stringify({ tot, data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
+
+// REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 45s en la instancia.
+export const GET = conMicroCache('arr/clientes', 45000, _GET as any);

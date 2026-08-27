@@ -1,3 +1,4 @@
+import { swrGet } from '../../../../lib/crm/swr';
 // SOPORTE · Dashboard GLOBAL de soporte (tab del CRM). Volumen por estado/tema,
 // SLA (primera respuesta y resolución), sentimiento, quién consume el soporte y
 // tendencia. Founder-only (middleware).
@@ -678,8 +679,8 @@ export default function SoporteTab() {
   useEffect(() => {
     if (!esMovilS) return;
     let vivo = true;
-    fetch('/api/crm/soporte/bandeja').then(r => r.json())
-      .then(j => { if (vivo) setBandeja(j.tickets || []); }).catch(() => { if (vivo) setBandeja([]); });
+    swrGet('/api/crm/soporte/bandeja', j => { if (vivo) setBandeja(j.tickets || []); })
+      .catch(() => { if (vivo) setBandeja([]); });
     return () => { vivo = false; };
   }, [esMovilS, recarga]);
   if (esMovilS) {
