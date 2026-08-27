@@ -365,7 +365,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
               { l: 'MRR ganado', v: fmt(kMrrGanado), c: '#1E8A63' },
-              { l: `MRR en juego · ${openDeals.length} abiertas`, v: fmt(kMrrAbierto), c: '#1a1a1a' },
+              { l: 'MRR en juego', v: fmt(kMrrAbierto), c: '#1a1a1a' },
               { l: 'Único en juego', v: fmt(kUnicoAbierto), c: '#1a1a1a' },
               { l: 'Estancadas', v: String(estancadas.length), c: estancadas.length ? '#C0554E' : '#1a1a1a' },
             ].map(sK => (
@@ -422,13 +422,13 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       {/* Filtros: la lista completa sigue siendo el default (ver todo antes de
           filtrar), pero "qué tengo vivo" y "qué gané" son dos clics distintos. */}
       {esMovilD && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 16px 0', overflowX: 'auto' }}>
-          {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
-            <button key={'m' + k} onClick={() => setFiltro(k as any)} className={'m-chip' + (filtro === k ? ' on' : '')} style={{ whiteSpace: 'nowrap' }}>{l}</button>
-          ))}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 16px 0', overflowX: 'auto', WebkitMaskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)', maskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)' }}>
           <button onClick={() => setFiltrosMov(true)} className={'m-chip' + (nFiltrosSec ? ' on' : '')} style={{ whiteSpace: 'nowrap' }}>
             Filtros{nFiltrosSec ? ` · ${nFiltrosSec}` : ''}
           </button>
+          {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
+            <button key={'m' + k} onClick={() => setFiltro(k as any)} className={'m-chip' + (filtro === k ? ' on' : '')} style={{ whiteSpace: 'nowrap' }}>{l}</button>
+          ))}
         </div>
       )}
       <div style={{ display: esMovilD ? 'none' : 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>

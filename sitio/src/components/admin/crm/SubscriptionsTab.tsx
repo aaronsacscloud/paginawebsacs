@@ -334,14 +334,14 @@ export default function SubscriptionsTab() {
             facturas vencidas siguen siendo la vía corta. */}
         {!isMobile && <>
           <div style={{ flex: 1 }} />
-          <button style={{ ...S.btn, background: '#fff', border: '1.5px solid #7DA6F5', color: '#2C5FC4' }} onClick={() => setShowPago(true)}>Registrar pago</button>
-          <button style={{ ...S.btn, background: '#9B8CFA', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+          <button style={{ ...S.btn, background: '#fff', border: '1.5px solid #c9bcf7', color: '#5B4BD6' }} onClick={() => setShowPago(true)}>Registrar pago</button>
+          <button style={{ ...S.btn, background: '#5B4BD6', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
         </>}
       </div>
       {isMobile && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          <button style={{ ...S.btn, flex: 1, height: 44, background: '#9B8CFA', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
-          <button style={{ ...S.btn, flex: '0 0 auto', height: 44, background: '#fff', border: '1.5px solid #7DA6F5', color: '#2C5FC4' }} onClick={() => setShowPago(true)}>Registrar pago</button>
+          <button style={{ ...S.btn, flex: 1, height: 44, background: '#5B4BD6', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+          <button style={{ ...S.btn, flex: '0 0 auto', height: 44, background: '#fff', border: '1.5px solid #c9bcf7', color: '#5B4BD6' }} onClick={() => setShowPago(true)}>Registrar pago</button>
         </div>
       )}
 

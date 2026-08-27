@@ -496,7 +496,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
               de reunión y la disponibilidad viven en Configuración → Reuniones:
               son ajustes que se tocan una vez, no trabajo del día. */}
           <button onClick={() => setEligiendoCliente(true)}
-            style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             + Agendar reunión
           </button>
         </div>

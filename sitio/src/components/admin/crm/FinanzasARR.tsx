@@ -114,11 +114,13 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
         <span style={S.tit}>Panorama</span>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#8f8d98' }}>Periodo</span>
-          <input type="month" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
-            style={{ ...S.btn, padding: '7px 10px', fontWeight: 500 }} />
-          <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>a</span>
-          <input type="month" value={hasta} onChange={e => setHasta(e.target.value)} title="Hasta"
-            style={{ ...S.btn, padding: '7px 10px', fontWeight: 500 }} />
+          <span style={{ display: 'flex', gap: 7, alignItems: 'center', whiteSpace: 'nowrap', flex: '1 1 auto', minWidth: 0, maxWidth: 340 }}>
+            <input type="month" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
+              style={{ ...S.btn, padding: '7px 10px', fontWeight: 500, flex: 1, minWidth: 0 }} />
+            <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>a</span>
+            <input type="month" value={hasta} onChange={e => setHasta(e.target.value)} title="Hasta"
+              style={{ ...S.btn, padding: '7px 10px', fontWeight: 500, flex: 1, minWidth: 0 }} />
+          </span>
           <button style={{ ...S.btn, background: '#EEECFE', borderColor: '#ddd6fb', color: VIO }}
             onClick={() => cargar(desde || hasta ? `?desde=${desde || ''}&hasta=${hasta || ''}` : '')}>Aplicar</button>
           {(desde || hasta) && <button style={S.btn} onClick={() => { setDesde(''); setHasta(''); cargar(); }}>Últimos 12 meses</button>}
