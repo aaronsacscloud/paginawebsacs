@@ -5,11 +5,14 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { avisarNuevoLead } from '../../../../lib/crm/aviso-lead';
+import { probarCorreoBienvenida } from '../../../../lib/crm/bienvenida-lead';
 
 export const prerender = false;
 const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
 
 export const GET: APIRoute = async ({ url }) => {
+  const correo = url.searchParams.get('correo');
+  if (correo) return json(await probarCorreoBienvenida(correo));
   if (url.searchParams.get('leads') === 'tiktok') {
     // Solo los REALES de TikTok de hoy y ayer (el pipeline vivo), no el
     // import masivo de la hoja vieja.

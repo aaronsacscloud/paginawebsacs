@@ -14,19 +14,64 @@ import { enviarPlantilla } from '../whatsapp/kapso-api';
 import { resolverTenant } from '../email/tenant';
 import { enviarCorreo } from '../email/pipeline';
 
-// La plantilla PREESTABLECIDA del correo: se usa cuando el módulo está activo
-// y el usuario no ha escrito la suya. Variables: {{nombre}} y {{campana}}.
+// La plantilla PREESTABLECIDA del correo. El cuerpo (editable en el módulo)
+// es SOLO la parte personal de arriba; el diseño —cinta de marca, imagen,
+// aviso de WhatsApp, botón de demo y sellos de confianza— lo pone siempre
+// la plantilla visual de abajo. Variables: {{nombre}} y {{campana}}.
 export const EMAIL_BIENVENIDA_DEFAULT = {
-  asunto: 'Recibimos tu registro, {{nombre}} — Sacscloud',
-  cuerpo: `Hola {{nombre}},
+  asunto: '{{nombre}}, recibimos tu registro — te leemos por WhatsApp',
+  cuerpo: `Hola {{nombre}}, ¡qué gusto saludarte!
 
-Te escribimos de Sacscloud: recibimos el registro que llenaste en TikTok y quedó completo.
-
-Un asesor te va a contactar por WhatsApp para resolver tus dudas y enseñarte cómo funciona el sistema en un negocio como el tuyo. Si prefieres adelantarte, responde este correo y te atendemos por aquí.
-
-Equipo Sacscloud
-www.sacscloud.com`,
+Vimos tu registro que llenaste en TikTok ({{campana}}) y queremos presentarnos bien: somos Sacscloud, el sistema con el que las marcas de retail en México venden en tienda y en línea, controlan su inventario y facturan — todo en un solo lugar.`,
 };
+
+/** El correo ARMADO: diseño de documento del cliente (email-safe: tablas + inline). */
+function htmlBienvenida(intro: string): string {
+  const parrafos = intro.split(/\n{2,}/).map(p2 =>
+    `<p style="margin:0 0 16px;font:16px/1.65 -apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2733">${p2.replace(/\n/g, '<br>')}</p>`).join('');
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f3f8">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f8"><tr><td align="center" style="padding:28px 12px">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #ececf1">
+      <tr><td height="6" style="height:6px;background:#9B8CFA;background:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,rgba(244,168,205,.9));font-size:0;line-height:0">&nbsp;</td></tr>
+      <tr><td style="padding:26px 34px 0">
+        <div style="font:800 20px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#5B4BD6;letter-spacing:-.02em">Sacscloud</div>
+        <div style="font:600 11px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#a5a2af;margin-top:5px;letter-spacing:.06em;text-transform:uppercase">El sistema de las marcas de retail en México</div>
+      </td></tr>
+      <tr><td style="padding:22px 34px 0">${parrafos}</td></tr>
+      <tr><td style="padding:6px 34px 0">
+        <img src="https://www.sacscloud.com/images/hero-sacs-store.webp" width="532" alt="Una tienda operando con Sacscloud: el punto de venta en una tablet" style="width:100%;max-width:532px;border-radius:12px;display:block;border:1px solid #ececf1">
+      </td></tr>
+      <tr><td style="padding:18px 34px 0">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#EEECFE;border-radius:12px;padding:14px 18px">
+          <p style="margin:0;font:600 14.5px/1.6 -apple-system,'Segoe UI',Roboto,sans-serif;color:#4536BE">📲 En unos minutos te va a llegar un WhatsApp de tu asesor, desde nuestro número oficial. Por ahí te acompañamos en todo — respóndele con confianza.</p>
+        </td></tr></table>
+      </td></tr>
+      <tr><td style="padding:22px 34px 0">
+        <p style="margin:0 0 14px;font:16px/1.65 -apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2733">El mejor siguiente paso es una <b>demo en vivo</b>: vemos TU negocio, entendemos tus procesos y los ejecutamos en el sistema en tiempo real — sales viendo tu operación ya funcionando y con un plan claro de implementación.</p>
+      </td></tr>
+      <tr><td align="center" style="padding:6px 34px 8px">
+        <a href="https://www.sacscloud.com/contacto" style="display:inline-block;background:#9B8CFA;color:#ffffff;text-decoration:none;font:800 16px/1 -apple-system,'Segoe UI',Roboto,sans-serif;padding:15px 34px;border-radius:12px">Agendar mi demo →</a>
+      </td></tr>
+      <tr><td style="padding:22px 34px 26px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0eff5"><tr>
+          <td align="center" style="padding-top:18px;width:33%">
+            <div style="font:800 17px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#5B4BD6">+14 años</div>
+            <div style="font:600 11px/1.4 -apple-system,'Segoe UI',Roboto,sans-serif;color:#8a8590;margin-top:4px">acompañando al retail</div>
+          </td>
+          <td align="center" style="padding-top:18px;width:33%">
+            <div style="font:800 17px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#5B4BD6">★ 4.8/5</div>
+            <div style="font:600 11px/1.4 -apple-system,'Segoe UI',Roboto,sans-serif;color:#8a8590;margin-top:4px">en Google Reviews</div>
+          </td>
+          <td align="center" style="padding-top:18px;width:33%">
+            <div style="font:800 17px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#5B4BD6">3,000+ marcas</div>
+            <div style="font:600 11px/1.4 -apple-system,'Segoe UI',Roboto,sans-serif;color:#8a8590;margin-top:4px">han operado con nosotros</div>
+          </td>
+        </tr></table>
+      </td></tr>
+    </table>
+    <p style="margin:14px 0 0;font:500 11.5px/1.5 -apple-system,'Segoe UI',Roboto,sans-serif;color:#a5a2af">Sacscloud · www.sacscloud.com · Recibiste este correo porque te registraste en nuestra campaña.</p>
+  </td></tr></table></body></html>`;
+}
 
 /** Correo de bienvenida al lead de TikTok (config del módulo; preset editable). */
 export async function enviarCorreoBienvenidaTikTok(contactId: string, email: string, nombre?: string | null, campana?: string | null) {
@@ -40,7 +85,7 @@ export async function enviarCorreoBienvenidaTikTok(contactId: string, email: str
     .replace(/\{\{campana\}\}/g, campana || 'nuestra campaña');
   const asunto = pon(cfg.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
   const texto = pon(cfg.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
-  const html = texto.split(/\n{2,}/).map(p2 => `<p style="margin:0 0 14px;font:15px/1.6 -apple-system,Segoe UI,sans-serif;color:#2a2733">${p2.replace(/\n/g, '<br>')}</p>`).join('');
+  const html = htmlBienvenida(texto);
   const r = await enviarCorreo({ tenantId: t.id, para: email, asunto, html, texto, categoria: 'relacion', contactId } as any);
   if (!(r as any)?.enviado) return { ok: false, motivo: (r as any)?.motivo || 'error' };
   await supabase.from('activities').insert({
@@ -68,4 +113,16 @@ export async function enviarBienvenidaTikTok(contactId: string, telefono: string
     metadata: { plantilla: cfg.bienvenida_tiktok_plantilla, telefono },
   }).then(() => {});
   return { ok: true, plantilla: cfg.bienvenida_tiktok_plantilla };
+}
+
+/** Prueba del correo de bienvenida: lo manda TAL CUAL a la dirección dada. */
+export async function probarCorreoBienvenida(para: string) {
+  const t = await resolverTenant();
+  if (!t) return { ok: false, motivo: 'sin_tenant' };
+  const pon = (x: string) => x.replace(/\{\{nombre\}\}/g, 'María').replace(/\{\{campana\}\}/g, 'Campaña nuevos leads');
+  const { data: cfg } = await supabase.from('wa_config').select('email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
+  const asunto = pon(cfg?.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
+  const texto = pon(cfg?.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
+  const r = await enviarCorreo({ tenantId: t.id, para, asunto, html: htmlBienvenida(texto), texto, categoria: 'relacion' } as any);
+  return { ok: !!(r as any)?.enviado, motivo: (r as any)?.motivo || null, detalle: (r as any)?.detalle || null };
 }
