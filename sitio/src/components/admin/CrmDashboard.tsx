@@ -232,7 +232,7 @@ function getInitialTab(): Tab {
 // EL caso de uso móvil. La Agenda vive en Inicio ("Hoy") y en Más.
 // Pantallas móviles con cabecera propia v5 (m-hdr): sin app bar de 56px.
 // Se suman aquí conforme cada pantalla pasa el referee.
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones'];
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };

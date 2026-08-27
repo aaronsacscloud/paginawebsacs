@@ -373,6 +373,62 @@ export default function PagosTab() {
     // CRM usa este marco (máximo 1280, centrado, 24 de aire), y por eso las
     // pantallas se veían de dos anchos distintos según qué pestaña abrieras.
     <div style={WRAP}>
+      {/* ══ Pantalla MÓVIL v5 (mockup Cobranza): héroe rojo "Vencido" +
+          secciones VENCIDAS / PRÓXIMAS con filas cliente·plan / monto·días.
+          El chrome de escritorio (tarjetas, vistas, tablas) queda !isMobile;
+          el modal de registrar pago se comparte. ══ */}
+      {isMobile && (() => {
+        const fmtM = (n: number) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+        const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+        const hoyIso = today();
+        const proxOrden = [...proximos].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+        const enDias = (f: string) => Math.max(0, Math.ceil((Date.parse(String(f).slice(0, 10)) - Date.parse(hoyIso)) / 86400000));
+        return (
+          <div className="m-bleed">
+            <div className="m-hdr">
+              <div className="m-tt">Cobranza</div>
+              <button className="m-cta" onClick={() => { setPagoPrefill(null); setShowPago(true); }}>＋ Pago</button>
+            </div>
+            <div className="m-hero">
+              <div className="m-hl">Vencido</div>
+              <div className="m-hv" style={vencidas.length ? { color: '#C0554E' } : undefined}>{fmtM(montoVencido)}</div>
+              <div className="m-hd">{vencidas.length
+                ? `${vencidas.length} ${vencidas.length === 1 ? 'cuenta' : 'cuentas'} · ${fmtM(montoSemana)} vence esta semana`
+                : 'Nada vencido. Todo al día.'}</div>
+            </div>
+            {vencidas.length > 0 && <div className="m-sec">Vencidas</div>}
+            {vencidas.map((v: any) => (
+              <div key={'v' + v.subscription_id} className="m-row" onClick={() => abonar(v.subscription_id)}>
+                <div className="m-tx">
+                  <div className="m-n1">{cased(v.empresa)}</div>
+                  <div className="m-n2">{[v.plan, v.vencida_desde ? 'venció ' + fmtDate(v.vencida_desde).replace(/ de \d{4}| \d{4}/, '') : null].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div className="m-fin">
+                  <div className="m-m1">{fmtM(v.monto)}</div>
+                  <div className="m-m2" style={{ color: '#C0554E' }}>{v.dias_vencida === 1 ? '1 día' : `${v.dias_vencida} días`}</div>
+                </div>
+              </div>
+            ))}
+            {proxOrden.length > 0 && <div className="m-sec">Próximas</div>}
+            {proxOrden.map((c: any) => (
+              <div key={'p' + c.subscription_id} className="m-row" onClick={() => abonar(c.subscription_id)}>
+                <div className="m-tx">
+                  <div className="m-n1">{cased(c.empresa)}</div>
+                  <div className="m-n2">{c.plan || '—'}</div>
+                </div>
+                <div className="m-fin">
+                  <div className="m-m1">{fmtM(c.monto)}</div>
+                  <div className="m-m2">{enDias(c.fecha) === 0 ? 'hoy' : enDias(c.fecha) === 1 ? 'mañana' : `en ${enDias(c.fecha)} días`}</div>
+                </div>
+              </div>
+            ))}
+            {vencidas.length === 0 && proxOrden.length === 0 && (
+              <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Sin cobros pendientes este mes.</div>
+            )}
+          </div>
+        );
+      })()}
+      {!isMobile && (<>
       {/* Las cinco tarjetas en rejilla, con los mismos cortes que Cobranza:
           nunca se apachurran ni se salen de la pantalla. */}
       <style>{`
@@ -915,6 +971,7 @@ export default function PagosTab() {
       {gestionPago && <GestionModal pago={gestionPago} onCerrar={() => setGestionPago(null)}
         onListo={(m) => { setToast(m); setTimeout(() => setToast(''), 4000); }} />}
 
+      </>)}
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
       {toast && <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>}
