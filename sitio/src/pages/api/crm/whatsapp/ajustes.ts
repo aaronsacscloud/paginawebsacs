@@ -34,6 +34,9 @@ export const POST: APIRoute = async ({ request }) => {
   if ('asignacion_rr' in b) cambios.asignacion_rr = !!b.asignacion_rr;
   if ('bienvenida_tiktok_activa' in b) cambios.bienvenida_tiktok_activa = !!b.bienvenida_tiktok_activa;
   if ('bienvenida_tiktok_plantilla' in b) cambios.bienvenida_tiktok_plantilla = String(b.bienvenida_tiktok_plantilla || '').trim() || null;
+  if ('email_bienvenida_tiktok_activa' in b) cambios.email_bienvenida_tiktok_activa = !!b.email_bienvenida_tiktok_activa;
+  if ('email_bienvenida_asunto' in b) cambios.email_bienvenida_asunto = String(b.email_bienvenida_asunto || '').slice(0, 200) || null;
+  if ('email_bienvenida_cuerpo' in b) cambios.email_bienvenida_cuerpo = String(b.email_bienvenida_cuerpo || '').slice(0, 4000) || null;
   const { error } = await supabase.from('wa_config').upsert(cambios);
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true });

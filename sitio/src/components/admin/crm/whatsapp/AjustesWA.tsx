@@ -99,6 +99,22 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
           </div>
 
           <div style={{ marginTop: 18 }}>
+            <Toggle on={!!a.email_bienvenida_tiktok_activa} onChange={v => setA({ ...a, email_bienvenida_tiktok_activa: v })} label="Correo de bienvenida a leads de TikTok" />
+            <p style={{ margin: '4px 0 0 43px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
+              Si el registro trae correo, se le manda este mensaje (categoría relación, no marketing).
+              Variables: {'{{nombre}}'} y {'{{campana}}'}. Vacío = se usa la plantilla preestablecida.
+            </p>
+            {a.email_bienvenida_tiktok_activa && (<>
+              <input style={{ ...inp, marginTop: 8 }} value={a.email_bienvenida_asunto || ''}
+                onChange={e => setA({ ...a, email_bienvenida_asunto: e.target.value })}
+                placeholder="Recibimos tu registro, {{nombre}} — Sacscloud" />
+              <textarea style={{ ...inp, marginTop: 6, resize: 'vertical' }} rows={5} value={a.email_bienvenida_cuerpo || ''}
+                onChange={e => setA({ ...a, email_bienvenida_cuerpo: e.target.value })}
+                placeholder={'Hola {{nombre}},\n\nTe escribimos de Sacscloud: recibimos el registro que llenaste en TikTok y quedó completo.\n\nUn asesor te va a contactar por WhatsApp…'} />
+            </>)}
+          </div>
+
+          <div style={{ marginTop: 18 }}>
             <Toggle on={!!a.fuera_activa} onChange={v => setA({ ...a, fuera_activa: v })} label="Respuesta fuera de horario" />
             {a.fuera_activa && (<>
               <textarea style={{ ...inp, marginTop: 8, resize: 'vertical' }} rows={2} value={a.fuera_texto || ''}
