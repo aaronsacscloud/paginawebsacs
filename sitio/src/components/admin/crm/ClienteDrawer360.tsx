@@ -184,7 +184,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
           <>
             {/* ══ Cabecera MÓVIL v5 (mockup Ficha): handle + avatar + nombre +
                 "Cliente desde · Plan", acciones WhatsApp/Llamar/Agendar,
-                métricas MRR·Saldo vencido y segmented de pestañas. El chrome
+                métricas ARR·Saldo vencido y segmented de pestañas. El chrome
                 de escritorio (editar nombre, eliminar, tabbar) queda atrás
                 del segmented o solo en escritorio. ══ */}
             {isMobile && (() => {
@@ -195,7 +195,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               const ini = (ws.length >= 2 ? ws[0][0] + ws[1][0] : nombreCli.slice(0, 2)).toUpperCase();
               const activas = subs.filter((x: any) => x.estado !== 'cancelada');
               const hoyIso = new Date().toISOString().slice(0, 10);
-              const mrr = Math.round(activas.reduce((t: number, x: any) => t + Number(x.arr || 0), 0) / 12);
+              const arrAct = Math.round(activas.reduce((t: number, x: any) => t + Number(x.arr || 0), 0));
               const vencidas = activas.filter((x: any) => x.proxima_factura && String(x.proxima_factura).slice(0, 10) < hoyIso);
               const saldoVencido = Math.round(vencidas.reduce((t: number, x: any) =>
                 t + (Number(x.precio) || Number(x.arr || 0) / (x.ciclo === 'mensual' ? 12 : 1)), 0));
@@ -235,8 +235,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   )}
                   <div style={{ display: 'flex', alignItems: 'stretch', padding: '18px 24px 4px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>MRR</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{money(mrr)}</div>
+                      <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>ARR</div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{money(arrAct)}</div>
                     </div>
                     <div style={{ width: 1, background: '#ececf1', margin: '2px 20px' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>

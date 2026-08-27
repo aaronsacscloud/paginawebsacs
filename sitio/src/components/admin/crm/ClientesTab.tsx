@@ -702,7 +702,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       `}</style>
 
       {/* ══ Pantalla MÓVIL v5 (mockup Clientes): cabecera + búsqueda fija +
-          chips (Activos / Riesgo / MRR orden) + filas avatar·nombre·plan·MRR
+          chips (Activos / Riesgo / ARR orden) + filas avatar·nombre·plan·ARR
           con la excepción en color (vencida en rojo, salud baja en ámbar).
           El chrome de escritorio —KPIs, exclientes, TablaEnterprise— no
           existe en el teléfono: la referencia manda. ══ */}
@@ -743,7 +743,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 Riesgo{chipCl === 'riesgo' ? ' ' + nRiesgo : ''}
               </button>
               <button className="m-chip" onClick={() => setMrrAsc(v => !v)}>
-                MRR {mrrAsc ? '↑' : '↓'}
+                ARR {mrrAsc ? '↑' : '↓'}
               </button>
             </div>
             <div>
@@ -770,7 +770,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                       <div className="m-n2">{planL}</div>
                     </div>
                     <div className="m-fin">
-                      <div className="m-m1">{c.vitalicia ? 'Vitalicia' : money(Math.round(Number(c.arr || 0) / 12))}</div>
+                      <div className="m-m1">{c.vitalicia ? 'Vitalicia' : money(c.arr)}</div>
                       {vDias > 0
                         ? <div className="m-m2" style={{ color: '#C0554E' }}>vencida {vDias === 1 ? '1 día' : vDias + ' días'}</div>
                         : (salud != null && salud < 60
