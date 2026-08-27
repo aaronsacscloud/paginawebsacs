@@ -93,6 +93,26 @@ export const spinner = (px = 24, color = C.morado): CSSProperties => ({
 
 /** CSS global del inbox (keyframes + scrollbars finos). Inyectar una vez. */
 export const CSS_INBOX = `
+  /* ══ Hilo móvil v5: burbujas gris/morado (la referencia manda), sin verdes.
+     Los estilos de burbuja son inline: se pisan por atributo. ══ */
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] { background: #EEECFE !important; color: #1a1a1a !important; border-radius: 18px 18px 6px 18px !important; }
+  .wa-hilo-m [style*="border-radius: 16px 16px 16px 6px"] { background: #f2f2f5 !important; border-color: transparent !important; border-radius: 18px 18px 18px 6px !important; }
+  .wa-hilo-m [style*="rgb(167, 243, 208)"], .wa-hilo-m [style*="#A7F3D0"] { color: #6B7280 !important; border-left-color: #c9c2f2 !important; }
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] [style*="rgb(248, 113, 113)"] { color: #DC2626 !important; }
+  .wa-hilo-m .wa-citar { display: none !important; }
+  /* Sobre burbuja clara, los links y botones "claros" de plantilla se re-tintan */
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a { color: #5B4BD6 !important; }
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] [style*="rgba(255, 255, 255, 0.18)"] { background: rgba(91, 75, 214, 0.10) !important; color: #5B4BD6 !important; }
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] mark { background: #ddd6fb; }
+  /* La banda global ya explica el error: la leyenda repetida por mensaje sobra en el teléfono */
+  .wa-hilo-m .wa-err-msg { display: none !important; }
+  /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
+  .wa-hilo-m textarea[disabled] { display: none !important; }
+  /* URLs largas dentro de burbuja: una línea con ellipsis (el href queda completo) */
+  .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  /* El menú ⋮ con presencia y área táctil de header */
+  .wa-hilo-m [title="Más acciones"] { color: #111827 !important; padding: 10px !important; }
+  .wa-hilo-m [title="Más acciones"] svg { width: 20px; height: 20px; }
 .wa-citar{opacity:0;transition:opacity .15s}
 @media (max-width:720px){.wa-solo-desktop{display:none!important}.wa-citar{opacity:1}}
 @keyframes wa-pulso{0%,100%{opacity:1}50%{opacity:.3}}

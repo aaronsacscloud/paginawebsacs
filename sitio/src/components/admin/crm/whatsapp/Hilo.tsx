@@ -165,12 +165,12 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   let diaPrevio = '';
 
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
+    <div className={mobile ? 'wa-hilo-m' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header h-44 ── */}
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36, height: 36 }}>←</button>}
         <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
-          <b style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
+          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {hilo?.web_en_vivo && !mobile && (
             <span title={`Está viendo ${hilo.web_en_vivo} en este momento: es EL mejor momento para escribirle`}
@@ -222,13 +222,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="resuelta">Resuelta</option>
         </select>}
         {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
-        <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
+        {!mobile && <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
           style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
           <IcoBuscar size={15} />
-        </button>
+        </button>}
         {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} />}
         {onVerDetalle && (
-          <button onClick={onVerDetalle} style={{ border: `1px solid ${C.azulBorde}`, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#fff', color: C.azulTinta, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Detalle</button>
+          mobile
+            ? <button onClick={onVerDetalle} style={{ border: 'none', background: 'none', padding: '8px 0 8px 8px', fontSize: '0.9rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Ficha ›</button>
+            : <button onClick={onVerDetalle} style={{ border: `1px solid ${C.azulBorde}`, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#fff', color: C.azulTinta, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Detalle</button>
         )}
       </div>
 
@@ -273,8 +275,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         </div>
       ))}
       {conv.alerta && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, color: C.rojo700, flexShrink: 0 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: C.rojo500, flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, lineHeight: 1.45, color: C.rojo700, flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
           <span style={{ flex: 1 }}>{conv.alerta}</span>
           {hilo.canales?.correo?.ok && <button onClick={() => document.dispatchEvent(new CustomEvent('wa-modo-correo'))} style={{ border: `1px solid ${C.rojo200}`, background: '#fff', color: C.rojo700, borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Escribir por correo</button>}
         </div>

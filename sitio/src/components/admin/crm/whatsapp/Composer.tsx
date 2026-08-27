@@ -231,8 +231,8 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const FilaCanal = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: `1px solid ${C.g100}` }}>
       {modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />}
-      <span style={{ fontSize: 12, fontWeight: 600, color: C.g700 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>
-      <span style={{ fontSize: 11, color: C.g400 }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>
+      <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
           style={{ border: `1px solid ${C.g200}`, borderRadius: 6, fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
@@ -241,7 +241,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       )}
       <span style={{ flex: 1 }} />
       <button onClick={resumir} disabled={iaProcesando}
-        style={{ border: `1px solid #c9bcf7`, borderRadius: 8, padding: '3px 10px', background: '#fff', color: C.moradoTinta, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        style={{ border: `1px solid #c9bcf7`, borderRadius: 8, padding: '3px 10px', background: '#fff', color: C.moradoTinta, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
         <IcoChispas size={12} /> Resumir
       </button>
     </div>
@@ -313,7 +313,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           ))}
         </div>
       )}
-      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative' }}>
+      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: 'hidden' }}>
         <FilaCanal />
         {cita && modo === 'wa' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.emerald50, borderBottom: `1px solid #A7F3D0`, fontSize: 11 }}>
