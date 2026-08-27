@@ -17,6 +17,18 @@ if (gate) return gate;
 (function () {
   var v = document.querySelector('meta[name="viewport"]');
   if (v) v.setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover');
+  // ── M7 · PWA instalable ──
+  // El manifest y los metas de app se inyectan SOLO aquí (BaseLayout intacto):
+  // "Agregar a inicio" da una app standalone morada; el wrapper nativo futuro
+  // hereda iconos, splash y safe-areas de esto mismo.
+  var head = document.head;
+  var mk = function (tag, attrs) { var e = document.createElement(tag); for (var k in attrs) e.setAttribute(k, attrs[k]); head.appendChild(e); };
+  mk('link', { rel: 'manifest', href: '/crm-manifest.json' });
+  mk('meta', { name: 'theme-color', content: '#5B4BD6' });
+  mk('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+  mk('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' });
+  mk('meta', { name: 'apple-mobile-web-app-title', content: 'SACS CRM' });
+  mk('link', { rel: 'apple-touch-icon', href: '/crm-icon-192.png' });
 })();
 </script>
 <CrmDashboard client:only="react" />

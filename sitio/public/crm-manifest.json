@@ -1,0 +1,15 @@
+{
+  "name": "SACS CRM",
+  "short_name": "SACS CRM",
+  "description": "El CRM de SACS en tu bolsillo",
+  "start_url": "/admin/crm",
+  "scope": "/admin/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#5B4BD6",
+  "icons": [
+    { "src": "/crm-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/crm-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

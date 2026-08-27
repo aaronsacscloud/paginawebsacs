@@ -759,7 +759,9 @@ export default function CrmDashboard() {
         paddingTop: isMobile ? 'calc(56px + env(safe-area-inset-top))' : (tab === 'whatsapp' ? 0 : 22), paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
         transitionProperty: 'margin-left, width, max-width, padding-top',
       }}>
-        {/* Content */}
+        {/* Content — key={tab} remonta el contenido al navegar y dispara la
+            transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
+        <div key={tab} className={isMobile ? 'm-tabin' : undefined}>
         {tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
              zonas — el Dashboard completo es de escritorio. */
@@ -882,6 +884,7 @@ export default function CrmDashboard() {
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}
+        </div>
       </div>
 
       {/* Contact Profile Overlay */}
@@ -1066,8 +1069,31 @@ const CRM_MOBILE_CSS = `
     .m-chips::-webkit-scrollbar { display: none; }
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
-    /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono. */
-    .fin-k2 { grid-template-columns: 1fr !important; }
+    /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.
+       minmax(0,1fr) y min-width:0 en los hijos: con 1fr a secas, el min-content
+       de la tabla interna (420px) infla el grid item y desborda el viewport
+       aunque la tabla tenga su propio scroll. */
+    .fin-k2 { grid-template-columns: minmax(0, 1fr) !important; }
+    .fin-k2 > * { min-width: 0; }
+    /* ══ M5 · Piso tipográfico: nada bajo 12 px en el teléfono ══
+       Los tabs densos (Consultoría 180 textos <11 px, Clientes 156, Radar 81)
+       usan estilos INLINE con 0.55-0.68rem / 9-11px. Una regla externa con
+       !important SÍ le gana a un style inline sin !important, y el selector de
+       atributo alcanza a todos sin tocar 50 archivos. Los selectores son
+       EXACTOS por diseño: "0.7rem" (con la r pegada) no atrapa a 0.75rem. */
+    [style*="font-size: 0.5"], [style*="font-size: 0.6"],
+    [style*="font-size: 0.7rem"], [style*="font-size: 0.71"], [style*="font-size: 0.72"], [style*="font-size: 0.73"], [style*="font-size: 0.74"],
+    [style*="font-size: 8px"], [style*="font-size: 9px"], [style*="font-size: 10px"], [style*="font-size: 11px"], [style*="font-size: 11."] {
+      font-size: 0.75rem !important;
+    }
+    /* El margen compartido del CRM (lib/crm/layout WRAP) trae 56 px laterales
+       pensados para escritorio: en 390 px se comen 112. A 16 en el teléfono. */
+    [style*="padding: 24px 56px"] { padding: 16px 16px 24px !important; }
+    [style*="padding: 0px 56px"], [style*="padding: 0 56px"] { padding: 0 16px !important; }
+    /* M6 · Transición de entrada al cambiar de tab (como una app nativa). */
+    .m-tabin { animation: m-tabin 180ms ease; }
+    @keyframes m-tabin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .m-tabin { animation: none; } }
     /* Skeleton compartido */
     .m-skel { background: linear-gradient(90deg, var(--m-neutro) 25%, #eceaf1 50%, var(--m-neutro) 75%); background-size: 200% 100%; animation: m-skel 1.1s infinite linear; border-radius: 8px; }
     @keyframes m-skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
