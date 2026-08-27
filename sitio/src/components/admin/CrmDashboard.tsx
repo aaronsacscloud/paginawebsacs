@@ -352,6 +352,27 @@ export default function CrmDashboard() {
       ? (window as any).requestIdleCallback(cb, { timeout: t }) : setTimeout(cb, t);
     idle(() => { import('./crm/LeadsTab'); import('./crm/ClientesTab'); import('./crm/whatsapp/WhatsAppTab'); }, 2500);
     idle(() => { import('./RevenueHub'); import('./crm/PagosTab'); import('./crm/soporte/SoporteTab'); import('./crm/OportunidadesTab'); }, 6000);
+    // También los DATOS de los destinos del pulgar: el switch pinta del caché
+    // sin esperar red (y de paso calienta el micro-caché del servidor).
+    idle(() => {
+      const prime = (u: string) => {
+        try {
+          if (sessionStorage.getItem('swr:' + u)) return;
+          fetch(u).then(r => r.ok ? r.json() : null).then(j => {
+            if (j != null) try { sessionStorage.setItem('swr:' + u, JSON.stringify(j)); } catch { /* nada */ }
+          }).catch(() => {});
+        } catch { /* nada */ }
+      };
+      prime('/api/crm/contacts?limit=500&con_etapa=1');
+      prime('/api/crm/arr/clientes');
+      try {
+        if (!sessionStorage.getItem('swr:inbox-lista')) {
+          fetch('/api/crm/whatsapp/inbox?filtro=todas&estado=abierta&orden=recientes&limit=50').then(r => r.ok ? r.json() : null).then(j => {
+            if (j) try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch { /* nada */ }
+          }).catch(() => {});
+        }
+      } catch { /* nada */ }
+    }, 4000);
   }, []);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [initialDealId, setInitialDealId] = useState<string | null>(null);

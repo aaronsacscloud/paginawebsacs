@@ -52,6 +52,13 @@ if (gate) return gate;
     pagos: ['/api/crm/arr/summary'],
     soporte: ['/api/crm/soporte/bandeja'],
   };
+  // El inbox guarda su snapshot con clave y forma propias
+  if (tab === 'whatsapp' && !sessionStorage.getItem('swr:inbox-lista')) {
+    fetch('/api/crm/whatsapp/inbox?filtro=todas&estado=abierta&orden=recientes&limit=50')
+      .then(r => r.ok ? r.json() : null).then(j => {
+        if (j) try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch (e) {}
+      }).catch(() => {});
+  }
   for (const u of APIS[tab] || []) {
     try {
       if (sessionStorage.getItem('swr:' + u)) continue; // ya hay caché: no gastar
