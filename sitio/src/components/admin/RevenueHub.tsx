@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { WRAP } from '../../lib/crm/layout';
+import { useIsMobile } from '../../lib/ui/mobile';
 import { createPortal } from 'react-dom';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
@@ -540,6 +541,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // los ABONOS, y aquí solo hay cotizaciones. Calcularlos en el front daría un
     // "pendiente" que ignora los anticipos.
     const [kpis, setKpis] = useState<any>(null);
+    // ══ Móvil v5 (mockup Cotizaciones): chips Abiertas/Aceptadas/Vencidas ══
+    const esMovilQ = useIsMobile();
+    const [chipQ, setChipQ] = useState<'abiertas' | 'aceptadas' | 'vencidas'>('abiertas');
     // Cada tarjeta se abre con la lista que forma su número: un KPI que no se
     // puede desarmar termina en "¿de dónde salió esto?".
     const [panelKpi, setPanelKpi] = useState<string>('');
@@ -1427,6 +1431,88 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     return (
       <div>
         {cobrando && <RegistrarPagoModal quote={cobrando} onCerrar={() => setCobrando(null)} onListo={trasCobrar} />}
+        {/* ══ Pantalla MÓVIL v5 (mockup Cotizaciones): cabecera + héroe verde
+            "Cobrado del mes" + chips + lista Seguimiento. El chrome de
+            escritorio (KPIs, tabs, búsqueda, tabla) queda !esMovilQ; los
+            modales y el drawer de edición se comparten. ══ */}
+        {esMovilQ && (() => {
+          const vDe = (q: any) => Number(parseMeta(q.notas).meta.views || 0);
+          const abiertas = quotes.filter((q: any) => q.estado === 'draft' || q.estado === 'sent');
+          const aceptadas = quotes.filter((q: any) => q.estado === 'accepted' || estadoVisual(q, vDe(q)) === 'parcial');
+          const vencidas = quotes.filter((q: any) => q.estado === 'expired' || (q.estado === 'sent' && q.vigencia && daysUntil(q.vigencia) < 0));
+          const listaQ = [...(chipQ === 'abiertas' ? abiertas : chipQ === 'aceptadas' ? aceptadas : vencidas)]
+            .sort((a: any, b: any) => Number(b.total || 0) - Number(a.total || 0));
+          const contexto = (q: any) => {
+            const v = vDe(q);
+            if (q.estado === 'accepted') return 'espera anticipo';
+            if (estadoVisual(q, v) === 'parcial') return `${fmt(Number(q.abonado || 0))} abonado`;
+            if (v > 0) return `vista ${v} ${v === 1 ? 'vez' : 'veces'}`;
+            const d = Math.floor(daysSince(q.created_at));
+            return d <= 0 ? 'enviada hoy' : d === 1 ? 'enviada ayer' : `enviada hace ${d} días`;
+          };
+          const estadoDer = (q: any) => {
+            const v = vDe(q);
+            const ev = estadoVisual(q, v);
+            if (ev === 'accepted') return { t: 'aceptada', c: '#1E8A63' };
+            if (ev === 'parcial') return { t: 'parcial', c: '#1E8A63' };
+            if (chipQ === 'vencidas') return { t: 'vencida', c: '#C0554E' };
+            if (q.estado === 'sent' && v === 0 && daysSince(q.created_at) > 3) return { t: 'sin respuesta', c: '#a06600' };
+            return null;
+          };
+          return (
+            <div className="m-bleed">
+              <div className="m-hdr">
+                <div className="m-tt">Cotizaciones</div>
+                <button className="m-cta" onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || '', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}>＋ Nueva</button>
+              </div>
+              <div className="m-hero">
+                <div className="m-hl">Cobrado del mes</div>
+                <div className="m-hv" style={{ color: '#1E8A63' }}>{fmt(Number(kpis?.cobrado?.monto || 0))}</div>
+                <div className="m-hd">{kpis?.cobrado?.cotizaciones ?? 0} {(kpis?.cobrado?.cotizaciones ?? 0) === 1 ? 'cotización cobrada' : 'cotizaciones cobradas'}</div>
+              </div>
+              <div className="m-chips">
+                {([['abiertas', 'Abiertas', abiertas.length], ['aceptadas', 'Aceptadas', aceptadas.length], ['vencidas', 'Vencidas', vencidas.length]] as const).map(([v, l, n]) => {
+                  const on = chipQ === v;
+                  return (
+                    <button key={v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setChipQ(v)}>
+                      {l}{on ? ' ' + n : ''}
+                    </button>
+                  );
+                })}
+              </div>
+              {chipQ === 'abiertas' && listaQ.length > 0 && <div className="m-sec">Seguimiento</div>}
+              {listaQ.length === 0 && (
+                <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
+                  {chipQ === 'vencidas' ? 'Nada vencido. Todo al día.' : chipQ === 'aceptadas' ? 'Aún no hay aceptadas este periodo.' : 'Sin cotizaciones abiertas.'}
+                </div>
+              )}
+              {listaQ.map((q: any) => {
+                const ed = estadoDer(q);
+                return (
+                  <div key={q.id} className="m-row" onClick={() => setVerActividad(q.id)}>
+                    <div className="m-tx">
+                      <div className="m-n1">{String(q.empresa || q.contacto || q.numero || '').replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)))}</div>
+                      <div className="m-n2">{contexto(q)}</div>
+                    </div>
+                    <div className="m-fin">
+                      <div className="m-m1">{fmt(Number(q.total || 0))}</div>
+                      {ed && <div className="m-m2" style={{ color: ed.c }}>{ed.t}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+              {verActividad && (
+                <CotizacionActividad quoteId={verActividad} onClose={() => setVerActividad(null)}
+                  onCambio={async () => {
+                    const d2 = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
+                    if (Array.isArray(d2)) setQuotes(d2);
+                    cargarArchivadas();
+                  }} />
+              )}
+            </div>
+          );
+        })()}
+        {!esMovilQ && (<>
         {/* ─── Top header: title + actions ─── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
           <div>
@@ -1971,6 +2057,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             )}
           </div>
         </div>
+        </>)}
 
         {/* ─── Accept Quote Modal (admin manual acceptance) ─── */}
         {acceptForm && (
