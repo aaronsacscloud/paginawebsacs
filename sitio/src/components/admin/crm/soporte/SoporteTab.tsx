@@ -661,7 +661,11 @@ export default function SoporteTab() {
   const query = modo === 'rango' && desde && hasta && desde <= hasta
     ? `desde=${desde}&hasta=${hasta}` : `dias=${dias}`;
 
+  const esMovilS = useIsMobile();
   useEffect(() => {
+    // REGLA DE VELOCIDAD: el tablero analítico es de escritorio; en el
+    // teléfono la bandeja no lo usa y cargarlo solo quemaba red y CPU.
+    if (esMovilS) return;
     let vivo = true; setD(null); setErr('');
     fetch(`/api/crm/soporte/dashboard?${query}`)
       .then(r => r.json())
@@ -671,9 +675,6 @@ export default function SoporteTab() {
   }, [query, recarga]);
 
   // ══ Móvil v5 (mockup Soporte): bandeja de tickets abiertos, no el tablero.
-  // Chips Abiertos/Hoy; SIN RESPONDER (sin primera respuesta) arriba con la
-  // edad en color (≥4h rojo, ≥1h ámbar), EN CONVERSACIÓN abajo con "hace X".
-  const esMovilS = useIsMobile();
   const [bandeja, setBandeja] = useState<any[] | null>(null);
   const [chipS, setChipS] = useState<'abiertos' | 'hoy'>('abiertos');
   useEffect(() => {

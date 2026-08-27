@@ -6,7 +6,7 @@ import { swrGet } from '../../../lib/crm/swr';
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
 import type { CSSProperties } from 'react';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, useRef } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import PipelineTab from './PipelineTab';
@@ -235,6 +235,16 @@ export default function LeadsTab() {
   const esMovil = useIsMobile();
   // Móvil: la búsqueda vive tras el icono de la cabecera (la referencia no lleva campo fijo).
   const [buscaMovil, setBuscaMovil] = useState(false);
+  // REGLA DE VELOCIDAD: pintar 320 filas de golpe costaba ~600 ms de render;
+  // se pintan 40 y el sentinel del fondo pide más al hacer scroll.
+  const [visMovil, setVisMovil] = useState(40);
+  const finListaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!esMovil || !finListaRef.current) return;
+    const io = new IntersectionObserver(es => { if (es[0]?.isIntersecting) setVisMovil(v => v + 80); }, { rootMargin: '600px' });
+    io.observe(finListaRef.current);
+    return () => io.disconnect();
+  }, [esMovil, etapa]);
   const [borrando, setBorrando] = useState<any>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
@@ -1000,12 +1010,17 @@ export default function LeadsTab() {
                   </div>
                 );
                 };
+                const todasFilas = [...atorados, ...alDia];
+                const corte = Math.min(visMovil, todasFilas.length);
+                const atoradosVis = atorados.slice(0, corte);
+                const alDiaVis = alDia.slice(0, Math.max(0, corte - atorados.length));
                 return (
                   <>
                     {conSec && <div className="m-sec">Atorados</div>}
-                    {atorados.map(fila)}
-                    {conSec && <div className="m-sec">Recientes</div>}
-                    {alDia.map(fila)}
+                    {atoradosVis.map(fila)}
+                    {conSec && alDiaVis.length > 0 && <div className="m-sec">Recientes</div>}
+                    {alDiaVis.map(fila)}
+                    <div ref={finListaRef} style={{ height: 1 }} />
                   </>
                 );
               })()}

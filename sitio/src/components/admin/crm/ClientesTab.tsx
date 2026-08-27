@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { useCampos } from './CamposPersonalizados';
@@ -196,6 +196,15 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [buscaM, setBuscaM] = useState('');
   const [chipCl, setChipCl] = useState<'activos' | 'riesgo'>('activos');
   const [mrrAsc, setMrrAsc] = useState(false);
+  // REGLA DE VELOCIDAD: 40 filas de inicio, el sentinel pide más al scrollear
+  const [visMovil, setVisMovil] = useState(40);
+  const finListaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isMobile || !finListaRef.current) return;
+    const io = new IntersectionObserver(es => { if (es[0]?.isIntersecting) setVisMovil(v => v + 80); }, { rootMargin: '600px' });
+    io.observe(finListaRef.current);
+    return () => io.disconnect();
+  }, [isMobile, chipCl]);
   const { toast, show } = useToast();
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
 
@@ -742,7 +751,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   {chipCl === 'riesgo' ? 'Nadie en riesgo. Todo al corriente.' : 'Nada con esa búsqueda.'}
                 </div>
               )}
-              {listaM.map((c: any) => {
+              {listaM.slice(0, visMovil).map((c: any) => {
                 // Solo presentación (lección de Leads): "Super carnes rivera" rompe el ritmo.
                 const crudo = c.nombre_comercial || c.sacs_account || c.nombre || 'Sin nombre';
                 const nombre = crudo.replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
@@ -770,6 +779,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   </div>
                 );
               })}
+              <div ref={finListaRef} style={{ height: 1 }} />
             </div>
           </div>
         );

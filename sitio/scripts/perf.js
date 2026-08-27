@@ -32,7 +32,7 @@ const THROTTLE = !process.env.NO_THROTTLE;
       if (THROTTLE) {
         await cdp.send('Network.enable');
         await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 70, downloadThroughput: 12 * 1024 * 1024 / 8, uploadThroughput: 3 * 1024 * 1024 / 8 });
-        await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+        await cdp.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.CPU || 4) });
       }
       const url = BASE + '/admin/crm?tab=' + tab;
       if (modo === 'warm') { // primer viaje para calentar caché de assets, luego medir
