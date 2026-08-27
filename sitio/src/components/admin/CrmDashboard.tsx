@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
 import BottomNav from './crm/ui/BottomNav';
 import MasScreen from './crm/ui/MasScreen';
+import InicioMovil from './crm/InicioMovil';
 import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import DealsTab from './crm/DealsTab';
@@ -760,7 +761,9 @@ export default function CrmDashboard() {
       }}>
         {/* Content */}
         {tab === 'dashboard' ? (
-          <ErrorBoundary><DashboardTab /></ErrorBoundary>
+          /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
+             zonas — el Dashboard completo es de escritorio. */
+          <ErrorBoundary>{isMobile ? <InicioMovil onIrA={(t) => switchTab(t as Tab)} /> : <DashboardTab />}</ErrorBoundary>
         ) : tab === 'hoy' ? (
           <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
