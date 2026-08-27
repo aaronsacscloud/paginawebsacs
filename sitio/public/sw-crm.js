@@ -1,12 +1,14 @@
 // ══ Service Worker del CRM (REGLA DE VELOCIDAD) ══
 // - /_astro/*: cache-first — los nombres llevan hash, son inmutables. Una
 //   visita repetida no toca la red para JS/CSS: el arranque se vuelve local.
-// - HTML de /admin/crm: network-first con timeout de 2.5 s y fallback al
-//   caché — la app abre aunque la red esté floja; la versión se refresca sola
-//   en cuanto la red responde.
+// - HTML de /admin/crm: STALE-WHILE-REVALIDATE — se sirve el caché al
+//   instante (el TTFB de la función serverless, 300-500 ms, sale del camino
+//   crítico de TODAS las pantallas) y la red refresca el caché detrás; la
+//   siguiente navegación ya trae la versión nueva. Los assets con hash del
+//   HTML viejo siguen servibles porque /_astro/* es cache-first.
 // - APIs: NO se tocan aquí (el SWR de sessionStorage ya las cubre y cachear
 //   respuestas autenticadas en el SW sería un riesgo).
-const VER = 'crm-sw-v1';
+const VER = 'crm-sw-v2';
 const RE_ASSET = /\/_astro\/.+\.(js|css|woff2?)$/;
 
 self.addEventListener('install', (e) => { self.skipWaiting(); });
@@ -36,18 +38,13 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname === '/admin/crm') {
     e.respondWith((async () => {
       const cache = await caches.open(VER);
-      try {
-        const r = await Promise.race([
-          fetch(e.request),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('lenta')), 2500)),
-        ]);
+      const hit = await cache.match('/admin/crm');
+      const red = fetch(e.request).then(r => {
         if (r.ok) cache.put('/admin/crm', r.clone());
         return r;
-      } catch {
-        const hit = await cache.match('/admin/crm');
-        if (hit) return hit;
-        return fetch(e.request);
-      }
+      });
+      if (hit) { e.waitUntil(red.catch(() => {})); return hit; }
+      try { return await red; } catch { return fetch(e.request); }
     })());
   }
 });
