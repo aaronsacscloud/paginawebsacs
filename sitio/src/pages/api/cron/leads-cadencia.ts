@@ -48,8 +48,18 @@ export const GET: APIRoute = async ({ url }) => {
     const props: any = c.propiedades || {};
     const cad: any = props.cadencia || {};
     if (cad.detenida) continue;
-    // El reloj arranca cuando entró a la cadencia (primer toque sin respuesta).
-    if (!cad.inicio) { cad.inicio = c.estatus_lead_at || ahora.toISOString(); }
+    // Los ya-viejos NO entran: un lead que lleva más días frío que el corte
+    // es material de Rezagados/reciclaje, no de cadencia — sin esto, prender
+    // el toggle dispararía una ráfaga a todo el histórico.
+    const llegoReal = props?.tiktok?.creado || c.estatus_lead_at;
+    if (!cad.inicio && llegoReal && (ahora.getTime() - Date.parse(llegoReal)) / 86400000 > corte) {
+      if (!dry) await supabase.from('contacts').update({ propiedades: { ...props, cadencia: { detenida: true, motivo: 'viejo_al_activar' } } }).eq('id', c.id);
+      continue;
+    }
+    // El reloj arranca cuando la cadencia LO VE por primera vez (día 1 = hoy),
+    // nunca con fecha vieja: si no, un lead rezagado entraría en "día 9" y
+    // recibiría un paso pendiente CADA HORA hasta ponerse al día.
+    if (!cad.inicio) { cad.inicio = ahora.toISOString(); if (!dry) await supabase.from('contacts').update({ propiedades: { ...props, cadencia: cad } }).eq('id', c.id); }
     const diaActual = Math.floor((ahora.getTime() - Date.parse(cad.inicio)) / 86400000) + 1;
     if (diaActual > corte) {
       if (!dry) await supabase.from('contacts').update({ propiedades: { ...props, cadencia: { ...cad, detenida: true, motivo: 'corte' } } }).eq('id', c.id);
