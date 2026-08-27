@@ -14,6 +14,7 @@ import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
@@ -229,6 +230,7 @@ export default function LeadsTab() {
   // tabla con scroll, un menú en flujo se recorta contra el borde.
   const [menu, setMenu] = useState<{ c: any; x: number; y: number } | null>(null);
   const [verContacto, setVerContacto] = useState<string | null>(null);
+  const esMovil = useIsMobile();
   const [borrando, setBorrando] = useState<any>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
@@ -417,7 +419,7 @@ export default function LeadsTab() {
               : <>{conteos.todos ?? lista.length} en total · {lista.length} en vista</>}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
           {/* Segmentado, no tres botones sueltos: son la MISMA cosa vista de
               tres formas, y eso se dice con una sola pieza. */}
           <div style={{ display: 'inline-flex', background: '#f5f4f8', borderRadius: 10, padding: 3 }}>
@@ -885,7 +887,7 @@ export default function LeadsTab() {
               </span>
             ))}
 
-            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
               {/* El conteo en pastilla (cuántos hay en ESTA vista) y el orden
                   con su etiqueta: antes "7 leads" flotaba suelto junto al
                   select y no se entendía qué era ni de qué hablaba. */}
@@ -903,6 +905,43 @@ export default function LeadsTab() {
             </span>
           </div>
 
+          {/* ══ M2 · Lista móvil (presupuesto v5) ══
+              La tabla de 13 columnas medía 1,349 px en un viewport de 390: era
+              EL desborde más grande del CRM. En móvil cada lead es una fila
+              full-bleed de ≤3 datos: nombre · un hecho de contexto · cuándo
+              llegó. La excepción (prueba vencida / ya-cliente) es el 4º dato.
+              Tap → el mismo drawer del lead que en escritorio. */}
+          {esMovil ? (
+            <div>
+              {lista.length === 0 && (
+                <div style={{ padding: '28px 20px', color: '#8f8d98', fontSize: '0.86rem' }}>Nada con estos filtros.</div>
+              )}
+              {lista.map((c: any) => {
+                const o = origenDe(origenDeRegistro(c));
+                const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+                const pr = prueba(c);
+                const excep = (c.historial && HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA])
+                  || (pr && pr.restan != null && pr.restan <= 0 ? { label: pr.restan < 0 ? 'prueba vencida' : 'prueba termina hoy', bg: '#FFF4E5', fg: '#9a6a10' } : null);
+                const esHoy = fechaCorta(c.created_at) === 'hoy';
+                return (
+                  <div key={c.id} className="m-row" onClick={() => setVerContacto(c.id)}>
+                    <div className="m-tx">
+                      <div className="m-n1">{[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}</div>
+                      <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
+                    </div>
+                    <div className="m-fin">
+                      <div className="m-m1" style={esHoy ? { color: '#1E8A63' } : undefined}>{c.created_at ? fechaCorta(c.created_at) : '—'}</div>
+                      {excep
+                        ? <div className="m-m2" style={{ color: (excep as any).fg }}>{(excep as any).label}</div>
+                        : (c.lifecycle_stage && c.lifecycle_stage !== 'lead'
+                          ? <div className="m-m2" style={{ color: et.fg }}>{et.l}</div>
+                          : null)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="lead-tabla">
               <thead>
@@ -1091,6 +1130,7 @@ export default function LeadsTab() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </>)}
 

@@ -105,8 +105,27 @@ export function PlantillasMeta() {
           <button style={S.btnG} onClick={cargar}>Sincronizar</button>
           <button style={S.btnP} onClick={() => setForm({ nombre: '', idioma: 'es_MX', categoria: 'UTILITY', cuerpo: '', header: '', footer: '', botones: [], header_tipo: 'TEXT', header_media_url: '', ejemplos: [], variables_map: [], otp_expira_min: 10 })}>Nueva plantilla</button>
         </div>
-        {!lista.length ? <Vacio titulo="Sin plantillas todavía" texto="Las plantillas son los mensajes pre-aprobados por Meta: sirven fuera de la ventana de 24 horas y para los masivos." /> : (
-          <div className="crm-scroll-x" style={{ ...S.card, padding: 0 }}>
+        {!lista.length ? <Vacio titulo="Sin plantillas todavía" texto="Las plantillas son los mensajes pre-aprobados por Meta: sirven fuera de la ventana de 24 horas y para los masivos." /> : (<>
+          {/* M2 · móvil: la tabla de 7 columnas medía 1,205 px de lado. Fila v5:
+              nombre · estado como dato de la derecha · un hecho (categoría).
+              Tap = probar (si está aprobada); el resto de acciones, en escritorio. */}
+          <div className="wa-plantillas-movil" style={{ display: 'none' }}>
+            {pagina.map(p => (
+              <div key={'m' + p.id} className="m-row" onClick={() => { if (p.status === 'APPROVED') setPrueba({ plantilla: p, telefono: '', params: Array(p.variables || 0).fill('') }); }}>
+                <div className="m-tx">
+                  <div className="m-n1" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.82rem' }}>{p.nombre}</div>
+                  <div className="m-n2">{p.categoria === 'MARKETING' ? 'Marketing' : p.categoria === 'UTILITY' ? 'Utility' : p.categoria} · {p.idioma}</div>
+                </div>
+                <div className="m-fin">
+                  <div className="m-m1" style={{ fontSize: '0.82rem', color: p.status === 'APPROVED' ? '#1E8A63' : p.status === 'REJECTED' ? '#C0554E' : '#a06600' }}>
+                    {p.status === 'APPROVED' ? 'Aprobada' : p.status === 'REJECTED' ? 'Rechazada' : p.status === 'PENDING' ? 'En revisión' : p.status}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <style>{`@media (max-width:899px){ .wa-plantillas-movil{display:block !important} .wa-plantillas-desk{display:none !important} }`}</style>
+          <div className="wa-plantillas-desk crm-scroll-x" style={{ ...S.card, padding: 0 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
               <thead><tr>{th('nombre', 'Nombre')}{th('categoria', 'Categoría')}{th('idioma', 'Idioma')}{th('status', 'Estado')}{th('calidad', 'Calidad')}<th style={S.th}>Cuerpo</th><th style={S.th}></th></tr></thead>
               <tbody>
@@ -146,7 +165,7 @@ export function PlantillasMeta() {
               <button style={S.btnG} disabled={(pag + 1) * porPag >= lista.length} onClick={() => setPag(p => p + 1)}>›</button>
             </div>
           </div>
-        )}
+        </>)}
       </>)}
 
       {form && <EditorPlantilla form={form} setForm={setForm} onCrear={crear} guardando={guardando} onCancelar={() => { setForm(null); setMsg(null); }} />}

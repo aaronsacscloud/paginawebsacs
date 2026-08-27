@@ -286,7 +286,9 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       )}
       <div className="fin-k2" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 13, marginBottom: 14 }}>
         <div style={S.card}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          {/* M2: 4 columnas con montos no caben en 390 px — scroll interno. */}
+          <div className="crm-scroll-x">
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
             <thead><tr>
               <th style={S.th}>Cuenta</th><th style={{ ...S.th, textAlign: 'right' }}>Recurrente</th>
               <th style={{ ...S.th, textAlign: 'right' }}>Pagos únicos</th><th style={{ ...S.th, width: '32%' }}>Total del año</th>
@@ -309,6 +311,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
               ))}
             </tbody>
           </table>
+          </div>
           <div style={S.nota}>
             Los <b>pagos únicos</b> —plugins, personalizaciones, implementaciones— no son ARR, pero sí son ingreso de la cuenta
             y dicen cuánto vale de verdad un cliente. En la vista de ARR sola, esa parte no existe.

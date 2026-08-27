@@ -555,7 +555,31 @@ function TopClientes({ filas, etiqueta, onAbrir }: { filas: any[]; etiqueta: str
     <Tarjeta titulo="Clientes que más piden atención"
       cap="Quién consume el soporte por este canal. Da clic en un cliente para abrir su ficha."
       extra={<span style={{ fontSize: '0.7rem', color: '#b3b1bb', fontWeight: 700 }}>{etiqueta}</span>}>
-      <div className="crm-scroll-x">
+      {/* M2 · móvil: 7 columnas scrolleaban de lado (790 px). Fila v5: cliente ·
+          lo que más pide · tickets a la derecha; la excepción (urgentes o
+          estancados) es el 4º dato, en rojo. */}
+      <div className="sop-clientes-movil" style={{ display: 'none' }}>
+        {vista.map((f: any, i: number) => {
+          const ligado = !!f.company_id;
+          const nombre = f.nombre || f.cuenta || 'Sin identificar';
+          const alerta = f.urgentes ? `${f.urgentes} urgente${f.urgentes > 1 ? 's' : ''}` : (f.estancados ? `${f.estancados} estancado${f.estancados > 1 ? 's' : ''}` : null);
+          return (
+            <div key={'m' + (f.company_id || f.cuenta || i)} className="m-row" style={{ padding: '13px 0', cursor: ligado ? 'pointer' : 'default' }}
+              onClick={() => ligado && onAbrir(f.company_id)}>
+              <div className="m-tx">
+                <div className="m-n1" style={{ color: ligado ? '#1a1a1a' : '#8a8a8a' }}>{nombre}</div>
+                <div className="m-n2">{f.tema_label || f.plan || '—'}</div>
+              </div>
+              <div className="m-fin">
+                <div className="m-m1">{f.n}</div>
+                {alerta && <div className="m-m2" style={{ color: '#C0554E' }}>{alerta}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`@media (max-width:899px){ .sop-clientes-movil{display:block !important} .sop-clientes-desk{display:none !important} }`}</style>
+      <div className="sop-clientes-desk crm-scroll-x">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>
             <th style={th()}>Cliente</th>

@@ -1063,6 +1063,8 @@ const CRM_MOBILE_CSS = `
     .m-chips::-webkit-scrollbar { display: none; }
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
+    /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono. */
+    .fin-k2 { grid-template-columns: 1fr !important; }
     /* Skeleton compartido */
     .m-skel { background: linear-gradient(90deg, var(--m-neutro) 25%, #eceaf1 50%, var(--m-neutro) 75%); background-size: 200% 100%; animation: m-skel 1.1s infinite linear; border-radius: 8px; }
     @keyframes m-skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }

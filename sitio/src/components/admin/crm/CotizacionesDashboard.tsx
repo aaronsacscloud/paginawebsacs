@@ -253,7 +253,27 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     // ── Quién cotiza y quién paga ──
     clientes: () => (
       <W id="clientes" titulo="Quién cotiza y quién paga" cap="Cotizar mucho no es pagar mucho. Las dos columnas juntas lo dicen.">
-        <div style={{ overflowX: 'auto' }}>
+        {/* M2 · móvil: la tabla de 6 columnas scrolleaba de lado (1,040 px).
+            Fila v5 de 3 datos: cliente · cotizado→cobrado · % de avance. */}
+        <div className="cotz-lista-movil" style={{ display: 'none' }}>
+          {(d.clientes || []).map((c: any, i: number) => {
+            const pct = c.cotizado > 0 ? Math.min(100, Math.round((c.cobrado / c.cotizado) * 100)) : (c.cobrado > 0 ? 100 : 0);
+            return (
+              <div key={'m' + c.cliente + i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f7f6fa', minHeight: 52 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.cliente}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#8f8d98', marginTop: 2 }}>cotizado {money(c.cotizado)}</div>
+                </div>
+                <div style={{ flex: 'none', textAlign: 'right' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums', color: c.cobrado > 0 ? P_TINTA : '#c9c7d0' }}>{money(c.cobrado)}</div>
+                  <div style={{ fontSize: '0.78rem', color: pct >= 100 ? P_TINTA : '#8f8d98', marginTop: 1 }}>{pct}%</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <style>{`@media (max-width:899px){ .cotz-lista-movil{display:block !important} .cotz-tabla-desk{display:none !important} }`}</style>
+        <div className="cotz-tabla-desk" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
             <thead><tr>
               {['Cliente', 'Origen', 'Cotizado', 'Cobrado', 'Avance', 'Días a cobro'].map((h, i) => (
