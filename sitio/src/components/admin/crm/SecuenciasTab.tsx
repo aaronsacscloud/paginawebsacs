@@ -30,7 +30,7 @@ export default function SecuenciasTab() {
     fetch('/api/crm/email/templates').then(r => r.json()).then(j => setPlantillasEmail(j.plantillas || [])).catch(() => {});
     fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
       const t = j.plantillas || [];
-      setPlantillasWa(t.filter((x: any) => (x.status || x.estado) === 'APPROVED'));
+      setPlantillasWa(t.map((x: any) => ({ nombre: x.name || x.nombre, aprobada: (x.status || x.estado) === 'APPROVED' })));
     }).catch(() => {});
   }, []);
 
@@ -84,7 +84,7 @@ export default function SecuenciasTab() {
               <span style={{ fontSize: '0.7rem', color: '#999' }}>Día</span>
               <input type="number" min={1} value={p.dia} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, dia: Number(e.target.value) } : x) })} style={{ ...inp, width: 58 }} />
               <select value={p.canal} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, canal: e.target.value } : x) })} style={{ ...inp, width: 104 }}>
-                <option value="correo">✉️ Correo</option><option value="wa">📲 WhatsApp</option>
+                <option value="correo">Correo</option><option value="wa">WhatsApp</option>
               </select>
               {p.canal === 'correo' ? (
                 <select value={p.email_template_id || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
@@ -94,7 +94,8 @@ export default function SecuenciasTab() {
               ) : (
                 <select value={p.wa_plantilla || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, wa_plantilla: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
                   <option value="">— plantilla de WhatsApp —</option>
-                  {plantillasWa.map((x: any) => <option key={x.name || x.nombre} value={x.name || x.nombre}>{x.name || x.nombre}</option>)}
+                  {plantillasWa.map((x: any) => <option key={x.nombre} value={x.nombre}>{x.nombre}{x.aprobada ? '' : ' (en revisión de Meta)'}</option>)}
+                  {p.wa_plantilla && !plantillasWa.some((x: any) => x.nombre === p.wa_plantilla) && <option value={p.wa_plantilla}>{p.wa_plantilla}</option>}
                 </select>
               )}
               <button onClick={() => setEdit({ ...edit, pasos: pasos.filter((_, j) => j !== i) })} style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
@@ -154,7 +155,7 @@ export default function SecuenciasTab() {
               </div>
               <div style={{ ...tarjetaKpi(P.azul), minWidth: 140, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Envíos</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>✉️ {m.correos ?? 0} · 📲 {m.whatsapps ?? 0}</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>{m.correos ?? 0} correos · {m.whatsapps ?? 0} WA</div>
               </div>
               <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Resultados (salidas)</div>
