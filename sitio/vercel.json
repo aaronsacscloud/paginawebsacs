@@ -18,6 +18,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/tiktok-crm-events",
+      "schedule": "0 */6 * * *"
+    },
+    {
       "path": "/api/cron/tiktok-leads",
       "schedule": "*/15 * * * *"
     },
@@ -84,6 +88,10 @@
     {
       "path": "/api/cron/leads-sla",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/leads-cadencia",
+      "schedule": "0 * * * *"
     }
   ]
 }
