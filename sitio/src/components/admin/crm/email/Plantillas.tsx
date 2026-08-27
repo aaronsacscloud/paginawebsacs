@@ -261,7 +261,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               </div>
             </div>
 
-            {['titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'alt', 'pie', 'sub', 'puesto', 'nombre'].map(k => (
+            {['titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'alt', 'pie', 'sub', 'ancho', 'puesto', 'nombre'].map(k => (
               k in b ? (
                 <div key={k} style={{ marginBottom: 10 }}>
                   <span style={S.lbl}>{ETIQ_CAMPO[k] || k}</span>
@@ -332,5 +332,5 @@ const ETIQ_CAMPO: Record<string, string> = {
   titulo: 'Título', subtitulo: 'Subtítulo', texto: 'Texto', autor: 'Autor',
   href: 'Liga (URL)', src: 'URL de la imagen', alt: 'Texto alternativo',
   puesto: 'Puesto', nombre: 'Nombre',
-  pie: 'Pie de la imagen', sub: 'Línea bajo el botón',
+  pie: 'Pie de la imagen', sub: 'Línea bajo el botón', ancho: 'Ancho en px (vacío = completo)',
 };

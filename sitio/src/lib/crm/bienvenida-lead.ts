@@ -40,8 +40,8 @@ function htmlBienvenida(intro: string): string {
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #ececf1">
       <tr><td height="6" style="height:6px;background:#9B8CFA;background:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,rgba(244,168,205,.9));font-size:0;line-height:0">&nbsp;</td></tr>
       <tr><td style="padding:26px 34px 0">
-        <div style="font:800 20px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#5B4BD6;letter-spacing:-.02em">Sacscloud</div>
-        <div style="font:600 11px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#a5a2af;margin-top:5px;letter-spacing:.06em;text-transform:uppercase">El sistema de las marcas de retail en México</div>
+        <img src="https://www.sacscloud.com/images/sacs-wordmark.png" alt="Sacs" width="88" style="display:block;border:0;height:auto;max-width:88px">
+        <div style="font:600 11px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#a5a2af;margin-top:8px;letter-spacing:.06em;text-transform:uppercase">El sistema de las marcas de retail en México</div>
       </td></tr>
       <tr><td style="padding:22px 34px 0">${parrafos}</td></tr>
       <tr><td style="padding:6px 34px 0">

@@ -99,9 +99,13 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
     case 'texto':
       return fila(`<div class="em-tinta" style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
     case 'imagen': {
-      const img = `<img src="${url(b.src, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${ANCHO - 64}" style="display:block;width:100%;max-width:${ANCHO - 64}px;height:auto;border:0;border-radius:10px;">`;
+      // `ancho` (px) la hace logo/sello en vez de imagen a todo lo ancho;
+      // `align` la acomoda. Sin ancho, se comporta como siempre.
+      const w = Math.min(Number(b.ancho) || (ANCHO - 64), ANCHO - 64);
+      const align = ['left', 'center', 'right'].includes(b.align) ? b.align : 'left';
+      const img = `<img src="${url(b.src, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${w}" style="display:${b.ancho ? 'inline-block' : 'block'};width:${b.ancho ? `${w}px` : '100%'};max-width:${w}px;height:auto;border:0;${b.ancho ? '' : 'border-radius:10px;'}">`;
       const pie = b.pie ? `<div style="${FA}font-size:12px;font-weight:600;color:#8a8590;margin-top:8px;text-align:center;">${txt(b.pie, ctx)}</div>` : '';
-      return fila(`<div style="padding-top:16px;">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}${pie}</div>`);
+      return fila(`<div style="padding-top:16px;text-align:${align};">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}${pie}</div>`);
     }
     case 'boton': {
       // Botón como tabla: un <a> con padding se rompe en Outlook.
