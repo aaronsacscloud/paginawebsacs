@@ -119,3 +119,78 @@ export async function enviarEventoCRM(e: EventoCRM): Promise<Resultado> {
     return { ok: false, mensaje: String(err?.message || err) };
   }
 }
+
+
+// ── La vía del PÍXEL, para los leads sin lead_id ─────────────────────────
+//
+// La vía de CRM es mejor —alimenta la vista de embudo de TikTok— pero exige
+// `lead_id`, y ese dato solo existe si venía en la entrega del lead. Los que
+// entraron por la hoja no lo tienen y TikTok ya los borró de su lado (guarda
+// los leads 90 días), así que para ellos no hay forma de recuperarlo.
+//
+// Por el píxel sí se puede: TikTok casa la conversión por correo y teléfono
+// hasheados. No pinta el embudo, pero le enseña al algoritmo QUIÉN compró, que
+// es lo que mueve la optimización. Y usa el permiso que la cuenta ya tiene.
+
+/** TikTok solo acepta conversiones de los últimos 28 días. */
+export const VENTANA_DIAS = 28;
+
+export function dentroDeVentana(cuando: Date, ahora = new Date()): boolean {
+  const dias = (ahora.getTime() - cuando.getTime()) / 86400000;
+  return dias >= 0 && dias <= VENTANA_DIAS;
+}
+
+async function sha256(txt: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export interface ConversionPixel {
+  email?: string | null;
+  telefono?: string | null;
+  /** Cuándo compró. Fuera de los 28 días TikTok lo descarta. */
+  cuando: Date;
+  /** Sin monto NO se manda `value`: un value en 0 le enseña que esa
+   *  conversión no vale nada, que es peor que no mandar el dato. */
+  valor?: number | null;
+  moneda?: string;
+  /** Estable por persona: si el cron reintenta, TikTok no cuenta dos. */
+  eventId: string;
+}
+
+export async function enviarConversionPixel(c: ConversionPixel): Promise<Resultado> {
+  const pixel = String((import.meta.env as any).TIKTOK_PIXEL_ID || '').trim();
+  if (!token() || !pixel) return { ok: false, mensaje: 'Falta TIKTOK_ACCESS_TOKEN o TIKTOK_PIXEL_ID' };
+  if (!c.email && !c.telefono) return { ok: false, mensaje: 'Sin correo ni teléfono no hay con qué casarlo.' };
+  if (!dentroDeVentana(c.cuando)) {
+    return { ok: false, mensaje: `Fuera de la ventana de ${VENTANA_DIAS} días de TikTok.` };
+  }
+
+  const user: Record<string, string> = {};
+  if (c.email) user.email = await sha256(String(c.email).trim().toLowerCase());
+  if (c.telefono) user.phone = await sha256(String(c.telefono).replace(/[^\d+]/g, ''));
+
+  const evento: Record<string, any> = {
+    event: 'CompletePayment',
+    event_id: c.eventId,
+    event_time: Math.floor(c.cuando.getTime() / 1000),
+    context: { user },
+  };
+  if (c.valor && c.valor > 0) {
+    evento.properties = { value: Math.round(c.valor * 100) / 100, currency: c.moneda || 'MXN' };
+  }
+
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Access-Token': token() },
+      body: JSON.stringify({ event_source: 'web', event_source_id: pixel, data: [evento] }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const j: any = await r.json().catch(() => ({}));
+    if (Number(j?.code) === 0) return { ok: true, code: 0 };
+    return { ok: false, code: Number(j?.code), mensaje: String(j?.message || 'Respuesta inesperada') };
+  } catch (err: any) {
+    return { ok: false, mensaje: String(err?.message || err) };
+  }
+}
