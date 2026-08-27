@@ -24,7 +24,9 @@ export const EMAIL_BIENVENIDA_DEFAULT = {
 
 Vimos tu registro en TikTok y queremos presentarnos bien: Sacscloud no es un punto de venta tradicional — es la evolución de los sistemas de retail.
 
-Es la forma moderna de operar tu marca: vendes en tienda, en línea y hasta en TikTok Shop con todo sincronizado, y controlas inventarios, administración y equipo desde un solo lugar. Lo implementamos contigo paso a paso, para que tu operación crezca sin saturarte.`,
+Es la forma moderna de operar tu marca: vendes en tienda, en línea y hasta en TikTok Shop con todo sincronizado, y controlas inventarios, administración y equipo desde un solo lugar — desde 1 tienda hasta cientos, en varios países o continentes. No hay límite a lo que quieras crecer y crear con Sacscloud.
+
+Y el sistema se adapta a ti, no al revés: flujos avanzados según el giro en que te encuentres — eso hace posible la verdadera automatización — con IA integrada que te ayuda dentro del sistema todos los días. Lo implementamos contigo paso a paso, para que tu operación crezca sin saturarte.`,
 };
 
 /** El correo ARMADO: diseño de documento del cliente (email-safe: tablas + inline). */
