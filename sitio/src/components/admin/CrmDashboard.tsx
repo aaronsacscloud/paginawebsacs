@@ -931,14 +931,16 @@ export default function CrmDashboard() {
           </div>
         ) : tab === 'desempeno' ? (
           <div style={{ padding: 24 }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Mi desempeño</h2>
-            <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: 20 }}>
-              MRR, comisiones, pipeline, leaderboard. Partners ven solo lo suyo; founder ve agregado.
-            </p>
-            <a href="/app/dashboard" target="_blank" style={{
-              display: 'inline-block', padding: '12px 18px', background: '#5B4BD6', color: '#fff',
-              borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem'
-            }}>Abrir dashboard de desempeño →</a>
+            <div style={{ background: '#fff', border: '1px solid #eeeef1', borderRadius: 14, padding: '20px 18px', maxWidth: 560 }}>
+              <div style={{ fontSize: '1.02rem', fontWeight: 800, marginBottom: 6 }}>Dashboard de desempeño</div>
+              <p style={{ color: '#666', fontSize: '0.875rem', margin: '0 0 16px', lineHeight: 1.5 }}>
+                MRR, comisiones, pipeline, leaderboard. Partners ven solo lo suyo; founder ve agregado.
+              </p>
+              <a href="/app/dashboard" target="_blank" style={{
+                display: 'inline-block', padding: '12px 18px', background: '#5B4BD6', color: '#fff',
+                borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem'
+              }}>Abrir dashboard →</a>
+            </div>
           </div>
         ) : tab === 'cobranza' ? (
           // Ya no hay renglón de menú que lleve aquí; queda como red por si algún

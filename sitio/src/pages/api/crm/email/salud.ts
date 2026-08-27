@@ -54,7 +54,7 @@ export const GET: APIRoute = async ({ url }) => {
   if (intentados >= 20 && tasaRebote > 2) alertas.push({ nivel: 'urgente', texto: `Rebotes en ${tasaRebote}% (el límite sano es 2%). Limpia la lista antes de la próxima campaña.` });
   if (intentados >= 20 && tasaQueja > 0.1) alertas.push({ nivel: 'urgente', texto: `Quejas de spam en ${tasaQueja}% (Gmail tolera hasta 0.3%, y su umbral de castigo empieza en 0.1%).` });
   if (enviados >= 50 && pct(clics, entregados) < 1) alertas.push({ nivel: 'alerta', texto: 'Menos de 1% de clics: el contenido o la audiencia no están conectando.' });
-  if (fallidos > 0) alertas.push({ nivel: 'alerta', texto: `${fallidos} envíos quedaron fallidos o dudosos — revísalos antes de reintentar.` });
+  if (fallidos > 0) alertas.push({ nivel: 'alerta', texto: fallidos === 1 ? '1 envío quedó fallido o dudoso — revísalo antes de reintentar.' : `${fallidos} envíos quedaron fallidos o dudosos — revísalos antes de reintentar.` });
 
   // El daño colateral que nadie ve: las listas de rebotes y quejas de SendGrid
   // son de CUENTA. Una queja contra una campaña del CRM también deja a esa

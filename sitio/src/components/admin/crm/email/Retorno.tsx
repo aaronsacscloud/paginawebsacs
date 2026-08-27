@@ -36,10 +36,9 @@ export default function Retorno() {
       {registrando && <GastoModal onCerrar={() => setRegistrando(false)} onListo={() => { setRegistrando(false); cargar(); }} />}
 
       {d.sin_gasto_capturado?.length > 0 && (
-        <Aviso tono="aviso"
-          accion={<button style={S.btnP} onClick={() => setRegistrando(true)}>Registrar</button>}>
-          Ya se ve el ARR que trajo <b>{d.sin_gasto_capturado.join(' y ')}</b>, pero no si valió la pena.
-          Con el gasto aparece el costo por cliente.
+        <Aviso tono="aviso">
+          Ya se ve el ARR que trajo <b>{d.sin_gasto_capturado.map((c: string) => c ? c[0].toUpperCase() + c.slice(1) : c).join(' y ')}</b>, pero no si valió la pena.
+          Con el gasto aparece el costo por cliente — usa <b>Registrar gasto</b>, aquí arriba.
         </Aviso>
       )}
 
