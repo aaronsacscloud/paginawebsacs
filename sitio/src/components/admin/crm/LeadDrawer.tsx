@@ -22,6 +22,7 @@ import { minutaLlena, normalizaEstado, siguientes } from '../../../lib/crm/reuni
 import MinutaLead from './MinutaLead';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
+import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
 import { pintaEstatus } from '../../../lib/crm/estatus-lead';
 import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
@@ -119,6 +120,11 @@ const COLOR_ETAPA: Record<Etapa, { bg: string; fg: string }> = {
 };
 
 export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro }: any) {
+  // ⚠️ Hooks SIEMPRE antes de los returns tempranos de carga/error — si van
+  // después, React truena con "Rendered more hooks than during the previous
+  // render" en cuanto la ficha pasa de 'cargando' a 'con datos'.
+  const esMovil = useIsMobile();
+  useDrawerHistory(esMovil, onClose);
   // Abre en "quién es", no en un revoltijo. Es el orden de la conversación con
   // el lead, el mismo criterio con el que están ordenadas las pestañas del
   // cliente: quién es · en qué va · cuándo lo tocamos · cuándo lo vimos · qué
@@ -211,7 +217,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
   return (
     <>
       <div style={D.overlay} onClick={onClose} />
-      <div style={D.panel}>
+      <div style={esMovil ? { ...D.panel, width: '100%', boxShadow: 'none' } : D.panel}>
         <div style={D.head}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <div style={{ minWidth: 0 }}>
@@ -227,13 +233,22 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
               </div>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
-              {tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
-              {c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
-              <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>
-              <button onClick={cerrar} aria-label="Cerrar"
-                style={{ width: 32, height: 32, border: '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem', fontFamily: 'inherit' }}>✕</button>
+              {!esMovil && tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
+              {!esMovil && c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
+              {!esMovil && <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>}
+              <button onClick={cerrar} aria-label={esMovil ? 'Atrás' : 'Cerrar'}
+                style={{ width: esMovil ? 44 : 32, height: esMovil ? 44 : 32, border: esMovil ? 'none' : '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: esMovil ? '#1a1a1a' : '#9c99a6', cursor: 'pointer', fontSize: '1.05rem', fontFamily: 'inherit' }}>{esMovil ? '←' : '✕'}</button>
             </div>
           </div>
+          {/* ══ M3 · Fila de acciones al pulgar (solo móvil): WhatsApp primaria
+              en morado, llamar y cotizar con targets ≥44px. ══ */}
+          {esMovil && (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 0 2px' }}>
+              {tel && <a href={waLink(tel)} target="_blank" rel="noreferrer" style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>WhatsApp</a>}
+              {tel && <a href={'tel:' + String(tel).replace(/\D/g, '')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>Llamar</a>}
+              <button onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>Cotizar</button>
+            </div>
+          )}
           {/* El orden es el de la conversación con el lead —quién es, en qué va,
               cuándo lo tocamos, cuándo lo vimos, qué le ofrecimos, qué hace él—
               igual que las pestañas del cliente. Señales va al final: se

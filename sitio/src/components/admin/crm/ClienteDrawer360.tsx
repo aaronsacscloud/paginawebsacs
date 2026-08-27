@@ -223,6 +223,35 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 </button>
                 <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={cerrar} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
               </div>
+              {/* ══ M3 · Fila de acciones al pulgar (solo móvil) ══
+                  Antes de una llamada, la ficha se abre para ACTUAR: los tres
+                  canales van arriba del doblez con targets ≥44px. WhatsApp es
+                  la primaria (morado) — es EL canal del negocio. */}
+              {isMobile && principal && (
+                <div style={{ display: 'flex', gap: 8, padding: '10px 16px 4px' }}>
+                  {principal.whatsapp && (
+                    <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{
+                      flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700,
+                      fontSize: '0.82rem', textDecoration: 'none',
+                    }}>WhatsApp</a>
+                  )}
+                  {(principal.telefono || principal.whatsapp) && (
+                    <a href={'tel:' + String(principal.telefono || principal.whatsapp).replace(/\D/g, '')} style={{
+                      flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12,
+                      fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
+                    }}>Llamar</a>
+                  )}
+                  {principal.email && (
+                    <a href={'mailto:' + principal.email} style={{
+                      flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12,
+                      fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none',
+                    }}>Correo</a>
+                  )}
+                </div>
+              )}
               <div style={D.tabbar}>
                 {/* El orden es el de la conversación con el cliente: quién es,
                     qué compró, cómo lo está usando, qué le prometimos, cuándo lo
