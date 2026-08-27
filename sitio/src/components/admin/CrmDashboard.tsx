@@ -1091,6 +1091,35 @@ const CRM_MOBILE_CSS = `
     .m-chips::-webkit-scrollbar { display: none; }
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
+    /* ══ DARK móvil (mockup Dark): tokens re-mapeados + overrides de los
+       inline claves. Solo teléfono y solo si el sistema está en oscuro. ══ */
+    @media (prefers-color-scheme: dark) and (max-width: 899px) {
+      :root {
+        --m-ink: #F2F1F7; --m-soft: #918fa0; --m-line: #26262e;
+        --m-neutro: #232329; --m-acc: #A78BFA; --m-acc-suave: #2a2440;
+        --m-dinero: #34D399; --m-rojo: #F0857A; --m-ambar: #E8B04B;
+      }
+      body, [style*="Plus Jakarta"], [style*="transition: margin-left"] { background: #131318 !important; }
+      .m-row { background: transparent; }
+      .m-row:active { background: #1d1d24; }
+      .m-row .m-n1, .m-row .m-m1 { color: var(--m-ink); }
+      .m-row .m-ini { color: #b3b1bd; }
+      .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
+      .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
+      nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
+      nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
+      /* inline fijos de las pantallas v5 */
+      .m-hdr [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
+      .m-hdr [style*="color: rgb(91, 75, 214)"], .m-cta { color: #B7A8F7 !important; }
+      input[style*="background: rgb(242, 242, 245)"] { background: #1d1d24 !important; color: #F2F1F7 !important; }
+      [style*="color: rgb(30, 138, 99)"] { color: #34D399 !important; }
+      [style*="color: rgb(192, 85, 78)"] { color: #F0857A !important; }
+      [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
+      [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
+      [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+      [style*="background: rgb(244, 243, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+    }
+
     /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.
        minmax(0,1fr) y min-width:0 en los hijos: con 1fr a secas, el min-content
        de la tabla interna (420px) infla el grid item y desborda el viewport
