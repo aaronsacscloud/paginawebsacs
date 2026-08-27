@@ -38,17 +38,34 @@ export const GET: APIRoute = async ({ url }) => {
   const companyId = url.searchParams.get('company_id') || '';
   if (!companyId) return json({ error: 'Falta el cliente.' }, 400);
 
+  // Se traen TODAS las del cliente, no solo las unificables. Antes se filtraba
+  // aquí y una licencia sin fecha de renovación —o pausada— simplemente no
+  // aparecía en la lista: el usuario unificaba dos de tres sin enterarse de que
+  // faltaba una, y no había forma de saber por qué. Ahora vienen con el motivo.
   const { data } = await supabase.from('subscriptions').select(CAMPOS)
-    .eq('company_id', companyId).in('estado', ['activa', 'pendiente_pago'])
-    .neq('ciclo', 'vitalicia').not('proxima_factura', 'is', null)
-    .order('proxima_factura');
+    .eq('company_id', companyId).order('proxima_factura', { nullsFirst: false });
 
-  const subs = data || [];
+  const porQueNo = (s: any): string | null => {
+    if (!['activa', 'pendiente_pago'].includes(s.estado)) return `está ${s.estado}: solo se unifican las que se están cobrando`;
+    if (s.ciclo === 'vitalicia') return 'es de pago único: no tiene renovación que alinear';
+    if (!s.proxima_factura) return 'no tiene fecha de próxima factura capturada';
+    return null;
+  };
+  const todas = (data || []).map((s: any) => ({ ...s, _no: porQueNo(s) }));
+  const subs = todas.filter((s: any) => !s._no);
   // Se agrupan por ciclo: una mensual y una anual no comparten cadencia, así
   // que alinearlas una vez no las mantiene alineadas. Cada ciclo se unifica
   // dentro de su propio grupo.
   const grupos: Record<string, any[]> = {};
   subs.forEach((s: any) => { (grupos[s.ciclo] = grupos[s.ciclo] || []).push(s); });
+  // Las que no se pueden unificar se cuelgan del grupo de su ciclo para que la
+  // pantalla las enseñe apagadas con su motivo. Sin ciclo utilizable van a la
+  // bolsa del primer grupo, que es donde el usuario las va a buscar.
+  const fuera = todas.filter((s: any) => s._no).map((s: any) => ({
+    id: s.id, nombre_plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado,
+    proxima_factura: s.proxima_factura ? String(s.proxima_factura).slice(0, 10) : null,
+    motivo: s._no,
+  }));
 
   // Propuestas que ya se le mandaron al cliente y siguen esperando su OK: sin
   // esto se generaría una nueva cada vez que alguien abre la ficha.
@@ -69,7 +86,11 @@ export const GET: APIRoute = async ({ url }) => {
         proxima_factura: String(s.proxima_factura).slice(0, 10), saldo_favor: num(s.saldo_favor),
         grupo_cobro: s.grupo_cobro,
       })),
+      // Se enseñan apagadas: que falte una licencia sin explicación es lo que
+      // hace pensar que la unificación "no jaló".
+      fuera: fuera.filter((f: any) => f.ciclo === ciclo || !['mensual', 'anual'].includes(f.ciclo)),
     })),
+    fuera,
   });
 };
 

@@ -3490,6 +3490,16 @@ const ESTADO_COT: Record<string, string> = {
 function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: any) {
   const [ids, setIds] = useState<string[]>(grupo.subs.map((s: any) => s.id));
   const [ancla, setAncla] = useState<string>(grupo.propuesta?.ancla ? String(grupo.propuesta.ancla).slice(0, 10) : grupo.anclas[0]);
+  // El grupo se vuelve a pedir cada vez que cambian las suscripciones, y con
+  // useState a secas el modal se quedaba con la foto vieja: si llegaba una
+  // licencia más, seguía unificando las de antes sin avisar. Se resincroniza
+  // cuando cambia la lista de licencias del grupo.
+  const firma = grupo.subs.map((s: any) => s.id).join(',');
+  useEffect(() => {
+    setIds(grupo.subs.map((s: any) => s.id));
+    if (!grupo.anclas.includes(ancla)) setAncla(grupo.propuesta?.ancla ? String(grupo.propuesta.ancla).slice(0, 10) : grupo.anclas[0]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [firma]);
   const [prev, setPrev] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -3565,6 +3575,18 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
               <span style={{ fontSize: '0.78rem', color: '#6b6b74' }}>{money(s.precio)}</span>
               <span style={{ fontSize: '0.75rem', color: '#8a8590', width: 96, textAlign: 'right' }}>{fmtDate(s.proxima_factura)}</span>
             </label>
+          ))}
+          {/* Las que NO se pueden juntar se enseñan apagadas con su motivo.
+              Que una licencia simplemente no aparezca es lo que hace pensar
+              que la unificación no funcionó. */}
+          {(grupo.fuera || []).map((f: any) => (
+            <div key={f.id} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', borderTop: '1px solid #f4f3f7', opacity: .55 }}>
+              <input type="checkbox" disabled checked={false} readOnly />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.81rem', fontWeight: 700 }}>{f.nombre_plan}</div>
+                <div style={{ fontSize: '0.72rem', color: '#C0554E', marginTop: 2 }}>No se puede juntar: {f.motivo}.</div>
+              </div>
+            </div>
           ))}
 
           <div style={{ ...D.lbl, marginTop: 14 }}>¿En qué fecha quedan todas?</div>
