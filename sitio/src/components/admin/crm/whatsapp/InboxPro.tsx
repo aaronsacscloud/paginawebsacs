@@ -31,6 +31,13 @@ export default function InboxPro() {
   const [orden, setOrden] = useState('recientes');
   const [mostrar, setMostrar] = useState('conversaciones');
   const [filtrosMobile, setFiltrosMobile] = useState(false);
+  // ══ Móvil v5 (mockup Inbox): chips Abiertas/Mías/Resueltas y lista seccionada ══
+  const [chipWa, setChipWa] = useState<'abiertas' | 'mias' | 'resueltas'>('abiertas');
+  useEffect(() => {
+    if (!isMobile) return;
+    setMostrar(chipWa === 'resueltas' ? 'resueltas' : 'abiertas');
+    setFiltros(f => ({ ...f, filtro: chipWa === 'mias' ? 'mias' : 'todas' }));
+  }, [isMobile, chipWa]);
   const [lista, setLista] = useState<any[] | null>(null);
   const [counts, setCounts] = useState<any>({});
   const [activa, setActiva] = useState<{ id: string; wa: string | null; email: string | null } | null>(null);
@@ -409,7 +416,75 @@ export default function InboxPro() {
       <div style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>
         <style>{CSS_INBOX}</style>
         {!activa ? (
-          <ListaConversaciones {...propsLista} mobile onFiltros={() => setFiltrosMobile(true)} />
+          (() => {
+            const convs = (lista || []).filter((c: any) => !c.virtual);
+            const horaV5 = (iso: string | null) => {
+              if (!iso) return '';
+              const d = new Date(iso); const hoy = new Date();
+              const dd = (x: Date) => x.toISOString().slice(0, 10);
+              const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+              if (dd(d) === dd(hoy)) return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+              if (dd(d) === dd(ayer)) return 'ayer';
+              return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }).replace(/\./g, '');
+            };
+            const sinLeer = convs.filter((c: any) => c.no_leidos > 0);
+            const previas = convs.filter((c: any) => !(c.no_leidos > 0));
+            const conSec = chipWa !== 'resueltas' && sinLeer.length > 0;
+            const fila = (c: any) => {
+              const noLeida = c.no_leidos > 0;
+              const nom = c.contacto?.nombre || c.telefono || '—';
+              const emp = c.contacto?.empresa_nombre || c.contacto?.companies?.nombre || null;
+              const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
+              const ws = String(nom).split(/\s+/).filter((w: string) => w && !stop.includes(w.toLowerCase()));
+              // Un teléfono sin contacto no tiene iniciales: icono de persona.
+              const esTel = /^\+?\d/.test(String(nom));
+              const ini = esTel
+                ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8f8d98" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                : (ws.length >= 2 ? ws[0][0] + ws[1][0] : String(nom).slice(0, 2)).toUpperCase();
+              return (
+                <div key={c.id} className="m-row" onClick={() => abrir(c)}>
+                  <div className="m-ini">{ini}</div>
+                  <div className="m-tx">
+                    <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>{[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}</div>
+                    <div className="m-n2" style={!c.ultimo_mensaje_texto ? { fontStyle: 'italic' } : undefined}>
+                      {c.ultimo_mensaje_texto ? `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto}` : 'Sin mensajes'}
+                    </div>
+                  </div>
+                  <div className="m-fin">
+                    <div className="m-m1" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : { fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{horaV5(c.ultimo_mensaje_at)}</div>
+                  </div>
+                </div>
+              );
+            };
+            return (
+              <div>
+                <div className="m-hdr">
+                  <div className="m-tt">Inbox</div>
+                  <button className="m-cta" onClick={() => setNuevoChat(true)}>＋ Nuevo</button>
+                </div>
+                <div className="m-chips">
+                  {([['abiertas', 'Abiertas'], ['mias', 'Mías'], ['resueltas', 'Resueltas']] as const).map(([v, l]) => {
+                    const on = chipWa === v;
+                    return (
+                      <button key={v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setChipWa(v)}>
+                        {l}{on && lista ? ' ' + convs.length : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+                {lista === null && <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Cargando…</div>}
+                {lista !== null && convs.length === 0 && (
+                  <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
+                    {chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.' : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.' : 'Sin conversaciones abiertas. Bandeja limpia.'}
+                  </div>
+                )}
+                {conSec && <div className="m-sec">Sin leer</div>}
+                {(conSec ? sinLeer : convs).map(fila)}
+                {conSec && previas.length > 0 && <div className="m-sec">Anteriores</div>}
+                {conSec && previas.map(fila)}
+              </div>
+            );
+          })()
         ) : (
           <>
             <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api} mobile
