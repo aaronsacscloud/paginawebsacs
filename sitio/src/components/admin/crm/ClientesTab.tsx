@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
-import ClienteDrawer360 from './ClienteDrawer360';
-import NuevoClienteModal from './NuevoClienteModal';
-import PipelineKanban from './PipelineKanban';
+// REGLA DE VELOCIDAD: los overlays pesados bajan al abrirse, no con la lista.
+const ClienteDrawer360 = lazy(() => import('./ClienteDrawer360'));
+const NuevoClienteModal = lazy(() => import('./NuevoClienteModal'));
+const PipelineKanban = lazy(() => import('./PipelineKanban'));
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import FiltroRenovacion, { type RangoRenov } from './FiltroRenovacion';
 import { useToast, Toast, logStageChange } from './crmHelpers';
@@ -940,7 +941,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           customBody={modo === 'kanban' ? ((rows: any[]) => (
             stages.length === 0
               ? <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Configura las etapas del pipeline de Clientes en <b>Configuración → Pipelines</b>.</div>
-              : <PipelineKanban
+              : <Suspense fallback={<Cargando texto="Cargando pipeline…" />}><PipelineKanban
                   stages={stages}
                   items={rows}
                   getId={(c: any) => c.id}
@@ -957,14 +958,14 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                       </div>
                     </div>
                   )}
-                />
+                /></Suspense>
           )) : null}
 
         />
       </div>
       </>)}
 
-      {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      {detailId && <Suspense fallback={null}><ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} /></Suspense>}
 
       {motivoMasivo && (
         <MotivoBajaMasivo ids={Array.from(selEx)}
@@ -978,7 +979,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       {avisoEx && (
         <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 1200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{avisoEx}</div>
       )}
-      {showNuevo && <NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} />}
+      {showNuevo && <Suspense fallback={null}><NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} /></Suspense>}
       <Toast toast={toast} />
     </div>
   );

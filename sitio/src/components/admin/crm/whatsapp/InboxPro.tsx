@@ -2,19 +2,20 @@
 // sidebar de vistas custom | lista PRO | hilo | detalle. Polling deliberado
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
-import ListaConversaciones from './ListaConversaciones';
-import Telefonia from './Telefonia';
-import Llamadas from './Llamadas';
-import Hilo from './Hilo';
-import PanelDetalle from './PanelDetalle';
-import NuevoChat from './NuevoChat';
+// REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
+const ListaConversaciones = lazy(() => import('./ListaConversaciones'));
+const Telefonia = lazy(() => import('./Telefonia'));
+const Llamadas = lazy(() => import('./Llamadas'));
+const Hilo = lazy(() => import('./Hilo'));
+const PanelDetalle = lazy(() => import('./PanelDetalle'));
+const NuevoChat = lazy(() => import('./NuevoChat'));
 import type { Condicion } from '../../../../lib/whatsapp/filtros';
 
 export type Filtros = { filtro: string; etapa: string; search: string };
@@ -496,15 +497,15 @@ export default function InboxPro() {
             );
           })()
         ) : (
-          <>
+          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}>
             <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api} mobile
               onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
               {conv && <PanelDetalle hilo={hilo} api={api} />}
             </Sheet>
-          </>
+          </Suspense>
         )}
-        {nuevoChat && <NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} />}
+        {nuevoChat && <Suspense fallback={null}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
           <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
             vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
@@ -521,30 +522,32 @@ export default function InboxPro() {
         display: 'flex', background: '#fff', borderTop: `1px solid ${C.g200}`,
         overflow: 'hidden', height: '100dvh', minHeight: 480,
       }}>
+        <Suspense fallback={null}>
         <Llamadas onAbrir={(id) => setActiva({ id, wa: id, email: null })} />
         <Telefonia />
+        </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
-        <ListaConversaciones {...propsLista} />
+        <Suspense fallback={<Cargando texto="Cargando conversaciones…" />}><ListaConversaciones {...propsLista} /></Suspense>
         {activa ? (
-          <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api}
-            onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} />
+          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api}
+            onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
         )}
         {!isCompact && (
           <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
-            {conv || filaActiva?.virtual ? <PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} />
+            {conv || filaActiva?.virtual ? <Suspense fallback={null}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
         )}
       </div>
       {isCompact && (
         <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
-          {conv && <PanelDetalle hilo={hilo} api={api} />}
+          {conv && <Suspense fallback={null}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
         </Sheet>
       )}
-      {nuevoChat && <NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} />}
+      {nuevoChat && <Suspense fallback={null}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
     </div>
   );
 }

@@ -7,10 +7,11 @@ import { swrGet } from '../../../../lib/crm/swr';
 // franja de color a la izquierda, comparativo contra el periodo anterior, y la
 // gama de abajo. No se inventa color aquí — el mostaza que había antes no
 // existe en el sistema.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import { S, Tag, Aviso, Vacio, Cargando, fmtFecha } from '../email/ui';
-import ClienteDrawer360 from '../ClienteDrawer360';
+// REGLA DE VELOCIDAD: la ficha 360 baja al abrirse, no con la bandeja.
+const ClienteDrawer360 = lazy(() => import('../ClienteDrawer360'));
 import Hallazgos from './Hallazgos';
 import Capacitacion from './Capacitacion';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';
@@ -900,7 +901,7 @@ export default function SoporteTab() {
       {filaKpis}
       <BarraVistas vista={vista} setVista={setVista} pendientes={pendientes} />
       {contenido}
-      {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} />}
+      {cliente && <Suspense fallback={null}><ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} /></Suspense>}
     </div>
   );
 }

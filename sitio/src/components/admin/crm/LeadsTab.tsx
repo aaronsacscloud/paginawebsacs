@@ -6,11 +6,12 @@ import { swrGet } from '../../../lib/crm/swr';
 // el pipeline queda como segunda vista, para cuando de verdad se está moviendo
 // gente de etapa.
 import type { CSSProperties } from 'react';
-import { Fragment, useEffect, useMemo, useState, useRef } from 'react';
+import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
-import PipelineTab from './PipelineTab';
-import LeadDrawer from './LeadDrawer';
+// REGLA DE VELOCIDAD: el kanban de escritorio y el drawer bajan al usarse.
+const PipelineTab = lazy(() => import('./PipelineTab'));
+const LeadDrawer = lazy(() => import('./LeadDrawer'));
 import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
@@ -577,7 +578,7 @@ export default function LeadsTab() {
         );
       })()}
 
-      {vista === 'midia' ? null : vista === 'pipeline' ? <PipelineTab /> : vista === 'dashboard' ? (<>
+      {vista === 'midia' ? null : vista === 'pipeline' ? <Suspense fallback={<div style={{ padding: 32, color: '#8f8d98' }}>Cargando pipeline…</div>}><PipelineTab /></Suspense> : vista === 'dashboard' ? (<>
         <div className="lead-4" style={{ marginBottom: 14 }}>
           <div style={{ ...S.card, marginBottom: 0 }}>
             <div style={S.kl}>Leads nuevos</div>
@@ -1515,8 +1516,8 @@ export default function LeadsTab() {
         );
       })()}
 
-      {verContacto && <LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
-        onAbrirOtro={(id: string) => setVerContacto(id)} />}
+      {verContacto && <Suspense fallback={null}><LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
+        onAbrirOtro={(id: string) => setVerContacto(id)} /></Suspense>}
       {borrando && <EliminarLead c={borrando} onCerrar={() => setBorrando(null)}
         onListo={() => { setBorrando(null); cargar(); }} />}
       {nuevo && <NuevoLead onCerrar={() => setNuevo(false)} onListo={() => { setNuevo(false); cargar(); }} />}
