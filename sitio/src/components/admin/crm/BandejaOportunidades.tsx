@@ -66,12 +66,12 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
         <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>ARR en juego</div><div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1A8F7A' }}>{money(r?.valor_abierto)}</div><div style={{ fontSize: '0.64rem', color: '#a7abb3' }}>solo las abiertas</div></div>
       </div>
 
-      <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 12, overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 12, overflowX: 'auto', WebkitMaskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)', maskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)' }}>
         {TABS.map(t => (
           <button key={t.k} onClick={() => setTab(t.k)}
             style={{ flexShrink: 0, minHeight: 40, padding: '8px 14px', border: 'none', background: 'none', cursor: 'pointer',
-              borderBottom: tab === t.k ? '2.5px solid #1a1a1a' : '2.5px solid transparent',
-              fontWeight: tab === t.k ? 800 : 600, fontSize: '0.82rem', color: tab === t.k ? '#1a1a1a' : '#777' }}>{t.l}</button>
+              borderBottom: tab === t.k ? '2.5px solid #5B4BD6' : '2.5px solid transparent',
+              fontWeight: tab === t.k ? 800 : 600, fontSize: '0.82rem', color: tab === t.k ? '#5B4BD6' : '#777' }}>{t.l}</button>
         ))}
       </div>
 
@@ -103,7 +103,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                   {f.opportunity_value > 0 && <span style={{ fontWeight: 800, color: '#1A8F7A', fontSize: '0.82rem' }}>+{money(f.opportunity_value)}/año</span>}
                   {f.estado === 'contactado' && <span style={{ fontSize: '0.7rem', color: '#a06600', fontWeight: 700 }}>· en seguimiento</span>}
                 </div>
-                <div style={{ fontSize: '0.83rem', color: '#333' }}>{f.titulo}</div>
+                <div style={{ fontSize: '0.83rem', color: '#333' }}>{String(f.titulo || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '')}</div>
                 {f.detalle && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
                 {f.accion && <div style={{ fontSize: '0.78rem', color: '#1A8F7A', marginTop: 5, fontWeight: 600 }}>→ {f.accion}</div>}
                 {f.motivo_descarte && <div style={{ fontSize: '0.74rem', color: '#b93333', marginTop: 5 }}>Descartada: {f.motivo_descarte}</div>}

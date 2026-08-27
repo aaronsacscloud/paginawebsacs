@@ -643,9 +643,11 @@ export default function MejorasTab() {
         .cons-alertas { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
         @media (max-width: 1100px) { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 620px)  { .cons-alertas { grid-template-columns:1fr; } }
+        /* El app bar ya dice "Consultoría": el H2 duplicado a 60px sobra en móvil */
+        @media (max-width: 899px)  { .cons-titulo { display: none; } }
       `}</style>
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
+        <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>
         <div style={{ fontSize: '0.79rem', color: '#8a8a8a', marginTop: 2 }}>
           Todo el trabajo con clientes: mejoras, capacitaciones, videos y pendientes.
         </div>

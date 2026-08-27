@@ -484,7 +484,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
           las tarjetas, y sin saber dónde estabas parado. */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '1.375rem', fontWeight: 800, margin: 0, letterSpacing: '-0.015em' }}>Reuniones</h1>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 800, margin: 0, letterSpacing: '-0.015em', display: isMobile ? 'none' : 'block' }}>Reuniones</h1>
           <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
             {data.length} totales · {filtered.length} en vista
             {fTipo && resumenTipos.find(t => t.id === fTipo) ? ` · ${resumenTipos.find(t => t.id === fTipo)!.nombre}` : ''}
