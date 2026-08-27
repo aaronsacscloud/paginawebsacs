@@ -1,0 +1,170 @@
+<title>Manual del proceso de Leads</title>
+<style>
+  :root{ --fondo:#faf9fc; --tarjeta:#fff; --borde:#ececf1; --tinta:#1d1a26; --tinta2:#55515f; --tinta3:#8b8794;
+    --morado:#9B8CFA; --moradoT:#5B4BD6; --moradoA:#EEECFE; --verdeT:#1E8A63; --verdeA:#EAF8F2; --ambarA:#FFF4E5; --ambarT:#9a6a10; --cod:#f5f4f9; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --fondo:#151318; --tarjeta:#1e1b24; --borde:#2e2a38; --tinta:#f0eef5; --tinta2:#b6b2c2; --tinta3:#7d7889; --moradoA:#2c2547; --moradoT:#b3a7ff; --verdeA:#15302a; --verdeT:#6fd4ab; --ambarA:#332a15; --ambarT:#e0b45e; --cod:#242030; } }
+  :root[data-theme="dark"]{ --fondo:#151318; --tarjeta:#1e1b24; --borde:#2e2a38; --tinta:#f0eef5; --tinta2:#b6b2c2; --tinta3:#7d7889; --moradoA:#2c2547; --moradoT:#b3a7ff; --verdeA:#15302a; --verdeT:#6fd4ab; --ambarA:#332a15; --ambarT:#e0b45e; --cod:#242030; }
+  body{ background:var(--fondo); color:var(--tinta); font:15px/1.65 "Instrument Sans",system-ui,sans-serif; margin:0; }
+  .w{ max-width:820px; margin:0 auto; padding:42px 20px 90px; }
+  h1{ font-size:1.8rem; letter-spacing:-.02em; margin:0 0 4px; }
+  h2{ font-size:1.08rem; margin:40px 0 10px; padding-top:20px; border-top:1px solid var(--borde); }
+  p,li{ color:var(--tinta2); } .sub{ color:var(--tinta3); font-size:.85rem; margin-bottom:26px; }
+  .eti{ display:inline-block; font-size:.63rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--moradoT); background:var(--moradoA); border-radius:999px; padding:3px 11px; margin-bottom:10px; }
+  .ok{ color:var(--verdeT); background:var(--verdeA); }
+  .card{ background:var(--tarjeta); border:1px solid var(--borde); border-left:3px solid var(--morado); border-radius:11px; padding:14px 18px; margin:12px 0; }
+  code{ background:var(--cod); border-radius:5px; padding:1px 6px; font-size:.82em; font-family:ui-monospace,Menlo,monospace; }
+  table{ border-collapse:collapse; width:100%; font-size:.84rem; } .tw{ overflow-x:auto; margin:10px 0; }
+  th{ text-align:left; font-size:.65rem; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta3); padding:7px 10px; border-bottom:1px solid var(--borde); }
+  td{ padding:8px 10px; border-bottom:1px solid var(--borde); vertical-align:top; color:var(--tinta2); }
+  td:first-child{ color:var(--tinta); font-weight:700; white-space:nowrap; }
+  ul{ padding-left:20px; } li{ margin:4px 0; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700;800&display=swap">
+<div class="w">
+  <span class="eti">Wiki de ventas · documento vivo</span>
+  <h1>Manual del proceso de Leads</h1>
+  <div class="sub">Cada paso se agrega aquí cuando lo validamos juntos. Al terminar, esta página se convierte en la primera de la Wiki de procesos de ventas dentro del CRM.</div>
+
+  <h2>Las dos preguntas que ordenan todo</h2>
+  <div class="tw"><table>
+    <tr><th>Campo</th><th>Pregunta que responde</th><th>Quién lo mueve</th></tr>
+    <tr><td>Etapa (ciclo de vida)</td><td>¿QUIÉN es? Nuevo lead → Calificado → Oportunidad → Cliente</td><td>Personas y reglas automáticas (agendar promueve; la suscripción convierte)</td></tr>
+    <tr><td>Estatus (del lead)</td><td>¿Qué tan VIVA está la relación? Sin tocar → Contactado → Respondió → …</td><td>Los HECHOS: mensajes, llamadas, reuniones, cotizaciones. El sistema lo deriva solo</td></tr>
+  </table></div>
+
+  <h2>Paso 1 · Llega un lead de campaña de TikTok <span class="eti ok">validado</span></h2>
+  <div class="card">
+    <p><b>Estado inicial:</b> Etapa = <b>Nuevo lead</b> · Estatus = <b>Sin tocar</b> (nadie le ha escrito ni llamado).</p>
+    <p><b>Campos con los que nace</b> (automáticos):</p>
+    <ul>
+      <li><b>Identidad:</b> nombre, correo, WhatsApp normalizado, empresa (crea la cuenta si viene), giro, sucursales de interés.</li>
+      <li><b>Atribución:</b> fuente <code>tiktok-lead-form</code>, campaña, anuncio, formulario, fecha real del anuncio.</li>
+      <li><b>Gestión:</b> sin dueño (hasta activar round-robin); reloj de SLA corriendo.</li>
+    </ul>
+    <p><b>Qué se dispara solo al entrar:</b></p>
+    <ul>
+      <li>Campana en el CRM.</li>
+      <li>WhatsApp al equipo de ventas con link directo a la ficha.</li>
+      <li>WhatsApp de bienvenida AL LEAD — <b>ACTIVA</b> con la plantilla <code>solicitud_asignada_asesor</code>: «Hola {nombre}, te escribimos de Sacscloud sobre la solicitud que registraste. Un asesor quedó asignado para atenderte desde este número. Puedes responder aquí para avanzar con tu proceso.»</li>
+      <li>Correo de bienvenida AL LEAD — <b>ACTIVO</b> con la plantilla del sistema «Bienvenida a leads de TikTok»: presentación «la evolución del retail», video del POS en GIF, aviso del WhatsApp, CTA «Agendar mi demo» y sellos de confianza. Se edita por bloques en Email ▸ Plantillas.</li>
+    </ul>
+    <p><b>Dónde se configura</b> (sin código): WhatsApp ▸ ⚙ Automatización → «Bienvenida a leads de TikTok» y «Correo de bienvenida a leads de TikTok», cada una con su toggle. El WhatsApp elige plantilla UTILITY (con preview); el correo elige una PLANTILLA DEL SISTEMA de email (se edita por bloques en Email ▸ Plantillas — un solo camino, todo por el CRM). Ahí mismo: «Leads por WhatsApp directo» (la IA decide / crear siempre / nunca + toggle de alta saliente).</p>
+    <p><b>Reglas que protegen el paso:</b></p>
+    <ul>
+      <li>Las bienvenidas solo disparan con el goteo real (≤10 por corrida): un import masivo jamás manda cientos de mensajes.</li>
+      <li>Ninguna bienvenida cuenta como toque humano: el lead sigue en «Sin tocar» hasta que una persona lo trabaje… o él responda (pasa solo a «Respondió»).</li>
+      <li>Mismo teléfono/correo ya registrado = NO se duplica la ficha: se firma «volvió a levantar la mano» y se avisa.</li>
+    </ul>
+  </div>
+
+
+  <h2>Paso 2 · El tablero se mueve solo <span class="eti ok">validado</span></h2>
+  <div class="card">
+    <p>Cada evento real mueve el estatus (y a veces la etapa) sin que nadie capture nada. Todos los cambios <b>solo avanzan</b>; el recálculo nocturno (3 am) revisa los hechos completos y autocorrige. Todo queda firmado en la actividad del lead.</p>
+    <div class="tw"><table>
+      <tr><th>Evento</th><th>Cambio automático</th><th>Cuándo</th></tr>
+      <tr><td>Entra por formulario/campaña</td><td>nace con estatus «Sin tocar»</td><td>al instante</td></tr>
+      <tr><td>El lead escribe por WhatsApp</td><td>→ «Respondió» (si no existía, nace la ficha según el modo del módulo)</td><td>al instante</td></tr>
+      <tr><td>Le escribimos por WhatsApp (humano)</td><td>Sin tocar → «Contactado»</td><td>al instante</td></tr>
+      <tr><td>El lead responde el correo</td><td>→ «Respondió»</td><td>al instante</td></tr>
+      <tr><td>Llamada de WhatsApp contestada</td><td>→ «Respondió» (una perdida no mueve nada)</td><td>al instante</td></tr>
+      <tr><td>Llamada en la tabla: «Contestó»</td><td>→ «Respondió»</td><td>al instante</td></tr>
+      <tr><td>«No contestó» / «Buzón»</td><td>Sin tocar → «Contactado»</td><td>al instante</td></tr>
+      <tr><td>«Discovery hecha» (o llamada 3+ min con minuta)</td><td>→ «Discovery hecho»</td><td>al instante</td></tr>
+      <tr><td>Agenda una reunión</td><td>Etapa → «Oportunidad» + estatus → «Agendó demo»</td><td>al instante</td></tr>
+      <tr><td>Reunión «Asistió»</td><td>→ «Demo hecha»</td><td>al instante</td></tr>
+      <tr><td>Reunión «No asistió»</td><td>sin cambio de estatus; entra a «No asistieron sin reagendar» (Mi día)</td><td>al instante</td></tr>
+      <tr><td>Se crea su cotización</td><td>→ «Cotizado»</td><td>recálculo nocturno</td></tr>
+      <tr><td>3+ toques y 14 días sin respuesta</td><td>→ «No contesta»</td><td>recálculo nocturno</td></tr>
+      <tr><td>30 min / 2 h sin primer toque</td><td>avisos de SLA (campana + WhatsApp al equipo)</td><td>cron cada 10 min</td></tr>
+    </table></div>
+    <p><b>Lo que NUNCA mueve el estatus:</b> las bienvenidas automáticas, los ecos y el backfill — la automatización abre, el humano vende.</p>
+  </div>
+
+
+  <h2>Paso 3 · La cadencia de seguimiento <span class="eti ok">construida</span></h2>
+  <div class="card">
+    <p><b>Para quién:</b> el lead tocado que NO responde (estatus «Contactado» o «No contesta»). <b>Se detiene sola, al instante</b>, cuando: responde por cualquier canal, agenda, pide tiempo o se descarta — el freno es el estatus vivo del CRM.</p>
+    <p><b>El arco de confianza</b> (correo diario días 1-7, WhatsApp cada 2 días, corte al día 14 → Rezagados):</p>
+    <div class="tw"><table>
+      <tr><th>Día</th><th>Pieza</th><th>Qué construye</th></tr>
+      <tr><td>1</td><td>✉️ Tu consultora (Andrea, con foto)</td><td>Persona real: llevó los casos de éxito del sitio; compromiso de inicio a fin</td></tr>
+      <tr><td>2</td><td>📲 + ✉️ Multisucursal avanzado</td><td>Especialidad: inventario central vivo, traspasos, precios por plaza, e-tiendas sincronizadas</td></tr>
+      <tr><td>3</td><td>✉️ Inventario con IA</td><td>Automatización real: mínimos/máximos y nivelación entre sucursales</td></tr>
+      <tr><td>4</td><td>✉️ + 📲 Fidelización avanzada</td><td>Vender más con los clientes que ya tienes</td></tr>
+      <tr><td>5</td><td>✉️ Innovación</td><td>E-tiendas modernas, IA integrada, hardware propio en camino</td></tr>
+      <tr><td>6</td><td>✉️ + 📲 Un plan para cada etapa</td><td>Vende · Controla · Fideliza · Automatiza — honestidad de qué plan le toca</td></tr>
+      <tr><td>7</td><td>✉️ El último correo</td><td>Cierre elegante: respeto como diferenciador</td></tr>
+      <tr><td>8-14</td><td>📲 Goteo (pregunta simple → horario concreto → cierre)</td><td>El canal humano queda abierto; al día 14 cierra el expediente</td></tr>
+    </table></div>
+    <p><b>La meta de TODAS las piezas:</b> la sesión consultiva sin costo — vemos, entendemos y ejecutamos SUS procesos en tiempo real; el lead sale con un plan claro.</p>
+    <p><b>Dónde se configura:</b> WhatsApp ▸ ⚙ Automatización ▸ «Cadencia de seguimiento»: toggle, corte en días, y CADA paso (día + canal + plantilla) editable, ampliable y reordenable. Los correos se editan por bloques en Email ▸ Plantillas (Cadencia 1-7); los WhatsApps son plantillas de Meta.</p>
+    <p><b>Blindajes:</b> horario humano (10-18 CDMX, L-V) · el reloj arranca el día que la cadencia ve al lead (nunca ráfagas retroactivas) · los leads más viejos que el corte no entran (son material de reciclaje) · optout y pausa se respetan · todo firmado en la actividad.</p>
+  </div>
+
+  <h2>Paso 4 · El primer toque humano</h2>
+  <p class="sub" style="margin-bottom:0">Pendiente: round-robin de dueños (faltan los nombres del equipo).</p>
+
+  <h2>Paso 5 · La señal de vuelta a TikTok <span class="eti ok">validado</span></h2>
+  <div class="card">
+    <p><b>El problema:</b> TikTok sabe <b>cuántos formularios se llenaron</b>. No sabe <b>cuáles sirvieron</b>. Con esa información a medias optimiza por lo único que puede medir —la cantidad— y entrega los leads más baratos de conseguir, que casi nunca son los que compran.</p>
+    <p>El dato que le falta lo tenemos nosotros. <b>Cerrar el círculo es lo que convierte al CRM en la fuente que entrena al algoritmo.</b></p>
+    <p class="sub" style="margin:10px 0 0">Antes de esto: 76 leads de TikTok, 4 se volvieron clientes, y TikTok no sabía de ninguno.</p>
+  </div>
+
+  <div class="card">
+    <p><b>Lo único que hace el vendedor:</b> mover la <b>Etapa</b> en la ficha del lead. Nada más. No hay hojas que tocar ni nada que avisar.</p>
+    <p><b>Las tres etapas que sí le enseñan algo:</b></p>
+    <div class="tw"><table>
+      <tr><th>Etapa en el CRM</th><th>Lo que recibe TikTok</th><th>Qué le enseña</th></tr>
+      <tr><td>Calificado</td><td><code>Qualified</code></td><td>«Este lead sí era del perfil»</td></tr>
+      <tr><td>Oportunidad</td><td><code>Opportunity</code></td><td>«Este iba en serio»</td></tr>
+      <tr><td>Cliente</td><td><code>Converted</code> + el monto</td><td>«Este compró, y por esto»</td></tr>
+    </table></div>
+    <p><b>Las demás NO se reportan, a propósito:</b> «Nuevo lead» es el estado en que TikTok ya lo entregó —decírselo no le enseña nada y le quita peso a las señales que sí importan— y «Perdido» tampoco se manda, porque el algoritmo optimiza hacia lo que le señalas, no en contra.</p>
+    <p><b>El monto solo viaja con «Cliente»</b>, y sale de su suscripción: es lo que hace que TikTok persiga clientes grandes en vez de clientes cualesquiera. Si no hay suscripción registrada se reporta la conversión <i>sin</i> monto — nunca en cero, porque un cero le enseñaría que esa venta no valió nada.</p>
+  </div>
+
+  <div class="card">
+    <p><b>La cadena, y sus tiempos:</b></p>
+    <div class="tw"><table>
+      <tr><th>Paso</th><th>Qué pasa</th><th>Cuándo</th></tr>
+      <tr><td>1. El vendedor</td><td>Cambia la etapa en la ficha</td><td>—</td></tr>
+      <tr><td>2. El CRM</td><td>Registra el cambio con su fecha real</td><td>al instante</td></tr>
+      <tr><td>3. El puente</td><td>Escribe el estatus en el Google Sheet que TikTok tiene conectado</td><td>cada 3 h</td></tr>
+      <tr><td>4. TikTok</td><td>Relee la hoja y usa la señal para optimizar</td><td>cada ~10 min</td></tr>
+    </table></div>
+    <p>Entre que mueves la etapa y TikTok se entera pasan <b>entre 10 minutos y 3 horas</b>. La integración vive en TikTok Ads Manager ▸ Leads Center ▸ CRM integration, en modo <b>Signal postback</b>.</p>
+  </div>
+
+  <div class="card">
+    <p><b>Por qué importa CUÁNDO se mueve la etapa:</b> TikTok solo acepta conversiones de los <b>últimos 28 días</b>. Una venta reportada al día 29 se descarta — para el algoritmo, nunca ocurrió.</p>
+    <p>Ya estuvo a punto de costarnos: tres clientes que sumaban <b>$53,240 de ARR</b> casi quedan fuera porque su etapa se movió semanas después de la venta. El sistema usa la fecha real del cambio, no la del día en que corre el proceso: <b>mover la etapa tarde es reportar tarde</b>.</p>
+    <p><b>Muévela cuando pasa, no en lote a fin de mes.</b></p>
+  </div>
+
+  <div class="card">
+    <p><b>Cómo verificarlo:</b> TikTok Ads Manager ▸ Events Manager ▸ dataset <b>TIKTOK AGENDAS</b>. Hay una barra de cuatro pasos:</p>
+    <p><code>Dataset created → CRM connected → Events received → Funnel created</code></p>
+    <p>Si estamos reportando bien, llega a <b>«Events received»</b>. Si se queda en «CRM connected», TikTok no está recibiendo nada y hay que revisar.</p>
+  </div>
+
+  <div class="card">
+    <p><b>Qué NO hacer:</b></p>
+    <ul>
+      <li><b>No edites a mano la columna «TikTok Lead Status» del Sheet.</b> La escribe el sistema; lo que pongas se sobrescribe en la siguiente corrida.</li>
+      <li><b>No muevas etapas para «probar».</b> Cada envío cuenta como una conversión del lado de TikTok, y regresar la etapa no deshace la señal.</li>
+      <li><b>No dejes leads muertos en «Nuevo lead».</b> No hace daño, pero desperdicia la única oportunidad de enseñarle algo al algoritmo sobre ese perfil.</li>
+    </ul>
+    <p><b>Límites que conviene conocer:</b></p>
+    <div class="tw"><table>
+      <tr><th>Límite</th><th>Consecuencia práctica</th></tr>
+      <tr><td>Leads guardados 90 días</td><td>Un lead de hace más de 3 meses ya no existe del lado de TikTok</td></tr>
+      <tr><td>Conversiones de 28 días</td><td>Mover la etapa tarde equivale a no moverla</td></tr>
+      <tr><td>Identifica por correo, teléfono o Lead ID</td><td>Un lead sin ninguno de los tres no se puede reportar</td></tr>
+      <tr><td>Una vez por etapa</td><td>Regresar y volver a avanzar no manda la señal dos veces</td></tr>
+      <tr><td>Solo leads de TikTok</td><td>Los que llegaron por otro canal se ignoran</td></tr>
+    </table></div>
+    <p class="sub" style="margin:10px 0 0">El algoritmo necesita volumen para aprender: con unas pocas conversiones no cambia nada. La diferencia aparece cuando hay decenas de señales acumuladas — por eso importa que sea un hábito y no un esfuerzo de una semana.</p>
+  </div>
+</div>
