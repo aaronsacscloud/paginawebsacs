@@ -44,7 +44,12 @@ function htmlBienvenida(intro: string): string {
       </td></tr>
       <tr><td style="padding:22px 34px 0">${parrafos}</td></tr>
       <tr><td style="padding:6px 34px 0">
-        <img src="https://www.sacscloud.com/images/hero-sacs-store.webp" width="532" alt="Una tienda operando con Sacscloud: el punto de venta en una tablet" style="width:100%;max-width:532px;border-radius:12px;display:block;border:1px solid #ececf1">
+        <!-- GIF animado: Gmail y Apple Mail lo REPRODUCEN inline (movimiento
+             en el inbox); Outlook viejo enseña el primer cuadro. Click → demo. -->
+        <a href="https://www.sacscloud.com/contacto" style="text-decoration:none">
+          <img src="https://www.sacscloud.com/images/posdemo-email.gif" width="532" alt="Una venta completa en Sacscloud: catálogo, cobro y ticket por WhatsApp en 11 segundos" style="width:100%;max-width:532px;border-radius:12px;display:block;border:1px solid #ececf1">
+        </a>
+        <div style="font:600 12px/1.5 -apple-system,'Segoe UI',Roboto,sans-serif;color:#8a8590;margin-top:8px;text-align:center">Una venta completa, en 11 segundos — así de simple se opera con Sacscloud.</div>
       </td></tr>
       <tr><td style="padding:18px 34px 0">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#EEECFE;border-radius:12px;padding:14px 18px">
