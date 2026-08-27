@@ -39,7 +39,17 @@ export const GET: APIRoute = async ({ request }) => {
 
   // Lo ya reportado, de un jalón: una consulta por lead sería una tormenta de
   // peticiones para no mandar nada la mayoría de las veces.
-  const leadIds = leads.map((c: any) => String(c.propiedades?.tiktok?.lead_id)).filter(Boolean);
+  //
+  // La clave tiene que ser LA MISMA que se usa al registrar el envío. Al
+  // principio esta lista solo juntaba `lead_id`, así que los reportados por el
+  // píxel —que se guardan como `pixel:<contact_id>` porque no tienen lead_id—
+  // nunca aparecían como ya enviados y se habrían mandado en CADA corrida.
+  // TikTok cuenta cada envío como una conversión: eso le habría enseñado que
+  // un solo cliente vale cuatro veces al día.
+  const leadIds = leads.map((c: any) => {
+    const lid = c.propiedades?.tiktok?.lead_id;
+    return lid ? String(lid) : `pixel:${c.id}`;
+  });
   const { data: yaEnviados } = await supabase.from('tiktok_crm_eventos')
     .select('lead_id, evento').in('lead_id', leadIds).eq('ok', true);
   const hecho = new Set((yaEnviados || []).map((x: any) => `${x.lead_id}|${x.evento}`));
