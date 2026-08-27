@@ -268,6 +268,11 @@ function TabCargando() {
 }
 
 const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
+// Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
+// data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
+// en vez de heredar fondo negro con texto negro (el reporte del usuario).
+// whatsapp queda fuera hasta adaptar el hilo (mezclaba burbujas claras).
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -347,6 +352,11 @@ export default function CrmDashboard() {
   const [masOpen, setMasOpen] = useState(false);
   // REGLA DE VELOCIDAD: los chunks de los destinos del pulgar se precargan en
   // idle — el switch de tab nunca espera red. El resto baja al entrar.
+  // El scope del modo oscuro sigue al tab activo (ver M_DARK_TABS)
+  useEffect(() => {
+    document.documentElement.dataset.crmDark = (isMobile && M_DARK_TABS.includes(tab)) ? '1' : '0';
+    return () => { delete document.documentElement.dataset.crmDark; };
+  }, [tab, isMobile]);
   useEffect(() => {
     const idle = (cb: () => void, t: number) => ('requestIdleCallback' in window)
       ? (window as any).requestIdleCallback(cb, { timeout: t }) : setTimeout(cb, t);
@@ -1012,7 +1022,7 @@ export default function CrmDashboard() {
       {isMobile && !mobileExpanded && (
         <BottomNav
           activeId={masOpen ? '__mas' : BOTTOM_IDS.includes(tab) ? tab : '__mas'}
-          onSelect={(id) => { if (id === '__mas') setMasOpen(true); else switchTab(id as Tab); }}
+          onSelect={(id) => { if (id === '__mas') { setMasOpen(true); } else { setMasOpen(false); switchTab(id as Tab); } }}
           items={[
             ...BOTTOM_IDS.map(id => {
               const item = NAV_SECTIONS.flatMap(s => s.items).find(i => i.id === id)!;
@@ -1160,32 +1170,34 @@ const CRM_MOBILE_CSS = `
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     /* ══ DARK móvil (mockup Dark): tokens re-mapeados + overrides de los
-       inline claves. Solo teléfono y solo si el sistema está en oscuro. ══ */
+       inline claves. SOLO teléfono, SOLO sistema en oscuro y SOLO pantallas
+       adaptadas (html[data-crm-dark="1"], ver M_DARK_TABS) — una pantalla no
+       adaptada queda en claro legible, nunca fondo negro con texto negro. ══ */
     @media (prefers-color-scheme: dark) and (max-width: 899px) {
-      :root {
+      :root[data-crm-dark="1"] {
         --m-ink: #F2F1F7; --m-soft: #918fa0; --m-line: #26262e;
         --m-neutro: #232329; --m-acc: #A78BFA; --m-acc-suave: #2a2440;
         --m-dinero: #34D399; --m-rojo: #F0857A; --m-ambar: #E8B04B;
       }
-      body, [style*="Plus Jakarta"], [style*="transition: margin-left"] { background: #131318 !important; }
-      .m-row { background: transparent; }
-      .m-row:active { background: #1d1d24; }
-      .m-row .m-n1, .m-row .m-m1 { color: var(--m-ink); }
-      .m-row .m-ini { color: #b3b1bd; }
-      .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
-      .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
-      nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
-      nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
+      [data-crm-dark="1"] body, [data-crm-dark="1"] [style*="Plus Jakarta"], [data-crm-dark="1"] [style*="transition: margin-left"] { background: #131318 !important; }
+      [data-crm-dark="1"] .m-row { background: transparent; }
+      [data-crm-dark="1"] .m-row:active { background: #1d1d24; }
+      [data-crm-dark="1"] .m-row .m-n1, [data-crm-dark="1"] .m-row .m-m1 { color: var(--m-ink); }
+      [data-crm-dark="1"] .m-row .m-ini { color: #b3b1bd; }
+      [data-crm-dark="1"] .m-chip { background: #1d1d24; border-color: #33333d; color: #c9c7d3; }
+      [data-crm-dark="1"] .m-chip.on { background: #A78BFA; border-color: #A78BFA; color: #17121f; }
+      [data-crm-dark="1"] nav[aria-label="Navegación principal"] { background: #131318 !important; border-top-color: #26262e !important; box-shadow: none !important; }
+      [data-crm-dark="1"] nav[aria-label="Navegación principal"] button[aria-current="page"] { color: #B7A8F7 !important; }
       /* inline fijos de las pantallas v5 */
-      .m-hdr [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
-      .m-hdr [style*="color: rgb(91, 75, 214)"], .m-cta { color: #B7A8F7 !important; }
-      input[style*="background: rgb(242, 242, 245)"] { background: #1d1d24 !important; color: #F2F1F7 !important; }
-      [style*="color: rgb(30, 138, 99)"] { color: #34D399 !important; }
-      [style*="color: rgb(192, 85, 78)"] { color: #F0857A !important; }
-      [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
-      [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
-      [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
-      [style*="background: rgb(244, 243, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+      [data-crm-dark="1"] .m-hdr [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-hdr [style*="color: rgb(91, 75, 214)"], [data-crm-dark="1"] .m-cta { color: #B7A8F7 !important; }
+      [data-crm-dark="1"] input[style*="background: rgb(242, 242, 245)"] { background: #1d1d24 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(30, 138, 99)"] { color: #34D399 !important; }
+      [data-crm-dark="1"] [style*="color: rgb(192, 85, 78)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
+      [data-crm-dark="1"] [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
+      [data-crm-dark="1"] [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+      [data-crm-dark="1"] [style*="background: rgb(244, 243, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
     }
 
     /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.
