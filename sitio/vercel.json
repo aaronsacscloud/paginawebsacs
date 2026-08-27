@@ -18,6 +18,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/tiktok-estatus-hoja",
+      "schedule": "0 */3 * * *"
+    },
+    {
       "path": "/api/cron/tiktok-crm-events",
       "schedule": "0 */6 * * *"
     },
