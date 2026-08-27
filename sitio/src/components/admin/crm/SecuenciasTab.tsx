@@ -9,11 +9,11 @@ import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 
 const inp: React.CSSProperties = { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 11px', fontSize: '0.8rem', fontFamily: 'inherit', background: '#fdfcff', outline: 'none', boxSizing: 'border-box' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em', margin: '12px 0 4px' };
-const btnP: React.CSSProperties = { border: 'none', background: P.morado, color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+const btnP: React.CSSProperties = { border: 'none', background: P.violeta, color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
 const btnG: React.CSSProperties = { border: '1px solid #ddd', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#444' };
 
 const MOTIVO_L: Record<string, [string, string]> = {
-  respondio: ['Respondieron', P.moradoTinta], agendo: ['Agendaron', P.verdeTinta],
+  respondio: ['Respondieron', P.violetaTinta], agendo: ['Agendaron', P.verdeTinta],
   convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
   corte: ['Llegaron al corte', '#888'], optout: ['Baja de WhatsApp', P.rojoTinta], archivado: ['Archivados', '#888'],
 };
@@ -144,9 +144,9 @@ export default function SecuenciasTab() {
             </div>
             {s.descripcion && <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4 }}>{s.descripcion}</div>}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-              <div style={{ ...tarjetaKpi(P.morado), minWidth: 120, flex: 1 }}>
+              <div style={{ ...tarjetaKpi(P.violeta), minWidth: 120, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>En secuencia</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.moradoTinta }}>{m.en_secuencia ?? 0}</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.violetaTinta }}>{m.en_secuencia ?? 0}</div>
               </div>
               <div style={{ ...tarjetaKpi(P.azul), minWidth: 120, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Entraron</div>

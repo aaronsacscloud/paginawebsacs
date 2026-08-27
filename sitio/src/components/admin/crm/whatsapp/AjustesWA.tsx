@@ -151,6 +151,7 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
               Ahí se crean secuencias que mezclan WhatsApp y correo, se ven sus reglas de salida y se mide cada una.
             </p>
           </div>
+          <div style={{ marginTop: 18 }}>
             <Toggle on={!!a.fuera_activa} onChange={v => setA({ ...a, fuera_activa: v })} label="Respuesta fuera de horario" />
             {a.fuera_activa && (<>
               <textarea style={{ ...inp, marginTop: 8, resize: 'vertical' }} rows={2} value={a.fuera_texto || ''}
