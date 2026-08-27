@@ -10,7 +10,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 
 export const GET: APIRoute = async () => {
   const { data } = await supabase.from('wa_config')
-    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr, catalog_id, ubicaciones, bienvenida_tiktok_activa, bienvenida_tiktok_plantilla, email_bienvenida_tiktok_activa, email_bienvenida_asunto, email_bienvenida_cuerpo')
+    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr, catalog_id, ubicaciones, bienvenida_tiktok_activa, bienvenida_tiktok_plantilla, email_bienvenida_tiktok_activa, email_bienvenida_asunto, email_bienvenida_cuerpo, email_bienvenida_template_id, alta_wa_entrante, alta_wa_saliente')
     .eq('id', 1).maybeSingle();
   return json({ ajustes: data || {} });
 };
@@ -37,6 +37,9 @@ export const POST: APIRoute = async ({ request }) => {
   if ('email_bienvenida_tiktok_activa' in b) cambios.email_bienvenida_tiktok_activa = !!b.email_bienvenida_tiktok_activa;
   if ('email_bienvenida_asunto' in b) cambios.email_bienvenida_asunto = String(b.email_bienvenida_asunto || '').slice(0, 200) || null;
   if ('email_bienvenida_cuerpo' in b) cambios.email_bienvenida_cuerpo = String(b.email_bienvenida_cuerpo || '').slice(0, 4000) || null;
+  if ('email_bienvenida_template_id' in b) cambios.email_bienvenida_template_id = String(b.email_bienvenida_template_id || '').trim() || null;
+  if ('alta_wa_entrante' in b) cambios.alta_wa_entrante = ['triaje', 'siempre', 'nunca'].includes(b.alta_wa_entrante) ? b.alta_wa_entrante : 'triaje';
+  if ('alta_wa_saliente' in b) cambios.alta_wa_saliente = !!b.alta_wa_saliente;
   const { error } = await supabase.from('wa_config').upsert(cambios);
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true });

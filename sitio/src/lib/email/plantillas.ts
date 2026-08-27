@@ -20,7 +20,7 @@ import type { Tenant } from './tenant';
 export type TipoBloque =
   | 'hero' | 'encabezado' | 'texto' | 'imagen' | 'boton' | 'separador'
   | 'espaciador' | 'dos_columnas' | 'cita' | 'lista' | 'firma' | 'planes'
-  | 'cuenta';
+  | 'cuenta' | 'aviso' | 'metricas';
 
 export interface Bloque { id: string; tipo: TipoBloque; [k: string]: any }
 
@@ -100,7 +100,8 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       return fila(`<div class="em-tinta" style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
     case 'imagen': {
       const img = `<img src="${url(b.src, ctx)}" alt="${txt(b.alt || '', ctx)}" width="${ANCHO - 64}" style="display:block;width:100%;max-width:${ANCHO - 64}px;height:auto;border:0;border-radius:10px;">`;
-      return fila(`<div style="padding-top:16px;">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}</div>`);
+      const pie = b.pie ? `<div style="${FA}font-size:12px;font-weight:600;color:#8a8590;margin-top:8px;text-align:center;">${txt(b.pie, ctx)}</div>` : '';
+      return fila(`<div style="padding-top:16px;">${b.href ? `<a href="${url(b.href, ctx)}">${img}</a>` : img}${pie}</div>`);
     }
     case 'boton': {
       // Botón como tabla: un <a> con padding se rompe en Outlook.
@@ -108,7 +109,26 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;" align="${align}"><tr>
         <td style="background:${acento};border-radius:9px;">
           <a href="${url(b.href, ctx)}" class="em-btn" style="${FA}display:inline-block;padding:13px 26px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${txt(b.texto || 'Ver más', ctx)}</a>
+        </td></tr></table>${b.sub ? `<div style="${FA}font-size:12px;font-weight:600;color:#8a8590;margin-top:9px;text-align:${['left', 'center', 'right'].includes(b.align) ? b.align : 'left'};">${txt(b.sub, ctx)}</div>` : ''}`);
+    }
+    case 'aviso':
+      // Destacado suave: el dato que NO se puede perder (p. ej. "te va a
+      // llegar un WhatsApp"). Fondo agua fijo + tinta del acento del tenant.
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>
+        <td style="background:#EEECFE;border-radius:12px;padding:14px 18px;">
+          <div style="${FA}font-size:14.5px;line-height:1.6;font-weight:600;color:${acento};">${txt(b.texto || '', ctx)}</div>
         </td></tr></table>`);
+    case 'metricas': {
+      // Sellos de confianza: 2-4 columnas de cifra + texto ("+14 años",
+      // "★ 4.8/5"...). Cifra en el acento, texto chico en gris.
+      const items = (Array.isArray(b.items) ? b.items : []).slice(0, 4);
+      if (!items.length) return '';
+      const celdas = items.map((it: any) => `
+        <td align="center" style="padding-top:16px;width:${Math.floor(100 / items.length)}%;">
+          <div style="${FA}font-size:17px;font-weight:800;color:${acento};">${txt(it.cifra || '', ctx)}</div>
+          <div style="${FA}font-size:11px;line-height:1.4;font-weight:600;color:#8a8590;margin-top:4px;">${txt(it.texto || '', ctx)}</div>
+        </td>`).join('');
+      return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #f0eff5;"><tr>${celdas}</tr></table>`);
     }
     case 'separador':
       return fila(`<div class="em-linea" style="border-top:1px solid #E8E5F0;margin-top:24px;"></div>`);
@@ -272,6 +292,8 @@ export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
       case 'encabezado': p.push('', i(b.texto).toUpperCase()); break;
       case 'texto': p.push(i(b.texto)); break;
       case 'boton': p.push(`${i(b.texto || 'Ver más')}: ${i(b.href)}`); break;
+      case 'aviso': p.push(i(b.texto || '')); break;
+      case 'metricas': p.push((Array.isArray(b.items) ? b.items : []).map((it: any) => `${i(it?.cifra || '')} ${i(it?.texto || '')}`.trim()).join(' · ')); break;
       case 'cita': p.push(`"${i(b.texto)}"${b.autor ? ' — ' + i(b.autor) : ''}`); break;
       case 'lista': for (const it of (b.items || [])) p.push('· ' + i(it)); break;
       case 'dos_columnas': p.push(i(b.izquierda?.texto || ''), i(b.derecha?.texto || '')); break;

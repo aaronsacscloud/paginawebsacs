@@ -37,11 +37,13 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
   // Plantillas UTILITY aprobadas: el catálogo del selector de bienvenida a
   // leads de TikTok. Se cargan una vez al abrir la sección.
   const [plantillasUtil, setPlantillasUtil] = useState<any[]>([]);
+  const [plantillasEmail, setPlantillasEmail] = useState<any[]>([]);
   useEffect(() => {
     fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
       const todas = j.plantillas || j.data || [];
       setPlantillasUtil(todas.filter((x: any) => (x.category || x.categoria) === 'UTILITY' && (x.status || x.estado) === 'APPROVED'));
     }).catch(() => {});
+    fetch('/api/crm/email/templates').then(r => r.json()).then(j => setPlantillasEmail(j.plantillas || [])).catch(() => {});
   }, []);
 
   const guardar = async () => {
@@ -105,13 +107,41 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
               Variables: {'{{nombre}}'} y {'{{campana}}'}. Vacío = se usa la plantilla preestablecida.
             </p>
             {a.email_bienvenida_tiktok_activa && (<>
-              <input style={{ ...inp, marginTop: 8 }} value={a.email_bienvenida_asunto || ''}
-                onChange={e => setA({ ...a, email_bienvenida_asunto: e.target.value })}
-                placeholder="Recibimos tu registro, {{nombre}} — Sacscloud" />
-              <textarea style={{ ...inp, marginTop: 6, resize: 'vertical' }} rows={5} value={a.email_bienvenida_cuerpo || ''}
-                onChange={e => setA({ ...a, email_bienvenida_cuerpo: e.target.value })}
-                placeholder={'Hola {{nombre}}, ¡qué gusto saludarte!\n\nSacscloud no es un punto de venta tradicional — es la evolución de los sistemas de retail…'} />
+              {/* El correo ES una plantilla del sistema de email marketing:
+                  se elige aquí y se EDITA en Email ▸ Plantillas (bloques,
+                  imagen/GIF, aviso, botón, sellos — todo del editor). */}
+              <select style={{ ...inp, marginTop: 8 }} value={a.email_bienvenida_template_id || ''}
+                onChange={e => setA({ ...a, email_bienvenida_template_id: e.target.value })}>
+                <option value="">— elegir plantilla del sistema de email —</option>
+                {plantillasEmail.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+              </select>
+              <p style={{ margin: '6px 0 0', fontSize: '0.68rem', color: '#a5a2af' }}>
+                El contenido se edita en <b>Email ▸ Plantillas</b> — bloques, imagen, botón y sellos. Un solo camino: todo por el CRM.
+              </p>
             </>)}
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#333' }}>Leads por WhatsApp directo</span>
+            <p style={{ margin: '4px 0 8px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
+              Qué hacer cuando escribe un número desconocido. El lead nace como «Respondió»
+              (él nos buscó) y avisa al equipo; soporte y spam solo marcan la conversación.
+            </p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {([['triaje', 'La IA decide (ventas / soporte / spam)'], ['siempre', 'Crear lead siempre'], ['nunca', 'Nunca (manual)']] as const).map(([v, l]) => {
+                const on = (a.alta_wa_entrante || 'triaje') === v;
+                return (
+                  <button key={v} onClick={() => setA({ ...a, alta_wa_entrante: v })} style={{
+                    border: `1.5px solid ${on ? '#c9bcf7' : '#e2e4e9'}`, background: on ? '#EEECFE' : '#fff',
+                    color: on ? '#5B4BD6' : '#666', borderRadius: 999, padding: '6px 13px',
+                    fontSize: '0.72rem', fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>{l}</button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Toggle on={a.alta_wa_saliente !== false} onChange={v => setA({ ...a, alta_wa_saliente: v })} label="Crear lead al escribirle a un número nuevo" />
+            </div>
           </div>
 
           <div style={{ marginTop: 18 }}>

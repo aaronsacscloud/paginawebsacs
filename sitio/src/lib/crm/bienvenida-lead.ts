@@ -13,6 +13,7 @@ import { supabase } from '../supabase';
 import { enviarPlantilla } from '../whatsapp/kapso-api';
 import { resolverTenant } from '../email/tenant';
 import { enviarCorreo } from '../email/pipeline';
+import { compilar, compilarTexto, interpolar } from '../email/plantillas';
 
 // La plantilla PREESTABLECIDA del correo. El cuerpo (editable en el módulo)
 // es SOLO la parte personal de arriba; el diseño —cinta de marca, imagen,
@@ -90,16 +91,30 @@ function htmlBienvenida(intro: string): string {
 /** Correo de bienvenida al lead de TikTok (config del módulo; preset editable). */
 export async function enviarCorreoBienvenidaTikTok(contactId: string, email: string, nombre?: string | null, campana?: string | null) {
   const { data: cfg } = await supabase.from('wa_config')
-    .select('email_bienvenida_tiktok_activa, email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
+    .select('email_bienvenida_tiktok_activa, email_bienvenida_template_id, email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
   if (!cfg?.email_bienvenida_tiktok_activa) return { ok: false, motivo: 'apagada' };
   const t = await resolverTenant();
   if (!t) return { ok: false, motivo: 'sin_tenant' };
-  const pon = (x: string) => x
-    .replace(/\{\{nombre\}\}/g, String(nombre || '').trim().split(/\s+/)[0] || 'hola')
-    .replace(/\{\{campana\}\}/g, campana || 'nuestra campaña');
-  const asunto = pon(cfg.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
-  const texto = pon(cfg.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
-  const html = htmlBienvenida(texto);
+  const ctx = { nombre: String(nombre || '').trim().split(/\s+/)[0] || null, campana: campana || null };
+  let asunto: string, html: string, texto: string;
+  // El correo sale del SISTEMA de email marketing (plantilla de bloques,
+  // editable en Email ▸ Plantillas). El texto plano del módulo queda solo
+  // como respaldo si la plantilla se borra.
+  const { data: pl } = cfg.email_bienvenida_template_id
+    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', cfg.email_bienvenida_template_id).eq('activo', true).maybeSingle()
+    : { data: null as any };
+  if (pl?.bloques) {
+    asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
+    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null);
+    texto = compilarTexto(pl.bloques, ctx);
+  } else {
+    const pon = (x: string) => x
+      .replace(/\{\{nombre\}\}/g, ctx.nombre || 'hola')
+      .replace(/\{\{campana\}\}/g, campana || 'nuestra campaña');
+    asunto = pon(cfg.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
+    texto = pon(cfg.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
+    html = htmlBienvenida(texto);
+  }
   const r = await enviarCorreo({ tenantId: t.id, para: email, asunto, html, texto, categoria: 'relacion', contactId } as any);
   if (!(r as any)?.enviado) return { ok: false, motivo: (r as any)?.motivo || 'error' };
   await supabase.from('activities').insert({
@@ -133,10 +148,22 @@ export async function enviarBienvenidaTikTok(contactId: string, telefono: string
 export async function probarCorreoBienvenida(para: string) {
   const t = await resolverTenant();
   if (!t) return { ok: false, motivo: 'sin_tenant' };
-  const pon = (x: string) => x.replace(/\{\{nombre\}\}/g, 'María').replace(/\{\{campana\}\}/g, 'Campaña nuevos leads');
-  const { data: cfg } = await supabase.from('wa_config').select('email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
-  const asunto = pon(cfg?.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
-  const texto = pon(cfg?.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
-  const r = await enviarCorreo({ tenantId: t.id, para, asunto, html: htmlBienvenida(texto), texto, categoria: 'relacion' } as any);
-  return { ok: !!(r as any)?.enviado, motivo: (r as any)?.motivo || null, detalle: (r as any)?.detalle || null };
+  const ctx = { nombre: 'María', campana: 'Campaña nuevos leads' };
+  const { data: cfg } = await supabase.from('wa_config').select('email_bienvenida_template_id, email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
+  const { data: pl } = cfg?.email_bienvenida_template_id
+    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', cfg.email_bienvenida_template_id).maybeSingle()
+    : { data: null as any };
+  let asunto: string, html: string, texto: string;
+  if (pl?.bloques) {
+    asunto = interpolar(pl.asunto || EMAIL_BIENVENIDA_DEFAULT.asunto, ctx);
+    html = compilar(pl.bloques, ctx, t, pl.preview_text ? interpolar(pl.preview_text, ctx) : null);
+    texto = compilarTexto(pl.bloques, ctx);
+  } else {
+    const pon = (x: string) => x.replace(/\{\{nombre\}\}/g, 'María').replace(/\{\{campana\}\}/g, 'Campaña nuevos leads');
+    asunto = pon(cfg?.email_bienvenida_asunto || EMAIL_BIENVENIDA_DEFAULT.asunto);
+    texto = pon(cfg?.email_bienvenida_cuerpo || EMAIL_BIENVENIDA_DEFAULT.cuerpo);
+    html = htmlBienvenida(texto);
+  }
+  const r = await enviarCorreo({ tenantId: t.id, para, asunto, html, texto, categoria: 'relacion' } as any);
+  return { ok: !!(r as any)?.enviado, motivo: (r as any)?.motivo || null, detalle: (r as any)?.detalle || null, via: pl?.bloques ? 'sistema' : 'fallback' };
 }

@@ -22,6 +22,14 @@ export async function altaDesdeWhatsApp(convId: string, telefono: string, o: { d
   const { data: conv } = await supabase.from('wa_conversaciones').select('contact_id, company_id, triage').eq('id', convId).maybeSingle();
   if (!conv || conv.contact_id) return;
 
+  // El comportamiento lo manda el MÓDULO (WhatsApp ▸ ⚙ Automatización):
+  //   alta_wa_entrante: 'triaje' (IA decide) | 'siempre' | 'nunca'
+  //   alta_wa_saliente: crear contacto al escribirle a un desconocido
+  const { data: cfgAlta } = await supabase.from('wa_config').select('alta_wa_entrante, alta_wa_saliente').eq('id', 1).maybeSingle();
+  const modoEntrante = cfgAlta?.alta_wa_entrante || 'triaje';
+  if (o.direccion === 'entrante' && modoEntrante === 'nunca') return;
+  if (o.direccion === 'saliente' && cfgAlta && cfgAlta.alta_wa_saliente === false) return;
+
   // ¿El teléfono ya es de alguien? (el lead llenó un formulario antes de
   // escribir): se liga y su estatus avanza — no se duplica la ficha.
   const ya = await ligarContacto(telefono);
@@ -48,7 +56,7 @@ export async function altaDesdeWhatsApp(convId: string, telefono: string, o: { d
   // ── Entrante: triaje ──
   if (conv.triage) return;   // ya se decidió antes (spam/soporte)
   let clase = 'ventas';
-  try {
+  if (modoEntrante === 'siempre') { /* sin triaje: todo desconocido es lead */ } else try {
     const r = await pedirJSON({
       system: 'Clasificas el PRIMER mensaje de WhatsApp que un desconocido le manda a SACS (software punto de venta para comercios en México). Contesta SOLO JSON: {"clase":"ventas"|"soporte"|"spam"}. "ventas" = persona/negocio interesada o preguntando por el sistema, precios, demo, o un saludo genuino. "soporte" = ya es cliente con un problema técnico. "spam" = publicidad, cadenas, links sospechosos, mensajes sin sentido.',
       user: `Mensaje: "${(o.texto || '').slice(0, 400)}"`,

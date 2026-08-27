@@ -14,8 +14,10 @@ const TIPOS: Array<{ id: string; label: string; base: any }> = [
   { id: 'encabezado', label: 'Título', base: { texto: 'Título de sección', nivel: 2 } },
   { id: 'texto', label: 'Párrafo', base: { texto: 'Escribe aquí.' } },
   { id: 'lista', label: 'Lista', base: { items: ['Primer punto', 'Segundo punto'] } },
-  { id: 'boton', label: 'Botón', base: { texto: 'Ver más', href: 'https://www.sacscloud.com', align: 'left' } },
-  { id: 'imagen', label: 'Imagen', base: { src: '', alt: '' } },
+  { id: 'boton', label: 'Botón', base: { texto: 'Ver más', href: 'https://www.sacscloud.com', align: 'left', sub: '' } },
+  { id: 'imagen', label: 'Imagen', base: { src: '', alt: '', pie: '' } },
+  { id: 'aviso', label: 'Aviso destacado', base: { texto: 'El dato que no se puede perder.' } },
+  { id: 'metricas', label: 'Sellos de confianza', base: { items: [{ cifra: '+14 años', texto: 'acompañando al retail' }, { cifra: '★ 4.8/5', texto: 'en Google Reviews' }, { cifra: '3,000+ marcas', texto: 'han operado con nosotros' }] } },
   { id: 'cita', label: 'Cita', base: { texto: 'Lo que dijo un cliente.', autor: 'Nombre' } },
   { id: 'dos_columnas', label: 'Dos columnas', base: { izquierda: { titulo: '', texto: '' }, derecha: { titulo: '', texto: '' } } },
   { id: 'planes', label: 'Planes', base: { planes: [{ nombre: 'Plan', precio: '$0', detalle: '' }] } },
@@ -259,7 +261,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               </div>
             </div>
 
-            {['titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'alt', 'puesto', 'nombre'].map(k => (
+            {['titulo', 'subtitulo', 'texto', 'autor', 'href', 'src', 'alt', 'pie', 'sub', 'puesto', 'nombre'].map(k => (
               k in b ? (
                 <div key={k} style={{ marginBottom: 10 }}>
                   <span style={S.lbl}>{ETIQ_CAMPO[k] || k}</span>
@@ -270,7 +272,7 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
               ) : null
             ))}
 
-            {Array.isArray(b.items) && (
+            {Array.isArray(b.items) && b.tipo !== 'metricas' && (
               <div style={{ marginBottom: 10 }}>
                 <span style={S.lbl}>Puntos</span>
                 {b.items.map((it: string, i: number) => (
@@ -280,6 +282,22 @@ function Editor({ id, onCerrar }: { id: string; onCerrar: () => void }) {
                   </div>
                 ))}
                 <button style={{ ...S.btnG, fontSize: '0.72rem' }} onClick={() => setB(sel!, { items: [...b.items, 'Nuevo punto'] })}>+ Agregar punto</button>
+              </div>
+            )}
+
+            {b.tipo === 'metricas' && (
+              <div style={{ marginBottom: 10 }}>
+                <span style={S.lbl}>Sellos (cifra + texto)</span>
+                {(b.items || []).map((it: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: 5, marginBottom: 5 }}>
+                    <input placeholder="Cifra" value={it?.cifra ?? ''} onChange={e => setB(sel!, { items: b.items.map((x: any, j: number) => j === i ? { ...x, cifra: e.target.value } : x) })} style={{ ...inp, width: 110 }} />
+                    <input placeholder="Texto" value={it?.texto ?? ''} onChange={e => setB(sel!, { items: b.items.map((x: any, j: number) => j === i ? { ...x, texto: e.target.value } : x) })} style={inp} />
+                    <button style={{ ...S.btnG, padding: '3px 8px' }} onClick={() => setB(sel!, { items: b.items.filter((_: any, j: number) => j !== i) })}>✕</button>
+                  </div>
+                ))}
+                {(b.items || []).length < 4 && (
+                  <button style={{ ...S.btnG, fontSize: '0.72rem' }} onClick={() => setB(sel!, { items: [...(b.items || []), { cifra: '', texto: '' }] })}>+ Agregar sello</button>
+                )}
               </div>
             )}
 
@@ -314,4 +332,5 @@ const ETIQ_CAMPO: Record<string, string> = {
   titulo: 'Título', subtitulo: 'Subtítulo', texto: 'Texto', autor: 'Autor',
   href: 'Liga (URL)', src: 'URL de la imagen', alt: 'Texto alternativo',
   puesto: 'Puesto', nombre: 'Nombre',
+  pie: 'Pie de la imagen', sub: 'Línea bajo el botón',
 };
