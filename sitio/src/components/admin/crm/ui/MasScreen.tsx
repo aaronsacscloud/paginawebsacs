@@ -38,14 +38,14 @@ export default function MasScreen({
       background: '#fff', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
       paddingTop: 'env(safe-area-inset-top)',
     }}>
-      <div style={{ padding: '18px 20px 6px', fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
+      <div style={{ padding: '16px 24px 6px', fontSize: '2.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
         Más
       </div>
       {grupos.map(g => (
         <div key={g.label || 'sin'}>
           {g.label && (
             <div style={{
-              padding: '20px 20px 8px', fontSize: '0.68rem', fontWeight: 700,
+              padding: '22px 24px 8px', fontSize: '0.68rem', fontWeight: 700,
               letterSpacing: '0.07em', textTransform: 'uppercase', color: '#8f8d98',
             }}>{g.label}</div>
           )}
@@ -54,9 +54,9 @@ export default function MasScreen({
             return (
               <button key={it.id} onClick={() => onSelect(it.id)} className="crm-row" style={{
                 display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                minHeight: 52, padding: '14px 20px', border: 'none', cursor: 'pointer',
+                minHeight: 64, padding: '18px 24px', border: 'none', cursor: 'pointer',
                 background: 'none', borderBottom: '1px solid #efeef2',
-                fontFamily: 'inherit', fontSize: '0.92rem', textAlign: 'left',
+                fontFamily: 'inherit', fontSize: '1rem', textAlign: 'left',
                 fontWeight: activo ? 700 : 500,
                 color: activo ? '#5B4BD6' : '#1a1a1a',
               }}>
@@ -71,9 +71,9 @@ export default function MasScreen({
       {extras.map(x => (
         <button key={x.label} onClick={x.onClick} className="crm-row" style={{
           display: 'flex', alignItems: 'center', width: '100%',
-          minHeight: 52, padding: '14px 20px', border: 'none', cursor: 'pointer',
+          minHeight: 64, padding: '18px 24px', border: 'none', cursor: 'pointer',
           background: 'none', borderBottom: '1px solid #efeef2',
-          fontFamily: 'inherit', fontSize: '0.92rem', textAlign: 'left',
+          fontFamily: 'inherit', fontSize: '1rem', textAlign: 'left',
           fontWeight: 500, color: x.danger ? '#C0554E' : '#1a1a1a',
         }}>{x.label}</button>
       ))}

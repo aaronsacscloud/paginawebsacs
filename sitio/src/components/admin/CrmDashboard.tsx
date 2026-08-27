@@ -155,7 +155,7 @@ const NAV_SECTIONS = [
       // Pagos se comió a Cobranza: eran el mismo trabajo —el dinero— visto en
       // dos momentos, y "Por cobrar" salía duplicado en las dos pantallas.
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
-      { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
+      { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
     ],
   },
@@ -943,7 +943,7 @@ export default function CrmDashboard() {
       })()}
       {isMobile && !mobileExpanded && (
         <BottomNav
-          activeId={BOTTOM_IDS.includes(tab) ? tab : '__mas'}
+          activeId={masOpen ? '__mas' : BOTTOM_IDS.includes(tab) ? tab : '__mas'}
           onSelect={(id) => { if (id === '__mas') setMasOpen(true); else switchTab(id as Tab); }}
           items={[
             ...BOTTOM_IDS.map(id => {
