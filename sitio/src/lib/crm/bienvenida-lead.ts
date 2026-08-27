@@ -34,6 +34,7 @@ function htmlBienvenida(intro: string): string {
   const parrafos = intro.split(/\n{2,}/).map(p2 =>
     `<p style="margin:0 0 16px;font:16px/1.65 -apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2733">${p2.replace(/\n/g, '<br>')}</p>`).join('');
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f3f8">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all">Tu asesor te escribe por WhatsApp en unos minutos — y tu demo en vivo está a un click.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f8"><tr><td align="center" style="padding:28px 12px">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #ececf1">
       <tr><td height="6" style="height:6px;background:#9B8CFA;background:linear-gradient(90deg,#9B8CFA,#7DA6F5 55%,rgba(244,168,205,.9));font-size:0;line-height:0">&nbsp;</td></tr>
@@ -55,6 +56,10 @@ function htmlBienvenida(intro: string): string {
       </td></tr>
       <tr><td align="center" style="padding:6px 34px 8px">
         <a href="https://www.sacscloud.com/contacto" style="display:inline-block;background:#9B8CFA;color:#ffffff;text-decoration:none;font:800 16px/1 -apple-system,'Segoe UI',Roboto,sans-serif;padding:15px 34px;border-radius:12px">Agendar mi demo →</a>
+        <div style="font:600 12px/1 -apple-system,'Segoe UI',Roboto,sans-serif;color:#8a8590;margin-top:9px">20 minutos · sin costo · con tu propio negocio</div>
+      </td></tr>
+      <tr><td style="padding:16px 34px 0">
+        <p style="margin:0;font:15px/1.6 -apple-system,'Segoe UI',Roboto,sans-serif;color:#55515f"><b>P.D.</b> Si prefieres, responde este correo contándonos de tu negocio y te atendemos por aquí — lo leemos personalmente.</p>
       </td></tr>
       <tr><td style="padding:22px 34px 26px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0eff5"><tr>
