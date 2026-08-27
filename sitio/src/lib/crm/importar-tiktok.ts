@@ -18,6 +18,7 @@
 // formulario de TikTok, el canal que lo trajo sigue siendo Google — pisarlo le
 // regalaría a TikTok un lead que no pagó.
 import { supabase } from '../supabase';
+import { enviarBienvenidaTikTok } from './bienvenida-lead';
 import { atribucionDeLead, type LeadTikTok } from './tiktok-leads';
 import { notificar } from './notificaciones';
 
@@ -229,6 +230,13 @@ export async function importarLeadsTikTok(
       titulo: `Lead de formulario instantáneo de TikTok: ${base.nombre || base.lead}`,
       metadata: { origen: 'tiktok-lead-form', ...bloqueTikTok },
     });
+
+    // Bienvenida automática al LEAD (plantilla UTILITY): solo en el goteo del
+    // pipeline vivo — un import masivo de la hoja vieja NO debe disparar
+    // decenas de mensajes.
+    if (l.whatsapp && leads.length <= 10) {
+      enviarBienvenidaTikTok(nuevo.id, l.whatsapp, l.nombre).catch(e => console.warn('[bienvenida-tiktok]', e?.message || e));
+    }
     // La campana: un lead pagado que nadie ve el mismo día es la fuga cara.
     await notificar({
       clave: `lead_tiktok:${l.clave}`,
