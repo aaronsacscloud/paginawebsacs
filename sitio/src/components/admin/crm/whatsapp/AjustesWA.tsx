@@ -226,16 +226,6 @@ function AjustesInactividad() {
   const [min, setMin] = useState(60);
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState(false);
-  // Plantillas UTILITY aprobadas: el catálogo del selector de bienvenida a
-  // leads de TikTok. Se cargan una vez al abrir la sección.
-  const [plantillasUtil, setPlantillasUtil] = useState<any[]>([]);
-  useEffect(() => {
-    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
-      const todas = j.plantillas || j.data || [];
-      setPlantillasUtil(todas.filter((x: any) => (x.category || x.categoria) === 'UTILITY' && (x.status || x.estado) === 'APPROVED'));
-    }).catch(() => {});
-  }, []);
-
   const guardar = async () => {
     setOcupado(true); setMsg('');
     const r = await fetch('/api/crm/whatsapp/contacto-kapso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'webhook', inactivity_minutes: min }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
