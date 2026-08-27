@@ -1083,7 +1083,7 @@ const CRM_MOBILE_CSS = `
        EXACTOS por diseño: "0.7rem" (con la r pegada) no atrapa a 0.75rem. */
     [style*="font-size: 0.5"], [style*="font-size: 0.6"],
     [style*="font-size: 0.7rem"], [style*="font-size: 0.71"], [style*="font-size: 0.72"], [style*="font-size: 0.73"], [style*="font-size: 0.74"],
-    [style*="font-size: 8px"], [style*="font-size: 9px"], [style*="font-size: 10px"], [style*="font-size: 11px"], [style*="font-size: 11."] {
+    [style*="font-size: 8px"], [style*="font-size: 9px"], [style*="font-size: 10px"], [style*="font-size: 10."], [style*="font-size: 11px"], [style*="font-size: 11."] {
       font-size: 0.75rem !important;
     }
     /* El margen compartido del CRM (lib/crm/layout WRAP) trae 56 px laterales
@@ -1101,6 +1101,11 @@ const CRM_MOBILE_CSS = `
     .m-tabin button:not(.m-chip), .m-tabin [role="button"],
     .cs-modal-close { min-height: 36px !important; }
     .cs-modal-close { min-width: 40px !important; min-height: 40px !important; box-sizing: border-box !important; }
+    /* Action-links de fila (el "Ver" de cotizaciones ×25): son botones con
+       etiqueta <a>. Los links de prosa no llevan border/background inline. */
+    .m-tabin td a, .m-tabin a[style*="border"], .m-tabin a[style*="background"] {
+      min-height: 36px !important; display: inline-flex !important; align-items: center !important;
+    }
 
     /* M6 · Transición de entrada al cambiar de tab (como una app nativa). */
     .m-tabin { animation: m-tabin 180ms ease; }
