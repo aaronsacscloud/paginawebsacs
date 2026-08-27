@@ -22,7 +22,9 @@ export const EMAIL_BIENVENIDA_DEFAULT = {
   asunto: '{{nombre}}, recibimos tu registro — te leemos por WhatsApp',
   cuerpo: `Hola {{nombre}}, ¡qué gusto saludarte!
 
-Vimos tu registro que llenaste en TikTok ({{campana}}) y queremos presentarnos bien: somos Sacscloud, el sistema con el que las marcas de retail en México venden en tienda y en línea, controlan su inventario y facturan — todo en un solo lugar.`,
+Vimos tu registro en TikTok y queremos presentarnos bien: Sacscloud no es un punto de venta tradicional — es la evolución de los sistemas de retail.
+
+Es la forma moderna de operar tu marca: vendes en tienda, en línea y hasta en TikTok Shop con todo sincronizado, y controlas inventarios, administración y equipo desde un solo lugar. Lo implementamos contigo paso a paso, para que tu operación crezca sin saturarte.`,
 };
 
 /** El correo ARMADO: diseño de documento del cliente (email-safe: tablas + inline). */

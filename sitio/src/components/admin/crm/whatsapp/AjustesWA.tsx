@@ -110,7 +110,7 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
                 placeholder="Recibimos tu registro, {{nombre}} — Sacscloud" />
               <textarea style={{ ...inp, marginTop: 6, resize: 'vertical' }} rows={5} value={a.email_bienvenida_cuerpo || ''}
                 onChange={e => setA({ ...a, email_bienvenida_cuerpo: e.target.value })}
-                placeholder={'Hola {{nombre}},\n\nTe escribimos de Sacscloud: recibimos el registro que llenaste en TikTok y quedó completo.\n\nUn asesor te va a contactar por WhatsApp…'} />
+                placeholder={'Hola {{nombre}}, ¡qué gusto saludarte!\n\nSacscloud no es un punto de venta tradicional — es la evolución de los sistemas de retail…'} />
             </>)}
           </div>
 
