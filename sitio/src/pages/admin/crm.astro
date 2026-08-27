@@ -48,7 +48,7 @@ if (gate) return gate;
     dashboard: [`/api/crm/reports/tablero?desde=${d1}&hasta=${d2}`, '/api/crm/cobranza', '/api/crm/soporte/dashboard?dias=14', `/api/scheduling/reuniones?from=${h}&to=${h}`],
     pipeline: ['/api/crm/contacts?limit=500&con_etapa=1'],
     clientes: ['/api/crm/arr/clientes'],
-    cotizaciones: ['/api/revenue/quotes/kpis'],
+    cotizaciones: ['/api/revenue/quotes/kpis', '/api/revenue/quotes'],
     pagos: ['/api/crm/arr/summary'],
     soporte: ['/api/crm/soporte/bandeja'],
   };
