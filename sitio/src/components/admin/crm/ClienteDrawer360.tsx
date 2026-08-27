@@ -210,8 +210,14 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               const SEG: [string, string][] = [['resumen', 'Resumen'], ['info', 'Info'], ['subs', 'Licencias'], ['mejoras', 'Consultoría'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
               return (
                 <div style={{ background: '#fff' }}>
-                  <div onClick={cerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 12px', cursor: 'pointer' }} aria-label="Cerrar">
+                  <div onClick={cerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', cursor: 'pointer' }} aria-label="Cerrar">
                     <div style={{ width: 44, height: 5, borderRadius: 99, background: '#e2e1e8' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '2px 12px 6px' }}>
+                    <button onClick={cerrar} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                      Volver
+                    </button>
                   </div>
                   <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0 24px' }}>
                     <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f3f6', color: '#6a6875', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.05rem', flex: 'none' }}>{ini}</div>
@@ -361,7 +367,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               </div>
             </div>
             )}
-            <div style={isMobile ? { padding: '16px 16px 28px' } : D.body}>
+            <div className={isMobile ? 'fic-body' : undefined} style={isMobile ? { padding: '16px 16px 28px' } : D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
               {tab === 'resumen' && vencidasMej.length > 0 && (
                 <div onClick={() => irA('mejoras')}
@@ -680,7 +686,7 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 16 }}>
         <div style={kpi}>
-          <div style={D.kl}>Sucursales vendiendo</div>
+          <div style={{ ...D.kl, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Suc. vendiendo</div>
           <div style={{ ...num, marginTop: 5 }}>{sucTotales ? sucVivas : '—'}</div>
           <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
             {sucTotales ? <>de <b style={{ color: '#3f3b4d' }}>{sucTotales}</b> en la cuenta</> : 'sin datos de la cuenta'}

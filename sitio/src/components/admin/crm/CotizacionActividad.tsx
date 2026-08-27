@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import RegistrarPagoModal, { resumenCierre } from './RegistrarPagoModal';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ Panel de actividad de una cotización ═══
  *
@@ -27,7 +28,7 @@ const P = {
   // la acción principal, contorno azul para las importantes que no lo son, y
   // gris para lo secundario.
   btn: { padding: '7px 14px', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
-  btnA: { padding: '6px 13px', border: '1.5px solid #7DA6F5', borderRadius: 10, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
+  btnA: { padding: '6px 13px', border: '1.5px solid #c9bcf7', borderRadius: 10, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#5B4BD6' } as const,
   // Verde aguado con tinta legible, el mismo par que usan las pastillas de
   // "Pagada" y las cifras cobradas. El relleno saturado pesaba más que el
   // morado del resto del módulo y se robaba la pantalla.
@@ -53,6 +54,7 @@ const METODOS = ['transferencia', 'efectivo', 'tarjeta', 'oxxo', 'mercadopago', 
 export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
   quoteId: string; onClose: () => void; onCambio?: () => void;
 }) {
+  const esMovilCot = useIsMobile();
   const [d, setD] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [nota, setNota] = useState('');
@@ -206,14 +208,20 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
       <div style={P.panel}>
         {/* Encabezado con el mismo tinte morado del buscador de cliente: separa
             el título del contenido sin meter una línea más. */}
-        <div style={{ position: 'sticky', top: 0, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2 }}>
+        <div style={{ position: 'sticky', top: 0, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: esMovilCot ? '8px 12px 10px' : '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2, flexWrap: esMovilCot ? 'wrap' : undefined }}>
+          {esMovilCot && (
+            <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 4px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexBasis: '100%' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+              Volver
+            </button>
+          )}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización {q.numero}</div>
-            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.empresa || q.contacto} · {money(q.total)} · {ESTADO_ES[q.estado] || q.estado}</div>
+            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', lineHeight: 1.4 }}>{q.empresa || q.contacto} · {money(q.total)} · {ESTADO_ES[q.estado] || q.estado}</div>
           </div>
-          <button onClick={copiarHistorial} style={P.btnG} title="Copiar el historial para pegarlo en un correo o nota">📋</button>
+          <button onClick={copiarHistorial} style={P.btnG} title="Copiar el historial para pegarlo en un correo o nota">Copiar</button>
           <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Ver documento</a>
-          <button onClick={onClose} style={{ ...P.btnG, border: 'none', fontSize: '1rem' }}>✕</button>
+          {!esMovilCot && <button onClick={onClose} style={{ ...P.btnG, border: 'none', fontSize: '1rem' }}>✕</button>}
         </div>
 
         <div style={{ padding: 18 }}>
@@ -312,7 +320,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               {/* El estado de cuenta se manda; por eso es un icono y no un
                   botón que compita. Con plan de pagos deja elegir cuál mandar. */}
               <div style={{ position: 'relative' }}>
-                <button title="Mandar el estado de cuenta" style={{ ...P.btnG, padding: '5px 9px', lineHeight: 0, color: '#5B4BD6', borderColor: '#ddd6fb' }}
+                <button title="Mandar el estado de cuenta" style={{ ...P.btnG, padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: 5, color: '#5B4BD6', borderColor: '#ddd6fb' }}
                   onClick={() => {
                     const pend = (d.plan_pagos || []).filter((x: any) => !x.pagada);
                     if (pend.length <= 1) { window.open(`/estado-cuenta/cotizacion/${d.quote.id}`, '_blank'); return; }
@@ -322,6 +330,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
                     <path d="M14 3v5h5M9 13h6M9 17h4" />
                   </svg>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>Edo. cuenta</span>
                 </button>
                 {menuEdo && (
                   <div style={{ position: 'absolute', right: 0, top: 32, background: '#fff', border: '1px solid #e6e3ee', borderRadius: 10, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, minWidth: 230, zIndex: 40 }}>
@@ -474,7 +483,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                 <span style={{ flex: 1 }}>{fHora(v.at)}</span>
                 {v.duracion_seg ? <span style={{ color: '#666' }}>{dur(v.duracion_seg)}</span> : null}
                 {v.scroll_pct != null ? <span style={{ color: v.scroll_pct >= 70 ? '#1A8F7A' : '#a06600' }}>leyó {v.scroll_pct}%</span> : null}
-                {v.dispositivo ? <span style={{ color: '#bbb', fontSize: '0.72rem' }}>{v.dispositivo === 'movil' ? '📱' : '💻'}</span> : null}
+                {v.dispositivo ? <span style={{ color: '#a5a2af', fontSize: '0.64rem', fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase' }}>{v.dispositivo === 'movil' ? 'móvil' : 'web'}</span> : null}
               </div>
             ))}
             {d.vistas.eventos?.length > 15 && <div style={{ fontSize: '0.72rem', color: '#bbb', paddingTop: 6 }}>… y {d.vistas.eventos.length - 15} más</div>}
@@ -484,11 +493,12 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
           </div>
 
           {/* ── Cambios ── */}
+          {(d.cambios || []).length === 0 ? (
+            <div style={{ fontSize: '0.76rem', color: '#a5a2af', padding: '2px 4px 10px' }}>Sin ediciones registradas — el historial se guarda desde ahora.</div>
+          ) : (
           <div style={P.card}>
             <div style={P.h}>Cambios</div>
-            {(d.cambios || []).length === 0 ? (
-              <div style={{ fontSize: '0.8rem', color: '#999' }}>Sin ediciones registradas. El historial se guarda desde ahora.</div>
-            ) : d.cambios.map((c: any, i: number) => (
+            {d.cambios.map((c: any, i: number) => (
               <div key={i} style={{ ...P.fila, display: 'block' }}>
                 <div style={{ color: '#8a8a8a', fontSize: '0.72rem', marginBottom: 5 }}>{fHora(c.at)} · {c.por}</div>
 
@@ -531,6 +541,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               </div>
             ))}
           </div>
+          )}
 
           {/* ── Notas internas ── */}
           <div style={P.card}>

@@ -165,7 +165,7 @@ function activityLabel(tipo: string): string {
 
 // ─── Shared styles ───
 const btn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' };
-const input: React.CSSProperties = { width: '100%', padding: '10px 12px', fontSize: '0.8125rem', border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none', fontFamily: 'inherit', marginBottom: 8, boxSizing: 'border-box' as const };
+const input: React.CSSProperties = { width: '100%', padding: '10px 12px', fontSize: '0.8125rem', border: '1px solid #e5e7eb', borderRadius: 12, outline: 'none', fontFamily: 'inherit', marginBottom: 8, boxSizing: 'border-box' as const, background: '#fff', appearance: 'auto' };
 const td: React.CSSProperties = { padding: '10px 14px', color: '#555' };
 const dealBulkBtn: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#b93333', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' };
 
@@ -1103,20 +1103,27 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
         ? { width: '100%', height: '100dvh', background: '#fff', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }
         : { width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' }}>
         {/* Header */}
-        <div style={{ padding: isMobile ? '12px 16px' : '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          {isMobile && <button aria-label="Atrás" onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', minWidth: 44, height: 44, flexShrink: 0 }}>←</button>}
+        {isMobile && (
+          <div style={{ padding: '6px 12px 0' }}>
+            <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+              Volver
+            </button>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '4px 16px 12px' : '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>{deal.nombre}</div>
             <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>{stageLabel(deal.stage)}</span>
-              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#888' }}>{deal.probabilidad}%</span>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#888' }}>{STAGES.find(sx => sx.id === deal.stage)?.prob ?? deal.probabilidad}%</span>
               {deal.days_in_pipeline != null && <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#aaa' }}>{deal.days_in_pipeline}d en pipeline</span>}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+          {!isMobile && <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>}
         </div>
 
-        <div style={{ padding: '20px 24px' }}>
+        <div style={{ padding: isMobile ? '16px' : '20px 24px' }}>
           {/* Deal fields */}
           <Label>Etapa</Label>
           <select value={editStage} onChange={e => setEditStage(e.target.value)} style={input}>
@@ -1146,14 +1153,17 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
           <Label>Etiquetas</Label>
           <div style={{ marginBottom: 10 }}><Etiquetas entidad="deal" id={deal.id} /></div>
 
-          {/* Notas de la llamada → propuesta de actualización (idea 9) */}
-          <Label>Notas de la llamada / demo</Label>
-          <textarea value={notasIA} onChange={e => setNotasIA(e.target.value)} rows={3}
-            placeholder="Pega aquí lo que se habló y te propongo etapa, próximo paso y fecha de cierre."
-            style={{ ...input, minHeight: 70, resize: 'vertical' as const }} />
-          <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#6C5CE7', color: '#fff', marginBottom: 10 }}>
-            {analizando ? 'Leyendo…' : 'Proponer actualización'}
-          </button>
+          {/* Notas de la llamada → propuesta de actualización (idea 9).
+              En su propia card: el CTA es de ESTA zona, no el submit del form. */}
+          <div style={{ background: '#F7F7FB', border: '1px solid #ececf3', borderRadius: 12, padding: '12px 14px', margin: '4px 0 12px' }}>
+            <div style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#8f8d98', marginBottom: 8 }}>Asistente IA</div>
+            <textarea value={notasIA} onChange={e => setNotasIA(e.target.value)} rows={3}
+              placeholder="Pega aquí lo que se habló y te propongo etapa, próximo paso y fecha de cierre."
+              style={{ ...input, minHeight: 70, resize: 'vertical' as const }} />
+            <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>
+              {analizando ? 'Leyendo…' : 'Proponer actualización'}
+            </button>
+          </div>
           {propuesta && (
             <div style={{ background: '#f7f6ff', border: '1px solid #e2ddf9', borderRadius: 10, padding: 12, marginBottom: 12, fontSize: '0.8rem' }}>
               <b>Propuesta</b>
@@ -1166,7 +1176,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
                 {propuesta.objeciones?.length ? <li>Objeciones: {propuesta.objeciones.join(' · ')}</li> : null}
               </ul>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={aplicarPropuesta} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>Aplicar a los campos</button>
+                <button onClick={aplicarPropuesta} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>Aplicar a los campos</button>
                 <button onClick={() => setPropuesta(null)} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>Descartar</button>
               </div>
               <div style={{ fontSize: '0.7rem', color: '#999', marginTop: 6 }}>Nada se guarda hasta que le des a Guardar: la propuesta solo llena los campos.</div>
@@ -1201,9 +1211,11 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </div>
           </div>
 
-          <button onClick={save} disabled={saving} style={{ ...btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 8, justifyContent: 'center' }}>
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          <div style={isMobile ? { position: 'sticky', bottom: 0, background: '#fff', padding: '10px 0 14px', margin: '8px -16px 0', paddingLeft: 16, paddingRight: 16, borderTop: '1px solid #f0f0f0' } : undefined}>
+            <button onClick={save} disabled={saving} style={{ ...btn, background: '#5B4BD6', color: '#fff', width: '100%', minHeight: 48, marginTop: isMobile ? 0 : 8, justifyContent: 'center' }}>
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
 
           {/* Contact info */}
           {deal.contacts && (
@@ -1250,7 +1262,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
           <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
             <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Escribir nota..." style={{ ...input, flex: 1, marginBottom: 0 }}
               onKeyDown={e => { if (e.key === 'Enter') addNote(); }} />
-            <button onClick={addNote} disabled={saving || !noteText.trim()} style={{ ...btn, background: '#4B7BE5', color: '#fff' }}>+</button>
+            <button onClick={addNote} disabled={saving || !noteText.trim()} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>+</button>
           </div>
 
           {/* Activity Timeline */}

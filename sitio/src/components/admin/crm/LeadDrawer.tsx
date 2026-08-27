@@ -218,6 +218,14 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
     <>
       <div style={D.overlay} onClick={onClose} />
       <div style={esMovil ? { ...D.panel, width: '100%', boxShadow: 'none' } : D.panel}>
+        {esMovil && (
+          <div style={{ background: '#fff', padding: '6px 12px 0' }}>
+            <button onClick={cerrar} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+              Volver
+            </button>
+          </div>
+        )}
         <div style={D.head}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <div style={{ minWidth: 0 }}>
@@ -236,8 +244,8 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
               {!esMovil && tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
               {!esMovil && c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
               {!esMovil && <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>}
-              <button onClick={cerrar} aria-label={esMovil ? 'Atrás' : 'Cerrar'}
-                style={{ width: esMovil ? 44 : 32, height: esMovil ? 44 : 32, border: esMovil ? 'none' : '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: esMovil ? '#1a1a1a' : '#9c99a6', cursor: 'pointer', fontSize: '1.05rem', fontFamily: 'inherit' }}>{esMovil ? '←' : '✕'}</button>
+              {!esMovil && <button onClick={cerrar} aria-label="Cerrar"
+                style={{ width: 32, height: 32, border: '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: '#9c99a6', cursor: 'pointer', fontSize: '1.05rem', fontFamily: 'inherit' }}>✕</button>}
             </div>
           </div>
           {/* ══ M3 · Fila de acciones al pulgar (solo móvil): WhatsApp primaria
@@ -253,7 +261,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
               cuándo lo tocamos, cuándo lo vimos, qué le ofrecimos, qué hace él—
               igual que las pestañas del cliente. Señales va al final: se
               consulta cuando ya sabes qué buscas, no al abrir la ficha. */}
-          <div style={{ display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', WebkitMaskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)', maskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)' }}>
             {([
               ['info', 'Info general', null],
               ['seguimiento', 'Seguimiento', null],
@@ -1033,6 +1041,8 @@ function DeDondeLlego({ c }: any) {
 }
 
 function Campos({ c, guardar, guardando, setSucio }: any) {
+  const esMovilC = useIsMobile();
+  const [verVacios, setVerVacios] = useState(false);
   // La ficha se LEE escrita (patrón de la ficha del cliente): héroe con chips,
   // la franja de lo derivado, y los datos como texto. Los inputs solo salen al
   // pedir Editar — ocho cajas abiertas para venir a LEER eran puro ruido.
@@ -1126,17 +1136,21 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
       <div style={D.cardM}>
         {/* ── Héroe: quién es, en una mirada ── */}
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEECFE', color: '#4536BE', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>{iniciales}</div>
+          {!esMovilC && <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEECFE', color: '#4536BE', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>{iniciales}</div>}
           <div style={{ flex: 1, minWidth: 190 }}>
+            {!esMovilC && (<>
             <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.015em', lineHeight: 1.2 }}>
               {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
             </div>
             <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 3 }}>
               {[c.companies?.nombre, giroTxt].filter(Boolean).join(' · ') || 'sin empresa capturada'}
             </div>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
+            </>)}
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: esMovilC ? 0 : 8, alignItems: 'center' }}>
               {chip(estP.label, estP.fondo, estP.tinta, 'Estatus del lead (derivado de hechos)')}
-              {chip(o.l, '#E3EDFD', '#2C5FC4', 'Por dónde llegó')}
+              {o.l === 'Sin definir'
+                ? <span title="Por dónde llegó" style={{ fontSize: '0.72rem', color: '#a5a2af' }}>origen sin definir</span>
+                : chip(o.l, '#E3EDFD', '#2C5FC4', 'Por dónde llegó')}
               {/* La campaña ya vive en "De dónde llegó": repetirla aquí era ruido. */}
               {pausaActiva && c.retenido_razon ? chip(`pausa: ${c.retenido_razon}`, '#FFF4E5', '#9a6a10') : null}
             </div>
@@ -1200,20 +1214,29 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         </div>
 
         {/* ── Los datos, ESCRITOS (los inputs salen al Editar) ── */}
-        {!editando ? (
+        {!editando ? (() => {
+          // En móvil los campos en "—" se colapsan: pantalla para lo que SÍ hay.
+          const pares: [string, any][] = [
+            ['Teléfono', c.telefono], ['Puesto', c.rol || c.puesto], ['Empresa', c.companies?.nombre],
+            ['Sucursales', c.sucursales_interes || c.companies?.sucursales], ['Giro', giroTxt],
+            ['Sistema actual', etiqueta('sistema_actual', prop('sistema_actual'))],
+            ['Urgencia', etiqueta('urgencia', prop('urgencia'))], ['Dueño', dueno],
+          ];
+          const vacios = pares.filter(x => !x[1]);
+          const visibles = (esMovilC && !verVacios) ? pares.filter(x => x[1]) : pares;
+          return (
           <div style={{ ...separador, ...rejilla }}>
             <div style={{ gridColumn: 'span 2', minWidth: 0 }}>{leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}</div>
-            {leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}
-            {leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel'))}
-            {leido('Puesto', c.rol || c.puesto)}
-            {leido('Empresa', c.companies?.nombre)}
-            {leido('Sucursales', c.sucursales_interes || c.companies?.sucursales)}
-            {leido('Giro', giroTxt)}
-            {leido('Sistema actual', etiqueta('sistema_actual', prop('sistema_actual')))}
-            {leido('Urgencia', etiqueta('urgencia', prop('urgencia')))}
-            {leido('Dueño', dueno)}
+            <div style={{ gridColumn: esMovilC ? 'span 2' : undefined, minWidth: 0 }}>{leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}</div>
+            {visibles.map(([l2, v2]) => <span key={l2}>{l2 === 'Teléfono' ? leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel')) : leido(l2, v2)}</span>)}
+            {esMovilC && vacios.length > 0 && (
+              <button onClick={() => setVerVacios(x => !x)} style={{ gridColumn: 'span 2', border: 'none', background: 'none', padding: '6px 0', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {verVacios ? 'Ocultar campos vacíos' : `Mostrar campos vacíos (${vacios.length})`}
+              </button>
+            )}
           </div>
-        ) : (
+          );
+        })() : (
           <div style={separador}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
               <div><div style={D.fl}>Nombre</div><input style={D.fi} value={v('nombre')} onChange={e => set('nombre', e.target.value)} /></div>

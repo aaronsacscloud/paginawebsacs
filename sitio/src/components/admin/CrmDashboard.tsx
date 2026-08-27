@@ -1158,6 +1158,18 @@ const CRM_MOBILE_CSS = `
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
     .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
     .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }
+    /* ══ DETALLE v5 (fic-body): el cuerpo de la ficha compactado en móvil.
+       Las cards del drawer son inline: se pisan por atributo. ══ */
+    @media (max-width: 899px) {
+      /* KPIs de uso: 2×2 compacto en vez de una card gigante por fila */
+      .fic-body [style*="minmax(190px"] { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+      /* cards del drawer: hairline neutra y menos aire; fuera los bordes de color */
+      .fic-body [style*="border: 1px solid rgb(236, 236, 236)"] { border-color: #efeef2 !important; padding: 14px 16px !important; margin-bottom: 12px !important; }
+      .fic-body [style*="rgb(221, 214, 251)"] { border: 1px solid #efeef2 !important; }
+      .fic-body [style*="rgb(207, 224, 250)"] { border: 1px solid #efeef2 !important; }
+      /* la barra sticky de periodo, compacta */
+      .fic-body [style*="position: sticky"] { padding: 8px 12px !important; }
+    }
     /* Carruseles y tab bars scrolleables: fade al borde derecho para que lo
        cortado "asome" en vez de leerse como texto roto (KPIs, tabs) */
     @media (max-width: 899px) {
