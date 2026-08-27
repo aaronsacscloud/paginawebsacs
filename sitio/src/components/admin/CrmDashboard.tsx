@@ -1090,6 +1090,18 @@ const CRM_MOBILE_CSS = `
        pensados para escritorio: en 390 px se comen 112. A 16 en el teléfono. */
     [style*="padding: 24px 56px"] { padding: 16px 16px 24px !important; }
     [style*="padding: 0px 56px"], [style*="padding: 0 56px"] { padding: 0 16px !important; }
+    /* ══ M5 · Mínimo táctil: ningún BOTÓN bajo 36 px en el teléfono ══
+       Los tabs densos repetían controles de 18-32 px por fila (el ⋯ del inbox
+       ×49, "Sin fecha ✎" ×22 en Consultoría, "⇄ Mover" ×11 en Oportunidades).
+       min-height le gana a height inline, así que esto los levanta a todos sin
+       tocar cada archivo. Los <a> inline en prosa quedan exentos a propósito
+       (excepción estándar de WCAG para links en línea de texto); las acciones
+       primarias del sistema (m-row 60px, fichas 44px, barra 56px) ya cumplen
+       ≥44 por su cuenta. */
+    .m-tabin button:not(.m-chip), .m-tabin [role="button"],
+    .cs-modal-close { min-height: 36px !important; }
+    .cs-modal-close { min-width: 40px !important; min-height: 40px !important; box-sizing: border-box !important; }
+
     /* M6 · Transición de entrada al cambiar de tab (como una app nativa). */
     .m-tabin { animation: m-tabin 180ms ease; }
     @keyframes m-tabin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
