@@ -1002,6 +1002,10 @@ function DeDondeLlego({ c }: any) {
     </div>
   ) : null;
 
+  // En móvil, si el origen es "Sin definir" y no hay campaña ni actividad,
+  // la card entera es redundante: los chips de arriba ya lo dicen.
+  const esMovilO = useIsMobile();
+  if (esMovilO && o.l === 'Sin definir' && !hayCampana && !a?.paginas_vistas) return null;
   return (
     /* Azul: nada de esto se captura, todo lo escribió la atribución al llegar. */
     <div style={D.cardA}>

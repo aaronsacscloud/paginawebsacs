@@ -858,7 +858,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             {tab === 'info' ? (['info', 'actividad'] as const).map(s => (
               <button key={s} onClick={() => setSubInfo(s)} style={{ flex: 1, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: subInfo === s ? C.g900 : C.g400, padding: '10px 0', position: 'relative', textTransform: 'capitalize' }}>
                 {s}
-                {subInfo === s && <span style={{ position: 'absolute', bottom: 0, left: 8, right: 8, height: 2, borderRadius: 999, background: C.emerald500 }} />}
+                {subInfo === s && <span style={{ position: 'absolute', bottom: 0, left: 8, right: 8, height: 2, borderRadius: 999, background: C.moradoTinta }} />}
               </button>
             )) : <b style={{ fontSize: 13, paddingLeft: 8 }}>{TABS.find(t => t.id === tab)?.t}</b>}
           </div>

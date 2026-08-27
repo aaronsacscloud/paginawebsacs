@@ -1177,7 +1177,7 @@ const CRM_MOBILE_CSS = `
     }
     /* Segmented scrolleable de la ficha: fade al borde derecho para que la
        pestaña cortada "asome" en vez de amputarse */
-    .fic-seg { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 16px !important; scroll-padding: 16px; scrollbar-width: none; }
+    .fic-seg { padding-right: 16px !important; scroll-padding: 16px; scrollbar-width: none; }
     .fic-seg::-webkit-scrollbar { display: none; }
     /* Saca el bloque del padding de 16px del wrap: gutter = solo los 24px de m-* */
     .m-bleed { margin-left: -16px; margin-right: -16px; }

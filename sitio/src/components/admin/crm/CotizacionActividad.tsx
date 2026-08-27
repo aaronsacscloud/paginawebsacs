@@ -216,8 +216,8 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
             </button>
           )}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización {q.numero}</div>
-            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', lineHeight: 1.4 }}>{q.empresa || q.contacto} · {money(q.total)} · {ESTADO_ES[q.estado] || q.estado}</div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización <span style={{ whiteSpace: 'nowrap' }}>{q.numero}</span></div>
+            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', lineHeight: 1.4 }}><span style={{ whiteSpace: 'nowrap' }}>{q.empresa || q.contacto}</span> <span style={{ whiteSpace: 'nowrap' }}>· {money(q.total)}</span> <span style={{ whiteSpace: 'nowrap' }}>· {ESTADO_ES[q.estado] || q.estado}</span></div>
           </div>
           <button onClick={copiarHistorial} style={P.btnG} title="Copiar el historial para pegarlo en un correo o nota">Copiar</button>
           <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Ver documento</a>

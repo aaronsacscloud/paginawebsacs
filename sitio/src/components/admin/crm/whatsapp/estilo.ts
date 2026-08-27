@@ -8,7 +8,7 @@
 import type { CSSProperties } from 'react';
 
 export const C = {
-  morado: '#9B8CFA', moradoTinta: '#5B4BD6', moradoAgua: '#EEECFE', moradoSuave: '#f7f4ff',
+  morado: '#5B4BD6', moradoTinta: '#5B4BD6', moradoAgua: '#EEECFE', moradoSuave: '#f7f4ff',
   emerald600: '#059669', emerald500: '#10B981', emerald300: '#6EE7B7', emerald100: '#D1FAE5', emerald50: '#ECFDF5', emerald700: '#047857', wa: '#25D366',
   sky300: '#7DD3FC',
   azul: '#7DA6F5', azulTinta: '#2C5FC4', azulAgua: '#E3EDFD', azulBorde: '#cfdefa',

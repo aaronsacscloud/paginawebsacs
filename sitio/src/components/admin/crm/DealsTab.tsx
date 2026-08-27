@@ -1160,7 +1160,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             <textarea value={notasIA} onChange={e => setNotasIA(e.target.value)} rows={3}
               placeholder="Pega aquí lo que se habló y te propongo etapa, próximo paso y fecha de cierre."
               style={{ ...input, minHeight: 70, resize: 'vertical' as const }} />
-            <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>
+            <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#fff', border: '1.5px solid #c9bcf7', color: '#5B4BD6' }}>
               {analizando ? 'Leyendo…' : 'Proponer actualización'}
             </button>
           </div>
@@ -1211,7 +1211,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </div>
           </div>
 
-          <div style={isMobile ? { position: 'sticky', bottom: 0, background: '#fff', padding: '10px 0 14px', margin: '8px -16px 0', paddingLeft: 16, paddingRight: 16, borderTop: '1px solid #f0f0f0' } : undefined}>
+          <div style={isMobile ? { position: 'sticky', bottom: 0, background: '#fff', padding: '10px 0 14px', margin: '8px -16px 0', paddingLeft: 16, paddingRight: 16, borderTop: '1px solid #e5e7eb', boxShadow: '0 -6px 16px rgba(16,24,40,.06)' } : undefined}>
             <button onClick={save} disabled={saving} style={{ ...btn, background: '#5B4BD6', color: '#fff', width: '100%', minHeight: 48, marginTop: isMobile ? 0 : 8, justifyContent: 'center' }}>
               {saving ? 'Guardando...' : 'Guardar cambios'}
             </button>

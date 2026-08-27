@@ -259,13 +259,16 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                       )}
                     </div>
                   </div>
-                  <div className="fic-seg" style={{ display: 'flex', gap: 2, margin: '14px 24px 0', background: '#f2f2f5', borderRadius: 12, padding: 3, overflowX: 'auto' }}>
+                  <div style={{ position: 'relative', margin: '14px 24px 0' }}>
+                  <div className="fic-seg" style={{ display: 'flex', gap: 2, background: '#f2f2f5', borderRadius: 12, padding: 3, overflowX: 'auto' }}>
                     {SEG.map(([k, l]) => {
                       const act = tab === k;
                       return (
                         <button key={k} onClick={() => irA(k)} style={{ flex: 'none', padding: '9px 15px', borderRadius: 10, border: 'none', background: act ? '#fff' : 'transparent', boxShadow: act ? '0 1px 3px rgba(16,24,40,.14)' : 'none', fontWeight: 700, color: act ? '#1a1a1a' : '#8f8d98', fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>{l}</button>
                       );
                     })}
+                  </div>
+                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30, background: 'linear-gradient(90deg, rgba(242,242,245,0), #f2f2f5 75%)', borderRadius: '0 12px 12px 0', pointerEvents: 'none' }} />
                   </div>
                 </div>
               );
@@ -2118,9 +2121,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           <div style={{ ...D.kv, color: '#5B4BD6' }}>{arrAct > 0 ? money(arrAct) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{activas.length} licencia{activas.length === 1 ? '' : 's'} activa{activas.length === 1 ? '' : 's'}</div>
         </div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' , flex: '1 1 150px' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #c9bcf7' , flex: '1 1 150px' }}>
           <div style={D.kl}>Equivale al mes</div>
-          <div style={{ ...D.kv, color: '#2C5FC4' }}>{mrrAct > 0 ? money(mrrAct) : '—'}</div>
+          <div style={{ ...D.kv, color: '#5B4BD6' }}>{mrrAct > 0 ? money(mrrAct) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>MRR · el anual repartido entre 12</div>
         </div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95', flex: '1 1 150px' }}>
@@ -2143,7 +2146,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
             Van en la misma fila y del mismo tamaño —son cifras de la cuenta
             igual que las otras tres— pero en azul y rojo, que es lo que ya
             significan en el resto del CRM: por decidirse, y perdido. */}
-        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5', flex: '1 1 150px' }}>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA', flex: '1 1 150px' }}>
           <div style={D.kl}>Cotizado</div>
           <div style={{ ...D.kv, color: cotizado > 0 ? '#2C5FC4' : '#1a1a1a' }}>{cotizado > 0 ? money(cotizado) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>
@@ -3917,7 +3920,7 @@ function SeccionCotizaciones({ abiertos, resueltos, companyId, flash, cargar, re
           title={it.quote_id ? 'Abrir la cotización' : 'Generar la cotización y abrirla'}
           style={{
             display: 'flex', alignItems: 'center', gap: 14, padding: '13px 15px', cursor: 'pointer',
-            border: '1px solid #ececec', borderLeft: `3px solid ${it.quote_id ? '#7DA6F5' : '#E8A838'}`,
+            border: '1px solid #ececec', borderLeft: `3px solid ${it.quote_id ? '#9B8CFA' : '#E8A838'}`,
             borderRadius: 11, marginBottom: 9, background: '#fff',
             opacity: busyId === it.key ? 0.55 : 1,
           }}>
