@@ -7,6 +7,7 @@
 // gama de abajo. No se inventa color aquí — el mostaza que había antes no
 // existe en el sistema.
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { S, Tag, Aviso, Vacio, Cargando, fmtFecha } from '../email/ui';
 import ClienteDrawer360 from '../ClienteDrawer360';
 import Hallazgos from './Hallazgos';
@@ -667,6 +668,98 @@ export default function SoporteTab() {
       .catch(() => { if (vivo) setErr('Sin conexión — revisa tu internet'); });
     return () => { vivo = false; };
   }, [query, recarga]);
+
+  // ══ Móvil v5 (mockup Soporte): bandeja de tickets abiertos, no el tablero.
+  // Chips Abiertos/Hoy; SIN RESPONDER (sin primera respuesta) arriba con la
+  // edad en color (≥4h rojo, ≥1h ámbar), EN CONVERSACIÓN abajo con "hace X".
+  const esMovilS = useIsMobile();
+  const [bandeja, setBandeja] = useState<any[] | null>(null);
+  const [chipS, setChipS] = useState<'abiertos' | 'hoy'>('abiertos');
+  useEffect(() => {
+    if (!esMovilS) return;
+    let vivo = true;
+    fetch('/api/crm/soporte/bandeja').then(r => r.json())
+      .then(j => { if (vivo) setBandeja(j.tickets || []); }).catch(() => { if (vivo) setBandeja([]); });
+    return () => { vivo = false; };
+  }, [esMovilS, recarga]);
+  if (esMovilS) {
+    const ahora = Date.now();
+    const hoyIso = new Date().toISOString().slice(0, 10);
+    const todosB = bandeja || [];
+    const lista = chipS === 'hoy' ? todosB.filter(t => String(t.abierto_at || '').slice(0, 10) === hoyIso) : todosB;
+    // Sin responder: lo más viejo arriba (urgencia). En conversación: lo más
+    // reciente arriba (actividad). Columna y orden cuentan la misma historia.
+    const sinResp = lista.filter(t => !t.primera_respuesta_at)
+      .sort((a, b) => String(a.abierto_at || '').localeCompare(String(b.abierto_at || '')));
+    const enConv = lista.filter(t => !!t.primera_respuesta_at)
+      .sort((a, b) => String(b.ultima_actividad_at || '').localeCompare(String(a.ultima_actividad_at || '')));
+    const conSec = sinResp.length > 0;
+    const edad = (iso: string | null) => {
+      if (!iso) return { t: '—', c: '#8f8d98' };
+      const m = Math.max(1, Math.round((ahora - Date.parse(iso)) / 60000));
+      const t = m < 60 ? `${m} m` : m < 60 * 24 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`;
+      return { t, c: m >= 240 ? '#C0554E' : m >= 60 ? '#a06600' : '#1a1a1a' };
+    };
+    const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+    const fila = (t: any, esperando: boolean) => {
+      const e = esperando ? edad(t.abierto_at) : null;
+      const ult = !esperando && t.ultima_actividad_at
+        ? (() => { const m = Math.max(1, Math.round((ahora - Date.parse(t.ultima_actividad_at)) / 60000)); return m < 60 ? `hace ${m} m` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`; })()
+        : null;
+      return (
+        <div key={t.conversation_id} className="m-row" onClick={() => { if (t.intercom_url) window.open(t.intercom_url, '_blank'); }}>
+          <div className="m-tx">
+            <div className="m-n1">{cased(t.empresa || 'Sin cliente ligado')}</div>
+            <div className="m-n2">{(() => {
+              let x = String(t.asunto || t.vista_previa || '').slice(0, 60).trim();
+              if (!x) return '—';
+              // Cita del cliente EN MAYÚSCULAS: se baja a sentence case solo al mostrar
+              const letras = x.replace(/[^a-záéíóúñü]/gi, '');
+              if (letras && letras === letras.toUpperCase()) x = x[0].toUpperCase() + x.slice(1).toLowerCase();
+              return `“${x}”`;
+            })()}</div>
+          </div>
+          <div className="m-fin">
+            {esperando
+              ? <div className="m-m1" style={{ color: e!.c }}>{e!.t}</div>
+              : <div className="m-m1" style={{ fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{ult || '—'}</div>}
+          </div>
+        </div>
+      );
+    };
+    return (
+      <div style={{ background: '#fff', minHeight: '60dvh' }}>
+        <div>
+          <div className="m-hdr">
+            <div className="m-tt">Soporte</div>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#f4f3f6', color: '#6a6875', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>A</div>
+          </div>
+          <div className="m-chips">
+            {([['abiertos', 'Abiertos'], ['hoy', 'Hoy']] as const).map(([v, l]) => {
+              const on = chipS === v;
+              const n = v === 'abiertos' ? todosB.length : todosB.filter(t => String(t.abierto_at || '').slice(0, 10) === hoyIso).length;
+              return (
+                <button key={v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setChipS(v)}>
+                  {l}{on ? ' ' + n : ''}
+                </button>
+              );
+            })}
+          </div>
+          {bandeja === null && <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Cargando…</div>}
+          {bandeja !== null && lista.length === 0 && (
+            <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
+              {chipS === 'hoy' ? 'Hoy no ha entrado nada.' : 'Bandeja limpia. Nada abierto.'}
+            </div>
+          )}
+          {conSec && <div className="m-sec">Sin responder</div>}
+          {sinResp.map(t => fila(t, true))}
+          {conSec && enConv.length > 0 && <div className="m-sec">En conversación</div>}
+          {enConv.map(t => fila(t, false))}
+          {!conSec && sinResp.map(t => fila(t, true))}
+        </div>
+      </div>
+    );
+  }
 
   const selector = (
     <SelectorPeriodo modo={modo} dias={dias} desde={desde} hasta={hasta}

@@ -232,7 +232,7 @@ function getInitialTab(): Tab {
 // EL caso de uso móvil. La Agenda vive en Inicio ("Hoy") y en Más.
 // Pantallas móviles con cabecera propia v5 (m-hdr): sin app bar de 56px.
 // Se suman aquí conforme cada pantalla pasa el referee.
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos'];
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1070,6 +1070,8 @@ const CRM_MOBILE_CSS = `
     .m-row::after { content: ''; position: absolute; left: 24px; right: 0; bottom: 0; height: 1px; background: var(--m-line); }
     /* Con avatar, la hairline se alinea a la columna de texto (24 + 38 + 12) */
     .m-row:has(.m-ini)::after { left: 74px; }
+    /* La lista cierra sin divisor colgante (Square): la última fila del bloque va limpia */
+    .m-row:last-child::after { display: none; }
     .m-row:active { background: var(--m-neutro); }
     .m-row .m-ini { flex: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; background: var(--m-neutro); color: #6a6875; }
     .m-row .m-tx { flex: 1; min-width: 0; }
