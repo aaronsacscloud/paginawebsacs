@@ -10,7 +10,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 
 export const GET: APIRoute = async () => {
   const { data } = await supabase.from('wa_config')
-    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr, catalog_id, ubicaciones')
+    .select('bienvenida_activa, bienvenida_texto, fuera_activa, fuera_texto, horario, asignacion_rr, catalog_id, ubicaciones, bienvenida_tiktok_activa, bienvenida_tiktok_plantilla, email_bienvenida_tiktok_activa, email_bienvenida_asunto, email_bienvenida_cuerpo')
     .eq('id', 1).maybeSingle();
   return json({ ajustes: data || {} });
 };
