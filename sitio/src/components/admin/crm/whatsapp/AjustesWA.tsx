@@ -34,6 +34,16 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
       .catch(() => setA({}));
   }, []);
 
+  // Plantillas UTILITY aprobadas: el catálogo del selector de bienvenida a
+  // leads de TikTok. Se cargan una vez al abrir la sección.
+  const [plantillasUtil, setPlantillasUtil] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
+      const todas = j.plantillas || j.data || [];
+      setPlantillasUtil(todas.filter((x: any) => (x.category || x.categoria) === 'UTILITY' && (x.status || x.estado) === 'APPROVED'));
+    }).catch(() => {});
+  }, []);
+
   const guardar = async () => {
     setGuardando(true); setMsg('');
     const r = await fetch('/api/crm/whatsapp/ajustes', {
@@ -65,6 +75,27 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
                 onChange={e => setA({ ...a, bienvenida_texto: e.target.value })}
                 placeholder="¡Hola! Gracias por escribir a SACS. En un momento te atendemos." />
             )}
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <Toggle on={!!a.bienvenida_tiktok_activa} onChange={v => setA({ ...a, bienvenida_tiktok_activa: v })} label="Bienvenida a leads de TikTok" />
+            <p style={{ margin: '4px 0 0 43px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
+              Al entrar un registro de TikTok, se le manda al lead la plantilla UTILITY elegida
+              (confirma SU registro; cuando responde, la conversación sigue libre). Los imports
+              masivos nunca la disparan.
+            </p>
+            {a.bienvenida_tiktok_activa && (<>
+              <select style={{ ...inp, marginTop: 8 }} value={a.bienvenida_tiktok_plantilla || ''}
+                onChange={e => setA({ ...a, bienvenida_tiktok_plantilla: e.target.value })}>
+                <option value="">— elegir plantilla UTILITY aprobada —</option>
+                {plantillasUtil.map((x: any) => <option key={x.name || x.nombre} value={x.name || x.nombre}>{x.name || x.nombre}</option>)}
+              </select>
+              {(() => {
+                const el = plantillasUtil.find((x: any) => (x.name || x.nombre) === a.bienvenida_tiktok_plantilla);
+                const cuerpo = el?.components?.find?.((c: any) => c.type === 'BODY')?.text || el?.cuerpo || '';
+                return cuerpo ? <p style={{ margin: '7px 0 0', fontSize: '0.72rem', color: '#5c5966', background: '#faf9fc', border: '1px solid #eeeef1', borderRadius: 9, padding: '8px 11px', lineHeight: 1.5 }}>{cuerpo.replace('{{1}}', 'María')}</p> : null;
+              })()}
+            </>)}
           </div>
 
           <div style={{ marginTop: 18 }}>
@@ -195,6 +226,16 @@ function AjustesInactividad() {
   const [min, setMin] = useState(60);
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  // Plantillas UTILITY aprobadas: el catálogo del selector de bienvenida a
+  // leads de TikTok. Se cargan una vez al abrir la sección.
+  const [plantillasUtil, setPlantillasUtil] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
+      const todas = j.plantillas || j.data || [];
+      setPlantillasUtil(todas.filter((x: any) => (x.category || x.categoria) === 'UTILITY' && (x.status || x.estado) === 'APPROVED'));
+    }).catch(() => {});
+  }, []);
+
   const guardar = async () => {
     setOcupado(true); setMsg('');
     const r = await fetch('/api/crm/whatsapp/contacto-kapso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'webhook', inactivity_minutes: min }) }).then(x => x.json()).catch(e => ({ error: String(e) }));

@@ -32,6 +32,8 @@ export const POST: APIRoute = async ({ request }) => {
     } : null;
   }
   if ('asignacion_rr' in b) cambios.asignacion_rr = !!b.asignacion_rr;
+  if ('bienvenida_tiktok_activa' in b) cambios.bienvenida_tiktok_activa = !!b.bienvenida_tiktok_activa;
+  if ('bienvenida_tiktok_plantilla' in b) cambios.bienvenida_tiktok_plantilla = String(b.bienvenida_tiktok_plantilla || '').trim() || null;
   const { error } = await supabase.from('wa_config').upsert(cambios);
   if (error) return json({ error: error.message }, 500);
   return json({ ok: true });
