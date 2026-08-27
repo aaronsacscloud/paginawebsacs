@@ -35,6 +35,7 @@ try {
 const DealsTab = lazy(() => import('./crm/DealsTab'));
 const AutomationsTab = lazy(() => import('./crm/AutomationsTab'));
 const EmailTab = lazy(() => import('./crm/email/EmailTab'));
+const SecuenciasTab = lazy(() => import('./crm/SecuenciasTab'));
 const OutboundTab = lazy(() => import('./crm/outbound/OutboundTab'));
 const WhatsAppTab = lazy(() => import('./crm/whatsapp/WhatsAppTab'));
 const WaMasivos = lazy(() => import('./crm/whatsapp/Masivos'));
@@ -76,7 +77,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'soporte';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -211,6 +212,7 @@ const NAV_SECTIONS = [
       // Email vive junto a las automatizaciones porque es la misma pregunta
       // ("qué le llega solo al cliente"), vista desde el canal.
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
+      { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
       { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
       { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
@@ -271,8 +273,7 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).
-// whatsapp queda fuera hasta adaptar el hilo (mezclaba burbujas claras).
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -882,6 +883,8 @@ export default function CrmDashboard() {
           </div>
         ) : tab === 'email' ? (
           <ErrorBoundary><EmailTab /></ErrorBoundary>
+        ) : tab === 'secuencias' ? (
+          <ErrorBoundary><SecuenciasTab /></ErrorBoundary>
         ) : tab === 'whatsapp' ? (
           <ErrorBoundary><WhatsAppTab /></ErrorBoundary>
         ) : tab === 'wa-masivos' ? (
@@ -932,13 +935,10 @@ export default function CrmDashboard() {
             <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: 20 }}>
               MRR, comisiones, pipeline, leaderboard. Partners ven solo lo suyo; founder ve agregado.
             </p>
-            <a href="/app/dashboard?user_id=YOUR_USER_ID" target="_blank" style={{
-              display: 'inline-block', padding: '10px 18px', background: '#1a1a1a', color: '#fff',
-              borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.8125rem'
+            <a href="/app/dashboard" target="_blank" style={{
+              display: 'inline-block', padding: '12px 18px', background: '#5B4BD6', color: '#fff',
+              borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem'
             }}>Abrir dashboard de desempeño →</a>
-            <div style={{ marginTop: 12, fontSize: '0.75rem', color: '#888' }}>
-              Reemplaza YOUR_USER_ID con tu team_members.id
-            </div>
           </div>
         ) : tab === 'cobranza' ? (
           // Ya no hay renglón de menú que lleve aquí; queda como red por si algún
@@ -1218,6 +1218,25 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
       [data-crm-dark="1"] [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
       [data-crm-dark="1"] [style*="background: rgb(244, 243, 246)"], [data-crm-dark="1"] [style*="background: rgb(243, 244, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+      /* ══ Inbox oscuro (lista + hilo + composer). Los estilos son inline: se
+         pisan por atributo, siempre con contraste AA sobre #131318. ══ */
+      [data-crm-dark="1"] .wa-hilo-m, [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(255, 255, 255)"] { background: #131318 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="color: rgb(17, 24, 39)"], [data-crm-dark="1"] .wa-hilo-m b { color: #F2F1F7 !important; }
+      /* burbujas: saliente morado profundo, entrante superficie */
+      [data-crm-dark="1"] .wa-hilo-m [style*="border-radius: 16px 16px 6px"] { background: #2a2440 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="border-radius: 16px 16px 16px 6px"] { background: #232329 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="border-radius: 16px 16px 6px"] a { color: #B7A8F7 !important; }
+      /* aviso de Meta y franja ámbar en tinta oscura legible */
+      [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(254, 242, 242)"] { background: #2d1a19 !important; color: #F0857A !important; border-color: #43221f !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(255, 251, 235)"], [data-crm-dark="1"] .wa-hilo-m [style*="rgb(255, 248, 225)"] { background: #2b2314 !important; color: #E8B04B !important; border-color: #3e3118 !important; }
+      /* composer: card y campo en superficie oscura */
+      [data-crm-dark="1"] .wa-hilo-m [style*="border: 1px solid rgb(229, 231, 235)"] { background: #1d1d24 !important; border-color: #26262e !important; }
+      [data-crm-dark="1"] .wa-hilo-m textarea, [data-crm-dark="1"] .wa-hilo-m input[type="text"] { background: transparent !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="border-bottom: 1px solid rgb(243, 244, 246)"] { border-bottom-color: #26262e !important; }
+      /* header del hilo: atrás y menú visibles, textos secundarios legibles */
+      [data-crm-dark="1"] .wa-hilo-m [aria-label="Atrás"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [title="Más acciones"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="color: rgb(55, 65, 81)"], [data-crm-dark="1"] .wa-hilo-m [style*="color: rgb(31, 41, 55)"] { color: #c9c7d3 !important; }
       /* Texto tinta-clara y hairlines claros inline → al tema */
       [data-crm-dark="1"] [style*="color: rgb(26, 26, 26)"], [data-crm-dark="1"] [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
       [data-crm-dark="1"] [style*="solid rgb(239, 238, 242)"] { border-color: #26262e !important; }

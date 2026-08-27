@@ -424,7 +424,7 @@ export default function InboxPro() {
   // ── Móvil: lista → hilo apilado; sidebar y detalle en Sheets ──
   if (isMobile) {
     return (
-      <div style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>
+      <div className="m-lienzo" style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>
         <style>{CSS_INBOX}</style>
         {!activa ? (
           (() => {

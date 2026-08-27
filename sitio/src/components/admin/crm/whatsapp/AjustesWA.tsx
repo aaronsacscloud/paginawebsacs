@@ -46,21 +46,6 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
     fetch('/api/crm/email/templates').then(r => r.json()).then(j => setPlantillasEmail(j.plantillas || [])).catch(() => {});
   }, []);
 
-  // ── Cadencia de seguimiento: config + pasos editables ──
-  const [cad, setCad] = useState<any>(null);
-  const [cadPasos, setCadPasos] = useState<any[]>([]);
-  const [cadMsg, setCadMsg] = useState('');
-  useEffect(() => {
-    fetch('/api/crm/leads/cadencia').then(r => r.json()).then(j => { setCad(j.config || {}); setCadPasos(j.pasos || []); }).catch(() => {});
-  }, []);
-  const guardarCadencia = async () => {
-    setCadMsg('');
-    const r = await fetch('/api/crm/leads/cadencia', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, cadencia_hora_inicio: cad?.cadencia_hora_inicio ?? 10, cadencia_hora_fin: cad?.cadencia_hora_fin ?? 18, pasos: cadPasos }) })
-      .then(x => x.json()).catch(e => ({ error: String(e) }));
-    setCadMsg(r?.error ? r.error : 'Cadencia guardada ✓'); setTimeout(() => setCadMsg(''), 2500);
-  };
-
   const guardar = async () => {
     setGuardando(true); setMsg('');
     const r = await fetch('/api/crm/whatsapp/ajustes', {
@@ -159,58 +144,13 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
             </div>
           </div>
 
-          {cad && (
-            <div style={{ marginTop: 18, border: '1px solid #ececec', borderRadius: 10, padding: '12px 14px', background: '#fafafa' }}>
-              <Toggle on={!!cad.cadencia_activa} onChange={v => setCad({ ...cad, cadencia_activa: v })} label="Cadencia de seguimiento" />
-              <p style={{ margin: '4px 0 8px 43px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
-                Al lead tocado que NO responde: correos y WhatsApps por pasos, en horario laboral (10-18 CDMX,
-                L-V). Se detiene SOLA en cuanto responde, agenda, pide tiempo o se descarta.
-              </p>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888' }}>Corte a los</span>
-                <input type="number" min={1} max={60} value={cad.cadencia_corte_dias || 14}
-                  onChange={e => setCad({ ...cad, cadencia_corte_dias: Number(e.target.value) })}
-                  style={{ ...inp, width: 64 }} />
-                <span style={{ fontSize: '0.7rem', color: '#888' }}>días (después → Rezagados)</span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', marginLeft: 10 }}>Horario</span>
-                <input type="number" min={0} max={23} value={cad.cadencia_hora_inicio ?? 10}
-                  onChange={e => setCad({ ...cad, cadencia_hora_inicio: Number(e.target.value) })} style={{ ...inp, width: 56 }} />
-                <span style={{ fontSize: '0.7rem', color: '#888' }}>a</span>
-                <input type="number" min={1} max={24} value={cad.cadencia_hora_fin ?? 18}
-                  onChange={e => setCad({ ...cad, cadencia_hora_fin: Number(e.target.value) })} style={{ ...inp, width: 56 }} />
-                <span style={{ fontSize: '0.7rem', color: '#888' }}>h CDMX (L-V)</span>
-              </div>
-              {cadPasos.map((p2, i) => (
-                <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.68rem', color: '#999' }}>Día</span>
-                  <input type="number" min={1} value={p2.dia} onChange={e => setCadPasos(cadPasos.map((x, j) => j === i ? { ...x, dia: Number(e.target.value) } : x))} style={{ ...inp, width: 54 }} />
-                  <select value={p2.canal} onChange={e => setCadPasos(cadPasos.map((x, j) => j === i ? { ...x, canal: e.target.value } : x))} style={{ ...inp, width: 92 }}>
-                    <option value="correo">Correo</option><option value="wa">WhatsApp</option>
-                  </select>
-                  {p2.canal === 'correo' ? (
-                    <select value={p2.email_template_id || ''} onChange={e => setCadPasos(cadPasos.map((x, j) => j === i ? { ...x, email_template_id: e.target.value } : x))} style={{ ...inp, flex: 1, minWidth: 160 }}>
-                      <option value="">— plantilla de correo —</option>
-                      {plantillasEmail.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
-                    </select>
-                  ) : (
-                    <select value={p2.wa_plantilla || ''} onChange={e => setCadPasos(cadPasos.map((x, j) => j === i ? { ...x, wa_plantilla: e.target.value } : x))} style={{ ...inp, flex: 1, minWidth: 160 }}>
-                      <option value="">— plantilla UTILITY —</option>
-                      {plantillasUtil.map((x: any) => <option key={x.name || x.nombre} value={x.name || x.nombre}>{x.name || x.nombre}</option>)}
-                    </select>
-                  )}
-                  <button onClick={() => setCadPasos(cadPasos.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-                <button onClick={() => setCadPasos([...cadPasos, { dia: (cadPasos[cadPasos.length - 1]?.dia || 0) + 1, canal: 'correo', activo: true }])}
-                  style={{ border: '1px solid #ddd', background: '#fff', borderRadius: 8, padding: '5px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Agregar paso</button>
-                <button onClick={guardarCadencia} style={{ border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 8, padding: '6px 14px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar cadencia</button>
-                {cadMsg && <span style={{ fontSize: '0.72rem', fontWeight: 700, color: cadMsg.includes('✓') ? '#1E8A63' : '#C0554E' }}>{cadMsg}</span>}
-              </div>
-            </div>
-          )}
-
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 18, border: '1px solid #e4dffb', borderRadius: 10, padding: '12px 14px', background: '#fdfcff' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6' }}>Secuencias de seguimiento</div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
+              La cadencia creció y ahora vive en su propia sección: <b>Automatización ▸ Secuencias</b>.
+              Ahí se crean secuencias que mezclan WhatsApp y correo, se ven sus reglas de salida y se mide cada una.
+            </p>
+          </div>
             <Toggle on={!!a.fuera_activa} onChange={v => setA({ ...a, fuera_activa: v })} label="Respuesta fuera de horario" />
             {a.fuera_activa && (<>
               <textarea style={{ ...inp, marginTop: 8, resize: 'vertical' }} rows={2} value={a.fuera_texto || ''}
@@ -338,20 +278,6 @@ function AjustesInactividad() {
   const [min, setMin] = useState(60);
   const [msg, setMsg] = useState('');
   const [ocupado, setOcupado] = useState(false);
-  // ── Cadencia de seguimiento: config + pasos editables ──
-  const [cad, setCad] = useState<any>(null);
-  const [cadPasos, setCadPasos] = useState<any[]>([]);
-  const [cadMsg, setCadMsg] = useState('');
-  useEffect(() => {
-    fetch('/api/crm/leads/cadencia').then(r => r.json()).then(j => { setCad(j.config || {}); setCadPasos(j.pasos || []); }).catch(() => {});
-  }, []);
-  const guardarCadencia = async () => {
-    setCadMsg('');
-    const r = await fetch('/api/crm/leads/cadencia', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, cadencia_hora_inicio: cad?.cadencia_hora_inicio ?? 10, cadencia_hora_fin: cad?.cadencia_hora_fin ?? 18, pasos: cadPasos }) })
-      .then(x => x.json()).catch(e => ({ error: String(e) }));
-    setCadMsg(r?.error ? r.error : 'Cadencia guardada ✓'); setTimeout(() => setCadMsg(''), 2500);
-  };
 
   const guardar = async () => {
     setOcupado(true); setMsg('');

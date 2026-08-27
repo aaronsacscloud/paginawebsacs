@@ -1,0 +1,178 @@
+// SECUENCIAS · La sección que reemplaza al modal de "cadencia": aquí se crean
+// secuencias multi-canal (WhatsApp + correo EN UNA SOLA), se definen sus
+// reglas y se mide su rendimiento. Las reglas de SALIDA son del sistema y se
+// enseñan siempre — es lo que hace confiable prender una secuencia.
+import { useEffect, useState } from 'react';
+import type React from 'react';
+import Cargando from './ui/Cargando';
+import { P, tarjetaKpi } from '../../../lib/crm/paleta';
+
+const inp: React.CSSProperties = { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '8px 11px', fontSize: '0.8rem', fontFamily: 'inherit', background: '#fdfcff', outline: 'none', boxSizing: 'border-box' };
+const lbl: React.CSSProperties = { display: 'block', fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em', margin: '12px 0 4px' };
+const btnP: React.CSSProperties = { border: 'none', background: P.morado, color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
+const btnG: React.CSSProperties = { border: '1px solid #ddd', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#444' };
+
+const MOTIVO_L: Record<string, [string, string]> = {
+  respondio: ['Respondieron', P.moradoTinta], agendo: ['Agendaron', P.verdeTinta],
+  convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
+  corte: ['Llegaron al corte', '#888'], optout: ['Baja de WhatsApp', P.rojoTinta], archivado: ['Archivados', '#888'],
+};
+
+export default function SecuenciasTab() {
+  const [lista, setLista] = useState<any[] | null>(null);
+  const [edit, setEdit] = useState<any>(null);
+  const [plantillasEmail, setPlantillasEmail] = useState<any[]>([]);
+  const [plantillasWa, setPlantillasWa] = useState<any[]>([]);
+  const [msg, setMsg] = useState('');
+  const cargar = () => fetch('/api/crm/secuencias').then(r => r.json()).then(j => setLista(j.secuencias || [])).catch(() => setLista([]));
+  useEffect(() => {
+    cargar();
+    fetch('/api/crm/email/templates').then(r => r.json()).then(j => setPlantillasEmail(j.plantillas || [])).catch(() => {});
+    fetch('/api/crm/whatsapp/plantillas').then(r => r.json()).then(j => {
+      const t = j.plantillas || [];
+      setPlantillasWa(t.filter((x: any) => (x.status || x.estado) === 'APPROVED'));
+    }).catch(() => {});
+  }, []);
+
+  const guardar = async () => {
+    setMsg('');
+    const r = await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    if (r?.error) { setMsg(r.error); return; }
+    setEdit(null); cargar();
+  };
+
+  if (lista === null) return <Cargando texto="Cargando secuencias…" />;
+
+  if (edit) {
+    const pasos: any[] = edit.pasos || [];
+    return (
+      <div style={{ maxWidth: 860 }}>
+        <button style={btnG} onClick={() => setEdit(null)}>← Secuencias</button>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '14px 0 2px' }}>{edit.id ? 'Editar secuencia' : 'Nueva secuencia'}</h2>
+
+        <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
+          <span style={lbl}>Nombre</span>
+          <input style={{ ...inp, width: '100%' }} value={edit.nombre || ''} onChange={e => setEdit({ ...edit, nombre: e.target.value })} placeholder="Seguimiento a leads sin respuesta" />
+          <span style={lbl}>Qué busca esta secuencia</span>
+          <input style={{ ...inp, width: '100%' }} value={edit.descripcion || ''} onChange={e => setEdit({ ...edit, descripcion: e.target.value })} placeholder="Construir confianza y agendar la sesión consultiva" />
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
+            <div><span style={lbl}>Corte (días)</span>
+              <input type="number" min={1} max={60} style={{ ...inp, width: 80 }} value={edit.corte_dias ?? 14} onChange={e => setEdit({ ...edit, corte_dias: Number(e.target.value) })} /></div>
+            <div><span style={lbl}>Horario CDMX (L-V)</span>
+              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <input type="number" min={0} max={23} style={{ ...inp, width: 64 }} value={edit.hora_inicio ?? 10} onChange={e => setEdit({ ...edit, hora_inicio: Number(e.target.value) })} />
+                <span style={{ fontSize: '0.75rem', color: '#888' }}>a</span>
+                <input type="number" min={1} max={24} style={{ ...inp, width: 64 }} value={edit.hora_fin ?? 18} onChange={e => setEdit({ ...edit, hora_fin: Number(e.target.value) })} />
+              </span></div>
+          </div>
+        </div>
+
+        {/* Las reglas: quién entra, quién sale. Fijas y a la vista. */}
+        <div style={{ background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Las reglas (las aplica el sistema, siempre)</div>
+          <div style={{ fontSize: '0.78rem', color: '#4a4a52', lineHeight: 1.7 }}>
+            <b>Entra:</b> el lead tocado que NO responde (estatus «Contactado» o «No contesta») y que llegó dentro del corte — los viejos no reciben ráfagas.<br />
+            <b>Sale al instante cuando:</b> responde por cualquier canal · agenda una reunión · se convierte en cliente · se descarta («no le interesa») · se da de baja de WhatsApp · se cumple el corte de {edit.corte_dias ?? 14} días.<br />
+            <b>Pausa («pidió tiempo»):</b> suspende los envíos, NO lo saca — al vencer la pausa, continúa donde iba.
+          </div>
+        </div>
+
+        <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Los pasos (WhatsApp y correo, una sola secuencia)</div>
+          {pasos.map((p, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.7rem', color: '#999' }}>Día</span>
+              <input type="number" min={1} value={p.dia} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, dia: Number(e.target.value) } : x) })} style={{ ...inp, width: 58 }} />
+              <select value={p.canal} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, canal: e.target.value } : x) })} style={{ ...inp, width: 104 }}>
+                <option value="correo">✉️ Correo</option><option value="wa">📲 WhatsApp</option>
+              </select>
+              {p.canal === 'correo' ? (
+                <select value={p.email_template_id || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
+                  <option value="">— plantilla de correo —</option>
+                  {plantillasEmail.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+                </select>
+              ) : (
+                <select value={p.wa_plantilla || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, wa_plantilla: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
+                  <option value="">— plantilla de WhatsApp —</option>
+                  {plantillasWa.map((x: any) => <option key={x.name || x.nombre} value={x.name || x.nombre}>{x.name || x.nombre}</option>)}
+                </select>
+              )}
+              <button onClick={() => setEdit({ ...edit, pasos: pasos.filter((_, j) => j !== i) })} style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+            </div>
+          ))}
+          <button style={{ ...btnG, marginTop: 4 }} onClick={() => setEdit({ ...edit, pasos: [...pasos, { dia: (pasos[pasos.length - 1]?.dia || 0) + 1, canal: 'correo', activo: true }] })}>+ Agregar paso</button>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 8 }}>Los correos se editan por bloques en Email ▸ Plantillas; los WhatsApps son plantillas aprobadas por Meta. Máximo un correo y un WhatsApp por corrida por lead.</p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'center' }}>
+          <button style={btnP} onClick={guardar}>Guardar secuencia</button>
+          <label style={{ display: 'inline-flex', gap: 7, alignItems: 'center', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!edit.activa} onChange={e => setEdit({ ...edit, activa: e.target.checked })} /> Activa
+          </label>
+          {msg && <span style={{ fontSize: '0.75rem', color: P.rojoTinta, fontWeight: 700 }}>{msg}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 980 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, letterSpacing: '-.015em' }}>Secuencias</h1>
+        <button style={{ ...btnP, marginLeft: 'auto' }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
+      </div>
+      <p style={{ fontSize: '0.8rem', color: '#888', margin: '0 0 16px' }}>
+        WhatsApp y correo en un solo flujo: el lead entra por reglas, recibe los pasos en orden y sale SOLO en cuanto responde, agenda o se descarta — y aquí se mide qué tan bien funciona.
+      </p>
+      {lista.length === 0 && <div style={{ color: '#a5a2af', fontSize: '0.85rem' }}>Sin secuencias todavía — crea la primera.</div>}
+      {lista.map(s => {
+        const m = s.metricas || {};
+        const salidas = m.salidas || {};
+        return (
+          <div key={s.id} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${s.activa ? P.verde : '#d8d6e4'}`, borderRadius: 12, padding: '15px 17px', marginBottom: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+              <b style={{ fontSize: '0.95rem' }}>{s.nombre}</b>
+              <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f1f1f4', color: s.activa ? P.verdeTinta : '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
+              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h</span>
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                <button style={btnG} onClick={() => setEdit({ ...s })}>Editar</button>
+                <button style={{ ...btnG, color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
+                  onClick={async () => { await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, activa: !s.activa }) }); cargar(); }}>
+                  {s.activa ? 'Apagar' : 'Prender'}
+                </button>
+              </span>
+            </div>
+            {s.descripcion && <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4 }}>{s.descripcion}</div>}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+              <div style={{ ...tarjetaKpi(P.morado), minWidth: 120, flex: 1 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>En secuencia</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.moradoTinta }}>{m.en_secuencia ?? 0}</div>
+              </div>
+              <div style={{ ...tarjetaKpi(P.azul), minWidth: 120, flex: 1 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Entraron</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.azulTinta }}>{m.entraron ?? 0}</div>
+              </div>
+              <div style={{ ...tarjetaKpi(P.azul), minWidth: 140, flex: 1 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Envíos</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>✉️ {m.correos ?? 0} · 📲 {m.whatsapps ?? 0}</div>
+              </div>
+              <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Resultados (salidas)</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, marginTop: 3, display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                  {Object.keys(salidas).length === 0 && <span style={{ color: '#c4c4cc' }}>aún sin salidas</span>}
+                  {Object.entries(salidas).map(([k, v]: any) => {
+                    const [l, col] = MOTIVO_L[k] || [k, '#888'];
+                    return <span key={k} style={{ color: col }}>{l}: {v}</span>;
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <p style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 6 }}>
+        Reglas de salida (todas las secuencias): responde · agenda · se hace cliente · se descarta · baja de WhatsApp · corte de días. La pausa «pidió tiempo» solo suspende. Todo queda firmado en la actividad de cada lead.
+      </p>
+    </div>
+  );
+}
