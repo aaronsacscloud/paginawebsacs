@@ -32,12 +32,23 @@ export function conMicroCache(clave: string, ttlMs: number, handler: (ctx: any) 
   return async (ctx: any) => {
     try {
       const k = clave + '|' + (new URL(ctx.request.url).search || '');
-      const texto = await microCache(k, ttlMs, async () => {
-        const r = await handler(ctx);
-        if (r.status !== 200) throw new Error('no-cacheable');
-        return await r.text();
-      });
+      // Timeout defensivo: si el backend se atora (visto en prod: cuelgues de
+      // ~60 s intermitentes de infra), respondemos 504 rápido y NO cacheamos —
+      // el cliente SWR muestra su caché y reintenta después.
+      const texto = await Promise.race([
+        microCache(k, ttlMs, async () => {
+          const r = await handler(ctx);
+          if (r.status !== 200) throw new Error('no-cacheable');
+          return await r.text();
+        }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout-9s')), 9000)),
+      ]);
       return new Response(texto, { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
-    } catch { return handler(ctx); }
+    } catch (err: any) {
+      if (String(err?.message) === 'timeout-9s') {
+        return new Response(JSON.stringify({ error: 'El servidor tardó demasiado. Intenta de nuevo.' }), { status: 504, headers: { 'Content-Type': 'application/json' } });
+      }
+      return handler(ctx);
+    }
   };
 }

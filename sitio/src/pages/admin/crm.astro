@@ -31,6 +31,34 @@ if (gate) return gate;
   mk('link', { rel: 'apple-touch-icon', href: '/crm-icon-192.png' });
 })();
 </script>
+<script is:inline>
+// ══ REGLA DE VELOCIDAD: PRIME de datos. Mientras baja el bundle, las APIs
+// del tab activo ya viajan en paralelo y aterrizan en la MISMA clave que usa
+// swrGet — al hidratar, la pantalla pinta con datos sin esperar otra vuelta.
+(() => {
+  const tab = new URLSearchParams(location.search).get('tab') || 'dashboard';
+  const hoy = new Date(); const y = hoy.getFullYear(), m = hoy.getMonth();
+  const d1 = new Date(y, m, 1).toISOString().slice(0, 10);
+  const d2 = new Date(y, m + 1, 0).toISOString().slice(0, 10);
+  const h = hoy.toISOString().slice(0, 10);
+  const APIS = {
+    dashboard: [`/api/crm/reports/tablero?desde=${d1}&hasta=${d2}`, '/api/crm/cobranza', '/api/crm/soporte/dashboard?dias=14', `/api/scheduling/reuniones?from=${h}&to=${h}`],
+    pipeline: ['/api/crm/contacts?limit=500&con_etapa=1'],
+    clientes: ['/api/crm/arr/clientes'],
+    cotizaciones: ['/api/revenue/quotes/kpis'],
+    pagos: ['/api/crm/arr/summary'],
+    soporte: ['/api/crm/soporte/bandeja'],
+  };
+  for (const u of APIS[tab] || []) {
+    try {
+      if (sessionStorage.getItem('swr:' + u)) continue; // ya hay caché: no gastar
+      fetch(u).then(r => r.ok ? r.json() : null).then(j => {
+        if (j != null) try { sessionStorage.setItem('swr:' + u, JSON.stringify(j)); } catch (e) {}
+      }).catch(() => {});
+    } catch (e) { /* nada */ }
+  }
+})();
+</script>
 <CrmDashboard client:only="react" />
 </BaseLayout>
 
