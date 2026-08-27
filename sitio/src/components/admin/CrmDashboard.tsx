@@ -1180,6 +1180,9 @@ const CRM_MOBILE_CSS = `
         --m-dinero: #34D399; --m-rojo: #F0857A; --m-ambar: #E8B04B;
       }
       [data-crm-dark="1"] body, [data-crm-dark="1"] [style*="Plus Jakarta"], [data-crm-dark="1"] [style*="transition: margin-left"] { background: #131318 !important; }
+      /* Lienzos de pantalla con #fff inline: en dark toman el fondo del tema
+         (era la mitad blanca con texto claro ilegible que reportó el usuario) */
+      [data-crm-dark="1"] .m-lienzo { background: #131318 !important; }
       [data-crm-dark="1"] .m-row { background: transparent; }
       [data-crm-dark="1"] .m-row:active { background: #1d1d24; }
       [data-crm-dark="1"] .m-row .m-n1, [data-crm-dark="1"] .m-row .m-m1 { color: var(--m-ink); }
@@ -1197,7 +1200,10 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
       [data-crm-dark="1"] [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
       [data-crm-dark="1"] [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
-      [data-crm-dark="1"] [style*="background: rgb(244, 243, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+      [data-crm-dark="1"] [style*="background: rgb(244, 243, 246)"], [data-crm-dark="1"] [style*="background: rgb(243, 244, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+      /* Texto tinta-clara y hairlines claros inline → al tema */
+      [data-crm-dark="1"] [style*="color: rgb(26, 26, 26)"], [data-crm-dark="1"] [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] [style*="solid rgb(239, 238, 242)"] { border-color: #26262e !important; }
     }
 
     /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.

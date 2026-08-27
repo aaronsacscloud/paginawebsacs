@@ -56,7 +56,7 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   const fecha = _f.toLocaleDateString('es-MX', { weekday: 'long' }) + ' ' + _f.getDate() + ' de ' + _f.toLocaleDateString('es-MX', { month: 'long' });
 
   return (
-    <div style={{ background: '#fff', minHeight: '60vh' }}>
+    <div className="m-lienzo" style={{ background: '#fff', minHeight: '60vh' }}>
       {/* saludo + avatar (referencia: misma fila, avatar 44px a la derecha) */}
       <div className="m-hdr" style={{ alignItems: 'center' }}>
         <div>

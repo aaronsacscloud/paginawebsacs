@@ -731,7 +731,7 @@ export default function SoporteTab() {
       );
     };
     return (
-      <div style={{ background: '#fff', minHeight: '60dvh' }}>
+      <div className="m-lienzo" style={{ background: '#fff', minHeight: '60dvh' }}>
         <div>
           <div className="m-hdr">
             <div className="m-tt">Soporte</div>
