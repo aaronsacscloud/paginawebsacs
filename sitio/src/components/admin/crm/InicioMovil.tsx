@@ -59,14 +59,19 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
 
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
-  const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  // Sin coma, como la referencia: "jueves 27 de agosto".
+  const _f = new Date();
+  const fecha = _f.toLocaleDateString('es-MX', { weekday: 'long' }) + ' ' + _f.getDate() + ' de ' + _f.toLocaleDateString('es-MX', { month: 'long' });
 
   return (
     <div style={{ background: '#fff', minHeight: '60vh' }}>
-      {/* saludo */}
-      <div className="m-hdr" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 2 }}>
-        <div style={{ fontSize: '0.8rem', color: '#8f8d98' }}>{fecha}</div>
-        <div className="m-tt">{saludo}</div>
+      {/* saludo + avatar (referencia: misma fila, avatar 44px a la derecha) */}
+      <div className="m-hdr" style={{ alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: '0.8rem', color: '#8f8d98' }}>{fecha}</div>
+          <div className="m-tt">{saludo}</div>
+        </div>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '1.02rem' }}>A</div>
       </div>
 
       {/* héroe: lo cobrado del mes */}
@@ -74,7 +79,7 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
         <div className="m-hl">Cobrado del mes</div>
         {cargando && cobrado == null
           ? <div className="m-skel" style={{ width: 170, height: 38, margin: '4px 0' }} />
-          : <div className="m-hv" style={{ color: '#5B4BD6' }}>{money(cobrado || 0)}</div>}
+          : <div className="m-hv">{money(cobrado || 0)}</div>}
         {meta > 0 && cobrado != null && (
           <div className="m-hd">ARR {money(meta)}</div>
         )}
@@ -84,11 +89,11 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       <div className="m-sec">Hoy <span className="m-vt" onClick={() => onIrA('reuniones')}>Agenda ›</span></div>
       {cargando && !reuniones.length && <div className="m-skel" style={{ height: 52, margin: '4px 20px' }} />}
       {!cargando && reuniones.length === 0 && (
-        <div style={{ padding: '10px 20px 4px', fontSize: '0.86rem', color: '#8f8d98' }}>Sin reuniones hoy.</div>
+        <div style={{ padding: '12px 24px 22px', fontSize: '0.94rem', color: '#9CA3AF', borderBottom: '1px solid #efeef2' }}>Sin reuniones hoy.</div>
       )}
       {reuniones.map((r: any, i: number) => (
         <div key={r.id || i} className="m-row" onClick={() => onIrA('reuniones')}>
-          <div style={{ flex: 'none', width: 46, fontWeight: 600, fontSize: '0.84rem', color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ flex: 'none', width: 56, fontWeight: 600, fontSize: '0.9rem', color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
             {(r.hora_inicio || '').slice(0, 5) || '—'}
           </div>
           <div className="m-tx">
@@ -106,7 +111,7 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
             <div className="m-n1">{tickets} ticket{tickets > 1 ? 's' : ''} de soporte abierto{tickets > 1 ? 's' : ''}</div>
             <div className="m-n2">esperando respuesta</div>
           </div>
-          <div className="m-fin"><div className="m-m2">›</div></div>
+          <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
         </div>
       )}
       {venc && (

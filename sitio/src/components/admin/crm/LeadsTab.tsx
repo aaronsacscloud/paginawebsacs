@@ -196,7 +196,8 @@ export default function LeadsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
-  const [etapa, setEtapa] = useState('nuevos');
+  const [etapa, setEtapa] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 899px)').matches ? 'todos' : 'nuevos');
   const [origen, setOrigen] = useState('todo');
   // Cuándo llegó. 'todo' | 'hoy' | 'ayer' | '7' | '30' | 'YYYY-MM' | 'rango'
   const [cuando, setCuando] = useState('todo');
@@ -231,6 +232,8 @@ export default function LeadsTab() {
   const [menu, setMenu] = useState<{ c: any; x: number; y: number } | null>(null);
   const [verContacto, setVerContacto] = useState<string | null>(null);
   const esMovil = useIsMobile();
+  // Móvil: la búsqueda vive tras el icono de la cabecera (la referencia no lleva campo fijo).
+  const [buscaMovil, setBuscaMovil] = useState(false);
   const [borrando, setBorrando] = useState<any>(null);
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
@@ -405,6 +408,41 @@ export default function LeadsTab() {
         .lead-tabla { width:100%; border-collapse:collapse; }
       `}</style>
 
+      {/* ══ Cabecera MÓVIL v5 (mockup Leads): título + ＋Nuevo, héroe con el
+          conteo de la vista, chips de etapa (solo la activa con número). El
+          toolbar de escritorio —segmentado de vistas, ⋮, vistas guardadas,
+          orden— no existe en el teléfono: la referencia manda. ══ */}
+      {esMovil && (
+        <div className="m-bleed">
+          <div className="m-hdr">
+            <div className="m-tt">Leads</div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button aria-label="Buscar" onClick={() => setBuscaMovil(v => { if (v) setBusca(''); return !v; })}
+                style={{ background: 'none', border: 'none', width: 44, height: 44, padding: 0, cursor: 'pointer', color: buscaMovil ? '#5B4BD6' : '#1A1A1E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              </button>
+              <button className="m-cta" onClick={() => setNuevo(true)}>＋ Nuevo</button>
+            </div>
+          </div>
+          <div className="m-hero">
+            <div className="m-hl">{etapa === 'todos' ? 'Todos los leads' : (VISTAS.find(v => v.v === etapa) || VISTAS[0]).l}</div>
+            <div className="m-hv">{conteos[etapa] ?? lista.length}</div>
+            <div className="m-hd">{etapa === 'todos' ? `${conteos.nuevos ?? 0} nuevos sin atender` : `${conteos.todos ?? 0} en total`}</div>
+          </div>
+          <div className="m-chips">
+            {[VISTAS[VISTAS.length - 1], ...VISTAS.slice(0, -1)].map(v => {
+              const on = etapa === v.v;
+              const chipL = v.v === 'nuevos' ? 'Nuevos' : v.l;
+              return (
+                <button key={v.v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setEtapa(v.v)}>
+                  {chipL}{on ? ' ' + (conteos[v.v] ?? 0) : ''}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {!esMovil && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.015em' }}>Leads</h1>
@@ -466,6 +504,7 @@ export default function LeadsTab() {
           <button style={S.btnP} onClick={() => setNuevo(true)}>+ Nuevo lead</button>
         </div>
       </div>
+      )}
 
       {vista === 'midia' && (() => {
         // La bandeja del vendedor: junta lo ACCIONABLE de las 7 pestañas en
@@ -622,11 +661,11 @@ export default function LeadsTab() {
         )}
       </>) : (<>
 
-        <div style={S.card}>
+        <div className={esMovil ? 'm-bleed' : undefined} style={esMovil ? { background: 'transparent' } : S.card}>
           {/* Las etapas son PESTAÑAS con contador, como las vistas de
               Cotizaciones: cuántos hay en cada una se ve de golpe y se cambia
               con un clic, no abriendo un desplegable. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
+          {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
             {VISTAS.map(v => {
               const on = etapa === v.v;
               const n = conteos[v.v] ?? 0;
@@ -647,9 +686,9 @@ export default function LeadsTab() {
                 </button>
               );
             })}
-          </div>
+          </div>}
 
-          {etapa === 'contactados' && (() => {
+          {!esMovil && etapa === 'contactados' && (() => {
             // Contactados mezcla temperaturas MUY distintas: este strip las
             // separa de un vistazo y cada contador filtra al click. "Pausa
             // vencida" es lista-hueco: se vacía cuando les marcas.
@@ -719,7 +758,7 @@ export default function LeadsTab() {
             );
           })()}
 
-          {FILTRO_TAB[etapa] && (
+          {!esMovil && FILTRO_TAB[etapa] && (
             <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
               <span style={{ fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: '0.6rem', color: '#b3b1bb' }}>Filtro de esta pestaña · </span>
               {FILTRO_TAB[etapa]}
@@ -729,14 +768,18 @@ export default function LeadsTab() {
           {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
               creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
               Lo aplicado se ve en pastillas que se quitan con la ✕. */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: 420 }}>
+          <div style={esMovil
+            ? { display: buscaMovil ? 'flex' : 'none', alignItems: 'center', margin: '4px 24px 12px' }
+            : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: esMovil ? 'none' : 420 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar nombre, empresa o correo…"
-                style={{ width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
+              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={esMovil ? 'Buscar' : 'Buscar nombre, empresa o correo…'}
+                style={esMovil
+                  ? { width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 36px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }
+                  : { width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
             </div>
 
-            {vistasLeads.length > 0 && (
+            {!esMovil && vistasLeads.length > 0 && (
               <select value={vistaId} onChange={e => {
                 const v = vistasLeads.find(x => x.id === e.target.value);
                 setVistaId(e.target.value);
@@ -747,7 +790,7 @@ export default function LeadsTab() {
                 {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
               </select>
             )}
-            <div style={{ position: 'relative' }}>
+            {!esMovil && <div style={{ position: 'relative' }}>
               <button onClick={() => setPanelFiltros(!panelFiltros)} style={{
                 height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: '0.78rem', fontWeight: 700, padding: '0 14px',
@@ -877,7 +920,7 @@ export default function LeadsTab() {
                   </div>
                 </>
               )}
-            </div>
+            </div>}
 
             {chips.map(ch => (
               <span key={ch.k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, borderRadius: 20, padding: '0 6px 0 11px', fontSize: '0.72rem', fontWeight: 700, background: '#EEF1FE', color: '#2C5FC4', border: '1px solid #d8e2fb' }}>
@@ -887,7 +930,7 @@ export default function LeadsTab() {
               </span>
             ))}
 
-            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+            {!esMovil && <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
               {/* El conteo en pastilla (cuántos hay en ESTA vista) y el orden
                   con su etiqueta: antes "7 leads" flotaba suelto junto al
                   select y no se entendía qué era ni de qué hablaba. */}
@@ -902,7 +945,7 @@ export default function LeadsTab() {
                   <option value="frio">Más fríos primero</option>
                 </select>
               </label>
-            </span>
+            </span>}
           </div>
 
           {/* ══ M2 · Lista móvil (presupuesto v5) ══
@@ -914,32 +957,56 @@ export default function LeadsTab() {
           {esMovil ? (
             <div>
               {lista.length === 0 && (
-                <div style={{ padding: '28px 20px', color: '#8f8d98', fontSize: '0.86rem' }}>Nada con estos filtros.</div>
+                <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Nada con estos filtros.</div>
               )}
-              {lista.map((c: any) => {
+              {(() => {
+                // Como la referencia: lo atorado (≥3 días sin atender) arriba con su
+                // sección, lo demás abajo. Sin atorados no hay cabeceras: estado sano
+                // en silencio. Solo aplica en pestañas "vivas" (nuevos/contactados…).
+                const dias = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
+                const agrupa = !['no_interesados', 'todos', 'rezagados'].includes(etapa);
+                const atorados = (agrupa ? lista.filter((c: any) => dias(c) >= 3) : []).sort((a: any, b: any) => dias(b) - dias(a));
+                const alDia = agrupa ? lista.filter((c: any) => dias(c) < 3) : lista;
+                const conSec = atorados.length > 0 && alDia.length > 0;
+                const fila = (c: any) => {
                 const o = origenDe(origenDeRegistro(c));
                 const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
                 const pr = prueba(c);
                 const excep = (c.historial && HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA])
                   || (pr && pr.restan != null && pr.restan <= 0 ? { label: pr.restan < 0 ? 'prueba vencida' : 'prueba termina hoy', bg: '#FFF4E5', fg: '#9a6a10' } : null);
                 const esHoy = fechaCorta(c.created_at) === 'hoy';
+                // Solo presentación: 'AILYN PROAÑO' rompe el ritmo de la lista.
+                const cased = (t: string) => t.replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+                const d = dias(c);
+                const atorado = agrupa && d >= 3;
                 return (
                   <div key={c.id} className="m-row" onClick={() => setVerContacto(c.id)}>
                     <div className="m-tx">
-                      <div className="m-n1">{[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}</div>
+                      <div className="m-n1">{cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || 'Sin nombre'}</div>
                       <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
                     </div>
                     <div className="m-fin">
-                      <div className="m-m1" style={esHoy ? { color: '#1E8A63' } : undefined}>{c.created_at ? fechaCorta(c.created_at) : '—'}</div>
+                      <div className="m-m1" style={esHoy ? { color: '#1E8A63' } : { fontWeight: 500, color: '#6B7280' }}>{c.created_at ? fechaCorta(c.created_at) : '—'}</div>
                       {excep
                         ? <div className="m-m2" style={{ color: (excep as any).fg }}>{(excep as any).label}</div>
+                        : atorado
+                        ? <div className="m-m2" style={{ color: '#C0554E' }}>{d} días sin tocar</div>
                         : (c.lifecycle_stage && c.lifecycle_stage !== 'lead'
                           ? <div className="m-m2" style={{ color: et.fg }}>{et.l}</div>
                           : null)}
                     </div>
                   </div>
                 );
-              })}
+                };
+                return (
+                  <>
+                    {conSec && <div className="m-sec">Atorados</div>}
+                    {atorados.map(fila)}
+                    {conSec && <div className="m-sec">Recientes</div>}
+                    {alDia.map(fila)}
+                  </>
+                );
+              })()}
             </div>
           ) : (
           <div style={{ overflowX: 'auto' }}>

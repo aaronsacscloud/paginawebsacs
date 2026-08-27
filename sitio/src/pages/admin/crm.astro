@@ -41,7 +41,10 @@ if (gate) return gate;
    la página, incluido el de la ficha del contacto —que quedaba de 0×0 con su
    nombre y su botón de cerrar adentro—: se entraba a un contacto y no había
    forma de regresar sin salirse del CRM. */
-nav, .nav, footer, .wa-bar, .final-cta {
+/* ⚠️ Sin `nav` a secas: la MISMA trampa que ya pasó con `header` — tumbaba el
+   BottomNav del CRM (que es <nav>) y el CRM móvil quedaba sin barra inferior.
+   El nav del sitio es <header class="nav"> y `.nav` lo cubre. */
+.nav, footer, .wa-bar, .final-cta, #partner-strip, .mega-dropdown, .mega-backdrop, #mobile-menu {
   display: none !important;
 }
 main { padding: 0 !important; margin: 0 !important; }

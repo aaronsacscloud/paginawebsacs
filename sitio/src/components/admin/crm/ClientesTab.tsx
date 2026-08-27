@@ -191,6 +191,10 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
   const isMobile = useIsMobile();
+  // ══ Pantalla móvil v5 (mockup Clientes): búsqueda fija + chips + filas ══
+  const [buscaM, setBuscaM] = useState('');
+  const [chipCl, setChipCl] = useState<'activos' | 'riesgo'>('activos');
+  const [mrrAsc, setMrrAsc] = useState(false);
   const { toast, show } = useToast();
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
 
@@ -681,6 +685,89 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
       `}</style>
 
+      {/* ══ Pantalla MÓVIL v5 (mockup Clientes): cabecera + búsqueda fija +
+          chips (Activos / Riesgo / MRR orden) + filas avatar·nombre·plan·MRR
+          con la excepción en color (vencida en rojo, salud baja en ámbar).
+          El chrome de escritorio —KPIs, exclientes, TablaEnterprise— no
+          existe en el teléfono: la referencia manda. ══ */}
+      {isMobile && (() => {
+        const hoyIso = new Date().toISOString().slice(0, 10);
+        const enRiesgo = (c: any) => (c.proxima_factura && c.proxima_factura < hoyIso)
+          || (c.health_score != null && Number(c.health_score) < 60)
+          || c.senal_nivel === 'riesgo';
+        const t = buscaM.trim().toLowerCase();
+        let listaM = clientes.filter((c: any) => !t
+          || [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email]
+            .filter(Boolean).join(' ').toLowerCase().includes(t));
+        const nActivos = listaM.length;
+        const nRiesgo = listaM.filter(enRiesgo).length;
+        if (chipCl === 'riesgo') listaM = listaM.filter(enRiesgo);
+        listaM = [...listaM].sort((a: any, b: any) => (mrrAsc ? 1 : -1) * (Number(a.arr || 0) - Number(b.arr || 0)));
+        const iniciales = (n: string) => {
+          const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
+          const ws = String(n || '').split(/\s+/).filter(w => w && !stop.includes(w.toLowerCase()));
+          return (ws.length >= 2 ? ws[0][0] + ws[1][0] : String(n || '??').slice(0, 2)).toUpperCase();
+        };
+        return (
+          <div className="m-bleed">
+            <div className="m-hdr">
+              <div className="m-tt">Clientes</div>
+              <button className="m-cta" onClick={() => setShowNuevo(true)}>＋ Nuevo</button>
+            </div>
+            <div style={{ margin: '4px 24px 12px', position: 'relative' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a98a4" strokeWidth="2" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input value={buscaM} onChange={e => setBuscaM(e.target.value)} placeholder="Nombre, cuenta o contacto"
+                style={{ width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 38px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }} />
+            </div>
+            <div className="m-chips">
+              <button className={'m-chip' + (chipCl === 'activos' ? ' on' : '')} onClick={() => setChipCl('activos')}>
+                Activos{chipCl === 'activos' ? ' ' + nActivos : ''}
+              </button>
+              <button className={'m-chip' + (chipCl === 'riesgo' ? ' on' : '')} onClick={() => setChipCl('riesgo')}>
+                Riesgo{chipCl === 'riesgo' ? ' ' + nRiesgo : ''}
+              </button>
+              <button className="m-chip" onClick={() => setMrrAsc(v => !v)}>
+                MRR {mrrAsc ? '↑' : '↓'}
+              </button>
+            </div>
+            <div>
+              {listaM.length === 0 && (
+                <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
+                  {chipCl === 'riesgo' ? 'Nadie en riesgo. Todo al corriente.' : 'Nada con esa búsqueda.'}
+                </div>
+              )}
+              {listaM.map((c: any) => {
+                // Solo presentación (lección de Leads): "Super carnes rivera" rompe el ritmo.
+                const crudo = c.nombre_comercial || c.sacs_account || c.nombre || 'Sin nombre';
+                const nombre = crudo.replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+                const planL = c.plan && PLAN_BADGE[c.plan] ? 'Plan ' + PLAN_BADGE[c.plan].label : (c.cuentas?.[0] || c.sacs_account || '—');
+                const vDias = c.proxima_factura && c.proxima_factura < hoyIso
+                  ? Math.max(1, Math.floor((Date.parse(hoyIso) - Date.parse(String(c.proxima_factura).slice(0, 10))) / 86400000)) : 0;
+                const salud = c.health_score == null ? null : Number(c.health_score);
+                return (
+                  <div key={c.id} className="m-row" onClick={() => setDetailId(c.id)}>
+                    <div className="m-ini">{iniciales(nombre)}</div>
+                    <div className="m-tx">
+                      <div className="m-n1">{nombre}</div>
+                      <div className="m-n2">{planL}</div>
+                    </div>
+                    <div className="m-fin">
+                      <div className="m-m1">{c.vitalicia ? 'Vitalicia' : money(Math.round(Number(c.arr || 0) / 12))}</div>
+                      {vDias > 0
+                        ? <div className="m-m2" style={{ color: '#C0554E' }}>vencida {vDias === 1 ? '1 día' : vDias + ' días'}</div>
+                        : (salud != null && salud < 60
+                          ? <div className="m-m2" style={{ color: '#a06600' }}>salud {salud}</div>
+                          : null)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {!isMobile && (<>
       {/* Encabezado: título y acciones ARRIBA, y debajo los KPIs. Los botones
           vivían dentro de la barra de la tabla, junto al buscador, así que
           "Nuevo cliente" competía con un campo de texto en vez de encabezar la
@@ -857,6 +944,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
         />
       </div>
+      </>)}
 
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
 

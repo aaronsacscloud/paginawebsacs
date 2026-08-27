@@ -230,6 +230,9 @@ function getInitialTab(): Tab {
 // Decisión del dueño (goal mobile-first v5): Inicio · Leads · Clientes · Inbox.
 // Leads y Clientes van SEPARADOS (como en escritorio) y el Inbox de WhatsApp es
 // EL caso de uso móvil. La Agenda vive en Inicio ("Hoy") y en Más.
+// Pantallas móviles con cabecera propia v5 (m-hdr): sin app bar de 56px.
+// Se suman aquí conforme cada pantalla pasa el referee.
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -390,7 +393,7 @@ export default function CrmDashboard() {
       {/* App bar móvil: el título del tab orienta y la lupa busca. El hamburger
           desapareció a propósito — la navegación completa vive en la barra
           inferior y en "Más" (el sidebar overlay quedó como código inerte). */}
-      {isMobile && sidebarCollapsed && (
+      {isMobile && sidebarCollapsed && !M_HDR_TABS.includes(tab) && (
         <header style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 108,
           height: 'calc(56px + env(safe-area-inset-top))',
@@ -756,7 +759,8 @@ export default function CrmDashboard() {
         marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease',
         display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden',
         // El inbox de WhatsApp va a PANTALLA COMPLETA: sin la franja de 22px del shell.
-        paddingTop: isMobile ? 'calc(56px + env(safe-area-inset-top))' : (tab === 'whatsapp' ? 0 : 22), paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
+        paddingTop: isMobile ? (M_HDR_TABS.includes(tab) ? 'env(safe-area-inset-top)' : 'calc(56px + env(safe-area-inset-top))') : (tab === 'whatsapp' ? 0 : 22), paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0,
+        background: isMobile ? '#fff' : undefined,
         transitionProperty: 'margin-left, width, max-width, padding-top',
       }}>
         {/* Content — key={tab} remonta el contenido al navegar y dispara la
@@ -1023,7 +1027,7 @@ export default function CrmDashboard() {
  * queries: desktop NUNCA entra a estas reglas, así que no cambia nada ≥900px. */
 const CRM_MOBILE_CSS = `
   @media (max-width: 899px) {
-    body { overflow-x: hidden; }
+    body { overflow-x: hidden; background: #fff; }
     /* iOS hace auto-zoom al enfocar inputs con font-size < 16px. Un solo golpe
        para los ~20 tabs sin tocar los objetos E/D/S/M. */
     input, select, textarea { font-size: 16px !important; }
@@ -1037,35 +1041,45 @@ const CRM_MOBILE_CSS = `
        ≤3 chips sin conteo, ≤2 secciones de ≤2 palabras, filas de ≤3 datos,
        ≤2 colores de estado, 5 valores tipográficos. El estado sano guarda
        silencio. Ver el goal "CRM de bolsillo". */
+    /* Tipografía del SISTEMA en el teléfono (dirección v5): así se ve nativa
+       en iPhone y Android. Le gana al 'Plus Jakarta Sans' inline del root. */
+    [style*="Plus Jakarta"], [style*="Plus Jakarta"] * { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }
+    /* El lienzo móvil es blanco continuo (la ref no tiene paneles grises). El
+       root del CRM pinta #f5f6f8 inline — solo él lleva la fuente inline, así
+       que el mismo selector sirve de gancho. */
+    [style*="Plus Jakarta"] { background: #fff !important; }
     :root {
       --m-ink: #1a1a1a; --m-soft: #8f8d98; --m-line: #efeef2;
       --m-neutro: #f4f3f6; --m-acc: #5B4BD6; --m-acc-suave: #EEECFE;
       --m-dinero: #1E8A63; --m-rojo: #C0554E; --m-ambar: #a06600;
     }
     /* Encabezado grande de pantalla (título 26/800 + acción a la derecha) */
-    .m-hdr { display: flex; align-items: flex-end; justify-content: space-between; padding: 14px 20px 10px; }
-    .m-hdr .m-tt { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: var(--m-ink); }
-    .m-hdr .m-cta { font-size: 0.86rem; font-weight: 700; color: var(--m-acc); background: none; border: none; padding: 8px 0 8px 12px; cursor: pointer; font-family: inherit; }
+    .m-hdr { display: flex; align-items: flex-end; justify-content: space-between; padding: 16px 24px 10px; }
+    .m-hdr .m-tt { font-size: 2.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--m-ink); }
+    .m-hdr .m-cta { font-size: 0.86rem; font-weight: 700; color: var(--m-acc); background: none; border: none; padding: 0 0 0 8px; min-height: 44px; cursor: pointer; font-family: inherit; }
     /* Número héroe (uno por pantalla, UNA línea de contexto) */
-    .m-hero { padding: 4px 20px 14px; }
+    .m-hero { padding: 4px 24px 16px; }
     .m-hero .m-hl { font-size: 0.8rem; color: var(--m-soft); }
-    .m-hero .m-hv { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 2px 0; color: var(--m-ink); }
-    .m-hero .m-hd { font-size: 0.8rem; color: var(--m-soft); }
+    .m-hero .m-hv { font-size: 2.85rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 4px 0 2px; line-height: 1.02; color: var(--m-ink); }
+    .m-hero .m-hd { font-size: 0.9rem; color: var(--m-soft); margin-top: 2px; }
     /* Encabezado de sección (≤2 palabras, máx 2 por pantalla) */
-    .m-sec { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 8px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--m-soft); }
+    .m-sec { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--m-soft); }
     .m-sec .m-vt { font-size: 0.78rem; font-weight: 700; color: var(--m-acc); letter-spacing: 0; text-transform: none; cursor: pointer; }
     /* Fila full-bleed con hairline (≤3 datos; la 4ª solo en la excepcional) */
-    .m-row { display: flex; gap: 12px; align-items: center; padding: 13px 20px; min-height: 60px; border-bottom: 1px solid var(--m-line); background: #fff; cursor: pointer; }
+    .m-row { display: flex; gap: 12px; align-items: center; padding: 16px 24px; min-height: 60px; position: relative; background: #fff; cursor: pointer; }
+    .m-row::after { content: ''; position: absolute; left: 24px; right: 0; bottom: 0; height: 1px; background: var(--m-line); }
     .m-row:active { background: var(--m-neutro); }
     .m-row .m-ini { flex: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; background: var(--m-neutro); color: #6a6875; }
     .m-row .m-tx { flex: 1; min-width: 0; }
-    .m-row .m-n1 { font-weight: 600; font-size: 0.94rem; letter-spacing: -0.01em; color: var(--m-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .m-row .m-n2 { font-size: 0.8rem; color: var(--m-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-    .m-row .m-fin { flex: none; text-align: right; }
-    .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; font-variant-numeric: tabular-nums; color: var(--m-ink); }
-    .m-row .m-m2 { font-size: 0.8rem; color: var(--m-soft); margin-top: 1px; }
+    .m-row .m-n1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; letter-spacing: -0.01em; color: var(--m-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m-row .m-n2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
+    .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
+    .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }
+    /* Saca el bloque del padding de 16px del wrap: gutter = solo los 24px de m-* */
+    .m-bleed { margin-left: -16px; margin-right: -16px; }
     /* Chips de filtro (≤3; solo el activo lleva conteo) */
-    .m-chips { display: flex; gap: 8px; padding: 8px 20px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .m-chips::-webkit-scrollbar { display: none; }
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
