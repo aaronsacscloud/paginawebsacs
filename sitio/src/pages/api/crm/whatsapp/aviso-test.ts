@@ -12,7 +12,7 @@ const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-T
 
 export const GET: APIRoute = async ({ url }) => {
   const correo = url.searchParams.get('correo');
-  if (correo) return json(await probarCorreoBienvenida(correo));
+  if (correo) return json(await probarCorreoBienvenida(correo, url.searchParams.get('plantilla')));
   if (url.searchParams.get('leads') === 'tiktok') {
     // Solo los REALES de TikTok de hoy y ayer (el pipeline vivo), no el
     // import masivo de la hoja vieja.

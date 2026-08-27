@@ -145,13 +145,14 @@ export async function enviarBienvenidaTikTok(contactId: string, telefono: string
 }
 
 /** Prueba del correo de bienvenida: lo manda TAL CUAL a la dirección dada. */
-export async function probarCorreoBienvenida(para: string) {
+export async function probarCorreoBienvenida(para: string, plantillaId?: string | null) {
   const t = await resolverTenant();
   if (!t) return { ok: false, motivo: 'sin_tenant' };
   const ctx = { nombre: 'María', campana: 'Campaña nuevos leads' };
   const { data: cfg } = await supabase.from('wa_config').select('email_bienvenida_template_id, email_bienvenida_asunto, email_bienvenida_cuerpo').eq('id', 1).maybeSingle();
-  const { data: pl } = cfg?.email_bienvenida_template_id
-    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', cfg.email_bienvenida_template_id).maybeSingle()
+  const idPl = plantillaId || cfg?.email_bienvenida_template_id;
+  const { data: pl } = idPl
+    ? await supabase.from('email_templates').select('asunto, preview_text, bloques').eq('id', idPl).maybeSingle()
     : { data: null as any };
   let asunto: string, html: string, texto: string;
   if (pl?.bloques) {
