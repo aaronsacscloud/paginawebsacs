@@ -100,7 +100,7 @@ const S = {
       · terciario   → gris, para lo que casi nunca se toca.
      Aquí todo era negro, que no es de la paleta y además ponía "Esta semana"
      al mismo nivel visual que la acción principal de la pantalla. */
-  btnPrim: { padding: '7px 15px', border: 'none', background: '#9B8CFA', color: '#fff', borderRadius: 9, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
+  btnPrim: { padding: '7px 15px', border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 9, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
   btnSec: { padding: '7px 14px', border: '1.5px solid #9B8CFA', background: '#fff', color: '#5B4BD6', borderRadius: 9, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
   btnSmall: { padding: '5px 11px', border: '1.5px solid #ddd6fb', background: '#fff', color: '#5B4BD6', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const, fontFamily: 'inherit' } as const,
   /* El segmento elegido es el morado; los demás quedan neutros. Si todos

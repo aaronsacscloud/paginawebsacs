@@ -635,7 +635,7 @@ export default function PagosTab() {
             <button onClick={identificarEnMP} disabled={identificando}
               style={{ ...S.btnSmall, background: '#009ee3', color: '#fff', border: 'none', padding: '7px 12px' }}
               title="Va a Mercado Pago por el correo, el titular, los últimos 4 y la suscripción de cada cobro anónimo">
-              {identificando ? 'Preguntando a Mercado Pago…' : '🔎 Identificar en Mercado Pago'}
+              {identificando ? 'Preguntando a Mercado Pago…' : 'Identificar en Mercado Pago'}
             </button>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>

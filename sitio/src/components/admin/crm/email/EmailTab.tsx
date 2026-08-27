@@ -51,12 +51,14 @@ export default function EmailTab() {
     <div className="em-sec">
       <style>{FOCO}</style>
       <div style={{ background: '#fff', borderBottom: '1px solid #f0eff3', padding: '12px 24px 0' }}>
-        <div style={{ maxWidth: WRAP.maxWidth, margin: '0 auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        {/* Una sola fila con scroll: envueltos en 3 filas parecían párrafo,
+            no navegación (referee ronda B). */}
+        <div className="em-nav-scroll" style={{ maxWidth: WRAP.maxWidth, margin: '0 auto', display: 'flex', gap: 7, flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {SECCIONES.map(s => (
             <button key={s.id} onClick={() => setSec(s.id)}
               aria-current={sec === s.id ? 'page' : undefined}
               style={{
-                border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
                 padding: '9px 14px 11px', fontSize: '0.82rem', position: 'relative',
                 fontWeight: sec === s.id ? 800 : 500,
                 color: sec === s.id ? '#5B4BD6' : '#8a8a92',

@@ -25,7 +25,7 @@ export const S = {
   ks: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.45 } as CSSProperties,
   th: { fontSize: '0.56rem', fontWeight: 800, color: '#b3b1bb', textTransform: 'uppercase', letterSpacing: '.07em', textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #f0eff3' } as CSSProperties,
   td: { padding: '11px 10px', fontSize: '0.79rem', borderBottom: '1px solid #f7f6fa', verticalAlign: 'middle' } as CSSProperties,
-  btnP: { border: 'none', borderRadius: 9, padding: '8px 15px', background: '#9B8CFA', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as CSSProperties,
+  btnP: { border: 'none', borderRadius: 9, padding: '8px 15px', background: '#5B4BD6', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as CSSProperties,
   btnA: { border: '1.5px solid #7DA6F5', borderRadius: 9, padding: '7px 13px', background: '#fff', fontSize: '0.77rem', fontWeight: 700, color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit' } as CSSProperties,
   btnG: { border: '1px solid #e2e4e9', borderRadius: 9, padding: '7px 13px', background: '#fff', fontSize: '0.77rem', fontWeight: 600, color: '#555', cursor: 'pointer', fontFamily: 'inherit' } as CSSProperties,
   inp: { border: '1.5px solid #e4dffb', borderRadius: 9, padding: '9px 12px', fontSize: '0.82rem', background: '#fdfcff', width: '100%', boxSizing: 'border-box', fontFamily: 'inherit' } as CSSProperties,

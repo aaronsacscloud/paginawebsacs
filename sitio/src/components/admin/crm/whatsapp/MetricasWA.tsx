@@ -39,9 +39,11 @@ export default function MetricasWA() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <h3 style={{ margin: 0, fontSize: '1rem' }}>Métricas de WhatsApp</h3>
         <span style={{ flex: 1 }} />
-        {[7, 30].map(n => (
-          <button key={n} style={chip(dias === n)} onClick={() => setDias(n)}>Últimos {n} días</button>
-        ))}
+        <span style={{ display: 'inline-flex', gap: 6, whiteSpace: 'nowrap' }}>
+          {[7, 30].map(n => (
+            <button key={n} style={chip(dias === n)} onClick={() => setDias(n)}>{n} días</button>
+          ))}
+        </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
@@ -64,6 +66,13 @@ export default function MetricasWA() {
               <div style={{ height: `${(x.entrantes / maxDia) * 100}%`, background: '#7DA6F5', borderRadius: x.salientes ? 0 : '3px 3px 0 0', minHeight: x.entrantes ? 3 : 0 }} />
             </div>
           ))}
+        </div>
+        <div style={{ display: 'flex', gap: dias > 7 ? 3 : 10, marginTop: 4 }}>
+          {d.por_dia.map((x: any, i: number) => {
+            const dd = String(x.dia || '').slice(8, 10);
+            const ver = dias <= 7 || i % 5 === 0 || i === d.por_dia.length - 1;
+            return <div key={'x' + x.dia} style={{ flex: 1, textAlign: 'center', fontSize: '0.6rem', color: '#a5a2af', fontVariantNumeric: 'tabular-nums' }}>{ver ? dd : ''}</div>;
+          })}
         </div>
         <div style={{ display: 'flex', gap: 14, marginTop: 9, fontSize: '0.68rem', color: '#8a8a92' }}>
           <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#7DA6F5', marginRight: 5 }} />Recibidos</span>

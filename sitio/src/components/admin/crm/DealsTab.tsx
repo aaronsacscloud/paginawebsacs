@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
+import Sheet from './ui/Sheet';
 import ActionSheet from './ui/ActionSheet';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import SugerenciasOportunidad from './SugerenciasOportunidad';
@@ -352,8 +353,37 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
     return true;
   });
 
+  const esMovilD = useIsMobile();
+  const [filtrosMov, setFiltrosMov] = useState(false);
+  const nFiltrosSec = (tablero !== 'venta' ? 1 : 0) + (filtroTipo ? 1 : 0) + (soloEstancadas ? 1 : 0) + (filtroCat ? 1 : 0) + selEtiquetas.length;
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* ══ Móvil: 4 stat-cards en grid 2×2 (label arriba, cifra abajo) en vez
+          de la franja corrida que envolvía en 3 líneas ilegibles. ══ */}
+      {esMovilD && (
+        <div style={{ background: '#fff', padding: '14px 16px 4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { l: 'MRR ganado', v: fmt(kMrrGanado), c: '#1E8A63' },
+              { l: `MRR en juego · ${openDeals.length} abiertas`, v: fmt(kMrrAbierto), c: '#1a1a1a' },
+              { l: 'Único en juego', v: fmt(kUnicoAbierto), c: '#1a1a1a' },
+              { l: 'Estancadas', v: String(estancadas.length), c: estancadas.length ? '#C0554E' : '#1a1a1a' },
+            ].map(sK => (
+              <div key={sK.l} style={{ border: '1px solid #eeeef1', borderRadius: 12, padding: '10px 12px', minWidth: 0 }}>
+                <div style={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#8f8d98', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sK.l}</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: sK.c, marginTop: 2 }}>{sK.v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={() => setShowCreate(true)} style={{ ...btn, flex: 1, justifyContent: 'center', minHeight: 44, background: '#5B4BD6', color: '#fff' }}>+ Nueva oportunidad</button>
+            <button onClick={() => setView(view === 'kanban' ? 'table' : 'kanban')} style={{ ...btn, minHeight: 44, background: '#f5f5f5', color: '#555' }}>
+              {view === 'kanban' ? 'Tabla' : 'Kanban'}
+            </button>
+          </div>
+        </div>
+      )}
+      {!esMovilD && (<>
       {/* Top stats bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto' }}>
@@ -375,48 +405,59 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva oportunidad</button>
+          <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>+ Nueva oportunidad</button>
           <button onClick={() => setView(view === 'kanban' ? 'table' : 'kanban')} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>
             {view === 'kanban' ? '☰ Tabla' : '▦ Kanban'}
           </button>
-          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Oportunidades" style={{ ...btn, background: '#f5f5f5', color: '#555' }}>⚙️ Etapas</button>
+          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Oportunidades" style={{ ...btn, background: '#f5f5f5', color: '#555' }}>Etapas</button>
           <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
         </div>
       </div>
 
+      </>)}
       {/* Lo que el sistema propone solo, en su propia bandeja: aceptar lo mete
           al pipeline, descartar lo quita. Hasta entonces no cuenta en nada. */}
       <SugerenciasOportunidad onCambio={load} />
 
       {/* Filtros: la lista completa sigue siendo el default (ver todo antes de
           filtrar), pero "qué tengo vivo" y "qué gané" son dos clics distintos. */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>
-        {([['venta', '🆕 Venta nueva'], ['cartera', '🔄 Cartera (renovación y retención)']] as const).map(([k, l]) => (
+      {esMovilD && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 16px 0', overflowX: 'auto' }}>
+          {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
+            <button key={'m' + k} onClick={() => setFiltro(k as any)} className={'m-chip' + (filtro === k ? ' on' : '')} style={{ whiteSpace: 'nowrap' }}>{l}</button>
+          ))}
+          <button onClick={() => setFiltrosMov(true)} className={'m-chip' + (nFiltrosSec ? ' on' : '')} style={{ whiteSpace: 'nowrap' }}>
+            Filtros{nFiltrosSec ? ` · ${nFiltrosSec}` : ''}
+          </button>
+        </div>
+      )}
+      <div style={{ display: esMovilD ? 'none' : 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>
+        {([['venta', 'Venta nueva'], ['cartera', 'Cartera (renovación y retención)']] as const).map(([k, l]) => (
           <button key={k} onClick={() => { setTablero(k as any); setFiltroCat(''); }}
             title={k === 'venta' ? 'Clientes nuevos y upsell' : 'Renovaciones que vienen y clientes a retener: otras etapas, otros tiempos'}
-            style={{ ...btn, background: tablero === k ? '#1a1a1a' : '#f5f5f5', color: tablero === k ? '#fff' : '#555' }}>{l}</button>
+            style={{ ...btn, background: tablero === k ? '#5B4BD6' : '#f5f5f5', color: tablero === k ? '#fff' : '#555' }}>{l}</button>
         ))}
         <span style={{ width: 1, height: 20, background: '#eee' }} />
         {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setFiltro(k as any)}
-            style={{ ...btn, background: filtro === k ? '#1a1a1a' : '#f5f5f5', color: filtro === k ? '#fff' : '#555' }}>{l}</button>
+            style={{ ...btn, background: filtro === k ? '#5B4BD6' : '#f5f5f5', color: filtro === k ? '#fff' : '#555' }}>{l}</button>
         ))}
         <span style={{ width: 1, height: 20, background: '#eee' }} />
-        {([['', 'Todo tipo'], ['recurrente', '🔁 Recurrente'], ['unico', '💵 Pago único'], ['mixto', '⚡ Mixto']] as const).map(([k, l]) => (
+        {([['', 'Todo tipo'], ['recurrente', 'Recurrente'], ['unico', 'Pago único'], ['mixto', 'Mixto']] as const).map(([k, l]) => (
           <button key={k || 'all'} onClick={() => setFiltroTipo(k as any)}
-            style={{ ...btn, background: filtroTipo === k ? '#4B7BE5' : '#f5f5f5', color: filtroTipo === k ? '#fff' : '#555' }}>{l}</button>
+            style={{ ...btn, background: filtroTipo === k ? '#5B4BD6' : '#f5f5f5', color: filtroTipo === k ? '#fff' : '#555' }}>{l}</button>
         ))}
         <button onClick={() => setSoloEstancadas(v => !v)}
           title="Abiertas sin movimiento — el 'rotting' de Pipedrive"
           style={{ ...btn, background: soloEstancadas ? '#b93333' : '#f5f5f5', color: soloEstancadas ? '#fff' : '#555' }}>
-          🥶 Estancadas ({estancadas.length})
+          Estancadas ({estancadas.length})
         </button>
         <span style={{ width: 1, height: 20, background: '#eee' }} />
         {/* Cliente nuevo vs ampliarle a quien ya te compra: cuestan distinto y
             solo una es crecimiento nuevo. Es el "deal type" de HubSpot. */}
-        {([['', 'Todas'], ['nuevo', '✨ Nuevos'], ['upsell', '⬆ Upsell'], ['renovacion', '🔄 Renovación'], ['retencion', '🛟 Retención']] as const).map(([k, l]) => (
+        {([['', 'Todas'], ['nuevo', 'Nuevos'], ['upsell', 'Upsell'], ['renovacion', 'Renovación'], ['retencion', 'Retención']] as const).map(([k, l]) => (
           <button key={'c' + (k || 'all')} onClick={() => setFiltroCat(k as any)}
-            style={{ ...btn, background: filtroCat === k ? '#6C5CE7' : '#f5f5f5', color: filtroCat === k ? '#fff' : '#555' }}>{l}</button>
+            style={{ ...btn, background: filtroCat === k ? '#5B4BD6' : '#f5f5f5', color: filtroCat === k ? '#fff' : '#555' }}>{l}</button>
         ))}
         {catEtiquetas.length > 0 && <span style={{ width: 1, height: 20, background: '#eee' }} />}
         <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
@@ -432,6 +473,41 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
           <TableView deals={dealsVista} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} etiquetasFila={etiquetasDeal} />
         )}
       </div>
+
+      {/* Filtros secundarios en Sheet (móvil): el muro de 20 chips en 7 filas
+          empujaba el contenido fuera del viewport. */}
+      {esMovilD && (
+        <Sheet open={filtrosMov} onClose={() => setFiltrosMov(false)} title="Filtros" width={390}>
+          <div style={{ padding: '4px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {([
+              ['Tablero', ([['venta', 'Venta nueva'], ['cartera', 'Cartera']] as const).map(([k, l]) => (
+                <button key={k} onClick={() => { setTablero(k as any); setFiltroCat(''); }} className={'m-chip' + (tablero === k ? ' on' : '')}>{l}</button>
+              ))],
+              ['Tipo de dinero', ([['', 'Todo tipo'], ['recurrente', 'Recurrente'], ['unico', 'Pago único'], ['mixto', 'Mixto']] as const).map(([k, l]) => (
+                <button key={k || 'all'} onClick={() => setFiltroTipo(k as any)} className={'m-chip' + (filtroTipo === k ? ' on' : '')}>{l}</button>
+              ))],
+              ['Movimiento', [<button key="est" onClick={() => setSoloEstancadas(v => !v)} className={'m-chip' + (soloEstancadas ? ' on' : '')}>Estancadas ({estancadas.length})</button>]],
+              ['Categoría', ([['', 'Todas'], ['nuevo', 'Nuevos'], ['upsell', 'Upsell'], ['renovacion', 'Renovación'], ['retencion', 'Retención']] as const).map(([k, l]) => (
+                <button key={'c' + (k || 'all')} onClick={() => setFiltroCat(k as any)} className={'m-chip' + (filtroCat === k ? ' on' : '')}>{l}</button>
+              ))],
+            ] as [string, any][]).map(([titulo, chips]) => (
+              <div key={titulo}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8f8d98', marginBottom: 8 }}>{titulo}</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{chips}</div>
+              </div>
+            ))}
+            {catEtiquetas.length > 0 && (
+              <div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8f8d98', marginBottom: 8 }}>Etiquetas</div>
+                <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
+              </div>
+            )}
+            <button onClick={() => setFiltrosMov(false)} style={{ ...btn, justifyContent: 'center', minHeight: 48, background: '#5B4BD6', color: '#fff' }}>
+              Ver resultados
+            </button>
+          </div>
+        </Sheet>
+      )}
 
       {/* Create Modal */}
       {/* CreateDealModal (una línea, un monto) se queda para el alta rápida desde
@@ -670,7 +746,7 @@ function TableView({ deals, onSelect, onBulk, onDelete, etiquetasFila }: { deals
                     const c = cat === 'renovacion' ? ['🔄 Renovación', '#1A8F7A'] : cat === 'upsell' ? ['⬆ Upsell', '#6C5CE7'] : null;
                     return c ? <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: c[1] }}>{c[0]}</span> : null;
                   })()}
-                  {estaEstancada(d) && <span title={`${diasSinMover(d)} días sin moverse`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#b93333' }}>🥶 {diasSinMover(d)}d</span>}
+                  {estaEstancada(d) && <span title={`${diasSinMover(d)} días sin moverse`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#b93333' }}>{diasSinMover(d)}d sin mover</span>}
                   {comisionDe(d) > 0 && <span title={`Comisión estimada al socio referido (${COMISION_PCT_DEFAULT}% del primer año)`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#a06600' }}>💰 {fmt(comisionDe(d))}</span>}
                   {etiquetasFila?.[d.id]?.length ? <span style={{ marginLeft: 6 }}><ChipsEtiquetas etiquetas={etiquetasFila[d.id]} max={3} /></span> : null}
                 </td>
@@ -1076,7 +1152,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             placeholder="Pega aquí lo que se habló y te propongo etapa, próximo paso y fecha de cierre."
             style={{ ...input, minHeight: 70, resize: 'vertical' as const }} />
           <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#6C5CE7', color: '#fff', marginBottom: 10 }}>
-            {analizando ? 'Leyendo…' : '✨ Proponer actualización'}
+            {analizando ? 'Leyendo…' : 'Proponer actualización'}
           </button>
           {propuesta && (
             <div style={{ background: '#f7f6ff', border: '1px solid #e2ddf9', borderRadius: 10, padding: 12, marginBottom: 12, fontSize: '0.8rem' }}>

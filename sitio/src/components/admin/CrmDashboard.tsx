@@ -1158,6 +1158,11 @@ const CRM_MOBILE_CSS = `
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
     .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
     .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }
+    /* Carruseles y tab bars scrolleables: fade al borde derecho para que lo
+       cortado "asome" en vez de leerse como texto roto (KPIs, tabs) */
+    @media (max-width: 899px) {
+      [style*="scroll-snap-type"] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); padding-right: 20px !important; }
+    }
     /* Segmented scrolleable de la ficha: fade al borde derecho para que la
        pestaña cortada "asome" en vez de amputarse */
     .fic-seg { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 16px !important; scroll-padding: 16px; scrollbar-width: none; }
@@ -1204,6 +1209,8 @@ const CRM_MOBILE_CSS = `
       /* Texto tinta-clara y hairlines claros inline → al tema */
       [data-crm-dark="1"] [style*="color: rgb(26, 26, 26)"], [data-crm-dark="1"] [style*="color: rgb(26, 26, 30)"] { color: #F2F1F7 !important; }
       [data-crm-dark="1"] [style*="solid rgb(239, 238, 242)"] { border-color: #26262e !important; }
+      /* Badges de etapa fuera de paleta en oscuro: azul #2C5FC4 y morado light → lila */
+      [data-crm-dark="1"] [style*="color: rgb(44, 95, 196)"], [data-crm-dark="1"] [style*="color: rgb(91, 75, 214)"] { color: #A78BFA !important; }
     }
 
     /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.

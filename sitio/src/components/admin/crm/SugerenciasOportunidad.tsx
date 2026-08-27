@@ -73,7 +73,7 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 24px 0', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.72rem', color: '#aaa' }}>Sin sugerencias pendientes.</span>
         <button onClick={generar} disabled={generando} style={{ ...btn, padding: '5px 10px', fontSize: '0.72rem' }}>
-          {generando ? 'Buscando…' : '🔎 Buscar renovaciones y upsells'}
+          {generando ? 'Buscando…' : 'Buscar renovaciones y upsells'}
         </button>
       </div>
     );

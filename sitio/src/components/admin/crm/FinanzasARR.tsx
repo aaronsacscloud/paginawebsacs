@@ -111,8 +111,9 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
     <div style={S.wrap}>
       {/* ── Periodo ── */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
-        <span style={S.tit}>El titular</span>
+        <span style={S.tit}>Panorama</span>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#8f8d98' }}>Periodo</span>
           <input type="month" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
             style={{ ...S.btn, padding: '7px 10px', fontWeight: 500 }} />
           <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>a</span>

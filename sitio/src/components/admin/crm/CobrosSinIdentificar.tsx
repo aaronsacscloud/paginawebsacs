@@ -63,7 +63,7 @@ export default function CobrosSinIdentificar() {
             setD(j);
             if (j?.barrido?.error) alert(j.barrido.error);
             else if (j?.barrido) alert(`Revisé ${j.barrido.revisados} cobros.\n\nNuevos por identificar: ${j.barrido.nuevos}\nMovimientos propios ignorados: ${j.barrido.propios}`);
-          }}>{cargando ? '…' : '🔎 Buscar cobros pasados'}</button>
+          }}>{cargando ? '…' : 'Buscar cobros pasados'}</button>
         <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50 }} disabled={cargando} onClick={cargar}>{cargando ? '…' : '↻ Actualizar'}</button>
       </div>
 
