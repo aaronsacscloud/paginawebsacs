@@ -29,6 +29,9 @@ if (gate) return gate;
   mk('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' });
   mk('meta', { name: 'apple-mobile-web-app-title', content: 'SACS CRM' });
   mk('link', { rel: 'apple-touch-icon', href: '/crm-icon-192.png' });
+  // ══ REGLA DE VELOCIDAD: Service Worker — assets inmutables sin red y HTML
+  // con fallback; la visita repetida (y la PWA) arranca local.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-crm.js').catch(() => {});
 })();
 </script>
 <script is:inline>
