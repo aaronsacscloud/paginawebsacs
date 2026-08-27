@@ -40,7 +40,7 @@ export default function BottomNav({
             style={{
               flex: 1, minWidth: 0, border: 'none', background: 'none', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-              color: active ? '#3764c4' : '#8a8f98', padding: 0,
+              color: active ? '#5B4BD6' : '#8a8f98', padding: 0,
             }}>
             <span style={{ display: 'flex', width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}
               dangerouslySetInnerHTML={{ __html: it.icon }} />
