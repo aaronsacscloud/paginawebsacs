@@ -28,7 +28,7 @@ export default function BottomNav({
       position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 400,
       height: `calc(${NAV_H}px + env(safe-area-inset-bottom))`,
       paddingBottom: 'env(safe-area-inset-bottom)',
-      background: '#fff', borderTop: '1px solid #e9eaee',
+      background: '#fff', borderTop: '1px solid #e5e7eb',
       display: 'flex', alignItems: 'stretch',
       boxShadow: '0 -2px 12px rgba(16,24,40,0.06)',
     }}>

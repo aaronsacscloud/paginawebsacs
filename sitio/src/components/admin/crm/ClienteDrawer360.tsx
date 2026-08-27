@@ -34,12 +34,12 @@ function metaWa(p: string): string {
 const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(metaWa(p)).replace(/\D/g, '') : '';
 
 const D = {
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 } as const,
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(12,11,18,.55)', zIndex: 900 } as const,
   // Ancho: la ficha creció (contactos, consultoría, los tres canales) y a
   // 940 px la tabla de suscripciones se leía apretada y las pestañas ya no
   // cabían de un vistazo. 1240 deja respirar la tabla sin tapar la lista de
   // clientes que queda detrás.
-  panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(1240px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
+  panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(1240px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto', boxShadow: '-12px 0 40px rgba(0,0,0,.18)' } as const,
   head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '16px 22px 0' },
   // Una sola fila con scroll horizontal (8 pestañas). En desktop (1240px) caben
   // igual; nowrap no cambia nada visible y arregla el wrap en mobile.
@@ -177,11 +177,94 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   return (
     <>
       <div style={D.overlay} onClick={onClose} />
-      <div style={isMobile ? { ...D.panel, width: '100%', height: '100dvh' } : D.panel}>
+      <div style={isMobile ? { ...D.panel, width: '100%', top: 'auto', height: '94dvh', borderRadius: '24px 24px 0 0', overflow: 'hidden auto', background: '#fff' } : D.panel}>
         {!data && !err && <Cargando texto="Cargando cliente…" alto={260} onReintentar={load} />}
         {err && <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={D.btnG} onClick={load}>Reintentar</button></div>}
         {data && co && (
           <>
+            {/* ══ Cabecera MÓVIL v5 (mockup Ficha): handle + avatar + nombre +
+                "Cliente desde · Plan", acciones WhatsApp/Llamar/Agendar,
+                métricas MRR·Saldo vencido y segmented de pestañas. El chrome
+                de escritorio (editar nombre, eliminar, tabbar) queda atrás
+                del segmented o solo en escritorio. ══ */}
+            {isMobile && (() => {
+              const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+              const nombreCli = cased(co.nombre_comercial || co.sacs_account || co.nombre || 'Cliente');
+              const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
+              const ws = nombreCli.split(/\s+/).filter(w => w && !stop.includes(w.toLowerCase()));
+              const ini = (ws.length >= 2 ? ws[0][0] + ws[1][0] : nombreCli.slice(0, 2)).toUpperCase();
+              const activas = subs.filter((x: any) => x.estado !== 'cancelada');
+              const hoyIso = new Date().toISOString().slice(0, 10);
+              const mrr = Math.round(activas.reduce((t: number, x: any) => t + Number(x.arr || 0), 0) / 12);
+              const vencidas = activas.filter((x: any) => x.proxima_factura && String(x.proxima_factura).slice(0, 10) < hoyIso);
+              const saldoVencido = Math.round(vencidas.reduce((t: number, x: any) =>
+                t + (Number(x.precio) || Number(x.arr || 0) / (x.ciclo === 'mensual' ? 12 : 1)), 0));
+              const renueva = activas.map((x: any) => x.proxima_factura).filter(Boolean).sort()[0] || null;
+              const desde = subs.map((x: any) => x.fecha_inicio).filter(Boolean).sort()[0] || co.created_at || null;
+              const desdeTxt = desde ? new Date(String(desde).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { month: 'short', year: 'numeric' }).replace(/\./g, '') : null;
+              // El nombre del plan trae el ciclo pegado ("Licencia Anual Personalizada"):
+              // para el subtítulo basta el plan a secas.
+              const planCrudo = [...activas].sort((a: any, b: any) => Number(b.arr || 0) - Number(a.arr || 0))[0]?.nombre_plan || null;
+              const planTop = planCrudo ? String(planCrudo).replace(/licencia\s+(anual|mensual)\s*/i, '').trim() : null;
+              const planTxt = planTop ? (/^plan/i.test(planTop) ? cased(planTop) : 'Plan ' + cased(planTop)) : null;
+              const SEG: [string, string][] = [['resumen', 'Resumen'], ['info', 'Info'], ['subs', 'Licencias'], ['mejoras', 'Consultoría'], ['reuniones', 'Reuniones'], ['whatsapp', 'WhatsApp'], ['soporte', 'Soporte'], ['outbound', 'Outbound']];
+              return (
+                <div style={{ background: '#fff' }}>
+                  <div onClick={cerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 12px', cursor: 'pointer' }} aria-label="Cerrar">
+                    <div style={{ width: 44, height: 5, borderRadius: 99, background: '#e2e1e8' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0 24px' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f3f6', color: '#6a6875', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.05rem', flex: 'none' }}>{ini}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>{nombreCli}</div>
+                      <div style={{ fontSize: '0.88rem', color: '#8f8d98', marginTop: 3, lineHeight: 1.4 }}>
+                        {[desdeTxt ? 'Cliente desde ' + desdeTxt : null, planTxt].filter(Boolean).join(' · ') || (co.sacs_account || '')}
+                      </div>
+                    </div>
+                  </div>
+                  {principal && (
+                    <div style={{ display: 'flex', gap: 10, padding: '18px 24px 0' }}>
+                      {principal.whatsapp && (
+                        <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none' }}>WhatsApp</a>
+                      )}
+                      {(principal.telefono || principal.whatsapp) && (
+                        <a href={'tel:' + String(principal.telefono || principal.whatsapp).replace(/\D/g, '')} style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none' }}>Llamar</a>
+                      )}
+                      <button onClick={() => irA('reuniones')} style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', fontFamily: 'inherit' }}>Agendar</button>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'stretch', padding: '18px 24px 4px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>MRR</div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{money(mrr)}</div>
+                    </div>
+                    <div style={{ width: 1, background: '#ececf1', margin: '2px 20px' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {saldoVencido > 0 ? (
+                        <>
+                          <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>Saldo vencido</div>
+                          <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2, color: '#C0554E' }}>{money(saldoVencido)}</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>Renueva</div>
+                          <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: 2 }}>{renueva ? fmtDate(renueva) : '—'}</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="fic-seg" style={{ display: 'flex', gap: 2, margin: '14px 24px 0', background: '#f2f2f5', borderRadius: 12, padding: 3, overflowX: 'auto' }}>
+                    {SEG.map(([k, l]) => {
+                      const act = tab === k;
+                      return (
+                        <button key={k} onClick={() => irA(k)} style={{ flex: 'none', padding: '9px 15px', borderRadius: 10, border: 'none', background: act ? '#fff' : 'transparent', boxShadow: act ? '0 1px 3px rgba(16,24,40,.14)' : 'none', fontWeight: 700, color: act ? '#1a1a1a' : '#8f8d98', fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>{l}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+            {!isMobile && (
             <div style={D.head}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ flex: 1 }}>
@@ -277,13 +360,15 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'outbound')} onClick={() => irA('outbound')}>Outbound</button>
               </div>
             </div>
-            <div style={D.body}>
+            )}
+            <div style={isMobile ? { padding: '16px 16px 28px' } : D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
               {tab === 'resumen' && vencidasMej.length > 0 && (
                 <div onClick={() => irA('mejoras')}
                   style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>
-                  <b style={{ color: '#8c2f28' }}>⚠️ {vencidasMej.length} cosa(s) comprometidas se pasaron de fecha.</b>{' '}
-                  {vencidasMej[0].titulo} lleva {vencidasMej[0].dias} días tarde — ver mejoras.
+                  <b style={{ color: '#8c2f28' }}>{vencidasMej.length === 1 ? 'Un compromiso se pasó de fecha.' : `${vencidasMej.length} compromisos se pasaron de fecha.`}</b>{' '}
+                  «{vencidasMej[0].titulo}» · {vencidasMej[0].dias === 1 ? '1 día' : `${vencidasMej[0].dias} días`} de retraso.{' '}
+                  <span style={{ fontWeight: 700, color: '#5B4BD6', whiteSpace: 'nowrap' }}>Ver mejoras ›</span>
                 </div>
               )}
               {tab === 'resumen' && alertasReu.map((a: any) => (
@@ -567,9 +652,9 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
   // El rosa marca lo ELEGIDO, igual que la opción seleccionada de los filtros.
   const seg = (on: boolean) => ({
     border: 'none', cursor: 'pointer', padding: '5px 13px', fontSize: '0.7rem', fontWeight: 700,
-    fontFamily: 'inherit', background: on ? 'rgba(244,168,205,.34)' : 'transparent', color: on ? '#9c3d70' : '#8a8a92',
+    fontFamily: 'inherit', background: on ? '#EEECFE' : 'transparent', color: on ? '#5B4BD6' : '#8a8a92',
   }) as const;
-  const cajaSeg = { display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' } as const;
+  const cajaSeg = { display: 'inline-flex', border: '1px solid #e6e4f0', borderRadius: 20, overflow: 'hidden', background: '#fff' } as const;
   const num = { fontSize: '1.4rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-.02em' } as const;
   const cap = { fontSize: '0.64rem', color: '#a5a2af', fontWeight: 700, textTransform: 'uppercase' as const, marginTop: 5, letterSpacing: '.05em' } as const;
   const kpi = { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '14px 15px' } as const;

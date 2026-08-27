@@ -1054,7 +1054,7 @@ const CRM_MOBILE_CSS = `
       --m-dinero: #1E8A63; --m-rojo: #C0554E; --m-ambar: #a06600;
     }
     /* Encabezado grande de pantalla (título 26/800 + acción a la derecha) */
-    .m-hdr { display: flex; align-items: flex-end; justify-content: space-between; padding: 16px 24px 10px; }
+    .m-hdr { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px 10px; }
     .m-hdr .m-tt { font-size: 2.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--m-ink); }
     .m-hdr .m-cta { font-size: 0.86rem; font-weight: 700; color: var(--m-acc); background: none; border: none; padding: 0 0 0 8px; min-height: 44px; cursor: pointer; font-family: inherit; }
     /* Número héroe (uno por pantalla, UNA línea de contexto) */
@@ -1076,6 +1076,10 @@ const CRM_MOBILE_CSS = `
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
     .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
     .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }
+    /* Segmented scrolleable de la ficha: fade al borde derecho para que la
+       pestaña cortada "asome" en vez de amputarse */
+    .fic-seg { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 16px !important; scroll-padding: 16px; scrollbar-width: none; }
+    .fic-seg::-webkit-scrollbar { display: none; }
     /* Saca el bloque del padding de 16px del wrap: gutter = solo los 24px de m-* */
     .m-bleed { margin-left: -16px; margin-right: -16px; }
     /* Chips de filtro (≤3; solo el activo lleva conteo) */

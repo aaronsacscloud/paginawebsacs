@@ -740,7 +740,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 // Solo presentación (lección de Leads): "Super carnes rivera" rompe el ritmo.
                 const crudo = c.nombre_comercial || c.sacs_account || c.nombre || 'Sin nombre';
                 const nombre = crudo.replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
-                const planL = c.plan && PLAN_BADGE[c.plan] ? 'Plan ' + PLAN_BADGE[c.plan].label : (c.cuentas?.[0] || c.sacs_account || '—');
+                const planL = c.plan && PLAN_BADGE[c.plan]
+                  ? 'Plan ' + PLAN_BADGE[c.plan].label.replace(/\S+/g, (w: string) => w[0].toUpperCase() + w.slice(1))
+                  : 'Sin plan';
                 const vDias = c.proxima_factura && c.proxima_factura < hoyIso
                   ? Math.max(1, Math.floor((Date.parse(hoyIso) - Date.parse(String(c.proxima_factura).slice(0, 10))) / 86400000)) : 0;
                 const salud = c.health_score == null ? null : Number(c.health_score);
