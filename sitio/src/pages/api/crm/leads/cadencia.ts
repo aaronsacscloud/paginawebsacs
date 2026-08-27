@@ -8,7 +8,7 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 
 export const GET: APIRoute = async () => {
   const [{ data: cfg }, { data: pasos }] = await Promise.all([
-    supabase.from('wa_config').select('cadencia_activa, cadencia_corte_dias').eq('id', 1).maybeSingle(),
+    supabase.from('wa_config').select('cadencia_activa, cadencia_corte_dias, cadencia_hora_inicio, cadencia_hora_fin').eq('id', 1).maybeSingle(),
     supabase.from('crm_cadencia_pasos').select('*').order('orden'),
   ]);
   return json({ config: cfg || {}, pasos: pasos || [] });
@@ -16,10 +16,12 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
-  if ('cadencia_activa' in b || 'cadencia_corte_dias' in b) {
+  if ('cadencia_activa' in b || 'cadencia_corte_dias' in b || 'cadencia_hora_inicio' in b || 'cadencia_hora_fin' in b) {
     const cambios: any = { id: 1 };
     if ('cadencia_activa' in b) cambios.cadencia_activa = !!b.cadencia_activa;
     if ('cadencia_corte_dias' in b) cambios.cadencia_corte_dias = Math.max(1, Math.min(60, Number(b.cadencia_corte_dias) || 14));
+    if ('cadencia_hora_inicio' in b) cambios.cadencia_hora_inicio = Math.max(0, Math.min(23, Number(b.cadencia_hora_inicio) ?? 10));
+    if ('cadencia_hora_fin' in b) cambios.cadencia_hora_fin = Math.max(1, Math.min(24, Number(b.cadencia_hora_fin) ?? 18));
     const { error } = await supabase.from('wa_config').upsert(cambios);
     if (error) return json({ error: error.message }, 500);
   }

@@ -19,13 +19,14 @@ const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-T
 
 export const GET: APIRoute = async ({ url }) => {
   const dry = url.searchParams.get('dry') === '1';
-  const { data: cfg } = await supabase.from('wa_config').select('cadencia_activa, cadencia_corte_dias').eq('id', 1).maybeSingle();
+  const { data: cfg } = await supabase.from('wa_config').select('cadencia_activa, cadencia_corte_dias, cadencia_hora_inicio, cadencia_hora_fin').eq('id', 1).maybeSingle();
   if (!cfg?.cadencia_activa && !dry) return json({ ok: true, apagada: true });
 
-  // Horario humano: 10:00-18:00 CDMX, lunes a viernes.
+  // Horario humano (ventana configurable en el módulo), lunes a viernes CDMX.
+  const hIni = Number(cfg?.cadencia_hora_inicio ?? 10), hFin = Number(cfg?.cadencia_hora_fin ?? 18);
   const cdmx = new Date(Date.now() - 6 * 3600e3);
   const hora = cdmx.getUTCHours(), dia = cdmx.getUTCDay();
-  if (!dry && (hora < 10 || hora >= 18 || dia === 0 || dia === 6)) return json({ ok: true, fuera_de_horario: true });
+  if (!dry && (hora < hIni || hora >= hFin || dia === 0 || dia === 6)) return json({ ok: true, fuera_de_horario: true });
 
   const corte = Number(cfg?.cadencia_corte_dias) || 14;
   const { data: pasos } = await supabase.from('crm_cadencia_pasos').select('*').eq('activo', true).order('orden');

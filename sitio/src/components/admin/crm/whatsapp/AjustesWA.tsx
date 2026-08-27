@@ -56,7 +56,7 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
   const guardarCadencia = async () => {
     setCadMsg('');
     const r = await fetch('/api/crm/leads/cadencia', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, pasos: cadPasos }) })
+      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, cadencia_hora_inicio: cad?.cadencia_hora_inicio ?? 10, cadencia_hora_fin: cad?.cadencia_hora_fin ?? 18, pasos: cadPasos }) })
       .then(x => x.json()).catch(e => ({ error: String(e) }));
     setCadMsg(r?.error ? r.error : 'Cadencia guardada ✓'); setTimeout(() => setCadMsg(''), 2500);
   };
@@ -172,6 +172,13 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
                   onChange={e => setCad({ ...cad, cadencia_corte_dias: Number(e.target.value) })}
                   style={{ ...inp, width: 64 }} />
                 <span style={{ fontSize: '0.7rem', color: '#888' }}>días (después → Rezagados)</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', marginLeft: 10 }}>Horario</span>
+                <input type="number" min={0} max={23} value={cad.cadencia_hora_inicio ?? 10}
+                  onChange={e => setCad({ ...cad, cadencia_hora_inicio: Number(e.target.value) })} style={{ ...inp, width: 56 }} />
+                <span style={{ fontSize: '0.7rem', color: '#888' }}>a</span>
+                <input type="number" min={1} max={24} value={cad.cadencia_hora_fin ?? 18}
+                  onChange={e => setCad({ ...cad, cadencia_hora_fin: Number(e.target.value) })} style={{ ...inp, width: 56 }} />
+                <span style={{ fontSize: '0.7rem', color: '#888' }}>h CDMX (L-V)</span>
               </div>
               {cadPasos.map((p2, i) => (
                 <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' }}>
@@ -341,7 +348,7 @@ function AjustesInactividad() {
   const guardarCadencia = async () => {
     setCadMsg('');
     const r = await fetch('/api/crm/leads/cadencia', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, pasos: cadPasos }) })
+      body: JSON.stringify({ cadencia_activa: !!cad?.cadencia_activa, cadencia_corte_dias: cad?.cadencia_corte_dias || 14, cadencia_hora_inicio: cad?.cadencia_hora_inicio ?? 10, cadencia_hora_fin: cad?.cadencia_hora_fin ?? 18, pasos: cadPasos }) })
       .then(x => x.json()).catch(e => ({ error: String(e) }));
     setCadMsg(r?.error ? r.error : 'Cadencia guardada ✓'); setTimeout(() => setCadMsg(''), 2500);
   };
