@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ request }) => {
   const cfg = configurado();
 
   const av = { revisados: 0, enviados: 0, porPixel: 0, yaEstaban: 0, sinLeadId: 0,
-               fueraDeVentana: 0, errores: 0, detalle: [] as any[] };
+               sinFecha: 0, fueraDeVentana: 0, errores: 0, detalle: [] as any[] };
   let viaCrmViva = cfg.listo;
 
   // TODOS los que vinieron de TikTok y ya avanzaron de etapa. Los que traen
@@ -50,7 +50,22 @@ export const GET: APIRoute = async ({ request }) => {
     const evento = ETAPAS_A_TIKTOK[c.lifecycle_stage];
     if (!evento) continue;
 
-    const cuando = c.updated_at ? new Date(c.updated_at) : new Date();
+    // La fecha del CAMBIO DE ETAPA, que el trigger `trg_contact_stage_change`
+    // deja en `activities`. NO `updated_at`: ese se mueve con cualquier
+    // edición del contacto, así que corregirle el teléfono a alguien hoy
+    // reportaría su conversión como si hubiera sido hoy. Medido: hay contactos
+    // con 73 días de diferencia entre una fecha y la otra — bastante para
+    // sacar una conversión real de la ventana, o para meter una vieja.
+    const { data: cambio } = await supabase.from('activities')
+      .select('created_at')
+      .eq('contact_id', c.id).eq('tipo', 'stage_change')
+      .eq('metadata->>new_stage', c.lifecycle_stage)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    // Sin registro del cambio no se inventa una fecha: se salta. Un contacto
+    // importado ya como cliente no tiene cuándo, y ponerle hoy sería decirle a
+    // TikTok que convirtió por un anuncio de esta semana.
+    if (!cambio?.created_at) { av.sinFecha++; continue; }
+    const cuando = new Date(cambio.created_at);
     const clave = leadId || `pixel:${c.id}`;
     if (hecho.has(`${clave}|${evento}`)) { av.yaEstaban++; continue; }
 
