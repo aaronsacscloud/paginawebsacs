@@ -134,10 +134,22 @@ export async function importarLeadsTikTok(
 
     if (existente) {
       const prev = existente.propiedades || {};
+      // FUSIÓN, no reemplazo. Reimportar para RESCATAR el lead_id —que es el
+      // caso real: los leads que entraron por la hoja no lo traen y sin él no
+      // se le puede reportar nada a TikTok— venía con un archivo de dos
+      // columnas, y el bloque nuevo, armado entero desde ese archivo, borraba
+      // la campaña, el anuncio y las respuestas del formulario que ya estaban.
+      // Un dato nuevo puede llenar un hueco; nunca vaciar algo que ya había.
+      const fusionado: Record<string, any> = { ...(previo || {}) };
+      for (const [k, v] of Object.entries(bloqueTikTok)) {
+        const vacio = v === null || v === undefined || v === ''
+          || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as any).length === 0);
+        if (!vacio) fusionado[k] = v;
+      }
       const upd: Record<string, any> = {
         propiedades: {
           ...prev,
-          tiktok: bloqueTikTok,
+          tiktok: fusionado,
           origen_cuenta: prev.origen_cuenta || 'tiktok',
           atribucion: prev.atribucion || atribucionDeLead(l),
         },
