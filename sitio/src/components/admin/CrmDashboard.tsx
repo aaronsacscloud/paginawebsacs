@@ -11,6 +11,27 @@ import CampanaNotificaciones from './crm/CampanaNotificaciones';
 // ══ REGLA DE VELOCIDAD: cada tab es un chunk LAZY. El bundle inicial solo
 // lleva el shell (nav + Inicio móvil). Un import estático aquí regresa el
 // monolito de 2.2 MB que mataba el primer pintado. ══
+// El chunk del TAB ACTIVO se pide en cuanto este módulo evalúa — viaja en
+// paralelo con la hidratación en vez de esperarla (client:only → solo browser).
+const PRECARGA_TAB: Record<string, () => Promise<any>> = {
+  pipeline: () => import('./crm/LeadsTab'),
+  clientes: () => import('./crm/ClientesTab'),
+  whatsapp: () => import('./crm/whatsapp/WhatsAppTab'),
+  cotizaciones: () => import('./RevenueHub'),
+  pagos: () => import('./crm/PagosTab'),
+  soporte: () => import('./crm/soporte/SoporteTab'),
+  suscripciones: () => import('./crm/SubscriptionsTab'),
+  oportunidades: () => import('./crm/OportunidadesTab'),
+  reuniones: () => import('./crm/ReunionesTab'),
+  mejoras: () => import('./crm/MejorasTab'),
+  deals: () => import('./crm/DealsTab'),
+};
+try {
+  const t0 = new URLSearchParams(window.location.search).get('tab') || '';
+  if (t0 === 'cobranza') PRECARGA_TAB.pagos();
+  else PRECARGA_TAB[t0]?.();
+} catch { /* SSR u otro entorno: nada */ }
+
 const DealsTab = lazy(() => import('./crm/DealsTab'));
 const AutomationsTab = lazy(() => import('./crm/AutomationsTab'));
 const EmailTab = lazy(() => import('./crm/email/EmailTab'));
