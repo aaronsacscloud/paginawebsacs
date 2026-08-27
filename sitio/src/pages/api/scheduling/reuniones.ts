@@ -7,6 +7,7 @@
 // Solo founder/cs (los partners usan su portal con /api/scheduling/bookings).
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { marcarAgendado } from '../../../lib/crm/estatus-live';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { isPartner } from '../../../lib/scheduling/scope';
 import { alertasInasistencia, ESTADOS } from '../../../lib/crm/reuniones';
@@ -207,6 +208,7 @@ export const POST: APIRoute = async ({ request }) => {
   const cidPromo = filas[0]?.contact_id;
   if (cidPromo) {
     const { data: cLead } = await supabase.from('contacts').select('lifecycle_stage').eq('id', cidPromo).single();
+    await marcarAgendado(cidPromo).catch(() => {});   // estatus en vivo: agendó
     if (cLead && ['lead', 'lead_calificado'].includes(cLead.lifecycle_stage)) {
       await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', cidPromo);
       await supabase.from('activities').insert({ contact_id: cidPromo, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión', automatico: true, metadata: { regla: 'booking_creado', actor: 'sistema' } });

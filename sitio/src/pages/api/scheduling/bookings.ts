@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { supabase } from '../../../lib/supabase';
+import { marcarDemoHecha } from '../../../lib/crm/estatus-live';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { isPartner, canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
@@ -78,6 +79,8 @@ export const PUT: APIRoute = async ({ request }) => {
   const estadoNuevo = updates.estado ? normalizaEstado(String(updates.estado)) : null;
 
   if (estadoNuevo === 'asistio' && cambioEstado) {
+    // Leads en vivo: asistió a la reunión → demo_hecha (solo avanza).
+    if (current.contact_id) marcarDemoHecha(current.contact_id).catch(() => {});
     // Update deal stage to demo_realizada
     if (current.deal_id) {
       await supabase

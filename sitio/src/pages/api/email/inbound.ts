@@ -14,6 +14,7 @@
 //    ruido que enterraría las respuestas de verdad.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { marcarRespondio } from '../../../lib/crm/estatus-live';
 import { verificar } from '../../../lib/email/token';
 import { limpiarCitado, htmlAtexto } from '../../../lib/email/puro';
 import { darDeBaja } from '../../../lib/email/bajas';
@@ -148,6 +149,10 @@ export const POST: APIRoute = async ({ request, url }) => {
       const { data } = await supabase.from('contacts').select('company_id').eq('id', contactId).maybeSingle();
       companyId = data?.company_id || null;
     }
+
+    // Leads en vivo: una respuesta por CORREO también mueve el funnel —
+    // nuevo/contactado/sin_respuesta → respondió (el cron confirma).
+    if (contactId) await marcarRespondio(contactId).catch(() => {});
 
     // ── Hilo: se reusa la conversación abierta de esa persona ──
     const { data: abierta } = await supabase.from('email_conversations')

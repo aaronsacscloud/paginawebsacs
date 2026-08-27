@@ -1294,10 +1294,17 @@ export default function LeadsTab() {
                     await fetch('/api/crm/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                       contact_id: c.id, tipo: 'llamada', titulo: `Llamada: ${lbl}`, descripcion: llamadaNota.trim() || null, metadata: { resultado: llamadaRes },
                     }) }).catch(() => {});
-                    // La llamada ES un toque: mueve el reloj y, si fue discovery, el estatus.
+                    // La llamada ES un toque y su RESULTADO mueve el estatus en
+                    // vivo (solo hacia adelante; el cron confirma de noche):
+                    //   contestó → respondió · discovery → descubrimiento ·
+                    //   no contestó/buzón → contactado (si estaba sin tocar).
+                    const eAct = eDe(c);
+                    const avance = llamadaRes === 'discovery' ? 'descubrimiento'
+                      : llamadaRes === 'contesto' && ['nuevo', 'contactado', 'sin_respuesta'].includes(eAct) ? 'respondio'
+                      : eAct === 'nuevo' ? 'contactado' : null;
                     await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                       id: c.id, last_contact_at: new Date().toISOString(),
-                      ...(llamadaRes === 'discovery' ? { estatus_lead: 'descubrimiento', estatus_lead_at: new Date().toISOString() } : {}),
+                      ...(avance ? { estatus_lead: avance, estatus_lead_at: new Date().toISOString() } : {}),
                     }) }).catch(() => {});
                     cerrar(); cargar();
                   }} style={{ border: 'none', background: llamadaRes ? '#9B8CFA' : '#d8d6e4', color: '#fff', borderRadius: 9, padding: '8px 16px', fontSize: '0.78rem', fontWeight: 800, cursor: llamadaRes ? 'pointer' : 'default', fontFamily: 'inherit' }}>Registrar</button>

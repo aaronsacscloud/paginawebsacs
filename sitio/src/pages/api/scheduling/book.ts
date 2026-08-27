@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { medirConversionEnSegundoPlano } from '../../../lib/openai-conversions';
 import { capturarEnServidor } from '../../../lib/posthog';
 import { supabase } from '../../../lib/supabase';
+import { marcarAgendado } from '../../../lib/crm/estatus-live';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
@@ -500,6 +501,7 @@ export const POST: APIRoute = async ({ request }) => {
   // la actividad — el lead con reunión ya no se trabaja como lead frío.
   if (contact_id) {
     const { data: cLead } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contact_id).single();
+    await marcarAgendado(contact_id).catch(() => {});   // estatus en vivo: agendó
     if (cLead && ['lead', 'lead_calificado'].includes(cLead.lifecycle_stage)) {
       await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', contact_id);
       await supabase.from('activities').insert({ contact_id, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión', automatico: true, metadata: { regla: 'booking_creado', actor: 'sistema' } });

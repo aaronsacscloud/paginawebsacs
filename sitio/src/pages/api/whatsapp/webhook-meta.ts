@@ -7,6 +7,7 @@
 import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { supabase } from '../../../lib/supabase';
+import { marcarRespondio } from '../../../lib/crm/estatus-live';
 import { upsertConversacion } from '../../../lib/whatsapp/espejo';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { telefonoLegible } from '../../../lib/telefono';
@@ -71,6 +72,12 @@ export const POST: APIRoute = async ({ request, url }) => {
               duracion_seg: c.duration != null ? Number(c.duration) : (prev?.started_at ? Math.max(0, Math.round((Date.now() - new Date(prev.started_at).getTime()) / 1000)) : null),
               motivo: st || null, updated_at: fin,
             }).eq('call_id', callId);
+            // Leads en vivo: llamada CONTESTADA (con duración) = conversación
+            // real → respondió. Una perdida no mueve nada.
+            if (conv?.id && (estado === 'terminada' || estado === 'aceptada') && Number(c.duration || 0) > 0) {
+              const { data: cvx } = await supabase.from('wa_conversaciones').select('contact_id').eq('id', conv.id).maybeSingle();
+              if (cvx?.contact_id) await marcarRespondio(cvx.contact_id).catch(() => {});
+            }
             if (conv?.id) await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'llamada', autor: null,
               detalle: estado === 'terminada' || estado === 'aceptada' ? `Llamada de WhatsApp ${entrante ? 'recibida' : 'realizada'}${c.duration ? ` · ${Math.floor(Number(c.duration) / 60)} min ${Number(c.duration) % 60} s` : ''}` : `Llamada ${entrante ? 'entrante' : 'saliente'} ${estado === 'perdida' ? 'perdida' : estado}` });
           }

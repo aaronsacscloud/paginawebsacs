@@ -16,7 +16,7 @@ with hechos as (
     coalesce(wa.salientes, 0) + coalesce(em.enviados, 0) + coalesce(ll.total, 0) as toques,
     least(wa.primer_saliente, em.primer_envio, ll.primera) as primer_toque,
     -- respondió: el primer ENTRANTE real de WhatsApp
-    wa.primer_entrante as respondio_at_calc,
+    least(wa.primer_entrante, emi.primer_entrante) as respondio_at_calc,
     -- discovery: llamada contestada de 3+ min CON minuta
     coalesce(ll.discovery, false) as discovery,
     coalesce(bk.agendadas, 0) as agendadas,
@@ -36,6 +36,12 @@ with hechos as (
     select count(*) enviados, min(created_at) primer_envio
     from email_sends where contact_id = ct.id and estado not in ('queued','failed')
   ) em on true
+  left join lateral (
+    -- respuesta por CORREO: también es "respondió"
+    select min(m.created_at) primer_entrante
+    from email_conversations ec join email_messages m on m.conversation_id = ec.id
+    where ec.contact_id = ct.id and m.direccion = 'entrante'
+  ) emi on true
   left join lateral (
     select count(*) total, min(l.created_at) primera,
            bool_or(l.estado = 'terminada' and coalesce(l.duracion_seg, 0) >= 180 and l.minuta is not null) discovery

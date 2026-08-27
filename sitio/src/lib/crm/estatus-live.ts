@@ -25,3 +25,17 @@ export async function marcarContactado(contactId?: string | null) {
     .eq('id', contactId).eq('estatus_lead', 'nuevo').then(() => {});
   await supabase.from('contacts').update({ last_contact_at: ahora }).eq('id', contactId).then(() => {});
 }
+
+/** Agendó reunión: cualquier estatus previo al hito → agendado (solo avanza). */
+export async function marcarAgendado(contactId?: string | null) {
+  if (!contactId) return;
+  await supabase.from('contacts').update({ estatus_lead: 'agendado', estatus_lead_at: new Date().toISOString() })
+    .eq('id', contactId).in('estatus_lead', ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento']).then(() => {});
+}
+
+/** Asistió a la reunión: → demo_hecha (solo avanza). */
+export async function marcarDemoHecha(contactId?: string | null) {
+  if (!contactId) return;
+  await supabase.from('contacts').update({ estatus_lead: 'demo_hecha', estatus_lead_at: new Date().toISOString() })
+    .eq('id', contactId).in('estatus_lead', ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado']).then(() => {});
+}
