@@ -920,14 +920,18 @@ export default function CrmDashboard() {
           <ErrorBoundary><ContentReviewTab /></ErrorBoundary>
         ) : tab === 'agents' ? (
           <div style={{ padding: 24 }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Agentes IA</h2>
+            {/* El app bar ya dice «Agentes IA». Y el tablero se describe en
+                español: «kill switches, approvals y traces» no dice nada a
+                quien abre esto desde el teléfono. */}
+            {!isMobile && <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Agentes IA</h2>}
             <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: 20 }}>
-              Dashboard completo de agentes con kill switches, approvals y traces.
+              El tablero completo: apagar un agente al vuelo, aprobar lo que propone y ver qué hizo, paso por paso.
             </p>
             <a href="/admin/agents" target="_blank" style={{
-              display: 'inline-block', padding: '10px 18px', background: '#1a1a1a', color: '#fff',
-              borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.8125rem'
-            }}>Abrir dashboard de agentes →</a>
+              display: isMobile ? 'flex' : 'inline-block', alignItems: 'center', justifyContent: 'center',
+              padding: '0 18px', minHeight: 44, background: '#5B4BD6', color: '#fff',
+              borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem',
+            }}>Abrir el tablero de agentes →</a>
             <div style={{ marginTop: 24, padding: 16, background: '#fafafa', borderRadius: 8, fontSize: '0.8125rem', color: '#555', lineHeight: 1.6 }}>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>Agentes disponibles:</div>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
