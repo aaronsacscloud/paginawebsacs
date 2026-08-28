@@ -281,8 +281,8 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Módulos del menú «Más» que heredan el mapa oscuro genérico (el mismo de la
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
-const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound'];
+const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1400,6 +1400,10 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
       [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
       [data-crm-dark="1"] .cons-grupo { background: #131318 !important; }
+      /* El interruptor de una automatización venía del tema claro: en oscuro
+         era una barra blanca, lo más brillante de la pantalla. */
+      [data-crm-dark="1"] .aut-riel[style*="rgb(221, 220, 227)"] { background: #2c2c36 !important; }
+      [data-crm-dark="1"] .aut-riel[style*="rgb(221, 220, 227)"] .aut-perilla { background: #918fa0 !important; }
       /* La línea de contexto del hilo (etapa · empresa · origen) es superficie
          de la app, no una franja clara pegada bajo el nombre. */
       [data-crm-dark="1"] .wa-ctx { background: #17171d !important; border-bottom-color: #1f1f26 !important; color: #918fa0 !important; }

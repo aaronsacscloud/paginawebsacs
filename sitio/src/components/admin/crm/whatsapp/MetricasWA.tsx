@@ -1,6 +1,7 @@
 // WHATSAPP · Métricas del inbox: volumen, estados, primera respuesta y carga
 // por agente. Sección propia del menú (wa-metricas).
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import Cargando from '../ui/Cargando';
 import { S, Aviso, chip } from '../email/ui';
 
@@ -10,6 +11,7 @@ const franjas: Record<string, [string, string]> = {
 };
 
 export default function MetricasWA() {
+  const esMovilM = useIsMobile();
   const [dias, setDias] = useState(7);
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
@@ -27,9 +29,9 @@ export default function MetricasWA() {
   const t = d.totales;
   const maxDia = Math.max(1, ...d.por_dia.map((x: any) => x.entrantes + x.salientes));
   const kpi = (etiqueta: string, valor: any, key: string, sub?: string) => (
-    <div style={{ ...S.card, borderLeft: `3px solid ${franjas[key]?.[0] || '#9B8CFA'}`, padding: '13px 15px' }}>
+    <div className="kpi-card" style={{ ...S.card, padding: '13px 15px' }}>
       <div style={S.kl}>{etiqueta}</div>
-      <div style={{ ...S.kv, fontSize: '1.45rem', color: franjas[key]?.[1] || '#1a1a1a' }}>{valor}</div>
+      <div style={{ ...S.kv, fontSize: '1.45rem', color: '#1a1a1a' }}>{valor}</div>
       {sub && <div style={S.ks}>{sub}</div>}
     </div>
   );
@@ -37,7 +39,8 @@ export default function MetricasWA() {
   return (
     <div style={S.wrap}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0, fontSize: '1rem' }}>Métricas de WhatsApp</h3>
+        {/* El app bar ya dice «Métricas» */}
+        {!esMovilM && <h3 style={{ margin: 0, fontSize: '1rem' }}>Métricas de WhatsApp</h3>}
         <span style={{ flex: 1 }} />
         <span style={{ display: 'inline-flex', gap: 6, whiteSpace: 'nowrap' }}>
           {[7, 30].map(n => (
@@ -46,7 +49,7 @@ export default function MetricasWA() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: esMovilM ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
         {kpi('Conversaciones nuevas', t.conversaciones_nuevas, 'nuevas')}
         {kpi('Mensajes recibidos', t.entrantes, 'entrantes')}
         {kpi('Mensajes enviados', t.salientes, 'salientes')}

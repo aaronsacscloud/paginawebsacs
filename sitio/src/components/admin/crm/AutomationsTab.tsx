@@ -144,7 +144,7 @@ export default function AutomationsTab() {
             onClick={() => { setView(tab.id); setSelectedId(null); }}
             style={{
               padding: '12px 20px', fontSize: '0.8125rem', fontWeight: 600,
-              border: 'none', borderBottom: (view === tab.id || (view === 'detail' && tab.id === 'list')) ? '2px solid #1a1a1a' : '2px solid transparent',
+              border: 'none', borderBottom: (view === tab.id || (view === 'detail' && tab.id === 'list')) ? '2px solid #5B4BD6' : '2px solid transparent',
               background: 'none', cursor: 'pointer', fontFamily: 'inherit',
               color: (view === tab.id || (view === 'detail' && tab.id === 'list')) ? '#1a1a1a' : '#999',
             }}
@@ -273,8 +273,10 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
           </div>
         )}
         {esMovilAut && <div style={{ fontSize: '0.85rem', color: '#8f8d98', marginBottom: 2 }}>{automations.length} automatizaciones</div>}
-        <button onClick={() => setVerListos(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff', minHeight: 44, ...(esMovilAut ? { width: '100%' } : {}) }}>Empezar de una lista</button>
-        <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', minHeight: 44, ...(esMovilAut ? { width: '100%' } : {}) }}>+ Nueva automatización</button>
+        {/* El sólido es crear: «Empezar de una lista» es el atajo, no la
+            acción principal. Ambos de 44 px y centrados. */}
+        <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff', height: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...(esMovilAut ? { width: '100%' } : {}) }}>+ Nueva automatización</button>
+        <button onClick={() => setVerListos(true)} style={{ ...btn, background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', height: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...(esMovilAut ? { width: '100%' } : {}) }}>Empezar de una lista</button>
       </div>
 
       {loading ? (
@@ -293,49 +295,61 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
               <div
                 key={a.id}
                 onClick={() => onSelect(a.id)}
-                style={{ ...card, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'box-shadow 0.15s' }}
+                style={{ ...card, cursor: 'pointer', display: 'flex', alignItems: esMovilAut ? 'stretch' : 'center', flexDirection: esMovilAut ? 'column' : 'row', gap: esMovilAut ? 10 : 16, transition: 'box-shadow 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
               >
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1a1a1a' }}>{a.nombre}</span>
+                  {/* El título partía en dos renglones peleando con el chip:
+                      ocupa su renglón y el chip va debajo. */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1a1a1a', flexBasis: esMovilAut ? '100%' : undefined }}>{a.nombre}</span>
                     <span style={badge(tipo.color)}>{tipo.label}</span>
                   </div>
                   {a.descripcion && (
                     <div style={{ fontSize: '0.8125rem', color: '#888', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.descripcion}</div>
                   )}
-                  <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem', color: '#999' }}>
-                    <span>Inscritos: <strong style={{ color: '#555' }}>{a.total_enrolled}</strong></span>
-                    <span>Completados: <strong style={{ color: '#555' }}>{a.total_completed}</strong></span>
-                    <span>Meta lograda: <strong style={{ color: '#2AB5A0' }}>{a.total_achieved_goal}</strong></span>
-                    <span style={{ color: '#ccc' }}>Creado {fmtDate(a.created_at)}</span>
-                  </div>
+                  {esMovilAut ? (
+                    /* «Meta lograda: 0» ocupaba tres renglones y los ceros
+                       quedaban desalineados: una sola línea que se lee de
+                       corrido. */
+                    <div style={{ fontSize: '0.78rem', color: '#8f8d98' }}>
+                      {a.total_enrolled} inscritos · {a.total_completed} completados · {a.total_achieved_goal} lograron la meta
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem', color: '#999' }}>
+                      <span>Inscritos: <strong style={{ color: '#555' }}>{a.total_enrolled}</strong></span>
+                      <span>Completados: <strong style={{ color: '#555' }}>{a.total_completed}</strong></span>
+                      <span>Meta lograda: <strong style={{ color: '#2AB5A0' }}>{a.total_achieved_goal}</strong></span>
+                      <span style={{ color: '#ccc' }}>Creado {fmtDate(a.created_at)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Toggle */}
-                <div onClick={e => toggleActive(a, e)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flexShrink: 0 }}>
-                  <div style={{
-                    width: 36, height: 20, borderRadius: 10,
-                    background: isActive ? '#2AB5A0' : '#ddd',
+                <div onClick={e => toggleActive(a, e)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0, minHeight: esMovilAut ? 44 : undefined }}>
+                  <div className="aut-riel" style={{
+                    width: 40, height: 22, borderRadius: 11,
+                    background: isActive ? '#2AB5A0' : '#dddce3',
                     position: 'relative', transition: 'background 0.2s',
                   }}>
-                    <div style={{
-                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                    <div className="aut-perilla" style={{
+                      width: 18, height: 18, borderRadius: '50%', background: '#fff',
                       position: 'absolute', top: 2,
-                      left: isActive ? 18 : 2,
+                      left: isActive ? 20 : 2,
                       transition: 'left 0.2s',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
                     }} />
                   </div>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: isActive ? '#2AB5A0' : '#999' }}>
+                  <span style={{ fontSize: esMovilAut ? '0.82rem' : '0.6875rem', fontWeight: 600, color: isActive ? '#2AB5A0' : '#999' }}>
                     {isActive ? 'Activo' : 'Pausado'}
                   </span>
+                  {esMovilAut && <span style={{ marginLeft: 'auto', color: '#918fa0', fontSize: '1.125rem' }}>›</span>}
                 </div>
 
-                {/* Arrow */}
-                <span style={{ color: '#ccc', fontSize: '1.125rem', flexShrink: 0 }}>›</span>
+                {/* La flecha vive con el estado, no en un renglón propio */}
+                {!esMovilAut && <span style={{ color: '#ccc', fontSize: '1.125rem', flexShrink: 0 }}>›</span>}
               </div>
             );
           })}
