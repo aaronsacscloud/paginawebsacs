@@ -105,6 +105,14 @@ export default function InboxPro() {
 
   const activaRef = useRef(activa); activaRef.current = activa;
   const hiloRef = useRef<any>(null);
+  // E1.1 · Hilos ya cargados. Se guardan los últimos 30 (una jornada completa
+  // de inbox cabe de sobra) para que volver a cualquiera sea instantáneo.
+  const cacheHilos = useRef<Map<string, any>>(new Map());
+  const guardarEnCache = (id: string, j: any) => {
+    cacheHilos.current.delete(id);
+    cacheHilos.current.set(id, j);
+    while (cacheHilos.current.size > 30) cacheHilos.current.delete(cacheHilos.current.keys().next().value as string);
+  };
   const cargarHilo = useCallback(async (a: { wa: string | null; email: string | null }) => {
     if (!a.wa && !a.email) return;   // fila virtual: no hay hilo que cargar
     const qs = a.wa ? `id=${a.wa}` : `email_id=${a.email}`;
@@ -113,7 +121,12 @@ export default function InboxPro() {
     // se descarta, si no pisa el hilo nuevo y el composer manda al chat equivocado.
     const act = activaRef.current;
     if (!act || (a.wa && act.wa !== a.wa) || (!a.wa && a.email && act.email !== a.email)) return;
-    if (j && !j.error) { hiloRef.current = j; } 
+    if (j && !j.error) {
+      hiloRef.current = j;
+      // E1.1: se guarda para que volver a esta conversación sea instantáneo.
+      const id = a.wa || a.email;
+      if (id) guardarEnCache(id, j);
+    } 
     if (j && !j.error) setHilo((prev: any) => {
       // Conserva los ecos optimistas que el servidor todavía no refleja (evita
       // que tu mensaje "parpadee" si el poll llega antes que el espejo).
@@ -147,7 +160,11 @@ export default function InboxPro() {
 
   useEffect(() => {
     if (!activa) { setHilo(null); return; }
-    setHilo(null);
+    // E1.1 · Si el hilo ya está en memoria NO se borra la pantalla: se deja lo
+    // que `abrir` ya pintó y el fetch de abajo solo lo refresca. Borrarlo aquí
+    // era lo que hacía parpadear en blanco cada conversación ya visitada.
+    const enMemoria = cacheHilos.current.get((activa.wa || activa.email) as string);
+    if (enMemoria) { hiloRef.current = enMemoria; setHilo(enMemoria); } else setHilo(null);
     if (activa.wa || activa.email) cargarHilo(activa);
     const t = setInterval(() => {
       if (!document.hidden && activaRef.current) {
@@ -243,18 +260,23 @@ export default function InboxPro() {
     precargados.current.add(id);
     const qs = c.wa_id ? `id=${c.wa_id}` : `email_id=${c.email_id}`;
     fetch(`/api/crm/whatsapp/hilo?${qs}`, { cache: 'no-store' }).then(r => r.json())
-      .then(j => { if (j && !j.error) cacheHilos.current.set(id, j); }).catch(() => {});
+      .then(j => { if (j && !j.error) guardarEnCache(id, j); }).catch(() => {});
   }, []);
-  const cacheHilos = useRef<Map<string, any>>(new Map());
 
   const abrir = (c: any) => {
-    // Si el hilo ya se precargó, se pinta AL INSTANTE y el fetch de siempre
-    // solo lo refresca detrás.
+    // Si el hilo ya se cargó antes, se pinta AL INSTANTE y el fetch de siempre
+    // solo lo refresca detrás. Es lo que hace que moverse entre conversaciones
+    // no tenga espera después de la primera.
     const id = c?.wa_id || c?.email_id;
     const listo = id ? cacheHilos.current.get(id) : null;
     if (listo) { hiloRef.current = listo; setHilo(listo); }
+    else { hiloRef.current = null; setHilo(null); }
     setActiva({ id: c.id, wa: c.wa_id ?? null, email: c.email_id ?? null });
     setLista(l => (l || []).map(x => x.id === c.id ? { ...x, no_leidos: 0 } : x));
+    // E1.3: las vecinas de la lista son las que se abren enseguida.
+    const arr = (listaRef.current || []).filter((x: any) => !x.virtual);
+    const i = arr.findIndex((x: any) => x.id === c.id);
+    [arr[i - 2], arr[i - 1], arr[i + 1], arr[i + 2]].forEach(v => { if (v) precargarHilo(v); });
   };
 
   // El código del hilo pesa 137 KB entre Hilo y Composer: se trae mientras el
@@ -272,8 +294,17 @@ export default function InboxPro() {
   useEffect(() => {
     if (!lista || !lista.length) return;
     const w: any = window;
-    const traer = () => (lista as any[]).filter(c => !c.virtual).slice(0, 3).forEach(precargarHilo);
-    const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 3500 }) : setTimeout(traer, 1400);
+    // E1: la primera pantalla puede tardar un poco más — lo que no puede
+    // tardar es abrir. Se traen las 5 primeras en cuanto el hilo principal
+    // tiene un respiro.
+    // Ojo: la lista se PINTA en otro orden que el arreglo (en móvil arranca
+    // en «No contestadas»), así que se precargan los dos frentes: las
+    // primeras del arreglo y las primeras que esperan respuesta, que son las
+    // que el usuario ve arriba.
+    const vivas = (lista as any[]).filter(c => !c.virtual);
+    const esperan = vivas.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
+    const traer = () => [...esperan.slice(0, 5), ...vivas.slice(0, 5)].forEach(precargarHilo);
+    const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 1200 }) : setTimeout(traer, 600);
     return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(t); else clearTimeout(t as any); };
   }, [lista, precargarHilo]);
 

@@ -14,7 +14,7 @@ import { Corazones } from '../ui/Cargando';
 import { srcMedia } from './Burbuja';
 import VisorMedia, { extensionDe } from './VisorMedia';
 import { C, L, label, haceCuanto } from './estilo';
-import AccionesVenta from './AccionesVenta';
+import AccionesVenta, { EstiloAccv } from './AccionesVenta';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
 const money = (n: any) => (n || n === 0) ? `$${Math.round(Number(n)).toLocaleString('es-MX')}` : '—';
@@ -517,6 +517,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       })()}
       {contactoBase && (
         <div style={{ margin: '0 16px 10px', display: 'flex', gap: 6 }}>
+          <EstiloAccv />
           <button onClick={() => { setAccionInicial('cotizar'); setSubInfo('acciones'); }}
             className="accv-tap" style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📄 Cotizar aquí</button>
           <button onClick={() => { setAccionInicial('agendar'); setSubInfo('acciones'); }}
