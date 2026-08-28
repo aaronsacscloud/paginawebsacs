@@ -364,9 +364,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 el trabajo que este bloque borra. Toca = lo escribe (y ahí lo
                 puedes ajustar antes de enviar). Solo cuando la caja está
                 vacía: con texto escrito estorbarían. */}
-            {!grabando && movil && !texto && snippets.length > 0 && modo === 'wa' && !bloqueadoWa && (
+            {!grabando && !texto && snippets.length > 0 && modo === 'wa' && !bloqueadoWa && (
               <div style={{ display: 'flex', gap: 7, padding: '8px 12px 2px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                {snippets.slice(0, 4).map((r: any) => (
+                {snippets.slice(0, movil ? 4 : 6).map((r: any) => (
                   <button key={r.id} onClick={() => usarSnippet(r)}
                     style={{ flex: 'none', maxWidth: 190, minHeight: 34, padding: '0 13px', borderRadius: 999, border: `1px solid ${C.g200}`, background: '#fff', color: C.g700, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {r.titulo || r.atajo || String(r.texto || '').slice(0, 24)}

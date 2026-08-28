@@ -17,7 +17,10 @@ const BANDEJAS = [
   { id: 'todas', label: 'Todas', Ico: IcoInbox },
   { id: 'mias', label: 'Míos', Ico: IcoUsuario },
   { id: 'sin_asignar', label: 'Sin asignar', Ico: IcoUsuarioMas },
-  { id: 'no_leidas', label: 'Sin respuesta', Ico: IcoBurbuja },
+  // El nombre importa: «Sin respuesta» se leía como «no me contestaron», y
+  // esta bandeja es la contraria — te escribieron y nadie respondió.
+  { id: 'no_leidas', label: 'No contestadas', Ico: IcoBurbuja },
+  { id: 'sin_respuesta', label: 'Sin respuesta de ellos', Ico: IcoBurbuja },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
 ];
 

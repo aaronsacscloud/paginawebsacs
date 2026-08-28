@@ -3,6 +3,7 @@
 // NEGRO, lupa desplegable, filtros avanzados con el builder, y la fila con
 // avatar+badge de canal, 3 líneas y border-l de selección.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { C, L, horaRelativa } from './estilo';
 import { IcoBuscar, IcoChevronAbajo, IcoUsuarioMas, IcoPuntos, IcoMegafono } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
@@ -269,8 +270,16 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     fontWeight: c.no_leidos ? 600 : 400, fontStyle: c.virtual ? 'italic' : 'normal',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180,
                   }}>
-                    {c.virtual ? 'Sin conversación' : `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}
+                    {/* Un borrador a medias es trabajo empezado: si la lista no
+                        lo dice, se olvida. Igual que en el teléfono. */}
+                    {hayBorrador(c.id)
+                      ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
+                      : c.virtual ? 'Sin conversación' : `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto || '—'}`}
                   </span>
+                  {/* Espera tu respuesta: el cliente escribió y nadie contestó. */}
+                  {c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && !c.no_leidos && (
+                    <span title="Espera tu respuesta" style={{ width: 8, height: 8, borderRadius: 99, background: C.morado, flexShrink: 0 }} />
+                  )}
                   {c.no_leidos > 0 && (
                     <span style={{ background: C.morado, color: '#fff', fontSize: 10, fontWeight: 800, minWidth: 18, height: 18, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px', flexShrink: 0 }}>
                       {c.no_leidos}

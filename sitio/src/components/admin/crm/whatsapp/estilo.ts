@@ -93,6 +93,12 @@ export const spinner = (px = 24, color = C.morado): CSSProperties => ({
 
 /** CSS global del inbox (keyframes + scrollbars finos). Inyectar una vez. */
 export const CSS_INBOX = `
+/* Un mensaje que NO salió tiene que verse como tal, en teléfono y en
+   escritorio: a 10 px, el aviso y «Reintentar» se leían igual que la hora y
+   se pasaban de largo. */
+.wa-fallo .wa-err-msg { font-size: 12px; font-weight: 600; }
+.wa-fallo button { min-height: 30px; font-size: 12px; padding: 0 12px; }
+
   /* ══ Hilo móvil v5: burbujas gris/morado (la referencia manda), sin verdes.
      Los estilos de burbuja son inline: se pisan por atributo. ══ */
   .wa-hilo-m [style*="border-radius: 16px 16px 6px"] { background: #EEECFE !important; color: #1a1a1a !important; border-radius: 18px 18px 6px 18px !important; }

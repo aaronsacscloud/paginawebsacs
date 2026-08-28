@@ -100,13 +100,16 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
           <div key={f.id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 14, marginBottom: 10 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 240 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                {/* El nombre queda anclado a la derecha: centrado en el espacio
+                    sobrante terminaba en una x distinta en cada tarjeta y no se
+                    leía como columna al bajar. */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 5 }}>
                   {/* El tipo de señal es taxonomía, no gravedad: pintarlo de
                       verde o rojo hacía que «usa fuera de plan» se leyera como
                       un estado. El color de esta tarjeta lo lleva el dinero. */}
                   <span className="opo-tipo" style={{ padding: '3px 10px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74' }}>{e.txt}</span>
                   <button onClick={() => onOpenCliente?.(f.company_id)}
-                    style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontWeight: 800, fontSize: '0.88rem', color: '#1a1a1a' }}>
+                    style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontWeight: 800, fontSize: '0.88rem', color: '#1a1a1a', marginLeft: 'auto', textAlign: 'right' }}>
                     {co?.sacs_account || co?.nombre || 'Cliente'}
                   </button>
                   {f.opportunity_value > 0 && <span style={{ fontWeight: 800, color: '#1E8A63', fontSize: '0.82rem' }}>+{money(f.opportunity_value)}/año</span>}
@@ -116,14 +119,23 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                     (cultomar): …») cuando la cuenta ya está en el encabezado, y
                     debajo un resumen que decía lo mismo con otras palabras. */}
                 <div style={{ fontSize: '0.86rem', color: '#333', lineHeight: 1.45 }}>
+                  {/* Si el ARR ya está arriba en verde, la cola «— $X ARR en
+                      juego» del hecho lo dice dos veces. */}
                   {String(f.titulo || '')
+                    .replace(/\s*[—-]\s*\$[\d,]+\s*ARR\s*en\s*juego\.?\s*$/i, '')
                     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '')
                     .replace(new RegExp('^\\s*' + String(co?.sacs_account || co?.nombre || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*(\\([^)]*\\))?\\s*:\\s*', 'i'), '')}
                 </div>
                 {f.detalle && !esMovilB && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
                 {/* Lo que hay que hacer es instrucción, no dinero: en verde
                     competía con el ARR, que es el único dato que sí lo es. */}
-                {f.accion && <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>}
+                {/* Si la acción repite la cola del hecho («… → súbelo a
+                    controla» y luego «→ Súbelo a controla»), se pinta una vez:
+                    decir dos veces lo mismo hace dudar de si son dos cosas. */}
+                {f.accion && !(() => {
+                  const norm = (t: string) => String(t || '').toLowerCase().replace(/[.\s—–-]+/g, ' ').trim();
+                  return norm(f.titulo).endsWith(norm(f.accion));
+                })() && <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>}
                 {f.motivo_descarte && <div style={{ fontSize: '0.74rem', color: '#b93333', marginTop: 5 }}>Descartada: {f.motivo_descarte}</div>}
               </div>
               {abierta && (
@@ -131,9 +143,9 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                   {/* «Ganada» iba en verde sólido: un segundo botón lleno en la
                       misma tarjeta compite con la acción de todos los días, que
                       es marcar que ya contactaste. Los tres pesan igual ahora. */}
-                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, fontWeight: 700 }}>Ya contacté</button>}
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
+                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, fontWeight: 700 }}>Ya contacté</button>}
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
                 </div>
               )}
             </div>

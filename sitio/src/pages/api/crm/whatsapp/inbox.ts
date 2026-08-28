@@ -268,7 +268,10 @@ const _GET: APIRoute = async ({ request, url }) => {
   else lista = lista.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
   if (filtro === 'mias' && user) lista = lista.filter(c => c.asignado_a === user.id);
   if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
-  if (filtro === 'no_leidas') lista = lista.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
+  // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y
+  // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
+  if (filtro === 'no_leidas' || filtro === 'no_contestadas') lista = lista.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
+  if (filtro === 'sin_respuesta') lista = lista.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
   if (filtro === 'accion') lista = lista.filter(requiereAccion);
   if (etapa) lista = lista.filter(c => c.contacto?.lifecycle_stage === etapa);
   if (tipo) lista = lista.filter(c => c.contacto?.tipo === tipo);

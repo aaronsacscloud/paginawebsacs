@@ -270,12 +270,12 @@ export default function InboxPro() {
   // Y los datos de las primeras conversaciones de la cola: son las que se
   // abren en el 90% de los casos.
   useEffect(() => {
-    if (!isMobile || !lista || !lista.length) return;
+    if (!lista || !lista.length) return;
     const w: any = window;
     const traer = () => (lista as any[]).filter(c => !c.virtual).slice(0, 3).forEach(precargarHilo);
     const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 3500 }) : setTimeout(traer, 1400);
     return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(t); else clearTimeout(t as any); };
-  }, [isMobile, lista, precargarHilo]);
+  }, [lista, precargarHilo]);
 
   const refrescar = () => { if (activaRef.current) cargarHilo(activaRef.current); cargarLista(filtrosRef.current); };
   const waId = () => activaRef.current?.wa || null;

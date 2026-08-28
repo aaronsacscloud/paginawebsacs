@@ -1745,11 +1745,6 @@ const CRM_MOBILE_CSS = `
        track oscuro: es el dato que dice si la reunión sirvió. */
     .kpi-card > div:last-child[style*="border-radius: 99px"] { height: 5px !important; }
 
-    /* Un mensaje que NO salió tiene que verse como tal: a 10 px, el aviso y
-       el «Reintentar» se leían igual que la hora y se pasaban de largo. */
-    .wa-fallo .wa-err-msg { font-size: 12px !important; font-weight: 600 !important; }
-    .wa-fallo button { min-height: 32px !important; font-size: 12px !important; padding: 0 12px !important; }
-
     /* Acción única: a lo ancho parecía el asunto de la pantalla */
     .vr-acc:only-child, .vr-accp:only-child { flex: 0 1 auto !important; padding: 0 26px !important; }
 
