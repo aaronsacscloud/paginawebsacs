@@ -1663,8 +1663,8 @@ const CRM_MOBILE_CSS = `
        la caja desaparece —el aire separa, no el marco—, el color se reserva
        al DATO y los botones quedan neutros, altos y de a dos por fila.
        GLOBAL a propósito: en el bloque dark solo aplicaría en oscuro. */
-    .hoja-ficha [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
-    .m-auto-dark [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .hoja-ficha [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea):not(.kpi-card),
+    .m-auto-dark [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea):not(.kpi-card),
     .hoja-ficha [style*="border-radius: 10px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
     .m-auto-dark [style*="border-radius: 10px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
     .hoja-ficha [style*="border-radius: 14px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),

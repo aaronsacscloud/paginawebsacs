@@ -52,13 +52,26 @@ function limpiarHecho(titulo: string, cuenta: string, tieneCifra: boolean) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-/** El hecho no debe cerrar repitiendo la categoría que ya dice el chip
- *  («— uso sin pagar», «: capacitar o riesgo de downgrade»). */
+/** El hecho no debe cerrar repitiendo la categoría que ya dice el chip. Ojo:
+ *  la coletilla viene FLEXIONADA («— uso sin pagar» contra el chip «Usa sin
+ *  pagar»), así que la comparación es por raíz: se recorta la terminación de
+ *  cada palabra antes de comparar. */
+const raiz = (p: string) => p.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().slice(0, Math.max(3, p.length - 2));
+const mismaFrase = (a: string, b: string) => {
+  const pal = (x: string) => String(x || '').toLowerCase().replace(/[^\wáéíóúñ ]+/gi, ' ').split(/\s+/).filter(Boolean).map(raiz);
+  const A = pal(a), B = pal(b);
+  return A.length === B.length && A.length > 0 && A.every((w, i) => w === B[i]);
+};
 function sinEcoDeCategoria(hecho: string, categoria: string) {
-  const cat = String(categoria || '').toLowerCase().trim();
+  const cat = String(categoria || '').trim();
   if (!cat) return hecho;
-  const re = new RegExp('[\\s,;:—–-]+' + cat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s]*$', 'i');
-  return hecho.replace(re, '').replace(/[\s,;:.—–-]+$/, '');
+  const n = cat.split(/\s+/).length;
+  const palabras = hecho.split(/\s+/);
+  const cola = palabras.slice(-n).join(' ').replace(/^[\s,;:—–-]+/, '');
+  if (mismaFrase(cola, cat)) {
+    return palabras.slice(0, -n).join(' ').replace(/[\s,;:.—–-]+$/, '');
+  }
+  return hecho;
 }
 
 /** ¿La acción repite el final del hecho? Se compara SIN el paréntesis final,

@@ -206,7 +206,7 @@ export default function CommissionsTab() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: esMovilCom ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: esMovilCom ? '10px 10px' : 12, marginBottom: 20, alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: esMovilCom ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: esMovilCom ? 12 : 12, rowGap: esMovilCom ? 12 : undefined, columnGap: esMovilCom ? 12 : undefined, marginBottom: 20, alignItems: 'stretch' }}>
         <Stat label="Por aprobar" value={fmt(stats.pending)} sub={`${stats.countPending} bonos`} accent="#E8A838" />
         <Stat label="Por pagar" value={fmt(stats.earned)} sub={`${stats.countEarned} comisiones`} accent="#4B7BE5" />
         <Stat label="Pagado" value={fmt(stats.paid)} accent="#2AB5A0" />
@@ -236,7 +236,7 @@ export default function CommissionsTab() {
         />
         {/* A media anchura quedaba huérfano bajo el buscador: en el teléfono
             ocupa el renglón entero, como el resto de los controles. */}
-        <button onClick={exportCSV} style={{ ...btn(), ...(esMovilCom ? { width: '100%', minHeight: 44, gridColumn: '1 / -1' } : {}) }}>↓ CSV</button>
+        <button onClick={exportCSV} style={{ ...btn(), ...(esMovilCom ? { width: '100%', height: 44, minHeight: 44, gridColumn: '1 / -1' } : {}) }}>↓ CSV</button>
         {selectedRows.length > 0 && (
           <button onClick={payBulk} disabled={!canBulkPay} style={{ ...btn('#2AB5A0', '#fff'), opacity: canBulkPay ? 1 : 0.5 }}
             title={canBulkPay ? '' : 'Solo earned del mismo partner'}>
@@ -252,8 +252,8 @@ export default function CommissionsTab() {
         {loading ? (
           <Cargando texto="Cargando…" />
         ) : filtered.length === 0 ? (
-          <div style={{ padding: esMovilCom ? '26px 16px' : 48, textAlign: 'center', color: '#888' }}>
-            Sin comisiones que coincidan.
+          <div style={{ padding: esMovilCom ? '18px 16px' : 48, textAlign: 'center', color: '#888' }}>
+            {(filterStatus || filterTipo || search) ? 'Sin comisiones que coincidan.' : 'Aún no hay comisiones.'}
             {(filterStatus || filterTipo || search) && (
               <div style={{ marginTop: 10 }}>
                 {/* Un vacío sin salida deja al usuario atorado: si hay filtros
