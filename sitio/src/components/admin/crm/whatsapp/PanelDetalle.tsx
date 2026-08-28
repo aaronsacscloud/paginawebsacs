@@ -231,6 +231,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const [abiertoPanel, setAbiertoPanel] = useState(true);
   const [subInfo, setSubInfo] = useState<'info' | 'actividad' | 'acciones'>('info');
   const ventanaAbierta = !!(conv?.ultimo_entrante_at && Date.now() - Date.parse(conv.ultimo_entrante_at) < 24 * 3600e3);
+  const [nonceCtx, setNonceCtx] = useState(0);   // acciones recién ejecutadas → recargar el contexto
   const [accionInicial, setAccionInicial] = useState<'cotizar' | 'agendar' | null>(null);
   const [detalle, setDetalle] = useState<string | null>(null);   // drill-down de una tarjeta (breadcrumb ← Resumen)
   const [ficha, setFicha] = useState(false);
@@ -256,7 +257,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
     setCtx(null);
     const qs = conv.id ? `wa_id=${conv.id}` : conv.contact_id ? `contact_id=${conv.contact_id}` : conv.company_id ? `company_id=${conv.company_id}` : '';
     if (qs) fetch(`/api/crm/whatsapp/panel?${qs}`).then(r => r.json()).then(setCtx).catch(() => {});
-  }, [conv?.id, conv?.company_id, conv?.contact_id]);
+  }, [conv?.id, conv?.company_id, conv?.contact_id, nonceCtx]);
   const ligar = async (contactId: string, companyId?: string | null) => {
     await api.patchConversacion({ contact_id: contactId, company_id: companyId || null });
     cacheId.current = null;
@@ -908,8 +909,8 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
                 elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
                 en cada polling (Clasificación parpadeaba). */}
-            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} />)}
-            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={null} />}
+            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} />)}
+            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={null} refrescar={() => setNonceCtx(n => n + 1)} />}
             {tab === 'adjuntos' && TabAdjuntos()}
             {tab === 'notas' && TabNotas()}
           </div>

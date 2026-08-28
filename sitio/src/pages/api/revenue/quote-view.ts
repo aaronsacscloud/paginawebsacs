@@ -104,7 +104,7 @@ export const POST: APIRoute = async ({ request }) => {
           tipo: 'cotizacion_vista', automatico: true,
           company_id: quote.company_id || null, contact_id: quote.contact_id || null,
           deal_id: quote.deal_id || null,
-          titulo: (`👀 Vio la cotización ${quote.numero || ''}`).trim() + (meta.views > 1 ? ` (${meta.views}ª vez)` : ''),
+          titulo: (`Vio la cotización ${quote.numero || ''}`).trim() + (meta.views > 1 ? ` (${meta.views}ª vez)` : ''),
           descripcion: (`${hora} · ${quote.empresa || quote.contacto || ''}`).trim(),
           metadata: { audit: 'quote_view', quote_id: id, views: meta.views, at: now },
         }).select().maybeSingle();

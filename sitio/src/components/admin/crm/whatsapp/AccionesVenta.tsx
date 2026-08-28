@@ -18,11 +18,11 @@ const BASE = 'https://www.sacscloud.com';
 const PLANES_VENDIBLES = PLANS.filter(p => PLAN_PRICES[p] > 0);
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-const inp: React.CSSProperties = { border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none', background: '#fff', boxSizing: 'border-box', width: '100%', minHeight: 36 };
-const btnP: React.CSSProperties = { border: 'none', background: C.moradoTinta, color: '#fff', borderRadius: 9, padding: '10px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 };
-const btnG: React.CSSProperties = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 9, padding: '9px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: C.g700, minHeight: 44 };
+const inp: React.CSSProperties = { border: `1px solid ${C.g200}`, borderRadius: 8, padding: '10px 12px', fontSize: 12, fontFamily: 'inherit', outline: 'none', background: '#fff', boxSizing: 'border-box', width: '100%', minHeight: 44 };
+const btnP: React.CSSProperties = { border: 'none', background: C.moradoTinta, color: '#fff', borderRadius: 9, padding: '12px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', minHeight: 48, boxSizing: 'border-box' };
+const btnG: React.CSSProperties = { border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 9, padding: '11px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', color: C.g700, minHeight: 48, boxSizing: 'border-box' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', margin: '10px 0 4px' };
-const pill = (on: boolean): React.CSSProperties => ({ border: '1.5px solid', borderColor: on ? '#c9bcf7' : C.g200, background: on ? C.moradoAgua : '#fff', color: on ? C.moradoTinta : C.g500, borderRadius: 999, padding: '7px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', minHeight: 36 });
+const pill = (on: boolean): React.CSSProperties => ({ border: '1.5px solid', borderColor: on ? '#c9bcf7' : C.g200, background: on ? C.moradoAgua : '#fff', color: on ? C.moradoTinta : C.g500, borderRadius: 999, padding: '11px 14px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, boxSizing: 'border-box' });
 
 function fechaHumana(f: string) {
   const [y, m, d] = f.split('-').map(Number);
@@ -36,9 +36,9 @@ function horaHumana(h: string) {
   return `${h12}:${String(mm).padStart(2, '0')} ${ampm}`;
 }
 
-export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta, abrirFicha, accionInicial }: {
+export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta, abrirFicha, accionInicial, refrescar }: {
   contacto: any; empresa: any; conv: any; ventanaAbierta: boolean;
-  abrirFicha?: () => void; accionInicial?: 'cotizar' | 'agendar' | null;
+  abrirFicha?: () => void; accionInicial?: 'cotizar' | 'agendar' | null; refrescar?: () => void;
 }) {
   const [vista, setVista] = useState<'menu' | 'cotizar' | 'agendar'>(accionInicial || 'menu');
   useEffect(() => { if (accionInicial) setVista(accionInicial); }, [accionInicial]);
@@ -54,8 +54,8 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
     { e: '📣', t: 'Masivo', d: 'Incluir en campaña', href: `/admin/crm?tab=wa-masivos`, ok: true },
   ];
 
-  if (vista === 'cotizar') return <Cotizar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} />;
-  if (vista === 'agendar') return <Agendar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} />;
+  if (vista === 'cotizar') return <Cotizar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
+  if (vista === 'agendar') return <Agendar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
 
   return (
     <div style={{ padding: 14 }}>
@@ -93,7 +93,7 @@ function Volver({ volver, titulo }: { volver: () => void; titulo: string }) {
 }
 
 // ══ COTIZAR: crear + link + enviar, sin salir ═══════════════════════════════
-function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, ventanaAbierta, volver }: any) {
+function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, ventanaAbierta, volver, refrescar }: any) {
   const [plan, setPlan] = useState('controla');
   const [periodo, setPeriodo] = useState<'mensual' | 'anual'>('mensual');
   const [sucursales, setSucursales] = useState(String(empresa?.sucursales || 1));
@@ -105,19 +105,26 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [enviado, setEnviado] = useState<{ wa?: boolean; correo?: boolean }>({});
 
   const suc = Math.max(1, parseInt(sucursales) || 1);
-  const subPlan = (PLAN_PRICES[plan] || 0) * suc * (periodo === 'anual' ? 10 : 1);
+  const factorAnual = periodo === 'anual' ? 10 : 1;   // regla de planes: el año son 10 meses (2 gratis)
+  const subPlan = (PLAN_PRICES[plan] || 0) * suc * factorAnual;
   const subImpl = conImpl ? (IMPL_PRICES[plan] || 0) : 0;
-  const subExtras = extras.reduce((a, x) => a + (parseFloat(x.monto) || 0), 0);
+  // Solo cuentan los extras COMPLETOS (concepto + monto): un extra a medias no
+  // entra ni al total ni a la cotización — nada de cobros invisibles.
+  const extrasValidos = extras.filter(x => x.nombre.trim() && (parseFloat(x.monto) || 0) > 0);
+  const extraMonto = (x: any) => (parseFloat(x.monto) || 0) * (x.recurrente ? factorAnual : 1);
+  const subExtras = extrasValidos.reduce((a, x) => a + extraMonto(x), 0);
   const total = subPlan + subImpl + subExtras;
+  const extrasAMedias = extras.some(x => (x.nombre.trim() ? !(parseFloat(x.monto) > 0) : (parseFloat(x.monto) || 0) > 0));
 
   const crear = async () => {
     setMsg(''); setCreando(true);
     const items: any[] = [{ tipo: 'plan', nombre: plan, sucursales: suc, precio_unitario: PLAN_PRICES[plan] || 0, periodo, descuento_pct: 0, subtotal: subPlan }];
-    if (conImpl) items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: `Implementación ${plan}`, monto: subImpl, recurrente: false, subtotal: subImpl });
-    for (const x of extras) {
+    if (conImpl) items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: `Implementación ${plan.charAt(0).toUpperCase()}${plan.slice(1)}`, monto: subImpl, recurrente: false, subtotal: subImpl });
+    for (const x of extrasValidos) {
       const monto = parseFloat(x.monto) || 0;
-      if (!x.nombre.trim() || !monto) continue;
-      items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: x.nombre.trim(), monto, recurrente: x.recurrente, periodo_extra: x.recurrente ? 'mensual' : 'unico', subtotal: monto });
+      items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: x.nombre.trim(), monto,
+        recurrente: x.recurrente, periodo_extra: x.recurrente ? (periodo === 'anual' ? 'anual' : 'mensual') : 'unico',
+        subtotal: extraMonto(x) });
     }
     const r = await fetch('/api/revenue/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -125,7 +132,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         empresa: empresa?.nombre_comercial || empresa?.nombre || nombre || 'Por definir',
         contacto: nombre || null, email: contacto?.email || null, whatsapp: telefono || null,
         company_id: empresa?.id || null, contact_id: contacto?.id || null,
-        items, iva_incluido: false, moneda: 'MXN', estado: 'enviada', created_via: 'inbox',
+        items, iva_incluido: false, moneda: 'MXN', estado: 'draft', created_via: 'inbox',
         // El servidor NO recalcula en el POST: los totales viajan explícitos
         // (misma regla que el editor grande) o la cotización sale en $0.
         subtotal: total, iva_monto: 0, total,
@@ -134,6 +141,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     setCreando(false);
     if (r?.error || !r?.id) { setMsg(r?.error || 'No se pudo crear la cotización.'); return; }
     setHecha({ id: r.id, folio: r.folio || r.id.slice(0, 8) });
+    refrescar?.();
   };
 
   const link = hecha ? `${BASE}/cotizacion/${hecha.id}` : '';
@@ -144,6 +152,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
       : { telefono, plantilla: { nombre: 'cotizacion_lista', idioma: 'es_MX', params: [primerNombre, String(hecha.folio)] } };
     const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setMsg(`WhatsApp: ${r.error}`); return; }
+    fetch('/api/revenue/quotes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: hecha.id, estado: 'enviada' }) }).catch(() => {});
     setEnviado(e => ({ ...e, wa: true }));
   };
   const enviarCorreo = async () => {
@@ -153,6 +162,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
       body: JSON.stringify({ contact_id: contacto?.id, para: contacto?.email, asunto: `Tu cotización ${hecha.folio} de Sacs`, texto: `Hola ${primerNombre},\n\nTu cotización ${hecha.folio} ya está lista. La puedes revisar aquí:\n${link}\n\nCualquier duda respóndeme este correo o mi WhatsApp y la ajustamos juntos.\n\nSaludos,\nEquipo Sacs` }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setMsg(`Correo: ${r.error}`); return; }
+    fetch('/api/revenue/quotes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: hecha.id, estado: 'enviada' }) }).catch(() => {});
     setEnviado(e => ({ ...e, correo: true }));
   };
 
@@ -187,8 +197,8 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
       <span style={lbl}>Plan</span>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
         {PLANES_VENDIBLES.map(p => (
-          <button key={p} onClick={() => setPlan(p)} style={{ ...pill(plan === p), borderRadius: 10, textTransform: 'capitalize', display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-            <b>{p}</b><span style={{ fontSize: 9.5, fontWeight: 600 }}>{fmt(PLAN_PRICES[p])}/mes por sucursal</span>
+          <button key={p} onClick={() => setPlan(p)} style={{ ...pill(plan === p), borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+            <b style={{ textTransform: 'capitalize' }}>{p}</b><span style={{ fontSize: 10.5, fontWeight: 600 }}>{fmt(PLAN_PRICES[p])}/mes por sucursal</span>
           </button>
         ))}
       </div>
@@ -198,9 +208,10 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         <button onClick={() => setPeriodo('anual')} style={pill(periodo === 'anual')}>Anual · 2 meses gratis</button>
       </div>
       <span style={lbl}>Sucursales</span>
-      <input type="number" min={1} value={sucursales} onChange={e => setSucursales(e.target.value)} style={{ ...inp, width: 90 }} />
-      <label style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 11.5, fontWeight: 600, margin: '10px 0 0', cursor: 'pointer' }}>
-        <input type="checkbox" checked={conImpl} onChange={e => setConImpl(e.target.checked)} />
+      <input type="number" min={1} value={sucursales} onChange={e => setSucursales(e.target.value)}
+        onBlur={() => setSucursales(String(Math.max(1, parseInt(sucursales) || 1)))} style={{ ...inp, width: 90 }} />
+      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11.5, fontWeight: 600, margin: '10px 0 0', cursor: 'pointer', minHeight: 44 }}>
+        <input type="checkbox" checked={conImpl} onChange={e => setConImpl(e.target.checked)} style={{ width: 18, height: 18 }} />
         Implementación ({fmt(IMPL_PRICES[plan] || 0)} único)
       </label>
       <span style={lbl}>Extras</span>
@@ -213,9 +224,10 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         </div>
       ))}
       <button style={{ ...btnG, minHeight: 32, padding: '4px 10px', fontSize: 11 }} onClick={() => setExtras([...extras, { nombre: '', monto: '', recurrente: false }])}>+ Agregar extra</button>
+      {extrasAMedias && <p style={{ fontSize: 10, color: C.ambar700, margin: '8px 0 0' }}>Un extra sin concepto o sin monto NO se incluye — complétalo o quítalo.</p>}
       <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: C.moradoAgua, fontSize: 12, fontWeight: 700, color: C.moradoTinta }}>
-        Total {periodo === 'anual' ? 'del año' : 'mensual'}: {fmt(subPlan + (extras.some(x => x.recurrente) ? subExtras : 0))}
-        {(subImpl > 0 || extras.some(x => !x.recurrente)) && <span style={{ fontWeight: 600 }}> + {fmt(subImpl + extras.filter(x => !x.recurrente).reduce((a, x) => a + (parseFloat(x.monto) || 0), 0))} por única vez</span>}
+        Total {periodo === 'anual' ? 'del año' : 'mensual'}: {fmt(subPlan + extrasValidos.filter(x => x.recurrente).reduce((a, x) => a + extraMonto(x), 0))}
+        {(subImpl > 0 || extrasValidos.some(x => !x.recurrente)) && <span style={{ fontWeight: 600 }}> + {fmt(subImpl + extrasValidos.filter(x => !x.recurrente).reduce((a, x) => a + (parseFloat(x.monto) || 0), 0))} por única vez</span>}
       </div>
       <button style={{ ...btnP, width: '100%', marginTop: 10 }} disabled={creando} onClick={crear}>{creando ? 'Creando…' : `Crear cotización · ${fmt(total)}`}</button>
       {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
@@ -224,7 +236,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
 }
 
 // ══ AGENDAR: horarios reales aquí mismo, o mandárselos al cliente ═══════════
-function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, ventanaAbierta, volver }: any) {
+function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, ventanaAbierta, volver, refrescar }: any) {
   const [slots, setSlots] = useState<Record<string, string[]> | null>(null);
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
@@ -255,9 +267,10 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     return out;
   }, [dias, slots]);
 
+  const emailValido = /.+@.+\..+/.test(email.trim());
   const agendar = async () => {
     setMsg('');
-    if (!email.trim()) { setMsg('El correo es obligatorio: ahí llega su confirmación e invitación de calendario.'); return; }
+    if (!emailValido) { setMsg('Escribe un correo válido: ahí llega su confirmación e invitación de calendario.'); return; }
     setOcupado(true);
     const r = await fetch('/api/scheduling/book', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -266,6 +279,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     setOcupado(false);
     if (r?.error) { setMsg(r.error); return; }
     setHecho('agendada');
+    refrescar?.();
   };
 
   const textoHorarios = `${primerNombre}, estos son los horarios más próximos para tu sesión consultiva (30-60 min, sin costo):\n\n${primeros.map(s => `• ${s}`).join('\n')}\n\nElige el que te acomode aquí y queda confirmada al momento (te llega la invitación por correo y WhatsApp):\n${BASE}/agendar/demo`;
@@ -320,15 +334,15 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         </>}
         <span style={lbl}>Correo del cliente (obligatorio para confirmar)</span>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@correo.com" style={inp} />
-        <button style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || ocupado} onClick={agendar}>
-          {ocupado ? 'Agendando…' : fecha && hora ? `Agendar ${fechaHumana(fecha)} · ${horaHumana(hora)}` : 'Elige día y horario'}
+        <button style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>
+          {ocupado ? 'Agendando…' : !emailValido ? 'Falta un correo válido' : fecha && hora ? `Agendar ${fechaHumana(fecha)} · ${horaHumana(hora)}` : 'Elige día y horario'}
         </button>
         <div style={{ borderTop: `1px solid ${C.g100}`, margin: '14px 0 10px', paddingTop: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.g700, marginBottom: 6 }}>¿Prefieres que elija él? Mándale los horarios:</div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button style={{ ...btnG, flex: 1, color: '#059669', borderColor: '#A7F3D0' }} disabled={!telefono || !ventanaAbierta} onClick={enviarFechasWA}
+            <button style={{ ...btnG, flex: 1, color: '#059669', borderColor: '#A7F3D0', ...(!telefono || !ventanaAbierta ? { opacity: .45, cursor: 'not-allowed', filter: 'grayscale(.6)' } : {}) }} disabled={!telefono || !ventanaAbierta} onClick={enviarFechasWA}
               title={!ventanaAbierta ? 'Ventana de 24 h cerrada: usa el correo o una plantilla desde el composer' : ''}>Por WhatsApp</button>
-            <button style={{ ...btnG, flex: 1, color: C.moradoTinta }} disabled={!(email.trim() || contacto?.email)} onClick={enviarFechasCorreo}>Por correo</button>
+            <button style={{ ...btnG, flex: 1, color: C.moradoTinta, ...(!(email.trim() || contacto?.email) ? { opacity: .45, cursor: 'not-allowed' } : {}) }} disabled={!(email.trim() || contacto?.email)} onClick={enviarFechasCorreo}>Por correo</button>
           </div>
           {!ventanaAbierta && telefono && <p style={{ fontSize: 10, color: C.ambar700, margin: '6px 0 0' }}>La ventana de WhatsApp está cerrada — por correo sí sale ya, con el link para que elija.</p>}
         </div>
