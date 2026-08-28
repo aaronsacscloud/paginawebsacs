@@ -126,6 +126,9 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         contacto: nombre || null, email: contacto?.email || null, whatsapp: telefono || null,
         company_id: empresa?.id || null, contact_id: contacto?.id || null,
         items, iva_incluido: false, moneda: 'MXN', estado: 'enviada', created_via: 'inbox',
+        // El servidor NO recalcula en el POST: los totales viajan explícitos
+        // (misma regla que el editor grande) o la cotización sale en $0.
+        subtotal: total, iva_monto: 0, total,
       }),
     }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setCreando(false);
