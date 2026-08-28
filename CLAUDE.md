@@ -67,12 +67,35 @@ PATH=/tmp/.../node-v22.12.0-linux-x64/bin:$PATH \
 Mira `User time` (CPU real) y `Percent of CPU`. **Ojo con el OOM:** dos
 builds seguidos dejan la memoria del servidor al tope.
 
-### Lo que solo se puede hacer desde el dashboard
+### La máquina de build (ARREGLADO 2026-08-28 — no lo devuelvas a turbo)
 
-Bajar el **tamaño de la máquina de build** (Settings → Build & Deployment).
-El build usa menos de un núcleo, así que la máquina grande es dinero tirado:
-vale ~50% de la factura. No hay forma de hacerlo por código ni por
-`vercel.json` — pídeselo a Aaron.
+Vercel factura **minuto de build × número de vCPUs de la máquina**. Los 12
+proyectos del equipo estaban en **`turbo` (30 vCPU / 60 GB)** porque el
+*default del equipo* estaba en turbo — y el build usa **0.77 de UN núcleo**.
+Se pagaban 30 para usar menos de 1.
+
+| Máquina | vCPU | Memoria |
+|---|---|---|
+| standard | 4 | 8 GB |
+| enhanced | 8 | 16 GB |
+| turbo | 30 | 60 GB |
+
+Ya está en `standard` los 12 proyectos **y el default del equipo**. Si algún
+build muere por memoria (el de `sitio` llegó a 3.2 GB de RSS, cabe en 8 GB),
+sube ESE proyecto a `enhanced` — nunca todo el equipo a `turbo`.
+
+Por API (no hay comando en la CLI):
+
+```bash
+# por proyecto
+curl -X PATCH "https://api.vercel.com/v9/projects/$ID?teamId=$TEAM" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"resourceConfig":{"buildMachineType":"standard"}}'
+# default del equipo (la raíz del problema)
+curl -X PATCH "https://api.vercel.com/v2/teams/$TEAM" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  -d '{"resourceConfig":{"buildMachine":{"default":"standard"}}}'
+```
 
 ## 🔐 Secretos
 
