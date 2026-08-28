@@ -95,7 +95,10 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 240 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-                  <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: '0.68rem', fontWeight: 700, background: e.bg, color: e.co }}>{e.txt}</span>
+                  {/* El tipo de señal es taxonomía, no gravedad: pintarlo de
+                      verde o rojo hacía que «usa fuera de plan» se leyera como
+                      un estado. El color de esta tarjeta lo lleva el dinero. */}
+                  <span className="opo-tipo" style={{ padding: '3px 10px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74' }}>{e.txt}</span>
                   <button onClick={() => onOpenCliente?.(f.company_id)}
                     style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontWeight: 800, fontSize: '0.88rem', color: '#1a1a1a' }}>
                     {co?.sacs_account || co?.nombre || 'Cliente'}
@@ -110,9 +113,12 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
               </div>
               {abierta && (
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, minHeight: 36, padding: '0 12px' }}>Ya contacté</button>}
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, minHeight: 36, padding: '0 12px', background: '#1A8F7A', color: '#fff', border: 'none', fontWeight: 700 }}>Ganada</button>
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, minHeight: 36, padding: '0 12px', color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
+                  {/* «Ganada» iba en verde sólido: un segundo botón lleno en la
+                      misma tarjeta compite con la acción de todos los días, que
+                      es marcar que ya contactaste. Los tres pesan igual ahora. */}
+                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', fontWeight: 700 }}>Ya contacté</button>}
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
                 </div>
               )}
             </div>

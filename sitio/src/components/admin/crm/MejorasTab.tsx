@@ -509,10 +509,9 @@ export default function MejorasTab() {
                     }}
                     className={venc ? 'cons-fecha' : undefined}
                     style={{
-                      fontSize: '0.78rem', fontWeight: venc ? 700 : 500, whiteSpace: 'nowrap', borderRadius: 8,
-                      padding: venc ? '4px 9px' : 0, minHeight: 28, fontFamily: 'inherit', cursor: 'pointer',
-                      ...(venc ? { border: '1px solid #EF7A72', background: '#FEF0EF', color: '#C0554E' }
-                        : { border: 'none', background: 'none', color: '#8f8d98' }),
+                      fontSize: '0.78rem', fontWeight: venc ? 700 : 500, whiteSpace: 'nowrap',
+                      padding: 0, minHeight: 28, fontFamily: 'inherit', cursor: 'pointer',
+                      border: 'none', background: 'none', color: venc ? '#C0554E' : '#8f8d98',
                     }}>{fechaTxt}</button>
                   {(m.cortesia || Number(m.valor) > 0) && (
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: m.cortesia ? '#8f8d98' : '#1a1a1a' }}>
@@ -763,10 +762,12 @@ export default function MejorasTab() {
                 borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent', whiteSpace: 'nowrap',
               }}>
               {v.l}
+              {/* Un solo tratamiento de pastilla para las tres pestañas: la
+                  urgencia la dice el COLOR DEL NÚMERO, no una regla a sangre. */}
               <span style={{
-                background: urge && !on ? '#FEF0EF' : on ? '#EEECFE' : '#f4f4f6',
+                background: on ? '#EEECFE' : '#f4f4f6',
                 color: urge && !on ? '#C0554E' : on ? '#5B4BD6' : '#8a8a92',
-                borderRadius: 20, padding: '1px 8px', fontSize: '0.67rem', fontWeight: 800,
+                borderRadius: 20, padding: '2px 9px', fontSize: '0.72rem', fontWeight: 800,
               }}>{n}</span>
             </button>
           );

@@ -281,8 +281,8 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Módulos del menú «Más» que heredan el mapa oscuro genérico (el mismo de la
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
-const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras'];
+const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1489,6 +1489,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-auto-dark b, [data-crm-dark="1"] .m-auto-dark strong,
       [data-crm-dark="1"] .m-auto-dark h1, [data-crm-dark="1"] .m-auto-dark h2,
       [data-crm-dark="1"] .m-auto-dark h3, [data-crm-dark="1"] .m-auto-dark h4 { color: #F2F1F7; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(51, 51, 51)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(22, 24, 29)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(119, 119, 119)"],
       [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(138, 138, 138)"],
       [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(165, 162, 175)"],
       [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(156, 153, 166)"],
@@ -1588,13 +1591,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .mas-screen [style*="color: rgb(201, 199, 208)"] { color: #4a4a55 !important; }
       [data-crm-dark="1"] .mas-screen [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
 
-      /* La alerta no es el dato principal: superficie normal + barra roja de
-         2 px. Un panel relleno gritaba más que el ARR de la cuenta. */
-      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(254, 240, 239)"],
-      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(253, 236, 234)"] {
-        background: #1d1d24 !important; border-left: 2px solid #F0857A !important;
-        border-radius: 0 10px 10px 0 !important;
-      }
+      /* Esta regla (superficie + barra roja) va SOLO en la alerta con su
+         clase: por valor alcanzaba a las pastillas de conteo y de filtro, y
+         les pintaba un filete rojo que no significaba nada. */
       /* Restos medidos en la ficha del cliente: barras de progreso, pastillas
          lilas de fondo y el borde del grupo de periodo. */
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(240, 239, 243)"],

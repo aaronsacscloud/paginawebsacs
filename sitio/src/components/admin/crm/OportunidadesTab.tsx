@@ -21,6 +21,7 @@ const T = {
 };
 
 export default function OportunidadesTab() {
+  const esMovil = useIsMobile();
   const isMobile = useIsMobile();
   const [data, setData] = useState<any[]>([]);
   const [res, setRes] = useState<any>(null);
@@ -106,7 +107,9 @@ export default function OportunidadesTab() {
     return (
       <div>
         <div style={{ padding: '4px 12px 0' }}>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Oportunidades por trabajar</div>
+          {/* El app bar ya dice «Radar de ventas»: el título repetido a 18 px
+              se comía la primera pantalla del teléfono. */}
+          {!esMovil && <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Oportunidades por trabajar</div>}
           <div style={{ fontSize: '0.8rem', color: '#8a8f98', marginBottom: 10 }}>
             Lo que el sistema detectó y alguien tiene que atender. Márcalas conforme avances —
             de ahí sale qué señal vende y cuál es ruido.

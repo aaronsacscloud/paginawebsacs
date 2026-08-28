@@ -74,6 +74,16 @@ export async function avisarLoteLeads(n: number, nombres: string[], origen: stri
 }
 
 /** SLA: leads sin primer toque, agrupados en un solo mensaje. */
+// El lead canceló su sesión: ventas debe saberlo YA (es rescatable en caliente).
+export async function avisarCancelacion(c: { id: string; nombre?: string | null; whatsapp?: string | null; email?: string | null }, fecha: string) {
+  const nombre = c.nombre || c.whatsapp || c.email || 'Sin nombre';
+  return mandar(
+    `Cancelación de sesión: ${nombre} (${fecha}). Márcale para rescatarla.`,
+    [`1 sesión cancelada (${fecha}) — rescatable si se le marca pronto`, String(nombre),
+      URL_LEAD(c.id)],
+  );
+}
+
 // Leads que abren correos de la secuencia pero no contestan: intención pura.
 export async function avisarCalientes(leads: { id: string; nombre: string; abiertos: number }[]) {
   const nombres = leads.map(l => `${l.nombre} (${l.abiertos} correos abiertos)`).join(', ').slice(0, 250);

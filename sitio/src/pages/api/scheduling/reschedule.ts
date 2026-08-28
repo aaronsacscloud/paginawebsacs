@@ -5,6 +5,7 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 
 export const prerender = false;
 
@@ -228,14 +229,40 @@ export const POST: APIRoute = async ({ request }) => {
     } catch { /* Reschedule email is non-critical */ }
   }
 
-  // Send WhatsApp notification
+  // Send WhatsApp notification — PLANTILLA primero: el texto libre fuera de
+  // la ventana de 24 h se "acepta" pero WhatsApp lo tira en silencio.
   if (oldBooking.invitee_whatsapp) {
+    const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
     try {
-      await sendWhatsApp(
-        oldBooking.invitee_whatsapp,
-        `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
-      );
-    } catch {}
+      await enviarPlantilla(oldBooking.invitee_whatsapp, 'sesion_reagendada', 'es_MX', [nombreInv, `${nueva_fecha} a las ${nueva_hora}`]);
+    } catch {
+      try {
+        await sendWhatsApp(
+          oldBooking.invitee_whatsapp,
+          `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
+        );
+      } catch {}
+    }
+  }
+
+  // La SECUENCIA de demo se reinicia: nueva fecha = cadencia nueva (día 1 hoy),
+  // sin repetir lo ya enviado a favor — enviados se limpia a propósito para
+  // que el lead reciba otra vez la preparación rumbo a la fecha nueva.
+  if (oldBooking.contact_id) {
+    try {
+      const { data: secsDemo } = await supabase.from('crm_secuencias').select('id, nombre').eq('objetivo', 'demo_hecha');
+      for (const sd of secsDemo || []) {
+        const { data: mm } = await supabase.from('crm_secuencia_miembros')
+          .select('id').eq('secuencia_id', sd.id).eq('contact_id', oldBooking.contact_id).maybeSingle();
+        if (!mm) continue;
+        await supabase.from('crm_secuencia_miembros')
+          .update({ inicio: new Date().toISOString(), enviados: {}, detenida_at: null, motivo: null }).eq('id', mm.id);
+        const { data: conv } = await supabase.from('wa_conversaciones').select('id')
+          .eq('contact_id', oldBooking.contact_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (conv) await supabase.from('wa_notas').insert({ conversation_id: conv.id, contact_id: oldBooking.contact_id, autor: 'Secuencias',
+          texto: `Reagendó su sesión (${nueva_fecha} ${nueva_hora}): la secuencia "${sd.nombre}" se reinicia en día 1 rumbo a la fecha nueva.` });
+      }
+    } catch (e) { console.warn('[reschedule] reset secuencia', e); }
   }
 
   return new Response(

@@ -5,6 +5,8 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
+import { avisarCancelacion } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
 
@@ -132,6 +134,33 @@ export const POST: APIRoute = async ({ request }) => {
       },
       automatico: true,
     });
+  }
+
+  // Cancelar NO es reagendar: el lead sale de la secuencia de demo (motivo
+  // 'cancelo'), recibe UN rescate por WhatsApp con el link para reagendar,
+  // y ventas se entera para tomarlo en persona.
+  if (booking.contact_id) {
+    try {
+      const { data: secsDemo } = await supabase.from('crm_secuencias').select('id, nombre').eq('objetivo', 'demo_hecha');
+      for (const sd of secsDemo || []) {
+        const { data: mm } = await supabase.from('crm_secuencia_miembros')
+          .select('id, detenida_at').eq('secuencia_id', sd.id).eq('contact_id', booking.contact_id).maybeSingle();
+        if (!mm || mm.detenida_at) continue;
+        await supabase.from('crm_secuencia_miembros')
+          .update({ detenida_at: new Date().toISOString(), motivo: 'cancelo' }).eq('id', mm.id);
+        const { data: conv } = await supabase.from('wa_conversaciones').select('id')
+          .eq('contact_id', booking.contact_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (conv) await supabase.from('wa_notas').insert({ conversation_id: conv.id, contact_id: booking.contact_id, autor: 'Secuencias',
+          texto: `Canceló su sesión del ${booking.fecha}: salió de la secuencia "${sd.nombre}" (motivo: canceló). Se le mandó UN rescate por WhatsApp con el link de reagendar; si reagenda, vuelve a entrar sola.` });
+      }
+      const nombreInv = String(booking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
+      if (booking.invitee_whatsapp) {
+        try { await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]); } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
+      }
+      try {
+        await avisarCancelacion({ id: booking.contact_id, nombre: booking.invitee_nombre, whatsapp: booking.invitee_whatsapp, email: booking.invitee_email }, booking.fecha);
+      } catch { /* aviso interno no crítico */ }
+    } catch (e) { console.warn('[cancel] secuencia/rescate', e); }
   }
 
   // Fire webhook

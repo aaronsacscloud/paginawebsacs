@@ -229,6 +229,40 @@ export const GET: APIRoute = async ({ url }) => {
     // manda máximo esto por canal; el resto sale la siguiente hora solo.
     const MAX_POR_CORRIDA = 60;
     let corridaCorreos = 0, corridaWas = 0;
+
+    // La reunión próxima de cada miembro: alimenta {{fecha_sesion}},
+    // {{link_reagendar}}, {{link_gcal}} y {{link_meet}} en los correos.
+    const reunionPor: Record<string, any> = {};
+    if (vigentes.length) {
+      const hoyStr = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+      const { data: bks } = await supabase.from('bookings')
+        .select('contact_id, fecha, hora_inicio, token_reagendar, google_meet_link, event_types(nombre, duracion_minutos)')
+        .in('contact_id', vigentes.map(v => v.c.id)).eq('estado', 'confirmada').gte('fecha', hoyStr)
+        .order('fecha').limit(300);
+      for (const b of bks || []) if (!reunionPor[b.contact_id]) reunionPor[b.contact_id] = b;
+    }
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const extrasReunion = (cid: string) => {
+      const b = reunionPor[cid];
+      if (!b) return { link_reagendar: 'https://www.sacscloud.com/agendar' };
+      const [y, mo, d] = String(b.fecha).split('-').map(Number);
+      const [hh, mi] = String(b.hora_inicio).slice(0, 5).split(':').map(Number);
+      const dur = (b.event_types as any)?.duracion_minutos || 30;
+      const ini = `${y}${String(mo).padStart(2, '0')}${String(d).padStart(2, '0')}T${String(hh).padStart(2, '0')}${String(mi).padStart(2, '0')}00`;
+      const finMin = hh * 60 + mi + dur;
+      const fin = `${y}${String(mo).padStart(2, '0')}${String(d).padStart(2, '0')}T${String(Math.floor(finMin / 60)).padStart(2, '0')}${String(finMin % 60).padStart(2, '0')}00`;
+      const titulo = encodeURIComponent(`Sesión consultiva con Sacs`);
+      const detalles = encodeURIComponent(`Tu sesión consultiva.${b.google_meet_link ? ' Únete: ' + b.google_meet_link : ''}`);
+      const ampm = hh >= 12 ? 'p. m.' : 'a. m.';
+      const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+      return {
+        fecha_sesion: `${d} de ${MESES[mo - 1]}`,
+        hora_sesion: `${h12}:${String(mi).padStart(2, '0')} ${ampm}`,
+        link_reagendar: b.token_reagendar ? `https://www.sacscloud.com/agendar/reagendar?token=${b.token_reagendar}` : 'https://www.sacscloud.com/agendar',
+        link_gcal: `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${ini}/${fin}&ctz=America/Mexico_City&details=${detalles}`,
+        link_meet: b.google_meet_link || '',
+      };
+    };
     for (const { m, c, dias, cd } of vigentes) {
       if (c.retenido_hasta && new Date(c.retenido_hasta) > ahora) continue;   // pausa: se salta, no sale
       const enviados: Record<string, string> = m.enviados || {};
@@ -239,7 +273,7 @@ export const GET: APIRoute = async ({ url }) => {
         if (p.canal === 'wa' && (cd.wa || waHecho || !c.whatsapp || !p.wa_plantilla || corridaWas >= MAX_POR_CORRIDA || envioHoy[c.id]?.wa)) continue;
         if (dry) { res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal }); if (p.canal === 'correo') correoHecho = true; else waHecho = true; continue; }
         const primerNombre = String(c.nombre || '').trim().split(/\s+/)[0] || null;
-        const ctx = { nombre: primerNombre, campana: c.campana || null };
+        const ctx = { nombre: primerNombre, campana: c.campana || null, ...extrasReunion(c.id) };
         try {
           if (p.canal === 'correo') {
             // A/B: si el paso tiene variante B, el lead cae en A o B por el
