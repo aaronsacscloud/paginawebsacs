@@ -254,6 +254,18 @@ export const POST: APIRoute = async ({ request }) => {
   if (!texto) return json({ error: 'Falta texto' }, 400);
   try {
     const cita = b.cita ? String(b.cita) : null;
+    // ── Candado anti-duplicado (cola de envío del inbox) ──────────────────
+    // El cliente reintenta cuando vuelve la red, y un reintento puede llegar
+    // DESPUÉS de que el envío original sí salió (respuesta perdida, no envío
+    // perdido). Cada mensaje de la cola trae su marca única: si ya hay un
+    // espejo con esa marca, se contesta que ya está y no se manda otra vez.
+    const idem = b.idem ? String(b.idem).slice(0, 64) : null;
+    if (idem) {
+      const { data: ya } = await supabase.from('wa_mensajes')
+        .select('kapso_message_id').eq('conversation_id', destino.convId)
+        .eq('metadata->>idem', idem).limit(1).maybeSingle();
+      if (ya) return json({ ok: true, duplicado: true, message_id: (ya as any).kapso_message_id || null, conversation_id: destino.convId });
+    }
     // Los links a NUESTRO sitio se marcan con el `sv` del contacto: así, cuando
     // entre, el CRM sabe que fue él y qué recorrió. Los links ajenos no se tocan.
     const textoEnviado = textoConSv(texto, destino.contactId);
@@ -261,7 +273,8 @@ export const POST: APIRoute = async ({ request }) => {
     const wamid = r?.messages?.[0]?.id;
     if (wamid) await registrarMensaje({
       kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
-      tipo: 'text', cuerpo: textoEnviado, status: 'sent', metadata: cita ? { cita: { wamid: cita } } : null,
+      tipo: 'text', cuerpo: textoEnviado, status: 'sent',
+      metadata: (cita || idem) ? { ...(cita ? { cita: { wamid: cita } } : {}), ...(idem ? { idem } : {}) } : null,
     });
     return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
   } catch (e: any) { return errorKapso(e); }

@@ -112,6 +112,11 @@ export const CSS_INBOX = `
   .wa-hilo-m [style*="border-radius: 16px 16px 6px"] mark { background: #ddd6fb; }
   /* La banda global ya explica el error: la leyenda repetida por mensaje sobra en el teléfono */
   .wa-hilo-m .wa-err-msg { display: none !important; }
+  .wa-hilo-m .wa-err-cola { display: inline !important; font-size: 11.5px !important; }
+  /* El fallo cuelga del mensaje, y el mensaje es tuyo: va a la derecha. Y el
+     botón se toca con el dedo, así que 44. */
+  .wa-hilo-m .wa-fallo { justify-content: flex-end; text-align: right; }
+  .wa-hilo-m .wa-fallo button { min-height: 44px !important; padding: 0 16px !important; }
   /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
   .wa-hilo-m textarea[disabled] { display: none !important; }
   /* URLs largas dentro de burbuja: una línea con ellipsis (el href queda completo) */

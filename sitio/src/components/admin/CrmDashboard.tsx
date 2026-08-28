@@ -10,6 +10,7 @@ import InicioMovil from './crm/InicioMovil';
 import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
+import Wiki from './crm/Wiki';
 // ══ REGLA DE VELOCIDAD: cada tab es un chunk LAZY. El bundle inicial solo
 // lleva el shell (nav + Inicio móvil). Un import estático aquí regresa el
 // monolito de 2.2 MB que mataba el primer pintado. ══
@@ -79,7 +80,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -229,6 +230,14 @@ const NAV_SECTIONS = [
       { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'content-review' as Tab, label: 'Revisar contenido', icon: 'automations' },
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
+    ],
+  },
+  {
+    // La Wiki no es de un sujeto (cuentas, dinero, canal): es CÓMO se trabaja.
+    // Por eso va sola al final y no colgada de otro grupo.
+    label: 'Documentación', sec: 'documentacion', icon: 'automations',
+    items: [
+      { id: 'wiki' as Tab, label: 'Wiki de ventas', icon: 'automations' },
     ],
   },
 ];
@@ -963,6 +972,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><CobranzaTab /></ErrorBoundary>
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
+        ) : tab === 'wiki' ? (
+          <Wiki />
         ) : tab === 'soporte' ? (
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (

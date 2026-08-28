@@ -89,6 +89,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [errorDet, setErrorDet] = useState<any>(null);
   const setError = (m: string, det: any = null) => { setErrorRaw(m); setErrorDet(det); };
   const [aviso, setAviso] = useState('');
+  // Un mensaje que quedó en cola NO es un éxito verde: se dice en ámbar, que
+  // es «atención, todavía no sale».
+  const [avisoTono, setAvisoTono] = useState<'ok' | 'espera'>('ok');
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const [escribiendoMovil, setEscribiendoMovil] = useState(false);  // móvil: al enfocar, la caja crece
   const [masHerramientas, setMasHerramientas] = useState(false);    // móvil: el resto de la barra
@@ -189,7 +192,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
     if (modo === 'correo') {
       if (necesitaAsunto && !asunto.trim()) { setOcupado(false); setError('Un correo nuevo necesita asunto.'); return; }
       r = await api.enviarCorreo({ texto: t, asunto: asunto.trim() || undefined });
-      if (r?.ok) { setAviso('Correo enviado.'); setAsunto(''); }
+      if (r?.ok) { setAvisoTono('ok'); setAviso('Correo enviado.'); setAsunto(''); }
     } else if (staged.length) {
       if (staged.some(s => s.errores.length)) { setOcupado(false); setError('Corrige los archivos marcados en rojo.'); return; }
       // Solo el primer archivo lleva el caption (regla de WhatsApp).
@@ -210,9 +213,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       if (!r?.error) { setRemotos([]); api.refrescar?.(); }
     } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
     setOcupado(false);
-    if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente) setSugerirSiguiente(true); }
+    if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente && !r?.encolado) setSugerirSiguiente(true); }
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
     if (r?.error) { setError(r.error, r.error_detalle || null); return; }
+    // Quedó en la cola: el texto se limpia igual (el mensaje ya no vive aquí,
+    // vive en el hilo como pendiente) pero se dice lo que pasó.
+    if (r?.encolado) { setAvisoTono('espera'); setAviso('Sin conexión: el mensaje se manda solo cuando vuelva la señal.'); }
     setTexto(''); areaRef.current?.focus();
   };
 
@@ -396,7 +402,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 <button onClick={() => setError('')} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer', color: C.rojo500 }}>✕</button>
               </div>
             )}
-            {aviso && <div style={{ padding: '6px 12px', fontSize: 11, color: C.emerald700, background: C.emerald50 }}>{aviso}</div>}
+            {aviso && <div style={{ padding: '6px 12px', fontSize: 11, color: avisoTono === 'espera' ? '#9a6a10' : C.emerald700, background: avisoTono === 'espera' ? '#FFF4E5' : C.emerald50 }}>{aviso}</div>}
             {sugerirSiguiente && siguiente && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 11, color: C.moradoTinta, background: C.moradoAgua }}>
                 <span>Enviado.</span>
