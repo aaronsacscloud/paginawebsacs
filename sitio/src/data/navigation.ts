@@ -113,7 +113,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Merch de Eventos',
-    // moda: true se enciende cuando la página pase los tres referees (manual de giros).
+    moda: true,
     description: 'Conciertos, festivales, ferias y pop-ups',
     href: '/giros/merchandising-eventos',
     iconId: 'eventmerch',
@@ -121,7 +121,7 @@ export const businessSectors: BusinessSector[] = [
     bgColor: '#FEF2F2',
     image: '/images/verticales/merch-eventos.webp',
     personalizations: [
-      { label: 'Cobra sin internet', description: 'El venue no tiene señal y la caja no lo nota: cobra toda la noche y sincroniza cuando vuelve el WiFi.' },
+      { label: 'Cobra sin internet', description: 'El venue se queda sin WiFi y la caja no lo nota: cobra toda la noche y sincroniza cuando vuelve la conexión.' },
       { label: 'Un almacén por módulo', description: 'Cada punto de venta con su inventario, todo consolidado en vivo. El corte sale por módulo y por fecha.' },
       { label: 'Traspasos durante el show', description: 'La talla que vuela en un módulo llega del camión o del módulo lento, con escáner, en minutos.' },
       { label: 'Fila con entrega por escáner', description: 'Preventa y pedidos se entregan escaneando el celular del cliente: marcar entregado toma segundos.' },
@@ -134,7 +134,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Novias y Fiesta',
-    // moda: true se enciende cuando la página pase los tres referees (manual de giros).
+    moda: true,
     description: 'Vestidos de novia, XV años y fiesta',
     href: '/giros/novias-y-fiesta',
     iconId: 'bridal',

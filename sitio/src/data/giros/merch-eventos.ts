@@ -33,7 +33,7 @@ export const casosMerch = [
     id: 'puertas',
     titulo: 'Abren puertas y el venue se queda sin WiFi',
     texto:
-      'La caja registra y cobra sin internet toda la noche, y sincroniza cuando vuelve la señal. El efectivo no depende de nadie y la terminal trae su propio chip — el módulo no se detiene por el WiFi del venue.',
+      'La caja registra y cobra sin internet toda la noche, y sincroniza cuando vuelve la conexión. El efectivo no depende de nadie y la terminal trae su propio chip — el módulo no se detiene por el WiFi del venue.',
     remate: 'En un concierto se pierde 20% de la venta en dos horas si el sistema se cae. Nos tocó verlo — por eso existimos.',
     img: '/images/caso-merch-puertas.webp',
     alt: 'Fila de asistentes comprando en un módulo de mercancía dentro de un venue, cajera cobrando con tablet',
@@ -202,7 +202,7 @@ export const seccionesMerch: SuiteSeccion[] = [
           <div style="font-size:16px;font-weight:800;color:var(--color-text-primary);">${v}</div></div>`).join('')}
       </div>
       <div style="${est.ok}border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800;text-align:center;margin-bottom:6px;">Pedido 0448 · escaneado y entregado · 8:41 pm</div>
-      ${[['0172','2 playeras M','en mostrador'],['0391','hoodie L','preparando'],['0284','kit playera + póster','en fila']]
+      ${[['0172','2 playeras M','en mostrador'],['0391','hoodie L','preparando'],['0284','kit playera + póster','en fila'],['0455','playera tie-dye S','en fila'],['0212','2 hoodies M','en fila']]
         .map(([f,q,e])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:5px;background:#fff;">
           <b style="font-size:11px;color:var(--color-text-tertiary);">${f}</b>
           <span style="font-size:11.5px;font-weight:700;color:var(--color-text-primary);">${q}</span>
