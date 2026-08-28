@@ -288,7 +288,10 @@ export default function LeadsTab() {
   }, []);
 
   const listaBase = useMemo(() => {
-    let r = (rows || []);
+    // Las personas que se agregaron DENTRO de otro lead —el encargado que mandó
+    // el dueño— no abren renglón propio: son de ese negocio, no leads aparte.
+    // Viven en la tarjeta Personas de su ficha.
+    let r = (rows || []).filter((c: any) => !c.contacto_de);
     if (etapa !== 'todos') r = r.filter((c: any) => pestanaDe(c) === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
@@ -368,7 +371,9 @@ export default function LeadsTab() {
   // "Nuevos 71" con el canal en TikTok tiene que decir cuántos nuevos de TikTok
   // hay, no cuántos nuevos hay en total.
   const conteos = useMemo(() => {
-    let base = rows || [];
+    // Mismo criterio que la lista: si el contador los cuenta y la lista no los
+    // muestra, la pestaña vuelve a mentir (ya pasó con "En prueba").
+    let base = (rows || []).filter((c: any) => !c.contacto_de);
     if (origen !== 'todo') base = base.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));

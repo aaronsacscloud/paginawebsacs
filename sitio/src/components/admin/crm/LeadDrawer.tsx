@@ -398,6 +398,161 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
   );
 }
 
+/* ═══ Las personas del negocio ═══
+ *
+ * Vino de un caso real: la dueña mandó por WhatsApp la tarjeta de su encargado
+ * de sucursales —"El es. Le puedes decir como opera"— y no había dónde ponerlo.
+ * O se perdía, o entraba como lead aparte y la lista decía 2 donde hay 1.
+ *
+ * El papel no es decoración: "a quien se le enseña" es el invitado por default
+ * a la demo y "quien paga" es a quien le llega la cotización. Sin eso, las dos
+ * cosas se le mandan siempre al primero que escribió — que en este caso es
+ * justo quien pidió que se lo explicaran a otro.
+ */
+const PAPELES = [
+  { v: 'decide', l: 'Quien decide', bg: '#EEECFE', fg: '#5B4BD6' },
+  { v: 'usuario', l: 'A quien se le enseña', bg: '#E3EDFD', fg: '#2C5FC4' },
+  { v: 'paga', l: 'Quien paga', bg: '#EAF8F2', fg: '#1E8A63' },
+  { v: 'otro', l: 'Otro', bg: '#f4f4f6', fg: '#6B7280' },
+];
+const papelDe = (v?: string | null) => PAPELES.find(p => p.v === v) || null;
+const iniciales = (n?: string | null, a?: string | null) =>
+  ([n, a].filter(Boolean).join(' ').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('') || '?').toUpperCase();
+
+function Personas({ c, flash, recargar, onChanged }: any) {
+  const [d, setD] = useState<any>(null);
+  const [abierto, setAbierto] = useState(false);
+  const [f, setF] = useState<any>({ nombre: '', whatsapp: '', email: '', puesto: '', papel: 'usuario' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const cargar = () => fetch(`/api/crm/leads/personas?lead_id=${c.id}`).then(r => r.json())
+    .then(j => setD(j.error ? { principal: null, personas: [] } : j)).catch(() => setD({ principal: null, personas: [] }));
+  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [c.id]);
+
+  async function agregar() {
+    setBusy(true); setError('');
+    const r = await fetch('/api/crm/leads/personas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: c.id, ...f }),
+    }).then(x => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo agregar.'); return; }
+    setAbierto(false); setF({ nombre: '', whatsapp: '', email: '', puesto: '', papel: 'usuario' });
+    // "Traído" y "agregado" no son lo mismo: uno ya existía y dejó de ser un
+    // lead suelto. Decirlo evita que después alguien lo busque en la lista.
+    flash(r.traido ? 'Ya existía como lead: se trajo a este negocio' : 'Persona agregada');
+    cargar(); recargar?.(); onChanged?.();
+  }
+
+  async function cambiarPapel(id: string, papel: string) {
+    await fetch('/api/crm/leads/personas', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, papel }),
+    }).catch(() => {});
+    cargar();
+  }
+
+  async function soltar(id: string, nombre: string) {
+    if (!confirm(`¿Sacar a ${nombre} de este negocio?\n\nNo se borra: vuelve a la lista como lead por su cuenta.`)) return;
+    await fetch(`/api/crm/leads/personas?id=${id}`, { method: 'DELETE' }).catch(() => {});
+    flash('Salió de este negocio'); cargar(); recargar?.(); onChanged?.();
+  }
+
+  const personas: any[] = d?.personas || [];
+  const pri = d?.principal || c;
+  const esSecundario = !!c.contacto_de;
+
+  const fila = (x: any, principal: boolean) => {
+    const p = papelDe(principal ? (x.papel || 'decide') : x.papel);
+    const tel = x.whatsapp || x.telefono;
+    return (
+      <div key={x.id} style={{ display: 'flex', gap: 11, alignItems: 'flex-start', padding: '11px 0', borderTop: '1px solid #f4f4f4' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.78rem', color: '#fff', background: principal ? 'linear-gradient(135deg,#9B8CFA,#7DA6F5)' : 'linear-gradient(135deg,#7DA6F5,#4FBF95)' }}>
+          {iniciales(x.nombre, x.apellido)}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>
+            {[x.nombre, x.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+            {p && <span style={{ ...D.chip(p.bg, p.fg), fontSize: '0.55rem', marginLeft: 7, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em' }}>{p.l}</span>}
+            {x.id === c.id && <span style={{ fontSize: '0.6rem', color: '#b3afbd', marginLeft: 6 }}>· esta ficha</span>}
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {[tel, x.email].filter(Boolean).join(' · ') || 'sin forma de contacto'}
+          </div>
+          {(x.puesto || x.rol) && <div style={{ fontSize: '0.7rem', color: '#a5a2af' }}>{x.puesto || x.rol}</div>}
+          {!principal && (
+            <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
+              {PAPELES.filter(o => o.v !== 'otro').map(o => (
+                <button key={o.v} onClick={() => cambiarPapel(x.id, o.v)}
+                  style={{ border: '1px solid', borderColor: x.papel === o.v ? o.fg : '#e6e3ef', background: x.papel === o.v ? o.bg : '#fff', color: x.papel === o.v ? o.fg : '#9c99a6', borderRadius: 20, padding: '2px 9px', fontSize: '0.62rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
+              ))}
+              <button onClick={() => soltar(x.id, x.nombre)}
+                style={{ border: 'none', background: 'none', color: '#c9c4dc', fontSize: '0.62rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '2px 4px' }}>sacar</button>
+            </div>
+          )}
+        </div>
+        {tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
+      </div>
+    );
+  };
+
+  return (
+    <div style={D.cardM}>
+      <div style={D.h}>
+        Personas
+        <span style={D.hr}>{personas.length + 1} en este negocio</span>
+      </div>
+
+      {/* Si estás parado en el encargado, la ficha tiene que decir de quién es
+          — si no, se lee como un lead suelto que llegó de la nada. */}
+      {esSecundario && (
+        <div style={{ background: '#E3EDFD', border: '1px solid #2C5FC433', borderRadius: 9, padding: '8px 11px', fontSize: '0.75rem', color: '#2C5FC4', marginBottom: 4, lineHeight: 1.5 }}>
+          Esta persona se agregó dentro del lead de <b>{[pri.nombre, pri.apellido].filter(Boolean).join(' ')}</b>, por eso no sale en la lista por su cuenta.
+        </div>
+      )}
+
+      {!d && <div style={{ fontSize: '0.78rem', color: '#a5a2af' }}>Cargando…</div>}
+      {d && fila(pri, true)}
+      {d && personas.map(x => fila(x, false))}
+
+      {abierto ? (
+        <div style={{ borderTop: '1px solid #f4f4f4', paddingTop: 12, marginTop: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+            <div><div style={D.fl}>Nombre</div><input autoFocus style={D.fi} value={f.nombre} onChange={e => setF({ ...f, nombre: e.target.value })} placeholder="Amado Jr" /></div>
+            <div><div style={D.fl}>WhatsApp</div><input style={D.fi} value={f.whatsapp} onChange={e => setF({ ...f, whatsapp: e.target.value })} placeholder="+52 812 601 9086" /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
+            <div><div style={D.fl}>Correo <span style={{ color: '#b3b1bb' }}>· opcional</span></div><input style={D.fi} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="— agregar" /></div>
+            <div><div style={D.fl}>Puesto</div><input style={D.fi} value={f.puesto} onChange={e => setF({ ...f, puesto: e.target.value })} placeholder="Encargado de sucursales" /></div>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <div style={D.fl}>¿Qué papel tiene?</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {PAPELES.map(o => (
+                <button key={o.v} onClick={() => setF({ ...f, papel: o.v })}
+                  style={{ border: '1.5px solid', borderColor: f.papel === o.v ? o.fg : '#e2e2e8', background: f.papel === o.v ? o.bg : '#fff', color: f.papel === o.v ? o.fg : '#3f3b4d', borderRadius: 10, padding: '6px 12px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
+              ))}
+            </div>
+            <div style={{ fontSize: '0.71rem', color: '#a5a2af', marginTop: 7, lineHeight: 1.5 }}>
+              <b>A quien se le enseña</b> es el que va invitado a la demo; <b>quien paga</b>, a quien le llega la cotización.
+            </div>
+          </div>
+          {error && <div style={{ marginTop: 10, background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 9, padding: '8px 11px', fontSize: '0.75rem', color: '#C0554E' }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+            <button style={{ ...D.btnP, opacity: busy || !f.nombre.trim() ? .5 : 1 }} disabled={busy || !f.nombre.trim()} onClick={agregar}>{busy ? 'Guardando…' : 'Agregar'}</button>
+            <button style={D.btnG} onClick={() => { setAbierto(false); setError(''); }}>Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginTop: 11 }}>
+          <button style={D.btnA} onClick={() => setAbierto(true)}>+ Agregar persona</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ═══ Unir fichas duplicadas ═══
  *
  * El aviso ya sabía decir "conviene fusionarlas" y no había con qué: detectar
@@ -562,6 +717,15 @@ function UnirFichas({ c, onCerrar, onListo }: any) {
  */
 function Agendar({ c, etapa, flash, onRegistrarPasada }: any) {
   const [tipos, setTipos] = useState<any[]>([]);
+  // A quién se invita. Si el dueño puso a alguien como "a quien se le enseña",
+  // la demo es para ese: el link salía siempre con los datos del que escribió
+  // primero, que es justo quien pidió que se lo explicaran a otro.
+  const [invitado, setInvitado] = useState<any>(null);
+  useEffect(() => {
+    fetch(`/api/crm/leads/personas?lead_id=${c.id}`).then(r => r.json())
+      .then(j => setInvitado((j.personas || []).find((p: any) => p.papel === 'usuario') || null))
+      .catch(() => {});
+  }, [c.id]);
   const [otro, setOtro] = useState(false);
   const [manual, setManual] = useState('');
 
@@ -581,8 +745,9 @@ function Agendar({ c, etapa, flash, onRegistrarPasada }: any) {
   const url = (abs: boolean) => {
     const base = (abs && typeof window !== 'undefined' ? window.location.origin : '') + '/agendar/' + slug;
     const q = new URLSearchParams();
-    if (c.email) q.set('email', c.email);
-    if (c.nombre) q.set('nombre', [c.nombre, c.apellido].filter(Boolean).join(' '));
+    const quien = invitado || c;
+    if (quien.email) q.set('email', quien.email);
+    if (quien.nombre) q.set('nombre', [quien.nombre, quien.apellido].filter(Boolean).join(' '));
     return q.toString() ? `${base}?${q}` : base;
   };
 
@@ -598,6 +763,11 @@ function Agendar({ c, etapa, flash, onRegistrarPasada }: any) {
       <div style={{ fontSize: '0.75rem', color: '#8a8a8a', lineHeight: 1.55, marginTop: 6 }}>
         {manual ? 'Elegido a mano para este lead.' : `Porque ${sugerido.porque}.`}
       </div>
+      {invitado && (
+        <div style={{ fontSize: '0.75rem', color: '#2C5FC4', background: '#E3EDFD', borderRadius: 9, padding: '8px 11px', marginTop: 9, lineHeight: 1.5 }}>
+          Va para <b>{[invitado.nombre, invitado.apellido].filter(Boolean).join(' ')}</b>{invitado.puesto ? ` · ${invitado.puesto}` : ''}, que es a quien hay que enseñarle. El link lleva sus datos.
+        </div>
+      )}
 
       {otro && (
         <div style={{ marginTop: 10 }}>
@@ -1610,6 +1780,9 @@ function LineaDeTiempo({ c }: any) {
     return l.map((a: any) => ({
       id: a.id,
       quien: quienLoHizo(a),
+      // De quién es. Viene del endpoint solo cuando NO es de la ficha que
+      // estás viendo: si el encargado contestó, la línea del negocio lo dice.
+      persona: a.persona || null,
       titulo: a.titulo || a.tipo,
       detalle: a.descripcion || null,
       // `ocurrio_at` es cuándo pasó de verdad; `created_at`, cuándo se apuntó.
@@ -1627,7 +1800,7 @@ function LineaDeTiempo({ c }: any) {
   let diaAnterior = '';
   return (
     <div style={D.cardA}>
-      <div style={D.h}>Todo lo que ha pasado<span style={D.hr}>lo tuyo y lo suyo, en una sola línea</span></div>
+      <div style={D.h}>Todo lo que ha pasado<span style={D.hr}>lo tuyo y lo del negocio, en una sola línea</span></div>
       {eventos.length === 0 && <div style={{ fontSize: '0.79rem', color: '#a5a2af' }}>Todavía no hay nada registrado.</div>}
       <div style={{ maxHeight: 420, overflowY: 'auto' }}>
         {eventos.map((e: any) => {
@@ -1642,7 +1815,10 @@ function LineaDeTiempo({ c }: any) {
               <div style={{ display: 'flex', gap: 11, padding: '7px 0', alignItems: 'flex-start' }}>
                 <span style={marca(e.quien)}>{e.quien === 'el' ? 'ÉL' : 'TÚ'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{e.titulo}</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>
+                    {e.titulo}
+                    {e.persona && <span style={{ fontSize: '0.63rem', fontWeight: 700, color: '#2C5FC4', background: '#E3EDFD', borderRadius: 20, padding: '1px 8px', marginLeft: 7 }}>{e.persona}</span>}
+                  </div>
                   {e.detalle && <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 1, lineHeight: 1.5 }}>{e.detalle}</div>}
                 </div>
                 <span style={{ fontSize: '0.69rem', color: '#b6b2c2', whiteSpace: 'nowrap' }}>

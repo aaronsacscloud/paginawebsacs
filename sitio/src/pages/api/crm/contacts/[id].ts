@@ -23,13 +23,31 @@ export const GET: APIRoute = async ({ params }) => {
     .eq('contact_id', id)
     .order('created_at', { ascending: false });
 
-  // Get activities
-  const { data: activities } = await supabase
+  // ── Actividades del NEGOCIO, no solo de esta persona ──────────────────────
+  // Si el dueño mandó a su encargado, la conversación con el negocio es una
+  // sola: partirla en dos fichas es volver al problema que resolvió agregarlo
+  // aquí. Se traen las de todas las personas ligadas —las que cuelgan de esta
+  // ficha y, si esta ES la secundaria, las de su principal y sus hermanas— y
+  // cada evento viaja con el nombre de quién lo hizo.
+  const { data: familia } = await supabase.from('contacts')
+    .select('id, nombre, apellido, contacto_de')
+    .or(`id.eq.${id},contacto_de.eq.${contact.contacto_de || id}` + (contact.contacto_de ? `,id.eq.${contact.contacto_de}` : ''))
+    .is('archived_at', null).limit(30);
+  const idsFamilia = [...new Set([String(id), ...(familia || []).map((x: any) => x.id)])];
+  const nombrePor = new Map<string, string>();
+  for (const x of (familia || [])) nombrePor.set(x.id, [x.nombre, x.apellido].filter(Boolean).join(' '));
+
+  const { data: actsCrudas } = await supabase
     .from('activities')
     .select('*')
-    .eq('contact_id', id)
+    .in('contact_id', idsFamilia)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(80);
+  // El nombre solo se pone cuando NO es de quien estás viendo: marcar cada
+  // renglón propio con tu propio nombre es ruido en la línea de tiempo.
+  const activities = (actsCrudas || []).map((a: any) => a.contact_id === id
+    ? a
+    : { ...a, persona: nombrePor.get(a.contact_id) || null, persona_id: a.contact_id });
 
   // Get quotes
   const { data: quotes } = await supabase
