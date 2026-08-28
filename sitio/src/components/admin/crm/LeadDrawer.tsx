@@ -326,7 +326,13 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
           {/* ── Info general: quién es y cómo alcanzarlo. Nada más. ── */}
           {tab === 'info' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, alignItems: 'start' }}>
-              <div><Campos c={c} guardar={guardar} guardando={guardando} setSucio={setSucio} /></div>
+              <div>
+                <Campos c={c} guardar={guardar} guardando={guardando} setSucio={setSucio} />
+                {/* Quién más está metido en este negocio. Va debajo de los datos
+                    del que llegó, no arriba: primero quién es, luego con quién
+                    más hay que hablar. */}
+                <Personas c={c} flash={flash} recargar={cargar} onChanged={onChanged} />
+              </div>
               <div>
                 <DeDondeLlego c={c} />
                 <SiguientePaso c={c} guardar={guardar} guardando={guardando} />
