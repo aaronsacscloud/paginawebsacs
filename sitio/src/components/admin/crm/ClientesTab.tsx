@@ -15,7 +15,7 @@ import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import { swrGet } from '../../../lib/crm/swr';
-import VistaRapida from './ui/VistaRapida';
+import VistaRapida, { HojaEsqueleto } from './ui/VistaRapida';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -996,10 +996,15 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               { k: 'Contacto', v: c.contacto?.nombre || c.contacto?.email || 'sin contacto', tono: c.contacto ? undefined : 'rojo' as const },
               { k: 'Próxima factura', v: c.proxima_factura ? fmtDate(c.proxima_factura) : '—', tono: vencida ? 'rojo' as const : undefined },
             ]}
-            verTodoLabel="Ver ficha completa ›" />
+            verTodoLabel="Ver ficha completa ›"
+            ficha={isMobile ? (
+              <Suspense fallback={<HojaEsqueleto />}>
+                <ClienteDrawer360 companyId={c.id} embebido onClose={() => setRapida(null)} onChanged={load} />
+              </Suspense>
+            ) : undefined} />
         );
       })()}
-      {detailId && <Suspense fallback={null}><ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} /></Suspense>}
+      {detailId && <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}><ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} /></Suspense>}
 
       {motivoMasivo && (
         <MotivoBajaMasivo ids={Array.from(selEx)}
@@ -1013,7 +1018,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       {avisoEx && (
         <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 1200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{avisoEx}</div>
       )}
-      {showNuevo && <Suspense fallback={null}><NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} /></Suspense>}
+      {showNuevo && <Suspense fallback={<Cargando texto="Abriendo…" alto={200} />}><NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} /></Suspense>}
       <Toast toast={toast} />
     </div>
   );

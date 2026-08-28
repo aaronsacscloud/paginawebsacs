@@ -901,7 +901,7 @@ export default function SoporteTab() {
       {filaKpis}
       <BarraVistas vista={vista} setVista={setVista} pendientes={pendientes} />
       {contenido}
-      {cliente && <Suspense fallback={null}><ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} /></Suspense>}
+      {cliente && <Suspense fallback={<Cargando que="la ficha del cliente" />}><ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={() => setRecarga(r => r + 1)} /></Suspense>}
     </div>
   );
 }

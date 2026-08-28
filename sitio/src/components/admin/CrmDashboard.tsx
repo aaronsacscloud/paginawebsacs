@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Component, lazy, Suspense } from 'react';
+import Cargando from './crm/ui/Cargando';
 import { WRAP } from '../../lib/crm/layout';
 import type { ReactNode } from 'react';
 import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
@@ -971,7 +972,7 @@ export default function CrmDashboard() {
 
       {/* Contact Profile Overlay */}
       {profileContactId && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#f5f6f8', display: 'grid', placeItems: 'center' }}><Cargando texto="Cargando contacto…" alto={200} /></div>}>
           <ContactProfile contactId={profileContactId} onClose={() => setProfileContactId(null)} />
         </Suspense>
       )}
@@ -1259,6 +1260,143 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="solid rgb(239, 238, 242)"] { border-color: #26262e !important; }
       /* Badges de etapa fuera de paleta en oscuro: azul #2C5FC4 y morado light → lila */
       [data-crm-dark="1"] [style*="color: rgb(44, 95, 196)"], [data-crm-dark="1"] [style*="color: rgb(91, 75, 214)"] { color: #A78BFA !important; }
+
+      /* ══ LA FICHA DENTRO DE LA HOJA ══════════════════════════════════════
+         Las fichas (lead, cliente, oportunidad, cotización) se escribieron en
+         claro con estilos INLINE. Embebidas en la hoja heredan el tema: se
+         repintan por VALOR SERIALIZADO —React escribe rgb(), nunca #hex— y
+         acotadas a .hoja-ficha, para no tocar los mismos tonos en el resto.
+         Superficies primero, después texto, después bordes y semánticos. */
+      [data-crm-dark="1"] .hoja-ficha { background: #1d1d24 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(255, 255, 255)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background-color: rgb(255, 255, 255)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(250, 250, 250)"] { background: #1d1d24 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(245, 244, 248)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(244, 244, 246)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(244, 243, 247)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(247, 247, 251)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(245, 246, 248)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(250, 248, 255)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(246, 246, 249)"] { background: #232329 !important; }
+      /* Aguas de color: conservan el significado, bajan al nivel del fondo */
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(238, 236, 254)"] { background: #221c33 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(234, 248, 242)"] { background: #14291f !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(254, 240, 239)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(251, 236, 234)"] { background: #2d1a19 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(255, 244, 229)"] { background: #2b2314 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(227, 237, 253)"] { background: #16203a !important; }
+      /* Texto: tinta y grises. El gris del sistema es #918fa0 en oscuro. */
+      [data-crm-dark="1"] .hoja-ficha b, [data-crm-dark="1"] .hoja-ficha strong,
+      [data-crm-dark="1"] .hoja-ficha h1, [data-crm-dark="1"] .hoja-ficha h2,
+      [data-crm-dark="1"] .hoja-ficha h3, [data-crm-dark="1"] .hoja-ficha h4 { color: #F2F1F7; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(138, 138, 138)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(165, 162, 175)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(156, 153, 166)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(179, 177, 187)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(182, 178, 194)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(138, 133, 144)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(107, 114, 128)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(107, 107, 116)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(153, 153, 153)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(136, 136, 136)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(102, 102, 102)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+      /* Semánticos: mismos papeles, contraste de oscuro */
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(192, 85, 78)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(30, 138, 99)"] { color: #34D399 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(154, 106, 16)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(91, 75, 214)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(155, 140, 250)"] { color: #B7A8F7 !important; }
+      /* Bordes: el hairline del sistema; los de color guardan su tinte */
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(236, 236, 236)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(230, 230, 234)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(238, 238, 238)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(239, 238, 242)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 240, 244)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(244, 244, 246)"] { border-color: #26262e !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(221, 214, 251)"] { border-color: #362c55 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(207, 224, 250)"] { border-color: #23324f !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(247, 201, 197)"] { border-color: #43221f !important; }
+      /* Campos: se capturan igual, se leen en oscuro */
+      [data-crm-dark="1"] .hoja-ficha input, [data-crm-dark="1"] .hoja-ficha select,
+      [data-crm-dark="1"] .hoja-ficha textarea {
+        background: #232329 !important; color: #F2F1F7 !important; border-color: #2c2c36 !important;
+      }
+      [data-crm-dark="1"] .hoja-ficha input::placeholder,
+      [data-crm-dark="1"] .hoja-ficha textarea::placeholder { color: #62626c !important; }
+      /* Tintas oscuras de la ficha (#241d43 el dato, #3f3b4d el secundario,
+         #5c5966 el terciario): en claro son jerarquía, en oscuro serían tinta
+         sobre tinta. Medidas con sonda en la ficha del lead. */
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(36, 29, 67)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(63, 59, 77)"] { color: #c9c7d3 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(92, 89, 102)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(201, 199, 208)"] { color: #918fa0 !important; }
+      /* Hairlines restantes: en oscuro se veían como rayas blancas */
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(230, 229, 236)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(245, 244, 248)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(247, 247, 250)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(244, 243, 247)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(243, 241, 248)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(241, 240, 246)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 239, 243)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(247, 247, 250)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(221, 220, 227)"] { border-color: #26262e !important; }
+      /* Contornos de color: conservan el semáforo, sin gritar en oscuro */
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 220, 176)"] { border-color: #5a4520 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 196, 189)"] { border-color: #4a2b28 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(230, 221, 250)"] { border-color: #362c55 !important; }
+      /* Riel de la línea de tiempo */
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(239, 237, 245)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(248, 247, 252)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(253, 252, 255)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(255, 251, 250)"] { background: #232329 !important; }
+      /* Segmented de la ficha del cliente: en claro es track gris con pastilla
+         blanca; en oscuro se invertía (pastilla negra sobre track blanco). */
+      [data-crm-dark="1"] .hoja-ficha .fic-seg { background: #232329 !important; }
+      [data-crm-dark="1"] .hoja-ficha .fic-seg button[style*="background: rgb(255, 255, 255)"] { background: #3a3a46 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="rgb(242, 242, 245)"] { background: linear-gradient(90deg, rgba(35,35,41,0), #232329 75%) !important; }
+      /* Divisor entre las dos cifras de la cabecera del cliente */
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(236, 236, 241)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(236, 236, 236)"] { background: #2a2a33 !important; }
+      /* Grises planos del CRM viejo (#f0f0f0, #f5f5f5, #eee, #f2f2f2): como
+         borde salían rayas blancas y como fondo pastillas claras. */
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 240, 240)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(245, 245, 245)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(242, 242, 242)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(221, 221, 221)"] { border-color: #26262e !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(245, 245, 245)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(240, 240, 240)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(242, 242, 242)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(238, 238, 238)"] { background: #232329 !important; }
+      /* El tema de la ficha vive en variables: una sola definición de forma
+         (arriba, global) y aquí solo los valores del oscuro. Así un botón no
+         puede quedarse blanco porque su selector no matcheó dos veces. */
+      [data-crm-dark="1"] .hoja-ficha {
+        --hoja-btn: #232329; --hoja-line: #2c2c36; --hoja-ink: #F2F1F7;
+        --hoja-caja: #26262e; --hoja-chip: #232329; --hoja-chip-ink: #918fa0;
+      }
+      /* La alerta no es el dato principal: superficie normal + barra roja de
+         2 px. Un panel relleno gritaba más que el ARR de la cuenta. */
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(254, 240, 239)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(253, 236, 234)"] {
+        background: #1d1d24 !important; border-left: 2px solid #F0857A !important;
+        border-radius: 0 10px 10px 0 !important;
+      }
+      /* Restos medidos en la ficha del cliente: barras de progreso, pastillas
+         lilas de fondo y el borde del grupo de periodo. */
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(240, 239, 243)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(247, 246, 250)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(221, 217, 228)"] { background: #2a2a33 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(221, 214, 251)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(212, 202, 253)"] { background: #362c55 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(230, 228, 240)"],
+      [data-crm-dark="1"] .hoja-ficha [style*="solid rgb(240, 239, 245)"] { border-color: #2c2c36 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="border-radius: 9px"] { border-color: #2c2c36 !important; }
+      [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(140, 47, 40)"] { color: #F0857A !important; }
+      /* Esqueleto de carga: sobre la superficie de la hoja, jamás en blanco */
+      [data-crm-dark="1"] .hoja-sk { background: #26262e !important; }
+      [data-crm-dark="1"] .hoja-skrow { border-bottom-color: #1f1f26 !important; }
     }
 
     /* Grids de 2 columnas del tab de finanzas ARR: a 1 col en teléfono.
@@ -1303,6 +1441,104 @@ const CRM_MOBILE_CSS = `
       display: inline-flex !important; align-items: center !important; justify-content: center !important;
       flex: 1 1 0 !important; min-height: 44px !important; text-align: center !important; padding: 0 8px !important; width: auto !important;
     }
+
+    /* ══ LA FICHA RESPIRA (Square) ═══════════════════════════════════════
+       Las fichas venían del escritorio: cajas con borde dentro de la hoja,
+       botones de cuatro colores pegados y cero aire. Dentro de .hoja-ficha
+       la caja desaparece —el aire separa, no el marco—, el color se reserva
+       al DATO y los botones quedan neutros, altos y de a dos por fila.
+       GLOBAL a propósito: en el bloque dark solo aplicaría en oscuro. */
+    .hoja-ficha [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .hoja-ficha [style*="border-radius: 10px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .hoja-ficha [style*="border-radius: 14px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea) {
+      border-color: var(--hoja-caja, #efeef2) !important; border-width: 1px !important; border-radius: 14px !important;
+      padding: 16px 16px 18px !important; margin-bottom: 18px !important;
+    }
+    /* Botones secundarios: un solo acabado, sin semáforo de contornos. Solo
+       toca lo que YA era botón con contorno —un botón sin borde es una
+       pestaña o un enlace de texto (copiar, ver más) y ahí una caja sobra—,
+       y el sólido morado se respeta: es la acción principal del bloque. */
+    .hoja-ficha button[style*="solid"]:not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
+    .hoja-ficha a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]) {
+      min-height: 42px !important; border-radius: 12px !important; padding: 0 14px !important;
+      border: 1px solid var(--hoja-line, #e4e3ea) !important; background: var(--hoja-btn, #fff) !important;
+      color: var(--hoja-ink, #1a1a1a) !important;
+      font-weight: 650 !important; display: inline-flex !important; align-items: center !important;
+      justify-content: center !important;
+    }
+    /* Fila de botones: dos por renglón, del mismo ancho, con aire */
+    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] { gap: 8px !important; }
+    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button { flex: 1 1 calc(50% - 8px) !important; }
+    /* Pastillas: el color decorativo se va; queda el morado del sistema */
+    .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"] {
+      background: var(--hoja-chip, #f4f3f6) !important; color: var(--hoja-chip-ink, #6b6b74) !important;
+      align-self: center !important; vertical-align: middle !important;
+      padding: 4px 10px !important; line-height: 1.4 !important;
+    }
+    /* Aire entre secciones y renglones altos: el ojo descansa */
+    .hoja-ficha [style*="text-transform: uppercase"] { margin-bottom: 12px !important; letter-spacing: .09em !important; }
+    /* Encabezado de sección con su acción al lado: que no se peguen */
+    .hoja-ficha [style*="display: flex"][style*="justify-content: space-between"] { gap: 12px !important; align-items: center !important; }
+
+    /* Acción única: a lo ancho parecía el asunto de la pantalla */
+    .vr-acc:only-child, .vr-accp:only-child { flex: 0 1 auto !important; padding: 0 26px !important; }
+
+    /* Grupos de acciones (cambiar estado del lead, de la cotización): en el
+       teléfono una rejilla de cuatro cajas es justo el amontonamiento que el
+       usuario rechazó. Se leen como LISTA: una acción por renglón, sin marco,
+       separadas por hairline; el pulgar acierta y el ojo baja en línea recta. */
+    .hoja-ficha .ficha-acciones {
+      display: block !important; width: 100% !important; flex: 1 1 100% !important;
+      margin-top: 14px !important;
+    }
+    .hoja-ficha .ficha-acciones > button[style][style][style][style],
+    .hoja-ficha .ficha-acciones > a[style][style][style][style] {
+      display: flex !important; width: 100% !important; justify-content: flex-start !important;
+      min-height: 48px !important; padding: 0 !important; border: none !important;
+      border-bottom: 1px solid var(--hoja-caja, #efeef2) !important; border-radius: 0 !important;
+      background: transparent !important; font-weight: 600 !important; font-size: 0.9rem !important;
+    }
+    .hoja-ficha .ficha-acciones > button:last-child[style][style][style][style],
+    .hoja-ficha .ficha-acciones > a:last-child[style][style][style][style] { border-bottom: none !important; }
+
+    /* Rejillas de datos de la ficha: con 342 px de ancho, un auto-fit de
+       minmax(150px) mete tres columnas y las etiquetas largas ("ÚLTIMO
+       CONTACTO") se encaraman. Dos columnas fijas y ritmo vertical amplio:
+       cada dato queda debajo de su etiqueta, que es lo que se venía a leer. */
+    .hoja-ficha [style*="gap: 26px"][style*="flex-wrap: wrap"] {
+      display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 20px 14px !important;
+    }
+    .hoja-ficha [style*="minmax(150px"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 22px 16px !important;
+    }
+    /* Las rejillas anchas (el layout de dos columnas del escritorio) van a una
+       sola columna: en 342 px la segunda columna no es una columna, es un
+       recorte. */
+    .hoja-ficha [style*="minmax(360px"], .hoja-ficha [style*="minmax(300px"] {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    /* La barra fija de guardar no puede tapar el último bloque */
+    .hoja-ficha { padding-bottom: 8px; }
+
+    /* El selector de periodo es un ajuste, no un titular: dentro de la hoja
+       pierde la caja y la palabra PERIODO —los propios botones lo dicen— y
+       deja de competir con lo que de verdad se viene a leer, que es lo de
+       abajo (uso de la cuenta, facturación, ventas). */
+    .hoja-ficha .fic-periodo {
+      position: static !important; border: none !important; background: transparent !important;
+      padding: 0 !important; margin: 0 0 16px !important; gap: 10px !important;
+    }
+    .hoja-ficha .fic-periodo > span:first-child { display: none !important; }
+    .hoja-ficha .fic-periodo > span:last-child { display: none !important; }
+    .hoja-ficha .fic-periodo button { min-height: 32px !important; font-size: 0.72rem !important; }
+
+    /* La ficha dentro de la hoja: su scroll no contagia a la página de atrás
+       (sin esto, al llegar al final la lista de abajo empieza a moverse) y la
+       ficha embebida no repite el ancho ni el aire del panel de escritorio.
+       GLOBAL a propósito: dentro del bloque dark solo aplicaría en oscuro. */
+    .hoja-ficha { overscroll-behavior: contain; }
+    .hoja-ficha > div { width: 100% !important; }
 
     /* M6 · Transición de entrada al cambiar de tab (como una app nativa). */
     .m-tabin { animation: m-tabin 180ms ease; }

@@ -525,8 +525,10 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         const tel = d.contacts?.whatsapp;
         const sinMover = diasSinMover(d);
         const acciones = [
-          { label: 'Avanzar etapa', primaria: true, onClick: () => { setRapidaD(null); setSelected(d); } },
-          tel ? { label: 'WhatsApp', href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
+          // Sin `primaria`: dentro de la hoja el único morado sólido es la barra
+          // fija de «Guardar cambios». Dos sólidos en la misma altura compiten.
+          tel ? { label: 'WhatsApp', primaria: true, href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
+          { label: 'Ver etapa', onClick: () => { setRapidaD(null); setSelected(d); } },
         ].filter(Boolean) as any[];
         return (
           <VistaRapida abierta onCerrar={() => setRapidaD(null)} onVerTodo={() => { setRapidaD(null); setSelected(d); }}
@@ -542,7 +544,16 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
               { k: 'Cierre esperado', v: d.fecha_cierre_esperada || '—' },
               { k: 'Movimiento', v: estaEstancada(d) ? `${sinMover} días sin moverse` : 'al día', tono: estaEstancada(d) ? 'ambar' as const : undefined },
             ]}
-            verTodoLabel="Ver oportunidad completa ›" />
+            verTodoLabel="Ver oportunidad completa ›"
+            ficha={esMovilD ? (
+              <DealDrawer deal={d} embebido onClose={() => setRapidaD(null)} onSaved={() => { load(); }}
+                onRefresh={async (id: string) => {
+                  const res = await fetch('/api/crm/deals');
+                  const data = await res.json();
+                  const updated = (Array.isArray(data) ? data : []).find((x: Deal) => x.id === id);
+                  if (updated) setRapidaD(updated);
+                }} />
+            ) : undefined} />
         );
       })()}
       {/* Detail Drawer */}
@@ -1007,7 +1018,9 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
 }
 
 // ─── Deal Drawer ───
-function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose: () => void; onSaved: () => void; onRefresh: (id: string) => void }) {
+// `embebido`: el detalle vive DENTRO de la hoja (VistaRapida), que ya pone
+// superficie, asa, identidad y acciones.
+function DealDrawer({ deal, onClose, onSaved, onRefresh, embebido }: { deal: Deal; onClose: () => void; onSaved: () => void; onRefresh: (id: string) => void; embebido?: boolean }) {
   const isMobile = useIsMobile();
   useDrawerHistory(true, onClose); // atrás cierra el drawer del deal
   const [editStage, setEditStage] = useState(deal.stage);
@@ -1127,13 +1140,17 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', justifyContent: 'flex-end' }}>
-      {!isMobile && <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />}
-      <div style={isMobile
+    <div style={embebido
+      ? { background: 'transparent' }
+      : { position: 'fixed', inset: 0, zIndex: 500, display: 'flex', justifyContent: 'flex-end' }}>
+      {!isMobile && !embebido && <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />}
+      <div style={embebido
+        ? { background: 'transparent' }
+        : (isMobile
         ? { width: '100%', height: '100dvh', background: '#fff', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }
-        : { width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' }}>
+        : { width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' })}>
         {/* Header */}
-        {isMobile && (
+        {isMobile && !embebido && (
           <div style={{ padding: '6px 12px 0' }}>
             <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
@@ -1141,19 +1158,20 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </button>
           </div>
         )}
-        <div style={{ padding: isMobile ? '4px 16px 12px' : '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ padding: embebido ? '0 0 12px' : (isMobile ? '4px 16px 12px' : '20px 24px'), borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>{deal.nombre}</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            {!embebido && <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>{deal.nombre}</div>}
+            {/* Etapa, probabilidad y días: en la hoja ya los dice la cabecera fija */}
+            {!embebido && <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>{stageLabel(deal.stage)}</span>
               <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#888' }}>{STAGES.find(sx => sx.id === deal.stage)?.prob ?? deal.probabilidad}%</span>
               {deal.days_in_pipeline != null && <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#aaa' }}>{deal.days_in_pipeline}d en pipeline</span>}
-            </div>
+            </div>}
           </div>
           {!isMobile && <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>}
         </div>
 
-        <div style={{ padding: isMobile ? '16px' : '20px 24px' }}>
+        <div style={{ padding: embebido ? '16px 0 24px' : (isMobile ? '16px' : '20px 24px') }}>
           {/* Deal fields */}
           <Label>Etapa</Label>
           <select value={editStage} onChange={e => setEditStage(e.target.value)} style={input}>

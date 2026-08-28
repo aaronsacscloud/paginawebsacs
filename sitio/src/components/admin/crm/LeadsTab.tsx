@@ -1,5 +1,5 @@
 import { swrGet } from '../../../lib/crm/swr';
-import VistaRapida, { telBonito } from './ui/VistaRapida';
+import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
 //
 // Abre en LISTA y no en el tablero. Con cuarenta leads apilados en una sola
@@ -1546,10 +1546,16 @@ export default function LeadsTab() {
               { k: 'Correo', v: c.email || '—' },
               { k: 'Origen', v: o.l },
             ]}
-            verTodoLabel="Ver ficha completa ›" />
+            verTodoLabel="Ver ficha completa ›"
+            ficha={esMovil ? (
+              <Suspense fallback={<HojaEsqueleto />}>
+                <LeadDrawer contactId={c.id} embebido onClose={() => setRapidaL(null)} onChanged={cargar}
+                  onAbrirOtro={(id: string) => { setRapidaL(null); setVerContacto(id); }} />
+              </Suspense>
+            ) : undefined} />
         );
       })()}
-      {verContacto && <Suspense fallback={null}><LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
+      {verContacto && <Suspense fallback={<Cargando texto="Cargando lead…" alto={240} />}><LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
         onAbrirOtro={(id: string) => setVerContacto(id)} /></Suspense>}
       {borrando && <EliminarLead c={borrando} onCerrar={() => setBorrando(null)}
         onListo={() => { setBorrando(null); cargar(); }} />}

@@ -505,7 +505,7 @@ export default function InboxPro() {
             </Sheet>
           </Suspense>
         )}
-        {nuevoChat && <Suspense fallback={null}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+        {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
           <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
             vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
@@ -537,17 +537,17 @@ export default function InboxPro() {
         )}
         {!isCompact && (
           <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
-            {conv || filaActiva?.virtual ? <Suspense fallback={null}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
+            {conv || filaActiva?.virtual ? <Suspense fallback={<Cargando texto="Cargando…" alto={180} />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
         )}
       </div>
       {isCompact && (
         <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
-          {conv && <Suspense fallback={null}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
+          {conv && <Suspense fallback={<Cargando texto="Cargando…" alto={180} />}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
         </Sheet>
       )}
-      {nuevoChat && <Suspense fallback={null}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+      {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
     </div>
   );
 }

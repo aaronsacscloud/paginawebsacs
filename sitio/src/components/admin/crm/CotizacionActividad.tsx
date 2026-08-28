@@ -51,8 +51,10 @@ const EVENTO_ES: Record<string, string> = {
 
 const METODOS = ['transferencia', 'efectivo', 'tarjeta', 'oxxo', 'mercadopago', 'stripe', 'otro'];
 
-export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
-  quoteId: string; onClose: () => void; onCambio?: () => void;
+// `embebido`: la actividad vive DENTRO de la hoja (VistaRapida), que ya pone
+// superficie, asa, identidad y acciones.
+export default function CotizacionActividad({ quoteId, onClose, onCambio, embebido }: {
+  quoteId: string; onClose: () => void; onCambio?: () => void; embebido?: boolean;
 }) {
   const esMovilCot = useIsMobile();
   const [d, setD] = useState<any>(null);
@@ -204,27 +206,27 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
           }}
         />
       )}
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1199 }} />
-      <div style={P.panel}>
+      {!embebido && <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1199 }} />}
+      <div style={embebido ? { background: 'transparent' } : P.panel}>
         {/* Encabezado con el mismo tinte morado del buscador de cliente: separa
             el título del contenido sin meter una línea más. */}
-        <div style={{ position: 'sticky', top: 0, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: esMovilCot ? '8px 12px 10px' : '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2, flexWrap: esMovilCot ? 'wrap' : undefined }}>
-          {esMovilCot && (
+        {!embebido && <div style={{ position: 'sticky', top: 0, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: esMovilCot ? '8px 12px 10px' : '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2, flexWrap: esMovilCot ? 'wrap' : undefined }}>
+          {esMovilCot && !embebido && (
             <button onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 4px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexBasis: '100%' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
               Volver
             </button>
           )}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización <span style={{ whiteSpace: 'nowrap' }}>{q.numero}</span></div>
-            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', lineHeight: 1.4 }}><span style={{ whiteSpace: 'nowrap' }}>{q.empresa || q.contacto}</span> <span style={{ whiteSpace: 'nowrap' }}>· {money(q.total)}</span> <span style={{ whiteSpace: 'nowrap' }}>· {ESTADO_ES[q.estado] || q.estado}</span></div>
+            {!embebido && <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización <span style={{ whiteSpace: 'nowrap' }}>{q.numero}</span></div>}
+            {!embebido && <div style={{ fontSize: '0.76rem', color: '#7a6fc9', lineHeight: 1.4 }}><span style={{ whiteSpace: 'nowrap' }}>{q.empresa || q.contacto}</span> <span style={{ whiteSpace: 'nowrap' }}>· {money(q.total)}</span> <span style={{ whiteSpace: 'nowrap' }}>· {ESTADO_ES[q.estado] || q.estado}</span></div>}
           </div>
           <button onClick={copiarHistorial} style={P.btnG} title="Copiar el historial para pegarlo en un correo o nota">Copiar</button>
-          <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Ver documento</a>
+          {!embebido && <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Ver documento</a>}
           {!esMovilCot && <button onClick={onClose} style={{ ...P.btnG, border: 'none', fontSize: '1rem' }}>✕</button>}
-        </div>
+        </div>}
 
-        <div style={{ padding: 18 }}>
+        <div style={{ padding: embebido ? '14px 0 24px' : 18 }}>
           {/* ── Resumen y vínculos ── */}
           <div style={P.card}>
             <div style={P.h}>Resumen</div>
@@ -283,7 +285,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               marcarla pagada, extenderla o darla por perdida. */}
           <div style={P.card}>
             <div style={P.h}>Cambiar estado</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div className="ficha-acciones" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {q.estado !== 'accepted' && q.estado !== 'paid' && (
                 <button style={P.btnA} disabled={busy} onClick={() => cambiarEstado('aceptada')}>Marcar aceptada</button>
               )}

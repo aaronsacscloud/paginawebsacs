@@ -1535,7 +1535,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       { k: 'Estado', v: estadoLabels[estadoVisual(q, v)] || q.estado },
                       { k: 'Vigencia', v: q.vigencia ? new Date(String(q.vigencia).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ') : '—' },
                     ]}
-                    verTodoLabel="Ver cotización completa ›" />
+                    verTodoLabel="Ver cotización completa ›"
+                    ficha={esMovilQ ? (
+                      <CotizacionActividad quoteId={q.id} embebido onClose={() => setRapidaQ(null)}
+                        onCambio={async () => {
+                          const d2 = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
+                          if (Array.isArray(d2)) setQuotes(d2);
+                        }} />
+                    ) : undefined} />
                 );
               })()}
               {verActividad && (

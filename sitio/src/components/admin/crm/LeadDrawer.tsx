@@ -119,12 +119,15 @@ const COLOR_ETAPA: Record<Etapa, { bg: string; fg: string }> = {
   perdido: { bg: '#FEF0EF', fg: '#C0554E' },
 };
 
-export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro }: any) {
+// `embebido`: la ficha se monta DENTRO de la hoja (VistaRapida), que ya pone
+// superficie, asa, identidad y acciones. Aquí solo se apaga el cascarón propio
+// —velo, panel fijo, «Volver» y el bloque de identidad— para no duplicarlo.
+export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro, embebido }: any) {
   // ⚠️ Hooks SIEMPRE antes de los returns tempranos de carga/error — si van
   // después, React truena con "Rendered more hooks than during the previous
   // render" en cuanto la ficha pasa de 'cargando' a 'con datos'.
   const esMovil = useIsMobile();
-  useDrawerHistory(esMovil, onClose);
+  useDrawerHistory(esMovil && !embebido, onClose);
   // Abre en "quién es", no en un revoltijo. Es el orden de la conversación con
   // el lead, el mismo criterio con el que están ordenadas las pestañas del
   // cliente: quién es · en qué va · cuándo lo tocamos · cuándo lo vimos · qué
@@ -195,8 +198,12 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
   const RUTA_VISIBLE: Etapa[] = ['nuevo', 'contactado', 'calificado', 'agendado', 'demo_hecha', 'cotizado', 'negociando', 'cliente'];
 
 
-  if (err) return (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24 }}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>{err}</div><button style={{ ...D.btnA, marginTop: 12 }} onClick={onClose}>Cerrar</button></div></>);
-  if (!c) return (<><div style={D.overlay} onClick={onClose} /><div style={D.panel}><Cargando texto="Cargando lead…" alto={240} /></div></>);
+  if (err) return embebido
+    ? (<div style={{ color: '#C0554E', fontSize: '0.85rem', padding: '18px 0' }}>{err}</div>)
+    : (<><div style={D.overlay} onClick={onClose} /><div style={{ ...D.panel, padding: 24 }}><div style={{ color: '#C0554E', fontSize: '0.85rem' }}>{err}</div><button style={{ ...D.btnA, marginTop: 12 }} onClick={onClose}>Cerrar</button></div></>);
+  if (!c) return embebido
+    ? (<Cargando texto="Cargando lead…" alto={240} />)
+    : (<><div style={D.overlay} onClick={onClose} /><div style={D.panel}><Cargando texto="Cargando lead…" alto={240} /></div></>);
 
   // La pastilla dice la etapa DEDUCIDA, la misma que la ruta y la que decide
   // qué reunión toca. `lifecycle_stage` solo entra si todavía no hay evaluación.
@@ -216,9 +223,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
 
   return (
     <>
-      <div style={D.overlay} onClick={onClose} />
-      <div style={esMovil ? { ...D.panel, width: '100%', boxShadow: 'none' } : D.panel}>
-        {esMovil && (
+      {!embebido && <div style={D.overlay} onClick={onClose} />}
+      <div style={embebido
+        ? { background: 'transparent' }
+        : (esMovil ? { ...D.panel, width: '100%', boxShadow: 'none' } : D.panel)}>
+        {esMovil && !embebido && (
           <div style={{ background: '#fff', padding: '6px 12px 0' }}>
             <button onClick={cerrar} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
@@ -226,8 +235,8 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
             </button>
           </div>
         )}
-        <div style={D.head}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={embebido ? { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', padding: '0' } : D.head}>
+          {!embebido && <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
                 {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
@@ -247,10 +256,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
               {!esMovil && <button onClick={cerrar} aria-label="Cerrar"
                 style={{ width: 32, height: 32, border: '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: '#9c99a6', cursor: 'pointer', fontSize: '1.05rem', fontFamily: 'inherit' }}>✕</button>}
             </div>
-          </div>
+          </div>}
           {/* ══ M3 · Fila de acciones al pulgar (solo móvil): WhatsApp primaria
-              en morado, llamar y cotizar con targets ≥44px. ══ */}
-          {esMovil && (
+              en morado, llamar y cotizar con targets ≥44px. Embebida en la hoja
+              NO se pinta: la hoja ya trae esa misma fila, fija arriba. ══ */}
+          {esMovil && !embebido && (
             <div style={{ display: 'flex', gap: 8, padding: '10px 0 2px' }}>
               {tel && <a href={waLink(tel)} target="_blank" rel="noreferrer" style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>WhatsApp</a>}
               {tel && <a href={'tel:' + String(tel).replace(/\D/g, '')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>Llamar</a>}
@@ -276,7 +286,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro 
           </div>
         </div>
 
-        <div style={D.body}>
+        <div style={embebido ? { padding: '14px 0 26px' } : D.body}>
           {msg && <div style={{ background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
 
           {/* ── ¿Ya lo conocíamos? ──
@@ -1159,7 +1169,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
               {pausaActiva && c.retenido_razon ? chip(`pausa: ${c.retenido_razon}`, '#FFF4E5', '#9a6a10') : null}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+          <div className="ficha-acciones" style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
             {/* El mismo lugar en los dos modos: Editar se vuelve Guardar/Cancelar
                 y nada se recorre. El commit es inequívoco. */}
             {!editando ? (<>
@@ -1210,7 +1220,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         {/* ── La franja derivada: números que NO se capturan ── */}
         <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', ...separador }}>
           {dato('Llegó', fmtDate(llegoRealF), undefined, c.propiedades?.tiktok?.creado ? 'fecha real del anuncio' : undefined)}
-          {dato('Último contacto', c.last_contact_at ? `hace ${sinC} d` : 'nunca', c.last_contact_at && sinC != null && sinC > 14 ? '#C0554E' : undefined)}
+          {dato('Último contacto', c.last_contact_at ? (sinC === 0 ? 'hoy' : sinC === 1 ? 'ayer' : `hace ${sinC} d`) : 'nunca', c.last_contact_at && sinC != null && sinC > 14 ? '#C0554E' : undefined)}
           {dato('Toques', toques || '—')}
           {dato('Reuniones', (c.bookings || []).length || '—')}
           {dato('Cotizaciones', (c.quotes || []).length || '—')}
