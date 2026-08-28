@@ -533,6 +533,19 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
   const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
   const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
   const dormida = conv.snooze_until && new Date(conv.snooze_until) > new Date();
+  // E9 · «Recuérdame si no contesta» estaba enterrado tras el reloj de la barra
+  // de herramientas (y en el teléfono, además, tras «Más»): es de lo que más se
+  // usa para cerrar el ciclo, así que vive aquí.
+  const [recordar, setRecordar] = useState(false);
+  const [avisoRec, setAvisoRec] = useState('');
+  const aLas9 = (dias: number) => { const d = new Date(); d.setDate(d.getDate() + dias); d.setHours(9, 0, 0, 0); return d; };
+  const elLunes = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
+  const recordarme = async (cuando: Date, etiqueta: string) => {
+    setAvisoRec('…');
+    const r = await api.programar({ tipo: 'recordatorio', ejecutar_at: cuando.toISOString(), payload: { nota: `Sin respuesta — ${etiqueta}` } });
+    setAvisoRec(r?.error ? 'No se pudo programar' : 'Listo, te avisamos');
+    if (!r?.error) setTimeout(() => { setAbierto(false); setRecordar(false); setAvisoRec(''); }, 900);
+  };
   return (
     <span style={{ position: 'relative', flexShrink: 0 }}>
       <button onClick={() => setAbierto(!abierto)} title="Más acciones"
@@ -566,6 +579,23 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             )}
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
+          {/* E9 · Cerrar el ciclo sin salir del hilo. */}
+          <button onClick={() => setRecordar(v => !v)}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '12px 20px' : '9px 14px', fontSize: movil ? 15 : 12, color: C.g700 }}>
+            Recuérdame si no contesta
+          </button>
+          {recordar && (
+            <span className="menu-sub" style={{ display: 'block', background: C.g50 }}>
+              {[{ l: 'Mañana', d: () => aLas9(1) }, { l: 'En 2 días', d: () => aLas9(2) }, { l: 'La próxima semana', d: elLunes }].map(o => (
+                <button key={o.l} onClick={() => recordarme(o.d(), o.l.toLowerCase())}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '12px 20px 12px 34px' : '8px 14px 8px 26px', fontSize: movil ? 14.5 : 12, color: C.moradoTinta, fontWeight: 600 }}>
+                  {o.l}
+                </button>
+              ))}
+              {avisoRec && <span style={{ display: 'block', padding: movil ? '4px 20px 10px' : '2px 14px 8px', fontSize: 11.5, color: C.g500 }}>{avisoRec}</span>}
+            </span>
+          )}
+          <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           {!movil && !!notas && (
             <button onClick={() => { setAbierto(false); onVerNotas?.(); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 14px', fontSize: 12, color: C.g700 }}>

@@ -150,6 +150,10 @@ export const CSS_INBOX = `
   .wa-x-hover { display: none; }
   .wa-staged:hover .wa-x-hover { display: flex; }
   mark.wa-mark { background: #FEF08A; color: #854D0E; border-radius: 3px; padding: 0 2px; }
+/* La hoja del menú del hilo se toca con el pulgar: 48 px por renglón. Los
+   botones venían a 41 (padding + tipografía) y quedaban bajo el estándar. */
+.menu-hoja button{min-height:48px}
+
 /* Marca de nota interna en la fila (E8.1). Discreta a propósito: informa, no
    compite con el punto de «te toca contestar». */
 .m-nota{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;

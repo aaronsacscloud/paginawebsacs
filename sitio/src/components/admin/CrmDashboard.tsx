@@ -1430,6 +1430,10 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .menu-hoja select,
       [data-crm-dark="1"] .menu-hoja input { background: #232329 !important; border-color: #2c2c36 !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .menu-hoja > span > span { background: #33333d !important; }
+      /* Sub-lista desplegable dentro de la hoja (las horas del recordatorio):
+         traía el gris claro del tema normal y en oscuro salía un bloque
+         blanco en medio del menú. */
+      [data-crm-dark="1"] .menu-sub { background: #232329 !important; }
       [data-crm-dark="1"] .wa-ctx { background: #17171d !important; border-bottom-color: #1f1f26 !important; color: #918fa0 !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .m-lupa { stroke: #918fa0 !important; }
@@ -1688,6 +1692,10 @@ const CRM_MOBILE_CSS = `
        ≥44 por su cuenta. */
     .m-tabin button:not(.m-chip), .m-tabin [role="button"],
     .cs-modal-close { min-height: 36px !important; }
+    /* …salvo los renglones de una hoja de menú, que son la lista de acciones
+       del hilo y se tocan con el pulgar: 48. La regla de arriba los dejaba en
+       36 aunque el componente pidiera más. */
+    .m-tabin .menu-hoja button { min-height: 48px !important; }
     .cs-modal-close { min-width: 40px !important; min-height: 40px !important; box-sizing: border-box !important; }
     /* Action-links de fila (el "Ver" de cotizaciones ×25): son botones con
        etiqueta <a>. Los links de prosa no llevan border/background inline. */
