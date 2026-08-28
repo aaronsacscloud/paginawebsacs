@@ -6,6 +6,7 @@
 // vendedor debe escribirle "hola" al número del CRM de vez en cuando para
 // mantener su ventana abierta (o después migramos a plantilla UTILITY).
 import { supabase } from '../supabase';
+import { pushLeadNuevo } from './push-crm';
 import { enviarTexto, enviarPlantilla } from '../whatsapp/kapso-api';
 
 const URL_LEAD = (id: string) => `https://www.sacscloud.com/admin/crm?tab=pipeline&lead=${id}`;
@@ -58,6 +59,9 @@ export async function avisarNuevoLead(c: { id: string; nombre?: string | null; a
     extra || '',
     `Verlo: ${URL_LEAD(c.id)}`,
   ].filter(Boolean);
+  // El push va junto al WhatsApp y desde el MISMO lugar: si un día cambia qué
+  // cuenta como «lead nuevo», cambia en un solo sitio.
+  pushLeadNuevo(c).catch(() => {});
   return mandar(lineas.join('\n'), [nombre, [c.whatsapp || c.telefono, c.email, c.campana || c.fuente].filter(Boolean).join(' · ') || 'sin datos', c.id]);
 }
 
@@ -70,6 +74,16 @@ export async function avisarLoteLeads(n: number, nombres: string[], origen: stri
 }
 
 /** SLA: leads sin primer toque, agrupados en un solo mensaje. */
+// Leads que abren correos de la secuencia pero no contestan: intención pura.
+export async function avisarCalientes(leads: { id: string; nombre: string; abiertos: number }[]) {
+  const nombres = leads.map(l => `${l.nombre} (${l.abiertos} correos abiertos)`).join(', ').slice(0, 250);
+  return mandar(
+    `Leads calientes en el CRM: ${nombres}. Buen momento para llamarles.`,
+    [`${leads.length} lead(s) caliente(s): abren los correos y no responden`, nombres,
+      'https://www.sacscloud.com/admin/crm?tab=pipeline&lead=lista'],
+  );
+}
+
 export async function avisarSLA(leads: { id: string; nombre: string; mins: number }[]) {
   if (!leads.length) return;
   const filas = leads.slice(0, 8).map(l => `· ${l.nombre} — ${l.mins} min sin toque`).join('\n');

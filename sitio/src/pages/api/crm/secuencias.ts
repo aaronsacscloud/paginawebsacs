@@ -11,10 +11,11 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 export const GET: APIRoute = async () => {
-  const [{ data: secs }, { data: pasos }, { data: mets }] = await Promise.all([
+  const [{ data: secs }, { data: pasos }, { data: mets }, { data: pstats }] = await Promise.all([
     supabase.from('crm_secuencias').select('*').order('created_at'),
     supabase.from('crm_secuencia_pasos').select('*').order('orden'),
     supabase.rpc('crm_secuencias_metricas'),
+    supabase.rpc('crm_secuencia_pasos_stats'),
   ]);
   const porSec = new Map<string, any[]>();
   for (const p of pasos || []) { const a = porSec.get(p.secuencia_id) || []; a.push(p); porSec.set(p.secuencia_id, a); }
@@ -23,6 +24,7 @@ export const GET: APIRoute = async () => {
     secuencias: (secs || []).map(s => ({
       ...s, pasos: porSec.get(s.id) || [],
       metricas: metPor.get(s.id) || { en_secuencia: 0, entraron: 0, salidas: {}, correos: 0, whatsapps: 0 },
+      stats_correo: (pstats || []).filter((x: any) => x.secuencia_id === s.id),
     })),
   });
 };
@@ -64,6 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
       .map((p: any, i: number) => ({
         secuencia_id: id, orden: i + 1, dia: Math.max(1, Number(p.dia) || 1), canal: p.canal,
         email_template_id: p.canal === 'correo' ? (p.email_template_id || null) : null,
+        email_template_id_b: p.canal === 'correo' ? (p.email_template_id_b || null) : null,
         wa_plantilla: p.canal === 'wa' ? (String(p.wa_plantilla || '').trim() || null) : null,
         activo: p.activo !== false,
       }));

@@ -116,6 +116,8 @@ export default function SecuenciasTab() {
             <b>Si responde, se ajusta el canal (no sale):</b> respondió por WhatsApp → se detienen los WhatsApps automáticos y los correos SIGUEN; respondió por correo → al revés. Si respondió por ambos, ahí sí sale.<br />
             <b>Sale al instante cuando:</b> agenda una reunión · se convierte en cliente · se descarta («no le interesa») · empieza a negociar (cotizado) · se cumple el corte de {edit.corte_dias ?? 14} días. La baja de WhatsApp detiene ese canal para siempre.<br />
             <b>Pausa («pidió tiempo»):</b> suspende los envíos, NO lo saca — al vencer la pausa, continúa donde iba.<br />
+            <b>Techo global:</b> máximo un correo y un WhatsApp AL DÍA por lead, contando TODAS las secuencias; y cada corrida manda a lo más 60 por canal — una campaña grande sale en olas, no en ráfaga.<br />
+            <b>Re-entrada:</b> quien salió solo vuelve a entrar si levanta la mano otra vez, o si su salida tiene más de 90 días y hoy vuelve a cumplir la entrada.<br />
             <b>El vendedor siempre se entera:</b> cada correo enviado, cada canal detenido y cada salida dejan una nota en el hilo del inbox, y desde el detalle de la conversación puede pausar o reanudar la secuencia de ese lead.
           </div>
         </div>
@@ -129,12 +131,26 @@ export default function SecuenciasTab() {
               <select value={p.canal} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, canal: e.target.value } : x) })} style={{ ...inp, width: 104 }}>
                 <option value="correo">Correo</option><option value="wa">WhatsApp</option>
               </select>
-              {p.canal === 'correo' ? (
+              {p.canal === 'correo' ? (<>
                 <select value={p.email_template_id || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
                   <option value="">— plantilla de correo —</option>
                   {plantillasEmail.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
                 </select>
-              ) : (
+                {p.email_template_id_b === undefined || p.email_template_id_b === null ? (
+                  <button title="Prueba A/B: mitad de los leads recibe la variante B" onClick={() => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id_b: '' } : x) })}
+                    style={{ border: '1px dashed #c9bcf7', background: '#fff', borderRadius: 8, padding: '5px 9px', fontSize: '0.66rem', fontWeight: 800, color: P.violetaTinta, cursor: 'pointer', fontFamily: 'inherit' }}>A/B</button>
+                ) : (
+                  <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center', flex: 1, minWidth: 180 }}>
+                    <span style={{ fontSize: '0.66rem', fontWeight: 800, color: P.violetaTinta }}>B:</span>
+                    <select value={p.email_template_id_b || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id_b: e.target.value } : x) })} style={{ ...inp, flex: 1 }}>
+                      <option value="">— variante B —</option>
+                      {plantillasEmail.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+                    </select>
+                    <button title="Quitar la variante B" onClick={() => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id_b: null } : x) })}
+                      style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+                  </span>
+                )}
+              </>) : (
                 <select value={p.wa_plantilla || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, wa_plantilla: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
                   <option value="">— plantilla de WhatsApp —</option>
                   {plantillasWa.map((x: any) => <option key={x.nombre} value={x.nombre}>{x.nombre}{x.aprobada ? '' : ' (en revisión de Meta)'}</option>)}
@@ -146,6 +162,15 @@ export default function SecuenciasTab() {
                 {p.activo === false ? 'apagado' : 'activo'}
               </label>
               <button onClick={() => setEdit({ ...edit, pasos: pasos.filter((_, j) => j !== i) })} style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+              {p.canal === 'correo' && (() => {
+                const st = (edit.stats_correo || []).filter((x: any) => [p.email_template_id, p.email_template_id_b].includes(x.template_id));
+                if (!st.length) return null;
+                return (
+                  <span style={{ flexBasis: '100%', fontSize: '0.65rem', color: '#a5a2af', paddingLeft: 66 }}>
+                    {st.map((x: any) => `${st.length > 1 || x.variante === 'B' ? x.variante + ': ' : ''}${x.enviados} enviados · ${x.abiertos} abiertos · ${x.clics} clics`).join('  ·  ')}
+                  </span>
+                );
+              })()}
             </div>
           ))}
           <button style={{ ...btnG, marginTop: 4 }} onClick={() => setEdit({ ...edit, pasos: [...pasos, { dia: (pasos[pasos.length - 1]?.dia || 0) + 1, canal: 'correo', activo: true }] })}>+ Agregar paso</button>
@@ -214,6 +239,7 @@ export default function SecuenciasTab() {
               <div style={{ ...tarjetaKpi(P.azul), minWidth: 140, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Envíos</div>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>{m.correos ?? 0} correos · {m.whatsapps ?? 0} WA</div>
+                <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 2 }}>{m.correos_abiertos ?? 0} abiertos · {m.correos_clic ?? 0} con clic</div>
               </div>
               <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>
@@ -227,6 +253,7 @@ export default function SecuenciasTab() {
                   return (
                     <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.verdeTinta }}>
                       {logrados} de {entraron}{entraron ? ` · ${Math.round(logrados / entraron * 100)}%` : ''}
+                      {m.tiempo_a_objetivo != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888' }}> · ~{m.tiempo_a_objetivo} días</span>}
                     </div>
                   );
                 })()}
