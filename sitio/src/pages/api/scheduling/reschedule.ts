@@ -132,13 +132,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   const nueva_hora_fin = addMinutes(nueva_hora, eventType.duracion_minutos);
 
-  // Mark old booking as reagendada
-  await supabase
-    .from('bookings')
-    .update({ estado: 'reagendada' })
-    .eq('id', booking_id);
-
-  // Create new booking
+  // Create new booking FIRST — si el insert falla, la reunión vieja debe
+  // seguir confirmada (marcarla antes dejaba al lead SIN ninguna cita).
   const token_cancelar = generateToken();
   const token_reagendar = generateToken();
 
@@ -171,6 +166,12 @@ export const POST: APIRoute = async ({ request }) => {
     .single();
 
   if (nbErr) return new Response(JSON.stringify({ error: nbErr.message }), { status: 500 });
+
+  // Ahora sí: la vieja pasa a 'reagendada' (la nueva ya existe).
+  await supabase
+    .from('bookings')
+    .update({ estado: 'reagendada' })
+    .eq('id', booking_id);
 
   // Log activity
   if (oldBooking.contact_id) {
