@@ -78,6 +78,15 @@ self.addEventListener('push', (e) => {
     requireInteraction: !!d.requireInteraction,
     vibrate: [160, 70, 160],
   }));
+  // E7.2 · El ícono de la PWA lleva el número: al llegar un aviso con la app
+  // cerrada, el badge sube; el inbox lo pone en su valor real al abrirse.
+  e.waitUntil((async () => {
+    try {
+      if (!self.registration.getNotifications) return;
+      const n = await self.registration.getNotifications();
+      if (self.navigator && self.navigator.setAppBadge) await self.navigator.setAppBadge(n.length || 1);
+    } catch (_) { /* navegador sin badge */ }
+  })());
 });
 
 self.addEventListener('notificationclick', (e) => {

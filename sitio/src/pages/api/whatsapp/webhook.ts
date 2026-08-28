@@ -100,6 +100,17 @@ export const POST: APIRoute = async ({ request, url }) => {
           // "Escribiendo…" hacia el cliente: señal de que alguien lo vio llegar.
           // La confirmación de LECTURA real la manda el hilo al abrirse.
           await marcarLeido(String(msj.id), true).catch(() => {});
+          // E7.1 · Push al equipo. No se espera: el webhook tiene que contestar
+          // rápido o Kapso reintenta. El `tag` por conversación hace que cinco
+          // mensajes seguidos sean UN aviso que se actualiza, no cinco.
+          (async () => {
+            const { data: c } = await supabase.from('wa_conversaciones')
+              .select('id, telefono, contacts(nombre, apellido)').eq('id', r.conversationId).maybeSingle();
+            const ct: any = (c as any)?.contacts;
+            const nombre = ct ? [ct.nombre, ct.apellido].filter(Boolean).join(' ') : null;
+            const { pushMensajeEntrante } = await import('../../../lib/crm/push-crm');
+            await pushMensajeEntrante({ conversationId: String(r.conversationId), telefono, texto: p.cuerpo, nombre });
+          })().catch(e => console.warn('[wa-push]', e));
         }
         return ok();
       }

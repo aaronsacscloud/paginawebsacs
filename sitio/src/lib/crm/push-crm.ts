@@ -48,3 +48,20 @@ export async function pushLeadNuevo(c: { id: string; nombre?: string | null; ape
     data: { contact_id: c.id },
   });
 }
+
+/** El push de un mensaje ENTRANTE de WhatsApp (E7).
+ *
+ * El `tag` es la conversación: si el cliente manda cinco mensajes seguidos, el
+ * teléfono enseña UNO que se va actualizando, no cinco avisos apilados. */
+export async function pushMensajeEntrante(o: { conversationId: string; telefono: string; texto?: string | null; nombre?: string | null }) {
+  const quien = o.nombre || o.telefono || 'Un cliente';
+  const cuerpo = String(o.texto || '').trim().slice(0, 120) || 'Te mandó un mensaje';
+  return pushAlEquipo({
+    title: quien,
+    body: cuerpo,
+    tag: `wa-${o.conversationId}`,
+    url: `/admin/crm?tab=whatsapp&wa_conv=${o.conversationId}`,
+    requireInteraction: false,
+    data: { conversation_id: o.conversationId },
+  });
+}

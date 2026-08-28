@@ -222,12 +222,20 @@ export default function InboxPro() {
         o.frequency.value = 880; g.gain.value = 0.04;
         o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.12);
       } catch { /* sin audio */ }
+      // E7.3 · Vibración corta con la app abierta. Es lo que hace que te
+      // enteres con el teléfono en la mano y en silencio.
+      try { navigator.vibrate?.(30); } catch { /* el escritorio no vibra */ }
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
         try { new Notification('WhatsApp · CRM SACS', { body: 'Tienes mensajes nuevos en el inbox' }); } catch { /* nada */ }
       }
     }
     prevNoLeidas.current = n;
     document.title = n > 0 ? `(${n}) Inbox — Sacs CRM` : 'Sacs CRM';
+    // E7.2 · El número en el ícono de la PWA: se ve sin abrir la app.
+    try {
+      const nav: any = navigator;
+      if (n > 0) nav.setAppBadge?.(n); else nav.clearAppBadge?.();
+    } catch { /* navegador sin badge */ }
   }, [counts?.no_leidas]);
 
   // Permiso de notificaciones: se pide en el primer gesto del usuario (el
