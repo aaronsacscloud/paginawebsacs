@@ -3,6 +3,7 @@
 // archivos, etapas del ciclo de vida, motivos de cierre, automatización y el
 // número (salud, perfil y pagos de Meta). Antes estaba regado en 4 lugares.
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { S, Aviso, Vacio } from '../email/ui';
 import { C } from './estilo';
 import Cargando, { Corazones } from '../ui/Cargando';
@@ -27,25 +28,36 @@ const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
 ];
 
 export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
+  const esMovilCfg = useIsMobile();
   const [sec, setSec] = useState<Seccion>(inicial || 'plantillas');
   useEffect(() => {
     // Deep-link: ?tab=wa-config&sec=numero
     try { const s = new URLSearchParams(window.location.search).get('sec') as Seccion | null; if (s && SECCIONES.some(x => x.id === s)) setSec(s); } catch { /* SSR */ }
   }, []);
 
+  // En el teléfono no caben dos columnas: el menú de 228 px dejaba el
+  // contenido en 140 y todo salía cortado. Una sola columna, con las secciones
+  // como una tira de pestañas arriba.
   return (
-    <div style={{ ...S.wrap, display: 'flex', gap: 22, alignItems: 'flex-start' }}>
+    <div style={{ ...S.wrap, display: 'flex', flexDirection: esMovilCfg ? 'column' : 'row', gap: esMovilCfg ? 12 : 22, alignItems: esMovilCfg ? 'stretch' : 'flex-start' }}>
       {/* OJO: crm.astro esconde todo <nav> del sitio con display:none — aside, no nav */}
-      <aside style={{ width: 228, flexShrink: 0, position: 'sticky', top: 34 }}>
-        <p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '2px 0 8px 10px' }}>Configuración WhatsApp</p>
+      <aside className={esMovilCfg ? 'mod-tabs crm-scroll-x' : undefined}
+        style={esMovilCfg
+          ? { display: 'flex', gap: 4, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }
+          : { width: 228, flexShrink: 0, position: 'sticky', top: 34 }}>
+        {!esMovilCfg && <p style={{ fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '2px 0 8px 10px' }}>Configuración WhatsApp</p>}
         {SECCIONES.map(s => (
-          <button key={s.id} onClick={() => setSec(s.id)} style={{
+          <button key={s.id} onClick={() => setSec(s.id)} className={esMovilCfg && sec === s.id ? 'seg-on' : undefined} style={esMovilCfg ? {
+            flex: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            borderRadius: 9, padding: '0 12px', minHeight: 40, fontSize: 13, fontWeight: sec === s.id ? 800 : 600,
+            background: sec === s.id ? '#EEECFE' : 'transparent', color: sec === s.id ? '#5B4BD6' : '#83808e',
+          } : {
             display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
             borderRadius: 9, padding: '8px 11px', marginBottom: 2,
             background: sec === s.id ? '#EEECFE' : 'transparent',
           }}>
-            <b style={{ fontSize: 12.5, color: sec === s.id ? '#5B4BD6' : '#444', display: 'block' }}>{s.label}</b>
-            <span style={{ fontSize: 10.5, color: sec === s.id ? '#7C6BF0' : '#999', display: 'block', marginTop: 1 }}>{s.desc}</span>
+            <b style={{ fontSize: esMovilCfg ? 13 : 12.5, color: sec === s.id ? '#5B4BD6' : (esMovilCfg ? '#83808e' : '#444'), display: 'block' }}>{s.label}</b>
+            {!esMovilCfg && <span style={{ fontSize: 10.5, color: sec === s.id ? '#7C6BF0' : '#999', display: 'block', marginTop: 1 }}>{s.desc}</span>}
           </button>
         ))}
       </aside>

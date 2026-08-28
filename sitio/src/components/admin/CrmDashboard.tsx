@@ -1422,6 +1422,7 @@ const CRM_MOBILE_CSS = `
       /* Las dos series de una gráfica no pueden acabar del mismo color */
       [data-crm-dark="1"] .m-auto-dark .wam-in { background: rgba(167,139,250,.42) !important; }
       [data-crm-dark="1"] .m-auto-dark .wam-out { background: #A78BFA !important; }
+      [data-crm-dark="1"] .m-auto-dark .wam-riel { background: #26262e !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a
          longhands (border-style: none none solid) cuando hay otras propiedades

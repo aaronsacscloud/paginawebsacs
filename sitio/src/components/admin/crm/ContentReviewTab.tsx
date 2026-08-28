@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando from './ui/Cargando';
 
 interface Submission {
@@ -32,6 +33,7 @@ const TIPOS_LABEL: Record<string, { label: string; puntos: number }> = {
 const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
 export default function ContentReviewTab() {
+  const esMovilCR = useIsMobile();
   const [list, setList] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState('pending_review');
@@ -76,9 +78,13 @@ export default function ContentReviewTab() {
     load();
   }
 
+  // En el teléfono: margen propio, la página en la base del tema (estaba más
+  // clara que sus tarjetas) y sin el eyebrow + título + párrafo, que repiten
+  // lo que ya dice la barra.
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: '#f5f6f8' }}>
-      <div style={{ marginBottom: 24 }}>
+    <div className={esMovilCR ? 'm-lienzo' : undefined}
+      style={{ padding: esMovilCR ? '4px 18px 24px' : 24, minHeight: '100vh', background: esMovilCR ? 'transparent' : '#f5f6f8' }}>
+      <div style={{ marginBottom: esMovilCR ? 10 : 24, display: esMovilCR ? 'none' : 'block' }}>
         <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#4B7BE5', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Contenido de partners</div>
         <h1 style={{ margin: 0, fontFamily: 'Clash Display, sans-serif', fontSize: '1.75rem', fontWeight: 600, color: '#1a1a1a', letterSpacing: '-0.015em' }}>
           Revisión de contenido
@@ -114,7 +120,9 @@ export default function ContentReviewTab() {
         {loading ? (
           <Cargando texto="Cargando…" />
         ) : list.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Sin submissions en este estado.</div>
+          <div style={{ padding: esMovilCR ? '22px 16px' : 48, textAlign: 'center', color: '#888' }}>
+            {filterEstado === 'pending_review' ? 'Nada por revisar.' : filterEstado === 'approved' ? 'Aún no hay contenido aprobado.' : 'Aún no hay contenido rechazado.'}
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {list.map(s => {

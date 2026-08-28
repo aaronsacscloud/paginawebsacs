@@ -89,14 +89,17 @@ export default function MetricasWA() {
         {!(d.por_cierre || []).length && <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#a5a2af' }}>Aún no hay conversaciones resueltas con categoría.</div>}
         {(d.por_cierre || []).map((c: any) => {
           const total = (d.por_cierre || []).reduce((a: number, x: any) => a + x.n, 0) || 1;
+          const maxCierre = Math.max(...(d.por_cierre || []).map((x: any) => x.n), 1);
           return (
             <div key={c.categoria} style={{ marginTop: 10, fontSize: '0.78rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                 <span style={{ fontWeight: 600, minWidth: 0 }}>{c.categoria}</span>
                 <b style={{ color: '#1a1a1a', flexShrink: 0 }}>{c.n}</b>
               </div>
-              <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 5 }}>
-                <div style={{ width: `${(c.n / total) * 100}%`, height: '100%', background: '#9B8CFA' }} />
+              {/* Riel hairline y relleno en acento: en blanco y al 100% las
+                  barras se leían como reglas divisorias, no como dato. */}
+              <div className="wam-riel" style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 5 }}>
+                <div className="wam-out" style={{ width: `${Math.max(3, (c.n / Math.max(1, maxCierre)) * 100)}%`, height: '100%', background: '#9B8CFA' }} />
               </div>
             </div>
           );
@@ -119,7 +122,7 @@ export default function MetricasWA() {
                     {a.asignadas} asignadas · <b style={{ color: a.resueltas > 0 ? '#1E8A63' : '#8f8d98' }}>{a.resueltas} resueltas</b>
                   </span>
                 </div>
-                <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 7 }}>
+                <div className="wam-riel" style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 7 }}>
                   <div style={{ width: `${a.asignadas ? (a.resueltas / a.asignadas) * 100 : 0}%`, height: '100%', background: '#4FBF95' }} />
                 </div>
               </div>

@@ -139,17 +139,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               style={{ border: 'none', borderRadius: 8, padding: '9px 18px', background: C.emerald600, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               Elegir plantilla
             </button>
-            {sugerenciasDe(filaActiva.contacto?.lifecycle_stage).filter((t: any) => t.tipo === 'plantilla').length > 0 && (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Temas de su etapa</div>
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  {sugerenciasDe(filaActiva.contacto?.lifecycle_stage).filter((t: any) => t.tipo === 'plantilla').slice(0, 4).map((t: any, i: number) => (
-                    <button key={i} onClick={() => setModalPlantillaVirtual({ presel: t.ref })}
-                      style={{ border: `1px solid #A7F3D0`, background: '#fff', color: C.emerald700, borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{t.titulo || t.ref}</button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Los «Temas de su etapa» se quitaron a pedido del usuario. */}
           </div>
         </div>
         {modalPlantillaVirtual && (
