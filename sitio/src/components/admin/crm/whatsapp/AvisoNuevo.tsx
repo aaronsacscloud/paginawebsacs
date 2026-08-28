@@ -7,6 +7,7 @@
 // En el teléfono va arriba (abajo está el composer) y en escritorio abajo a la
 // derecha, que es donde el ojo no está leyendo.
 import { useEffect, useRef } from 'react';
+import { telefonoLegible } from '../../../../lib/telefono';
 
 export default function AvisoNuevo({ conv, mas, movil, onAbrir, onCerrar }: {
   conv: any; mas: number; movil?: boolean; onAbrir: () => void; onCerrar: () => void;
@@ -21,7 +22,9 @@ export default function AvisoNuevo({ conv, mas, movil, onAbrir, onCerrar }: {
     return () => clearTimeout(t);
   }, [conv?.id]);
 
-  const nombre = conv?.contacto?.nombre || conv?.telefono || 'Alguien';
+  // Un número crudo se lee peor y además queda distinto de la lista y del
+  // hilo, que sí lo formatean.
+  const nombre = conv?.contacto?.nombre || (conv?.telefono ? telefonoLegible(String(conv.telefono)) : 'Alguien');
   const texto = String(conv?.ultimo_mensaje_texto || '').slice(0, 70);
 
   return (
