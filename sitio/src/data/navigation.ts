@@ -155,7 +155,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Activewear',
-    // moda: true se enciende cuando la página pase los tres referees (manual de giros).
+    moda: true,
     description: 'Marcas de ropa deportiva que venden por drops',
     href: '/giros/activewear',
     iconId: 'activewear',

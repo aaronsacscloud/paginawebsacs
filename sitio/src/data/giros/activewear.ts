@@ -202,6 +202,7 @@ export const seccionesActive: SuiteSeccion[] = [
       </div>
       <div style="${est.ok}border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;text-align:center;">Su talla es S — el aviso del restock le llega a ella primero</div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-tertiary);margin-top:8px;padding:0 4px;"><span>Monedero: $340</span><span>Puntos: 1,120 · nivel 2</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-tertiary);margin-top:5px;padding:0 4px;"><span>Última campaña: restock Lila</span><span>abierta · hace 2 días</span></div>
     </div>`,
   },
   {
