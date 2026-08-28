@@ -1,0 +1,165 @@
+---
+/**
+ * Suite para Casas de Novias y Vestidos de Fiesta.
+ *
+ * El giro: la venta tiene una FECHA QUE NO SE MUEVE. Muestras en piso, vestido
+ * sobre pedido, abonos largos, taller de ajustes con pruebas — todo contra la
+ * boda o los XV. Contenido en data/giros/novias-fiesta.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import NoviaFecha from '../../components/giros/NoviaFecha.astro';
+import { cortinaNovias, casosNovias, pasosNovias, planoNovias, seccionesNovias } from '../../data/giros/novias-fiesta';
+
+const titulo = 'Suite Moda para Casas de Novias y Fiesta';
+const desc =
+  'El sistema para novias, XV años y fiesta: apartados con abonos y fecha de evento, muestras que no se venden por error, el taller por etapas y la semana de entregas en una vista.';
+---
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu venta no termina en la caja."
+    resalte="Termina en una fecha."
+    sub="El apartado con la fecha del evento adentro, los abonos que cierran dos semanas antes, el pedido que tiene que llegar y el taller con sus pruebas — todo contando hacia atrás desde la boda."
+    foto="/images/hero-novia.webp"
+    fotoAlt="Novia probándose un vestido de muestra frente al espejo mientras la dueña consulta su tablet"
+    selloMarcas="Negocios de moda activos en México y Latam"
+    avisos={[
+      { modulo: 'Pedido en camino', texto: 'Sirena talla 8 de Valeria: llega 20 ene · boda 14 mar', pos: 1, tono: 'azul', sello: 'A tiempo' },
+      { modulo: 'Pedido justo', texto: 'El de Fernanda llega con 19 días: llamar hoy', pos: 2, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Abono vencido', texto: 'XV de Ximena: el abono del 15 no ha caído', pos: 3, tono: 'rojo', sello: '3 días' },
+    ]}
+  />
+
+  <SuiteManifiesto
+    intro="Sabemos cómo trabaja una casa de novias"
+    frases={[
+      'La boda es el <b>14 de marzo</b> y el vestido "ya merito llega".',
+      '"¿Cuánto debo?" — y a buscar el <b>cuaderno</b> de abonos.',
+      'La <b>muestra</b> talla 6 se vendió — y era la única.',
+      'La 1ª prueba era <b>¿el 25 o el 29?</b> Nadie anotó.',
+      'La costurera tiene <b>ocho vestidos</b> y nadie sabe cuál va primero.',
+      'El papá abonó en efectivo y el recibo quedó en una <b>servilleta</b>.',
+      'Todo converge el <b>viernes a las 8</b>: prueba, abono y entrega.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto: para él una venta se entrega hoy, no en la semana 20, después de dos pruebas y nueve abonos. Y la casa ya no vive solo del piso: el catálogo viaja por WhatsApp al grupo de la boda, y la familia que compró los XV vuelve por la graduación. Cada pantalla funciona igual en el probador que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo."
+  />
+
+  <!-- El problema estructural: la muestra no es el vestido. -->
+  <SuiteVariantes
+    eyebrow="Un solo modelo"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“¿lo tienes en mi talla?”."
+    sub="Cuatro modelos en seis tallas: dieciséis muestras únicas para probarse — lo de ella siempre se pide sobre pedido. Y donde no hay muestra, la casa lo dice de frente y lo pide a tiempo."
+    ejeA={['2', '4', '6', '8', '10', '12']}
+    filas={[
+      { nombre: 'Princesa', img: '/images/novia-princesa.webp', alt: 'Vestido de novia corte princesa' },
+      { nombre: 'Sirena', img: '/images/novia-sirena.webp', alt: 'Vestido de novia corte sirena' },
+      { nombre: 'XV años', img: '/images/novia-xv.webp', alt: 'Vestido de XV años en tono rosa' },
+      { nombre: 'Fiesta', img: '/images/novia-fiesta.webp', alt: 'Vestido de fiesta largo en color' },
+    ]}
+    matriz={[
+      [1, 1, 1, 0, 1, 0],
+      [0, 1, 1, 1, 0, 1],
+      [1, 0, 1, 1, 1, 0],
+      [1, 1, 0, 1, 0, 1],
+    ]}
+    unidad="muestras"
+    genero="f"
+    leyendas={['Muestra en piso', 'Última pieza', 'Se pide a su talla']}
+    ceroNeutro={true}
+    umbralBajo={0}
+    pieLibre="<b>16</b> muestras en piso — cada una única, como debe ser — y donde no hay, <b>se pide a su talla</b>, a tiempo"
+  />
+
+  <SuiteCortina
+    titulo="“¿Cuánto debe Valeria?”"
+    sub="Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, el cuaderno. A la derecha, en tres segundos."
+    fotoAntes={cortinaNovias.fotoAntes}
+    fotoDespues={cortinaNovias.fotoDespues}
+    altAntes={cortinaNovias.altAntes}
+    altDespues={cortinaNovias.altDespues}
+    libreta={cortinaNovias.libreta}
+    filas={cortinaNovias.filas}
+  />
+
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi toda casa de novias que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Apartado con fecha de evento y abonos', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Muestras marcadas, aparte de los pedidos', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+      { que: 'Taller con órdenes de servicio y fechas', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Entregas y pruebas con fecha, no de memoria', generico: 'A medias', medida: 'Rara vez', sacs: 'Incluidas' },
+      { que: 'Un catálogo para piso, WhatsApp y redes', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un sistema por encargo, la tercera conversación es distinta: esta ya sabe qué es una fecha que no se mueve." />
+
+  <SuiteCifras
+    foto="/images/suite-novia-tienda.webp"
+    alt="Casa de novias amplia y luminosa con vestidos blancos en rieles y un área de XV años en color"
+    frase="De la casa que empieza a la que viste a media ciudad."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una casa de novias gana o pierde a la familia completa. Toca cada una."
+    casos={casosNovias}
+  />
+
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Toda la casa, del apartado a la entrega"
+    intro="Baja para ver cada pieza con una clienta tipo: Valeria, boda el 14 de marzo, vestido de $28,000 con 30% de anticipo. Del apartado con fecha al taller por etapas y la lista de la semana."
+    secciones={seccionesNovias}
+  />
+
+  <!-- El bloque propio: solo aquí la fecha es el producto -->
+  <NoviaFecha />
+
+  <SuitePlano
+    titulo="Tu casa, por dentro."
+    sub="Entra la novia con su mamá, se prueba la muestra, aparta con su fecha, el pedido llega al taller y la semana de la entrega todo converge. Toca cada zona."
+    proyecto="Tu casa de novias — planta baja"
+    zonas={planoNovias}
+  />
+
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin soltar ninguna boda."
+    sub="Tienes apartados vivos con fechas encima y un taller andando. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
+    pasos={pasosNovias}
+    remate="<b>Tu histórico no se tira.</b> Se migran los apartados vivos con su saldo y su fecha, las clientas y los modelos — y el cuaderno se guarda de recuerdo, no de herramienta."
+  />
+
+  <SuitePlanes suite="Suite Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tus apartados con su fecha en pantalla." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos SACS con tus modelos, tus apartados y tus fechas reales. 30 min, sin compromiso." />
+</BaseLayout>

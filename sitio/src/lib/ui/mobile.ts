@@ -27,6 +27,28 @@ export function useIsMobile(bp: number = BP.mobile): boolean {
   return useMediaQuery(`(max-width: ${bp - 1}px)`);
 }
 
+/**
+ * ¿La app está pintada en oscuro AHORA? El tema del CRM móvil se activa con
+ * html[data-crm-dark="1"] y solo aplica si el sistema está en oscuro (las
+ * reglas viven en un @media prefers-color-scheme). Las gráficas son SVG con
+ * el color en ATRIBUTOS (stroke/fill), donde ninguna regla CSS de fondo llega:
+ * necesitan saberlo en JavaScript para elegir su paleta.
+ */
+export function useCrmDark(): boolean {
+  const sistemaOscuro = useMediaQuery('(prefers-color-scheme: dark)');
+  const [attr, setAttr] = useState(() =>
+    typeof document !== 'undefined' && document.documentElement.getAttribute('data-crm-dark') === '1');
+  useEffect(() => {
+    const el = document.documentElement;
+    const leer = () => setAttr(el.getAttribute('data-crm-dark') === '1');
+    leer();
+    const obs = new MutationObserver(leer);
+    obs.observe(el, { attributes: true, attributeFilter: ['data-crm-dark'] });
+    return () => obs.disconnect();
+  }, []);
+  return attr && sistemaOscuro;
+}
+
 /** Dispositivo táctil (sin hover real). */
 export function isTouchDevice(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;

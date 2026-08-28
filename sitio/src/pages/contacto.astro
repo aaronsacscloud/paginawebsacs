@@ -31,6 +31,8 @@ const de = Astro.url.searchParams.get('de') || '';
 const deColchon = de === 'colchon';
 const dePercha = de === 'percha';
 const deConsigna = de === 'consigna';
+const deMerch = de === 'merch';
+const deNovias = de === 'novias';
 const urlAgenda = estimado
   ? `/agendar/demo?estimado=${estimadoNum}${de ? `&de=${de}` : ''}`
   : '/agendar/demo';
@@ -113,7 +115,7 @@ const urlAgenda = estimado
       {estimado && (
         <div class="estimado-aviso">
           <p>
-            <b>{deColchon ? `Ese colchón mueve ${estimado} de tu catálogo` : dePercha ? `Traes un estimado de ${estimado} parado hoy en marcas que no rotan` : deConsigna ? `Traes un estimado de ${estimado} de comisión en el periodo` : `Traes un estimado de ${estimado} al año en inventario atrapado`}.</b> Agenda abajo y
+            <b>{deColchon ? `Ese colchón mueve ${estimado} de tu catálogo` : dePercha ? `Traes un estimado de ${estimado} parado hoy en marcas que no rotan` : deConsigna ? `Traes un estimado de ${estimado} de comisión en el periodo` : deMerch ? `Traes una fecha de ${estimado} en juego` : deNovias ? `Traes un vestido de ${estimado} contra una fecha que no se mueve` : `Traes un estimado de ${estimado} al año en inventario atrapado`}.</b> Agenda abajo y
             lo revisamos con tu catálogo real en la sesión — normalmente la cifra cambia, para
             arriba o para abajo, en cuanto vemos tus números.
           </p>

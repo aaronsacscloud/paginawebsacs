@@ -280,8 +280,8 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Módulos del menú «Más» que heredan el mapa oscuro genérico (el mismo de la
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
-const M_AUTO_DARK: Tab[] = ['suscripciones'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones'];
+const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1420,6 +1420,30 @@ const CRM_MOBILE_CSS = `
       /* Esqueleto de carga: sobre la superficie de la hoja, jamás en blanco */
       [data-crm-dark="1"] .hoja-sk { background: #26262e !important; }
 
+      /* ── Gráficas y barras de los módulos del menú ─────────────────────
+         La capa de gráficas se escribió con tokens claros: bandas #FBFAFF,
+         gridlines y tracks de barra #F2F1F7. En oscuro eran lo más brillante
+         de la pantalla —ocho meses sin dato se leían como ocho meses al tope—
+         así que el track baja al hairline y la banda al morado translúcido. */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(242, 241, 247)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(240, 239, 243)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(245, 244, 248)"] { background: #26262e !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(251, 250, 255)"] { background: rgba(167, 139, 250, .06) !important; }
+      /* Una sola familia de color: el azul y el magenta de las gráficas eran
+         dos acentos más compitiendo con el morado del sistema. */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(125, 166, 245)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(236, 72, 153)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(217, 83, 142)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(155, 140, 250)"] { background: #A78BFA !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="linear-gradient"] { background-image: none !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(125, 166, 245)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(217, 83, 142)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(79, 191, 149)"] { border-color: #26262e !important; }
+      /* El sólido morado en oscuro lleva texto oscuro (contraste), como en el
+         resto del sistema */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(91, 75, 214)"] { background: #A78BFA !important; color: #1d1d24 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(91, 75, 214)"] * { color: #1d1d24 !important; }
+
       /* ── Los módulos del menú «Más» usan el MISMO mapa ── */
       [data-crm-dark="1"] .m-auto-dark { color: #F2F1F7 !important; }
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(255, 255, 255)"],
@@ -1619,8 +1643,11 @@ const CRM_MOBILE_CSS = `
        al DATO y los botones quedan neutros, altos y de a dos por fila.
        GLOBAL a propósito: en el bloque dark solo aplicaría en oscuro. */
     .hoja-ficha [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .m-auto-dark [style*="border-radius: 12px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
     .hoja-ficha [style*="border-radius: 10px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
-    .hoja-ficha [style*="border-radius: 14px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea) {
+    .m-auto-dark [style*="border-radius: 10px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .hoja-ficha [style*="border-radius: 14px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea),
+    .m-auto-dark [style*="border-radius: 14px"][style*="solid"]:not(button):not(a):not(input):not(select):not(textarea) {
       border-color: var(--hoja-caja, #efeef2) !important; border-width: 1px !important; border-radius: 14px !important;
       padding: 16px 16px 18px !important; margin-bottom: 18px !important;
     }
@@ -1629,7 +1656,9 @@ const CRM_MOBILE_CSS = `
        pestaña o un enlace de texto (copiar, ver más) y ahí una caja sobra—,
        y el sólido morado se respeta: es la acción principal del bloque. */
     .hoja-ficha button[style*="solid"]:not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
-    .hoja-ficha a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]) {
+    .m-auto-dark button[style*="solid"]:not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
+    .hoja-ficha a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
+    .m-auto-dark a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]) {
       min-height: 42px !important; border-radius: 12px !important; padding: 0 14px !important;
       border: 1px solid var(--hoja-line, #e4e3ea) !important; background: var(--hoja-btn, #fff) !important;
       color: var(--hoja-ink, #1a1a1a) !important;
@@ -1637,18 +1666,49 @@ const CRM_MOBILE_CSS = `
       justify-content: center !important;
     }
     /* Fila de botones: dos por renglón, del mismo ancho, con aire */
-    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] { gap: 8px !important; }
-    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button { flex: 1 1 calc(50% - 8px) !important; }
+    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"],
+    .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] { gap: 8px !important; }
+    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button,
+    .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] > button { flex: 1 1 calc(50% - 8px) !important; }
     /* Pastillas: el color decorativo se va; queda el morado del sistema */
-    .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"] {
+    .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"],
+    .m-auto-dark [style*="border-radius: 20px"], .m-auto-dark [style*="border-radius: 99px"] {
       background: var(--hoja-chip, #f4f3f6) !important; color: var(--hoja-chip-ink, #6b6b74) !important;
       align-self: center !important; vertical-align: middle !important;
       padding: 4px 10px !important; line-height: 1.4 !important;
     }
     /* Aire entre secciones y renglones altos: el ojo descansa */
-    .hoja-ficha [style*="text-transform: uppercase"] { margin-bottom: 12px !important; letter-spacing: .09em !important; }
+    .hoja-ficha [style*="text-transform: uppercase"],
+    .m-auto-dark [style*="text-transform: uppercase"] { margin-bottom: 12px !important; letter-spacing: .09em !important; }
     /* Encabezado de sección con su acción al lado: que no se peguen */
-    .hoja-ficha [style*="display: flex"][style*="justify-content: space-between"] { gap: 12px !important; align-items: center !important; }
+    .hoja-ficha [style*="display: flex"][style*="justify-content: space-between"],
+    .m-auto-dark [style*="display: flex"][style*="justify-content: space-between"] { gap: 12px !important; align-items: center !important; }
+
+    /* Las sub-vistas de un módulo son PESTAÑAS, no botones: con contorno se
+       leían como seis acciones y el riel les cortaba el borde de abajo. */
+    .mod-tabs { padding-bottom: 2px !important; }
+    .m-auto-dark .mod-tabs button, .mod-tabs button {
+      border: none !important; background: transparent !important; border-radius: 0 !important;
+      padding: 0 4px !important; min-height: 40px !important; font-weight: 600 !important;
+      color: #83808e !important; box-shadow: none !important;
+    }
+    .m-auto-dark .mod-tabs button[style*="rgb(238, 236, 254)"],
+    .mod-tabs button[style*="rgb(238, 236, 254)"],
+    .m-auto-dark .mod-tabs button[style*="rgb(34, 28, 51)"] {
+      color: #5B4BD6 !important; font-weight: 800 !important; box-shadow: inset 0 -2px 0 #9B8CFA !important;
+    }
+    [data-crm-dark="1"] .m-auto-dark .mod-tabs button[style*="rgb(238, 236, 254)"],
+    [data-crm-dark="1"] .m-auto-dark .mod-tabs button[style*="rgb(34, 28, 51)"] {
+      color: #B7A8F7 !important; box-shadow: inset 0 -2px 0 #A78BFA !important;
+    }
+
+    /* La tarjeta de indicador (Cotizaciones, Cobranza, Pagos, Reuniones,
+       Consultoría) trae del escritorio una franja de color de 3 px a la
+       izquierda. En el teléfono, cuatro franjas de cuatro colores en la misma
+       pantalla son cuatro acentos compitiendo: el color se queda en la CIFRA,
+       que ya lo lleva, y la tarjeta se aprieta para que quepan dos por fila. */
+    .kpi-card { border-left-width: 1px !important; border-left-color: #eeeef1 !important; padding: 13px 14px !important; }
+    .kpi-card > div:nth-child(2) { font-size: 1.25rem !important; }
 
     /* Acción única: a lo ancho parecía el asunto de la pantalla */
     .vr-acc:only-child, .vr-accp:only-child { flex: 0 1 auto !important; padding: 0 26px !important; }
@@ -1657,51 +1717,64 @@ const CRM_MOBILE_CSS = `
        teléfono una rejilla de cuatro cajas es justo el amontonamiento que el
        usuario rechazó. Se leen como LISTA: una acción por renglón, sin marco,
        separadas por hairline; el pulgar acierta y el ojo baja en línea recta. */
-    .hoja-ficha .ficha-acciones {
+    .hoja-ficha .ficha-acciones,
+    .m-auto-dark .ficha-acciones {
       display: block !important; width: 100% !important; flex: 1 1 100% !important;
       margin-top: 14px !important;
     }
     .hoja-ficha .ficha-acciones > button[style][style][style][style],
-    .hoja-ficha .ficha-acciones > a[style][style][style][style] {
+    .m-auto-dark .ficha-acciones > button[style][style][style][style],
+    .hoja-ficha .ficha-acciones > a[style][style][style][style],
+    .m-auto-dark .ficha-acciones > a[style][style][style][style] {
       display: flex !important; width: 100% !important; justify-content: flex-start !important;
       min-height: 48px !important; padding: 0 !important; border: none !important;
       border-bottom: 1px solid var(--hoja-caja, #efeef2) !important; border-radius: 0 !important;
       background: transparent !important; font-weight: 600 !important; font-size: 0.9rem !important;
     }
     .hoja-ficha .ficha-acciones > button:last-child[style][style][style][style],
-    .hoja-ficha .ficha-acciones > a:last-child[style][style][style][style] { border-bottom: none !important; }
+    .m-auto-dark .ficha-acciones > button:last-child[style][style][style][style],
+    .hoja-ficha .ficha-acciones > a:last-child[style][style][style][style],
+    .m-auto-dark .ficha-acciones > a:last-child[style][style][style][style] { border-bottom: none !important; }
 
     /* Rejillas de datos de la ficha: con 342 px de ancho, un auto-fit de
        minmax(150px) mete tres columnas y las etiquetas largas ("ÚLTIMO
        CONTACTO") se encaraman. Dos columnas fijas y ritmo vertical amplio:
        cada dato queda debajo de su etiqueta, que es lo que se venía a leer. */
-    .hoja-ficha [style*="gap: 26px"][style*="flex-wrap: wrap"] {
+    .hoja-ficha [style*="gap: 26px"][style*="flex-wrap: wrap"],
+    .m-auto-dark [style*="gap: 26px"][style*="flex-wrap: wrap"] {
       display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
       gap: 20px 14px !important;
     }
-    .hoja-ficha [style*="minmax(150px"] {
+    .hoja-ficha [style*="minmax(150px"],
+    .m-auto-dark [style*="minmax(150px"] {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 22px 16px !important;
     }
     /* Las rejillas anchas (el layout de dos columnas del escritorio) van a una
        sola columna: en 342 px la segunda columna no es una columna, es un
        recorte. */
-    .hoja-ficha [style*="minmax(360px"], .hoja-ficha [style*="minmax(300px"] {
+    .hoja-ficha [style*="minmax(360px"], .hoja-ficha [style*="minmax(300px"],
+    .m-auto-dark [style*="minmax(360px"], .m-auto-dark [style*="minmax(300px"] {
       grid-template-columns: minmax(0, 1fr) !important;
     }
     /* La barra fija de guardar no puede tapar el último bloque */
-    .hoja-ficha { padding-bottom: 8px; }
+    .hoja-ficha,
+    .m-auto-dark { padding-bottom: 8px; }
 
     /* El selector de periodo es un ajuste, no un titular: dentro de la hoja
        pierde la caja y la palabra PERIODO —los propios botones lo dicen— y
        deja de competir con lo que de verdad se viene a leer, que es lo de
        abajo (uso de la cuenta, facturación, ventas). */
-    .hoja-ficha .fic-periodo {
+    .hoja-ficha .fic-periodo,
+    .m-auto-dark .fic-periodo {
       position: static !important; border: none !important; background: transparent !important;
       padding: 0 !important; margin: 0 0 16px !important; gap: 10px !important;
     }
-    .hoja-ficha .fic-periodo > span:first-child { display: none !important; }
-    .hoja-ficha .fic-periodo > span:last-child { display: none !important; }
-    .hoja-ficha .fic-periodo button { min-height: 32px !important; font-size: 0.72rem !important; }
+    .hoja-ficha .fic-periodo > span:first-child,
+    .m-auto-dark .fic-periodo > span:first-child { display: none !important; }
+    .hoja-ficha .fic-periodo > span:last-child,
+    .m-auto-dark .fic-periodo > span:last-child { display: none !important; }
+    .hoja-ficha .fic-periodo button,
+    .m-auto-dark .fic-periodo button { min-height: 32px !important; font-size: 0.72rem !important; }
 
     /* La ficha dentro de la hoja: su scroll no contagia a la página de atrás
        (sin esto, al llegar al final la lista de abajo empieza a moverse) y la

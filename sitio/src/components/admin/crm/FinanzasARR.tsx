@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { P, tarjetaKpi, CINTA } from '../../../lib/crm/paleta';
-import { useIsMobile } from '../../../lib/ui/mobile';
+import { useIsMobile, useCrmDark } from '../../../lib/ui/mobile';
 
 const money = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 const kMoney = (n: number) => '$' + (n / 1_000_000).toFixed(2) + 'M';
@@ -59,17 +59,24 @@ function Kpi({ k, v, s: sub, e, color, franja, ancho, onClick }: {
 }
 
 /** Barra de dos tramos: morado el recurrente, rosa lo que es pago único. */
-function BarraDoble({ a, b, max }: { a: number; b: number; max: number }) {
+function BarraDoble({ a, b, max, G }: { a: number; b: number; max: number; G: any }) {
   return (
-    <div style={{ height: 7, borderRadius: 9, background: '#f2f1f7', overflow: 'hidden', display: 'flex', flex: 1 }}>
-      <span style={{ width: `${(a / max) * 100}%`, background: 'linear-gradient(90deg,#9B8CFA,#7DA6F5)' }} />
-      <span style={{ width: `${(b / max) * 100}%`, background: 'linear-gradient(90deg,#EFA6CA,#D9538E)' }} />
+    <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', display: 'flex', flex: 1 }}>
+      <span style={{ width: `${(a / max) * 100}%`, background: G.serie }} />
+      <span style={{ width: `${(b / max) * 100}%`, background: G.serie3 }} />
     </div>
   );
 }
 
 export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => void }) {
   const esMovilFin = useIsMobile();
+  // Paleta de las gráficas: el SVG lleva el color en atributos, así que el tema
+  // se resuelve aquí y no en CSS. En oscuro todas las series son el mismo lila
+  // separadas por opacidad — cuatro familias de color eran cuatro acentos.
+  const oscuroFin = useCrmDark();
+  const G = oscuroFin
+    ? { grid: '#26262e', eje: '#918fa0', serie: '#A78BFA', serie2: 'rgba(167,139,250,.62)', serie3: 'rgba(167,139,250,.34)', punto: '#1d1d24', banda: 'rgba(167,139,250,.06)', track: '#26262e' }
+    : { grid: '#f2f1f7', eje: '#b3b1bb', serie: '#9B8CFA', serie2: '#7DA6F5', serie3: '#D9538E', punto: '#fff', banda: '#FBFAFF', track: '#f2f1f7' };
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState('');
   const [desde, setDesde] = useState('');
@@ -201,7 +208,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
               </div>
             ))}
           </div>
-          <Proyeccion serie={d.serie} proy={proy} />
+          <Proyeccion serie={d.serie} proy={proy} G={G} />
           <div style={S.nota}>
             La línea sólida es lo que ya pasó; la punteada, tres escenarios a 12 meses según el ritmo de los últimos meses:
             <b> si mejora, si se mantiene y si se enfría</b>. No es una promesa — es la velocidad actual proyectada.
@@ -213,7 +220,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       <div className="fin-k2" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 13, marginBottom: 14 }}>
         <div style={S.card}>
           <div style={S.tit}>De dónde vino el ARR de este mes</div>
-          <Puente p={p} />
+          <Puente p={p} G={G} movil={esMovilFin} />
           <div style={S.nota}>
             El <b>puente de ARR</b>: no basta el total, importa de qué está hecho el cambio. Morado lo que suma, rosa y rojo lo que resta.
             {p.ledger_desde && <> El registro de movimientos empieza en <b>{etiquetaMes(p.ledger_desde, true)}</b>; antes de esa fecha solo hay altas y bajas, no expansiones.</>}
@@ -248,9 +255,9 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       {/* ── SERIE ── */}
       <div style={{ ...S.card, marginBottom: 14 }}>
         <div style={S.tit}>Licencias nuevas y ARR, mes a mes</div>
-        <Serie serie={d.serie} max={maxSerie} maxAlta={maxAlta} />
+        <Serie serie={d.serie} max={maxSerie} maxAlta={maxAlta} G={G} />
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: '0.71rem', color: '#6b7280', marginTop: 8 }}>
-          {[['#9B8CFA', 'ARR acumulado'], ['#7DA6F5', 'Licencias nuevas'], ['#D9538E', 'Bajas']].map(([c2, l]) => (
+          {[[G.serie, 'ARR acumulado'], [G.serie2, 'Licencias nuevas'], [G.serie3, 'Bajas']].map(([c2, l]) => (
             <span key={l}><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: c2, marginRight: 5, verticalAlign: -1 }} />{l}</span>
           ))}
         </div>
@@ -317,7 +324,27 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       )}
       <div className="fin-k2" style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 13, marginBottom: 14 }}>
         <div style={S.card}>
-          {/* M2: 4 columnas con montos no caben en 390 px — scroll interno. */}
+          {/* En el teléfono esta tabla de cuatro columnas partía los montos a la
+              mitad ("$236,48…" y el dígito en otro renglón). Cada cuenta pasa a
+              ser una fila: nombre arriba, el total del año a la derecha —que es
+              la columna por la que se ordena— y debajo, en una línea de
+              metadatos, de dónde sale ese total. */}
+          {esMovilFin ? (
+            <div>
+              {d.cuentas.slice(0, 8).map((x: any) => (
+                <div key={x.company_id} onClick={() => onCuenta?.(x.company_id)}
+                  style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '12px 0', borderBottom: '1px solid #f0eff3', cursor: onCuenta ? 'pointer' : 'default' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#8a8590', marginTop: 2 }}>
+                      Recurrente {x.arr ? money(x.arr) : '—'} · Único {x.unicos ? money(x.unicos) : '—'}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.88rem', fontVariantNumeric: 'tabular-nums', flex: 'none' }}>{money(x.total)}</div>
+                </div>
+              ))}
+            </div>
+          ) : (<>
           <div className="crm-scroll-x">
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
             <thead><tr>
@@ -334,7 +361,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
                   </td>
                   <td style={S.td}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <BarraDoble a={x.arr} b={x.unicos} max={maxCuenta} />
+                      <BarraDoble a={x.arr} b={x.unicos} max={maxCuenta} G={G} />
                       <span style={{ fontWeight: 800, width: 78, textAlign: 'right' }}>{money(x.total)}</span>
                     </div>
                   </td>
@@ -342,7 +369,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
               ))}
             </tbody>
           </table>
-          </div>
+          </div></>)}
           <div style={S.nota}>
             Los <b>pagos únicos</b> —plugins, personalizaciones, implementaciones— no son ARR, pero sí son ingreso de la cuenta
             y dicen cuánto vale de verdad un cliente. En la vista de ARR sola, esa parte no existe.
@@ -353,7 +380,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           {d.serie.map((x: any) => (
             <div key={x.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: '0.76rem' }}>
               <span style={{ width: 42, color: P.tenue }}>{etiquetaMes(x.mes, x.mes.endsWith('-01'))}</span>
-              <div style={{ height: 7, borderRadius: 9, background: '#f2f1f7', overflow: 'hidden', flex: 1 }}>
+              <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', flex: 1 }}>
                 <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(x.monto_unicos ? 2 : 0, (x.monto_unicos / maxUnico) * 100)}%`, background: `linear-gradient(90deg,${P.rosaSuave},${P.rosa})` }} />
               </div>
               <span style={{ width: 74, textAlign: 'right', fontWeight: 800 }}>{x.monto_unicos ? money(x.monto_unicos) : '—'}</span>
@@ -380,7 +407,23 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           <div style={S.tit}>Cuentas que ya repitieron</div>
           {d.unicos.recurrentes_extra.length === 0
             ? <div style={{ fontSize: '0.8rem', color: P.tenue, padding: '14px 0' }}>Todavía ninguna cuenta ha comprado un extra más de una vez.</div>
-            : (
+            : esMovilFin ? (
+              /* Cuatro columnas de dinero en 390 px cortaban el encabezado
+                 «Ticket». En el teléfono: cuenta y total arriba, y el detalle
+                 (cuántas compras y de a cuánto) en la línea de metadatos. */
+              <div>
+                {d.unicos.recurrentes_extra.map((x: any) => (
+                  <div key={x.company_id} onClick={() => onCuenta?.(x.company_id)}
+                    style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '12px 0', borderBottom: '1px solid #f0eff3', cursor: onCuenta ? 'pointer' : 'default' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8a8590', marginTop: 2 }}>{x.n} compras · ticket {money(x.ticket)}</div>
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', fontVariantNumeric: 'tabular-nums', flex: 'none' }}>{money(x.monto)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>
                   <th style={S.th}>Cuenta</th><th style={{ ...S.th, textAlign: 'right' }}>Compras</th>
@@ -405,7 +448,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
         </div>
         <div style={S.card}>
           <div style={S.tit}>En qué mes del año se compran extras</div>
-          <Estacionalidad datos={d.unicos.estacionalidad} />
+          <Estacionalidad datos={d.unicos.estacionalidad} G={G} />
           <div style={S.nota}>
             Sumando todos los años, no un calendario del último. Los meses altos son cuando el cliente tiene
             presupuesto y dice que sí — ofrecerle en su mes cuesta lo mismo y cierra más.
@@ -422,8 +465,8 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
             return (
               <div key={x.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: '0.76rem' }}>
                 <span style={{ width: 42, color: '#8a8590' }}>{etiquetaMes(x.mes, true)}</span>
-                <div style={{ height: 7, borderRadius: 9, background: '#f2f1f7', overflow: 'hidden', flex: 1 }}>
-                  <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(3, (x.monto / maxRenov) * 100)}%`, background: grande ? 'linear-gradient(90deg,#EF7A72,#C0554E)' : 'linear-gradient(90deg,#9B8CFA,#7DA6F5)' }} />
+                <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', flex: 1 }}>
+                  <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(3, (x.monto / maxRenov) * 100)}%`, background: grande ? DOWN : G.serie }} />
                 </div>
                 <span style={{ width: 78, textAlign: 'right', fontWeight: 800 }}>{money(x.monto)}</span>
                 <span style={{ width: 22, textAlign: 'right', color: '#a5a2af' }}>{x.n}</span>
@@ -457,6 +500,28 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       {/* ── COHORTES ── */}
       <div style={{ ...S.card, marginBottom: 14 }}>
         <div style={S.tit}>Cuántos se quedan · retención por cohorte</div>
+        {esMovilFin ? (
+          /* La tabla de cuatro columnas sacaba la barra y el badge fuera de la
+             tarjeta. En el teléfono el mes manda a la izquierda, el porcentaje
+             a la derecha y la barra ocupa el renglón completo debajo. */
+          <div>
+            {d.cohortes.map((x: any) => {
+              const col = x.pct >= 80 ? UP : x.pct >= 50 ? '#9a6a10' : DOWN;
+              return (
+                <div key={x.mes} style={{ padding: '11px 0', borderBottom: '1px solid #f0eff3' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#241d43', flex: 1, minWidth: 0 }}>{etiquetaMes(x.mes, true)}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#8a8590' }}>{x.vivos} de {x.n}</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: col, minWidth: 44, textAlign: 'right' }}>{x.pct}%</div>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 9, background: G.track, overflow: 'hidden', marginTop: 7 }}>
+                    <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${x.pct}%`, background: col }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>
             <th style={S.th}>Entraron en</th><th style={{ ...S.th, textAlign: 'right' }}>Clientes</th>
@@ -473,7 +538,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
                   <td style={{ ...S.td, textAlign: 'right' }}>{x.vivos}</td>
                   <td style={S.td}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ height: 7, borderRadius: 9, background: '#f2f1f7', overflow: 'hidden', flex: 1 }}>
+                      <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', flex: 1 }}>
                         <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${x.pct}%`, background: col }} />
                       </div>
                       <span style={{ minWidth: 42, textAlign: 'center', borderRadius: 6, padding: '3px 6px', fontSize: '0.7rem', fontWeight: 700, background: bg, color: col }}>{x.pct}%</span>
@@ -484,6 +549,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
             })}
           </tbody>
         </table>
+        )}
         <div style={S.nota}>Cada renglón es el mes en que entró el cliente y qué porcentaje sigue vivo hoy. Si las cohortes nuevas retienen menos que las viejas, el problema está en qué se promete al vender.</div>
       </div>
 
@@ -495,14 +561,21 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
             const col = x.nivel === 'alto' ? DOWN : x.nivel === 'medio' ? '#9a6a10' : VIO;
             const bg = x.nivel === 'alto' ? '#FEF0EF' : x.nivel === 'medio' ? '#FFF4E5' : '#F3F0FE';
             return (
-              <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 14px', borderRadius: 11, background: '#fff', border: '1px solid #eeeef1', marginBottom: 8 }}>
-                <span style={{ width: 42, height: 42, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 800, flexShrink: 0, background: bg, color: col }}>{x.n}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>{x.titulo}</div>
-                  <div style={{ fontSize: '0.74rem', color: '#8a8590', lineHeight: 1.45, marginTop: 2 }}>{x.limita}</div>
+              /* En el teléfono el badge, el texto y el botón en una fila dejan
+                 la columna de texto en ~130 px y parten el párrafo cada tres
+                 palabras. Apilado: cuántos + título arriba, la consecuencia a
+                 ancho completo y el botón abajo con su target de 44 px. */
+              <div key={x.id} style={{ display: 'flex', alignItems: esMovilFin ? 'stretch' : 'center', flexDirection: esMovilFin ? 'column' : 'row', gap: esMovilFin ? 9 : 13, padding: '12px 14px', borderRadius: 11, background: '#fff', border: '1px solid #eeeef1', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+                  <span style={{ width: 42, height: 42, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 800, flexShrink: 0, background: bg, color: col }}>{x.n}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>{x.titulo}</div>
+                    {!esMovilFin && <div style={{ fontSize: '0.74rem', color: '#8a8590', lineHeight: 1.45, marginTop: 2 }}>{x.limita}</div>}
+                  </div>
                 </div>
-                <span style={{ marginLeft: 'auto', flexShrink: 0 }}>
-                  <button style={S.btn} onClick={() => setPendiente(x.id)}>Ver y completar →</button>
+                {esMovilFin && <div style={{ fontSize: '0.76rem', color: '#8a8590', lineHeight: 1.5 }}>{x.limita}</div>}
+                <span style={{ marginLeft: esMovilFin ? 0 : 'auto', flexShrink: 0 }}>
+                  <button style={{ ...S.btn, ...(esMovilFin ? { width: '100%', minHeight: 44 } : {}) }} onClick={() => setPendiente(x.id)}>Ver y completar →</button>
                 </span>
               </div>
             );
@@ -532,7 +605,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
 /* ─── En qué mes del año se compran extras ───
  * Doce barras, una por mes del calendario, sumando todos los años. Con un solo
  * año esto es anécdota; con dos empieza a ser un calendario comercial. */
-function Estacionalidad({ datos }: { datos: any[] }) {
+function Estacionalidad({ datos, G }: { datos: any[]; G: any }) {
   const max = Math.max(1, ...datos.map((x: any) => x.monto));
   const NOM = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
   return (
@@ -605,7 +678,7 @@ function PanelCuentas({ tipo, d, onCerrar, onCuenta }: { tipo: string; d: any; o
 /* ─── El puente de ARR ─────────────────────────────────────────────────────
  * Las barras de los extremos son totales y las de en medio, movimientos: por
  * eso las primeras van a altura completa y las otras a escala entre ellas. */
-function Puente({ p }: { p: any }) {
+function Puente({ p, G, movil }: { p: any; G: any; movil?: boolean }) {
   const pasos = [
     { l: 'ARR inicial', v: p.arr_inicio, t: 'tot' },
     { l: 'Nuevo', v: p.nuevo, t: 'pos' },
@@ -620,6 +693,25 @@ function Puente({ p }: { p: any }) {
     neg: 'linear-gradient(180deg,#EFA6CA,#D9538E)', chu: 'linear-gradient(180deg,#EF7A72,#C0554E)',
     fin: 'linear-gradient(100deg,#9B8CFA,#7DA6F5 55%,#EFA6CA)',
   };
+  /* Seis columnas de barra con montos de siete dígitos no caben en 390 px:
+     «$1,961,359» y la etiqueta «ARR final» se salían de la pantalla. En el
+     teléfono el puente se lee como lista: el concepto a la izquierda y el
+     movimiento a la derecha, con su signo y su color. */
+  if (movil) return (
+    <div style={{ marginTop: 4 }}>
+      {pasos.map(x => {
+        const total = x.t === 'tot' || x.t === 'fin';
+        return (
+          <div key={x.l} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '11px 0', borderBottom: '1px solid ' + G.grid }}>
+            <span style={{ fontSize: '0.84rem', fontWeight: total ? 800 : 600, color: total ? '#241d43' : '#8a8590' }}>{x.l}</span>
+            <span style={{ fontSize: '0.92rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: total ? '#241d43' : x.v >= 0 ? UP : DOWN }}>
+              {x.v > 0 && !total ? '+' : ''}{money(x.v)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 190, marginTop: 6 }}>
       {pasos.map(x => {
@@ -640,7 +732,7 @@ function Puente({ p }: { p: any }) {
 }
 
 /* ─── Serie: área del ARR + barras de altas y bajas ─── */
-function Serie({ serie, max, maxAlta }: { serie: any[]; max: number; maxAlta: number }) {
+function Serie({ serie, max, maxAlta, G }: { serie: any[]; max: number; maxAlta: number; G: any }) {
   const W = 1100, H = 220, P = { t: 14, r: 10, b: 30, l: 64 };
   const top = max * 1.08;
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / Math.max(1, serie.length - 1);
@@ -655,18 +747,18 @@ function Serie({ serie, max, maxAlta }: { serie: any[]; max: number; maxAlta: nu
       </linearGradient></defs>
       {[0, .5, 1].map(f => (
         <g key={f}>
-          <line x1={P.l} x2={W - P.r} y1={y(top * f)} y2={y(top * f)} stroke="#f2f1f7" />
-          <text x={P.l - 8} y={y(top * f) + 4} textAnchor="end" fontSize="10" fill="#b3b1bb">${Math.round((top * f) / 1000)}k</text>
+          <line x1={P.l} x2={W - P.r} y1={y(top * f)} y2={y(top * f)} stroke={G.grid} />
+          <text x={P.l - 8} y={y(top * f) + 4} textAnchor="end" fontSize="13" fill={G.eje}>${Math.round((top * f) / 1000)}k</text>
         </g>
       ))}
       <path d={area} fill="url(#finArea)" />
-      <path d={linea} fill="none" stroke="#9B8CFA" strokeWidth="2.5" />
+      <path d={linea} fill="none" stroke={G.serie} strokeWidth="2.5" />
       {serie.map((s, i) => (
         <g key={s.mes}>
-          {s.altas > 0 && <rect x={x(i) - 10} y={H - P.b - hb(s.altas)} width="9" height={hb(s.altas)} rx="2" fill="#7DA6F5" />}
-          {s.bajas > 0 && <rect x={x(i) + 1} y={H - P.b - hb(s.bajas)} width="9" height={hb(s.bajas)} rx="2" fill="#D9538E" />}
-          <circle cx={x(i)} cy={y(s.arr)} r="3" fill="#fff" stroke="#9B8CFA" strokeWidth="2" />
-          <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="10" fill="#8a8590">{etiquetaMes(s.mes, s.mes.endsWith('-01') || i === 0)}</text>
+          {s.altas > 0 && <rect x={x(i) - 10} y={H - P.b - hb(s.altas)} width="9" height={hb(s.altas)} rx="2" fill={G.serie2} />}
+          {s.bajas > 0 && <rect x={x(i) + 1} y={H - P.b - hb(s.bajas)} width="9" height={hb(s.bajas)} rx="2" fill={G.serie3} />}
+          <circle cx={x(i)} cy={y(s.arr)} r="3" fill={G.punto} stroke={G.serie} strokeWidth="2" />
+          <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="13" fill={G.eje}>{etiquetaMes(s.mes, s.mes.endsWith('-01') || i === 0)}</text>
         </g>
       ))}
     </svg>
@@ -676,7 +768,7 @@ function Serie({ serie, max, maxAlta }: { serie: any[]; max: number; maxAlta: nu
 /* ─── Proyección a 12 meses ───────────────────────────────────────────────
  * El eje NO arranca en cero: con millones de base, escenarios separados por
  * cientos de miles se verían como la misma raya. Se encuadra a los datos. */
-function Proyeccion({ serie, proy }: { serie: any[]; proy: any }) {
+function Proyeccion({ serie, proy, G }: { serie: any[]; proy: any; G: any }) {
   const hist = serie.slice(-6).map((s: any) => s.arr);
   const todos = [...hist, ...proy.alto, ...proy.bajo];
   const max = Math.max(...todos), min = Math.min(...todos);
@@ -695,22 +787,22 @@ function Proyeccion({ serie, proy }: { serie: any[]; proy: any }) {
           const v = lo + (hi - lo) * f;
           return (
             <g key={f}>
-              <line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} stroke="#f2f1f7" />
-              <text x={P.l - 8} y={y(v) + 4} textAnchor="end" fontSize="10" fill="#b3b1bb">{kMoney(v)}</text>
+              <line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} stroke={G.grid} />
+              <text x={P.l - 8} y={y(v) + 4} textAnchor="end" fontSize="13" fill={G.eje}>{kMoney(v)}</text>
             </g>
           );
         })}
-        <rect x={x(corte)} y={P.t} width={W - P.r - x(corte)} height={H - P.t - P.b} fill="#FBFAFF" />
+        <rect x={x(corte)} y={P.t} width={W - P.r - x(corte)} height={H - P.t - P.b} fill={G.banda} />
         <line x1={x(corte)} x2={x(corte)} y1={P.t} y2={H - P.b} stroke="#ddd6fb" strokeDasharray="3 3" />
         <path d={path(proy.alto, corte)} fill="none" stroke="#7DA6F5" strokeWidth="1.7" strokeDasharray="5 4" />
         <path d={path(proy.bajo, corte)} fill="none" stroke="#D9538E" strokeWidth="1.7" strokeDasharray="5 4" />
-        <path d={path(proy.medio, corte)} fill="none" stroke="#9B8CFA" strokeWidth="2.4" strokeDasharray="7 4" />
-        <path d={path(hist, 0)} fill="none" stroke="#9B8CFA" strokeWidth="2.6" />
-        {hist.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="2.6" fill="#fff" stroke="#9B8CFA" strokeWidth="2" />)}
+        <path d={path(proy.medio, corte)} fill="none" stroke={G.serie} strokeWidth="2.4" strokeDasharray="7 4" />
+        <path d={path(hist, 0)} fill="none" stroke={G.serie} strokeWidth="2.6" />
+        {hist.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="2.6" fill={G.punto} stroke={G.serie} strokeWidth="2" />)}
         <text x={x(N) + 7} y={y(proy.alto[12]) + 4} fontSize="10.5" fill="#2C5FC4" fontWeight="800">{kMoney(proy.alto[12])}</text>
         <text x={x(N) + 7} y={y(proy.medio[12]) + 4} fontSize="10.5" fill="#5B4BD6" fontWeight="800">{kMoney(proy.medio[12])}</text>
         <text x={x(N) + 7} y={y(proy.bajo[12]) + 4} fontSize="10.5" fill="#9c3d70" fontWeight="800">{kMoney(proy.bajo[12])}</text>
-        <text x={x(corte)} y={H - 8} textAnchor="middle" fontSize="10" fill="#8a8590">hoy</text>
+        <text x={x(corte)} y={H - 8} textAnchor="middle" fontSize="13" fill={G.eje}>hoy</text>
       </svg>
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: '0.71rem', color: '#6b7280', marginTop: 2 }}>
         {[['#7DA6F5', 'Si el ritmo mejora'], ['#9B8CFA', 'Si se mantiene'], ['#D9538E', 'Si se enfría']].map(([c, l]) => (

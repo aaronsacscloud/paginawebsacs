@@ -40,6 +40,9 @@ interface Props {
   remate?: string;
   /** El género de la unidad, para que concuerden "distintos" y "agotados". */
   genero?: 'm' | 'f';
+  /** Desde cuántas piezas la celda deja de ser "bajo". En giros donde 1 es lo
+   *  normal y sano (una muestra por talla), se pasa 0 y el 1 pinta verde. */
+  umbralBajo?: number;
   /** El cero como dato neutro (gris), no como alarma roja — para matrices
    *  donde la celda vacía no es un hueco de venta (p. ej. estados). */
   ceroNeutro?: boolean;
@@ -62,6 +65,7 @@ const {
   remate = 'que comprar, guardar y contar',
   pieLibre,
   ceroNeutro = false,
+  umbralBajo = 2,
   genero = 'm',
   leyendas = ['Con existencia', 'Último', 'Agotado'],
 } = Astro.props;
@@ -81,7 +85,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
       {sub && <p class="vr-sub">{sub}</p>}
       <ul class="vr-leyenda">
         <li><i class="ok"></i>{leyendas[0]}</li>
-        <li><i class="bajo"></i>{leyendas[1]}</li>
+        {umbralBajo > 0 && <li><i class="bajo"></i>{leyendas[1]}</li>}
         <li><i class="cero"></i>{leyendas[2]}</li>
       </ul>
     </header>
@@ -104,8 +108,8 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
                   const n = matriz[fi][ci];
                   return (
                     <div
-                      class:list={['vr-celda', n === 0 ? 'cero' : n <= 2 ? 'bajo' : 'ok']}
-                      title={n === 0 ? leyendas[2] : n <= 2 ? leyendas[1] : leyendas[0]}
+                      class:list={['vr-celda', n === 0 ? 'cero' : n <= umbralBajo ? 'bajo' : 'ok']}
+                      title={n === 0 ? leyendas[2] : n <= umbralBajo ? leyendas[1] : leyendas[0]}
                       style={`--i:${fi * ejeA.length + ci}`}
                     >
                       <img src={f.img} alt="" width="120" height="120" loading="lazy" aria-hidden="true" />

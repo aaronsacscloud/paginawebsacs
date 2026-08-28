@@ -94,10 +94,10 @@ export default function SubscriptionsTab() {
   // tablero. La primera (ARR activo, con su desglose) ocupa el ancho entero:
   // es el número de la pantalla, no uno más de la fila.
   const kpiCarril = isMobile
-    ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, alignItems: 'stretch' as const }
+    ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, alignItems: 'start' as const }
     : { display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 12 };
   const kpiCard: any = isMobile
-    ? { ...S.kpi, flex: 'unset', minWidth: 0, padding: '13px 14px', borderLeftWidth: 1, borderLeftColor: '#ececec' }
+    ? { ...S.kpi, flex: 'unset', minWidth: 0, padding: '13px 14px', borderLeftWidth: 1, borderLeftColor: '#ececec', borderColor: '#ececec' }
     : S.kpi;
   const kpiAncho: any = isMobile ? { gridColumn: '1 / -1' } : {};
   const [showFiltrosSheet, setShowFiltrosSheet] = useState(false); // móvil: hoja de filtros
@@ -297,7 +297,7 @@ export default function SubscriptionsTab() {
               ? <>{fmt(bajas.arr)} de ARR · {bajas.motivos.slice(0, 2).map((m: any) => `${m.n} ${m.motivo.toLowerCase().split(' · ')[0].split(' — ')[0]}`).join(', ')}</>
               : 'ninguna cancelación registrada'}
           </div>
-          {(bajas?.motivos?.length || 0) > 0 && (
+          {(bajas?.motivos?.length || 0) > 0 && !isMobile && (
             <div style={{ marginTop: 7, borderTop: '1px solid #f4f3f7', paddingTop: 6 }}>
               {bajas.motivos.slice(0, 4).map((m: any, i: number) => (
                 <div key={i} style={{ display: 'flex', gap: 8, fontSize: '0.7rem', color: '#6b6b74', padding: '2px 0' }}>
@@ -308,7 +308,9 @@ export default function SubscriptionsTab() {
             </div>
           )}
         </div>
-        <div style={{ ...kpiCard, borderLeftColor: P.azul }}>
+        {/* La meta cierra la rejilla a ancho completo: sola a media fila dejaba
+            un hueco que se leía como algo que faltó cargar. */}
+        <div style={{ ...kpiCard, ...(isMobile ? kpiAncho : {}), borderLeftColor: P.azul }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={S.kLabel}>Meta ARR {meta?.anio}</span>
             <button style={{ ...S.btnSmall, padding: '1px 8px' }} onClick={() => setShowMeta(true)}>⚙</button>
@@ -319,12 +321,12 @@ export default function SubscriptionsTab() {
               <div style={{ height: '100%', width: Math.min(100, meta.progreso_pct || 0) + '%', background: (meta.progreso_pct || 0) >= 100 ? '#4FBF95' : '#9B8CFA', borderRadius: 99 }} />
             </div>
             <div style={S.kSub}>{fmt(k?.arr_activo)} de {fmt(meta.monto)}</div>
-          </>) : <div style={{ ...S.kSub, marginTop: 8 }}>Sin meta configurada — da clic en ⚙</div>}
+          </>) : <div style={{ ...S.kSub, marginTop: 8 }}>Sin meta configurada — ábrela con el engrane</div>}
         </div>
       </div>}
 
       {/* ── Barra de acciones + sub-vistas ── */}
-      <div style={isMobile
+      <div className="mod-tabs" style={isMobile
         ? { display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch', marginBottom: 10, paddingBottom: 4 }
         : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         {(['finanzas', 'subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
@@ -523,7 +525,27 @@ export default function SubscriptionsTab() {
               furioso también se puede ir. */}
           {(riesgo?.soporte?.length || 0) > 0 && (
             <div style={S.card}>
-              <div style={{ fontWeight: 800, marginBottom: 10 }}>🎧 Queja de soporte abierta — riesgo por servicio <span style={{ color: '#999', fontWeight: 400 }}>· {riesgo.soporte.length} cliente(s) · {fmt(riesgo.arr_en_riesgo_soporte || 0)} ARR</span></div>
+              <div style={{ fontWeight: 800, marginBottom: 10 }}>Queja de soporte abierta — riesgo por servicio <span style={{ color: '#999', fontWeight: 400 }}>· {riesgo.soporte.length} cliente(s) · {fmt(riesgo.arr_en_riesgo_soporte || 0)} ARR</span></div>
+              {isMobile ? (
+                /* Seis columnas partían los encabezados en dos renglones y
+                   truncaban el nombre. Igual que las bandas de abajo: cliente
+                   arriba con su señal, y el ARR en juego a la derecha. */
+                <div>
+                  {riesgo.soporte.map((x: any) => (
+                    <div key={x.company_id} className="m-row" onClick={() => setDetailId(x.company_id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid #efeef2', cursor: 'pointer' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#8f8d98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {[x.sacs_account, `${x.tickets_abiertos} ticket${x.tickets_abiertos === 1 ? '' : 's'} abierto${x.tickets_abiertos === 1 ? '' : 's'}`,
+                            x.estancado ? 'estancado' : null, x.sentimiento && x.sentimiento !== 'neutral' ? x.sentimiento : null].filter(Boolean).join(' · ')}
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#C0554E', fontVariantNumeric: 'tabular-nums', flex: 'none' }}>{fmt(x.arr)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
               <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>{['Cliente', 'Cuenta SACS', 'Tickets abiertos', 'Señal', 'ARR en juego', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                 <tbody>{riesgo.soporte.map((x: any) => (
@@ -536,14 +558,37 @@ export default function SubscriptionsTab() {
                     <td style={S.td}><button style={S.btnSmall} onClick={() => setDetailId(x.company_id)}>Ver cliente</button></td>
                   </tr>
                 ))}</tbody>
-              </table></div>
+              </table></div>)}
             </div>
           )}
-          {[{ titulo: '🔴 Más de 15 días sin vender — churn probable', items: riesgo?.banda_15_mas || [] },
-            { titulo: '🟠 De 3 a 15 días sin vender — atender ya', items: riesgo?.banda_3_15 || [] }].map(sec => (
+          {[{ titulo: 'Más de 15 días sin vender — churn probable', items: riesgo?.banda_15_mas || [] },
+            { titulo: 'De 3 a 15 días sin vender — atender ya', items: riesgo?.banda_3_15 || [] }].map(sec => (
             <div key={sec.titulo} style={S.card}>
               <div style={{ fontWeight: 800, marginBottom: 10 }}>{sec.titulo} <span style={{ color: '#999', fontWeight: 400 }}>· {sec.items.length} cliente(s) · {fmt(sec.items.reduce((a: number, x: any) => a + x.arr, 0))} ARR</span></div>
-              {sec.items.length ? (
+              {sec.items.length ? (isMobile ? (
+                /* En el teléfono, una tabla de seis columnas se corta y deja
+                   los días y el ARR fuera de pantalla: justo los dos datos por
+                   los que se abre esta pestaña. Cada cliente es una fila que se
+                   toca: nombre y cuenta arriba, y a la derecha los días y el
+                   ARR en juego, que es la pregunta real («¿cuánto me cuesta?»). */
+                <div>
+                  {sec.items.map((x: any) => (
+                    <div key={x.company_id} className="m-row" onClick={() => setDetailId(x.company_id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid #efeef2', cursor: 'pointer' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#8f8d98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {x.sacs_account} · última venta {fmtDate(x.ultima_venta)}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flex: 'none' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1a1a1a', fontVariantNumeric: 'tabular-nums' }}>{fmt(x.arr)}</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: x.dias_sin_venta > 15 ? '#C0554E' : '#a06600' }}>{x.dias_sin_venta} días sin vender</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
                 <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>{['Cliente', 'Cuenta SACS', 'Última venta', 'Días sin vender', 'ARR en juego', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>{sec.items.map((x: any) => (
@@ -557,10 +602,10 @@ export default function SubscriptionsTab() {
                     </tr>
                   ))}</tbody>
                 </table></div>
-              ) : <div style={{ color: '#1E8A63', fontSize: '0.85rem' }}>Nadie en esta banda. 🎉</div>}
+              )) : <div style={{ color: '#1E8A63', fontSize: '0.85rem' }}>Nadie en esta banda.</div>}
             </div>
           ))}
-          {riesgo?.sin_liga > 0 && <div style={{ ...S.card, color: '#999', fontSize: '0.8rem' }}>ℹ️ {riesgo.sin_liga} cliente(s) con cuenta ligada aún sin datos de actividad — corre el sync o espera al cron (cada 6 h).</div>}
+          {riesgo?.sin_liga > 0 && <div style={{ ...S.card, color: '#999', fontSize: '0.8rem' }}>{riesgo.sin_liga} cliente(s) con cuenta ligada aún sin datos de actividad — corre el sync o espera al cron (cada 6 h).</div>}
         </div>
       )}
 

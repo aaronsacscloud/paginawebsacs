@@ -34,7 +34,7 @@ export default function KpiCard({ label, valor, color, sub, onClick, franja, act
   barra?: { pct: number; color: string }[];
 }) {
   return (
-    <div onClick={onClick}
+    <div onClick={onClick} className="kpi-card"
       style={{
         ...KPI_S.card, marginBottom: 0,
         borderLeft: `3px solid ${franja || '#ddd'}`,

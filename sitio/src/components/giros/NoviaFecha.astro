@@ -1,0 +1,166 @@
+---
+/**
+ * NoviaFecha — el vestido se paga con tiempo.
+ *
+ * El bloque propio de novias y fiesta: solo aquí la venta tiene una FECHA QUE
+ * NO SE MUEVE. El vestido se pide, viaja, se prueba y se ajusta contra la
+ * boda; y se paga en abonos que también corren contra ella. Una boutique
+ * normal vende y entrega el mismo día — aquí la fecha es el producto.
+ *
+ * Los siete puntos del oficio:
+ * · Cuándo se decide: el día del apartado — ahí quedan la fecha y el plan.
+ * · Quién decide: la clienta elige el vestido; la casa fija qué SÍ llega.
+ * · Qué se mueve primero: la fecha límite de pedido; después todo lo demás.
+ * · Cuánto cuesta fallar: no hay reembolso que arregle una boda sin vestido.
+ * · El criterio: semanas a la boda menos fabricación, pruebas y colchón.
+ * · El dato que remata: el último abono cae dos semanas ANTES del evento —
+ *   nadie discute dinero la semana de su boda.
+ * · La cuenta honesta: si ya no llega sobre pedido, se dice de frente: se
+ *   busca en muestra o en otro modelo. Prometer lo que no llega es el pecado
+ *   del giro.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+
+const defaults = { precio: 28000, semanas: 20, anticipo: 30 };
+---
+
+<BloqueProducto
+  encabezado="La cuenta contra la fecha."
+  titulo="El vestido se paga con tiempo."
+  descripcion="Mueve el precio del vestido, las semanas que faltan para el evento y el anticipo — y mira el plan de abonos que cabe antes de la fecha, con el último abono dos semanas antes."
+  vinetas={[
+    { label: 'La fecha no se mueve', detail: 'La boda no espera al vestido. El plan de abonos y las pruebas del taller se cuentan hacia atrás desde la fecha — el sistema lo hace solo en cada apartado.' },
+    { label: 'El último abono, dos semanas antes', detail: 'Nadie debe llegar a la entrega debiendo, ni discutir dinero la semana de su boda. Por eso el plan cierra antes que el evento.' },
+    { label: 'Lo que no llega, se dice de frente', detail: 'Si ya no hay semanas para pedir sobre pedido, la casa lo dice el día uno y busca en muestra — no la semana de la boda.' },
+  ]}
+>
+  <div class="nf" id="nf" data-def={JSON.stringify(defaults)}>
+    <div class="nf-controles">
+      <label>
+        <span>Precio del vestido</span>
+        <input type="range" id="nfPrecio" class="nf-rango" min="6000" max="90000" step="1000" value={defaults.precio} />
+        <b id="nfPrecioV">$28,000</b>
+      </label>
+      <label>
+        <span>Semanas al evento</span>
+        <input type="range" id="nfSemanas" class="nf-rango" min="4" max="52" step="1" value={defaults.semanas} />
+        <b id="nfSemanasV">{defaults.semanas}</b>
+      </label>
+      <label>
+        <span>Anticipo</span>
+        <input type="range" id="nfAnticipo" class="nf-rango" min="20" max="50" step="5" value={defaults.anticipo} />
+        <b id="nfAnticipoV">{defaults.anticipo}%</b>
+      </label>
+    </div>
+
+    <div class="nf-datos">
+      <div class="nf-dato">
+        <span class="nf-rot">Anticipo hoy</span>
+        <b class="nf-n" id="nfHoy">$0</b>
+      </div>
+      <div class="nf-dato nf-dato-abono">
+        <span class="nf-rot">Abono quincenal</span>
+        <b class="nf-n" id="nfAbono">$0</b>
+        <span class="nf-sub" id="nfAbonoSub"></span>
+      </div>
+      <div class="nf-dato">
+        <span class="nf-rot">Último abono</span>
+        <b class="nf-n nf-n-chico" id="nfUltimo">—</b>
+        <span class="nf-sub">dos semanas antes del evento</span>
+      </div>
+    </div>
+
+    <p class="nf-fea" id="nfFea" aria-live="polite"></p>
+    <a class="nf-cta" href="/contacto?estimado=28000&de=novias#demo" id="nfCta">Ver mi casa con sus apartados reales</a>
+  </div>
+</BloqueProducto>
+
+<style>
+  .nf {
+    background: #fff; border-radius: 16px; padding: 26px 26px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 12px 32px rgba(15,23,42,.07);
+  }
+  .nf-controles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px 22px; margin-bottom: 22px; }
+  .nf-controles label { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; }
+  .nf-controles span { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
+  .nf-controles b { font-size: 13px; font-weight: 800; min-width: 6ch; text-align: right; font-variant-numeric: tabular-nums; }
+  .nf-rango {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px;
+    background: #E2E8F0; outline: none; cursor: pointer;
+  }
+  .nf-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 17px; height: 17px; border-radius: 50%;
+    background: #4B7BE5; border: 3px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .nf-rango::-moz-range-thumb {
+    width: 17px; height: 17px; border-radius: 50%; background: #4B7BE5; border: 3px solid #fff;
+    cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .nf-rango:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; }
+
+  .nf-datos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,.07); }
+  .nf-dato { border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+  .nf-dato-abono { border-color: #4B7BE5; background: rgba(75,123,229,.04); }
+  .nf-rot { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-tertiary, #8C8C8C); }
+  .nf-n { font-size: 28px; font-weight: 800; line-height: 1.05; letter-spacing: -1px; color: var(--color-text-primary, #1a1a2e); font-variant-numeric: tabular-nums; }
+  .nf-n-chico { font-size: 20px; }
+  .nf-dato-abono .nf-n { color: #3D6BD4; }
+  .nf-sub { font-size: 11.5px; color: var(--color-text-secondary, #4A4A4A); }
+
+  .nf-fea { margin: 16px 0 14px; font-size: 12.5px; color: var(--aviso-texto, #8C6D1F); font-weight: 600; max-width: 62ch; }
+  .nf-cta {
+    display: inline-block; padding: 12px 22px; background: #4B7BE5; color: #fff;
+    border-radius: 9px; font-size: 14px; font-weight: 700; text-decoration: none;
+    transition: background .15s ease;
+  }
+  .nf-cta:hover { background: #3D6BD4; }
+  @media (max-width: 760px) { .nf-controles, .nf-datos { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  const raiz = document.getElementById('nf');
+  if (raiz) {
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const el = (id: string) => document.getElementById(id)!;
+    function pintar() {
+      const precio = Number((el('nfPrecio') as HTMLInputElement).value);
+      const semanas = Number((el('nfSemanas') as HTMLInputElement).value);
+      const anticipo = Number((el('nfAnticipo') as HTMLInputElement).value);
+      el('nfPrecioV').textContent = fmt(precio);
+      el('nfSemanasV').textContent = String(semanas);
+      el('nfAnticipoV').textContent = anticipo + '%';
+
+      const hoy = precio * anticipo / 100;
+      const resto = precio - hoy;
+      // El plan cierra dos semanas antes del evento; abonos quincenales.
+      const quincenas = Math.max(1, Math.floor((semanas - 2) / 2));
+      const abono = resto / quincenas;
+
+      el('nfHoy').textContent = fmt(hoy);
+      el('nfAbono').textContent = fmt(abono);
+      el('nfAbonoSub').textContent = `${quincenas} ${quincenas === 1 ? 'quincena' : 'quincenas'} para lo que queda tras el anticipo — la última ajusta el saldo exacto`;
+      el('nfUltimo').textContent = `quincena ${quincenas}`;
+
+      const fea = el('nfFea');
+      if (semanas <= 6) {
+        // Modo honesto: sin plan de abonos que fingir
+        el('nfAbono').textContent = '—';
+        el('nfAbonoSub').textContent = 'sin plan: se busca en muestra o en otro modelo';
+        el('nfUltimo').textContent = '—';
+        fea.textContent = 'Con tan pocas semanas, el sobre pedido ya no llega: la casa lo dice de frente y se busca en muestra o en otro modelo. Prometer lo que no llega es el pecado del giro.';
+      } else if (quincenas <= 3) {
+        fea.textContent = `Quedan solo ${quincenas} quincenas: el abono sube a ${fmt(abono)}. La fecha manda — por eso el apartado se hace temprano.`;
+      } else {
+        fea.textContent = '';
+      }
+
+      const cta = el('nfCta') as HTMLAnchorElement;
+      const u = new URL(cta.getAttribute('href')!.split('#')[0], location.origin);
+      u.searchParams.set('estimado', String(Math.round(precio)));
+      u.searchParams.set('de', 'novias');
+      cta.setAttribute('href', u.pathname + u.search + '#demo');
+    }
+    ['nfPrecio','nfSemanas','nfAnticipo'].forEach((id) => el(id).addEventListener('input', pintar));
+    pintar();
+  }
+</script>

@@ -1,4 +1,171 @@
 ---
-import ComingSoon from './_coming-soon.astro';
+/**
+ * Suite para Merch de Eventos (conciertos, festivales, ferias y pop-ups).
+ *
+ * El giro: el 80% de la venta pasa en unas horas, en un venue sin señal. La
+ * casa opera EL caso real de México (mercancía oficial de giras: 100+ puntos,
+ * 150K+ transacciones sin error, 4 ventas/min por punto) — ver
+ * /casos-de-exito/liveshow. La Torre de Control es plugin y se cotiza aparte.
+ *
+ * Reemplaza al stub coming-soon; la URL /giros/merchandising-eventos ya
+ * existía y se conserva. Contenido en data/giros/merch-eventos.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import MerchPico from '../../components/giros/MerchPico.astro';
+import { cortinaMerch, casosMerch, pasosMerch, planoMerch, seccionesMerch } from '../../data/giros/merch-eventos';
+
+const titulo = 'Suite Moda para Merch de Eventos';
+const desc =
+  'El sistema del merch en vivo: POS sin internet, un almacén por módulo, traspasos durante el show, fila con entrega por escáner y el corte por fecha — probado en giras de 100+ puntos de venta.';
 ---
-<ComingSoon giro="Merchandising en Eventos" title="Merchandising en Eventos" description="POS para venta de mercancía en ferias, conciertos y eventos. Opera sin WiFi." color="#EF4444" />
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu venta no dura un mes."
+    resalte="Dura dos horas."
+    sub="POS que cobra sin internet, un almacén por módulo, traspasos mientras suena el show y el corte por fecha al cierre — el sistema con el que se opera la mercancía oficial de giras de 100+ puntos de venta en México."
+    foto="/images/hero-merch.webp"
+    fotoAlt="Módulo de mercancía oficial iluminado en un venue, con la fila avanzando y cajeras cobrando en tablets"
+    selloMarcas="Negocios de moda activos en México y Latam"
+    avisos={[
+      { modulo: 'Pico de venta', texto: 'Módulo 2: 12 ventas/min con 3 puntos de cobro', pos: 1, tono: 'azul', sello: '9:40 pm' },
+      { modulo: 'Talla por volar', texto: 'Playera negra M: quedan 12 en módulo 2', pos: 2, tono: 'ambar', sello: 'Ahora' },
+      { modulo: 'Sin WiFi', texto: 'El venue perdió el WiFi · la caja sigue cobrando', pos: 3, tono: 'rojo', sello: '8:14 pm' },
+    ]}
+  />
+
+  <SuiteManifiesto
+    intro="Sabemos cómo se vende un evento"
+    frases={[
+      'El venue <b>no tiene señal</b> y la terminal se quedó pensando.',
+      'La fila da vuelta al pasillo y se va con el <b>encore</b>.',
+      'La <b>M</b> se acabó en el módulo 2 — y sobraba en el 4.',
+      'Nadie sabe cuánto lleva vendido <b>la noche</b>, hasta mañana.',
+      'La preventa se entrega <b>palomeando una lista</b> impresa.',
+      'El staff cobra por <b>primera vez</b> esa misma noche.',
+      'El corte se hace de <b>madrugada</b>, contando cajas en el camión.',
+    ]}
+    cierre="Ningún sistema de tienda entiende esto: para él la venta es un goteo de todo el mes, no una ola de dos horas. Y el evento ya no termina en el venue: la preventa, la tienda del artista y el siguiente pop-up venden del mismo inventario. Cada pantalla funciona igual en el módulo que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo."
+  />
+
+  <!-- El problema estructural: un diseño son 20 claves talla×diseño y la noche
+       se los come por módulo, no parejo. -->
+  <SuiteVariantes
+    eyebrow="Un solo diseño"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“la playera del tour”."
+    sub="Cuatro diseños en cinco tallas: veinte combinaciones que cargar, repartir entre módulos y reponer a media noche. Y las que están en cero son las que la fila está pidiendo."
+    ejeA={['S', 'M', 'L', 'XL', 'XXL']}
+    filas={[
+      { nombre: 'Negra', img: '/images/merch-negra.webp', alt: 'Playera negra del tour con gráfica al frente' },
+      { nombre: 'Blanca', img: '/images/merch-blanca.webp', alt: 'Playera blanca del tour con gráfica al frente' },
+      { nombre: 'Tie-dye', img: '/images/merch-tiedye.webp', alt: 'Playera tie-dye del tour' },
+      { nombre: 'Hoodie', img: '/images/merch-hoodie.webp', alt: 'Hoodie negro del tour' },
+    ]}
+    matriz={[
+      [9, 12, 15, 8, 3],
+      [6, 0, 9, 5, 2],
+      [4, 7, 0, 3, 1],
+      [2, 5, 6, 0, 2],
+    ]}
+    unidad="combinaciones"
+    remate="que cargar, repartir y reponer"
+    genero="f"
+    leyendas={['Con existencia', 'Quedan pocas', 'Agotada']}
+  />
+
+  <SuiteCortina
+    titulo="“¿Cuánto queda en el módulo 4?”"
+    sub="Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, cómo se contesta hoy: por radio. A la derecha, en tres segundos."
+    pieAntes="Dos radios y la fila esperando."
+    fotoAntes={cortinaMerch.fotoAntes}
+    fotoDespues={cortinaMerch.fotoDespues}
+    altAntes={cortinaMerch.altAntes}
+    altDespues={cortinaMerch.altDespues}
+    libreta={cortinaMerch.libreta}
+    filas={cortinaMerch.filas}
+  />
+
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi todo el que opera merch en eventos llega con uno de estos dos documentos en el cajón. Ninguno fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Cobrar sin internet toda la noche', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Un almacén por módulo, consolidado en vivo', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+      { que: 'Traspasos entre módulos durante el show', generico: 'No existe', medida: 'Rara vez', sacs: 'Incluido' },
+      { que: 'Preventa entregada con escáner en la fila', generico: 'No existe', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Torre de control con semáforo por módulo', generico: 'No existe', medida: 'No existe', sacs: 'Plugin aparte' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es un encore con fila." />
+
+  <SuiteCifras
+    foto="/images/suite-merch-venue.webp"
+    alt="Venue lleno de noche con los módulos de mercancía iluminados en el perímetro"
+    frase="Del pop-up de fin de semana a la gira de estadios."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que un evento gana o pierde la noche. Toca cada una."
+    casos={casosMerch}
+  />
+
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Toda la operación del evento, del camión al encore"
+    intro="Baja para ver cada pieza con una fecha tipo: el módulo sin señal que sigue cobrando, el traspaso a media noche y el corte por módulo al cierre. Los números del caso real están en Casos de Éxito. La Torre de Control del Evento es un plugin y se cotiza aparte."
+    secciones={seccionesMerch}
+  />
+
+  <!-- El bloque propio: solo aquí la venta es una ola de dos horas -->
+  <MerchPico />
+
+  <SuitePlano
+    titulo="Tu zona de merch, por dentro."
+    sub="Entra el público, la fila crece, el módulo cobra, el camión reabastece y producción mira la noche completa. Toca cada zona."
+    proyecto="Tu fecha — croquis de la zona de merch (no a escala)"
+    rotuloSuite="Torre de Control del Evento · plugin aparte"
+    zonas={planoMerch}
+  />
+
+  <SuiteProceso
+    titulo="Montar una fecha"
+    resalte="sin apostarle a la suerte."
+    sub="La fecha no se repite: si la noche sale mal, no hay lunes para corregir. Así se monta — y lo hacemos contigo, no te dejamos un manual y suerte."
+    pasos={pasosMerch}
+    chip="La gira sigue"
+    remate="<b>La gira no empieza de cero en cada plaza.</b> El corte de CDMX arma el camión de GDL: qué viaja, qué se repone y qué diseño ya demostró que no vende."
+  />
+
+  <SuitePlanes suite="Suite Moda" notaComplemento="la Torre de Control del Evento (el semáforo por módulo y el reabasto propuesto en vivo) es un plugin y sí se cotiza aparte. Y como aquí no hay sucursales sino fechas: los módulos y almacenes de una gira no se cobran por separado — qué cuenta como sucursal se define contigo en la demo." />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu fecha en el tablero, módulo por módulo." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos SACS con tus diseños, tus módulos y tu fecha real. 30 min, sin compromiso." />
+</BaseLayout>

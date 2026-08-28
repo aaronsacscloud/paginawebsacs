@@ -112,6 +112,48 @@ export const businessSectors: BusinessSector[] = [
     ],
   },
   {
+    label: 'Merch de Eventos',
+    // moda: true se enciende cuando la página pase los tres referees (manual de giros).
+    description: 'Conciertos, festivales, ferias y pop-ups',
+    href: '/giros/merchandising-eventos',
+    iconId: 'eventmerch',
+    color: '#EF4444',
+    bgColor: '#FEF2F2',
+    image: '/images/verticales/merch-eventos.webp',
+    personalizations: [
+      { label: 'Cobra sin internet', description: 'El venue no tiene señal y la caja no lo nota: cobra toda la noche y sincroniza cuando vuelve el WiFi.' },
+      { label: 'Un almacén por módulo', description: 'Cada punto de venta con su inventario, todo consolidado en vivo. El corte sale por módulo y por fecha.' },
+      { label: 'Traspasos durante el show', description: 'La talla que vuela en un módulo llega del camión o del módulo lento, con escáner, en minutos.' },
+      { label: 'Fila con entrega por escáner', description: 'Preventa y pedidos se entregan escaneando el celular del cliente: marcar entregado toma segundos.' },
+      { label: 'Ritmo de hora pico', description: 'Hasta 4 ventas por minuto por punto: escanear, cobrar, entregar. Medido en giras reales.' },
+      { label: 'Tallas y curvas por diseño', description: 'Cada diseño con su curva S–XXL y existencia por módulo. La M no se acaba: se acaba en el módulo equivocado.' },
+      { label: 'Kits y bundles', description: 'Playera + póster en un solo escaneo, con su propio precio de evento.' },
+      { label: 'Torre de Control del Evento', description: 'Semáforo de venta y existencia por módulo con reabasto propuesto en vivo. Es un plugin, se cotiza aparte.' },
+      { label: 'La tienda sigue después', description: 'Lo que regresa de la gira se vende en línea: la tienda del artista y la preventa del siguiente show, del mismo inventario.' },
+    ],
+  },
+  {
+    label: 'Novias y Fiesta',
+    // moda: true se enciende cuando la página pase los tres referees (manual de giros).
+    description: 'Vestidos de novia, XV años y fiesta',
+    href: '/giros/novias-y-fiesta',
+    iconId: 'bridal',
+    color: '#DB2777',
+    bgColor: '#FDF2F8',
+    image: '/images/verticales/novias-fiesta.webp',
+    personalizations: [
+      { label: 'Apartado con fecha de evento', description: 'El anticipo aparta el vestido y la boda queda adentro del apartado. Todo se cuenta hacia atrás desde esa fecha.' },
+      { label: 'Abonos largos con recordatorio', description: 'El plan cierra dos semanas antes del evento y cada abono se registra en segundos, con recordatorios.' },
+      { label: 'Muestras marcadas', description: 'El piso vive de muestras por talla, marcadas como muestra y fuera de la tienda en línea. Lo de ella se pide.' },
+      { label: 'Pedido contra la fecha', description: 'El sobre pedido con su llegada amarrada a la boda — y el que va tarde se ve en rojo (el aviso solo, desde Automatiza).' },
+      { label: 'Taller por etapas', description: 'Primera prueba, ajuste, prueba final, plancha y entrega: órdenes de servicio con tus etapas y tus fechas.' },
+      { label: 'La semana con fechas', description: 'Cada prueba y cada entrega con su fecha y su responsable. Lo del sábado se revisa desde el lunes.' },
+      { label: 'La familia que vuelve', description: 'XV, graduación, boda: el perfil guarda tallas, compras y eventos de cada familia.' },
+      { label: 'Catálogo que viaja', description: 'El catálogo en línea que la novia manda al grupo de la boda — WhatsApp, Instagram y Facebook con el mismo catálogo.' },
+      { label: 'Cobra como cualquier tienda', description: 'POS con o sin internet, cortes de caja, recibo por WhatsApp y factura desde la caja.' },
+    ],
+  },
+  {
     label: 'Zapaterías',
     moda: true,
     description: 'Calzado por hormas y pares',
@@ -195,7 +237,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Parques y Atracciones',
-    description: 'Merchandise en venues y eventos',
+    description: 'Parques, museos, balnearios y atracciones',
     personalizations: [
       { label: 'Stock por venue', description: 'Inventario independiente por puesto, atracción o pop-up, todo consolidado en HQ.' },
       { label: 'POS sin internet', description: 'Cobra en tablet con o sin WiFi. Sincroniza automáticamente al recuperar señal.' },

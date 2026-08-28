@@ -642,7 +642,9 @@ export default function MejorasTab() {
       <style>{`
         .cons-alertas { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
         @media (max-width: 1100px) { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-        @media (max-width: 620px)  { .cons-alertas { grid-template-columns:1fr; } }
+        /* En el teléfono son dos columnas, no una: cuatro tarjetas a ancho
+           completo se comen la pantalla entera antes de llegar al trabajo. */
+        @media (max-width: 620px)  { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; } }
         /* El app bar ya dice "Consultoría": el H2 duplicado a 60px sobra en móvil */
         @media (max-width: 899px)  { .cons-titulo { display: none; } }
       `}</style>
