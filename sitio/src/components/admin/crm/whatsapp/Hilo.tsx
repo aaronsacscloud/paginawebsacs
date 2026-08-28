@@ -244,6 +244,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
   const etapa = lifecycleDe(conv?.contacts?.lifecycle_stage);
   const nombre = conv?.contacts ? `${conv.contacts.nombre || ''} ${conv.contacts.apellido || ''}`.trim() : null;
+  const ventanaViva = !!hilo?.ventana?.expira_at && new Date(hilo.ventana.expira_at) > new Date();
   let diaPrevio = '';
   // E6.1 · La marca «Mensajes nuevos» va justo antes del primero que no
   // habías leído: al abrir con 8 pendientes se ve dónde empieza lo tuyo, en
@@ -401,6 +402,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           ventana cerrada eran 200 px de cromo sobre el hilo. */}
       {conv.alerta && (() => {
         const roto = /bloquead|no alcanzable|inexistente|no existe/i.test(conv.alerta);
+        // Con la ventana cerrada, el panel del composer ya dice qué hacer y
+        // trae el botón: dos avisos ámbar seguidos diciendo casi lo mismo solo
+        // hacen dudar cuál obedecer. El texto viaja al panel.
+        if (mobile && !roto && !ventanaViva) return null;
         const fondo = roto ? C.rojo50 : C.ambar50, borde = roto ? C.rojo200 : C.ambar200, tinta = roto ? C.rojo700 : C.ambar700;
         return (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 16px', background: fondo, borderBottom: `1px solid ${borde}`, fontSize: 12, lineHeight: 1.45, color: tinta, flexShrink: 0 }}>
@@ -423,7 +428,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {(conv.companies?.nombre_comercial || conv.companies?.nombre) && (
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{conv.companies?.nombre_comercial || conv.companies?.nombre}</span>
           )}
-          {conv.contacts?.origen && <span>· {String(conv.contacts.origen).slice(0, 22)}</span>}
+          {conv.contacts?.origen && (
+            /* Antes iba como texto suelto al lado de un chip: dos etiquetas
+               hermanas con tratamiento distinto se leen como error. */
+            <span style={{ fontWeight: 600, background: C.g100, color: C.g700, borderRadius: 999, padding: '3px 10px' }}>
+              {String(conv.contacts.origen).replace(/^one\s*way$/i, 'Solo entrantes').slice(0, 22)}
+            </span>
+          )}
         </div>
       )}
       {/* ── Mensajes ── */}
@@ -555,7 +566,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       <div ref={cajaComposerRef}>
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
-        onFoco={() => { const el = scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight }); setNuevosAbajo(0); }}
+        alerta={conv.alerta || null}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
         borradorInicial={leerBorrador(conv.id || conv.email_only_id)} onBorrador={t => guardarBorrador(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}

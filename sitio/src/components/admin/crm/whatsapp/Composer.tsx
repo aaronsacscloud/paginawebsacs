@@ -46,7 +46,7 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
-export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [], movil }: {
+export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [], movil, alerta }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
   cita?: any; onQuitarCita?: () => void;
   borradorInicial?: string; onBorrador?: (t: string) => void;
@@ -56,9 +56,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   /** En el teléfono: caja de escritura alta, tipografía de 16 (iOS no hace
    *  zoom) y solo tres herramientas a la vista; el resto, tras «Más». */
   movil?: boolean;
-  /** Al enfocar la caja, el hilo baja al último mensaje: el composer crece y
-   *  antes tapaba justo aquello a lo que estabas respondiendo. */
-  onFoco?: () => void;
+  /** La alerta de la conversación (límite de Meta, etc.). Con la ventana
+   *  cerrada se pinta AQUÍ, en el mismo panel, en vez de en una segunda banda
+   *  ámbar arriba. */
+  alerta?: string | null;
 }) {
   const [preselTema, setPreselTema] = useState<string | null>(null);
   const camaraRef = useRef<HTMLInputElement>(null);
@@ -356,23 +357,26 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         )}
 
         {modo === 'wa' && cerrada && (
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: C.ambar50, borderBottom: `1px solid ${C.ambar200}`, padding: '8px 12px', fontSize: 12, color: C.ambar700 }}>
+          <div className="wa-cerrada" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: C.ambar50, borderBottom: `1px solid ${C.ambar200}`, padding: '8px 12px', fontSize: 12, color: movil ? C.g700 : C.ambar700 }}>
             <span>⚠</span>
             {/* En el teléfono la frase larga empujaba los atajos fuera de la
                 pantalla: ahí basta con nombrar el problema. */}
             <span style={{ flex: 1, minWidth: movil ? 0 : 160 }}>
               {movil ? <>Ventana de 24 h cerrada — usa una <b>plantilla</b>.</>
                 : <>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación{correoOk ? ' o cambia a correo' : ''}.</>}
+              {movil && alerta && (
+                <span title={alerta} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden', marginTop: 3, color: C.g700 }}>{alerta}</span>
+              )}
             </span>
             <button onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: 8, padding: '5px 12px', background: C.ambar200, color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
             {correoOk && <button onClick={() => setModo('correo')} style={{ border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '5px 12px', background: '#fff', color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cambiar a correo</button>}
             {recientes.length > 0 && (
               <span className="wa-recientes" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: '100%' }}>
-                <span style={{ fontSize: 11, color: C.ambar700, alignSelf: 'center', whiteSpace: 'nowrap', flex: 'none' }}>Últimas usadas:</span>
+                <span style={{ fontSize: 11, color: movil ? C.g500 : C.ambar700, alignSelf: 'center', whiteSpace: 'nowrap', flex: 'none' }}>Últimas usadas:</span>
                 {recientes.map((p: any) => (
                   <button key={p.nombre + p.idioma} onClick={() => { setPreselTema(p.nombre); setModalPlantilla(true); }}
                     title={p.cuerpo || p.nombre}
-                    style={{ border: `1px solid ${C.ambar200}`, borderRadius: 999, padding: '0 12px', minHeight: 32, background: '#fff', color: C.ambar700, fontSize: 11.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    style={{ border: `1px solid ${movil ? C.g200 : C.ambar200}`, borderRadius: 999, padding: '0 12px', minHeight: 32, background: '#fff', color: movil ? C.g700 : C.ambar700, fontSize: 11.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {String(p.nombre).replace(/_/g, ' ')}
                   </button>
                 ))}
@@ -397,17 +401,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           {({ grabando, iniciar }) => (<>
             {!grabando && (
               <textarea ref={areaRef} value={texto} rows={movil ? (escribiendoMovil ? 2 : 1) : 1}
-                onFocus={() => { if (movil) setEscribiendoMovil(true); onFoco?.(); setTimeout(() => onFoco?.(), 180); }}
+                onFocus={() => { if (movil) setEscribiendoMovil(true); }}
                 onBlur={() => { if (!movil || texto) return; setTimeout(() => { if (!tocandoBarra.current) setEscribiendoMovil(false); }, 140); }}
                 onChange={e => {
                   setTexto(e.target.value); pingEscribir();
-                  const antes = e.target.style.height;
                   e.target.style.height = 'auto';
                   e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 168 : 44) : 120) + 'px';
-                  // Cada línea nueva le come alto al hilo: se vuelve a bajar
-                  // para que el último mensaje no quede tapado por lo que
-                  // estás escribiendo.
-                  if (antes !== e.target.style.height) onFoco?.();
                 }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
@@ -502,8 +501,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 {(!movil || masHerramientas) && <button title="Emoji" style={toolBtn(pop === 'emoji')} onClick={() => setPop(pop === 'emoji' ? null : 'emoji')}><IcoEmoji size={18} /></button>}
                 {(!movil || masHerramientas) && <button title="Variables" style={toolBtn(pop === 'variables')} onClick={() => setPop(pop === 'variables' ? null : 'variables')}><IcoArroba size={18} /></button>}
                 {(!movil || masHerramientas) && <button title="Snippets" style={toolBtn(pop === 'snippets')} onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={18} /></button>}
+                {movil && masHerramientas && waDisponible && <button title="Comentario interno" aria-label="Comentario interno" style={toolBtn(false)} onClick={() => { setComentario(true); setTexto(''); }}><IcoBurbuja size={18} /></button>}
                 {modo === 'wa' && <button title="Adjuntar" style={toolBtn(pop === 'adjuntar')} onClick={() => setPop(pop === 'adjuntar' ? null : 'adjuntar')}><IcoClip size={18} /></button>}
-                {modo === 'wa' && <button title="Plantillas" style={toolBtn(false)} onClick={() => setModalPlantilla(true)}><BadgeWhatsApp size={18} /></button>}
+                {/* Era el mismo logo verde de WhatsApp que ya está en el
+                    selector de canal tres controles antes: se leía como
+                    decoración, no como «plantillas». */}
+                {modo === 'wa' && <button title="Plantillas" aria-label="Plantillas" style={toolBtn(false)} onClick={() => setModalPlantilla(true)}><IcoDoc size={18} /></button>}
                 {modo === 'wa' && !bloqueadoWa && (!movil || masHerramientas) && <button title="Mensaje interactivo: botones, lista, link, ubicación, contacto, carrusel, producto" aria-label="Interactivo" style={toolBtn(false)} onClick={() => setModalInteractivo(true)}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="14" width="8" height="6" rx="2" /><rect x="13" y="14" width="8" height="6" rx="2" /></svg>
                 </button>}
@@ -576,16 +579,21 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         </div>
       )}
 
-      {/* Acciones inferiores */}
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 6, gap: 8 }}>
-        {waDisponible && (
-          <button onClick={() => { setComentario(true); setTexto(''); }}
-            style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: C.g500, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 6px', borderRadius: 6 }}>
-            <IcoBurbuja size={14} /> Añadir comentario
-          </button>
-        )}
-        <span style={{ flex: 1 }} />
-      </div>
+      {/* Acciones inferiores. En el teléfono NO van aquí: eran una cuarta
+          banda apilada bajo el composer (tabs + composer + barra + esto) y se
+          comían medio hilo. El comentario interno vive en la barra, tras
+          «Más». */}
+      {!movil && (
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 6, gap: 8 }}>
+          {waDisponible && (
+            <button onClick={() => { setComentario(true); setTexto(''); }}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: C.g500, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 6px', borderRadius: 6 }}>
+              <IcoBurbuja size={14} /> Añadir comentario
+            </button>
+          )}
+          <span style={{ flex: 1 }} />
+        </div>
+      )}
 
       <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
       {/* E5 · La cámara es su propio input: `capture` abre la cámara trasera

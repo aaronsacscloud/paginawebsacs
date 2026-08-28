@@ -59,9 +59,12 @@ export default function EstadoEntrega({ status, direccion, error }: {
 }) {
   if (direccion !== 'saliente' || !status) return null;
   switch (status) {
+    // Convención de WhatsApp, que es la que el usuario ya tiene aprendida:
+    // gris = salió / llegó, azul = leído. El verde no significaba nada y hacía
+    // dudar si «verde» y «azul» eran cosas distintas.
     case 'pending': return <Reloj />;
-    case 'sent': return <Check color={C.emerald300} />;
-    case 'delivered': return <DobleCheck color={C.emerald300} />;
+    case 'sent': return <Check color={C.g400} />;
+    case 'delivered': return <DobleCheck color={C.g400} />;
     case 'read': return <DobleCheck color={C.sky300} />;
     case 'failed': return <Fallo error={error} />;
     default: return null;

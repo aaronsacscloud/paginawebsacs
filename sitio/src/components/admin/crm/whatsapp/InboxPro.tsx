@@ -132,6 +132,23 @@ export default function InboxPro() {
   const ultimoAtRef = useRef<Map<string, string>>(new Map());
   const [aviso, setAviso] = useState<{ conv: any; mas: number } | null>(null);
   const [nuevosAlAbrir, setNuevosAlAbrir] = useState(0);
+  // Con una conversación abierta en el teléfono, la barra de pestañas se va:
+  // la CSS del CRM la esconde con este atributo y pone su alto reservado en 0.
+  useEffect(() => {
+    if (!isMobile) return;
+    const raiz = document.documentElement;
+    // La altura reservada la escribe BottomNav como estilo EN LÍNEA sobre
+    // <html>, así que una regla CSS no la gana: se pone a 0 aquí y se repone
+    // al salir del hilo.
+    // 56 px + safe-area es lo que escribe BottomNav; se repone tal cual al
+    // salir del hilo (quitar la variable dejaría el respaldo de 64 y sobraría
+    // una franja).
+    const alturaNav = 'calc(56px + env(safe-area-inset-bottom))';
+    const reponer = () => { delete raiz.dataset.crmHilo; raiz.style.setProperty('--crm-bottomnav-h', alturaNav); };
+    if (activa) { raiz.dataset.crmHilo = '1'; raiz.style.setProperty('--crm-bottomnav-h', '0px'); }
+    else reponer();
+    return reponer;
+  }, [isMobile, !!activa]);
   const hiloRef = useRef<any>(null);
   // E1.1 · Hilos ya cargados. Se guardan los últimos 30 (una jornada completa
   // de inbox cabe de sobra) para que volver a cualquiera sea instantáneo.

@@ -173,6 +173,9 @@ html[data-crm-dark="1"] .wa-bajar{background:#232329;border-color:#3a3550;color:
 .wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
 .wa-recientes::-webkit-scrollbar{display:none}
 .wa-recientes button{flex:none}
+/* Aire al final del carrusel: sin esto el último atajo queda rebanado por el
+   marco, que se lee como un corte y no como «hay más». */
+.wa-recientes::after{content:'';flex:none;width:8px}
 
 /* ── Aviso de mensaje entrante (E2.2) ── */
 .wa-aviso{position:fixed;z-index:60;right:20px;bottom:20px;max-width:340px;display:flex;align-items:stretch;gap:0;

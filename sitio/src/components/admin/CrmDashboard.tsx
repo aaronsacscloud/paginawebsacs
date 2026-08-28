@@ -1213,10 +1213,12 @@ const CRM_MOBILE_CSS = `
     .m-bleed { margin-left: -16px; margin-right: -16px; }
     /* Chips de filtro (≤3; solo el activo lleva conteo) */
     .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    /* Aire al final del carril: el último chip quedaba rebanado por el marco. */
+    .m-chips::after { content: ''; flex: none; width: 16px; }
     .m-chips::-webkit-scrollbar { display: none; }
     /* Los chips son la navegación primaria del inbox y se tocan con el pulgar
        en movimiento: 44 de alto, no 31. */
-    .m-chip { flex: none; min-height: 44px; display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 700; padding: 0 15px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
+    .m-chip { flex: none; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 700; padding: 0 15px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     /* La cola de trabajo se ve sin tocarla: si hay gente esperando respuesta,
        su pastilla lo dice con el tono de atención aunque no esté activa. */
@@ -1227,6 +1229,15 @@ const CRM_MOBILE_CSS = `
        inline claves. SOLO teléfono, SOLO sistema en oscuro y SOLO pantallas
        adaptadas (html[data-crm-dark="1"], ver M_DARK_TABS) — una pantalla no
        adaptada queda en claro legible, nunca fondo negro con texto negro. ══ */
+    /* Dentro de una conversación, la barra de pestañas se esconde (patrón de
+       vista de detalle): con ella eran cuatro bandas apiladas abajo y el
+       contenido se quedaba con menos de la mitad de la pantalla. Se sale con
+       el «Atrás» del hilo. */
+    html[data-crm-hilo="1"] nav[aria-label="Navegación principal"] { display: none !important; }
+    /* Sin barra abajo, el hilo se queda con la pantalla completa: si no,
+       quedaba una franja muerta del alto de la barra que ya no está. */
+    html[data-crm-hilo="1"] .wa-hilo-m { height: 100dvh !important; }
+
     @media (prefers-color-scheme: dark) and (max-width: 899px) {
       :root[data-crm-dark="1"] {
         --m-ink: #F2F1F7; --m-soft: #918fa0; --m-line: #26262e;
@@ -1270,6 +1281,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .wa-hilo-m [style*="border: 1px solid rgb(229, 231, 235)"] { background: #1d1d24 !important; border-color: #26262e !important; }
       [data-crm-dark="1"] .wa-hilo-m textarea, [data-crm-dark="1"] .wa-hilo-m input[type="text"] { background: transparent !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .wa-hilo-m [style*="border-bottom: 1px solid rgb(243, 244, 246)"] { border-bottom-color: #26262e !important; }
+      /* El divisor de la barra de herramientas del composer se quedó con el
+         gris claro: en oscuro era una raya casi blanca cruzando el composer. */
+      [data-crm-dark="1"] .wa-hilo-m [style*="border-top: 1px solid rgb(243, 244, 246)"] { border-top-color: #26262e !important; }
       /* Vista rápida (bottom sheet) en oscuro */
       [data-crm-dark="1"] .vr-sheet { background: #131318 !important; }
       [data-crm-dark="1"] .vr-handle { background: #33333d !important; }
@@ -1434,6 +1448,7 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .menu-hoja select,
       [data-crm-dark="1"] .menu-hoja input { background: #232329 !important; border-color: #2c2c36 !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .menu-hoja > span > span { background: #33333d !important; }
+
       /* Sub-lista desplegable dentro de la hoja (las horas del recordatorio):
          traía el gris claro del tema normal y en oscuro salía un bloque
          blanco en medio del menú. */
