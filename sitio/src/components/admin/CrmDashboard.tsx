@@ -1197,6 +1197,11 @@ const CRM_MOBILE_CSS = `
     .m-chips::-webkit-scrollbar { display: none; }
     .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
+    /* La cola de trabajo se ve sin tocarla: si hay gente esperando respuesta,
+       su pastilla lo dice con el tono de atención aunque no esté activa. */
+    .m-chip.urge { border-color: #E8B04B; color: #a06600; }
+    /* Punto de «te toca contestar»: va junto a la hora, donde el ojo ya está. */
+    .m-pend { display: block; width: 9px; height: 9px; border-radius: 99px; background: var(--m-acc); margin: 5px 0 0 auto; }
     /* ══ DARK móvil (mockup Dark): tokens re-mapeados + overrides de los
        inline claves. SOLO teléfono, SOLO sistema en oscuro y SOLO pantallas
        adaptadas (html[data-crm-dark="1"], ver M_DARK_TABS) — una pantalla no
@@ -1390,6 +1395,8 @@ const CRM_MOBILE_CSS = `
       /* La barra de título es parte de la app, no una franja aparte: sin esto
          quedaba blanca con el título en tinta clara (ilegible) en los módulos
          del menú que ya van en oscuro. */
+      [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
+      [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a

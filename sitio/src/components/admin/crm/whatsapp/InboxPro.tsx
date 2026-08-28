@@ -34,7 +34,10 @@ export default function InboxPro() {
   const [mostrar, setMostrar] = useState('conversaciones');
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   // ══ Móvil v5 (mockup Inbox): chips Abiertas/Mías/Resueltas y lista seccionada ══
-  const [chipWa, setChipWa] = useState<'abiertas' | 'mias' | 'resueltas'>('abiertas');
+  // «No contestadas» = el cliente escribió y nadie respondió: es la cola de
+  // trabajo real, por eso abre el inbox. «Sin respuesta» es el espejo: yo
+  // escribí y no me han contestado, para dar seguimiento de corrido.
+  const [chipWa, setChipWa] = useState<'nocontestadas' | 'abiertas' | 'sinrespuesta' | 'mias' | 'resueltas'>('nocontestadas');
   useEffect(() => {
     if (!isMobile) return;
     setMostrar(chipWa === 'resueltas' ? 'resueltas' : 'abiertas');
@@ -429,7 +432,17 @@ export default function InboxPro() {
         <style>{CSS_INBOX}</style>
         {!activa ? (
           (() => {
-            const convs = (lista || []).filter((c: any) => !c.virtual);
+            const todas = (lista || []).filter((c: any) => !c.virtual);
+            // Espera respuesta: el último mensaje es del cliente y no está
+            // resuelta. Es el indicador que pidió el usuario para saber de un
+            // vistazo a quién le debe contestación.
+            const esperaRespuesta = (c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta';
+            const sinRespuestaDeEllos = (c: any) => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta';
+            const convs = chipWa === 'nocontestadas' ? todas.filter(esperaRespuesta)
+              : chipWa === 'sinrespuesta' ? todas.filter(sinRespuestaDeEllos)
+              : todas;
+            const nPendientes = todas.filter(esperaRespuesta).length;
+            const nSinResp = todas.filter(sinRespuestaDeEllos).length;
             const horaV5 = (iso: string | null) => {
               if (!iso) return '';
               const d = new Date(iso); const hoy = new Date();
@@ -439,8 +452,12 @@ export default function InboxPro() {
               if (dd(d) === dd(ayer)) return 'ayer';
               return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }).replace(/\./g, '');
             };
-            const sinLeer = convs.filter((c: any) => c.no_leidos > 0);
-            const previas = convs.filter((c: any) => !(c.no_leidos > 0));
+            // En «Abiertas» lo que espera respuesta va ARRIBA: es la única
+            // sección accionable; lo demás es historial que ya se atendió.
+            const pendientes = chipWa === 'abiertas' ? convs.filter(esperaRespuesta) : [];
+            const resto = chipWa === 'abiertas' ? convs.filter((c: any) => !esperaRespuesta(c)) : convs;
+            const sinLeer = resto.filter((c: any) => c.no_leidos > 0);
+            const previas = resto.filter((c: any) => !(c.no_leidos > 0));
             const conSec = chipWa !== 'resueltas' && sinLeer.length > 0;
             const fila = (c: any) => {
               const noLeida = c.no_leidos > 0;
@@ -464,6 +481,10 @@ export default function InboxPro() {
                   </div>
                   <div className="m-fin">
                     <div className="m-m1" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : { fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{horaV5(c.ultimo_mensaje_at)}</div>
+                    {/* Punto morado = te toca contestar. Es la señal que se
+                        busca al abrir el inbox, y por eso va a la derecha,
+                        donde el pulgar ya está mirando la hora. */}
+                    {esperaRespuesta(c) && <span className="m-pend" title="Espera tu respuesta" />}
                   </div>
                 </div>
               );
@@ -475,11 +496,15 @@ export default function InboxPro() {
                   <button className="m-cta" onClick={() => setNuevoChat(true)}>＋ Nuevo</button>
                 </div>
                 <div className="m-chips">
-                  {([['abiertas', 'Abiertas'], ['mias', 'Mías'], ['resueltas', 'Resueltas']] as const).map(([v, l]) => {
+                  {([['nocontestadas', 'No contestadas'], ['abiertas', 'Abiertas'], ['sinrespuesta', 'Sin respuesta'], ['mias', 'Mías'], ['resueltas', 'Resueltas']] as const).map(([v, l]) => {
                     const on = chipWa === v;
+                    // El conteo de las dos vistas de trabajo se ve SIEMPRE, no
+                    // solo cuando están activas: es el número que dice si hay
+                    // algo que hacer sin tener que tocar nada.
+                    const n = v === 'nocontestadas' ? nPendientes : v === 'sinrespuesta' ? nSinResp : on && lista ? convs.length : null;
                     return (
-                      <button key={v} className={'m-chip' + (on ? ' on' : '')} onClick={() => setChipWa(v)}>
-                        {l}{on && lista ? ' ' + convs.length : ''}
+                      <button key={v} className={'m-chip' + (on ? ' on' : '') + (v === 'nocontestadas' && nPendientes > 0 && !on ? ' urge' : '')} onClick={() => setChipWa(v)}>
+                        {l}{n ? ' ' + n : ''}
                       </button>
                     );
                   })}
@@ -490,8 +515,10 @@ export default function InboxPro() {
                     {chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.' : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.' : 'Sin conversaciones abiertas. Bandeja limpia.'}
                   </div>
                 )}
+                {pendientes.length > 0 && <div className="m-sec">Esperan tu respuesta</div>}
+                {pendientes.map(fila)}
                 {conSec && <div className="m-sec">Sin leer</div>}
-                {(conSec ? sinLeer : convs).map(fila)}
+                {(conSec ? sinLeer : resto).map(fila)}
                 {conSec && previas.length > 0 && <div className="m-sec">Anteriores</div>}
                 {conSec && previas.map(fila)}
               </div>
