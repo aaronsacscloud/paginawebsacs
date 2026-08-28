@@ -1,6 +1,6 @@
 {
   "meta": {
-    "siteTitle": "Sacs — Sistema operacional para varejistas conscientes",
+    "siteTitle": "Sacs — O sistema para marcas e lojas de moda",
     "siteDescription": "Sacs e a plataforma tudo-em-um para gerenciar seu varejo."
   },
   "nav": {
@@ -13,10 +13,22 @@
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
     "pillars": {
-      "sell": { "verb": "Venda", "desc": "Receba em todos os canais" },
-      "control": { "verb": "Controle", "desc": "Opere todas as suas lojas" },
-      "loyalty": { "verb": "Fidelize", "desc": "Cresca com seus clientes" },
-      "automate": { "verb": "Automatize", "desc": "Decida com inteligencia" }
+      "sell": {
+        "verb": "Venda",
+        "desc": "Receba em todos os canais"
+      },
+      "control": {
+        "verb": "Controle",
+        "desc": "Opere todas as suas lojas"
+      },
+      "loyalty": {
+        "verb": "Fidelize",
+        "desc": "Cresca com seus clientes"
+      },
+      "automate": {
+        "verb": "Automatize",
+        "desc": "Decida com inteligencia"
+      }
     },
     "features": {
       "pos": "Ponto de venda",
@@ -66,7 +78,7 @@
   },
   "blog": {
     "eyebrow": "Blog",
-    "title": "Ideias para varejistas conscientes",
+    "title": "Ideias para o varejo de moda",
     "subtitle": "Tendencias, inovacao e casos reais do varejo.",
     "viewAll": "Ver todos os artigos"
   },
@@ -135,7 +147,7 @@
     "quote": "A plataforma nos deu o controle necessario para escalar para 42 lojas."
   },
   "footer": {
-    "tagline": "Sistema operacional para varejistas conscientes. Tecnologia com alma mexicana.",
+    "tagline": "O sistema para marcas e lojas de moda. Tecnologia com alma mexicana.",
     "platform": "Plataforma",
     "company": "Empresa",
     "resources": "Recursos",

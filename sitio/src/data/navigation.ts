@@ -26,6 +26,17 @@ export interface BusinessSector {
   bgColor: string;
   image?: string;
   personalizations: SectorPersonalization[];
+  /** Giros del nicho moda: son los únicos que se promueven en el mega-menú y
+   *  encabezan /giros. Los demás siguen vivos por URL pero no se empujan. */
+  moda?: boolean;
+}
+
+/** Un modelo de negocio de moda (cómo opera, no qué vende). Alimenta la fila
+ *  inferior del mega-menú "Tu negocio" y el selector del home. */
+export interface ModeloNegocio {
+  label: string;
+  description: string;
+  href: string;
 }
 
 export interface NavLink {
@@ -39,6 +50,7 @@ export interface NavLink {
 export const businessSectors: BusinessSector[] = [
   {
     label: 'Tiendas de Ropa',
+    moda: true,
     description: 'Boutiques, moda y apparel',
     personalizations: [
       { label: 'Tallas y colores', description: 'Variantes por SKU (talla × color) con stock independiente. Reportes por talla más vendida y agotada.' },
@@ -59,6 +71,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Zapaterías',
+    moda: true,
     description: 'Calzado por hormas y pares',
     personalizations: [
       { label: 'Tallas y hormas', description: 'Inventario por número y horma (ancho/normal/angosto). Alerta cuando un par queda incompleto.' },
@@ -79,6 +92,7 @@ export const businessSectors: BusinessSector[] = [
   },
   {
     label: 'Joyerías',
+    moda: true,
     description: 'Joyería fina y bisutería',
     personalizations: [
       { label: 'Kilataje y certificados', description: 'Certificado de autenticidad, kilataje (10K/14K/18K/24K) y peso adjuntos a cada venta.' },
@@ -359,6 +373,29 @@ export const businessSectors: BusinessSector[] = [
   },
 ];
 
+/** Solo los giros de moda con página aprobada — el mega-menú "Tu negocio" se
+ *  arma de aquí. Un giro nuevo de moda entra marcándolo con `moda: true`
+ *  cuando su página pasa referees, no antes. */
+export const modaSectors: BusinessSector[] = businessSectors.filter((s) => s.moda);
+
+export const modelosNegocio: ModeloNegocio[] = [
+  {
+    label: 'Tengo una boutique',
+    description: 'Una tienda: vender, controlar tallas y colores, y crecer sin enredos.',
+    href: '/soluciones/boutique',
+  },
+  {
+    label: 'Tengo varias tiendas',
+    description: 'Sucursales y CEDIS: traspasos, reabasto y el inventario nivelado.',
+    href: '/soluciones/cadena',
+  },
+  {
+    label: 'Soy marca o fabricante',
+    description: 'Operación compleja: distribución por temporada, mayoreo y dirección.',
+    href: '/enterprise',
+  },
+];
+
 export const navLinks: NavLink[] = [
   {
     label: 'Plataforma',
@@ -423,10 +460,11 @@ export const navLinks: NavLink[] = [
     ],
   },
   {
-    label: 'Giros de Negocio',
+    label: 'Tu negocio',
     href: '/giros',
-    sectors: businessSectors,
+    sectors: modaSectors,
   },
+  { label: 'Enterprise', href: '/enterprise' },
   { label: 'Partners', href: '/partners' },
   { label: 'Planes', href: '/planes' },
   { label: 'Casos de éxito', href: '/casos-de-exito' },
@@ -471,6 +509,7 @@ export const footerLinks = {
   ],
   empresa: [
     { label: 'Giros de negocio', href: '/giros' },
+    { label: 'Enterprise · marcas y fabricantes', href: '/enterprise' },
     { label: 'Nosotros', href: '/nosotros' },
     { label: 'Manifiesto', href: '/manifiesto' },
     { label: 'Casos de éxito', href: '/casos-de-exito' },

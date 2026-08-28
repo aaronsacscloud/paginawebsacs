@@ -17,6 +17,12 @@ export default defineConfig({
   // el resto del sitio.
   security: { checkOrigin: false },
   output: 'static',
+  // /enterprise es la URL canónica del track de marcas/fabricantes; estas dos
+  // son las formas en que la gente lo escribe o lo linkeamos por modelo.
+  redirects: {
+    '/marcas': '/enterprise',
+    '/soluciones/marca': '/enterprise',
+  },
   // maxDuration en el ADAPTADOR, no en el bloque `functions` de vercel.json:
   // ese patrón apunta a rutas del código fuente y en Astro las funciones las
   // genera el adaptador, así que Vercel no lo encuentra y falla el build.

@@ -5,8 +5,23 @@ import { giroIcons } from '../../data/giro-icons';
 import { waDemoGiro, waLink } from '../../lib/whatsapp';
 
 // Los giros salen del MISMO arreglo que alimenta el mega-menú, así que agregar
-// un giro allá lo publica aquí sin tocar esta página.
+// un giro allá lo publica aquí sin tocar esta página. Desde el giro moda-first
+// (2026-08), los giros de moda encabezan la página y el resto se agrupa abajo.
 const giros = businessSectors;
+const grupos = [
+  {
+    id: 'moda',
+    titulo: 'Moda y calzado',
+    sub: 'El nicho de la casa: ropa, calzado y joyería con sus personalizaciones a fondo.',
+    lista: businessSectors.filter((g) => g.moda),
+  },
+  {
+    id: 'otros',
+    titulo: 'Otros comercios que operan con Sacs',
+    sub: 'El mismo sistema, configurado para cada uno de estos giros.',
+    lista: businessSectors.filter((g) => !g.moda),
+  },
+];
 
 const waGenerico = waLink('¡Hola! Quiero agendar una demo en línea de Sacscloud para mi negocio.');
 // El de "¿no ves tu giro?" deja la frase abierta a propósito: el prospecto
@@ -53,8 +68,14 @@ const structuredData = {
 
   <section class="giros-grid-section">
     <div class="container">
+      {grupos.map((grupo) => (
+      <div class="giros-grupo">
+      <div class="giros-grupo-head">
+        <h2 class="giros-grupo-titulo">{grupo.titulo}</h2>
+        <p class="giros-grupo-sub">{grupo.sub}</p>
+      </div>
       <div class="giros-grid">
-        {giros.map((g) => (
+        {grupo.lista.map((g) => (
           <article class="giro-card" style={`--accent:${g.color}; --accent-bg:${g.bgColor};`}>
             {g.image && (
               <a href={g.href} class="giro-card-media" aria-label={`Ver más sobre ${g.label}`}>
@@ -65,7 +86,7 @@ const structuredData = {
               <div class="giro-card-head">
                 <span class="giro-card-icon" set:html={giroIcons[g.iconId]} />
                 <div class="giro-card-titles">
-                  <h2 class="giro-card-title"><a href={g.href}>{g.label}</a></h2>
+                  <h3 class="giro-card-title"><a href={g.href}>{g.label}</a></h3>
                   <p class="giro-card-desc">{g.description}</p>
                 </div>
               </div>
@@ -103,6 +124,8 @@ const structuredData = {
           </article>
         ))}
       </div>
+      </div>
+      ))}
     </div>
   </section>
 
@@ -460,4 +483,9 @@ const structuredData = {
     color: var(--color-text-secondary);
     margin: 0;
   }
+  .giros-grupo { margin-bottom: 56px; }
+  .giros-grupo:last-child { margin-bottom: 0; }
+  .giros-grupo-head { margin-bottom: 24px; }
+  .giros-grupo-titulo { font-family: var(--font-display); font-size: clamp(1.375rem, 2.4vw, 1.75rem); font-weight: 700; color: var(--color-text-primary); }
+  .giros-grupo-sub { margin-top: 6px; font-size: 0.9688rem; color: var(--color-text-secondary); }
 </style>

@@ -1,5 +1,5 @@
 ---
-import { navLinks, type BusinessSector } from '../data/navigation';
+import { navLinks, modelosNegocio, type BusinessSector } from '../data/navigation';
 import { giroIcons } from '../data/giro-icons';
 import { waDemoGiro } from '../lib/whatsapp';
 import { t, getLocalizedUrl } from '../i18n/utils';
@@ -95,8 +95,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
               <div class="mega-dropdown-inner container">
                 <div class="sectors-header">
                   <div>
-                    <span class="sectors-eyebrow">Hecho a la medida de tu giro</span>
-                    <h3 class="sectors-headline">Cada giro tiene personalizaciones específicas.</h3>
+                    <span class="sectors-eyebrow">Software para el retail de moda</span>
+                    <h3 class="sectors-headline">Dinos qué vendes y cómo operas — el sistema ya viene configurado.</h3>
                   </div>
                   <a href={getLocalizedUrl('/giros', locale)} class="sectors-header-link">
                     Ver todos los giros
@@ -164,6 +164,19 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                           </a>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="sectors-modelos" aria-label="Modelos de negocio">
+                  <span class="sm-label">¿Cómo opera tu negocio?</span>
+                  <div class="sm-items">
+                    {modelosNegocio.map((m) => (
+                      <a href={getLocalizedUrl(m.href, locale)} class="sm-item">
+                        <span class="sm-item-name">{m.label}</span>
+                        <span class="sm-item-desc">{m.description}</span>
+                        <svg class="sm-item-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -268,6 +281,11 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                   Ver todos los giros
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </a>
+                <div class="mobile-modelos">
+                  {modelosNegocio.map((m) => (
+                    <a href={getLocalizedUrl(m.href, locale)} class="mobile-modelo-link">{m.label}</a>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -1554,6 +1572,75 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
       -webkit-backdrop-filter: none;
       background: rgba(0, 0, 0, 0.5);
     }
+  }
+
+  /* ─── Fila de modelos de negocio del mega-menú "Tu negocio" ─── */
+  .sectors-modelos {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-light);
+  }
+  .sm-label {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+  }
+  .sm-items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    flex: 1;
+  }
+  .sm-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .sm-item:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-primary);
+  }
+  .sm-item-name {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  .sm-item-desc {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--color-text-secondary);
+  }
+  .sm-item-arrow { color: var(--color-primary); }
+
+  .mobile-modelos {
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+    border-top: 1px solid var(--color-border-light);
+    padding-top: 8px;
+  }
+  .mobile-modelo-link {
+    padding: 10px 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-decoration: none;
   }
 </style>
 

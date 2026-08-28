@@ -1,6 +1,6 @@
 {
   "meta": {
-    "siteTitle": "Sacs — Sistema operativo para retailers conscientes",
+    "siteTitle": "Sacs — El sistema para marcas y tiendas de moda",
     "siteDescription": "Sacs es la plataforma todo-en-uno para gestionar tu retail."
   },
   "nav": {
@@ -13,10 +13,22 @@
     "openMenu": "Abrir menu",
     "closeMenu": "Cerrar menu",
     "pillars": {
-      "sell": { "verb": "Vende", "desc": "Cobra en todos los canales" },
-      "control": { "verb": "Controla", "desc": "Opera todas tus tiendas" },
-      "loyalty": { "verb": "Fideliza", "desc": "Crece con tus clientes" },
-      "automate": { "verb": "Automatiza", "desc": "Decide con inteligencia" }
+      "sell": {
+        "verb": "Vende",
+        "desc": "Cobra en todos los canales"
+      },
+      "control": {
+        "verb": "Controla",
+        "desc": "Opera todas tus tiendas"
+      },
+      "loyalty": {
+        "verb": "Fideliza",
+        "desc": "Crece con tus clientes"
+      },
+      "automate": {
+        "verb": "Automatiza",
+        "desc": "Decide con inteligencia"
+      }
     },
     "features": {
       "pos": "Punto de venta",
@@ -66,7 +78,7 @@
   },
   "blog": {
     "eyebrow": "Blog",
-    "title": "Ideas para retailers conscientes",
+    "title": "Ideas para el retail de moda",
     "subtitle": "Tendencias, innovacion y casos reales del retail.",
     "viewAll": "Ver todos los articulos"
   },
@@ -135,7 +147,7 @@
     "quote": "La plataforma nos dio el control que necesitabamos para escalar a 42 sucursales."
   },
   "footer": {
-    "tagline": "Sistema operativo para retailers conscientes. Tecnologia con alma mexicana.",
+    "tagline": "El sistema para marcas y tiendas de moda. Tecnologia con alma mexicana.",
     "platform": "Plataforma",
     "company": "Empresa",
     "resources": "Recursos",

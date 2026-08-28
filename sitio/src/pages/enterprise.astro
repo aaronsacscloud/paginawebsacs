@@ -1,0 +1,216 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaDudas from '../components/CtaDudas.astro';
+
+// ── Enterprise: marcas y fabricantes de moda con operación compleja ──
+// Regla de la página: SOLO se promete lo que ya corre y está en plans.ts.
+// La planeación de temporada (OTB / plan de surtido) se ofrece como PROGRAMA
+// a la medida, nunca como funcionalidad incluida.
+
+const capacidades = [
+  {
+    title: 'Distribución desde tu CEDIS',
+    desc: 'El primer embarque de la temporada repartido a cada tienda desde tu centro de distribución, con recepción escaneando cajas.',
+    plan: 'Plan Controla',
+    href: '/producto/inventario-omnicanal',
+  },
+  {
+    title: 'Nivelación de inventario con IA',
+    desc: 'La talla que no se vende en una tienda se mueve a la que sí la vende. El sistema propone los traspasos; tu equipo aprueba.',
+    plan: 'Plan Automatiza',
+    href: '/producto/nivelacion-de-inventario',
+  },
+  {
+    title: 'Planificador inteligente por tallas',
+    desc: 'Reabasto y compra sugerida por talla y modelo según la rotación real de cada sucursal, no por SKU suelto.',
+    plan: 'Plan Automatiza',
+    href: '/producto/reportes-predictivos',
+  },
+  {
+    title: 'Sell-through, ABC y rotación',
+    desc: 'Cómo va cada modelo por semana de vida, qué se agota y qué se está quedando. 50+ reportes y 20+ KPIs de la operación.',
+    plan: 'Plan Controla',
+    href: '/producto/reportes-y-analitica',
+  },
+  {
+    title: 'Mayoreo y listas de precios',
+    desc: 'Menudeo, medio mayoreo y mayoreo en el mismo catálogo: listas de precios y precios por volumen por tipo de cliente.',
+    plan: 'Desde el plan Vende',
+    href: '/producto/punto-de-venta',
+  },
+  {
+    title: 'Ecommerce, Meta y TikTok Shop',
+    desc: 'Tienda en línea, Facebook, Instagram y TikTok Shop jalando del mismo inventario que tus tiendas físicas.',
+    plan: 'Desde el plan Vende',
+    href: '/producto/social-commerce',
+  },
+];
+
+const programa = [
+  { paso: '01', title: 'Diagnóstico de tu operación', desc: 'Cómo compras, cómo distribuyes, cómo rebajas y dónde se te queda el dinero parado. Con tus datos, no con supuestos.' },
+  { paso: '02', title: 'Plan de implementación', desc: 'Migración de catálogo y existencias, tiendas piloto, capacitación por rol y calendario de salida por sucursal.' },
+  { paso: '03', title: 'Planeación de temporada', desc: 'Presupuesto de compra por temporada y plan de surtido por tienda, construidos contigo como programa a la medida.' },
+];
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Sacs Enterprise — marcas y fabricantes de moda',
+  url: 'https://www.sacscloud.com/enterprise',
+};
+---
+
+<BaseLayout
+  title="Enterprise — Para marcas y fabricantes de moda | Sacs"
+  description="Para marcas de moda con CEDIS, varias tiendas, mayoreo y ecommerce: distribución, nivelación con IA, sell-through y planeación de temporada."
+  structuredData={structuredData}
+>
+  <!-- ═══ Portada ═══ -->
+  <section class="ent-hero">
+    <div class="ent-container">
+      <span class="ent-eyebrow">Sacs Enterprise</span>
+      <h1 class="ent-title">Para marcas y fabricantes de moda</h1>
+      <p class="ent-sub">
+        Fabricas o importas, tienes CEDIS, tiendas propias, mayoreo y ecommerce.
+        Sacs es la capa que opera tu retail: la temporada se distribuye, se mueve
+        entre tiendas y se lee semana a semana — desde el primer embarque hasta la rebaja.
+      </p>
+      <div class="ent-ctas">
+        <a href="/contacto" class="ent-btn ent-btn-primary">Agenda un diagnóstico de tu operación</a>
+        <a href="/casos-de-exito/liveshow" class="ent-btn ent-btn-outline">Ver un caso enterprise</a>
+      </div>
+      <p class="ent-nota">Sin compromiso. Es una sesión de trabajo sobre tu operación real, no una llamada de ventas.</p>
+    </div>
+  </section>
+
+  <!-- ═══ Lo que ya corre ═══ -->
+  <section class="ent-caps">
+    <div class="ent-container">
+      <div class="ent-header">
+        <span class="ent-eyebrow">En producción hoy</span>
+        <h2 class="ent-h2">La operación de temporada, cubierta</h2>
+        <p class="ent-header-sub">Cada pieza está viva en el producto — nada de esta lista es promesa de roadmap.</p>
+      </div>
+      <div class="ent-caps-grid">
+        {capacidades.map((c) => (
+          <a href={c.href} class="ent-cap">
+            <span class="ent-cap-plan">{c.plan}</span>
+            <h3 class="ent-cap-title">{c.title}</h3>
+            <p class="ent-cap-desc">{c.desc}</p>
+            <span class="ent-cap-link">Ver el módulo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Convive con tu ERP ═══ -->
+  <section class="ent-erp">
+    <div class="ent-container ent-erp-inner">
+      <div>
+        <span class="ent-eyebrow">Dónde encaja</span>
+        <h2 class="ent-h2">No venimos a sacar tu ERP</h2>
+        <p class="ent-erp-text">
+          Si tu corporativo ya opera con un ERP, Sacs es la capa de tiendas y
+          distribución: punto de venta, inventario por sucursal, traspasos,
+          ecommerce y clientes. Se conecta por API con lo que ya tienes, y tu
+          contabilidad sigue donde está.
+        </p>
+        <a href="/producto/api-e-integraciones" class="ent-link">API e integraciones →</a>
+      </div>
+      <div class="ent-erp-caja">
+        <h3 class="ent-erp-caja-title">Liveshow Merchandising</h3>
+        <p class="ent-erp-caja-text">Mercancía oficial de Shakira, Metallica, Karol G y Lady Gaga en México.</p>
+        <ul class="ent-erp-stats">
+          <li><strong>100+</strong> puntos de venta simultáneos</li>
+          <li><strong>150K+</strong> transacciones sin error</li>
+          <li><strong>Offline</strong> el POS cobra aunque no haya internet</li>
+        </ul>
+        <a href="/casos-de-exito/liveshow" class="ent-link">Leer el caso completo →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ El programa ═══ -->
+  <section class="ent-programa">
+    <div class="ent-container">
+      <div class="ent-header">
+        <span class="ent-eyebrow">Programa Enterprise</span>
+        <h2 class="ent-h2">Así se implementa en una operación grande</h2>
+        <p class="ent-header-sub">
+          La implementación y la planeación de temporada son un programa a la
+          medida con costo propio — se cotiza en el diagnóstico, no es parte de la licencia.
+        </p>
+      </div>
+      <div class="ent-programa-grid">
+        {programa.map((pso) => (
+          <div class="ent-paso">
+            <span class="ent-paso-num">{pso.paso}</span>
+            <h3 class="ent-cap-title">{pso.title}</h3>
+            <p class="ent-cap-desc">{pso.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div class="ent-final">
+        <a href="/contacto" class="ent-btn ent-btn-primary">Agenda el diagnóstico</a>
+      </div>
+    </div>
+  </section>
+
+  <CtaDudas />
+
+  <style>
+    .ent-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .ent-eyebrow {
+      font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary);
+      display: block; margin-bottom: 14px;
+    }
+    .ent-h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.25rem); font-weight: 700; color: var(--color-text-primary); }
+    .ent-header { text-align: center; margin-bottom: 44px; }
+    .ent-header-sub { margin: 12px auto 0; max-width: 640px; font-size: 1rem; color: var(--color-text-secondary); }
+
+    .ent-hero { padding: clamp(90px, 12vw, 150px) 0 clamp(60px, 8vw, 100px); background: var(--color-bg-secondary); text-align: center; }
+    .ent-title { font-family: var(--font-display); font-size: clamp(2rem, 4.6vw, 3.25rem); font-weight: 700; color: var(--color-text-primary); max-width: 780px; margin: 0 auto; }
+    .ent-sub { margin: 18px auto 0; max-width: 680px; font-size: clamp(1rem, 1.6vw, 1.1875rem); line-height: 1.6; color: var(--color-text-secondary); }
+    .ent-ctas { margin-top: 32px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .ent-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.9875rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .ent-btn-primary { background: var(--color-primary); color: #fff; }
+    .ent-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .ent-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .ent-btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .ent-nota { margin-top: 14px; font-size: 0.8125rem; color: var(--color-text-tertiary); }
+
+    .ent-caps { padding: clamp(64px, 9vw, 120px) 0; background: #fff; }
+    .ent-caps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .ent-cap { display: flex; flex-direction: column; gap: 8px; padding: 26px 24px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 14px; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+    .ent-cap:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 12px 32px rgba(0,0,0,0.07); }
+    .ent-cap-plan { align-self: flex-start; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); background: rgba(75, 123, 229, 0.08); border-radius: 6px; padding: 4px 8px; }
+    .ent-cap-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); }
+    .ent-cap-desc { font-size: 0.9rem; line-height: 1.55; color: var(--color-text-secondary); flex: 1; }
+    .ent-cap-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8438rem; font-weight: 600; color: var(--color-primary); }
+
+    .ent-erp { padding: clamp(64px, 9vw, 120px) 0; background: var(--color-bg-primary); }
+    .ent-erp-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+    .ent-erp-text { margin-top: 14px; font-size: 1.0313rem; line-height: 1.65; color: var(--color-text-secondary); }
+    .ent-link { display: inline-block; margin-top: 16px; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+    .ent-erp-caja { background: var(--color-bg-dark); border-radius: 16px; padding: 32px 30px; color: #fff; }
+    .ent-erp-caja-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 700; }
+    .ent-erp-caja-text { margin-top: 6px; font-size: 0.9rem; color: rgba(255,255,255,0.75); }
+    .ent-erp-stats { list-style: none; margin: 18px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .ent-erp-stats li { font-size: 0.9375rem; color: rgba(255,255,255,0.85); }
+    .ent-erp-stats strong { color: #fff; font-family: var(--font-display); margin-right: 6px; }
+    .ent-erp-caja .ent-link { color: #9DB9F0; }
+
+    .ent-programa { padding: clamp(64px, 9vw, 120px) 0; background: #fff; }
+    .ent-programa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .ent-paso { padding: 26px 24px; border: 1px solid var(--color-border-light); border-radius: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .ent-paso-num { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--color-primary); }
+    .ent-final { margin-top: 40px; text-align: center; }
+
+    @media (max-width: 900px) {
+      .ent-caps-grid, .ent-programa-grid { grid-template-columns: 1fr; }
+      .ent-erp-inner { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

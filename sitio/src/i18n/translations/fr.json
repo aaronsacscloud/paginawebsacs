@@ -1,6 +1,6 @@
 {
   "meta": {
-    "siteTitle": "Sacs — Systeme d'exploitation pour retailers conscients",
+    "siteTitle": "Sacs — Le systeme pour les marques et boutiques de mode",
     "siteDescription": "Sacs est la plateforme tout-en-un pour gerer votre commerce."
   },
   "nav": {
@@ -13,10 +13,22 @@
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
     "pillars": {
-      "sell": { "verb": "Vendez", "desc": "Encaissez sur tous les canaux" },
-      "control": { "verb": "Controlez", "desc": "Gerez tous vos magasins" },
-      "loyalty": { "verb": "Fidelisez", "desc": "Grandissez avec vos clients" },
-      "automate": { "verb": "Automatisez", "desc": "Decidez avec intelligence" }
+      "sell": {
+        "verb": "Vendez",
+        "desc": "Encaissez sur tous les canaux"
+      },
+      "control": {
+        "verb": "Controlez",
+        "desc": "Gerez tous vos magasins"
+      },
+      "loyalty": {
+        "verb": "Fidelisez",
+        "desc": "Grandissez avec vos clients"
+      },
+      "automate": {
+        "verb": "Automatisez",
+        "desc": "Decidez avec intelligence"
+      }
     },
     "features": {
       "pos": "Point de vente",
@@ -66,7 +78,7 @@
   },
   "blog": {
     "eyebrow": "Blog",
-    "title": "Idees pour retailers conscients",
+    "title": "Idees pour le retail de mode",
     "subtitle": "Tendances, innovation et cas reels du retail.",
     "viewAll": "Voir tous les articles"
   },
@@ -135,7 +147,7 @@
     "quote": "La plateforme nous a donne le controle dont nous avions besoin pour passer a 42 magasins."
   },
   "footer": {
-    "tagline": "Systeme d'exploitation pour retailers conscients. Technologie avec ame mexicaine.",
+    "tagline": "Le systeme pour les marques et boutiques de mode. Technologie avec ame mexicaine.",
     "platform": "Plateforme",
     "company": "Entreprise",
     "resources": "Ressources",

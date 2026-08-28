@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+
+// ── Solución: cadena de tiendas (2+ sucursales, con o sin CEDIS) ──
+// Todo lo listado está respaldado en plans.ts, con su plan marcado.
+
+const bloques = [
+  {
+    title: 'Un inventario, todas tus tiendas',
+    desc: 'Existencias por sucursal y CEDIS en tiempo real. Vendes donde sea y descuenta donde corresponde.',
+    plan: 'Plan Controla',
+    href: '/producto/inventario-omnicanal',
+  },
+  {
+    title: 'Traspasos que sí llegan',
+    desc: 'Autorizar, surtir, tránsito y recepción escaneando. Cada movimiento entre tiendas queda auditado.',
+    plan: 'Plan Controla',
+    href: '/producto/inventario-omnicanal',
+  },
+  {
+    title: 'La talla muerta se mueve sola',
+    desc: 'Nivelación con IA: el sistema detecta la talla que no rota en una tienda y propone mandarla a la que sí la vende. Tú apruebas.',
+    plan: 'Plan Automatiza',
+    href: '/producto/nivelacion-de-inventario',
+  },
+  {
+    title: 'Reabasto sugerido',
+    desc: 'Alertas de stock bajo o exceso y compra sugerida por rotación real, por tienda y por temporada.',
+    plan: 'Plan Controla',
+    href: '/producto/ordenes-de-compra',
+  },
+  {
+    title: 'Conteos sin cerrar la tienda',
+    desc: 'Auditoría y conteo físico escaneando con el celular, por sucursal, sin paros operativos.',
+    plan: 'Plan Controla',
+    href: '/producto/conteo-fisico',
+  },
+  {
+    title: 'La operación, medida',
+    desc: 'Sell-through, ABC y rotación; cortes de caja por sucursal y 50+ reportes para dirigir con datos.',
+    plan: 'Plan Controla',
+    href: '/producto/reportes-y-analitica',
+  },
+];
+---
+
+<BaseLayout
+  title="Sacs para cadenas de tiendas — sucursales bajo control"
+  description="Para cadenas de moda con 2+ sucursales: inventario en tiempo real, traspasos auditados, nivelación con IA y reabasto sugerido."
+>
+  <section class="sol-hero">
+    <div class="sol-container">
+      <span class="sol-eyebrow">Para tu cadena de tiendas</span>
+      <h1 class="sol-title">Tus sucursales, bajo control</h1>
+      <p class="sol-sub">
+        Con dos tiendas empieza el problema real: el inventario está donde no se
+        vende. Sacs lo ve completo, lo mueve y te lo reporta — de la primera
+        sucursal al CEDIS.
+      </p>
+      <div class="sol-ctas">
+        <a href="/contacto" class="sol-btn sol-btn-primary">Agenda una demo</a>
+        <a href="/casos-de-exito/la-bella-pandita" class="sol-btn sol-btn-outline">Cómo escaló La Bella Pandita a 42 sucursales</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sol-bloques">
+    <div class="sol-container">
+      <div class="sol-grid">
+        {bloques.map((b) => (
+          <a href={b.href} class="sol-card">
+            <span class="sol-card-plan">{b.plan}</span>
+            <h3 class="sol-card-title">{b.title}</h3>
+            <p class="sol-card-desc">{b.desc}</p>
+            <span class="sol-card-link">Ver el módulo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        ))}
+      </div>
+      <p class="sol-siguiente">¿Fabricas o importas y también vendes a mayoreo? <a href="/enterprise">Conoce Sacs Enterprise →</a></p>
+    </div>
+  </section>
+
+  <CtaDudas />
+
+  <style>
+    .sol-container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .sol-eyebrow { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary); display: block; margin-bottom: 14px; }
+    .sol-hero { padding: clamp(90px, 12vw, 150px) 0 clamp(56px, 7vw, 90px); background: var(--color-bg-secondary); text-align: center; }
+    .sol-title { font-family: var(--font-display); font-size: clamp(2rem, 4.4vw, 3rem); font-weight: 700; color: var(--color-text-primary); }
+    .sol-sub { margin: 16px auto 0; max-width: 620px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.6; color: var(--color-text-secondary); }
+    .sol-ctas { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .sol-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 0.9875rem; text-decoration: none; transition: background 0.15s ease, transform 0.15s ease; }
+    .sol-btn-primary { background: var(--color-primary); color: #fff; }
+    .sol-btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+    .sol-btn-outline { border: 1.5px solid var(--color-border); color: var(--color-text-primary); background: #fff; }
+    .sol-btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .sol-bloques { padding: clamp(60px, 8vw, 110px) 0; background: #fff; }
+    .sol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .sol-card { display: flex; flex-direction: column; gap: 8px; padding: 26px 24px; border: 1px solid var(--color-border-light); border-radius: 14px; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; background: var(--color-bg-card); }
+    .sol-card:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 12px 32px rgba(0,0,0,0.07); }
+    .sol-card-plan { align-self: flex-start; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); background: rgba(75, 123, 229, 0.08); border-radius: 6px; padding: 4px 8px; }
+    .sol-card-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); }
+    .sol-card-desc { font-size: 0.9375rem; line-height: 1.55; color: var(--color-text-secondary); flex: 1; }
+    .sol-card-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8438rem; font-weight: 600; color: var(--color-primary); }
+    .sol-siguiente { text-align: center; margin-top: 36px; font-size: 0.9375rem; color: var(--color-text-secondary); }
+    .sol-siguiente a { color: var(--color-primary); font-weight: 600; text-decoration: none; }
+    @media (max-width: 760px) { .sol-grid { grid-template-columns: 1fr; } }
+  </style>
+</BaseLayout>

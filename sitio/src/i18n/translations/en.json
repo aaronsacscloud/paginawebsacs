@@ -1,6 +1,6 @@
 {
   "meta": {
-    "siteTitle": "Sacs — Operating system for conscious retailers",
+    "siteTitle": "Sacs — The system for fashion brands and stores",
     "siteDescription": "Sacs is the all-in-one platform to manage your retail business."
   },
   "nav": {
@@ -13,10 +13,22 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "pillars": {
-      "sell": { "verb": "Sell", "desc": "Accept payments everywhere" },
-      "control": { "verb": "Control", "desc": "Run all your stores" },
-      "loyalty": { "verb": "Retain", "desc": "Grow with your customers" },
-      "automate": { "verb": "Automate", "desc": "Decide with intelligence" }
+      "sell": {
+        "verb": "Sell",
+        "desc": "Accept payments everywhere"
+      },
+      "control": {
+        "verb": "Control",
+        "desc": "Run all your stores"
+      },
+      "loyalty": {
+        "verb": "Retain",
+        "desc": "Grow with your customers"
+      },
+      "automate": {
+        "verb": "Automate",
+        "desc": "Decide with intelligence"
+      }
     },
     "features": {
       "pos": "Point of Sale",
@@ -66,7 +78,7 @@
   },
   "blog": {
     "eyebrow": "Blog",
-    "title": "Ideas for conscious retailers",
+    "title": "Ideas for fashion retail",
     "subtitle": "Trends, innovation, and real retail stories.",
     "viewAll": "View all articles"
   },
@@ -135,7 +147,7 @@
     "quote": "The platform gave us the control we needed to scale to 42 locations."
   },
   "footer": {
-    "tagline": "Operating system for conscious retailers. Technology with Mexican soul.",
+    "tagline": "The system for fashion brands and stores. Technology with Mexican soul.",
     "platform": "Platform",
     "company": "Company",
     "resources": "Resources",

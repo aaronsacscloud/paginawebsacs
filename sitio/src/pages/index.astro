@@ -4,28 +4,123 @@ import Hero from '../components/Hero.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
+import { modaSectors, modelosNegocio } from '../data/navigation';
 
 const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'SACS',
   url: 'https://sacs.com.mx',
-  description: 'Sistema operativo empresarial para retailers conscientes en México.',
+  description: 'El sistema para marcas y tiendas de moda en México.',
 };
+
+// Los tres casos de moda que se enseñan en el home. Los datos completos viven
+// en /casos-de-exito; aquí solo la tarjeta.
+const casosHome = [
+  {
+    slug: 'liveshow',
+    brand: 'Liveshow Merchandising',
+    tagline: 'Shakira, Metallica, Karol G y Lady Gaga confían en SACS.',
+    dato: '100+ puntos de venta simultáneos',
+    image: '/images/case-shakira-merch.webp',
+  },
+  {
+    slug: 'la-bella-pandita',
+    brand: 'La Bella Pandita',
+    tagline: 'De 1 tienda en Querétaro a 42 sucursales en todo México.',
+    dato: '42 sucursales sincronizadas',
+    image: '/images/case-bella-pandita.webp',
+  },
+  {
+    slug: 'sandmade',
+    brand: 'Sandmade Swimwear',
+    tagline: 'Swimwear premium conectado de Tulum a Los Cabos.',
+    dato: '8 boutiques turísticas',
+    image: '/images/case-sandmade.webp',
+  },
+];
 ---
 
 <BaseLayout
-  title="SACS — Sistema operativo para retailers conscientes"
-  description="SACS es la plataforma todo-en-uno para gestionar tu retail en México."
+  title="Sacs — El sistema para marcas y tiendas de moda"
+  description="Tallas, colores, temporadas y sucursales bajo control. Punto de venta, ecommerce y TikTok Shop sobre un solo inventario, con IA que lo mueve por ti."
   structuredData={websiteSchema}
 >
   <Hero
-    eyebrow="Software para retail"
-    title="El sistema para vender, controlar y hacer crecer tus tiendas"
-    subtitle="Conecta tu CEDIS, tus tiendas físicas, ecommerce, WhatsApp, inventario y clientes en una sola operación. Desde una sucursal hasta una cadena con centro de distribución, sin perder orden, visibilidad ni control."
+    eyebrow="Software para el retail de moda"
+    title="El sistema para marcas y tiendas de moda"
+    subtitle="Tallas, colores, temporadas y sucursales bajo control. Punto de venta, tienda en línea, WhatsApp y TikTok Shop sobre un solo inventario — y una inteligencia que lo mueve por ti."
     primaryCTA={{ label: 'Prueba 7 dias gratis', href: '/prueba-gratis' }}
     secondaryCTA={{ label: 'Agenda una demo', href: '/contacto' }}
   />
+
+  <!-- ═══ ¿Cómo opera tu negocio? — el selector de camino ═══ -->
+  <section class="modelos-section">
+    <div class="modelos-container">
+      <div class="modelos-header">
+        <span class="modelos-eyebrow">Para tu operación</span>
+        <h2 class="modelos-title">¿Cómo opera tu negocio?</h2>
+        <p class="modelos-sub">El mismo sistema, contado para tu tamaño de operación.</p>
+      </div>
+      <div class="modelos-grid">
+        {modelosNegocio.map((m) => (
+          <a href={m.href} class="modelo-card">
+            <h3 class="modelo-card-title">{m.label}</h3>
+            <p class="modelo-card-desc">{m.description}</p>
+            <span class="modelo-card-link">Ver cómo funciona <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Giros de moda ═══ -->
+  <section class="girosmoda-section">
+    <div class="modelos-container">
+      <div class="modelos-header">
+        <span class="modelos-eyebrow">Hecho a la medida de tu giro</span>
+        <h2 class="modelos-title">Tu giro ya viene configurado</h2>
+        <p class="modelos-sub">Ropa, calzado y joyería con sus propias personalizaciones desde el primer día.</p>
+      </div>
+      <div class="girosmoda-grid">
+        {modaSectors.map((g) => (
+          <a href={g.href} class="giromoda-card" style={`--gm-color:${g.color};`}>
+            {g.image && <div class="giromoda-media"><img src={g.image} alt={g.label} width="600" height="400" loading="lazy" /></div>}
+            <div class="giromoda-body">
+              <h3 class="giromoda-title">{g.label}</h3>
+              <p class="giromoda-desc">{g.description}</p>
+              <span class="modelo-card-link">Ver personalizaciones <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </div>
+          </a>
+        ))}
+      </div>
+      <p class="girosmoda-otros">¿Vendes otra cosa? <a href="/giros">Sacs también opera otros comercios →</a></p>
+    </div>
+  </section>
+
+  <!-- ═══ Casos de éxito de moda ═══ -->
+  <section class="casoshome-section">
+    <div class="modelos-container">
+      <div class="modelos-header">
+        <span class="modelos-eyebrow">Casos de éxito</span>
+        <h2 class="modelos-title">Marcas de moda que ya operan con Sacs</h2>
+      </div>
+      <div class="casoshome-grid">
+        {casosHome.map((c) => (
+          <a href={`/casos-de-exito/${c.slug}`} class="casohome-card">
+            <div class="casohome-media"><img src={c.image} alt={`${c.brand} — caso de éxito`} width="600" height="500" loading="lazy" /></div>
+            <div class="casohome-body">
+              <h3 class="casohome-brand">{c.brand}</h3>
+              <p class="casohome-tagline">{c.tagline}</p>
+              <span class="casohome-dato">{c.dato}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+      <p class="girosmoda-otros"><a href="/casos-de-exito">Ver todos los casos →</a></p>
+    </div>
+  </section>
+
   <!-- ═══ CTA: ¿Aún tienes dudas? — ahora vive en su componente, porque las
        páginas de giro cierran con el mismo gesto ═══ -->
   <CtaDudas />
@@ -35,8 +130,8 @@ const websiteSchema = {
     <div class="blog-home-container">
       <div class="blog-home-header">
         <span class="blog-home-eyebrow">Blog</span>
-        <h2 class="blog-home-title">Ideas para retailers conscientes</h2>
-        <p class="blog-home-subtitle">Tendencias, innovación y casos reales del retail en México.</p>
+        <h2 class="blog-home-title">Ideas para el retail de moda</h2>
+        <p class="blog-home-subtitle">Tendencias, innovación y casos reales del fashion retail en México.</p>
       </div>
       <div class="blog-home-grid">
         <a href="/blog/bershka" class="blog-home-card blog-home-card--featured">
@@ -298,7 +393,62 @@ const websiteSchema = {
         display: flex;
       }
     }
-  </style>
+  
+    /* ─── Selector de camino + giros de moda + casos (home moda) ─── */
+    .modelos-section { padding: clamp(64px, 8vw, 110px) 0; background: var(--color-bg-primary); }
+    .girosmoda-section { padding: clamp(64px, 8vw, 110px) 0; background: #fff; }
+    .casoshome-section { padding: clamp(64px, 8vw, 110px) 0; background: var(--color-bg-primary); }
+    .modelos-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+    .modelos-header { text-align: center; margin-bottom: 44px; }
+    .modelos-eyebrow {
+      font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-primary);
+      display: block; margin-bottom: 12px;
+    }
+    .modelos-title { font-family: var(--font-display); font-size: clamp(1.75rem, 3.4vw, 2.5rem); font-weight: 700; color: var(--color-text-primary); }
+    .modelos-sub { margin-top: 10px; font-size: 1.0625rem; color: var(--color-text-secondary); }
+    .modelos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .modelo-card {
+      display: flex; flex-direction: column; gap: 10px;
+      background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+      border-radius: 16px; padding: 28px 26px; text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .modelo-card:hover { transform: translateY(-3px); border-color: var(--color-primary); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .modelo-card-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary); }
+    .modelo-card-desc { font-size: 0.9375rem; line-height: 1.55; color: var(--color-text-secondary); flex: 1; }
+    .modelo-card-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 600; color: var(--color-primary); }
+    .girosmoda-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .giromoda-card {
+      display: flex; flex-direction: column; background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light); border-radius: 16px; overflow: hidden;
+      text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .giromoda-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .giromoda-media { aspect-ratio: 3 / 2; overflow: hidden; }
+    .giromoda-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .giromoda-body { display: flex; flex-direction: column; gap: 8px; padding: 22px 24px 24px; }
+    .giromoda-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); }
+    .giromoda-desc { font-size: 0.9375rem; color: var(--color-text-secondary); flex: 1; }
+    .girosmoda-otros { text-align: center; margin-top: 32px; font-size: 0.9375rem; color: var(--color-text-secondary); }
+    .girosmoda-otros a { color: var(--color-primary); font-weight: 600; text-decoration: none; }
+    .casoshome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .casohome-card {
+      display: flex; flex-direction: column; background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light); border-radius: 16px; overflow: hidden;
+      text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .casohome-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .casohome-media { aspect-ratio: 6 / 5; overflow: hidden; }
+    .casohome-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .casohome-body { padding: 20px 22px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .casohome-brand { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); }
+    .casohome-tagline { font-size: 0.9rem; line-height: 1.5; color: var(--color-text-secondary); flex: 1; }
+    .casohome-dato { font-size: 0.8125rem; font-weight: 700; color: var(--color-primary); }
+    @media (max-width: 900px) {
+      .modelos-grid, .girosmoda-grid, .casoshome-grid { grid-template-columns: 1fr; }
+    }
+</style>
 
   <FAQAccordion locale="es" />
   <FinalCTA locale="es" />

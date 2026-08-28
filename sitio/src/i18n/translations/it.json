@@ -1,6 +1,6 @@
 {
   "meta": {
-    "siteTitle": "Sacs — Sistema operativo per retailer consapevoli",
+    "siteTitle": "Sacs — Il sistema per brand e negozi di moda",
     "siteDescription": "Sacs e la piattaforma tutto-in-uno per gestire il tuo retail."
   },
   "nav": {
@@ -13,10 +13,22 @@
     "openMenu": "Apri menu",
     "closeMenu": "Chiudi menu",
     "pillars": {
-      "sell": { "verb": "Vendi", "desc": "Incassa su tutti i canali" },
-      "control": { "verb": "Controlla", "desc": "Gestisci tutti i tuoi negozi" },
-      "loyalty": { "verb": "Fidelizza", "desc": "Cresci con i tuoi clienti" },
-      "automate": { "verb": "Automatizza", "desc": "Decidi con intelligenza" }
+      "sell": {
+        "verb": "Vendi",
+        "desc": "Incassa su tutti i canali"
+      },
+      "control": {
+        "verb": "Controlla",
+        "desc": "Gestisci tutti i tuoi negozi"
+      },
+      "loyalty": {
+        "verb": "Fidelizza",
+        "desc": "Cresci con i tuoi clienti"
+      },
+      "automate": {
+        "verb": "Automatizza",
+        "desc": "Decidi con intelligenza"
+      }
     },
     "features": {
       "pos": "Punto vendita",
@@ -66,7 +78,7 @@
   },
   "blog": {
     "eyebrow": "Blog",
-    "title": "Idee per retailer consapevoli",
+    "title": "Idee per il fashion retail",
     "subtitle": "Tendenze, innovazione e casi reali dal retail.",
     "viewAll": "Vedi tutti gli articoli"
   },
@@ -135,7 +147,7 @@
     "quote": "La piattaforma ci ha dato il controllo necessario per scalare a 42 sedi."
   },
   "footer": {
-    "tagline": "Sistema operativo per retailer consapevoli. Tecnologia con anima messicana.",
+    "tagline": "Il sistema per brand e negozi di moda. Tecnologia con anima messicana.",
     "platform": "Piattaforma",
     "company": "Azienda",
     "resources": "Risorse",
