@@ -859,22 +859,28 @@ export default function MejorasTab() {
             const plegado = plegados.has(g.id);
             return (
               <div key={g.id} style={{ marginBottom: 6 }}>
+                {/* Rejilla FIJA de dos filas, con o sin vencidas: nombre arriba
+                    y, abajo, contadores a la izquierda con «Copiar» anclado a la
+                    derecha. Con flex envolvente cada grupo se veía distinto y la
+                    misma acción cambiaba de sitio al bajar por la lista. */}
                 <div className="cons-grupo" onClick={() => alterna(plegados, setPlegados, g.id)}
                   role="button" tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(plegados, setPlegados, g.id); } }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 0 6px', borderTop: '1px solid #f0eff3', cursor: 'pointer', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#b0aec0', fontSize: '0.7rem', transform: plegado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>▾</span>
-                  <b style={{ fontSize: '0.85rem' }}>{g.nombre}</b>
-                  {/* Conteos como TEXTO: con relleno se confundían con los
-                      chips de categoría de las filas, que dicen otra cosa. */}
-                  {vencG > 0 && <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C0554E' }}>{vencG} vencida{vencG === 1 ? '' : 's'}</span>}
-                  {pendG > 0 && <span style={{ fontSize: '0.75rem', color: '#8f8d98' }}>· {pendG} por entregar</span>}
-                  <span style={{ fontSize: '0.75rem', color: '#8f8d98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>· {g.items.length} en total</span>
-                  {/* «Copiar» sigue el flujo del nombre: con margin-left auto se
-                      iba solo y centrado a un renglón propio en cada grupo. */}
+                  style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '2px 10px', padding: '12px 0 8px', borderTop: '1px solid #f0eff3', cursor: 'pointer', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                    <span style={{ color: '#b0aec0', fontSize: '0.7rem', flexShrink: 0, transform: plegado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>▾</span>
+                    <b style={{ fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{g.nombre}</b>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C0554E', whiteSpace: 'nowrap', justifySelf: 'end' }}>
+                    {vencG > 0 ? `${vencG} vencida${vencG === 1 ? '' : 's'}` : ''}
+                  </span>
+                  {/* El separador se inserta ENTRE contadores, nunca al inicio. */}
+                  <span style={{ fontSize: '0.75rem', color: '#8f8d98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, paddingLeft: 19 }}>
+                    {[pendG > 0 ? `${pendG} por entregar` : null, `${g.items.length} en total`].filter(Boolean).join(' · ')}
+                  </span>
                   <button onClick={e => { e.stopPropagation(); copiarGrupo(g); }}
                     title="Copiar la lista de este cliente"
-                    style={{ border: 'none', background: 'none', padding: '6px 0 6px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    style={{ border: 'none', background: 'none', padding: '4px 0 4px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', justifySelf: 'end' }}>
                     Copiar
                   </button>
                 </div>

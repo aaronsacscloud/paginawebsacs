@@ -113,7 +113,7 @@ export default function OportunidadesTab() {
           <div style={{ fontSize: '0.8rem', color: '#8a8f98', marginBottom: 10 }}>
             Lo que el sistema detectó y alguien tiene que atender. Márcalas conforme avances —
             de ahí sale qué señal vende y cuál es ruido.
-            <button onClick={() => setVista('radar')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#3764c4', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>Ver el radar completo →</button>
+            <button onClick={() => setVista('radar')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>Ver el radar completo →</button>
           </div>
         </div>
         <BandejaOportunidades onOpenCliente={(id) => setDetailId(id)} />
@@ -129,7 +129,7 @@ export default function OportunidadesTab() {
         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Radar de ventas</div>
         <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>
           Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.
-          <button onClick={() => setVista('bandeja')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#3764c4', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>← Ir a la bandeja</button>
+          <button onClick={() => setVista('bandeja')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>← Ir a la bandeja</button>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { S } from './SubscriptionsTab';
@@ -27,6 +28,7 @@ const TABS = [
 const kpi = { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', flex: 1, minWidth: 155 } as const;
 
 export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?: (id: string) => void }) {
+  const esMovilB = useIsMobile();
   const [tab, setTab] = useState('abiertas');
   const [d, setD] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -63,7 +65,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>Por trabajar</div><div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{r?.nuevas ?? '—'}</div></div>
         <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>Contactadas</div><div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{r?.contactadas ?? '—'}</div></div>
-        <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>ARR en juego</div><div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1A8F7A' }}>{money(r?.valor_abierto)}</div><div style={{ fontSize: '0.64rem', color: '#a7abb3' }}>solo las abiertas</div></div>
+        <div style={kpi}><div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' }}>ARR en juego</div><div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E8A63' }}>{money(r?.valor_abierto)}</div><div style={{ fontSize: '0.64rem', color: '#a7abb3' }}>solo las abiertas</div></div>
       </div>
 
       <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 12, overflowX: 'auto', WebkitMaskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)', maskImage: 'linear-gradient(90deg, #000 calc(100% - 28px), transparent)' }}>
@@ -78,7 +80,11 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
       {r?.por_tipo?.length ? (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
           {r.por_tipo.map((t: any) => { const e = et(t.tipo); return (
-            <span key={t.tipo} style={{ padding: '3px 10px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, background: e.bg, color: e.co }}>{e.txt}: {t.n}</span>
+            <span key={t.tipo} style={{ padding: '4px 11px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74' }}>
+              {/* Un tipo sin etiqueta traducida salía crudo («reactivacion»):
+                  se capitaliza y se le pone el acento que le falta. */}
+              {(e.txt || String(t.tipo).replace(/_/g, ' ')).replace(/^\w/, (c: string) => c.toUpperCase()).replace(/reactivacion/i, 'Reactivación')}: {t.n}
+            </span>
           ); })}
         </div>
       ) : null}
@@ -103,22 +109,31 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                     style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontWeight: 800, fontSize: '0.88rem', color: '#1a1a1a' }}>
                     {co?.sacs_account || co?.nombre || 'Cliente'}
                   </button>
-                  {f.opportunity_value > 0 && <span style={{ fontWeight: 800, color: '#1A8F7A', fontSize: '0.82rem' }}>+{money(f.opportunity_value)}/año</span>}
+                  {f.opportunity_value > 0 && <span style={{ fontWeight: 800, color: '#1E8A63', fontSize: '0.82rem' }}>+{money(f.opportunity_value)}/año</span>}
                   {f.estado === 'contactado' && <span style={{ fontSize: '0.7rem', color: '#a06600', fontWeight: 700 }}>· en seguimiento</span>}
                 </div>
-                <div style={{ fontSize: '0.83rem', color: '#333' }}>{String(f.titulo || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '')}</div>
-                {f.detalle && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
-                {f.accion && <div style={{ fontSize: '0.78rem', color: '#1A8F7A', marginTop: 5, fontWeight: 600 }}>→ {f.accion}</div>}
+                {/* El título venía con el eco del slug al inicio («cultomar
+                    (cultomar): …») cuando la cuenta ya está en el encabezado, y
+                    debajo un resumen que decía lo mismo con otras palabras. */}
+                <div style={{ fontSize: '0.86rem', color: '#333', lineHeight: 1.45 }}>
+                  {String(f.titulo || '')
+                    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '')
+                    .replace(new RegExp('^\\s*' + String(co?.sacs_account || co?.nombre || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*(\\([^)]*\\))?\\s*:\\s*', 'i'), '')}
+                </div>
+                {f.detalle && !esMovilB && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
+                {/* Lo que hay que hacer es instrucción, no dinero: en verde
+                    competía con el ARR, que es el único dato que sí lo es. */}
+                {f.accion && <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>}
                 {f.motivo_descarte && <div style={{ fontSize: '0.74rem', color: '#b93333', marginTop: 5 }}>Descartada: {f.motivo_descarte}</div>}
               </div>
               {abierta && (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: esMovilB ? '100%' : undefined }}>
                   {/* «Ganada» iba en verde sólido: un segundo botón lleno en la
                       misma tarjeta compite con la acción de todos los días, que
                       es marcar que ya contactaste. Los tres pesan igual ahora. */}
-                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', fontWeight: 700 }}>Ya contacté</button>}
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, minHeight: 40, padding: '0 14px', color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
+                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, fontWeight: 700 }}>Ya contacté</button>}
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px', flex: esMovilB ? '1 1 0' : undefined, color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
                 </div>
               )}
             </div>

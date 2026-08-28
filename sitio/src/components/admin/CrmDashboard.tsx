@@ -1741,6 +1741,9 @@ const CRM_MOBILE_CSS = `
        que ya lo lleva, y la tarjeta se aprieta para que quepan dos por fila. */
     .kpi-card { border-left-width: 1px !important; border-left-color: #eeeef1 !important; padding: 13px 14px !important; }
     .kpi-card > div:nth-child(2) { font-size: 1.25rem !important; }
+    /* La barra de reparto (asistieron / faltaron) a 3 px se perdía sobre el
+       track oscuro: es el dato que dice si la reunión sirvió. */
+    .kpi-card > div:last-child[style*="border-radius: 99px"] { height: 5px !important; }
 
     /* Un mensaje que NO salió tiene que verse como tal: a 10 px, el aviso y
        el «Reintentar» se leían igual que la hora y se pasaban de largo. */
