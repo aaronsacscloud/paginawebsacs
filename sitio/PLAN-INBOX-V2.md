@@ -58,6 +58,26 @@ todo lo demás:
 
 ---
 
+## Estado: las 9 etapas están en producción (28-ago-2026)
+
+| Etapa | Commit | Cómo quedó |
+|---|---|---|
+| E1 Velocidad | `f08c8f3` | 1ª conversación **329 ms**, ya visitada **25-34 ms**, volver **18-26 ms** (móvil). Objetivo era 1.5 s / 150 ms / 100 ms. |
+| E2 Tiempo real | `2ad5b37` | Poll 6 s a la vista / 30 s en segundo plano + aviso flotante «Nuevo mensaje de X». |
+| E3 Cola de envío | `adcde98` | Cola en localStorage, reintento al volver la red, candado anti-duplicado en el servidor. |
+| E4 Plantillas recientes | `6e9c5b6` | Las 3 últimas usadas en la barra de ventana cerrada. |
+| E5 Cámara | `d8ad6f1` | «Tomar una foto» en el clip del teléfono. |
+| E6 Mensajes nuevos | `f96a0d1` | Marca «Mensajes nuevos» + botón «N nuevos ↓» sin robar el scroll. |
+| E7 Avisos | `3bc6925` | Push por mensaje entrante, badge en el ícono, vibración. |
+| E8 Notas internas | `3f11a16` | Marca «nota» en la fila + acceso desde el menú del hilo. |
+| E9 Recordatorio | `d428d52` | «Recuérdame si no contesta» en el menú, móvil y escritorio. |
+
+Extras que salieron del QA y también se arreglaron: el «Atrás» del hilo a 44 px,
+el menú del composer que se cortaba a la mitad en móvil, tocar la barra de
+herramientas con el composer vacío, `scrollIntoView` sobre contenedores
+`display:contents` (afectaba también a la búsqueda en el hilo), los renglones
+de la hoja del menú a 48 px y la sub-lista blanca en modo oscuro.
+
 ## Etapas
 
 ### E1 · Velocidad al moverse entre conversaciones  *(punto 10)*
