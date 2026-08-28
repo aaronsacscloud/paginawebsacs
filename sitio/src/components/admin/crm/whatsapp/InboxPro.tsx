@@ -10,6 +10,7 @@ import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
+import AvisoNuevo from './AvisoNuevo';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
 const ListaConversaciones = lazySeguro(() => import('./ListaConversaciones'));
@@ -89,6 +90,21 @@ export default function InboxPro() {
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
     // REGLA DE VELOCIDAD: snapshot para la primera pintura de la próxima visita
     try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch { /* nada */ }
+    // ── E2.2 · ¿entró algo mientras trabajaba? ──────────────────────────
+    // Se compara contra lo que ya teníamos: una conversación con mensaje
+    // entrante más nuevo (o que aparece de golpe) es un lead escribiendo.
+    // La conversación ABIERTA no avisa: ahí el mensaje simplemente se pinta
+    // (E2.4).
+    const antes = ultimoAtRef.current;
+    const nuevas: any[] = [];
+    (j.conversaciones || []).forEach((c: any) => {
+      const at = String(c.ultimo_mensaje_at || '');
+      const prev = antes.get(c.id);
+      if (prev != null && at > prev && c.ultima_direccion === 'entrante' && c.id !== activaRef.current?.id) nuevas.push(c);
+      if (at) antes.set(c.id, at);
+    });
+    if (nuevas.length) setAviso({ conv: nuevas[0], mas: nuevas.length - 1 });
+
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
     setTotalLista(j.total_filtrado || 0); setHayMasLista(!!j.hay_mas);
     // Cambió la vista/filtro y el chat abierto ya no pertenece a la lista →
@@ -104,6 +120,10 @@ export default function InboxPro() {
   useEffect(() => { paginasRef.current = 1; filtroCambio.current = true; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
   const activaRef = useRef(activa); activaRef.current = activa;
+  // Última marca de tiempo conocida por conversación (E2.2). Empieza vacío a
+  // propósito: en la primera carga no se avisa de nada, solo se toma la foto.
+  const ultimoAtRef = useRef<Map<string, string>>(new Map());
+  const [aviso, setAviso] = useState<{ conv: any; mas: number } | null>(null);
   const hiloRef = useRef<any>(null);
   // E1.1 · Hilos ya cargados. Se guardan los últimos 30 (una jornada completa
   // de inbox cabe de sobra) para que volver a cualquiera sea instantáneo.
@@ -150,9 +170,17 @@ export default function InboxPro() {
   useEffect(() => { cargarLista(filtros); }, [filtros, cargarLista]);
   const [tick, setTick] = useState(0);
   const guardarVistaRef = useRef<((cfg: any) => void) | null>(null);
+  // E2.1 · El poll se adapta: 6 s con la pestaña a la vista —para enterarse
+  // de un lead casi al instante— y 30 s en segundo plano, que es solo para
+  // que el contador esté al día cuando vuelvas.
   useEffect(() => {
-    const t = setInterval(() => { if (!document.hidden) { cargarLista(filtrosRef.current); setTick(x => x + 1); } }, 15000);
-    const onFocus = () => { cargarLista(filtrosRef.current); if (activaRef.current) cargarHilo(activaRef.current); };
+    let t: any;
+    const armar = () => {
+      clearInterval(t);
+      t = setInterval(() => { cargarLista(filtrosRef.current); setTick(x => x + 1); }, document.hidden ? 30000 : 6000);
+    };
+    armar();
+    const onFocus = () => { armar(); cargarLista(filtrosRef.current); if (activaRef.current) cargarHilo(activaRef.current); };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onFocus);
     return () => { clearInterval(t); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
@@ -642,6 +670,10 @@ export default function InboxPro() {
           </Suspense>
         )}
         {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+        {aviso && (
+          <AvisoNuevo conv={aviso.conv} mas={aviso.mas} movil={true}
+            onAbrir={() => { abrir(aviso.conv); setAviso(null); }} onCerrar={() => setAviso(null)} />
+        )}
         <Sheet open={filtrosMobile} onClose={() => setFiltrosMobile(false)} title="Vistas y filtros" width={320}>
           <SidebarInbox counts={counts} filtros={filtros} setFiltros={f => setFiltros(f)} yo={yo} tick={tick}
             vistaActiva={vistaActiva} onVista={v => { setVistaActiva(v); setFiltrosMobile(false); }} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
@@ -684,6 +716,10 @@ export default function InboxPro() {
         </Sheet>
       )}
       {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+      {aviso && (
+        <AvisoNuevo conv={aviso.conv} mas={aviso.mas}
+          onAbrir={() => { abrir(aviso.conv); setAviso(null); }} onCerrar={() => setAviso(null)} />
+      )}
     </div>
   );
 }

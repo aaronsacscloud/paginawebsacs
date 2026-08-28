@@ -142,6 +142,25 @@ export const CSS_INBOX = `
   .wa-x-hover { display: none; }
   .wa-staged:hover .wa-x-hover { display: flex; }
   mark.wa-mark { background: #FEF08A; color: #854D0E; border-radius: 3px; padding: 0 2px; }
+/* ── Aviso de mensaje entrante (E2.2) ── */
+.wa-aviso{position:fixed;z-index:60;right:20px;bottom:20px;max-width:340px;display:flex;align-items:stretch;gap:0;
+  background:#fff;border:1px solid #e6e5ec;border-radius:14px;box-shadow:0 8px 28px rgba(20,18,40,.16);overflow:hidden;
+  animation:wa-aviso-in .18s ease-out}
+.wa-aviso-m{right:12px;left:12px;bottom:auto;top:calc(8px + env(safe-area-inset-top));max-width:none}
+.wa-aviso-ir{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:11px 4px 11px 14px;min-height:56px;
+  border:none;background:none;cursor:pointer;font-family:inherit;text-align:left;color:inherit}
+.wa-aviso-punto{flex:none;width:8px;height:8px;border-radius:99px;background:#5B4BD6}
+.wa-aviso-tx{min-width:0;display:flex;flex-direction:column;gap:1px}
+.wa-aviso-tx b{font-size:13.5px;font-weight:650;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-aviso-tx span{font-size:12.5px;color:#8f8d98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-aviso-x{flex:none;width:44px;border:none;border-left:1px solid #f0eff4;background:none;color:#8f8d98;
+  font-size:20px;line-height:1;cursor:pointer;font-family:inherit}
+@keyframes wa-aviso-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.wa-aviso{animation:none}}
+html[data-crm-dark="1"] .wa-aviso{background:#232329;border-color:#33333d;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+html[data-crm-dark="1"] .wa-aviso-tx b{color:#F2F1F7}
+html[data-crm-dark="1"] .wa-aviso-punto{background:#A78BFA}
+html[data-crm-dark="1"] .wa-aviso-x{border-left-color:#33333d}
 `;
 
 /** Hora relativa corta para la lista. */
