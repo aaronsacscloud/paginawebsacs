@@ -280,6 +280,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {/* El teléfono solo se repite si arriba va un NOMBRE; si el título ya
               es el número, mostrarlo dos veces solo quitaba aire al header. */}
           {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
+          {conv.id && !hilo.ventana?.expira_at && (
+            <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>Ventana cerrada</span>
+          )}
           {conv.id && hilo.ventana?.expira_at && (() => {
             const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
             if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>Ventana cerrada</span>;
@@ -432,7 +435,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             /* Antes iba como texto suelto al lado de un chip: dos etiquetas
                hermanas con tratamiento distinto se leen como error. */
             <span style={{ fontWeight: 600, background: C.g100, color: C.g700, borderRadius: 999, padding: '3px 10px' }}>
-              {String(conv.contacts.origen).replace(/^one\s*way$/i, 'Solo entrantes').slice(0, 22)}
+              {String(conv.contacts.origen).slice(0, 22)}
             </span>
           )}
         </div>
@@ -494,7 +497,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 /* «Sin actividad» salió de la lista de pastillas ámbar: es un
                    separador de sistema, no algo que atender, y en ámbar competía
                    con el aviso de ventana cerrada. */
-                <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
+                <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g500, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
                   {item.detalle}{item._veces > 1 ? ` · ${item._veces} veces` : ''}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>
@@ -635,6 +638,8 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             </span>
             <button onClick={() => { setAbierto(false); onBuscar?.(); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>Buscar en la conversación</button>
+            <button onClick={() => { setAbierto(false); document.dispatchEvent(new CustomEvent('wa-nota-interna')); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>Escribir nota interna</button>
             {/* E8.2 · Las notas del equipo viven mezcladas en el hilo; desde
                 aquí se salta a la última sin buscarla a mano. */}
             {!!notas && (

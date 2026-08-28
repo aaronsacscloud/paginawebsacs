@@ -1432,6 +1432,9 @@ const CRM_MOBILE_CSS = `
          del menú que ya van en oscuro. */
       [data-crm-dark="1"] .m-buscar { background: #1d1d24 !important; border-color: #2c2c36 !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .m-buscar::placeholder { color: #62626c !important; }
+      /* El placeholder del composer venía con un gris fijo para los dos temas:
+         en oscuro se quedaba en 3.5:1. */
+      [data-crm-dark="1"] .wa-hilo-m textarea::placeholder { color: #7c7a8a !important; }
       [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
       [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
       [data-crm-dark="1"] .cons-grupo { background: #131318 !important; }

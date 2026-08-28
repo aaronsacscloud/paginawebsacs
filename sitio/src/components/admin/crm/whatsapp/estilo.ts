@@ -170,7 +170,7 @@ html[data-crm-dark="1"] .wa-bajar{background:#232329;border-color:#3a3550;color:
 
 /* Atajos de «últimas plantillas usadas»: una sola línea que se desliza, en
    móvil y en escritorio. Apilados hacían crecer la barra ámbar el doble. */
-.wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
+.wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-right:16px}
 .wa-recientes::-webkit-scrollbar{display:none}
 .wa-recientes button{flex:none}
 /* Aire al final del carrusel: sin esto el último atajo queda rebanado por el
