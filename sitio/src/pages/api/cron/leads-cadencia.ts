@@ -58,7 +58,7 @@ export const GET: APIRoute = async ({ url }) => {
     for (const c of nuevos || []) {
       const llego = (c.propiedades as any)?.tiktok?.creado || c.estatus_lead_at;
       if (llego && (ahora.getTime() - Date.parse(llego)) / 86400000 > sec.corte_dias) continue;
-      if (dry) continue;
+      if (dry) { res.enrolados++; res.entrarian = [...(res.entrarian || []), c.id].slice(0, 12); continue; }
       const { error } = await supabase.from('crm_secuencia_miembros')
         .insert({ secuencia_id: sec.id, contact_id: c.id });
       if (!error) res.enrolados++;
