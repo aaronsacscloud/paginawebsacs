@@ -226,15 +226,52 @@ export default function SecuenciasTab() {
               <b style={{ fontSize: '0.95rem' }}>{s.nombre}</b>
               <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f4f3f6', color: s.activa ? P.verdeTinta : '#6b6b74', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
               <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h · {(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}</span>
-              <span style={{ marginLeft: esMovilSec ? 0 : 'auto', display: 'flex', gap: 8, flexBasis: esMovilSec ? '100%' : undefined, marginTop: esMovilSec ? 4 : 0 }}>
+              {!esMovilSec && <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexBasis: esMovilSec ? '100%' : undefined, marginTop: esMovilSec ? 4 : 0 }}>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}) }} onClick={() => setEdit({ ...s })}>Editar</button>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}), color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
                   onClick={async () => { await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, activa: !s.activa }) }); cargar(); }}>
                   {s.activa ? 'Apagar' : 'Prender'}
                 </button>
-              </span>
+              </span>}
             </div>
             {s.descripcion && <div style={{ fontSize: '0.76rem', color: '#8a8a92', marginTop: 4 }}>{s.descripcion}</div>}
+            {esMovilSec ? (
+              /* Una métrica por renglón: tarjeta dentro de tarjeta partía
+                 «0 correos · 0 / WA» y estiraba cada secuencia a 550 px. */
+              <div style={{ marginTop: 10, borderTop: '1px solid #f0eff3', paddingTop: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '5px 0', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#8f8d98' }}>En secuencia</span><b>{m.en_secuencia ?? 0}</b>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '5px 0', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#8f8d98' }}>Entraron</span><b>{m.entraron ?? 0}</b>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '5px 0', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#8f8d98' }}>Envíos</span>
+                  <b style={{ textAlign: 'right' }}>{m.correos ?? 0} correos · {m.whatsapps ?? 0} WA</b>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#8f8d98', textAlign: 'right', marginTop: -2 }}>
+                  {m.correos_abiertos ?? 0} abiertos · {m.correos_clic ?? 0} con clic
+                </div>
+                {/* El objetivo se queda: es la métrica que mide si la secuencia
+                    sirvió, no un adorno. */}
+                {(() => {
+                  const orden = ['respondio', 'agendo', 'demo_hecha', 'convertido'];
+                  const desde = orden.indexOf(s.objetivo || 'agendo');
+                  const logrados = orden.slice(desde).reduce((a, k) => a + (Number(salidas[k]) || 0), 0);
+                  const entraron = Number(m.entraron) || 0;
+                  const meta = ({ respondio: 'que responda', agendo: 'que agende demo', demo_hecha: 'que asista a la demo', convertido: 'que se haga cliente' } as any)[s.objetivo || 'agendo'];
+                  return (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '7px 0 0', marginTop: 5, borderTop: '1px solid #f0eff3', fontSize: '0.82rem' }}>
+                      <span style={{ color: '#8f8d98', minWidth: 0 }}>Objetivo: {meta}</span>
+                      <b style={{ color: logrados > 0 ? P.verdeTinta : '#8f8d98', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {logrados} de {entraron}{entraron ? ` · ${Math.round(logrados / entraron * 100)}%` : ''}
+                        {m.tiempo_a_objetivo != null ? ` · ~${m.tiempo_a_objetivo} d` : ''}
+                      </b>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
               <div style={{ ...tarjetaKpi(P.violeta), minWidth: 120, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>En secuencia</div>
@@ -259,7 +296,7 @@ export default function SecuenciasTab() {
                   const logrados = orden.slice(desde).reduce((a, k) => a + (Number(salidas[k]) || 0), 0);
                   const entraron = Number(m.entraron) || 0;
                   return (
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.verdeTinta }}>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: logrados > 0 ? P.verdeTinta : '#8f8d98' }}>
                       {logrados} de {entraron}{entraron ? ` · ${Math.round(logrados / entraron * 100)}%` : ''}
                       {m.tiempo_a_objetivo != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888' }}> · ~{m.tiempo_a_objetivo} días</span>}
                     </div>
@@ -274,6 +311,18 @@ export default function SecuenciasTab() {
                 </div>
               </div>
             </div>
+            )}
+            {/* Las acciones al PIE: entre la meta y la descripción cortaban la
+                lectura de la tarjeta. */}
+            {esMovilSec && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button style={{ ...btnG, minHeight: 44, flex: 1 }} onClick={() => setEdit({ ...s })}>Editar</button>
+                <button style={{ ...btnG, minHeight: 44, flex: 1, color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
+                  onClick={async () => { await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, activa: !s.activa }) }); cargar(); }}>
+                  {s.activa ? 'Apagar' : 'Prender'}
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
