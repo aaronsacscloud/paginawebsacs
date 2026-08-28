@@ -16,6 +16,7 @@ const MOTIVO_L: Record<string, [string, string]> = {
   respondio: ['Respondieron', P.violetaTinta], agendo: ['Agendaron', P.verdeTinta],
   convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
   corte: ['Llegaron al corte', '#888'], optout: ['Baja de WhatsApp', P.rojoTinta], archivado: ['Archivados', '#888'],
+  pausado_manual: ['Pausados a mano', '#888'],
 };
 
 export default function SecuenciasTab() {
@@ -24,6 +25,8 @@ export default function SecuenciasTab() {
   const [plantillasEmail, setPlantillasEmail] = useState<any[]>([]);
   const [plantillasWa, setPlantillasWa] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
+  const [simul, setSimul] = useState<any>(null);
+  const [simulando, setSimulando] = useState(false);
   const cargar = () => fetch('/api/crm/secuencias').then(r => r.json()).then(j => setLista(j.secuencias || [])).catch(() => setLista([]));
   useEffect(() => {
     cargar();
@@ -65,15 +68,41 @@ export default function SecuenciasTab() {
                 <input type="number" min={1} max={24} style={{ ...inp, width: 64 }} value={edit.hora_fin ?? 18} onChange={e => setEdit({ ...edit, hora_fin: Number(e.target.value) })} />
               </span></div>
           </div>
+          <span style={lbl}>Días en que envía</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['L', 1], ['M', 2], ['M', 3], ['J', 4], ['V', 5], ['S', 6], ['D', 7]].map(([l, d], i) => {
+              const ds: number[] = Array.isArray(edit.dias_envio) && edit.dias_envio.length ? edit.dias_envio : [1, 2, 3, 4, 5];
+              const on = ds.includes(d as number);
+              return (
+                <button key={i} onClick={() => setEdit({ ...edit, dias_envio: on ? ds.filter(x => x !== d) : [...ds, d as number].sort() })}
+                  style={{ width: 32, height: 32, borderRadius: 99, border: '1.5px solid', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 800,
+                    borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? P.violetaAgua : '#fff', color: on ? P.violetaTinta : '#a5a2af' }}>{l}</button>
+              );
+            })}
+          </div>
+          <span style={lbl}>Quién entra (estatus del lead)</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[['Sin tocar', 'nuevo'], ['Contactado', 'contactado'], ['No contesta', 'sin_respuesta'], ['Respondió', 'respondio'], ['Descubrimiento', 'descubrimiento']].map(([l, v]) => {
+              const est: string[] = edit.entrada?.estatus?.length ? edit.entrada.estatus : ['contactado', 'sin_respuesta'];
+              const on = est.includes(v as string);
+              return (
+                <button key={v as string} onClick={() => setEdit({ ...edit, entrada: { ...(edit.entrada || {}), estatus: on ? est.filter(x => x !== v) : [...est, v as string] } })}
+                  style={{ borderRadius: 999, border: '1.5px solid', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, padding: '5px 12px',
+                    borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? P.violetaAgua : '#fff', color: on ? P.violetaTinta : '#a5a2af' }}>{l}</button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Solo entran leads (nunca clientes ni oportunidades) que llegaron dentro del corte — los viejos no reciben ráfagas.</p>
         </div>
 
         {/* Las reglas: quién entra, quién sale. Fijas y a la vista. */}
         <div style={{ background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
           <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Las reglas (las aplica el sistema, siempre)</div>
           <div style={{ fontSize: '0.78rem', color: '#4a4a52', lineHeight: 1.7 }}>
-            <b>Entra:</b> el lead tocado que NO responde (estatus «Contactado» o «No contesta») y que llegó dentro del corte — los viejos no reciben ráfagas.<br />
-            <b>Sale al instante cuando:</b> responde por cualquier canal · agenda una reunión · se convierte en cliente · se descarta («no le interesa») · se da de baja de WhatsApp · se cumple el corte de {edit.corte_dias ?? 14} días.<br />
-            <b>Pausa («pidió tiempo»):</b> suspende los envíos, NO lo saca — al vencer la pausa, continúa donde iba.
+            <b>Si responde, se ajusta el canal (no sale):</b> respondió por WhatsApp → se detienen los WhatsApps automáticos y los correos SIGUEN; respondió por correo → al revés. Si respondió por ambos, ahí sí sale.<br />
+            <b>Sale al instante cuando:</b> agenda una reunión · se convierte en cliente · se descarta («no le interesa») · empieza a negociar (cotizado) · se cumple el corte de {edit.corte_dias ?? 14} días. La baja de WhatsApp detiene ese canal para siempre.<br />
+            <b>Pausa («pidió tiempo»):</b> suspende los envíos, NO lo saca — al vencer la pausa, continúa donde iba.<br />
+            <b>El vendedor siempre se entera:</b> cada correo enviado, cada canal detenido y cada salida dejan una nota en el hilo del inbox, y desde el detalle de la conversación puede pausar o reanudar la secuencia de ese lead.
           </div>
         </div>
 
@@ -98,6 +127,10 @@ export default function SecuenciasTab() {
                   {p.wa_plantilla && !plantillasWa.some((x: any) => x.nombre === p.wa_plantilla) && <option value={p.wa_plantilla}>{p.wa_plantilla}</option>}
                 </select>
               )}
+              <label title="Un paso apagado se salta sin borrar su lugar" style={{ display: 'inline-flex', gap: 4, alignItems: 'center', fontSize: '0.68rem', color: p.activo === false ? '#a5a2af' : P.verdeTinta, fontWeight: 700, cursor: 'pointer' }}>
+                <input type="checkbox" checked={p.activo !== false} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, activo: e.target.checked } : x) })} />
+                {p.activo === false ? 'apagado' : 'activo'}
+              </label>
               <button onClick={() => setEdit({ ...edit, pasos: pasos.filter((_, j) => j !== i) })} style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
             </div>
           ))}
@@ -105,8 +138,19 @@ export default function SecuenciasTab() {
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 8 }}>Los correos se editan por bloques en Email ▸ Plantillas; los WhatsApps son plantillas aprobadas por Meta. Máximo un correo y un WhatsApp por corrida por lead.</p>
         </div>
 
+        {simul && (
+          <div style={{ background: P.violetaAgua, border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 14px', marginTop: 12, fontSize: '0.78rem', color: '#4a4a52' }}>
+            <b>Simulacro (no envió nada):</b> entrarían <b>{simul.enrolados ?? 0}</b> leads hoy · saldrían {simul.graduados ?? 0} · canales que se detendrían: {simul.canales_detenidos ?? 0} · envíos que tocarían hoy: {simul.envios ?? 0}.
+            <button onClick={() => setSimul(null)} style={{ border: 'none', background: 'none', color: P.violetaTinta, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginLeft: 8 }}>cerrar</button>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'center' }}>
           <button style={btnP} onClick={guardar}>Guardar secuencia</button>
+          <button style={btnG} disabled={simulando} onClick={async () => {
+            setSimulando(true); setSimul(null);
+            const r = await fetch('/api/cron/leads-cadencia?dry=1').then(x => x.json()).catch(e => ({ error: String(e) }));
+            setSimulando(false); setSimul(r);
+          }}>{simulando ? 'Simulando…' : 'Simular (sin enviar)'}</button>
           <label style={{ display: 'inline-flex', gap: 7, alignItems: 'center', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
             <input type="checkbox" checked={!!edit.activa} onChange={e => setEdit({ ...edit, activa: e.target.checked })} /> Activa
           </label>
@@ -123,7 +167,7 @@ export default function SecuenciasTab() {
         <button style={{ ...btnP, marginLeft: 'auto' }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
       </div>
       <p style={{ fontSize: '0.8rem', color: '#888', margin: '0 0 16px' }}>
-        WhatsApp y correo en un solo flujo: el lead entra por reglas, recibe los pasos en orden y sale SOLO en cuanto responde, agenda o se descarta — y aquí se mide qué tan bien funciona.
+        WhatsApp y correo en un solo flujo: el lead entra por reglas, recibe los pasos en orden, y si responde por un canal ese canal se detiene solo (el otro sigue). Aquí se mide qué tan bien funciona cada secuencia.
       </p>
       {lista.length === 0 && <div style={{ color: '#a5a2af', fontSize: '0.85rem' }}>Sin secuencias todavía — crea la primera.</div>}
       {lista.map(s => {
@@ -134,7 +178,7 @@ export default function SecuenciasTab() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
               <b style={{ fontSize: '0.95rem' }}>{s.nombre}</b>
               <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f1f1f4', color: s.activa ? P.verdeTinta : '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
-              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h</span>
+              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h · {(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}</span>
               <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button style={btnG} onClick={() => setEdit({ ...s })}>Editar</button>
                 <button style={{ ...btnG, color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
@@ -172,7 +216,7 @@ export default function SecuenciasTab() {
         );
       })}
       <p style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 6 }}>
-        Reglas de salida (todas las secuencias): responde · agenda · se hace cliente · se descarta · baja de WhatsApp · corte de días. La pausa «pidió tiempo» solo suspende. Todo queda firmado en la actividad de cada lead.
+        Reglas (todas las secuencias): responder detiene SOLO ese canal — respondió por WhatsApp y los correos siguen (y al revés). Sale al agendar, hacerse cliente, descartarse o llegar al corte. La pausa «pidió tiempo» solo suspende. Cada envío, canal detenido y salida deja nota en el hilo del inbox y queda firmado en la actividad.
       </p>
     </div>
   );

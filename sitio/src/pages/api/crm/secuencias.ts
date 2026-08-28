@@ -38,6 +38,16 @@ export const POST: APIRoute = async ({ request }) => {
     hora_inicio: Math.max(0, Math.min(23, Number(b.hora_inicio) ?? 10)),
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
+  // Días de la semana en que SÍ envía (1=lun … 7=dom) y reglas de entrada.
+  if (Array.isArray(b.dias_envio)) {
+    const ds = b.dias_envio.map(Number).filter((d: number) => d >= 1 && d <= 7);
+    if (ds.length) fila.dias_envio = [...new Set(ds)].sort();
+  }
+  if (b.entrada && typeof b.entrada === 'object') {
+    const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento'];
+    const est = Array.isArray(b.entrada.estatus) ? b.entrada.estatus.filter((x: string) => ESTATUS_OK.includes(x)) : [];
+    fila.entrada = { estatus: est.length ? est : ['contactado', 'sin_respuesta'], lifecycle: ['lead', 'lead_calificado'] };
+  }
   let id = b.id || null;
   if (id) {
     const { error } = await supabase.from('crm_secuencias').update(fila).eq('id', id);

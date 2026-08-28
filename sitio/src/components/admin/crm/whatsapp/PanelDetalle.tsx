@@ -160,6 +160,63 @@ function CampoTelefono({ etiqueta, valor, onGuardar }: { etiqueta: string; valor
 
 const ESTADO_SUB: Record<string, [string, string]> = { activa: [C.emerald50, C.emerald700], pausada: [C.ambar50, C.ambar700], cancelada: [C.rojo50, '#C0554E'] };
 
+
+// ── Secuencias del contacto: qué recibe en automático y el freno de mano ──
+function SeccionSecuencias({ contactId }: { contactId: string }) {
+  const [datos, setDatos] = useState<any[] | null>(null);
+  const [ocupado, setOcupado] = useState('');
+  const cargar = () => fetch(`/api/crm/secuencias/miembro?contact_id=${contactId}`)
+    .then(r => r.json()).then(j => setDatos(j.secuencias || [])).catch(() => setDatos([]));
+  useEffect(() => { setDatos(null); cargar(); }, [contactId]);
+  const accion = async (secuenciaId: string, a: string) => {
+    setOcupado(secuenciaId);
+    await fetch('/api/crm/secuencias/miembro', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: contactId, secuencia_id: secuenciaId, accion: a }) }).catch(() => {});
+    setOcupado(''); cargar();
+  };
+  if (datos === null) return null;
+  const conAlgo = datos.filter(d => d.estado !== 'fuera' || d.activa);
+  if (!conAlgo.length) return null;
+  const MOT: Record<string, string> = { respondio: 'respondió', agendo: 'agendó', convertido: 'se hizo cliente', descartado: 'descartado', corte: 'llegó al corte', optout: 'baja de WA', archivado: 'archivado', pausado_manual: 'pausada a mano', viejo_al_activar: 'era muy viejo' };
+  return (
+    <Seccion id="g-secuencias" titulo="Secuencias" n={conAlgo.filter(d => d.estado === 'dentro').length || null}>
+      <div style={{ margin: '0 16px 10px', border: `1px solid ${C.g200}`, borderRadius: 10, overflow: 'hidden' }}>
+        {conAlgo.map((d, i) => (
+          <div key={d.id} style={{ padding: '9px 12px', borderTop: i ? `1px solid ${C.g100}` : 'none', background: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: C.g700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre}</span>
+              {d.estado === 'dentro' && <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: C.emerald50, color: C.emerald700 }}>DÍA {d.dia}</span>}
+              {d.estado === 'detenida' && <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: C.g100, color: C.g500 }}>{MOT[d.motivo] || d.motivo || 'detenida'}</span>}
+              {d.estado === 'fuera' && <span style={{ fontSize: 9, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: C.g50, color: C.g400 }}>fuera</span>}
+            </div>
+            {d.estado === 'dentro' && (d.canales_detenidos?.wa || d.canales_detenidos?.correo) && (
+              <div style={{ fontSize: 10, color: C.ambar700, marginTop: 3 }}>
+                {d.canales_detenidos?.wa && 'WhatsApps detenidos (respondió por WA) — correos siguen. '}
+                {d.canales_detenidos?.correo && 'Correos detenidos (respondió por correo) — WhatsApps siguen.'}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+              {d.estado === 'dentro' && (
+                <button disabled={ocupado === d.id} onClick={() => accion(d.id, 'pausar')}
+                  style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 7, padding: '3px 10px', fontSize: 10, fontWeight: 700, color: C.rojo700, cursor: 'pointer', fontFamily: 'inherit' }}>Pausar envíos</button>
+              )}
+              {d.estado === 'detenida' && d.motivo === 'pausado_manual' && (
+                <button disabled={ocupado === d.id} onClick={() => accion(d.id, 'reanudar')}
+                  style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 7, padding: '3px 10px', fontSize: 10, fontWeight: 700, color: C.emerald700, cursor: 'pointer', fontFamily: 'inherit' }}>Reanudar</button>
+              )}
+              {(d.estado === 'fuera' || (d.estado === 'detenida' && d.motivo !== 'pausado_manual')) && d.activa && (
+                <button disabled={ocupado === d.id} onClick={() => accion(d.id, 'inscribir')}
+                  style={{ border: `1px solid ${C.g200}`, background: '#fff', borderRadius: 7, padding: '3px 10px', fontSize: 10, fontWeight: 700, color: C.moradoTinta, cursor: 'pointer', fontFamily: 'inherit' }}>Inscribir (día 1 hoy)</button>
+              )}
+              {d.enviados_n > 0 && <span style={{ fontSize: 10, color: C.g400, alignSelf: 'center' }}>{d.enviados_n} envíos</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Seccion>
+  );
+}
+
 export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api: any; filaActiva?: any }) {
   // Fila VIRTUAL (contacto sin conversación): el panel funciona igual, con los
   // datos del CRM; hilo llega null y todo lo de mensajes queda vacío.
@@ -382,6 +439,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </div>
         </Seccion>
       )}
+      {contactoBase && !esCliente && <SeccionSecuencias contactId={contactoBase.id} />}
       {empresa && (
         <Seccion id="g-empresa" titulo="Empresa" n={null}>
           <div style={caja}>
