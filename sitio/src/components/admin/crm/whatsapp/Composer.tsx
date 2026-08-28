@@ -9,7 +9,7 @@ import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
 import { optimizarImagen } from '../../../../lib/crm/imagen';
-import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario } from './Iconos';
+import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario, IcoCamara } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 
@@ -58,6 +58,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   movil?: boolean;
 }) {
   const [preselTema, setPreselTema] = useState<string | null>(null);
+  const camaraRef = useRef<HTMLInputElement>(null);
   const ultimoPingRef = useRef(0);
   const pingEscribir = () => { const t = Date.now(); if (t - ultimoPingRef.current > 4000) { ultimoPingRef.current = t; onEscribir?.(); } };
   const [remotos, setRemotos] = useState<{ url: string; nombre: string; clase: string; mime?: string }[]>([]);   // 8) adjuntos por URL (snippets/biblioteca)
@@ -98,6 +99,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [recientes, setRecientes] = useState<any[]>([]);
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const [escribiendoMovil, setEscribiendoMovil] = useState(false);  // móvil: al enfocar, la caja crece
+  // El dedo va a la barra de herramientas: el `blur` del textarea llega ANTES
+  // del click y encogía el composer justo debajo del pulgar, así que el toque
+  // caía en el vacío (pasaba con el clip, con el micrófono y con «Más»).
+  const tocandoBarra = useRef(false);
   const [masHerramientas, setMasHerramientas] = useState(false);    // móvil: el resto de la barra
   const [pop, setPop] = useState<Popup>(null);
   const [modalPlantilla, setModalPlantilla] = useState(false);
@@ -326,7 +331,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
 
       {/* Los chips de sugerencias («Temas de la etapa») se quitaron a pedido
           del usuario: estaban de más sobre el composer. */}
-      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: 'hidden' }}>
+      {/* En el teléfono la tarjeta NO recorta: los menús del composer (adjuntar,
+          IA, snippets) salen hacia arriba y con `overflow:hidden` se cortaban a
+          la mitad. En escritorio se conserva para redondear las esquinas. */}
+      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: movil ? 'visible' : 'hidden' }}>
         {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
             no se escribe: en reposo el composer es una línea y ya. */}
         {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
@@ -384,7 +392,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
             {!grabando && (
               <textarea ref={areaRef} value={texto} rows={movil ? (escribiendoMovil ? 3 : 1) : 1}
                 onFocus={() => movil && setEscribiendoMovil(true)}
-                onBlur={() => movil && !texto && setEscribiendoMovil(false)}
+                onBlur={() => { if (!movil || texto) return; setTimeout(() => { if (!tocandoBarra.current) setEscribiendoMovil(false); }, 140); }}
                 onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 300 : 44) : 120) + 'px'; }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
@@ -468,7 +476,8 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 tercio de la pantalla sin que nadie la estuviera usando. Al
                 tocar la caja, crece y aparecen las herramientas. */}
             {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
+              <div onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
                 {/* En el teléfono la barra deja a la vista lo que se usa en cada
                     mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
                     tras «Más». Nueve iconos de 18 px en 390 px eran una fila
@@ -530,6 +539,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 )}
                 {pop === 'adjuntar' && (
                   <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
+                    onCamara={movil ? () => { setPop(null); camaraRef.current?.click(); } : undefined}
                     onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')} />
                 )}
               </div>
@@ -563,6 +573,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       </div>
 
       <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.doc,.docx,.csv,.xlsx" hidden onChange={e => agregarArchivos(e.target.files)} />
+      {/* E5 · La cámara es su propio input: `capture` abre la cámara trasera
+          directamente, sin pasar por el explorador de archivos. */}
+      <input ref={camaraRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { agregarArchivos(e.target.files); e.currentTarget.value = ''; }} />
       {modalPlantilla && <SelectorPlantilla telefono={telefono} api={api} onClose={() => { setModalPlantilla(false); setPreselTema(null); }} contacto={contacto} preseleccion={preselTema} />}
       {modalInteractivo && <ModalInteractivo equipo={equipo} yo={api.yo?.()} contacto={contacto} catalogId={catalogId} onCerrar={() => setModalInteractivo(false)}
         onEnviar={async (body) => {
@@ -728,7 +741,7 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
   );
 }
 
-function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar }: { onSubir: () => void; onBiblioteca: () => void; onCotizacion?: () => void; onAgendar?: () => void }) {
+function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar, onCamara }: { onSubir: () => void; onBiblioteca: () => void; onCotizacion?: () => void; onAgendar?: () => void; onCamara?: () => void }) {
   const item = (icono: React.ReactNode, t: string, s: string, onClick: () => void) => (
     <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 12px' }}
       onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -738,7 +751,10 @@ function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar }: { onSub
   );
   return (
     <div style={popup(224, 116)}>
-      {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoClip size={15} /></span>, 'Subir desde computadora', 'Selecciona un archivo', onSubir)}
+      {/* En el teléfono, la foto del producto o del comprobante se toma en el
+          momento: la cámara va primero y el explorador después. */}
+      {onCamara && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCamara size={15} /></span>, 'Tomar una foto', 'Abre la cámara', onCamara)}
+      {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoClip size={15} /></span>, onCamara ? 'Elegir un archivo' : 'Subir desde computadora', onCamara ? 'De la galería o de archivos' : 'Selecciona un archivo', onSubir)}
       {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.emerald50, color: C.emerald700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoMarcador size={15} /></span>, 'Biblioteca de medios', 'Archivos pre-configurados', onBiblioteca)}
       {onCotizacion && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.azulAgua, color: C.azulTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoDoc size={15} /></span>, 'Cotización del CRM', 'Manda el link de una cotización', onCotizacion)}
       {onAgendar && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.ambar100, color: C.ambar700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCalendario size={15} /></span>, 'Link para agendar', 'Prellenado con sus datos', onAgendar)}
