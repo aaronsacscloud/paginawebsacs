@@ -25,10 +25,19 @@ async function mandar(texto: string, vars?: [string, string, string]): Promise<{
   const res: { tel: string; ok: boolean; via?: string; error?: string }[] = [];
   for (const t of tels) {
     if (vars) {
-      try {
-        await enviarPlantilla(t, 'nuevo_lead_aviso', 'es_MX', vars.map(v => String(v || '—').replace(/\s+/g, ' ').slice(0, 300)));
-        res.push({ tel: t, ok: true, via: 'plantilla' }); continue;
-      } catch (e: any) { console.warn('[aviso-lead] plantilla falló para', t, e?.message || e); }
+      // aviso_pendiente_crm es la UTILITY nueva (tono operativo, sin lenguaje
+      // de ventas): Meta recategorizó nuevo_lead_aviso a MARKETING y empezó a
+      // limitarla — los avisos morían. La vieja queda de respaldo mientras
+      // la nueva está en revisión.
+      const params = vars.map(v => String(v || '—').replace(/\s+/g, ' ').slice(0, 300));
+      let mandado = false;
+      for (const plantilla of ['aviso_pendiente_crm', 'nuevo_lead_aviso']) {
+        try {
+          await enviarPlantilla(t, plantilla, 'es_MX', params);
+          res.push({ tel: t, ok: true, via: `plantilla:${plantilla}` }); mandado = true; break;
+        } catch (e: any) { console.warn('[aviso-lead]', plantilla, 'falló para', t, e?.message || e); }
+      }
+      if (mandado) continue;
     }
     try { await enviarTexto(t, texto); res.push({ tel: t, ok: true, via: 'texto' }); }
     catch (e: any) {
