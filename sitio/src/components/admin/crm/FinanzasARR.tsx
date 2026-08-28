@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { P, tarjetaKpi, CINTA } from '../../../lib/crm/paleta';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 const money = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 const kMoney = (n: number) => '$' + (n / 1_000_000).toFixed(2) + 'M';
@@ -68,6 +69,7 @@ function BarraDoble({ a, b, max }: { a: number; b: number; max: number }) {
 }
 
 export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => void }) {
+  const esMovilFin = useIsMobile();
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState('');
   const [desde, setDesde] = useState('');
@@ -113,26 +115,52 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
         <span style={S.tit}>Panorama</span>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#8f8d98' }}>Periodo</span>
-          <span style={{ display: 'flex', gap: 7, alignItems: 'center', whiteSpace: 'nowrap', flex: '1 1 auto', minWidth: 0, maxWidth: 340 }}>
+          {!esMovilFin && <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#8f8d98' }}>Periodo</span>}
+          {!esMovilFin && <span style={{ display: 'flex', gap: 7, alignItems: 'center', whiteSpace: 'nowrap', flex: '1 1 auto', minWidth: 0, maxWidth: 340 }}>
             <input type="month" value={desde} onChange={e => setDesde(e.target.value)} title="Desde"
               style={{ ...S.btn, padding: '7px 10px', fontWeight: 500, flex: 1, minWidth: 0 }} />
             <span style={{ fontSize: '0.75rem', color: '#a5a2af' }}>a</span>
             <input type="month" value={hasta} onChange={e => setHasta(e.target.value)} title="Hasta"
               style={{ ...S.btn, padding: '7px 10px', fontWeight: 500, flex: 1, minWidth: 0 }} />
-          </span>
-          <button style={{ ...S.btn, background: '#EEECFE', borderColor: '#ddd6fb', color: VIO }}
-            onClick={() => cargar(desde || hasta ? `?desde=${desde || ''}&hasta=${hasta || ''}` : '')}>Aplicar</button>
-          {(desde || hasta) && <button style={S.btn} onClick={() => { setDesde(''); setHasta(''); cargar(); }}>Últimos 12 meses</button>}
+          </span>}
+          {!esMovilFin && <button style={{ ...S.btn, background: '#EEECFE', borderColor: '#ddd6fb', color: VIO }}
+            onClick={() => cargar(desde || hasta ? `?desde=${desde || ''}&hasta=${hasta || ''}` : '')}>Aplicar</button>}
+          {!esMovilFin && (desde || hasta) && <button style={S.btn} onClick={() => { setDesde(''); setHasta(''); cargar(); }}>Últimos 12 meses</button>}
+          {/* En el teléfono el periodo son atajos, no dos selectores de mes y un
+              botón Aplicar: nadie captura un rango con el pulgar para ver un
+              tablero. Los tres cubren lo que de verdad se consulta. */}
+          {esMovilFin && (() => {
+            const hoyMes = new Date().toISOString().slice(0, 7);
+            const haceMeses = (n: number) => { const d2 = new Date(); d2.setMonth(d2.getMonth() - n); return d2.toISOString().slice(0, 7); };
+            const opts: [string, string, string][] = [
+              ['12 meses', '', ''],
+              ['6 meses', haceMeses(5), hoyMes],
+              ['Este año', new Date().getFullYear() + '-01', hoyMes],
+            ];
+            return (
+              <span style={{ display: 'flex', gap: 6 }}>
+                {opts.map(([l, dd, hh]) => {
+                  const act = (desde || '') === dd && (hasta || '') === hh;
+                  return (
+                    <button key={l} onClick={() => { setDesde(dd); setHasta(hh); cargar(dd || hh ? `?desde=${dd}&hasta=${hh}` : ''); }}
+                      style={{ ...S.btn, minHeight: 34, padding: '0 12px', fontSize: '0.74rem',
+                        background: act ? '#EEECFE' : '#fff', borderColor: act ? '#ddd6fb' : '#e6e6ea', color: act ? VIO : '#6b6b74' }}>{l}</button>
+                  );
+                })}
+              </span>
+            );
+          })()}
         </span>
       </div>
 
       {/* ── TITULAR: lo ganado y lo perdido, cada uno con su número ── */}
       <div className="fin-k5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0,1fr))', gap: 10, marginBottom: 14 }}>
-        <Kpi franja={P.violeta} color={VIO} ancho
+        {/* En móvil el ARR activo ya es el número grande de la cabecera de
+            Suscripciones: repetirlo aquí era el mismo dato dos veces. */}
+        {!esMovilFin && <Kpi franja={P.violeta} color={VIO} ancho
           k="ARR activo" v={money(t.arr_activo)}
           s={<>{t.subs_activas} licencias · {t.clientes} clientes</>}
-          e="Lo que factura en 12 meses si nadie más entra ni se va." />
+          e="Lo que factura en 12 meses si nadie más entra ni se va." />}
         <Kpi franja={P.azul} color={(t.crecimiento_12m_pct ?? 0) >= 0 ? UP : DOWN}
           k="Crecimiento 12 meses"
           v={t.crecimiento_12m_pct == null ? '—' : `${t.crecimiento_12m_pct > 0 ? '+' : ''}${t.crecimiento_12m_pct}%`}

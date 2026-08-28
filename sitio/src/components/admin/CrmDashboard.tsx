@@ -274,7 +274,14 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp'];
+// El tema no es de unas pantallas sí y otras no: en el teléfono la app es una
+// sola. Se van sumando conforme cada módulo del menú «Más» pasa su revisión —
+// meter aquí un módulo sin adaptar deja texto claro sobre fondo claro.
+// Módulos del menú «Más» que heredan el mapa oscuro genérico (el mismo de la
+// ficha dentro de la hoja): se escribieron en claro con estilos inline y se
+// repintan por valor serializado en vez de tocar 17 archivos.
+const M_AUTO_DARK: Tab[] = ['suscripciones'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -470,7 +477,7 @@ export default function CrmDashboard() {
           desapareció a propósito — la navegación completa vive en la barra
           inferior y en "Más" (el sidebar overlay quedó como código inerte). */}
       {isMobile && sidebarCollapsed && !M_HDR_TABS.includes(tab) && (
-        <header style={{
+        <header className="m-appbar" style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 108,
           height: 'calc(56px + env(safe-area-inset-top))',
           paddingTop: 'env(safe-area-inset-top)',
@@ -841,7 +848,7 @@ export default function CrmDashboard() {
       }}>
         {/* Content — key={tab} remonta el contenido al navegar y dispara la
             transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
-        <div key={tab} className={isMobile ? 'm-tabin' : undefined}>
+        <div key={tab} className={isMobile ? ('m-tabin' + (M_AUTO_DARK.includes(tab) ? ' m-auto-dark' : '')) : undefined}>
         <Suspense fallback={<TabCargando />}>
         {tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
@@ -1379,6 +1386,10 @@ const CRM_MOBILE_CSS = `
       /* La pantalla «Más» es una superficie más de la app, no un overlay
          aparte: sin esto tomaba la tinta clara del tema oscuro sobre su
          blanco original y las secciones se leían fantasma. */
+      /* La barra de título es parte de la app, no una franja aparte: sin esto
+         quedaba blanca con el título en tinta clara (ilegible) en los módulos
+         del menú que ya van en oscuro. */
+      [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a
          longhands (border-style: none none solid) cuando hay otras propiedades
@@ -1408,6 +1419,149 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .hoja-ficha [style*="color: rgb(140, 47, 40)"] { color: #F0857A !important; }
       /* Esqueleto de carga: sobre la superficie de la hoja, jamás en blanco */
       [data-crm-dark="1"] .hoja-sk { background: #26262e !important; }
+
+      /* ── Los módulos del menú «Más» usan el MISMO mapa ── */
+      [data-crm-dark="1"] .m-auto-dark { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(255, 255, 255)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background-color: rgb(255, 255, 255)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(250, 250, 250)"] { background: #1d1d24 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(245, 244, 248)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(244, 244, 246)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(244, 243, 247)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(247, 247, 251)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(245, 246, 248)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(250, 248, 255)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(246, 246, 249)"] { background: #232329 !important; }
+      /* Aguas de color: conservan el significado, bajan al nivel del fondo */
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(238, 236, 254)"] { background: #221c33 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(234, 248, 242)"] { background: #14291f !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(254, 240, 239)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(251, 236, 234)"] { background: #2d1a19 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(255, 244, 229)"] { background: #2b2314 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(227, 237, 253)"] { background: #16203a !important; }
+      /* Texto: tinta y grises. El gris del sistema es #918fa0 en oscuro. */
+      [data-crm-dark="1"] .m-auto-dark b, [data-crm-dark="1"] .m-auto-dark strong,
+      [data-crm-dark="1"] .m-auto-dark h1, [data-crm-dark="1"] .m-auto-dark h2,
+      [data-crm-dark="1"] .m-auto-dark h3, [data-crm-dark="1"] .m-auto-dark h4 { color: #F2F1F7; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(138, 138, 138)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(165, 162, 175)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(156, 153, 166)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(179, 177, 187)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(182, 178, 194)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(138, 133, 144)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(107, 114, 128)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(107, 107, 116)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(153, 153, 153)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(136, 136, 136)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(102, 102, 102)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+      /* Semánticos: mismos papeles, contraste de oscuro */
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(192, 85, 78)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(30, 138, 99)"] { color: #34D399 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(154, 106, 16)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(160, 102, 0)"] { color: #E8B04B !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(91, 75, 214)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(155, 140, 250)"] { color: #B7A8F7 !important; }
+      /* Bordes: el hairline del sistema; los de color guardan su tinte */
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(236, 236, 236)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(230, 230, 234)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(238, 238, 238)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(239, 238, 242)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 240, 244)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(244, 244, 246)"] { border-color: #26262e !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(221, 214, 251)"] { border-color: #362c55 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(207, 224, 250)"] { border-color: #23324f !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(247, 201, 197)"] { border-color: #43221f !important; }
+      /* Campos: se capturan igual, se leen en oscuro */
+      [data-crm-dark="1"] .m-auto-dark input, [data-crm-dark="1"] .m-auto-dark select,
+      [data-crm-dark="1"] .m-auto-dark textarea {
+        background: #232329 !important; color: #F2F1F7 !important; border-color: #2c2c36 !important;
+      }
+      [data-crm-dark="1"] .m-auto-dark input::placeholder,
+      [data-crm-dark="1"] .m-auto-dark textarea::placeholder { color: #62626c !important; }
+      /* Tintas oscuras de la ficha (#241d43 el dato, #3f3b4d el secundario,
+         #5c5966 el terciario): en claro son jerarquía, en oscuro serían tinta
+         sobre tinta. Medidas con sonda en la ficha del lead. */
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(36, 29, 67)"] { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(63, 59, 77)"] { color: #c9c7d3 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(92, 89, 102)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(201, 199, 208)"] { color: #918fa0 !important; }
+      /* Hairlines restantes: en oscuro se veían como rayas blancas */
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(230, 229, 236)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(245, 244, 248)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(247, 247, 250)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(244, 243, 247)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(243, 241, 248)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(241, 240, 246)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 239, 243)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(247, 247, 250)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(221, 220, 227)"] { border-color: #26262e !important; }
+      /* Contornos de color: conservan el semáforo, sin gritar en oscuro */
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 220, 176)"] { border-color: #5a4520 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 196, 189)"] { border-color: #4a2b28 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(230, 221, 250)"] { border-color: #362c55 !important; }
+      /* Riel de la línea de tiempo */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(239, 237, 245)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(248, 247, 252)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(253, 252, 255)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(255, 251, 250)"] { background: #232329 !important; }
+      /* Segmented de la ficha del cliente: en claro es track gris con pastilla
+         blanca; en oscuro se invertía (pastilla negra sobre track blanco). */
+      [data-crm-dark="1"] .m-auto-dark .fic-seg { background: #232329 !important; }
+      [data-crm-dark="1"] .m-auto-dark .fic-seg button[style*="background: rgb(255, 255, 255)"] { background: #3a3a46 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="rgb(242, 242, 245)"] { background: linear-gradient(90deg, rgba(35,35,41,0), #232329 75%) !important; }
+      /* Divisor entre las dos cifras de la cabecera del cliente */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(236, 236, 241)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(236, 236, 236)"] { background: #2a2a33 !important; }
+      /* Grises planos del CRM viejo (#f0f0f0, #f5f5f5, #eee, #f2f2f2): como
+         borde salían rayas blancas y como fondo pastillas claras. */
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 240, 240)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(245, 245, 245)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(242, 242, 242)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(221, 221, 221)"] { border-color: #26262e !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(245, 245, 245)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(240, 240, 240)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(242, 242, 242)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(238, 238, 238)"] { background: #232329 !important; }
+      /* El tema de la ficha vive en variables: una sola definición de forma
+         (arriba, global) y aquí solo los valores del oscuro. Así un botón no
+         puede quedarse blanco porque su selector no matcheó dos veces. */
+      [data-crm-dark="1"] .m-auto-dark {
+        --hoja-btn: #232329; --hoja-line: #2c2c36; --hoja-ink: #F2F1F7;
+        --hoja-caja: #26262e; --hoja-chip: #232329; --hoja-chip-ink: #918fa0;
+      }
+      /* La pantalla «Más» es una superficie más de la app, no un overlay
+         aparte: sin esto tomaba la tinta clara del tema oscuro sobre su
+         blanco original y las secciones se leían fantasma. */
+      [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
+      /* El borde va por CLASE, no por valor: React expande el shorthand a
+         longhands (border-style: none none solid) cuando hay otras propiedades
+         de borde, así que [style*="solid rgb(...)"] no lo alcanza. */
+      [data-crm-dark="1"] .mas-screen .crm-row { border-bottom-color: #1f1f26 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="background: rgb(239, 238, 242)"] { background: #1f1f26 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="color: rgb(201, 199, 208)"] { color: #4a4a55 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+
+      /* La alerta no es el dato principal: superficie normal + barra roja de
+         2 px. Un panel relleno gritaba más que el ARR de la cuenta. */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(254, 240, 239)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(253, 236, 234)"] {
+        background: #1d1d24 !important; border-left: 2px solid #F0857A !important;
+        border-radius: 0 10px 10px 0 !important;
+      }
+      /* Restos medidos en la ficha del cliente: barras de progreso, pastillas
+         lilas de fondo y el borde del grupo de periodo. */
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(240, 239, 243)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(247, 246, 250)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(221, 217, 228)"] { background: #2a2a33 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(221, 214, 251)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(212, 202, 253)"] { background: #362c55 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(230, 228, 240)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(240, 239, 245)"] { border-color: #2c2c36 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="border-radius: 9px"] { border-color: #2c2c36 !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="color: rgb(140, 47, 40)"] { color: #F0857A !important; }
+      /* Esqueleto de carga: sobre la superficie de la hoja, jamás en blanco */
+      [data-crm-dark="1"] .hoja-sk { background: #26262e !important; }
       [data-crm-dark="1"] .hoja-skrow { border-bottom-color: #1f1f26 !important; }
     }
 
@@ -1417,6 +1571,10 @@ const CRM_MOBILE_CSS = `
        aunque la tabla tenga su propio scroll. */
     .fin-k2 { grid-template-columns: minmax(0, 1fr) !important; }
     .fin-k2 > * { min-width: 0; }
+    /* Los cinco KPI del panel financiero a 78 px de ancho cada uno no son
+       cinco números: son cinco recortes. En el teléfono van de dos en dos. */
+    .fin-k5 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+    .fin-k5 > * { min-width: 0; }
     /* ══ M5 · Piso tipográfico: nada bajo 12 px en el teléfono ══
        Los tabs densos (Consultoría 180 textos <11 px, Clientes 156, Radar 81)
        usan estilos INLINE con 0.55-0.68rem / 9-11px. Una regla externa con

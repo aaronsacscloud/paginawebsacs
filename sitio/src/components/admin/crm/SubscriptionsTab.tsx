@@ -88,11 +88,18 @@ export function Estado({ e }: { e: string }) {
 
 export default function SubscriptionsTab() {
   const isMobile = useIsMobile();
-  // KPI en carrusel scroll-snap en móvil (no apilar); grid/flex en desktop.
+  // KPI en móvil: rejilla 2×2 de tarjetas compactas, NO carrusel. Un carrusel
+  // de tarjetas de 78vw obliga a deslizar para saber cuántos números hay y
+  // deja la mitad de una tarjeta asomando: se lee como algo roto, no como un
+  // tablero. La primera (ARR activo, con su desglose) ocupa el ancho entero:
+  // es el número de la pantalla, no uno más de la fila.
   const kpiCarril = isMobile
-    ? { display: 'flex', gap: 12, overflowX: 'auto' as const, scrollSnapType: 'x mandatory' as const, WebkitOverflowScrolling: 'touch' as const, marginBottom: 12, paddingBottom: 4 }
+    ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, alignItems: 'stretch' as const }
     : { display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 12 };
-  const kpiCard: any = isMobile ? { ...S.kpi, flex: '0 0 78vw', minWidth: 0, scrollSnapAlign: 'start' } : S.kpi;
+  const kpiCard: any = isMobile
+    ? { ...S.kpi, flex: 'unset', minWidth: 0, padding: '13px 14px', borderLeftWidth: 1, borderLeftColor: '#ececec' }
+    : S.kpi;
+  const kpiAncho: any = isMobile ? { gridColumn: '1 / -1' } : {};
   const [showFiltrosSheet, setShowFiltrosSheet] = useState(false); // móvil: hoja de filtros
   const [subs, setSubs] = useState<Sub[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -255,7 +262,7 @@ export default function SubscriptionsTab() {
             KPIs distintos y había que sumarlos mentalmente para saber cuál era
             el número de verdad. Aquí el grande es el ARR y lo de abajo explica
             de dónde sale. */}
-        <div style={{ ...kpiCard, ...(isMobile ? {} : { flex: '1 1 380px', minWidth: 320 }) }}>
+        <div style={{ ...kpiCard, ...(isMobile ? kpiAncho : { flex: '1 1 380px', minWidth: 320 }) }}>
           <div style={S.kLabel}>ARR activo</div>
           <div style={S.kValue}>{fmt(k?.arr_activo)}</div>
           <div style={S.kSub}>{k?.subs_activas || 0} suscripciones · {k?.clientes_activos || 0} clientes</div>
