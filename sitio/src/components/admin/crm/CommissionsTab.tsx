@@ -234,7 +234,9 @@ export default function CommissionsTab() {
           value={search} onChange={e => setSearch(e.target.value)}
           style={{ ...selectStyle, flex: 1, minWidth: 220 }}
         />
-        <button onClick={exportCSV} style={btn()}>↓ CSV</button>
+        {/* A media anchura quedaba huérfano bajo el buscador: en el teléfono
+            ocupa el renglón entero, como el resto de los controles. */}
+        <button onClick={exportCSV} style={{ ...btn(), ...(esMovilCom ? { width: '100%', minHeight: 44, gridColumn: '1 / -1' } : {}) }}>↓ CSV</button>
         {selectedRows.length > 0 && (
           <button onClick={payBulk} disabled={!canBulkPay} style={{ ...btn('#2AB5A0', '#fff'), opacity: canBulkPay ? 1 : 0.5 }}
             title={canBulkPay ? '' : 'Solo earned del mismo partner'}>
@@ -250,7 +252,19 @@ export default function CommissionsTab() {
         {loading ? (
           <Cargando texto="Cargando…" />
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#888' }}>Sin comisiones que coincidan.</div>
+          <div style={{ padding: esMovilCom ? '26px 16px' : 48, textAlign: 'center', color: '#888' }}>
+            Sin comisiones que coincidan.
+            {(filterStatus || filterTipo || search) && (
+              <div style={{ marginTop: 10 }}>
+                {/* Un vacío sin salida deja al usuario atorado: si hay filtros
+                    puestos, lo que falta es poder quitarlos desde aquí. */}
+                <button onClick={() => { setFilterStatus(''); setFilterTipo(''); setSearch(''); }}
+                  style={{ border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>
+                  Quitar los filtros
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
