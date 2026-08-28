@@ -138,6 +138,7 @@ export const WIKI: PaginaWiki[] = [
 </ul>
 <h3>Dónde se configura, sin código</h3>
 <p><b>WhatsApp ▸ ⚙ Automatización</b> → «Bienvenida a leads de TikTok» y «Correo de bienvenida a leads de TikTok», cada una con su toggle. El correo se edita por bloques en <b>Email ▸ Plantillas</b>.</p>
+<p>Ahí mismo vive <b>«Leads por WhatsApp directo»</b>, que decide qué pasa cuando alguien escribe por WhatsApp <b>sin haber llenado formulario</b>: <i>la IA decide</i> · <i>crear siempre</i> · <i>nunca</i>, más el toggle de alta saliente. Es el ajuste que determina si esas conversaciones se vuelven ficha en el CRM o se quedan solo en el inbox — y por lo tanto si cuentan o no como lead.</p>
 <div class="w-caja w-ok"><span class="w-k">Tres reglas que protegen el paso</span>
 <p><b>1.</b> Las bienvenidas solo disparan con el goteo real (≤10 por corrida): un import masivo jamás manda cientos de mensajes.<br>
 <b>2.</b> Ninguna bienvenida cuenta como toque humano — el lead sigue en «Sin tocar» hasta que una persona lo trabaje… o él responda.<br>
