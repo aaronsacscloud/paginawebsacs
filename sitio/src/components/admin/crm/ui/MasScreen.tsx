@@ -10,6 +10,7 @@
 // solas; la lupa global vive en la app bar), filas de texto sin iconos
 // decorativos, acento morado SOLO en el ítem activo.
 import { useDrawerHistory } from '../../../../lib/ui/mobile';
+import AvisosPush from './AvisosPush';
 
 export type MasGrupo = {
   label: string;
@@ -41,6 +42,7 @@ export default function MasScreen({
       <div style={{ padding: '16px 24px 6px', fontSize: '2.125rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#1a1a1a' }}>
         Más
       </div>
+      <AvisosPush />
       {grupos.map(g => (
         <div key={g.label || 'sin'}>
           {g.label && (

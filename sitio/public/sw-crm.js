@@ -48,3 +48,35 @@ self.addEventListener('fetch', (e) => {
     })());
   }
 });
+
+// ══ Avisos push del CRM ═══════════════════════════════════════════════════
+// Un lead nuevo llega por WhatsApp al equipo, pero ahí compite con cientos de
+// mensajes. El push suena como lo que es —algo que atender ahora— y al tocarlo
+// abre el lead, no la portada.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: (e.data && e.data.text()) || 'SACS' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'SACS CRM', {
+    body: d.body || '',
+    icon: '/crm-icon-192.png',
+    badge: '/crm-icon-192.png',
+    tag: d.tag || 'crm',
+    renotify: true,
+    data: { url: d.url || '/admin/crm', ...(d.data || {}) },
+    requireInteraction: !!d.requireInteraction,
+    vibrate: [160, 70, 160],
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/admin/crm';
+  e.waitUntil((async () => {
+    const wins = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // Si el CRM ya está abierto se reutiliza esa ventana: abrir una segunda
+    // pestaña del mismo inbox es justo lo que desordena el trabajo.
+    const abierta = wins.find(w => w.url.includes('/admin/crm'));
+    if (abierta) { await abierta.focus(); return abierta.navigate(url).catch(() => abierta.postMessage({ tipo: 'ir', url })); }
+    return clients.openWindow(url);
+  })());
+});
