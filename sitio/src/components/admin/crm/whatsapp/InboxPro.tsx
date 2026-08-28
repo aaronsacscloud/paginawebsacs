@@ -3,6 +3,7 @@
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
@@ -10,12 +11,12 @@ import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
-const ListaConversaciones = lazy(() => import('./ListaConversaciones'));
-const Telefonia = lazy(() => import('./Telefonia'));
-const Llamadas = lazy(() => import('./Llamadas'));
-const Hilo = lazy(() => import('./Hilo'));
-const PanelDetalle = lazy(() => import('./PanelDetalle'));
-const NuevoChat = lazy(() => import('./NuevoChat'));
+const ListaConversaciones = lazySeguro(() => import('./ListaConversaciones'));
+const Telefonia = lazySeguro(() => import('./Telefonia'));
+const Llamadas = lazySeguro(() => import('./Llamadas'));
+const Hilo = lazySeguro(() => import('./Hilo'));
+const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
+const NuevoChat = lazySeguro(() => import('./NuevoChat'));
 import type { Condicion } from '../../../../lib/whatsapp/filtros';
 
 export type Filtros = { filtro: string; etapa: string; search: string };

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 // REGLA DE VELOCIDAD: los overlays pesados bajan al abrirse, no con la lista.
-const ClienteDrawer360 = lazy(() => import('./ClienteDrawer360'));
-const NuevoClienteModal = lazy(() => import('./NuevoClienteModal'));
-const PipelineKanban = lazy(() => import('./PipelineKanban'));
+const ClienteDrawer360 = lazySeguro(() => import('./ClienteDrawer360'));
+const NuevoClienteModal = lazySeguro(() => import('./NuevoClienteModal'));
+const PipelineKanban = lazySeguro(() => import('./PipelineKanban'));
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import FiltroRenovacion, { type RangoRenov } from './FiltroRenovacion';
 import { useToast, Toast, logStageChange } from './crmHelpers';

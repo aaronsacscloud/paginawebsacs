@@ -1,4 +1,5 @@
 import { swrGet } from '../../../../lib/crm/swr';
+import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 // SOPORTE · Dashboard GLOBAL de soporte (tab del CRM). Volumen por estado/tema,
 // SLA (primera respuesta y resolución), sentimiento, quién consume el soporte y
 // tendencia. Founder-only (middleware).
@@ -11,7 +12,7 @@ import { useEffect, useState, lazy, Suspense } from 'react';
 import { useIsMobile } from '../../../../lib/ui/mobile';
 import { S, Tag, Aviso, Vacio, Cargando, fmtFecha } from '../email/ui';
 // REGLA DE VELOCIDAD: la ficha 360 baja al abrirse, no con la bandeja.
-const ClienteDrawer360 = lazy(() => import('../ClienteDrawer360'));
+const ClienteDrawer360 = lazySeguro(() => import('../ClienteDrawer360'));
 import Hallazgos from './Hallazgos';
 import Capacitacion from './Capacitacion';
 import { TEMA_LABEL } from '../../../../lib/soporte/clasificar';

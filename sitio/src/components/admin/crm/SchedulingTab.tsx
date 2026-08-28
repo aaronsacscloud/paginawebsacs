@@ -5,9 +5,10 @@
 // Lazy-loaded: el Hub son ~2k líneas, no las queremos en el bundle inicial del CRM.
 
 import { lazy, Suspense } from 'react';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import Cargando, { Corazones } from './ui/Cargando';
 
-const SchedulingHub = lazy(() => import('../../scheduling/SchedulingHub'));
+const SchedulingHub = lazySeguro(() => import('../../scheduling/SchedulingHub'));
 
 export default function SchedulingTab() {
   return (

@@ -13,6 +13,7 @@ const svg = (paths: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 export const giroIcons: Record<string, string> = {
+  activewear: svg('<path d="M8 3h8l2 4-3 1v13H9V8L6 7l2-4z"/><path d="M9 13h6"/><path d="M12 3v3"/>'),
   bridal: svg('<path d="M12 3a2 2 0 100 .01"/><path d="M9.5 5.5h5L16 9l-4 2-4-2 1.5-3.5z"/><path d="M12 11v2"/><path d="M7 21c0-5 2-7 5-8 3 1 5 3 5 8H7z"/>'),
   eventmerch: svg('<path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/><path d="M2 10h20"/><path d="M8 6.5h.01M12 4.5h.01M16 6.5h.01"/>'),
   consignment: svg('<path d="M12 3.5a1.5 1.5 0 011.5 1.5c0 .8-.7 1.2-1.5 1.7"/><path d="M12 6.7L4.5 12v1h15v-1L12 6.7z"/><path d="M6 16.5a6 6 0 0011.6 1.6M18 21.5a6 6 0 00-11.6-1.6"/><path d="M6 16.5v-2.3M6 16.5h2.3M18 21.5v2.3M18 21.5h-2.3"/>'),

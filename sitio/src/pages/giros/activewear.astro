@@ -1,0 +1,166 @@
+---
+/**
+ * Suite para Marcas de Activewear.
+ *
+ * El giro: marcas que fabrican o importan ropa deportiva y venden por drops
+ * de colorways — sets top + legging, Instagram/TikTok + showroom, comunidad.
+ * El problema estructural propio: el set que se rompe.
+ * Contenido en data/giros/activewear.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import ActiveSet from '../../components/giros/ActiveSet.astro';
+import { cortinaActive, casosActive, pasosActive, planoActive, seccionesActive } from '../../data/giros/activewear';
+
+const titulo = 'Suite Moda para Marcas de Activewear';
+const desc =
+  'El sistema para marcas de activewear: drops por colorway con un solo inventario, sets que no se rompen, cambios de talla sin drama y el lote siguiente pedido con datos.';
+---
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu marca no vende piezas."
+    resalte="Vende sets que no deben romperse."
+    sub="El drop sale a la hora exacta con un solo inventario para tu tienda en línea, tus redes y tu showroom; el kit empuja al set completo; y el siguiente lote se pide con los datos del anterior — no de memoria."
+    foto="/images/hero-active.webp"
+    fotoAlt="Dueña de una marca de activewear acomodando sets por colorway en el rack de su showroom"
+    selloMarcas="Negocios de moda activos en México y Latam"
+    avisos={[
+      { modulo: 'Drop en vivo', texto: 'Salvia: $96,300 vendidos · 61% del drop', pos: 1, tono: 'azul', sello: '8:41 pm' },
+      { modulo: 'Set por romperse', texto: 'Salvia S: quedan 2 tops y 19 leggings', pos: 2, tono: 'ambar', sello: 'Ahora' },
+      { modulo: 'Talla agotada', texto: 'Top Salvia S: se apagó en línea y en TikTok Shop', pos: 3, tono: 'rojo', sello: '8:14 pm' },
+    ]}
+  />
+
+  <SuiteManifiesto
+    intro="Sabemos cómo vive una marca de activewear"
+    frases={[
+      'El drop salió a las 8 y a las 8:20 ya habías <b>sobrevendido</b> la S.',
+      'El top voló y el legging se quedó <b>viudo</b> en el rack.',
+      'La clienta pide <b>cambio de talla</b> y el drop ya cerró.',
+      'Instagram dice que hay, la bodega dice que <b>no</b>.',
+      'El lote nuevo se pidió <b>de memoria</b> — y volvió a sobrar la L.',
+      'La lista de <b>"avísame"</b> vive en los DMs, sin talla ni orden.',
+      'El rack se ve lleno, pero de puros <b>sets rotos</b>.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto: para él un set son dos productos sin relación, y un drop es un martes cualquiera. Y tu marca vive en los dos mundos a la vez: el showroom y el drop en línea venden las mismas piezas, a la misma comunidad. Cada pantalla funciona igual en el mostrador que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo."
+  />
+
+  <!-- El problema estructural: el set vive en dos piezas por talla. -->
+  <SuiteVariantes
+    eyebrow="Un solo colorway"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“el set Salvia”."
+    sub="Top y legging en cuatro tallas: ocho existencias que caminan en pares. Y donde una pieza está en cero, su pareja ya está viuda — aunque el rack se vea lleno."
+    ejeA={['XS', 'S', 'M', 'L']}
+    filas={[
+      { nombre: 'Top', img: '/images/active-top.webp', alt: 'Top deportivo color salvia' },
+      { nombre: 'Legging', img: '/images/active-legging.webp', alt: 'Legging deportivo color salvia' },
+      { nombre: 'Biker', img: '/images/active-biker.webp', alt: 'Short biker color salvia' },
+      { nombre: 'Sudadera', img: '/images/active-sudadera.webp', alt: 'Sudadera oversize color salvia' },
+    ]}
+    matriz={[
+      [6, 2, 0, 4],
+      [8, 19, 7, 6],
+      [3, 5, 4, 0],
+      [2, 4, 3, 1],
+    ]}
+    unidad="existencias"
+    genero="f"
+    leyendas={['Con piezas', 'Quedan pocas', 'Agotada']}
+    anchoCelda="72px"
+    pieLibre="La <b>M</b> del top está agotada con <b>7</b> leggings M esperando pareja — ese es el set roto que el rack no enseña"
+  />
+
+  <SuiteCortina
+    titulo="“¿Cuántos sets completos me quedan?”"
+    sub="Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, contar cajas a mano. A la derecha, en tres segundos."
+    pieAntes="Dos conteos y el drop encima."
+    fotoAntes={cortinaActive.fotoAntes}
+    fotoDespues={cortinaActive.fotoDespues}
+    altAntes={cortinaActive.altAntes}
+    altDespues={cortinaActive.altDespues}
+    libreta={cortinaActive.libreta}
+    filas={cortinaActive.filas}
+  />
+
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi toda marca de activewear que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Sets como kits, piezas sueltas con su precio', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Un inventario para línea, redes y showroom', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+      { que: 'El descase top vs legging, visible por talla', generico: 'No existe', medida: 'No existe', sacs: 'Incluido' },
+      { que: 'Cambio de talla contra inventario real', generico: 'A medias', medida: 'A veces', sacs: 'Incluido' },
+      { que: 'Reabasto del lote con datos del drop', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluido' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un sistema por encargo, la tercera conversación es distinta: esta ya sabe qué es un set roto." />
+
+  <SuiteCifras
+    foto="/images/suite-active-tienda.webp"
+    alt="Showroom amplio de una marca de activewear con racks por colorway y luz natural"
+    frase="De la marca que empieza en drops al showroom con fila afuera."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una marca de activewear gana o pierde el drop. Toca cada una."
+    casos={casosActive}
+  />
+
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Toda tu marca, del drop al siguiente lote"
+    intro="Baja para ver cada pieza con un drop tipo: el colorway Salvia que sale jueves 8 pm, el set que amenaza con romperse y el lote siguiente pedido con datos."
+    secciones={seccionesActive}
+  />
+
+  <!-- El bloque propio: solo aquí el producto son dos piezas en pareja -->
+  <ActiveSet />
+
+  <SuitePlano
+    titulo="Tu marca, por dentro."
+    sub="La comunidad entra al showroom, se prueba, cambia de talla; atrás la bodega empaca el drop en línea; y afuera el drop vive en la tienda y las redes. Toca cada zona."
+    proyecto="Tu showroom — planta baja"
+    zonas={planoActive}
+  />
+
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin perderte un drop."
+    sub="Tienes un drop el jueves y pedidos por empacar. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
+    pasos={pasosActive}
+    remate="<b>Tu histórico no se tira.</b> Se migran tus clientas con sus tallas, tus colorways y tus pedidos vivos — y el siguiente lote ya se pide con los datos de tus drops anteriores."
+  />
+
+  <SuitePlanes suite="Suite Moda" />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu descase real, colorway por colorway." cta="Agenda una demo" />
+
+  <CtaDudas demoDesc="Te mostramos SACS con tus colorways, tus sets y tu drop real. 30 min, sin compromiso." />
+</BaseLayout>

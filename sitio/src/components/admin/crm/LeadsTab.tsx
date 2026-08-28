@@ -1,4 +1,5 @@
 import { swrGet } from '../../../lib/crm/swr';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
 //
@@ -11,8 +12,8 @@ import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from '
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 // REGLA DE VELOCIDAD: el kanban de escritorio y el drawer bajan al usarse.
-const PipelineTab = lazy(() => import('./PipelineTab'));
-const LeadDrawer = lazy(() => import('./LeadDrawer'));
+const PipelineTab = lazySeguro(() => import('./PipelineTab'));
+const LeadDrawer = lazySeguro(() => import('./LeadDrawer'));
 import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';

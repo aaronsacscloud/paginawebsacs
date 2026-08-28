@@ -208,7 +208,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
               </div>
             ))}
           </div>
-          <Proyeccion serie={d.serie} proy={proy} G={G} />
+          <Proyeccion serie={d.serie} proy={proy} G={G} movil={esMovilFin} />
           <div style={S.nota}>
             La línea sólida es lo que ya pasó; la punteada, tres escenarios a 12 meses según el ritmo de los últimos meses:
             <b> si mejora, si se mantiene y si se enfría</b>. No es una promesa — es la velocidad actual proyectada.
@@ -255,7 +255,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
       {/* ── SERIE ── */}
       <div style={{ ...S.card, marginBottom: 14 }}>
         <div style={S.tit}>Licencias nuevas y ARR, mes a mes</div>
-        <Serie serie={d.serie} max={maxSerie} maxAlta={maxAlta} G={G} />
+        <Serie serie={d.serie} max={maxSerie} maxAlta={maxAlta} G={G} movil={esMovilFin} />
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: '0.71rem', color: '#6b7280', marginTop: 8 }}>
           {[[G.serie, 'ARR acumulado'], [G.serie2, 'Licencias nuevas'], [G.serie3, 'Bajas']].map(([c2, l]) => (
             <span key={l}><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: c2, marginRight: 5, verticalAlign: -1 }} />{l}</span>
@@ -625,7 +625,7 @@ function Estacionalidad({ datos, G }: { datos: any[]; G: any }) {
         const h = (x.monto / max) * 100;
         return (
           <div key={x.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', height: '100%' }}>
-            {x.monto > 0 && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: ROSA, marginBottom: 4, whiteSpace: 'nowrap' }}>{Math.round(x.monto / 1000)}k</div>}
+            {x.monto > 0 && <div style={{ fontSize: '0.72rem', fontWeight: 800, color: G.serie, marginBottom: 4, whiteSpace: 'nowrap' }}>{Math.round(x.monto / 1000)}k</div>}
             <div title={`${x.n} pago${x.n === 1 ? '' : 's'} · ${money(x.monto)}`}
               style={{ width: '100%', borderRadius: '5px 5px 0 0', minHeight: 3, height: `${Math.max(2, h)}%`, background: x.monto ? G.serie : G.track }} />
             <div style={{ fontSize: '0.62rem', color: P.tenue, marginTop: 6 }}>{NOM[i]}</div>
@@ -743,8 +743,11 @@ function Puente({ p, G, movil }: { p: any; G: any; movil?: boolean }) {
 }
 
 /* ─── Serie: área del ARR + barras de altas y bajas ─── */
-function Serie({ serie, max, maxAlta, G }: { serie: any[]; max: number; maxAlta: number; G: any }) {
-  const W = 1100, H = 220, P = { t: 14, r: 10, b: 30, l: 64 };
+function Serie({ serie, max, maxAlta, G, movil }: { serie: any[]; max: number; maxAlta: number; G: any; movil?: boolean }) {
+  // El viewBox se estrecha en el teléfono para que la escala sea ~1: con 1100
+  // de ancho dentro de una caja de 390, «meet» encogía las etiquetas a 3.5 px
+  // y «none» las dejaba condensadas. A 420 el texto sale a tamaño real.
+  const W = movil ? 420 : 1100, H = movil ? 210 : 220, P = { t: 14, r: 10, b: 30, l: movil ? 52 : 64 };
   const top = max * 1.08;
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / Math.max(1, serie.length - 1);
   const y = (v: number) => P.t + (1 - v / top) * (H - P.t - P.b);
@@ -779,13 +782,15 @@ function Serie({ serie, max, maxAlta, G }: { serie: any[]; max: number; maxAlta:
 /* ─── Proyección a 12 meses ───────────────────────────────────────────────
  * El eje NO arranca en cero: con millones de base, escenarios separados por
  * cientos de miles se verían como la misma raya. Se encuadra a los datos. */
-function Proyeccion({ serie, proy, G }: { serie: any[]; proy: any; G: any }) {
+function Proyeccion({ serie, proy, G, movil }: { serie: any[]; proy: any; G: any; movil?: boolean }) {
   const hist = serie.slice(-6).map((s: any) => s.arr);
   const todos = [...hist, ...proy.alto, ...proy.bajo];
   const max = Math.max(...todos), min = Math.min(...todos);
   const pad = (max - min) * 0.18 || max * 0.1;
   const hi = max + pad, lo = Math.max(0, min - pad);
-  const W = 1100, H = 210, P = { t: 16, r: 78, b: 26, l: 64 };
+  // Mismo criterio que Serie: en el teléfono el viewBox se estrecha para que
+  // el texto del SVG salga a tamaño real y el dibujo llene su caja.
+  const W = movil ? 430 : 1100, H = movil ? 200 : 210, P = { t: 16, r: movil ? 62 : 78, b: 26, l: movil ? 50 : 64 };
   const N = hist.length + 12 - 1;
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / N;
   const y = (v: number) => P.t + (1 - (v - lo) / (hi - lo || 1)) * (H - P.t - P.b);
@@ -810,9 +815,9 @@ function Proyeccion({ serie, proy, G }: { serie: any[]; proy: any; G: any }) {
         <path d={path(proy.medio, corte)} fill="none" stroke={G.serie} strokeWidth="2.4" strokeDasharray="7 4" />
         <path d={path(hist, 0)} fill="none" stroke={G.serie} strokeWidth="2.6" />
         {hist.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="2.6" fill={G.punto} stroke={G.serie} strokeWidth="2" />)}
-        <text x={x(N) + 7} y={y(proy.alto[12]) + 4} fontSize="13" fill={G.serie2} fontWeight="800">{kMoney(proy.alto[12])}</text>
+        <text x={x(N) + 7} y={y(proy.alto[12]) + 4} fontSize="13" fill={G.serie} fontWeight="800">{kMoney(proy.alto[12])}</text>
         <text x={x(N) + 7} y={y(proy.medio[12]) + 4} fontSize="13" fill={G.serie} fontWeight="800">{kMoney(proy.medio[12])}</text>
-        <text x={x(N) + 7} y={y(proy.bajo[12]) + 4} fontSize="13" fill={G.serie3} fontWeight="800">{kMoney(proy.bajo[12])}</text>
+        <text x={x(N) + 7} y={y(proy.bajo[12]) + 4} fontSize="13" fill={G.serie} fontWeight="800">{kMoney(proy.bajo[12])}</text>
         <text x={x(corte)} y={H - 8} textAnchor="middle" fontSize="13" fill={G.eje}>hoy</text>
       </svg>
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: '0.71rem', color: '#6b7280', marginTop: 2 }}>
