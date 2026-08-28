@@ -464,29 +464,32 @@ export default function MejorasTab() {
         <div onClick={() => alterna(expandidos, setExpandidos, m.id)}
           role="button" tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(expandidos, setExpandidos, m.id); } }}
+          className="cons-fila"
           style={{ display: 'flex', gap: 11, padding: '11px 0', alignItems: 'flex-start', cursor: 'pointer' }}>
           {m.estado !== 'entregada' && m.estado !== 'descartada'
             ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
             : <span style={{ width: 13, flexShrink: 0 }} />}
-          <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 6 }} />
+          <span style={{ flex: '0 0 6px', height: 6, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 7 }} />
           {conCliente && (
-            <div style={{ flex: '0 0 170px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="cons-cliente" style={{ flex: '0 0 170px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+            <div className="cons-tit" style={{ fontSize: '0.82rem', fontWeight: 700 }}>
               {m.titulo}
-              <span style={{ fontSize: '0.57rem', fontWeight: 800, background: c.bg, color: c.fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{c.label}</span>
+              {/* La categoría es taxonomía, no estado: en verde o ámbar se leía
+                  como «entregada» o «urge». Un solo chip neutro para todas. */}
+              <span className="cons-cat" style={{ fontSize: '0.7rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74', borderRadius: 20, padding: '3px 9px', marginLeft: 6, whiteSpace: 'nowrap' }}>{c.label}</span>
             </div>
-            <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div className="cons-meta" style={{ fontSize: '0.75rem', color: '#8f8d98', marginTop: 5, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <span>{PASO_L[m.estado] || m.estado}</span>
               {m.bookings?.fecha && <><span>·</span><span>de la junta del {fmtDate(m.bookings.fecha)}</span></>}
               {m.quotes?.numero && <><span>·</span><span>{m.quotes.numero}</span></>}
               {nReag > 0 && <><span>·</span><span style={{ color: '#C0554E', fontWeight: 700 }}>reagendada {nReag} {nReag === 1 ? 'vez' : 'veces'}</span></>}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+          <div className="cons-der" style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
             <button
               onClick={e => {
                 e.stopPropagation();
@@ -496,13 +499,13 @@ export default function MejorasTab() {
               }}
               title={m.estado === 'entregada' ? 'Ya entregada' : 'Cambiar la fecha de entrega'}
               style={{
-                fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '3px 9px',
+                fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '6px 11px', minHeight: 32,
                 border: '1px solid', fontFamily: 'inherit', cursor: m.estado === 'entregada' ? 'default' : 'pointer',
                 ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
                   : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
                   : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
               }}>{fechaTxt}</button>
-            <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#8f8d98' : m.estado === 'entregada' ? '#1E8A63' : '#1a1a1a' }}>
               {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
             </div>
           </div>
@@ -647,6 +650,26 @@ export default function MejorasTab() {
         @media (max-width: 620px)  { .cons-alertas { grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; } }
         /* El app bar ya dice "Consultoría": el H2 duplicado a 60px sobra en móvil */
         @media (max-width: 899px)  { .cons-titulo { display: none; } }
+        /* ══ La fila de trabajo en el teléfono ══════════════════════════════
+           En 390 px la fila de escritorio dejaba el título con 55 px de ancho
+           —una palabra por renglón— y empujaba el chip de fecha encima, con el
+           valor cortado contra el borde. Aquí se apila: punto y título arriba,
+           y debajo una sola línea de contexto con estado, fecha y valor. */
+        @media (max-width: 820px) {
+          .cons-fila { display: grid !important; grid-template-columns: auto auto 1fr !important;
+                       align-items: start !important; gap: 9px !important; padding: 13px 0 !important; }
+          .cons-cliente { display: none !important; }   /* el cliente ya es el encabezado del grupo */
+          /* El punto de estado se estiraba: en la rejilla el flex-basis no
+             manda, así que se le fija el tamaño. */
+          .cons-fila > span { width: 6px !important; height: 6px !important; margin-top: 9px !important; }
+          .cons-tit { font-size: 0.95rem !important; font-weight: 650 !important; line-height: 1.35 !important; overflow-wrap: anywhere; }
+          .cons-cat { display: inline-block; margin-left: 0 !important; margin-top: 6px; }
+          .cons-meta { font-size: 0.78rem !important; }
+          /* El chip de fecha y el valor bajan a la línea de contexto, en el
+             flujo del texto: a la derecha se recortaban. */
+          .cons-der { grid-column: 3 !important; justify-content: flex-start !important;
+                      flex-wrap: wrap !important; margin-top: 8px !important; }
+        }
       `}</style>
       <div style={{ marginBottom: 16 }}>
         <h2 className="cons-titulo" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Consultoría</h2>

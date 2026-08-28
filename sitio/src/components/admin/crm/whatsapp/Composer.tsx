@@ -358,6 +358,22 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           if (r?.ventana_cerrada) setModalPlantilla(true); else if (r?.error) setError(r.error, r.error_detalle || null);
         }} onMicError={m => setError(m)}>
           {({ grabando, iniciar }) => (<>
+            {/* ══ Respuestas rápidas (móvil) ══════════════════════════════
+                Lo que más se contesta, a un toque. Escribir «gracias, en un
+                momento te confirmo» con el pulgar, cincuenta veces al día, es
+                el trabajo que este bloque borra. Toca = lo escribe (y ahí lo
+                puedes ajustar antes de enviar). Solo cuando la caja está
+                vacía: con texto escrito estorbarían. */}
+            {!grabando && movil && !texto && snippets.length > 0 && modo === 'wa' && !bloqueadoWa && (
+              <div style={{ display: 'flex', gap: 7, padding: '8px 12px 2px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                {snippets.slice(0, 4).map((r: any) => (
+                  <button key={r.id} onClick={() => usarSnippet(r)}
+                    style={{ flex: 'none', maxWidth: 190, minHeight: 34, padding: '0 13px', borderRadius: 999, border: `1px solid ${C.g200}`, background: '#fff', color: C.g700, fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {r.titulo || r.atajo || String(r.texto || '').slice(0, 24)}
+                  </button>
+                ))}
+              </div>
+            )}
             {!grabando && (
               <textarea ref={areaRef} value={texto} rows={movil ? 3 : 1}
                 onFocus={() => movil && setEscribiendoMovil(true)}
