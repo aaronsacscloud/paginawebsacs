@@ -84,6 +84,12 @@ Ya está en `standard` los 12 proyectos **y el default del equipo**. Si algún
 build muere por memoria (el de `sitio` llegó a 3.2 GB de RSS, cabe en 8 GB),
 sube ESE proyecto a `enhanced` — nunca todo el equipo a `turbo`.
 
+**MEDIDO en producción el mismo día, 4 builds de cada uno:** el build tarda
+**lo mismo** con 4 núcleos que con 30 (111 s vs 115 s de reloj) — la prueba
+de que los 30 no servían para nada. Por build: 57.4 CPU-min en turbo contra
+**7.4 en standard, −87%**. Si alguien propone volver a turbo "para que
+compile más rápido", este es el contraejemplo.
+
 Por API (no hay comando en la CLI):
 
 ```bash
