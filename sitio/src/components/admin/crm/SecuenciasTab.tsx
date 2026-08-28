@@ -16,7 +16,7 @@ const MOTIVO_L: Record<string, [string, string]> = {
   respondio: ['Respondieron', P.violetaTinta], agendo: ['Agendaron', P.verdeTinta],
   convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
   corte: ['Llegaron al corte', '#888'], optout: ['Baja de WhatsApp', P.rojoTinta], archivado: ['Archivados', '#888'],
-  pausado_manual: ['Pausados a mano', '#888'],
+  pausado_manual: ['Pausados a mano', '#888'], demo_hecha: ['Asistieron a la demo', P.verdeTinta],
 };
 
 export default function SecuenciasTab() {
@@ -82,7 +82,7 @@ export default function SecuenciasTab() {
           </div>
           <span style={lbl}>Quién entra (estatus del lead)</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {[['Sin tocar', 'nuevo'], ['Contactado', 'contactado'], ['No contesta', 'sin_respuesta'], ['Respondió', 'respondio'], ['Descubrimiento', 'descubrimiento']].map(([l, v]) => {
+            {[['Sin tocar', 'nuevo'], ['Contactado', 'contactado'], ['No contesta', 'sin_respuesta'], ['Respondió', 'respondio'], ['Descubrimiento', 'descubrimiento'], ['Agendó demo', 'agendado']].map(([l, v]) => {
               const est: string[] = edit.entrada?.estatus?.length ? edit.entrada.estatus : ['contactado', 'sin_respuesta'];
               const on = est.includes(v as string);
               return (
@@ -95,7 +95,7 @@ export default function SecuenciasTab() {
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Solo entran leads (nunca clientes ni oportunidades) que llegaron dentro del corte — los viejos no reciben ráfagas.</p>
           <span style={lbl}>Objetivo de la secuencia</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {[['Que responda', 'respondio'], ['Que agende demo', 'agendo'], ['Que se haga cliente', 'convertido']].map(([l, v]) => {
+            {[['Que responda', 'respondio'], ['Que agende demo', 'agendo'], ['Que asista a la demo', 'demo_hecha'], ['Que se haga cliente', 'convertido']].map(([l, v]) => {
               const on = (edit.objetivo || 'agendo') === v;
               return (
                 <button key={v as string} onClick={() => setEdit({ ...edit, objetivo: v })}
@@ -243,10 +243,10 @@ export default function SecuenciasTab() {
               </div>
               <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>
-                  Objetivo: {({ respondio: 'que responda', agendo: 'que agende demo', convertido: 'que se haga cliente' } as any)[s.objetivo || 'agendo']}
+                  Objetivo: {({ respondio: 'que responda', agendo: 'que agende demo', demo_hecha: 'que asista a la demo', convertido: 'que se haga cliente' } as any)[s.objetivo || 'agendo']}
                 </div>
                 {(() => {
-                  const orden = ['respondio', 'agendo', 'convertido'];
+                  const orden = ['respondio', 'agendo', 'demo_hecha', 'convertido'];
                   const desde = orden.indexOf(s.objetivo || 'agendo');
                   const logrados = orden.slice(desde).reduce((a, k) => a + (Number(salidas[k]) || 0), 0);
                   const entraron = Number(m.entraron) || 0;

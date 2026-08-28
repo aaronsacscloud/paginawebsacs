@@ -24,14 +24,19 @@ import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 export const prerender = false;
 const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
 
-// Estados que significan "el vendedor ya está negociando": salida total.
-const NEGOCIANDO = ['cotizado', 'negociando'];
-function motivoSalida(c: any): string | null {
+// La ESCALERA del lead y el umbral del objetivo: una secuencia gradúa al
+// miembro cuando su avance ALCANZA el objetivo (o lo rebasa). Así "agendó"
+// es salida para la secuencia de seguimiento (objetivo agendo) pero es la
+// ENTRADA de la de demo agendada (objetivo demo_hecha).
+const RANGO: Record<string, number> = { respondio: 1, descubrimiento: 1, agendado: 2, demo_hecha: 3, cotizado: 4, negociando: 4 };
+const UMBRAL: Record<string, number> = { respondio: 1, agendo: 2, demo_hecha: 3, convertido: 99 };
+function motivoSalida(c: any, objetivo: string): string | null {
   if (c.archived_at) return 'archivado';
   if (c.estatus_lead === 'descartado' || c.calificacion === 'no_califica') return 'descartado';
-  if (['cliente', 'oportunidad'].includes(c.lifecycle_stage)) return c.lifecycle_stage === 'cliente' ? 'convertido' : 'agendo';
-  if (['agendado', 'demo_hecha'].includes(c.estatus_lead)) return 'agendo';
-  if (NEGOCIANDO.includes(c.estatus_lead)) return 'respondio';
+  if (c.lifecycle_stage === 'cliente') return 'convertido';
+  const umbral = UMBRAL[objetivo] ?? 2;
+  const rango = Math.max(RANGO[c.estatus_lead] || 0, c.lifecycle_stage === 'oportunidad' ? 2 : 0);
+  if (rango >= umbral && objetivo !== 'convertido') return objetivo;
   return null;
 }
 
@@ -199,7 +204,7 @@ export const GET: APIRoute = async ({ url }) => {
       // OBJETIVO de la secuencia es que responda y ya respondió por uno.
       const respondioAlgo = cd.wa?.motivo === 'respondio' || cd.correo?.motivo === 'respondio';
       const ambos = cd.wa?.motivo === 'respondio' && cd.correo?.motivo === 'respondio';
-      const motivo = motivoSalida(c) || (dias > sec.corte_dias ? 'corte' : null)
+      const motivo = motivoSalida(c, objetivoSec) || (dias > sec.corte_dias ? 'corte' : null)
         || (ambos ? 'respondio' : null)
         || (objetivoSec === 'respondio' && respondioAlgo ? 'respondio' : null);
       if (motivo) {

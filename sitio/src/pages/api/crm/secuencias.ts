@@ -40,16 +40,19 @@ export const POST: APIRoute = async ({ request }) => {
     hora_inicio: Math.max(0, Math.min(23, Number(b.hora_inicio) ?? 10)),
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
-  if (['respondio', 'agendo', 'convertido'].includes(b.objetivo)) fila.objetivo = b.objetivo;
+  if (['respondio', 'agendo', 'demo_hecha', 'convertido'].includes(b.objetivo)) fila.objetivo = b.objetivo;
   // Días de la semana en que SÍ envía (1=lun … 7=dom) y reglas de entrada.
   if (Array.isArray(b.dias_envio)) {
     const ds = b.dias_envio.map(Number).filter((d: number) => d >= 1 && d <= 7);
     if (ds.length) fila.dias_envio = [...new Set(ds)].sort();
   }
   if (b.entrada && typeof b.entrada === 'object') {
-    const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento'];
+    const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado'];
     const est = Array.isArray(b.entrada.estatus) ? b.entrada.estatus.filter((x: string) => ESTATUS_OK.includes(x)) : [];
-    fila.entrada = { estatus: est.length ? est : ['contactado', 'sin_respuesta'], lifecycle: ['lead', 'lead_calificado'] };
+    const estFinal = est.length ? est : ['contactado', 'sin_respuesta'];
+    // Quien agendó ya es Oportunidad: la entrada debe alcanzarlo en esa etapa.
+    const lifecycle = estFinal.includes('agendado') ? ['lead', 'lead_calificado', 'oportunidad'] : ['lead', 'lead_calificado'];
+    fila.entrada = { estatus: estFinal, lifecycle };
   }
   let id = b.id || null;
   if (id) {

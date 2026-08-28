@@ -225,9 +225,12 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <option value="resuelta">Resuelta</option>
         </select>}
         {conv.id && !mobile && <BotonLlamar conversationId={conv.id} telefono={conv.telefono} nombre={nombre} api={api} />}
-        {!mobile && <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
+        {/* Buscar dentro del hilo también en el teléfono: encontrar un monto o
+            una dirección subiendo a mano por cien mensajes es justo lo que no
+            se puede hacer con el pulgar. */}
+        {<button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
           style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
-          <IcoBuscar size={15} />
+          <IcoBuscar size={mobile ? 19 : 15} />
         </button>}
         {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} />}
         {onVerDetalle && (

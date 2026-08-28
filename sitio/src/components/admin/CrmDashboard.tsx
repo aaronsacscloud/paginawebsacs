@@ -1399,6 +1399,7 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-buscar::placeholder { color: #62626c !important; }
       [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
       [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
+      [data-crm-dark="1"] .cons-grupo { background: #131318 !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a
@@ -1674,7 +1675,7 @@ const CRM_MOBILE_CSS = `
        pestaña o un enlace de texto (copiar, ver más) y ahí una caja sobra—,
        y el sólido morado se respeta: es la acción principal del bloque. */
     .hoja-ficha button[style*="solid"]:not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
-    .m-auto-dark button[style*="solid"]:not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
+    .m-auto-dark button[style*="solid"]:not(.cons-fecha):not([style*="border-style: none none"]):not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
     .hoja-ficha a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]),
     .m-auto-dark a[style*="solid"]:not([style*="background: rgb(91, 75, 214)"]):not([style*="background: rgb(155, 140, 250)"]) {
       min-height: 42px !important; border-radius: 12px !important; padding: 0 14px !important;
@@ -1689,8 +1690,8 @@ const CRM_MOBILE_CSS = `
     .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button,
     .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] > button { flex: 1 1 calc(50% - 8px) !important; }
     /* Pastillas: el color decorativo se va; queda el morado del sistema */
-    .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"],
-    .m-auto-dark [style*="border-radius: 20px"], .m-auto-dark [style*="border-radius: 99px"] {
+    .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"]:not([style*="width: 6px"]):not([style*="height: 6px"]),
+    .m-auto-dark [style*="border-radius: 20px"], .m-auto-dark [style*="border-radius: 99px"]:not([style*="width: 6px"]):not([style*="height: 6px"]) {
       background: var(--hoja-chip, #f4f3f6) !important; color: var(--hoja-chip-ink, #6b6b74) !important;
       align-self: center !important; vertical-align: middle !important;
       padding: 4px 10px !important; line-height: 1.4 !important;
@@ -1734,6 +1735,11 @@ const CRM_MOBILE_CSS = `
        que ya lo lleva, y la tarjeta se aprieta para que quepan dos por fila. */
     .kpi-card { border-left-width: 1px !important; border-left-color: #eeeef1 !important; padding: 13px 14px !important; }
     .kpi-card > div:nth-child(2) { font-size: 1.25rem !important; }
+
+    /* Un mensaje que NO salió tiene que verse como tal: a 10 px, el aviso y
+       el «Reintentar» se leían igual que la hora y se pasaban de largo. */
+    .wa-fallo .wa-err-msg { font-size: 12px !important; font-weight: 600 !important; }
+    .wa-fallo button { min-height: 32px !important; font-size: 12px !important; padding: 0 12px !important; }
 
     /* Acción única: a lo ancho parecía el asunto de la pantalla */
     .vr-acc:only-child, .vr-accp:only-child { flex: 0 1 auto !important; padding: 0 26px !important; }

@@ -8,6 +8,7 @@
 // una que nunca se hizo, y es lo único de esta pantalla que se atiende hoy.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import ClienteDrawer360 from './ClienteDrawer360';
 // La bandeja de soporte ya tenía su pantalla: se reusa tal cual en vez de
 // escribir otra lista de aceptar/descartar que se separaría con el tiempo.
@@ -185,6 +186,7 @@ function Desplegable({ etiqueta, valor, opciones, onCambio }: {
  * siempre deja de leerse en una semana.
  */
 export default function MejorasTab() {
+  const esMovilCons = useIsMobile();
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
   const [vista, setVista] = useState<string>('todo');
@@ -468,8 +470,10 @@ export default function MejorasTab() {
           style={{ display: 'flex', gap: 11, padding: '11px 0', alignItems: 'flex-start', cursor: 'pointer' }}>
           {m.estado !== 'entregada' && m.estado !== 'descartada'
             ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
-            : <span style={{ width: 13, flexShrink: 0 }} />}
-          <span style={{ flex: '0 0 6px', height: 6, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 7 }} />
+            : <span className="cons-hueco" style={{ width: 13, flexShrink: 0 }} />}
+          {/* El punto vive PEGADO a la palabra que califica («● En proceso»),
+              no en una canaleta aparte donde quedaba huérfano. */}
+          <span className="cons-punto" style={{ flex: '0 0 6px', width: 6, height: 6, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 7 }} />
           {conCliente && (
             <div className="cons-cliente" style={{ flex: '0 0 170px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
@@ -478,18 +482,46 @@ export default function MejorasTab() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="cons-tit" style={{ fontSize: '0.82rem', fontWeight: 700 }}>
               {m.titulo}
-              {/* La categoría es taxonomía, no estado: en verde o ámbar se leía
-                  como «entregada» o «urge». Un solo chip neutro para todas. */}
-              <span className="cons-cat" style={{ fontSize: '0.7rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74', borderRadius: 20, padding: '3px 9px', marginLeft: 6, whiteSpace: 'nowrap' }}>{c.label}</span>
             </div>
-            <div className="cons-meta" style={{ fontSize: '0.75rem', color: '#8f8d98', marginTop: 5, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div className="cons-meta" style={{ fontSize: '0.75rem', color: '#8f8d98', marginTop: 5, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Todo el contexto en UNA línea: categoría, estado, junta y
+                  cotización. Cada uno en su renglón hacía filas de 155 px y
+                  53 partidas se volvían doce pantallas de scroll. */}
+              <span className="cons-cat" style={{ fontSize: '0.72rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74', borderRadius: 20, padding: '3px 9px', whiteSpace: 'nowrap' }}>{c.label}</span>
               <span>{PASO_L[m.estado] || m.estado}</span>
-              {m.bookings?.fecha && <><span>·</span><span>de la junta del {fmtDate(m.bookings.fecha)}</span></>}
-              {m.quotes?.numero && <><span>·</span><span>{m.quotes.numero}</span></>}
+              {/* De qué junta salió y con qué cotización se cotizó son datos de
+                  archivo: en el teléfono se ven al abrir la partida, no en la
+                  lista, donde alargaban la fila a tres renglones. */}
+              {m.bookings?.fecha && <span className="cons-extra"><span> · </span>de la junta del {fmtDate(m.bookings.fecha)}</span>}
+              {m.quotes?.numero && <span className="cons-extra"><span> · </span>{m.quotes.numero}</span>}
               {nReag > 0 && <><span>·</span><span style={{ color: '#C0554E', fontWeight: 700 }}>reagendada {nReag} {nReag === 1 ? 'vez' : 'veces'}</span></>}
+              {/* En el teléfono la fecha y el valor cierran ESTA línea: en
+                  renglón aparte la fila crecía a 146 px y 53 partidas eran
+                  doce pantallas de scroll. */}
+              {esMovilCons && (
+                <>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (m.estado === 'entregada') return;
+                      setExpandidos(x => new Set(x).add(m.id));
+                      setEditFecha({ id: m.id, fecha: m.fecha_compromiso || '', motivo: '' });
+                    }}
+                    className={venc ? 'cons-fecha' : undefined}
+                    style={{
+                      fontSize: '0.78rem', fontWeight: venc ? 700 : 500, whiteSpace: 'nowrap', borderRadius: 8,
+                      padding: venc ? '4px 9px' : 0, minHeight: 28, fontFamily: 'inherit', cursor: 'pointer',
+                      ...(venc ? { border: '1px solid #EF7A72', background: '#FEF0EF', color: '#C0554E' }
+                        : { border: 'none', background: 'none', color: '#8f8d98' }),
+                    }}>{fechaTxt}</button>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: m.cortesia || !(Number(m.valor) > 0) ? '#8f8d98' : '#1a1a1a' }}>
+                    {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
-          <div className="cons-der" style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+          {!esMovilCons && <div className="cons-der" style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
             <button
               onClick={e => {
                 e.stopPropagation();
@@ -497,18 +529,21 @@ export default function MejorasTab() {
                 setExpandidos(x => new Set(x).add(m.id));
                 setEditFecha({ id: m.id, fecha: m.fecha_compromiso || '', motivo: '' });
               }}
+              className={venc ? 'cons-fecha' : undefined}
               title={m.estado === 'entregada' ? 'Ya entregada' : 'Cambiar la fecha de entrega'}
               style={{
-                fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', borderRadius: 8, padding: '6px 11px', minHeight: 32,
-                border: '1px solid', fontFamily: 'inherit', cursor: m.estado === 'entregada' ? 'default' : 'pointer',
-                ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
-                  : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
-                  : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
+                fontSize: '0.78rem', fontWeight: venc ? 700 : 500, whiteSpace: 'nowrap', borderRadius: 8,
+                padding: venc ? '6px 11px' : '6px 0', minHeight: 32,
+                fontFamily: 'inherit', cursor: m.estado === 'entregada' ? 'default' : 'pointer',
+                // Relleno SOLO para lo vencido: en todas las filas, el chip era
+                // el objeto más pesado del renglón y competía con el título.
+                ...(venc ? { border: '1px solid #EF7A72', background: '#FEF0EF', color: '#C0554E' }
+                  : { border: 'none', background: 'none', color: '#8f8d98' }),
               }}>{fechaTxt}</button>
-            <div style={{ fontSize: '0.8rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#8f8d98' : m.estado === 'entregada' ? '#1E8A63' : '#1a1a1a' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', color: m.cortesia || !(Number(m.valor) > 0) ? '#8f8d98' : '#1a1a1a' }}>
               {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
             </div>
-          </div>
+          </div>}
         </div>
 
         {abiertoAqui && (
@@ -659,16 +694,22 @@ export default function MejorasTab() {
           .cons-fila { display: grid !important; grid-template-columns: auto auto 1fr !important;
                        align-items: start !important; gap: 9px !important; padding: 13px 0 !important; }
           .cons-cliente { display: none !important; }   /* el cliente ya es el encabezado del grupo */
-          /* El punto de estado se estiraba: en la rejilla el flex-basis no
-             manda, así que se le fija el tamaño. */
-          .cons-fila > span { width: 6px !important; height: 6px !important; margin-top: 9px !important; }
+          /* El punto y el hueco del checkbox no piden columna propia: el punto
+             se pega al texto y el hueco desaparece (45 px de canaleta vacía en
+             casi todas las filas). */
+          .cons-punto { width: 6px !important; height: 6px !important; flex: none !important; margin-top: 9px !important; }
+          .cons-hueco { display: none !important; }
+          .cons-fila { grid-template-columns: auto auto 1fr !important; }
+          /* El encabezado del cliente acompaña el scroll: al quitar el cliente
+             de cada fila, es lo único que dice de quién es este trabajo. */
+          .cons-grupo { position: sticky; top: 0; z-index: 2; background: #fff; }
           .cons-tit { font-size: 0.95rem !important; font-weight: 650 !important; line-height: 1.35 !important; overflow-wrap: anywhere; }
-          .cons-cat { display: inline-block; margin-left: 0 !important; margin-top: 6px; }
           .cons-meta { font-size: 0.78rem !important; }
-          /* El chip de fecha y el valor bajan a la línea de contexto, en el
-             flujo del texto: a la derecha se recortaban. */
+          .cons-extra { display: none !important; }
+          /* La fecha y el valor cierran la misma línea de contexto: a la
+             derecha se recortaban, y en renglón propio inflaban la fila. */
           .cons-der { grid-column: 3 !important; justify-content: flex-start !important;
-                      flex-wrap: wrap !important; margin-top: 8px !important; }
+                      flex-wrap: wrap !important; margin-top: 4px !important; gap: 10px !important; }
         }
       `}</style>
       <div style={{ marginBottom: 16 }}>
@@ -812,26 +853,21 @@ export default function MejorasTab() {
             const plegado = plegados.has(g.id);
             return (
               <div key={g.id} style={{ marginBottom: 6 }}>
-                <div onClick={() => alterna(plegados, setPlegados, g.id)}
+                <div className="cons-grupo" onClick={() => alterna(plegados, setPlegados, g.id)}
                   role="button" tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(plegados, setPlegados, g.id); } }}
                   style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 0 6px', borderTop: '1px solid #f0eff3', cursor: 'pointer', flexWrap: 'wrap' }}>
                   <span style={{ color: '#b0aec0', fontSize: '0.7rem', transform: plegado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>▾</span>
                   <b style={{ fontSize: '0.85rem' }}>{g.nombre}</b>
-                  {vencG > 0 && (
-                    <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#FEF0EF', color: '#C0554E', borderRadius: 20, padding: '2px 8px' }}>
-                      {vencG} vencida{vencG === 1 ? '' : 's'}
-                    </span>
-                  )}
-                  {pendG > 0 && (
-                    <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>
-                      {pendG} por entregar
-                    </span>
-                  )}
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>{g.items.length} en total</span>
+                  {/* Conteos como TEXTO: con relleno se confundían con los
+                      chips de categoría de las filas, que dicen otra cosa. */}
+                  {vencG > 0 && <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C0554E' }}>{vencG} vencida{vencG === 1 ? '' : 's'}</span>}
+                  {pendG > 0 && <span style={{ fontSize: '0.75rem', color: '#8f8d98' }}>· {pendG} por entregar</span>}
+                  <span style={{ fontSize: '0.75rem', color: '#8f8d98' }}>· {g.items.length} en total</span>
                   <button onClick={e => { e.stopPropagation(); copiarGrupo(g); }}
-                    style={{ marginLeft: 'auto', border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Copiar lista
+                    title="Copiar la lista de este cliente"
+                    style={{ marginLeft: 'auto', border: 'none', background: 'none', padding: '6px 0 6px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    Copiar
                   </button>
                 </div>
                 {!plegado && g.items.map((m: any) => renglon(m, false))}
