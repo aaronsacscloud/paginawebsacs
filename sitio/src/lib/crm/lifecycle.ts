@@ -25,6 +25,7 @@ export const LIFECYCLE: LifecycleStage[] = [
   { id: 'evangelista',     label: 'Evangelista', bg: '#EAF8F2', fg: '#1E8A63' },
   { id: 'churned',         label: 'Perdido',     bg: '#FEF0EF', fg: '#C0554E' },
   { id: 'descalificado',   label: 'Descalificado', bg: '#F1EFEF', fg: '#7A6E6C' },
+  { id: 'rezagado',       label: 'Rezagado',    bg: '#FFF4E5', fg: '#9a6a10' },
 ];
 
 export const lifecycleDe = (id?: string | null): LifecycleStage | null =>

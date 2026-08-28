@@ -48,6 +48,10 @@ export const ETAPAS_A_TIKTOK: Record<string, string> = {
   // un lead sin trabajar NO es un descalificado, y un mal negativo hace mas
   // dano que un positivo faltante porque se usa para excluir.
   descalificado: 'Unqualified',
+  // `rezagado` NO va aquí a propósito. Es un lead que dejamos enfriar: habla de
+  // NUESTRO proceso, no de su calidad. Reportarlo le enseñaría a TikTok a evitar
+  // gente buena a la que simplemente no llamamos a tiempo. Vive en el CRM para
+  // poder filtrarlo y recuperarlo, y se queda ahí. Igual que `churned`.
 };
 
 /** El orden del embudo: sirve para no reportar hacia atrás. */
