@@ -1155,7 +1155,9 @@ const CRM_MOBILE_CSS = `
        que el mismo selector sirve de gancho. */
     [style*="Plus Jakarta"] { background: #fff !important; }
     :root {
-      --m-ink: #1a1a1a; --m-soft: #8f8d98; --m-line: #efeef2;
+      /* El gris secundario subió de #8f8d98 (3.27:1 sobre blanco) a #6b7280
+         (4.83:1): es el texto que se lee para decidir qué fila abrir. */
+      --m-ink: #1a1a1a; --m-soft: #6b7280; --m-line: #efeef2;
       --m-neutro: #f4f3f6; --m-acc: #5B4BD6; --m-acc-suave: #EEECFE;
       --m-dinero: #1E8A63; --m-rojo: #C0554E; --m-ambar: #a06600;
     }
@@ -1456,6 +1458,9 @@ const CRM_MOBILE_CSS = `
          traía el gris claro del tema normal y en oscuro salía un bloque
          blanco en medio del menú. */
       [data-crm-dark="1"] .menu-sub { background: #232329 !important; }
+      /* Rojo destructivo: el tinte del tema claro (#b91c1c) sobre #131318 da
+         2.86:1 — el único texto de la app que no se leía. */
+      [data-crm-dark="1"] .menu-hoja [style*="color: rgb(185, 28, 28)"] { color: #F87171 !important; }
       /* Chip de estado elegido: el morado agua es casi blanco y en oscuro era
          lo más luminoso de la hoja. */
       [data-crm-dark="1"] .menu-hoja [style*="background: rgb(238, 236, 254)"] {
