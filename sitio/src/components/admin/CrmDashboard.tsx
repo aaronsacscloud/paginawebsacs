@@ -1401,8 +1401,10 @@ const CRM_MOBILE_CSS = `
 
       /* La alerta no es el dato principal: superficie normal + barra roja de
          2 px. Un panel relleno gritaba más que el ARR de la cuenta. */
-      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(254, 240, 239)"],
-      [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(253, 236, 234)"] {
+      /* Solo la ALERTA (clase propia) baja a superficie con barra roja: la
+         regla por valor alcanzaba también a las pastillas de conteo y les
+         pintaba un filete rojo de la nada. */
+      [data-crm-dark="1"] .hoja-ficha .fic-alerta, [data-crm-dark="1"] .m-auto-dark .fic-alerta {
         background: #1d1d24 !important; border-left: 2px solid #F0857A !important;
         border-radius: 0 10px 10px 0 !important;
       }
@@ -1425,6 +1427,10 @@ const CRM_MOBILE_CSS = `
          gridlines y tracks de barra #F2F1F7. En oscuro eran lo más brillante
          de la pantalla —ocho meses sin dato se leían como ocho meses al tope—
          así que el track baja al hairline y la banda al morado translúcido. */
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(247, 246, 250)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(238, 238, 241)"],
+      [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(236, 236, 242)"] { border-color: #26262e !important; }
+      [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(247, 246, 250)"],
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(242, 241, 247)"],
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(240, 239, 243)"],
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(245, 244, 248)"] { background: #26262e !important; }
@@ -1435,7 +1441,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(236, 72, 153)"],
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(217, 83, 142)"],
       [data-crm-dark="1"] .m-auto-dark [style*="background: rgb(155, 140, 250)"] { background: #A78BFA !important; }
-      [data-crm-dark="1"] .m-auto-dark [style*="linear-gradient"] { background-image: none !important; }
+      /* Los degradados de fondo se apagan SOLO en superficies grandes; en una
+         barra de progreso quitar la imagen la dejaba vacía teniendo dato. */
+      [data-crm-dark="1"] .m-auto-dark [style*="linear-gradient"]:not([style*="height: 100%"]):not([style*="height: 7px"]):not([style*="height: 6px"]) { background-image: none !important; }
       [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(125, 166, 245)"],
       [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(217, 83, 142)"],
       [data-crm-dark="1"] .m-auto-dark [style*="solid rgb(79, 191, 149)"] { border-color: #26262e !important; }
@@ -1683,6 +1691,13 @@ const CRM_MOBILE_CSS = `
     /* Encabezado de sección con su acción al lado: que no se peguen */
     .hoja-ficha [style*="display: flex"][style*="justify-content: space-between"],
     .m-auto-dark [style*="display: flex"][style*="justify-content: space-between"] { gap: 12px !important; align-items: center !important; }
+
+    /* Fila de filtros de módulo: en el teléfono, tres controles apilados a
+       ancho completo son tres renglones de cromo antes del trabajo. El
+       buscador manda (ancho completo) y los dos filtros comparten renglón. */
+    .mod-filtros { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; align-items: stretch !important; }
+    .mod-filtros > input, .mod-filtros > input[type="search"] { grid-column: 1 / -1 !important; min-width: 0 !important; min-height: 44px !important; }
+    .mod-filtros > select, .mod-filtros > label, .mod-filtros > div { min-width: 0 !important; }
 
     /* Las sub-vistas de un módulo son PESTAÑAS, no botones: con contorno se
        leían como seis acciones y el riel les cortaba el borde de abajo. */

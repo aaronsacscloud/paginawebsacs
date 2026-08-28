@@ -379,6 +379,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
               {tab === 'resumen' && vencidasMej.length > 0 && (
                 <div onClick={() => irA('mejoras')}
+                  className="fic-alerta"
                   style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>
                   <b style={{ color: '#8c2f28' }}>{vencidasMej.length === 1 ? 'Un compromiso se pasó de fecha.' : `${vencidasMej.length} compromisos se pasaron de fecha.`}</b>{' '}
                   «{vencidasMej[0].titulo}» · {vencidasMej[0].dias === 1 ? '1 día' : `${vencidasMej[0].dias} días`} de retraso.{' '}
@@ -387,6 +388,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
               )}
               {tab === 'resumen' && alertasReu.map((a: any) => (
                 <div key={a.categoria} onClick={() => irA('reuniones')}
+                  className="fic-alerta"
                   style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>
                   <b style={{ color: '#8c2f28' }}>⚠️ {a.faltas} inasistencias en {String(a.tipo_nombre).toLowerCase()}.</b>{' '}
                   No está acudiendo a lo que tiene contratado — ver reuniones.

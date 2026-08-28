@@ -456,7 +456,7 @@ export default function MejorasTab() {
     const c = cat(m.categoria);
     const iAct = PASOS.indexOf(m.estado);
     const fechaTxt = m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}`
-      : m.fecha_compromiso ? `${venc ? '⚠ ' : ''}Para el ${fmtDate(m.fecha_compromiso)}`
+      : m.fecha_compromiso ? `Para el ${fmtDate(m.fecha_compromiso)}`
       : 'Sin fecha';
 
     return (
@@ -501,7 +501,7 @@ export default function MejorasTab() {
                 ...(venc ? { borderColor: '#EF7A72', background: '#FEF0EF', color: '#C0554E' }
                   : m.estado === 'entregada' ? { borderColor: '#cdeadd', background: '#EAF8F2', color: '#1E8A63' }
                   : { borderColor: '#eceaf3', background: '#fff', color: '#8a8a92' }),
-              }}>{fechaTxt}{m.estado !== 'entregada' ? ' ✎' : ''}</button>
+              }}>{fechaTxt}</button>
             <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
               {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
             </div>
@@ -600,7 +600,7 @@ export default function MejorasTab() {
                 ['Cliente', m.companies?.nombre_comercial || m.companies?.nombre || '—'],
                 ['Salió de', m.bookings?.asunto || (m.bookings?.fecha ? `junta del ${fmtDate(m.bookings.fecha)}` : 'captura manual')],
                 ['Módulo', m.modulo || '—'],
-                ['Entregado como', m.estado === 'entregada' ? (m.url ? (m.modo || 'con liga') : '⚠️ sin liga de entrega') : (m.modo || '—')],
+                ['Entregado como', m.estado === 'entregada' ? (m.url ? (m.modo || 'con liga') : 'sin liga de entrega') : (m.modo || '—')],
               ].map(([kk, vv]) => (
                 <div key={kk as string} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{ fontSize: '0.58rem', letterSpacing: '.11em', textTransform: 'uppercase', color: '#b0aec0', fontWeight: 700 }}>{kk}</span>
@@ -679,7 +679,7 @@ export default function MejorasTab() {
       </div>
 
       {/* ── Las vistas ── */}
-      <div className="crm-scroll-x" style={{ display: 'flex', gap: 2, borderBottom: '1px solid #ececf2', marginBottom: 16 }}>
+      <div className="crm-scroll-x mod-tabs" style={{ display: 'flex', gap: 2, borderBottom: '1px solid #ececf2', marginBottom: 16 }}>
         {VISTAS.map(v => {
           const n = v.id === 'revisar' ? nDecidir : (rows || []).filter(v.f).length;
           const on = vista === v.id;
@@ -736,7 +736,7 @@ export default function MejorasTab() {
         {/* El buscador va PRIMERO: lo que se busca aquí es un cliente, para ver
             de golpe todo lo suyo después de una junta. Los filtros vienen
             después, para acotar lo que ya se encontró. */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+        <div className="mod-filtros" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o mejora…"
             style={{ minWidth: 260, padding: '8px 12px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.78rem', outline: 'none', background: '#fdfcff', fontFamily: 'inherit' }} />
           {/* El estado es transversal a los tres tipos, así que es filtro y no

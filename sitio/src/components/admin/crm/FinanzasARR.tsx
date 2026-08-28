@@ -179,7 +179,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           e={<>{d.detalle.ganadas.length} cuenta{d.detalle.ganadas.length === 1 ? '' : 's'} nueva{d.detalle.ganadas.length === 1 ? '' : 's'} · <b style={{ color: VIO }}>ver quiénes</b></>} />
         {/* Lo que se fue tiene su propio número: escondido dentro del neto no se
             ve venir, y es la mitad de la historia. */}
-        <Kpi franja={P.rosa} color={DOWN} onClick={() => setDetalle('perdidas')}
+        <Kpi franja={P.rojo} color={DOWN} onClick={() => setDetalle('perdidas')}
           k="ARR dado de baja este mes" v={money(t.perdido)}
           s={<>bajas {money(Math.abs(p.baja))} · contracción {money(Math.abs(p.contraccion))}</>}
           e={<>{t.bajas_mes} licencia{t.bajas_mes === 1 ? '' : 's'} cancelada{t.bajas_mes === 1 ? '' : 's'} · <b style={{ color: VIO }}>ver quiénes</b></>} />
@@ -222,7 +222,7 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
           <div style={S.tit}>De dónde vino el ARR de este mes</div>
           <Puente p={p} G={G} movil={esMovilFin} />
           <div style={S.nota}>
-            El <b>puente de ARR</b>: no basta el total, importa de qué está hecho el cambio. Morado lo que suma, rosa y rojo lo que resta.
+            El <b>puente de ARR</b>: no basta el total, importa de qué está hecho el cambio. En verde lo que suma y en rojo lo que resta.
             {p.ledger_desde && <> El registro de movimientos empieza en <b>{etiquetaMes(p.ledger_desde, true)}</b>; antes de esa fecha solo hay altas y bajas, no expansiones.</>}
           </div>
         </div>
@@ -377,16 +377,27 @@ export default function FinanzasARR({ onCuenta }: { onCuenta?: (id: string) => v
         </div>
         <div style={S.card}>
           <div style={S.tit}>Ingreso por pagos únicos, mes a mes</div>
-          {d.serie.map((x: any) => (
-            <div key={x.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: '0.76rem' }}>
-              <span style={{ width: 42, color: P.tenue }}>{etiquetaMes(x.mes, x.mes.endsWith('-01'))}</span>
-              <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', flex: 1 }}>
-                <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(x.monto_unicos ? 2 : 0, (x.monto_unicos / maxUnico) * 100)}%`, background: `linear-gradient(90deg,${P.rosaSuave},${P.rosa})` }} />
+          {/* Doce renglones con diez guiones no son una gráfica: en el teléfono
+              solo salen los meses que SÍ tuvieron ingreso (si no hubo ninguno,
+              se dice con palabras). El relleno es color plano, no degradado:
+              el degradado se apagaba y la barra quedaba vacía con dato. */}
+          {(() => {
+            const conDato = d.serie.filter((x: any) => x.monto_unicos > 0);
+            const filas = esMovilFin ? conDato : d.serie;
+            if (esMovilFin && conDato.length === 0) {
+              return <div style={{ fontSize: '0.8rem', color: P.tenue, padding: '10px 0' }}>Ningún mes del periodo registró pagos únicos.</div>;
+            }
+            return filas.map((x: any) => (
+              <div key={x.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', fontSize: '0.76rem' }}>
+                <span style={{ width: 42, color: P.tenue }}>{etiquetaMes(x.mes, x.mes.endsWith('-01'))}</span>
+                <div style={{ height: 7, borderRadius: 9, background: G.track, overflow: 'hidden', flex: 1 }}>
+                  <span style={{ display: 'block', height: '100%', borderRadius: 9, width: `${Math.max(x.monto_unicos ? 3 : 0, (x.monto_unicos / maxUnico) * 100)}%`, background: G.serie }} />
+                </div>
+                <span style={{ width: 74, textAlign: 'right', fontWeight: 800 }}>{x.monto_unicos ? money(x.monto_unicos) : '—'}</span>
+                <span style={{ width: 20, textAlign: 'right', color: P.gris }}>{x.unicos || ''}</span>
               </div>
-              <span style={{ width: 74, textAlign: 'right', fontWeight: 800 }}>{x.monto_unicos ? money(x.monto_unicos) : '—'}</span>
-              <span style={{ width: 20, textAlign: 'right', color: P.gris }}>{x.unicos || ''}</span>
-            </div>
-          ))}
+            ));
+          })()}
           <div style={S.nota}>
             <b>{money(d.unicos.total)}</b> en {d.unicos.n} pagos no recurrentes
             {d.unicos.vitalicias.monto > 0 && <>, de los cuales <b>{money(d.unicos.vitalicias.monto)}</b> son licencias vitalicias</>}.
@@ -616,7 +627,7 @@ function Estacionalidad({ datos, G }: { datos: any[]; G: any }) {
           <div key={x.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', height: '100%' }}>
             {x.monto > 0 && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: ROSA, marginBottom: 4, whiteSpace: 'nowrap' }}>{Math.round(x.monto / 1000)}k</div>}
             <div title={`${x.n} pago${x.n === 1 ? '' : 's'} · ${money(x.monto)}`}
-              style={{ width: '100%', borderRadius: '5px 5px 0 0', minHeight: 3, height: `${Math.max(2, h)}%`, background: x.monto ? `linear-gradient(180deg,${P.rosaSuave},${P.rosa})` : '#f2f1f7' }} />
+              style={{ width: '100%', borderRadius: '5px 5px 0 0', minHeight: 3, height: `${Math.max(2, h)}%`, background: x.monto ? G.serie : G.track }} />
             <div style={{ fontSize: '0.62rem', color: P.tenue, marginTop: 6 }}>{NOM[i]}</div>
           </div>
         );
@@ -689,9 +700,9 @@ function Puente({ p, G, movil }: { p: any; G: any; movil?: boolean }) {
   ];
   const maxMov = Math.max(1, ...pasos.filter(x => x.t !== 'tot' && x.t !== 'fin').map(x => Math.abs(x.v)));
   const fondo: Record<string, string> = {
-    tot: '#EEECFE', pos: 'linear-gradient(180deg,#9B8CFA,#7DA6F5)', exp: 'linear-gradient(180deg,#7DA6F5,#a9c6f9)',
-    neg: 'linear-gradient(180deg,#EFA6CA,#D9538E)', chu: 'linear-gradient(180deg,#EF7A72,#C0554E)',
-    fin: 'linear-gradient(100deg,#9B8CFA,#7DA6F5 55%,#EFA6CA)',
+    tot: '#EEECFE', pos: '#9B8CFA', exp: 'rgba(155,140,250,.62)',
+    neg: '#EF7A72', chu: '#C0554E',
+    fin: '#9B8CFA',
   };
   /* Seis columnas de barra con montos de siete dígitos no caben en 390 px:
      «$1,961,359» y la etiqueta «ARR final» se salían de la pantalla. En el
@@ -741,7 +752,7 @@ function Serie({ serie, max, maxAlta, G }: { serie: any[]; max: number; maxAlta:
   const area = `M${x(0)},${y(0)} ` + serie.map((s, i) => `L${x(i)},${y(s.arr)}`).join(' ') + ` L${x(serie.length - 1)},${y(0)} Z`;
   const linea = serie.map((s, i) => `${i ? 'L' : 'M'}${x(i)},${y(s.arr)}`).join(' ');
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 220 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: 220 }}>
       <defs><linearGradient id="finArea" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#9B8CFA" stopOpacity=".34" /><stop offset="100%" stopColor="#EFA6CA" stopOpacity=".05" />
       </linearGradient></defs>
@@ -782,7 +793,7 @@ function Proyeccion({ serie, proy, G }: { serie: any[]; proy: any; G: any }) {
   const corte = hist.length - 1;
   return (
     <>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 210 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: 210 }}>
         {[0, .33, .66, 1].map(f => {
           const v = lo + (hi - lo) * f;
           return (
@@ -793,19 +804,19 @@ function Proyeccion({ serie, proy, G }: { serie: any[]; proy: any; G: any }) {
           );
         })}
         <rect x={x(corte)} y={P.t} width={W - P.r - x(corte)} height={H - P.t - P.b} fill={G.banda} />
-        <line x1={x(corte)} x2={x(corte)} y1={P.t} y2={H - P.b} stroke="#ddd6fb" strokeDasharray="3 3" />
-        <path d={path(proy.alto, corte)} fill="none" stroke="#7DA6F5" strokeWidth="1.7" strokeDasharray="5 4" />
-        <path d={path(proy.bajo, corte)} fill="none" stroke="#D9538E" strokeWidth="1.7" strokeDasharray="5 4" />
+        <line x1={x(corte)} x2={x(corte)} y1={P.t} y2={H - P.b} stroke={G.grid} strokeDasharray="3 3" />
+        <path d={path(proy.alto, corte)} fill="none" stroke={G.serie2} strokeWidth="1.7" strokeDasharray="5 4" />
+        <path d={path(proy.bajo, corte)} fill="none" stroke={G.serie3} strokeWidth="1.7" strokeDasharray="5 4" />
         <path d={path(proy.medio, corte)} fill="none" stroke={G.serie} strokeWidth="2.4" strokeDasharray="7 4" />
         <path d={path(hist, 0)} fill="none" stroke={G.serie} strokeWidth="2.6" />
         {hist.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="2.6" fill={G.punto} stroke={G.serie} strokeWidth="2" />)}
-        <text x={x(N) + 7} y={y(proy.alto[12]) + 4} fontSize="10.5" fill="#2C5FC4" fontWeight="800">{kMoney(proy.alto[12])}</text>
-        <text x={x(N) + 7} y={y(proy.medio[12]) + 4} fontSize="10.5" fill="#5B4BD6" fontWeight="800">{kMoney(proy.medio[12])}</text>
-        <text x={x(N) + 7} y={y(proy.bajo[12]) + 4} fontSize="10.5" fill="#9c3d70" fontWeight="800">{kMoney(proy.bajo[12])}</text>
+        <text x={x(N) + 7} y={y(proy.alto[12]) + 4} fontSize="13" fill={G.serie2} fontWeight="800">{kMoney(proy.alto[12])}</text>
+        <text x={x(N) + 7} y={y(proy.medio[12]) + 4} fontSize="13" fill={G.serie} fontWeight="800">{kMoney(proy.medio[12])}</text>
+        <text x={x(N) + 7} y={y(proy.bajo[12]) + 4} fontSize="13" fill={G.serie3} fontWeight="800">{kMoney(proy.bajo[12])}</text>
         <text x={x(corte)} y={H - 8} textAnchor="middle" fontSize="13" fill={G.eje}>hoy</text>
       </svg>
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: '0.71rem', color: '#6b7280', marginTop: 2 }}>
-        {[['#7DA6F5', 'Si el ritmo mejora'], ['#9B8CFA', 'Si se mantiene'], ['#D9538E', 'Si se enfría']].map(([c, l]) => (
+        {[[G.serie2, 'Si el ritmo mejora'], [G.serie, 'Si se mantiene'], [G.serie3, 'Si se enfría']].map(([c, l]) => (
           <span key={l}><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: c, marginRight: 5, verticalAlign: -1 }} />{l}</span>
         ))}
       </div>
