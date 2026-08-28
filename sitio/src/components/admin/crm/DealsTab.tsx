@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import Sheet from './ui/Sheet';
+import VistaRapida from './ui/VistaRapida';
 import ActionSheet from './ui/ActionSheet';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import SugerenciasOportunidad from './SugerenciasOportunidad';
@@ -355,6 +356,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
 
   const esMovilD = useIsMobile();
   const [filtrosMov, setFiltrosMov] = useState(false);
+  const [rapidaD, setRapidaD] = useState<Deal | null>(null);
   const nFiltrosSec = (tablero !== 'venta' ? 1 : 0) + (filtroTipo ? 1 : 0) + (soloEstancadas ? 1 : 0) + (filtroCat ? 1 : 0) + selEtiquetas.length;
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -468,9 +470,9 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         {loading ? (
           <KanbanSkeleton cols={5} />
         ) : view === 'kanban' ? (
-          <KanbanView deals={dealsVista} onSelect={setSelected} onMove={moveStage} />
+          <KanbanView deals={dealsVista} onSelect={esMovilD ? (setRapidaD as any) : setSelected} onMove={moveStage} />
         ) : (
-          <TableView deals={dealsVista} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} etiquetasFila={etiquetasDeal} />
+          <TableView deals={dealsVista} onSelect={esMovilD ? (setRapidaD as any) : setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} etiquetasFila={etiquetasDeal} />
         )}
       </div>
 
@@ -515,6 +517,34 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
           tipo de dinero— vive aquí. */}
       {showCreate && <NuevaOportunidadModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
 
+      {rapidaD && (() => {
+        const d = rapidaD;
+        const st2 = STAGES.find(sx => sx.id === d.stage);
+        const mensual = Number(d.mrr ?? d.valor_mensual ?? 0);
+        const unico = Number(d.valor_unico ?? 0);
+        const tel = d.contacts?.whatsapp;
+        const sinMover = diasSinMover(d);
+        const acciones = [
+          { label: 'Avanzar etapa', primaria: true, onClick: () => { setRapidaD(null); setSelected(d); } },
+          tel ? { label: 'WhatsApp', href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
+        ].filter(Boolean) as any[];
+        return (
+          <VistaRapida abierta onCerrar={() => setRapidaD(null)} onVerTodo={() => { setRapidaD(null); setSelected(d); }}
+            nombre={d.nombre?.replace(/^Oportunidad — /, '') || d.nombre}
+            estado={`${stageLabel(d.stage)} · ${st2?.prob ?? d.probabilidad}%`}
+            contexto={d.days_in_pipeline != null ? (d.days_in_pipeline === 0 ? 'creada hoy' : d.days_in_pipeline === 1 ? '1 día en pipeline' : `${d.days_in_pipeline} días en pipeline`) : 'recién creada'}
+            heroLabel={mensual > 0 ? 'Valor mensual' : 'Pago único'}
+            heroValor={fmt(mensual > 0 ? mensual : unico)}
+            heroLectura={d.proximo_paso ? <>próximo paso: <b style={{ color: '#3f3b4d', fontWeight: 600 }}>{d.proximo_paso}</b></> : <span style={{ color: '#C0554E' }}>sin próximo paso agendado</span>}
+            acciones={acciones}
+            claves={[
+              { k: 'Plan', v: d.plan ? d.plan[0].toUpperCase() + d.plan.slice(1) : '—' },
+              { k: 'Cierre esperado', v: d.fecha_cierre_esperada || '—' },
+              { k: 'Movimiento', v: estaEstancada(d) ? `${sinMover} días sin moverse` : 'al día', tono: estaEstancada(d) ? 'ambar' as const : undefined },
+            ]}
+            verTodoLabel="Ver oportunidad completa ›" />
+        );
+      })()}
       {/* Detail Drawer */}
       {selected && (
         <DealDrawer

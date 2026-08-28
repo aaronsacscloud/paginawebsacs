@@ -1235,6 +1235,21 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .wa-hilo-m [style*="border: 1px solid rgb(229, 231, 235)"] { background: #1d1d24 !important; border-color: #26262e !important; }
       [data-crm-dark="1"] .wa-hilo-m textarea, [data-crm-dark="1"] .wa-hilo-m input[type="text"] { background: transparent !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .wa-hilo-m [style*="border-bottom: 1px solid rgb(243, 244, 246)"] { border-bottom-color: #26262e !important; }
+      /* Vista rápida (bottom sheet) en oscuro */
+      [data-crm-dark="1"] .vr-sheet { background: #131318 !important; }
+      [data-crm-dark="1"] .vr-handle { background: #33333d !important; }
+      [data-crm-dark="1"] .vr-nom, [data-crm-dark="1"] .vr-hv:not([style*="rgb(192, 85, 78)"]):not([style*="rgb(30, 138, 99)"]):not([style*="rgb(160, 102, 0)"]) { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .vr-acc { background: #232329 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .vr-accp { background: #A78BFA !important; color: #17121f !important; }
+      [data-crm-dark="1"] .vr-cl { border-color: #1f1f26 !important; }
+      [data-crm-dark="1"] .vr-v:not([style*="rgb(192, 85, 78)"]):not([style*="rgb(30, 138, 99)"]):not([style*="rgb(160, 102, 0)"]) { color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .vr-vertodo { color: #B7A8F7 !important; }
+      [data-crm-dark="1"] .vr-hint { color: #62626c !important; }
+      [data-crm-dark="1"] .vr-ctx, [data-crm-dark="1"] .vr-hl, [data-crm-dark="1"] .vr-hd, [data-crm-dark="1"] .vr-k { color: #918fa0 !important; }
+      [data-crm-dark="1"] .vr-hv[style*="rgb(192, 85, 78)"] { color: #F0857A !important; }
+      [data-crm-dark="1"] .vr-hv[style*="rgb(30, 138, 99)"], [data-crm-dark="1"] .vr-v[style*="rgb(30, 138, 99)"] { color: #34D399 !important; }
+      [data-crm-dark="1"] .vr-v[style*="rgb(160, 102, 0)"] { color: #E8B04B !important; }
+      [data-crm-dark="1"] .vr-v[style*="rgb(192, 85, 78)"] { color: #F0857A !important; }
       /* header del hilo: atrás y menú visibles, textos secundarios legibles */
       [data-crm-dark="1"] .wa-hilo-m [aria-label="Atrás"] { color: #F2F1F7 !important; }
       [data-crm-dark="1"] .wa-hilo-m [title="Más acciones"] { color: #F2F1F7 !important; }
@@ -1282,6 +1297,11 @@ const CRM_MOBILE_CSS = `
        etiqueta <a>. Los links de prosa no llevan border/background inline. */
     .m-tabin td a, .m-tabin a[style*="border"], .m-tabin a[style*="background"] {
       min-height: 36px !important; display: inline-flex !important; align-items: center !important;
+    }
+    /* Vista rápida: pills centradas e iguales (la regla de arriba las pisaba) */
+    .m-tabin a.vr-acc[style], .m-tabin a.vr-accp[style], a.vr-acc[style], a.vr-accp[style], .vr-acc, .vr-accp {
+      display: inline-flex !important; align-items: center !important; justify-content: center !important;
+      flex: 1 1 0 !important; min-height: 44px !important; text-align: center !important; padding: 0 8px !important; width: auto !important;
     }
 
     /* M6 · Transición de entrada al cambiar de tab (como una app nativa). */

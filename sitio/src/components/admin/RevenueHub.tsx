@@ -7,6 +7,7 @@ import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
 import PlanesConfig from './crm/PlanesConfig';
 import { swrGet } from '../../lib/crm/swr';
+import VistaRapida from './crm/ui/VistaRapida';
 // El hub de agenda ya viene lazy: no engorda el bundle de Cotizaciones.
 import SchedulingTab from './crm/SchedulingTab';
 import MotivosLead from './crm/MotivosLead';
@@ -549,6 +550,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // ══ Móvil v5 (mockup Cotizaciones): chips Abiertas/Aceptadas/Vencidas ══
     const esMovilQ = useIsMobile();
     const [chipQ, setChipQ] = useState<'abiertas' | 'aceptadas' | 'vencidas'>('abiertas');
+    const [rapidaQ, setRapidaQ] = useState<any>(null);
     // Cada tarjeta se abre con la lista que forma su número: un KPI que no se
     // puede desarmar termina en "¿de dónde salió esto?".
     const [panelKpi, setPanelKpi] = useState<string>('');
@@ -1494,7 +1496,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               {listaQ.map((q: any) => {
                 const ed = estadoDer(q);
                 return (
-                  <div key={q.id} className="m-row" onClick={() => setVerActividad(q.id)}>
+                  <div key={q.id} className="m-row" onClick={() => setRapidaQ(q)}>
                     <div className="m-tx">
                       <div className="m-n1">{String(q.empresa || q.contacto || q.numero || '').replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)))}</div>
                       <div className="m-n2">{contexto(q)}</div>
@@ -1506,6 +1508,36 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   </div>
                 );
               })}
+              {rapidaQ && (() => {
+                const q = rapidaQ;
+                const abonado = Number(q.abonado || 0);
+                const saldo = Math.max(0, Number(q.total || 0) - abonado);
+                const v = vDe(q);
+                const dEnv = Math.floor(daysSince(q.created_at));
+                const venceEn = q.vigencia ? Math.ceil(daysUntil(q.vigencia)) : null;
+                return (
+                  <VistaRapida abierta onCerrar={() => setRapidaQ(null)} onVerTodo={() => { const id = q.id; setRapidaQ(null); setVerActividad(id); }}
+                    nombre={String(q.empresa || q.contacto || q.numero || '').replace(/\S+/g, (w: string) => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)))}
+                    estado={q.numero}
+                    contexto={[`enviada ${dEnv <= 0 ? 'hoy' : dEnv === 1 ? 'ayer' : 'hace ' + dEnv + ' días'}`, venceEn != null ? (venceEn < 0 ? 'vencida' : 'vence en ' + venceEn + ' d') : null].filter(Boolean).join(' · ')}
+                    heroLabel={saldo > 0 && abonado > 0 ? 'Saldo por cobrar' : saldo > 0 ? 'Total' : 'Cobrada'}
+                    heroValor={fmt(saldo > 0 ? saldo : Number(q.total || 0))}
+                    heroTono={saldo > 0 && (venceEn != null && venceEn < 0) ? 'rojo' : undefined}
+                    heroLectura={v > 0 ? <><b style={{ color: '#1E8A63' }}>la abrió {v === 1 ? '1 vez' : v + ' veces'}</b></> : <span style={{ color: '#a06600' }}>aún no la abre</span>}
+                    acciones={[
+                      { label: 'Cobrar', primaria: true, onClick: () => { setRapidaQ(null); setCobrando(q); } },
+                      { label: 'Ver documento', onClick: () => window.open(`/cotizacion/${q.id}?admin=1`, '_blank', 'noopener') },
+                    ]}
+                    claves={[
+                      abonado > 0
+                        ? { k: 'Total', v: fmt(Number(q.total || 0)) }
+                        : { k: 'Abonado', v: fmt(0) },
+                      { k: 'Estado', v: estadoLabels[estadoVisual(q, v)] || q.estado },
+                      { k: 'Vigencia', v: q.vigencia ? new Date(String(q.vigencia).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ') : '—' },
+                    ]}
+                    verTodoLabel="Ver cotización completa ›" />
+                );
+              })()}
               {verActividad && (
                 <CotizacionActividad quoteId={verActividad} onClose={() => setVerActividad(null)}
                   onCambio={async () => {

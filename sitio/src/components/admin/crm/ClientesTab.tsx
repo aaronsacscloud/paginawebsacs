@@ -15,6 +15,7 @@ import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import { swrGet } from '../../../lib/crm/swr';
+import VistaRapida from './ui/VistaRapida';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -197,6 +198,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [buscaM, setBuscaM] = useState('');
   const [chipCl, setChipCl] = useState<'activos' | 'riesgo'>('activos');
   const [mrrAsc, setMrrAsc] = useState(false);
+  // Vista rápida (mock aprobado): el tap abre el sheet mínimo; "Ver todo" la ficha
+  const [rapida, setRapida] = useState<any>(null);
   // REGLA DE VELOCIDAD: 40 filas de inicio, el sentinel pide más al scrollear
   const [visMovil, setVisMovil] = useState(40);
   const finListaRef = useRef<HTMLDivElement | null>(null);
@@ -763,7 +766,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   ? Math.max(1, Math.floor((Date.parse(hoyIso) - Date.parse(String(c.proxima_factura).slice(0, 10))) / 86400000)) : 0;
                 const salud = c.health_score == null ? null : Number(c.health_score);
                 return (
-                  <div key={c.id} className="m-row" onClick={() => setDetailId(c.id)}>
+                  <div key={c.id} className="m-row" onClick={() => setRapida(c)}>
                     <div className="m-ini">{iniciales(nombre)}</div>
                     <div className="m-tx">
                       <div className="m-n1">{nombre}</div>
@@ -965,6 +968,37 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       </div>
       </>)}
 
+      {rapida && (() => {
+        const c = rapida;
+        const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+        const nombre = cased(c.nombre_comercial || c.sacs_account || c.nombre || 'Cliente');
+        const hoyIso = new Date().toISOString().slice(0, 10);
+        const vencida = c.proxima_factura && String(c.proxima_factura).slice(0, 10) < hoyIso;
+        const salud = c.health_score == null ? null : Number(c.health_score);
+        const tel = c.contacto?.whatsapp || c.contacto?.telefono;
+        const acciones = [
+          tel ? { label: 'WhatsApp', primaria: true, href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
+          tel ? { label: 'Llamar', href: 'tel:' + String(tel).replace(/[^\d+]/g, '') } : null,
+          c.contacto?.email ? { label: 'Correo', href: 'mailto:' + c.contacto.email } : null,
+        ].filter(Boolean) as any[];
+        if (!acciones.length) acciones.push({ label: 'Abrir ficha', primaria: true, onClick: () => { setRapida(null); setDetailId(c.id); } });
+        return (
+          <VistaRapida abierta onCerrar={() => setRapida(null)} onVerTodo={() => { setRapida(null); setDetailId(c.id); }}
+            nombre={nombre}
+            estado={vencida ? 'vencida' : salud != null && salud < 60 ? `salud ${salud}` : salud != null ? 'saludable' : undefined}
+            estadoTono={vencida ? 'rojo' : salud != null && salud < 60 ? 'ambar' : salud != null ? 'verde' : undefined}
+            contexto={[c.plan && PLAN_BADGE[c.plan] ? 'Plan ' + PLAN_BADGE[c.plan].label : null, c.proxima_factura ? 'renueva ' + fmtDate(c.proxima_factura) : null].filter(Boolean).join(' · ') || c.sacs_account}
+            heroLabel="ARR" heroValor={c.vitalicia ? 'Vitalicia' : money(c.arr)}
+            heroLectura={<>{vencida ? <span style={{ color: '#C0554E', fontWeight: 700 }}>renovación vencida</span> : 'al corriente'}{salud != null ? <> · <b style={{ color: salud < 60 ? '#a06600' : '#1E8A63' }}>salud {salud}</b></> : null}</>}
+            acciones={acciones}
+            claves={[
+              { k: 'Cuenta SACS', v: (c.cuentas || [c.sacs_account]).filter(Boolean).join(' · ') || '—' },
+              { k: 'Contacto', v: c.contacto?.nombre || c.contacto?.email || 'sin contacto', tono: c.contacto ? undefined : 'rojo' as const },
+              { k: 'Próxima factura', v: c.proxima_factura ? fmtDate(c.proxima_factura) : '—', tono: vencida ? 'rojo' as const : undefined },
+            ]}
+            verTodoLabel="Ver ficha completa ›" />
+        );
+      })()}
       {detailId && <Suspense fallback={null}><ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} /></Suspense>}
 
       {motivoMasivo && (

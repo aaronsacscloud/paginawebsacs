@@ -1,4 +1,5 @@
 import { swrGet } from '../../../lib/crm/swr';
+import VistaRapida, { telBonito } from './ui/VistaRapida';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
 //
 // Abre en LISTA y no en el tablero. Con cuarenta leads apilados en una sola
@@ -236,6 +237,7 @@ export default function LeadsTab() {
   const esMovil = useIsMobile();
   // Móvil: la búsqueda vive tras el icono de la cabecera (la referencia no lleva campo fijo).
   const [buscaMovil, setBuscaMovil] = useState(false);
+  const [rapidaL, setRapidaL] = useState<any>(null);
   // REGLA DE VELOCIDAD: pintar 320 filas de golpe costaba ~600 ms de render;
   // se pintan 40 y el sentinel del fondo pide más al hacer scroll.
   const [visMovil, setVisMovil] = useState(40);
@@ -993,7 +995,7 @@ export default function LeadsTab() {
                 const d = dias(c);
                 const atorado = agrupa && d >= 3;
                 return (
-                  <div key={c.id} className="m-row" onClick={() => setVerContacto(c.id)}>
+                  <div key={c.id} className="m-row" onClick={() => setRapidaL(c)}>
                     <div className="m-tx">
                       <div className="m-n1">{cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || 'Sin nombre'}</div>
                       <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
@@ -1516,6 +1518,37 @@ export default function LeadsTab() {
         );
       })()}
 
+      {rapidaL && (() => {
+        const c = rapidaL;
+        const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
+        const nombre = cased([c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre');
+        const o = origenDe(origenDeRegistro(c));
+        const et2 = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+        const dToque = c.last_contact_at ? Math.floor((Date.now() - Date.parse(c.last_contact_at)) / 86400000) : null;
+        const tel = c.whatsapp || c.telefono;
+        const acciones = [
+          tel ? { label: 'WhatsApp', primaria: true, href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
+          tel ? { label: 'Llamar', href: 'tel:' + String(tel).replace(/[^\d+]/g, '') } : null,
+          { label: 'Cotizar', onClick: () => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener') },
+        ].filter(Boolean) as any[];
+        return (
+          <VistaRapida abierta onCerrar={() => setRapidaL(null)} onVerTodo={() => { const id = c.id; setRapidaL(null); setVerContacto(id); }}
+            nombre={nombre}
+            estado={et2.l.toLowerCase()} estadoTono={c.lifecycle_stage === 'cliente' ? 'verde' : c.lifecycle_stage === 'oportunidad' || c.lifecycle_stage === 'lead_calificado' ? 'morado' : 'ambar'}
+            contexto={[c.companies?.nombre, 'llegó ' + (fechaCorta(c.created_at) === 'hoy' ? 'hoy' : fechaCorta(c.created_at))].filter(Boolean).join(' · ')}
+            heroLabel="Último toque"
+            heroValor={dToque == null ? 'nunca' : dToque === 0 ? 'hoy' : dToque === 1 ? 'ayer' : `hace ${dToque} d`}
+            heroTono={dToque == null || dToque > 7 ? 'rojo' : undefined}
+            heroLectura={o.l !== 'Sin definir' ? <>llegó por <b>{o.l}</b></> : undefined}
+            acciones={acciones}
+            claves={[
+              { k: 'WhatsApp', v: c.whatsapp ? telBonito(c.whatsapp) : '—', tono: c.whatsapp ? undefined : 'rojo' as const },
+              { k: 'Correo', v: c.email || '—' },
+              { k: 'Origen', v: o.l },
+            ]}
+            verTodoLabel="Ver ficha completa ›" />
+        );
+      })()}
       {verContacto && <Suspense fallback={null}><LeadDrawer contactId={verContacto} onClose={() => setVerContacto(null)} onChanged={cargar}
         onAbrirOtro={(id: string) => setVerContacto(id)} /></Suspense>}
       {borrando && <EliminarLead c={borrando} onCerrar={() => setBorrando(null)}
