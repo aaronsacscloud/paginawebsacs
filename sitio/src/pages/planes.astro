@@ -233,6 +233,10 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
         </div>
       ))}
     </div>
+    <p class="universal-pronto">
+      <b>Lo marcado «pronto»</b> es la ruta de temporada que estamos construyendo con marcas de moda mexicanas.
+      Cuando salga, entra en tu plan sin costo extra — y en Automatiza lo estrenas antes que nadie.
+    </p>
   </div>
 </section>
 
@@ -2009,6 +2013,16 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 }
 
 @media (min-width: 768px) {
+  .universal-pronto {
+    max-width: 760px;
+    margin: 28px auto 0;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+  .universal-pronto b { color: var(--color-text-primary, #1A1A1A); font-weight: 700; }
+
   .universal-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-5) var(--space-6); }
 }
 
