@@ -20,6 +20,16 @@ import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { cumpleVista, type ConfigVista } from '../../../../lib/whatsapp/filtros';
 
 export const prerender = false;
+
+// Caché de proceso (60 s) del set de conversaciones con nota interna.
+let notasCache: { at: number; data: any[] } | null = null;
+async function notasConCache(): Promise<{ data: any[] }> {
+  if (notasCache && Date.now() - notasCache.at < 60_000) return { data: notasCache.data };
+  const { data } = await supabase.from('wa_notas').select('conversation_id')
+    .not('conversation_id', 'is', null).order('created_at', { ascending: false }).limit(1000);
+  notasCache = { at: Date.now(), data: data || [] };
+  return { data: notasCache.data };
+}
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
@@ -52,8 +62,10 @@ const _GET: APIRoute = async ({ request, url }) => {
     // 24) menciones @ a este usuario en notas (para "Requiere mi acción")
     user ? supabase.from('wa_notas').select('conversation_id, created_at').contains('menciones', [user.id]).order('created_at', { ascending: false }).limit(300) : Promise.resolve({ data: [] as any[] }),
     // E8.1) Qué conversaciones traen nota interna del equipo: hay que saberlo
-    // ANTES de abrirla, no después de leerla entera.
-    supabase.from('wa_notas').select('conversation_id').not('conversation_id', 'is', null).order('created_at', { ascending: false }).limit(1000),
+    // ANTES de abrirla, no después de leerla entera. Con caché de 60 s: el
+    // inbox se refresca cada 6 s y las notas casi no cambian — sin esto sería
+    // una consulta de mil filas cada seis segundos por pestaña abierta.
+    notasConCache(),
   ]);
   if (error) return json({ error: error.message }, 500);
   const leidoAt = new Map<string, string>((lecturas || []).map((l: any) => [l.conversation_id, l.leido_at]));
