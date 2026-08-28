@@ -6,12 +6,15 @@ import { telefonoLegible } from '../../../../lib/telefono';
 import { Avatar } from './ListaConversaciones';
 import { SelectorPlantilla } from './Composer';
 
-export default function NuevoChat({ lista, api, onAbrir, onClose }: {
-  lista: any[]; api: any; onAbrir: (c: any) => void; onClose: () => void;
+export default function NuevoChat({ lista, api, telefono, onAbrir, onClose }: {
+  lista: any[]; api: any; telefono?: string; onAbrir: (c: any) => void; onClose: () => void;
 }) {
   const [audiencia, setAudiencia] = useState<any[] | null>(null);
   const [q, setQ] = useState('');
-  const [telPlantilla, setTelPlantilla] = useState<string | null>(null);
+  // Con teléfono se entra directo al arranque con plantilla: viene del botón de
+  // WhatsApp de una ficha, donde ya sabes a quién le escribes. Buscarlo otra
+  // vez en una lista de 3000 sería pedir dos veces el mismo dato.
+  const [telPlantilla, setTelPlantilla] = useState<string | null>(telefono || null);
 
   useEffect(() => {
     fetch('/api/crm/whatsapp/broadcasts?audiencia=1').then(r => r.json())

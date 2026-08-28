@@ -2,7 +2,7 @@
 // sidebar de vistas custom | lista PRO | hilo | detalle. Polling deliberado
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
-import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
@@ -11,6 +11,7 @@ import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import AvisoNuevo from './AvisoNuevo';
+import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscribirCola, marcaUnica, type EnCola } from '../../../../lib/crm/cola-envio';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
 const ListaConversaciones = lazySeguro(() => import('./ListaConversaciones'));
@@ -51,7 +52,12 @@ export default function InboxPro() {
   const [activa, setActiva] = useState<{ id: string; wa: string | null; email: string | null } | null>(null);
   const [hilo, setHilo] = useState<any>(null);
   const [detalleMobile, setDetalleMobile] = useState(false);
-  const [nuevoChat, setNuevoChat] = useState(false);
+  // `true` abre el buscador de contactos; un string abre directo el arranque
+  // con plantilla para ESE teléfono. Es lo que hace que el botón de WhatsApp de
+  // una ficha caiga aquí y no en wa.me: si el contacto nunca ha escrito no hay
+  // conversación que abrir, y quedarse en una búsqueda vacía se lee como que el
+  // contacto "no está".
+  const [nuevoChat, setNuevoChat] = useState<boolean | string>(false);
   const [error, setError] = useState('');
   const campos = useCamposFiltro(equipo);
 
@@ -270,6 +276,10 @@ export default function InboxPro() {
         const limpio = tel.replace(/\D/g, '');
         const hit = lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)));
         if (hit) setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id });
+        // Sin conversación previa no hay nada que buscar: se arranca. Un
+        // contacto recién agregado NUNCA tiene conversación, y dejar la
+        // búsqueda vacía hacía parecer que el contacto no existía.
+        else if (p.get('wa_nuevo') === '1') setNuevoChat(tel);
         else setFiltros(f => ({ ...f, search: tel }));
       }
     } catch { /* SSR o URL rara */ }
@@ -337,6 +347,52 @@ export default function InboxPro() {
   }, [lista, precargarHilo]);
 
   const refrescar = () => { if (activaRef.current) cargarHilo(activaRef.current); cargarLista(filtrosRef.current); };
+
+  // ══ E3 · Cola de envío ═══════════════════════════════════════════════════
+  // Un mensaje sale de la cola solo cuando el servidor confirma. Si no hubo
+  // respuesta (sin señal, pestaña muerta a medias) se queda y se reintenta.
+  const [colaTick, setColaTick] = useState(0);
+  const mandarDeLaCola = useCallback(async (it: EnCola) => {
+    const r = await fetch('/api/crm/whatsapp/enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      // `idem` es el candado del servidor: si este mensaje ya se espejó, no
+      // se manda otra vez aunque el reintento llegue tarde.
+      body: JSON.stringify({ conversation_id: it.conv, texto: it.texto, cita: it.cita || undefined, idem: it.id }),
+    }).then(x => x.json()).catch(() => null);
+    if (r === null) {   // no hubo respuesta: es la red, no el mensaje
+      const n = it.intentos + 1;
+      actualizarEnCola(it.id, { intentos: n, error: n >= 5 ? 'No se pudo enviar. Toca Reintentar cuando tengas señal.' : null });
+      setColaTick(x => x + 1);
+      return { ok: true, encolado: true };
+    }
+    // Error del servidor (ventana cerrada, plantilla, número): reintentarlo a
+    // ciegas no lo arregla — se saca de la cola y el composer lo explica.
+    quitarDeCola(it.id); setColaTick(x => x + 1);
+    return r;
+  }, []);
+
+  const vaciando = useRef(false);
+  const vaciarCola = useCallback(async () => {
+    if (vaciando.current) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    vaciando.current = true;
+    try {
+      for (const it of leerCola()) {
+        if (it.intentos >= 5) continue;   // ya no insiste solo: espera el toque
+        await mandarDeLaCola(it);
+      }
+    } finally { vaciando.current = false; }
+    if (activaRef.current) cargarHilo(activaRef.current);
+  }, [mandarDeLaCola, cargarHilo]);
+
+  useEffect(() => {
+    const unir = suscribirCola(() => setColaTick(x => x + 1));
+    const alVolverLaRed = () => vaciarCola();
+    window.addEventListener('online', alVolverLaRed);
+    const t = setInterval(() => { if (leerCola().length) vaciarCola(); }, 20000);
+    if (leerCola().length) vaciarCola();   // lo que quedó de la sesión anterior
+    return () => { unir(); window.removeEventListener('online', alVolverLaRed); clearInterval(t); };
+  }, [vaciarCola]);
   const waId = () => activaRef.current?.wa || null;
 
   const api = {
@@ -347,15 +403,16 @@ export default function InboxPro() {
       return r;
     },
     enviarTexto: async (texto: string, cita?: string | null) => {
-      // Eco optimista: la burbuja aparece YA (status pending); el refetch la
-      // sustituye por la real con su wamid y sus palomitas.
-      const eco = { id: `eco-${Date.now()}`, kapso_message_id: null, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'pending', created_at: new Date().toISOString(), enviado_at: new Date().toISOString(), autor: yo?.nombre || null, metadata: cita ? { cita: { wamid: cita } } : null, _eco: true };
-      setHilo((h: any) => h ? { ...h, mensajes: [...(h.mensajes || []), eco] } : h);
-      const r = await fetch('/api/crm/whatsapp/enviar', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation_id: waId(), texto, cita: cita || undefined }),
-      }).then(x => x.json()).catch(e => ({ error: String(e) }));
-      refrescar(); return r;
+      // E3 · El mensaje entra a la cola ANTES de salir a la red. Así, si la
+      // red falla o el navegador se muere a media petición, el texto sigue
+      // ahí: se ve pendiente en el hilo y se reintenta solo.
+      const conv = waId();
+      if (!conv) return { error: 'Esta conversación no tiene WhatsApp' };
+      const it = agregarACola({ id: marcaUnica(), conv, texto, cita: cita || null, autor: yo?.nombre || null });
+      setColaTick(x => x + 1);
+      const r = await mandarDeLaCola(it);
+      refrescar();
+      return r;
     },
     escribiendo: () => {
       const a = activaRef.current; if (!a?.wa) return;
@@ -405,6 +462,15 @@ export default function InboxPro() {
       setHilo((h: any) => h ? { ...h, mensajes: [...(j.mensajes || []), ...(h.mensajes || [])], hay_mas: !!j.hay_mas } : h);
     },
     reintentar: async (m: any) => {
+      // De la cola: se reintenta el mismo mensaje con su marca, así que si el
+      // envío anterior sí había salido, el servidor no lo duplica.
+      if (m?._cola) {
+        const it = leerCola().find(x => x.id === m._cola);
+        if (!it) { refrescar(); return { ok: true }; }
+        actualizarEnCola(it.id, { intentos: 0, error: null });
+        const r = await mandarDeLaCola({ ...it, intentos: 0 });
+        refrescar(); return r;
+      }
       // Vuelve a mandar el mismo contenido como mensaje nuevo (Meta no reintenta por wamid).
       const body: any = { conversation_id: waId() };
       if (m.tipo === 'text' || m.tipo === 'template') body.texto = m.cuerpo;
@@ -509,11 +575,27 @@ export default function InboxPro() {
     },
   };
 
+  // E3.2 · Lo que está en la cola se ve EN el hilo, con su estado: reloj
+  // mientras espera, error rojo con «Reintentar» cuando ya insistió 5 veces.
+  const hiloConCola = useMemo(() => {
+    const pend = colaDe(activa?.wa || null);
+    if (!hilo || !pend.length) return hilo;
+    const burbujas = pend.map(it => ({
+      id: `cola-${it.id}`, kapso_message_id: null, direccion: 'saliente', tipo: 'text',
+      cuerpo: it.texto, status: it.intentos >= 5 ? 'failed' : 'pending',
+      error: it.intentos >= 5 ? (it.error || 'No se pudo enviar') : null,
+      created_at: it.creado_at, enviado_at: it.creado_at, autor: it.autor || null,
+      metadata: it.cita ? { cita: { wamid: it.cita } } : null, _eco: true, _cola: it.id,
+    }));
+    return { ...hilo, mensajes: [...(hilo.mensajes || []), ...burbujas] };
+  }, [hilo, activa?.wa, colaTick]);
+
   if (error && lista === null) return <div style={S.wrap}><Aviso tono="malo">{error}</Aviso></div>;
   if (lista === null) return <Cargando texto="Cargando el inbox de WhatsApp…" />;
 
   const conv = hilo?.conversacion || null;
   const filaActiva = (lista || []).find(c => c.id === activa?.id) || null;
+
 
   const propsLista = {
     lista, counts, filtros, setFiltros, activaId: activa?.id || null, onAbrir: abrir,
@@ -662,14 +744,14 @@ export default function InboxPro() {
           })()
         ) : (
           <Suspense fallback={<Cargando texto="Abriendo conversación…" />}>
-            <Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api} mobile
+            <Hilo hilo={hiloConCola} filaActiva={filaActiva} equipo={equipo} api={api} mobile
               onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
               {conv && <PanelDetalle hilo={hilo} api={api} />}
             </Sheet>
           </Suspense>
         )}
-        {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+        {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} telefono={typeof nuevoChat === 'string' ? nuevoChat : undefined} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
         {aviso && (
           <AvisoNuevo conv={aviso.conv} mas={aviso.mas} movil={true}
             onAbrir={() => { abrir(aviso.conv); setAviso(null); }} onCerrar={() => setAviso(null)} />
@@ -698,7 +780,7 @@ export default function InboxPro() {
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         <Suspense fallback={<Cargando texto="Cargando conversaciones…" />}><ListaConversaciones {...propsLista} /></Suspense>
         {activa ? (
-          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hilo} filaActiva={filaActiva} equipo={equipo} api={api}
+          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hiloConCola} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
@@ -715,7 +797,7 @@ export default function InboxPro() {
           {conv && <Suspense fallback={<Cargando texto="Cargando…" alto={180} />}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
         </Sheet>
       )}
-      {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
+      {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} telefono={typeof nuevoChat === 'string' ? nuevoChat : undefined} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
       {aviso && (
         <AvisoNuevo conv={aviso.conv} mas={aviso.mas}
           onAbrir={() => { abrir(aviso.conv); setAviso(null); }} onCerrar={() => setAviso(null)} />

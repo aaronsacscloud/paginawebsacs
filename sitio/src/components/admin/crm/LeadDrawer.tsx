@@ -33,7 +33,20 @@ const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T1
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
 const hoy = () => new Date().toISOString().slice(0, 10);
-const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/\D/g, '') : '';
+/* A NUESTRA bandeja, no a wa.me.
+ *
+ * El botón abría WhatsApp Web, que escribe desde el teléfono personal de quien
+ * le dio clic: el mensaje no queda en el hilo del CRM, no lo ve el equipo y no
+ * cuenta como toque. Y en un contacto recién agregado ni siquiera se podía
+ * empezar la conversación desde el inbox, porque sin conversación previa no
+ * salía en la búsqueda — parecía que el contacto no estaba.
+ *
+ * `wa_nuevo=1` le dice al inbox que, si no hay hilo todavía, lo arranque con
+ * plantilla en vez de dejar una búsqueda vacía. Una conversación nueva no tiene
+ * ventana de 24 h: la plantilla es la única forma de abrirla. */
+const waLink = (p?: string | null) => p
+  ? `/admin/crm?tab=whatsapp&wa_nuevo=1&wa_search=${encodeURIComponent(String(p).replace(/[^\d+]/g, ''))}`
+  : '';
 
 const D = {
   overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 },
@@ -250,7 +263,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
               </div>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
-              {!esMovil && tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
+              {!esMovil && tel && <a style={D.btnW} href={waLink(tel)}>WhatsApp</a>}
               {!esMovil && c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
               {!esMovil && <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>}
               {!esMovil && <button onClick={cerrar} aria-label="Cerrar"
@@ -262,7 +275,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
               NO se pinta: la hoja ya trae esa misma fila, fija arriba. ══ */}
           {esMovil && !embebido && (
             <div style={{ display: 'flex', gap: 8, padding: '10px 0 2px' }}>
-              {tel && <a href={waLink(tel)} target="_blank" rel="noreferrer" style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>WhatsApp</a>}
+              {tel && <a href={waLink(tel)} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>WhatsApp</a>}
               {tel && <a href={'tel:' + String(tel).replace(/\D/g, '')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>Llamar</a>}
               <button onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>Cotizar</button>
             </div>
@@ -498,7 +511,7 @@ function Personas({ c, flash, recargar, onChanged }: any) {
             </div>
           )}
         </div>
-        {tel && <a style={D.btnW} href={waLink(tel)} target="_blank" rel="noreferrer">WhatsApp</a>}
+        {tel && <a style={D.btnW} href={waLink(tel)}>WhatsApp</a>}
       </div>
     );
   };
@@ -1136,7 +1149,7 @@ function LoUltimo({ c }: any) {
       <div style={D.h}>Lo último</div>
       <div style={{ fontSize: '0.78rem', color: '#8a8590', lineHeight: 1.5 }}>
         Aún no hay actividad con este lead.
-        {tel && <> El primer toque es el que abre todo — <a href={waLink(tel)} target="_blank" rel="noreferrer" style={{ color: '#5B4BD6', fontWeight: 700, textDecoration: 'none' }}>mándale el primer WhatsApp →</a></>}
+        {tel && <> El primer toque es el que abre todo — <a href={waLink(tel)} style={{ color: '#5B4BD6', fontWeight: 700, textDecoration: 'none' }}>mándale el primer WhatsApp →</a></>}
       </div>
     </div>
   );
@@ -1417,7 +1430,7 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
           return (
           <div style={{ ...separador, ...rejilla }}>
             <div style={{ gridColumn: 'span 2', minWidth: 0 }}>{leido('Correo', c.email, c.email && btnCopiar(c.email, 'email'))}</div>
-            <div style={{ gridColumn: esMovilC ? 'span 2' : undefined, minWidth: 0 }}>{leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}</div>
+            <div style={{ gridColumn: esMovilC ? 'span 2' : undefined, minWidth: 0 }}>{leido('WhatsApp', c.whatsapp, c.whatsapp && <>{btnCopiar(c.whatsapp, 'wa')}<a href={waLink(c.whatsapp)} style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'none', whiteSpace: 'nowrap' }}>abrir</a></>)}</div>
             {visibles.map(([l2, v2]) => <span key={l2}>{l2 === 'Teléfono' ? leido('Teléfono', c.telefono, c.telefono && btnCopiar(c.telefono, 'tel')) : leido(l2, v2)}</span>)}
             {esMovilC && vacios.length > 0 && (
               <button onClick={() => setVerVacios(x => !x)} style={{ gridColumn: 'span 2', border: 'none', background: 'none', padding: '6px 0', textAlign: 'left', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
