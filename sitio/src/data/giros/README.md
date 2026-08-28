@@ -19,7 +19,8 @@ copiar su estructura es el camino corto.
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
 | Joyería | **Al día y aprobada** por los tres referees (oficio 9.2 · calidad 9.2 · diseño 9). Único giro que se vende como complemento |
 | Papelería y arte | Estructura y fotos al día; **pendiente de referees** |
-| Los demás (~19) | Sin empezar |
+| Boutique multimarca | **Al día y aprobada** (oficio 9 · calidad 9 · diseño 9, 5 rondas). Bloque propio `MultiPercha`; la consigna se vende como suite aparte |
+| Los demás (~18) | Sin empezar |
 
 ---
 
@@ -257,6 +258,24 @@ Todos mandan su resultado a `/contacto?estimado=`, que la página de agenda lee:
 es lo único que sabemos del visitante antes de la llamada. **Nunca mandes
 `estimado=0`** — le llega a la llamada como si el cliente no tuviera nada que
 ganar.
+
+### Trampas pagadas en boutique-multimarca (no repetir)
+
+- **Lo que es una SUITE gateada se marca "aparte" en TODOS los lugares donde se
+  vende** (hero, scroll, plano `suite:true` + `rotuloSuite`, SuiteProblemas,
+  SuitePlanes `notaComplemento`, personalización del nav). La consignación
+  entrante es `consignacion_gate.suiteActiva()` — nunca "Plan Controla".
+- **SuiteProblemas y el pie "3,000 marcas" traen defaults de marcas de ropa**:
+  en un giro nuevo SIEMPRE pasar `entrada`, `filas` y `quienes` propios.
+- **El +3,000 del GiroBanner es prop** (`selloMarcas`) — en multimarca "marcas"
+  significa las de terceros y hay que decir "negocios de moda".
+- **En consigna no hay "compra"**: el % vendido es "de lo que dejó", y la
+  liquidación sale del acuerdo de comisión, no de piezas × costo.
+- **Los proveedores tienen geografía**: la mezclilla es Torreón/Tehuacán, León
+  es piel y calzado. El gremio lo huele.
+- **Referees con capturas VIEJAS reportan fantasmas**: si una ronda corrigió el
+  código después del QA, recaptura ANTES de la siguiente ronda o el dictamen
+  trae hallazgos ya resueltos.
 
 ### Cómo se encuentra el bloque propio
 

@@ -31,6 +31,9 @@ interface Fila {
 export interface DocLinea { a: string; b: string; c?: string; tachado?: boolean; tenue?: boolean; }
 interface Props {
   filas?: Fila[];
+  /** Quiénes pagan la pieza, en el pie. En giros donde "marca" nombra a la
+   *  marca de terceros (multimarca), decir "marcas" confunde: se sobreescribe. */
+  quienes?: string;
   titulo?: string;
   entrada?: string;
   /** Documento 1: el reporte del sistema genérico. */
@@ -40,6 +43,7 @@ interface Props {
 }
 
 const {
+  quienes = 'las más de 3,000 marcas que ya la usan',
   filas = [
     { que: 'Matriz de tallas × colores', generico: 'No existe', medida: 'Si la pagaste', sacs: 'Incluida' },
     { que: 'Curva de compra por sucursal', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluida' },
@@ -166,8 +170,7 @@ const documentos = [doc1, doc2];
 
       <p class="pp-pie">
         No es que seamos más listos. Es que <b>esa pieza ya está construida</b> para tu giro y se
-        mantiene todos los días — y no la pagas tú sola: la pagan las más de 3,000 marcas que ya
-        la usan.
+        mantiene todos los días — y no la pagas tú sola: la pagan {quienes}.
       </p>
     </div>
 

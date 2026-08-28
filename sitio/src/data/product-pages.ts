@@ -4,7 +4,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Punto de Venta",
       "title": "Un punto de venta listo para tu negocio",
-      "subtitle": "Convierte cualquier dispositivo en un punto de venta completo. Tarjeta, efectivo, transferencia y más.",
+      "subtitle": "Convierte cualquier dispositivo en un punto de venta completo. Cobra, cambia de talla y aparta — tarjeta, efectivo, transferencia y más.",
       "image": "/images/screen-pos.webp",
       "imageAlt": "Punto de Venta SACS en tablet mostrando el proceso de cobro",
       "video": {
@@ -500,7 +500,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Promociones",
       "title": "Tu promo corre sola. En todas tus sucursales. A la hora exacta.",
-      "subtitle": "Defínela una vez. SACS se encarga de que todas tus tiendas la apliquen igual, sin códigos en post-its ni cajeros que la olviden.",
+      "subtitle": "Del 2×1 al remate de fin de temporada: la defines una vez y SACS la aplica igual en todas tus tiendas, sin códigos en post-its ni cajeros que la olviden.",
       "image": "/images/promo-hero.webp",
       "imageAlt": "Dueña de boutique de moda revisando promociones en tablet",
       "video": {
@@ -2083,7 +2083,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Tienda en Línea",
       "title": "Un solo inventario. Tus tiendas físicas y tu tienda en línea, en tiempo real.",
-      "subtitle": "Tu tienda en línea ya no vive aparte. Cada venta online baja stock en la sucursal correcta y cada cambio en caja se refleja en tu sitio al instante.",
+      "subtitle": "Tu tienda en línea ya no vive aparte. Cada venta online baja la talla exacta en la sucursal correcta y cada cambio en caja se refleja en tu sitio al instante.",
       "image": "/images/tienda-online-hero.webp",
       "imageAlt": "Dueña de boutique revisando tienda en línea conectada a inventario físico"
     },
@@ -3055,7 +3055,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Inventario Omnicanal",
       "title": "Tu inventario de toda la red, leído en 10 análisis listos para decidir.",
-      "subtitle": "El Tablero de Inventario consolida existencias, costos y ventas de cada sucursal y almacén en una sola pantalla. Elige el análisis que necesitas — ABC, rotación, puntos de reorden, valorización — filtra por ubicación y expórtalo a Excel cuando tu contador lo pida.",
+      "subtitle": "El Tablero de Inventario consolida existencias, costos y ventas de cada sucursal y almacén en una sola pantalla. Elige el análisis que necesitas — ABC, rotación, puntos de reorden, valorización — filtra por ubicación y expórtalo a Excel cuando tu contador lo pida. En moda, con la lectura por talla y color: qué combinación se vende y cuál se quedó.",
       "image": "/images/inventario-omnicanal-sistema.webp",
       "imageAlt": "Módulo de inventario omnicanal en SACS"
     },
@@ -3614,7 +3614,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Nivelación de Inventario",
       "title": "El stock donde se está vendiendo. Calculado, no a corazonada.",
-      "subtitle": "SACS lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. Tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
+      "subtitle": "SACS lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. La talla parada en una tienda se va a la que sí la vende: tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
       "image": "/images/nivelacion-de-inventario-sistema.webp",
       "imageAlt": "Módulo de nivelacion de inventario en SACS"
     },
@@ -4735,7 +4735,7 @@ export const pageContent: Record<string, any> = {
     "hero": {
       "eyebrow": "SACS Reportes y Analítica",
       "title": "Todos los reportes de tu negocio, en una sola pantalla.",
-      "subtitle": "Un hub con tus reportes agrupados por área —ventas, cobros, clientes, inventario, caja— y un reporte de ventas con filtros por sucursal, vendedor y periodo que se exporta a Excel con el mismo corte que ves. Sin pedirle el reporte al contador.",
+      "subtitle": "Un hub con tus reportes agrupados por área —ventas, cobros, clientes, inventario, caja— y un reporte de ventas con filtros por sucursal, vendedor y periodo — hasta la talla más vendida y la que se agotó — que se exporta a Excel con el mismo corte que ves. Sin pedirle el reporte al contador.",
       "image": "/images/reportes-y-analitica-sistema.webp",
       "imageAlt": "Módulo de reportes y analitica en SACS"
     },

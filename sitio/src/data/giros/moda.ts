@@ -201,9 +201,9 @@ export const planoModa = [
     caja: { x: 298, y: 82, w: 128, h: 112 },
     items: [
       { t: 'Consulta de existencia de las otras tiendas sin dejar a la clienta' },
-      { t: 'Apartado con anticipo y abonos' },
-      { t: 'Cambio de talla o color, aunque la prenda venga de otra tienda' },
-      { t: 'Vale a favor cuando no está su talla' },
+      { t: 'Apartado con anticipo; los abonos, desde Controla', plan: 'Controla' },
+      { t: 'Cambio de talla o color, aunque la prenda venga de otra tienda', plan: 'Controla' },
+      { t: 'Vale a favor cuando no está su talla', plan: 'Controla' },
       { t: 'Cambio sin ticket físico', plan: 'Fideliza' },
     ],
   },

@@ -1,0 +1,177 @@
+---
+/**
+ * Suite para Boutiques Multimarca.
+ *
+ * El giro: una tienda que vende marcas de OTROS. Su pleito diario no es el
+ * producto sino la marca — cuál rota, cuál se queda, a cuál se le liquida la
+ * consigna y a cuál se le recompra en la expo.
+ *
+ * Estructura calcada de marcas-de-ropa.astro (la referencia viva del manual).
+ * Todo ejemplo es de multimarca: proveedores, consigna, etiquetado y percha.
+ * Padrón de sucursales de la página: Centro · Del Valle · Querétaro.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import MultiPercha from '../../components/giros/MultiPercha.astro';
+import { cortinaMulti, casosMulti, pasosMulti, planoMulti, seccionesMulti } from '../../data/giros/boutique-multimarca';
+
+const titulo = 'Suite Moda para Boutiques Multimarca';
+const desc =
+  'El sistema para boutiques multimarca: cada prenda con su marca y su proveedor, consigna separada de lo firme, etiquetado al recibir y el corte que dice qué marca te deja.';
+---
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <!-- ── Portada: avisos del oficio multimarca ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu boutique no vende productos."
+    resalte="Vende marcas."
+    sub="Cada prenda con su marca, su proveedor y su costo; el corte que dice qué marca paga la percha que ocupa; y si trabajas consigna, la Suite de Consignación (aparte) la separa de lo firme — todo con un mismo inventario para tu piso, tu tienda en línea y tu WhatsApp."
+    foto="/images/hero-multi.webp"
+    fotoAlt="Dueña de una boutique multimarca consultando su tablet junto a percheros de distintas marcas"
+    selloMarcas="Negocios de moda activos en México y Latam"
+    avisos={[
+      { modulo: 'Talla agotada', texto: 'Mezclilla slim 26: agotada en Centro', pos: 1, tono: 'rojo', sello: 'Hoy' },
+      { modulo: 'Marca sin rotar', texto: 'Trajes de baño: 18% vendido en 12 semanas', pos: 2, tono: 'ambar', sello: '12 sem. en piso' },
+      { modulo: 'Consigna por liquidar', texto: 'Proveedor de GDL: $18,400 · pasa el viernes', pos: 3, tono: 'azul', sello: 'Viernes' },
+    ]}
+  />
+
+  <!-- ── Manifiesto: se demuestra que entendemos el giro ── -->
+  <SuiteManifiesto
+    intro="Sabemos cómo trabaja una multimarca"
+    frases={[
+      'Llegaron tres <b>proveedores</b> el mismo martes, y ninguno trae código de barras.',
+      'El de la <b>consigna</b> pasa el viernes y nadie sabe cuánto se le debe.',
+      'La marca nueva se ve preciosa — y no ha vendido <b>una pieza</b> en tres semanas.',
+      '"¿Tendrás algo así pero de <b>otra marca</b>?" — y a buscar perchero por perchero.',
+      'Compraste en la <b>expo</b> por corazonada, porque el corte por marca no existe.',
+      'Vendiste <b>en línea</b> el vestido que la clienta traía en el probador.',
+      'El <b>remate</b> de enero se come el margen que dejó diciembre.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto: para él todo es «producto», sin marca, sin proveedor y sin consigna. Y hoy el mostrador ya no es el único piso: tu tienda física, tu tienda en línea y tu WhatsApp venden la misma percha, con la misma clienta. Cada pantalla funciona igual en el piso que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo."
+  />
+
+  <!-- El problema estructural: un tipo de prenda son veinticuatro piezas,
+       y en multimarca cada corte viene además de un proveedor distinto. -->
+  <SuiteVariantes
+    eyebrow="Un solo tipo de prenda"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“unos jeans”."
+    sub="Cuatro modelos — recto, slim, mom y wide — en seis tallas. Veinticuatro combinaciones de modelo y talla que comprar, etiquetar, contar y resurtir. Y las que están en cero son justo las que te piden."
+    ejeA={['24', '26', '28', '30', '32', '34']}
+    filas={[
+      { nombre: 'Recto', img: '/images/jean-recto.webp', alt: 'Jeans rectos en azul medio' },
+      { nombre: 'Slim', img: '/images/jean-slim.webp', alt: 'Jeans slim en azul oscuro' },
+      { nombre: 'Mom', img: '/images/jean-mom.webp', alt: 'Jeans mom en azul claro deslavado' },
+      { nombre: 'Wide', img: '/images/jean-wide.webp', alt: 'Jeans wide de pierna amplia en azul medio' },
+    ]}
+    matriz={[
+      [3, 2, 6, 1, 4, 5],
+      [2, 0, 1, 3, 2, 1],
+      [4, 3, 2, 0, 2, 3],
+      [1, 2, 0, 0, 3, 4],
+    ]}
+    unidad="combinaciones"
+    genero="f"
+    leyendas={['Con existencia', 'Quedan pocas', 'Agotada']}
+  />
+
+  <!-- ── La comparación que hace el propio visitante ── -->
+  <SuiteCortina
+    fotoAntes={cortinaMulti.fotoAntes}
+    fotoDespues={cortinaMulti.fotoDespues}
+    altAntes={cortinaMulti.altAntes}
+    altDespues={cortinaMulti.altDespues}
+    libreta={cortinaMulti.libreta}
+    filas={cortinaMulti.filas}
+  />
+
+  <!-- ── Por qué lo que ya probó no le sirvió ── -->
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi toda multimarca que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Matriz de tallas × colores', generico: 'No existe', medida: 'Si la pagaste', sacs: 'Incluida' },
+      { que: 'Venta y margen por marca', generico: 'No existe', medida: 'Casi nunca', sacs: 'Incluida' },
+      { que: 'Etiquetas al recibir la mercancía', generico: 'A medias', medida: 'A veces', sacs: 'Incluida' },
+      { que: 'Consigna del proveedor separada de lo firme', generico: 'No existe', medida: 'A veces', sacs: 'Suite aparte' },
+      { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una consigna." />
+
+  <!-- ── Respiro fotográfico: la escala ── -->
+  <SuiteCifras
+    foto="/images/suite-multi-tienda.webp"
+    alt="Boutique multimarca amplia con percheros por marca, mesa de accesorios y mostrador al fondo"
+    frase="De una boutique de barrio a una cadena multimarca con bodega."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <!-- Los cuatro momentos del año -->
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una multimarca gana o pierde el dinero. Toca cada una."
+    casos={casosMulti}
+  />
+
+  <!-- ── El recorrido de funcionalidades ── -->
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Toda tu multimarca, física y digital, en un solo lugar"
+    intro="Baja para ver cada pieza. Todos los ejemplos son de una boutique multimarca real: la mercancía que llega sin código, la consigna que hay que liquidar y el corte que dice qué marca te deja. Y todo funciona igual en el piso que en tu tienda en línea, porque es el mismo inventario."
+    secciones={seccionesMulti}
+  />
+
+  <!-- El bloque propio: solo en multimarca las marcas pelean por la percha -->
+  <MultiPercha />
+
+  <!-- La operación completa, contada como el plano de la tienda -->
+  <SuitePlano
+    titulo="Tu boutique, por dentro."
+    sub="Entra la clienta, recorre los percheros, se prueba, arma su look y paga. Detrás hay una trastienda que recibe y etiqueta y, afuera, una tienda en línea que vende de la misma percha. Toca cada zona del plano."
+    proyecto="Tu boutique multimarca — planta baja"
+    rotuloSuite="Suite de Consignación · se cotiza aparte"
+    zonas={planoMulti}
+  />
+
+  <!-- Cómo se cambia sin cerrar -->
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin cerrar la tienda."
+    sub="Tienes la tienda operando y proveedores que pasan cada semana. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
+    pasos={pasosMulti}
+    remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —clientas, prendas, proveedores, saldos de consigna— y lo demás queda consultable. Nunca te pedimos empezar de cero."
+  />
+
+  <!-- ── El modelo comercial ── -->
+  <SuitePlanes suite="Suite Moda" notaComplemento="la Suite de Consignación (lo firme vs. lo del proveedor y su liquidación) sí se cotiza aparte, con tu catálogo en la mesa." />
+
+  <SuiteSalida frase="Ya viste el precio. Lo que sigue es ver tu propio corte por marca en pantalla." cta="Agenda una demo" />
+
+  <!-- El mismo cierre que la portada -->
+  <CtaDudas demoDesc="Te mostramos SACS con tus marcas, tus proveedores y tu venta real. 30 min, sin compromiso." />
+</BaseLayout>

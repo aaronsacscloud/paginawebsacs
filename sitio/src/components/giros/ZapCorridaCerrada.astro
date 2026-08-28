@@ -294,7 +294,7 @@ const escalaInicial = Math.max(4, ...caja, ...venta);
         if (cta) {
           const u = new URL(cta.getAttribute('href') || '/contacto', location.origin);
           u.searchParams.set('estimado', String(Math.round(total)));
-          cta.href = u.pathname + u.search;
+          cta.href = u.pathname + u.search + '#demo';
         }
       };
 

@@ -30,6 +30,10 @@ interface Props {
   comoSeVende?: 'incluida' | 'complemento';
   /** El artículo que le toca al nombre del complemento: 'la' o 'las'. */
   articulo?: string;
+  /** Nota extra bajo el sub cuando la suite viene incluida PERO la página
+      vendió además un complemento puntual (p.ej. Suite de Consignación):
+      sin ella, este bloque promete de más por omisión. */
+  notaComplemento?: string;
   /** Por qué se cotiza aparte, en las palabras del giro. */
   porQue?: string;
 }
@@ -38,6 +42,7 @@ const {
   comoSeVende = 'incluida',
   articulo = 'la',
   porQue = 'no es un módulo estándar sino una forma completa de costear',
+  notaComplemento,
 } = Astro.props;
 
 const planes = [
@@ -122,12 +127,15 @@ const planes = [
            nivel que los que nombran el problema del giro. -->
       <h3 class="pl-h">{comoSeVende === 'incluida' ? `La ${suite} no se paga aparte.` : `Los planes, y dónde entra ${articulo} ${suite}.`}</h3>
       {comoSeVende === 'incluida' ? (
-        <p class="pl-sub">
-          No es un módulo con precio propio ni una implementación a cotizar. Los planes son
-          acumulativos —cada uno trae todo el anterior— y a partir del tercero
-          <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
-          planificador— vive en el cuarto, y se dice en cada punto donde aparece.
-        </p>
+        <Fragment>
+          <p class="pl-sub">
+            No es un módulo con precio propio ni una implementación a cotizar. Los planes son
+            acumulativos —cada uno trae todo el anterior— y a partir del tercero
+            <b>ya está incluida</b>. Lo que corre con IA —agentes, predicción de demanda y
+            planificador— vive en el cuarto, y se dice en cada punto donde aparece.
+          </p>
+          {notaComplemento && <p class="pl-sub pl-sub-nota"><b>La excepción:</b> {notaComplemento}</p>}
+        </Fragment>
       ) : (
         <p class="pl-sub">
           Los planes son acumulativos: cada uno trae todo el anterior. {articulo === 'las' ? 'Las' : 'La'} <b>{suite}</b> {articulo === 'las' ? 'son' : 'es'}
@@ -199,6 +207,7 @@ const planes = [
   }
   .pl-sub { margin: 0 0 44px; font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: var(--claro-apunte); }
   .pl-sub b { color: var(--claro-texto); font-weight: 700; }
+  .pl-sub-nota { margin-top: -28px; }
 
   /* ── La escalera ──
      Filas, no tarjetas: cada plan ocupa el ancho y cabe el detalle real. La

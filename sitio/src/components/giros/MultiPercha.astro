@@ -1,0 +1,240 @@
+---
+/**
+ * MultiPercha — qué marca ocupa percha y qué marca la paga.
+ *
+ * El bloque propio de la boutique multimarca: solo aquí la decisión de cada
+ * temporada es entre MARCAS de terceros peleando por los mismos metros de
+ * percha. Una tienda de marca propia no tiene este pleito; un abarrotes menos.
+ *
+ * Los siete puntos del oficio que lo sostienen:
+ * · Cuándo se decide: al cambio de temporada, cuando llega colección nueva y
+ *   no hay dónde colgarla.
+ * · Quién decide: la dueña. Nadie más regresa una consigna.
+ * · Qué se mueve primero: la consigna se REGRESA antes de rematar lo firme —
+ *   regresar no cuesta margen, rematar sí.
+ * · Cuánto cuesta: el dinero parado se cuenta a COSTO, nunca a etiqueta.
+ * · El criterio: porcentaje de percha contra porcentaje de venta, por marca.
+ * · El dato que remata: una marca puede ocupar un tercio de la tienda y dar
+ *   una décima de la venta — y a simple vista no se nota, porque la percha
+ *   llena se ve "bien surtida".
+ * · La cuenta honesta: lo parado no se recupera entero; parte se regresa y
+ *   parte se remata perdiendo margen. El bloque lo dice junto al número.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+
+interface Marca {
+  nombre: string;   // la marca se nombra como en el piso: por su proveedor
+  piezas: number;   // piezas colgadas hoy (percha ocupada)
+  ventas: number;   // piezas vendidas por semana (ajustable)
+  costo: number;    // costo promedio por prenda, a costo
+  firme: boolean;   // true = la compraste; false = te la dejaron a consignación
+}
+const marcas: Marca[] = [
+  { nombre: 'La de Torreón · mezclilla',   piezas: 120, ventas: 18, costo: 380, firme: true },
+  { nombre: 'La de GDL · vestidos',        piezas: 23,  ventas: 3,  costo: 1450, firme: false },
+  { nombre: 'La de Mérida · trajes de baño', piezas: 60, ventas: 1, costo: 310, firme: false },
+  { nombre: 'La de Aguascalientes · blusas', piezas: 150, ventas: 20, costo: 180, firme: true },
+  { nombre: 'La de Monterrey · caballero', piezas: 80,  ventas: 5,  costo: 450, firme: true },
+];
+const totalPiezas = marcas.reduce((a, m) => a + m.piezas, 0);
+---
+
+<BloqueProducto
+  encabezado="La decisión de cada temporada."
+  titulo="La percha se la gana la marca que rota."
+  descripcion={`Hoy tienes ${totalPiezas} piezas colgadas de tus cinco marcas principales. Mueve la venta semanal de cada una — con tus números — y mira qué marca paga la percha que ocupa y cuál nada más la aparta.`}
+  vinetas={[
+    { label: 'Percha contra venta, por marca', detail: 'Una marca que ocupa el 14% de la percha y da el 2% de la venta se ve "bien surtida" — hasta que la pones junto a las demás.' },
+    { label: 'La consigna se regresa antes de rematar', detail: 'Regresar consigna no cuesta margen; rematar lo firme sí. Por eso el sistema separa lo tuyo de lo del proveedor (es la Suite de Consignación; se cotiza aparte).' },
+    { label: 'La cuenta va a costo, y solo lo firme', detail: 'El dinero parado es el que ya pusiste, no el precio de la etiqueta. La consigna lenta no es dinero tuyo: es percha que liberas al regresarla.' },
+  ]}
+>
+  <div class="mp" id="mp" data-marcas={JSON.stringify(marcas)}>
+    <ul class="mp-clave">
+      <li><i class="p"></i>% de la percha que ocupa</li>
+      <li><i class="v"></i>% de la venta que da</li>
+    </ul>
+
+    <div class="mp-filas">
+      {marcas.map((m, i) => (
+        <div class="mp-fila">
+          <div class="mp-cab">
+            <span class="mp-nombre">{m.nombre}</span>
+            <span class="mp-meta">{m.piezas} pzas · costo prom. ${m.costo} · {m.firme ? 'firme' : 'consigna'}</span>
+          </div>
+          <div class="mp-barras" aria-hidden="true">
+            <div class="mp-barra mp-barra-percha" id={`mpp-${i}`}><b id={`mppt-${i}`}></b></div>
+            <div class="mp-barra mp-barra-venta" id={`mpv-${i}`}><b id={`mpvt-${i}`}></b></div>
+          </div>
+          <span class="mp-sr" id={`mpsr-${i}`}></span>
+          <label class="mp-control">
+            <span>Vende por semana</span>
+            <input type="range" class="mp-rango" id={`mpr-${i}`} min="0" max="30" step="1" value={m.ventas} data-i={i} aria-label={`Piezas de ${m.nombre} que vendes por semana`} />
+            <b id={`mprv-${i}`}>{m.ventas}</b>
+          </label>
+        </div>
+      ))}
+    </div>
+
+    <div class="mp-pie">
+      <div class="mp-veredicto" id="mpVeredicto" aria-live="polite"></div>
+      <div class="mp-dinero">
+        <span class="mp-dinero-rot">Dinero parado en marcas lentas — solo lo firme, a costo</span>
+        <b class="mp-dinero-n" id="mpDinero" aria-live="polite">$0</b>
+        <span class="mp-dinero-nota">Marca lenta: la que a su ritmo tarda más de una temporada (12 semanas) en vaciar su percha. Lo firme parado no se recupera entero: se remata perdiendo margen. La consigna lenta se regresa al proveedor — nunca fue dinero tuyo, pero sí percha ocupada.</span>
+        <span class="mp-regresa" id="mpRegresa" aria-live="polite"></span>
+        <a class="mp-cta" href="/contacto" id="mpCta">Ver mi corte por marca con mi venta real</a>
+      </div>
+    </div>
+  </div>
+</BloqueProducto>
+
+<style>
+  .mp {
+    background: #fff; border-radius: 16px; padding: 26px 26px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 12px 32px rgba(15,23,42,.07);
+  }
+  .mp-clave {
+    list-style: none; margin: 0 0 18px; padding: 0; display: flex; gap: 18px; flex-wrap: wrap;
+    font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A);
+  }
+  .mp-clave i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; }
+  .mp-clave i.p { background: #C3D2EE; }
+  .mp-clave i.v { background: #2AB5A0; }
+
+  .mp-fila { position: relative; }
+  .mp-fila + .mp-fila { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,.06); }
+  .mp-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+  .mp-nombre { font-size: 13px; font-weight: 800; color: var(--color-text-primary, #1a1a2e); }
+  .mp-meta { font-size: 11px; color: var(--color-text-tertiary, #8C8C8C); font-variant-numeric: tabular-nums; }
+
+  .mp-barras { display: grid; gap: 4px; margin-bottom: 8px; }
+  .mp-barra {
+    position: relative; height: 16px; border-radius: 4px; min-width: 3px;
+    transition: width .3s cubic-bezier(.25,.46,.45,.94);
+  }
+  .mp-barra b {
+    position: absolute; left: calc(100% + 7px); top: 50%; transform: translateY(-50%);
+    font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary, #4A4A4A); white-space: nowrap;
+  }
+  .mp-barra-percha { background: #C3D2EE; }
+  .mp-barra-venta { background: #2AB5A0; }
+  .mp-fila.lenta .mp-barra-percha {
+    background: repeating-linear-gradient(45deg, rgba(229,75,75,.5) 0 5px, rgba(229,75,75,.18) 5px 10px);
+    outline: 1.5px solid #E54B4B; outline-offset: -1.5px;
+  }
+
+  .mp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mp-control { display: flex; align-items: center; gap: 10px; }
+  .mp-control span { font-size: 11px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); white-space: nowrap; }
+  .mp-control b { font-size: 12px; font-weight: 800; min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
+  .mp-rango {
+    -webkit-appearance: none; appearance: none; flex: 1; height: 3px; border-radius: 2px;
+    background: #E2E8F0; outline: none; cursor: pointer;
+  }
+  .mp-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #4B7BE5; border: 3px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .mp-rango::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; background: #4B7BE5; border: 3px solid #fff;
+    cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .mp-rango:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; }
+
+  .mp-pie { margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,.07); }
+  .mp-veredicto { font-size: 13.5px; font-weight: 600; color: var(--color-text-secondary, #4A4A4A); margin-bottom: 16px; }
+  .mp-veredicto b { color: var(--color-text-primary, #1a1a2e); }
+  .mp-dinero { display: grid; gap: 8px; }
+  .mp-dinero-rot {
+    font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .mp-dinero-n {
+    font-size: 38px; font-weight: 800; color: #E54B4B; line-height: 1; letter-spacing: -1.4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-dinero-nota { font-size: 12px; color: var(--color-text-secondary, #4A4A4A); max-width: 52ch; }
+  .mp-regresa { font-size: 12px; font-weight: 600; color: var(--aviso-texto, #8C6D1F); }
+  .mp-cta {
+    justify-self: start; margin-top: 6px; display: inline-block; padding: 11px 20px;
+    background: #4B7BE5; color: #fff; border-radius: 9px; font-size: 14px; font-weight: 700;
+    text-decoration: none; transition: background .15s ease;
+  }
+  .mp-cta:hover { background: #3D6BD4; }
+</style>
+
+<script>
+  const raiz = document.getElementById('mp');
+  if (raiz) {
+    const marcas = JSON.parse(raiz.dataset.marcas || '[]');
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const totalPiezas = marcas.reduce((a: number, m: any) => a + m.piezas, 0);
+
+    function pintar() {
+      const ventas = marcas.map((_: any, i: number) =>
+        Number((document.getElementById(`mpr-${i}`) as HTMLInputElement).value));
+      const totalVenta = ventas.reduce((a: number, b: number) => a + b, 0);
+      let parado = 0;
+      const lentas: string[] = [];
+      const regresa: string[] = [];
+      let mejor = { i: 0, ratio: -1 }, peor = { i: 0, ratio: Infinity };
+
+      marcas.forEach((m: any, i: number) => {
+        const pPercha = m.piezas / totalPiezas;
+        const pVenta = totalVenta > 0 ? ventas[i] / totalVenta : 0;
+        const fila = document.getElementById(`mpr-${i}`)!.closest('.mp-fila')!;
+        (document.getElementById(`mpp-${i}`) as HTMLElement).style.width = `${Math.max(2, pPercha * 82)}%`;
+        (document.getElementById(`mpv-${i}`) as HTMLElement).style.width = `${Math.max(2, pVenta * 82)}%`;
+        document.getElementById(`mppt-${i}`)!.textContent = `${Math.round(pPercha * 100)}%`;
+        document.getElementById(`mpvt-${i}`)!.textContent = `${Math.round(pVenta * 100)}%`;
+        document.getElementById(`mprv-${i}`)!.textContent = String(ventas[i]);
+        document.getElementById(`mpsr-${i}`)!.textContent =
+          `${m.nombre}: ocupa el ${Math.round(pPercha * 100)}% de la percha y da el ${Math.round(pVenta * 100)}% de la venta.`;
+
+        // Lenta: a su ritmo, tarda más de una temporada (12 sem) en vaciarse.
+        const lenta = ventas[i] === 0 || m.piezas / ventas[i] > 12;
+        fila.classList.toggle('lenta', lenta);
+        if (lenta) {
+          lentas.push(m.nombre);
+          // Solo lo FIRME es dinero tuyo parado; la consigna lenta se regresa.
+          if (m.firme) parado += m.piezas * m.costo;
+          else regresa.push(`${m.piezas} pzas de ${m.nombre}`);
+        }
+
+        const ratio = pVenta - pPercha;
+        if (ratio > mejor.ratio) mejor = { i, ratio };
+        if (ratio < peor.ratio) peor = { i, ratio };
+      });
+
+      const v = document.getElementById('mpVeredicto')!;
+      if (totalVenta === 0) {
+        v.innerHTML = 'Mueve la venta semanal de cada marca para ver quién paga su percha.';
+      } else if (mejor.ratio < 0.02 && peor.ratio > -0.02) {
+        v.innerHTML = 'Hoy la percha está repartida como vende cada marca. Mueve una venta y mira cómo cambia.';
+      } else {
+        const mM = marcas[mejor.i], mP = marcas[peor.i];
+        const pPeor = Math.round((mP.piezas / totalPiezas) * 100);
+        const vPeor = Math.round((ventas[peor.i] / totalVenta) * 100);
+        v.innerHTML = `<b>${mM.nombre}</b> merece más percha de la que tiene. ` +
+          `<b>${mP.nombre}</b> ocupa el ${pPeor}% de la percha y da el ${vPeor}% de la venta` +
+          (lentas.includes(mP.nombre) ? ' — a su ritmo, no se vacía en la temporada.' : '.');
+      }
+
+      document.getElementById('mpDinero')!.textContent = fmt(parado);
+      const reg = document.getElementById('mpRegresa')!;
+      reg.textContent = regresa.length ? `Y de consigna lenta, percha que se regresa: ${regresa.join(' · ')}.` : '';
+      const cta = document.getElementById('mpCta') as HTMLAnchorElement;
+      const u = new URL(cta.href, location.origin);
+      // Nunca estimado=0: sin dinero parado el link va limpio.
+      if (parado > 0) { u.searchParams.set('estimado', String(Math.round(parado))); u.searchParams.set('de', 'percha'); }
+      else { u.searchParams.delete('estimado'); u.searchParams.delete('de'); }
+      cta.href = u.pathname + u.search + '#demo';
+    }
+
+    marcas.forEach((_: any, i: number) =>
+      document.getElementById(`mpr-${i}`)!.addEventListener('input', pintar));
+    pintar();
+  }
+</script>

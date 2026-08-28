@@ -32,6 +32,9 @@ interface Props {
   foto: string;
   fotoAlt: string;
   avisos: AvisoGiro[];
+  /** Rótulo del sello "+3,000". En giros donde "marca" significa la marca del
+   *  tercero (multimarca), decir "Marcas activas" confunde: se sobreescribe. */
+  selloMarcas?: string;
   ctaPri?: { label: string; href: string };
   ctaSec?: { label: string; href: string };
 }
@@ -43,6 +46,7 @@ const {
   foto,
   fotoAlt,
   avisos,
+  selloMarcas = 'Marcas activas en México y Latam',
   ctaPri = { label: 'Prueba 7 días gratis', href: '/prueba-gratis' },
   ctaSec = { label: 'Agenda una demo', href: '/contacto' },
 } = Astro.props;
@@ -74,7 +78,7 @@ const {
             <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
             <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
-          <div><b>+3,000</b><span>Marcas activas en México y Latam</span></div>
+          <div><b>+3,000</b><span>{selloMarcas}</span></div>
         </div>
         <i class="gb-sello-sep"></i>
         <div class="gb-sello">
@@ -213,6 +217,17 @@ const {
     .gb-aviso-3 { left: 4%; bottom: 6%; }
     .gb-sellos { gap: 14px; }
     .gb-sello span { font-size: 11.5px; }
+  }
+  @media (max-width: 480px) {
+    /* Tres avisos con texto de dos líneas se enciman en 390px: se reparten
+       más y se achican para que ninguno tape a otro. */
+    .gb-aviso { max-width: 86%; }
+    .gb-aviso-1 { top: 3%; }
+    .gb-aviso-2 { top: 38%; }
+    .gb-aviso-3 { bottom: 2%; }
+    .gb-aviso-cuerpo b { font-size: 12px; }
+    .gb-aviso-cuerpo span { font-size: 11px; }
+    .gb-aviso-sello { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .gb-aviso { animation: none; }

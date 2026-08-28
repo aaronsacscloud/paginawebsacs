@@ -565,7 +565,7 @@ const totalExistencia = tiendas.reduce((a, t) => a + t.existencia.reduce((x, y) 
           // Sin reparto aplicado no hay estimado que mandar: un ?estimado=0 le
           // llega a la llamada como si el cliente no tuviera nada que ganar.
           if (total > 0) u.searchParams.set('estimado', String(Math.round(total)));
-          cta.href = u.pathname + u.search;
+          cta.href = u.pathname + u.search + '#demo';
         }
       };
 

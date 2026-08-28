@@ -357,7 +357,7 @@ const sepSSR = ((colchonInicial - spot) / spot) * 100;
           const u = new URL(cta.href, location.origin);
           u.searchParams.set('estimado', String(Math.max(0, Math.round(juego - base))));
           u.searchParams.set('de', 'colchon');
-          cta.href = u.pathname + u.search;
+          cta.href = u.pathname + u.search + '#demo';
         }
       };
 

@@ -13,6 +13,7 @@ const svg = (paths: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 export const giroIcons: Record<string, string> = {
+  multibrand: svg('<path d="M4 4h16"/><path d="M6 4v3M12 4v3M18 4v3"/><path d="M4.2 10.5L6 7l1.8 3.5M7.8 10.5c0 4 -3.6 4.5 -3.6 8v2.5h3.6"/><path d="M10.2 10.5L12 7l1.8 3.5M13.8 10.5c0 4-3.6 4.5-3.6 8v2.5h3.6"/><path d="M16.2 10.5L18 7l1.8 3.5M19.8 10.5c0 4-3.6 4.5-3.6 8v2.5h3.6"/>'),
   clothing: svg('<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10a2 2 0 002 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>'),
   shoes: svg('<path d="M3 18.5v-2.3c0-.6.4-1 1-1h1.7c.4 0 .8-.2 1-.6L9.4 9c.3-.5.9-.7 1.4-.5l1.6.7c.4.2.6.6.6 1l.1 1.5c0 .5.4.9.9 1l4.6 1.1c1.4.3 2.4 1.5 2.4 2.9v1.8a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M8.3 12.9l2.4 1"/><path d="M7.5 19.5v-2M13 19.5v-2"/>'),
   jewelry: svg('<path d="M6 3h12l4 6-10 13L2 9l4-6z"/><path d="M2 9h20"/><path d="M12 22l4-13M12 22L8 9"/>'),
