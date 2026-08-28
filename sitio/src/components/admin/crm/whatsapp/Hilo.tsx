@@ -290,6 +290,20 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {hilo.canales?.correo?.ok && <button onClick={() => document.dispatchEvent(new CustomEvent('wa-modo-correo'))} style={{ border: `1px solid ${C.rojo200}`, background: '#fff', color: C.rojo700, borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Escribir por correo</button>}
         </div>
       )}
+      {/* ══ Con quién hablas, sin abrir la ficha (móvil) ══════════════════
+          Etapa, empresa y de dónde llegó, en una línea. Contestar sin saber si
+          es un lead nuevo o un cliente de años es la diferencia entre atinar y
+          escribir de más; la ficha completa está a un toque, pero esto se ve
+          sin toques. */}
+      {mobile && (etapa || conv.companies?.nombre_comercial || conv.companies?.nombre || conv.contacts?.origen) && (
+        <div className="wa-ctx" style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', padding: '7px 16px', background: C.g50, borderBottom: `1px solid ${C.g100}`, flexShrink: 0, fontSize: 12.5, color: C.g500 }}>
+          {etapa && <span style={{ fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '3px 10px' }}>{etapa.label}</span>}
+          {(conv.companies?.nombre_comercial || conv.companies?.nombre) && (
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{conv.companies?.nombre_comercial || conv.companies?.nombre}</span>
+          )}
+          {conv.contacts?.origen && <span>· {String(conv.contacts.origen).slice(0, 22)}</span>}
+        </div>
+      )}
       {/* ── Mensajes ── */}
       <div ref={scrollRef} className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {hilo.hay_mas && (

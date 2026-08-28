@@ -499,7 +499,7 @@ export default function MejorasTab() {
                   renglón aparte la fila crecía a 146 px y 53 partidas eran
                   doce pantallas de scroll. */}
               {esMovilCons && (
-                <>
+                <span className="cons-linea2" style={{ display: 'flex', alignItems: 'center', gap: 10, flexBasis: '100%', marginTop: 2 }}>
                   <button
                     onClick={e => {
                       e.stopPropagation();
@@ -514,10 +514,12 @@ export default function MejorasTab() {
                       ...(venc ? { border: '1px solid #EF7A72', background: '#FEF0EF', color: '#C0554E' }
                         : { border: 'none', background: 'none', color: '#8f8d98' }),
                     }}>{fechaTxt}</button>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: m.cortesia || !(Number(m.valor) > 0) ? '#8f8d98' : '#1a1a1a' }}>
-                    {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
-                  </span>
-                </>
+                  {(m.cortesia || Number(m.valor) > 0) && (
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: m.cortesia ? '#8f8d98' : '#1a1a1a' }}>
+                      {m.cortesia ? 'Cortesía' : (m.estado === 'idea' ? '~' : '') + money(m.valor)}
+                    </span>
+                  )}
+                </span>
               )}
             </div>
           </div>
@@ -698,7 +700,10 @@ export default function MejorasTab() {
              se pega al texto y el hueco desaparece (45 px de canaleta vacía en
              casi todas las filas). */
           .cons-punto { width: 6px !important; height: 6px !important; flex: none !important; margin-top: 9px !important; }
-          .cons-hueco { display: none !important; }
+          /* La canaleta de selección se reserva aunque la fila no tenga
+             checkbox: sin ella el título arrancaba 21 px más a la izquierda en
+             unas filas sí y en otras no, y el margen bailaba al hacer scroll. */
+          .cons-hueco { display: block !important; width: 15px !important; flex: none !important; }
           .cons-fila { grid-template-columns: auto auto 1fr !important; }
           /* El encabezado del cliente acompaña el scroll: al quitar el cliente
              de cada fila, es lo único que dice de quién es este trabajo. */
@@ -863,10 +868,12 @@ export default function MejorasTab() {
                       chips de categoría de las filas, que dicen otra cosa. */}
                   {vencG > 0 && <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C0554E' }}>{vencG} vencida{vencG === 1 ? '' : 's'}</span>}
                   {pendG > 0 && <span style={{ fontSize: '0.75rem', color: '#8f8d98' }}>· {pendG} por entregar</span>}
-                  <span style={{ fontSize: '0.75rem', color: '#8f8d98' }}>· {g.items.length} en total</span>
+                  <span style={{ fontSize: '0.75rem', color: '#8f8d98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>· {g.items.length} en total</span>
+                  {/* «Copiar» sigue el flujo del nombre: con margin-left auto se
+                      iba solo y centrado a un renglón propio en cada grupo. */}
                   <button onClick={e => { e.stopPropagation(); copiarGrupo(g); }}
                     title="Copiar la lista de este cliente"
-                    style={{ marginLeft: 'auto', border: 'none', background: 'none', padding: '6px 0 6px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    style={{ border: 'none', background: 'none', padding: '6px 0 6px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                     Copiar
                   </button>
                 </div>

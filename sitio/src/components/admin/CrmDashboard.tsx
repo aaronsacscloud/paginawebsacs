@@ -1400,6 +1400,9 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
       [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
       [data-crm-dark="1"] .cons-grupo { background: #131318 !important; }
+      /* La línea de contexto del hilo (etapa · empresa · origen) es superficie
+         de la app, no una franja clara pegada bajo el nombre. */
+      [data-crm-dark="1"] .wa-ctx { background: #17171d !important; border-bottom-color: #1f1f26 !important; color: #918fa0 !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a
@@ -1687,8 +1690,12 @@ const CRM_MOBILE_CSS = `
     /* Fila de botones: dos por renglón, del mismo ancho, con aire */
     .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"],
     .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] { gap: 8px !important; }
-    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button,
-    .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] > button { flex: 1 1 calc(50% - 8px) !important; }
+    /* Dos por renglón vale para GRUPOS de acciones, no para un chip suelto
+       dentro de una línea de texto: ahí el botón se estiraba al 62% del ancho
+       y pesaba más que el título de la partida. */
+    .hoja-ficha [style*="display: flex"][style*="flex-wrap: wrap"] > button:not(.cons-fecha),
+    .m-auto-dark [style*="display: flex"][style*="flex-wrap: wrap"] > button:not(.cons-fecha) { flex: 1 1 calc(50% - 8px) !important; }
+    .cons-fecha { flex: 0 0 auto !important; width: max-content !important; align-self: flex-start !important; }
     /* Pastillas: el color decorativo se va; queda el morado del sistema */
     .hoja-ficha [style*="border-radius: 20px"], .hoja-ficha [style*="border-radius: 99px"]:not([style*="width: 6px"]):not([style*="height: 6px"]),
     .m-auto-dark [style*="border-radius: 20px"], .m-auto-dark [style*="border-radius: 99px"]:not([style*="width: 6px"]):not([style*="height: 6px"]) {
