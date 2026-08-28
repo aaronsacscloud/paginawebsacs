@@ -3,6 +3,7 @@
 // reglas y se mide su rendimiento. Las reglas de SALIDA son del sistema y se
 // enseñan siempre — es lo que hace confiable prender una secuencia.
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import type React from 'react';
 import Cargando from './ui/Cargando';
 import { P, tarjetaKpi } from '../../../lib/crm/paleta';
@@ -20,6 +21,7 @@ const MOTIVO_L: Record<string, [string, string]> = {
 };
 
 export default function SecuenciasTab() {
+  const esMovilSec = useIsMobile();
   const [lista, setLista] = useState<any[] | null>(null);
   const [edit, setEdit] = useState<any>(null);
   const [plantillasEmail, setPlantillasEmail] = useState<any[]>([]);
@@ -199,15 +201,21 @@ export default function SecuenciasTab() {
     );
   }
 
+  // En el teléfono: margen propio (el contenido arrancaba pegado al borde),
+  // sin el H1 que ya dice la barra, y el botón a ancho completo — se salía de
+  // la pantalla por la derecha. El párrafo largo se guarda para escritorio:
+  // aquí estorba antes de llegar a la primera secuencia.
   return (
-    <div style={{ maxWidth: 980 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, letterSpacing: '-.015em' }}>Secuencias</h1>
-        <button style={{ ...btnP, marginLeft: 'auto' }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
+    <div style={{ maxWidth: 980, padding: esMovilSec ? '4px 18px 0' : 0 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: esMovilSec ? 12 : 4, flexDirection: esMovilSec ? 'column' : 'row', alignItems: esMovilSec ? 'stretch' : 'center' }}>
+        {!esMovilSec && <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, letterSpacing: '-.015em' }}>Secuencias</h1>}
+        <button style={{ ...btnP, marginLeft: esMovilSec ? 0 : 'auto', minHeight: 44, ...(esMovilSec ? { width: '100%' } : {}) }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
       </div>
-      <p style={{ fontSize: '0.8rem', color: '#888', margin: '0 0 16px' }}>
-        WhatsApp y correo en un solo flujo: el lead entra por reglas, recibe los pasos en orden, y si responde por un canal ese canal se detiene solo (el otro sigue). Aquí se mide qué tan bien funciona cada secuencia.
-      </p>
+      {!esMovilSec && (
+        <p style={{ fontSize: '0.8rem', color: '#888', margin: '0 0 16px' }}>
+          WhatsApp y correo en un solo flujo: el lead entra por reglas, recibe los pasos en orden, y si responde por un canal ese canal se detiene solo (el otro sigue). Aquí se mide qué tan bien funciona cada secuencia.
+        </p>
+      )}
       {lista.length === 0 && <div style={{ color: '#a5a2af', fontSize: '0.85rem' }}>Sin secuencias todavía — crea la primera.</div>}
       {lista.map(s => {
         const m = s.metricas || {};
@@ -216,11 +224,11 @@ export default function SecuenciasTab() {
           <div key={s.id} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${s.activa ? P.verde : '#d8d6e4'}`, borderRadius: 12, padding: '15px 17px', marginBottom: 13 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
               <b style={{ fontSize: '0.95rem' }}>{s.nombre}</b>
-              <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f1f1f4', color: s.activa ? P.verdeTinta : '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
+              <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f4f3f6', color: s.activa ? P.verdeTinta : '#6b6b74', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
               <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h · {(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}</span>
-              <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button style={btnG} onClick={() => setEdit({ ...s })}>Editar</button>
-                <button style={{ ...btnG, color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
+              <span style={{ marginLeft: esMovilSec ? 0 : 'auto', display: 'flex', gap: 8, flexBasis: esMovilSec ? '100%' : undefined, marginTop: esMovilSec ? 4 : 0 }}>
+                <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}) }} onClick={() => setEdit({ ...s })}>Editar</button>
+                <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}), color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
                   onClick={async () => { await fetch('/api/crm/secuencias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, activa: !s.activa }) }); cargar(); }}>
                   {s.activa ? 'Apagar' : 'Prender'}
                 </button>
