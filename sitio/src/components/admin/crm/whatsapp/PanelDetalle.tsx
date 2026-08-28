@@ -14,6 +14,7 @@ import { Corazones } from '../ui/Cargando';
 import { srcMedia } from './Burbuja';
 import VisorMedia, { extensionDe } from './VisorMedia';
 import { C, L, label, haceCuanto } from './estilo';
+import AccionesVenta from './AccionesVenta';
 import { IcoMas, IcoContacto, IcoClip, IcoBurbuja, IcoChevronAbajo, IcoChevronArriba, IcoLapiz, IcoCopiar } from './Iconos';
 
 const money = (n: any) => (n || n === 0) ? `$${Math.round(Number(n)).toLocaleString('es-MX')}` : '—';
@@ -228,7 +229,9 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const contactoBase = conv?.contacts || null;
   const [tab, setTab] = useState<Tab>('info');
   const [abiertoPanel, setAbiertoPanel] = useState(true);
-  const [subInfo, setSubInfo] = useState<'info' | 'actividad'>('info');
+  const [subInfo, setSubInfo] = useState<'info' | 'actividad' | 'acciones'>('info');
+  const ventanaAbierta = !!(conv?.ultimo_entrante_at && Date.now() - Date.parse(conv.ultimo_entrante_at) < 24 * 3600e3);
+  const [accionInicial, setAccionInicial] = useState<'cotizar' | 'agendar' | null>(null);
   const [detalle, setDetalle] = useState<string | null>(null);   // drill-down de una tarjeta (breadcrumb ← Resumen)
   const [ficha, setFicha] = useState(false);
   const [alta, setAlta] = useState<{ empresa: string; contacto: string; email: string } | null>(null);
@@ -504,7 +507,14 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </Seccion>
         ) : null;
       })()}
-      {contactoBase && <ResumenIA contactId={contactoBase.id} inicial={contacto?.resumen_ia} inicialAt={contacto?.resumen_ia_at} />}
+      {contactoBase && (
+        <div style={{ margin: '0 16px 10px', display: 'flex', gap: 6 }}>
+          <button onClick={() => { setAccionInicial('cotizar'); setSubInfo('acciones'); }}
+            style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📄 Cotizar aquí</button>
+          <button onClick={() => { setAccionInicial('agendar'); setSubInfo('acciones'); }}
+            style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📅 Agendar aquí</button>
+        </div>
+      )}
       {(ctx?.llamadas || []).some((l: any) => l.minuta) && (
         <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta).length} abiertaDefault>
           {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
@@ -666,6 +676,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
 
   const TabActividad = () => (
     <div style={{ paddingTop: 8 }}>
+      {contactoBase && <ResumenIA contactId={contactoBase.id} inicial={contacto?.resumen_ia} inicialAt={contacto?.resumen_ia_at} />}
       {/* 1 · Qué ha visto de nosotros */}
       <Seccion id="a-web" titulo="Visitas a la web y material de venta" n={(ctx?.web?.total || 0) + (ctx?.desde_ultimo?.correos_abiertos || 0) + quotesTodas.length} abiertaDefault>
         {ctx?.web?.paginas?.length ? ctx.web.paginas.map((p: any, i: number) => (
@@ -780,33 +791,6 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
     </div>
   );
 
-  const acciones = [
-    { e: '📄', t: 'Cotización', d: 'Nueva cotización', href: `/admin/crm?tab=cotizaciones${empresa ? `&company_id=${empresa.id}` : ''}`, ok: !!(empresa || contactoBase) },
-    { e: '📅', t: 'Reunión', d: 'Agendar', href: `/admin/crm?tab=reuniones`, ok: !!contactoBase },
-    { e: '🎯', t: 'Oportunidad', d: 'Nueva oportunidad', href: `/admin/crm?tab=oportunidades`, ok: !!(empresa || contactoBase) },
-    { e: '👤', t: 'Ficha 360', d: 'Ver completa', onClick: () => setFicha(true), ok: !!empresa },
-    { e: '🧾', t: 'Estado de cuenta', d: 'Suscripciones', href: `/admin/crm?tab=suscripciones`, ok: !!empresa },
-    { e: '📣', t: 'Masivo', d: 'Incluir en campaña', href: `/admin/crm?tab=wa-masivos`, ok: true },
-  ];
-  const TabAcciones = () => (
-    <div style={{ padding: 14 }}>
-      <div style={{ ...label(10), marginBottom: 8 }}>Ventas</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-        {acciones.map(a => (
-          <button key={a.t} disabled={!a.ok} onClick={() => a.onClick ? a.onClick() : (a.href && (window.location.href = a.href))}
-            className="wa-grupo"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: 12, borderRadius: 12, border: `1px solid ${C.g100}`, background: '#fff', cursor: a.ok ? 'pointer' : 'not-allowed', fontFamily: 'inherit', filter: a.ok ? 'none' : 'grayscale(1)', opacity: a.ok ? 1 : .5 }}
-            onMouseEnter={e => { if (a.ok) { e.currentTarget.style.borderColor = '#c9bcf7'; e.currentTarget.style.background = 'rgba(238,236,254,.4)'; } }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.g100; e.currentTarget.style.background = '#fff'; }}>
-            <span style={{ fontSize: 22, transition: 'transform .15s' }}>{a.e}</span>
-            <b style={{ fontSize: 11 }}>{a.t}</b>
-            <span style={{ fontSize: 9, color: C.g400 }}>{a.ok ? a.d : 'Sin contacto'}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   const [filtroAdj, setFiltroAdj] = useState('todos');
   const [visorAdj, setVisorAdj] = useState<any>(null);
   const TabAdjuntos = () => {
@@ -913,7 +897,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       {abiertoPanel && (
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 8px', borderBottom: `1px solid ${C.g100}`, position: 'relative' }}>
-            {tab === 'info' ? (['info', 'actividad'] as const).map(s => (
+            {tab === 'info' ? (['info', 'actividad', 'acciones'] as const).map(s => (
               <button key={s} onClick={() => setSubInfo(s)} style={{ flex: 1, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: subInfo === s ? C.g900 : C.g400, padding: '10px 0', position: 'relative', textTransform: 'capitalize' }}>
                 {s}
                 {subInfo === s && <span style={{ position: 'absolute', bottom: 0, left: 8, right: 8, height: 2, borderRadius: 999, background: C.moradoTinta }} />}
@@ -924,8 +908,8 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
             {/* Se llaman como función (no <Tab />): definidas dentro del componente, como
                 elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
                 en cada polling (Clasificación parpadeaba). */}
-            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : TabActividad())}
-            {tab === 'acciones' && TabAcciones()}
+            {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} />)}
+            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={null} />}
             {tab === 'adjuntos' && TabAdjuntos()}
             {tab === 'notas' && TabNotas()}
           </div>
