@@ -85,7 +85,8 @@
   <h2>Paso 3 · La secuencia de seguimiento <span class="eti ok">construida</span></h2>
   <div class="card">
     <p><b>Dónde vive:</b> <code>Automatización ▸ Secuencias</code> — su propia sección. Una secuencia mezcla <b>WhatsApp y correo en UN solo flujo</b>, enseña sus reglas siempre, y se mide sola: cuántos están dentro, cuántos entraron, envíos por canal y <b>por qué salió cada uno</b> (respondió · agendó · se hizo cliente · descartado · corte).</p>
-    <p><b>Para quién:</b> el lead tocado que NO responde (estatus «Contactado» o «No contesta»). <b>Se detiene sola, al instante</b>, cuando: responde por cualquier canal, agenda, se hace cliente, se descarta o se da de baja de WhatsApp. La pausa «pidió tiempo» solo suspende — al vencer continúa donde iba.</p>
+    <p><b>Para quién:</b> el lead tocado que NO responde (estatus «Contactado» o «No contesta») — y los estatus de entrada son configurables por secuencia. <b>La regla de oro es POR CANAL:</b> si responde por WhatsApp, se detienen los WhatsApps automáticos pero los correos SIGUEN nutriendo (y al revés: responde por correo → paran los correos, siguen los WhatsApps). Si respondió por ambos canales, ahí sí sale. <b>Sale al instante</b> cuando agenda, se hace cliente, se descarta o empieza a negociar; la baja de WhatsApp detiene ese canal para siempre. La pausa «pidió tiempo» solo suspende — al vencer continúa donde iba.</p>
+    <p><b>El vendedor siempre se entera:</b> cada correo enviado, cada canal detenido, cada entrada y cada salida dejan una <b>nota en el hilo del inbox</b> (autor «Secuencias»), y en el panel de detalle de la conversación hay una sección <b>Secuencias</b> donde ve en qué día va el lead, qué canales siguen vivos, y puede <b>pausar, reanudar o inscribir</b> a mano.</p>
     <p><b>El arco de confianza</b> (la primera secuencia real, migrada de la cadencia — corte al día 14 → Rezagados):</p>
     <div class="tw"><table>
       <tr><th>Día</th><th>Pieza</th><th>Qué construye</th></tr>
@@ -100,8 +101,35 @@
       <tr><td>10-14</td><td>📲 Goteo (horario concreto → pregunta simple → cierre)</td><td>El canal humano queda abierto; al día 14 cierra el expediente</td></tr>
     </table></div>
     <p><b>La meta de TODAS las piezas:</b> la sesión consultiva sin costo — vemos, entendemos y ejecutamos SUS procesos en tiempo real; el lead sale con un plan claro.</p>
-    <p><b>Cómo se administra:</b> en la sección se crea cualquier secuencia nueva (nombre, para qué es, corte, horario) y CADA paso es un renglón día + canal + plantilla, ampliable y reordenable. Los correos se editan por bloques en Email ▸ Plantillas; los WhatsApps son plantillas aprobadas por Meta. El toggle <b>Prender/Apagar</b> es por secuencia — hoy está APAGADA esperando el OK.</p>
+    <p><b>Cómo se administra:</b> en la sección se crea cualquier secuencia nueva (nombre, para qué es, corte, horario, <b>días de la semana</b> y <b>estatus de entrada</b>) y CADA paso es un renglón día + canal + plantilla que se puede prender/apagar sin borrarlo. El botón <b>Simular (sin enviar)</b> enseña cuántos leads entrarían hoy antes de prender nada. Los correos se editan por bloques en Email ▸ Plantillas (los 8 ya reescritos con enfoque <b>retail de moda</b>: tallas, colecciones, apartados, liveshows); los WhatsApps son plantillas aprobadas por Meta (las versiones moda «cadencia_*_moda» están en revisión). El toggle <b>Prender/Apagar</b> es por secuencia — hoy está APAGADA esperando el OK.</p>
     <p><b>Blindajes (los aplica el sistema, siempre):</b> horario humano por secuencia (10-18 CDMX, L-V) · máximo un correo y un WhatsApp por corrida por lead · el reloj arranca el día que la secuencia VE al lead (nunca ráfagas retroactivas) · los leads más viejos que el corte no entran · optout y pausa se respetan · cada envío y cada salida quedan firmados en la actividad del lead.</p>
+  </div>
+
+  <h2>Paso 3.5 · El relevo: la secuencia de Demo agendada <span class="eti ok">construida y probada</span></h2>
+  <div class="card">
+    <p><b>El pase de estafeta es automático:</b> agendar una demo saca al lead de «Seguimiento a leads sin respuesta» (motivo: agendó) y la secuencia <b>«Demo agendada · rumbo a la sesión»</b> lo toma en su siguiente corrida. Su objetivo: <b>que asista</b> — el enemigo es el no-show.</p>
+    <p><b>El arco (corte 10 días, L-S):</b> D1 confirmación + botón «Agregar a mi Google Calendar» + qué preparar (+ WhatsApp) · D2 la historia y experiencia de Andrea · D3 la agenda de los 20 minutos (+ WhatsApp «¿qué quieres que veamos?») · D4 caso LiveShow (transnacional de merchandising: de un pop-up de artista a cientos de tiendas simultáneas) + 100+ reseñas de Google 4.8 · D6 y D8 anti no-show (reagendar). <b>Eje de todos los correos: «mándame tus preguntas»</b> — y todos llevan el link de reagendar de SU reunión.</p>
+    <p><b>Las reglas de la agenda</b> (verificadas de punta a punta en producción):</p>
+    <div class="tw"><table>
+      <tr><th>Evento</th><th>Qué pasa solo</th></tr>
+      <tr><td>Reagenda</td><td>La cita vieja queda «reagendada» y nace la nueva ligada; el evento de Google Calendar se mueve; WhatsApp de confirmación por plantilla; la secuencia <b>se reinicia en día 1</b> rumbo a la fecha nueva.</td></tr>
+      <tr><td>Cancela</td><td>Sale de la secuencia (motivo «canceló»); recibe UN rescate por WhatsApp con la puerta abierta; <b>Andrea recibe aviso inmediato</b> («rescatable si le marcas pronto»).</td></tr>
+      <tr><td>Vuelve a agendar</td><td>Se reinscribe solo en día 1.</td></tr>
+      <tr><td>Asiste</td><td>Objetivo cumplido: sale entera (correos y WhatsApps).</td></tr>
+      <tr><td>Recordatorios exactos</td><td>Los pone el sistema de reuniones relativo a la FECHA REAL: correo 24 h antes y WhatsApp 1 h antes, ambos con link de reagendar.</td></tr>
+    </table></div>
+  </div>
+
+  <h2>Vender sin salir del inbox · las acciones del panel <span class="eti ok">construido</span></h2>
+  <div class="card">
+    <p>En el panel derecho de cada conversación (pestaña <b>Acciones</b>, junto a Info y Actividad — y con accesos directos «Cotizar aquí / Agendar aquí» en Info) el vendedor ejecuta la venta <b>sin cambiar de pantalla</b>:</p>
+    <div class="tw"><table>
+      <tr><th>Acción</th><th>Cómo funciona</th></tr>
+      <tr><td>Cotizar</td><td>Elige plan (precios del catálogo real), periodo (anual = 2 meses gratis), sucursales, implementación y extras → <b>Crear</b> → el link del cliente aparece al instante → <b>Enviar por WhatsApp</b> (con la ventana abierta va el link directo; cerrada, va la plantilla de aviso y el link viaja por correo) <b>y/o por correo</b>. La cotización queda ligada al lead y su apertura se rastrea.</td></tr>
+      <tr><td>Agendar</td><td>Días y horarios REALES de la agenda → confirmar ahí mismo → al cliente le llega solo la confirmación por correo + WhatsApp con su invitación de calendario y Meet, y la secuencia de «Demo agendada» lo toma en la siguiente corrida. Si el lead ya tiene reunión próxima, el panel avisa antes de duplicar.</td></tr>
+      <tr><td>Mandarle los horarios</td><td>Si prefiere que elija el cliente: un clic manda los próximos horarios + el link público por WhatsApp (ventana abierta) o correo; cuando el cliente elige, TODO se confirma solo — correo, WhatsApp, calendario y secuencia.</td></tr>
+    </table></div>
+    <p><b>Reglas del vendedor:</b> el correo del cliente es obligatorio para confirmar una reunión (ahí llega su invitación) · si la ventana de WhatsApp está cerrada, el sistema lo dice y ofrece el camino que SÍ entrega · todo usa los mismos precios y los mismos canales del CRM — nada de rutas paralelas.</p>
   </div>
 
   <h2>Paso 4 · El primer toque humano</h2>
@@ -111,19 +139,22 @@
   <div class="card">
     <p><b>El problema:</b> TikTok sabe <b>cuántos formularios se llenaron</b>. No sabe <b>cuáles sirvieron</b>. Con esa información a medias optimiza por lo único que puede medir —la cantidad— y entrega los leads más baratos de conseguir, que casi nunca son los que compran.</p>
     <p>El dato que le falta lo tenemos nosotros. <b>Cerrar el círculo es lo que convierte al CRM en la fuente que entrena al algoritmo.</b></p>
-    <p class="sub" style="margin:10px 0 0">Antes de esto: 76 leads de TikTok, 4 se volvieron clientes, y TikTok no sabía de ninguno.</p>
+    <p class="sub" style="margin:10px 0 0">Antes de esto: 75 leads de TikTok y 4 clientes salidos de ahí, y TikTok no sabía de ninguno. Hoy el cuello de botella ya no es la señal sino el seguimiento: <b>73 de los 75 siguen en «Nuevo lead»</b>, sin que nadie los haya trabajado.</p>
   </div>
 
   <div class="card">
     <p><b>Lo único que hace el vendedor:</b> mover la <b>Etapa</b> en la ficha del lead. Nada más. No hay hojas que tocar ni nada que avisar.</p>
-    <p><b>Las tres etapas que sí le enseñan algo:</b></p>
+    <p><b>Las cuatro etapas que sí le enseñan algo:</b></p>
     <div class="tw"><table>
       <tr><th>Etapa en el CRM</th><th>Lo que recibe TikTok</th><th>Qué le enseña</th></tr>
       <tr><td>Calificado</td><td><code>Qualified</code></td><td>«Este lead sí era del perfil»</td></tr>
       <tr><td>Oportunidad</td><td><code>Opportunity</code></td><td>«Este iba en serio»</td></tr>
       <tr><td>Cliente</td><td><code>Converted</code> + el monto</td><td>«Este compró, y por esto»</td></tr>
+      <tr><td>Descalificado</td><td><code>Unqualified</code></td><td>«Deja de buscar gente así»</td></tr>
     </table></div>
-    <p><b>Las demás NO se reportan, a propósito:</b> «Nuevo lead» es el estado en que TikTok ya lo entregó —decírselo no le enseña nada y le quita peso a las señales que sí importan— y «Perdido» tampoco se manda, porque el algoritmo optimiza hacia lo que le señalas, no en contra.</p>
+    <p><b>Las demás NO se reportan, a propósito:</b> «Nuevo lead» es el estado en que TikTok ya lo entregó —decírselo no le enseña nada y le quita peso a las señales que sí importan. «Perdido» tampoco se manda: ese es un cliente que se fue, y marcarlo contradiría el «Cliente» que ya reportamos por esa misma persona.</p>
+    <p><b>«Descalificado» es distinto y sí se manda.</b> No es un retroceso, es una etiqueta sobre un lead que nunca fue del perfil — y es la única forma de que el algoritmo aprenda a quién <i>dejar</i> de buscar. Con puros positivos aprende media lección.</p>
+    <p><b>La regla, y no admite excepciones:</b> solo se marca Descalificado lo que una persona revisó y descartó. Un lead sin trabajar <b>no</b> es un descalificado. Un negativo equivocado hace más daño que un positivo faltante, porque el algoritmo lo usa para excluir gente parecida.</p>
     <p><b>El monto solo viaja con «Cliente»</b>, y sale de su suscripción: es lo que hace que TikTok persiga clientes grandes en vez de clientes cualesquiera. Si no hay suscripción registrada se reporta la conversión <i>sin</i> monto — nunca en cero, porque un cero le enseñaría que esa venta no valió nada.</p>
   </div>
 
@@ -146,10 +177,13 @@
   </div>
 
   <div class="card">
-    <p><b>Cómo verificarlo:</b> TikTok Ads Manager ▸ Events Manager ▸ dataset <b>TIKTOK AGENDAS</b>. Hay una barra de cuatro pasos:</p>
-    <p><code>Dataset created → CRM connected → Events received → Funnel created</code></p>
-    <p>Si estamos reportando bien, llega a <b>«Events received»</b>. Si se queda en «CRM connected», TikTok no está recibiendo nada y hay que revisar.</p>
-  </div>
+    <p><b>Cómo verificarlo</b> — en este orden:</p>
+    <ul>
+      <li><b>1. La hoja.</b> Abre el Google Sheet conectado y mira la columna <b>«TikTok Lead Status»</b>: ahí deben aparecer los <code>Qualified</code>, <code>Opportunity</code>, <code>Converted</code> y <code>Unqualified</code>. Si la columna trae los estatus, nuestra mitad está hecha.</li>
+      <li><b>2. La conexión.</b> TikTok Ads Manager ▸ <b>Leads Center ▸ CRM integration</b>, en modo <b>Signal postback</b>: ahí se ve si TikTok está leyendo la hoja y cuándo la leyó por última vez.</li>
+    </ul>
+    <p><b>Dónde NO hay que buscar:</b> el dataset <b>TIKTOK AGENDAS</b> de Events Manager y su barra de <code>Dataset created → CRM connected → Events received</code>. Esa barra pertenece a la otra vía —la de API, que se apagó por duplicada— y se va a quedar en «CRM connected» de forma permanente. <b>Eso es lo esperado, no una falla</b>: la señal viaja por la hoja.</p>
+    </div>
 
   <div class="card">
     <p><b>Qué NO hacer:</b></p>
