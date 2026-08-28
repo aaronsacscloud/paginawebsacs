@@ -58,7 +58,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
   if (vista === 'agendar') return <Agendar contacto={contacto} empresa={empresa} conv={conv} telefono={telefono} nombre={nombre} primerNombre={primerNombre} ventanaAbierta={ventanaAbierta} volver={() => setVista('menu')} refrescar={refrescar} />;
 
   return (
-    <div style={{ padding: 14 }}>
+    <div className="accv" style={{ padding: 14 }}>
       <div style={{ fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Ventas · se ejecutan aquí mismo</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BotonAccion e="📄" t="Cotización" d="Crear y enviar aquí" ok={!!contacto} onClick={() => setVista('cotizar')} destacado />
@@ -167,7 +167,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   };
 
   if (hecha) return (
-    <div style={{ padding: 14 }}>
+    <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo={`Cotización ${hecha.folio} creada`} />
       <div style={{ border: `1px solid ${C.g200}`, borderRadius: 10, padding: 12, background: '#fff' }}>
         <div style={{ fontSize: 11, color: C.g500, marginBottom: 6 }}>El link del cliente:</div>
@@ -192,7 +192,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   );
 
   return (
-    <div style={{ padding: 14 }}>
+    <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo="Nueva cotización" />
       <span style={lbl}>Plan</span>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
@@ -229,7 +229,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         Total {periodo === 'anual' ? 'del año' : 'mensual'}: {fmt(subPlan + extrasValidos.filter(x => x.recurrente).reduce((a, x) => a + extraMonto(x), 0))}
         {(subImpl > 0 || extrasValidos.some(x => !x.recurrente)) && <span style={{ fontWeight: 600 }}> + {fmt(subImpl + extrasValidos.filter(x => !x.recurrente).reduce((a, x) => a + (parseFloat(x.monto) || 0), 0))} por única vez</span>}
       </div>
-      <button style={{ ...btnP, width: '100%', marginTop: 10 }} disabled={creando} onClick={crear}>{creando ? 'Creando…' : `Crear cotización · ${fmt(total)}`}</button>
+      <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10 }} disabled={creando} onClick={crear}>{creando ? 'Creando…' : `Crear cotización · ${fmt(total)}`}</button>
       {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
     </div>
   );
@@ -297,7 +297,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   };
 
   if (hecho === 'agendada') return (
-    <div style={{ padding: 14 }}>
+    <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo="Reunión agendada ✓" />
       <div style={{ border: `1px solid #A7F3D0`, background: C.emerald50, borderRadius: 10, padding: 12, fontSize: 12, color: C.emerald700, lineHeight: 1.5 }}>
         <b>{fechaHumana(fecha)} · {horaHumana(hora)}</b><br />
@@ -307,7 +307,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   );
 
   return (
-    <div style={{ padding: 14 }}>
+    <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo="Agendar reunión" />
       {proxima && (
         <div style={{ border: `1px solid ${C.ambar200}`, background: C.ambar50, borderRadius: 10, padding: '8px 11px', fontSize: 11, color: C.ambar700, marginBottom: 10 }}>
@@ -334,7 +334,7 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         </>}
         <span style={lbl}>Correo del cliente (obligatorio para confirmar)</span>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@correo.com" style={inp} />
-        <button style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>
+        <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>
           {ocupado ? 'Agendando…' : !emailValido ? 'Falta un correo válido' : fecha && hora ? `Agendar ${fechaHumana(fecha)} · ${horaHumana(hora)}` : 'Elige día y horario'}
         </button>
         <div style={{ borderTop: `1px solid ${C.g100}`, margin: '14px 0 10px', paddingTop: 10 }}>

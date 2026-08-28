@@ -231,6 +231,13 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const [abiertoPanel, setAbiertoPanel] = useState(true);
   const [subInfo, setSubInfo] = useState<'info' | 'actividad' | 'acciones'>('info');
   const ventanaAbierta = !!(conv?.ultimo_entrante_at && Date.now() - Date.parse(conv.ultimo_entrante_at) < 24 * 3600e3);
+  // El CSS móvil del CRM aplana botones con !important: los targets táctiles
+  // de las acciones ejecutables se defienden con clase propia.
+  const cssAcciones = `
+    .accv button { min-height: 44px !important; }
+    .accv .accv-grande { min-height: 48px !important; }
+    .accv-tap { min-height: 44px !important; }
+  `;
   const [nonceCtx, setNonceCtx] = useState(0);   // acciones recién ejecutadas → recargar el contexto
   const [accionInicial, setAccionInicial] = useState<'cotizar' | 'agendar' | null>(null);
   const [detalle, setDetalle] = useState<string | null>(null);   // drill-down de una tarjeta (breadcrumb ← Resumen)
@@ -249,7 +256,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   const ocultarDinero = yo?.rol === 'cs' && ctx?.contacto?.owner_id && ctx.contacto.owner_id !== yo.id;
 
   useEffect(() => {
-    const k = `${conv?.id}|${conv?.company_id}|${conv?.contact_id}`;
+    const k = `${conv?.id}|${conv?.company_id}|${conv?.contact_id}|${nonceCtx}`;
     if (!conv || cacheId.current === k) return;
     cacheId.current = k; setD360(null); setDCon(null); setDetalle(null);
     if (conv.company_id) fetch(`/api/crm/arr/company360?id=${conv.company_id}`).then(r => r.json()).then(setD360).catch(() => {});
@@ -511,9 +518,9 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       {contactoBase && (
         <div style={{ margin: '0 16px 10px', display: 'flex', gap: 6 }}>
           <button onClick={() => { setAccionInicial('cotizar'); setSubInfo('acciones'); }}
-            style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📄 Cotizar aquí</button>
+            className="accv-tap" style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📄 Cotizar aquí</button>
           <button onClick={() => { setAccionInicial('agendar'); setSubInfo('acciones'); }}
-            style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📅 Agendar aquí</button>
+            className="accv-tap" style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📅 Agendar aquí</button>
         </div>
       )}
       {(ctx?.llamadas || []).some((l: any) => l.minuta) && (
@@ -600,7 +607,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           {(d360?.quotes || []).map((q: any) => (
             <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
               <span>{q.numero || String(q.id).slice(0, 6)}</span>
-              {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
+              {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{({ draft: 'borrador', enviada: 'enviada', aceptada: 'aceptada', rechazada: 'rechazada', vencida: 'vencida' } as any)[q.estado] || q.estado}</span>}
               <span style={{ marginLeft: 'auto', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(q.total)}</span>
             </div>
           ))}
@@ -694,7 +701,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         )}
         <div style={{ marginTop: 8, fontSize: 12, color: C.g700, lineHeight: 1.7 }}>
           {ctx?.desde_ultimo?.correos_abiertos > 0 && <div>Abrió {ctx.desde_ultimo.correos_abiertos} correo{ctx.desde_ultimo.correos_abiertos === 1 ? '' : 's'}{ctx.desde_ultimo.clics > 0 ? ` y dio ${ctx.desde_ultimo.clics} clic${ctx.desde_ultimo.clics === 1 ? '' : 's'}` : ''}</div>}
-          {quotesTodas.length > 0 && <div>{quotesTodas.length} cotización{quotesTodas.length === 1 ? '' : 'es'} enviada{quotesTodas.length === 1 ? '' : 's'}{!ocultarDinero ? ` por ${money(quotesTodas.reduce((t, q) => t + (Number(q.total) || 0), 0))}` : ''}</div>}
+          {quotesTodas.length > 0 && <div>{quotesTodas.length} {quotesTodas.length === 1 ? 'cotización' : 'cotizaciones'}{!ocultarDinero ? ` por ${money(quotesTodas.reduce((t, q) => t + (Number(q.total) || 0), 0))}` : ''}</div>}
         </div>
       </Seccion>
 
@@ -731,7 +738,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         {quotesTodas.length ? quotesTodas.slice(0, 10).map((q: any) => (
           <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', fontSize: 12, borderBottom: `1px solid ${C.g50}` }}>
             <span>{q.numero || String(q.id).slice(0, 6)}</span>
-            {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{q.estado}</span>}
+            {q.estado && <span style={tag(q.estado === 'aceptada' ? C.emerald50 : C.g100, q.estado === 'aceptada' ? C.emerald700 : C.g500)}>{({ draft: 'borrador', enviada: 'enviada', aceptada: 'aceptada', rechazada: 'rechazada', vencida: 'vencida' } as any)[q.estado] || q.estado}</span>}
             {q.vistas > 0
               ? <span title={q.ultima_vista_at ? `Última vez: ${fecha(q.ultima_vista_at)}` : undefined} style={tag(C.emerald50, C.emerald700)}>vista ×{q.vistas}</span>
               : <span style={tag(C.g100, C.g400)}>sin abrir</span>}
@@ -894,6 +901,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
 
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
+      <style>{cssAcciones}</style>
       {/* Contenido colapsable */}
       {abiertoPanel && (
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
