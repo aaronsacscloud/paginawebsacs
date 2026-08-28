@@ -3,6 +3,7 @@
 // tooltip de error en español, player de audio propio, lightbox, linkify,
 // reacciones como chips y búsqueda en el hilo tipo Cmd+F.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
 import Cargando from '../ui/Cargando';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
@@ -15,7 +16,7 @@ import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 
 // Borradores por conversación (viven mientras la pestaña esté abierta).
-const BORRADORES = new Map<string, string>();
+
 
 export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
@@ -379,7 +380,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
-        borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}
+        borradorInicial={leerBorrador(conv.id || conv.email_only_id)} onBorrador={t => guardarBorrador(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label, telefono: telefonoLegible(conv.telefono), mrr: conv.companies?.mrr, fecha_renovacion: conv.companies?.fecha_renovacion, sucursales: conv.companies?.sucursales }} />
 

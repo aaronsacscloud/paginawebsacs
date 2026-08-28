@@ -3,6 +3,7 @@
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
@@ -519,11 +520,23 @@ export default function InboxPro() {
                   <div className="m-tx">
                     <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>{[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}</div>
                     <div className="m-n2" style={!c.ultimo_mensaje_texto ? { fontStyle: 'italic' } : undefined}>
-                      {c.ultimo_mensaje_texto ? `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto}` : 'Sin mensajes'}
+                      {/* Un borrador a medias es trabajo empezado: si la lista no
+                          lo dice, se olvida y el cliente se queda esperando. */}
+                      {hayBorrador(c.id) ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
+                        : c.ultimo_mensaje_texto ? `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto}` : 'Sin mensajes'}
                     </div>
                   </div>
                   <div className="m-fin">
                     <div className="m-m1" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : { fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{horaV5(c.ultimo_mensaje_at)}</div>
+                    {/* Ventana de 24 h por cerrarse: pasado ese punto ya solo se
+                        puede mandar plantilla, así que se avisa ANTES. */}
+                    {(() => {
+                      if (c.ultima_direccion !== 'entrante' || !c.ultimo_mensaje_at) return null;
+                      const restan = 24 * 3600e3 - (Date.now() - new Date(c.ultimo_mensaje_at).getTime());
+                      if (restan <= 0 || restan > 2 * 3600e3) return null;
+                      const h = Math.floor(restan / 3600e3), m = Math.round((restan % 3600e3) / 60000);
+                      return <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a06600', whiteSpace: 'nowrap' }}>cierra en {h > 0 ? `${h} h` : `${m} min`}</div>;
+                    })()}
                     {/* Punto morado = te toca contestar. Es la señal que se
                         busca al abrir el inbox, y por eso va a la derecha,
                         donde el pulgar ya está mirando la hora. */}
