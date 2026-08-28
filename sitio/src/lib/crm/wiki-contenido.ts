@@ -187,6 +187,9 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>10-14</td><td>📲 Goteo</td><td>El canal humano queda abierto; al 14 cierra el expediente</td></tr>
 </tbody></table>
 <p><b>La meta de todas las piezas:</b> la sesión consultiva sin costo — vemos, entendemos y ejecutamos sus procesos en tiempo real.</p>
+<h3>Cómo se administra</h3>
+<p>En la sección se crea cualquier secuencia nueva —nombre, para qué es, corte, horario, días de la semana y <b>estatus de entrada</b>— y cada paso es un renglón <i>día + canal + plantilla</i> que se puede prender o apagar sin borrarlo.</p>
+<p>El botón <b>Simular</b> (sin enviar) enseña <b>cuántos leads entrarían hoy</b> antes de prender nada. Los correos se editan por bloques en <b>Email ▸ Plantillas</b> —los 8 ya reescritos con enfoque retail de moda: tallas, colecciones, apartados, liveshows—; los WhatsApps son plantillas aprobadas por Meta. El toggle Prender/Apagar es por secuencia.</p>
 <div class="w-caja w-ok"><span class="w-k">Blindajes que aplica el sistema, siempre</span>
 <p>Horario humano (10-18 CDMX, L-V) · máximo un correo y un WhatsApp por corrida por lead · el reloj arranca el día que la secuencia <b>ve</b> al lead, nunca ráfagas retroactivas · los leads más viejos que el corte no entran · optout y pausa se respetan · cada envío queda firmado.</p></div>`,
   },
