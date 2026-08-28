@@ -150,6 +150,14 @@ export const CSS_INBOX = `
   .wa-x-hover { display: none; }
   .wa-staged:hover .wa-x-hover { display: flex; }
   mark.wa-mark { background: #FEF08A; color: #854D0E; border-radius: 3px; padding: 0 2px; }
+/* «N mensajes nuevos»: aparece pegado al fondo del hilo cuando llega algo
+   mientras lees hacia arriba (E6.2). */
+.wa-bajar{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:40;
+  border:1px solid #c9bcf7;background:#fff;color:#5B4BD6;border-radius:999px;
+  min-height:36px;padding:0 16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;
+  box-shadow:0 6px 20px rgba(20,18,40,.14)}
+html[data-crm-dark="1"] .wa-bajar{background:#232329;border-color:#3a3550;color:#A78BFA}
+
 /* Atajos de «últimas plantillas usadas»: una sola línea que se desliza, en
    móvil y en escritorio. Apilados hacían crecer la barra ámbar el doble. */
 .wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}

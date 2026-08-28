@@ -23,9 +23,10 @@ import { BotonLlamar } from './Llamadas';
 // sobrevivir a que el hilo se desmonte al cambiar de conversación.
 const memoriaScroll = new Map<string, number>();
 
-export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle }: {
+export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, onVerDetalle, nuevosAlAbrir }: {
   hilo: any; filaActiva?: any; equipo: any[]; api: any; mobile?: boolean;
   onBack?: () => void; onVerDetalle?: () => void;
+  nuevosAlAbrir?: number;   // cuántos entrantes traía sin leer al abrirla (E6)
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const conv = hilo?.conversacion;
@@ -110,12 +111,19 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   useEffect(() => { if (matches.length) irAMatch(matchIdx); }, [matchIdx, matches.length]);
 
   const ultimoRef = useRef('');
+  const [nuevosAbajo, setNuevosAbajo] = useState(0);
   useEffect(() => {
     const ult = timeline.length ? `${timeline[timeline.length - 1]._clase}-${timeline[timeline.length - 1].id}` : '';
-    if (ult !== ultimoRef.current) {
-      ultimoRef.current = ult;
-      if (!buscando) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-    }
+    if (ult === ultimoRef.current) return;
+    const primeraVez = !ultimoRef.current;
+    ultimoRef.current = ult;
+    if (buscando) return;
+    const el = scrollRef.current; if (!el) return;
+    // E6.2 · Si estás leyendo hacia arriba, un mensaje nuevo NO te arranca de
+    // donde ibas: se avisa con un botón y bajas tú.
+    const alFinal = primeraVez || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (alFinal) { el.scrollTo({ top: el.scrollHeight }); setNuevosAbajo(0); }
+    else setNuevosAbajo(n => n + 1);
   }, [timeline]);
 
   // ── E1.5 · La posición de lectura se recuerda por conversación ──────────
@@ -133,8 +141,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     ultimoRef.current = `${timeline[timeline.length - 1]._clase}-${timeline[timeline.length - 1].id}`;
   }, [convId, timeline.length]);
   const guardarScroll = () => {
-    const el = scrollRef.current; if (!el || !convId) return;
+    const el = scrollRef.current; if (!el) return;
     const alFinal = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (alFinal && nuevosAbajo) setNuevosAbajo(0);
+    if (!convId) return;
     if (alFinal) memoriaScroll.delete(convId); else memoriaScroll.set(convId, el.scrollTop);
   };
   useEffect(() => {
@@ -198,9 +208,24 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const etapa = lifecycleDe(conv?.contacts?.lifecycle_stage);
   const nombre = conv?.contacts ? `${conv.contacts.nombre || ''} ${conv.contacts.apellido || ''}`.trim() : null;
   let diaPrevio = '';
+  // E6.1 · La marca «Mensajes nuevos» va justo antes del primero que no
+  // habías leído: al abrir con 8 pendientes se ve dónde empieza lo tuyo, en
+  // vez de aterrizar al final y subir a ciegas.
+  const claveNuevos = (() => {
+    const n = Number(nuevosAlAbrir || 0);
+    if (!n || !timeline.length) return null;
+    let vistos = 0;
+    for (let i = timeline.length - 1; i >= 0; i--) {
+      const it: any = timeline[i];
+      if (it._clase !== 'mensaje' || it.direccion !== 'entrante') continue;
+      vistos++;
+      if (vistos === n) return `${it._clase}-${it.id}`;
+    }
+    return null;
+  })();
 
   return (
-    <div className={mobile ? 'wa-hilo-m' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
+    <div className={mobile ? 'wa-hilo-m' : undefined} style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header h-44 ── */}
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
@@ -343,6 +368,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         </div>
       )}
       {/* ── Mensajes ── */}
+      {nuevosAbajo > 0 && (
+        <button className="wa-bajar" onClick={() => { const el = scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); setNuevosAbajo(0); }}>
+          {nuevosAbajo === 1 ? '1 mensaje nuevo' : `${nuevosAbajo} mensajes nuevos`} ↓
+        </button>
+      )}
       <div ref={scrollRef} onScroll={guardarScroll} data-hilo-scroll className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {hilo.hay_mas && (
           <button disabled={cargandoMas} onClick={async () => {
@@ -370,6 +400,13 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               {sepDia && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
                   <span style={sep.linea} /><span style={sep.chip}>{dia}</span><span style={sep.linea} />
+                </span>
+              )}
+              {clave === claveNuevos && (
+                <span className="wa-nuevos" style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 0 2px' }}>
+                  <span style={{ flex: 1, height: 1, background: '#c9bcf7' }} />
+                  <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: C.moradoTinta }}>Mensajes nuevos</span>
+                  <span style={{ flex: 1, height: 1, background: '#c9bcf7' }} />
                 </span>
               )}
               {esBoundary ? (

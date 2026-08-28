@@ -130,6 +130,7 @@ export default function InboxPro() {
   // propósito: en la primera carga no se avisa de nada, solo se toma la foto.
   const ultimoAtRef = useRef<Map<string, string>>(new Map());
   const [aviso, setAviso] = useState<{ conv: any; mas: number } | null>(null);
+  const [nuevosAlAbrir, setNuevosAlAbrir] = useState(0);
   const hiloRef = useRef<any>(null);
   // E1.1 · Hilos ya cargados. Se guardan los últimos 30 (una jornada completa
   // de inbox cabe de sobra) para que volver a cualquiera sea instantáneo.
@@ -271,11 +272,18 @@ export default function InboxPro() {
       const p = new URLSearchParams(window.location.search);
       const conv = p.get('wa_conv');
       const tel = p.get('wa_search');
-      if (conv) setActiva({ id: conv, wa: conv, email: null });
+      if (conv) {
+        // Llegar por link (la campana, un push) también tiene que enseñar
+        // dónde empieza lo no leído: sin esto la marca solo salía al abrir
+        // desde la lista.
+        const fila = (lista || []).find((c: any) => c.wa_id === conv || c.id === conv);
+        setNuevosAlAbrir(Number(fila?.no_leidos || 0));
+        setActiva({ id: fila?.id || conv, wa: conv, email: null });
+      }
       else if (tel) {
         const limpio = tel.replace(/\D/g, '');
         const hit = lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)));
-        if (hit) setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id });
+        if (hit) { setNuevosAlAbrir(Number(hit.no_leidos || 0)); setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id }); }
         // Sin conversación previa no hay nada que buscar: se arranca. Un
         // contacto recién agregado NUNCA tiene conversación, y dejar la
         // búsqueda vacía hacía parecer que el contacto no existía.
@@ -309,6 +317,9 @@ export default function InboxPro() {
     const listo = id ? cacheHilos.current.get(id) : null;
     if (listo) { hiloRef.current = listo; setHilo(listo); }
     else { hiloRef.current = null; setHilo(null); }
+    // E6.1 · Se apunta cuántos traía sin leer ANTES de ponerlos en cero: es lo
+    // que dice dónde va la marca «Mensajes nuevos».
+    setNuevosAlAbrir(Number(c?.no_leidos || 0));
     setActiva({ id: c.id, wa: c.wa_id ?? null, email: c.email_id ?? null });
     setLista(l => (l || []).map(x => x.id === c.id ? { ...x, no_leidos: 0 } : x));
     // E1.3: las vecinas de la lista son las que se abren enseguida.
@@ -744,7 +755,7 @@ export default function InboxPro() {
           })()
         ) : (
           <Suspense fallback={<Cargando texto="Abriendo conversación…" />}>
-            <Hilo hilo={hiloConCola} filaActiva={filaActiva} equipo={equipo} api={api} mobile
+            <Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api} mobile
               onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
               {conv && <PanelDetalle hilo={hilo} api={api} />}
@@ -780,7 +791,7 @@ export default function InboxPro() {
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
         <Suspense fallback={<Cargando texto="Cargando conversaciones…" />}><ListaConversaciones {...propsLista} /></Suspense>
         {activa ? (
-          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hiloConCola} filaActiva={filaActiva} equipo={equipo} api={api}
+          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
