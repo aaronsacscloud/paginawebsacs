@@ -291,7 +291,12 @@ export default function InboxPro() {
       }
       else if (tel) {
         const limpio = tel.replace(/\D/g, '');
-        const hit = lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)));
+        // Con menos de 10 dígitos NO se busca por teléfono. `endsWith('')` es
+        // cierto para todos: un `wa_search=Amado` hacía "match" con la primera
+        // conversación de la lista y abría el chat de otra persona.
+        const hit = limpio.length >= 10
+          ? lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)))
+          : null;
         if (hit) { setNuevosAlAbrir(Number(hit.no_leidos || 0)); setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id }); }
         // Sin conversación previa no hay nada que buscar: se arranca. Un
         // contacto recién agregado NUNCA tiene conversación, y dejar la
