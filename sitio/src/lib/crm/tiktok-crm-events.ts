@@ -35,6 +35,12 @@ export const ETAPAS_A_TIKTOK: Record<string, string> = {
   lead_calificado: 'Qualified',
   oportunidad: 'Opportunity',
   cliente: 'Converted',
+  // La senal negativa. Sin ella el algoritmo solo aprende a quien buscar y
+  // nunca a quien dejar de buscar, que con 87 leads y 9 que avanzan es la
+  // mitad mas util. OJO: solo se marca lo que un humano reviso y descarto —
+  // un lead sin trabajar NO es un descalificado, y un mal negativo hace mas
+  // dano que un positivo faltante porque se usa para excluir.
+  descalificado: 'Unqualified',
 };
 
 /** El orden del embudo: sirve para no reportar hacia atrás. */
