@@ -28,12 +28,27 @@ export const resumenMensaje = (m: any): string => {
 };
 
 /** URLs → links (portado). */
+/** Negritas de WhatsApp (*así*) y de markdown (**así**), que es lo que
+ *  escriben la IA y los snippets. Se veían literales, con los asteriscos a la
+ *  vista, en un hilo que el cliente también está leyendo del otro lado. */
+function ConNegritas({ texto }: { texto: string }) {
+  const partes = texto.split(/(\*\*[^*\n]+\*\*|(?<![\w*])\*[^*\n]+\*(?![\w*]))/g);
+  return (<>
+    {partes.map((p, i) => {
+      const dobles = /^\*\*[^*\n]+\*\*$/.test(p);
+      const simples = /^\*[^*\n]+\*$/.test(p);
+      if (!dobles && !simples) return <span key={i}>{p}</span>;
+      return <b key={i} style={{ fontWeight: 700 }}>{p.slice(dobles ? 2 : 1, dobles ? -2 : -1)}</b>;
+    })}
+  </>);
+}
+
 export function Linkify({ texto, claro }: { texto: string; claro?: boolean }) {
   const partes = texto.split(/(https?:\/\/[^\s]+)/g);
   return (<>
     {partes.map((p, i) => /^https?:\/\//.test(p)
       ? <a key={i} href={p} target="_blank" rel="noreferrer" style={{ color: claro ? '#fff' : C.azulTinta, textDecoration: 'underline', wordBreak: 'break-all' }}>{p}</a>
-      : <span key={i}>{p}</span>)}
+      : <ConNegritas key={i} texto={p} />)}
   </>);
 }
 
@@ -102,9 +117,10 @@ const IcoReenviar = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, mismoAutorQueElAnterior }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
+  mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
   onLightbox: (m: any) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
@@ -241,7 +257,9 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
 
   return (
     <span className="wa-msg" style={{ display: 'flex', flexDirection: 'column', alignItems: saliente ? 'flex-end' : 'flex-start', gap: 2, position: 'relative' }}>
-      {saliente && <span style={{ fontSize: 10, color: C.g400, padding: '0 4px' }}>{item.autor || 'Equipo SACS'}</span>}
+      {/* El nombre solo cuando CAMBIA de autor: con tres mensajes seguidos
+          tuyos se repetía tres veces y partía el bloque en tres. */}
+      {saliente && !mismoAutorQueElAnterior && <span style={{ fontSize: 10, color: C.g400, padding: '0 4px' }}>{item.autor || 'Equipo SACS'}</span>}
       <span style={{ display: 'flex', alignItems: 'center', gap: 4, flexDirection: saliente ? 'row-reverse' : 'row', maxWidth: '100%' }}>
         <span style={{
           ...(saliente ? burbuja.salienteWa : burbuja.entrante),

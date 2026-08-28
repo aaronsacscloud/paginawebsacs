@@ -46,6 +46,20 @@ export const POST: APIRoute = async ({ request }) => {
 export const DELETE: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   if (!b.id) return json({ error: 'Falta id' }, 400);
+  // Cancelar tiene que borrar TAMBIÉN la línea del hilo. Antes solo se marcaba
+  // el programado como cancelado y el «Recordatorio si no contesta: …» se
+  // quedaba puesto para siempre: seis pruebas seguidas dejaban seis líneas
+  // idénticas tapando la conversación.
+  const { data: prog } = await supabase.from('wa_programados')
+    .select('conversation_id, tipo, ejecutar_at').eq('id', b.id).maybeSingle();
   await supabase.from('wa_programados').update({ estado: 'cancelado' }).eq('id', b.id).eq('estado', 'pendiente');
+  if (prog?.conversation_id) {
+    const cuando = new Date(prog.ejecutar_at as string);
+    const fecha = cuando.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    await supabase.from('wa_eventos').delete()
+      .eq('conversation_id', prog.conversation_id)
+      .eq('tipo', prog.tipo === 'envio' ? 'programado' : 'recordatorio')
+      .eq('detalle', prog.tipo === 'envio' ? `Mensaje programado para ${fecha}` : `Recordatorio si no contesta: ${fecha}`);
+  }
   return json({ ok: true });
 };

@@ -1173,7 +1173,9 @@ const CRM_MOBILE_CSS = `
     .m-sec .m-vt { font-size: 0.78rem; font-weight: 700; color: var(--m-acc); letter-spacing: 0; text-transform: none; cursor: pointer; }
     /* Fila full-bleed con hairline (≤3 datos; la 4ª solo en la excepcional) */
     .m-row { display: flex; gap: 12px; align-items: center; padding: 16px 24px; min-height: 60px; position: relative; background: #fff; cursor: pointer; }
-    .m-row::after { content: ''; position: absolute; left: 24px; right: 0; bottom: 0; height: 1px; background: var(--m-line); }
+    /* La línea termina donde termina el contenido, no en el filo: el
+       contenido respeta 24 de padding y la raya llegaba al borde. */
+    .m-row::after { content: ''; position: absolute; left: 24px; right: 24px; bottom: 0; height: 1px; background: var(--m-line); }
     /* Con avatar, la hairline se alinea a la columna de texto (24 + 38 + 12) */
     .m-row:has(.m-ini)::after { left: 74px; }
     /* La lista cierra sin divisor colgante (Square): la última fila del bloque va limpia */
@@ -1212,7 +1214,9 @@ const CRM_MOBILE_CSS = `
     /* Chips de filtro (≤3; solo el activo lleva conteo) */
     .m-chips { display: flex; gap: 8px; padding: 8px 24px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .m-chips::-webkit-scrollbar { display: none; }
-    .m-chip { flex: none; font-size: 0.8rem; font-weight: 700; padding: 8px 13px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
+    /* Los chips son la navegación primaria del inbox y se tocan con el pulgar
+       en movimiento: 44 de alto, no 31. */
+    .m-chip { flex: none; min-height: 44px; display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 700; padding: 0 15px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     /* La cola de trabajo se ve sin tocarla: si hay gente esperando respuesta,
        su pastilla lo dice con el tono de atención aunque no esté activa. */
@@ -1434,6 +1438,11 @@ const CRM_MOBILE_CSS = `
          traía el gris claro del tema normal y en oscuro salía un bloque
          blanco en medio del menú. */
       [data-crm-dark="1"] .menu-sub { background: #232329 !important; }
+      /* Chip de estado elegido: el morado agua es casi blanco y en oscuro era
+         lo más luminoso de la hoja. */
+      [data-crm-dark="1"] .menu-hoja [style*="background: rgb(238, 236, 254)"] {
+        background: rgba(167, 139, 250, .16) !important; color: #C9BCF7 !important; border-color: #4a3f7a !important;
+      }
       [data-crm-dark="1"] .wa-ctx { background: #17171d !important; border-bottom-color: #1f1f26 !important; color: #918fa0 !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
       [data-crm-dark="1"] .m-lupa { stroke: #918fa0 !important; }

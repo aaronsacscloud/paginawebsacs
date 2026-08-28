@@ -10,6 +10,7 @@ import Cargando from '../ui/Cargando';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
+import { telefonoLegible } from '../../../../lib/telefono';
 import AvisoNuevo from './AvisoNuevo';
 import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscribirCola, marcaUnica, type EnCola } from '../../../../lib/crm/cola-envio';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
@@ -665,7 +666,9 @@ export default function InboxPro() {
             const conSec = chipWa !== 'resueltas' && sinLeer.length > 0;
             const fila = (c: any) => {
               const noLeida = c.no_leidos > 0;
-              const nom = c.contacto?.nombre || c.telefono || '—';
+              // Un número sin contacto se lee mejor separado, y es el mismo
+              // formato que usa la cabecera del hilo.
+              const nom = c.contacto?.nombre || (c.telefono ? telefonoLegible(String(c.telefono)) : '—');
               const emp = c.contacto?.empresa_nombre || c.contacto?.companies?.nombre || null;
               const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
               const ws = String(nom).split(/\s+/).filter((w: string) => w && !stop.includes(w.toLowerCase()));

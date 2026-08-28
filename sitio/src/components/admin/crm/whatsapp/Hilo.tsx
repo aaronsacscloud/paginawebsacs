@@ -88,8 +88,20 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     // Orden estable: hora real → created_at (ms) → id. Los timestamps de WhatsApp
     // van al SEGUNDO: sin el desempate fino, tu envío y la respuesta del cliente
     // dentro del mismo segundo se volteaban entre un poll y otro.
-    const timeline = [...msjs, ...notas, ...correos, ...eventos].sort((a, b) =>
+    const crudo = [...msjs, ...notas, ...correos, ...eventos].sort((a, b) =>
       String(a._t).localeCompare(String(b._t)) || String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id)));
+    // Eventos de sistema idénticos y seguidos se colapsan en uno con su
+    // cuenta: cinco «Recordatorio si no contesta: 30 ago» seguidos se comían
+    // un tercio de la pantalla y no decían nada más que el primero.
+    const timeline: any[] = [];
+    for (const it of crudo) {
+      const prev = timeline[timeline.length - 1];
+      if (it._clase === 'evento' && prev?._clase === 'evento' && prev.tipo === it.tipo && prev.detalle === it.detalle) {
+        prev._veces = (prev._veces || 1) + 1;
+        continue;
+      }
+      timeline.push(it._clase === 'evento' ? { ...it } : it);
+    }
     return { timeline, reacciones: reac, porWamid: new Map<string, any>(msjs.filter(m => m.kapso_message_id).map(m => [m.kapso_message_id, m])) };
   }, [hilo]);
 
@@ -148,9 +160,26 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     el.scrollTop = y != null ? Math.min(y, el.scrollHeight) : el.scrollHeight;
     ultimoRef.current = `${timeline[timeline.length - 1]._clase}-${timeline[timeline.length - 1].id}`;
   }, [convId, timeline.length]);
+  // Cuando el composer crece —al enfocarlo, al añadir líneas, al aparecer la
+  // barra ámbar— le quita alto al hilo. Si estabas al final, te quedas al
+  // final: si no, el composer tapa justo el mensaje al que respondes.
+  const cajaComposerRef = useRef<HTMLDivElement>(null);
+  // Ojo: «estabas al final» tiene que leerse del scroll EN VIVO, no de lo que
+  // valía en el resize anterior; si no, después de subir a leer, la siguiente
+  // línea que escribas te arrastra al fondo.
+  const alFinalRef = useRef(true);
+  useEffect(() => {
+    const caja = cajaComposerRef.current, el = scrollRef.current;
+    if (!caja || !el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => { if (alFinalRef.current) el.scrollTop = el.scrollHeight; });
+    ro.observe(caja);
+    return () => ro.disconnect();
+  }, [conv?.id]);
+
   const guardarScroll = () => {
     const el = scrollRef.current; if (!el) return;
     const alFinal = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    alFinalRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
     if (alFinal && nuevosAbajo) setNuevosAbajo(0);
     if (!convId) return;
     if (alFinal) memoriaScroll.delete(convId); else memoriaScroll.set(convId, el.scrollTop);
@@ -256,7 +285,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
             const urgente = ms < 4 * 3600e3;
             return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
-              style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 11px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              /* Con horas de sobra, la píldora era lo más brillante del header y
+                 pesaba más que el nombre del contacto. Queda de contorno; se
+                 rellena en ámbar solo cuando la ventana está por cerrarse. */
+              style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : 'transparent', border: urgente ? '1px solid transparent' : `1px solid ${C.emerald300}`, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 10px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
               {mobile
                 ? (h > 0 ? `${h} h` : `${m} min`)
@@ -362,20 +394,31 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             style={{ border: '1px solid #cfc5f6', background: '#fff', color: C.moradoTinta, borderRadius: 999, padding: '3px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Quitarlo de ese envío</button>
         </div>
       ))}
-      {conv.alerta && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 16px', background: C.rojo50, borderBottom: `1px solid ${C.rojo200}`, fontSize: 12, lineHeight: 1.45, color: C.rojo700, flexShrink: 0 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-          <span style={{ flex: 1 }}>{conv.alerta}</span>
-          {hilo.canales?.correo?.ok && <button onClick={() => document.dispatchEvent(new CustomEvent('wa-modo-correo'))} style={{ border: `1px solid ${C.rojo200}`, background: '#fff', color: C.rojo700, borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Escribir por correo</button>}
-        </div>
-      )}
+      {/* El rojo es para lo que YA se rompió: número bloqueado o inalcanzable.
+          Un límite de Meta o una restricción temporal es atención, y va en
+          ámbar; si no, el rojo deja de alarmar cuando de verdad importa.
+          En el teléfono el texto se corta a dos líneas: junto con el aviso de
+          ventana cerrada eran 200 px de cromo sobre el hilo. */}
+      {conv.alerta && (() => {
+        const roto = /bloquead|no alcanzable|inexistente|no existe/i.test(conv.alerta);
+        const fondo = roto ? C.rojo50 : C.ambar50, borde = roto ? C.rojo200 : C.ambar200, tinta = roto ? C.rojo700 : C.ambar700;
+        return (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 16px', background: fondo, borderBottom: `1px solid ${borde}`, fontSize: 12, lineHeight: 1.45, color: tinta, flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+            <span title={conv.alerta} style={{ flex: 1, ...(mobile ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' } : null) }}>{conv.alerta}</span>
+            {hilo.canales?.correo?.ok && <button onClick={() => document.dispatchEvent(new CustomEvent('wa-modo-correo'))} style={{ border: `1px solid ${borde}`, background: '#fff', color: tinta, borderRadius: 999, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Escribir por correo</button>}
+          </div>
+        );
+      })()}
       {/* ══ Con quién hablas, sin abrir la ficha (móvil) ══════════════════
           Etapa, empresa y de dónde llegó, en una línea. Contestar sin saber si
           es un lead nuevo o un cliente de años es la diferencia entre atinar y
           escribir de más; la ficha completa está a un toque, pero esto se ve
           sin toques. */}
       {mobile && (etapa || conv.companies?.nombre_comercial || conv.companies?.nombre || conv.contacts?.origen) && (
-        <div className="wa-ctx" style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', padding: '7px 16px', background: C.g50, borderBottom: `1px solid ${C.g100}`, flexShrink: 0, fontSize: 12.5, color: C.g500 }}>
+        /* Sin banda gris y con tinta de texto real: sobre el gris claro, el
+           origen («One Way») quedaba a 2.5:1 de contraste, ilegible. */
+        <div className="wa-ctx" style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', padding: '7px 16px', background: 'transparent', borderBottom: `1px solid ${C.g100}`, flexShrink: 0, fontSize: 12.5, color: C.g700 }}>
           {etapa && <span style={{ fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '3px 10px' }}>{etapa.label}</span>}
           {(conv.companies?.nombre_comercial || conv.companies?.nombre) && (
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{conv.companies?.nombre_comercial || conv.companies?.nombre}</span>
@@ -401,7 +444,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             {cargandoMas ? 'Cargando…' : 'Cargar mensajes anteriores'}
           </button>
         )}
-        {timeline.map((item: any) => {
+        {timeline.map((item: any, idx: number) => {
           const dia = etiquetaDia(item._t);
           const sepDia = dia !== diaPrevio; diaPrevio = dia;
           // Boundary: al pasar por un evento "resuelta", el siguiente bloque abre nueva etapa.
@@ -409,6 +452,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           const clave = `${item._clase}-${item.id}`;
           const conRing = resaltada === clave;
           const chips = item._clase === 'mensaje' && item.kapso_message_id ? reacciones.get(item.kapso_message_id) : null;
+          const prevItem = timeline[idx - 1];
+          const mismoAutor = !!prevItem && prevItem._clase === 'mensaje' && item._clase === 'mensaje'
+            && prevItem.direccion === item.direccion && (prevItem.autor || '') === (item.autor || '') && !sepDia;
           const sep = separador(false);
           const sepOscuro = separador(true);
           return (
@@ -434,8 +480,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               ) : item._clase === 'evento' && item.tipo === 'minuta' ? (
                 <MinutaCard item={item} />
               ) : item._clase === 'evento' ? (
-                <span style={{ alignSelf: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'inactiva', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
-                  {item.detalle}{item.autor ? ` · ${item.autor}` : ''}
+                /* «Sin actividad» salió de la lista de pastillas ámbar: es un
+                   separador de sistema, no algo que atender, y en ámbar competía
+                   con el aviso de ventana cerrada. */
+                <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g400, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
+                  {item.detalle}{item._veces > 1 ? ` · ${item._veces} veces` : ''}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                 </span>
               ) : item._clase === 'nota' ? (
@@ -467,6 +516,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 </span>
               ) : (
                 <BurbujaMensaje item={item} q={q} conRing={conRing} chips={chips} porWamid={porWamid}
+                  mismoAutorQueElAnterior={mismoAutor}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
                   onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined} />
@@ -487,7 +537,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {/* ── Composer ── */}
       {mobile && acciones && (
         <>
-          <div onClick={() => setAcciones(false)} style={{ position: 'fixed', inset: 0, zIndex: 950, background: 'rgba(12,11,18,.45)' }} />
+          <div onClick={() => setAcciones(false)} style={{ position: 'fixed', inset: 0, zIndex: 950, background: 'rgba(8,7,12,.62)' }} />
           <div className="menu-hoja" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 951, background: '#fff', borderRadius: '20px 20px 0 0', maxHeight: '86dvh', overflowY: 'auto', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}>
             <span style={{ display: 'block', width: 40, height: 5, borderRadius: 99, background: '#e2e1e8', margin: '10px auto 4px' }} />
             <AccionesVenta
@@ -502,12 +552,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           </div>
         </>
       )}
+      <div ref={cajaComposerRef}>
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
+        onFoco={() => { const el = scrollRef.current; if (el) el.scrollTo({ top: el.scrollHeight }); setNuevosAbajo(0); }}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
         borradorInicial={leerBorrador(conv.id || conv.email_only_id)} onBorrador={t => guardarBorrador(conv.id || conv.email_only_id, t)}
         canales={{ ...hilo.canales, wa_id: conv.id }}
         contacto={{ nombre, email: conv.contacts?.email, empresa: conv.companies?.nombre_comercial || conv.companies?.nombre, plan: conv.companies?.plan, etapa: etapa?.label, telefono: telefonoLegible(conv.telefono), mrr: conv.companies?.mrr, fecha_renovacion: conv.companies?.fecha_renovacion, sucursales: conv.companies?.sucursales }} />
+      </div>
 
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
@@ -552,7 +605,7 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
         style={{ border: 'none', background: dormida ? C.ambar50 : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: dormida ? C.ambar700 : C.g400 }}>
         <IcoPuntos size={16} />
       </button>
-      {abierto && <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940, background: movil ? 'rgba(12,11,18,.45)' : 'transparent' }} />}
+      {abierto && <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940, background: movil ? 'rgba(8,7,12,.62)' : 'transparent' }} />}
       {abierto && (
         /* En el teléfono, un volado con siete grupos tapaba la conversación
            entera. Es una hoja que sube desde abajo, con su asa, y el pulgar
@@ -565,8 +618,10 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             {/* Lo que se hace DURANTE la conversación, primero: cotizar,
                 agendar y buscar en el hilo. La cabecera se queda con el
                 nombre, que es lo que dice con quién hablas. */}
-            <button onClick={() => { setAbierto(false); onAcciones?.(); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, fontWeight: 700, color: C.moradoTinta }}>Cotizar o agendar</button>
+            <span style={{ display: 'block', padding: '4px 20px 12px' }}>
+              <button onClick={() => { setAbierto(false); onAcciones?.(); }}
+                style={{ display: 'block', width: '100%', minHeight: 48, border: 'none', borderRadius: 12, background: C.morado, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15, fontWeight: 700 }}>Cotizar o agendar</button>
+            </span>
             <button onClick={() => { setAbierto(false); onBuscar?.(); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>Buscar en la conversación</button>
             {/* E8.2 · Las notas del equipo viven mezcladas en el hilo; desde
@@ -620,30 +675,35 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             </span>
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
-          <span style={{ display: 'block', padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Posponer hasta</span>
-          {[{ l: 'En 3 horas', f: () => new Date(Date.now() + 3 * 3600e3) }, { l: 'Mañana 9:00', f: manana9 }, { l: 'Lunes 9:00', f: lunes9 }].map(o => (
-            <button key={o.l} onClick={() => posponer(o.f())}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.g700 }}>{o.l}</button>
-          ))}
+          <span style={{ display: 'block', padding: movil ? '10px 20px 4px' : '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Posponer hasta</span>
+          {/* Tres chips en una fila, como ESTADO: en columna se comían ~100 px
+              de la hoja y empujaban lo destructivo hasta el filo de la
+              pantalla, medio tapado y sin señal de que había más abajo. */}
+          <span style={{ display: 'flex', gap: 8, padding: movil ? '0 20px 10px' : '0 12px 8px' }}>
+            {[{ l: 'En 3 horas', f: () => new Date(Date.now() + 3 * 3600e3) }, { l: 'Mañana', f: manana9 }, { l: 'Lunes', f: lunes9 }].map(o => (
+              <button key={o.l} onClick={() => posponer(o.f())}
+                style={{ flex: 1, minHeight: movil ? 44 : 32, border: `1px solid ${C.g200}`, borderRadius: 999, background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: movil ? 12.5 : 11.5, fontWeight: 600, color: C.g700 }}>{o.l}</button>
+            ))}
+          </span>
           {dormida && (
             <button onClick={() => { setAbierto(false); api.patchConversacion({ snooze_until: null }); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.ambar700, fontWeight: 700 }}>Despertar ahora</button>
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.ambar700, fontWeight: 700 }}>Despertar ahora</button>
           )}
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
-            style={{ display: 'block', padding: '9px 12px', fontSize: 12, color: C.azulTinta, fontWeight: 700, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
+            style={{ display: 'block', padding: movil ? '13px 20px' : '9px 12px', fontSize: movil ? 15 : 12, color: C.g700, fontWeight: movil ? 500 : 600, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'resincronizar' }); if (r?.error) alert(r.error); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.g700 }}>Enviar datos del CRM a Kapso</button>
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>Enviar datos del CRM a Kapso</button>
           {/bloqueado/i.test(conv.alerta || '') ? (
             <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'desbloquear' }); if (r?.error) alert(r.error); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.emerald700, fontWeight: 700 }}>Desbloquear número</button>
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.emerald700, fontWeight: 700 }}>Desbloquear número</button>
           ) : (
             <button onClick={async () => { setAbierto(false); if (!confirm('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.rojo700 }}>Bloquear número (spam)</button>
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Bloquear número (spam)</button>
           )}
           <button onClick={async () => { setAbierto(false); if (!confirm('BORRADO GDPR: se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número. No se puede deshacer. ¿Continuar?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '7px 12px', fontSize: 12, color: C.rojo700 }}>Borrar datos del cliente (GDPR)</button>
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Borrar datos del cliente (GDPR)</button>
         </span>
       )}
     </span>

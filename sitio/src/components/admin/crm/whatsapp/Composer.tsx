@@ -56,6 +56,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   /** En el teléfono: caja de escritura alta, tipografía de 16 (iOS no hace
    *  zoom) y solo tres herramientas a la vista; el resto, tras «Más». */
   movil?: boolean;
+  /** Al enfocar la caja, el hilo baja al último mensaje: el composer crece y
+   *  antes tapaba justo aquello a lo que estabas respondiendo. */
+  onFoco?: () => void;
 }) {
   const [preselTema, setPreselTema] = useState<string | null>(null);
   const camaraRef = useRef<HTMLInputElement>(null);
@@ -270,9 +273,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         </select>
       )}
       <span style={{ flex: 1 }} />
+      {/* «Resumir» es ayuda, no la acción de la pantalla: en el teléfono
+          competía con Enviar (borde morado, negritas y chispa, del mismo peso).
+          Queda como texto morado a secas. */}
       <button onClick={resumir} disabled={iaProcesando}
-        style={{ border: `1px solid #c9bcf7`, borderRadius: 8, padding: '3px 10px', background: '#fff', color: C.moradoTinta, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-        <IcoChispas size={12} /> Resumir
+        style={{ border: movil ? 'none' : `1px solid #c9bcf7`, borderRadius: 8, padding: movil ? '3px 4px' : '3px 10px', background: movil ? 'none' : '#fff', color: movil ? C.morado : C.moradoTinta, fontSize: movil ? 12.5 : 11, fontWeight: movil ? 600 : 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+        {!movil && <IcoChispas size={12} />} Resumir
       </button>
     </div>
   );
@@ -390,10 +396,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         }} onMicError={m => setError(m)}>
           {({ grabando, iniciar }) => (<>
             {!grabando && (
-              <textarea ref={areaRef} value={texto} rows={movil ? (escribiendoMovil ? 3 : 1) : 1}
-                onFocus={() => movil && setEscribiendoMovil(true)}
+              <textarea ref={areaRef} value={texto} rows={movil ? (escribiendoMovil ? 2 : 1) : 1}
+                onFocus={() => { if (movil) setEscribiendoMovil(true); onFoco?.(); setTimeout(() => onFoco?.(), 180); }}
                 onBlur={() => { if (!movil || texto) return; setTimeout(() => { if (!tocandoBarra.current) setEscribiendoMovil(false); }, 140); }}
-                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 300 : 44) : 120) + 'px'; }}
+                onChange={e => {
+                  setTexto(e.target.value); pingEscribir();
+                  const antes = e.target.style.height;
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 168 : 44) : 120) + 'px';
+                  // Cada línea nueva le come alto al hilo: se vuelve a bajar
+                  // para que el último mensaje no quede tapado por lo que
+                  // estás escribiendo.
+                  if (antes !== e.target.style.height) onFoco?.();
+                }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
                   bloqueadoWa ? 'Ventana de 24h cerrada — envía una plantilla'
@@ -402,7 +417,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                         : modo === 'correo' ? 'Escribe el correo… (Enter envía)'
                           : "Escribe un mensaje... usa '/' para snippets"}
                 disabled={bloqueadoWa || bloqueadoCorreo}
-                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? (escribiendoMovil ? 96 : 44) : undefined, maxHeight: movil ? (escribiendoMovil ? 300 : 44) : 120, borderRadius: 0 }} />
+                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? (escribiendoMovil ? 72 : 44) : undefined, maxHeight: movil ? (escribiendoMovil ? 168 : 44) : 120, borderRadius: 0 }} />
             )}
             {/* Staged files */}
             {staged.length > 0 && !grabando && (
