@@ -240,6 +240,8 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                     {c.contacto?.nombre || c.telefono}
                   </b>
                   {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px' }}>Pendiente</span>}
+                  {/* E8.1 · Nota interna del equipo: se sabe antes de abrir. */}
+                  {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
                   {resuelta && <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 6px', textTransform: 'uppercase' }}>Resuelta</span>}
                   {asignado && (!yo || c.asignado_a !== yo.id) && (
                     <span style={{ fontSize: 9, fontWeight: 700, background: C.azulAgua, color: C.azulTinta, borderRadius: 999, padding: '1px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 72 }}>→ {asignado.nombre.split(' ')[0]}</span>

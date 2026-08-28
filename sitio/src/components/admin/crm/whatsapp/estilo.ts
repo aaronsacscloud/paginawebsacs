@@ -150,6 +150,12 @@ export const CSS_INBOX = `
   .wa-x-hover { display: none; }
   .wa-staged:hover .wa-x-hover { display: flex; }
   mark.wa-mark { background: #FEF08A; color: #854D0E; border-radius: 3px; padding: 0 2px; }
+/* Marca de nota interna en la fila (E8.1). Discreta a propósito: informa, no
+   compite con el punto de «te toca contestar». */
+.m-nota{flex:none;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:#7a7690;background:#f1f0f5;border-radius:999px;padding:1px 6px;line-height:1.5}
+html[data-crm-dark="1"] .m-nota{color:#a5a2b5;background:#2b2b33}
+
 /* «N mensajes nuevos»: aparece pegado al fondo del hilo cuando llega algo
    mientras lees hacia arriba (E6.2). */
 .wa-bajar{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;z-index:40;

@@ -678,7 +678,13 @@ export default function InboxPro() {
                 <div key={c.id} className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
                   <div className="m-ini">{ini}</div>
                   <div className="m-tx">
-                    <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>{[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}</div>
+                    <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>
+                      {[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}
+                      {/* E8.1 · Alguien del equipo dejó una nota interna aquí.
+                          Hay que saberlo ANTES de abrir, no después de leer
+                          toda la conversación. */}
+                      {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
+                    </div>
                     <div className="m-n2" style={!c.ultimo_mensaje_texto ? { fontStyle: 'italic' } : undefined}>
                       {/* Un borrador a medias es trabajo empezado: si la lista no
                           lo dice, se olvida y el cliente se queda esperando. */}

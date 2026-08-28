@@ -101,10 +101,18 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       it._clase !== 'evento' && String(it.cuerpo || it.cuerpo_texto || it.transcript || it.texto || '').toLowerCase().includes(ql));
   }, [timeline, q]);
   useEffect(() => { setMatchIdx(0); }, [q]);
+  // Cada item del hilo cuelga de un <span display:contents>, que NO tiene caja
+  // propia: `scrollIntoView` sobre él no mueve nada. Se desplaza su primer
+  // hijo, que sí la tiene.
+  const irAItem = (clave: string) => {
+    const el = document.getElementById(`wa-item-${clave}`);
+    const caja = (el?.firstElementChild as HTMLElement) || el;
+    caja?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   const irAMatch = (idx: number) => {
     const it = matches[idx]; if (!it) return;
-    const el = document.getElementById(`wa-item-${it._clase}-${it.id}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    irAItem(`${it._clase}-${it.id}`);
     setResaltada(`${it._clase}-${it.id}`);
     setTimeout(() => setResaltada(null), 2000);
   };
@@ -292,7 +300,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <IcoBuscar size={mobile ? 19 : 15} />
         </button>}
         {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
-          onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)} />}
+          onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)}
+          notas={(hilo?.notas || []).length}
+          onVerNotas={() => {
+            const ult = [...timeline].reverse().find((t: any) => t._clase === 'nota');
+            if (!ult) return;
+            const clave = `nota-${ult.id}`;
+            irAItem(clave);
+            setResaltada(clave); setTimeout(() => setResaltada(null), 2500);
+          }} />}
         {/* Acciones (cotizar, agendar) a un toque: en el teléfono estaban
             enterradas dentro de la ficha, y son lo que se hace DURANTE la
             conversación. */}
@@ -512,7 +528,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }
 
 /** Menú ⋯ del hilo: posponer / exportar. */
-function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, onAcciones, onBuscar }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void; movil?: boolean; onAcciones?: () => void; onBuscar?: () => void }) {
+function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, onAcciones, onBuscar, notas, onVerNotas }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void; movil?: boolean; onAcciones?: () => void; onBuscar?: () => void; notas?: number; onVerNotas?: () => void }) {
   const posponer = async (hasta: Date) => { setAbierto(false); await api.patchConversacion({ snooze_until: hasta.toISOString(), no_leidos: 0 }); };
   const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
   const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
@@ -540,8 +556,22 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, fontWeight: 700, color: C.moradoTinta }}>Cotizar o agendar</button>
             <button onClick={() => { setAbierto(false); onBuscar?.(); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>Buscar en la conversación</button>
+            {/* E8.2 · Las notas del equipo viven mezcladas en el hilo; desde
+                aquí se salta a la última sin buscarla a mano. */}
+            {!!notas && (
+              <button onClick={() => { setAbierto(false); onVerNotas?.(); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>
+                Notas internas ({notas})
+              </button>
+            )}
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
+          {!movil && !!notas && (
+            <button onClick={() => { setAbierto(false); onVerNotas?.(); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 14px', fontSize: 12, color: C.g700 }}>
+              Notas internas ({notas})
+            </button>
+          )}
           {equipo && (<>
             <span style={{ display: 'block', padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Estado</span>
             <span style={{ display: 'flex', gap: 4, padding: '0 10px 6px' }}>

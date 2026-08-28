@@ -42,7 +42,7 @@ const _GET: APIRoute = async ({ request, url }) => {
   const offset = Number(url.searchParams.get('offset') || 0);
 
   const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
-  const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }] = await Promise.all([
+  const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }, { data: notasRaw }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
     supabase.from('email_conversations').select(`*, ${SELECT_JOINS}`)
@@ -51,6 +51,9 @@ const _GET: APIRoute = async ({ request, url }) => {
     user ? supabase.from('wa_lecturas').select('conversation_id, leido_at').eq('user_id', user.id) : Promise.resolve({ data: [] as any[] }),
     // 24) menciones @ a este usuario en notas (para "Requiere mi acción")
     user ? supabase.from('wa_notas').select('conversation_id, created_at').contains('menciones', [user.id]).order('created_at', { ascending: false }).limit(300) : Promise.resolve({ data: [] as any[] }),
+    // E8.1) Qué conversaciones traen nota interna del equipo: hay que saberlo
+    // ANTES de abrirla, no después de leerla entera.
+    supabase.from('wa_notas').select('conversation_id').not('conversation_id', 'is', null).order('created_at', { ascending: false }).limit(1000),
   ]);
   if (error) return json({ error: error.message }, 500);
   const leidoAt = new Map<string, string>((lecturas || []).map((l: any) => [l.conversation_id, l.leido_at]));
@@ -61,6 +64,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     const { data: n } = await supabase.rpc('wa_no_leidos_por_usuario', { uid: user.id });
     for (const r of n || []) pendientesPersonal.set(r.conversation_id, Number(r.n));
   }
+  const conNota = new Set<string>((notasRaw || []).map((n: any) => String(n.conversation_id)));
   const mencionesPend = new Set<string>();
   for (const m of mencionesRaw || []) {
     const l = leidoAt.get(m.conversation_id);
@@ -100,7 +104,7 @@ const _GET: APIRoute = async ({ request, url }) => {
       ultima_direccion: c.ultima_direccion, ultimo_canal: 'wa',
       no_leidos: leidoAt.has(c.id) ? (pendientesPersonal.get(c.id) || 0) : (c.no_leidos || 0),
       ventana_expira_at: c.ultimo_entrante_at ? new Date(new Date(c.ultimo_entrante_at).getTime() + 24 * 3600e3).toISOString() : null,
-      alerta: c.alerta || null, mencion: mencionesPend.has(c.id),
+      alerta: c.alerta || null, mencion: mencionesPend.has(c.id), tiene_notas: conNota.has(c.id),
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
       asignado_a: c.asignado_a, contact_id: c.contact_id, company_id: c.company_id,
       contacto: contactoDe(c), empresa: empresaDe(c),
