@@ -38,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
     hora_inicio: Math.max(0, Math.min(23, Number(b.hora_inicio) ?? 10)),
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
+  if (['respondio', 'agendo', 'convertido'].includes(b.objetivo)) fila.objetivo = b.objetivo;
   // Días de la semana en que SÍ envía (1=lun … 7=dom) y reglas de entrada.
   if (Array.isArray(b.dias_envio)) {
     const ds = b.dias_envio.map(Number).filter((d: number) => d >= 1 && d <= 7);

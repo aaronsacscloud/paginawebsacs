@@ -122,16 +122,17 @@ export const GET: APIRoute = async ({ url }) => {
       const cd: Record<string, any> = { ...(m.canales_detenidos || {}) };
       let cdCambio = false;
 
+      const objetivoSec = sec.objetivo || 'agendo';
       // Canal WhatsApp: optout o respuesta entrante después de entrar.
       if (!cd.wa && c.wa_optout) { cd.wa = { motivo: 'optout', at: ahora.toISOString() }; cdCambio = true; }
       if (!cd.wa && waEntrante[c.id] && waEntrante[c.id] > m.inicio) {
         cd.wa = { motivo: 'respondio', at: ahora.toISOString() }; cdCambio = true;
-        if (!dry) await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por WhatsApp — se detienen los WhatsApps automáticos; los correos siguen.`);
+        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por WhatsApp — se detienen los WhatsApps automáticos; los correos siguen.`);
       }
       // Canal correo: respuesta entrante después de entrar.
       if (!cd.correo && correoEntrante[c.id] && correoEntrante[c.id] > m.inicio) {
         cd.correo = { motivo: 'respondio', at: ahora.toISOString() }; cdCambio = true;
-        if (!dry) await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por correo — se detienen los correos automáticos; los WhatsApps siguen.`);
+        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por correo — se detienen los correos automáticos; los WhatsApps siguen.`);
       }
       if (cdCambio) {
         res.canales_detenidos++;
@@ -142,9 +143,13 @@ export const GET: APIRoute = async ({ url }) => {
         }
       }
 
-      // Salida total: motivo duro, corte, o respondió por AMBOS canales.
+      // Salida total: motivo duro, corte, respondió por AMBOS canales — o el
+      // OBJETIVO de la secuencia es que responda y ya respondió por uno.
+      const respondioAlgo = cd.wa?.motivo === 'respondio' || cd.correo?.motivo === 'respondio';
       const ambos = cd.wa?.motivo === 'respondio' && cd.correo?.motivo === 'respondio';
-      const motivo = motivoSalida(c) || (dias > sec.corte_dias ? 'corte' : null) || (ambos ? 'respondio' : null);
+      const motivo = motivoSalida(c) || (dias > sec.corte_dias ? 'corte' : null)
+        || (ambos ? 'respondio' : null)
+        || (objetivoSec === 'respondio' && respondioAlgo ? 'respondio' : null);
       if (motivo) {
         if (!dry) {
           await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora.toISOString(), motivo, canales_detenidos: cd }).eq('id', m.id);

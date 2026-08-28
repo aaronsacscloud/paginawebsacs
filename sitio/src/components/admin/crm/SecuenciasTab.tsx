@@ -93,6 +93,20 @@ export default function SecuenciasTab() {
             })}
           </div>
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Solo entran leads (nunca clientes ni oportunidades) que llegaron dentro del corte — los viejos no reciben ráfagas.</p>
+          <span style={lbl}>Objetivo de la secuencia</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[['Que responda', 'respondio'], ['Que agende demo', 'agendo'], ['Que se haga cliente', 'convertido']].map(([l, v]) => {
+              const on = (edit.objetivo || 'agendo') === v;
+              return (
+                <button key={v as string} onClick={() => setEdit({ ...edit, objetivo: v })}
+                  style={{ borderRadius: 999, border: '1.5px solid', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 700, padding: '5px 12px',
+                    borderColor: on ? '#b5e3d1' : '#e2e4e9', background: on ? P.verdeAgua : '#fff', color: on ? P.verdeTinta : '#a5a2af' }}>{l}</button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>
+            Al cumplir el objetivo, la secuencia ENTERA termina para ese lead (correos y WhatsApps). Con «Que agende demo» o «Que se haga cliente», responder solo detiene el canal por el que respondió — el otro sigue nutriendo hacia el objetivo.
+          </p>
         </div>
 
         {/* Las reglas: quién entra, quién sale. Fijas y a la vista. */}
@@ -202,7 +216,20 @@ export default function SecuenciasTab() {
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>{m.correos ?? 0} correos · {m.whatsapps ?? 0} WA</div>
               </div>
               <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
-                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Resultados (salidas)</div>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>
+                  Objetivo: {({ respondio: 'que responda', agendo: 'que agende demo', convertido: 'que se haga cliente' } as any)[s.objetivo || 'agendo']}
+                </div>
+                {(() => {
+                  const orden = ['respondio', 'agendo', 'convertido'];
+                  const desde = orden.indexOf(s.objetivo || 'agendo');
+                  const logrados = orden.slice(desde).reduce((a, k) => a + (Number(salidas[k]) || 0), 0);
+                  const entraron = Number(m.entraron) || 0;
+                  return (
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.verdeTinta }}>
+                      {logrados} de {entraron}{entraron ? ` · ${Math.round(logrados / entraron * 100)}%` : ''}
+                    </div>
+                  );
+                })()}
                 <div style={{ fontSize: '0.78rem', fontWeight: 700, marginTop: 3, display: 'flex', gap: 9, flexWrap: 'wrap' }}>
                   {Object.keys(salidas).length === 0 && <span style={{ color: '#c4c4cc' }}>aún sin salidas</span>}
                   {Object.entries(salidas).map(([k, v]: any) => {
