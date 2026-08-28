@@ -1395,6 +1395,8 @@ const CRM_MOBILE_CSS = `
       /* La barra de título es parte de la app, no una franja aparte: sin esto
          quedaba blanca con el título en tinta clara (ilegible) en los módulos
          del menú que ya van en oscuro. */
+      [data-crm-dark="1"] .m-buscar { background: #1d1d24 !important; border-color: #2c2c36 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .m-buscar::placeholder { color: #62626c !important; }
       [data-crm-dark="1"] .m-chip.urge { border-color: #6b5220 !important; color: #E8B04B !important; }
       [data-crm-dark="1"] .m-pend { background: #A78BFA !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }

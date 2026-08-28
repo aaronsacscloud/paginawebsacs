@@ -33,6 +33,7 @@ export default function InboxPro() {
   const [orden, setOrden] = useState('recientes');
   const [mostrar, setMostrar] = useState('conversaciones');
   const [filtrosMobile, setFiltrosMobile] = useState(false);
+  const [buscarAbierto, setBuscarAbierto] = useState(false);   // móvil: buscador de la cabecera
   // ══ Móvil v5 (mockup Inbox): chips Abiertas/Mías/Resueltas y lista seccionada ══
   // «No contestadas» = el cliente escribió y nadie respondió: es la cola de
   // trabajo real, por eso abre el inbox. «Sin respuesta» es el espejo: yo
@@ -228,10 +229,52 @@ export default function InboxPro() {
     } catch { /* SSR o URL rara */ }
   }, [lista]);
 
+  // ══ Abrir rápido ══════════════════════════════════════════════════════
+  // Abrir una conversación costaba ~3.6 s porque hasta ese momento se
+  // descargaban los chunks del hilo y del composer (137 KB) Y se pedía el
+  // hilo al servidor. Ahora las dos cosas pasan ANTES: el código se precarga
+  // en cuanto hay lista, y el hilo de la conversación se trae al primer
+  // contacto del dedo (pointerdown) o al asomarse la fila.
+  const precargados = useRef<Set<string>>(new Set());
+  const precargarHilo = useCallback((c: any) => {
+    const id = c?.wa_id || c?.email_id;
+    if (!id || precargados.current.has(id)) return;
+    precargados.current.add(id);
+    const qs = c.wa_id ? `id=${c.wa_id}` : `email_id=${c.email_id}`;
+    fetch(`/api/crm/whatsapp/hilo?${qs}`, { cache: 'no-store' }).then(r => r.json())
+      .then(j => { if (j && !j.error) cacheHilos.current.set(id, j); }).catch(() => {});
+  }, []);
+  const cacheHilos = useRef<Map<string, any>>(new Map());
+
   const abrir = (c: any) => {
+    // Si el hilo ya se precargó, se pinta AL INSTANTE y el fetch de siempre
+    // solo lo refresca detrás.
+    const id = c?.wa_id || c?.email_id;
+    const listo = id ? cacheHilos.current.get(id) : null;
+    if (listo) { hiloRef.current = listo; setHilo(listo); }
     setActiva({ id: c.id, wa: c.wa_id ?? null, email: c.email_id ?? null });
     setLista(l => (l || []).map(x => x.id === c.id ? { ...x, no_leidos: 0 } : x));
   };
+
+  // El código del hilo pesa 137 KB entre Hilo y Composer: se trae mientras el
+  // usuario mira la lista, no cuando ya tocó una conversación.
+  useEffect(() => {
+    if (!lista || !lista.length) return;
+    const traer = () => { import('./Hilo'); import('./Composer'); import('./PanelDetalle'); };
+    const w: any = window;
+    const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 2500 }) : setTimeout(traer, 900);
+    return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(t); else clearTimeout(t as any); };
+  }, [!!(lista && lista.length)]);
+
+  // Y los datos de las primeras conversaciones de la cola: son las que se
+  // abren en el 90% de los casos.
+  useEffect(() => {
+    if (!isMobile || !lista || !lista.length) return;
+    const w: any = window;
+    const traer = () => (lista as any[]).filter(c => !c.virtual).slice(0, 3).forEach(precargarHilo);
+    const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 3500 }) : setTimeout(traer, 1400);
+    return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(t); else clearTimeout(t as any); };
+  }, [isMobile, lista, precargarHilo]);
 
   const refrescar = () => { if (activaRef.current) cargarHilo(activaRef.current); cargarLista(filtrosRef.current); };
   const waId = () => activaRef.current?.wa || null;
@@ -471,7 +514,7 @@ export default function InboxPro() {
                 ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8f8d98" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 : (ws.length >= 2 ? ws[0][0] + ws[1][0] : String(nom).slice(0, 2)).toUpperCase();
               return (
-                <div key={c.id} className="m-row" onClick={() => abrir(c)}>
+                <div key={c.id} className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
                   <div className="m-ini">{ini}</div>
                   <div className="m-tx">
                     <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>{[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}</div>
@@ -493,8 +536,29 @@ export default function InboxPro() {
               <div>
                 <div className="m-hdr">
                   <div className="m-tt">Inbox</div>
-                  <button className="m-cta" onClick={() => setNuevoChat(true)}>＋ Nuevo</button>
+                  {/* Dos acciones y ninguna más: buscar (por número, nombre o
+                      texto del mensaje) y abrir conversación. Lo demás vive en
+                      la propia conversación. */}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button className="m-cta" aria-label="Buscar conversación"
+                      onClick={() => { setBuscarAbierto(v => !v); if (buscarAbierto) setFiltros(f => ({ ...f, search: '' })); }}
+                      style={{ padding: '0 6px' }}>
+                      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                        <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.2-3.2" />
+                      </svg>
+                    </button>
+                    <button className="m-cta" onClick={() => setNuevoChat(true)}>＋ Nuevo</button>
+                  </span>
                 </div>
+                {buscarAbierto && (
+                  <div style={{ padding: '0 24px 8px' }}>
+                    <input autoFocus value={filtros.search}
+                      onChange={e => setFiltros(f => ({ ...f, search: e.target.value }))}
+                      placeholder="Número, contacto o texto del mensaje…"
+                      className="m-buscar"
+                      style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#1a1a1a', fontSize: '0.92rem', fontFamily: 'inherit', outline: 'none' }} />
+                  </div>
+                )}
                 <div className="m-chips">
                   {([['nocontestadas', 'No contestadas'], ['abiertas', 'Abiertas'], ['sinrespuesta', 'Sin respuesta'], ['mias', 'Mías'], ['resueltas', 'Resueltas']] as const).map(([v, l]) => {
                     const on = chipWa === v;

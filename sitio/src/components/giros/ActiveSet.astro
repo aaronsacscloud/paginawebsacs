@@ -29,14 +29,14 @@ const defaults = { piezas: 60, tops: 48, leggings: 31, costo: 240 };
 <BloqueProducto
   encabezado="El pleito de cada drop."
   titulo="El top vuela. El legging se queda viudo."
-  descripcion="Un colorway sale con los mismos tops que leggings. Mueve cuántos se vendieron de cada uno — con tus números del último drop — y mira cuántas piezas quedan sin su pareja y cuánto dinero es."
+  descripcion="Un colorway casi siempre sale parejo — mismos tops que leggings — y justo así se rompe. Mueve cuántos se vendieron de cada uno, con tus números del último drop, y mira cuántas piezas quedan sin pareja y cuánto dinero es."
   vinetas={[
     { label: 'El descase no se ve en el rack', detail: 'El rack se ve lleno aunque el set esté roto. El descase se ve en el reporte por pieza y por talla — por eso existe este bloque.' },
     { label: 'El kit empuja al set', detail: 'El set con precio de set y la pieza suelta con el suyo: así la clienta se lleva el conjunto y las dos piezas caminan parejas.' },
     { label: 'La cuenta va a costo', detail: 'Lo viudo se cuenta a lo que te costó, no a etiqueta. Y no se recupera entero: parte se vende suelto y parte se remata en la venta nocturna.' },
   ]}
 >
-  <div class="as" id="as" data-def={JSON.stringify(defaults)}>
+  <div class="as" id="as">
     <div class="as-controles">
       <label>
         <span>Piezas por colorway (tops = leggings)</span>
@@ -54,7 +54,7 @@ const defaults = { piezas: 60, tops: 48, leggings: 31, costo: 240 };
         <b id="asLeggingsV">{defaults.leggings}</b>
       </label>
       <label>
-        <span>Costo por pieza</span>
+        <span>Costo promedio por pieza</span>
         <input type="range" id="asCosto" class="as-rango" min="100" max="600" step="20" value={defaults.costo} />
         <b id="asCostoV">${defaults.costo}</b>
       </label>
@@ -158,8 +158,11 @@ const defaults = { piezas: 60, tops: 48, leggings: 31, costo: 240 };
       el('asDinero').textContent = fmt(dinero);
 
       const fea = el('asFea');
+      const rapidaAgotada = topsRestan === 0 || legRestan === 0;
       fea.textContent = viudas > 0
-        ? `Del siguiente lote: pide ${viudas} ${pieza === 'tops' ? 'leggings' : 'tops'} más (o ${viudas} ${pieza} menos) — el descase de hoy es la curva de mañana.`
+        ? (rapidaAgotada
+            ? `Del siguiente lote: pide ${viudas} ${pieza === 'tops' ? 'leggings' : 'tops'} más — la pieza rápida se agotó y dejó ${viudas} ${pieza} viudos.`
+            : `Del siguiente lote: pide ${viudas} ${pieza} menos — ninguna pieza se agotó todavía, y el kit puede emparejar lo que queda.`)
         : '';
 
       const cta = el('asCta') as HTMLAnchorElement;

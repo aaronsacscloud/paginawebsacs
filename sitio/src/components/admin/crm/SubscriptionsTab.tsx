@@ -294,7 +294,15 @@ export default function SubscriptionsTab() {
           <div style={{ ...S.kValue, color: (bajas?.n || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{bajas?.n ?? '—'}</div>
           <div style={S.kSub}>
             {(bajas?.n || 0) > 0
-              ? <>{fmt(bajas.arr)} de ARR · {bajas.motivos.slice(0, 2).map((m: any) => `${m.n} ${m.motivo.toLowerCase().split(' · ')[0].split(' — ')[0]}`).join(', ')}</>
+              ? <>{fmt(bajas.arr)} de ARR · {(() => {
+                  // El motivo viene por suscripción, así que «mal servicio o
+                  // soporte» salía dos veces en la misma línea. Se agrupa por
+                  // la raíz del motivo y se suman: «2 mal servicio o soporte».
+                  const raiz = (t: string) => String(t || '').toLowerCase().split(' · ')[0].split(' — ')[0].trim();
+                  const acc = new Map<string, number>();
+                  bajas.motivos.forEach((m: any) => acc.set(raiz(m.motivo), (acc.get(raiz(m.motivo)) || 0) + (m.n || 1)));
+                  return [...acc.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([t, n]) => `${n} ${t}`).join(', ');
+                })()}</>
               : 'ninguna cancelación registrada'}
           </div>
           {(bajas?.motivos?.length || 0) > 0 && !isMobile && (

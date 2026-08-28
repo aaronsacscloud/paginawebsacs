@@ -35,3 +35,26 @@ interfaz limpia.**
 Cada pantalla pasa por el referee de UI/UX móvil (estándar Square) hasta 10/10,
 y los 7 puntos del usuario quedan verificados con captura o medición, no de
 palabra. Si al revisar aparece algo más, se regresa antes de avanzar.
+
+---
+
+## En cola: agendar desde el Inbox (móvil y web)
+
+Pedido del usuario (2026-08-28, después de los 8 puntos de arriba). Un botón
+de **agenda** en la conversación, con dos caminos:
+
+1. **Automático.** Lee los huecos libres de la agenda y le manda al cliente
+   unos horarios como botones de WhatsApp. El cliente toca uno y con eso queda:
+   se crea la cita, se confirma y se avisa, sin que nadie más intervenga.
+2. **Por liga.** Elegir cuál de los calendarios mandar y pegarle la liga al
+   cliente para que él escoja.
+
+**Y en los dos casos, siempre:** al quedar agendado sale un WhatsApp *y* un
+correo con todos los datos del evento —fecha, hora, con quién, liga de la
+reunión—. No es un aviso suelto: es una **secuencia que corre siempre** que se
+agenda, venga por donde venga.
+
+Pendiente de análisis antes de tocar código: qué endpoints de agenda existen
+hoy (SchedulingTab/reuniones), si la API de WhatsApp permite mensajes
+interactivos de lista para los horarios, y dónde vive la plantilla de
+confirmación para no crear un camino paralelo al que ya manda el CRM.

@@ -32,6 +32,9 @@ interface Props {
   foto: string;
   fotoAlt: string;
   avisos: AvisoGiro[];
+  /** Encuadre de la foto (object-position); útil cuando el recorte móvil
+   *  corta la cara de la persona. Ej: 'center 22%'. */
+  encuadre?: string;
   /** Rótulo del sello "+3,000". En giros donde "marca" significa la marca del
    *  tercero (multimarca), decir "Marcas activas" confunde: se sobreescribe. */
   selloMarcas?: string;
@@ -47,6 +50,7 @@ const {
   fotoAlt,
   avisos,
   selloMarcas = 'Marcas activas en México y Latam',
+  encuadre,
   ctaPri = { label: 'Prueba 7 días gratis', href: '/prueba-gratis' },
   ctaSec = { label: 'Agenda una demo', href: '/contacto' },
 } = Astro.props;
@@ -93,7 +97,7 @@ const {
 
     <div class="gb-visual">
       <div class="gb-foto">
-        <img src={foto} alt={fotoAlt} width="900" height="1200" loading="eager" fetchpriority="high" />
+        <img src={foto} alt={fotoAlt} width="900" height="1200" loading="eager" fetchpriority="high" style={encuadre ? `object-position:${encuadre}` : undefined} />
 
         {avisos.map((a) => (
           <div class:list={['gb-aviso', `gb-aviso-${a.pos}`]} aria-hidden="true">
@@ -228,6 +232,10 @@ const {
     .gb-aviso-cuerpo b { font-size: 12px; }
     .gb-aviso-cuerpo span { font-size: 11px; }
     .gb-aviso-sello { display: none; }
+  }
+  @media (max-width: 420px) {
+    /* Tres tarjetas tapan la foto entera en 390px: la de en medio cede. */
+    .gb-aviso-2 { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .gb-aviso { animation: none; }

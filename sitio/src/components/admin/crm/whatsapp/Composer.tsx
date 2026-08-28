@@ -46,13 +46,16 @@ const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, docume
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
 const emojiTipo: Record<string, string> = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' };
 
-export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [] }: {
+export default function Composer({ ventana, api, telefono, equipo = [], canales, contacto, cita, onQuitarCita, borradorInicial, onBorrador, onEscribir, siguiente, sugerencias = [], movil }: {
   ventana: any; api: any; telefono: string; equipo?: any[]; canales?: any; contacto?: any;
   cita?: any; onQuitarCita?: () => void;
   borradorInicial?: string; onBorrador?: (t: string) => void;
   onEscribir?: () => void;                 // 6) presencia "escribiendo…"
   siguiente?: () => boolean;               // 2) abrir la siguiente sin responder
   sugerencias?: any[];                     // L4: temas relevantes de la etapa del contacto
+  /** En el teléfono: caja de escritura alta, tipografía de 16 (iOS no hace
+   *  zoom) y solo tres herramientas a la vista; el resto, tras «Más». */
+  movil?: boolean;
 }) {
   const [preselTema, setPreselTema] = useState<string | null>(null);
   const ultimoPingRef = useRef(0);
@@ -87,6 +90,8 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const setError = (m: string, det: any = null) => { setErrorRaw(m); setErrorDet(det); };
   const [aviso, setAviso] = useState('');
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
+  const [escribiendoMovil, setEscribiendoMovil] = useState(false);  // móvil: al enfocar, la caja crece
+  const [masHerramientas, setMasHerramientas] = useState(false);    // móvil: el resto de la barra
   const [pop, setPop] = useState<Popup>(null);
   const [modalPlantilla, setModalPlantilla] = useState(false);
   const [biblioteca, setBiblioteca] = useState(false);
@@ -228,11 +233,15 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   };
 
   // ── Fila de canal ──
+  // En el teléfono esta fila era pura etiqueta: «WhatsApp Sacscloud · a +52…»
+  // ocupaba el ancho entero y empujaba «Resumir» fuera de la pantalla. Queda
+  // el icono del canal (que sí informa por dónde sale el mensaje), el selector
+  // cuando hay dos canales, y la acción.
   const FilaCanal = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: `1px solid ${C.g100}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: movil ? '6px 12px' : '8px 12px', borderBottom: `1px solid ${C.g100}` }}>
       {modo === 'correo' ? <BadgeCorreo size={16} /> : <BadgeWhatsApp size={16} />}
-      <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>
-      <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>
+      {!movil && <span style={{ fontSize: 12, fontWeight: 600, color: C.g700, whiteSpace: 'nowrap', flexShrink: 0 }}>{modo === 'correo' ? 'Correo' : 'WhatsApp'} Sacscloud</span>}
+      {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
           style={{ border: `1px solid ${C.g200}`, borderRadius: 6, fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
@@ -350,8 +359,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         }} onMicError={m => setError(m)}>
           {({ grabando, iniciar }) => (<>
             {!grabando && (
-              <textarea ref={areaRef} value={texto} rows={1}
-                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+              <textarea ref={areaRef} value={texto} rows={movil ? 3 : 1}
+                onFocus={() => movil && setEscribiendoMovil(true)}
+                onBlur={() => movil && !texto && setEscribiendoMovil(false)}
+                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 260 : 132) : 120) + 'px'; }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
                   bloqueadoWa ? 'Ventana de 24h cerrada — envía una plantilla'
@@ -360,7 +371,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                         : modo === 'correo' ? 'Escribe el correo… (Enter envía)'
                           : "Escribe un mensaje... usa '/' para snippets"}
                 disabled={bloqueadoWa || bloqueadoCorreo}
-                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: '10px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, maxHeight: 120, borderRadius: 0 }} />
+                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? 72 : undefined, maxHeight: movil ? (escribiendoMovil ? 260 : 132) : 120, borderRadius: 0 }} />
             )}
             {/* Staged files */}
             {staged.length > 0 && !grabando && (
@@ -431,24 +442,36 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 arriba ya trae "Enviar plantilla" y repetirlo abajo era ruido. */}
             {!grabando && (bloqueadoWa ? null : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
+                {/* En el teléfono la barra deja a la vista lo que se usa en cada
+                    mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
+                    tras «Más». Nueve iconos de 18 px en 390 px eran una fila
+                    imposible de acertar con el pulgar. */}
                 <button title="AI Prompts" style={toolBtn(pop === 'ia', true)} onClick={() => setPop(pop === 'ia' ? null : 'ia')}><IcoVarita size={18} /></button>
                 <span style={{ width: 1, height: 18, background: C.g200, margin: '0 4px' }} />
-                <button title="Emoji" style={toolBtn(pop === 'emoji')} onClick={() => setPop(pop === 'emoji' ? null : 'emoji')}><IcoEmoji size={18} /></button>
-                <button title="Variables" style={toolBtn(pop === 'variables')} onClick={() => setPop(pop === 'variables' ? null : 'variables')}><IcoArroba size={18} /></button>
-                <button title="Snippets" style={toolBtn(pop === 'snippets')} onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={18} /></button>
+                {(!movil || masHerramientas) && <button title="Emoji" style={toolBtn(pop === 'emoji')} onClick={() => setPop(pop === 'emoji' ? null : 'emoji')}><IcoEmoji size={18} /></button>}
+                {(!movil || masHerramientas) && <button title="Variables" style={toolBtn(pop === 'variables')} onClick={() => setPop(pop === 'variables' ? null : 'variables')}><IcoArroba size={18} /></button>}
+                {(!movil || masHerramientas) && <button title="Snippets" style={toolBtn(pop === 'snippets')} onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={18} /></button>}
                 {modo === 'wa' && <button title="Adjuntar" style={toolBtn(pop === 'adjuntar')} onClick={() => setPop(pop === 'adjuntar' ? null : 'adjuntar')}><IcoClip size={18} /></button>}
                 {modo === 'wa' && <button title="Plantillas" style={toolBtn(false)} onClick={() => setModalPlantilla(true)}><BadgeWhatsApp size={18} /></button>}
-                {modo === 'wa' && !bloqueadoWa && <button title="Mensaje interactivo: botones, lista, link, ubicación, contacto, carrusel, producto" aria-label="Interactivo" style={toolBtn(false)} onClick={() => setModalInteractivo(true)}>
+                {modo === 'wa' && !bloqueadoWa && (!movil || masHerramientas) && <button title="Mensaje interactivo: botones, lista, link, ubicación, contacto, carrusel, producto" aria-label="Interactivo" style={toolBtn(false)} onClick={() => setModalInteractivo(true)}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="14" width="8" height="6" rx="2" /><rect x="13" y="14" width="8" height="6" rx="2" /></svg>
                 </button>}
                 {modo === 'wa' && (<>
                   <span style={{ width: 1, height: 18, background: C.g200, margin: '0 4px' }} />
                   <button title="Grabar nota de voz" style={toolBtn(false)} onClick={iniciar}><IcoMic size={18} /></button>
                 </>)}
+                {movil && (
+                  <button onClick={() => setMasHerramientas(v => !v)} aria-label={masHerramientas ? 'Menos herramientas' : 'Más herramientas'}
+                    title={masHerramientas ? 'Menos' : 'Más'} style={toolBtn(masHerramientas)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                      {masHerramientas ? <path d="M6 15l6-6 6 6" /> : <><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></>}
+                    </svg>
+                  </button>
+                )}
                 <span style={{ flex: 1 }} />
                 {iaProcesando && <span style={{ fontSize: 11, color: C.moradoTinta, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Corazones size={8} /> Procesando con IA…</span>}
                 <span className="wa-solo-desktop" style={{ fontSize: 11, color: C.g400, marginRight: 6 }}>Presiona "Enter"</span>
-                {modo === 'wa' && canales?.wa_id && (
+                {modo === 'wa' && canales?.wa_id && (!movil || masHerramientas) && (
                   <button onClick={() => setPopProgramar(p => !p)} title="Programar envío / recordarme si no contesta" aria-label="Programar"
                     style={{ width: 26, height: 32, borderRadius: 8, border: `1px solid ${popProgramar ? C.morado : C.g200}`, background: popProgramar ? C.moradoAgua : '#fff', color: popProgramar ? C.moradoTinta : C.g500, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>

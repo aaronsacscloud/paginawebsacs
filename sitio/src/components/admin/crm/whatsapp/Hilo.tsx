@@ -190,7 +190,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
               style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : C.emerald50, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 11px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
-              {urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min
+              {mobile
+                ? (h > 0 ? `${h} h` : `${m} min`)
+                : <>{urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min</>}
             </span>;
           })()}
           {hilo.marketing?.stopped && <span title="El cliente pidió no recibir mensajes de marketing (Meta lo registra). Solo plantillas de utilidad o responder cuando él escriba." style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Sin marketing</span>}
@@ -229,7 +231,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} />}
         {onVerDetalle && (
           mobile
-            ? <button onClick={onVerDetalle} style={{ border: 'none', background: 'none', padding: '8px 0 8px 8px', fontSize: '0.9rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Ficha ›</button>
+            ? <button onClick={onVerDetalle} aria-label="Ficha del contacto" title="Ficha del contacto"
+                style={{ border: 'none', background: 'none', padding: '8px 2px 8px 8px', color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              </button>
             : <button onClick={onVerDetalle} style={{ border: `1px solid ${C.azulBorde}`, borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#fff', color: C.azulTinta, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Detalle</button>
         )}
       </div>
@@ -371,7 +376,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       </div>
 
       {/* ── Composer ── */}
-      <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo}
+      <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
         borradorInicial={BORRADORES.get(conv.id || conv.email_only_id) || ''} onBorrador={t => BORRADORES.set(conv.id || conv.email_only_id, t)}

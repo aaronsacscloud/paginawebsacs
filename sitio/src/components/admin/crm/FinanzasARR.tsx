@@ -15,6 +15,10 @@ import { useIsMobile, useCrmDark } from '../../../lib/ui/mobile';
 
 const money = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 const kMoney = (n: number) => '$' + (n / 1_000_000).toFixed(2) + 'M';
+/** Corte de eje LEGIBLE: «$2336k» se lee como un número calculado; «$2.3M»,
+ *  como uno elegido. Bajo el millón se dice en miles redondos. */
+const corteEje = (n: number) => n >= 1_000_000 ? '$' + (n / 1_000_000).toFixed(1) + 'M'
+  : n >= 1_000 ? '$' + Math.round(n / 1_000) + 'k' : '$0';
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const etiquetaMes = (m: string, conAnio = false) => {
   const [y, mm] = m.split('-');
@@ -747,7 +751,9 @@ function Serie({ serie, max, maxAlta, G, movil }: { serie: any[]; max: number; m
   // El viewBox se estrecha en el teléfono para que la escala sea ~1: con 1100
   // de ancho dentro de una caja de 390, «meet» encogía las etiquetas a 3.5 px
   // y «none» las dejaba condensadas. A 420 el texto sale a tamaño real.
-  const W = movil ? 420 : 1100, H = movil ? 210 : 220, P = { t: 14, r: 10, b: 30, l: movil ? 52 : 64 };
+  // El viewBox iguala el ANCHO REAL de la caja (≈324 px dentro de la tarjeta):
+  // con 420 la escala caía a 0.75 y el texto de 13 salía en 10.4.
+  const W = movil ? 324 : 1100, H = movil ? 172 : 220, P = { t: 10, r: movil ? 16 : 8, b: 26, l: movil ? 54 : 64 };
   const top = max * 1.08;
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / Math.max(1, serie.length - 1);
   const y = (v: number) => P.t + (1 - v / top) * (H - P.t - P.b);
@@ -755,14 +761,14 @@ function Serie({ serie, max, maxAlta, G, movil }: { serie: any[]; max: number; m
   const area = `M${x(0)},${y(0)} ` + serie.map((s, i) => `L${x(i)},${y(s.arr)}`).join(' ') + ` L${x(serie.length - 1)},${y(0)} Z`;
   const linea = serie.map((s, i) => `${i ? 'L' : 'M'}${x(i)},${y(s.arr)}`).join(' ');
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: 220 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: movil ? 176 : 220 }}>
       <defs><linearGradient id="finArea" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#9B8CFA" stopOpacity=".34" /><stop offset="100%" stopColor="#EFA6CA" stopOpacity=".05" />
       </linearGradient></defs>
       {[0, .5, 1].map(f => (
         <g key={f}>
           <line x1={P.l} x2={W - P.r} y1={y(top * f)} y2={y(top * f)} stroke={G.grid} />
-          <text x={P.l - 8} y={y(top * f) + 4} textAnchor="end" fontSize="13" fill={G.eje}>${Math.round((top * f) / 1000)}k</text>
+          <text x={P.l - 8} y={y(top * f) + 4} textAnchor="end" fontSize="13" fill={G.eje}>{corteEje(top * f)}</text>
         </g>
       ))}
       <path d={area} fill="url(#finArea)" />
@@ -772,7 +778,11 @@ function Serie({ serie, max, maxAlta, G, movil }: { serie: any[]; max: number; m
           {s.altas > 0 && <rect x={x(i) - 10} y={H - P.b - hb(s.altas)} width="9" height={hb(s.altas)} rx="2" fill={G.serie2} />}
           {s.bajas > 0 && <rect x={x(i) + 1} y={H - P.b - hb(s.bajas)} width="9" height={hb(s.bajas)} rx="2" fill={G.serie3} />}
           <circle cx={x(i)} cy={y(s.arr)} r="3" fill={G.punto} stroke={G.serie} strokeWidth="2" />
-          <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="13" fill={G.eje}>{etiquetaMes(s.mes, s.mes.endsWith('-01') || i === 0)}</text>
+          {/* En el teléfono se rotula uno de cada dos meses: con 27 px de paso
+              las doce etiquetas se encimaban hasta volverse una mancha. */}
+          {(!movil || i % 2 === 0 || i === serie.length - 1) && (
+            <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="13" fill={G.eje}>{etiquetaMes(s.mes, s.mes.endsWith('-01') || i === 0)}</text>
+          )}
         </g>
       ))}
     </svg>
@@ -790,7 +800,9 @@ function Proyeccion({ serie, proy, G, movil }: { serie: any[]; proy: any; G: any
   const hi = max + pad, lo = Math.max(0, min - pad);
   // Mismo criterio que Serie: en el teléfono el viewBox se estrecha para que
   // el texto del SVG salga a tamaño real y el dibujo llene su caja.
-  const W = movil ? 430 : 1100, H = movil ? 200 : 210, P = { t: 16, r: movil ? 62 : 78, b: 26, l: movil ? 50 : 64 };
+  // El margen izquierdo tiene que caber la etiqueta completa: con 42 el signo
+  // de pesos quedaba fuera del viewBox y se recortaba.
+  const W = movil ? 324 : 1100, H = movil ? 168 : 210, P = { t: 10, r: movil ? 56 : 78, b: 24, l: movil ? 56 : 64 };
   const N = hist.length + 12 - 1;
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / N;
   const y = (v: number) => P.t + (1 - (v - lo) / (hi - lo || 1)) * (H - P.t - P.b);
@@ -798,7 +810,7 @@ function Proyeccion({ serie, proy, G, movil }: { serie: any[]; proy: any; G: any
   const corte = hist.length - 1;
   return (
     <>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: 210 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', width: '100%', height: movil ? 172 : 210 }}>
         {[0, .33, .66, 1].map(f => {
           const v = lo + (hi - lo) * f;
           return (

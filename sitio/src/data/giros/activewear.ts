@@ -33,7 +33,7 @@ export const casosActive = [
     id: 'drop',
     titulo: 'Jueves 8 pm: sale el drop',
     texto:
-      'El colorway nuevo se publica a la hora exacta en la tienda en línea, Instagram y TikTok Shop con el mismo inventario. Lo que se vende en un canal se descuenta en todos — sin sobrevender la talla que vuela.',
+      'El colorway nuevo sale a la venta a la hora exacta en la tienda en línea, Instagram, Facebook y TikTok Shop, con el mismo inventario. Lo que se vende en un canal se descuenta en todos — sin sobrevender la talla que vuela.',
     remate: 'Un drop vende en dos horas lo de dos semanas. Y castiga doble: la sobreventa y el "ya no hay".',
     img: '/images/caso-active-drop.webp',
     alt: 'Dueña y asistente frente a una laptop lanzando el drop, con el rack del colorway nuevo detrás',
@@ -49,7 +49,7 @@ export const casosActive = [
   },
   {
     id: 'cambio',
-    titulo: '"Me quedó chico el top" — y el drop ya cerró',
+    titulo: '"Me quedó chico el top" — y su talla ya voló',
     texto:
       'El cambio de talla se hace en tienda o por paquetería, contra el inventario real. Si su talla ya no está, vale a favor o monedero — y la clienta no se va enojada con la marca.',
     remate: 'En compresión, una de cada cinco compras cambia de talla. Ahí se decide si la clienta repite.',
@@ -77,7 +77,7 @@ export const pasosActive = [
   },
   {
     cuando: 'Día 2', titulo: 'Tus canales, conectados',
-    texto: 'La tienda en línea, Instagram y TikTok Shop jalan del mismo inventario desde el día dos.',
+    texto: 'La tienda en línea, Instagram, Facebook y TikTok Shop jalan del mismo inventario desde el día dos.',
     detalle: 'Y el showroom cobra contra ese mismo inventario — se acabó el "déjame ver si queda".',
     img: '/images/proc-active-2.webp',
     alt: 'Configuración de canales en una laptop con la tienda en línea de la marca en pantalla',
@@ -98,8 +98,8 @@ export const pasosActive = [
   },
   {
     cuando: 'El jueves', titulo: 'Tu primer drop con datos',
-    texto: 'El drop sale a la hora exacta y por primera vez lo ves venderse talla por talla, en vivo.',
-    detalle: 'Y al día siguiente sabes qué pieza se adelantó, qué talla se rompió y qué pedir al siguiente lote.',
+    texto: 'El drop sale a la venta a la hora exacta y por primera vez lo ves venderse talla por talla, en vivo.',
+    detalle: 'Y al día siguiente sabes qué pieza se adelantó, qué talla se agotó y qué pedir al siguiente lote.',
     img: '/images/proc-active-5.webp',
     alt: 'La dueña viendo el drop venderse en tiempo real en su tablet por la noche',
   },
@@ -138,9 +138,9 @@ export const seccionesActive: SuiteSeccion[] = [
   {
     id: 'drop',
     tag: 'El drop',
-    titulo: 'El drop sale a la hora exacta, en todos lados',
+    titulo: 'El drop sale a la venta a la hora exacta, en todos lados',
     texto:
-      'La colección se publica a la hora del drop en la tienda en línea, Instagram, Facebook y TikTok Shop — con un solo inventario. La talla que se agota se apaga sola en todos los canales.',
+      'La colección sale a la venta a la hora del drop en la tienda en línea, Instagram, Facebook y TikTok Shop — con un solo inventario. La talla que se agota se apaga sola en todos los canales.',
     bullets: [
       'Un inventario para el drop completo: en línea, redes y showroom',
       'Sin sobreventa: la última S se vende una sola vez',
@@ -148,7 +148,7 @@ export const seccionesActive: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Drop Salvia · jueves 8:00 pm</p>
-      ${[['8:00','Publicado en línea, IG y TikTok Shop','ok'],['8:14','Top S agotado · se apaga en todos los canales','lo'],['8:41','$96,300 vendidos · 61% del drop','ok']]
+      ${[['8:00','A la venta en línea, Instagram y TikTok Shop','ok'],['8:14','Top M agotado · se apaga en todos los canales','lo'],['8:41','$96,300 vendidos · 61% del drop','ok']]
         .map(([h,e,t])=>`<div style="display:flex;gap:10px;padding:8px 12px;border:1px solid #E7EAF0;border-radius:10px;margin-bottom:6px;background:#fff;align-items:center;">
           <b style="font-size:11px;color:var(--color-text-tertiary);min-width:34px;">${h}</b>
           <span style="font-size:12px;font-weight:600;color:${t==='ok'?'var(--color-text-primary)':'var(--aviso-texto)'};">${e}</span>
@@ -194,7 +194,14 @@ export const seccionesActive: SuiteSeccion[] = [
           <b style="font-size:11px;color:var(--color-text-tertiary);min-width:70px;">${a}</b>
           <span style="font-size:12px;font-weight:600;color:var(--color-text-primary);">${e}</span>
         </div>`).join('')}
-      <div style="${est.ok}border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;text-align:center;margin-top:4px;">Su talla es S — el aviso del restock le llega a ella primero</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:4px 0 8px;">
+        ${[['Talla','S'],['Colorway','Salvia'],['Compras','3 drops']]
+          .map(([k,v])=>`<div style="border:1px solid #E7EAF0;border-radius:10px;padding:8px;background:#fff;text-align:center;">
+          <div style="font-size:10px;font-weight:800;color:var(--color-text-tertiary);text-transform:uppercase;">${k}</div>
+          <div style="font-size:12px;font-weight:800;color:var(--color-text-primary);">${v}</div></div>`).join('')}
+      </div>
+      <div style="${est.ok}border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800;text-align:center;">Su talla es S — el aviso del restock le llega a ella primero</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-tertiary);margin-top:8px;padding:0 4px;"><span>Monedero: $340</span><span>Puntos: 1,120 · nivel 2</span></div>
     </div>`,
   },
   {
@@ -216,7 +223,7 @@ export const seccionesActive: SuiteSeccion[] = [
         ${[['Top',[20,60,40,20]],['Legging',[20,45,40,25]]]
           .map(([p,v])=>`<tr><td style="font-size:11px;font-weight:700;color:var(--color-text-primary);">${p}</td>${v.map(n=>`<td style="${est.ok}border-radius:8px;height:30px;text-align:center;font-weight:800;">${n}</td>`).join('')}</tr>`).join('')}
       </table>
-      <p style="margin:10px 0 0;font-size:11px;color:var(--color-text-tertiary);">La S del top sube y la del legging baja: el set deja de romperse</p>
+      <p style="margin:10px 0 0;font-size:11px;color:var(--color-text-tertiary);">La S del top sube y la del legging baja: el set deja de romperse — biker y sudadera llevan su propia cuenta</p>
     </div>`,
   },
 ];
