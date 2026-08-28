@@ -46,8 +46,19 @@ function limpiarHecho(titulo: string, cuenta: string, tieneCifra: boolean) {
     t = t.replace(/[—–-]?\s*\$[\d,]+\s*ARR\s*(en\s*(riesgo|juego))?\.?/gi, '');     // $6,900 ARR en riesgo
   }
   t = t.replace(/\s*\$0\s*ARR[^.]*\.?/gi, '');   // «$0 ARR en riesgo» no es un hecho
-  t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.])/g, '$1').replace(/[\s—–-]+$/, '').trim();
+  // Al quitar la cifra queda la puntuación colgando («… churn probable,»):
+  // se recorta cualquier signo huérfano del final.
+  t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.])/g, '$1').replace(/[\s,;:.—–-]+$/, '').trim();
   return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** El hecho no debe cerrar repitiendo la categoría que ya dice el chip
+ *  («— uso sin pagar», «: capacitar o riesgo de downgrade»). */
+function sinEcoDeCategoria(hecho: string, categoria: string) {
+  const cat = String(categoria || '').toLowerCase().trim();
+  if (!cat) return hecho;
+  const re = new RegExp('[\\s,;:—–-]+' + cat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.\\s]*$', 'i');
+  return hecho.replace(re, '').replace(/[\s,;:.—–-]+$/, '');
 }
 
 /** ¿La acción repite el final del hecho? Se compara SIN el paréntesis final,
@@ -153,7 +164,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                     (cultomar): …») cuando la cuenta ya está en el encabezado, y
                     debajo un resumen que decía lo mismo con otras palabras. */}
                 <div style={{ fontSize: '0.86rem', color: '#333', lineHeight: 1.45 }}>
-                  {limpiarHecho(f.titulo, co?.sacs_account || co?.nombre || '', f.opportunity_value > 0)}
+                  {sinEcoDeCategoria(limpiarHecho(f.titulo, co?.sacs_account || co?.nombre || '', f.opportunity_value > 0), e.txt)}
                 </div>
                 {f.detalle && !esMovilB && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
                 {/* Lo que hay que hacer es instrucción, no dinero: en verde

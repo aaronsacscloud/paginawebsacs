@@ -193,7 +193,8 @@ export default function CommissionsTab() {
   }
 
   return (
-    <div className={esMovilCom ? 'm-lienzo' : undefined} style={{ padding: esMovilCom ? '4px 0 24px' : 24, minHeight: '100vh', background: '#f5f6f8' }}>
+    <div className={esMovilCom ? 'm-lienzo' : undefined}
+      style={{ padding: esMovilCom ? '4px 18px 24px' : 24, minHeight: '100vh', background: esMovilCom ? 'transparent' : '#f5f6f8' }}>
       {/* En el teléfono el app bar ya dice «Comisiones»: el eyebrow, el título
           y el párrafo de tres renglones se comían la primera pantalla. */}
       <div style={{ marginBottom: esMovilCom ? 12 : 24, display: esMovilCom ? 'none' : 'block' }}>
@@ -205,7 +206,7 @@ export default function CommissionsTab() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: esMovilCom ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: esMovilCom ? 10 : 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: esMovilCom ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: esMovilCom ? '10px 10px' : 12, marginBottom: 20, alignItems: 'stretch' }}>
         <Stat label="Por aprobar" value={fmt(stats.pending)} sub={`${stats.countPending} bonos`} accent="#E8A838" />
         <Stat label="Por pagar" value={fmt(stats.earned)} sub={`${stats.countEarned} comisiones`} accent="#4B7BE5" />
         <Stat label="Pagado" value={fmt(stats.paid)} accent="#2AB5A0" />
@@ -305,15 +306,16 @@ export default function CommissionsTab() {
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #ececec', borderLeft: accent ? `3px solid ${accent}` : '1px solid #ececec' }}>
+    <div className="kpi-card" style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #ececec' }}>
       <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 22, fontWeight: 700, color: '#1a1a1a' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: 11, color: '#888', marginTop: 4, minHeight: 15 }}>{sub || ''}</div>
     </div>
   );
 }
 
 const selectStyle: React.CSSProperties = {
+  minHeight: 44,
   padding: '10px 12px', fontSize: '0.8125rem', border: '1px solid #e5e5e5',
   borderRadius: 8, background: '#fff', outline: 'none', fontFamily: 'inherit',
 };

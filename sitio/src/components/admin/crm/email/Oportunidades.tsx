@@ -4,9 +4,11 @@
 // concreta —renovaciones, cobranza, expansión, cotizaciones abiertas— con su
 // conteo real, para que crear el segmento sea un clic en vez de un rato.
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { S, Kpi, Aviso, Cargando, Tag, Vacio, money } from './ui';
 
 export default function Oportunidades({ onIrA }: { onIrA?: (s: string) => void }) {
+  const esMovilOp = useIsMobile();
   const [segs, setSegs] = useState<any[] | null>(null);
   const [alcance, setAlcance] = useState<any>(null);
   const [creando, setCreando] = useState<string | null>(null);
@@ -35,8 +37,10 @@ export default function Oportunidades({ onIrA }: { onIrA?: (s: string) => void }
 
   return (
     <div style={S.wrap}>
+      {/* La pestaña activa ya dice «Dinero en la mesa»: repetirlo como título
+          era el mismo texto dos veces a dos tamaños. */}
       <div style={{ marginBottom: 14 }}>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Dinero en la mesa</h2>
+        {!esMovilOp && <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Dinero en la mesa</h2>}
         <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>
           Audiencias que ya corresponden a dinero. Un clic las crea y quedan listas para una campaña.
         </div>
@@ -45,7 +49,7 @@ export default function Oportunidades({ onIrA }: { onIrA?: (s: string) => void }
       {msg && <Aviso tono={msg.tipo}>{msg.texto}</Aviso>}
 
       {alcance && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: esMovilOp ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit,minmax(180px,1fr))', gap: esMovilOp ? 10 : 12, marginBottom: 16 }}>
           <Kpi etiqueta="Puedes alcanzar" valor={alcance.alcanzables} sub={`${alcance.pct_alcanzable}% de tu base con correo`} tono="ok" />
           <Kpi etiqueta="Suprimidos" valor={alcance.suprimidos} sub="bajas, rebotes y quejas" />
           <Kpi etiqueta="Sin correo" valor={alcance.sin_correo} sub="no hay a dónde escribirles" />
