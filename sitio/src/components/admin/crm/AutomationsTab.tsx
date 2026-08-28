@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando from './ui/Cargando';
 
 // ─── Types ───
@@ -121,6 +122,7 @@ function Label({ children, style: s }: { children: React.ReactNode; style?: Reac
 
 // ─── Main Component ───
 export default function AutomationsTab() {
+  const esMovilAut = useIsMobile();
   const [view, setView] = useState<'list' | 'detail' | 'templates'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -166,6 +168,7 @@ export default function AutomationsTab() {
 // View 1: Automations List
 // ═══════════════════════════════════════════════
 function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
+  const esMovilAut = useIsMobile();
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -259,14 +262,19 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
           </div>
         </div>
       )}
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1a1a' }}>Automatizaciones</div>
-          <div style={{ fontSize: '0.8125rem', color: '#999', marginTop: 2 }}>{automations.length} automatizaciones</div>
-        </div>
-        <button onClick={() => setVerListos(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff' }}>Empezar de una lista</button>
-        <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva automatización</button>
+      {/* Header. En el teléfono los dos botones se salían de la pantalla —el
+          segundo quedaba cortado— y uno iba en NEGRO, que no está en la
+          paleta: apilados, a ancho completo, y el secundario de contorno. */}
+      <div style={{ display: 'flex', flexDirection: esMovilAut ? 'column' : 'row', justifyContent: 'space-between', alignItems: esMovilAut ? 'stretch' : 'center', gap: esMovilAut ? 8 : 0, marginBottom: 20 }}>
+        {!esMovilAut && (
+          <div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1a1a' }}>Automatizaciones</div>
+            <div style={{ fontSize: '0.8125rem', color: '#999', marginTop: 2 }}>{automations.length} automatizaciones</div>
+          </div>
+        )}
+        {esMovilAut && <div style={{ fontSize: '0.85rem', color: '#8f8d98', marginBottom: 2 }}>{automations.length} automatizaciones</div>}
+        <button onClick={() => setVerListos(true)} style={{ ...btn, background: '#5B4BD6', color: '#fff', minHeight: 44, ...(esMovilAut ? { width: '100%' } : {}) }}>Empezar de una lista</button>
+        <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', minHeight: 44, ...(esMovilAut ? { width: '100%' } : {}) }}>+ Nueva automatización</button>
       </div>
 
       {loading ? (

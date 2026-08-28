@@ -46,6 +46,10 @@ function limpiarHecho(titulo: string, cuenta: string, tieneCifra: boolean) {
     t = t.replace(/[—–-]?\s*\$[\d,]+\s*ARR\s*(en\s*(riesgo|juego))?\.?/gi, '');     // $6,900 ARR en riesgo
   }
   t = t.replace(/\s*\$0\s*ARR[^.]*\.?/gi, '');   // «$0 ARR en riesgo» no es un hecho
+  // La acción venía incrustada al final del hecho («… → súbelo a controla»):
+  // se corta de aquí y se deja que la pinte su propia línea, en negrita y con
+  // el mismo «→» que el resto de las tarjetas entrena a buscar.
+  t = t.replace(/\s*(→|->)\s*[^→]*$/, '');
   // Al quitar la cifra queda la puntuación colgando («… churn probable,»):
   // se recorta cualquier signo huérfano del final.
   t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.])/g, '$1').replace(/[\s,;:.—–-]+$/, '').trim();
@@ -187,19 +191,26 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                 {/* Si la acción repite la cola del hecho («… → súbelo a
                     controla» y luego «→ Súbelo a controla»), se pinta una vez:
                     decir dos veces lo mismo hace dudar de si son dos cosas. */}
-                {f.accion && !accionRepetida(f.titulo, f.accion) && (
-                  <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>
+                {/* Siempre visible: una lista cuyo valor es la acción no puede
+                    tener tarjetas sin ella. La primera letra en mayúscula y el
+                    punto final, para que todas se lean igual. */}
+                {f.accion && (
+                  <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>
+                    → {String(f.accion).trim().replace(/^\w/, (c: string) => c.toUpperCase()).replace(/[.\s]*$/, '') + '.'}
+                  </div>
                 )}
                 {f.motivo_descarte && <div style={{ fontSize: '0.74rem', color: '#b93333', marginTop: 5 }}>Descartada: {f.motivo_descarte}</div>}
               </div>
+              {/* Sin wrap en el teléfono: con él «No aplica» —la menos
+                  importante— se llevaba el renglón entero. Tres columnas. */}
               {abierta && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: esMovilB ? '100%' : undefined }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: esMovilB ? 'nowrap' : 'wrap', width: esMovilB ? '100%' : undefined }}>
                   {/* «Ganada» iba en verde sólido: un segundo botón lleno en la
                       misma tarjeta compite con la acción de todos los días, que
                       es marcar que ya contactaste. Los tres pesan igual ahora. */}
-                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, fontWeight: 700 }}>Ya contacté</button>}
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
-                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 10px', flex: esMovilB ? '1 1 0' : undefined, borderRadius: 10, color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
+                  {f.estado === 'nueva' && <button disabled={moviendo === f.id} onClick={() => mover(f, 'contactado')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 6px', flex: esMovilB ? '1 1 0' : undefined, minWidth: 0, fontSize: '0.78rem', borderRadius: 10, fontWeight: 700 }}>Ya contacté</button>}
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'ganada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 6px', flex: esMovilB ? '1 1 0' : undefined, minWidth: 0, fontSize: '0.78rem', borderRadius: 10, color: '#1A8F7A', borderColor: '#bfe3da', fontWeight: 700 }}>Ganada</button>
+                  <button disabled={moviendo === f.id} onClick={() => mover(f, 'descartada')} style={{ ...S.btnSmall, height: 44, minHeight: 44, padding: '0 6px', flex: esMovilB ? '1 1 0' : undefined, minWidth: 0, fontSize: '0.78rem', borderRadius: 10, color: '#b93333', borderColor: '#f0c4bd' }}>No aplica</button>
                 </div>
               )}
             </div>
