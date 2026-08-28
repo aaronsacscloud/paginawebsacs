@@ -279,7 +279,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {!movil && <span style={{ fontSize: 11, color: C.g400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto' }}>· a {modo === 'correo' ? (canales?.correo?.email || '—') : telefono}</span>}
       {(waDisponible && correoOk) && (
         <select value={modo} onChange={e => setModo(e.target.value as Modo)}
-          style={{ border: `1px solid ${C.g200}`, borderRadius: 6, fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
+          style={{ border: `1px solid ${C.g200}`, borderRadius: movil ? 10 : 6, minHeight: movil ? 44 : undefined, fontSize: movil ? 13 : 11, padding: movil ? '0 10px' : '2px 4px', fontFamily: 'inherit', color: C.g500, background: '#fff', cursor: 'pointer' }}>
           <option value="wa">WhatsApp</option><option value="correo">Correo</option>
         </select>
       )}
@@ -288,7 +288,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
           competía con Enviar (borde morado, negritas y chispa, del mismo peso).
           Queda como texto morado a secas. */}
       <button onClick={resumir} disabled={iaProcesando}
-        style={{ border: movil ? 'none' : `1px solid #c9bcf7`, borderRadius: 8, padding: movil ? '3px 4px' : '3px 10px', background: movil ? 'none' : '#fff', color: movil ? C.morado : C.moradoTinta, fontSize: movil ? 12.5 : 11, fontWeight: movil ? 600 : 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+        style={{ border: movil ? 'none' : `1px solid #c9bcf7`, borderRadius: 8, minHeight: movil ? 44 : undefined, padding: movil ? '0 8px' : '3px 10px', background: movil ? 'none' : '#fff', color: movil ? C.morado : C.moradoTinta, fontSize: movil ? 12.5 : 11, fontWeight: movil ? 600 : 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
         {!movil && <IcoChispas size={12} />} Resumir
       </button>
     </div>
@@ -377,21 +377,22 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
             <span style={{ flex: 1, minWidth: movil ? 0 : 160 }}>
               {movil ? <>Ventana de 24 h cerrada — usa una <b>plantilla</b>.</>
                 : <>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación{correoOk ? ' o cambia a correo' : ''}.</>}
-              {movil && alerta && (
-                <span title={alerta} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden', marginTop: 3, color: C.g700 }}>{alerta}</span>
-              )}
+              {/* Sin recorte: cortado a dos líneas nadie se enteraba de cuál era
+                  el límite ni hasta cuándo. Con el botón abajo hay ancho de
+                  sobra para leerlo. */}
+              {movil && alerta && <span style={{ display: 'block', marginTop: 3, color: C.g700 }}>{alerta}</span>}
             </span>
-            <button onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: movil ? 10 : 8, minHeight: movil ? 44 : undefined, padding: movil ? '0 16px' : '5px 12px', background: movil ? C.morado : C.ambar200, color: movil ? '#fff' : C.ambar700, fontSize: movil ? 13 : 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
+            <button className="wa-cta-plantilla" onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: movil ? 10 : 8, minHeight: movil ? 44 : undefined, width: movil ? '100%' : undefined, padding: movil ? '0 16px' : '5px 12px', background: movil ? C.morado : C.ambar200, color: movil ? '#fff' : C.ambar700, fontSize: movil ? 13.5 : 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
             {correoOk && <button onClick={() => setModo('correo')} style={{ border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '5px 12px', background: '#fff', color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cambiar a correo</button>}
             {recientes.length > 0 && (
               <span className="wa-recientes" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: '100%' }}>
-                <span style={{ fontSize: 11, color: movil ? C.g500 : C.ambar700, alignSelf: 'center', whiteSpace: 'nowrap', flex: 'none' }}>{movil ? 'Últimas:' : 'Últimas usadas:'}</span>
+                {!movil && <span style={{ fontSize: 11, color: C.ambar700, alignSelf: 'center', whiteSpace: 'nowrap', flex: 'none' }}>Últimas usadas:</span>}
                 {/* En el teléfono, dos completas antes que tres cortadas: la
                     tercera quedaba rebanada por el marco a media palabra. */}
                 {(movil ? recientes.slice(0, 2) : recientes).map((p: any) => (
                   <button key={p.nombre + p.idioma} onClick={() => { setPreselTema(p.nombre); setModalPlantilla(true); }}
                     title={p.cuerpo || p.nombre}
-                    style={{ border: `1px solid ${movil ? C.g200 : C.ambar200}`, borderRadius: 999, padding: '0 12px', minHeight: 32, background: '#fff', color: movil ? C.g700 : C.ambar700, fontSize: 11.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', maxWidth: movil ? 132 : 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    style={{ border: `1px solid ${movil ? C.g200 : C.ambar200}`, borderRadius: 999, padding: '0 12px', minHeight: 32, background: '#fff', color: movil ? C.g700 : C.ambar700, fontSize: 11.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', flex: movil ? '1 1 0' : undefined, minWidth: 0, maxWidth: movil ? undefined : 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {String(p.nombre).replace(/_/g, ' ')}
                   </button>
                 ))}
@@ -505,8 +506,8 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 tercio de la pantalla sin que nadie la estuviera usando. Al
                 tocar la caja, crece y aparecen las herramientas. */}
             {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
-              <div onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
+              <div className="wa-barra" onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
+                style={{ display: 'flex', alignItems: 'center', gap: movil ? 4 : 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
                 {/* En el teléfono la barra deja a la vista lo que se usa en cada
                     mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
                     tras «Más». Nueve iconos de 18 px en 390 px eran una fila

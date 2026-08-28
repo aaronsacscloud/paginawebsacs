@@ -281,11 +281,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               es el número, mostrarlo dos veces solo quitaba aire al header. */}
           {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
           {conv.id && !hilo.ventana?.expira_at && (
-            <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>Ventana cerrada</span>
+            <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>
           )}
           {conv.id && hilo.ventana?.expira_at && (() => {
             const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
-            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>Ventana cerrada</span>;
+            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>;
             const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
             const urgente = ms < 4 * 3600e3;
             return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
@@ -625,7 +625,7 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
            entera. Es una hoja que sube desde abajo, con su asa, y el pulgar
            llega a todo. */
         <span className={movil ? 'menu-hoja' : undefined} style={movil
-          ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 941, background: '#fff', borderRadius: '20px 20px 0 0', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', display: 'block', maxHeight: '78dvh', overflowY: 'auto', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }
+          ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 941, background: '#fff', borderRadius: '20px 20px 0 0', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', display: 'block', maxHeight: '78dvh', overflowY: 'auto', paddingBottom: 'calc(28px + env(safe-area-inset-bottom))' }
           : { position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', minWidth: 190, display: 'block', overflow: 'hidden' }}>
           {movil && <span style={{ display: 'block', width: 40, height: 5, borderRadius: 99, background: '#e2e1e8', margin: '10px auto 6px' }} />}
           {movil && (<>

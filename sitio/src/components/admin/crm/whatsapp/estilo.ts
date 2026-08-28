@@ -118,7 +118,10 @@ export const CSS_INBOX = `
   .wa-hilo-m .wa-fallo { justify-content: flex-end; text-align: right; }
   .wa-hilo-m .wa-fallo button { min-height: 44px !important; padding: 0 16px !important; }
   /* Atajos de plantilla: en el teléfono se tocan con el dedo */
-  .wa-hilo-m .wa-recientes { -webkit-overflow-scrolling: touch; }
+  /* En el teléfono los nombres van completos: si no caben en un renglón,
+     bajan al siguiente. Cortados a media palabra no dicen cuál es cuál. */
+  .wa-hilo-m .wa-recientes { flex-wrap: wrap !important; overflow: visible; padding-right: 0; }
+  .wa-hilo-m .wa-recientes button { flex: 1 1 auto !important; max-width: 100% !important; }
   .wa-hilo-m .wa-recientes button { min-height: 44px !important; font-size: 12.5px !important; padding: 0 14px !important; flex: none; }
   /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
   .wa-hilo-m textarea[disabled] { display: none !important; }

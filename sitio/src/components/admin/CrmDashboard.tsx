@@ -1723,6 +1723,11 @@ const CRM_MOBILE_CSS = `
        del hilo y se tocan con el pulgar: 48. La regla de arriba los dejaba en
        36 aunque el componente pidiera más. */
     .m-tabin .menu-hoja button { min-height: 48px !important; }
+    /* …y los controles del composer, que son los que más se tocan: la barra de
+       herramientas, el CTA de plantilla y los atajos. La regla de 36 los dejaba
+       por debajo del mínimo aunque el componente pidiera 44. */
+    .m-tabin .wa-barra button { min-height: 44px !important; min-width: 44px !important; }
+    .m-tabin .wa-cerrada button { min-height: 44px !important; }
     .cs-modal-close { min-width: 40px !important; min-height: 40px !important; box-sizing: border-box !important; }
     /* Action-links de fila (el "Ver" de cotizaciones ×25): son botones con
        etiqueta <a>. Los links de prosa no llevan border/background inline. */
