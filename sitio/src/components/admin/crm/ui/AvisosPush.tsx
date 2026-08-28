@@ -48,6 +48,13 @@ export default function AvisosPush({ compacto }: { compacto?: boolean }) {
     } finally { setOcupado(false); }
   };
 
+  const probar = async () => {
+    setOcupado(true);
+    try {
+      await fetch('/api/crm/push', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prueba: true }) });
+    } finally { setOcupado(false); }
+  };
+
   const apagar = async () => {
     setOcupado(true);
     try {
@@ -78,9 +85,14 @@ export default function AvisosPush({ compacto }: { compacto?: boolean }) {
         <div style={{ fontSize: '0.78rem', color: '#8f8d98', marginTop: 2 }}>{texto[estado]}</div>
       </div>
       {estado === 'activos' ? (
-        <button onClick={apagar} disabled={ocupado} style={{ minHeight: 40, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#1a1a1a', fontWeight: 650, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>Apagar</button>
+        <span style={{ display: 'flex', gap: 8, flex: 'none' }}>
+          {/* Probar de una vez: si no, la única forma de saber si quedó bien es
+              esperar a que entre un lead. */}
+          <button onClick={probar} disabled={ocupado} style={{ minHeight: 44, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#5B4BD6', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'inherit' }}>{ocupado ? '…' : 'Probar'}</button>
+          <button onClick={apagar} disabled={ocupado} style={{ minHeight: 44, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#1a1a1a', fontWeight: 650, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'inherit' }}>Apagar</button>
+        </span>
       ) : estado === 'apagados' ? (
-        <button onClick={encender} disabled={ocupado} style={{ minHeight: 40, padding: '0 16px', borderRadius: 12, border: 'none', background: '#5B4BD6', color: '#fff', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>{ocupado ? 'Activando…' : 'Activar'}</button>
+        <button onClick={encender} disabled={ocupado} style={{ minHeight: 44, padding: '0 16px', borderRadius: 12, border: 'none', background: '#5B4BD6', color: '#fff', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'inherit', flex: 'none' }}>{ocupado ? 'Activando…' : 'Activar'}</button>
       ) : null}
     </div>
   );

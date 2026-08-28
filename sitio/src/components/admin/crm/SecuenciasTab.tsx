@@ -209,7 +209,7 @@ export default function SecuenciasTab() {
     <div style={{ maxWidth: 980, padding: esMovilSec ? '4px 18px 0' : 0 }}>
       <div style={{ display: 'flex', gap: 10, marginBottom: esMovilSec ? 12 : 4, flexDirection: esMovilSec ? 'column' : 'row', alignItems: esMovilSec ? 'stretch' : 'center' }}>
         {!esMovilSec && <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, letterSpacing: '-.015em' }}>Secuencias</h1>}
-        <button style={{ ...btnP, marginLeft: esMovilSec ? 0 : 'auto', minHeight: 44, ...(esMovilSec ? { width: '100%' } : {}) }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
+        <button style={{ ...btnP, marginLeft: esMovilSec ? 0 : 'auto', height: 44, minHeight: 44, padding: '0 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...(esMovilSec ? { width: '100%' } : {}) }} onClick={() => setEdit({ nombre: '', corte_dias: 14, hora_inicio: 10, hora_fin: 18, activa: false, pasos: [] })}>+ Nueva secuencia</button>
       </div>
       {!esMovilSec && (
         <p style={{ fontSize: '0.8rem', color: '#888', margin: '0 0 16px' }}>

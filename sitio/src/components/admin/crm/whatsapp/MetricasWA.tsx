@@ -114,7 +114,7 @@ export default function MetricasWA() {
           /* Cuatro columnas encogidas partían «Aaron / Herzberg» y «1 /
              asignadas»: un renglón por agente, con su barra al pie. */
           <div style={{ marginTop: 8 }}>
-            {d.por_agente.map((a: any) => (
+            {d.por_agente.map((a: any) => { const maxCarga = Math.max(...d.por_agente.map((x: any) => x.asignadas || 0), 1); return (
               <div key={a.id} style={{ padding: '10px 0', borderBottom: '1px solid #eeeef1' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                   <span style={{ fontWeight: 700, fontSize: '0.86rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nombre}</span>
@@ -122,11 +122,13 @@ export default function MetricasWA() {
                     {a.asignadas} asignadas · <b style={{ color: a.resueltas > 0 ? '#1E8A63' : '#8f8d98' }}>{a.resueltas} resueltas</b>
                   </span>
                 </div>
-                <div className="wam-riel" style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 7 }}>
-                  <div style={{ width: `${a.asignadas ? (a.resueltas / a.asignadas) * 100 : 0}%`, height: '100%', background: '#4FBF95' }} />
-                </div>
+                {a.asignadas > 0 && (
+                  <div className="wam-riel" style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 7 }}>
+                    <div className="wam-out" style={{ width: `${(a.asignadas / maxCarga) * 100}%`, height: '100%', background: '#9B8CFA' }} />
+                  </div>
+                )}
               </div>
-            ))}
+            ); })}
           </div>
         ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>

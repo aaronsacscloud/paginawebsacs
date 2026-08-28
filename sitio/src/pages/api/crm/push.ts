@@ -32,6 +32,20 @@ export const POST: APIRoute = async ({ request }) => {
   const usuario = quien(request);
   if (!usuario) return j({ error: 'sin_sesion' }, 401);
   const b = await request.json().catch(() => null);
+
+  // Prueba: manda un push real a este navegador para comprobar de una vez que
+  // las llaves, el service worker y el permiso quedaron bien. Sin esto, la
+  // única forma de saberlo es esperar a que entre un lead.
+  if (b?.prueba) {
+    const { pushAlEquipo } = await import('../../../lib/crm/push-crm');
+    const r = await pushAlEquipo({
+      title: 'Avisos activados',
+      body: 'Así se verá cuando entre un lead nuevo.',
+      url: '/admin/crm?tab=pipeline',
+      tag: 'prueba',
+    });
+    return j({ ok: r.enviados > 0, ...r });
+  }
   const endpoint = b?.subscription?.endpoint;
   const p256dh = b?.subscription?.keys?.p256dh;
   const auth = b?.subscription?.keys?.auth;
