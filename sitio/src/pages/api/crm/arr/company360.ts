@@ -90,7 +90,7 @@ export const GET: APIRoute = async ({ url }) => {
     timeline.push({ fecha: (p.fecha?.length === 10 ? p.fecha + 'T12:00:00' + TZ : p.fecha) || p.created_at, icono: '💰', tipo: 'pago', titulo: `Pago recibido · $${Math.round(p.monto || 0).toLocaleString()}`, detalle: p.metodo || '', id: 'p' + p.id });
   }
   for (const q of (quotes.data || [])) {
-    timeline.push({ fecha: q.created_at, icono: '📋', tipo: 'cotizacion', titulo: `Cotización ${q.numero || ''} · $${Math.round(q.total || 0).toLocaleString()} · ${q.estado}`, detalle: '', id: 'q' + q.id, link: `/cotizacion/${q.id}` });
+    timeline.push({ fecha: q.created_at, icono: '📋', tipo: 'cotizacion', titulo: `Cotización ${q.numero || ''} · $${Math.round(q.total || 0).toLocaleString()} · ${({ draft: 'borrador' } as any)[q.estado] || q.estado}`, detalle: '', id: 'q' + q.id, link: `/cotizacion/${q.id}` });
   }
   for (const b of bookings) {
     const ev: any = Array.isArray(b.event_types) ? b.event_types[0] : b.event_types;
