@@ -27,6 +27,38 @@ const TABS = [
 ];
 const kpi = { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', flex: 1, minWidth: 155 } as const;
 
+
+/** ══ El hecho, dicho UNA vez ═══════════════════════════════════════════════
+ *  El texto viene del detector y trae de todo: el slug de la cuenta al inicio
+ *  —que ya está en el encabezado—, la cifra al final en tres formatos
+ *  distintos —que ya está arriba en verde— y a veces la propia acción pegada
+ *  con una flecha. Decir lo mismo dos veces hace dudar de si son dos cosas.
+ */
+function limpiarHecho(titulo: string, cuenta: string, tieneCifra: boolean) {
+  let t = String(titulo || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '').trim();
+  if (cuenta) {
+    const esc = cuenta.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // «cuenta (cuenta):» o «cuenta (cuenta)» al inicio, con o sin dos puntos
+    t = t.replace(new RegExp('^\\s*' + esc + '\\s*(\\([^)]*\\))?\\s*[:—-]?\\s*', 'i'), '');
+  }
+  if (tieneCifra) {
+    t = t.replace(/\(\s*\+?\$[\d,]+\s*\/?\s*(año|anio|mes)?\s*\)/gi, '');        // (+$3,000/año)
+    t = t.replace(/[—–-]?\s*\$[\d,]+\s*ARR\s*(en\s*(riesgo|juego))?\.?/gi, '');     // $6,900 ARR en riesgo
+  }
+  t = t.replace(/\s*\$0\s*ARR[^.]*\.?/gi, '');   // «$0 ARR en riesgo» no es un hecho
+  t = t.replace(/\s{2,}/g, ' ').replace(/\s+([,.])/g, '$1').replace(/[\s—–-]+$/, '').trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** ¿La acción repite el final del hecho? Se compara SIN el paréntesis final,
+ *  que es justo lo que derrotaba la comparación literal. */
+function accionRepetida(hecho: string, accion: string) {
+  const norm = (x: string) => String(x || '').toLowerCase()
+    .replace(/\([^)]*\)/g, ' ').replace(/[^\wáéíóúñ ]+/gi, ' ').replace(/\s+/g, ' ').trim();
+  const h = norm(hecho), a = norm(accion);
+  return !!a && (h.endsWith(a) || h.includes(a));
+}
+
 export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?: (id: string) => void }) {
   const esMovilB = useIsMobile();
   const [tab, setTab] = useState('abiertas');
@@ -107,7 +139,9 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                   {/* El tipo de señal es taxonomía, no gravedad: pintarlo de
                       verde o rojo hacía que «usa fuera de plan» se leyera como
                       un estado. El color de esta tarjeta lo lleva el dinero. */}
-                  <span className="opo-tipo" style={{ padding: '3px 10px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74' }}>{e.txt}</span>
+                  <span className="opo-tipo" style={{ padding: '3px 10px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700, background: '#f4f3f6', color: '#6b6b74' }}>
+                    {(e.txt || String(f.signal_type).replace(/_/g, ' ')).replace(/^\w/, (c: string) => c.toUpperCase()).replace(/reactivacion/i, 'Reactivación')}
+                  </span>
                   <button onClick={() => onOpenCliente?.(f.company_id)}
                     style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontWeight: 800, fontSize: '0.88rem', color: '#1a1a1a', marginLeft: 'auto', textAlign: 'right' }}>
                     {co?.sacs_account || co?.nombre || 'Cliente'}
@@ -119,12 +153,7 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                     (cultomar): …») cuando la cuenta ya está en el encabezado, y
                     debajo un resumen que decía lo mismo con otras palabras. */}
                 <div style={{ fontSize: '0.86rem', color: '#333', lineHeight: 1.45 }}>
-                  {/* Si el ARR ya está arriba en verde, la cola «— $X ARR en
-                      juego» del hecho lo dice dos veces. */}
-                  {String(f.titulo || '')
-                    .replace(/\s*[—-]\s*\$[\d,]+\s*ARR\s*en\s*juego\.?\s*$/i, '')
-                    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/gu, '')
-                    .replace(new RegExp('^\\s*' + String(co?.sacs_account || co?.nombre || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*(\\([^)]*\\))?\\s*:\\s*', 'i'), '')}
+                  {limpiarHecho(f.titulo, co?.sacs_account || co?.nombre || '', f.opportunity_value > 0)}
                 </div>
                 {f.detalle && !esMovilB && <div style={{ fontSize: '0.76rem', color: '#777', marginTop: 3 }}>{f.detalle}</div>}
                 {/* Lo que hay que hacer es instrucción, no dinero: en verde
@@ -132,10 +161,9 @@ export default function BandejaOportunidades({ onOpenCliente }: { onOpenCliente?
                 {/* Si la acción repite la cola del hecho («… → súbelo a
                     controla» y luego «→ Súbelo a controla»), se pinta una vez:
                     decir dos veces lo mismo hace dudar de si son dos cosas. */}
-                {f.accion && !(() => {
-                  const norm = (t: string) => String(t || '').toLowerCase().replace(/[.\s—–-]+/g, ' ').trim();
-                  return norm(f.titulo).endsWith(norm(f.accion));
-                })() && <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>}
+                {f.accion && !accionRepetida(f.titulo, f.accion) && (
+                  <div style={{ fontSize: '0.86rem', color: '#1a1a1a', marginTop: 6, fontWeight: 600 }}>→ {f.accion}</div>
+                )}
                 {f.motivo_descarte && <div style={{ fontSize: '0.74rem', color: '#b93333', marginTop: 5 }}>Descartada: {f.motivo_descarte}</div>}
               </div>
               {abierta && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando from './ui/Cargando';
 
 interface Commission {
@@ -45,6 +46,7 @@ const fmt = (n?: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-
 const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
 export default function CommissionsTab() {
+  const esMovilCom = useIsMobile();
   const [list, setList] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -191,8 +193,10 @@ export default function CommissionsTab() {
   }
 
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: '#f5f6f8' }}>
-      <div style={{ marginBottom: 24 }}>
+    <div className={esMovilCom ? 'm-lienzo' : undefined} style={{ padding: esMovilCom ? '4px 0 24px' : 24, minHeight: '100vh', background: '#f5f6f8' }}>
+      {/* En el teléfono el app bar ya dice «Comisiones»: el eyebrow, el título
+          y el párrafo de tres renglones se comían la primera pantalla. */}
+      <div style={{ marginBottom: esMovilCom ? 12 : 24, display: esMovilCom ? 'none' : 'block' }}>
         <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#4B7BE5', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Comisiones partner</div>
         <h1 style={{ margin: 0, fontFamily: 'Clash Display, sans-serif', fontSize: '1.75rem', fontWeight: 600, color: '#1a1a1a', letterSpacing: '-0.015em' }}>Bonos y pagos</h1>
         <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: '#666', maxWidth: 600 }}>
@@ -201,7 +205,7 @@ export default function CommissionsTab() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: esMovilCom ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: esMovilCom ? 10 : 12, marginBottom: 20 }}>
         <Stat label="Por aprobar" value={fmt(stats.pending)} sub={`${stats.countPending} bonos`} accent="#E8A838" />
         <Stat label="Por pagar" value={fmt(stats.earned)} sub={`${stats.countEarned} comisiones`} accent="#4B7BE5" />
         <Stat label="Pagado" value={fmt(stats.paid)} accent="#2AB5A0" />
@@ -209,7 +213,7 @@ export default function CommissionsTab() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="mod-filtros" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
           <option value="">Todos los estados</option>
           <option value="pending">Pending (por aprobar)</option>
