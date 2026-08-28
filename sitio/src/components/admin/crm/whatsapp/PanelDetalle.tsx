@@ -176,7 +176,7 @@ function SeccionSecuencias({ contactId }: { contactId: string }) {
   };
   if (datos === null || !datos.length) return null;
   const conAlgo = datos;   // todas: el vendedor debe saber qué secuencias existen
-  const MOT: Record<string, string> = { respondio: 'respondió', agendo: 'agendó', convertido: 'se hizo cliente', descartado: 'descartado', corte: 'llegó al corte', optout: 'baja de WA', archivado: 'archivado', pausado_manual: 'pausada a mano', viejo_al_activar: 'era muy viejo' };
+  const MOT: Record<string, string> = { respondio: 'respondió', agendo: 'agendó', convertido: 'se hizo cliente', descartado: 'descartado', corte: 'llegó al corte', optout: 'baja de WA', archivado: 'archivado', pausado_manual: 'pausada a mano', viejo_al_activar: 'era muy viejo', demo_hecha: 'asistió a la demo', cancelo: 'canceló la sesión' };
   return (
     <Seccion id="g-secuencias" titulo="Secuencias" n={conAlgo.filter(d => d.estado === 'dentro').length || null}>
       <div style={{ margin: '0 16px 10px', border: `1px solid ${C.g200}`, borderRadius: 10, overflow: 'hidden' }}>

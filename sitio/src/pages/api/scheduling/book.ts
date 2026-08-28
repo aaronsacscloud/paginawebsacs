@@ -502,6 +502,19 @@ export const POST: APIRoute = async ({ request }) => {
   if (contact_id) {
     const { data: cLead } = await supabase.from('contacts').select('lifecycle_stage').eq('id', contact_id).single();
     await marcarAgendado(contact_id).catch(() => {});   // estatus en vivo: agendó
+    // Si estaba fuera de la secuencia de demo (canceló o llegó al corte),
+    // agendar de nuevo lo REINSCRIBE en día 1 — la cadencia se regenera sola.
+    try {
+      const { data: secsDemo } = await supabase.from('crm_secuencias').select('id, nombre').eq('objetivo', 'demo_hecha');
+      for (const sd of secsDemo || []) {
+        const { data: mm } = await supabase.from('crm_secuencia_miembros')
+          .select('id, detenida_at, motivo').eq('secuencia_id', sd.id).eq('contact_id', contact_id).maybeSingle();
+        if (mm?.detenida_at && ['cancelo', 'corte'].includes(mm.motivo || '')) {
+          await supabase.from('crm_secuencia_miembros')
+            .update({ inicio: new Date().toISOString(), enviados: {}, canales_detenidos: {}, detenida_at: null, motivo: null }).eq('id', mm.id);
+        }
+      }
+    } catch { /* la inscripción normal del cron lo alcanza igual */ }
     if (cLead && ['lead', 'lead_calificado'].includes(cLead.lifecycle_stage)) {
       await supabase.from('contacts').update({ lifecycle_stage: 'oportunidad' }).eq('id', contact_id);
       await supabase.from('activities').insert({ contact_id, tipo: 'etapa_cambio', titulo: 'Promovido a Oportunidad: agendó reunión', automatico: true, metadata: { regla: 'booking_creado', actor: 'sistema' } });

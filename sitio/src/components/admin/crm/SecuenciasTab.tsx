@@ -16,7 +16,7 @@ const MOTIVO_L: Record<string, [string, string]> = {
   respondio: ['Respondieron', P.violetaTinta], agendo: ['Agendaron', P.verdeTinta],
   convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
   corte: ['Llegaron al corte', '#888'], optout: ['Baja de WhatsApp', P.rojoTinta], archivado: ['Archivados', '#888'],
-  pausado_manual: ['Pausados a mano', '#888'], demo_hecha: ['Asistieron a la demo', P.verdeTinta],
+  pausado_manual: ['Pausados a mano', '#888'], demo_hecha: ['Asistieron a la demo', P.verdeTinta], cancelo: ['Cancelaron la sesión', P.rojoTinta],
 };
 
 export default function SecuenciasTab() {

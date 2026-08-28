@@ -505,14 +505,14 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
       {/* Una tarjeta por tipo, con el KpiCard compartido del CRM. Antes era una
           tarjeta propia de este módulo: otro tamaño de número y sin el "· ver"
           que anuncia que filtra. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 230px),1fr))', gap: 14, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit,minmax(min(100%, 230px),1fr))', gap: isMobile ? 10 : 14, marginBottom: 18 }}>
         {resumenTipos.map(t => {
           const pct = (x: number) => (t.n ? (x / t.n) * 100 : 0);
           return (
             <KpiCard key={t.id}
               label={t.nombre.replace(/^reuni[oó]n de\s+/i, '')}
               valor={t.n}
-              color={t.color}
+              color={isMobile ? undefined : t.color}
               franja={t.color}
               activo={fTipo === t.id}
               onClick={() => setFTipo(fTipo === t.id ? '' : t.id)}
