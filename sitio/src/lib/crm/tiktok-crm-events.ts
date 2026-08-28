@@ -36,8 +36,15 @@ export const ETAPAS_A_TIKTOK: Record<string, string> = {
   oportunidad: 'Opportunity',
   cliente: 'Converted',
   // La senal negativa. Sin ella el algoritmo solo aprende a quien buscar y
-  // nunca a quien dejar de buscar, que con 87 leads y 9 que avanzan es la
-  // mitad mas util. OJO: solo se marca lo que un humano reviso y descarto —
+  // nunca a quien dejar de buscar, que con 81 leads y 6 que avanzan es la
+  // mitad mas util.
+  //
+  // Los 81 se cuentan por `propiedades ? 'tiktok'`, NO por fuente: tres de los
+  // cuatro clientes perdieron `fuente` en un rescate por pixel y filtrar por
+  // ella los deja fuera — justo a los que mas pesan. (Y las 87 filas de la
+  // hoja no son 87 contactos: son poblaciones distintas.)
+  //
+  // OJO: solo se marca lo que un humano reviso y descarto —
   // un lead sin trabajar NO es un descalificado, y un mal negativo hace mas
   // dano que un positivo faltante porque se usa para excluir.
   descalificado: 'Unqualified',
