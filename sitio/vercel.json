@@ -1,5 +1,6 @@
 {
   "installCommand": "npm ci --include=dev",
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "crons": [
     {
       "path": "/api/cron/wa-snooze",
