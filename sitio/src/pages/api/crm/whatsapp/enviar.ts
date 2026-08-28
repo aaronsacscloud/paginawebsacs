@@ -246,6 +246,10 @@ export const POST: APIRoute = async ({ request }) => {
         tipo: 'template', cuerpo, status: 'sent', mediaUrl: headerMedia?.link || null, mime: headerMedia ? (headerMedia.tipo === 'image' ? 'image/jpeg' : headerMedia.tipo === 'video' ? 'video/mp4' : 'application/pdf') : null,
         metadata: { plantilla: b.plantilla.nombre, botones: p?.botones || null },
       });
+      // E4.1 · Se apunta el uso: es lo que alimenta «las últimas que usaste».
+      // No se espera (si falla, el mensaje ya salió y eso es lo que importa).
+      supabase.rpc('wa_plantilla_usada', { p_nombre: String(b.plantilla.nombre), p_idioma: String(b.plantilla.idioma || 'es_MX') })
+        .then(() => {}, () => {});
       return json({ ok: true, message_id: wamid || null, conversation_id: destino.convId });
     } catch (e: any) { return errorKapso(e); }
   }

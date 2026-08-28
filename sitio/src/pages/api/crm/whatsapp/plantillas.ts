@@ -95,7 +95,17 @@ export async function sincronizarPlantillas(): Promise<{ cambios: { nombre: stri
   return { cambios };
 }
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ url }) => {
+  // ?recientes=1 · las últimas que se usaron, para el acceso rápido del
+  // composer. NO sincroniza con Meta: es una consulta que se hace cada vez que
+  // se abre una conversación con la ventana cerrada y tiene que ser barata.
+  if (url.searchParams.get('recientes')) {
+    const { data } = await supabase.from('wa_plantillas')
+      .select('nombre, idioma, cuerpo, variables, status, header_tipo, ultimo_uso_at, usos')
+      .eq('status', 'APPROVED').not('ultimo_uso_at', 'is', null)
+      .order('ultimo_uso_at', { ascending: false }).limit(3);
+    return json({ plantillas: data || [] });
+  }
   try {
     await sincronizarPlantillas();
   } catch (e: any) {

@@ -117,6 +117,9 @@ export const CSS_INBOX = `
      botón se toca con el dedo, así que 44. */
   .wa-hilo-m .wa-fallo { justify-content: flex-end; text-align: right; }
   .wa-hilo-m .wa-fallo button { min-height: 44px !important; padding: 0 16px !important; }
+  /* Atajos de plantilla: en el teléfono se tocan con el dedo */
+  .wa-hilo-m .wa-recientes { -webkit-overflow-scrolling: touch; }
+  .wa-hilo-m .wa-recientes button { min-height: 44px !important; font-size: 12.5px !important; padding: 0 14px !important; flex: none; }
   /* Ventana de 24h cerrada: la franja ámbar + "Enviar plantilla" bastan; el campo muerto solo gasta pantalla */
   .wa-hilo-m textarea[disabled] { display: none !important; }
   /* URLs largas dentro de burbuja: una línea con ellipsis (el href queda completo) */
@@ -147,6 +150,12 @@ export const CSS_INBOX = `
   .wa-x-hover { display: none; }
   .wa-staged:hover .wa-x-hover { display: flex; }
   mark.wa-mark { background: #FEF08A; color: #854D0E; border-radius: 3px; padding: 0 2px; }
+/* Atajos de «últimas plantillas usadas»: una sola línea que se desliza, en
+   móvil y en escritorio. Apilados hacían crecer la barra ámbar el doble. */
+.wa-recientes{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
+.wa-recientes::-webkit-scrollbar{display:none}
+.wa-recientes button{flex:none}
+
 /* ── Aviso de mensaje entrante (E2.2) ── */
 .wa-aviso{position:fixed;z-index:60;right:20px;bottom:20px;max-width:340px;display:flex;align-items:stretch;gap:0;
   background:#fff;border:1px solid #e6e5ec;border-radius:14px;box-shadow:0 8px 28px rgba(20,18,40,.16);overflow:hidden;

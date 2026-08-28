@@ -92,6 +92,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   // Un mensaje que quedó en cola NO es un éxito verde: se dice en ámbar, que
   // es «atención, todavía no sale».
   const [avisoTono, setAvisoTono] = useState<'ok' | 'espera'>('ok');
+  // E4 · Las 3 plantillas que se usaron más recientemente. Es el atajo del
+  // caso donde más conversaciones se mueren: la ventana de 24 h ya cerró y hay
+  // que reabrir con plantilla. Se piden solo cuando hacen falta.
+  const [recientes, setRecientes] = useState<any[]>([]);
   useEffect(() => { if (!aviso) return; const t = setTimeout(() => setAviso(''), 5000); return () => clearTimeout(t); }, [aviso]);
   const [escribiendoMovil, setEscribiendoMovil] = useState(false);  // móvil: al enfocar, la caja crece
   const [masHerramientas, setMasHerramientas] = useState(false);    // móvil: el resto de la barra
@@ -176,6 +180,12 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       setStaged(s => [...s, { file, url: URL.createObjectURL(file), errores: validar(file) }]);
     }
   };
+
+  useEffect(() => {
+    if (!cerrada || modo !== 'wa') return;
+    fetch('/api/crm/whatsapp/plantillas?recientes=1').then(r => r.json())
+      .then(j => setRecientes(j.plantillas || [])).catch(() => {});
+  }, [cerrada, modo]);
 
   const enviar = async () => {
     const t = resolver(texto.trim());
@@ -334,9 +344,26 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         {modo === 'wa' && cerrada && (
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: C.ambar50, borderBottom: `1px solid ${C.ambar200}`, padding: '8px 12px', fontSize: 12, color: C.ambar700 }}>
             <span>⚠</span>
-            <span style={{ flex: 1, minWidth: 160 }}>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación{correoOk ? ' o cambia a correo' : ''}.</span>
+            {/* En el teléfono la frase larga empujaba los atajos fuera de la
+                pantalla: ahí basta con nombrar el problema. */}
+            <span style={{ flex: 1, minWidth: movil ? 0 : 160 }}>
+              {movil ? <>Ventana de 24 h cerrada — usa una <b>plantilla</b>.</>
+                : <>Ventana de 24h cerrada. Usa una <b>plantilla</b> para reiniciar la conversación{correoOk ? ' o cambia a correo' : ''}.</>}
+            </span>
             <button onClick={() => setModalPlantilla(true)} style={{ border: 'none', borderRadius: 8, padding: '5px 12px', background: C.ambar200, color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Enviar plantilla</button>
             {correoOk && <button onClick={() => setModo('correo')} style={{ border: `1px solid ${C.ambar200}`, borderRadius: 8, padding: '5px 12px', background: '#fff', color: C.ambar700, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cambiar a correo</button>}
+            {recientes.length > 0 && (
+              <span className="wa-recientes" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: '100%' }}>
+                <span style={{ fontSize: 11, color: C.ambar700, alignSelf: 'center', whiteSpace: 'nowrap', flex: 'none' }}>Últimas usadas:</span>
+                {recientes.map((p: any) => (
+                  <button key={p.nombre + p.idioma} onClick={() => { setPreselTema(p.nombre); setModalPlantilla(true); }}
+                    title={p.cuerpo || p.nombre}
+                    style={{ border: `1px solid ${C.ambar200}`, borderRadius: 999, padding: '0 12px', minHeight: 32, background: '#fff', color: C.ambar700, fontSize: 11.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {String(p.nombre).replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </span>
+            )}
           </div>
         )}
         {bloqueadoCorreo && <div style={{ padding: '8px 12px', fontSize: 12, color: C.ambar700, background: C.ambar50, borderBottom: `1px solid ${C.ambar200}` }}>{canales?.correo?.motivo || 'El canal de correo no está disponible.'}</div>}
