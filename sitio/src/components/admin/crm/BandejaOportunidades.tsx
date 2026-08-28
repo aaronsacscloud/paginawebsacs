@@ -56,7 +56,9 @@ function limpiarHecho(titulo: string, cuenta: string, tieneCifra: boolean) {
  *  la coletilla viene FLEXIONADA («— uso sin pagar» contra el chip «Usa sin
  *  pagar»), así que la comparación es por raíz: se recorta la terminación de
  *  cada palabra antes de comparar. */
-const raiz = (p: string) => p.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().slice(0, Math.max(3, p.length - 2));
+// Umbral de 2, no de 3: con 3, «uso» y «usa» —tres letras— nunca empataban,
+// que es justo el caso de «Usa sin pagar» contra «— uso sin pagar».
+const raiz = (p: string) => p.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().slice(0, Math.max(2, p.length - 2));
 const mismaFrase = (a: string, b: string) => {
   const pal = (x: string) => String(x || '').toLowerCase().replace(/[^\wáéíóúñ ]+/gi, ' ').split(/\s+/).filter(Boolean).map(raiz);
   const A = pal(a), B = pal(b);

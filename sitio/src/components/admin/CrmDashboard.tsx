@@ -1526,8 +1526,10 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .m-auto-dark textarea {
         background: #232329 !important; color: #F2F1F7 !important; border-color: #2c2c36 !important;
       }
+      /* El placeholder a #62626c daba 2.9:1 y el campo se leía deshabilitado
+         junto a los selects en tinta llena: va al gris estándar. */
       [data-crm-dark="1"] .m-auto-dark input::placeholder,
-      [data-crm-dark="1"] .m-auto-dark textarea::placeholder { color: #62626c !important; }
+      [data-crm-dark="1"] .m-auto-dark textarea::placeholder { color: #918fa0 !important; }
       /* Tintas oscuras de la ficha (#241d43 el dato, #3f3b4d el secundario,
          #5c5966 el terciario): en claro son jerarquía, en oscuro serían tinta
          sobre tinta. Medidas con sonda en la ficha del lead. */
