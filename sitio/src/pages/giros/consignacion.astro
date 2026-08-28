@@ -1,0 +1,187 @@
+---
+/**
+ * Suite para Tiendas de Consignación (preloved / segunda mano).
+ *
+ * El giro: la tienda vende piezas que no son suyas — cada una con dueña,
+ * comisión por contrato y una cuenta que rendir. El Live es el canal estrella.
+ *
+ * OJO: la Suite de Consignación es el corazón del giro y SE COTIZA APARTE —
+ * SuitePlanes va en modo "complemento" (como joyería) y cada bloque que la
+ * vende lo dice donde se ve.
+ *
+ * Estructura calcada de marcas-de-ropa.astro. Contenido en data/giros/consignacion.ts.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
+import SuiteVariantes from '../../components/suite/SuiteVariantes.astro';
+import SuiteScroll from '../../components/suite/SuiteScroll.astro';
+import SuiteCasos from '../../components/suite/SuiteCasos.astro';
+import SuiteSalida from '../../components/suite/SuiteSalida.astro';
+import SuiteProceso from '../../components/suite/SuiteProceso.astro';
+import SuitePlano from '../../components/suite/SuitePlano.astro';
+import CtaDudas from '../../components/CtaDudas.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteProblemas from '../../components/suite/SuiteProblemas.astro';
+import SuitePlanes from '../../components/suite/SuitePlanes.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import GiroBanner from '../../components/giros/GiroBanner.astro';
+import ConsignaCuenta from '../../components/giros/ConsignaCuenta.astro';
+import { cortinaConsigna, casosConsigna, pasosConsigna, planoConsigna, seccionesConsigna } from '../../data/giros/consignacion';
+
+const titulo = 'Suite Moda para Tiendas de Consignación';
+const desc =
+  'El sistema para consignación y segunda mano: cada pieza con su dueña y su comisión por contrato, Lives con piezas contadas, estado de cuenta y saldo a favor de cada consignante.';
+---
+
+<BaseLayout title={`${titulo} — SACS`} description={desc}>
+  <!-- ── Portada: avisos del oficio de consignación ── -->
+  <GiroBanner
+    eyebrow="SACS · Suite Moda"
+    titulo="Tu tienda no vende inventario."
+    resalte="Vende el clóset de tus clientas."
+    sub="Cada pieza con su dueña, su comisión pactada por contrato y su cuenta clara; el Live con sus piezas contadas; y la liquidación que sale sola — es la Suite de Consignación (aparte), sobre un mismo inventario para tu piso, tu tienda en línea y tus Lives."
+    foto="/images/hero-consig.webp"
+    fotoAlt="Dueña de una tienda de consignación acomodando piezas únicas en un perchero curado"
+    selloMarcas="Negocios de moda activos en México y Latam"
+    avisos={[
+      { modulo: 'Firma pendiente', texto: 'Clóset de Sofía: 9 piezas · el link vence en 31 h', pos: 1, tono: 'ambar', sello: 'Hoy' },
+      { modulo: 'Pieza bloqueada', texto: 'Bolsa acolchada: en revisión de autenticidad', pos: 2, tono: 'rojo', sello: 'Hoy' },
+      { modulo: 'Liquidación lista', texto: 'Ana: $4,140 a favor · prefirió saldo en tienda', pos: 3, tono: 'azul', sello: 'Agosto' },
+    ]}
+  />
+
+  <!-- ── Manifiesto ── -->
+  <SuiteManifiesto
+    intro="Sabemos cómo trabaja una consignación"
+    frases={[
+      '"¿Ya se vendió algo mío?" — y hay que <b>revisar la libreta</b>.',
+      'El contrato está en una carpeta y la comisión "era 40… <b>¿o 50?</b>".',
+      'Se vendió en el <b>Live</b> y nadie la bajó de la tienda en línea.',
+      'La bolsa dudosa sigue exhibida porque nadie decidió si es <b>original</b>.',
+      'Vino por sus piezas y tardaste <b>una hora</b> en juntarlas.',
+      'Le pagaste — y a la semana pidió que mejor fuera <b>saldo</b>.',
+      'Vendiste dos veces la misma <b>pieza única</b>.',
+    ]}
+    cierre="Ningún sistema de abarrotes entiende esto: para él todo es «producto tuyo», sin dueña, sin comisión y sin cuenta que rendir. Y tu negocio ya no vive solo en el piso: el Live, la tienda en línea y el WhatsApp venden las mismas piezas únicas, a la misma clientela. Cada pantalla funciona igual en el mostrador que en digital — y el trabajo repetitivo se lo dejas a la IA, que nosotros configuramos contigo."
+  />
+
+  <!-- El problema estructural: un "clóset" son piezas únicas, cada una en un
+       punto distinto de su ciclo — y todas tienen dueña. -->
+  <SuiteVariantes
+    eyebrow="Un solo clóset"
+    titulo="Esto es lo que de verdad hay detrás de"
+    resalte="“me dejó su clóset”."
+    sub="Veinticuatro piezas únicas de una sola clienta, cada una en un punto distinto de su vida. Ninguna es tuya — y las «vendidas» sin liquidar ya son dinero que le debes."
+    ejeA={['Recibida', 'Disponible', 'Apartada', 'Vendida', 'Liquidada']}
+    filas={[
+      { nombre: 'Bolsas', img: '/images/consig-bolsa.webp', alt: 'Bolsa de piel camel de diseñador' },
+      { nombre: 'Vestidos', img: '/images/consig-vestido.webp', alt: 'Vestido de seda negro de noche' },
+      { nombre: 'Zapatos', img: '/images/consig-zapatos.webp', alt: 'Zapatos de tacón de diseñador' },
+      { nombre: 'Abrigos', img: '/images/consig-abrigo.webp', alt: 'Abrigo de lana color camel' },
+    ]}
+    matriz={[
+      [1, 3, 1, 2, 0],
+      [2, 4, 0, 1, 1],
+      [0, 3, 1, 0, 2],
+      [1, 2, 0, 0, 0],
+    ]}
+    unidad="piezas"
+    genero="f"
+    leyendas={['Varias', 'Una o dos', 'Ninguna']}
+    ceroNeutro={true}
+    pieLibre="<b>24</b> piezas de una sola clienta — y <b class='vr-rojo'>3</b> vendidas que ya son dinero de ella"
+  />
+
+  <!-- ── La comparación que hace el propio visitante ── -->
+  <SuiteCortina
+    titulo="“¿Qué le debo a Ana?”"
+    sub="Baja y la línea se mueve sola — o arrástrala tú. A la izquierda, cómo se contesta hoy. A la derecha, en tres segundos."
+    fotoAntes={cortinaConsigna.fotoAntes}
+    fotoDespues={cortinaConsigna.fotoDespues}
+    altAntes={cortinaConsigna.altAntes}
+    altDespues={cortinaConsigna.altDespues}
+    libreta={cortinaConsigna.libreta}
+    filas={cortinaConsigna.filas}
+  />
+
+  <!-- ── Por qué lo que ya probó no le sirvió ── -->
+  <SuiteProblemas
+    quienes="los más de 3,000 negocios de moda que ya la usan"
+    entrada="Casi toda tienda de consignación que llega con nosotros trae uno de estos dos documentos en el cajón. Ninguno de los dos fue una tontería. Los dos fallan — por motivos distintos."
+    filas={[
+      { que: 'Cada pieza con su dueña y su comisión', generico: 'No existe', medida: 'A veces', sacs: 'Suite aparte' },
+      { que: 'Contrato con firma remota', generico: 'No existe', medida: 'Casi nunca', sacs: 'Suite aparte' },
+      { que: 'Estado de cuenta y saldo de cada consignante', generico: 'No existe', medida: 'A veces', sacs: 'Suite aparte' },
+      { que: 'Lives con piezas asignadas y conversión', generico: 'No existe', medida: 'No existe', sacs: 'Suite aparte' },
+      { que: 'Un inventario para piso, línea y WhatsApp', generico: 'A medias', medida: 'Rara vez', sacs: 'Uno solo' },
+      { que: 'Tiempo para arrancar', generico: 'Días', medida: '4 a 9 meses', sacs: 'Días' },
+      { que: 'Quién lo mantiene', generico: 'Su proveedor', medida: 'Tú, si lo encuentras', sacs: 'Nosotros, a diario' },
+    ]}
+  />
+
+  <SuiteSalida frase="Si ya probaste un genérico y un desarrollo a la medida, la tercera conversación es distinta: esta ya sabe qué es una pieza con dueña." />
+
+  <!-- ── Respiro fotográfico: la escala ── -->
+  <SuiteCifras
+    foto="/images/suite-consig-tienda.webp"
+    alt="Tienda de consignación amplia y luminosa con percheros curados, exhibidores de bolsas y un rincón de transmisión"
+    frase="Del bazar de fin de semana a la consignación con lista de espera."
+    encuadre="center 38%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'NEGOCIOS DE MODA ACTIVOS' },
+      { n: 7600, pre: '+$', rotulo: 'MILLONES TRANSACCIONADOS' },
+      { n: 20, pos: '+', rotulo: 'PERSONAS DE SOPORTE, EN MÉXICO' },
+      { n: 1, pre: '#', rotulo: 'EN RETAIL ESPECIALIZADO' },
+    ]}
+  />
+
+  <!-- Los cuatro momentos -->
+  <SuiteCasos
+    eyebrow="Cuatro situaciones de siempre"
+    titulo="Dónde te sirve, en concreto"
+    sub="Las cuatro situaciones en las que una tienda de consignación gana o pierde el negocio. Toca cada una."
+    casos={casosConsigna}
+  />
+
+  <!-- ── El recorrido de funcionalidades ── -->
+  <SuiteScroll
+    eyebrow="Suite Moda"
+    titulo="Toda tu consignación, del contrato a la liquidación"
+    intro="Baja para ver cada pieza del sistema. Todos los ejemplos son de una consignación real: el clóset que entra con contrato, el Live con sus piezas contadas y la cuenta que cada clienta puede ver sola. La Suite de Consignación se cotiza aparte de tu plan."
+    secciones={seccionesConsigna}
+  />
+
+  <!-- El bloque propio: solo aquí el ingreso es una comisión pactada -->
+  <ConsignaCuenta />
+
+  <!-- La operación completa, contada como el plano de la tienda -->
+  <SuitePlano
+    titulo="Tu tienda, por dentro."
+    sub="Entra el clóset por la recepción, se valúa, se firma y sale al piso; se vende en el mostrador o en el Live; y la cuenta de cada clienta se rinde sola. Toca cada zona del plano."
+    proyecto="Tu consignación — planta baja"
+    rotuloSuite="Suite de Consignación · se cotiza aparte"
+    zonas={planoConsigna}
+  />
+
+  <!-- Cómo se cambia sin cerrar -->
+  <SuiteProceso
+    titulo="Cambiar de sistema"
+    resalte="sin cerrar la tienda."
+    sub="Tienes clósets en custodia, saldos que debes y un Live este jueves. Así se hace — y lo hacemos nosotros, no te dejamos un manual y suerte."
+    pasos={pasosConsigna}
+    remate="<b>Tu histórico no se tira.</b> Se migra lo que sirve —consignantes, piezas, saldos a favor, apartados vivos— y lo demás queda consultable. Nunca te pedimos empezar de cero."
+  />
+
+  <!-- ── El modelo comercial: aquí la suite se cotiza aparte ── -->
+  <SuitePlanes
+    suite="Suite de Consignación"
+    comoSeVende="complemento"
+    articulo="la"
+    porQue="una pieza consignada no es inventario tuyo: es custodia con contrato, comisión y liquidación — y eso necesita su propia maquinaria"
+  />
+
+  <SuiteSalida frase="Ya viste cómo se cotiza. Lo que sigue es ver el estado de cuenta de tus consignantes en pantalla." cta="Agenda una demo" />
+
+  <!-- El mismo cierre que la portada -->
+  <CtaDudas demoDesc="Te mostramos SACS con tus piezas, tus consignantes y tu comisión real. 30 min, sin compromiso." />
+</BaseLayout>

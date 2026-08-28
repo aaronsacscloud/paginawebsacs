@@ -40,6 +40,13 @@ interface Props {
   remate?: string;
   /** El género de la unidad, para que concuerden "distintos" y "agotados". */
   genero?: 'm' | 'f';
+  /** El cero como dato neutro (gris), no como alarma roja — para matrices
+   *  donde la celda vacía no es un hueco de venta (p. ej. estados). */
+  ceroNeutro?: boolean;
+  /** Pie completamente propio. Cuando el eje NO es talla×color (p. ej. estados
+   *  de consignación), contar celdas no cuenta piezas y "agotadas" no es del
+   *  ramo: esta prop sustituye la línea auto-generada entera. */
+  pieLibre?: string;
   leyendas?: [string, string, string];
 }
 const {
@@ -53,6 +60,8 @@ const {
   unidad = 'pares',
   anchoCelda = '122px',
   remate = 'que comprar, guardar y contar',
+  pieLibre,
+  ceroNeutro = false,
   genero = 'm',
   leyendas = ['Con existencia', 'Último', 'Agotado'],
 } = Astro.props;
@@ -63,7 +72,7 @@ const agotadas = genero === 'f' ? 'agotadas' : 'agotados';
 const enCero = matriz.flat().filter((n) => n === 0).length;
 ---
 
-<section class="vr" data-celdas={String(celdas)} style={`--cols:${ejeA.length};--ancho-celda:${anchoCelda}`}>
+<section class:list={["vr", { "vr-cero-neutro": ceroNeutro }]} data-celdas={String(celdas)} style={`--cols:${ejeA.length};--ancho-celda:${anchoCelda}`}>
   <div class="vr-inner">
 
     <header class="vr-head">
@@ -111,8 +120,9 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
         </div>
 
         <p class="vr-conteo" data-conteo>
+{pieLibre ? <Fragment set:html={pieLibre} /> : <Fragment>
           <b>{celdas}</b> {unidad} {distintas} {remate} —
-          <b class="vr-rojo">{enCero}</b> ya {agotadas}
+          <b class="vr-rojo">{enCero}</b> ya {agotadas}</Fragment>}
         </p>
 
       </div>
@@ -215,6 +225,7 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
   }
   .vr-celda.cero b { color: var(--color-text-tertiary, #8C8C8C); }
   .vr-celda.cero span { color: var(--alerta-texto); }
+  .vr-cero-neutro .vr-celda.cero span { color: var(--color-text-tertiary, #8C8C8C); }
 
   .vr-conteo {
     margin: clamp(18px, 2.5vw, 28px) 0 0; text-align: center;
@@ -250,6 +261,12 @@ const enCero = matriz.flat().filter((n) => n === 0).length;
     .vr-celda { opacity: 1; transform: none; transition: none; }
     .vr-conteo { opacity: 1; }
   }
+</style>
+<style is:global>
+  /* El pie libre entra por set:html y pierde el scoping de Astro: estas dos
+     reglas acotadas a .vr le devuelven el peso y el rojo del remate. */
+  .vr .vr-conteo b { font-weight: 800; color: var(--color-text-primary, #1A1A1A); }
+  .vr .vr-conteo .vr-rojo { color: var(--alerta-texto, #B3261E); }
 </style>
 
 <script>

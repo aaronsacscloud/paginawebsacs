@@ -19,6 +19,7 @@ copiar su estructura es el camino corto.
 | Marcas de ropa | **Al día.** Es la referencia de estructura |
 | Joyería | **Al día y aprobada** por los tres referees (oficio 9.2 · calidad 9.2 · diseño 9). Único giro que se vende como complemento |
 | Papelería y arte | Estructura y fotos al día; **pendiente de referees** |
+| Consignación y Segunda Mano | **Al día y aprobada** (oficio 9 · calidad 9 · diseño 9, 3 rondas). Bloque propio `ConsignaCuenta`; TODA la suite se vende como complemento |
 | Boutique multimarca | **Al día y aprobada** (oficio 9 · calidad 9 · diseño 9, 5 rondas). Bloque propio `MultiPercha`; la consigna se vende como suite aparte |
 | Los demás (~18) | Sin empezar |
 

@@ -1,0 +1,165 @@
+---
+/**
+ * ConsignaCuenta — la cuenta que este giro rinde todos los días.
+ *
+ * El bloque propio de la consignación: solo aquí la tienda vende piezas DE
+ * OTRAS PERSONAS y vive de una comisión pactada. Una boutique normal no le
+ * rinde cuentas a nadie; aquí la cuenta ES el negocio.
+ *
+ * Los siete puntos del oficio que lo sostienen:
+ * · Cuándo se decide: al recibir el clóset — precio y comisión se pactan ahí,
+ *   por contrato, y ya no se mueven.
+ * · Quién decide: la dueña valúa; la clienta acepta y firma.
+ * · Qué se mueve primero: la pieza vendida dispara DOS cuentas a la vez — lo
+ *   de la clienta y tu comisión. Ninguna espera a fin de mes.
+ * · Cuánto cuesta no llevarla: cada "déjame revisar y te aviso" es un clóset
+ *   que la próxima vez se va a otra tienda.
+ * · El criterio: % vendido de la temporada × comisión pactada.
+ * · El dato que remata: tu ingreso no es lo que vendes — es tu comisión. Verla
+ *   como número cambia cómo valúas y qué aceptas recibir.
+ * · La cuenta honesta: lo que no se vende no es tuyo ni es ingreso: se regresa
+ *   a su dueña, y el bloque lo dice junto al número bueno.
+ */
+import BloqueProducto from '../BloqueProducto.astro';
+
+const defaults = { piezas: 40, precio: 950, comision: 40, vendido: 60 };
+---
+
+<BloqueProducto
+  encabezado="La cuenta que rinde este negocio."
+  titulo="Tu ingreso no es lo que vendes. Es tu comisión."
+  descripcion="Mueve los números de un clóset típico — piezas, precio, comisión pactada y qué tanto se vende antes del retiro — y mira las dos cuentas que el sistema lleva solas: la de tu clienta y la tuya."
+  vinetas={[
+    { label: 'Dos cuentas por cada venta', detail: 'La pieza vendida abona a la vez lo de la consignante y tu comisión. Ninguna de las dos espera a que alguien pase la libreta a Excel. (Es la Suite de Consignación; se cotiza aparte.)' },
+    { label: 'La comisión se pacta por contrato', detail: 'El porcentaje queda congelado al firmar, pieza por pieza. Aquí lo mueves solo para simular tu política.' },
+    { label: 'Lo no vendido no es ingreso', detail: 'Se regresa a su dueña cuando vence la vigencia — o se rebaja solo con la regla que ella firmó en su contrato. La cuenta honesta lo dice junto al número bueno.' },
+  ]}
+>
+  <div class="cq" id="cq" data-def={JSON.stringify(defaults)}>
+    <div class="cq-controles">
+      <label>
+        <span>Piezas del clóset</span>
+        <input type="range" id="cqPiezas" class="cq-rango" min="10" max="120" step="5" value={defaults.piezas} />
+        <b id="cqPiezasV">{defaults.piezas}</b>
+      </label>
+      <label>
+        <span>Precio promedio de venta</span>
+        <input type="range" id="cqPrecio" class="cq-rango" min="200" max="5000" step="50" value={defaults.precio} />
+        <b id="cqPrecioV">${defaults.precio}</b>
+      </label>
+      <label>
+        <span>Tu comisión pactada</span>
+        <input type="range" id="cqComision" class="cq-rango" min="20" max="60" step="5" value={defaults.comision} />
+        <b id="cqComisionV">{defaults.comision}%</b>
+      </label>
+      <label>
+        <span>Se vende en la vigencia</span>
+        <input type="range" id="cqVendido" class="cq-rango" min="10" max="90" step="5" value={defaults.vendido} />
+        <b id="cqVendidoV">{defaults.vendido}%</b>
+      </label>
+    </div>
+
+    <div class="cq-cuentas">
+      <div class="cq-cuenta">
+        <span class="cq-rot">La cuenta de tu clienta</span>
+        <b class="cq-n" id="cqClienta">$0</b>
+        <span class="cq-sub" id="cqClientaSub"></span>
+      </div>
+      <div class="cq-cuenta cq-cuenta-tuya">
+        <span class="cq-rot">Tu comisión del periodo</span>
+        <b class="cq-n" id="cqTuya">$0</b>
+        <span class="cq-sub" id="cqTuyaSub"></span>
+      </div>
+    </div>
+
+    <p class="cq-regresa" id="cqRegresa" aria-live="polite"></p>
+    <a class="cq-cta" href="/contacto" id="cqCta">Ver mi comisión con mis números reales</a>
+  </div>
+</BloqueProducto>
+
+<style>
+  .cq {
+    background: #fff; border-radius: 16px; padding: 26px 26px 22px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06), 0 12px 32px rgba(15,23,42,.07);
+  }
+  .cq-controles { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px; margin-bottom: 22px; }
+  .cq-controles label { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; }
+  .cq-controles span { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--color-text-secondary, #4A4A4A); }
+  .cq-controles b { font-size: 13px; font-weight: 800; min-width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
+  .cq-rango {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px;
+    background: #E2E8F0; outline: none; cursor: pointer;
+  }
+  .cq-rango::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 17px; height: 17px; border-radius: 50%;
+    background: #4B7BE5; border: 3px solid #fff; cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .cq-rango::-moz-range-thumb {
+    width: 17px; height: 17px; border-radius: 50%; background: #4B7BE5; border: 3px solid #fff;
+    cursor: grab; box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  }
+  .cq-rango:focus-visible { outline: 2px solid #4B7BE5; outline-offset: 4px; }
+
+  .cq-cuentas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,.07); }
+  .cq-cuenta { border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; }
+  .cq-cuenta-tuya { border-color: #4B7BE5; background: rgba(75,123,229,.04); }
+  .cq-rot {
+    font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+  .cq-n { font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -1px; color: var(--color-text-primary, #1a1a2e); font-variant-numeric: tabular-nums; }
+  .cq-cuenta-tuya .cq-n { color: #3D6BD4; }
+  .cq-sub { font-size: 12px; color: var(--color-text-secondary, #4A4A4A); }
+
+  .cq-regresa { margin: 16px 0 14px; font-size: 12.5px; color: var(--aviso-texto, #8C6D1F); font-weight: 600; }
+  .cq-cta {
+    display: inline-block; padding: 12px 22px; background: #4B7BE5; color: #fff;
+    border-radius: 9px; font-size: 14px; font-weight: 700; text-decoration: none;
+    transition: background .15s ease;
+  }
+  .cq-cta:hover { background: #3D6BD4; }
+  @media (max-width: 700px) {
+    .cq-controles, .cq-cuentas { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  const raiz = document.getElementById('cq');
+  if (raiz) {
+    const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const el = (id: string) => document.getElementById(id)!;
+    function pintar() {
+      const piezas = Number((el('cqPiezas') as HTMLInputElement).value);
+      const precio = Number((el('cqPrecio') as HTMLInputElement).value);
+      const comision = Number((el('cqComision') as HTMLInputElement).value);
+      const vendido = Number((el('cqVendido') as HTMLInputElement).value);
+      el('cqPiezasV').textContent = String(piezas);
+      el('cqPrecioV').textContent = fmt(precio);
+      el('cqComisionV').textContent = comision + '%';
+      el('cqVendidoV').textContent = vendido + '%';
+
+      const vendidas = Math.round(piezas * vendido / 100);
+      const venta = vendidas * precio;
+      const tuya = venta * comision / 100;
+      const clienta = venta - tuya;
+      const regresan = piezas - vendidas;
+
+      el('cqClienta').textContent = fmt(clienta);
+      el('cqClientaSub').textContent = `${vendidas} piezas vendidas · le toca el ${100 - comision}% — o lo deja como saldo y estrena de tu tienda`;
+      el('cqTuya').textContent = fmt(tuya);
+      el('cqTuyaSub').textContent = `el ${comision}% de ${fmt(venta)} vendidos en la vigencia`;
+      el('cqRegresa').textContent = regresan > 0
+        ? `Y las otras ${regresan} piezas no son ingreso: se regresan a su dueña al vencer la vigencia — o se rebajan solo con la regla firmada en su contrato.`
+        : 'Se vendió el clóset completo — pasa poco, y cuando pasa, la clienta trae el siguiente.';
+
+      const cta = el('cqCta') as HTMLAnchorElement;
+      const u = new URL(cta.getAttribute('href')!.split('#')[0], location.origin);
+      // El estimado es TU comisión del periodo; nunca estimado=0.
+      if (tuya > 0) { u.searchParams.set('estimado', String(Math.round(tuya))); u.searchParams.set('de', 'consigna'); }
+      else { u.searchParams.delete('estimado'); u.searchParams.delete('de'); }
+      cta.setAttribute('href', u.pathname + u.search + '#demo');
+    }
+    ['cqPiezas','cqPrecio','cqComision','cqVendido'].forEach((id) => el(id).addEventListener('input', pintar));
+    pintar();
+  }
+</script>
