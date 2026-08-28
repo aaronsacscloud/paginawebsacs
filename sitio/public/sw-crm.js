@@ -39,8 +39,20 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(VER);
       const hit = await cache.match('/admin/crm');
-      const red = fetch(e.request).then(r => {
-        if (r.ok) cache.put('/admin/crm', r.clone());
+      const red = fetch(e.request).then(async (r) => {
+        if (!r.ok) return r;
+        // ¿La versión de red es OTRA? Entonces el usuario está viendo la de
+        // ayer: se le avisa a la app para que se refresque cuando pueda. Sin
+        // esto, un cambio desplegado tarda en aparecer y parece que no se hizo.
+        try {
+          const nuevo = (await r.clone().text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/);
+          const viejo = hit ? (await hit.clone().text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/) : null;
+          if (nuevo && viejo && nuevo[0] !== viejo[0]) {
+            const wins = await self.clients.matchAll({ type: 'window' });
+            wins.forEach(w => w.postMessage({ tipo: 'crm-version-nueva' }));
+          }
+        } catch (_) { /* comparar es un lujo, no un requisito */ }
+        cache.put('/admin/crm', r.clone());
         return r;
       });
       if (hit) { e.waitUntil(red.catch(() => {})); return hit; }

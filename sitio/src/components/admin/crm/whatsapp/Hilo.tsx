@@ -3,6 +3,7 @@
 // tooltip de error en español, player de audio propio, lightbox, linkify,
 // reacciones como chips y búsqueda en el hilo tipo Cmd+F.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import AccionesVenta from './AccionesVenta';
 import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
 import Cargando from '../ui/Cargando';
 import { telefonoLegible } from '../../../../lib/telefono';
@@ -46,6 +47,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const [matchIdx, setMatchIdx] = useState(0);
   const [resaltada, setResaltada] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
+  const [acciones, setAcciones] = useState(false);   // móvil: hoja de cotizar/agendar
   const [cita, setCita] = useState<any>(null);            // mensaje que se va a citar al responder
   const [cierre, setCierre] = useState(false);            // modal de nota de cierre
   const [cargandoMas, setCargandoMas] = useState(false);
@@ -218,11 +220,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         {/* Buscar dentro del hilo también en el teléfono: encontrar un monto o
             una dirección subiendo a mano por cien mensajes es justo lo que no
             se puede hacer con el pulgar. */}
-        {<button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
+        {!mobile && <button onClick={() => setBuscando(b => !b)} title="Buscar en la conversación"
           style={{ border: 'none', background: buscando ? C.moradoAgua : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: buscando ? C.moradoTinta : C.g400 }}>
           <IcoBuscar size={mobile ? 19 : 15} />
         </button>}
-        {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} />}
+        {conv.id && <MenuHilo conv={conv} api={api} abierto={menu} setAbierto={setMenu} equipo={mobile ? equipo : undefined} onResolver={() => setCierre(true)} movil={mobile}
+          onAcciones={() => setAcciones(true)} onBuscar={() => setBuscando(b => !b)} />}
+        {/* Acciones (cotizar, agendar) a un toque: en el teléfono estaban
+            enterradas dentro de la ficha, y son lo que se hace DURANTE la
+            conversación. */}
         {onVerDetalle && (
           mobile
             ? <button onClick={onVerDetalle} aria-label="Ficha del contacto" title="Ficha del contacto"
@@ -384,6 +390,23 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       </div>
 
       {/* ── Composer ── */}
+      {mobile && acciones && (
+        <>
+          <div onClick={() => setAcciones(false)} style={{ position: 'fixed', inset: 0, zIndex: 950, background: 'rgba(12,11,18,.45)' }} />
+          <div className="menu-hoja" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 951, background: '#fff', borderRadius: '20px 20px 0 0', maxHeight: '86dvh', overflowY: 'auto', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}>
+            <span style={{ display: 'block', width: 40, height: 5, borderRadius: 99, background: '#e2e1e8', margin: '10px auto 4px' }} />
+            <AccionesVenta
+              contacto={conv?.contacts || null}
+              empresa={conv?.companies || null}
+              conv={conv}
+              ventanaAbierta={!!hilo?.ventana?.expira_at && new Date(hilo.ventana.expira_at) > new Date()}
+              abrirFicha={() => { setAcciones(false); onVerDetalle?.(); }}
+              accionInicial={null}
+              refrescar={() => api.refrescar?.()}
+            />
+          </div>
+        </>
+      )}
       <Composer key={conv.id || conv.email_only_id} ventana={hilo.ventana} api={api} telefono={conv.telefono} equipo={equipo} movil={mobile}
         cita={cita} onQuitarCita={() => setCita(null)} onEscribir={api.escribiendo} siguiente={api.siguienteSinResponder}
         sugerencias={sugerenciasDe(conv?.contacts?.lifecycle_stage)}
@@ -410,7 +433,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }
 
 /** Menú ⋯ del hilo: posponer / exportar. */
-function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void }) {
+function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, onAcciones, onBuscar }: { conv: any; api: any; abierto: boolean; setAbierto: (v: boolean) => void; equipo?: any[]; onResolver?: () => void; movil?: boolean; onAcciones?: () => void; onBuscar?: () => void }) {
   const posponer = async (hasta: Date) => { setAbierto(false); await api.patchConversacion({ snooze_until: hasta.toISOString(), no_leidos: 0 }); };
   const manana9 = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; };
   const lunes9 = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(9, 0, 0, 0); return d; };
@@ -421,9 +444,25 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver }: { conv
         style={{ border: 'none', background: dormida ? C.ambar50 : 'none', borderRadius: 8, cursor: 'pointer', padding: 6, color: dormida ? C.ambar700 : C.g400 }}>
         <IcoPuntos size={16} />
       </button>
-      {abierto && <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940 }} />}
+      {abierto && <span onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 940, background: movil ? 'rgba(12,11,18,.45)' : 'transparent' }} />}
       {abierto && (
-        <span style={{ position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', minWidth: 190, display: 'block', overflow: 'hidden' }}>
+        /* En el teléfono, un volado con siete grupos tapaba la conversación
+           entera. Es una hoja que sube desde abajo, con su asa, y el pulgar
+           llega a todo. */
+        <span className={movil ? 'menu-hoja' : undefined} style={movil
+          ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 941, background: '#fff', borderRadius: '20px 20px 0 0', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', display: 'block', maxHeight: '78dvh', overflowY: 'auto', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }
+          : { position: 'absolute', right: 0, top: '112%', zIndex: 941, background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12, boxShadow: '0 12px 30px rgba(0,0,0,.12)', minWidth: 190, display: 'block', overflow: 'hidden' }}>
+          {movil && <span style={{ display: 'block', width: 40, height: 5, borderRadius: 99, background: '#e2e1e8', margin: '10px auto 6px' }} />}
+          {movil && (<>
+            {/* Lo que se hace DURANTE la conversación, primero: cotizar,
+                agendar y buscar en el hilo. La cabecera se queda con el
+                nombre, que es lo que dice con quién hablas. */}
+            <button onClick={() => { setAbierto(false); onAcciones?.(); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, fontWeight: 700, color: C.moradoTinta }}>Cotizar o agendar</button>
+            <button onClick={() => { setAbierto(false); onBuscar?.(); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '12px 20px', fontSize: 15, color: C.g700 }}>Buscar en la conversación</button>
+            <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
+          </>)}
           {equipo && (<>
             <span style={{ display: 'block', padding: '8px 12px 3px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Estado</span>
             <span style={{ display: 'flex', gap: 4, padding: '0 10px 6px' }}>

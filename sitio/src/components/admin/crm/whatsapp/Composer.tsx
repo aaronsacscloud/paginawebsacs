@@ -311,7 +311,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {/* Los chips de sugerencias («Temas de la etapa») se quitaron a pedido
           del usuario: estaban de más sobre el composer. */}
       <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: 'hidden' }}>
-        <FilaCanal />
+        {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
+            no se escribe: en reposo el composer es una línea y ya. */}
+        {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
         {cita && modo === 'wa' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.emerald50, borderBottom: `1px solid #A7F3D0`, fontSize: 11 }}>
             <span style={{ width: 3, alignSelf: 'stretch', background: C.emerald500, borderRadius: 2 }} />
@@ -347,10 +349,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
         }} onMicError={m => setError(m)}>
           {({ grabando, iniciar }) => (<>
             {!grabando && (
-              <textarea ref={areaRef} value={texto} rows={movil ? 3 : 1}
+              <textarea ref={areaRef} value={texto} rows={movil ? (escribiendoMovil ? 3 : 1) : 1}
                 onFocus={() => movil && setEscribiendoMovil(true)}
                 onBlur={() => movil && !texto && setEscribiendoMovil(false)}
-                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 260 : 132) : 120) + 'px'; }}
+                onChange={e => { setTexto(e.target.value); pingEscribir(); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, movil ? (escribiendoMovil ? 300 : 44) : 120) + 'px'; }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                 placeholder={
                   bloqueadoWa ? 'Ventana de 24h cerrada — envía una plantilla'
@@ -359,7 +361,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                         : modo === 'correo' ? 'Escribe el correo… (Enter envía)'
                           : "Escribe un mensaje... usa '/' para snippets"}
                 disabled={bloqueadoWa || bloqueadoCorreo}
-                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? 72 : undefined, maxHeight: movil ? (escribiendoMovil ? 260 : 132) : 120, borderRadius: 0 }} />
+                style={{ width: '100%', boxSizing: 'border-box', resize: 'none', border: 'none', padding: movil ? '12px 14px' : '10px 12px', fontSize: movil ? 16 : 13, fontFamily: 'inherit', outline: 'none', background: (bloqueadoWa || bloqueadoCorreo) ? C.g50 : '#fff', lineHeight: 1.5, minHeight: movil ? (escribiendoMovil ? 96 : 44) : undefined, maxHeight: movil ? (escribiendoMovil ? 300 : 44) : 120, borderRadius: 0 }} />
             )}
             {/* Staged files */}
             {staged.length > 0 && !grabando && (
@@ -428,7 +430,11 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
 
             {/* Toolbar. Con la ventana cerrada no se pinta nada: el banner de
                 arriba ya trae "Enviar plantilla" y repetirlo abajo era ruido. */}
-            {!grabando && (bloqueadoWa ? null : (
+            {/* En reposo el composer es una sola línea: la conversación es lo
+                que se viene a leer, y la barra de herramientas ocupaba un
+                tercio de la pantalla sin que nadie la estuviera usando. Al
+                tocar la caja, crece y aparecen las herramientas. */}
+            {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
                 {/* En el teléfono la barra deja a la vista lo que se usa en cada
                     mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
