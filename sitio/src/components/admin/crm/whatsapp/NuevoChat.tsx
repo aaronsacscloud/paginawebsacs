@@ -15,6 +15,12 @@ export default function NuevoChat({ lista, api, telefono, onAbrir, onClose }: {
   // WhatsApp de una ficha, donde ya sabes a quién le escribes. Buscarlo otra
   // vez en una lista de 3000 sería pedir dos veces el mismo dato.
   const [telPlantilla, setTelPlantilla] = useState<string | null>(telefono || null);
+  // El contacto de ese teléfono, para que las variables de la plantilla se
+  // llenen solas. Sin esto el selector abría con {{1}} y {{2}} vacías y el
+  // botón Enviar se quedaba apagado: "no me deja enviarlo".
+  const contactoDe = useMemo(() =>
+    (audiencia || []).find(a => String(a.telefono || '').replace(/\D/g, '').slice(-10) === String(telPlantilla || '').replace(/\D/g, '').slice(-10)) || null,
+    [audiencia, telPlantilla]);
 
   useEffect(() => {
     fetch('/api/crm/whatsapp/broadcasts?audiencia=1').then(r => r.json())
@@ -35,7 +41,7 @@ export default function NuevoChat({ lista, api, telefono, onAbrir, onClose }: {
   };
 
   if (telPlantilla) {
-    return <SelectorPlantilla telefono={telPlantilla} api={api} onClose={onClose} />;
+    return <SelectorPlantilla telefono={telPlantilla} api={api} contacto={contactoDe} onClose={onClose} />;
   }
 
   return (

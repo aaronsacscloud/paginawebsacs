@@ -213,8 +213,28 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
         {!ordenada.length && (
           <div style={{ textAlign: 'center', padding: '48px 24px' }}>
             <div style={{ width: 48, height: 48, borderRadius: 999, background: C.g100, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💬</div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: C.g700, margin: '10px 0 2px' }}>No hay conversaciones</p>
-            <p style={{ fontSize: 11, color: C.g400 }}>Ajusta los filtros o espera un mensaje nuevo.</p>
+            {/* Buscar aquí y no encontrar a alguien se leía como "ese contacto
+                no existe", y no es eso: esta lista son CONVERSACIONES, y quien
+                nunca ha escrito no tiene ninguna. Se dice, y se ofrece la
+                salida —arrancarla— en vez de dejar el hueco. */}
+            {filtros.search ? (
+              <>
+                <p style={{ fontSize: 13, fontWeight: 600, color: C.g700, margin: '10px 0 2px' }}>Nadie ha escrito con «{filtros.search}»</p>
+                <p style={{ fontSize: 11, color: C.g400, lineHeight: 1.6 }}>
+                  Aquí solo salen conversaciones. Si es un contacto nuevo, todavía no tiene una.
+                </p>
+                {onNuevo && (
+                  <button onClick={onNuevo} style={{ marginTop: 12, border: 'none', borderRadius: 9, padding: '8px 14px', background: C.morado, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Buscarlo en contactos y escribirle
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, fontWeight: 600, color: C.g700, margin: '10px 0 2px' }}>No hay conversaciones</p>
+                <p style={{ fontSize: 11, color: C.g400 }}>Ajusta los filtros o espera un mensaje nuevo.</p>
+              </>
+            )}
           </div>
         )}
         {ordenada.map(c => {
