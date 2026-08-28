@@ -174,9 +174,8 @@ function SeccionSecuencias({ contactId }: { contactId: string }) {
       body: JSON.stringify({ contact_id: contactId, secuencia_id: secuenciaId, accion: a }) }).catch(() => {});
     setOcupado(''); cargar();
   };
-  if (datos === null) return null;
-  const conAlgo = datos.filter(d => d.estado !== 'fuera' || d.activa);
-  if (!conAlgo.length) return null;
+  if (datos === null || !datos.length) return null;
+  const conAlgo = datos;   // todas: el vendedor debe saber qué secuencias existen
   const MOT: Record<string, string> = { respondio: 'respondió', agendo: 'agendó', convertido: 'se hizo cliente', descartado: 'descartado', corte: 'llegó al corte', optout: 'baja de WA', archivado: 'archivado', pausado_manual: 'pausada a mano', viejo_al_activar: 'era muy viejo' };
   return (
     <Seccion id="g-secuencias" titulo="Secuencias" n={conAlgo.filter(d => d.estado === 'dentro').length || null}>
@@ -187,6 +186,7 @@ function SeccionSecuencias({ contactId }: { contactId: string }) {
               <span style={{ fontSize: 11.5, fontWeight: 700, color: C.g700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre}</span>
               {d.estado === 'dentro' && <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: C.emerald50, color: C.emerald700 }}>DÍA {d.dia}</span>}
               {d.estado === 'detenida' && <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 8px', background: C.g100, color: C.g500 }}>{MOT[d.motivo] || d.motivo || 'detenida'}</span>}
+              {!d.activa && <span style={{ fontSize: 9, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: C.ambar50, color: C.ambar700 }}>secuencia apagada</span>}
               {d.estado === 'fuera' && <span style={{ fontSize: 9, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: C.g50, color: C.g400 }}>fuera</span>}
             </div>
             {d.estado === 'dentro' && (d.canales_detenidos?.wa || d.canales_detenidos?.correo) && (
