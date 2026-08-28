@@ -32,7 +32,7 @@ export default function MasScreen({
   if (!open) return null;
 
   return (
-    <div style={{
+    <div className="mas-screen" style={{
       position: 'fixed', left: 0, right: 0, top: 0,
       bottom: 'var(--crm-bottomnav-h, 64px)', zIndex: 395,
       background: '#fff', overflowY: 'auto', WebkitOverflowScrolling: 'touch',

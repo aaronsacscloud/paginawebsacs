@@ -1376,6 +1376,18 @@ const CRM_MOBILE_CSS = `
         --hoja-btn: #232329; --hoja-line: #2c2c36; --hoja-ink: #F2F1F7;
         --hoja-caja: #26262e; --hoja-chip: #232329; --hoja-chip-ink: #918fa0;
       }
+      /* La pantalla «Más» es una superficie más de la app, no un overlay
+         aparte: sin esto tomaba la tinta clara del tema oscuro sobre su
+         blanco original y las secciones se leían fantasma. */
+      [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
+      /* El borde va por CLASE, no por valor: React expande el shorthand a
+         longhands (border-style: none none solid) cuando hay otras propiedades
+         de borde, así que [style*="solid rgb(...)"] no lo alcanza. */
+      [data-crm-dark="1"] .mas-screen .crm-row { border-bottom-color: #1f1f26 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="background: rgb(239, 238, 242)"] { background: #1f1f26 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="color: rgb(201, 199, 208)"] { color: #4a4a55 !important; }
+      [data-crm-dark="1"] .mas-screen [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
+
       /* La alerta no es el dato principal: superficie normal + barra roja de
          2 px. Un panel relleno gritaba más que el ARR de la cuenta. */
       [data-crm-dark="1"] .hoja-ficha [style*="background: rgb(254, 240, 239)"],
