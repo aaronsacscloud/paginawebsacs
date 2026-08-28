@@ -34,8 +34,9 @@ export const S = {
 
 export const chip = (on: boolean): CSSProperties => ({
   border: '1px solid', borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? '#f7f4ff' : '#fff',
-  color: on ? '#5B4BD6' : '#555', borderRadius: 9, padding: '7px 12px', fontSize: '0.77rem',
+  color: on ? '#5B4BD6' : '#555', borderRadius: 9, padding: '0 14px', minHeight: 44, fontSize: '0.8rem',
   fontWeight: on ? 700 : 600, cursor: 'pointer', fontFamily: 'inherit',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
 });
 
 export const TONO: Record<string, { bg: string; fg: string }> = {

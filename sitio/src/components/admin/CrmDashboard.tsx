@@ -281,8 +281,8 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // Módulos del menú «Más» que heredan el mapa oscuro genérico (el mismo de la
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
-const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias'];
+const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -492,7 +492,9 @@ export default function CrmDashboard() {
             width: 44, height: 44, background: 'none', border: 'none', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           }} aria-label="Buscar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
+            {/* La lupa iba en tinta clara fija: en oscuro quedaba en #1d1d24
+                sobre #131318 —contraste 1.1:1— o sea, un control invisible. */}
+            <svg className="m-lupa" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
               <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/>
             </svg>
           </button>
@@ -1408,6 +1410,18 @@ const CRM_MOBILE_CSS = `
          de la app, no una franja clara pegada bajo el nombre. */
       [data-crm-dark="1"] .wa-ctx { background: #17171d !important; border-bottom-color: #1f1f26 !important; color: #918fa0 !important; }
       [data-crm-dark="1"] .m-appbar { background: #131318 !important; border-bottom-color: #1f1f26 !important; }
+      [data-crm-dark="1"] .m-lupa { stroke: #918fa0 !important; }
+      /* El segmentado activo (7 días / 30 días y sus primos) se volvía igual
+         al inactivo en oscuro: sin estado, el control no dice nada. */
+      /* El activo lleva clase propia: la regla de calma —que vuelve neutro
+         todo botón con contorno— le ganaba por especificidad y el segmentado
+         se quedaba sin estado. */
+      [data-crm-dark="1"] .m-auto-dark .seg-on[style][style][style][style] {
+        background: #221c33 !important; color: #B7A8F7 !important; border-color: #4b3f77 !important;
+      }
+      /* Las dos series de una gráfica no pueden acabar del mismo color */
+      [data-crm-dark="1"] .m-auto-dark .wam-in { background: rgba(167,139,250,.42) !important; }
+      [data-crm-dark="1"] .m-auto-dark .wam-out { background: #A78BFA !important; }
       [data-crm-dark="1"] .mas-screen { background: #131318 !important; }
       /* El borde va por CLASE, no por valor: React expande el shorthand a
          longhands (border-style: none none solid) cuando hay otras propiedades
@@ -1746,6 +1760,7 @@ const CRM_MOBILE_CSS = `
        pantalla son cuatro acentos compitiendo: el color se queda en la CIFRA,
        que ya lo lleva, y la tarjeta se aprieta para que quepan dos por fila. */
     .kpi-card { border-left-width: 1px !important; border-left-color: #eeeef1 !important; padding: 13px 14px !important; }
+    .seg-on[style][style][style][style] { background: #EEECFE !important; color: #5B4BD6 !important; border-color: #ddd6fb !important; }
     .kpi-card > div:nth-child(2) { font-size: 1.25rem !important; }
     /* La barra de reparto (asistieron / faltaron) a 3 px se perdía sobre el
        track oscuro: es el dato que dice si la reunión sirvió. */

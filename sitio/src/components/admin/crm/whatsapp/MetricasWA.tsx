@@ -44,7 +44,7 @@ export default function MetricasWA() {
         <span style={{ flex: 1 }} />
         <span style={{ display: 'inline-flex', gap: 6, whiteSpace: 'nowrap' }}>
           {[7, 30].map(n => (
-            <button key={n} style={chip(dias === n)} onClick={() => setDias(n)}>{n} días</button>
+            <button key={n} className={dias === n ? 'seg-on' : undefined} style={chip(dias === n)} onClick={() => setDias(n)}>{n} días</button>
           ))}
         </span>
       </div>
@@ -65,8 +65,8 @@ export default function MetricasWA() {
           {d.por_dia.map((x: any) => (
             <div key={x.dia} title={`${x.dia}: ${x.entrantes} recibidos, ${x.salientes} enviados`}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 1, height: '100%' }}>
-              <div style={{ height: `${(x.salientes / maxDia) * 100}%`, background: '#9B8CFA', borderRadius: '3px 3px 0 0', minHeight: x.salientes ? 3 : 0 }} />
-              <div style={{ height: `${(x.entrantes / maxDia) * 100}%`, background: '#7DA6F5', borderRadius: x.salientes ? 0 : '3px 3px 0 0', minHeight: x.entrantes ? 3 : 0 }} />
+              <div className="wam-out" style={{ height: `${(x.salientes / maxDia) * 100}%`, background: '#9B8CFA', borderRadius: '3px 3px 0 0', minHeight: x.salientes ? 3 : 0 }} />
+              <div className="wam-in" style={{ height: `${(x.entrantes / maxDia) * 100}%`, background: 'rgba(155,140,250,.45)', borderRadius: x.salientes ? 0 : '3px 3px 0 0', minHeight: x.entrantes ? 3 : 0 }} />
             </div>
           ))}
         </div>
@@ -78,8 +78,8 @@ export default function MetricasWA() {
           })}
         </div>
         <div style={{ display: 'flex', gap: 14, marginTop: 9, fontSize: '0.68rem', color: '#8a8a92' }}>
-          <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#7DA6F5', marginRight: 5 }} />Recibidos</span>
-          <span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#9B8CFA', marginRight: 5 }} />Enviados</span>
+          <span><span className="wam-in" style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'rgba(155,140,250,.45)', marginRight: 5 }} />Recibidos</span>
+          <span><span className="wam-out" style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#9B8CFA', marginRight: 5 }} />Enviados</span>
         </div>
       </div>
 
@@ -90,10 +90,14 @@ export default function MetricasWA() {
         {(d.por_cierre || []).map((c: any) => {
           const total = (d.por_cierre || []).reduce((a: number, x: any) => a + x.n, 0) || 1;
           return (
-            <div key={c.categoria} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 40px', alignItems: 'center', gap: 10, marginTop: 8, fontSize: '0.78rem' }}>
-              <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.categoria}</span>
-              <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden' }}><div style={{ width: `${(c.n / total) * 100}%`, height: '100%', background: '#9B8CFA' }} /></div>
-              <b style={{ color: '#5B4BD6', textAlign: 'right' }}>{c.n}</b>
+            <div key={c.categoria} style={{ marginTop: 10, fontSize: '0.78rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontWeight: 600, minWidth: 0 }}>{c.categoria}</span>
+                <b style={{ color: '#1a1a1a', flexShrink: 0 }}>{c.n}</b>
+              </div>
+              <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 5 }}>
+                <div style={{ width: `${(c.n / total) * 100}%`, height: '100%', background: '#9B8CFA' }} />
+              </div>
             </div>
           );
         })}
@@ -103,13 +107,32 @@ export default function MetricasWA() {
       <div style={S.card}>
         <div style={S.kl}>Carga por agente</div>
         {!d.por_agente.length && <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#a5a2af' }}>Nadie tiene conversaciones asignadas todavía.</div>}
+        {esMovilM ? (
+          /* Cuatro columnas encogidas partían «Aaron / Herzberg» y «1 /
+             asignadas»: un renglón por agente, con su barra al pie. */
+          <div style={{ marginTop: 8 }}>
+            {d.por_agente.map((a: any) => (
+              <div key={a.id} style={{ padding: '10px 0', borderBottom: '1px solid #eeeef1' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.86rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nombre}</span>
+                  <span style={{ fontSize: '0.78rem', color: '#8f8d98', flexShrink: 0 }}>
+                    {a.asignadas} asignadas · <b style={{ color: a.resueltas > 0 ? '#1E8A63' : '#8f8d98' }}>{a.resueltas} resueltas</b>
+                  </span>
+                </div>
+                <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden', marginTop: 7 }}>
+                  <div style={{ width: `${a.asignadas ? (a.resueltas / a.asignadas) * 100 : 0}%`, height: '100%', background: '#4FBF95' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
           <tbody>
             {d.por_agente.map((a: any) => (
               <tr key={a.id}>
                 <td style={{ ...S.td, fontWeight: 700 }}>{a.nombre}</td>
                 <td style={S.td}>{a.asignadas} asignadas</td>
-                <td style={{ ...S.td, color: '#1E8A63', fontWeight: 700 }}>{a.resueltas} resueltas</td>
+                <td style={{ ...S.td, color: a.resueltas > 0 ? '#1E8A63' : '#8f8d98', fontWeight: 700 }}>{a.resueltas} resueltas</td>
                 <td style={{ ...S.td, width: '40%' }}>
                   <div style={{ height: 6, borderRadius: 99, background: '#eeeef1', overflow: 'hidden' }}>
                     <div style={{ width: `${a.asignadas ? (a.resueltas / a.asignadas) * 100 : 0}%`, height: '100%', background: '#4FBF95' }} />
@@ -119,6 +142,7 @@ export default function MetricasWA() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

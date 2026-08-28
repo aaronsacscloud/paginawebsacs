@@ -357,10 +357,12 @@ export default function PartnersTab() {
   }
 
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: '#f5f6f8' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
+    <div className={isMobile ? 'm-lienzo' : undefined}
+      style={{ padding: isMobile ? '4px 18px 24px' : 24, minHeight: '100vh', background: isMobile ? 'transparent' : '#f5f6f8' }}>
+      {/* Header. En el teléfono el app bar ya dice «Partners»: el eyebrow, el
+          título y el párrafo se comían la primera pantalla. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? 14 : 24, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: isMobile ? 'none' : 'block' }}>
           <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#4B7BE5', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Programa Partners</div>
           <h1 style={{ margin: 0, fontFamily: 'Clash Display, sans-serif', fontSize: '1.75rem', fontWeight: 600, color: '#1a1a1a', letterSpacing: '-0.015em' }}>
             Invitaciones a partners
@@ -374,13 +376,14 @@ export default function PartnersTab() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '12px 20px',
-            background: '#1a1a1a', color: '#fff',
-            border: 'none', borderRadius: 10,
+            background: '#5B4BD6', color: '#fff',
+            border: 'none', borderRadius: 10, minHeight: 44,
             fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 600,
             cursor: 'pointer', transition: 'background 0.15s ease',
+            ...(isMobile ? { width: '100%', justifyContent: 'center' } : {}),
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#4B7BE5')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#1a1a1a')}
+          onMouseEnter={e => (e.currentTarget.style.background = '#4536BE')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#5B4BD6')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Nueva invitación
@@ -388,7 +391,7 @@ export default function PartnersTab() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? 10 : 12, marginBottom: 24 }}>
         <StatCard label="Invitaciones totales" value={stats.total.toString()} />
         <StatCard label="Activas" value={stats.sent.toString()} accent="#4B7BE5" />
         <StatCard label="Aceptadas · por aprobar" value={stats.pending.toString()} accent="#E8A838" />
@@ -1190,7 +1193,7 @@ function btnSm(bg = '#fff', color = '#1a1a1a'): React.CSSProperties {
 
 function StatCard({ label, value, accent = '#1a1a1a' }: { label: string; value: string; accent?: string }) {
   return (
-    <div style={{
+    <div className="kpi-card" style={{
       padding: 18,
       background: '#fff',
       border: '1px solid #e5e5e5',
