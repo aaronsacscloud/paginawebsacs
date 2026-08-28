@@ -59,6 +59,7 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
 
   return (
     <div className="accv" style={{ padding: 14 }}>
+      <EstiloAccv />
       <div style={{ fontSize: 10, fontWeight: 800, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Ventas · se ejecutan aquí mismo</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <BotonAccion e="📄" t="Cotización" d="Crear y enviar aquí" ok={!!contacto} onClick={() => setVista('cotizar')} destacado />
@@ -83,10 +84,24 @@ function BotonAccion({ e, t, d, ok, onClick, destacado }: { e: string; t: string
   );
 }
 
+// El CSS móvil del CRM aplana botones con !important y especificidad alta;
+// estas reglas viajan con el componente (se montan también en el detalle
+// móvil) y ganan por especificidad (.accv repetido) — targets táctiles 44/48.
+export function EstiloAccv() {
+  return (
+    <style>{`
+      .accv.accv.accv button { min-height: 44px !important; }
+      .accv.accv.accv button.accv-grande { min-height: 48px !important; }
+      .accv-tap.accv-tap.accv-tap { min-height: 44px !important; }
+    `}</style>
+  );
+}
+
 function Volver({ volver, titulo }: { volver: () => void; titulo: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-      <button onClick={volver} style={{ ...btnG, minHeight: 32, padding: '4px 10px', fontSize: 11 }}>←</button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, position: 'relative', zIndex: 5 }}>
+      <EstiloAccv />
+      <button onClick={volver} style={{ ...btnG, padding: '4px 12px', fontSize: 12 }}>←</button>
       <b style={{ fontSize: 12.5 }}>{titulo}</b>
     </div>
   );
