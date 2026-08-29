@@ -18,3 +18,8 @@ sitio/.astro/
 .DS_Store
 .gstack/
 .env*.local
+
+# Token personal de Supabase (Management API). Fuera de git A PROPOSITO:
+# es de CUENTA, no de proyecto — puede borrar proyectos enteros, y en el
+# historial de GitHub quedaria para siempre. Vive en el servidor con perms 600.
+.supabase-token

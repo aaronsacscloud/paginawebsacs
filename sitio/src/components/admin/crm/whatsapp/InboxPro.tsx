@@ -397,11 +397,28 @@ export default function InboxPro() {
     const pre = id ? mensajesPre.current.get(id) : null;
     if (listo) { hiloRef.current = listo; setHilo(listo); }
     else if (pre && pre.length) {
-      // Provisional: se pintan los mensajes YA y el panel de detalle aparece
-      // cuando /hilo responde (la vista usa encadenamiento opcional, así que
-      // `conversacion: null` no la rompe). Es preferible a un spinner: el
-      // usuario ve su conversación de inmediato.
-      const prov = { conversacion: null, mensajes: pre, notas: [], eventos: [], precargado: true };
+      // Provisional: se pintan los mensajes YA y el resto llega con /hilo.
+      //
+      // La `conversacion` NO puede ir en null: Hilo.tsx lee `conv.telefono` sin
+      // encadenamiento opcional y reventaba con «Cannot read properties of null
+      // (reading 'telefono')» — lo cazó la verificación en escritorio. Se arma
+      // con lo que la LISTA ya tiene en memoria (teléfono, contacto, empresa),
+      // que es justo lo que pinta la cabecera.
+      //
+      // Y va A PROPÓSITO sin `id`: media docena de controles se activan con
+      // `conv.id &&` (llamar, ventana de 24 h, asignar). Sin id no se pintan, y
+      // así no se enseña un estado inventado durante el segundo que tarda /hilo
+      // en traer el de verdad. Aparecen completos cuando llega.
+      const prov = {
+        conversacion: {
+          telefono: c.telefono || null,
+          contacts: c.contacto || null,
+          companies: c.empresa || null,
+          asignado_a: c.asignado_a || null,
+          estado_crm: c.estado_crm || null,
+        },
+        mensajes: pre, notas: [], eventos: [], precargado: true,
+      };
       hiloRef.current = prov; setHilo(prov);
     }
     else { hiloRef.current = null; setHilo(null); }

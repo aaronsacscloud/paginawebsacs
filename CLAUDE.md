@@ -107,3 +107,31 @@ curl -X PATCH "https://api.vercel.com/v2/teams/$TEAM" \
 
 `sitio/.env` no se commitea (`.gitignore`). Los tokens de Supabase, SendGrid
 y demás viven ahí y en las variables de entorno de Vercel.
+
+### Management API de Supabase (correr SQL sin depender de nadie)
+
+El token personal del dueño vive en **`.supabase-token`** en la raíz del repo
+(perms 600, **ignorado por git**). Con él se corre cualquier SQL —incluido DDL—
+contra el proyecto del CRM:
+
+```bash
+TOK=$(cat .supabase-token)
+SQL="select count(*) from wa_conversaciones;"
+curl -s -X POST "https://api.supabase.com/v1/projects/wtzhogdyicekxcnclmyu/database/query" \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" \
+  --data "{\"query\": $(node -e 'console.log(JSON.stringify(process.argv[1]))' "$SQL")}"
+```
+
+(El truco `node -e JSON.stringify` escapa comillas y saltos de línea del SQL.)
+
+Proyecto: **`wtzhogdyicekxcnclmyu`** (`crm sacs`, us-west-2).
+
+⚠️ **Por qué NO está commiteado:** es un token de CUENTA (`sbp_…`), no de
+proyecto. Puede leer cualquier dato y borrar proyectos enteros. Si entra al
+historial de git ya no se saca: solo se arregla revocándolo en
+supabase.com/dashboard/account/tokens. Si un día da 401, es que lo rotaron —
+hay que pedir uno nuevo y reescribir ese archivo, no buscarlo en el historial.
+
+📋 **Regla al usarlo:** enseña el SQL antes de correrlo, ejecútalo, y verifica
+el resultado. Todo cambio de esquema se guarda además como archivo en
+`sitio/scripts/migration-*.sql` para que quede rastro en el repo.
