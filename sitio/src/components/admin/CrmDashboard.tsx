@@ -1254,8 +1254,31 @@ const CRM_MOBILE_CSS = `
        el «Atrás» del hilo. */
     html[data-crm-hilo="1"] nav[aria-label="Navegación principal"] { display: none !important; }
     /* Sin barra abajo, el hilo se queda con la pantalla completa: si no,
-       quedaba una franja muerta del alto de la barra que ya no está. */
-    html[data-crm-hilo="1"] .wa-hilo-m { height: 100dvh !important; }
+       quedaba una franja muerta del alto de la barra que ya no está.
+       
+       Y va FIJO al viewport, no solo alto 100dvh. Con solo el alto, el hilo
+       medía una pantalla entera pero EMPEZABA más abajo (la app bar, un aviso
+       de configuración, lo que hubiera arriba), así que el total no cabía: al
+       tocar el composer —que quedaba por debajo del pliegue— el navegador
+       arrastraba la página para enseñarlo y la cabecera del chat se iba hacia
+       arriba. Medido a 390 px: la cabecera saltaba de y=176 a y=0, o sea 176 px
+       de un tirón, y ya no volvía a verse con quién estabas hablando.
+       Fijándolo, el chat ocupa EXACTAMENTE la pantalla: no hay nada que
+       arrastrar, la cabecera se queda quieta y solo scrollea la lista de
+       mensajes, que es lo que debe scrollear. z-index bajo a propósito: las
+       hojas y modales (950+) tienen que seguir montándose encima. */
+    html[data-crm-hilo="1"] .wa-hilo-m {
+      position: fixed !important; inset: 0 !important;
+      height: 100dvh !important; z-index: 40;
+    }
+    /* Con el hilo fijo, lo de atrás no debe poder moverse: si el fondo
+       scrollea bajo el chat, al cerrar apareces en otro punto de la lista. */
+    html[data-crm-hilo="1"], html[data-crm-hilo="1"] body { overflow: hidden !important; }
+    /* El composer crece al enfocarlo (aparecen la fila de canal y la de
+       acciones): que crezca, no que salte. Solo la transición de tamaño; el
+       contenido no se desvanece porque un control a medio opacar se ve roto. */
+    .wa-comp-caja { transition: height 160ms ease, min-height 160ms ease; }
+    @media (prefers-reduced-motion: reduce) { .wa-comp-caja { transition: none; } }
 
     @media (prefers-color-scheme: dark) and (max-width: 899px) {
       :root[data-crm-dark="1"] {

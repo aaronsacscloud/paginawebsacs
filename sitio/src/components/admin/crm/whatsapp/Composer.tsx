@@ -351,7 +351,13 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       {/* En el teléfono la tarjeta NO recorta: los menús del composer (adjuntar,
           IA, snippets) salen hacia arriba y con `overflow:hidden` se cortaban a
           la mitad. En escritorio se conserva para redondear las esquinas. */}
-      <div style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: movil ? 'visible' : 'hidden' }}>
+      {/* En reposo el composer es una línea; al enfocarlo aparecen la fila de
+          canal y la de acciones, y la caja crece 118 px DE GOLPE. Medido a
+          390 px: ese salto es lo que el usuario describió como "hace un efecto
+          todo raro". La altura se anima para que crezca en vez de saltar —
+          160 ms, lo justo para que el ojo lo siga sin sentir que va lento. Quien
+          pide menos movimiento no ve animación, solo el resultado. */}
+      <div className="wa-comp-caja" style={{ border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', position: 'relative', overflow: movil ? 'visible' : 'hidden' }}>
         {/* La fila de canal («WhatsApp · Resumir») también se guarda mientras
             no se escribe: en reposo el composer es una línea y ya. */}
         {(!movil || escribiendoMovil || !!texto) && <FilaCanal />}
