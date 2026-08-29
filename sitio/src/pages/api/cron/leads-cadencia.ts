@@ -233,6 +233,7 @@ export const GET: APIRoute = async ({ url }) => {
     // La reunión próxima de cada miembro: alimenta {{fecha_sesion}},
     // {{link_reagendar}}, {{link_gcal}} y {{link_meet}} en los correos.
     const reunionPor: Record<string, any> = {};
+    const vencidaPor: Record<string, string> = {};   // reunión pasada sin asistencia marcada
     if (vigentes.length) {
       const hoyStr = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
       const { data: bks } = await supabase.from('bookings')
@@ -240,6 +241,15 @@ export const GET: APIRoute = async ({ url }) => {
         .in('contact_id', vigentes.map(v => v.c.id)).eq('estado', 'confirmada').gte('fecha', hoyStr)
         .order('fecha').limit(300);
       for (const b of bks || []) if (!reunionPor[b.contact_id]) reunionPor[b.contact_id] = b;
+
+      // La reunión que YA PASÓ y sigue en 'confirmada': nadie marcó asistencia.
+      // Sin esto la secuencia no puede distinguir «todavía no llega» de «ya fue
+      // y no lo registraron», y le manda preparación a quien ya estuvo.
+      const { data: bksPasadas } = await supabase.from('bookings')
+        .select('contact_id, fecha')
+        .in('contact_id', vigentes.map(v => v.c.id)).eq('estado', 'confirmada').lt('fecha', hoyStr)
+        .order('fecha', { ascending: false }).limit(300);
+      for (const b of bksPasadas || []) if (!vencidaPor[b.contact_id]) vencidaPor[b.contact_id] = b.fecha;
     }
     const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     const extrasReunion = (cid: string) => {
@@ -267,8 +277,40 @@ export const GET: APIRoute = async ({ url }) => {
       if (c.retenido_hasta && new Date(c.retenido_hasta) > ahora) continue;   // pausa: se salta, no sale
       const enviados: Record<string, string> = m.enviados || {};
       let correoHecho = false, waHecho = false, cambio = false;
+      // ── Las tres condiciones de la secuencia de demo agendada ──
+      // El arco supone pista antes de la sesión, y no la hay: 27 de 31
+      // reuniones se agendan para el mismo día o el siguiente (mediana 0). Sin
+      // esto, casi todo el arco llega DESPUÉS de la reunión: preguntarle a
+      // alguien qué quiere ver en una sesión que ya tuvo.
+      const esDemo = (sec.objetivo || 'agendo') === 'demo_hecha';
+      const reunionFutura = !!reunionPor[c.id];
+      const reunionVencida = vencidaPor[c.id] || null;
+
+      // (2) Si la reunión ya pasó y nadie marcó asistencia, la secuencia se
+      // para sola y lo dice. Antes seguía mandando «¿se te movió la agenda?» a
+      // quien ya estuvo en la llamada, por el simple retraso de un registro.
+      if (esDemo && reunionVencida && !dry) {
+        if (!m.detenida_at) {
+          await supabase.from('crm_secuencia_miembros')
+            .update({ detenida_at: ahora.toISOString(), motivo: 'reunion_sin_marcar' }).eq('id', m.id);
+          await notaInbox(c.id, `Secuencia "${sec.nombre}" en pausa: la reunión del ${reunionVencida} ya pasó y no está marcada como asistió o no asistió. Márcala y la secuencia sigue sola.`);
+        }
+        continue;
+      }
+
       for (const p of pasos || []) {
         if (p.dia > dias || enviados[p.id]) continue;
+
+        // (3) El arco son dos tramos, no una lista: los pasos hasta el día 4
+        // PREPARAN la sesión y solo tienen sentido si la sesión no ha ocurrido;
+        // del 6 en adelante RESCATAN, y solo tienen sentido si ya pasó sin
+        // asistir. Como una sola lista lineal, el rescate le llegaba a quien sí
+        // asistió y la preparación a quien ya no la necesitaba.
+        if (esDemo) {
+          const esPreparacion = p.dia <= 4;
+          if (esPreparacion && !reunionFutura) continue;   // sin sesión por delante, no se prepara nada
+          if (!esPreparacion && reunionFutura) continue;   // con sesión viva, no se rescata
+        }
         if (p.canal === 'correo' && (cd.correo || correoHecho || !c.email || !p.email_template_id || corridaCorreos >= MAX_POR_CORRIDA || envioHoy[c.id]?.correo)) continue;
         if (p.canal === 'wa' && (cd.wa || waHecho || !c.whatsapp || !p.wa_plantilla || corridaWas >= MAX_POR_CORRIDA || envioHoy[c.id]?.wa)) continue;
         if (dry) { res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal }); if (p.canal === 'correo') correoHecho = true; else waHecho = true; continue; }
