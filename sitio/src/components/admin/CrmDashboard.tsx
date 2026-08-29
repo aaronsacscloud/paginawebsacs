@@ -1204,6 +1204,16 @@ const CRM_MOBILE_CSS = `
        código ya había recortado a 60 caracteres. No se cambia .m-n2 de raíz
        porque lo comparten todas las listas móviles y ahí una línea basta. */
     .m-row .m-n2.m-2l { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    /* Empresa y tamaño, bajo el nombre. Chico y en gris: es contexto, no
+       titular — con cuántas sucursales trata uno cambia el tono, pero no es lo
+       que buscas al barrer la lista. */
+    .m-row .m-emp { font-size: 0.72rem; color: var(--m-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
+    /* La pastilla del ciclo de vida. En línea propia, alineada con el texto,
+       para que se lea de un vistazo cuál va en qué punto del embudo sin abrir
+       ninguna. Sin color propio cae al neutro del tema. */
+    .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .01em;
+      padding: 3px 9px; border-radius: 99px; background: var(--m-acc-suave); color: var(--m-acc);
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
     .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
     .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }
@@ -1237,7 +1247,12 @@ const CRM_MOBILE_CSS = `
     .m-chips::-webkit-scrollbar { display: none; }
     /* Los chips son la navegación primaria del inbox y se tocan con el pulgar
        en movimiento: 44 de alto, no 31. */
-    .m-chip { flex: none; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 700; padding: 0 15px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
+    /* Pestañas más chicas: con 44 px de alto y 15 de aire, tres pestañas más el
+       «Más» no cabían en 390 px y había que deslizar para descubrir que existían.
+       A 36 px y 12 de aire entran las tres de trabajo y se ve asomar la
+       siguiente, que es la señal de que hay más. 36 sigue siendo el mínimo
+       táctil que el propio sistema fijó (M5), así que no se pierde nada. */
+    .m-chip { flex: none; min-height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; font-size: 0.76rem; font-weight: 700; padding: 0 12px; border-radius: 999px; background: #fff; border: 1px solid #dddce3; color: #4a4854; cursor: pointer; font-family: inherit; }
     .m-chip.on { background: var(--m-acc); border-color: var(--m-acc); color: #fff; }
     /* La cola de trabajo se ve sin tocarla: si hay gente esperando respuesta,
        su pastilla lo dice con el tono de atención aunque no esté activa. */

@@ -8,6 +8,7 @@ import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { EsqueletoChat, EsqueletoLista, EsqueletoPanel } from './Esqueletos';
+import ActionSheet from '../ui/ActionSheet';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
@@ -352,6 +353,39 @@ export default function InboxPro() {
   // hilo al servidor. Ahora las dos cosas pasan ANTES: el código se precarga
   // en cuanto hay lista, y el hilo de la conversación se trae al primer
   // contacto del dedo (pointerdown) o al asomarse la fila.
+  // Catálogo de etapas del ciclo de vida, para pintar la pastilla de cada fila.
+  // Se pide UNA vez: son ~10 filas que casi no cambian, y sin ellas la lista no
+  // puede decir en qué punto va cada prospecto sin abrirlo.
+  const [etapasCiclo, setEtapasCiclo] = useState<Record<string, { nombre: string; emoji?: string; color?: string }>>({});
+  // El menú de todas las vistas (las 3 rayas y el «Más» de las pestañas abren
+  // el mismo). Se carga SOLO al abrirlo: la mayoría de las veces el usuario
+  // trabaja con las tres pestañas y nunca lo necesita, así que pagarlo al
+  // entrar sería gastar dos peticiones por nada.
+  const [menuVistas, setMenuVistas] = useState(false);
+  const [vistasGuardadas, setVistasGuardadas] = useState<any[] | null>(null);
+  const [contVistas, setContVistas] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!menuVistas || vistasGuardadas !== null) return;
+    fetch('/api/crm/vistas').then(r => r.json()).then((j: any) => {
+      const vs = Array.isArray(j?.vistas) ? j.vistas : Array.isArray(j) ? j : [];
+      setVistasGuardadas(vs);
+      if (!vs.length) return;
+      // Los contadores de TODAS las vistas en UN viaje (el modo ?vistas= del
+      // endpoint). Pedirlos de a uno era lo que hacía lento el inbox de
+      // escritorio: 25 peticiones para leer 25 números.
+      const defs = vs.map((x: any) => ({ id: x.id, config: x.config || {} }));
+      fetch(`/api/crm/whatsapp/inbox?vistas=${encodeURIComponent(JSON.stringify(defs))}`)
+        .then(r => r.json()).then((k: any) => { if (k?.contadores) setContVistas(k.contadores); }).catch(() => {});
+    }).catch(() => setVistasGuardadas([]));
+  }, [menuVistas, vistasGuardadas]);
+  useEffect(() => {
+    fetch('/api/crm/lifecycle-etapas').then(r => r.json()).then((j: any) => {
+      const m: any = {};
+      (j?.etapas || []).forEach((e: any) => { m[e.id] = { nombre: e.nombre, emoji: e.emoji, color: e.color }; });
+      setEtapasCiclo(m);
+    }).catch(() => {});
+  }, []);
+
   const precargados = useRef<Set<string>>(new Set());
   // Últimos mensajes de las 50 recientes, traídos de un viaje por /precarga.
   // No es el hilo completo (sin notas, eventos ni presencia): es lo que hace
@@ -789,7 +823,9 @@ export default function InboxPro() {
               // Un número sin contacto se lee mejor separado, y es el mismo
               // formato que usa la cabecera del hilo.
               const nom = c.contacto?.nombre || (c.telefono ? telefonoLegible(String(c.telefono)) : '—');
-              const emp = c.contacto?.empresa_nombre || c.contacto?.companies?.nombre || null;
+              const emp = c.empresa?.nombre || c.contacto?.empresa_nombre || c.contacto?.companies?.nombre || null;
+              const suc = Number(c.empresa?.sucursales) || 0;
+              const etq = etapasCiclo[String(c.contacto?.lifecycle_stage || '')] || null;
               const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
               const ws = String(nom).split(/\s+/).filter((w: string) => w && !stop.includes(w.toLowerCase()));
               // Un teléfono sin contacto no tiene iniciales: icono de persona.
@@ -801,19 +837,42 @@ export default function InboxPro() {
                 <div key={c.id} className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
                   <div className="m-ini">{ini}</div>
                   <div className="m-tx">
+                    {/* El NOMBRE solo. Antes iba "Nombre · Empresa" en el mismo
+                        renglón y con el ancho del teléfono se comían el uno al
+                        otro; la empresa baja a su propia línea, chica, donde se
+                        lee sin pelear. */}
                     <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>
-                      {[nom.split(' ')[0].length > 2 && emp ? nom.split(' ')[0] : nom, emp].filter(Boolean).join(' · ')}
+                      {nom}
                       {/* E8.1 · Alguien del equipo dejó una nota interna aquí.
                           Hay que saberlo ANTES de abrir, no después de leer
                           toda la conversación. */}
                       {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
                     </div>
+                    {/* Empresa y tamaño: con cuántas sucursales trata uno es lo
+                        que cambia el tono de la conversación, y tenerlo aquí
+                        evita abrir la ficha solo para saberlo. */}
+                    {/* Boolean() a propósito: con `emp` nulo y `suc` en 0, la
+                        expresión valía 0 — y React PINTA el cero. Salía un "0"
+                        suelto bajo el teléfono en las filas sin empresa. */}
+                    {Boolean(emp || suc > 0) && (
+                      <div className="m-emp">
+                        {[emp, suc ? `${suc} ${suc === 1 ? 'sucursal' : 'sucursales'}` : null].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
                     <div className="m-n2" style={!c.ultimo_mensaje_texto ? { fontStyle: 'italic' } : undefined}>
                       {/* Un borrador a medias es trabajo empezado: si la lista no
                           lo dice, se olvida y el cliente se queda esperando. */}
                       {hayBorrador(c.id) ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
                         : c.ultimo_mensaje_texto ? `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto}` : 'Sin mensajes'}
                     </div>
+                    {/* En qué punto del embudo va, sin abrir la conversación.
+                        Es el dato que decide a quién contestar primero cuando
+                        hay veinte esperando. */}
+                    {etq && (
+                      <div className="m-etq" style={etq.color ? { background: etq.color + '22', color: etq.color } : undefined}>
+                        {etq.emoji ? etq.emoji + ' ' : ''}{etq.nombre}
+                      </div>
+                    )}
                   </div>
                   <div className="m-fin">
                     <div className="m-m1" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : { fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{horaV5(c.ultimo_mensaje_at)}</div>
@@ -837,6 +896,14 @@ export default function InboxPro() {
             return (
               <div>
                 <div className="m-hdr">
+                  {/* Las tres rayas: todas las vistas del inbox de un toque, sin
+                      tener que ir a escritorio para cambiar de bandeja. */}
+                  <button className="m-cta" aria-label="Todas las vistas" onClick={() => setMenuVistas(true)}
+                    style={{ padding: '0 8px 0 0', marginRight: 2 }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                      <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                  </button>
                   <div className="m-tt">Inbox</div>
                   {/* Dos acciones y ninguna más: buscar (por número, nombre o
                       texto del mensaje) y abrir conversación. Lo demás vive en
@@ -861,8 +928,12 @@ export default function InboxPro() {
                       style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#1a1a1a', fontSize: '0.92rem', fontFamily: 'inherit', outline: 'none' }} />
                   </div>
                 )}
+                {/* Tres pestañas, no cinco. Con cinco no cabían y había que
+                    deslizar para descubrir que existían; estas tres son las de
+                    trabajo diario y el resto vive detrás de «Más», que abre la
+                    hoja con TODAS las vistas. */}
                 <div className="m-chips">
-                  {([['nocontestadas', 'No contestadas'], ['abiertas', 'Abiertas'], ['sinrespuesta', 'Sin respuesta'], ['mias', 'Mías'], ['resueltas', 'Resueltas']] as const).map(([v, l]) => {
+                  {([['nocontestadas', 'No contestadas'], ['sinrespuesta', 'Sin respuesta'], ['abiertas', 'Abiertas']] as const).map(([v, l]) => {
                     const on = chipWa === v;
                     // El conteo de las dos vistas de trabajo se ve SIEMPRE, no
                     // solo cuando están activas: es el número que dice si hay
@@ -874,6 +945,36 @@ export default function InboxPro() {
                       </button>
                     );
                   })}
+                  {/* Las bandejas que ya no caben arriba y las vistas guardadas. */}
+                  <button className="m-chip" onClick={() => setMenuVistas(true)}>Más ›</button>
+                  <ActionSheet
+                    open={menuVistas} onClose={() => setMenuVistas(false)} title="Ir a"
+                    items={[
+                      // Primero las bandejas de trabajo, con su número: son las
+                      // que se usan todos los días.
+                      ...([['nocontestadas', 'No contestadas', nPendientes], ['sinrespuesta', 'Sin respuesta', nSinResp],
+                           ['abiertas', 'Abiertas', null], ['mias', 'Mías', null], ['resueltas', 'Resueltas', null]] as const)
+                        .map(([v2, l, n2]) => ({
+                          label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                            <span>{l}</span>{n2 ? <span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{n2}</span> : null}
+                          </span>,
+                          active: chipWa === v2,
+                          onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
+                        })),
+                      // Y las vistas guardadas, con el conteo que trajo el viaje
+                      // único. Si todavía no llegan, se dice; una lista que
+                      // aparece a medias se lee como que no hay más.
+                      ...(vistasGuardadas === null ? [{ label: 'Cargando vistas…', disabled: true, onClick: () => {} }]
+                        : vistasGuardadas.map((x: any) => ({
+                          label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                            <span>{x.emoji ? x.emoji + '  ' : ''}{x.nombre}</span>
+                            {contVistas[x.id] != null ? <span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{contVistas[x.id]}</span> : null}
+                          </span>,
+                          active: vistaActiva?.id === x.id,
+                          onClick: () => { setVistaActiva?.(x); setMenuVistas(false); },
+                        }))),
+                    ]}
+                  />
                 </div>
                 {lista === null && <EsqueletoLista filas={7} mobile />}
                 {lista !== null && convs.length === 0 && (
