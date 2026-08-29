@@ -1,5 +1,8 @@
 {
   "installCommand": "npm ci --include=dev",
+  "regions": [
+    "pdx1"
+  ],
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "crons": [
     {
