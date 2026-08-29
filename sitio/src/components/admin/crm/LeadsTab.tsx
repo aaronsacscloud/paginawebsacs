@@ -1847,7 +1847,7 @@ function NuevoLead({ onCerrar, onListo }: any) {
             <div><span style={lbl}>Sucursales</span><input type="number" value={f.sucursales_interes} onChange={e => set('sucursales_interes', e.target.value)} style={inp} /></div>
           </div>
           {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="hoja-pie" style={{ display: 'flex', gap: 8 }}>
             <button onClick={guardar} disabled={guardando} style={{ ...S.btnP, opacity: guardando ? .6 : 1 }}>{guardando ? 'Guardando…' : 'Guardar lead'}</button>
             <button onClick={onCerrar} style={{ ...S.mini, padding: '8px 14px', fontSize: '0.78rem' }}>Cancelar</button>
           </div>

@@ -1810,6 +1810,26 @@ const CRM_MOBILE_CSS = `
        Se acota A LAS HOJAS a propósito: fuera de ellas hay rejillas de dos
        columnas que SÍ deben quedarse así (las tarjetas de KPI van 2-up porque
        son números cortos). Aquí no: son campos de captura. */
+    /* Los BOTONES DEL PIE de una hoja se reparten el ancho.
+       Cuarenta y dos modales terminan igual: una fila flex con
+       justify-content flex-end. En un monitor eso es correcto —los botones
+       se agrupan a la derecha, cerca del ratón—; en un teléfono deja dos
+       botones chicos pegados a una esquina, y el pulgar de la mano que sostiene
+       queda del lado contrario. Repartidos a lo ancho se alcanzan con cualquier
+       mano y el principal deja de ser un blanco de 140 px.
+       Solo se tocan los BOTONES hijos: si la fila trae otra cosa (un texto de
+       ayuda, un contador), se queda como está. */
+    /* EL PIE DE UNA HOJA: los botones se reparten el ancho.
+       En un monitor un pie con los botones agrupados a la derecha está bien —
+       ahí está el ratón—; en un teléfono deja el botón principal como un blanco
+       de 107 px pegado a una esquina, y el pulgar de la mano que sostiene queda
+       del lado contrario.
+       Va con CLASE y no con selector de atributo a propósito: probé lo segundo
+       y falló, porque los cuarenta y dos pies del CRM no están escritos igual
+       —unos usan justify-content flex-end, otros una fila flex a secas— y un
+       selector que acierta en la mitad desordena la otra mitad en silencio.
+       Marcarlos cuesta una línea por modal y no miente. */
+    .hoja-pie > button { flex: 1 1 0; min-height: 46px; justify-content: center; }
     [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) [style*="grid-template-columns: 1fr 1fr"],
     [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) [style*="grid-template-columns: repeat(2"] {
       grid-template-columns: 1fr !important;
