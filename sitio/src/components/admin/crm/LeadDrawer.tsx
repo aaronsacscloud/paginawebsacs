@@ -374,6 +374,30 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
           {tab === 'reuniones' && (
             <>
               <Agendar c={c} etapa={evaluacion?.etapa} flash={flash} onRegistrarPasada={() => setRegistrando(true)} />
+              {/* El historial de un vistazo. Antes había que contar los renglones
+                  a ojo para saber si a alguien se le habían caído dos citas.
+                  Sale de las columnas de contacts, que un trigger mantiene. */}
+              {(c.reuniones_total || 0) > 0 && (
+                <div style={{ ...D.cardA, display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+                  {([
+                    ['Total', c.reuniones_total, '#4b4560'],
+                    ['Asistió', c.reuniones_completadas, '#1E8A63'],
+                    ['No asistió', c.reuniones_no_asistio, '#C0554E'],
+                    ['Canceladas', c.reuniones_canceladas, '#9a6a10'],
+                    ['Reagendadas', c.reuniones_reagendadas, '#5B4BD6'],
+                  ] as [string, number, string][]).filter(([, v]) => (v || 0) > 0).map(([l, v, col]) => (
+                    <div key={l}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 750, lineHeight: 1.1, color: col }}>{v}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#8a8796', letterSpacing: '.04em', textTransform: 'uppercase' }}>{l}</div>
+                    </div>
+                  ))}
+                  {(c.reuniones_reagendadas || 0) > 0 && (
+                    <div style={{ flexBasis: '100%', fontSize: '0.72rem', color: '#8a8796' }}>
+                      Reuniones de verdad: {Math.max(0, (c.reuniones_total || 0) - (c.reuniones_reagendadas || 0))} — las reagendadas dejan el registro viejo y crean uno nuevo.
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={D.cardA}>
                 <div style={D.h}>Las que ya hubo<span style={D.hr}>{(c.bookings || []).length}</span></div>
                 {(c.bookings || []).length === 0 && <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Ninguna todavía.</div>}

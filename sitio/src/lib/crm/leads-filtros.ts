@@ -33,6 +33,12 @@ export function camposLeads(din: { campanas?: string[]; giros?: string[] } = {})
       { v: 'agendada', l: 'Tiene agendada' }, { v: 'asistio', l: 'Asistió a la última' },
       { v: 'no_asistio', l: 'No asistió' }, { v: 'sin_reagendar', l: 'No asistió y sin reagendar' },
       { v: 'cancelada', l: 'Tuvo cancelada' }, { v: 'nunca', l: 'Nunca ha tenido' }] },
+    // El filtro «Reunión» de arriba responde QUÉ pasó con la última. Estos dos
+    // responden CUÁNTAS, que es otra pregunta: quién insiste y a quién se le
+    // cae la cita. Salen de las columnas materializadas de contacts, así que
+    // valen para toda la base y no solo para la página cargada.
+    { id: 'reuniones_n', label: 'Reuniones totales', ops: OPS.num, valores: [] },
+    { id: 'no_shows', label: 'No-shows', ops: OPS.num, valores: [] },
     { id: 'prueba', label: 'Prueba', ops: OPS.esSolo, valores: [
       { v: 'activa', l: 'Activa' }, { v: 'vencida', l: 'Vencida sin cerrar' }, { v: 'sin', l: 'Sin prueba' }] },
     { id: 'pausa', label: 'Pausa (pidió tiempo)', ops: OPS.esSolo, valores: [
@@ -85,6 +91,18 @@ export function cumpleCondLead(c: any, k: CondLead): boolean {
     case 'sucursales': {
       const n = parseFloat(k.valor); if (isNaN(n)) return true;
       const v = Number(c.sucursales_interes ?? c.companies?.sucursales ?? 0);
+      return k.op === 'mayor' ? v > n : v < n;
+    }
+    case 'reuniones_n': {
+      const n = parseFloat(k.valor); if (isNaN(n)) return true;
+      // Se descuentan las reagendadas: una cita movida dos veces deja tres
+      // bookings y contarlas como tres reuniones es mentir sobre el interés.
+      const v = Math.max(0, Number(c.reuniones_total || 0) - Number(c.reuniones_reagendadas || 0));
+      return k.op === 'mayor' ? v > n : v < n;
+    }
+    case 'no_shows': {
+      const n = parseFloat(k.valor); if (isNaN(n)) return true;
+      const v = Number(c.reuniones_no_asistio || 0);
       return k.op === 'mayor' ? v > n : v < n;
     }
     case 'toques': {
