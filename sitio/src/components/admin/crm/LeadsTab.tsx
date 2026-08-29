@@ -65,6 +65,28 @@ const FUNNEL = [
   { g: 'fuera', l: 'Descartados' },
 ] as const;
 
+/* Qué fue lo último que pasó con este lead, en palabras.
+ *
+ * Para decidir a quién contactar hoy no sirve "hace 82 días": sirve saber que
+ * ABRIÓ EL CORREO ayer, o que VIO LA COTIZACIÓN. Un rezagado que sigue mirando
+ * es un rezagado que vale la pena; uno en silencio absoluto, no. Por eso la
+ * lista muestra el TIPO de la última actividad, no solo su fecha.
+ *
+ * `sistema` no aparece porque el servidor ya lo excluye: son apuntes que
+ * escribe el propio CRM y, si contaran, todo el mundo parecería activo por
+ * trabajo que nadie hizo. */
+const ACT_LABEL: Record<string, string> = {
+  whatsapp_recibido: 'te escribió', whatsapp_enviado: 'le escribimos',
+  email_opened: 'abrió el correo', email_enviado: 'le mandamos correo',
+  cotizacion_vista: 'vio la cotización', cotizacion: 'se le cotizó',
+  page_visit: 'visitó la web', pago_recibido: 'pagó', llamada: 'llamada',
+  lead_created: 'llegó', stage_change: 'cambió de etapa', etapa_cambio: 'cambió de etapa',
+  estatus_cambio: 'cambió de estatus',
+  ticket_abierto: 'abrió un ticket', ticket_resuelto: 'ticket resuelto', tarea: 'tarea',
+};
+const actLabel = (t?: string | null) => (t ? (ACT_LABEL[t] || String(t).replace(/_/g, ' ')) : null);
+const dineroCorto = (n: number) => (n >= 1000 ? '$' + Math.round(n / 1000) + 'k' : '$' + Math.round(n));
+
 const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
   lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
@@ -743,41 +765,11 @@ export default function LeadsTab() {
             );
           })()}
 
-          {etapa === 'oportunidad' && (() => {
-            // Los contadores de reuniones cuentan sobre la pestaña ya filtrada
-            // (mismo criterio que el Funnel): cada uno filtra al hacer click y
-            // los huecos ("sin reagendar") se vacían cuando el trabajo está hecho.
-            const n = (f: (r: any) => boolean) => listaBase.filter((c: any) => f(c.reunion)).length;
-            const grupos = [
-              { v: 'agendada', l: 'Agendadas', n: n(r => !!r?.proxima), bg: '#E3EDFD', fg: '#2C5FC4' },
-              { v: 'asistio', l: 'Completadas', n: n(r => r?.ultima_estado === 'asistio'), bg: '#EAF8F2', fg: '#1E8A63' },
-              { v: 'no_asistio', l: 'No asistieron', n: n(r => r?.ultima_estado === 'no_asistio'), bg: '#FEF0EF', fg: '#C0554E' },
-              { v: 'sin_reagendar', l: 'Sin reagendar', n: n(r => !!r?.sin_reagendar), bg: '#FFF4E5', fg: '#9a6a10' },
-              { v: 'cancelada', l: 'Canceladas', n: n(r => (r?.canceladas || 0) > 0), bg: '#f4f4f6', fg: '#6B7280' },
-            ];
-            const nCotizados = listaBase.filter((c: any) => eDe(c) === 'cotizado').length;
-            return (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                {grupos.map(g => {
-                  const on = reunionF === g.v;
-                  return (
-                    <button key={g.v} onClick={() => setReunionF(on ? '' : g.v)} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
-                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
-                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
-                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
-                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
-                  );
-                })}
-                <button onClick={() => setEstatusF(estatusF === 'cotizado' ? '' : 'cotizado')} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
-                  cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: estatusF === 'cotizado' ? 800 : 600,
-                  border: `1px solid ${estatusF === 'cotizado' ? '#1E8A63' : '#e6e5ec'}`, background: estatusF === 'cotizado' ? '#EAF8F2' : '#fff',
-                  color: estatusF === 'cotizado' ? '#1E8A63' : nCotizados === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
-                }}>Cotizados<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{nCotizados}</span></button>
-              </div>
-            );
-          })()}
+          {/* Los chips de reuniones (Agendadas / Completadas / No asistieron…)
+              se QUITARON de aquí. En Oportunidad lo que decide a quién llamar
+              no es el estado de una reunión: es qué fue lo último que pasó y
+              cuánto hay cotizado. Ese filtro sigue viviendo en la vista de
+              Reuniones, que es donde sí tiene que ver. */}
 
           {!esMovil && FILTRO_TAB[etapa] && (
             <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
@@ -986,8 +978,21 @@ export default function LeadsTab() {
                 // en silencio. Solo aplica en pestañas "vivas" (nuevos/contactados…).
                 const dias = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
                 const agrupa = !['no_interesados', 'todos', 'rezagados'].includes(etapa);
-                const atorados = (agrupa ? lista.filter((c: any) => dias(c) >= 3) : []).sort((a: any, b: any) => dias(b) - dias(a));
-                const alDia = agrupa ? lista.filter((c: any) => dias(c) < 3) : lista;
+                // En Oportunidad y Rezagados el orden que sirve NO es por
+                // cuándo entró el lead: es por qué tan reciente fue lo último
+                // que pasó con él. Un rezagado que abrió el correo ayer se
+                // llama hoy; uno de hace tres meses en silencio, no. Sin esto
+                // la lista los mezclaba y había que abrirlos uno por uno.
+                const porActividad = etapa === 'oportunidad' || etapa === 'rezagados';
+                const actAt = (c: any) => Date.parse(c.ultima_actividad?.at || c.updated_at || c.created_at || 0) || 0;
+                const listaOrd = porActividad ? [...lista].sort((a: any, b: any) => actAt(b) - actAt(a)) : lista;
+                // Con orden por actividad NO se agrupa en «Atorados / Recientes»:
+                // ese grupo reordena por días sin tocar y pisaría justo el
+                // criterio que se pidió —lo que tuvo movimiento va primero—.
+                // Una lista, un orden: el que sirve para decidir a quién llamar.
+                const agrupaEff = agrupa && !porActividad;
+                const atorados = (agrupaEff ? listaOrd.filter((c: any) => dias(c) >= 3) : []).sort((a: any, b: any) => dias(b) - dias(a));
+                const alDia = agrupaEff ? listaOrd.filter((c: any) => dias(c) < 3) : listaOrd;
                 const conSec = atorados.length > 0 && alDia.length > 0;
                 const fila = (c: any) => {
                 const o = origenDe(origenDeRegistro(c));
@@ -1005,6 +1010,18 @@ export default function LeadsTab() {
                     <div className="m-tx">
                       <div className="m-n1">{cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || 'Sin nombre'}</div>
                       <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
+                      {/* Lo que de verdad decide a quién contactar: QUÉ pasó al
+                          final —abrió el correo, vio la cotización, te escribió—
+                          y, si hay cotización, CUÁNTO hay sobre la mesa. Antes
+                          había que abrir cada ficha para enterarse. */}
+                      {porActividad && (c.ultima_actividad || c.cotizacion) && (
+                        <div className="m-act">
+                          {c.ultima_actividad && <span>{actLabel(c.ultima_actividad.tipo)} · {fechaCorta(c.ultima_actividad.at)}</span>}
+                          {c.cotizacion?.total > 0 && (
+                            <span className="m-monto">{dineroCorto(c.cotizacion.total)}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="m-fin">
                       <div className="m-m1" style={esHoy ? { color: '#1E8A63' } : { fontWeight: 500, color: '#6B7280' }}>{c.created_at ? fechaCorta(c.created_at) : '—'}</div>

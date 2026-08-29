@@ -49,7 +49,10 @@ const _GET: APIRoute = async ({ request, url }) => {
     const [acts, books, qs] = await Promise.all([
       supabase.from('activities').select('contact_id, tipo').in('contact_id', ids).in('tipo', TOQUES),
       supabase.from('bookings').select('id, contact_id, estado, fecha').in('contact_id', ids),
-      supabase.from('quotes').select('contact_id').in('contact_id', ids),
+      // `total` y el estado de la cotización, no solo el conteo: en Oportunidad
+      // lo que decide a quién llamar primero es CUÁNTO hay sobre la mesa, y
+      // saberlo obligaba a abrir la ficha una por una.
+      supabase.from('quotes').select('contact_id, total, estado, created_at').in('contact_id', ids).order('created_at', { ascending: false }),
     ]);
     const porContacto = new Map<string, { llamadas: number; correos: number; whatsapp: number; reuniones: any[]; cotizaciones: number }>();
     const dame = (id: string) => {
@@ -64,6 +67,31 @@ const _GET: APIRoute = async ({ request, url }) => {
       else if (a.tipo === 'whatsapp_enviado') x.whatsapp++;
     }
     for (const b of (books.data || [])) dame(b.contact_id).reuniones.push({ id: (b as any).id, estado: normalizaEstado(b.estado), fecha: b.fecha });
+
+    // ── La ÚLTIMA ACTIVIDAD de cada quien ──────────────────────────────────
+    // No es lo mismo un rezagado que abrió el correo ayer que uno que lleva
+    // tres meses en silencio: al primero se le llama hoy. Sin esta fecha la
+    // lista solo podía ordenar por cuándo ENTRÓ el lead, que a los 100 días
+    // ya no dice nada.
+    //
+    // `sistema` queda FUERA: son apuntes que escribe el propio CRM (cambios de
+    // estatus, notas automáticas) y si contaran, cada lead parecería activo
+    // por trabajo que nadie hizo. Lo demás sí cuenta, incluido `page_visit`:
+    // que alguien vuelva a la web es señal, aunque no nos escriba.
+    const { data: actsUlt } = await supabase.from('activities')
+      .select('contact_id, tipo, created_at').in('contact_id', ids)
+      .neq('tipo', 'sistema').order('created_at', { ascending: false }).limit(4000);
+    const ultimaAct = new Map<string, { tipo: string; at: string }>();
+    for (const a of (actsUlt || []) as any[]) {
+      if (!a.contact_id || ultimaAct.has(a.contact_id)) continue;   // ya viene ordenado desc
+      ultimaAct.set(a.contact_id, { tipo: a.tipo, at: a.created_at });
+    }
+    // La cotización más reciente de cada uno (la consulta ya viene ordenada).
+    const ultimaCot = new Map<string, { total: number; estado: string | null; at: string }>();
+    for (const q of (qs.data || []) as any[]) {
+      if (!q.contact_id || ultimaCot.has(q.contact_id)) continue;
+      ultimaCot.set(q.contact_id, { total: Number(q.total) || 0, estado: q.estado || null, at: q.created_at });
+    }
 
     // Llamadas de WhatsApp por contacto (una consulta para el lote): la
     // columna "Llamadas" de la tabla vive de esto.
@@ -153,7 +181,9 @@ const _GET: APIRoute = async ({ request, url }) => {
       return { ...c, etapa, etapa_por_hechos: porHechos, etapa_manual_aplicada: manual, historial, reunion,
         llamadas: llamPor.get(c.id) || { n: 0, ultima: null, discovery: false },
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
-        n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones };
+        n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones,
+        ultima_actividad: ultimaAct.get(c.id) || null,
+        cotizacion: ultimaCot.get(c.id) || null };
     });
   }
 

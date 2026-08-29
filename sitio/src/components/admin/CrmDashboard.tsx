@@ -1211,6 +1211,10 @@ const CRM_MOBILE_CSS = `
     /* La pastilla del ciclo de vida. En línea propia, alineada con el texto,
        para que se lea de un vistazo cuál va en qué punto del embudo sin abrir
        ninguna. Sin color propio cae al neutro del tema. */
+    /* La última actividad y el monto cotizado, bajo el nombre. Es la línea
+       que evita abrir la ficha solo para saber si vale la pena llamar. */
+    .m-row .m-act { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.72rem; color: var(--m-soft); }
+    .m-row .m-act .m-monto { font-weight: 800; color: var(--m-dinero, #1E8A63); font-variant-numeric: tabular-nums; }
     .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .01em;
       padding: 3px 9px; border-radius: 99px; background: var(--m-acc-suave); color: var(--m-acc);
       max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
