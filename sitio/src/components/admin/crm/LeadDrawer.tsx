@@ -23,6 +23,7 @@ import MinutaLead from './MinutaLead';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
+import ActionSheet from './ui/ActionSheet';
 import { etapaDeLead, siguientePaso as pasoDeEtapa, ETAPA_LABEL, type Etapa } from '../../../lib/crm/lead-etapa';
 import { pintaEstatus } from '../../../lib/crm/estatus-lead';
 import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
@@ -185,7 +186,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
     }).then(x => x.json()).catch(() => null);
     setGuardando(false);
     if (!r || r.error) { flash(r?.error || 'No se pudo guardar'); return false; }
-    await cargar(); onChanged?.(); return true;
+    // Devuelve la RESPUESTA, no un true: el servidor adjunta `tiktok` cuando el
+    // guardado disparó una señal, y quien cambió la etapa necesita ver eso.
+    // Los llamadores que hacen `if (await guardar(...))` siguen funcionando
+    // porque un objeto es truthy.
+    await cargar(); onChanged?.(); return r;
   }
 
   // ── La etapa ─────────────────────────────────────────────────────────────
@@ -340,6 +345,11 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
           {tab === 'info' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, alignItems: 'start' }}>
               <div>
+                {/* Lo PRIMERO de la ficha: en qué punto del ciclo está y
+                    poder moverlo de un toque. Antes había que salir a otra
+                    pantalla, así que desde el teléfono nadie lo actualizaba —
+                    y es el dato que alimenta la señal de TikTok. */}
+                <CicloDeVida c={c} guardar={guardar} guardando={guardando} flash={flash} />
                 <Campos c={c} guardar={guardar} guardando={guardando} setSucio={setSucio} />
                 {/* Quién más está metido en este negocio. Va debajo de los datos
                     del que llegó, no arriba: primero quién es, luego con quién
@@ -1916,6 +1926,100 @@ function RenglonReunion({ b, onMinuta, onCambio }: any) {
           <button style={{ ...D.btnA, padding: '5px 11px', fontSize: '0.7rem' }} onClick={onMinuta}>Ver minuta</button>
         )}
       </div>
+    </div>
+  );
+}
+
+
+/* ── CICLO DE VIDA: la etapa DECLARADA, y su señal a TikTok ────────────────
+ *
+ * Ojo con no confundirla con la etapa que enseña el encabezado. Son dos cosas
+ * distintas a propósito:
+ *
+ *  · la del encabezado se DEDUCE de hechos (hay toque, hay reunión, hay
+ *    cotización, pagó) y contesta "¿dónde va este lead de verdad?";
+ *  · esta es la que un humano DECLARA, y es la única que viaja a TikTok.
+ *
+ * Por eso TikTok necesita la declarada y no la deducida: el algoritmo aprende
+ * de juicio humano. Un lead sin trabajar no es un descalificado, y una señal
+ * negativa falsa hace más daño que una positiva que falta, porque se usa para
+ * EXCLUIR a quién parecerse.
+ *
+ * Móvil: hoja de acciones con filas grandes, que es como se elige con el dedo.
+ * Escritorio: el mismo listado en un desplegable en línea. Misma escritura, la
+ * presentación que le toca a cada aparato.
+ */
+function CicloDeVida({ c, guardar, guardando, flash }: any) {
+  const esMovilCV = useIsMobile();
+  const [etapas, setEtapas] = useState<any[] | null>(null);
+  const [hoja, setHoja] = useState(false);
+  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/crm/lifecycle-etapas').then(r => r.json())
+      .then((j: any) => setEtapas(Array.isArray(j?.etapas) ? j.etapas : []))
+      .catch(() => setEtapas([]));
+  }, []);
+
+  const actual = (etapas || []).find((e: any) => e.id === c.lifecycle_stage);
+  const deTikTok = !!c.propiedades?.tiktok || c.fuente === 'tiktok-lead-form' || /tiktok/i.test(String(c.utm_source || ''));
+
+  async function poner(id: string) {
+    setHoja(false);
+    if (id === c.lifecycle_stage) return;
+    const r: any = await guardar({ lifecycle_stage: id });
+    if (!r) return;
+    // El servidor contesta si la señal salió, no salió, o ni aplicaba. Se dice
+    // tal cual: "no aplica" y "falló" son cosas muy distintas para quien acaba
+    // de tocar el botón, y callarlo deja al usuario sin saber si su anuncio
+    // aprendió algo o no.
+    if (r.tiktok) setAviso({ ok: !!r.tiktok.mando, texto: r.tiktok.motivo });
+    else flash('Etapa actualizada');
+  }
+
+  const items = (etapas || []).map((e: any) => ({
+    label: `${e.emoji ? e.emoji + '  ' : ''}${e.nombre}`,
+    active: e.id === c.lifecycle_stage,
+    onClick: () => poner(e.id),
+  }));
+
+  return (
+    <div style={{ ...D.cardA, paddingTop: 12, paddingBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#a5a2af' }}>Ciclo de vida</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#241d43', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {etapas === null ? '…' : (actual ? `${actual.emoji ? actual.emoji + ' ' : ''}${actual.nombre}` : 'Sin etapa')}
+          </div>
+        </div>
+        {esMovilCV ? (
+          <button onClick={() => setHoja(true)} disabled={guardando || !etapas?.length}
+            style={{ ...D.btnA, minHeight: 44, paddingInline: 16, flexShrink: 0 }}>Cambiar</button>
+        ) : (
+          <select value={c.lifecycle_stage || ''} disabled={guardando || !etapas?.length}
+            onChange={(ev) => poner(ev.target.value)}
+            style={{ border: '1px solid #e2e0e8', borderRadius: 9, padding: '8px 10px', fontSize: '0.82rem', fontFamily: 'inherit', background: '#fff', minWidth: 190, cursor: 'pointer' }}>
+            {!actual && <option value="">Sin etapa</option>}
+            {(etapas || []).map((e: any) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+          </select>
+        )}
+      </div>
+
+      {/* Que se sepa ANTES de tocar nada que este lead reporta a TikTok: mover
+          la etapa aquí gasta (o ahorra) presupuesto de anuncios. */}
+      {deTikTok && !aviso && (
+        <div style={{ marginTop: 9, fontSize: '0.72rem', color: '#8a8590', lineHeight: 1.45 }}>
+          Vino de TikTok: al cambiar la etapa se le avisa para que el anuncio aprenda.
+        </div>
+      )}
+      {aviso && (
+        <div style={{ marginTop: 9, fontSize: '0.75rem', lineHeight: 1.45, borderRadius: 8, padding: '8px 10px',
+          background: aviso.ok ? '#EAF8F2' : '#F6F5F9', color: aviso.ok ? '#1E8A63' : '#6b6875' }}>
+          {aviso.texto}
+        </div>
+      )}
+
+      {esMovilCV && <ActionSheet open={hoja} onClose={() => setHoja(false)} title="Ciclo de vida" items={items} />}
     </div>
   );
 }

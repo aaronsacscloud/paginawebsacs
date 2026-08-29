@@ -211,3 +211,90 @@ export async function enviarConversionPixel(c: ConversionPixel): Promise<Resulta
     return { ok: false, mensaje: String(err?.message || err) };
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// UN SOLO CONTACTO, AL MOMENTO DE CAMBIARLE LA ETAPA
+//
+// El cron de arriba reporta en lote de madrugada. Esto es para cuando alguien
+// mueve la etapa a mano —desde el teléfono, entre visita y visita— y necesita
+// saber AHÍ MISMO si eso viajó a TikTok o no. Sin esta respuesta el usuario no
+// tiene forma de distinguir "se mandó" de "no se mandó nunca", y una señal de
+// conversión que no llega es dinero mal gastado en anuncios.
+//
+// Comparte con el cron TODAS las reglas que importan, y por los mismos motivos:
+//  · la MISMA bitácora `tiktok_crm_eventos` con la misma clave (lead_id real o
+//    `pixel:<contact_id>`) — TikTok cuenta cada envío como una conversión, así
+//    que mandar dos veces enseña que un cliente vale el doble;
+//  · la fecha del CAMBIO DE ETAPA que deja el trigger en `activities`, no la de
+//    hoy ni `updated_at`;
+//  · el monto solo en 'cliente', y el píxel SOLO para la conversión.
+//
+// Devuelve SIEMPRE un motivo legible: "no aplica" y "falló" son cosas muy
+// distintas para quien acaba de tocar el botón.
+export interface ReporteEtapa {
+  mando: boolean;
+  motivo: string;
+  evento?: string;
+  via?: 'crm' | 'pixel';
+}
+
+export async function reportarEtapaDeContacto(
+  supabase: any, contactId: string, etapa: string,
+): Promise<ReporteEtapa> {
+  const evento = ETAPAS_A_TIKTOK[etapa];
+  if (!evento) return { mando: false, motivo: 'Esa etapa no es una señal para TikTok.' };
+
+  const { data: c } = await supabase.from('contacts')
+    .select('id, email, whatsapp, company_id, lifecycle_stage, propiedades, fuente, utm_source')
+    .eq('id', contactId).maybeSingle();
+  if (!c) return { mando: false, motivo: 'No encontré el contacto.' };
+
+  // Igual que el cron: se reconoce por `propiedades.tiktok` o por la fuente/utm.
+  // Por propiedades PRIMERO, porque hay contactos que perdieron `fuente` en un
+  // rescate y son justo los que más pesan.
+  const leadId = String(c.propiedades?.tiktok?.lead_id || '');
+  const esDeTikTok = !!c.propiedades?.tiktok
+    || String(c.fuente || '') === 'tiktok-lead-form'
+    || /tiktok/i.test(String(c.utm_source || ''));
+  if (!esDeTikTok) return { mando: false, motivo: 'Este lead no vino de TikTok.' };
+
+  const cfg = configurado();
+  if (!cfg.listo && !leadId) return { mando: false, motivo: 'TikTok sin configurar: falta ' + cfg.falta.join(', ') + '.' };
+
+  const clave = leadId || `pixel:${c.id}`;
+  const { data: ya } = await supabase.from('tiktok_crm_eventos')
+    .select('id').eq('lead_id', clave).eq('evento', evento).eq('ok', true).limit(1).maybeSingle();
+  if (ya) return { mando: false, motivo: `TikTok ya sabía que este lead es «${evento}». No se manda dos veces.`, evento };
+
+  const { data: cambio } = await supabase.from('activities')
+    .select('created_at').eq('contact_id', c.id).eq('tipo', 'stage_change')
+    .eq('metadata->>new_stage', etapa)
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
+  const cuando = cambio?.created_at ? new Date(cambio.created_at) : new Date();
+
+  let valor: number | null = null;
+  if (etapa === 'cliente' && c.company_id) {
+    const { data: sus } = await supabase.from('subscriptions')
+      .select('arr').eq('company_id', c.company_id).order('arr', { ascending: false }).limit(1).maybeSingle();
+    valor = sus?.arr ? Number(sus.arr) : null;
+  }
+
+  let r: Resultado; let via: 'crm' | 'pixel' = 'crm';
+  if (leadId && cfg.listo) {
+    r = await enviarEventoCRM({ leadId, evento, cuando, valor });
+  } else {
+    via = 'pixel';
+    if (etapa !== 'cliente') return { mando: false, motivo: 'Sin lead_id de TikTok solo se puede reportar la venta, no las etapas intermedias.', evento };
+    if (!dentroDeVentana(cuando)) return { mando: false, motivo: `El cambio quedó fuera de la ventana de ${VENTANA_DIAS} días que acepta TikTok.`, evento };
+    r = await enviarConversionPixel({ email: c.email, telefono: c.whatsapp, cuando, valor, eventId: `crm_${c.id}_${evento}` });
+  }
+
+  await supabase.from('tiktok_crm_eventos').insert({
+    contact_id: c.id, lead_id: clave, evento, etapa, valor,
+    ok: r.ok, respuesta: { ...r, via, manual: true } as any,
+  }).then(() => {}, () => {});
+
+  return r.ok
+    ? { mando: true, motivo: `Señal «${evento}» enviada a TikTok${valor ? ` por $${valor.toLocaleString('es-MX')}` : ''}.`, evento, via }
+    : { mando: false, motivo: `TikTok rechazó la señal: ${r.mensaje || 'sin detalle'}`, evento, via };
+}

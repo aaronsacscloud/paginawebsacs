@@ -274,6 +274,15 @@ export const PUT: APIRoute = async ({ request }) => {
     }
   }
 
+  // Se lee la etapa ANTES de escribir: sin esto no hay forma de saber si el
+  // guardado la cambió de verdad o solo venía repetida en el mismo formulario,
+  // y reportarle a TikTok un cambio que no ocurrió es una conversión inventada.
+  let etapaAntes: string | null = null;
+  if ('lifecycle_stage' in updates) {
+    const { data: prev } = await supabase.from('contacts').select('lifecycle_stage').eq('id', id).maybeSingle();
+    etapaAntes = prev?.lifecycle_stage ?? null;
+  }
+
   const { data, error } = await supabase
     .from('contacts')
     .update(updates)
@@ -282,7 +291,28 @@ export const PUT: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify(data));
+
+  // ── La señal a TikTok, en el momento ────────────────────────────────────
+  // Si el lead vino de TikTok y su etapa nueva es una de las que el algoritmo
+  // aprende, se reporta AQUÍ y se devuelve el resultado para que la pantalla lo
+  // diga. Antes esto solo pasaba en el cron de madrugada: quien movía la etapa
+  // desde el teléfono no tenía manera de saber si la señal salió, y una
+  // conversión que no llega es presupuesto de anuncios tirado.
+  //
+  // No se rompe el guardado si TikTok falla: el contacto YA se actualizó, y el
+  // cron reintentará. Por eso el fallo viaja como aviso, no como error.
+  let tiktok: any = null;
+  const etapaNueva = updates.lifecycle_stage;
+  if (etapaNueva && etapaNueva !== etapaAntes) {
+    try {
+      const { reportarEtapaDeContacto } = await import('../../../lib/crm/tiktok-crm-events');
+      tiktok = await reportarEtapaDeContacto(supabase, String(id), String(etapaNueva));
+    } catch (e: any) {
+      tiktok = { mando: false, motivo: 'No se pudo avisar a TikTok: ' + (e?.message || 'error') };
+    }
+  }
+
+  return new Response(JSON.stringify(tiktok ? { ...data, tiktok } : data));
 };
 
 // REGLA DE VELOCIDAD: lectura pesada founder-only → micro-caché 30s en la instancia.
