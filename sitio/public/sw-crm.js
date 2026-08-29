@@ -8,7 +8,11 @@
 //   HTML viejo siguen servibles porque /_astro/* es cache-first.
 // - APIs: NO se tocan aquí (el SWR de sessionStorage ya las cubre y cachear
 //   respuestas autenticadas en el SW sería un riesgo).
-const VER = 'crm-sw-v2';
+// v3: sube A PROPÓSITO para que el `activate` borre el caché v2. Los teléfonos
+// que hoy tienen guardada una versión vieja del HTML —por el bug del clon que
+// impedía avisar— la sueltan en el primer arranque tras este despliegue, sin
+// que nadie tenga que reinstalar la app.
+const VER = 'crm-sw-v3';
 const RE_ASSET = /\/_astro\/.+\.(js|css|woff2?)$/;
 
 self.addEventListener('install', (e) => { self.skipWaiting(); });
@@ -39,6 +43,14 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(VER);
       const hit = await cache.match('/admin/crm');
+      // ⚠️ El clon se saca AQUÍ, antes de entregarle `hit` al navegador.
+      // Clonarlo después —que es lo que se hacía— revienta con "body already
+      // used": en cuanto se devuelve `hit`, el navegador empieza a leer su
+      // cuerpo y ya no se puede clonar. El error caía en el catch de abajo, que
+      // lo daba por "un lujo", así que el aviso de versión nueva NUNCA se
+      // mandaba y la PWA se quedaba con la versión de ayer para siempre.
+      // Verificado envenenando el caché a mano: sin este cambio, cero avisos.
+      const clonVieja = hit ? hit.clone() : null;
       const red = fetch(e.request).then(async (r) => {
         if (!r.ok) return r;
         // ¿La versión de red es OTRA? Entonces el usuario está viendo la de
@@ -46,7 +58,7 @@ self.addEventListener('fetch', (e) => {
         // esto, un cambio desplegado tarda en aparecer y parece que no se hizo.
         try {
           const nuevo = (await r.clone().text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/);
-          const viejo = hit ? (await hit.clone().text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/) : null;
+          const viejo = clonVieja ? (await clonVieja.text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/) : null;
           if (nuevo && viejo && nuevo[0] !== viejo[0]) {
             const wins = await self.clients.matchAll({ type: 'window' });
             wins.forEach(w => w.postMessage({ tipo: 'crm-version-nueva' }));
