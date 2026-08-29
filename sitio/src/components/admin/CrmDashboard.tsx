@@ -1802,6 +1802,18 @@ const CRM_MOBILE_CSS = `
       max-height: 92dvh !important;
       padding-bottom: env(safe-area-inset-bottom);
     }
+    /* Y DENTRO de la hoja, los formularios bajan a una columna.
+       Convertir el modal en hoja no basta: el formulario seguía en dos columnas
+       —Nombre|Apellido, Correo|WhatsApp— y en 390 px cada campo quedaba en
+       173 px. Eso es lo que se ve "encimado": campos a medio ancho, etiquetas
+       apretadas y nada donde apoyar el pulgar.
+       Se acota A LAS HOJAS a propósito: fuera de ellas hay rejillas de dos
+       columnas que SÍ deben quedarse así (las tarjetas de KPI van 2-up porque
+       son números cortos). Aquí no: son campos de captura. */
+    [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) [style*="grid-template-columns: 1fr 1fr"],
+    [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) [style*="grid-template-columns: repeat(2"] {
+      grid-template-columns: 1fr !important;
+    }
 
     /* El margen compartido del CRM (lib/crm/layout WRAP) trae 56 px laterales
        pensados para escritorio: en 390 px se comen 112. A 16 en el teléfono. */
