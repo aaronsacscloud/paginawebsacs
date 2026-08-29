@@ -48,11 +48,25 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (b.entrada && typeof b.entrada === 'object') {
     const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado'];
+    const LIFECYCLE_OK = ['lead', 'lead_calificado', 'oportunidad', 'cliente', 'rezagado'];
     const est = Array.isArray(b.entrada.estatus) ? b.entrada.estatus.filter((x: string) => ESTATUS_OK.includes(x)) : [];
     const estFinal = est.length ? est : ['contactado', 'sin_respuesta'];
     // Quien agendó ya es Oportunidad: la entrada debe alcanzarlo en esa etapa.
-    const lifecycle = estFinal.includes('agendado') ? ['lead', 'lead_calificado', 'oportunidad'] : ['lead', 'lead_calificado'];
-    fila.entrada = { estatus: estFinal, lifecycle };
+    const lifecycle = Array.isArray(b.entrada.lifecycle) && b.entrada.lifecycle.length
+      ? b.entrada.lifecycle.filter((x: string) => LIFECYCLE_OK.includes(x))
+      : (estFinal.includes('agendado') ? ['lead', 'lead_calificado', 'oportunidad'] : ['lead', 'lead_calificado']);
+
+    // Tercera dimensión de la entrada: el MISMO filtro que se usa en la pestaña
+    // de Leads. Estatus y etapa son la red gruesa; esto es la fina — «marcas de
+    // moda con 2+ sucursales que ya usan un sistema», por ejemplo. Se guardan
+    // las condiciones tal cual y el cron las evalúa con cumpleCondsLead, así
+    // que filtrar en la lista y filtrar para inscribir son literalmente lo
+    // mismo: lo que ves es lo que entra.
+    const filtros = Array.isArray(b.entrada.filtros)
+      ? b.entrada.filtros.filter((f: any) => f && typeof f.campo === 'string' && typeof f.op === 'string').slice(0, 12)
+      : [];
+    const logica = b.entrada.logica === 'OR' ? 'OR' : 'AND';
+    fila.entrada = { estatus: estFinal, lifecycle, filtros, logica };
   }
   let id = b.id || null;
   if (id) {

@@ -18,6 +18,7 @@ import { supabase } from '../../../lib/supabase';
 import { resolverTenant } from '../../../lib/email/tenant';
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { compilar, compilarTexto, interpolar } from '../../../lib/email/plantillas';
+import { cumpleCondsLead } from '../../../lib/crm/leads-filtros';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
@@ -81,11 +82,26 @@ export const GET: APIRoute = async ({ url }) => {
     const lifecycleIn = entrada.lifecycle?.length ? entrada.lifecycle : ['lead', 'lead_calificado'];
 
     // 1) ENROLAR — solo leads vigentes (no más viejos que el corte).
-    const { data: nuevos } = await supabase.from('contacts')
-      .select('id, estatus_lead_at, propiedades')
+    // El filtro fino de la entrada: las MISMAS condiciones que la pestaña de
+    // Leads. Estatus y etapa son la red gruesa; esto elige a quién de esa red
+    // sí le hablamos. Como se evalúa con cumpleCondsLead —la misma función que
+    // pinta la lista— filtrar para ver y filtrar para inscribir son idénticos:
+    // lo que ves en la lista es exactamente lo que va a entrar.
+    const filtrosIn = Array.isArray(entrada.filtros) ? entrada.filtros : [];
+    const logicaIn = entrada.logica === 'OR' ? 'OR' : 'AND';
+    // Con filtro se traen más candidatos: el filtro descarta en memoria y con
+    // el tope de 60 se corría el riesgo de que un lote entero se fuera vacío
+    // y la secuencia pareciera muerta.
+    const tope = filtrosIn.length ? 400 : 60;
+    const { data: crudos } = await supabase.from('contacts')
+      .select('id, estatus_lead_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
       .is('archived_at', null).eq('wa_optout', false)
-      .limit(60);
+      .limit(tope);
+    const nuevos = filtrosIn.length
+      ? (crudos || []).filter(c => cumpleCondsLead(c, filtrosIn, logicaIn)).slice(0, 60)
+      : (crudos || []).slice(0, 60);
+    if (filtrosIn.length) res.filtrados = (res.filtrados || 0) + ((crudos || []).length - nuevos.length);
     const candIds = (nuevos || []).map(c => c.id);
     const prevPor: Record<string, any> = {};
     if (candIds.length) {
