@@ -905,8 +905,15 @@ export default function InboxPro() {
                 <div className="m-hdr">
                   {/* Las tres rayas: todas las vistas del inbox de un toque, sin
                       tener que ir a escritorio para cambiar de bandeja. */}
+                  {/* 44×44 y despegado del borde, a propósito. Medido en el
+                      teléfono del usuario: el botón salía de 30×36 px empezando
+                      en x=24, o sea por debajo del mínimo táctil Y dentro de la
+                      franja de ~20 px que iOS reserva para el gesto de volver
+                      atrás. Resultado: los toques se perdían y el menú "no
+                      hacía nada". No era el menú —que abre bien— era que el
+                      dedo no le pegaba. */}
                   <button className="m-cta" aria-label="Todas las vistas" onClick={() => setMenuVistas(true)}
-                    style={{ padding: '0 8px 0 0', marginRight: 2 }}>
+                    style={{ minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, marginLeft: 4, marginRight: 4 }}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                       <path d="M3 6h18M3 12h18M3 18h18" />
                     </svg>

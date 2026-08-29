@@ -1129,8 +1129,9 @@ export default function LeadsTab() {
                   <th style={{ ...S.th, width: 120 }}>Canal</th>
                   <th style={{ ...S.th, width: 56 }}>Suc.</th>
                   <th style={{ ...S.th, width: 120 }}>{
-                    etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba'
-                    : etapa === 'rezagados' ? 'Último intento'
+                    etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
+                    : etapa === 'rezagados' ? 'Última señal'
+                    : etapa === 'oportunidad' ? 'Última actividad'
                     : etapa === 'no_interesados' ? 'Por qué no' : 'Campaña'}</th>
                   <th style={{ ...S.th, width: 96 }}>Etapa</th>
                   <th style={{ ...S.th, width: 108 }}>Estatus</th>
@@ -1216,6 +1217,22 @@ export default function LeadsTab() {
                           return <div>
                             <span style={S.tag(vencida ? '#FEF0EF' : '#FFF4E5', vencida ? '#C0554E' : '#9a6a10')}>{vencida ? `venció hace ${Math.floor((Date.now() - fin!) / 86400000)} d` : `día ${Math.min(dia, total)} de ${total}`}</span>
                             <div style={{ height: 4, borderRadius: 4, background: '#f1f1f4', marginTop: 4, overflow: 'hidden', maxWidth: 90 }}><div style={{ height: '100%', width: `${Math.min(100, (dia / total) * 100)}%`, background: vencida ? '#EF7A72' : '#E8A838' }} /></div>
+                            {/* La MISMA nota que en el teléfono, de la misma
+                                fórmula (lib/crm/uso-prueba). Los días de prueba
+                                dicen cuánto lleva; esto dice si la está usando,
+                                que es lo que decide si se le llama o se le
+                                deja correr. */}
+                            {(() => {
+                              const cal = calificarUso(c.companies?.uso_sacs);
+                              return (
+                                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ ...S.tag(colorNota(cal.nota) + '1f', colorNota(cal.nota)), fontVariantNumeric: 'tabular-nums' }}>{cal.nota}/10</span>
+                                  <span style={{ fontSize: '0.62rem', color: '#8a8a92', lineHeight: 1.35 }}>
+                                    {cal.motivos.length ? cal.motivos.join(' · ') : 'no ha tocado el sistema'}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </div>;
                         }
                         if (etapa === 'no_interesados') {
@@ -1224,10 +1241,26 @@ export default function LeadsTab() {
                             ? <div>{cat && <span style={S.tag('#f4f4f6', '#6B7280')}>{cat.l}</span>}{c.calificacion_motivo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: cat ? 3 : 0 }}>{c.calificacion_motivo}</div>}</div>
                             : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
                         }
-                        if (etapa === 'rezagados') {
+                        if (etapa === 'rezagados' || etapa === 'oportunidad') {
+                          // Lo que decide a quién marcarle es lo que hizo ÉL, no
+                          // cuántas veces le escribimos nosotros. Antes esta
+                          // celda decía "3 toques · último hace 40 d", que son
+                          // dos números sobre NUESTRO esfuerzo. Ahora dice la
+                          // señal —"vio la cotización", "abrió el correo"— y en
+                          // el color del sistema cuando fue suya.
+                          const ua = c.ultima_actividad;
                           const t = c.esfuerzo?.total || 0;
-                          const u = diasDesde(c.last_contact_at);
-                          return <div style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{t === 0 ? 'nunca contactado' : `${t} toque${t === 1 ? '' : 's'}`}{u != null && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>último hace {u} d</div>}</div>;
+                          if (!ua) return <div style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{t === 0 ? 'nunca contactado' : 'sin señal suya'}</div>;
+                          const suya = esSuya(ua.tipo);
+                          return (
+                            <div style={{ fontSize: '0.72rem', color: suya ? '#5B4BD6' : '#4a4a52', fontWeight: suya ? 700 : 400 }}>
+                              {actLabel(ua.tipo)}
+                              <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2, fontWeight: 400 }}>
+                                {fechaCorta(ua.at)}
+                                {c.cotizacion?.total > 0 && <span style={{ color: '#1E8A63', fontWeight: 800 }}> · {dineroCorto(c.cotizacion.total)}</span>}
+                              </div>
+                            </div>
+                          );
                         }
                         return c.campana
                           ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
