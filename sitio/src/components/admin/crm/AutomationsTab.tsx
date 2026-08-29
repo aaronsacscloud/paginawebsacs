@@ -308,7 +308,16 @@ function AutomationsList({ onSelect }: { onSelect: (id: string) => void }) {
                     <span style={badge(tipo.color)}>{tipo.label}</span>
                   </div>
                   {a.descripcion && (
-                    <div style={{ fontSize: '0.8125rem', color: '#888', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.descripcion}</div>
+                    /* En el teléfono la descripción NO va en una sola línea:
+                       medido a 390 px, el texto pedía 598 px y el hueco daba
+                       308 — se leía la mitad de cada automatización ("Secuencia
+                       de bienvenida para n…"). Dos renglones alcanzan para casi
+                       todas y el corte deja de caer a media frase. En escritorio
+                       hay ancho de sobra y se queda como estaba. */
+                    <div style={{ fontSize: '0.8125rem', color: '#888', marginBottom: 6, overflow: 'hidden',
+                      ...(esMovilAut
+                        ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, lineHeight: 1.4 }
+                        : { whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }) }}>{a.descripcion}</div>
                   )}
                   {esMovilAut ? (
                     /* «Meta lograda: 0» ocupaba tres renglones y los ceros

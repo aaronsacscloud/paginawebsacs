@@ -781,13 +781,23 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
                     {porDia[f].sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || '')).map(b => {
                       const est = ESTADOS[normalizaEstado(b.estado)];
                       return (
-                        <div key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', gap: 10, alignItems: 'center', minHeight: 44, padding: '8px 12px', borderRadius: 10, border: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', borderLeft: `3px solid ${b.event_types?.color || '#999'}` }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#333', whiteSpace: 'nowrap', minWidth: 62 }}>{fmtTime(b.hora_inicio)}</span>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.86rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.invitee_nombre || '—'}</div>
-                            <div style={{ fontSize: '0.72rem', color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.event_types?.nombre || ''}{b.invitado_company_nombre ? ` · ${b.invitado_company_nombre}` : ''}</div>
+                        // La fila NO va en tres columnas. Medido a 390 px: la hora
+                        // (62) y la insignia (~95) son fijas, y el nombre —lo único
+                        // que identifica la reunión— se quedaba con 119 px, el 30%
+                        // de la pantalla: "Lorena del Car…", "Jose Luis Tregu…".
+                        // Apilado, el nombre toma el renglón completo (~290) y la
+                        // hora baja al segundo, que es donde ya no estorba.
+                        <div key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', flexDirection: 'column', gap: 3, minHeight: 44, padding: '9px 12px', borderRadius: 10, border: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', borderLeft: `3px solid ${b.event_types?.color || '#999'}` }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.invitee_nombre || '—'}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.73rem', color: '#8a8590', minWidth: 0 }}>
+                            <span style={{ fontWeight: 700, color: '#5B4BD6', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{fmtTime(b.hora_inicio)}</span>
+                            {/* Sin el prefijo "Reunión de ": truncado se leía
+                                "Reunión de consult…" en TODAS las filas, o sea
+                                un renglón que no distinguía ninguna. El panel de
+                                escritorio ya lo quitaba; aquí faltaba. */}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(b.event_types?.nombre || '').replace(/^Reunión de |^Sesión de /i, '')}{b.invitado_company_nombre ? ` · ${b.invitado_company_nombre}` : ''}</span>
+                            <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0, marginLeft: 'auto' }}>{est.label}</span>
                           </div>
-                          <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0 }}>{est.label}</span>
                         </div>
                       );
                     })}

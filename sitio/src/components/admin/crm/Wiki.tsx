@@ -71,6 +71,15 @@ export default function Wiki() {
           .wiki-idx{border-right:0;border-bottom:1px solid #E4E4EA;display:flex;flex-wrap:wrap;
             gap:4px;padding:10px 12px}
           .wiki-g{width:100%;padding:8px 4px 2px}
+          /* 10px es ilegible en un teléfono. El CRM ya fijó su piso en 12
+             (0.75rem) para móvil; estas cuatro se lo saltaban por venir de
+             clase y no de estilo inline, que es lo único que alcanza la regla
+             global del dashboard. El letter-spacing baja un punto para que la
+             versalita no crezca de ancho al crecer de tamaño. */
+          .wiki-g{font-size:12px;letter-spacing:.10em}
+          .w-tab th{font-size:12px;letter-spacing:.06em}
+          .w-k{font-size:12px;letter-spacing:.09em}
+          .wiki-chip{font-size:12px}
           .wiki-i{width:auto;border-left:0;border-radius:7px;padding:5px 10px;font-size:12.5px}
           .wiki-i.on{border-left:0}
           .wiki-cp{padding:22px 18px 60px}

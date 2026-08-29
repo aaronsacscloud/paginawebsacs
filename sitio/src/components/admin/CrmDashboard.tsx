@@ -1137,6 +1137,12 @@ const CRM_MOBILE_CSS = `
     /* iOS hace auto-zoom al enfocar inputs con font-size < 16px. Un solo golpe
        para los ~20 tabs sin tocar los objetos E/D/S/M. */
     input, select, textarea { font-size: 16px !important; }
+    /* Y con el tipo a 16 px los controles quedaban en 34-35: a un pelo del
+       mínimo de 36 que el propio sistema fijó para los botones (M5). Se nivelan
+       aquí en vez de en cada tab. Casillas y radios quedan FUERA a propósito:
+       son cuadrados de 20 px y estirarlos a 36 los deforma —su área de toque
+       se resuelve con el envoltorio, como en Consultoría. */
+    input:not([type=checkbox]):not([type=radio]), select, textarea { min-height: 36px; }
     /* Toasts y bottom-fixed respetando el notch/home-indicator */
     .crm-toast-bottom { bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
     /* Filas de menús/dropdowns con target táctil en mobile */
@@ -1171,7 +1177,7 @@ const CRM_MOBILE_CSS = `
     .m-hero .m-hv { font-size: 2.85rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 4px 0 2px; line-height: 1.02; color: var(--m-ink); }
     .m-hero .m-hd { font-size: 0.9rem; color: var(--m-soft); margin-top: 2px; }
     /* Encabezado de sección (≤2 palabras, máx 2 por pantalla) */
-    .m-sec { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--m-soft); }
+    .m-sec { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--m-soft); }
     .m-sec .m-vt { font-size: 0.78rem; font-weight: 700; color: var(--m-acc); letter-spacing: 0; text-transform: none; cursor: pointer; }
     /* Fila full-bleed con hairline (≤3 datos; la 4ª solo en la excepcional) */
     .m-row { display: flex; gap: 12px; align-items: center; padding: 16px 24px; min-height: 60px; position: relative; background: #fff; cursor: pointer; }
@@ -1187,6 +1193,12 @@ const CRM_MOBILE_CSS = `
     .m-row .m-tx { flex: 1; min-width: 0; }
     .m-row .m-n1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; letter-spacing: -0.01em; color: var(--m-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .m-row .m-n2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    /* Modificador opt-in: dos renglones en vez de uno. Para filas cuyo segundo
+       renglón ES el contenido y no una etiqueta —la cita del cliente en la
+       bandeja de Soporte—, donde a 390 px cabía la mitad de un texto que el
+       código ya había recortado a 60 caracteres. No se cambia .m-n2 de raíz
+       porque lo comparten todas las listas móviles y ahí una línea basta. */
+    .m-row .m-n2.m-2l { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
     .m-row .m-m1 { font-weight: 600; font-size: 0.94rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--m-ink); }
     .m-row .m-m2 { font-size: 0.8rem; line-height: 1.3; color: var(--m-soft); margin-top: 2px; }

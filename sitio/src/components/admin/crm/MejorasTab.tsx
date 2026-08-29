@@ -469,7 +469,22 @@ export default function MejorasTab() {
           className="cons-fila"
           style={{ display: 'flex', gap: 11, padding: '11px 0', alignItems: 'flex-start', cursor: 'pointer' }}>
           {m.estado !== 'entregada' && m.estado !== 'descartada'
-            ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
+            ? (
+              /* El checkbox nativo mide 13 px y esta fila TAMBIÉN responde al
+                 tap (expande la mejora): con un blanco así de chico, el dedo
+                 que quería seleccionar terminaba expandiendo. En el teléfono se
+                 sube a 20 y el envoltorio le da un área de ~40 px con padding
+                 compensado por margen negativo, así que la fila no se mueve ni
+                 un pixel. En escritorio queda exactamente como estaba. */
+              <span
+                onClick={esMovilCons ? (e => alternarSel(e as any, m.id)) : undefined}
+                style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'flex-start',
+                  ...(esMovilCons ? { padding: '10px 9px 10px 0', margin: '-10px -9px -10px 0' } : {}) }}>
+                <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}}
+                  style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0,
+                    ...(esMovilCons ? { width: 20, height: 20, marginTop: 1 } : {}) }} />
+              </span>
+            )
             : <span className="cons-hueco" style={{ width: 13, flexShrink: 0 }} />}
           {/* El punto vive PEGADO a la palabra que califica («● En proceso»),
               no en una canaleta aparte donde quedaba huérfano. */}

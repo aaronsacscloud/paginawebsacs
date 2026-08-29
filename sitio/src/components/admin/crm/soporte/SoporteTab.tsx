@@ -714,7 +714,7 @@ export default function SoporteTab() {
         <div key={t.conversation_id} className="m-row" onClick={() => { if (t.intercom_url) window.open(t.intercom_url, '_blank'); }}>
           <div className="m-tx">
             <div className="m-n1">{cased(t.empresa || 'Sin cliente ligado')}</div>
-            <div className="m-n2">{(() => {
+            <div className="m-n2 m-2l">{(() => {
               let x = String(t.asunto || t.vista_previa || '').slice(0, 60).trim();
               if (!x) return '—';
               // Cita del cliente EN MAYÚSCULAS: se baja a sentence case solo al mostrar
