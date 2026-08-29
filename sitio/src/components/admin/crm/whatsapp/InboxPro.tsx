@@ -771,7 +771,10 @@ export default function InboxPro() {
   if (error && lista === null) return <div style={S.wrap}><Aviso tono="malo">{error}</Aviso></div>;
   // Esqueleto en vez de spinner: adelanta la forma de la bandeja, así que
   // cuando llegan las conversaciones nada salta de sitio.
-  if (lista === null) return <EsqueletoLista filas={9} />;
+  // alInstante: esto es el ARRANQUE, no la apertura de un chat. Aquí se sabe
+  // que va a tardar, y esperar 120 ms deja la pantalla con solo la barra de
+  // navegación sobre el vacío — el "menú en blanco que aparece y desaparece".
+  if (lista === null) return <EsqueletoLista filas={9} alInstante />;
 
   const conv = hilo?.conversacion || null;
   const filaActiva = (lista || []).find(c => c.id === activa?.id) || null;
@@ -990,7 +993,7 @@ export default function InboxPro() {
                     ]}
                   />
                 </div>
-                {lista === null && <EsqueletoLista filas={7} mobile />}
+                {lista === null && <EsqueletoLista filas={7} mobile alInstante />}
                 {lista !== null && convs.length === 0 && (
                   <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
                     {chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.' : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.' : 'Sin conversaciones abiertas. Bandeja limpia.'}
@@ -1041,7 +1044,7 @@ export default function InboxPro() {
         </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
-        <Suspense fallback={<EsqueletoLista filas={9} />}><ListaConversaciones {...propsLista} /></Suspense>
+        <Suspense fallback={<EsqueletoLista filas={9} alInstante />}><ListaConversaciones {...propsLista} /></Suspense>
         {activa ? (
           <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>

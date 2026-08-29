@@ -65,8 +65,17 @@ function Estilos() {
   return null;
 }
 
-/** Regla 1: no aparecer si la espera no se nota. Devuelve false los primeros ms. */
+/** Regla 1: no aparecer si la espera no se nota. Devuelve false los primeros ms.
+ *
+ * EXCEPCIÓN: `ms = 0`. El retraso es correcto cuando la espera PUEDE ser corta
+ * —abrir una conversación ya precargada tarda 12-45 ms y un esqueleto ahí es un
+ * parpadeo—. Al ARRANCAR la app no: ahí se sabe que va a tardar, y esos 120 ms
+ * en blanco dejan la pantalla con solo la barra de navegación flotando sobre
+ * nada. Eso es exactamente lo que el usuario describió como "un menú en blanco
+ * que aparece y desaparece". Medido en el arranque de la PWA: a los 660 ms se
+ * veía la barra sola; el contenido llegaba a los 880. */
 function useTrasRetraso(ms = 120) {
+  if (ms === 0) return true;
   const [ver, setVer] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVer(true), ms); return () => clearTimeout(t); }, [ms]);
   return ver;
@@ -100,8 +109,8 @@ const BURBUJAS: Array<[lado: 'ellos' | 'nosotros', ancho: number, alto: number]>
   ['nosotros', 55, 44], ['ellos', 40, 32], ['nosotros', 68, 52],
 ];
 
-export function EsqueletoChat({ mobile = false }: { mobile?: boolean }) {
-  const ver = useTrasRetraso();
+export function EsqueletoChat({ mobile = false, alInstante = false }: { mobile?: boolean; alInstante?: boolean }) {
+  const ver = useTrasRetraso(alInstante ? 0 : 120);
   const tarda = useTarda();
   if (!ver) return null;
   return (
@@ -132,8 +141,8 @@ export function EsqueletoChat({ mobile = false }: { mobile?: boolean }) {
 // ── La lista de conversaciones ─────────────────────────────────────────────
 const ANCHOS = [58, 72, 45, 66, 52, 78, 61, 49];
 
-export function EsqueletoLista({ filas = 7, mobile = false }: { filas?: number; mobile?: boolean }) {
-  const ver = useTrasRetraso();
+export function EsqueletoLista({ filas = 7, mobile = false, alInstante = false }: { filas?: number; mobile?: boolean; alInstante?: boolean }) {
+  const ver = useTrasRetraso(alInstante ? 0 : 120);
   if (!ver) return null;
   return (
     <div>

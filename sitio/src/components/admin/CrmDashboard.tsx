@@ -12,6 +12,7 @@ import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import Wiki from './crm/Wiki';
 import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
+import { EsqueletoLista } from './crm/whatsapp/Esqueletos';
 // ══ REGLA DE VELOCIDAD: cada tab es un chunk LAZY. El bundle inicial solo
 // lleva el shell (nav + Inicio móvil). Un import estático aquí regresa el
 // monolito de 2.2 MB que mataba el primer pintado. ══
@@ -271,14 +272,23 @@ function getInitialTab(): Tab {
 // Pantallas móviles con cabecera propia v5 (m-hdr): sin app bar de 56px.
 // Se suman aquí conforme cada pantalla pasa el referee.
 /** Esqueleto sobrio mientras baja el chunk del tab (solo primera visita). */
+/* Lo que se ve mientras baja el código de una pestaña.
+ *
+ * Eran cuatro barras grises sueltas arriba de la pantalla. Con la barra de
+ * navegación abajo y nada en medio, eso se lee como "un menú en blanco que
+ * aparece y desaparece" — así lo describió el usuario, y tenía razón: cuatro
+ * rayas no se parecen a ninguna pantalla del CRM.
+ *
+ * Ahora tiene la FORMA de lo que viene: filas con avatar y dos líneas, que es
+ * lo que son casi todas las pestañas del teléfono. El ojo reconoce la
+ * estructura antes de que llegue el contenido y la espera deja de sentirse
+ * como un error.
+ *
+ * Sin retraso, a propósito: aquí ya se sabe que va a tardar —está bajando un
+ * chunk— y esperar 120 ms para pintar deja justo el hueco en blanco que se
+ * quería quitar. */
 function TabCargando() {
-  return (
-    <div style={{ padding: '24px' }} aria-busy="true">
-      {[0, 1, 2, 3].map(i => (
-        <div key={i} className="m-skel" style={{ height: 18, borderRadius: 6, margin: '0 0 18px', width: `${[62, 90, 78, 84][i]}%` }} />
-      ))}
-    </div>
-  );
+  return <div aria-busy="true"><EsqueletoLista filas={8} mobile alInstante /></div>;
 }
 
 const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
@@ -1204,10 +1214,13 @@ const CRM_MOBILE_CSS = `
        código ya había recortado a 60 caracteres. No se cambia .m-n2 de raíz
        porque lo comparten todas las listas móviles y ahí una línea basta. */
     .m-row .m-n2.m-2l { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    /* Empresa y tamaño, bajo el nombre. Chico y en gris: es contexto, no
+    /* 0.75rem y no menos: el CRM fijó su piso en 12 px para móvil y estas dos
+       clases las escribí yo por debajo (11.5 y 10.9). Salieron en el barrido de
+       legibilidad al día siguiente, como cualquier otra deuda.
+       Empresa y tamaño, bajo el nombre. Chico y en gris: es contexto, no
        titular — con cuántas sucursales trata uno cambia el tono, pero no es lo
        que buscas al barrer la lista. */
-    .m-row .m-emp { font-size: 0.72rem; color: var(--m-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
+    .m-row .m-emp { font-size: 0.75rem; color: var(--m-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
     /* La pastilla del ciclo de vida. En línea propia, alineada con el texto,
        para que se lea de un vistazo cuál va en qué punto del embudo sin abrir
        ninguna. Sin color propio cae al neutro del tema. */
@@ -1221,7 +1234,7 @@ const CRM_MOBILE_CSS = `
     .m-row .m-act .m-nota-uso { font-weight: 800; font-size: 0.7rem; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
     .m-row .m-act .m-suya { color: var(--m-acc); font-weight: 700; }
     .m-row .m-act .m-monto { font-weight: 800; color: var(--m-dinero, #1E8A63); font-variant-numeric: tabular-nums; }
-    .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .01em;
+    .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: .01em;
       padding: 3px 9px; border-radius: 99px; background: var(--m-acc-suave); color: var(--m-acc);
       max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .m-row .m-fin { flex: none; text-align: right; align-self: flex-start; }
