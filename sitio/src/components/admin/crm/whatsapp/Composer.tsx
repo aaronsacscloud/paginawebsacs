@@ -514,7 +514,15 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 tocar la caja, crece y aparecen las herramientas. */}
             {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
               <div className="wa-barra" onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
-                style={{ display: 'flex', alignItems: 'center', gap: movil ? 4 : 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: movil ? 4 : 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative',
+                  // Al tocar «Más herramientas» aparecen cinco iconos más EN LA
+                  // MISMA fila, y en 390 px el último quedaba cortado contra el
+                  // borde derecho: se veía media herramienta y no había forma de
+                  // tocarla. Envuelve a un segundo renglón en vez de salirse.
+                  // Nada de scroll horizontal aquí: una barra de acciones que se
+                  // desliza esconde opciones sin decir que existen, y el botón
+                  // de enviar —que vive al final— dejaría de estar a la mano.
+                  ...(movil ? { flexWrap: 'wrap' as const, rowGap: 2 } : {}) }}>
                 {/* En el teléfono la barra deja a la vista lo que se usa en cada
                     mensaje —IA, adjuntar, plantilla, voz— y esconde el resto
                     tras «Más». Nueve iconos de 18 px en 390 px eran una fila

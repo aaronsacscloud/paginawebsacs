@@ -1775,6 +1775,34 @@ const CRM_MOBILE_CSS = `
     [style*="font-size: 8px"], [style*="font-size: 9px"], [style*="font-size: 10px"], [style*="font-size: 10."], [style*="font-size: 11px"], [style*="font-size: 11."] {
       font-size: 0.75rem !important;
     }
+    /* ══ TODO DIÁLOGO CENTRADO SE VUELVE HOJA INFERIOR EN EL TELÉFONO ══
+       El CRM tiene MÁS DE VEINTE modales escritos con el mismo patrón de
+       escritorio: un fondo position:fixed que centra una tarjeta con
+       márgenes. En un monitor está bien; en 390 px desperdicia el ancho justo
+       donde no sobra, deja el contenido en una rendija y pone los controles
+       lejos del pulgar. Y cuando la tarjeta trae una fila de tres controles,
+       el tercero se sale por la derecha — que es exactamente lo que reportó el
+       usuario con el selector de plantillas.
+       
+       Se hace con selector de atributo, como ya se hace con el margen WRAP,
+       porque son 20+ archivos: convertirlos a mano sería 20 oportunidades de
+       equivocarse y de que el siguiente modal nazca otra vez de escritorio.
+       Así, cualquier modal NUEVO que siga el patrón queda mobile-first solo.
+       
+       Quien de verdad necesite quedarse centrado (un visor de imagen a
+       pantalla completa) se marca con la clase no-hoja y esta regla lo deja en paz. */
+    [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) {
+      align-items: flex-end !important;
+      padding: 0 !important;
+    }
+    [style*="position: fixed"][style*="align-items: center"][style*="justify-content: center"]:not(.no-hoja) > div:not(.no-hoja) {
+      width: 100% !important;
+      max-width: 100% !important;
+      border-radius: 16px 16px 0 0 !important;
+      max-height: 92dvh !important;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
     /* El margen compartido del CRM (lib/crm/layout WRAP) trae 56 px laterales
        pensados para escritorio: en 390 px se comen 112. A 16 en el teléfono. */
     [style*="padding: 24px 56px"] { padding: 16px 16px 24px !important; }

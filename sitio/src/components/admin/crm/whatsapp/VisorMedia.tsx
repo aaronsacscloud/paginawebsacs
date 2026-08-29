@@ -88,7 +88,11 @@ export default function VisorMedia({ m, onCerrar }: { m: any; onCerrar: () => vo
   const nombre = m.filename || m.cuerpo || extensionDe(m);
 
   return (
-    <div onClick={onCerrar} role="dialog" style={{
+    // no-hoja: el CRM convierte todo diálogo centrado en hoja inferior cuando
+    // está en el teléfono, y aquí NO aplica. Una foto o un video se ven a
+    // pantalla completa y centrados; empujarlos abajo con esquinas redondeadas
+    // los recortaría y dejaría media pantalla negra sin usar.
+    <div onClick={onCerrar} role="dialog" className="no-hoja" style={{
       position: 'fixed', inset: 0, background: 'rgba(12,10,22,.88)', zIndex: 1200,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 22,
     }}>
