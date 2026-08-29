@@ -1214,6 +1214,10 @@ const CRM_MOBILE_CSS = `
     /* La última actividad y el monto cotizado, bajo el nombre. Es la línea
        que evita abrir la ficha solo para saber si vale la pena llamar. */
     .m-row .m-act { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 0.72rem; color: var(--m-soft); }
+    /* Cuando la última actividad la hizo ÉL —abrió el correo, escribió, vio la
+       cotización— se pinta con el color del sistema: es lo que separa a un
+       rezagado que sigue vivo de uno que solo recibió nuestros mensajes. */
+    .m-row .m-act .m-suya { color: var(--m-acc); font-weight: 700; }
     .m-row .m-act .m-monto { font-weight: 800; color: var(--m-dinero, #1E8A63); font-variant-numeric: tabular-nums; }
     .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .01em;
       padding: 3px 9px; border-radius: 99px; background: var(--m-acc-suave); color: var(--m-acc);

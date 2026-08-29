@@ -84,6 +84,30 @@ const ACT_LABEL: Record<string, string> = {
   estatus_cambio: 'cambió de estatus',
   ticket_abierto: 'abrió un ticket', ticket_resuelto: 'ticket resuelto', tarea: 'tarea',
 };
+/* Cuánto INTERÉS demuestra cada señal, para Rezagados.
+ *
+ * Aquí la pregunta no es "¿cuál se movió hace menos?" sino "¿a cuál vale la
+ * pena marcarle?". Y eso no lo contesta la fecha sola: que NOSOTROS le
+ * escribiéramos ayer no dice nada de él; que ÉL abriera el correo hace una
+ * semana, sí. Un rezagado que sigue mirando es un rezagado vivo.
+ *
+ * Por eso el orden es primero por peso de la señal y después por fecha. Las
+ * acciones nuestras pesan 0 a propósito: no son señal del cliente, son trabajo
+ * nuestro, y ordenar por ellas pondría arriba justo a los que ya perseguimos
+ * sin respuesta. */
+const PESO_SENAL: Record<string, number> = {
+  pago_recibido: 6,        // pagó: no hay señal más fuerte
+  cotizacion_vista: 5,     // volvió a abrir el precio
+  whatsapp_recibido: 5,    // escribió por su cuenta
+  ticket_abierto: 4,       // tiene un problema y lo dijo: hay contacto vivo
+  email_opened: 3,         // abrió, aunque no contestara
+  page_visit: 2,           // volvió a la web
+  cotizacion: 1,           // se le cotizó (nuestro, pero marca etapa)
+};
+const pesoSenal = (t?: string | null) => (t ? (PESO_SENAL[t] || 0) : 0);
+/** ¿La última actividad la hizo ÉL? Cambia el color: lo suyo es lo que importa. */
+const esSuya = (t?: string | null) => pesoSenal(t) >= 2;
+
 const actLabel = (t?: string | null) => (t ? (ACT_LABEL[t] || String(t).replace(/_/g, ' ')) : null);
 const dineroCorto = (n: number) => (n >= 1000 ? '$' + Math.round(n / 1000) + 'k' : '$' + Math.round(n));
 
@@ -985,7 +1009,16 @@ export default function LeadsTab() {
                 // la lista los mezclaba y había que abrirlos uno por uno.
                 const porActividad = etapa === 'oportunidad' || etapa === 'rezagados';
                 const actAt = (c: any) => Date.parse(c.ultima_actividad?.at || c.updated_at || c.created_at || 0) || 0;
-                const listaOrd = porActividad ? [...lista].sort((a: any, b: any) => actAt(b) - actAt(a)) : lista;
+                // Rezagados ordena por TIPO de señal primero (quién demostró
+                // interés) y luego por fecha. Oportunidad, solo por fecha: ahí
+                // ya todos están calientes y lo que importa es quién se movió
+                // al último.
+                const listaOrd = etapa === 'rezagados'
+                  ? [...lista].sort((a: any, b: any) => {
+                      const d = pesoSenal(b.ultima_actividad?.tipo) - pesoSenal(a.ultima_actividad?.tipo);
+                      return d !== 0 ? d : actAt(b) - actAt(a);
+                    })
+                  : porActividad ? [...lista].sort((a: any, b: any) => actAt(b) - actAt(a)) : lista;
                 // Con orden por actividad NO se agrupa en «Atorados / Recientes»:
                 // ese grupo reordena por días sin tocar y pisaría justo el
                 // criterio que se pidió —lo que tuvo movimiento va primero—.
@@ -1016,7 +1049,11 @@ export default function LeadsTab() {
                           había que abrir cada ficha para enterarse. */}
                       {porActividad && (c.ultima_actividad || c.cotizacion) && (
                         <div className="m-act">
-                          {c.ultima_actividad && <span>{actLabel(c.ultima_actividad.tipo)} · {fechaCorta(c.ultima_actividad.at)}</span>}
+                          {c.ultima_actividad && (
+                            <span className={esSuya(c.ultima_actividad.tipo) ? 'm-suya' : undefined}>
+                              {actLabel(c.ultima_actividad.tipo)} · {fechaCorta(c.ultima_actividad.at)}
+                            </span>
+                          )}
                           {c.cotizacion?.total > 0 && (
                             <span className="m-monto">{dineroCorto(c.cotizacion.total)}</span>
                           )}

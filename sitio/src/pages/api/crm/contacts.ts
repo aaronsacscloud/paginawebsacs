@@ -78,9 +78,18 @@ const _GET: APIRoute = async ({ request, url }) => {
     // estatus, notas automáticas) y si contaran, cada lead parecería activo
     // por trabajo que nadie hizo. Lo demás sí cuenta, incluido `page_visit`:
     // que alguien vuelva a la web es señal, aunque no nos escriba.
+    // Fuera el PAPELEO. Además de `sistema`, quedan fuera los cambios de etapa
+    // y de estatus: los escribe el CRM cuando alguien mueve una pestaña, no el
+    // cliente. Medido en la lista de Rezagados: con ellos dentro, 39 de 40
+    // filas decían "cambió de etapa · ayer" —o sea, la pantalla se veía llena
+    // de movimiento que nadie hizo— y la única con señal de verdad ("visitó la
+    // web") quedaba enterrada entre ellas. Aquí la pregunta es a quién vale la
+    // pena marcarle, y eso solo lo contesta algo que hizo ÉL.
+    const PAPELEO = ['sistema', 'estatus_cambio', 'etapa_cambio', 'stage_change'];
     const { data: actsUlt } = await supabase.from('activities')
       .select('contact_id, tipo, created_at').in('contact_id', ids)
-      .neq('tipo', 'sistema').order('created_at', { ascending: false }).limit(4000);
+      .not('tipo', 'in', `(${PAPELEO.join(',')})`)
+      .order('created_at', { ascending: false }).limit(4000);
     const ultimaAct = new Map<string, { tipo: string; at: string }>();
     for (const a of (actsUlt || []) as any[]) {
       if (!a.contact_id || ultimaAct.has(a.contact_id)) continue;   // ya viene ordenado desc
