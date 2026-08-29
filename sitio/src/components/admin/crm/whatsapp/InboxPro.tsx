@@ -9,6 +9,8 @@ import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { EsqueletoChat, EsqueletoLista, EsqueletoPanel } from './Esqueletos';
 import ActionSheet from '../ui/ActionSheet';
+import { useJalarParaRefrescar } from '../../../../lib/ui/jalarParaRefrescar';
+import JalarIndicador from '../ui/JalarIndicador';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
@@ -519,6 +521,10 @@ export default function InboxPro() {
   }, [lista, precargarHilo]);
 
   const refrescar = () => { if (activaRef.current) cargarHilo(activaRef.current); cargarLista(filtrosRef.current); };
+  // Jalar hacia abajo para actualizar. En la PWA instalada no hay barra del
+  // navegador, así que sin este gesto NO hay forma de forzar un refresco: toca
+  // esperar al polling o cerrar la app.
+  const jalar = useJalarParaRefrescar(async () => { await cargarLista(filtrosRef.current); }, isMobile && !activa);
 
   // ══ E3 · Cola de envío ═══════════════════════════════════════════════════
   // Un mensaje sale de la cola solo cuando el servidor confirma. Si no hubo
@@ -787,7 +793,7 @@ export default function InboxPro() {
   // ── Móvil: lista → hilo apilado; sidebar y detalle en Sheets ──
   if (isMobile) {
     return (
-      <div className="m-lienzo" style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))' }}>
+      <div className="m-lienzo" style={{ background: '#fff', minHeight: 'calc(100dvh - 64px - var(--crm-bottomnav-h, 64px))', position: 'relative' }}>
         <style>{CSS_INBOX}</style>
         {!activa ? (
           (() => {
@@ -895,6 +901,7 @@ export default function InboxPro() {
             };
             return (
               <div>
+                <JalarIndicador {...jalar} />
                 <div className="m-hdr">
                   {/* Las tres rayas: todas las vistas del inbox de un toque, sin
                       tener que ir a escritorio para cambiar de bandeja. */}

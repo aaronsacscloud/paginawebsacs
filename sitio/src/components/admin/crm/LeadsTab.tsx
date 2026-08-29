@@ -1,5 +1,7 @@
 import { swrGet } from '../../../lib/crm/swr';
 import { calificarUso, colorNota } from '../../../lib/crm/uso-prueba';
+import { useJalarParaRefrescar } from '../../../lib/ui/jalarParaRefrescar';
+import JalarIndicador from './ui/JalarIndicador';
 import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
@@ -324,6 +326,10 @@ export default function LeadsTab() {
     fetch('/api/crm/leads/resumen?dias=30').then(r => r.json()).then(setRes).catch(() => {});
   };
   useEffect(() => { cargar(); }, []);
+  // El mismo gesto que en el inbox: jalar hacia abajo actualiza. Va aquí y no
+  // en cada pantalla suelta para que se sienta parte del sistema y no un truco
+  // de una lista.
+  const jalar = useJalarParaRefrescar(async () => { cargar(); }, esMovil);
   // Deep-link del aviso por WhatsApp: ?lead=<id> abre la ficha directo.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('lead');
@@ -481,7 +487,8 @@ export default function LeadsTab() {
           toolbar de escritorio —segmentado de vistas, ⋮, vistas guardadas,
           orden— no existe en el teléfono: la referencia manda. ══ */}
       {esMovil && (
-        <div className="m-bleed">
+        <div className="m-bleed" style={{ position: 'relative' }}>
+          <JalarIndicador {...jalar} />
           <div className="m-hdr">
             <div className="m-tt">Leads</div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
