@@ -22,6 +22,7 @@ const Hilo = lazySeguro(() => import('./Hilo'));
 const PanelDetalle = lazySeguro(() => import('./PanelDetalle'));
 const NuevoChat = lazySeguro(() => import('./NuevoChat'));
 import type { Condicion } from '../../../../lib/whatsapp/filtros';
+import { leerSnap, guardarSnap } from '../../../../lib/crm/snapshot';
 
 export type Filtros = { filtro: string; etapa: string; search: string };
 export const FILTROS_BASE: Filtros = { filtro: 'todas', etapa: '', search: '' };
@@ -66,10 +67,11 @@ export default function InboxPro() {
   // REGLA DE VELOCIDAD: la bandeja pinta el snapshot de la sesión al instante;
   // el polling de siempre trae lo fresco enseguida.
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('swr:inbox-lista');
-      if (raw) { const j = JSON.parse(raw); setLista(l => l === null ? (j.conversaciones || []) : l); setCounts((c: any) => Object.keys(c || {}).length ? c : (j.counts || {})); }
-    } catch { /* nada */ }
+    const j: any = leerSnap('inbox-lista');
+    if (j && Array.isArray(j.conversaciones)) {
+      setLista(l => l === null ? j.conversaciones : l);
+      setCounts((c: any) => Object.keys(c || {}).length ? c : (j.counts || {}));
+    }
   }, []);
 
   // ── Query de la lista: bandeja + mostrar + vista custom / filtros ad-hoc ──
@@ -112,7 +114,7 @@ export default function InboxPro() {
       return;
     }
     // REGLA DE VELOCIDAD: snapshot para la primera pintura de la próxima visita
-    try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch { /* nada */ }
+    guardarSnap('inbox-lista', { conversaciones: j.conversaciones, counts: j.counts || {} });
     // ── E2.2 · ¿entró algo mientras trabajaba? ──────────────────────────
     // Se compara contra lo que ya teníamos: una conversación con mensaje
     // entrante más nuevo (o que aparece de golpe) es un lead escribiendo.
@@ -360,20 +362,16 @@ export default function InboxPro() {
   // intermitente hasta 30 s. Con el snapshot, volver y abrir es instantáneo
   // aunque el servidor esté teniendo un mal momento.
   const mensajesPre = useRef<Map<string, any[]>>((() => {
-    try {
-      const raw = sessionStorage.getItem('swr:inbox-mensajes');
-      if (raw) return new Map<string, any[]>(Object.entries(JSON.parse(raw)));
-    } catch { /* nada */ }
-    return new Map<string, any[]>();
+    // 12 h: pasado ese punto los mensajes viejos ya no ayudan a nadie y solo
+    // ocupan cuota. Igual /hilo refresca al abrir.
+    const g = leerSnap<Record<string, any[]>>('inbox-mensajes', 12 * 3600e3);
+    return new Map<string, any[]>(g ? Object.entries(g) : []);
   })());
   const guardarPre = () => {
-    try {
-      // Solo las 50 más recientes: el snapshot no es un archivo histórico y
-      // sessionStorage se llena. Si no cabe, se descarta sin ruido — es caché.
-      const obj: Record<string, any[]> = {};
-      [...mensajesPre.current.entries()].slice(-50).forEach(([k, v]) => { obj[k] = v; });
-      sessionStorage.setItem('swr:inbox-mensajes', JSON.stringify(obj));
-    } catch { /* el snapshot es un lujo, nunca un requisito */ }
+    // Solo las 50 más recientes: el snapshot no es un archivo histórico.
+    const obj: Record<string, any[]> = {};
+    [...mensajesPre.current.entries()].slice(-50).forEach(([k, v]) => { obj[k] = v; });
+    guardarSnap('inbox-mensajes', obj);
   };
   const precargarHilo = useCallback((c: any) => {
     const id = c?.wa_id || c?.email_id;

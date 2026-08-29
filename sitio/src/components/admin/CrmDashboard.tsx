@@ -11,6 +11,7 @@ import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import Wiki from './crm/Wiki';
+import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
 // ══ REGLA DE VELOCIDAD: cada tab es un chunk LAZY. El bundle inicial solo
 // lleva el shell (nav + Inicio móvil). Un import estático aquí regresa el
 // monolito de 2.2 MB que mataba el primer pintado. ══
@@ -395,13 +396,13 @@ export default function CrmDashboard() {
       prime('/api/crm/contacts?limit=500&con_etapa=1');
       prime('/api/crm/arr/clientes');
       try {
-        if (!sessionStorage.getItem('swr:inbox-lista')) {
+        if (!leerSnap('inbox-lista')) {
           fetch('/api/crm/whatsapp/inbox?filtro=todas&estado=abierta&orden=recientes&limit=50').then(r => r.ok ? r.json() : null).then(j => {
             // Mismo candado que en InboxPro: un 504 del servidor trae JSON
             // válido pero SIN conversaciones, y guardarlo dejaba el snapshot en
             // blanco — o sea que la primera pintura del inbox salía vacía por
             // culpa de un cuelgue pasajero. Solo se guarda una lista de verdad.
-            if (j && Array.isArray(j.conversaciones) && !j.error) try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones, counts: j.counts || {} })); } catch { /* nada */ }
+            if (j && Array.isArray(j.conversaciones) && !j.error) guardarSnap('inbox-lista', { conversaciones: j.conversaciones, counts: j.counts || {} });
           }).catch(() => {});
         }
       } catch { /* nada */ }
@@ -786,7 +787,7 @@ export default function CrmDashboard() {
             {/* Salir va aquí, DESPUÉS de configuración y como un renglón más:
                 arriba estaba pegada a la flecha de plegar y se confundían. */}
             <button
-              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+              onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
               style={{ ...pieFila, color: '#B24C57' }}>
               <span style={{ ...pieIcono, color: '#B24C57', opacity: .85 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
             </button>
@@ -1078,7 +1079,7 @@ export default function CrmDashboard() {
         extras={[
           { label: 'Notificaciones', onClick: () => { setMasOpen(false); setNotifOpen(true); } },
           { label: 'Cambiar contraseña', onClick: () => { window.location.href = '/admin/cambiar-password'; } },
-          { label: 'Cerrar sesión', danger: true, onClick: async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; } },
+          { label: 'Cerrar sesión', danger: true, onClick: async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; } },
         ]}
       />
       {/* El panel de notificaciones en mobile: sin renglón propio, lo abre la
