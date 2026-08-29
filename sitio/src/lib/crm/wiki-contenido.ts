@@ -196,17 +196,34 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'p35', grupo: 'El proceso', titulo: '↳ El relevo: demo agendada',
-    bajada: 'El enemigo es el no-show.', chip: { texto: 'construida y probada', tono: 'ok' },
+    bajada: 'El enemigo es el no-show.', chip: { texto: 'construida · APAGADA', tono: 'warn' },
     cuerpo: `
 <p>El pase de estafeta es automático: agendar saca al lead de «Seguimiento sin respuesta» y la secuencia <b>«Demo agendada · rumbo a la sesión»</b> lo toma en su siguiente corrida.</p>
 <p><b>El arco</b> (corte 10 días, L-S): D1 confirmación + botón de Google Calendar + qué preparar · D2 la historia de Andrea · D3 la agenda de los 20 minutos · D4 caso LiveShow + reseñas 4.8 · D6 y D8 anti no-show. Eje de todos: «mándame tus preguntas», y todos llevan el link de reagendar de <b>su</b> reunión.</p>
+<h3>Los 8 pasos, exactos</h3>
+<table class="w-tab"><thead><tr><th>Día</th><th>Canal</th><th>Qué sale</th></tr></thead><tbody>
+<tr><td><b>1</b></td><td>✉️</td><td>«{{nombre}}, tu sesión quedó agendada» — botón de Google Calendar y qué preparar</td></tr>
+<tr><td><b>1</b></td><td>📲</td><td><code>demo_preparacion</code> — ten a la mano 2-3 productos con sus tallas y colores</td></tr>
+<tr><td>2</td><td>✉️</td><td>«Ya estoy preparando tu sesión» — entre más específicas tus preguntas, mejor llego preparada</td></tr>
+<tr><td>3</td><td>✉️</td><td>«Así serán tus 20 minutos» — nada de tour de pantallas</td></tr>
+<tr><td>3</td><td>📲</td><td><code>demo_pregunta</code> — ¿inventario por tallas, apartados, venta en línea o liveshows?</td></tr>
+<tr><td>4</td><td>✉️</td><td>«De un pop-up a cientos de tiendas a la vez» — el caso y las 100+ reseñas</td></tr>
+<tr><td>6</td><td>✉️</td><td>«{{nombre}}, ¿se te movió la agenda?» — reagendar toma 1 minuto</td></tr>
+<tr><td>8</td><td>📲</td><td><code>demo_reagendar</code> — contéstame con el día y la reagendo yo misma</td></tr>
+</tbody></table>
+<p><b>5 correos y 3 WhatsApps.</b> Las tres plantillas están <b>aprobadas por Meta</b>, categoría UTILITY, es_MX, con una variable ({{1}} = nombre). Corte a los 10 días, L-S.</p>
+<h3>Las variaciones</h3>
 <table class="w-tab"><thead><tr><th>Evento</th><th>Qué pasa solo</th></tr></thead><tbody>
 <tr><td><b>Reagenda</b></td><td>La cita vieja queda «reagendada» y nace la nueva ligada; el evento de Google Calendar se mueve; WhatsApp de confirmación; la secuencia reinicia en día 1.</td></tr>
 <tr><td><b>Cancela</b></td><td>Sale de la secuencia; recibe UN rescate por WhatsApp; Andrea recibe aviso inmediato.</td></tr>
 <tr><td><b>Vuelve a agendar</b></td><td>Se reinscribe solo en día 1.</td></tr>
+<tr><td><b>No asiste</b></td><td>No cambia el estatus, pero entra a la lista «No asistieron sin reagendar» de Mi día. Es el caso que esta secuencia existe para evitar.</td></tr>
 <tr><td><b>Asiste</b></td><td>Objetivo cumplido: sale entera.</td></tr>
-<tr><td><b>Recordatorios</b></td><td>Correo 24 h antes y WhatsApp 1 h antes, ambos con link de reagendar.</td></tr>
-</tbody></table>`,
+<tr><td><b>Recordatorios</b></td><td>No son de la secuencia sino del sistema de reuniones: <b>correo 24 h antes</b> y <b>WhatsApp 1 h antes</b>, relativos a la fecha real y con link de reagendar. Salen aunque la secuencia esté apagada.</td></tr>
+</tbody></table>
+<div class="w-caja w-warn"><span class="w-k">Hoy está apagada</span>
+<p>La secuencia está construida y sus plantillas listas, pero el toggle está en <b>off</b>: nada de esto se está enviando. Y el bloqueo <b>no es técnico</b> — las 3 plantillas de WhatsApp están aprobadas por Meta y los 5 correos activos. Falta el visto bueno al contenido.</p>
+<p>Los recordatorios de 24 h y 1 h sí funcionan, porque viven en el sistema de reuniones y no en la secuencia.</p></div>`,
   },
   {
     id: 'p4', grupo: 'El proceso', titulo: '4 · El primer toque humano',
