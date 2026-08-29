@@ -221,9 +221,41 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>Asiste</b></td><td>Objetivo cumplido: sale entera.</td></tr>
 <tr><td><b>Recordatorios</b></td><td>No son de la secuencia sino del sistema de reuniones: <b>correo 24 h antes</b> y <b>WhatsApp 1 h antes</b>, relativos a la fecha real y con link de reagendar. Salen aunque la secuencia esté apagada.</td></tr>
 </tbody></table>
+<h3>Las tres condiciones que la hacen segura</h3>
+<p>El arco supone pista antes de la sesión. <b>No la hay:</b> 27 de 31 reuniones se agendan para el mismo día o el siguiente — mediana <b>0 días</b>, máximo 7. Sin guardas, casi todo el arco llegaba <b>después</b> de la reunión: preguntarle a alguien qué quiere ver en una sesión que ya tuvo.</p>
+<table class="w-tab"><thead><tr><th>Condición</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>Dos tramos, no una lista</b></td><td>Hasta el día 4 <b>prepara</b> y solo sale si hay sesión por delante. Del 6 en adelante <b>rescata</b> y solo sale si ya pasó sin asistir. Antes el rescate le llegaba a quien sí asistió.</td></tr>
+<tr><td><b>Se para sola</b></td><td>Si la reunión pasó y sigue en «confirmada» —nadie marcó asistencia— la secuencia se pausa con motivo <code>reunion_sin_marcar</code> y deja nota en el inbox pidiendo que la marquen. Antes seguía escribiendo por el retraso de un registro.</td></tr>
+<tr><td><b>Mira la reunión vencida</b></td><td>No solo la próxima. Sin ese dato el motor no distingue «todavía no llega» de «ya fue».</td></tr>
+</tbody></table>
+<div class="w-caja w-bad"><span class="w-k">Lo que ese dato te obliga a decidir</span>
+<p>Con mediana de <b>0 días de pista</b>, la mayoría solo va a recibir el paso del día 1 —la confirmación— y nada más de preparación, porque la sesión ocurre antes. <b>Los pasos 2, 3 y 4 casi nunca van a salir.</b></p>
+<p>No es un error del código: es una decisión de contenido. O el arco se comprime a lo que cabe en un día, o hay que empujar a que agenden con más anticipación.</p></div>
 <div class="w-caja w-warn"><span class="w-k">Hoy está apagada</span>
 <p>La secuencia está construida y sus plantillas listas, pero el toggle está en <b>off</b>: nada de esto se está enviando. Y el bloqueo <b>no es técnico</b> — las 3 plantillas de WhatsApp están aprobadas por Meta y los 5 correos activos. Falta el visto bueno al contenido.</p>
 <p>Los recordatorios de 24 h y 1 h sí funcionan, porque viven en el sistema de reuniones y no en la secuencia.</p></div>`,
+  },
+  {
+    id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',
+    bajada: 'Dónde vive el dato y qué falta para tenerlo a la mano.',
+    cuerpo: `
+<p>Hay <b>dos niveles</b>, y conviene no confundirlos.</p>
+<h3>1 · Por reunión</h3>
+<p>Cada cita tiene su propio estado, visible en la pestaña <b>Reuniones</b>:</p>
+<table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><code>confirmada</code></td><td>Agendada y por venir</td></tr>
+<tr><td><code>asistio</code></td><td>Se presentó — es lo que gradúa al lead a «Demo hecha»</td></tr>
+<tr><td><code>no_asistio</code></td><td>No-show. La métrica que la secuencia existe para bajar</td></tr>
+<tr><td><code>cancelada</code></td><td>La canceló</td></tr>
+<tr><td><code>reagendada</code></td><td>Se movió: esta queda marcada y nace una nueva ligada</td></tr>
+</tbody></table>
+<h3>2 · Por contacto</h3>
+<p>El <b>Estatus del lead</b> refleja el momento más avanzado: «Agendó demo» y luego «Demo hecha», los dos del grupo <i>comprometido</i>. Pero es <b>un solo estado</b>: no dice cuántas reuniones hubo ni qué pasó con cada una.</p>
+<div class="w-caja w-warn"><span class="w-k">Lo que falta y ya está escrito</span>
+<p>Hay una migración lista —<code>scripts/migration-2026-08-contador-reuniones.sql</code>— que agrega siete columnas al contacto: <b>total, agendadas, completadas, canceladas, no_asistio, reagendadas</b> y la fecha de la última. Se mantienen con un trigger sobre <code>bookings</code>, así que no dependen de que nadie las actualice.</p>
+<p><b>Falta correr el SQL.</b> Hasta entonces, para saber cuántas reuniones tuvo un lead hay que ir a mirarlas una por una.</p></div>
+<div class="w-caja"><span class="w-k">Una trampa al leer el total</span>
+<p>Una reunión reagendada deja el booking viejo en <code>reagendada</code> y crea uno nuevo. <b>Dos reagendas de la misma cita suman 3 al total.</b> Por eso la columna de reagendadas existe: para poder restar y saber cuántas reuniones hubo de verdad.</p></div>`,
   },
   {
     id: 'p4', grupo: 'El proceso', titulo: '4 · El primer toque humano',
