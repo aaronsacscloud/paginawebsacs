@@ -397,7 +397,11 @@ export default function CrmDashboard() {
       try {
         if (!sessionStorage.getItem('swr:inbox-lista')) {
           fetch('/api/crm/whatsapp/inbox?filtro=todas&estado=abierta&orden=recientes&limit=50').then(r => r.ok ? r.json() : null).then(j => {
-            if (j) try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch { /* nada */ }
+            // Mismo candado que en InboxPro: un 504 del servidor trae JSON
+            // válido pero SIN conversaciones, y guardarlo dejaba el snapshot en
+            // blanco — o sea que la primera pintura del inbox salía vacía por
+            // culpa de un cuelgue pasajero. Solo se guarda una lista de verdad.
+            if (j && Array.isArray(j.conversaciones) && !j.error) try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones, counts: j.counts || {} })); } catch { /* nada */ }
           }).catch(() => {});
         }
       } catch { /* nada */ }

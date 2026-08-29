@@ -95,6 +95,22 @@ export default function InboxPro() {
   const cargarLista = useCallback(async (f: Filtros, paginas = paginasRef.current) => {
     const j = await fetch(`/api/crm/whatsapp/inbox?${armarQS(f)}&limit=${50 * paginas}`, { cache: 'no-store' }).then(r => r.json()).catch(() => null);
     if (!j) { setError('Sin conexión — revisa tu internet'); return; }
+    // ⚠️ UN ERROR NO ES UNA LISTA VACÍA.
+    // El servidor se cuelga de forma intermitente (medido en producción: /inbox
+    // responde en ~370 ms casi siempre, pero cada tantas peticiones se va a 8 y
+    // hasta 30 s). Cuando pasa, el candado de 9 s de conMicroCache devuelve un
+    // 504 con JSON VÁLIDO: {error:'El servidor tardó demasiado'}. Eso pasaba de
+    // largo el `if (!j)` de arriba y caía en `setLista(j.conversaciones || [])`
+    // → la lista se ponía en CERO delante del usuario. Y peor: dos líneas más
+    // abajo ese vacío se guardaba en el snapshot, así que la siguiente visita
+    // también arrancaba vacía. Un cuelgue de infra dejaba el inbox en blanco de
+    // forma pegajosa.
+    // Ahora: si la respuesta no trae un arreglo de conversaciones, NO se toca ni
+    // lo que se ve ni el snapshot. Se conserva lo último bueno y se avisa bajito.
+    if (j.error || !Array.isArray(j.conversaciones)) {
+      setError(typeof j.error === 'string' && j.error ? j.error : 'No se pudo actualizar — se muestra lo último cargado');
+      return;
+    }
     // REGLA DE VELOCIDAD: snapshot para la primera pintura de la próxima visita
     try { sessionStorage.setItem('swr:inbox-lista', JSON.stringify({ conversaciones: j.conversaciones || [], counts: j.counts || {} })); } catch { /* nada */ }
     // ── E2.2 · ¿entró algo mientras trabajaba? ──────────────────────────
@@ -337,7 +353,28 @@ export default function InboxPro() {
   // Últimos mensajes de las 50 recientes, traídos de un viaje por /precarga.
   // No es el hilo completo (sin notas, eventos ni presencia): es lo que hace
   // falta para que el chat APAREZCA al instante mientras /hilo trae el resto.
-  const mensajesPre = useRef<Map<string, any[]>>(new Map());
+  //
+  // Se HIDRATA de sessionStorage al montar y se guarda tras cada precarga. Sin
+  // esto, salir del inbox y volver tiraba los mensajes y la primera apertura
+  // volvía a pagar /hilo completo — que en producción se cuelga de forma
+  // intermitente hasta 30 s. Con el snapshot, volver y abrir es instantáneo
+  // aunque el servidor esté teniendo un mal momento.
+  const mensajesPre = useRef<Map<string, any[]>>((() => {
+    try {
+      const raw = sessionStorage.getItem('swr:inbox-mensajes');
+      if (raw) return new Map<string, any[]>(Object.entries(JSON.parse(raw)));
+    } catch { /* nada */ }
+    return new Map<string, any[]>();
+  })());
+  const guardarPre = () => {
+    try {
+      // Solo las 50 más recientes: el snapshot no es un archivo histórico y
+      // sessionStorage se llena. Si no cabe, se descarta sin ruido — es caché.
+      const obj: Record<string, any[]> = {};
+      [...mensajesPre.current.entries()].slice(-50).forEach(([k, v]) => { obj[k] = v; });
+      sessionStorage.setItem('swr:inbox-mensajes', JSON.stringify(obj));
+    } catch { /* el snapshot es un lujo, nunca un requisito */ }
+  };
   const precargarHilo = useCallback((c: any) => {
     const id = c?.wa_id || c?.email_id;
     if (!id || precargados.current.has(id)) return;
@@ -424,6 +461,7 @@ export default function InboxPro() {
         .then(j => {
           if (!j?.mensajes) return;
           for (const [id, msjs] of Object.entries(j.mensajes)) mensajesPre.current.set(id, msjs as any[]);
+          guardarPre();
         }).catch(() => {});
     };
     const t = w.requestIdleCallback ? w.requestIdleCallback(traer, { timeout: 1200 }) : setTimeout(traer, 600);
