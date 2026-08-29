@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AccionesVenta from './AccionesVenta';
 import { leerBorrador, guardarBorrador } from '../../../../lib/crm/borradores';
-import Cargando from '../ui/Cargando';
+import { EsqueletoChat } from './Esqueletos';
 import { telefonoLegible } from '../../../../lib/telefono';
 import { lifecycleDe, useLifecycle } from '../../../../lib/crm/lifecycle';
 import { C, L, burbuja, separador, etiquetaDia } from './estilo';
@@ -237,7 +237,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             ? <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{nom}</b>
             : <span style={{ flex: 1, height: 13, maxWidth: 160, borderRadius: 6, background: C.g100 }} />}
         </div>
-        <div style={{ flex: 1, minHeight: 0 }}><Cargando texto="Abriendo conversación…" /></div>
+        {/* La cabecera de arriba ya quedó pintada con el nombre real; aquí va
+            la forma del hilo —burbujas y composer— para que al llegar los
+            mensajes ocupen exactamente este sitio y nada salte. */}
+        <div style={{ flex: 1, minHeight: 0 }}><EsqueletoChat mobile={mobile} /></div>
       </div>
     );
   }

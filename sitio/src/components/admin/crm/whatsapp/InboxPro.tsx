@@ -7,6 +7,7 @@ import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
+import { EsqueletoChat, EsqueletoLista, EsqueletoPanel } from './Esqueletos';
 import Sheet from '../ui/Sheet';
 import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
@@ -728,7 +729,9 @@ export default function InboxPro() {
   }, [hilo, activa?.wa, colaTick]);
 
   if (error && lista === null) return <div style={S.wrap}><Aviso tono="malo">{error}</Aviso></div>;
-  if (lista === null) return <Cargando texto="Cargando el inbox de WhatsApp…" />;
+  // Esqueleto en vez de spinner: adelanta la forma de la bandeja, así que
+  // cuando llegan las conversaciones nada salta de sitio.
+  if (lista === null) return <EsqueletoLista filas={9} />;
 
   const conv = hilo?.conversacion || null;
   const filaActiva = (lista || []).find(c => c.id === activa?.id) || null;
@@ -872,7 +875,7 @@ export default function InboxPro() {
                     );
                   })}
                 </div>
-                {lista === null && <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Cargando…</div>}
+                {lista === null && <EsqueletoLista filas={7} mobile />}
                 {lista !== null && convs.length === 0 && (
                   <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
                     {chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.' : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.' : 'Sin conversaciones abiertas. Bandeja limpia.'}
@@ -888,7 +891,7 @@ export default function InboxPro() {
             );
           })()
         ) : (
-          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}>
+          <Suspense fallback={<EsqueletoChat mobile />}>
             <Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api} mobile
               onBack={() => setActiva(null)} onVerDetalle={() => setDetalleMobile(true)} />
             <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
@@ -923,23 +926,23 @@ export default function InboxPro() {
         </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
-        <Suspense fallback={<Cargando texto="Cargando conversaciones…" />}><ListaConversaciones {...propsLista} /></Suspense>
+        <Suspense fallback={<EsqueletoLista filas={9} />}><ListaConversaciones {...propsLista} /></Suspense>
         {activa ? (
-          <Suspense fallback={<Cargando texto="Abriendo conversación…" />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
+          <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
         ) : (
           <VacioHilo onNuevo={() => setNuevoChat(true)} total={totalLista} conFiltro={!!(vistaActiva || filtros.etapa || filtros.search || (filtrosAdHoc?.condiciones?.length))} onLimpiar={() => { setVistaActiva(null); setFiltrosAdHoc(null); setFiltros(f => ({ ...f, etapa: '', search: '', filtro: 'todas' })); }} />
         )}
         {!isCompact && (
           <div className="wa-scroll" style={{ width: L.detalle, flexShrink: 0, borderLeft: `1px solid ${C.g200}`, overflowY: 'auto', background: '#fff' }}>
-            {conv || filaActiva?.virtual ? <Suspense fallback={<Cargando texto="Cargando…" alto={180} />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
+            {conv || filaActiva?.virtual ? <Suspense fallback={<EsqueletoPanel />}><PanelDetalle hilo={hilo} api={api} filaActiva={filaActiva} /></Suspense>
               : <div style={{ padding: 18, color: C.g400, fontSize: 12 }}>El detalle del cliente aparece aquí.</div>}
           </div>
         )}
       </div>
       {isCompact && (
         <Sheet open={detalleMobile} onClose={() => setDetalleMobile(false)} title="Detalle del cliente" width={420}>
-          {conv && <Suspense fallback={<Cargando texto="Cargando…" alto={180} />}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
+          {conv && <Suspense fallback={<EsqueletoPanel />}><PanelDetalle hilo={hilo} api={api} /></Suspense>}
         </Sheet>
       )}
       {nuevoChat && <Suspense fallback={<Cargando texto="Abriendo…" alto={180} />}><NuevoChat lista={lista} api={api} telefono={typeof nuevoChat === 'string' ? nuevoChat : undefined} onAbrir={abrir} onClose={() => setNuevoChat(false)} /></Suspense>}
