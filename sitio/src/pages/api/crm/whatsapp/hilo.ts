@@ -62,17 +62,27 @@ export const GET: APIRoute = async ({ request, url }) => {
       : await q.eq('email', emailContacto);
     convsEmail = data || [];
   }
+  // El equipo y los correos SOLO se piden si hay conversación de email. Antes
+  // se traía la tabla team_members completa en CADA apertura de hilo —incluidas
+  // las de puro WhatsApp, que son la mayoría— y encima en un viaje aparte,
+  // esperando. Y los mensajes de cada conversación de correo iban en un `for`
+  // con await adentro: uno detrás de otro. Medido: /hilo tardaba ~800 ms
+  // encadenando 5-7 viajes a Supabase que no dependían entre sí.
   const correos: any[] = [];
-  // autor de email_messages es UUID de team_members: se resuelve a nombre aquí.
-  const { data: equipo } = await supabase.from('team_members').select('id, nombre');
-  const nombreDe = (uid?: string | null) => (equipo || []).find(m => m.id === uid)?.nombre || null;
-  for (const ce of convsEmail) {
-    const { data: msjs } = await supabase.from('email_messages')
-      .select('id, direccion, de_email, para_email, asunto, cuerpo_texto, adjuntos, autor, created_at')
-      .eq('conversation_id', ce.id).order('created_at', { ascending: true }).limit(200);
-    correos.push({
-      conversacion: { id: ce.id, asunto: ce.asunto, estado: ce.estado, email: ce.email },
-      mensajes: (msjs || []).map(m => ({ ...m, autor: nombreDe(m.autor) })),
+  if (convsEmail.length) {
+    // autor de email_messages es UUID de team_members: se resuelve a nombre aquí.
+    const [{ data: equipo }, ...porConv] = await Promise.all([
+      supabase.from('team_members').select('id, nombre'),
+      ...convsEmail.map((ce: any) => supabase.from('email_messages')
+        .select('id, direccion, de_email, para_email, asunto, cuerpo_texto, adjuntos, autor, created_at')
+        .eq('conversation_id', ce.id).order('created_at', { ascending: true }).limit(200)),
+    ]);
+    const nombreDe = (uid?: string | null) => (equipo || []).find((m: any) => m.id === uid)?.nombre || null;
+    convsEmail.forEach((ce: any, i: number) => {
+      correos.push({
+        conversacion: { id: ce.id, asunto: ce.asunto, estado: ce.estado, email: ce.email },
+        mensajes: ((porConv[i] as any)?.data || []).map((m: any) => ({ ...m, autor: nombreDe(m.autor) })),
+      });
     });
   }
 
@@ -129,7 +139,15 @@ export const GET: APIRoute = async ({ request, url }) => {
   // ── Marcar leído: personal (wa_lecturas) + global (compat) ──
   // Abrir el hilo NO toca el contador global (es "sin responder" del equipo):
   // solo registra MI lectura. Así el chat que abre Aaron sigue nuevo para Luis.
-  if (conv.id) {
+  // ⚠️ SOLO con ?marcar=1. Traer el hilo y DARLO POR LEÍDO no son la misma
+  // acción, y confundirlas costaba caro: la precarga del inbox pide /hilo cuando
+  // el dedo apenas roza una fila o cuando la fila se asoma al hacer scroll, así
+  // que conversaciones que NADIE abrió se marcaban leídas y —peor— se le
+  // mandaban PALOMITAS AZULES al cliente por WhatsApp. Es decirle "ya te leímos"
+  // sin que sea cierto. Abrir la conversación manda marcar=1; precargar y
+  // paginar hacia atrás, no.
+  const marcar = url.searchParams.get('marcar') === '1';
+  if (conv.id && marcar) {
     let yaLeido = false;
     if (yo) {
       const { data: lec } = await supabase.from('wa_lecturas').select('leido_at').eq('conversation_id', conv.id).eq('user_id', yo.id).maybeSingle();

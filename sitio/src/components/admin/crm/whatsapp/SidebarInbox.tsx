@@ -90,24 +90,25 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   useEffect(() => {
     let vivo = true;
     (async () => {
-      for (const v of vistas) {
-        // Vistas v3 (sin condiciones) guardan filtros planos: se cuentan con su propio formato.
-        let qs: string;
-        if (v.config?.condiciones) qs = `vista=${encodeURIComponent(JSON.stringify(v.config))}`;
-        else {
-          const p = new URLSearchParams();
-          for (const k of ['filtro', 'etapa', 'plan', 'tipo', 'estado', 'asignado', 'etiqueta', 'sin_contacto', 'search']) if (v.config?.[k]) p.set(k, String(v.config[k]));
-          qs = p.toString();
-        }
-        const j = await fetch(`/api/crm/whatsapp/inbox?${qs}&limit=1`)
-          .then(r => r.json()).catch(() => null);
-        if (!vivo) return;
-        if (j) setContadores(prev => {
-          const n = j.total_filtrado ?? 0;
+      // Los contadores de TODAS las vistas van en UNA sola petición.
+      // Antes era este mismo bucle pero con un fetch adentro: una llamada por
+      // vista, en serie, cada una reconstruyendo el universo entero del inbox
+      // (1000 conversaciones + 1000 correos + 600 contactos + 2000 visitas)
+      // para devolver un entero. Medido al entrar: 25 peticiones, 7.7 s.
+      if (!vistas.length) return;
+      const defs = vistas.map(v => ({ id: v.id, config: v.config || {} }));
+      const j = await fetch(`/api/crm/whatsapp/inbox?vistas=${encodeURIComponent(JSON.stringify(defs))}`)
+        .then(r => r.json()).catch(() => null);
+      if (!vivo || !j?.contadores) return;
+      setContadores(prev => {
+        const sig = { ...prev };
+        for (const v of vistas) {
+          const n = j.contadores[v.id] ?? 0;
           if (prev[v.id] != null && n > prev[v.id]) { setSubio(s => ({ ...s, [v.id]: true })); setTimeout(() => setSubio(s => ({ ...s, [v.id]: false })), 4000); }
-          return { ...prev, [v.id]: n };
-        });
-      }
+          sig[v.id] = n;
+        }
+        return sig;
+      });
     })();
     return () => { vivo = false; };
   }, [JSON.stringify(vistas.map(v => v.id)), tick]);

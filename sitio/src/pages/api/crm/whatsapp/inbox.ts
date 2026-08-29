@@ -48,6 +48,22 @@ const _GET: APIRoute = async ({ request, url }) => {
   // Vista custom (builder): ?vista=<json urlencoded> {modo, logica, condiciones}
   let vista: ConfigVista | null = null;
   try { const raw = url.searchParams.get('vista'); if (raw) vista = JSON.parse(raw); } catch { vista = null; }
+  // MODO CONTADORES (?vistas=[{id,config}…]): el barra lateral necesitaba el
+  // número de cada vista guardada y lo pedía llamando A ESTE MISMO endpoint una
+  // vez por vista, en serie. Medido: 25 llamadas y 7.7 s solo para entrar al
+  // inbox — y cada una reconstruía las MISMAS 1000 conversaciones, 1000 correos,
+  // 600 contactos y 2000 visitas para devolver un entero. El universo se arma
+  // una vez y los filtros, que ya eran en memoria, se aplican N veces sobre él.
+  let vistasDefs: Array<{ id: string; config: any }> = [];
+  try { const raw = url.searchParams.get('vistas'); if (raw) vistasDefs = JSON.parse(raw) || []; } catch { vistasDefs = []; }
+  if (!Array.isArray(vistasDefs)) vistasDefs = [];
+  // Para decidir qué enriquecimiento cargar hace falta mirar las condiciones de
+  // TODAS las vistas, no solo las de la actual.
+  const condsUnion = [
+    ...(vista?.condiciones || []),
+    ...vistasDefs.flatMap(d => (d?.config?.condiciones || [])),
+  ];
+  const usaCampo = (nombres: string[]) => condsUnion.some((c: any) => nombres.includes(c?.campo));
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
@@ -210,7 +226,7 @@ const _GET: APIRoute = async ({ request, url }) => {
   }
 
   // Etiquetas: si la vista o el filtro las usan, se cargan y se pegan a _extra.
-  const vistaUsaEtiquetas = !!vista?.condiciones?.some(c => c.campo === 'etiqueta');
+  const vistaUsaEtiquetas = usaCampo(['etiqueta']);
   if (vistaUsaEtiquetas) {
     const ids = [...new Set(todas.map(c => c.company_id).filter(Boolean))];
     const { data: asig } = ids.length
@@ -224,7 +240,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     for (const c of todas) if (c.company_id) c._extra.etiquetas = mapa.get(c.company_id) || [];
   }
 
-  if (vista?.condiciones?.some(c => c.campo === 'visita_web')) {
+  if (usaCampo(['visita_web'])) {
     const ids = todas.map(c => c.contact_id).filter(Boolean);
     if (ids.length) {
       // Última visita por contacto, en una sola pasada.
@@ -238,7 +254,7 @@ const _GET: APIRoute = async ({ request, url }) => {
   }
 
   // Llamadas (Leads v2): solo cuando la vista pregunta por el teléfono.
-  if (vista?.condiciones?.some(c => ['tuvo_llamada', 'tiene_minuta', 'ultima_llamada', 'min_llamadas'].includes(c.campo))) {
+  if (usaCampo(['tuvo_llamada', 'tiene_minuta', 'ultima_llamada', 'min_llamadas'])) {
     const ids = todas.map(c => c.wa_id).filter(Boolean);
     const { data: ll } = ids.length
       ? await supabase.from('wa_llamadas').select('conversation_id, created_at, duracion_seg, minuta').in('conversation_id', ids)
@@ -257,7 +273,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     }
   }
 
-  if (vista?.condiciones?.some(c => c.campo === 'etiqueta_conv')) {
+  if (usaCampo(['etiqueta_conv'])) {
     const ids = todas.map(c => c.wa_id).filter(Boolean);
     const { data: asig } = ids.length
       ? await supabase.from('crm_etiqueta_asignaciones').select('etiqueta_id, entidad_id').eq('entidad', 'wa_conversacion').in('entidad_id', ids)
@@ -268,40 +284,80 @@ const _GET: APIRoute = async ({ request, url }) => {
   }
 
   // Etiquetas de la empresa (solo si el filtro las pide: una query extra).
-  let conEtiqueta: Set<string> | null = null;
-  if (etiqueta) {
+  // Se resuelve como MAPA etiqueta→empresas y no como un set suelto porque el
+  // modo contadores cuenta varias vistas de un golpe y cada una puede pedir una
+  // etiqueta distinta: así siguen siendo UNA consulta, no una por vista.
+  const etiquetasPedidas = [...new Set([etiqueta, ...vistasDefs.map(d => String(d?.config?.etiqueta || ''))].filter(Boolean))];
+  const porEtiqueta = new Map<string, Set<string>>();
+  if (etiquetasPedidas.length) {
     const ids = [...new Set(todas.map(c => c.company_id).filter(Boolean))];
     const { data: asig } = ids.length
       ? await supabase.from('crm_etiqueta_asignaciones')
-          .select('entidad_id').eq('etiqueta_id', etiqueta).eq('entidad', 'company').in('entidad_id', ids)
+          .select('etiqueta_id, entidad_id').in('etiqueta_id', etiquetasPedidas).eq('entidad', 'company').in('entidad_id', ids)
       : { data: [] as any[] };
-    conEtiqueta = new Set((asig || []).map((a: any) => a.entidad_id));
+    for (const e of etiquetasPedidas) porEtiqueta.set(e, new Set());
+    for (const a of asig || []) porEtiqueta.get(String(a.etiqueta_id))?.add(a.entidad_id);
+  }
+  const conEtiqueta: Set<string> | null = etiqueta ? (porEtiqueta.get(etiqueta) || new Set()) : null;
+
+  // ── Filtro en memoria (el universo cabe) ──
+  // Extraído a función para que el modo contadores lo aplique N veces sobre el
+  // MISMO universo. La búsqueda de texto queda fuera a propósito: necesita dos
+  // consultas al historial y se resuelve aparte, solo cuando de verdad se pide.
+  const filtrar = (base: any[], f: {
+    filtro?: string; etapa?: string; tipo?: string; plan?: string; etiqueta?: string;
+    asignado?: string; estado?: string; sin_contacto?: boolean; vista?: ConfigVista | null;
+  }) => {
+    const fi = f.filtro || 'todas';
+    let l = base;
+    if (fi === 'pospuestas') l = l.filter(pospuesta);
+    else l = l.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
+    if (fi === 'mias' && user) l = l.filter(c => c.asignado_a === user.id);
+    if (fi === 'sin_asignar') l = l.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
+    // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y
+    // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
+    if (fi === 'no_leidas' || fi === 'no_contestadas') l = l.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
+    if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
+    if (fi === 'accion') l = l.filter(requiereAccion);
+    if (f.etapa) l = l.filter(c => c.contacto?.lifecycle_stage === f.etapa);
+    if (f.tipo) l = l.filter(c => c.contacto?.tipo === f.tipo);
+    if (f.plan) l = l.filter(c => c.empresa?.plan === f.plan);
+    if (f.etiqueta) { const set = porEtiqueta.get(f.etiqueta) || new Set<string>(); l = l.filter(c => c.company_id && set.has(c.company_id)); }
+    if (f.asignado === 'nadie') l = l.filter(c => !c.asignado_a);
+    else if (f.asignado) l = l.filter(c => c.asignado_a === f.asignado);
+    if (f.estado) l = l.filter(c => (c.estado_crm || 'abierta') === f.estado);
+    if (f.sin_contacto) l = l.filter(c => !c.contact_id);
+    if (f.vista) {
+      if (f.vista.modo === 'solo_contactos') l = l.filter(c => c.virtual);
+      else if (f.vista.modo !== 'todas') l = l.filter(c => !c.virtual);
+      l = l.filter(c => cumpleVista(c, f.vista!, user?.id || null));
+    } else l = l.filter(c => !c.virtual);
+    return l;
+  };
+
+  // ── MODO CONTADORES: N vistas, un solo universo ──
+  if (vistasDefs.length) {
+    const contadores: Record<string, number> = {};
+    for (const d of vistasDefs) {
+      const cfg = d?.config || {};
+      // Una vista guardada puede traer texto de búsqueda. Es raro, y cuando
+      // pasa se cuenta sin él en vez de disparar dos consultas por vista: el
+      // contador diría de más, así que se marca para que la barra no lo pinte
+      // como exacto en lugar de mentir en silencio.
+      contadores[String(d?.id)] = filtrar(todas, {
+        filtro: cfg.filtro, etapa: cfg.etapa, tipo: cfg.tipo, plan: cfg.plan,
+        etiqueta: cfg.etiqueta, asignado: cfg.asignado, estado: cfg.estado,
+        sin_contacto: cfg.sin_contacto === '1' || cfg.sin_contacto === true,
+        vista: cfg.condiciones ? cfg : null,
+      }).length;
+    }
+    return json({ contadores, con_busqueda: vistasDefs.filter(d => d?.config?.search).map(d => String(d.id)) });
   }
 
-  // ── Filtro + búsqueda en memoria (el universo cabe) ──
-  let lista = todas;
-  if (filtro === 'pospuestas') lista = lista.filter(pospuesta);
-  else lista = lista.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
-  if (filtro === 'mias' && user) lista = lista.filter(c => c.asignado_a === user.id);
-  if (filtro === 'sin_asignar') lista = lista.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
-  // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y
-  // nadie contestó. Se conserva por compatibilidad y se le suma el espejo.
-  if (filtro === 'no_leidas' || filtro === 'no_contestadas') lista = lista.filter(c => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta');
-  if (filtro === 'sin_respuesta') lista = lista.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
-  if (filtro === 'accion') lista = lista.filter(requiereAccion);
-  if (etapa) lista = lista.filter(c => c.contacto?.lifecycle_stage === etapa);
-  if (tipo) lista = lista.filter(c => c.contacto?.tipo === tipo);
-  if (plan) lista = lista.filter(c => c.empresa?.plan === plan);
-  if (conEtiqueta) lista = lista.filter(c => c.company_id && conEtiqueta!.has(c.company_id));
-  if (asignado === 'nadie') lista = lista.filter(c => !c.asignado_a);
-  else if (asignado) lista = lista.filter(c => c.asignado_a === asignado);
-  if (estado) lista = lista.filter(c => (c.estado_crm || 'abierta') === estado);
-  if (sinContacto) lista = lista.filter(c => !c.contact_id);
-  if (vista) {
-    if (vista.modo === 'solo_contactos') lista = lista.filter(c => c.virtual);
-    else if (vista.modo !== 'todas') lista = lista.filter(c => !c.virtual);
-    lista = lista.filter(c => cumpleVista(c, vista!, user?.id || null));
-  } else lista = lista.filter(c => !c.virtual);
+  let lista = filtrar(todas, {
+    filtro, etapa, tipo, plan, etiqueta, asignado, estado,
+    sin_contacto: sinContacto, vista,
+  });
   if (search) {
     const q = search.toLowerCase();
     const qLimpio = q.replace(/[%,()]/g, '');
