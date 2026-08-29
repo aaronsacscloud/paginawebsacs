@@ -20,7 +20,7 @@ const _GET: APIRoute = async ({ request, url }) => {
 
   let query = supabase
     .from('contacts')
-    .select('*, companies(id, nombre, plan, sucursales, estado_cuenta, mrr)', { count: 'exact' })
+    .select('*, companies(id, nombre, plan, sucursales, estado_cuenta, mrr, uso_sacs, uso_sync_at)', { count: 'exact' })
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);

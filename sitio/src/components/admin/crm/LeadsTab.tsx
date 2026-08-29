@@ -1,4 +1,5 @@
 import { swrGet } from '../../../lib/crm/swr';
+import { calificarUso, colorNota } from '../../../lib/crm/uso-prueba';
 import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // Leads: quién llegó, por dónde y qué falta para convertirlo.
@@ -1047,6 +1048,22 @@ export default function LeadsTab() {
                           final —abrió el correo, vio la cotización, te escribió—
                           y, si hay cotización, CUÁNTO hay sobre la mesa. Antes
                           había que abrir cada ficha para enterarse. */}
+                      {/* EN PRUEBA: lo único que importa es si de verdad
+                          entró a trabajar. La nota sale de lo que ya sincroniza
+                          el puente con SACS (ventas, cortes, catálogos), así
+                          que no cuesta una consulta por lead. Un 0 no es un
+                          hueco: es la cuenta a la que hay que llamarle hoy. */}
+                      {etapa === 'prueba' && (() => {
+                        const cal = calificarUso(c.companies?.uso_sacs);
+                        return (
+                          <div className="m-act">
+                            <span className="m-nota-uso" style={{ background: colorNota(cal.nota) + '1f', color: colorNota(cal.nota) }}>
+                              {cal.nota}/10
+                            </span>
+                            <span>{cal.motivos.length ? cal.motivos.join(' · ') : 'no ha tocado el sistema'}</span>
+                          </div>
+                        );
+                      })()}
                       {porActividad && (c.ultima_actividad || c.cotizacion) && (
                         <div className="m-act">
                           {c.ultima_actividad && (
