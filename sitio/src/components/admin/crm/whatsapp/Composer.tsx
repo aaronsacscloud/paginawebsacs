@@ -5,6 +5,7 @@
 // cuando la ventana de 24 h está cerrada. Correo es nuestro canal extra.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Corazones } from '../ui/Cargando';
+import { useIsMobile } from '../../../../lib/ui/mobile';
 import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
@@ -964,6 +965,10 @@ export function valorVariable(campo: string, contacto: any, yo: any): string {
 }
 
 export function SelectorPlantilla({ telefono, api, onClose, contacto, preseleccion }: { telefono: string; api: any; onClose: () => void; contacto?: any; preseleccion?: string | null }) {
+  // Este selector se abre desde el composer, que en el teléfono es lo que más
+  // se usa. No recibe `movil` por props porque lo montan tres pantallas
+  // distintas; se pregunta solo.
+  const movilPl = useIsMobile();
   const [headerUrl, setHeaderUrl] = useState('');
   const [otp, setOtp] = useState('');
   const [lista, setLista] = useState<any[] | null>(null);
@@ -997,8 +1002,18 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
     onClose();
   };
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(2px)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(672px, 94vw)', maxHeight: '80dvh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,.2)' }}>
+    // En el teléfono esto es una HOJA que sube desde abajo, no una tarjeta
+    // flotando en medio. Una tarjeta centrada con márgenes desperdicia el ancho
+    // justo donde menos sobra, deja la lista de plantillas en una rendija, y el
+    // pulgar queda lejos de todo. Pegada abajo y a pantalla casi completa se
+    // lee entera y se alcanza con una mano. En escritorio se queda como estaba.
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(2px)', zIndex: 960, display: 'flex', alignItems: movilPl ? 'flex-end' : 'center', justifyContent: 'center', padding: movilPl ? 0 : 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff',
+        borderRadius: movilPl ? '16px 16px 0 0' : 16,
+        width: movilPl ? '100%' : 'min(672px, 94vw)',
+        maxHeight: movilPl ? '92dvh' : '80dvh',
+        paddingBottom: movilPl ? 'env(safe-area-inset-bottom)' : 0,
+        display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,.2)' }}>
         <div style={{ padding: '14px 20px 0', borderBottom: `1px solid ${C.g100}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <BadgeWhatsApp size={20} />
@@ -1010,10 +1025,14 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
             ))}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, padding: '10px 20px' }}>
-          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar plantilla…" style={{ flex: 1, border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'inherit' }} />
-          <select value={idioma} onChange={e => setIdioma(e.target.value)} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit' }}><option value="">Idioma</option>{idiomas.map(i => <option key={i} value={i}>{i}</option>)}</select>
-          <select value={cat} onChange={e => setCat(e.target.value)} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit' }}><option value="">Categoría</option>{cats.map(c => <option key={c} value={c}>{c}</option>)}</select>
+        {/* Envuelve. Con tres controles en una sola fila —buscar, idioma y
+            categoría— el tercero se salía por la derecha en 390 px: se veía
+            media palabra y no había forma de tocarlo. El buscador se queda con
+            todo el primer renglón y los dos selectores bajan al siguiente. */}
+        <div style={{ display: 'flex', gap: 8, padding: '10px 20px', flexWrap: 'wrap' }}>
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar plantilla…" style={{ flex: movilPl ? '1 0 100%' : 1, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '10px 12px' : '7px 10px', fontSize: movilPl ? 16 : 12, fontFamily: 'inherit' }} />
+          <select value={idioma} onChange={e => setIdioma(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Idioma</option>{idiomas.map(i => <option key={i} value={i}>{i}</option>)}</select>
+          <select value={cat} onChange={e => setCat(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Categoría</option>{cats.map(c => <option key={c} value={c}>{c}</option>)}</select>
         </div>
         {error && <div style={{ margin: '0 20px 8px', fontSize: 12, color: C.rojo500 }}>{error}</div>}
         <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, padding: '0 12px 12px' }}>
