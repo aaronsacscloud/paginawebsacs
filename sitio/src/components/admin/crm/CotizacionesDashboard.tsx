@@ -261,7 +261,9 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
             return (
               <div key={'m' + c.cliente + i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f7f6fa', minHeight: 52 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.cliente}</div>
+                  {/* El nombre del cliente identifica la cotización: si no cabe,
+                      envuelve en vez de cortarse ("Tetetlan | Concept Store /…"). */}
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', overflowWrap: 'anywhere', lineHeight: 1.3 }}>{c.cliente}</div>
                   <div style={{ fontSize: '0.78rem', color: '#8f8d98', marginTop: 2 }}>cotizado {money(c.cotizado)}</div>
                 </div>
                 <div style={{ flex: 'none', textAlign: 'right' }}>

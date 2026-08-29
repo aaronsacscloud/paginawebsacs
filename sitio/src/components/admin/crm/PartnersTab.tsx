@@ -481,7 +481,15 @@ export default function PartnersTab() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 700, color: '#1a1a1a' }}>{it.nombre}</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {/* Folio · correo · empresa en una sola línea pedía 374 px
+                          y en el teléfono había 232: el correo —el dato con el
+                          que de verdad se contacta a un partner— se cortaba a
+                          media dirección. En móvil envuelve; en escritorio sobra
+                          ancho y se queda en una línea. */}
+                      <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 2, overflow: 'hidden',
+                        ...(isMobile
+                          ? { overflowWrap: 'anywhere' as const, lineHeight: 1.45 }
+                          : { whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }) }}>
                         {[it.numero, it.email, it.empresa].filter(Boolean).join(' · ')}
                       </div>
                     </div>

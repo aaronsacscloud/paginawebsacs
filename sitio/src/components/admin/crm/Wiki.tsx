@@ -80,6 +80,9 @@ export default function Wiki() {
           .w-tab th{font-size:12px;letter-spacing:.06em}
           .w-k{font-size:12px;letter-spacing:.09em}
           .wiki-chip{font-size:12px}
+          /* .w-mut es .9em: sobre la tabla de 13.2px cae en 11.9 y se queda
+             justo por debajo del piso. Fijo en 12 solo en el teléfono. */
+          .w-mut{font-size:12px}
           .wiki-i{width:auto;border-left:0;border-radius:7px;padding:5px 10px;font-size:12.5px}
           .wiki-i.on{border-left:0}
           .wiki-cp{padding:22px 18px 60px}

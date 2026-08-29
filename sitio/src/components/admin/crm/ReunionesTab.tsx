@@ -788,7 +788,16 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
                         // Apilado, el nombre toma el renglón completo (~290) y la
                         // hora baja al segundo, que es donde ya no estorba.
                         <div key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', flexDirection: 'column', gap: 3, minHeight: 44, padding: '9px 12px', borderRadius: 10, border: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', borderLeft: `3px solid ${b.event_types?.color || '#999'}` }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.invitee_nombre || '—'}</div>
+                          {/* La insignia sube al PRIMER renglón y el nombre
+                              envuelve en vez de cortarse: en una agenda el
+                              nombre completo importa más que la altura pareja
+                              de la fila. Eso libera el segundo renglón entero
+                              (290 px en vez de 142) para hora, tipo y empresa,
+                              que antes se cortaban en "consultoría · liveshowm…". */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <div style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: '0.9rem', color: '#241d43', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{b.invitee_nombre || '—'}</div>
+                            <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0 }}>{est.label}</span>
+                          </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.73rem', color: '#8a8590', minWidth: 0 }}>
                             <span style={{ fontWeight: 700, color: '#5B4BD6', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{fmtTime(b.hora_inicio)}</span>
                             {/* Sin el prefijo "Reunión de ": truncado se leía
@@ -796,7 +805,6 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: 
                                 un renglón que no distinguía ninguna. El panel de
                                 escritorio ya lo quitaba; aquí faltaba. */}
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(b.event_types?.nombre || '').replace(/^Reunión de |^Sesión de /i, '')}{b.invitado_company_nombre ? ` · ${b.invitado_company_nombre}` : ''}</span>
-                            <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0, marginLeft: 'auto' }}>{est.label}</span>
                           </div>
                         </div>
                       );
