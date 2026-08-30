@@ -223,6 +223,17 @@ export const GET: APIRoute = async ({ url }) => {
       }
     }
 
+    /* El ancla pertenece a la SECUENCIA, no al bucle de un contacto, y la usan
+       DOS bucles: el de graduación —donde se calcula el día— y el de envío
+       —donde se arma el contexto del correo—. Vivía dentro del primero, así que
+       el segundo la leía fuera de alcance: `anclaSec is not defined` en
+       ejecución, con el envío de TODAS las cadencias roto.
+
+       Va aquí arriba y no más abajo por la otra mitad de la trampa: un `const`
+       usado antes de su línea está en zona muerta temporal y también revienta.
+       esbuild no ve ninguna de las dos — solo aparecen al correr. */
+    const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
+
     // 2) GRADUAR + canales — miembros vigentes: salida total con motivo, o
     //    detención del canal por el que respondió.
     /* ⚠️ El `error` de aquí NO se puede tragar.
@@ -371,7 +382,6 @@ export const GET: APIRoute = async ({ url }) => {
         (sec as any)._pasoForzado = paso;
       }
 
-      const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
       /* ── El ancla, y el único caso que corre AL REVÉS ──
          Las demás cuentan días hacia adelante desde una fecha que ya pasó. La
          de renovación cuenta hacia ATRÁS hacia una que todavía no llega: su
