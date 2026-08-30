@@ -10,6 +10,7 @@ import Cargando from './ui/Cargando';
 import ReporteMejoras from './ReporteMejoras';
 import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 import { computarSenales } from '../../../lib/crm/senales';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -97,7 +98,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
     cargar(); flash(ESTADOS[estado]?.label || 'Actualizada');
   }
   async function archivar(m: any) {
-    if (!confirm(`¿Quitar "${m.titulo}" de la lista?\n\nSe archiva: deja de verse aquí pero no se borra del historial.`)) return;
+    if (!await confirmar(`¿Quitar "${m.titulo}" de la lista?`, { accion: 'Quitar', detalle: 'Se archiva: deja de verse aquí pero no se borra del historial.' })) return;
     await fetch('/api/crm/mejoras', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: m.id }) }).catch(() => {});
     cargar();
   }

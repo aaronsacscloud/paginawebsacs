@@ -6,6 +6,7 @@
 // lo que evita que un contrato quede accesible con una URL eterna.
 import { useEffect, useRef, useState } from 'react';
 import Cargando, { Corazones } from './ui/Cargando';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const peso = (n: number) => n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 const fecha = (s: string) => new Date(s).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '');
@@ -52,7 +53,7 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
   };
 
   const borrar = async (a: any) => {
-    if (!confirm(`¿Borrar "${a.nombre}"?\n\nSe elimina el archivo, no solo el enlace.`)) return;
+    if (!await confirmar(`¿Borrar "${a.nombre}"?`, { accion: 'Borrar', detalle: 'Se elimina el archivo, no solo el enlace.' })) return;
     await fetch('/api/crm/suscripciones/archivos', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: subId, path: a.path }),

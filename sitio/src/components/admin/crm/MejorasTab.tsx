@@ -16,6 +16,7 @@ import Hallazgos from './soporte/Hallazgos';
 import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
 import Cargando, { Corazones } from './ui/Cargando';
 import KpiCard from './ui/KpiCard';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -410,7 +411,7 @@ export default function MejorasTab() {
   async function cerrarSeleccionadas() {
     const ids = Array.from(sel);
     if (!ids.length) return;
-    if (!confirm(`¿Marcar ${ids.length} como hechas?`)) return;
+    if (!await confirmar(`¿Marcar ${ids.length} como hechas?`, { accion: 'Marcar hechas', peligro: false })) return;
     for (const id of ids) {
       await fetch('/api/crm/mejoras', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },

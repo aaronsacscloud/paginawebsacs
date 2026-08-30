@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import RegistrarPagoModal, { resumenCierre } from './RegistrarPagoModal';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Panel de actividad de una cotización ═══
  *
@@ -112,7 +113,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio, embebi
     setEditPago(null); refrescar();
   }
   async function borrarPago(id: string) {
-    if (!confirm('¿Quitar este abono? El saldo se recalcula.')) return;
+    if (!await confirmar('¿Quitar este abono?', { accion: 'Quitar abono', detalle: 'El saldo se recalcula.' })) return;
     await fetch('/api/revenue/quotes/pagos', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pago_id: id }) });
     refrescar();
   }
