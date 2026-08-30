@@ -11,7 +11,7 @@ import { swrGet } from '../../../lib/crm/swr';
 // En escritorio este componente no existe: el Dashboard completo sigue igual.
 import { useEffect, useState } from 'react';
 import Sheet from './ui/Sheet';
-import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
+import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, ParaRescatarLista, EmpresasActivas, EfectividadSeguimiento, RangoDias, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
@@ -30,7 +30,8 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   // Quién se movió esta semana. Va aquí y no en el pipeline porque la pregunta
   // que contesta —«¿a quién le toco hoy?»— es de arranque de día, no de
   // gestión: si hay que entrar a otra pantalla a buscarla, no se hace.
-  const activos = useLeadsActivos(7);
+  const [diasAct, setDiasAct] = useState(7);
+  const activos = useLeadsActivos(diasAct);
   const [verActivos, setVerActivos] = useState(false);
   const [filtroAct, setFiltroAct] = useState('todos');
   const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
@@ -173,12 +174,25 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       <div style={{ height: 24 }} />
 
       <Sheet open={verActivos} onClose={() => setVerActivos(false)}
-        title="Leads con actividad · 7 días">
+        title="Leads con actividad"
+        headerActions={<RangoDias valor={diasAct} onCambiar={setDiasAct} />}>
         {/* Los filtros van pegados arriba: son la diferencia entre un reporte
             y una lista de trabajo. «Te toca a ti» es el que se usa a diario. */}
         <FiltrosActivos movil datos={activos} valor={filtroAct} onCambiar={setFiltroAct} />
         <ListaLeadsActivos movil leads={aplicarFiltro(activos?.leads || [], filtroAct)}
           onAbrir={setLeadAbierto} />
+        <EfectividadSeguimiento datos={activos} />
+        <EmpresasActivas movil datos={activos} />
+        <ParaRescatarLista movil datos={activos}
+          onAbrirConv={(r) => {
+            setVerActivos(false);
+            const ruta = r.wa_conversation_id
+              ? `whatsapp?wa_conv=${encodeURIComponent(r.wa_conversation_id)}`
+              : r.whatsapp ? `whatsapp?wa_search=${encodeURIComponent(r.whatsapp.replace(/\D/g, ''))}&wa_nuevo=1`
+              : `pipeline?contacto=${r.id}`;
+            setTimeout(() => onIrA(ruta), 140);
+          }} />
+        <div style={{ height: 20 }} />
       </Sheet>
 
       {/* El drawer NO cierra la hoja: al volver del detalle se sigue donde se

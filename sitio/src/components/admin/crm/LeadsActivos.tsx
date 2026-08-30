@@ -26,8 +26,11 @@ import Sheet from './ui/Sheet';
 import EstadoVacio from './ui/EstadoVacio';
 
 export type ActividadItem = {
-  tipo: string; de: 'lead' | 'nosotros'; que: string; detalle: string | null; cuando: string; peso: number;
+  tipo: string; de: 'lead' | 'nosotros'; que: string; detalle: string | null; cuando: string;
+  ruta: string | null; peso: number;
 };
+export type Pagina = { ruta: string; n: number; caliente: boolean };
+export type Cotizacion = { id: string | null; folio: string | null; total: number; estado: string | null; vistas: number; cuando: string };
 export type LeadActivo = {
   id: string; nombre: string; empresa: string | null; whatsapp: string | null; email: string | null;
   ciclo: string | null; etapa: string | null;
@@ -35,12 +38,24 @@ export type LeadActivo = {
   pelota: 'nosotros' | 'ellos'; horas_esperando: number | null;
   tendencia: 'subiendo' | 'enfriandose' | 'estable';
   tipos: Record<string, number>;
+  paginas: Pagina[]; visitas_repetidas: number;
+  cotizacion: Cotizacion | null;
+  wa_ventana: 'abierta' | 'cerrada' | null;
+  su_record: boolean; ritmo_previo: number;
   wa_conversation_id: string | null;
   ultima: ActividadItem | null;
   linea: ActividadItem[];
 };
+export type ParaRescatar = {
+  id: string; nombre: string; empresa: string | null; whatsapp: string | null;
+  ciclo: string | null; etapa: string | null; que: string; cuando: string;
+  dias_callado: number; wa_conversation_id: string | null;
+};
 export type DatosActivos = {
-  total: number; con_senal: number; leads: LeadActivo[];
+  total: number; dias: number; con_senal: number; leads: LeadActivo[];
+  empresas: { empresa: string; n: number; nombres: string[] }[];
+  rescatar: ParaRescatar[];
+  seguimiento: { contestados: number; revivieron: number; pct: number | null };
   conteos: {
     pelota_nosotros: number; pelota_ellos: number; caliente: number; enfriandose: number;
     por_tipo: { tipo: string; etiqueta: string; n: number }[];
@@ -57,6 +72,8 @@ export function useLeadsActivos(dias = 7) {
   }, [dias]);
   return datos;
 }
+
+const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
 const CICLO: Record<string, string> = {
   lead: 'Lead', lead_calificado: 'Calificado', oportunidad: 'Oportunidad',
@@ -87,7 +104,11 @@ const diaDe = (iso: string) => {
   const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
   if (mismo(d, hoy)) return 'Hoy';
   if (mismo(d, ayer)) return 'Ayer';
-  return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+  // Solo la primera letra. `text-transform: capitalize` en CSS toca CADA
+  // palabra y dejaba «Miércoles 26 De Ago» —el "De" en mayúscula se lee como
+  // un error de alguien que no revisó—. En español solo va el día.
+  const t = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
 /* Filtros. `pelota:nosotros` va primero porque es el que convierte la pantalla
@@ -159,9 +180,32 @@ export function ListaLeadsActivos({ leads, onAbrir, movil }: {
               {l.etapa && <span style={{ fontSize: 10.5, fontWeight: 800, background: '#EEEEF3', color: '#4b5563', borderRadius: 999, padding: '2px 8px', textTransform: 'capitalize' }}>{l.etapa}</span>}
               {l.tendencia === 'enfriandose' && <span style={{ fontSize: 10.5, fontWeight: 700, color: '#8b8896' }}>enfriándose</span>}
               {l.tendencia === 'subiendo' && <span style={{ fontSize: 10.5, fontWeight: 700, color: '#0F766E' }}>subiendo</span>}
+              {/* Contra SU historia, no contra los demás: dos señales es poco
+                  en absoluto y muchísimo para quien nunca daba ninguna. */}
+              {l.su_record && <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0F766E' }}>su mejor racha</span>}
             </span>
 
-            {l.ultima && (
+            {/* Lo MÁS CARO que hizo, no lo más reciente. Si abrió una
+                cotización de $58,919 dos veces, eso decide la llamada; que
+                además haya entrado al sitio después es un detalle. */}
+            {l.cotizacion && l.cotizacion.total > 0 && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: '#241d43', fontWeight: 700 }}>
+                  Abrió {l.cotizacion.folio || 'la cotización'} · {money(l.cotizacion.total)}
+                  {l.cotizacion.vistas > 1 && <span style={{ fontWeight: 500, color: '#6b6875' }}> · {l.cotizacion.vistas} veces</span>}
+                </span>
+              </span>
+            )}
+            {(!l.cotizacion || !l.cotizacion.total) && l.paginas?.some(p => p.caliente) && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: '#241d43', fontWeight: 700 }}>
+                  Entró a {l.paginas.filter(p => p.caliente).map(p => p.ruta).join(', ')}
+                </span>
+              </span>
+            )}
+            {l.ultima && !(l.cotizacion && l.cotizacion.total > 0) && !l.paginas?.some(p => p.caliente) && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
                 <span style={{ width: 6, height: 6, borderRadius: 999, background: suyo ? '#5B4BD6' : '#c9c7d2', flexShrink: 0 }} />
                 <span style={{ fontSize: 12.5, color: suyo ? '#241d43' : '#6b6875', fontWeight: suyo ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -227,9 +271,60 @@ export function DrawerLead({ lead, onCerrar, onWhatsApp }: {
           </div>
         )}
 
+        {/* LA COTIZACIÓN, con monto y cuántas veces la abrió. Es el dato que
+            decide con qué frase abres la conversación. */}
+        {lead.cotizacion && (
+          <div style={{ border: '1px solid #ddd8f7', background: '#FAFAFD', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#a5a2af' }}>Cotización</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#241d43', marginTop: 3 }}>
+              {lead.cotizacion.folio || 'Sin folio'}{lead.cotizacion.total > 0 ? ` · ${money(lead.cotizacion.total)}` : ''}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b6875', marginTop: 2 }}>
+              La abrió {lead.cotizacion.vistas === 1 ? 'una vez' : `${lead.cotizacion.vistas} veces`} · {haceCuanto(lead.cotizacion.cuando)}
+              {lead.cotizacion.estado ? ` · ${lead.cotizacion.estado}` : ''}
+            </div>
+          </div>
+        )}
+
+        {/* QUÉ páginas vio. «Visitó el sitio» no dice nada; /planes sí. */}
+        {lead.paginas?.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#a5a2af', marginBottom: 5 }}>Qué miró</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {lead.paginas.map(pg => (
+                <span key={pg.ruta} style={{ fontSize: 11.5, fontWeight: pg.caliente ? 800 : 600, borderRadius: 999, padding: '3px 9px',
+                  background: pg.caliente ? '#FEE7E3' : '#EEEEF3', color: pg.caliente ? '#9A3412' : '#4b5563' }}>
+                  {pg.ruta}{pg.n > 1 ? ` ×${pg.n}` : ''}
+                </span>
+              ))}
+            </div>
+            {/* Se dice cuántas se descartaron para que el número de señales sea
+                defendible: sin esto, «53 señales» parece interés y es una
+                pestaña abierta. */}
+            {lead.visitas_repetidas > 0 && (
+              <div style={{ fontSize: 11, color: '#8b8896', marginTop: 5 }}>
+                {lead.visitas_repetidas === 1
+                  ? '1 recarga del mismo día no cuenta como señal.'
+                  : `${lead.visitas_repetidas} recargas del mismo día no cuentan como señal.`}
+              </div>
+            )}
+          </div>
+        )}
+
         {lead.pelota === 'nosotros' && (
           <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, color: '#92400E', marginBottom: 12, lineHeight: 1.5 }}>
             <b>La pelota es tuya.</b> Lo último fue suyo{lead.horas_esperando != null ? ` y lleva ${lead.horas_esperando < 24 ? `${lead.horas_esperando} h` : `${Math.round(lead.horas_esperando / 24)} d`} esperando` : ''}.
+          </div>
+        )}
+
+        {/* LA VENTANA DE 24 H, ANTES de tocar el botón. Si está cerrada, WhatsApp
+            solo deja mandar plantilla: enterarse allá dentro es descubrir un
+            callejón después de haber caminado hasta el fondo. */}
+        {lead.wa_ventana && (
+          <div style={{ fontSize: 12, marginBottom: 8, color: lead.wa_ventana === 'abierta' ? '#0F766E' : '#92400E', fontWeight: 600 }}>
+            {lead.wa_ventana === 'abierta'
+              ? 'Ventana de 24 h abierta: puedes escribirle libre.'
+              : 'Ventana de 24 h cerrada: tendrás que abrir con una plantilla.'}
           </div>
         )}
 
@@ -265,7 +360,7 @@ export function DrawerLead({ lead, onCerrar, onWhatsApp }: {
           return (
             <div key={i}>
               {nuevoDia && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#8b8896', margin: i ? '14px 0 6px' : '0 0 6px', textTransform: 'capitalize' }}>{dia}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#8b8896', margin: i ? '14px 0 6px' : '0 0 6px' }}>{dia}</div>
               )}
               <div style={{ display: 'flex', gap: 9, padding: '7px 0', borderBottom: '1px solid #f7f6fa' }}>
                 <span style={{ width: 7, height: 7, borderRadius: 999, background: suyo ? '#5B4BD6' : '#d5d3dd', marginTop: 5, flexShrink: 0 }} />
@@ -306,6 +401,97 @@ export function rutaConversacion(l: LeadActivo): string {
   const tel = (l.whatsapp || '').replace(/\D/g, '');
   if (!tel) return `pipeline?contacto=${l.id}`;
   return `whatsapp?wa_search=${encodeURIComponent(tel)}&wa_nuevo=1`;
+}
+
+/**
+ * LO QUE NO SALE EN LA LISTA. Un lead que abrió tu cotización hace tres
+ * semanas y desapareció no cabe en «últimos 7 días» — y es justo el que se
+ * está cayendo solo. Se buscan señales FUERTES fuera de la ventana en gente
+ * que lleva callada desde entonces.
+ *
+ * Cuando no hay nadie así no se pinta nada: una sección vacía permanente
+ * enseña a ignorar esa zona de la pantalla.
+ */
+export function ParaRescatarLista({ datos, onAbrirConv, movil }: {
+  datos: DatosActivos | null; onAbrirConv: (r: ParaRescatar) => void; movil?: boolean;
+}) {
+  const rs = datos?.rescatar || [];
+  if (!rs.length) return null;
+  return (
+    <div>
+      <div style={{ padding: movil ? '16px 16px 6px' : '14px 0 6px', fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af' }}>
+        Se están cayendo solos · {rs.length}
+      </div>
+      <div style={{ padding: movil ? '0 16px 8px' : '0 0 8px', fontSize: 12, color: '#7c7a86', lineHeight: 1.5 }}>
+        Dieron una señal fuerte y llevan días sin volver. No aparecen arriba porque no se movieron esta semana.
+      </div>
+      {rs.map(r => (
+        <button key={r.id} onClick={() => onAbrirConv(r)}
+          style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer',
+            fontFamily: 'inherit', padding: movil ? '12px 16px' : '10px 14px', borderBottom: '1px solid #f1f0f5' }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+            <b style={{ fontSize: movil ? 14.5 : 13.5, color: '#241d43' }}>{r.nombre}</b>
+            {r.empresa && <span style={{ fontSize: 12, color: '#8b8896', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{r.empresa}</span>}
+            <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: '#B45309', flexShrink: 0 }}>{r.dias_callado} d callado</span>
+          </span>
+          <span style={{ display: 'block', fontSize: 12.5, color: '#6b6875', marginTop: 4 }}>{r.que}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * VARIOS CONTACTOS DE LA MISMA EMPRESA moviéndose no son tres leads sueltos:
+ * es una empresa evaluando, y eso se atiende distinto (y se cotiza distinto).
+ */
+export function EmpresasActivas({ datos, movil }: { datos: DatosActivos | null; movil?: boolean }) {
+  const es = datos?.empresas || [];
+  if (!es.length) return null;
+  return (
+    <div style={{ padding: movil ? '12px 16px' : '10px 0' }}>
+      <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af', marginBottom: 6 }}>
+        Empresas evaluando
+      </div>
+      {es.map(e => (
+        <div key={e.empresa} style={{ fontSize: 12.5, color: '#4b4956', padding: '3px 0' }}>
+          <b style={{ color: '#241d43' }}>{e.empresa}</b> · {e.n} personas · {e.nombres.join(', ')}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * ¿SIRVE EL SEGUIMIENTO? De los leads a los que escribimos, cuántos volvieron
+ * a moverse después. Es la única cifra de la sección que mide nuestro trabajo
+ * y no el de ellos, y por eso vale la pena tenerla a la vista aunque incomode.
+ */
+export function EfectividadSeguimiento({ datos }: { datos: DatosActivos | null }) {
+  const s = datos?.seguimiento;
+  if (!s || !s.contestados) return null;
+  return (
+    <div style={{ padding: '10px 16px', fontSize: 12, color: '#6b6875', lineHeight: 1.5, borderTop: '1px solid #f1f0f5' }}>
+      Les escribiste a <b style={{ color: '#241d43' }}>{s.contestados}</b> y volvieron a moverse{' '}
+      <b style={{ color: '#241d43' }}>{s.revivieron}</b> ({s.pct}%).
+      {s.pct != null && s.pct < 30 && ' Vale la pena revisar con qué los estás abriendo.'}
+    </div>
+  );
+}
+
+/** Rango de la ventana. El 7 no tenía ninguna razón: un ciclo de venta de ERP no cabe en una semana. */
+export function RangoDias({ valor, onCambiar }: { valor: number; onCambiar: (d: number) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {[7, 14, 30].map(d => (
+        <button key={d} onClick={() => onCambiar(d)}
+          style={{ minHeight: 32, padding: '0 11px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+            border: `1px solid ${valor === d ? '#5B4BD6' : '#e2e0ea'}`, background: valor === d ? '#5B4BD6' : '#fff', color: valor === d ? '#fff' : '#4b4956' }}>
+          {d} d
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** Fila de filtros, compartida por la hoja del teléfono y la tarjeta del tablero. */

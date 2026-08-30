@@ -3,7 +3,7 @@ import { lazySeguro } from '../../lib/ui/lazySeguro';
 import Cargando from './crm/ui/Cargando';
 import { WRAP } from '../../lib/crm/layout';
 import type { ReactNode } from 'react';
-import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
+import { useIsMobile, isTouchDevice, BP } from '../../lib/ui/mobile';
 import BottomNav from './crm/ui/BottomNav';
 import MasScreen from './crm/ui/MasScreen';
 import InicioMovil from './crm/InicioMovil';
@@ -317,7 +317,19 @@ export default function CrmDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  /* EL DESTELLO DEL MENÚ BLANCO AL ABRIR LA PWA.
+     Esto arrancaba en `false` —menú desplegado— y un efecto lo colapsaba al
+     detectar que estamos en teléfono. Pero los efectos corren DESPUÉS del
+     primer pintado: el primer fotograma dibujaba la barra lateral completa y
+     el siguiente la quitaba. En modo oscuro se notaba el doble, porque esa
+     barra sale clara sobre una pantalla negra: parecía un menú que se abre
+     solo y se cierra.
+     Se resuelve leyendo el ancho de forma SÍNCRONA en la inicialización, con
+     la misma consulta que usa useIsMobile, para que el primer fotograma ya sea
+     el correcto. El efecto de abajo se queda por si se gira el aparato. */
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(`(max-width: ${BP.mobile - 1}px)`).matches
+  );
   /* El menú PLEGADO enseña un icono por GRUPO, no uno por pantalla. Pintando
      cada renglón salían 19 iconos en una tira que ni cabía, y los grupos que el
      menú abierto ya tiene desaparecían justo cuando más falta hacen. Tocar un

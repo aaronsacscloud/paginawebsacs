@@ -24,7 +24,7 @@ import { useEffect, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
-import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
+import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, ParaRescatarLista, EmpresasActivas, EfectividadSeguimiento, RangoDias, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 // Los millones de la cartera no caben en una tarjeta; los pesos del negocio sí.
@@ -69,7 +69,8 @@ const seg = (on: boolean) => ({
 }) as const;
 
 export default function DashboardTab() {
-  const activos = useLeadsActivos(7);
+  const [diasAct, setDiasAct] = useState(7);
+  const activos = useLeadsActivos(diasAct);
   const [filtroAct, setFiltroAct] = useState('todos');
   const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
   const [aMano, setAMano] = useState(false);
@@ -159,9 +160,12 @@ export default function DashboardTab() {
             único que cambia es el envase: aquí tarjeta, allá hoja. */}
         {!!activos?.total && (
           <div style={S.card}>
-            <div style={S.titulo}>
-              Leads que se movieron
-              <span style={S.der}>{activos.total} en 7 días · {activos.con_senal} por su cuenta</span>
+            <div style={{ ...S.titulo, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>Leads que se movieron</span>
+              <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={S.der}>{activos.total} · {activos.con_senal} por su cuenta</span>
+                <RangoDias valor={diasAct} onCambiar={setDiasAct} />
+              </span>
             </div>
             <div style={S.lead}>
               Quién dio señales esta semana, de lo más reciente a lo más viejo. El punto morado es lo que hizo el lead
@@ -172,6 +176,12 @@ export default function DashboardTab() {
             <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10 }}>
               <ListaLeadsActivos leads={aplicarFiltro(activos.leads, filtroAct)} onAbrir={setLeadAbierto} />
             </div>
+            <EfectividadSeguimiento datos={activos} />
+            <EmpresasActivas datos={activos} />
+            <ParaRescatarLista datos={activos}
+              onAbrirConv={(r) => { location.href = r.wa_conversation_id
+                ? `/admin/crm?tab=whatsapp&wa_conv=${encodeURIComponent(r.wa_conversation_id)}`
+                : `/admin/crm?tab=pipeline&contacto=${r.id}`; }} />
           </div>
         )}
         <DrawerLead lead={leadAbierto} onCerrar={() => setLeadAbierto(null)}
