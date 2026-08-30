@@ -148,6 +148,29 @@ export function aplicarFiltro(leads: LeadActivo[], f: string): LeadActivo[] {
   return leads;
 }
 
+/**
+ * LA FILA. Tres niveles y no más, porque antes había cinco y no se distinguía
+ * nada: nombre en negro, tres pastillas de colores, «subiendo» en verde, «su
+ * mejor racha» en verde, la acción en morado y «Te toca contestar» en ámbar.
+ * Seis cosas compitiendo por el ojo en 80 px de alto — y «Te toca contestar»
+ * salía en TODAS las filas, porque la lista viene ordenada justo por eso: un
+ * aviso que aparece siempre no avisa de nada.
+ *
+ * La jerarquía queda así:
+ *
+ *   1. NOMBRE — lo único en negrita oscura. Es por donde se entra.
+ *   2. LA PRUEBA — qué hizo, en una línea legible. Es el contenido de la fila,
+ *      lo que decide si llamas: «Abrió COT-80119 · $58,919».
+ *   3. EL RESTO — etapa, calor, espera, racha: una sola línea gris pequeña,
+ *      separada por puntos. Está para consultarse, no para leerse.
+ *
+ * El COLOR se gasta una vez por fila y en una sola cosa: la barrita de
+ * temperatura del borde izquierdo. Encodifica el estado sin gastar una palabra
+ * ni una pastilla, y deja el texto tranquilo. La única excepción es la espera
+ * cuando ya pasó de un día, que ahí sí es una deuda y se pinta.
+ */
+const BARRA: Record<string, string> = { caliente: '#E4674F', tibio: '#E8B04B', frio: 'transparent' };
+
 export function ListaLeadsActivos({ leads, onAbrir, movil }: {
   leads: LeadActivo[]; onAbrir?: (l: LeadActivo) => void; movil?: boolean;
 }) {
@@ -159,68 +182,67 @@ export function ListaLeadsActivos({ leads, onAbrir, movil }: {
     <div>
       {leads.map(l => {
         const suyo = l.ultima?.de === 'lead';
-        const t = TEMP[l.temperatura];
+        const horas = l.horas_esperando || 0;
+        const debe = l.pelota === 'nosotros' && horas >= 1;
+        const tarde = debe && horas >= 24;
+
+        // LA PRUEBA: lo más caro que hizo, no lo más reciente. Una cotización
+        // con monto gana a una visita, y una visita a precios gana al resto.
+        const prueba = l.cotizacion && l.cotizacion.total > 0
+          ? `Abrió ${l.cotizacion.folio || 'la cotización'} · ${money(l.cotizacion.total)}${l.cotizacion.vistas > 1 ? ` · ${l.cotizacion.vistas} veces` : ''}`
+          : l.paginas?.find(p => p.caliente)
+            ? `Entró a ${l.paginas.filter(p => p.caliente).map(p => p.ruta).join(', ')}`
+            : (l.ultima?.que || '');
+
+        /* La línea gris: solo lo que aporta. La etapa del pipeline se omite
+           cuando es «nuevo» —lo son casi todos y no distingue a nadie—, y la
+           racha solo si de verdad rompió su marca. */
+        const meta = [
+          CICLO[l.ciclo || ''] || l.ciclo,
+          // La temperatura NO va como palabra: ya la dice la barra de color del
+          // borde. Escribirla además era decir lo mismo dos veces en un
+          // renglón que se quería tranquilo.
+          l.etapa && l.etapa !== 'nuevo' ? l.etapa : null,
+          l.tendencia === 'enfriandose' ? 'enfriándose' : l.su_record ? 'su mejor racha' : null,
+        ].filter(Boolean);
+
         return (
           <button key={l.id} onClick={() => onAbrir?.(l)}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none',
+            style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none',
               cursor: onAbrir ? 'pointer' : 'default', fontFamily: 'inherit',
-              padding: movil ? '13px 16px' : '11px 14px', borderBottom: '1px solid #f1f0f5' }}>
+              border: 'none', borderLeft: `3px solid ${BARRA[l.temperatura]}`,
+              padding: movil ? '12px 16px 12px 13px' : '10px 14px 10px 11px',
+              borderBottom: '1px solid #f1f0f5' }}>
+
+            {/* 1 · quién */}
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-              <b style={{ fontSize: movil ? 15 : 13.5, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</b>
-              {l.empresa && <span style={{ fontSize: 12, color: '#8b8896', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{l.empresa}</span>}
-              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#8b8896', flexShrink: 0 }}>{l.ultima ? haceCuanto(l.ultima.cuando) : ''}</span>
+              <b style={{ fontSize: movil ? 15 : 13.5, color: '#241d43', letterSpacing: '-0.01em',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</b>
+              {l.empresa && <span style={{ fontSize: 12.5, color: '#9b98a8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{l.empresa}</span>}
+              <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#a5a2af', flexShrink: 0 }}>{l.ultima ? haceCuanto(l.ultima.cuando) : ''}</span>
             </span>
 
-            <span style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* La temperatura va PRIMERO: es lo que decide si sigo leyendo. */}
-              <span style={{ fontSize: 10.5, fontWeight: 800, background: t.bg, color: t.fg, borderRadius: 999, padding: '2px 8px' }}>{t.l}</span>
-              <span style={{ fontSize: 10.5, fontWeight: 800, background: '#EEF2FF', color: '#4338CA', borderRadius: 999, padding: '2px 8px' }}>
-                {CICLO[l.ciclo || ''] || l.ciclo || 'Sin ciclo'}
-              </span>
-              {l.etapa && <span style={{ fontSize: 10.5, fontWeight: 800, background: '#EEEEF3', color: '#4b5563', borderRadius: 999, padding: '2px 8px', textTransform: 'capitalize' }}>{l.etapa}</span>}
-              {l.tendencia === 'enfriandose' && <span style={{ fontSize: 10.5, fontWeight: 700, color: '#8b8896' }}>enfriándose</span>}
-              {l.tendencia === 'subiendo' && <span style={{ fontSize: 10.5, fontWeight: 700, color: '#0F766E' }}>subiendo</span>}
-              {/* Contra SU historia, no contra los demás: dos señales es poco
-                  en absoluto y muchísimo para quien nunca daba ninguna. */}
-              {l.su_record && <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0F766E' }}>su mejor racha</span>}
+            {/* 2 · la prueba */}
+            {prueba && (
+              <span style={{ display: 'block', marginTop: 3, fontSize: movil ? 13.5 : 13,
+                color: suyo || l.cotizacion ? '#3d3a4d' : '#8b8896',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prueba}</span>
+            )}
+
+            {/* 3 · el resto, en voz baja */}
+            <span style={{ display: 'block', marginTop: 4, fontSize: 11.5, color: '#a5a2af' }}>
+              {meta.join(' · ')}
+              {debe && (
+                <>
+                  {meta.length > 0 && ' · '}
+                  {/* Se pinta SOLO si ya pasó de un día: antes de eso es el
+                      curso normal de una conversación, no una deuda. */}
+                  <span style={tarde ? { color: '#B45309', fontWeight: 700 } : undefined}>
+                    {horas < 24 ? `${horas} h esperándote` : `${Math.round(horas / 24)} d esperándote`}
+                  </span>
+                </>
+              )}
             </span>
-
-            {/* Lo MÁS CARO que hizo, no lo más reciente. Si abrió una
-                cotización de $58,919 dos veces, eso decide la llamada; que
-                además haya entrado al sitio después es un detalle. */}
-            {l.cotizacion && l.cotizacion.total > 0 && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: '#241d43', fontWeight: 700 }}>
-                  Abrió {l.cotizacion.folio || 'la cotización'} · {money(l.cotizacion.total)}
-                  {l.cotizacion.vistas > 1 && <span style={{ fontWeight: 500, color: '#6b6875' }}> · {l.cotizacion.vistas} veces</span>}
-                </span>
-              </span>
-            )}
-            {(!l.cotizacion || !l.cotizacion.total) && l.paginas?.some(p => p.caliente) && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: '#241d43', fontWeight: 700 }}>
-                  Entró a {l.paginas.filter(p => p.caliente).map(p => p.ruta).join(', ')}
-                </span>
-              </span>
-            )}
-            {l.ultima && !(l.cotizacion && l.cotizacion.total > 0) && !l.paginas?.some(p => p.caliente) && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: 999, background: suyo ? '#5B4BD6' : '#c9c7d2', flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: suyo ? '#241d43' : '#6b6875', fontWeight: suyo ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {l.ultima.que}
-                </span>
-              </span>
-            )}
-
-            {/* La deuda, dicha con todas sus letras. Es la línea que hace que
-                alguien deje de leer y abra la conversación. */}
-            {l.pelota === 'nosotros' && l.horas_esperando != null && l.horas_esperando >= 1 && (
-              <span style={{ display: 'block', marginTop: 5, fontSize: 11.5, fontWeight: 700, color: '#B45309' }}>
-                Te toca contestar · {l.horas_esperando < 24 ? `${l.horas_esperando} h` : `${Math.round(l.horas_esperando / 24)} d`} esperando
-              </span>
-            )}
           </button>
         );
       })}

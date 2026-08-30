@@ -318,7 +318,12 @@ const _GET: APIRoute = async ({ url }) => {
        saltar «su mejor racha» de más. El 0.5 evita dividir entre casi cero. */
     const tramos = Math.max(0.5, (VENTANA_LARGA - dias) / dias);
     const ritmo = antes / tramos;   // señales por ventana equivalente
-    f.su_record = f.senales >= 2 && f.senales > ritmo * 1.5;
+    /* «Su mejor racha» exige que HAYA racha previa. Sin el `ritmo > 0`, todo
+       lead nuevo —que no tiene historia— batía su marca por definición, y la
+       etiqueta salía en casi todas las filas: repetida en todos lados, dejaba
+       de significar nada. Ahora solo la lleva quien ya venía dando señales y
+       esta ventana se salió de su propio ritmo. */
+    f.su_record = ritmo > 0 && f.senales >= 2 && f.senales > ritmo * 1.5;
     f.ritmo_previo = Math.round(ritmo * 10) / 10;
     /* Tres cajones, no un número suelto: «7.4» no le dice nada a nadie y
        además finge una precisión que no existe. El corte se eligió mirando la
