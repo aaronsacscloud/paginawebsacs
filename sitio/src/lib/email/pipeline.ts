@@ -248,6 +248,16 @@ export async function enviarCorreo(s: Solicitud): Promise<Resultado> {
       email_provider: 'sendgrid',
       categoria,
       variante: s.variante || null,
+      /* QUÉ se mandó, no solo a quién. El asunto solo existe en este momento:
+         los envíos no llevan plantilla ni campaña (medido: los 89 con ambos en
+         null), así que si no se guarda aquí, después no hay de dónde sacarlo.
+         Sin esto el inbox decía «Correo «campaña»: lo abrió» — «campaña» era
+         relleno y no decía de qué correo hablaba, que es justo lo que hace
+         falta para retomar la conversación.
+         Se guarda un extracto corto y no el HTML: el cuerpo pesa cientos de kB
+         y para reconocer un correo bastan el asunto y sus primeras líneas. */
+      asunto: s.asunto?.trim().slice(0, 300) || null,
+      extracto: (s.texto?.trim() || htmlATexto(s.html || '')).replace(/\s+/g, ' ').trim().slice(0, 240) || null,
       estado: 'enviando',
     })
     .select('id')

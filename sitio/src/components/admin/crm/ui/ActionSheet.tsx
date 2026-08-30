@@ -3,6 +3,7 @@
 // En desktop también funciona (bottom sheet centrado angosto) — aceptable según
 // el plan; los consumidores pueden seguir usando su dropdown en desktop si quieren.
 import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDrawerHistory } from '../../../../lib/ui/mobile';
 
 export type ActionItem = {
@@ -24,6 +25,11 @@ export default function ActionSheet({
   zIndex?: number;
 }) {
   useDrawerHistory(open, onClose);
+  /* Alta = expandida. Arranca en su tamaño normal y crece si la arrastras: una
+     hoja que abre a pantalla completa tapa el contexto de dónde saliste. */
+  const [alta, setAlta] = useState(false);
+  const asa = useRef<number | null>(null);
+  useEffect(() => { if (!open) setAlta(false); }, [open]);
   if (!open) return null;
 
   return (
@@ -34,8 +40,23 @@ export default function ActionSheet({
           blanco a pantalla completa de madrugada. */}
       <style>{CSS_HOJA}</style>
       <div className="ash-velo" onClick={onClose} style={{ zIndex }} />
-      <div role="menu" className="ash" style={{ zIndex: zIndex + 1 }}>
-        <div className="ash-asa" />
+      <div role="menu" className={'ash' + (alta ? ' alta' : '')} style={{ zIndex: zIndex + 1 }}>
+        {/* El asa se ve arrastrable, así que TIENE que arrastrar: si parece un
+            control y no responde, se lee como que la pantalla está trabada.
+            Arriba la agranda a pantalla casi completa, abajo la cierra. La zona
+            táctil es toda la franja superior, no los 4 px de la rayita. */}
+        <div className="ash-asa-zona"
+          onTouchStart={(e) => { asa.current = e.touches[0].clientY; }}
+          onTouchMove={(e) => {
+            if (asa.current == null) return;
+            const d = e.touches[0].clientY - asa.current;
+            if (d < -28) { setAlta(true); asa.current = null; }
+            else if (d > 60) { asa.current = null; onClose(); }
+          }}
+          onTouchEnd={() => { asa.current = null; }}
+          onClick={() => setAlta(v3 => !v3)}>
+          <div className="ash-asa" />
+        </div>
         {title != null && <div className="ash-tit">{title}</div>}
         <div className="ash-lista">
           {items.map((it, i) => {
@@ -75,9 +96,21 @@ const CSS_HOJA = `
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
   animation: ash-sube 190ms cubic-bezier(.22,.61,.36,1) both;
 }
-.ash-asa { width: 38px; height: 4px; border-radius: 99px; background: #d8dbe2; margin: 9px auto 2px; flex-shrink: 0; }
+.ash-asa-zona { padding: 8px 0 4px; cursor: grab; flex-shrink: 0; touch-action: none; }
+.ash-asa { width: 38px; height: 4px; border-radius: 99px; background: #d8dbe2; margin: 0 auto; }
+.ash.alta { max-height: 94dvh; }
 .ash-tit { padding: 8px 20px 6px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9a9aa8; flex-shrink: 0; }
-.ash-lista { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+/* min-height:0 es LO QUE HACE QUE HAGA SCROLL. Un hijo de un flex column no
+   encoge por debajo de su contenido salvo que se le diga; sin esto la lista
+   crecía más allá de la hoja y overflow-y:auto no llegaba a activarse nunca:
+   los últimos renglones quedaban cortados y no había forma de bajar.
+   El padding de abajo deja pasar la barra de pestanas, que va ENCIMA: sin el,
+   el último renglón queda debajo de «Inbox» y no se puede tocar. */
+.ash-lista {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding-bottom: calc(var(--crm-bottomnav-h, 64px) + 10px);
+}
 .ash-i {
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px;
   padding: 12px 20px; border: 0; background: none; cursor: pointer; text-align: left;

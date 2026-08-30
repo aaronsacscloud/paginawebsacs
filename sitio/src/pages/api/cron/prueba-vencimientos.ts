@@ -47,7 +47,10 @@ export const GET: APIRoute = async () => {
   for (const c of vencidas || []) {
     const r = await terminarPrueba(c, { motivo: 'vencio' });
     hechos.vencidas++;
-    if (!r.bloqueo.ok) hechos.errores.push(`${c.prueba_cuenta || c.id}: ${r.bloqueo.error}`);
+    /* Solo es error si HABÍA cuenta que bloquear. Una prueba registrada a mano,
+       sin cuenta ligada, se cierra igual y no hay nada que reportar — listarla
+       como fallo enseña a ignorar la lista de fallos. */
+    if (c.prueba_cuenta && !r.bloqueo.ok) hechos.errores.push(`${c.prueba_cuenta}: ${r.bloqueo.error}`);
   }
 
   // ── 2. Las que se van a acabar: 3 días y 1 día ─────────────────────────────

@@ -259,27 +259,53 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'e-prueba', grupo: 'Las etapas', titulo: '🎁 Prueba gratis',
-    bajada: 'Ya está dentro. Todavía no paga.', chip: { texto: 'nueva', tono: 'ok' },
+    bajada: 'Ya está dentro. Todavía no paga.', chip: { texto: 'automática', tono: 'ok' },
     cuerpo: `
-<p>Etapa nueva, entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
-<div class="w-caja"><span class="w-k">La fecha se sella sola</span><p>Al mover a alguien a esta etapa, el sistema guarda <b>cuándo empezó su prueba</b>. Esa fecha es la que manda: la cadencia cuenta sus 14 días desde ahí, no desde que lo marcaste. Solo se sella la primera vez — si sale y vuelve a entrar, su prueba no empieza de nuevo.</p></div>
-<h3>La cuenta se crea desde aquí</h3>
-<p>Antes eran tres pasos en dos sistemas: entrar a SACS, crear la cuenta a mano, y acordarse de anotar en el CRM cuál cuenta era de quién. El último casi nunca pasaba — por eso <b>ningún lead tenía cuenta ligada</b> y el CRM no sabía que alguien estaba probando el producto, que es justo cuando más importa saberlo.</p>
-<p>Ahora es un solo movimiento y deja las tres cosas atadas: <b>crea la cuenta</b> marcada como prueba con sus días, <b>la liga al lead</b> y <b>deja la actividad en su ficha</b>, para que la prueba aparezca en su línea de tiempo como cualquier otro hecho.</p>
+<p>Etapa entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
 
-<div class="w-caja"><span class="w-k">Dos datos que se dicen mal seguido</span><p>Se entra siempre por <b>app.sacscloud.com</b>: <b>no hay una dirección por cuenta</b>. El identificador de la cuenta —el que eliges al crearla— es el nombre del tenant, no un subdominio; dictarlo como si fuera una URL manda al cliente a una página que no existe, y eso es lo primero que ve de su prueba.</p>
-<p>Y la contraseña temporal <b>se enseña una sola vez</b> para dictarla. No queda guardada en el CRM: el cliente la cambia en su primer acceso.</p></div>
+<h3>Se crea de dos lugares, y en los dos es un clic</h3>
+<p>Antes eran tres pasos en dos sistemas: entrar a SACS, crear la cuenta a mano, y acordarse de anotar en el CRM cuál cuenta era de quién. El último casi nunca pasaba.</p>
+<table class="w-tab"><thead><tr><th>Desde dónde</th><th>Cómo</th></tr></thead><tbody>
+<tr><td><b>La ficha del lead</b></td><td>Pestaña <i>Seguimiento</i> ▸ tarjeta <b>Prueba gratis</b> ▸ «Crear cuenta de prueba». Propone el identificador con el nombre de la empresa y tú lo corriges.</td></tr>
+<tr><td><b>El inbox, en plena conversación</b></td><td>El 📎 del composer ▸ <b>Prueba gratis</b>. Crea la cuenta y <b>deja el mensaje escrito</b> con la cuenta, el usuario y la contraseña. No lo manda: lo lees, le agregas lo tuyo y lo envías. Funciona igual en computadora y en el teléfono.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">Un clic hace las cinco cosas</span><p>Crea la cuenta en SACS marcada como prueba con sus días · la liga al lead y a su empresa · <b>lo mueve a esta etapa</b> · sella las fechas de inicio y fin · y deja la actividad en su ficha. Ese tercer punto es el que faltaba: la cadencia de onboarding se cuelga de la etapa, así que sin él se creaba la cuenta y el cliente <b>no recibía ninguno de los 14 correos</b>. No fallaba nada — simplemente no pasaba nada.</p></div>
+
+<div class="w-caja"><span class="w-k">Dos datos que se dicen mal seguido</span><p>Se entra siempre por <b>app.sacscloud.com</b>: <b>no hay una dirección por cuenta</b>. El identificador —el que eliges al crearla— es el nombre del tenant, no un subdominio; dictarlo como si fuera una URL manda al cliente a una página que no existe, y eso es lo primero que ve de su prueba.</p>
+<p>Y la contraseña temporal <b>se enseña una sola vez</b> para dictarla. No queda guardada en el CRM: el cliente la cambia en su primer acceso. Por eso el botón del inbox deja el mensaje ya escrito — es el momento en que hay que dictarla.</p></div>
+
+<h3>Se acaba sola, y el cliente se entera</h3>
+<p>Cada madrugada el sistema revisa las pruebas vivas:</p>
+<table class="w-tab"><thead><tr><th>Cuándo</th><th>Qué pasa</th></tr></thead><tbody>
+<tr><td><b>Faltando 3 días</b></td><td>Aviso en la campana, con su WhatsApp a un toque.</td></tr>
+<tr><td><b>Faltando 1 día</b></td><td>El mismo aviso, en urgente.</td></tr>
+<tr><td><b>El día que vence</b></td><td>La prueba se marca <b>terminada</b> y la cuenta muestra el aviso de fin de prueba — el <b>mismo</b> que pondría una persona desde sacs3 al suspender por falta de pago, con su título, su mensaje, <b>su botón de WhatsApp</b> y el link a planes. Se deja la actividad en la ficha y se avisa por la campana.</td></tr>
+</tbody></table>
+<p>Los textos de ese aviso no se escriben aquí: salen de la configuración central de SACS (<i>Configuración ▸ Cuentas ▸ bloqueo</i>), la misma que usa el bloqueo por adeudo. Si mañana se cambia el texto allá, este también cambia.</p>
+
+<div class="w-caja"><span class="w-k">Vencida no es lo mismo que terminada</span><p><b>Vencida</b> es que la fecha pasó. <b>Terminada</b> es que ya se asumió y la cuenta tiene el aviso. Entre las dos hay una ventana —hasta que corre el cron de las 3:45 am— y es la que la ficha pinta en rojo. Si quieres el aviso hoy y no mañana, hay un botón «Cerrar ya».</p>
+<p>Y si el aviso no se pudo poner —cuenta borrada, API caída— la prueba queda terminada pero <b>sin</b> marca de bloqueo, y el cron lo reintenta cada madrugada. Sin eso, un timeout de una noche dejaba una cuenta vencida abierta para siempre y en silencio.</p></div>
+
+<h3>Lo que puedes hacer desde la ficha</h3>
+<table class="w-tab"><thead><tr><th>Botón</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>Extender</b></td><td>Le suma días a una prueba viva. No toca la cuenta.</td></tr>
+<tr><td><b>Cerrar ya</b></td><td>La termina hoy y le pone el aviso, sin esperar al cron.</td></tr>
+<tr><td><b>Reabrir</b></td><td>Le quita el aviso a la cuenta y la abre otra vez con días nuevos. Es una decisión comercial, no un trámite — por eso está separada de «Extender».</td></tr>
+<tr><td><b>Ya compró</b></td><td>Cierra la prueba como <b>convertida</b> y le quita el aviso. Sin esto, el cliente que acaba de pagar se topa con la pantalla de «tu prueba terminó»: la peor primera impresión posible después de un cobro.</td></tr>
+</tbody></table>
+<p>Cerrar y cancelar se guardan distinto a propósito: <b>terminada</b> es que se acabó el tiempo, <b>cancelada</b> es que el cliente dijo que no antes. Mezclarlas hace que el reporte de conversión mienta.</p>
+
+<h3>Todo queda escrito, en los dos lados</h3>
+<p>Cada movimiento —creada, extendida, terminada, reabierta, convertida— deja una actividad en la ficha del lead. Y como el panel de detalle del inbox pinta <b>esa misma</b> línea de tiempo, quien atiende la conversación ve el contexto completo sin salir del chat: cuándo empezó su prueba, cuántos días le quedan y si alguien ya se la extendió.</p>
 
 <h3>Qué se sabe de una prueba sin preguntarle a nadie</h3>
-<p>Cada madrugada el sistema mira la cuenta y trae dos cosas al CRM:</p>
 <table class="w-tab"><thead><tr><th>Dato</th><th>Para qué sirve</th></tr></thead><tbody>
 <tr><td><b>Días que le quedan</b></td><td>Ya calculados. La fecha de fin se sella al crear la cuenta, así que no depende de que alguien la vuelva a contar — que es como terminan existiendo dos fechas para la misma prueba.</td></tr>
 <tr><td><b>Si arrancó o no</b></td><td>Productos subidos, ventas y cortes de caja, con la fecha del último movimiento.</td></tr>
 </tbody></table>
 
-<div class="w-caja"><span class="w-k">El catálogo avisa antes que la venta</span><p>Nadie vende antes de subir su catálogo, así que <b>«subió productos» llega días antes que «hizo una venta»</b>. Es la señal más temprana de que la prueba arrancó — y su ausencia, la más temprana de que se está muriendo sola. Una cuenta en cero al día 3 no necesita el correo del día 5: necesita una llamada.</p></div>
-
-<div class="w-caja w-bad"><span class="w-k">La etapa sigue siendo a mano</span><p>Crear la cuenta desde el CRM no mueve la etapa del lead. <b>Si nadie la mueve a Prueba gratis, no recibe ni un correo de onboarding</b> — la cadencia se cuelga de la etapa, no de la cuenta.</p></div>`,
+<div class="w-caja"><span class="w-k">El catálogo avisa antes que la venta</span><p>Nadie vende antes de subir su catálogo, así que <b>«subió productos» llega días antes que «hizo una venta»</b>. Es la señal más temprana de que la prueba arrancó — y su ausencia, la más temprana de que se está muriendo sola. Una cuenta en cero al día 3 no necesita el correo del día 5: necesita una llamada.</p></div>`,
   },
   {
     id: 'p37', grupo: 'El proceso', titulo: '↳ El relevo: prueba gratis',
@@ -303,13 +329,16 @@ export const WIKI: PaginaWiki[] = [
 
 <h3>Los días se cuentan desde su prueba, no desde que entró</h3>
 <p>Es la diferencia entre que funcione y que no. Mover a alguien a la etapa cambia el <i>lifecycle</i>, no el estatus — así que un lead que llevabas dos meses nutriendo entraba con fecha de hace dos meses y el corte lo descartaba. <b>Nunca recibía el día 1</b>, sin error ni aviso.</p>
+<p>Esa fecha ahora la sella el sistema en el momento en que se crea la cuenta, y la cadencia cuenta desde ahí. No hay que capturarla.</p>
 <div class="w-caja"><span class="w-k">Y el que no tenga fecha, no entra</span><p>Mandarle el correo de bienvenida en su día 9, o el de cierre cuando su prueba ya venció, es peor que no mandar nada.</p></div>
 
 <h3>Pedir cita se contesta solo</h3>
 <p>Los correos del día 2 y del día 8 llevan botón de WhatsApp. Cuando esa solicitud llega, el sistema <b>contesta con los horarios reales del calendario</b> y el link que los confirma — sin esperar a que alguien abra la bandeja. El que elija queda confirmado al momento, con su invitación por correo y por WhatsApp.</p>
 <p>Es la misma redacción que usa el vendedor a mano, para que el lead reciba lo mismo lo conteste una persona o el sistema.</p>
 
-<div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>, y le faltan los tres WhatsApps de los días 2, 6 y 10: ninguna de las 33 plantillas aprobadas sirve para onboarding —todas son de leads, demos y cotizaciones— así que hay que darlas de alta y esperar a Meta.</p></div>`,
+<div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>, y le faltan los tres WhatsApps de los días 2, 6 y 10: ninguna de las 33 plantillas aprobadas sirve para onboarding —todas son de leads, demos y cotizaciones— así que hay que darlas de alta y esperar a Meta.</p></div>
+
+<div class="w-caja"><span class="w-k">El día 14 y el bloqueo van juntos</span><p>El correo del día 14 —«lo que lograste y qué pasa con tu cuenta»— y el aviso de fin de prueba en la cuenta salen del <b>mismo</b> plazo. Si algún día se cambian los 14 días de la cadencia, hay que cambiar también los días que se otorgan al crear la cuenta, o el correo de cierre llega cuando el cliente ya no puede entrar.</p></div>`,
   },
   {
     id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',

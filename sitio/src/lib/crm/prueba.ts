@@ -29,7 +29,18 @@ import { notificar } from './notificaciones';
 export type EstadoPrueba = 'activa' | 'terminada' | 'convertida' | 'cancelada';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-const SECRETO = (import.meta.env.SACS_REGISTER_SECRET || '').trim();
+/* Los DOS nombres a propósito.
+ *
+ * En Vercel la variable se llama `REGISTER_API_SECRET` —así se llama también
+ * del lado de la API de SACS, que es quien la valida— y este código buscaba
+ * `SACS_REGISTER_SECRET`, que no existe en ningún entorno. Resultado: el alta
+ * de pruebas devolvía 500 «Falta SACS_REGISTER_SECRET» en producción desde el
+ * día uno, y por eso no hay ni una cuenta creada desde el CRM.
+ *
+ * No se renombra la de Vercel: la tiene puesta desde hace meses y renombrar
+ * una variable de entorno para arreglar un typo es cambiar la infraestructura
+ * para no tocar el código. Se leen las dos, con la específica primero. */
+const SECRETO = (import.meta.env.SACS_REGISTER_SECRET || import.meta.env.REGISTER_API_SECRET || '').trim();
 
 /** Los días de prueba por omisión. Es el largo de la cadencia de onboarding:
  *  si se cambia uno hay que cambiar el otro, o el correo del día 14 llega
@@ -94,7 +105,7 @@ async function actividad(c: any, tipo: string, titulo: string, metadata?: any, d
  * reintentar el bloqueo sin volver a mover el estado.
  */
 export async function avisoEnCuenta(cuenta: string, accion: 'bloquear' | 'desbloquear'): Promise<{ ok: boolean; error?: string }> {
-  if (!SECRETO) return { ok: false, error: 'Falta SACS_REGISTER_SECRET en el entorno.' };
+  if (!SECRETO) return { ok: false, error: 'Falta el secreto de registro en el entorno' };
   if (!cuenta) return { ok: false, error: 'El contacto no tiene cuenta de SACS ligada.' };
   try {
     const r = await fetch(SACS_API + '/interno/prueba/bloqueo', {

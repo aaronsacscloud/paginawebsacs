@@ -30,7 +30,18 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-const REGISTER_SECRET = (import.meta.env.SACS_REGISTER_SECRET || '').trim();
+/* Los DOS nombres a propósito.
+ *
+ * En Vercel la variable se llama `REGISTER_API_SECRET` —así se llama también
+ * del lado de la API de SACS, que es quien la valida— y este código buscaba
+ * `SACS_REGISTER_SECRET`, que no existe en ningún entorno. Resultado: el alta
+ * de pruebas devolvía 500 «Falta SACS_REGISTER_SECRET» en producción desde el
+ * día uno, y por eso no hay ni una cuenta creada desde el CRM.
+ *
+ * No se renombra la de Vercel: la tiene puesta desde hace meses y renombrar
+ * una variable de entorno para arreglar un typo es cambiar la infraestructura
+ * para no tocar el código. Se leen las dos, con la específica primero. */
+const REGISTER_SECRET = (import.meta.env.SACS_REGISTER_SECRET || import.meta.env.REGISTER_API_SECRET || '').trim();
 
 /** Slug válido de SACS: minúsculas, números y guiones. Es parte de una URL. */
 const SLUG_OK = /^[a-z0-9][a-z0-9-]{2,38}[a-z0-9]$/;
