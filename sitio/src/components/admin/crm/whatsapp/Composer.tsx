@@ -663,6 +663,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                     selector de canal tres controles antes: se leía como
                     decoración, no como «plantillas». */}
                 {modo === 'wa' && <button title="Plantillas" aria-label="Plantillas" style={toolBtn(false)} onClick={() => setModalPlantilla(true)}><IcoDoc size={18} /></button>}
+                {/* Cotizar y agendar TAMBIÉN en escritorio. Los puse solo en la
+                    barra de reposo del teléfono, así que en la web seguían a
+                    tres toques detrás del panel lateral: la misma venta, más
+                    lejos, en el aparato donde más se trabaja. Mismo evento en
+                    los dos — el composer no necesita saber si abre una hoja o
+                    una pestaña. */}
+                {modo === 'wa' && !movil && (<>
+                  <span style={{ width: 1, height: 18, background: C.g200, margin: '0 4px' }} />
+                  <button title="Crear y mandar una cotización" aria-label="Crear y mandar una cotización" style={toolBtn(false)}
+                    onClick={() => document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'cotizar' }))}><IcoCotizacion size={18} /></button>
+                  <button title="Agendar una cita" aria-label="Agendar una cita" style={toolBtn(false)}
+                    onClick={() => document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'agendar' }))}><IcoCalendario size={18} /></button>
+                </>)}
                 {modo === 'wa' && !bloqueadoWa && (!movil || masHerramientas) && <button title="Mensaje interactivo: botones, lista, link, ubicación, contacto, carrusel, producto" aria-label="Interactivo" style={toolBtn(false)} onClick={() => setModalInteractivo(true)}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="14" width="8" height="6" rx="2" /><rect x="13" y="14" width="8" height="6" rx="2" /></svg>
                 </button>}

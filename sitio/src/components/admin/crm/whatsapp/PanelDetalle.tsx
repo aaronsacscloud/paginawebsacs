@@ -240,6 +240,18 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
   `;
   const [nonceCtx, setNonceCtx] = useState(0);   // acciones recién ejecutadas → recargar el contexto
   const [accionInicial, setAccionInicial] = useState<'cotizar' | 'agendar' | null>(null);
+  /* Los atajos del composer hablan por el MISMO evento en los dos aparatos.
+     En el teléfono abren la hoja de acciones; aquí saltan a la pestaña. El
+     composer no tiene por qué saber en cuál de los dos está: si lo supiera,
+     cada pantalla nueva tendría que acordarse de avisarle. */
+  useEffect(() => {
+    const h = (e: any) => {
+      setAccionInicial(e?.detail === 'agendar' ? 'agendar' : 'cotizar');
+      setTab('acciones');
+    };
+    document.addEventListener('wa-acciones', h);
+    return () => document.removeEventListener('wa-acciones', h);
+  }, []);
   const [detalle, setDetalle] = useState<string | null>(null);   // drill-down de una tarjeta (breadcrumb ← Resumen)
   const [ficha, setFicha] = useState(false);
   const [alta, setAlta] = useState<{ empresa: string; contacto: string; email: string } | null>(null);
