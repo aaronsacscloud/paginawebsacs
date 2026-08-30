@@ -431,15 +431,21 @@ export const WIKI: PaginaWiki[] = [
 
 <div class="w-caja"><span class="w-k">El tono es la decisión</span><p>No dice «te falta». Dice <b>«ya dominaste esto»</b>. Quien recibe estos correos vende, corta caja y mueve inventario — tratarlo como si le faltara algo insulta el trabajo que sí hizo. Cuando alguien ya domina el día a día, lo que sigue no es aprender el sistema: es <b>qué más se puede quitar de encima</b>.</p></div>
 
-<h3>Las cinco cosas que se enseñan</h3>
-<table class="w-tab"><thead><tr><th>Día</th><th>Qué</th><th>El argumento</th></tr></thead><tbody>
-<tr><td><b>12</b></td><td><b>Axo</b></td><td>No te explica dónde está el botón: te lleva a la pantalla y, si se lo pides, lo hace él. Con los mismos permisos que ya tienes.</td></tr>
-<tr><td><b>24</b></td><td><b>Empleados</b></td><td>Asistencias, contratos, actas y clima laboral. La operación de la tienda vive en el sistema; la de su gente, en un cuaderno.</td></tr>
-<tr><td><b>36</b></td><td><b>Administración</b></td><td>Gastos, cuentas por cobrar y por pagar, bancos. Sacs ya dice cuánto vendiste; falta a dónde se fue.</td></tr>
-<tr><td><b>48</b></td><td><b>Nivelación</b></td><td>Qué transferir entre sucursales y qué comprar de verdad — después de mover lo que ya pagaste.</td></tr>
-<tr><td><b>60</b></td><td><b>Personalizaciones</b></td><td>La pregunta no es «¿Sacs lo hace?» sino «¿esto que hago a mano cada semana se puede automatizar?».</td></tr>
+<h3>Las cinco cosas, y por qué canales viaja cada una</h3>
+<p>Ninguna va solo por correo. Cada capacidad se cuenta en el correo y se <b>recuerda dentro de Sacs</b> unos días después, cuando el cliente está trabajando — que es donde el argumento se vuelve concreto.</p>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
+<tr><td><b>Axo</b> · el asistente que ejecuta</td><td>día 12</td><td>día 15</td><td>—</td></tr>
+<tr><td><b>Empleados</b> · asistencias, contratos, actas, clima</td><td>día 24</td><td>día 27</td><td>—</td></tr>
+<tr><td><b>Administración</b> · gastos, cobrar y pagar, bancos</td><td>día 36</td><td>día 39</td><td>—</td></tr>
+<tr><td><b>Nivelación</b> · qué mover y qué comprar</td><td>día 48</td><td>día 52</td><td><b>día 50</b></td></tr>
+<tr><td><b>Personalizaciones</b> · automatizar un proceso tuyo</td><td>día 60</td><td>día 68</td><td><b>día 66</b></td></tr>
 </tbody></table>
-<p>El día 1 abre la serie diciendo qué viene, y el día 72 cierra preguntando cuál le movió — y ofreciendo dejar de mandarlos si ninguno.</p>
+<p>Más la apertura (día 1, correo + dentro de Sacs), un WhatsApp a media serie (día 30) y el cierre del día 72, que pregunta cuál le movió y ofrece dejar de mandarlos si ninguno.</p>
+
+<div class="w-caja"><span class="w-k">Por qué el in-app va DESPUÉS del correo, no el mismo día</span><p>Dos o tres días después. El correo cuenta el argumento; el mensaje dentro de Sacs lo encuentra ya trabajando, en la pantalla donde eso le serviría. El mismo día serían dos golpes del mismo mensaje; separados, uno le recuerda al otro.</p>
+<p>Y las que MÁS lo necesitan son Empleados y Administración: nadie busca un módulo de recursos humanos dentro de un sistema de punto de venta, así que si no aparece en su pantalla, no se entera de que existe.</p></div>
+
+<div class="w-caja"><span class="w-k">WhatsApp solo tres veces en setenta días</span><p>Es cliente, no lead. Uno a media serie, uno para nivelación —la que más dinero mueve— y uno al final. Uno por capacidad habría sido demasiado: el canal personal se gasta rápido con quien ya te paga.</p></div>
 
 <h3>Siempre las dos opciones</h3>
 <p>Cada paso ofrece <b>agendar 45 minutos</b> o <b>escribir por WhatsApp</b>, en ese orden. Quien prefiere hablar agenda; quien prefiere escribir, escribe. Obligar a una sola pierde a la mitad — y de una cadencia de expansión, la mitad que se pierde suele ser la que ya te iba a comprar.</p>
