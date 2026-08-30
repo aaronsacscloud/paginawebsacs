@@ -18,6 +18,7 @@ import { C, L, CSS_INBOX } from './estilo';
 import { telefonoLegible } from '../../../../lib/telefono';
 import AvisoNuevo from './AvisoNuevo';
 import { ticListo } from '../../../../lib/ui/tacto';
+import { putConProgreso, postConProgreso } from '../../../../lib/crm/subir-con-progreso';
 import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscribirCola, marcaUnica, type EnCola } from '../../../../lib/crm/cola-envio';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
@@ -678,7 +679,9 @@ export default function InboxPro() {
       refrescar(); return r;
     },
     refrescar,
-    enviarArchivo: async (file: File, caption?: string, voz?: boolean, cita?: string | null) => {
+    // `onProgreso` es opcional a propósito: quien no lo pase se comporta
+    // exactamente igual que antes, así que ningún otro consumidor cambia.
+    enviarArchivo: async (file: File, caption?: string, voz?: boolean, cita?: string | null, onProgreso?: (pct: number | null) => void) => {
       const esAudio = voz || file.type.startsWith('audio/');
       // Archivos grandes (> 4 MB): directo del navegador a Storage con URL
       // firmada y luego se manda por link — la función serverless no los aguanta.
@@ -688,8 +691,11 @@ export default function InboxPro() {
           body: JSON.stringify({ nombre: file.name, mime: file.type, conversation_id: waId() }),
         }).then(x => x.json()).catch(e => ({ error: String(e) }));
         if (firma?.error || !firma?.signed_url) return { error: firma?.error || 'No se pudo preparar la subida' };
-        const up = await fetch(firma.signed_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' }, body: file }).catch(() => null);
-        if (!up || !up.ok) return { error: `La subida directa falló (${up?.status || 'sin red'})` };
+        // Por XHR y no por fetch: fetch no expone el progreso de SUBIDA, y este
+        // es justo el camino de los archivos grandes — donde la espera duele.
+        const up = await putConProgreso(firma.signed_url, file,
+          { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' }, onProgreso);
+        if (!up.ok) return { error: `La subida directa falló (${up.status || 'sin red'})` };
         const clase = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
         const r = await fetch('/api/crm/whatsapp/enviar', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -702,8 +708,7 @@ export default function InboxPro() {
       if (caption) fd.append('caption', caption);
       if (voz) fd.append('voz', '1');
       if (cita) fd.append('cita', cita);
-      const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', body: fd })
-        .then(x => x.json()).catch(e => ({ error: String(e) }));
+      const r = await postConProgreso('/api/crm/whatsapp/enviar', fd, onProgreso);
       refrescar(); return r;
     },
     crearNota: async (texto: string) => {

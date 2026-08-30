@@ -120,6 +120,16 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const [modalPlantilla, setModalPlantilla] = useState(false);
   const [biblioteca, setBiblioteca] = useState(false);
   const [staged, setStaged] = useState<{ file: File; url: string; errores: string[] }[]>([]);
+  // Qué adjunto va saliendo y por dónde. Antes solo se deshabilitaba el botón:
+  // una foto de 5 MB por datos son ~20 segundos sin saber si avanza o si ya se
+  // murió, que es la diferencia entre esperar y no saber si esperar.
+  const [envio, setEnvio] = useState<{ i: number; n: number; pct: number | null } | null>(null);
+  // BUG QUE ESTO ARREGLA: la barra del composer se escondía en reposo mirando
+  // SOLO si había texto. Con una foto adjunta y sin escribir nada, en el
+  // teléfono no aparecía el botón de enviar por ningún lado: se podía elegir la
+  // foto y no había forma de mandarla salvo escribir algo primero. Un adjunto
+  // en cola ya es «algo que mandar», con o sin letras.
+  const hayQueMandar = () => !!texto || staged.length > 0 || remotos.length > 0;
   const [resumen, setResumen] = useState<any>(null);
   const [iaProcesando, setIaProcesando] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -232,7 +242,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       if (staged.some(s => s.errores.length)) { setOcupado(false); setError('Corrige los archivos marcados en rojo.'); return; }
       // Solo el primer archivo lleva el caption (regla de WhatsApp).
       for (let i = 0; i < staged.length; i++) {
-        r = await api.enviarArchivo(staged[i].file, i === 0 ? t : undefined, false, i === 0 ? (cita?.kapso_message_id || null) : null);
+        setEnvio({ i, n: staged.length, pct: 0 });
+        r = await api.enviarArchivo(staged[i].file, i === 0 ? t : undefined, false, i === 0 ? (cita?.kapso_message_id || null) : null,
+          (pct: number | null) => setEnvio(e => (e && e.i === i ? { ...e, pct } : e)));
         if (r?.error) break;
       }
       if (!r?.error) setStaged([]);
@@ -247,7 +259,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       }
       if (!r?.error) { setRemotos([]); api.refrescar?.(); }
     } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
-    setOcupado(false);
+    setOcupado(false); setEnvio(null);   // aquí y no dentro de una rama: si falla
+                                         // a media subida, la barra se congelaba.
+
     // El resultado se confirma también por el dedo: mandar es la acción que más
     // se repite del día y mirar la pantalla para saber si entró es el impuesto
     // que se está quitando. Dos golpes = falló, y eso se distingue sin ver.
@@ -459,14 +473,32 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   const cls = claseDe(s.file.type);
                   return (
                     <div key={i} className="wa-staged" style={{ position: 'relative', width: 80 }}>
-                      <div style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', background: C.g100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, boxShadow: s.errores.length ? `0 0 0 2px ${C.rojo300}` : 'none' }}>
+                      {/* `relative` aquí: el velo de progreso se ancla a la
+                          MINIATURA. Colgado del contenedor tapaba también el
+                          nombre del archivo, que es lo único que distingue un
+                          adjunto de otro mientras suben. */}
+                      <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', background: C.g100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, boxShadow: s.errores.length ? `0 0 0 2px ${C.rojo300}` : 'none' }}>
                         {cls === 'image' ? <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           : cls === 'video' ? <video src={s.url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             : emojiTipo[cls]}
+                        {envio && envio.i === i && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(17,24,39,.58)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, color: '#fff' }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+                              {envio.pct == null ? 'Enviando…' : `${envio.pct}%`}
+                            </span>
+                            <span style={{ width: 52, height: 4, borderRadius: 999, background: 'rgba(255,255,255,.3)', overflow: 'hidden' }}>
+                              <span style={{ display: 'block', height: '100%', width: `${envio.pct ?? 35}%`, background: '#fff', borderRadius: 999, transition: 'width 140ms linear' }} />
+                            </span>
+                            {envio.n > 1 && <span style={{ fontSize: 9.5, opacity: .85 }}>{envio.i + 1} de {envio.n}</span>}
+                          </div>
+                        )}
+                        {envio && envio.i > i && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.emerald700, fontSize: 18, fontWeight: 800 }}>✓</div>
+                        )}
                       </div>
                       <div style={{ fontSize: 10, color: C.g500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{s.file.name}</div>
-                      <button className="wa-x-hover" onClick={() => setStaged(st => st.filter((_, j) => j !== i))}
-                        style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 999, border: 'none', background: C.g900, color: '#fff', fontSize: 11, cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                      {!envio && <button className="wa-x-hover" onClick={() => setStaged(st => st.filter((_, j) => j !== i))}
+                        style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 999, border: 'none', background: C.g900, color: '#fff', fontSize: 11, cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}>✕</button>}
                       {s.errores.length > 0 && <span title={s.errores.join('\n')} style={{ position: 'absolute', top: -6, left: -6, width: 18, height: 18, borderRadius: 999, background: C.rojo500, color: '#fff', fontSize: 11, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>!</span>}
                       {s.errores.map((e, j) => <div key={j} style={{ fontSize: 10, color: C.rojo500, lineHeight: 1.3 }}>{e}</div>)}
                     </div>
@@ -535,7 +567,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
             {/* `relative` en la barra a propósito: los popups se anclan con
                 position:absolute y sin eso se colgarían de un ancestro más
                 arriba, apareciendo lejos del icono que los abrió. */}
-            {!grabando && !bloqueadoWa && movil && !escribiendoMovil && !texto && (
+            {!grabando && !bloqueadoWa && movil && !escribiendoMovil && !hayQueMandar() && (
               <div className="wa-barra" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
                 <button title="Enviar una foto" aria-label="Enviar una foto" style={toolBtn(false)}
                   onClick={() => camaraRef.current?.click()}><IcoCamara size={19} /></button>
@@ -563,7 +595,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 )}
               </div>
             )}
-            {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
+            {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !hayQueMandar()) ? null : (
               <div className="wa-barra" onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
                 style={{ display: 'flex', alignItems: 'center', gap: movil ? 4 : 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative',
                   // Al tocar «Más herramientas» aparecen cinco iconos más EN LA
@@ -613,7 +645,9 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" /><path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                   </button>
                 )}
-                <button onClick={enviar} disabled={ocupado || (!texto.trim() && !staged.length && !remotos.length) || bloqueadoCorreo}
+                {/* aria-label: es un círculo de 32 px con un icono y nada más;
+                    sin esto, un lector de pantalla lo anuncia como "botón". */}
+                <button onClick={enviar} aria-label="Enviar mensaje" title="Enviar" disabled={ocupado || (!texto.trim() && !staged.length && !remotos.length) || bloqueadoCorreo}
                   style={{ width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? C.morado : C.g200, color: (texto.trim() || staged.length || remotos.length) && !bloqueadoCorreo ? '#fff' : C.g400 }}>
                   {ocupado ? <Corazones size={8} color="#fff" /> : <IcoEnviar size={15} />}
                 </button>
