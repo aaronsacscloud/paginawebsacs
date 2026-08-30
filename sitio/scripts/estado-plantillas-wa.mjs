@@ -33,6 +33,7 @@ const ESPERANDO = [
   'prueba_sesion_consultor', 'prueba_sesion_repaso', 'prueba_cierre_sesion',
   'renovacion_sesion', 'renovacion_descuento',
   'crecimiento_sesion', 'crecimiento_proceso', 'crecimiento_nivelacion',
+  'crecimiento_catalogo_ia',
 ];
 
 const env = Object.fromEntries(readFileSync(RUTA_LOGIN, 'utf8')

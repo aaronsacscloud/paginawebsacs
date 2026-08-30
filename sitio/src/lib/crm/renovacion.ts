@@ -96,3 +96,57 @@ export async function ctxRenovacion(companyId: string | null): Promise<CtxRenova
     ahorro_10: menos(10), ahorro_5: menos(5),
   };
 }
+
+// ── LA ESCALERA DE PLANES ────────────────────────────────────────────────────
+/**
+ * Qué plan sigue, y qué gana de verdad al subir.
+ *
+ * Los tres puntos clave NO salen de la descripción del catálogo («todo lo de
+ * Controla más…»), que sirve para una tabla de precios y no para un correo: a
+ * un cliente no le mueve leer una lista de módulos, le mueve saber qué deja de
+ * hacer a mano. Por eso cada escalón dice lo que CAMBIA en su semana.
+ *
+ * `automatiza` no tiene siguiente a propósito: quien ya está arriba no recibe
+ * este correo — el paso se salta y queda anotado. Ofrecerle subir a alguien que
+ * ya está en el tope es la forma más rápida de que deje de leerte.
+ */
+const ESCALERA: Record<string, { siguiente: string; nombre: string; puntos: string[] }> = {
+  vende: { siguiente: 'controla', nombre: 'Controla', puntos: [
+    'Órdenes de compra con sugerencia: el sistema propone qué pedir en vez de que lo armes de memoria.',
+    'Traspasos entre sucursales con su documento y su rastro, no por WhatsApp.',
+    'Reportes por sucursal, para comparar cuál vende qué y no un total que no dice nada.',
+  ] },
+  controla: { siguiente: 'fideliza', nombre: 'Fideliza', puntos: [
+    'Programa de lealtad y monedero: que la clienta vuelva porque le conviene, no porque se acordó.',
+    'Campañas a tus clientes desde el mismo sistema donde están sus compras.',
+    'Tienda en línea conectada a tu inventario real, sin capturar nada dos veces.',
+  ] },
+  fideliza: { siguiente: 'automatiza', nombre: 'Automatiza', puntos: [
+    'Axo, el asistente con IA que ejecuta: configura, corre procesos y te lleva al resultado.',
+    'Automatizaciones sin código para los pasos que hoy dependen de que alguien se acuerde.',
+    'Inteligencia de inventario: qué mover y qué comprar, calculado en vez de estimado.',
+  ] },
+};
+
+export interface CtxPlan {
+  plan_actual: string;
+  plan_siguiente: string;
+  punto_1: string;
+  punto_2: string;
+  punto_3: string;
+}
+
+/** Null si no hay siguiente escalón — o si no sabemos en cuál está. */
+export async function ctxPlanSiguiente(companyId: string | null): Promise<CtxPlan | null> {
+  if (!companyId) return null;
+  const { data: co } = await supabase.from('companies').select('plan').eq('id', companyId).maybeSingle();
+  const actual = String(co?.plan || '').trim().toLowerCase();
+  const paso = ESCALERA[actual];
+  if (!paso) return null;
+  const { data: p } = await supabase.from('plans').select('nombre').eq('slug', actual).maybeSingle();
+  return {
+    plan_actual: String(p?.nombre || actual).replace(/^Plan\s+/i, ''),
+    plan_siguiente: paso.nombre,
+    punto_1: paso.puntos[0], punto_2: paso.puntos[1], punto_3: paso.puntos[2],
+  };
+}

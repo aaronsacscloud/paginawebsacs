@@ -427,25 +427,36 @@ export const WIKI: PaginaWiki[] = [
     id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
     bajada: 'Al cliente que ya opera bien.', chip: { texto: 'cargada, apagada', tono: 'warn' },
     cuerpo: `
-<p>Trece pasos en setenta días para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
+<p>Veintitrés pasos en cuatro meses para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
 
 <div class="w-caja"><span class="w-k">El tono es la decisión</span><p>No dice «te falta». Dice <b>«ya dominaste esto»</b>. Quien recibe estos correos vende, corta caja y mueve inventario — tratarlo como si le faltara algo insulta el trabajo que sí hizo. Cuando alguien ya domina el día a día, lo que sigue no es aprender el sistema: es <b>qué más se puede quitar de encima</b>.</p></div>
 
-<h3>Las cinco cosas, y por qué canales viaja cada una</h3>
-<p>Ninguna va solo por correo. Cada capacidad se cuenta en el correo y se <b>recuerda dentro de Sacs</b> unos días después, cuando el cliente está trabajando — que es donde el argumento se vuelve concreto.</p>
+<h3>Las ocho cosas, y por qué canales viaja cada una</h3>
+<p>Ninguna va solo por correo. Cada capacidad se cuenta en el correo y se <b>recuerda dentro de Sacs</b> dos o tres días después, cuando el cliente está trabajando — que es donde el argumento se vuelve concreto.</p>
 <table class="w-tab"><thead><tr><th>Qué</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
 <tr><td><b>Axo</b> · el asistente que ejecuta</td><td>día 12</td><td>día 15</td><td>—</td></tr>
 <tr><td><b>Empleados</b> · asistencias, contratos, actas, clima</td><td>día 24</td><td>día 27</td><td>—</td></tr>
 <tr><td><b>Administración</b> · gastos, cobrar y pagar, bancos</td><td>día 36</td><td>día 39</td><td>—</td></tr>
 <tr><td><b>Nivelación</b> · qué mover y qué comprar</td><td>día 48</td><td>día 52</td><td><b>día 50</b></td></tr>
 <tr><td><b>Personalizaciones</b> · automatizar un proceso tuyo</td><td>día 60</td><td>día 68</td><td><b>día 66</b></td></tr>
+<tr><td><b>El plan que sigue</b> · el escalón completo</td><td>día 84</td><td>día 87</td><td>—</td></tr>
+<tr><td><b>Catálogo con IA</b> · modelos y probador virtual</td><td>día 96</td><td>día 99</td><td><b>día 102</b></td></tr>
+<tr><td><b>Renta de productos</b> · otro modelo de negocio</td><td>día 108</td><td>día 111</td><td>—</td></tr>
 </tbody></table>
-<p>Más la apertura (día 1, correo + dentro de Sacs), un WhatsApp a media serie (día 30) y el cierre del día 72, que pregunta cuál le movió y ofrece dejar de mandarlos si ninguno.</p>
+<p>Más la apertura (día 1, correo + dentro de Sacs), un WhatsApp a media serie (día 30) y el cierre del día 120, que resume las ocho, pregunta cuál le movió y ofrece dejar de mandarlas si ninguna.</p>
+
+<div class="w-caja"><span class="w-k">Las tres últimas van al final a propósito</span><p>Las cinco primeras son cosas que puede usar <b>con lo que ya paga</b>. Subir de plan, cambiar cómo fotografía su catálogo o abrir un modelo de renta son decisiones más grandes — pedirlas antes de haber demostrado utilidad es pedir demasiado pronto.</p></div>
+
+<h3>El correo del plan lee SU plan</h3>
+<p>No manda una tabla comparativa: mira en qué escalón está el cliente y le cuenta el siguiente con <b>tres puntos concretos</b>. La escalera es <code>vende → controla → fideliza → automatiza</code>, y el asunto sale ya resuelto: «<i>Estás en Controla. Esto es lo que trae Fideliza</i>».</p>
+<div class="w-caja"><span class="w-k">Y si ya está en el tope, no se manda</span><p>El contexto sale vacío y el paso se salta con motivo. Ofrecerle subir a quien ya está arriba es la forma más rápida de que deje de leerte.</p></div>
+<p>Los tres puntos no salen de la descripción del catálogo («todo lo de Controla más…»), que sirve para una página de precios y no para un correo: a un cliente no le mueve una lista de módulos, le mueve saber <b>qué deja de hacer a mano</b>.</p>
 
 <div class="w-caja"><span class="w-k">Por qué el in-app va DESPUÉS del correo, no el mismo día</span><p>Dos o tres días después. El correo cuenta el argumento; el mensaje dentro de Sacs lo encuentra ya trabajando, en la pantalla donde eso le serviría. El mismo día serían dos golpes del mismo mensaje; separados, uno le recuerda al otro.</p>
 <p>Y las que MÁS lo necesitan son Empleados y Administración: nadie busca un módulo de recursos humanos dentro de un sistema de punto de venta, así que si no aparece en su pantalla, no se entera de que existe.</p></div>
 
-<div class="w-caja"><span class="w-k">WhatsApp solo tres veces en setenta días</span><p>Es cliente, no lead. Uno a media serie, uno para nivelación —la que más dinero mueve— y uno al final. Uno por capacidad habría sido demasiado: el canal personal se gasta rápido con quien ya te paga.</p></div>
+<div class="w-caja"><span class="w-k">WhatsApp solo cuatro veces en cuatro meses</span><p>Es cliente, no lead. Uno a media serie, uno para nivelación —la que más dinero mueve—, uno para el catálogo con IA y uno al final. Uno por capacidad habría sido demasiado: el canal personal se gasta rápido con quien ya te paga.</p>
+<p>El del catálogo con IA se ganó su lugar por una razón: es el que peor se explica por escrito y el único donde el cliente puede <b>mandar una foto suya por el mismo canal y recibirla hecha en minutos</b>. Un WhatsApp que termina en algo que el cliente ve vale más que tres que solo describen.</p></div>
 
 <h3>Siempre las dos opciones</h3>
 <p>Cada paso ofrece <b>agendar 45 minutos</b> o <b>escribir por WhatsApp</b>, en ese orden. Quien prefiere hablar agenda; quien prefiere escribir, escribe. Obligar a una sola pierde a la mitad — y de una cadencia de expansión, la mitad que se pierde suele ser la que ya te iba a comprar.</p>
