@@ -21,6 +21,8 @@
 import { supabase } from '../supabase';
 import { intencionDe } from '../whatsapp/intencion';
 import { configEntrante } from '../whatsapp/config-entrante';
+import { enviarTexto } from '../whatsapp/kapso-api';
+import { registrarMensaje } from '../whatsapp/espejo';
 import { notificar } from './notificaciones';
 
 /** Color de la etiqueta según qué tan cerca está de cerrar. */
@@ -80,6 +82,14 @@ export async function registrarIntencionEntrante(o: {
     },
   }).then(() => {}, () => {});
 
+  // ── Pide cita: se le contestan los HORARIOS al momento ──
+  // Alguien que ya está usando el producto y pide una sesión no debería esperar
+  // a que alguien abra la bandeja. Los horarios son los reales del calendario,
+  // así que el que elija queda confirmado sin que nadie intervenga.
+  if (intencion.agenda) {
+    await mandarHorarios(o.conversationId, quien.split(' ')[0]).catch(e => console.warn('[wa-agenda]', e?.message || e));
+  }
+
   if (!cfg.intencion.notificar) return;
   await notificar({
     // Una notificación por mensaje: si escribe dos veces del mismo correo, son
@@ -98,4 +108,51 @@ export async function registrarIntencionEntrante(o: {
       temperatura: intencion.temperatura,
     },
   }).catch(() => {});
+}
+
+
+/**
+ * Contesta con los próximos horarios reales y el link que los confirma.
+ *
+ * Se manda como texto normal, no como plantilla: la conversación está abierta
+ * porque el lead ACABA de escribir, y dentro de esa ventana de 24 h no hace
+ * falta plantilla aprobada. Es la misma redacción que usa el vendedor desde la
+ * bandeja, para que el lead reciba lo mismo lo conteste una persona o el
+ * sistema.
+ */
+async function mandarHorarios(conversationId: string, primerNombre: string): Promise<void> {
+  const { data: conv } = await supabase.from('wa_conversaciones')
+    .select('telefono').eq('id', conversationId).maybeSingle();
+  if (!conv?.telefono) return;
+
+  const base = (import.meta as any).env?.PUBLIC_SITE_URL || 'https://www.sacscloud.com';
+  const hoy = new Date();
+  const hasta = new Date(hoy.getTime() + 7 * 864e5);
+  const f = (d: Date) => d.toISOString().slice(0, 10);
+
+  let lineas: string[] = [];
+  try {
+    const r = await fetch(`${base}/api/scheduling/available-slots?slug=demo&from=${f(hoy)}&to=${f(hasta)}`);
+    const j: any = await r.json();
+    // Los primeros seis de los próximos días: una lista larga no se lee en el
+    // teléfono y obliga a hacer scroll para llegar al link.
+    lineas = Object.entries(j?.dates || {})
+      .flatMap(([dia, hs]: any) => (hs || []).slice(0, 2).map((h: string) => `${dia} · ${h}`))
+      .slice(0, 6);
+  } catch { /* sin horarios se manda solo el link: peor es no contestar */ }
+
+  const texto = lineas.length
+    ? `${primerNombre}, estos son los horarios más próximos para tu sesión con Andrea (30 min, sin costo):\n\n`
+      + lineas.map(l => `• ${l}`).join('\n')
+      + `\n\nElige el que te acomode aquí y queda confirmada al momento — te llega la invitación por correo y por WhatsApp:\n${base}/agendar/demo`
+    : `${primerNombre}, con gusto. Elige el horario que te acomode para tu sesión con Andrea (30 min, sin costo) y queda confirmada al momento:\n${base}/agendar/demo`;
+
+  const r = await enviarTexto(conv.telefono, texto);
+  const wamid = r?.messages?.[0]?.id;
+  if (wamid) {
+    await registrarMensaje({
+      kapsoMessageId: wamid, telefono: conv.telefono, direccion: 'saliente',
+      tipo: 'text', cuerpo: texto, status: 'sent',
+    }).catch(() => {});
+  }
 }

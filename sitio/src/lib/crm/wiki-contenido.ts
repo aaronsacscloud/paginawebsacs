@@ -258,6 +258,44 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>. Prenderla manda correos a prospectos reales con cotización en la mano: es una decisión de negocio, no un paso de configuración.</p></div>`,
   },
   {
+    id: 'e-prueba', grupo: 'Las etapas', titulo: '🎁 Prueba gratis',
+    bajada: 'Ya está dentro. Todavía no paga.', chip: { texto: 'nueva', tono: 'ok' },
+    cuerpo: `
+<p>Etapa nueva, entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
+<div class="w-caja"><span class="w-k">La fecha se sella sola</span><p>Al mover a alguien a esta etapa, el sistema guarda <b>cuándo empezó su prueba</b>. Esa fecha es la que manda: la cadencia cuenta sus 14 días desde ahí, no desde que lo marcaste. Solo se sella la primera vez — si sale y vuelve a entrar, su prueba no empieza de nuevo.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Hoy hay que marcarla a mano</span><p>Nada la asigna sola todavía: el alta de la prueba en el sistema no está conectada al CRM. <b>Si nadie mueve la etapa, el lead no recibe ni un correo de onboarding.</b></p></div>`,
+  },
+  {
+    id: 'p37', grupo: 'El proceso', titulo: '↳ El relevo: prueba gratis',
+    bajada: 'Catorce días, del primer login al nivelador.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    cuerpo: `
+<p>Once correos que llevan al usuario de cero a operar. Cada uno enseña <b>dónde está la cosa</b> con captura del sistema real y la ruta exacta del menú, para qué sirve, qué hacer hoy y qué viene después. El CTA nunca es comprar: es preguntar por WhatsApp.</p>
+
+<table class="w-tab"><thead><tr><th>Día</th><th>Qué le enseña</th></tr></thead><tbody>
+<tr><td><b>1</b></td><td>La Academia. Y no lo invita a «ver videos»: la Academia está gamificada y paga <b>$500 de saldo</b> más una licencia gratis para regalar.</td></tr>
+<tr><td><b>2</b></td><td><b>Sesión con Andrea</b> para revisar sus flujos. Al principio a propósito: hacerla el día 12 resuelve dudas, hacerla el día 2 cambia cómo usa los doce que siguen.</td></tr>
+<tr><td><b>3</b></td><td>Su primer producto. Uno solo, sin tallas.</td></tr>
+<tr><td><b>5</b></td><td>Talla × color. Una blusa no es un producto, son 24.</td></tr>
+<tr><td><b>7</b></td><td>Abrir caja y vender. El POS recibe con «Caja registradora cerrada» — no es un error, es el primer control.</td></tr>
+<tr><td><b>8</b></td><td><b>Sesión con Andrea</b> de medio camino. Vale el doble que la primera porque ya tiene datos suyos adentro.</td></tr>
+<tr><td><b>9</b></td><td>Existencias por sucursal. La respuesta a «¿te queda la M?».</td></tr>
+<tr><td><b>11</b></td><td>La orden de compra y el hueco de curva.</td></tr>
+<tr><td><b>13</b></td><td>La nivelación: mover en vez de comprar.</td></tr>
+<tr><td><b>14</b></td><td>Lo que logró en catorce días, y qué pasa con su cuenta.</td></tr>
+<tr><td><b>15</b></td><td><b>35% de descuento</b> en el pago anual de la primera sucursal.</td></tr>
+</tbody></table>
+
+<h3>Los días se cuentan desde su prueba, no desde que entró</h3>
+<p>Es la diferencia entre que funcione y que no. Mover a alguien a la etapa cambia el <i>lifecycle</i>, no el estatus — así que un lead que llevabas dos meses nutriendo entraba con fecha de hace dos meses y el corte lo descartaba. <b>Nunca recibía el día 1</b>, sin error ni aviso.</p>
+<div class="w-caja"><span class="w-k">Y el que no tenga fecha, no entra</span><p>Mandarle el correo de bienvenida en su día 9, o el de cierre cuando su prueba ya venció, es peor que no mandar nada.</p></div>
+
+<h3>Pedir cita se contesta solo</h3>
+<p>Los correos del día 2 y del día 8 llevan botón de WhatsApp. Cuando esa solicitud llega, el sistema <b>contesta con los horarios reales del calendario</b> y el link que los confirma — sin esperar a que alguien abra la bandeja. El que elija queda confirmado al momento, con su invitación por correo y por WhatsApp.</p>
+<p>Es la misma redacción que usa el vendedor a mano, para que el lead reciba lo mismo lo conteste una persona o el sistema.</p>
+
+<div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>, y le faltan los tres WhatsApps de los días 2, 6 y 10: ninguna de las 33 plantillas aprobadas sirve para onboarding —todas son de leads, demos y cotizaciones— así que hay que darlas de alta y esperar a Meta.</p></div>`,
+  },
+  {
     id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',
     bajada: 'Dónde vive el dato y qué falta para tenerlo a la mano.',
     cuerpo: `
@@ -353,6 +391,15 @@ export const WIKI: PaginaWiki[] = [
 <p>Se reconoce por una frase distintiva, no por el texto completo: WhatsApp deja editar antes de enviar y casi siempre agregan algo. Si el lead escribió por su cuenta <b>no se inventa etiqueta</b> — el acuse sale igual y el contador de no leídos hace su trabajo.</p>
 
 <div class="w-caja"><span class="w-k">Dónde se configura</span><p>Todo esto vive en <b>Automatización ▸ Secuencias ▸ «WhatsApp entrante · atención y control»</b>. Es una secuencia por evento: no corre por días, reacciona en el momento. Si está apagada, no sale acuse.</p></div>`,
+  },
+  {
+    id: 'wa-voces', grupo: 'Referencia', titulo: 'Quién escribe por dónde',
+    bajada: 'Fernanda abre. Andrea es a quien llegas.',
+    cuerpo: `
+<p>En <b>WhatsApp escribe Fernanda</b>, del equipo. En la sesión consultiva está <b>Andrea</b>, la consultora de moda.</p>
+<p>No es un detalle de firma: separar las voces le da peso a Andrea. Si su nombre contesta también los acuses automáticos de las once de la noche, se gasta antes de llegar a la sesión. Así, cuando aparece, es porque la conversación subió de nivel.</p>
+<div class="w-caja"><span class="w-k">Cómo se ve en la práctica</span><p>El acuse automático y los botones de los correos van a nombre del equipo. Las plantillas invitan así: «<i>te agendo una sesión con Andrea, nuestra consultora — ella acompañó a las marcas de nuestros casos de éxito</i>». Fernanda no es el premio de consolación: es la puerta.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Pendiente</span><p>Dos plantillas aprobadas por Meta todavía dicen Andrea: <code>cadencia_consultora</code> y <code>cadencia_consultora_moda</code>. Cambiarles el cuerpo exige volver a aprobación, así que hay que dar de alta las nuevas y apagar esas dos cuando pasen.</p></div>`,
   },
   {
     id: 'wa-candados', grupo: 'Referencia', titulo: 'Los candados de WhatsApp',

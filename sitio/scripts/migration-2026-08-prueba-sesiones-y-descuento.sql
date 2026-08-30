@@ -1,0 +1,37 @@
+-- Tres correos más para la prueba: dos sesiones con Andrea (inicio y mitad)
+-- y el cierre con el 35% en el pago anual de la primera sucursal.
+--
+-- Los tres llevan botón de WhatsApp, y los dos de sesión activan la respuesta
+-- automática con HORARIOS reales: quien ya está usando el producto y pide una
+-- cita no debería esperar a que alguien abra la bandeja.
+begin;
+
+insert into email_templates (nombre, asunto, preview_text, tipo, layout, categoria, bloques, activo)
+values ('Prueba · Sesión con Andrea (inicio)', '¿Vemos juntos cómo montar tu operación?', 'Andrea revisa tus flujos y te dice por dónde empezar. Sin costo.', 'automatizado', 'simple', 'onboarding',
+        '[{"id":"t1","tipo":"texto","texto":"{{nombre|Hola}}, ayer te mandé la Academia para que empieces por tu cuenta."},{"id":"t2","tipo":"texto","texto":"Pero hay algo que un curso no puede hacer: **mirar TU operación.**"},{"id":"s0","tipo":"separador"},{"id":"h1","tipo":"encabezado","nivel":2,"texto":"Una sesión con Andrea, al principio"},{"id":"t3","tipo":"texto","texto":"Andrea es nuestra consultora de moda. Ha implementado marcas de una tienda y marcas de cuarenta."},{"id":"t4","tipo":"texto","texto":"En treinta minutos ve cómo trabajas hoy —cómo compras, cómo cuentas, cómo cobras— y te dice **en qué orden montar las cosas** para que estos catorce días rindan."},{"id":"l1","tipo":"lista","items":["🧭 **Qué configurar primero** según tu giro y tus tiendas.","🧵 **Cómo cargar tu catálogo** sin capturar a mano.","⚠️ **Qué NO hacer todavía.** La mitad del valor está en lo que te dice que dejes para después."]},{"id":"a1","tipo":"aviso","texto":"Es al inicio a propósito. Hacerla el día 12 sirve para resolver dudas; hacerla hoy cambia cómo usas los doce días que siguen."},{"id":"t5","tipo":"texto","texto":"Sin costo, y no es una demo de ventas — ya tienes la cuenta abierta."},{"id":"b1","tipo":"boton","texto":"📅 Quiero agendar con Andrea","align":"center","sub":"Te mandamos los horarios disponibles al momento.","href":"https://wa.me/12058920417?text=Hola,%20quiero%20agendar%20la%20sesion%20con%20Andrea%20para%20revisar%20mis%20flujos"},{"id":"fi","tipo":"firma","nombre":"Andrea Gutiérrez Araujo","puesto":"Tu consultora en Sacs","foto_url":"https://www.sacscloud.com/images/andrea-consultora.jpg"},{"id":"pd","tipo":"texto","texto":"P.D. Si prefieres avanzar solo y llamarla cuando te atores, también está bien. El botón queda aquí y sirve cualquier día."}]'::jsonb, true)
+on conflict do nothing;
+
+insert into email_templates (nombre, asunto, preview_text, tipo, layout, categoria, bloques, activo)
+values ('Prueba · Sesión con Andrea (mitad)', 'Vas a la mitad. ¿Lo revisamos juntos?', 'Siete días dentro. Es el mejor momento para corregir el rumbo.', 'automatizado', 'simple', 'onboarding',
+        '[{"id":"t1","tipo":"texto","texto":"{{nombre|Hola}}, vas a la mitad de tu prueba."},{"id":"t2","tipo":"texto","texto":"Y este es el punto donde una sesión de treinta minutos vale el doble que al principio: **ya tienes datos tuyos adentro.**"},{"id":"s0","tipo":"separador"},{"id":"h1","tipo":"encabezado","nivel":2,"texto":"Qué se revisa en la de la mitad"},{"id":"l1","tipo":"lista","items":["🔍 **Lo que cargaste.** Si el catálogo quedó bien armado o hay que corregirlo antes de seguir — arreglarlo ahora cuesta una hora, en tres meses cuesta semanas.","📊 **Lo que ya se puede ver.** Con tus productos y tus ventas de práctica, Andrea te enseña qué reportes te van a servir de verdad.","🚧 **Dónde te atoraste.** Casi siempre hay un paso que no se hizo. Se resuelve en la llamada."]},{"id":"a1","tipo":"aviso","texto":"Si en estos siete días no has podido entrar tanto como querías, esta sesión es justo para eso. No hay que llegar con la tarea hecha."},{"id":"t3","tipo":"texto","texto":"Treinta minutos, sin costo, con tu cuenta abierta en pantalla."},{"id":"b1","tipo":"boton","texto":"📅 Agendar la revisión de medio camino","align":"center","sub":"Te mandamos los horarios disponibles al momento.","href":"https://wa.me/12058920417?text=Hola,%20voy%20a%20la%20mitad%20de%20mi%20prueba%20y%20quiero%20agendar%20la%20revision%20con%20Andrea"},{"id":"fi","tipo":"firma","nombre":"Andrea Gutiérrez Araujo","puesto":"Tu consultora en Sacs","foto_url":"https://www.sacscloud.com/images/andrea-consultora.jpg"},{"id":"pd","tipo":"texto","texto":"P.D. Si ya la tomaste al inicio, esta segunda es distinta: la primera es de arranque, esta es de ajuste. Se puede tomar las dos."}]'::jsonb, true)
+on conflict do nothing;
+
+insert into email_templates (nombre, asunto, preview_text, tipo, layout, categoria, bloques, activo)
+values ('Prueba · 35% en el pago anual', '35% de descuento en tu primera sucursal', 'Por el año completo. Es la mejor condición que damos.', 'automatizado', 'simple', 'onboarding',
+        '[{"id":"t1","tipo":"texto","texto":"{{nombre|Hola}}, ayer te conté todo lo que lograste en tus catorce días."},{"id":"t2","tipo":"texto","texto":"Hoy te hago la oferta, y va sin rodeos."},{"id":"s0","tipo":"separador"},{"id":"h1","tipo":"encabezado","nivel":2,"texto":"35% de descuento en tu primera sucursal, pagando el año"},{"id":"m1","tipo":"metricas","items":[{"cifra":"−35%","texto":"en la primera sucursal"},{"cifra":"12 meses","texto":"pagando por año"},{"cifra":"$0","texto":"por lo que ya cargaste"}]},{"id":"t3","tipo":"texto","texto":"Aplica sobre la primera sucursal, con el plan pagado por año."},{"id":"t4","tipo":"texto","texto":"Y lo que ya está adentro se queda: tus productos, tu configuración, tu avance en la Academia. **No se empieza de cero.**"},{"id":"a1","tipo":"aviso","texto":"Es la mejor condición que damos, y existe porque pagar por año nos deja acompañarte todo el año. No es una promoción de temporada ni un botón que aparece en tu pantalla — se pide y se arma contigo."},{"id":"h2","tipo":"encabezado","nivel":2,"texto":"Y si el año no te cuadra"},{"id":"t5","tipo":"texto","texto":"Dímelo igual. Hay plan mensual, y hay una fase más chica que arranca solo con el piso de venta y deja la compra para después."},{"id":"t6","tipo":"texto","texto":"Prefiero un proyecto que arranca a uno completo que se queda en revisión."},{"id":"b1","tipo":"boton","texto":"💬 Quiero el 35% anual","align":"center","sub":"Te armamos la propuesta con tus tiendas y tu catálogo.","href":"https://wa.me/12058920417?text=Hola,%20quiero%20el%2035%%20de%20descuento%20en%20el%20pago%20anual%20de%20mi%20primera%20sucursal"},{"id":"fi","tipo":"firma","nombre":"Andrea Gutiérrez Araujo","puesto":"Tu consultora en Sacs","foto_url":"https://www.sacscloud.com/images/andrea-consultora.jpg"},{"id":"pd","tipo":"texto","texto":"P.D. Si tienes más de una sucursal, el descuento es sobre la primera y las demás van a precio de lista — pero pregúntame igual, que ahí la cuenta cambia y conviene verla completa."}]'::jsonb, true)
+on conflict do nothing;
+
+insert into crm_secuencia_pasos (secuencia_id, orden, dia, canal, email_template_id, activo)
+select s.id, p.orden, p.dia, 'correo', t.id, true
+from crm_secuencias s
+cross join (values
+  (20, 2, 'Prueba · Sesión con Andrea (inicio)'),
+  (21, 8, 'Prueba · Sesión con Andrea (mitad)'),
+  (22, 15, 'Prueba · 35% en el pago anual')
+) as p(orden, dia, plantilla)
+join email_templates t on t.nombre = p.plantilla
+where s.nombre = 'Prueba gratis · 14 días';
+
+-- El corte sube a 18: el del descuento sale el día 15.
+update crm_secuencias set corte_dias = 18 where nombre = 'Prueba gratis · 14 días';
+commit;

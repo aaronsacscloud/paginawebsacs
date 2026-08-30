@@ -29,6 +29,8 @@ export interface Intencion {
   quiere: string;
   /** alta = está pidiendo cerrar o ver algo concreto; media = duda. */
   temperatura: 'alta' | 'media';
+  /** Está pidiendo cita: el sistema contesta con horarios reales al momento. */
+  agenda?: boolean;
 }
 
 interface Regla extends Intencion { frases: string[] }
@@ -67,6 +69,24 @@ const REGLAS: Regla[] = [
   { clave: 'oportunidad-8-decision', fuente: 'Correo 8 · La decisión',
     quiere: 'DECIDIR — ya lo platicó internamente', temperatura: 'alta',
     frases: ['ya lo platicamos internamente', 'platicamos internamente'] },
+
+  // ── Secuencia "Prueba gratis · 14 días" ──
+  // Las dos de sesión llevan `agenda: true`: al reconocerlas, el sistema
+  // contesta con los horarios reales en vez de dejar al lead esperando. Pedir
+  // una cita y que nadie conteste hasta mañana es la peor forma de recibir a
+  // alguien que YA está usando el producto.
+  { clave: 'prueba-sesion-inicio', fuente: 'Prueba · Sesión con Andrea (inicio)',
+    quiere: 'Sesión de arranque: revisar sus flujos y por dónde empezar', temperatura: 'alta', agenda: true,
+    frases: ['sesion con andrea para revisar mis flujos'] },
+  { clave: 'prueba-sesion-mitad', fuente: 'Prueba · Sesión con Andrea (mitad)',
+    quiere: 'Revisión de medio camino: va a la mitad de su prueba', temperatura: 'alta', agenda: true,
+    frases: ['mitad de mi prueba y quiero agendar'] },
+  { clave: 'prueba-descuento', fuente: 'Prueba · 35% en el pago anual',
+    quiere: 'PIDE EL DESCUENTO — quiere el 35% anual', temperatura: 'alta',
+    frases: ['35% de descuento en el pago anual', '35 de descuento en el pago anual'] },
+  { clave: 'prueba-academia-wa', fuente: 'Prueba · La Academia',
+    quiere: 'Ayuda para empezar la Academia', temperatura: 'media',
+    frases: ['empezar la academia'] },
 
   // ── CTAs del sitio ──
   { clave: 'sitio-demo-giro', fuente: 'Sitio · Demo desde una página de giro',
