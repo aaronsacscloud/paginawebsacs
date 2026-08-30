@@ -24,7 +24,7 @@ import { useEffect, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
-import { useLeadsActivos, ListaLeadsActivos } from './LeadsActivos';
+import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 // Los millones de la cartera no caben en una tarjeta; los pesos del negocio sí.
@@ -70,6 +70,8 @@ const seg = (on: boolean) => ({
 
 export default function DashboardTab() {
   const activos = useLeadsActivos(7);
+  const [filtroAct, setFiltroAct] = useState('todos');
+  const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
   const [aMano, setAMano] = useState(false);
   const [desde, setDesde] = useState(inicioDeMes());
   const [hasta, setHasta] = useState(iso(new Date()));
@@ -166,11 +168,14 @@ export default function DashboardTab() {
               —te escribió, entró al sitio, abrió la cotización—; el gris, lo que hicimos nosotros. Los cambios de etapa
               y las bienvenidas automáticas no cuentan: si contaran, cualquiera tocado por un cron saldría como activo.
             </div>
-            <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10, marginTop: 10 }}>
-              <ListaLeadsActivos leads={activos.leads} />
+            <FiltrosActivos datos={activos} valor={filtroAct} onCambiar={setFiltroAct} />
+            <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10 }}>
+              <ListaLeadsActivos leads={aplicarFiltro(activos.leads, filtroAct)} onAbrir={setLeadAbierto} />
             </div>
           </div>
         )}
+        <DrawerLead lead={leadAbierto} onCerrar={() => setLeadAbierto(null)}
+          onWhatsApp={(l) => { const [t, qs] = rutaConversacion(l).split('?'); location.href = `/admin/crm?tab=${t}&${qs || ''}`; }} />
         <Compromisos d={d} abrir={setAbierto} />
         <Salud d={d} />
       </div>

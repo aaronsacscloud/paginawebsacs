@@ -25,7 +25,7 @@ export default function Sheet({
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex }} />
-      <div style={{
+      <div className="crm-sheet" style={{
         position: 'fixed', top: 0, right: 0, bottom: 0,
         width: isMobile ? '100%' : width,
         maxWidth: isMobile ? '100%' : '97vw',
@@ -35,7 +35,11 @@ export default function Sheet({
         boxShadow: isMobile ? 'none' : '-8px 0 30px rgba(0,0,0,0.15)',
       }}>
         {/* Header sticky de UNA fila */}
-        <div style={{
+        {/* Las clases existen para que el tema oscuro pueda alcanzar la hoja:
+            el fondo iba fijo en '#fff' en línea y sin clase, así que NINGUNA
+            hoja del CRM cambiaba de color — quedaban blancas con texto oscuro
+            en medio de una app negra. */}
+        <div className="crm-sheet-hdr" style={{
           display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
           padding: '8px 12px', borderBottom: '1px solid #ececf1', background: '#fff',
           minHeight: 52,

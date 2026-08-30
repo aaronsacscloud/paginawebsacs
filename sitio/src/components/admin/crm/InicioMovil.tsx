@@ -11,7 +11,7 @@ import { swrGet } from '../../../lib/crm/swr';
 // En escritorio este componente no existe: el Dashboard completo sigue igual.
 import { useEffect, useState } from 'react';
 import Sheet from './ui/Sheet';
-import { useLeadsActivos, ListaLeadsActivos, type LeadActivo } from './LeadsActivos';
+import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
@@ -32,6 +32,8 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   // gestión: si hay que entrar a otra pantalla a buscarla, no se hace.
   const activos = useLeadsActivos(7);
   const [verActivos, setVerActivos] = useState(false);
+  const [filtroAct, setFiltroAct] = useState('todos');
+  const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
 
   useEffect(() => {
     const hoy = new Date();
@@ -172,14 +174,26 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
 
       <Sheet open={verActivos} onClose={() => setVerActivos(false)}
         title="Leads con actividad · 7 días">
-        <ListaLeadsActivos movil leads={activos?.leads || []}
-          onAbrir={(l: LeadActivo) => {
-            // Abre la conversación si tiene WhatsApp —que es donde de verdad se
-            // actúa— y si no, su ficha en el pipeline.
-            setVerActivos(false);
-            onIrA(l.whatsapp ? `whatsapp?tel=${encodeURIComponent(l.whatsapp)}` : `pipeline?contacto=${l.id}`);
-          }} />
+        {/* Los filtros van pegados arriba: son la diferencia entre un reporte
+            y una lista de trabajo. «Te toca a ti» es el que se usa a diario. */}
+        <FiltrosActivos movil datos={activos} valor={filtroAct} onCambiar={setFiltroAct} />
+        <ListaLeadsActivos movil leads={aplicarFiltro(activos?.leads || [], filtroAct)}
+          onAbrir={setLeadAbierto} />
       </Sheet>
+
+      {/* El drawer NO cierra la hoja: al volver del detalle se sigue donde se
+          estaba, con el mismo filtro puesto. Perder el sitio en una lista de
+          treinta es lo que hace que se deje de usar. */}
+      <DrawerLead lead={leadAbierto} onCerrar={() => setLeadAbierto(null)}
+        onWhatsApp={(l) => {
+          // El salto va DESPUÉS de cerrar, no antes. Cerrar una hoja dispara
+          // `history.back()` (useDrawerHistory), y aquí se cierran dos: si se
+          // navega primero, esos dos back() se llevan por delante los
+          // parámetros recién puestos y el inbox abre en la lista en vez de en
+          // la conversación. Medido: la URL llegaba a /admin/crm pelada.
+          setLeadAbierto(null); setVerActivos(false);
+          setTimeout(() => onIrA(rutaConversacion(l)), 140);
+        }} />
     </div>
   );
 }

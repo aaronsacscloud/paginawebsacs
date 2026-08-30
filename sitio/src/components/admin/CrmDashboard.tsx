@@ -1359,6 +1359,63 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] [style*="color: rgb(107, 114, 128)"] { color: #9CA3AF !important; }
       [data-crm-dark="1"] [style*="color: rgb(143, 141, 152)"] { color: #918fa0 !important; }
       [data-crm-dark="1"] [style*="background: rgb(244, 243, 246)"], [data-crm-dark="1"] [style*="background: rgb(243, 244, 246)"] { background: #232329 !important; color: #b3b1bd !important; }
+      /* ══ HOJAS (ui/Sheet) ═══════════════════════════════════════════════
+         El fondo iba fijo en '#fff' EN LÍNEA y sin clase, así que ninguna de
+         las 8 pantallas que usan Sheet cambiaba en oscuro: salían blancas en
+         medio de una app negra. Se usa el mismo patrón que ya funciona en el
+         hilo —superficie por clase, y las tintas/superficies internas que van
+         en línea se pisan por atributo—, no un invento nuevo.
+         El orden importa: primero la superficie, luego lo de adentro. */
+      [data-crm-dark="1"] .crm-sheet { background: #131318 !important; color: #F2F1F7; }
+      [data-crm-dark="1"] .crm-sheet-hdr { background: #131318 !important; border-bottom-color: #26262e !important; }
+      [data-crm-dark="1"] .crm-sheet-hdr button { color: #F2F1F7 !important; }
+      /* tarjetas y superficies blancas dentro de la hoja */
+      [data-crm-dark="1"] .crm-sheet [style*="background: rgb(255, 255, 255)"] { background: #1d1d24 !important; }
+      /* las tintas oscuras que el código escribe en línea (#241d43, #111827,
+         #1a1a1e): sin esto quedarían negras sobre negro */
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(36, 29, 67)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(17, 24, 39)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(26, 26, 30)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(68, 68, 68)"] { color: #F2F1F7 !important; }
+      /* separadores claros, por CLASE donde se puede y por atributo donde no.
+         Ojo: un elemento con border:'none' + borderBottom se serializa en
+         LONGHAND y NO casa por cadena — por eso los renglones van por clase. */
+      [data-crm-dark="1"] .crm-sheet button, [data-crm-dark="1"] .crm-sheet > div > div {
+        border-color: #26262e !important;
+      }
+      [data-crm-dark="1"] .crm-sheet input, [data-crm-dark="1"] .crm-sheet select, [data-crm-dark="1"] .crm-sheet textarea {
+        background: #1d1d24 !important; color: #F2F1F7 !important; border-color: #33333d !important;
+      }
+      /* Los tres patrones que salieron al MEDIR el contraste dentro de la hoja
+         (17 textos por debajo de 3:1; el medidor los listó uno por uno).
+         Conviene entender por qué, porque no es solo esta pantalla:
+
+         1) PANELES CASI BLANCOS EN rgba. El barrido de arriba solo caza
+            rgb(255,255,255); un panel en rgba(250,250,252,.7) se quedaba
+            claro mientras su texto SÍ se aclaraba por las reglas globales.
+            Resultado: gris claro sobre blanco, 1.08:1 — invisible. */
+      [data-crm-dark="1"] .crm-sheet [style*="rgba(250, 250, 252"],
+      [data-crm-dark="1"] .crm-sheet [style*="background: rgb(250, 250, 252)"],
+      [data-crm-dark="1"] .crm-sheet [style*="background: rgb(252, 252, 253)"] {
+        background: #1d1d24 !important; border-color: #26262e !important;
+      }
+      /*  2) CHIPS PASTEL. Las reglas globales aclaran el TEXTO de un chip
+            (morado, verde, azul) pero su fondo pastel sigue casi blanco:
+            texto claro sobre fondo claro. Esto YA pasaba antes de tocar las
+            hojas —el barrido de texto es global— solo que nadie lo veía
+            porque nadie miraba estas pantallas en oscuro. Se oscurece el
+            fondo del chip para que el texto ya aclarado funcione. */
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(238, 236, 254)"] { background: #2a2440 !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(227, 237, 253)"] { background: #1b2740 !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(234, 248, 242)"] { background: #14312a !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(254, 243, 199)"] { background: #33280f !important; }
+      /*  3) TINTAS OSCURAS QUE FALTABAN en el barrido: #374151 y #4b5563 son
+            los grises de texto más usados del CRM y quedaban negro sobre
+            negro. */
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(55, 65, 81)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(75, 85, 99)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(31, 41, 55)"] { color: #d7d5de !important; }
+
       /* ══ Inbox oscuro (lista + hilo + composer). Los estilos son inline: se
          pisan por atributo, siempre con contraste AA sobre #131318. ══ */
       [data-crm-dark="1"] .wa-hilo-m, [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(255, 255, 255)"] { background: #131318 !important; }
