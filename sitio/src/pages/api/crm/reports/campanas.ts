@@ -27,6 +27,31 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 /* Etapas vivas: se trabaja lo que todavía se puede cerrar. */
 const VIVAS = ['lead', 'lead_calificado', 'oportunidad', 'rezagado'];
 
+/**
+ * QUÉ NO ES UNA CAMPAÑA.
+ *
+ * Esta pantalla contesta «¿qué trajo la pauta y a quién le falta seguimiento?».
+ * Dos familias de «fuente» ensuciaban la respuesta:
+ *
+ *  · LA MIGRACIÓN DE respond.io. Los 68 leads entraron el MISMO día —el 25 de
+ *    agosto— y su «fuente» no es por dónde llegaron: es el estatus que traían
+ *    allá («Interesado | Pidió tiempo», «Demo | No asistida»). Eran ocho
+ *    renglones encabezando una lista de campañas sin ser campañas de nada, y
+ *    describiendo un embudo que ya no existe.
+ *  · LOS ORÍGENES INTERNOS. `captura_manual`, `cotizacion`, `agregado_en_lead`,
+ *    `prueba_gratis_crm`: ahí el lead no llegó por ningún lado, lo metimos
+ *    nosotros. Contarlos como adquisición mezcla lo que trajo la inversión con
+ *    lo que trajo el trabajo a mano.
+ *
+ * Se excluyen de la LISTA, no de la base: siguen en el pipeline y en todas las
+ * demás pantallas. Lo único que se dice es que no son un canal.
+ */
+const NO_ES_CANAL = [
+  /^respond\.io/i,
+  /^(captura_manual|agregado_en_lead|cotizacion|prueba_gratis_crm)$/i,
+];
+const esCanal = (f: string) => !NO_ES_CANAL.some(re => re.test(f || ''));
+
 /** «tiktok-lead-form» → «TikTok». Lo que se lee tiene que ser lo que se dice. */
 function bonito(f: string): string {
   const s = (f || '').toLowerCase();
@@ -38,7 +63,7 @@ function bonito(f: string): string {
   if (s === 'booking-page') return 'Página de agenda';
   if (s === 'captura_manual') return 'Captura manual';
   if (s === 'widget' || s.includes('web')) return 'Sitio web';
-  return f || 'Sin fuente';
+  return f || 'Llegaron sin fuente';
 }
 
 const _GET: APIRoute = async ({ url }) => {
@@ -69,6 +94,7 @@ const _GET: APIRoute = async ({ url }) => {
 
   const porFuente = new Map<string, any>();
   for (const l of leads as any[]) {
+    if (!esCanal(l.fuente || '')) continue;
     const clave = l.fuente || 'sin_fuente';
     let f = porFuente.get(clave);
     if (!f) { f = { fuente: clave, etiqueta: bonito(clave), entraron: 0, sin_agendar: 0, sin_tocar: 0, leads: [] as any[] }; porFuente.set(clave, f); }
@@ -91,9 +117,14 @@ const _GET: APIRoute = async ({ url }) => {
   }
 
   const fuentes = [...porFuente.values()].filter(f => f.sin_agendar > 0).sort((a, b) => b.sin_agendar - a.sin_agendar);
+  /* El total cuenta lo MISMO que se lista. Contando todos los leads mientras
+     la lista excluye los importados, el encabezado diría «de 122 que entraron»
+     y al sumar los renglones darían 54 — un número que no cuadra con lo que se
+     ve obliga a desconfiar de los dos. */
+  const deCanal = (leads as any[]).filter(l => esCanal(l.fuente || ''));
   return json({
     dias,
-    total: leads.length,
+    total: deCanal.length,
     sin_agendar: fuentes.reduce((n, f) => n + f.sin_agendar, 0),
     fuentes,
   });
