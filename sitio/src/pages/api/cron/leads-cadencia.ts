@@ -95,7 +95,7 @@ export const GET: APIRoute = async ({ url }) => {
     // y la secuencia pareciera muerta.
     const tope = filtrosIn.length ? 400 : 60;
     const { data: crudos } = await supabase.from('contacts')
-      .select('id, estatus_lead_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
+      .select('id, estatus_lead_at, prueba_inicio, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
       .is('archived_at', null).eq('wa_optout', false)
       .limit(tope);
@@ -111,7 +111,20 @@ export const GET: APIRoute = async ({ url }) => {
       for (const x of prev || []) prevPor[x.contact_id] = x;
     }
     for (const c of nuevos || []) {
-      const llego = (c.propiedades as any)?.tiktok?.creado || c.estatus_lead_at;
+      // ── El ANCLA: desde cuándo se cuenta que "llegó" ──
+      // Por defecto es cuando cambió de estatus, que sirve para las cadencias
+      // de lead. Pero NO para todas: mover a alguien a la etapa 'prueba_gratis'
+      // cambia el lifecycle_stage y deja estatus_lead_at intacto, así que un
+      // lead nutrido dos meses entraba con fecha de hace dos meses y el corte
+      // lo descartaba — nunca recibía el día 1 de su onboarding. Cada secuencia
+      // declara desde qué fecha cuenta.
+      const ancla = String((entrada as any).ancla || 'estatus_lead_at');
+      const llego = ancla === 'prueba_inicio' ? (c as any).prueba_inicio
+                  : ancla === 'created_at'    ? c.created_at
+                  : ((c.propiedades as any)?.tiktok?.creado || c.estatus_lead_at);
+      // Si la secuencia pide un ancla que este contacto no tiene, no entra:
+      // meterlo con otra fecha sería mandarle el día 1 en su día 9.
+      if (ancla !== 'estatus_lead_at' && !llego) continue;
       if (llego && (ahora.getTime() - Date.parse(llego)) / 86400000 > sec.corte_dias) continue;
       const ya = prevPor[c.id];
       if (ya && !ya.detenida_at) continue;   // ya está corriendo
@@ -142,7 +155,7 @@ export const GET: APIRoute = async ({ url }) => {
     // 2) GRADUAR + canales — miembros vigentes: salida total con motivo, o
     //    detención del canal por el que respondió.
     const { data: miembros } = await supabase.from('crm_secuencia_miembros')
-      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades)')
+      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at)')
       .eq('secuencia_id', sec.id).is('detenida_at', null).limit(300);
 
     // Detección de respuesta POR CANAL, en lote (solo si alguien respondió).
@@ -191,7 +204,17 @@ export const GET: APIRoute = async ({ url }) => {
     for (const m of miembros || []) {
       const c: any = m.contacts;
       if (!c) continue;
-      const dias = Math.floor((ahora.getTime() - Date.parse(m.inicio)) / 86400000) + 1;
+      // El DÍA de la secuencia también se cuenta desde el ancla, no desde que
+      // el contacto entró. Si alguien lleva 3 días de prueba cuando se le marca
+      // la etapa, su "día 1" ya pasó: mandarle el correo de bienvenida en su
+      // día 3 y el de cierre en su día 17 —cuando la prueba ya venció— es peor
+      // que no mandar nada. Con el ancla por defecto ambos coinciden, así que
+      // las cadencias de siempre no cambian.
+      const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
+      const desde = anclaSec === 'prueba_inicio' ? (c as any).prueba_inicio
+                  : anclaSec === 'created_at'    ? c.created_at
+                  : m.inicio;
+      const dias = Math.floor((ahora.getTime() - Date.parse(desde || m.inicio)) / 86400000) + 1;
       const cd: Record<string, any> = { ...(m.canales_detenidos || {}) };
       let cdCambio = false;
 

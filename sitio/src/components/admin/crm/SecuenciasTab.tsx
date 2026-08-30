@@ -13,6 +13,13 @@ const lbl: React.CSSProperties = { display: 'block', fontSize: '0.62rem', fontWe
 const btnP: React.CSSProperties = { border: 'none', background: P.violeta, color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' };
 const btnG: React.CSSProperties = { border: '1px solid #ddd', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#444' };
 
+/** «12 abierto · 30%» — sin denominador el porcentaje miente y sin porcentaje
+ *  el número no dice si estuvo bien. Van juntos siempre. */
+const pct = (n: any, de: any, etiqueta: string) => {
+  const a = Number(n) || 0, b = Number(de) || 0;
+  return b ? `${a} ${etiqueta} · ${Math.round(a / b * 100)}%` : `${a} ${etiqueta}`;
+};
+
 const MOTIVO_L: Record<string, [string, string]> = {
   respondio: ['Respondieron', P.violetaTinta], agendo: ['Agendaron', P.verdeTinta],
   convertido: ['Se hicieron clientes', P.verdeTinta], descartado: ['Descartados', P.rojoTinta],
@@ -146,6 +153,13 @@ export default function SecuenciasTab() {
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
             <div><span style={lbl}>Corte (días)</span>
               <input type="number" min={1} max={60} style={{ ...inp, width: 80 }} value={edit.corte_dias ?? 14} onChange={e => setEdit({ ...edit, corte_dias: Number(e.target.value) })} /></div>
+            <div><span style={lbl}>Los días se cuentan desde</span>
+              <select style={{ ...inp, width: 210 }} value={edit.entrada?.ancla || 'estatus_lead_at'}
+                onChange={e => setEdit({ ...edit, entrada: { ...(edit.entrada || {}), ancla: e.target.value } })}>
+                <option value="estatus_lead_at">Que cambió de estatus</option>
+                <option value="prueba_inicio">Que arrancó su prueba</option>
+                <option value="created_at">Que se creó el contacto</option>
+              </select></div>
             <div><span style={lbl}>Horario CDMX (L-V)</span>
               <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                 <input type="number" min={0} max={23} style={{ ...inp, width: 64 }} value={edit.hora_inicio ?? 10} onChange={e => setEdit({ ...edit, hora_inicio: Number(e.target.value) })} />
@@ -178,6 +192,11 @@ export default function SecuenciasTab() {
             })}
           </div>
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Solo entran leads (nunca clientes ni oportunidades) que llegaron dentro del corte — los viejos no reciben ráfagas.</p>
+          {(edit.entrada?.ancla || 'estatus_lead_at') !== 'estatus_lead_at' && (
+            <p style={{ fontSize: '0.68rem', color: P.violetaTinta, background: P.violetaAgua, borderRadius: 8, padding: '8px 11px', margin: '8px 0 0', lineHeight: 1.5 }}>
+              Con este ancla, el <b>día 1 es el día 1 de esa fecha</b>, no el día que entró a la secuencia. Quien no tenga esa fecha no entra: mandarle el correo de bienvenida en su día 9 es peor que no mandarlo.
+            </p>
+          )}
           <span style={lbl}>Objetivo de la secuencia</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {[['Que responda', 'respondio'], ['Que agende demo', 'agendo'], ['Que asista a la demo', 'demo_hecha'], ['Que se haga cliente', 'convertido']].map(([l, v]) => {
@@ -310,6 +329,7 @@ export default function SecuenciasTab() {
       {lista.length === 0 && <div style={{ color: '#a5a2af', fontSize: '0.85rem' }}>Sin secuencias todavía — crea la primera.</div>}
       {lista.map(s => {
         const m = s.metricas || {};
+        const r = s.resultados || {};
         const salidas = m.salidas || {};
         return (
           <div key={s.id} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${s.activa ? P.verde : '#d8d6e4'}`, borderRadius: 12, padding: '15px 17px', marginBottom: 13 }}>
@@ -372,14 +392,47 @@ export default function SecuenciasTab() {
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>En secuencia</div>
                 <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.violetaTinta }}>{m.en_secuencia ?? 0}</div>
               </div>
+            {/* LO QUE RESULTÓ. Arriba están los envíos; esto es el negocio que
+                salió de ellos. Todo se cuenta DESPUÉS de que el lead entró a la
+                cadencia: una reunión anterior no la produjo esta secuencia. */}
+            {(Number(r.correo_enviados) || Number(r.wa_enviados)) ? (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10, padding: '11px 13px', background: '#fbfaff', border: '1px solid #ece8fb', borderRadius: 10 }}>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#999', textTransform: 'uppercase', letterSpacing: '.06em', width: '100%' }}>Lo que resultó</div>
+                {[['Respondieron', r.respondieron, P.violetaTinta],
+                  ['Agendaron reunión', r.agendaron, P.azulTinta],
+                  ['Recibieron cotización', r.cotizaron, P.azulTinta],
+                  ['Se hicieron clientes', r.convirtieron, P.verdeTinta]].map(([l, v, c]: any) => (
+                  <div key={l} style={{ minWidth: 116 }}>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: Number(v) ? c : '#c9c7d0' }}>{Number(v) || 0}</div>
+                    <div style={{ fontSize: '0.66rem', color: '#8f8d98' }}>{l}</div>
+                  </div>
+                ))}
+                {Number(r.monto_cotizado) > 0 && (
+                  <div style={{ minWidth: 130 }}>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.verdeTinta }}>${Number(r.monto_cotizado).toLocaleString('es-MX')}</div>
+                    <div style={{ fontSize: '0.66rem', color: '#8f8d98' }}>cotizado</div>
+                  </div>
+                )}
+              </div>
+            ) : null}
               <div style={{ ...tarjetaKpi(P.azul), minWidth: 120, flex: 1 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Entraron</div>
                 <div style={{ fontSize: '1.35rem', fontWeight: 800, color: P.azulTinta }}>{m.entraron ?? 0}</div>
               </div>
-              <div style={{ ...tarjetaKpi(P.azul), minWidth: 140, flex: 1 }}>
-                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Envíos</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>{m.correos ?? 0} correos · {m.whatsapps ?? 0} WA</div>
-                <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 2 }}>{m.correos_abiertos ?? 0} abiertos · {m.correos_clic ?? 0} con clic</div>
+              {/* Envíos SEPARADOS por canal: un correo y un WhatsApp no se leen
+                  igual ni se responden igual, y juntarlos en un solo número
+                  esconde cuál de los dos está trabajando. */}
+              <div style={{ ...tarjetaKpi(P.azul), minWidth: 168, flex: 1.2 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>Correo</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.azulTinta }}>{r.correo_enviados ?? m.correos ?? 0} enviados</div>
+                <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 2 }}>
+                  {pct(r.correo_abiertos ?? m.correos_abiertos, r.correo_enviados ?? m.correos, 'abierto')} · {pct(r.correo_clic ?? m.correos_clic, r.correo_enviados ?? m.correos, 'con clic')}
+                </div>
+              </div>
+              <div style={{ ...tarjetaKpi(P.verde), minWidth: 152, flex: 1 }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>WhatsApp</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: P.verdeTinta }}>{r.wa_enviados ?? m.whatsapps ?? 0} enviados</div>
+                <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 2 }}>{pct(r.wa_respondidos, r.wa_enviados, 'respondió')}</div>
               </div>
               <div style={{ ...tarjetaKpi(P.verde), minWidth: 150, flex: 1.4 }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' }}>

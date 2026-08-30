@@ -11,19 +11,24 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 export const GET: APIRoute = async () => {
-  const [{ data: secs }, { data: pasos }, { data: mets }, { data: pstats }] = await Promise.all([
+  const [{ data: secs }, { data: pasos }, { data: mets }, { data: pstats }, { data: rslt }] = await Promise.all([
     supabase.from('crm_secuencias').select('*').order('created_at'),
     supabase.from('crm_secuencia_pasos').select('*').order('orden'),
     supabase.rpc('crm_secuencias_metricas'),
     supabase.rpc('crm_secuencia_pasos_stats'),
+    // Lo que RESULTÓ, por canal. Las métricas de arriba cuentan envíos;
+    // "mandé 40 correos y 12 WhatsApps" no dice si la cadencia sirvió.
+    supabase.rpc('crm_secuencias_resultados'),
   ]);
   const porSec = new Map<string, any[]>();
   for (const p of pasos || []) { const a = porSec.get(p.secuencia_id) || []; a.push(p); porSec.set(p.secuencia_id, a); }
   const metPor = new Map<string, any>((mets || []).map((m: any) => [m.secuencia_id, m]));
+  const resPor = new Map<string, any>((rslt || []).map((r: any) => [r.secuencia_id, r]));
   return json({
     secuencias: (secs || []).map(s => ({
       ...s, pasos: porSec.get(s.id) || [],
       metricas: metPor.get(s.id) || { en_secuencia: 0, entraron: 0, salidas: {}, correos: 0, whatsapps: 0 },
+      resultados: resPor.get(s.id) || null,
       stats_correo: (pstats || []).filter((x: any) => x.secuencia_id === s.id),
     })),
   });
@@ -101,7 +106,13 @@ export const POST: APIRoute = async ({ request }) => {
       ? b.entrada.filtros.filter((f: any) => f && typeof f.campo === 'string' && typeof f.op === 'string').slice(0, 12)
       : [];
     const logica = b.entrada.logica === 'OR' ? 'OR' : 'AND';
-    fila.entrada = { estatus: estFinal, lifecycle, filtros, logica };
+    // ── El ancla: desde qué fecha cuenta esta cadencia ──
+    // 'estatus_lead_at' sirve para las de lead. Las de onboarding necesitan
+    // 'prueba_inicio', porque mover a alguien a la etapa de prueba no toca el
+    // estatus y el corte lo descartaría con una fecha de hace meses.
+    const ANCLAS = ['estatus_lead_at', 'prueba_inicio', 'created_at'];
+    const ancla = ANCLAS.includes(b.entrada.ancla) ? b.entrada.ancla : 'estatus_lead_at';
+    fila.entrada = { estatus: estFinal, lifecycle, filtros, logica, ancla };
   }
   let id = b.id || null;
   if (id) {
