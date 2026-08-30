@@ -42,6 +42,31 @@ if (gate) return gate;
     // un despliegue el teléfono sigue viendo la versión de ayer. Cuando el
     // service worker detecta una versión nueva, se refresca en cuanto sea
     // seguro: nunca con algo escrito a medias ni con un panel abierto.
+    /* ── RED DE SEGURIDAD: UN CHUNK QUE YA NO EXISTE ────────────────────
+       El CRM carga cada pantalla por separado (import dinámico). Si el HTML
+       cacheado es de ayer y el servidor ya no tiene ese archivo, el import
+       falla con un 404 y esa pantalla NO SE DIBUJA: se queda el velo del panel
+       y ningún panel. Desde fuera es «toco y no pasa nada» — y no hay error
+       visible en ningún lado, porque el fallo es de red, no de código.
+       Aquí se detecta ese caso concreto y se repara solo: se tiran los cachés
+       y se recarga UNA vez. El candado en sessionStorage es lo que evita el
+       bucle si el fallo fuera de verdad del servidor y no del caché. */
+    const recuperarDeChunkMuerto = async (motivo) => {
+      if (sessionStorage.getItem('crm-recarga-chunk')) return;   // ya se intentó
+      sessionStorage.setItem('crm-recarga-chunk', String(Date.now()));
+      try { for (const k of await caches.keys()) await caches.delete(k); } catch (_) {}
+      console.warn('[crm] recargando: no se pudo cargar una pantalla —', motivo);
+      location.reload();
+    };
+    window.addEventListener('error', (e) => {
+      const m = String(e?.message || '');
+      if (/dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(m)) recuperarDeChunkMuerto(m);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      const m = String(e?.reason?.message || e?.reason || '');
+      if (/dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(m)) recuperarDeChunkMuerto(m);
+    });
+
     let avisado = false;
     navigator.serviceWorker.addEventListener('message', (ev) => {
       if (ev.data?.tipo !== 'crm-version-nueva' || avisado) return;

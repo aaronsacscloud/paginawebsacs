@@ -12,7 +12,7 @@
 // que hoy tienen guardada una versión vieja del HTML —por el bug del clon que
 // impedía avisar— la sueltan en el primer arranque tras este despliegue, sin
 // que nadie tenga que reinstalar la app.
-const VER = 'crm-sw-v3';
+const VER = 'crm-sw-v4';   // v4: purga los assets viejos al detectar build nuevo
 const RE_ASSET = /\/_astro\/.+\.(js|css|woff2?)$/;
 
 self.addEventListener('install', (e) => { self.skipWaiting(); });
@@ -60,6 +60,20 @@ self.addEventListener('fetch', (e) => {
           const nuevo = (await r.clone().text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/);
           const viejo = clonVieja ? (await clonVieja.text()).match(/CrmDashboard\.[A-Za-z0-9_-]+\.js/) : null;
           if (nuevo && viejo && nuevo[0] !== viejo[0]) {
+            /* HAY VERSIÓN NUEVA → SE TIRAN LOS ASSETS VIEJOS.
+               Los /_astro/* son inmutables y se guardaban para siempre. El
+               problema no es el espacio: es que el HTML viejo y los chunks
+               viejos conviven con los nuevos, y basta que UN chunk viejo ya no
+               exista en el servidor para que su pantalla no cargue —se ve el
+               velo del panel y ningún panel—. Pasó con el menú del inbox.
+               Se borran en cuanto se detecta build nuevo, no al recargar: si
+               se espera, la siguiente pantalla que se abra puede pedir
+               justamente el chunk muerto. Volver a bajarlos cuesta un viaje;
+               una pantalla en blanco cuesta la confianza. */
+            const c = await caches.open(VER);
+            for (const req of await c.keys()) {
+              if (RE_ASSET.test(new URL(req.url).pathname)) await c.delete(req);
+            }
             const wins = await self.clients.matchAll({ type: 'window' });
             wins.forEach(w => w.postMessage({ tipo: 'crm-version-nueva' }));
           }
