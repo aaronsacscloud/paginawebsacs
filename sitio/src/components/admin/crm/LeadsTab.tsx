@@ -1048,6 +1048,18 @@ export default function LeadsTab() {
                 const atorado = agrupa && d >= 3;
                 return (
                   <div key={c.id} className="m-row" onClick={() => setRapidaL(c)}>
+                    {/* La inicial. La misma persona salía con círculo en Inbox y
+                        en Clientes y como texto pelón aquí: tres pantallas del
+                        mismo CRM contando la misma lista de gente de dos formas.
+                        Además le da al ojo un punto de anclaje para barrer la
+                        columna sin leer cada nombre. */}
+                    <div className="m-ini">{(() => {
+                      const nom = cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || '';
+                      const stop = ['de', 'del', 'la', 'los', 'las', 'y'];
+                      const ws = nom.split(/\s+/).filter((w: string) => w && !stop.includes(w.toLowerCase()));
+                      if (!ws.length) return '—';
+                      return (ws.length >= 2 ? ws[0][0] + ws[1][0] : nom.slice(0, 2)).toUpperCase();
+                    })()}</div>
                     <div className="m-tx">
                       <div className="m-n1">{cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || 'Sin nombre'}</div>
                       <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
