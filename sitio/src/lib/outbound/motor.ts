@@ -98,6 +98,14 @@ function tieneQuejaAbierta(e: any): boolean {
 
 /** Empresas (con sus cuentas SACS) que cumplen la definición HOY. */
 export async function resolverAudiencia(def: AudienciaDef): Promise<AudienciaResuelta> {
+  /* Campaña gobernada por una secuencia: la lista la llena el cron, un lead a
+     la vez. Se corta ANTES de leer companies, no solo porque es más barato,
+     sino porque `grupos: []` significa «todas» y este caso empieza vacío: sin
+     este corte, la primera publicación le habría llegado a las 560 cuentas. */
+  if (def?.solo_manual) {
+    const cuentas = Array.from(new Set((def.incluir_cuentas || []).map(normCuenta).filter(Boolean)));
+    return { companies: [], cuentas, exclusiones: { sin_cuenta: 0, excluidas_manual: 0, soporte: 0 } };
+  }
   const { data, error } = await supabase.from('companies')
     .select('id, nombre, plan, estado_cuenta, dias_sin_venta, giro, months_active, fecha_renovacion, sacs_account, uso_sacs, intereses, soporte_abiertos, soporte_estancado, soporte_sentimiento')
     .is('archived_at', null)

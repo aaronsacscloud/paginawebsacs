@@ -49,6 +49,18 @@ export const GET: APIRoute = async ({ url }) => {
     const { data: pasos } = await supabase.from('inapp_pasos').select('*').eq('campana_id', id).order('orden');
     return json({ campana: data, pasos: pasos || [] });
   }
+  /* ?de_secuencia=1 → solo las que gobierna una secuencia, para el selector del
+     editor de Secuencias. Ofrecer ahí una campaña normal sería ofrecer un pie
+     en la trampa: su audiencia se resuelve por condiciones y `grupos: []`
+     significa TODAS, así que elegirla mandaría el mensaje del día 3 de una
+     prueba gratis a las 560 cuentas. */
+  if (url.searchParams.get('de_secuencia')) {
+    const { data } = await supabase.from('inapp_campanas')
+      .select('id, nombre, estado, origen_secuencia, audiencia')
+      .is('archived_at', null).not('origen_secuencia', 'is', null)
+      .order('nombre').limit(200);
+    return json({ campanas: (data || []).filter((c: any) => c.audiencia?.solo_manual) });
+  }
   let q = supabase.from('inapp_campanas').select('*').is('archived_at', null).order('updated_at', { ascending: false }).limit(500);
   const estado = url.searchParams.get('estado');
   if (estado) q = q.eq('estado', estado);

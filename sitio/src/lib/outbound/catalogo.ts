@@ -101,6 +101,16 @@ export interface AudienciaDef {
   grupos: Array<{ condiciones: CondicionUso[] }>;
   excluir_cuentas?: string[];
   incluir_cuentas?: string[];   // adiciones manuales (beta testers, pilotos)
+  /**
+   * Solo las cuentas de `incluir_cuentas`, sin resolver condiciones.
+   *
+   * Existe por una trampa del resolvedor: `grupos: []` NO significa «nadie»,
+   * significa **todas las empresas** (así se expresa «toda la base»). Una
+   * campaña gobernada por una secuencia empieza con la lista vacía y va
+   * creciendo lead por lead — sin esta bandera, su primera publicación le
+   * habría llegado a las 560 cuentas.
+   */
+  solo_manual?: boolean;
   // Supresión por soporte: por defecto se OMITE a la empresa con una queja
   // abierta (ticket estancado o de sentimiento urgente/negativo) — no es momento
   // de venderle. Ponlo en false para campañas que SÍ deben llegar (p.ej. la CSAT

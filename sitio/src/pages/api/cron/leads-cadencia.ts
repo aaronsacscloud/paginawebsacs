@@ -21,6 +21,7 @@ import { compilar, compilarTexto, interpolar } from '../../../lib/email/plantill
 import { cumpleCondsLead } from '../../../lib/crm/leads-filtros';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/presion';
+import { entregarInapp, retirarInapp, cuentaDelLead, campanasDeSecuencia } from '../../../lib/crm/secuencia-inapp';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
@@ -195,9 +196,44 @@ export const GET: APIRoute = async ({ url }) => {
 
     // 2) GRADUAR + canales — miembros vigentes: salida total con motivo, o
     //    detención del canal por el que respondió.
-    const { data: miembros } = await supabase.from('crm_secuencia_miembros')
-      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at, reciclado_veces, ultima_actividad_venta_at, ultima_actividad_venta_tipo, eng_emails_leidos)')
+    /* ⚠️ El `error` de aquí NO se puede tragar.
+     *
+     * Este `select` trae a `contacts(...)` como JOIN de PostgREST, y PostgREST
+     * solo une dos tablas si hay LLAVE FORÁNEA declarada. Faltaba la de
+     * `contact_id → contacts(id)`: la consulta devolvía PGRST200, el
+     * `(miembros || [])` de más abajo lo convertía en lista vacía, y las
+     * secuencias enrolaban gente sin mandarle NADA. Medido: cero filas
+     * `secuencia_envio` en toda la historia de `activities`.
+     *
+     * Un error aquí significa que la secuencia está muerta, así que se grita.
+     * Si alguien vuelve a agregar una tabla al select sin su FK, se entera hoy
+     * y no dentro de tres meses. */
+    const { data: miembros, error: eMiembros } = await supabase.from('crm_secuencia_miembros')
+      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at, reciclado_veces, ultima_actividad_venta_at, ultima_actividad_venta_tipo, eng_emails_leidos, company_id, prueba_cuenta)')
       .eq('secuencia_id', sec.id).is('detenida_at', null).limit(300);
+    if (eMiembros) {
+      console.error(`[secuencias] "${sec.nombre}" NO PUDO LEER SUS MIEMBROS — no se envió nada:`, eMiembros.message);
+      res.errores = res.errores || [];
+      res.errores.push({ secuencia: sec.nombre, error: eMiembros.message });
+      continue;
+    }
+
+    /* ── QUIÉN YA PAGÓ ─────────────────────────────────────────────────────
+       Una consulta para todos los miembros, no una por lead: son hasta 300 y
+       la de arriba ya trajo sus company_id.
+
+       `estado='activa'` y no `pendiente_pago`: un anual pendiente de pago es
+       justo alguien a quien todavía hay que empujar, y sacarlo de la cadencia
+       ahí sería soltarlo en el peor momento. Vitalicia cuenta igual — pagó más
+       que un anual. */
+    const compIds = Array.from(new Set((miembros || []).map((m: any) => m.contacts?.company_id).filter(Boolean)));
+    const yaPagaron = new Set<string>();
+    if (compIds.length) {
+      const { data: subs } = await supabase.from('subscriptions')
+        .select('company_id, ciclo, estado').in('company_id', compIds)
+        .eq('estado', 'activa').in('ciclo', ['anual', 'vitalicia']);
+      for (const x of subs || []) yaPagaron.add(x.company_id);
+    }
 
     // Detección de respuesta POR CANAL, en lote (solo si alguien respondió).
     const idsRespondieron = (miembros || [])
@@ -350,12 +386,27 @@ export const GET: APIRoute = async ({ url }) => {
       // OBJETIVO de la secuencia es que responda y ya respondió por uno.
       const respondioAlgo = cd.wa?.motivo === 'respondio' || cd.correo?.motivo === 'respondio';
       const ambos = cd.wa?.motivo === 'respondio' && cd.correo?.motivo === 'respondio';
-      const motivo = motivoSalida(c, objetivoSec) || (dias > sec.corte_dias ? 'corte' : null)
+      /* Pagó su licencia: se acabó la cadencia, sea cual sea su etapa. Es la
+         salida más importante de todas — el que ya pagó y sigue recibiendo «te
+         doy 35% si contratas» aprende que le cobraron de más. */
+      const pago = c.company_id && yaPagaron.has(c.company_id) ? 'pago_licencia' : null;
+      const motivo = pago || motivoSalida(c, objetivoSec) || (dias > sec.corte_dias ? 'corte' : null)
         || (ambos ? 'respondio' : null)
         || (objetivoSec === 'respondio' && respondioAlgo ? 'respondio' : null);
       if (motivo) {
         if (!dry) {
           await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora.toISOString(), motivo, canales_detenidos: cd }).eq('id', m.id);
+          /* Y se baja de los mensajes DENTRO de Sacs. Sin esto, el que acaba de
+             pagar seguiría viendo el modal que le ofrece contratar: la peor
+             forma de recibir a alguien que acaba de darte dinero. Las bajas
+             importan tanto como las altas. */
+          try {
+            const camps = await campanasDeSecuencia(sec.id);
+            if (camps.length) {
+              const cuenta = await cuentaDelLead(c);
+              if (cuenta) for (const cid of camps) await retirarInapp(cid, cuenta);
+            }
+          } catch (e: any) { console.warn('[secuencias] baja in-app', c.id, e?.message || e); }
           await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_salida', automatico: true,
             titulo: `Salió de la secuencia "${sec.nombre}": ${motivo}`, metadata: { secuencia_id: sec.id, motivo, dia: dias } });
           await notaInbox(c.id, `Salió de la secuencia "${sec.nombre}" (día ${dias}): ${motivo}.`);
@@ -424,6 +475,7 @@ export const GET: APIRoute = async ({ url }) => {
       if (c.retenido_hasta && new Date(c.retenido_hasta) > ahora) continue;   // pausa: se salta, no sale
       const enviados: Record<string, string> = m.enviados || {};
       let correoHecho = false, waHecho = false, cambio = false;
+      let inappHecho = false;   // un mensaje dentro de Sacs por lead y corrida
       // ── Las tres condiciones de la secuencia de demo agendada ──
       // El arco supone pista antes de la sesión, y no la hay: 27 de 31
       // reuniones se agendan para el mismo día o el siguiente (mediana 0). Sin
@@ -464,7 +516,13 @@ export const GET: APIRoute = async ({ url }) => {
         }
         if (p.canal === 'correo' && (cd.correo || correoHecho || !c.email || !p.email_template_id || corridaCorreos >= MAX_POR_CORRIDA || envioHoy[c.id]?.correo)) continue;
         if (p.canal === 'wa' && (cd.wa || waHecho || !c.whatsapp || !p.wa_plantilla || corridaWas >= MAX_POR_CORRIDA || envioHoy[c.id]?.wa)) continue;
-        if (dry) { res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal }); if (p.canal === 'correo') correoHecho = true; else waHecho = true; continue; }
+        /* El in-app NO consume el cupo de «un correo y un WhatsApp por día»: no
+           interrumpe a nadie —espera dentro del sistema a que entre— y no
+           cuesta envío. Tampoco se detiene cuando el lead responde por otro
+           canal: que conteste el correo no es razón para quitarle de la
+           pantalla el modal que le explica su promoción. */
+        if (p.canal === 'inapp' && (inappHecho || !p.inapp_campana_id)) continue;
+        if (dry) { res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal }); if (p.canal === 'correo') correoHecho = true; else if (p.canal === 'wa') waHecho = true; else inappHecho = true; continue; }
         const primerNombre = String(c.nombre || '').trim().split(/\s+/)[0] || null;
         const ctx = { nombre: primerNombre, campana: c.campana || null, ...extrasReunion(c.id) };
         try {
@@ -489,7 +547,7 @@ export const GET: APIRoute = async ({ url }) => {
             if (!(r as any)?.enviado) continue;
             correoHecho = true; corridaCorreos++; (envioHoy[c.id] = envioHoy[c.id] || {}).correo = true;
             await notaInbox(c.id, `Secuencia "${sec.nombre}" · día ${p.dia}: correo "${asunto}" enviado a ${c.email}.`);
-          } else {
+          } else if (p.canal === 'wa') {
             // ── Dos candados antes de escribirle ──
             // 1. Un WhatsApp por lead por día, contando TODO lo que salió — el
             //    cron, otra secuencia, o un vendedor desde la bandeja. Aquí no
@@ -501,11 +559,23 @@ export const GET: APIRoute = async ({ url }) => {
             if (await cadenciaPausadaPorPersona(c.whatsapp)) { res.saltados.push({ lead: c.id, motivo: 'la tomo una persona' }); continue; }
             await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', [primerNombre || '👋']);
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
+          } else if (p.canal === 'inapp') {
+            /* Se mete su cuenta en la audiencia de la campaña y se republica.
+               La campaña es el mensaje; la secuencia decide a quién y cuándo. */
+            const cuenta = await cuentaDelLead(c);
+            if (!cuenta) { res.saltados.push({ lead: c.id, motivo: 'sin_cuenta_sacs' }); continue; }
+            const r = await entregarInapp(p.inapp_campana_id, cuenta);
+            /* Si falló NO se marca el paso como enviado: la próxima corrida lo
+               reintenta. `incluir_cuentas` es un conjunto, así que reintentar no
+               duplica a nadie. Marcarlo igual sería dar por entregado algo que
+               el usuario nunca vio. */
+            if (!r.ok) { res.saltados.push({ lead: c.id, motivo: 'inapp: ' + r.error }); continue; }
+            inappHecho = true;
           }
           enviados[p.id] = ahora.toISOString(); cambio = true;
           await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_envio', automatico: true,
-            titulo: `Secuencia "${sec.nombre}" día ${p.dia}: ${p.canal === 'correo' ? 'correo' : 'WhatsApp'}`,
-            metadata: { secuencia_id: sec.id, paso: p.orden, canal: p.canal, plantilla: p.email_template_id || p.wa_plantilla } });
+            titulo: `Secuencia "${sec.nombre}" día ${p.dia}: ${p.canal === 'correo' ? 'correo' : p.canal === 'wa' ? 'WhatsApp' : 'mensaje dentro de Sacs'}`,
+            metadata: { secuencia_id: sec.id, paso: p.orden, canal: p.canal, plantilla: p.email_template_id || p.wa_plantilla || p.inapp_campana_id } });
           res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal });
         } catch (e: any) { console.warn('[secuencias]', c.id, p.canal, e?.message || e); }
       }

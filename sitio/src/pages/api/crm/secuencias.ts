@@ -129,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
   // repetirse. Un arco solo necesita tener algo.
   if (b.activa) {
     const nPasos = Array.isArray(b.pasos)
-      ? b.pasos.filter((p: any) => p?.activo !== false && (p.email_template_id || p.wa_plantilla)).length
+      ? b.pasos.filter((p: any) => p?.activo !== false && (p.email_template_id || p.wa_plantilla || p.inapp_campana_id)).length
       : 0;
     const minimo = b.modo === 'permanente' ? 30 : 1;
     if (nPasos < minimo) {
@@ -152,15 +152,41 @@ export const POST: APIRoute = async ({ request }) => {
     id = data.id;
   }
   if (Array.isArray(b.pasos)) {
+    /* ⚠️ ESTE BLOQUE BORRA Y REINSERTA. Todo campo que no se copie aquí se
+       PIERDE al guardar desde la pantalla — sin error y sin aviso.
+       Ya casi cuesta caro: `dia_semana` (los carriles lunes/miércoles/viernes
+       de la cadencia permanente) no estaba en el mapeo ni en el editor, así que
+       el primer «Guardar» habría aplanado 34 pasos en una sola fila y nadie se
+       habría enterado hasta ver que todos los leads reciben insights tres veces
+       por semana. Si agregas una columna al paso, agrégala TAMBIÉN aquí. */
     const filas = b.pasos
-      .filter((p: any) => p.dia && ['correo', 'wa'].includes(p.canal))
+      .filter((p: any) => p.dia && ['correo', 'wa', 'inapp'].includes(p.canal))
       .map((p: any, i: number) => ({
-        secuencia_id: id, orden: i + 1, dia: Math.max(1, Number(p.dia) || 1), canal: p.canal,
+        secuencia_id: id, orden: Number(p.orden) || (i + 1) * 10, dia: Math.max(1, Number(p.dia) || 1), canal: p.canal,
         email_template_id: p.canal === 'correo' ? (p.email_template_id || null) : null,
         email_template_id_b: p.canal === 'correo' ? (p.email_template_id_b || null) : null,
         wa_plantilla: p.canal === 'wa' ? (String(p.wa_plantilla || '').trim() || null) : null,
+        inapp_campana_id: p.canal === 'inapp' ? (p.inapp_campana_id || null) : null,
+        dia_semana: p.dia_semana ? Math.max(1, Math.min(7, Number(p.dia_semana))) : null,
+        vigente_hasta: p.vigente_hasta || null,
         activo: p.activo !== false,
       }));
+
+    /* Candado contra el aplanado: si la secuencia HOY tiene carriles y lo que
+       llega no trae ninguno, es que el editor no los conoce — no que alguien
+       quisiera quitarlos. Se rechaza en vez de destruirlos. */
+    const { data: previos } = await supabase.from('crm_secuencia_pasos')
+      .select('dia_semana').eq('secuencia_id', id);
+    const teniaCarriles = (previos || []).some((p: any) => p.dia_semana);
+    const traeCarriles = filas.some((f: any) => f.dia_semana);
+    if (teniaCarriles && !traeCarriles) {
+      return json({ error: 'Esta secuencia tiene carriles por día de la semana y lo que llegó no los trae. No se guardó nada para no aplanarla.' }, 409);
+    }
+    /* Un paso in-app sin campaña se saltaría en silencio. La base también lo
+       impide, pero un error de restricción no le dice nada a quien edita. */
+    const sinCampana = filas.filter((f: any) => f.canal === 'inapp' && !f.inapp_campana_id).length;
+    if (sinCampana) return json({ error: `Hay ${sinCampana} paso(s) dentro de Sacs sin campaña elegida.` }, 400);
+
     const { error: e1 } = await supabase.from('crm_secuencia_pasos').delete().eq('secuencia_id', id);
     if (e1) return json({ error: e1.message }, 500);
     if (filas.length) {

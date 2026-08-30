@@ -33,6 +33,7 @@ export default function SecuenciasTab() {
   const [edit, setEdit] = useState<any>(null);
   const [plantillasEmail, setPlantillasEmail] = useState<any[]>([]);
   const [plantillasWa, setPlantillasWa] = useState<any[]>([]);
+  const [campanasInapp, setCampanasInapp] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [simul, setSimul] = useState<any>(null);
   const [simulando, setSimulando] = useState(false);
@@ -48,6 +49,13 @@ export default function SecuenciasTab() {
       const t = j.plantillas || [];
       setPlantillasWa(t.map((x: any) => ({ nombre: x.name || x.nombre, aprobada: (x.status || x.estado) === 'APPROVED' })));
     }).catch(() => {});
+    /* Solo las campañas gobernadas por una secuencia. Ofrecer las de Outbound
+       normales sería ofrecer un pie en la trampa: su audiencia se resuelve por
+       condiciones y `grupos: []` significa TODAS — elegir una aquí le mandaría
+       el mensaje del día 3 de la prueba a las 560 cuentas. */
+    fetch('/api/crm/outbound/campanas?de_secuencia=1').then(r => r.json())
+      .then(j => setCampanasInapp((j.campanas || []).map((x: any) => ({ id: x.id, nombre: x.nombre }))))
+      .catch(() => {});
   }, []);
 
   const guardar = async () => {
@@ -234,14 +242,26 @@ export default function SecuenciasTab() {
             acuse, y eso se configura arriba. */}
         {edit.disparador !== 'wa_entrante' && (
         <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
-          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Los pasos (WhatsApp y correo, una sola secuencia)</div>
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Los pasos · correo, WhatsApp y mensajes dentro de Sacs</div>
           {pasos.map((p, i) => (
             <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.7rem', color: '#999' }}>Día</span>
               <input type="number" min={1} value={p.dia} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, dia: Number(e.target.value) } : x) })} style={{ ...inp, width: 58 }} />
               <select value={p.canal} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, canal: e.target.value } : x) })} style={{ ...inp, width: 104 }}>
-                <option value="correo">Correo</option><option value="wa">WhatsApp</option>
+                <option value="correo">Correo</option><option value="wa">WhatsApp</option><option value="inapp">Dentro de Sacs</option>
               </select>
+              {/* El carril. En una cadencia permanente cada día de la semana
+                  tiene su tipo de contenido y rota por su cuenta. Vivía SOLO en
+                  la base: el editor no lo conocía, y como guardar borra y
+                  reinserta los pasos, el primer «Guardar» habría aplanado los
+                  tres carriles sin decir nada. */}
+              {String(edit.modo || '') === 'permanente' && (
+                <select value={p.dia_semana || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, dia_semana: e.target.value ? Number(e.target.value) : null } : x) })}
+                  title="Carril: en qué día de la semana corre este paso" style={{ ...inp, width: 82 }}>
+                  <option value="">sin carril</option>
+                  {[[1, 'lun'], [2, 'mar'], [3, 'mié'], [4, 'jue'], [5, 'vie'], [6, 'sáb'], [7, 'dom']].map(([v3, l]) => <option key={String(v3)} value={String(v3)}>{l}</option>)}
+                </select>
+              )}
               {p.canal === 'correo' ? (<>
                 <select value={p.email_template_id || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, email_template_id: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
                   <option value="">— plantilla de correo —</option>
@@ -261,7 +281,17 @@ export default function SecuenciasTab() {
                       style={{ border: 'none', background: 'none', color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
                   </span>
                 )}
-              </>) : (
+              </>) : p.canal === 'inapp' ? (
+                /* No se redacta aquí: se elige una campaña de Outbound. La
+                   campaña es el mensaje —formato, botones y vista previa ya
+                   resueltos—; la secuencia decide a quién y cuándo. Un segundo
+                   editor de mensajes in-app se habría separado del de Outbound
+                   en la primera semana. */
+                <select value={p.inapp_campana_id || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, inapp_campana_id: e.target.value || null } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
+                  <option value="">— campaña dentro de Sacs —</option>
+                  {campanasInapp.map((x: any) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+                </select>
+              ) : (
                 <select value={p.wa_plantilla || ''} onChange={e => setEdit({ ...edit, pasos: pasos.map((x, j) => j === i ? { ...x, wa_plantilla: e.target.value } : x) })} style={{ ...inp, flex: 1, minWidth: 180 }}>
                   <option value="">— plantilla de WhatsApp —</option>
                   {plantillasWa.map((x: any) => <option key={x.nombre} value={x.nombre}>{x.nombre}{x.aprobada ? '' : ' (en revisión de Meta)'}</option>)}
