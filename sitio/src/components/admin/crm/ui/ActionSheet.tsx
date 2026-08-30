@@ -28,38 +28,81 @@ export default function ActionSheet({
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex }} />
-      <div role="menu" style={{
-        position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0, zIndex: zIndex + 1,
-        width: 'min(480px, 100%)',
-        background: '#fff', borderRadius: '16px 16px 0 0',
-        boxShadow: '0 -8px 30px rgba(0,0,0,0.18)',
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
-        maxHeight: '75dvh', display: 'flex', flexDirection: 'column',
-      }}>
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: '#d8dbe2', margin: '8px auto 4px', flexShrink: 0 }} />
-        {title != null && (
-          <div style={{ padding: '6px 18px 8px', fontSize: '0.72rem', fontWeight: 800, color: '#8a8f98', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{title}</div>
-        )}
-        <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-          {items.map((it, i) => (
-            <button key={i} role="menuitem" disabled={it.disabled}
-              onClick={() => { if (it.disabled) return; onClose(); it.onClick(); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                minHeight: 48, padding: '12px 18px', border: 'none', background: it.active ? '#f0f4ff' : 'none',
-                cursor: it.disabled ? 'default' : 'pointer', textAlign: 'left',
-                fontSize: '0.95rem', fontWeight: it.active ? 800 : 600,
-                color: it.disabled ? '#b8bcc4' : it.danger ? '#b93333' : '#16181d',
-                borderTop: i > 0 ? '1px solid #f4f5f8' : 'none',
-              }}>
-              {it.icon && <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{it.icon}</span>}
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.label}</span>
-              {it.active && <span style={{ color: '#3764c4', fontWeight: 800 }}>✓</span>}
-            </button>
-          ))}
+      {/* Los colores van por CLASE, no en línea. Esta hoja se quedó blanca en
+          modo oscuro cuando el resto de la app ya era negra —el tema no puede
+          alcanzar un `background:'#fff'` escrito aquí dentro—: un rectángulo
+          blanco a pantalla completa de madrugada. */}
+      <style>{CSS_HOJA}</style>
+      <div className="ash-velo" onClick={onClose} style={{ zIndex }} />
+      <div role="menu" className="ash" style={{ zIndex: zIndex + 1 }}>
+        <div className="ash-asa" />
+        {title != null && <div className="ash-tit">{title}</div>}
+        <div className="ash-lista">
+          {items.map((it, i) => {
+            /* Un separador es un item deshabilitado SIN acción: se dibuja como
+               encabezado de sección y no como una fila apagada, que es como se
+               veía — igual que un botón roto. */
+            const esSeparador = it.disabled && !it.icon;
+            return (
+              <button key={i} role={esSeparador ? undefined : 'menuitem'} disabled={it.disabled}
+                onClick={() => { if (it.disabled) return; onClose(); it.onClick(); }}
+                className={'ash-i' + (it.active ? ' on' : '') + (it.danger ? ' mal' : '') + (esSeparador ? ' sep' : '')}>
+                {it.icon && <span className="ash-ico">{it.icon}</span>}
+                <span className="ash-tx">{it.label}</span>
+                {it.active && <span className="ash-ok">✓</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
     </>
   );
 }
+
+/* La hoja SUBE en vez de aparecer de golpe: 190 ms es lo que separa «algo
+   cambió» de «esto salió de aquí». El velo entra a la vez, un poco más lento,
+   para que el fondo se apague sin parpadeo. */
+const CSS_HOJA = `
+@keyframes ash-sube { from { transform: translate(-50%, 16px); opacity: .4 } to { transform: translate(-50%, 0); opacity: 1 } }
+@keyframes ash-vela { from { opacity: 0 } to { opacity: 1 } }
+.ash-velo { position: fixed; inset: 0; background: rgba(8,7,12,.55); backdrop-filter: blur(2px); animation: ash-vela 220ms ease both; }
+.ash {
+  position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(480px, 100%); max-height: 78dvh; display: flex; flex-direction: column;
+  background: #fff; color: #16181d;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -12px 40px rgba(10,8,20,.22);
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  animation: ash-sube 190ms cubic-bezier(.22,.61,.36,1) both;
+}
+.ash-asa { width: 38px; height: 4px; border-radius: 99px; background: #d8dbe2; margin: 9px auto 2px; flex-shrink: 0; }
+.ash-tit { padding: 8px 20px 6px; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9a9aa8; flex-shrink: 0; }
+.ash-lista { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+.ash-i {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 50px;
+  padding: 12px 20px; border: 0; background: none; cursor: pointer; text-align: left;
+  font-family: inherit; font-size: .95rem; font-weight: 600; color: #16181d;
+  border-left: 3px solid transparent; transition: background 130ms ease;
+}
+.ash-i:active { background: #f4f4f7; }
+.ash-i.on { background: #F3F1FE; color: #5B4BD6; font-weight: 800; border-left-color: #5B4BD6; }
+.ash-i.mal { color: #b93333; }
+.ash-i:disabled { cursor: default; }
+.ash-ico { flex-shrink: 0; display: flex; align-items: center; }
+.ash-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ash-ok { color: #5B4BD6; font-weight: 800; }
+.ash-i.sep { min-height: 0; padding: 16px 20px 5px; cursor: default; background: none; border-left-color: transparent; }
+.ash-i.sep .ash-tx { font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9a9aa8; }
+
+@media (prefers-color-scheme: dark) and (max-width: 899px) {
+  [data-crm-dark="1"] .ash { background: #17171d; color: #F2F1F7; box-shadow: 0 -12px 40px rgba(0,0,0,.55); }
+  [data-crm-dark="1"] .ash-asa { background: #3a3a45; }
+  [data-crm-dark="1"] .ash-tit, [data-crm-dark="1"] .ash-i.sep .ash-tx { color: #7e7b89; }
+  [data-crm-dark="1"] .ash-i { color: #F2F1F7; }
+  [data-crm-dark="1"] .ash-i:active { background: #212129; }
+  [data-crm-dark="1"] .ash-i.on { background: #241F3D; color: #B7A8F7; border-left-color: #B7A8F7; }
+  [data-crm-dark="1"] .ash-i.mal { color: #F0857A; }
+  [data-crm-dark="1"] .ash-ok { color: #B7A8F7; }
+}
+@media (prefers-reduced-motion: reduce) { .ash, .ash-velo { animation: none } }
+`;

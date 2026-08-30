@@ -3,6 +3,7 @@
 // (15 s lista, 5 s hilo, focus; pausa con pestaña oculta). Este componente es
 // el dueño de los datos y de todas las acciones.
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { IcoBurbuja, IcoReloj, IcoInbox, IcoUsuario, IcoCheck, IcoEmbudo } from './Iconos';
 import { hayBorrador, leerBorrador } from '../../../../lib/crm/borradores';
 import { lazySeguro } from '../../../../lib/ui/lazySeguro';
 import { S, Aviso } from '../email/ui';
@@ -1002,11 +1003,18 @@ export default function InboxPro() {
                     items={[
                       // Primero las bandejas de trabajo, con su número: son las
                       // que se usan todos los días.
-                      ...([['nocontestadas', 'No contestadas', nPendientes], ['sinrespuesta', 'Sin respuesta', nSinResp],
-                           ['abiertas', 'Abiertas', null], ['mias', 'Mías', null], ['resueltas', 'Resueltas', null]] as const)
-                        .map(([v2, l, n2]) => ({
+                      /* Cada bandeja con su icono. No es adorno: en una lista
+                         de trece renglones el icono es lo que deja saltar al
+                         que buscas sin leer los otros doce. */
+                      ...([['nocontestadas', 'No contestadas', nPendientes, <IcoBurbuja size={17} />],
+                           ['sinrespuesta', 'Sin respuesta', nSinResp, <IcoReloj size={17} />],
+                           ['abiertas', 'Abiertas', null, <IcoInbox size={17} />],
+                           ['mias', 'Mías', null, <IcoUsuario size={17} />],
+                           ['resueltas', 'Resueltas', null, <IcoCheck size={17} />]] as const)
+                        .map(([v2, l, n2, ico]) => ({
+                          icon: ico,
                           label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                            <span>{l}</span>{n2 ? <span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{n2}</span> : null}
+                            <span>{l}</span>{n2 ? <span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{n2}</span> : null}
                           </span>,
                           active: chipWa === v2,
                           onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
@@ -1034,8 +1042,9 @@ export default function InboxPro() {
                             onClick: () => { setFiltros(f => ({ ...f, etapa: '' })); setMenuVistas(false); },
                           }] : []),
                           ...vivas.map(([k, l]) => ({
+                            icon: <IcoEmbudo size={17} />,
                             label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
-                              <span>{l}</span><span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{porEtapa[k]}</span>
+                              <span>{l}</span><span style={{ opacity: .55, fontVariantNumeric: 'tabular-nums' }}>{porEtapa[k]}</span>
                             </span>,
                             active: filtros.etapa === k,
                             /* Se abre la bandeja ANCHA al elegir un ciclo. Si
