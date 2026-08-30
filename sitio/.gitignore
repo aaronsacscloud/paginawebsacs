@@ -26,3 +26,4 @@ pnpm-debug.log*
 .env*.local
 .gstack/
 .claude/scheduled_tasks.lock
+.env*

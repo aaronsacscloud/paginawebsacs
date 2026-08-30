@@ -119,6 +119,12 @@ export const GET: APIRoute = async ({ url }) => {
     if (congelada) { res.saltados.push({ sec: sec.nombre, motivo: 'blackout' }); continue; }
 
     const entrada = sec.entrada || {};
+    /* El ancla de la secuencia. Va AQUÍ, al principio del bucle, porque la usan
+       tres bloques que corren en este orden: enrolamiento, graduación y envío.
+       Declararla más abajo la deja en zona muerta temporal para el primero —un
+       `const` usado antes de su línea revienta— y declararla dentro de uno la
+       deja fuera de alcance para los otros. Ya pasó de las dos formas. */
+    const anclaSec = String(entrada.ancla || 'estatus_lead_at');
     const estatusIn = entrada.estatus?.length ? entrada.estatus : ['contactado', 'sin_respuesta'];
     const lifecycleIn = entrada.lifecycle?.length ? entrada.lifecycle : ['lead', 'lead_calificado'];
 
@@ -135,7 +141,7 @@ export const GET: APIRoute = async ({ url }) => {
     // y la secuencia pareciera muerta.
     const tope = filtrosIn.length ? 400 : 60;
     const { data: crudos } = await supabase.from('contacts')
-      .select('id, estatus_lead_at, prueba_inicio, ultima_actividad_venta_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
+      .select('id, estatus_lead_at, prueba_inicio, ultima_actividad_venta_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, company_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
       .is('archived_at', null).eq('wa_optout', false)
       .limit(tope);
@@ -167,6 +173,26 @@ export const GET: APIRoute = async ({ url }) => {
         .select('id, contact_id, detenida_at, motivo').eq('secuencia_id', sec.id).in('contact_id', candIds);
       for (const x of prev || []) prevPor[x.contact_id] = x;
     }
+    /* Días que le faltan a cada candidato para renovar. En lote y antes del
+       bucle: una consulta por secuencia en vez de una por lead. Solo se pide si
+       la secuencia cuenta hacia atrás. */
+    const renovaEntrada: Record<string, number> = {};
+    if (anclaSec === 'renovacion' && candIds.length) {
+      const empIds = Array.from(new Set((nuevos || []).map((x: any) => x.company_id).filter(Boolean)));
+      if (empIds.length) {
+        const { data: subs } = await supabase.from('subscriptions')
+          .select('company_id, proxima_factura').in('company_id', empIds)
+          .eq('estado', 'activa').in('ciclo', ['anual', 'vitalicia'])
+          .order('proxima_factura', { ascending: true });
+        const porEmp: Record<string, string> = {};
+        for (const x of subs || []) if (!porEmp[x.company_id] && x.proxima_factura) porEmp[x.company_id] = x.proxima_factura;
+        for (const x of nuevos || []) {
+          const f = porEmp[(x as any).company_id];
+          if (f) renovaEntrada[x.id] = Math.ceil((Date.parse(String(f).slice(0, 10) + 'T12:00:00Z') - ahora.getTime()) / 86400000);
+        }
+      }
+    }
+
     for (const c of nuevos || []) {
       // ── El ANCLA: desde cuándo se cuenta que "llegó" ──
       // Por defecto es cuando cambió de estatus, que sirve para las cadencias
@@ -179,10 +205,24 @@ export const GET: APIRoute = async ({ url }) => {
       const llego = ancla === 'prueba_inicio' ? (c as any).prueba_inicio
                   : ancla === 'created_at'    ? c.created_at
                   : ((c.propiedades as any)?.tiktok?.creado || c.estatus_lead_at);
-      // Si la secuencia pide un ancla que este contacto no tiene, no entra:
-      // meterlo con otra fecha sería mandarle el día 1 en su día 9.
-      if (ancla !== 'estatus_lead_at' && !llego) continue;
-      if (llego && (ahora.getTime() - Date.parse(llego)) / 86400000 > sec.corte_dias) continue;
+      /* El ancla de RENOVACIÓN no es una fecha del contacto sino la de su
+         próxima factura, y mira al FUTURO. El enrolamiento no la conocía: por
+         eso entraba cualquiera que cumpliera la entrada, tuviera o no una
+         renovación por delante. Esos miembros nunca recibían nada —el envío los
+         saltaba con `sin_renovacion`— pero ocupaban la cadencia, salían como
+         «enrolados» en el reporte, y si algún día contrataban empezarían a
+         media serie en vez de en su D-90.
+
+         Se entra solo si falta menos de la ventana y todavía no llega el día. */
+      if (ancla === 'renovacion') {
+        const faltan = renovaEntrada[c.id];
+        if (faltan == null || faltan > VENTANA_RENOVACION || faltan < 0) continue;
+      } else {
+        // Si la secuencia pide un ancla que este contacto no tiene, no entra:
+        // meterlo con otra fecha sería mandarle el día 1 en su día 9.
+        if (ancla !== 'estatus_lead_at' && !llego) continue;
+        if (llego && (ahora.getTime() - Date.parse(llego)) / 86400000 > sec.corte_dias) continue;
+      }
       const ya = prevPor[c.id];
       if (ya && !ya.detenida_at) continue;   // ya está corriendo
       if (ya) {
@@ -232,7 +272,6 @@ export const GET: APIRoute = async ({ url }) => {
        Va aquí arriba y no más abajo por la otra mitad de la trampa: un `const`
        usado antes de su línea está en zona muerta temporal y también revienta.
        esbuild no ve ninguna de las dos — solo aparecen al correr. */
-    const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
 
     /* Los pasos se cargan AQUÍ y no más abajo porque el modo permanente los
        necesita para elegir el del carril, y ese bloque corre antes del envío.
