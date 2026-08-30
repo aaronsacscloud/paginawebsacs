@@ -116,6 +116,33 @@ export function cumpleCondLead(c: any, k: CondLead): boolean {
       if (d == null) return k.op === 'hace_mas';   // nunca = hace infinito
       return k.op === 'hace_menos' ? d < n : d > n;
     }
+    // ── Señal de vida ──
+    // La union de correo, WhatsApp, visitas, cotizaciones, reuniones y toques.
+    // Es la condicion de los rezagados: "30 dias sin nada". A proposito NO
+    // incluye el cambio de estatus — si lo incluyera, un lead reviviria porque
+    // alguien movio un chip en el CRM sin que el lead hiciera nada.
+    case 'sin_actividad': {
+      const n2 = parseFloat(k.valor); if (isNaN(n2)) return true;
+      const d = dias(c.ultima_actividad_venta_at);
+      if (d == null) return k.op === 'hace_mas';   // nunca dio senal = hace infinito
+      return k.op === 'hace_menos' ? d < n2 : d > n2;
+    }
+    // ── Interes en el sitio ──
+    // visitas_n cuenta paginas vistas; visito_ruta pregunta por una en concreto
+    // (/planes es la de mayor intencion que existe). Las dos miran una ventana
+    // reciente: haber visitado precios hace un ano no dice nada de hoy.
+    case 'visitas_n': {
+      const n3 = parseFloat(k.valor); if (isNaN(n3)) return true;
+      const v2 = Number(c.visitas_recientes || 0);
+      return k.op === 'mayor' ? v2 > n3 : v2 < n3;
+    }
+    case 'visito_ruta': {
+      const rutas: string[] = Array.isArray(c.rutas_recientes) ? c.rutas_recientes : [];
+      const buscada = String(k.valor || '').toLowerCase();
+      if (!buscada) return true;
+      ok = rutas.some(r => String(r).toLowerCase().includes(buscada));
+      break;
+    }
     case 'dueno': ok = (k.valor === 'nadie') === !c.owner_id; break;
     default: return true;
   }

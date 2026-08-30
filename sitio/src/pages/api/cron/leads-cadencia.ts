@@ -95,10 +95,27 @@ export const GET: APIRoute = async ({ url }) => {
     // y la secuencia pareciera muerta.
     const tope = filtrosIn.length ? 400 : 60;
     const { data: crudos } = await supabase.from('contacts')
-      .select('id, estatus_lead_at, prueba_inicio, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
+      .select('id, estatus_lead_at, prueba_inicio, ultima_actividad_venta_at, propiedades, nombre, email, whatsapp, telefono, campana, giro, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, descarte_categoria, sucursales_interes, reuniones_total, reuniones_no_asistio, reuniones_reagendadas, last_contact_at, created_at, owner_id, companies(giro, sucursales)')
       .in('lifecycle_stage', lifecycleIn).in('estatus_lead', estatusIn)
       .is('archived_at', null).eq('wa_optout', false)
       .limit(tope);
+    // Las condiciones de sitio web (visitas_n, visito_ruta) necesitan datos que
+    // no viven en contacts. Se traen SOLO si algun filtro los pide: son 4,000+
+    // filas y no hay por que leerlas en cada corrida.
+    const pideWeb = filtrosIn.some((f: any) => f.campo === 'visitas_n' || f.campo === 'visito_ruta');
+    if (pideWeb && (crudos || []).length) {
+      const desde = new Date(Date.now() - 90 * 864e5).toISOString();
+      const { data: vis } = await supabase.from('contact_visits')
+        .select('contact_id, ruta').in('contact_id', (crudos || []).map(c => c.id))
+        .gte('created_at', desde).limit(5000);
+      const porC: Record<string, string[]> = {};
+      for (const v of vis || []) (porC[v.contact_id] = porC[v.contact_id] || []).push(v.ruta);
+      for (const c of crudos || []) {
+        const r = porC[c.id] || [];
+        (c as any).rutas_recientes = r;
+        (c as any).visitas_recientes = r.length;
+      }
+    }
     const nuevos = filtrosIn.length
       ? (crudos || []).filter(c => cumpleCondsLead(c, filtrosIn, logicaIn)).slice(0, 60)
       : (crudos || []).slice(0, 60);
@@ -145,7 +162,21 @@ export const GET: APIRoute = async ({ url }) => {
       }
       if (dry) { res.enrolados++; res.entrarian = [...(res.entrarian || []), c.id].slice(0, 12); continue; }
       const { error } = await supabase.from('crm_secuencia_miembros')
-        .insert({ secuencia_id: sec.id, contact_id: c.id });
+        .insert({ secuencia_id: sec.id, contact_id: c.id })
+        // ── Acción de ENTRADA ──
+        // Lo que faltaba para cerrar el ciclo solo: la cadencia de rezagados
+        // encuentra al lead sin señal y ELLA MISMA lo mueve a rezagado. Antes
+        // alguien tenía que acordarse de hacerlo a mano, y nadie se acuerda de
+        // noventa leads.
+        {
+          const ent2 = (sec.acciones || {}).al_entrar;
+          if (ent2?.lifecycle && !dry) {
+            await supabase.from('contacts').update({ lifecycle_stage: ent2.lifecycle }).eq('id', c.id);
+            await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_accion', automatico: true,
+              titulo: `"${sec.nombre}" lo movió a ${ent2.lifecycle}: sin señal de vida`,
+              metadata: { secuencia: sec.nombre, ...ent2 } }).then(() => {}, () => {});
+          }
+        };
       if (!error) {
         res.enrolados++;
         await notaInbox(c.id, `Entró a la secuencia "${sec.nombre}" (día 1 hoy).`);
@@ -210,6 +241,27 @@ export const GET: APIRoute = async ({ url }) => {
       // día 3 y el de cierre en su día 17 —cuando la prueba ya venció— es peor
       // que no mandar nada. Con el ancla por defecto ambos coinciden, así que
       // las cadencias de siempre no cambian.
+      // ── Modo PERMANENTE ──
+      // El modelo de arco no sirve para el top of mind: no hay "día 1, día 3",
+      // hay "cada N días, lo siguiente que no haya visto". El paso se elige por
+      // cuántos lleva recibidos, así que agregar un correo nuevo a la secuencia
+      // lo mete al goteo sin tocar a nadie ni reiniciar a nadie.
+      const permanente = sec.modo === 'permanente';
+      if (permanente) {
+        const cadaDias = Math.max(1, Number((sec.entrada || {}).cada_dias) || 14);
+        const yaEnviados = Object.keys(m.enviados || {}).length;
+        const ultimo = Object.values(m.enviados || {}).map((x: any) => Date.parse(String(x))).filter(Boolean).sort().pop();
+        const listos = (sec.pasos || []).filter((p: any) => p.activo !== false);
+        // Se acabó el contenido: no se repite, se espera a que haya algo nuevo.
+        if (!listos.length || yaEnviados >= listos.length) continue;
+        if (ultimo && (ahora.getTime() - ultimo) / 86400000 < cadaDias) continue;
+        const paso = listos[yaEnviados];
+        if (!paso) continue;
+        // El resto del bucle trabaja con `dias`; se le da el día del paso que
+        // toca para que la comparación de más abajo lo deje pasar.
+        (sec as any)._pasoForzado = paso;
+      }
+
       const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
       const desde = anclaSec === 'prueba_inicio' ? (c as any).prueba_inicio
                   : anclaSec === 'created_at'    ? c.created_at
@@ -217,6 +269,22 @@ export const GET: APIRoute = async ({ url }) => {
       const dias = Math.floor((ahora.getTime() - Date.parse(desde || m.inicio)) / 86400000) + 1;
       const cd: Record<string, any> = { ...(m.canales_detenidos || {}) };
       let cdCambio = false;
+
+      // ── La baja manda sobre todo ──
+      // Quien se dio de baja no es un lead frío al que le bajamos el ritmo: es
+      // alguien que pidió que dejáramos de escribirle. Seguir mandándole es
+      // como acabamos marcados como spam, y eso arrastra la entregabilidad de
+      // TODOS los demás. Sale de la secuencia entera, no del canal.
+      if (c.email && correoBaja.has(String(c.email).toLowerCase())) {
+        if (!dry) {
+          await supabase.from('crm_secuencia_miembros')
+            .update({ detenida_at: ahora.toISOString(), motivo: 'baja' }).eq('id', m.id);
+          await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_salida', automatico: true,
+            titulo: `Salió de "${sec.nombre}": se dio de baja`, metadata: { secuencia_id: sec.id, motivo: 'baja' } });
+          await notaInbox(c.id, `Se dio de baja del correo — sale de "${sec.nombre}" y no debe recibir más envíos.`);
+        }
+        continue;
+      }
 
       const objetivoSec = sec.objetivo || 'agendo';
       // Canal WhatsApp: optout o respuesta entrante después de entrar.
@@ -253,6 +321,7 @@ export const GET: APIRoute = async ({ url }) => {
           await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_salida', automatico: true,
             titulo: `Salió de la secuencia "${sec.nombre}": ${motivo}`, metadata: { secuencia_id: sec.id, motivo, dia: dias } });
           await notaInbox(c.id, `Salió de la secuencia "${sec.nombre}" (día ${dias}): ${motivo}.`);
+          await ejecutarAcciones(sec, c, motivo, dias);
         }
         res.graduados++;
         continue;
@@ -338,8 +407,12 @@ export const GET: APIRoute = async ({ url }) => {
         continue;
       }
 
-      for (const p of pasos || []) {
-        if (p.dia > dias || enviados[p.id]) continue;
+      // En permanente no manda el calendario, manda la rotación: el paso ya se
+      // eligió arriba por cuántos lleva recibidos. Se recorre solo ese.
+      const aRecorrer = (sec as any)._pasoForzado ? [(sec as any)._pasoForzado] : (pasos || []);
+      for (const p of aRecorrer) {
+        if (!(sec as any)._pasoForzado && (p.dia > dias || enviados[p.id])) continue;
+        if ((sec as any)._pasoForzado && enviados[p.id]) continue;
 
         // (3) El arco son dos tramos, no una lista: los pasos hasta el día 4
         // PREPARAN la sesión y solo tienen sentido si la sesión no ha ocurrido;
@@ -432,3 +505,57 @@ export const GET: APIRoute = async ({ url }) => {
   }
   return json({ ok: true, dry, ...res, envios: res.envios.length, muestra: res.envios.slice(0, 12) });
 };
+
+
+/**
+ * Lo que la secuencia HACE al soltar a alguien, además de dejar de escribirle.
+ *
+ * Hasta ahora una secuencia solo reaccionaba a la etapa; ninguna la escribía.
+ * Eso dejaba el ciclo de los rezagados a medias: la cadencia podía dejar de
+ * mandarle, pero alguien tenía que acordarse de moverlo a mano — y nadie se
+ * acuerda de 90 leads.
+ *
+ * Se configura en `acciones.al_salir`:
+ *   lifecycle     — a qué etapa se le mueve
+ *   marcar        — una marca en propiedades, para distinguirlo. Un lead que
+ *                   vuelve de rezagado NO es un lead nuevo: ya nos conoce, ya
+ *                   nos ignoró una vez, y el vendedor merece saberlo.
+ *   inscribir_en  — el nombre de la secuencia que lo recibe
+ *
+ * Solo corre con motivos de ÉXITO. Salir por descarte o por baja no es volver
+ * al ruedo: mover a `lead` a alguien que pidió que lo dejáramos en paz sería
+ * exactamente la forma de acabar marcados como spam.
+ */
+const MOTIVOS_DE_EXITO = new Set(['respondio', 'agendo', 'demo_hecha', 'convertido']);
+
+async function ejecutarAcciones(sec: any, c: any, motivo: string, dias: number) {
+  const acc = (sec.acciones || {}).al_salir;
+  if (!acc || !MOTIVOS_DE_EXITO.has(motivo)) return;
+
+  const parche: any = {};
+  if (acc.lifecycle) parche.lifecycle_stage = acc.lifecycle;
+  if (acc.marcar) {
+    const props = { ...(c.propiedades || {}) };
+    props[acc.marcar] = { at: new Date().toISOString(), desde: sec.nombre, motivo };
+    parche.propiedades = props;
+    if (acc.marcar === 'reciclado') {
+      parche.reciclado_at = new Date().toISOString();
+      parche.reciclado_veces = (Number(c.reciclado_veces) || 0) + 1;
+    }
+  }
+  if (!Object.keys(parche).length) return;
+  await supabase.from('contacts').update(parche).eq('id', c.id);
+
+  await supabase.from('activities').insert({
+    contact_id: c.id, tipo: 'secuencia_accion', automatico: true,
+    titulo: `Volvió del ciclo: ${sec.nombre} lo devuelve a ${acc.lifecycle || 'su etapa'}${acc.marcar ? ` como ${acc.marcar}` : ''}`,
+    metadata: { secuencia: sec.nombre, motivo, dia: dias, ...acc },
+  }).then(() => {}, () => {});
+
+  // Encadenar: la siguiente cadencia lo recoge en su próxima corrida por sus
+  // propias reglas de entrada. No se le fuerza la inscripción aquí — si ya no
+  // cumple la entrada de la otra, meterlo a la fuerza sería saltarse su filtro.
+  if (acc.inscribir_en) {
+    await notaInbox(c.id, `Reciclado: vuelve como ${acc.lifecycle || 'lead'} y queda listo para "${acc.inscribir_en}".`);
+  }
+}
