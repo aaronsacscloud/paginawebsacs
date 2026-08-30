@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import Cargando from './ui/Cargando';
 import { SECCIONES, type Nivel } from '../../../lib/crm/permisos';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const ROLES = [
   { id: 'founder', label: 'Founder', desc: 'Todo, incluida esta pantalla' },
@@ -180,10 +181,10 @@ export default function UsuariosPermisos() {
                     );
                   })}
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                    <button onClick={() => { if (confirm(`Se genera una contraseña nueva para ${u.email} y la anterior deja de servir.\n\n¿Continuar?`)) cambiar(u, { resetear_password: true }); }}
+                    <button onClick={async () => { if (await confirmar(`Se genera una contraseña nueva para ${u.email} y la anterior deja de servir.\n\n¿Continuar?`)) cambiar(u, { resetear_password: true }); }}
                       style={{ ...btn, padding: '5px 9px', fontSize: '0.68rem' }}>Nueva contraseña</button>
                     {u.activo
-                      ? <button onClick={() => { if (confirm(`${u.nombre || u.email} dejará de poder entrar y se le cierran las sesiones abiertas.\n\nSu actividad pasada se conserva.`)) cambiar(u, { activo: false }); }}
+                      ? <button onClick={async () => { if (await confirmar(`${u.nombre || u.email} dejará de poder entrar y se le cierran las sesiones abiertas.\n\nSu actividad pasada se conserva.`)) cambiar(u, { activo: false }); }}
                           style={{ ...btn, padding: '5px 9px', fontSize: '0.68rem', marginLeft: 6, color: '#C0554E', borderColor: '#f3dedd' }}>Desactivar</button>
                       : <button onClick={() => cambiar(u, { activo: true })} style={{ ...btn, padding: '5px 9px', fontSize: '0.68rem', marginLeft: 6, color: '#1E8A63', borderColor: '#cdeadd' }}>Reactivar</button>}
                   </td>

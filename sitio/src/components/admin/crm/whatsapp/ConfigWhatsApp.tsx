@@ -11,6 +11,7 @@ import { PlantillasMeta, Snippets } from './Plantillas';
 import EtapasModal from './EtapasModal';
 import AjustesWA from './AjustesWA';
 import NumeroWA from './NumeroWA';
+import { confirmar } from '../../../../lib/ui/confirmar';
 
 type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia' | 'duplicados';
 
@@ -95,7 +96,7 @@ function EtiquetasCatalogo() {
     setForm(null); setMsg(''); cargar();
   };
   const borrar = async (e: any) => {
-    if (!confirm(`¿Borrar la etiqueta "${e.nombre}"? Se quita de las ${e.uso?.total || 0} cosas que la llevan.`)) return;
+    if (!await confirmar(`¿Borrar la etiqueta "${e.nombre}"? Se quita de las ${e.uso?.total || 0} cosas que la llevan.`)) return;
     await fetch('/api/crm/etiquetas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: e.id }) }).catch(() => {});
     cargar();
   };
@@ -158,7 +159,7 @@ function Archivos() {
     setSubiendo(false); cargar();
   };
   const borrar = async (a: any) => {
-    if (!confirm(`¿Borrar "${a.nombre}" de la biblioteca?`)) return;
+    if (!await confirmar(`¿Borrar "${a.nombre}" de la biblioteca?`)) return;
     await fetch('/api/crm/whatsapp/media', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => {});
     cargar();
   };
@@ -286,7 +287,7 @@ function Duplicados() {
     setPares(j.pares || []);
   };
   const fusionar = async (keep: any, merge: any, par: any) => {
-    if (!confirm(`Conservar a "${keep.nombre}" y fusionarle todo lo de "${merge.nombre}" (mensajes, cotizaciones, reuniones, visitas). La ficha de "${merge.nombre}" se archiva. ¿Seguro?`)) return;
+    if (!await confirmar(`Conservar a "${keep.nombre}" y fusionarle todo lo de "${merge.nombre}" (mensajes, cotizaciones, reuniones, visitas). La ficha de "${merge.nombre}" se archiva. ¿Seguro?`)) return;
     setFusionando(par.llave);
     const r = await fetch('/api/crm/contacts/merge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keep_id: keep.id, merge_id: merge.id }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     setFusionando(null);

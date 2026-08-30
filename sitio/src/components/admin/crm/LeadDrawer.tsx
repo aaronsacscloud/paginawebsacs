@@ -29,6 +29,7 @@ import { pintaEstatus } from '../../../lib/crm/estatus-lead';
 import { agendaDeEtapa, SLUGS_DE_LEAD } from '../../../lib/crm/lead-agenda';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import { CANALES, RESULTADOS, resultadoDe, tipoActividad, tituloToque, quienLoHizo, esRuido, type Canal } from '../../../lib/crm/lead-toques';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '').replace('-', ' ') : '';
 const fmtLargo = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
@@ -162,7 +163,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
   // avisar. Cada sección reporta si tiene cambios pendientes.
   const [sucio, setSucio] = useState<Record<string, boolean>>({});
-  const confirmarSalida = () => !Object.values(sucio).some(Boolean) || confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
+  // Se queda con el confirm del navegador A PROPÓSITO: lo llama un guard de
+  // navegación que necesita respuesta SÍNCRONA. Una hoja devuelve promesa, y
+  // para cuando resuelve la salida ya ocurrió.
+  const confirmarSalida = () => !Object.values(sucio).some(Boolean) || window.confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
   const irA = (t: any) => { if (confirmarSalida()) { setSucio({}); setTab(t); } };
   const cerrar = () => { if (confirmarSalida()) onClose(); };
 
@@ -507,7 +511,7 @@ function Personas({ c, flash, recargar, onChanged }: any) {
   }
 
   async function soltar(id: string, nombre: string) {
-    if (!confirm(`¿Sacar a ${nombre} de este negocio?\n\nNo se borra: vuelve a la lista como lead por su cuenta.`)) return;
+    if (!await confirmar(`¿Sacar a ${nombre} de este negocio?\n\nNo se borra: vuelve a la lista como lead por su cuenta.`)) return;
     await fetch(`/api/crm/leads/personas?id=${id}`, { method: 'DELETE' }).catch(() => {});
     flash('Salió de este negocio'); cargar(); recargar?.(); onChanged?.();
   }

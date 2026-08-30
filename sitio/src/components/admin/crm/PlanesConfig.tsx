@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react';
 import { P } from '../../../lib/crm/paleta';
 import Cargando, { Corazones } from './ui/Cargando';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 type Plan = {
   id: string; slug: string; nombre: string; descripcion: string | null;
@@ -130,7 +131,7 @@ export default function PlanesConfig({ sinTitulo }: { sinTitulo?: boolean } = {}
   }
 
   async function borrar(p: Plan) {
-    if (!confirm(`¿Borrar «${p.nombre}» del catálogo? Nadie lo está usando, así que no afecta nada vendido.`)) return;
+    if (!await confirmar(`¿Borrar «${p.nombre}» del catálogo? Nadie lo está usando, así que no afecta nada vendido.`)) return;
     setBusy(true);
     const r = await fetch(`/api/crm/arr/plans?id=${p.id}`, { method: 'DELETE' });
     const j = await r.json();

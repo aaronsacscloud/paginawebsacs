@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Campos personalizados ═══
  *
@@ -127,7 +128,7 @@ export default function CamposConfig({ entidad = 'company', sinTitulo }: { entid
   }
 
   async function archivar(p: Prop) {
-    if (!confirm(`¿Archivar "${p.etiqueta}"?\n\nDeja de aparecer en las fichas, pero lo capturado en ${p.uso || 0} cliente(s) NO se borra: si lo reactivas, sigue ahí.`)) return;
+    if (!await confirmar(`¿Archivar "${p.etiqueta}"?\n\nDeja de aparecer en las fichas, pero lo capturado en ${p.uso || 0} cliente(s) NO se borra: si lo reactivas, sigue ahí.`)) return;
     await fetch('/api/crm/propiedades', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) });
     recargar();
   }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PipelineKanban from './PipelineKanban';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 interface Company {
   id: string; nombre: string; plan: string | null; sucursales: number; estado_cuenta: string; mrr: number;
@@ -512,7 +513,7 @@ function TableView({ contacts, onSelect, onBulk }: { contacts: Contact[]; onSele
           <span style={{ fontSize: '0.8125rem', fontWeight: 700 }}>{ids.length} seleccionados</span>
           <button onClick={() => runBulk({ next_followup: new Date().toISOString().slice(0, 10) }, `${ids.length} agendados para hoy`)} style={{ ...bulkBtn }}>📅 Seguir hoy</button>
           <button onClick={() => runBulk({ lifecycle_stage: 'lead_calificado' }, `${ids.length} marcados MQL`)} style={{ ...bulkBtn }}>⭐ Marcar MQL</button>
-          <button onClick={() => { if (confirm(`¿Marcar ${ids.length} como churned?`)) runBulk({ tipo: 'churned', lifecycle_stage: 'churned' }, `${ids.length} marcados churned`); }} style={{ ...bulkBtn, background: '#b93333' }}>✕ Churned</button>
+          <button onClick={async () => { if (await confirmar(`¿Marcar ${ids.length} como churned?`)) runBulk({ tipo: 'churned', lifecycle_stage: 'churned' }, `${ids.length} marcados churned`); }} style={{ ...bulkBtn, background: '#b93333' }}>✕ Churned</button>
           <button onClick={() => setSel(new Set())} style={{ ...bulkBtn, background: 'transparent', border: '1px solid #555' }}>Cancelar</button>
         </div>
       )}

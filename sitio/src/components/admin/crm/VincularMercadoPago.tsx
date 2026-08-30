@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { S } from './SubscriptionsTab';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Vincular las suscripciones que ya viven en Mercado Pago ═══
  * NO se vinculan solas: emparejar mal manda los cobros de un cliente a la
@@ -32,7 +33,7 @@ export default function VincularMercadoPago() {
   useEffect(() => { cargar(false); }, []);
 
   async function vincular(mp: any, cand: any) {
-    if (!confirm(`¿Vincular la suscripción de Mercado Pago "${mp.concepto}" (${money(mp.monto)}) con ${cand.cliente}?\n\nA partir de ahora sus cobros se van a registrar solos en esa suscripción.`)) return;
+    if (!await confirmar(`¿Vincular la suscripción de Mercado Pago "${mp.concepto}" (${money(mp.monto)}) con ${cand.cliente}?\n\nA partir de ahora sus cobros se van a registrar solos en esa suscripción.`)) return;
     setTrabajando(mp.mp_id);
     const j = await fetch('/api/crm/arr/mp-suscripciones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -53,7 +54,7 @@ export default function VincularMercadoPago() {
       subscription_id: m.candidatos[0].subscription_id, mp_preapproval_id: m.mp_id,
       payer_email: m.correo_pagador, cliente: m.candidatos[0].cliente,
     }));
-    if (!confirm(`¿Vincular ${lista.length} suscripciones de un golpe?\n\n${lista.map((l: any) => '· ' + l.cliente).join('\n')}\n\nSolo van las que empatan por correo idéntico.`)) return;
+    if (!await confirmar(`¿Vincular ${lista.length} suscripciones de un golpe?\n\n${lista.map((l: any) => '· ' + l.cliente).join('\n')}\n\nSolo van las que empatan por correo idéntico.`)) return;
     setTrabajando('lote');
     const j = await fetch('/api/crm/arr/mp-suscripciones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -68,7 +69,7 @@ export default function VincularMercadoPago() {
   async function crear(mp: any, companyId: string, nombrePlan: string) {
     if (!companyId) { alert('Elige el cliente.'); return; }
     const cliente = (d?.empresas || []).find((e: any) => e.id === companyId)?.nombre || 'ese cliente';
-    if (!confirm(`¿Dar de alta "${nombrePlan}" (${money(mp.monto)}/${mp.ciclo === 'anual' ? 'año' : 'mes'}) en ${cliente}?\n\nSe crea la suscripción con los datos de Mercado Pago y queda vinculada: sus cobros se van a registrar solos.`)) return;
+    if (!await confirmar(`¿Dar de alta "${nombrePlan}" (${money(mp.monto)}/${mp.ciclo === 'anual' ? 'año' : 'mes'}) en ${cliente}?\n\nSe crea la suscripción con los datos de Mercado Pago y queda vinculada: sus cobros se van a registrar solos.`)) return;
     setTrabajando(mp.mp_id);
     const j = await fetch('/api/crm/arr/mp-suscripciones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -79,7 +80,7 @@ export default function VincularMercadoPago() {
   }
 
   async function desvincular(mp: any) {
-    if (!confirm(`¿Separar esta suscripción de ${mp.vinculada.cliente}?\n\nSus próximos cobros dejarán de registrarse solos.`)) return;
+    if (!await confirmar(`¿Separar esta suscripción de ${mp.vinculada.cliente}?\n\nSus próximos cobros dejarán de registrarse solos.`)) return;
     setTrabajando(mp.mp_id);
     await fetch('/api/crm/arr/mp-suscripciones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

@@ -4,6 +4,7 @@ import Cargando from './ui/Cargando';
 import { Server, RefreshCw, ShieldCheck, User, LogIn } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Sección SACS — usuarios reales de cada cuenta SACS ═══
  * Correo, nombre, grupo de usuario y último acceso (día + hora), sobre el
@@ -64,7 +65,7 @@ export default function SacsUsuariosTab() {
 
   const [entrando, setEntrando] = useState('');
   async function entrar(u: any) {
-    if (!confirm(`Vas a ENTRAR a SACS como "${u.nombre}" (cuenta ${account}).\nSe abrirá en una pestaña nueva con acceso completo. ¿Continuar?`)) return;
+    if (!await confirmar(`Vas a ENTRAR a SACS como "${u.nombre}" (cuenta ${account}).\nSe abrirá en una pestaña nueva con acceso completo. ¿Continuar?`)) return;
     setEntrando(u.uid);
     try {
       const j = await fetch('/api/crm/sacs-impersonar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account, uid: u.uid }) }).then(r => r.json());

@@ -6,6 +6,7 @@ import Cargando from './ui/Cargando';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Reuniones (VENTAS) — listado operativo de TODAS las reuniones ═══
  * Las del founder y las de partners, segmentadas y ligadas al CRM real:
@@ -404,13 +405,13 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
      la tasa de asistencia. Por eso vive escondida en el ⋮ y pregunta antes. */
   async function borrar(b: any, forzar = false) {
     const quien = b.invitado_company_nombre || b.invitee_nombre || 'esta reunión';
-    if (!forzar && !confirm(`¿Borrar la reunión de ${quien} del ${fmtDate(b.fecha)}?\n\nSe borra de verdad, no se cancela. Úsalo solo para reuniones de prueba.`)) return;
+    if (!forzar && !await confirmar(`¿Borrar la reunión de ${quien} del ${fmtDate(b.fecha)}?\n\nSe borra de verdad, no se cancela. Úsalo solo para reuniones de prueba.`)) return;
     setBusyId(b.id);
     const r = await adminFetch(`/api/scheduling/reuniones?id=${b.id}${forzar ? '&forzar=1' : ''}`, { method: 'DELETE' });
     const j = await r.json().catch(() => ({}));
     setBusyId(null);
     if (j?.requiere_confirmacion) {
-      if (confirm(j.error + '\n\n¿Borrarla de todos modos?')) return borrar(b, true);
+      if (await confirmar(j.error + '\n\n¿Borrarla de todos modos?')) return borrar(b, true);
       return;
     }
     if (!r.ok || j?.error) { avisar(j?.error || 'No se pudo borrar'); return; }

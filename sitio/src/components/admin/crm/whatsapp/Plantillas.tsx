@@ -8,6 +8,7 @@ import { S, Tag, Aviso, Vacio, chip } from '../email/ui';
 import { C, label } from './estilo';
 import MockupWhatsApp from './MockupWhatsApp';
 import SubirImagen from '../ui/SubirImagen';
+import { confirmar } from '../../../../lib/ui/confirmar';
 
 const TONO: Record<string, string> = { APPROVED: 'ok', PENDING: 'aviso', REJECTED: 'malo', PAUSED: 'malo', DISABLED: 'gris' };
 const MOTIVO: Record<string, string> = {
@@ -58,7 +59,7 @@ export function PlantillasMeta() {
   const [prueba, setPrueba] = useState<any>(null);
   const [mapa, setMapa] = useState<any>(null);
   const borrar = async (p: any) => {
-    if (!confirm(`¿Borrar la plantilla "${p.nombre}" en Meta? Se pierde la aprobación y no se puede deshacer.`)) return;
+    if (!await confirmar(`¿Borrar la plantilla "${p.nombre}" en Meta? Se pierde la aprobación y no se puede deshacer.`)) return;
     const r = await fetch('/api/crm/whatsapp/plantillas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: p.nombre }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r.error) setMsg({ tono: 'malo', texto: r.error }); else { setMsg({ tono: 'ok', texto: `"${p.nombre}" borrada en Meta.` }); cargar(); }
   };

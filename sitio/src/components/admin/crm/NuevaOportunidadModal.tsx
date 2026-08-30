@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { calcularTotales, lineaImporte, type DealItem } from '../../../lib/crm/deal-items';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Alta de oportunidad: qué se le va a vender y de qué tipo es el dinero ═══
  *
@@ -106,7 +107,7 @@ export default function NuevaOportunidadModal({ onClose, onCreated, companyIdIni
     if (!f.nombre.trim()) { alert('Ponle nombre a la oportunidad.'); return; }
     if (!items.length) { alert('Agrega al menos una línea: qué le vas a vender.'); return; }
     if (items.some(i => !String(i.nombre || '').trim())) { alert('Hay una línea sin nombre.'); return; }
-    if (t.valor_total <= 0 && !confirm('La oportunidad vale $0. ¿Guardarla así?')) return;
+    if (t.valor_total <= 0 && !await confirmar('La oportunidad vale $0. ¿Guardarla así?')) return;
 
     setBusy(true);
     try {

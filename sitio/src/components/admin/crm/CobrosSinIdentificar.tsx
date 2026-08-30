@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { S } from './SubscriptionsTab';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Lo que Mercado Pago cobró y no terminó en un pago registrado ═══
  *
@@ -28,7 +29,7 @@ export default function CobrosSinIdentificar() {
   useEffect(() => { cargar(); }, []);
 
   async function resolver(c: any, body: any, pregunta: string) {
-    if (!confirm(pregunta)) return;
+    if (!await confirmar(pregunta)) return;
     setTrabajando(c.id);
     const j = await fetch('/api/crm/arr/mp-cobros', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -56,7 +57,7 @@ export default function CobrosSinIdentificar() {
         <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50 }} disabled={cargando}
           title="Sale a Mercado Pago por los cobros de los últimos meses que el CRM nunca vio"
           onClick={async () => {
-            if (!confirm('¿Buscar en Mercado Pago los cobros de los últimos 12 meses que el CRM no tenga?\n\nSolo los lista para que los acredites: no registra nada solo.')) return;
+            if (!await confirmar('¿Buscar en Mercado Pago los cobros de los últimos 12 meses que el CRM no tenga?\n\nSolo los lista para que los acredites: no registra nada solo.')) return;
             setCargando(true);
             const j = await fetch('/api/crm/arr/mp-cobros?escanear=1&dias=365').then(r => r.json()).catch(() => ({ error: 'No se pudo' }));
             setCargando(false);

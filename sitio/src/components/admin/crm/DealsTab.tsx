@@ -7,6 +7,7 @@ import ActionSheet from './ui/ActionSheet';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import SugerenciasOportunidad from './SugerenciasOportunidad';
 import Etiquetas, { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 // ─── Types ───
 interface Deal {
@@ -234,7 +235,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       ...(p.pasos || []).map((x: string) => '· ' + x),
       '', '¿Confirmas?',
     ].join('\n');
-    return confirm(texto);
+    return await confirmar(texto);
   };
 
   const moveStage = async (deal: Deal, newStage: string) => {

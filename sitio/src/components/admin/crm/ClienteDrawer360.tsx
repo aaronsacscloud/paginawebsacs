@@ -13,6 +13,7 @@ import TabWhatsApp360 from './whatsapp/TabWhatsApp360';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 import Cargando, { Corazones } from './ui/Cargando';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -120,7 +121,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
   // avisar. Cada sección reporta si tiene cambios pendientes.
   const [sucio, setSucio] = useState<Record<string, boolean>>({});
   const haySucio = Object.values(sucio).some(Boolean);
-  const confirmarSalida = () => !haySucio || confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
+  // Este SÍ se queda con el confirm del navegador, a propósito: lo llama un
+  // guard de navegación que necesita una respuesta SÍNCRONA. Una hoja devuelve
+  // promesa y para cuando resuelve, la salida ya ocurrió.
+  const confirmarSalida = () => !haySucio || window.confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
   const irA = (t: any) => { if (confirmarSalida()) { setSucio({}); setTab(t); } };
   const cerrar = () => { if (confirmarSalida()) onClose(); };
   // Las inasistencias se piden al abrir la ficha, no al entrar a Reuniones: si
@@ -1394,9 +1398,9 @@ function TabSacs({ co, act, reload, flash }: any) {
     if (!c) { alert('Escribe el subdominio de la cuenta (ej. dibujotecnico).'); return; }
     if (await pedir({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id, cuenta: c }) }, '/api/crm/arr/sacs-cuentas', 'Cuenta agregada y sincronizada')) setNueva('');
   };
-  const quitar = (c: any) => {
+  const quitar = async (c: any) => {
     if (!c.id) { alert('Esta cuenta viene del registro viejo; sincroniza una vez para poder administrarla.'); return; }
-    if (!confirm(`¿Desligar la cuenta "${c.cuenta}" de este cliente?\n\nNo se borra nada en SACS: solo deja de contar en sus métricas del CRM.`)) return;
+    if (!await confirmar(`¿Desligar la cuenta "${c.cuenta}" de este cliente?\n\nNo se borra nada en SACS: solo deja de contar en sus métricas del CRM.`)) return;
     pedir({ method: 'DELETE' }, '/api/crm/arr/sacs-cuentas?id=' + c.id, 'Cuenta desligada');
   };
   const hacerPrincipal = (c: any) => c.id && pedir({ method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id }) }, '/api/crm/arr/sacs-cuentas', 'Cuenta principal actualizada');
@@ -1654,13 +1658,12 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
     if (j.error) alert(j.error); else { flash('Contacto principal actualizado'); reload(); }
   }
   async function quitar(c: any) {
-    if (!confirmar('¿Quitar a "' + c.nombre + '" de este cliente? (el contacto no se borra, solo se desliga)')) return;
+    if (!await confirmar('¿Quitar a "' + c.nombre + '" de este cliente?', { accion: 'Quitar', detalle: 'El contacto no se borra, solo se desliga.' })) return;
     const r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id, company_id: null, es_principal: false }) });
     const j = await r.json().catch(() => ({}));
     if (j.error) alert(j.error); else { flash('Contacto desligado'); reload(); }
   }
   // confirm nativo está bien aquí (panel interno admin, no es sacs3).
-  function confirmar(m: string) { return window.confirm(m); }
 
   return (
     <div>
@@ -1900,7 +1903,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setCobrando(null);
     if (sim?.error) { alert(sim.error); return; }
     if (!sim.por_importar) { alert(`No hay cobros nuevos que importar.\n\nEn Mercado Pago hay ${sim.cobros_en_mp} y ya están los ${sim.ya_registrados} que aplican.`); return; }
-    if (!confirm(`Traer ${sim.por_importar} cobros de Mercado Pago (${money(sim.monto_total)}), de ${sim.desde} a ${sim.hasta}.\n\nSe agregan al historial de pagos de ${s.nombre_plan}. La próxima factura NO se mueve.\n\n¿Los importo?`)) return;
+    if (!await confirmar(`Traer ${sim.por_importar} cobros de Mercado Pago (${money(sim.monto_total)}), de ${sim.desde} a ${sim.hasta}.\n\nSe agregan al historial de pagos de ${s.nombre_plan}. La próxima factura NO se mueve.\n\n¿Los importo?`)) return;
     setCobrando(s.id);
     const j = await fetch('/api/crm/arr/mp-importar-historial', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1924,7 +1927,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     // Detener el cargo y dar de baja al cliente no son lo mismo: se pregunta
     // aparte para no borrar ARR por querer parar una tarjeta.
     const tambien = accion === 'reanudar' ? false
-      : confirm(`¿También quieres poner la suscripción como ${accion === 'cancelar' ? 'CANCELADA' : 'PAUSADA'} en el CRM?\n\nAceptar = sí, deja de contar en el ARR.\nCancelar = solo detengo el cobro en Mercado Pago y aquí la dejo igual.`);
+      : await confirmar(`¿También quieres poner la suscripción como ${accion === 'cancelar' ? 'CANCELADA' : 'PAUSADA'} en el CRM?\n\nAceptar = sí, deja de contar en el ARR.\nCancelar = solo detengo el cobro en Mercado Pago y aquí la dejo igual.`);
     setCobrando(s.id);
     const j = await fetch('/api/crm/arr/mp-cancelar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1949,7 +1952,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setMpHallado(j.data || []);
   }
   async function vincularMP(mp: any, cand: any) {
-    if (!confirm(`¿Vincular "${mp.concepto}" (${money(mp.monto)}) con ${cand.nombre_plan}?\n\nSus cobros se van a registrar solos en esa suscripción.`)) return;
+    if (!await confirmar(`¿Vincular "${mp.concepto}" (${money(mp.monto)}) con ${cand.nombre_plan}?\n\nSus cobros se van a registrar solos en esa suscripción.`)) return;
     const j = await fetch('/api/crm/arr/mp-suscripciones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subscription_id: cand.subscription_id, mp_preapproval_id: mp.mp_id, payer_email: mp.correo_pagador }),
@@ -3808,8 +3811,8 @@ function UnificarFechas({ grupo, companyId, principalWa, onCerrar, onListo }: an
                 {busy ? 'Generando…' : 'Generar propuesta para el cliente'}
               </button>
             : <button style={{ ...D.btn, opacity: busy ? .6 : 1, background: propuesta.estado === 'autorizada' ? '#1A8F7A' : '#9B8CFA' }} disabled={busy}
-                onClick={() => {
-                  if (propuesta.estado !== 'autorizada' && !confirm('El cliente todavía no ha autorizado esta propuesta.\n\n¿Aplicar de todas formas?')) return;
+                onClick={async () => {
+                  if (propuesta.estado !== 'autorizada' && !await confirmar('El cliente todavía no ha autorizado esta propuesta.\n\n¿Aplicar de todas formas?')) return;
                   aplicar();
                 }}>
                 {busy ? 'Unificando…' : 'Aplicar la unificación'}

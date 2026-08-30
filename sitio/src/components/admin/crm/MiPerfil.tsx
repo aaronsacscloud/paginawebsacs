@@ -9,6 +9,7 @@
 // próxima vez, así que se avisa antes de guardar.
 import { useEffect, useRef, useState } from 'react';
 import { Corazones } from './ui/Cargando';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 const iniciales = (n?: string | null) => {
   const t = String(n || '').trim();
@@ -51,7 +52,7 @@ export default function MiPerfil({ onGuardado }: { onGuardado?: (p: any) => void
   }
 
   async function guardar() {
-    if (cambiaCorreo && !confirm(`El correo es con el que entras al CRM.\n\nA partir de ahora entrarías con:\n${email}\n\n¿Guardar?`)) return;
+    if (cambiaCorreo && !await confirmar(`El correo es con el que entras al CRM.\n\nA partir de ahora entrarías con:\n${email}\n\n¿Guardar?`)) return;
     setGuardando(true); setMsg(null);
     const r = await fetch('/api/crm/perfil', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },

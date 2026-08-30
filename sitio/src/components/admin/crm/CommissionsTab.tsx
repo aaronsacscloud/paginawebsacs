@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando from './ui/Cargando';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 interface Commission {
   id: string;
@@ -120,7 +121,7 @@ export default function CommissionsTab() {
   }
 
   async function approveEarned(c: Commission) {
-    if (!confirm(`Aprobar bono pending → earned para ${c.team_members?.nombre} (${fmt(c.commission_amount)})?\n\nEsto manda email al partner notificando que su bono fue verificado.`)) return;
+    if (!await confirmar(`Aprobar bono pending → earned para ${c.team_members?.nombre} (${fmt(c.commission_amount)})?\n\nEsto manda email al partner notificando que su bono fue verificado.`)) return;
     try {
       await postAction('earned', { commission_id: c.id });
       load();
@@ -137,7 +138,7 @@ export default function CommissionsTab() {
   }
 
   async function flagFraud(c: Commission) {
-    const ok = confirm(`Marcar como FRAUDE el bono de ${c.team_members?.nombre} (${fmt(c.commission_amount)})?\n\nLa commission se cancela con motivo='fraud:...' para audit trail.\nEl partner NO recibirá email (silente).\n\nUsa esto para leads inválidos, registros de prueba que el partner generó él mismo, etc.`);
+    const ok = await confirmar(`Marcar como FRAUDE el bono de ${c.team_members?.nombre} (${fmt(c.commission_amount)})?\n\nLa commission se cancela con motivo='fraud:...' para audit trail.\nEl partner NO recibirá email (silente).\n\nUsa esto para leads inválidos, registros de prueba que el partner generó él mismo, etc.`);
     if (!ok) return;
     const detail = prompt('Detalle del fraude (queda en notas, solo admin lo ve):', 'Lead inválido / registro auto-generado por el partner');
     if (detail === null) return;

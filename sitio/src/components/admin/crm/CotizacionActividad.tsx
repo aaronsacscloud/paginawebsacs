@@ -153,7 +153,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio, embebi
       // referencia, fecha y el aviso de que cobrar cierra la oportunidad.
       if (accion === 'pagada') { setCobrando(true); return; }
       if (accion === 'aceptada') {
-        if (!confirm('¿Marcar esta cotización como ACEPTADA?\n\nSe registra como aceptada por el cliente y avanza su oportunidad.')) return;
+        if (!await confirmar('¿Marcar esta cotización como ACEPTADA?\n\nSe registra como aceptada por el cliente y avanza su oportunidad.')) return;
         const j = await fetch('/api/revenue/mark-accepted', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quoteId: quoteId, aceptado_por: 'admin' }),

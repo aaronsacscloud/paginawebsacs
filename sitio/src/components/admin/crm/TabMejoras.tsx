@@ -159,7 +159,7 @@ export default function TabMejoras({ companyId, cliente, flash, co, subs = [] }:
    *  que resuelve las duplicadas viejas, que se capturaron a mano y por eso no
    *  traen `senal_tipo`. */
   async function descartarSenal(sn: any) {
-    if (!confirm(`Dejar de sugerir "${sn.titulo}".\n\n¿Es porque ya la tienes en la lista o porque no aplica para este cliente?\n\nEn los dos casos se deja de ofrecer.`)) return;
+    if (!await confirmar(`Dejar de sugerir "${sn.titulo}".\n\n¿Es porque ya la tienes en la lista o porque no aplica para este cliente?\n\nEn los dos casos se deja de ofrecer.`)) return;
     await guardar({
       titulo: sn.accion.replace(/^ofr[eé]cele\s+/i, '').replace(/\.$/, '').trim().slice(0, 200),
       descripcion: `Sugerencia descartada: ${sn.titulo}`,

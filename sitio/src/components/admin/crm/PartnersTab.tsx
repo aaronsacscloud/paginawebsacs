@@ -4,6 +4,7 @@ import { ESPECIALIDADES } from '../../../data/partner-especialidades';
 import { FIL_TIERS } from '../../../data/filantropia';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import ActionSheet, { type ActionItem } from './ui/ActionSheet';
+import { confirmar } from '../../../lib/ui/confirmar';
 
 interface Invitation {
   id: string;
@@ -239,7 +240,7 @@ export default function PartnersTab() {
       alert('Aprueba primero al partner antes de provisionarle Fideliza.');
       return;
     }
-    const ok = confirm(`Activar SACS Plan Fideliza para ${it.nombre}?\n\nAntes de hacer click:\n1. Crea su cuenta en app.sacscloud.com con plan Fideliza\n2. Ten lista la contraseña temporal para enviarla por separado\n\nEste botón:\n• Marca al partner como provisionado\n• Envía email de bienvenida con instrucciones de acceso`);
+    const ok = await confirmar(`Activar SACS Plan Fideliza para ${it.nombre}?\n\nAntes de hacer click:\n1. Crea su cuenta en app.sacscloud.com con plan Fideliza\n2. Ten lista la contraseña temporal para enviarla por separado\n\nEste botón:\n• Marca al partner como provisionado\n• Envía email de bienvenida con instrucciones de acceso`);
     if (!ok) return;
     const nota = prompt('Nota opcional para el partner (aparece en el email):', '') || undefined;
     try {
@@ -258,7 +259,7 @@ export default function PartnersTab() {
   }
 
   async function approveInvitation(it: Invitation) {
-    const ok = confirm(`Aprobar a ${it.nombre} como partner?\n\nEsto:\n• Activa la cuenta\n• Crea el team_member con rol partner\n• Envía email de bienvenida con credenciales\n\nAsegúrate de validar primero los datos de cobro y dirección.`);
+    const ok = await confirmar(`Aprobar a ${it.nombre} como partner?\n\nEsto:\n• Activa la cuenta\n• Crea el team_member con rol partner\n• Envía email de bienvenida con credenciales\n\nAsegúrate de validar primero los datos de cobro y dirección.`);
     if (!ok) return;
     let nota = prompt('Nota opcional para el partner (aparece en el email de bienvenida):', '') || undefined;
     try {
@@ -277,7 +278,7 @@ export default function PartnersTab() {
   }
 
   async function cancelInvitation(it: Invitation) {
-    if (!confirm(`¿Cancelar por completo la invitación ${it.numero} de ${it.nombre}?\n\nEl link público dejará de funcionar y el partner la verá como CANCELADA y totalmente vencida. Puedes reactivarla luego con "Editar vigencia".\n\nEsto NO borra la invitación.`)) return;
+    if (!await confirmar(`¿Cancelar por completo la invitación ${it.numero} de ${it.nombre}?\n\nEl link público dejará de funcionar y el partner la verá como CANCELADA y totalmente vencida. Puedes reactivarla luego con "Editar vigencia".\n\nEsto NO borra la invitación.`)) return;
     try {
       const res = await fetch('/api/partners/invitations', {
         method: 'PUT',
@@ -331,7 +332,7 @@ export default function PartnersTab() {
     const firstConfirm = isAccepted
       ? `⚠️ ELIMINACIÓN COMPLETA · invitación + partner del team\n\nEsta invitación YA FUE ACEPTADA y generó un partner activo en SACS.\n\nSe borran en cascada:\n• La invitación (folio ${it.numero})\n• El link público y landing personalizada\n• Todas las sesiones de tracking\n• El partner del team (cuenta de acceso, sesiones, password tokens)\n• Sus content submissions, strikes, payouts, comisiones, certificaciones\n• Visitas a su landing\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?`
       : `Vas a eliminar la invitación ${it.numero} de ${it.nombre}.\n\nSe borran:\n• La invitación de la base de datos\n• El link público y la landing personalizada\n• Todas las sesiones de tracking\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?`;
-    if (!confirm(firstConfirm)) return;
+    if (!await confirmar(firstConfirm)) return;
     if (isAccepted) {
       const second = `Confirmación final: escribe el número de folio (${it.numero}) para eliminar.`;
       const typed = prompt(second, '');

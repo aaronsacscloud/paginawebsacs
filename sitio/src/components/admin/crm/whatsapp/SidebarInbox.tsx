@@ -11,6 +11,7 @@ import { CrearSeccionModal, CrearVistaModal } from './VistaModales';
 import { useCatalogoEtiquetas } from '../Etiquetas';
 import AjustesWA from './AjustesWA';
 import type { Filtros } from './InboxPro';
+import { confirmar } from '../../../../lib/ui/confirmar';
 
 const BANDEJAS = [
   { id: 'accion', label: 'Requiere mi acción', Ico: IcoRayo },
@@ -299,7 +300,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
                 {opcion('Subir', 'Un lugar arriba en la lista', () => { cerrar(); mover(v, -1, menuVista.lista); })}
                 {opcion('Bajar', 'Un lugar abajo en la lista', () => { cerrar(); mover(v, 1, menuVista.lista); })}
                 <div style={{ borderTop: `1px solid ${C.g100}`, margin: '4px 8px' }} />
-                {opcion('Borrar vista', 'No borra contactos ni conversaciones', () => { cerrar(); if (confirm(`¿Borrar la vista "${v.nombre}"?`)) borrarVista(v.id); }, true)}
+                {opcion('Borrar vista', 'No borra contactos ni conversaciones', async () => { cerrar(); if (await confirmar(`¿Borrar la vista "${v.nombre}"?`)) borrarVista(v.id); }, true)}
               </div>
             </div>
           </div>

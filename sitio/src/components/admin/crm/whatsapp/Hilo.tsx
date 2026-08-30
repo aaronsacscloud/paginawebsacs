@@ -15,6 +15,7 @@ import Composer, { SelectorPlantilla } from './Composer';
 import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
+import { confirmar } from '../../../../lib/ui/confirmar';
 
 // Borradores por conversación (viven mientras la pestaña esté abierta).
 
@@ -397,7 +398,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           <span style={{ flex: 1, minWidth: 0 }}>
             <b>Está en el masivo «{cp.nombre}»</b> programado para {new Date(cp.scheduled_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}{cp.plantilla ? ` · plantilla ${cp.plantilla}` : ''}
           </span>
-          <button onClick={async () => { if (confirm(`¿Quitar a este contacto del masivo «${cp.nombre}»? Ya no le llegará ese envío.`)) { const r = await api.quitarDeMasivo?.(cp.broadcast_id); if (r?.error) alert(r.error); } }}
+          <button onClick={async () => { if (await confirmar(`¿Quitar a este contacto del masivo «${cp.nombre}»? Ya no le llegará ese envío.`)) { const r = await api.quitarDeMasivo?.(cp.broadcast_id); if (r?.error) alert(r.error); } }}
             style={{ border: '1px solid #cfc5f6', background: '#fff', color: C.moradoTinta, borderRadius: 999, padding: '3px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Quitarlo de ese envío</button>
         </div>
       ))}
@@ -718,10 +719,10 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'desbloquear' }); if (r?.error) alert(r.error); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.emerald700, fontWeight: 700 }}>Desbloquear número</button>
           ) : (
-            <button onClick={async () => { setAbierto(false); if (!confirm('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
+            <button onClick={async () => { setAbierto(false); if (!await confirmar('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Bloquear número (spam)</button>
           )}
-          <button onClick={async () => { setAbierto(false); if (!confirm('BORRADO GDPR: se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número. No se puede deshacer. ¿Continuar?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
+          <button onClick={async () => { setAbierto(false); if (!await confirmar('BORRADO GDPR: se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número. No se puede deshacer. ¿Continuar?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
             style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Borrar datos del cliente (GDPR)</button>
         </span>
       )}
