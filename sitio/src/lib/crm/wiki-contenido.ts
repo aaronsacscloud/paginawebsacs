@@ -424,6 +424,41 @@ export const WIKI: PaginaWiki[] = [
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
+    id: 'churn', grupo: 'El proceso', titulo: '🛟 Churn · rescatar al que canceló',
+    bajada: 'El que se fue no se archiva: se trabaja.', chip: { texto: '$38,608 en rescate', tono: 'bad' },
+    cuerpo: `
+<p>Winback es la <b>cadencia automática</b> que les escribe. Churn es el <b>trabajo a mano</b> sobre cada uno: la sección que vive debajo de Clientes y lleva a un cliente cancelado de vuelta a pagar — o lo cierra con su porqué.</p>
+
+<h3>Las cuatro etapas</h3>
+<ul>
+<li><b>Detectado.</b> Canceló y nadie lo ha tocado. Entra <b>solo</b>: al cancelarse la suscripción se abre el caso, y un barrido a las 3:30 am recoge lo que se haya escapado por otro camino.</li>
+<li><b>En conciliación.</b> Ya estamos hablando: qué pasó de verdad y qué le ofrecemos.</li>
+<li><b>En gracia.</b> Usa el sistema bajo un acuerdo. Pactar exige <b>tres datos</b>: qué se pactó, hasta cuándo, y a cuánto vuelve a pagar. Sin los tres el sistema no deja — una gracia sin fecha de fin es un cliente gratis para siempre. Al guardar se le <b>devuelve el acceso en SACS automáticamente</b>.</li>
+<li><b>Recuperado.</b> Volvió a pagar. Exige la suscripción nueva que lo respalda: un recuperado que no paga mentiría en la ARR. Al cerrarse, la reactivación entra al ledger de MRR y la ARR lo cuenta sola.</li>
+</ul>
+<p><b>Irrecuperable</b> cierra desde cualquier etapa, con motivo obligatorio. Es terminal: si el cliente vuelve, se abre un <b>episodio nuevo</b> ligado al anterior — nunca se reabre el viejo, para que la historia no se pise.</p>
+
+<div class="w-caja w-bad"><span class="w-k">Lo que el dato dice y cambia el guion</span>
+<p>De los $38,608 de MRR que se fueron, <b>$25,048 (el 65%) fue por mal servicio o soporte</b> y <b>cero por precio</b>. A esta gente no se le rescata con descuento: se le rescata resolviendo lo que quedó mal. Por eso la primera plantilla de gracia es «30 días con soporte dedicado», no un mes gratis.</p></div>
+
+<h3>La columna que de verdad decide</h3>
+<p>«Uso del sistema» dice, desde la lista y sin abrir nada, si el cliente está entrando a SACS. Sale del sync nocturno que ya existía. Lo importante no es cuántos días lleva la gracia: es si la está usando. <b>Una gracia de 30 días con el sistema en cero ya fracasó</b>, y el sistema te avisa a los 7 días — no el último.</p>
+<p>Cuando la empresa no tiene cuenta ligada, la columna dice «sin cuenta ligada» y no un cero: un cero ahí parecería abandono cuando es falta de dato.</p>
+
+<h3>Los avisos</h3>
+<ul>
+<li><b>Sin tocar</b> a los 3 días de cancelar — el rescate en frío vale la mitad.</li>
+<li><b>Conciliación estancada</b> a los 7 días sin movimiento.</li>
+<li><b>Gracia por vencer</b> (7 días antes) y <b>gracia vencida</b>.</li>
+<li><b>La gracia no está funcionando</b>: lleva días de gracia y sigue sin vender.</li>
+</ul>
+<p>Todos caen en el <b>caso exacto</b> al tocarlos, no en la lista.</p>
+
+<div class="w-caja"><span class="w-k">Las fechas con tilde</span>
+<p>22 de los 35 casos traen la fecha de cancelación marcada como <b>estimada</b>: vinieron de Excel sin fecha. El promedio de «cuánto tarda un rescate» solo cuenta los que tienen fecha real, y dice sobre cuántos se calculó. Un promedio sobre fechas inventadas sería un número con cara de dato.</p></div>
+`,
+  },
+  {
     id: 'winback', grupo: 'El proceso', titulo: '↩ Winback · los que se fueron',
     bajada: 'Primero escuchar. La oferta va al final.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
