@@ -205,8 +205,10 @@ const NAV_SECTIONS = [
     items: [
       { id: 'whatsapp' as Tab, label: 'Conversaciones', icon: 'whatsapp' },
       { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
-      { id: 'wa-metricas' as Tab, label: 'Métricas', icon: 'wa-metricas' },
-      { id: 'wa-config' as Tab, label: 'Configuración', icon: 'wa-plantillas' },
+      /* Métricas de WhatsApp: fuera. Y la Configuración se fue a Ajustes, que
+         es donde vive la configuración de todo lo demás — tenerla colgando del
+         menú del canal obligaba a recordar que ESTE módulo guarda sus ajustes
+         en otro sitio que los demás. */
     ],
   },
   {
@@ -219,8 +221,11 @@ const NAV_SECTIONS = [
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
       { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },
       { id: 'outbound' as Tab, label: 'Outbound', icon: 'outbound' },
-      { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
-      { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
+      /* «Automatizaciones» y «Agentes IA» salieron del menú: están
+         descontinuados. Un destino que ya no se usa no es inofensivo — ocupa un
+         renglón en la lista que sí se lee todos los días y obliga a descartarlo
+         cada vez. Las pantallas siguen existiendo por si alguien llega con un
+         link viejo; lo que se quita es la puerta. */
     ],
   },
   {
@@ -661,10 +666,18 @@ export default function CrmDashboard() {
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {seccionesVisibles.map((section, si) => (
-            <div key={section.label || si} style={{ marginBottom: 4 }}>
-              {/* Una línea fina entre bloques: agrupa igual que el título, sin
-                  gastar un renglón de texto. */}
-              {si > 0 && !sidebarCollapsed && <div style={{ height: 1, background: '#ece7fa', margin: '6px 12px 2px' }} />}
+            <div key={section.label || si} style={{
+              /* Las líneas entre bloques se fueron: con una debajo de CADA
+                 sección el menú se leía como una tabla de renglones iguales y
+                 no agrupaba nada. Ahora separa el AIRE, y la sección abierta se
+                 pinta como un bloque para que se vea dónde empieza y dónde
+                 acaba. Plegado sí queda la rayita: ahí no hay texto ni bloque
+                 abierto, y sin ella los iconos son una fila continua. */
+              marginBottom: grupoAbierto === section.label && !sidebarCollapsed ? 10 : 2,
+              background: grupoAbierto === section.label && !sidebarCollapsed ? 'rgba(124,107,240,.055)' : 'transparent',
+              borderRadius: 13, padding: grupoAbierto === section.label && !sidebarCollapsed ? '2px 0 6px' : 0,
+              transition: 'background .16s ease',
+            }}>
               {si > 0 && sidebarCollapsed && <div style={{ height: 1, background: '#e7e0f7', margin: '7px auto', width: 26 }} />}
               {/* El título del grupo deja de ser un rótulo muerto y se vuelve
                   el botón que lo abre. Cerrado, un punto morado dice cuál
@@ -681,9 +694,14 @@ export default function CrmDashboard() {
                       display: 'flex', alignItems: 'center', gap: 11,
                       width: 'calc(100% - 16px)', margin: '1px 8px', padding: '8px 10px',
                       border: 'none', background: 'transparent', borderRadius: 9, cursor: 'pointer',
-                      fontFamily: 'inherit', fontSize: '0.79rem', textAlign: 'left' as const,
-                      fontWeight: tieneActivo ? 800 : 700,
-                      color: tieneActivo ? '#4C3BD0' : '#4b4560',
+                      fontFamily: 'inherit', textAlign: 'left' as const,
+                      /* Nivel 1. Contra sus subsecciones cambia en TRES cosas a
+                         la vez —es más grande, más negra y más oscura—; con una
+                         sola (antes, medio punto de peso) cabecera y contenido
+                         se leían como lo mismo. */
+                      fontSize: '0.84rem',
+                      fontWeight: tieneActivo || abierto ? 800 : 700,
+                      color: tieneActivo ? '#4C3BD0' : abierto ? '#2e2748' : '#3f3856',
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -731,7 +749,16 @@ export default function CrmDashboard() {
                   </button>
                 );
               })()}
-              {((sidebarCollapsed && !section.label) || (!sidebarCollapsed && (!section.label || grupoAbierto === section.label))) && section.items.map(item => {
+              {((sidebarCollapsed && !section.label) || (!sidebarCollapsed && (!section.label || grupoAbierto === section.label))) && (
+              <div style={{ position: 'relative' }}>
+              {/* El riel: una guía vertical que baja por el costado de las
+                  subsecciones. Es lo que dice "esto cuelga de aquella" de un
+                  vistazo; el puntito por renglón que había antes se leía como
+                  viñeta de lista, no como pertenencia. */}
+              {!sidebarCollapsed && section.label && (
+                <span aria-hidden="true" style={{ position: 'absolute', left: 26, top: 3, bottom: 3, width: 2, borderRadius: 2, background: '#ddd4f6' }} />
+              )}
+              {section.items.map(item => {
                 const isActive = tab === item.id;
                 /* Dentro de un grupo abierto, el renglón se sangra y cambia su
                    icono por un punto: con el icono puesto se veía igual que la
@@ -758,9 +785,13 @@ export default function CrmDashboard() {
                       borderRadius: sidebarCollapsed ? 11 : 9,
                       background: isActive ? '#fff' : 'transparent',
                       boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
-                      color: isActive ? '#4C3BD0' : '#4b4560',
+                      color: isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: '0.79rem', fontWeight: isActive ? 800 : 600,
+                      /* Nivel 2: más chico y más claro que su cabecera. Fuera
+                       del grupo (Dashboard, que no cuelga de nada) conserva el
+                       tamaño de siempre. */
+                    fontSize: enGrupo ? '0.775rem' : '0.82rem',
+                    fontWeight: isActive ? 800 : enGrupo ? 500 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
                       // desalineado del resto del menú.
@@ -772,11 +803,15 @@ export default function CrmDashboard() {
                   >
                     {/* El filo morado→rosa del activo: la misma cinta del
                         documento, de canto. */}
-                    {isActive && !sidebarCollapsed && (
+                    {isActive && !sidebarCollapsed && !enGrupo && (
                       <span style={{ position: 'absolute', left: -8, top: 6, bottom: 6, width: 3, borderRadius: '0 3px 3px 0', background: 'linear-gradient(180deg,#9B8CFA,#D9538E)' }} />
                     )}
                     {enGrupo
-                      ? <span style={{ position: 'absolute', left: 22, top: '50%', transform: 'translateY(-50%)', width: 5, height: 5, borderRadius: 99, background: isActive ? '#9B8CFA' : '#c9c4d8', flexShrink: 0 }} />
+                      /* En un grupo, la marca del activo es un tramo del
+                         propio riel encendido —no un punto suelto—: se lee
+                         "vas por esta rama" sin agregar un elemento más. El
+                         inactivo no pinta nada; el riel ya lo agrupa. */
+                      ? (isActive ? <span aria-hidden="true" style={{ position: 'absolute', left: 17, top: 5, bottom: 5, width: 4, borderRadius: 2, background: 'linear-gradient(180deg,#9B8CFA,#7C6BF0)', flexShrink: 0 }} /> : null)
                       : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: sidebarCollapsed ? 'center' : 'flex-start', marginTop: sidebarCollapsed ? 0 : 1, color: isActive ? '#7C6BF0' : '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />}
                     {!sidebarCollapsed && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
@@ -789,6 +824,8 @@ export default function CrmDashboard() {
                   </button>
                 );
               })}
+              </div>
+              )}
             </div>
           ))}
         </div>
