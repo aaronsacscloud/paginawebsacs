@@ -30,6 +30,7 @@ const ESPERANDO = [
   'rezagado_curva', 'rezagado_novedad', 'rezagado_temporada', 'rezagado_puerta',
   'cadencia_equipo', 'cadencia_equipo_moda',
   'prueba_academia', 'prueba_productos', 'prueba_inventario',
+  'prueba_sesion_consultor', 'prueba_sesion_repaso', 'prueba_cierre_sesion',
 ];
 
 const env = Object.fromEntries(readFileSync(RUTA_LOGIN, 'utf8')

@@ -336,18 +336,23 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>2</b></td><td>Sesión con Andrea</td><td><b>Sesión con consultor (1 de 3)</b> · modal con calendario</td><td>—</td></tr>
 <tr><td><b>3</b></td><td>Tu primer producto</td><td>—</td><td><b>¿Entraste a la Academia?</b></td></tr>
 <tr><td><b>4</b></td><td>—</td><td><b>Tu promoción del anual</b> · tarjeta en inicio, no interrumpe</td><td>—</td></tr>
-<tr><td><b>5</b></td><td>Talla × color</td><td>—</td><td>—</td></tr>
+<tr><td><b>5</b></td><td>Talla × color</td><td>—</td><td><b>Sesión con consultor</b></td></tr>
 <tr><td><b>6</b></td><td>—</td><td><b>Sesión con consultor (2 de 3)</b></td><td><b>¿Cómo vas con tus productos?</b></td></tr>
 <tr><td><b>7</b></td><td>Abrir caja y vender</td><td>—</td><td>—</td></tr>
 <tr><td><b>8</b></td><td>Sesión con Andrea (mitad)</td><td>—</td><td>—</td></tr>
 <tr><td><b>9</b></td><td>Existencias por sucursal</td><td><b>Sesión con consultor (3 de 3)</b></td><td>—</td></tr>
 <tr><td><b>10</b></td><td>—</td><td>—</td><td><b>Vas a la mitad</b></td></tr>
 <tr><td><b>11</b></td><td>La orden de compra</td><td><b>Pregunta por WhatsApp</b> · deja de pedir cita</td><td>—</td></tr>
+<tr><td><b>12</b></td><td>—</td><td>—</td><td><b>Te quedan pocos días</b> · sesión</td></tr>
 <tr><td><b>13</b></td><td>La nivelación</td><td><b>Contratar con el 35%</b> · modal con precio</td><td>—</td></tr>
 <tr><td><b>14</b></td><td>Lo que lograste</td><td><b>Último día</b> · o pide más días</td><td>—</td></tr>
-<tr><td><b>15</b></td><td>35% en el pago anual</td><td>—</td><td>—</td></tr>
+<tr><td><b>15</b></td><td>35% en el pago anual</td><td>—</td><td><b>Terminó tu prueba</b> · sesión</td></tr>
 </tbody></table>
-<div class="w-caja"><span class="w-k">Los WhatsApp los escribe Fernanda</span><p>Y caen en los días <b>3, 6 y 10</b>, no en el 2. El día 2 ya lleva dos toques —el correo de la sesión y el mensaje dentro de Sacs que ofrece la misma sesión—; un tercero hablando de otra cosa habría sido ruido. En el día 3 funciona mejor incluso: el correo del día 1 presenta la Academia y el WhatsApp llega dos días después a preguntar si entró. Un recordatorio separado del anuncio se lee como interés; pegado, como insistencia.</p></div>
+<div class="w-caja"><span class="w-k">La sesión con consultor, por los tres canales</span><p>Es la conversión real de una prueba: quien la toma contrata mucho más que quien no. Por eso se ofrece <b>seis veces</b> y por vías distintas — dentro de Sacs los días 2, 6 y 9, y por WhatsApp los días 5, 12 y 15.</p>
+<p>El WhatsApp del día 5 cae entre dos ofertas in-app a propósito: es el mismo ofrecimiento por un canal más personal, para quien no abrió el modal. Un mensaje personal después de uno que se ignoró funciona; dos el mismo día, no.</p>
+<p>Y el del día 15 llega cuando la cuenta <b>ya está bloqueada</b>. Por eso su texto dice primero que todo sigue guardado y sólo después propone algo: se quita el miedo a haber perdido el trabajo antes de hablar de nada. Ofrece la sesión <b>«aunque al final no contrates»</b> — condicionar la ayuda a la compra, justo en el momento de decidir, es la forma más rápida de que la decisión sea no.</p></div>
+
+<div class="w-caja"><span class="w-k">Los WhatsApp los escribe Fernanda</span><p>Los de soporte caen en los días <b>3, 6 y 10</b>, no en el 2. El día 2 ya lleva dos toques —el correo de la sesión y el mensaje dentro de Sacs que ofrece la misma sesión—; un tercero hablando de otra cosa habría sido ruido. En el día 3 funciona mejor incluso: el correo del día 1 presenta la Academia y el WhatsApp llega dos días después a preguntar si entró. Un recordatorio separado del anuncio se lee como interés; pegado, como insistencia.</p></div>
 
 <div class="w-caja"><span class="w-k">Tres veces la sesión, y luego se cambia la pregunta</span><p>La sesión con consultor se ofrece en los días 2, 6 y 9, y <b>el texto cambia cada vez</b>: arrancas · vas a la mitad · te queda poco. Tres veces la misma frase se lee como un robot y la tercera ya no se abre.</p>
 <p>En el día 11 se <b>deja de pedir cita</b> y se pide la duda concreta por WhatsApp. Quien no agendó tres veces no va a agendar la cuarta; lo que sí hace es escribir una pregunta si se la piden así.</p></div>

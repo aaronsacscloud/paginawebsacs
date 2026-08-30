@@ -14,6 +14,9 @@ conversación sube de nivel, no en un acuse automático.
 | `prueba_academia` | UTILITY | Prueba gratis · día 2 | — |
 | `prueba_productos` | UTILITY | Prueba gratis · día 6 | — |
 | `prueba_inventario` | UTILITY | Prueba gratis · día 10 | — |
+| `prueba_sesion_consultor` | UTILITY | Prueba gratis · día 5 · sesión | — |
+| `prueba_sesion_repaso` | UTILITY | Prueba gratis · día 12 · sesión | — |
+| `prueba_cierre_sesion` | MARKETING | Prueba gratis · día 15 · sesión tras el cierre | — |
 
 ## Dos cosas que costaron encontrar
 
@@ -27,13 +30,21 @@ bloqueo se resolvió sin que nadie lo anotara. Se crean desde
 escritas aquí; se les antepuso el saludo. El error que devuelve Meta es un 100
 genérico («Petición inválida») que no dice nada hasta abrir el `error_detalle`.
 
-## Lo que falta
+## Estado
 
-1. Que Meta apruebe las cinco (de minutos a 24 h). Una plantilla en PENDING
-   **no se envía**: el paso de la cadencia se salta en silencio.
-2. Apuntar los pasos de las secuencias a las nuevas.
-3. Recién entonces, borrar `cadencia_consultora_moda`. Hoy está dentro de una
-   secuencia: quitarla antes dejaría ese paso mudo.
+Las cinco primeras quedaron **APPROVED** el 30 ago 2026 y están enganchadas.
+`cadencia_consultora_moda` ya se borró después de apuntar su paso a
+`cadencia_equipo_moda`.
+
+Las tres de sesión con consultor se crearon el mismo día y están en **PENDING**.
+Una plantilla sin aprobar **no se envía**: el paso se salta en silencio, así que
+hay que ver que digan APPROVED antes de prender la cadencia.
+
+Para revisarlas sin entrar a ninguna pantalla:
+
+```
+node scripts/estado-plantillas-wa.mjs
+```
 
 ## Por qué UTILITY en las tres de prueba
 
