@@ -46,10 +46,29 @@ if (gate) return gate;
     navigator.serviceWorker.addEventListener('message', (ev) => {
       if (ev.data?.tipo !== 'crm-version-nueva' || avisado) return;
       avisado = true;
+      // ── Cuándo NO se puede recargar ──────────────────────────────────
+      // Esta comprobación solo miraba [role="dialog"] y .vr-sheet, y se le
+      // escapaban las hojas de acciones —que usan role="menu"— y la hoja de
+      // confirmar. Resultado, reportado por el usuario dos veces: tocaba las
+      // tres rayas, la hoja abría, y 1.5 s después la página se recargaba y se
+      // la llevaba. Desde fuera se ve como "toco y no pasa nada", o como "abre
+      // un menú blanco, lo cierra y se recarga". No era el menú: era el
+      // refresco pasándole por encima.
+      //
+      // Se agrega también aria-modal, que es lo que marca cualquier cosa que
+      // secuestra la pantalla, para que la próxima hoja que alguien escriba
+      // quede cubierta sin tener que acordarse de esta lista.
+      const ABIERTO = '[role="dialog"], [role="menu"], [aria-modal="true"], .vr-sheet, .cfm-fondo';
+      let ultimoToque = 0;
+      ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+        document.addEventListener(ev, () => { ultimoToque = Date.now(); }, true));
       const ocupado = () => {
         const a = document.activeElement;
         if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
-        return !!document.querySelector('[role="dialog"], .vr-sheet');
+        if (document.querySelector(ABIERTO)) return true;
+        // Y tampoco se recarga encima de alguien que acaba de tocar: el gesto
+        // puede estar a medias (un deslizamiento, un menú abriéndose).
+        return Date.now() - ultimoToque < 3000;
       };
       const refrescar = () => { if (!ocupado()) location.reload(); else setTimeout(refrescar, 4000); };
       setTimeout(refrescar, 1500);
