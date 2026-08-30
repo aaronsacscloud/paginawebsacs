@@ -223,8 +223,36 @@ const S = {
   ks: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.45 } as const,
   ke: { fontSize: '0.66rem', color: '#b3b1bb', marginTop: 6, paddingTop: 6, borderTop: '1px solid #f5f4f8', lineHeight: 1.4 } as const,
   h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 } as const,
-  th: { fontSize: '0.56rem', fontWeight: 800, color: '#b3b1bb', textTransform: 'uppercase' as const, letterSpacing: '.07em', textAlign: 'left' as const, padding: '8px 10px', borderBottom: '1px solid #f0eff3' } as const,
-  td: { padding: '11px 10px', fontSize: '0.79rem', borderBottom: '1px solid #f7f6fa', verticalAlign: 'middle' as const } as const,
+  /* La cabecera. Venía en #b3b1bb (2.0:1 sobre blanco: se leía como agua) a
+     0.56rem = 9 px. Ahora 11 px en #6B6A76 (5.3:1) y peso 600, no 800: a ese
+     tamaño, en mayúsculas y con letterSpacing, el peso 800 cierra las
+     contraformas y "TELÉFONO" se ve como un bloque, no como una palabra.
+     Y se queda pegada arriba al hacer scroll, con sombra —sin ella las filas
+     se le meten por debajo sin ninguna capa que las separe—: en 13 columnas,
+     perder los rótulos a la tercera fila es perder de qué habla cada dato. */
+  th: { fontSize: '0.6875rem', fontWeight: 600, color: '#6B6A76', textTransform: 'uppercase' as const, letterSpacing: '.04em', textAlign: 'left' as const, padding: '9px 14px', background: '#fff', position: 'sticky' as const, top: 0, zIndex: 2, whiteSpace: 'nowrap' as const, boxShadow: '0 1px 0 #e8e6ef, 0 6px 10px -8px rgba(16,24,40,.22)' } as const,
+  /* Alineación ARRIBA, no al centro. Cada celda apila lo suyo (la hora bajo
+     la fecha, el anuncio bajo la campaña, los días bajo el estatus) y con
+     `middle` una celda de tres renglones empujaba al nombre de al lado hacia
+     abajo: en la misma fila, ningún dato principal quedaba a la altura del
+     otro. Arriba, TODOS los valores principales caen en la primera línea y la
+     fila se lee de un barrido. */
+  td: { padding: '9px 14px', fontSize: '0.75rem', borderBottom: '1px solid #ebe9f0', verticalAlign: 'top' as const, lineHeight: '20px', fontVariantNumeric: 'tabular-nums' as const } as const,
+  /* El ancla de la fila: UN solo dato por encima de 0.8rem. Antes nombre,
+     empresa, correo y teléfono medían lo mismo (0.78) y la mancha de tinta más
+     grande de cada renglón era el correo — o sea, el dato por el que nadie
+     recuerda a un lead ganaba sobre el nombre. */
+  nombre: { fontSize: '0.87rem', fontWeight: 700, color: '#16151c', letterSpacing: '-.01em', cursor: 'pointer', lineHeight: '20px' } as const,
+  /* Lo que acompaña al nombre (empresa, correo, teléfono): un escalón abajo,
+     para que se lea sin competir. */
+  dato2: { fontSize: '0.75rem', color: '#5c5870', lineHeight: '20px' } as const,
+  /* UN solo estilo para la segunda línea de cualquier celda. Andaban sueltos
+     0.62, 0.66, 0.68 y 0.72 rem con cuatro grises distintos: mismo papel,
+     cuatro voces. */
+  sub: { fontSize: '0.65rem', color: '#71707C', marginTop: 2, lineHeight: 1.35 } as const,
+  /* El dato que no está: siempre igual y siempre más claro que un dato real,
+     para que un guión nunca compita con un valor. */
+  vacio: { color: '#74727F' } as const,
   chip: (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? '#f7f4ff' : '#fff',
     color: on ? '#5B4BD6' : '#555', borderRadius: 9, padding: '7px 12px', fontSize: '0.77rem',
@@ -236,7 +264,12 @@ const S = {
   fk: { fontSize: '0.58rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase' as const, color: '#a5a2af', margin: '4px 0 7px' } as const,
   fsel: { width: '100%', border: '1px solid #e2e4e9', borderRadius: 9, padding: '8px 10px', fontFamily: 'inherit', fontSize: '0.78rem', background: '#fff', marginBottom: 10 } as const,
   mini: { border: '1px solid #e2e4e9', borderRadius: 7, padding: '3px 8px', fontSize: '0.67rem', fontWeight: 700, color: '#555', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
-  tag: (bg: string, fg: string) => ({ fontSize: '0.57rem', fontWeight: 800, background: bg, color: fg, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' as const }) as const,
+  /* La pastilla mide 20 px de alto EXACTOS, que es lo que mide una línea de
+     texto de la celda. Antes medía 20.4 con lineHeight 1.45 y padding vertical,
+     así que en la misma fila el nombre caía 3 px arriba de la pastilla de al
+     lado: se arregló la alineación de las celdas de texto y se rompió la de
+     las de pastilla. Ahora 20 px es la unidad común de la primera línea. */
+  tag: (bg: string, fg: string) => ({ fontSize: '0.66rem', fontWeight: 700, background: bg, color: fg, borderRadius: 20, padding: '0 9px', whiteSpace: 'nowrap' as const, display: 'inline-flex' as const, alignItems: 'center' as const, height: 20, lineHeight: 1, maxWidth: '100%', overflow: 'hidden' as const }) as const,
 };
 
 export default function LeadsTab() {
@@ -389,6 +422,34 @@ export default function LeadsTab() {
   const eDe = (c: any): EstatusLead => (c.estatus_lead || 'nuevo') as EstatusLead;
   const opcionesDe = (campo: string, def: { v: string; l: string }[]) =>
     (cfgCampos[campo]?.length ? cfgCampos[campo] : def);
+  /* Una columna que solo puede decir una cosa no es información: es el
+     nombre de la pestaña repetido en cada renglón. "Leads nuevos" ya significa
+     etapa=lead y estatus=nuevo; "Calificados" y "Contactados" fijan la etapa;
+     "No interesados" fija el estatus. Ahí esas columnas se van. */
+  const verEtapa = !['nuevos', 'contactados', 'calificados'].includes(etapa);
+  const verEstatus = !['nuevos', 'no_interesados'].includes(etapa);
+  const nCols = 11 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0);
+  /* La suma EXACTA de los anchos declarados. Si el mínimo es mayor, el
+     navegador reparte el sobrante entre todas y los `left` de las columnas
+     congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
+     con puntos suspensivos empieza a morder donde no debe. */
+  const anchoTabla = 1378 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0);
+
+  /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
+     por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
+  const rejaRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const medir = () => rejaRef.current?.setAttribute('data-mas', el.scrollWidth - el.clientWidth - el.scrollLeft > 8 ? '1' : '0');
+    medir();
+    el.addEventListener('scroll', medir, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null;
+    ro?.observe(el);
+    return () => { el.removeEventListener('scroll', medir); ro?.disconnect(); };
+  });
+
   const lista = useMemo(() => {
     let r = listaBase;
     if (estatusF) r = estatusF.startsWith('g:') ? r.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2)) : r.filter((c: any) => eDe(c) === estatusF);
@@ -407,11 +468,16 @@ export default function LeadsTab() {
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
     // En las pestañas de campaña manda la fecha REAL de llegada (la del
     // anuncio si existe), lo más reciente arriba: es la bandeja del día.
-    if (etapa === 'nuevos' || etapa === 'contactados') {
+    // PERO solo cuando no se pidió otro orden: este re-ordenamiento era
+    // incondicional, así que elegir "Más fríos primero" en Leads nuevos o en
+    // Contactados no hacía absolutamente nada. Un control que miente en la
+    // pestaña por omisión es peor que no tenerlo, y "más fríos primero" es
+    // justo el triage que pide esta bandeja.
+    if (orden === 'reciente' && (etapa === 'nuevos' || etapa === 'contactados')) {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
-  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa]);
+  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden]);
   // Para la tarjeta del Dashboard: el funnel del pool ABIERTO completo, sin
   // los filtros de la lista — es la foto del negocio, no de la vista.
   const conteosFunnel = useMemo(() => {
@@ -482,7 +548,79 @@ export default function LeadsTab() {
         .lead-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; }
         @media (max-width: 1100px) { .lead-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
         @media (max-width: 620px)  { .lead-4 { grid-template-columns:1fr; } }
-        .lead-tabla { width:100%; border-collapse:collapse; }
+        /* table-layout FIJO. Sin esto, los anchos del encabezado eran
+           decorativos: el navegador reparte por contenido, así que la columna
+           de Campaña declarada en 120 px medía 270 cuando entraba un lead con
+           nombre de campaña largo — y el recorte con puntos suspensivos no
+           disparaba nunca, porque la tabla simplemente crecía. El ritmo de
+           columnas lo dictaba el registro más largo del día, no el diseño. */
+        /* border-collapse SEPARATE, no collapse: en modo colapsado Chrome no
+           pinta box-shadow exterior en th ni en td (solo las inset, por eso la
+           barra morada del hover sí se veía). Asi se habían quedado sin pintar
+           la regla bajo la cabecera pegajosa y el filo de la columna congelada;
+           en modo separado con spacing 0 se ven las dos y no cambia nada mas. */
+        .lead-tabla { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; }
+        /* NINGÚN dato parte renglón por su cuenta. Era lo que desordenaba la
+           tabla: "09:30 a.m." se rompía en dos, "3 d sin contacto" en dos, un
+           nombre largo en tres — y cada fila medía distinto, así que el ojo no
+           encontraba el ritmo para bajar. Ahora cada línea es UNA línea y lo
+           que no cabe se corta con puntos suspensivos (el valor completo sigue
+           en el titulo emergente y en la ficha del lead). Las filas quedan
+           alto salvo cuando de verdad hay un segundo dato que contar. */
+        .lead-tabla tbody td { overflow:hidden; }
+        .lead-tabla tbody td, .lead-tabla tbody td > div, .lead-tabla tbody td > span,
+        .lead-tabla tbody td > div > div { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; max-width:100%; }
+        /* La fila entera se ilumina al pasar: en 13 columnas, seguir un
+           renglón hasta la orilla sin una guía es contar con la suerte. El
+           #faf9fd anterior daba 1.03:1 contra el blanco —o sea, no se veía—,
+           así que la marca de verdad es la barra morada del borde izquierdo. */
+        .lead-tabla tbody tr:hover td { background:#f5f3fc; }
+        /* La campaña ya no es tinta muerta: un clic deja solo los leads de
+           ese anuncio. Era la mancha más fuerte de la fila, con color de
+           enlace, y no llevaba a ningún lado — el dueño la quiere para saber
+           de qué anuncio viene cada cosa, y así de verdad sirve para cortar. */
+        .lead-tabla .fila-camp:hover { color:#5B4BD6; text-decoration:underline; text-underline-offset:2px; }
+        .lead-tabla .fila-tel:hover { color:#1E8A63; text-decoration:underline; text-underline-offset:2px; }
+        .lead-tabla .fila-wa { opacity:.28; transition:opacity .12s ease, background .12s ease; }
+        .lead-tabla tbody tr:hover .fila-wa { opacity:1; }
+        .lead-tabla .fila-wa:hover, .lead-tabla .fila-wa:focus-visible { opacity:1; background:#E8F7F0; }
+        .lead-tabla tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #5B4BD6; }
+        /* Un conteo va a la DERECHA, no centrado: alineados por la unidad se
+           comparan de un vistazo. El !important no es capricho — S.th trae
+           textAlign en línea y un estilo en línea le gana siempre a la clase,
+           que es por lo que el rótulo salía a la izquierda y los dígitos al
+           centro, leyéndose como dos columnas distintas. */
+        .lead-tabla th.num, .lead-tabla td.num { text-align:right !important; }
+        /* La identidad no se pierde al irse a la derecha: las dos primeras
+           columnas quedan congeladas. Si al hacer scroll ves "HOY" en Reunión
+           pero ya no sabes de quién es la fila, tienes que volver, contar
+           renglones y regresar. */
+        .lead-tabla th.fija1, .lead-tabla td.fija1 { position:sticky; left:0; background:#fff; }
+        .lead-tabla th.fija2, .lead-tabla td.fija2 { position:sticky; left:108px; background:#fff; box-shadow:1px 0 0 #eceaf2; }
+        .lead-tabla th.derecha, .lead-tabla td.derecha { position:sticky; right:0; background:#fff; box-shadow:-1px 0 0 #eceaf2; }
+        .lead-tabla tbody tr:hover td.derecha { background:#f5f3fc; }
+        .lead-tabla th.fija1, .lead-tabla th.fija2, .lead-tabla th.derecha { z-index:3; }
+        .lead-tabla td.fija1, .lead-tabla td.fija2 { z-index:1; }
+        /* Congelada + hover: si no se repinta el fondo, la fila se parte en
+           dos colores justo en el borde de lo que se quedó fijo. */
+        .lead-tabla tbody tr:hover td.fija1, .lead-tabla tbody tr:hover td.fija2 { background:#f5f3fc; }
+        /* Y el aviso de que hay más columnas a la derecha: sin esto el borde
+           es un corte blanco seco y la única acción por fila (el ⋮) vive
+           fuera de la pantalla sin que nada lo insinúe. */
+        /* El contenedor ACOTA su altura. Sin esto el encabezado pegajoso era
+           decorativo: quien hacía scroll era la página, no la reja, así que el
+           thead no tenía de dónde despegarse y los rótulos se perdían igual a
+           la fila diez — exactamente lo que se quería evitar. */
+        .lead-reja { position:relative; }
+        .lead-scroll { overflow:auto; max-height:calc(100dvh - 250px); }
+        /* Y el aviso del borde va como capa aparte, no como ::after del
+           scroller: un pseudo con height:100% dentro de una caja de alto
+           automático mide cero, y siendo float su sitio natural es debajo de la
+           tabla, no al costado. Aquí es una capa absoluta sobre la reja. */
+        .lead-reja .lead-orilla { position:absolute; top:0; right:0; bottom:0; width:36px; pointer-events:none;
+          opacity:0; transition:opacity .15s ease;
+          background:linear-gradient(90deg, rgba(255,255,255,0), rgba(16,24,40,.11)); }
+        .lead-reja[data-mas="1"] .lead-orilla { opacity:1; }
       `}</style>
 
       {/* ══ Cabecera MÓVIL v5 (mockup Leads): título + ＋Nuevo, héroe con el
@@ -1177,36 +1315,49 @@ export default function LeadsTab() {
               })()}
             </div>
           ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="lead-tabla">
+          <div className="lead-reja" ref={rejaRef}>
+          <span className="lead-orilla" aria-hidden="true" />
+          <div className="lead-scroll" ref={scrollRef}>
+            <table className="lead-tabla" style={{ minWidth: anchoTabla }}>
               <thead>
                 <tr>
-                  {/* 92 px no alcanzaban para "09:45 p.m.": la hora se partía
-                      en otro renglón y cada fila crecía de alto. 130 la deja en
-                      una línea, y el ancho sale del correo, que traía 190 para
-                      un dato que casi siempre se trunca igual. */}
-                  <th style={{ ...S.th, width: 130 }}>Llegó</th>
-                  <th style={{ ...S.th, minWidth: 150 }}>Lead</th>
-                  <th style={{ ...S.th, minWidth: 140 }}>Empresa</th>
-                  <th style={{ ...S.th, minWidth: 210 }}>Correo</th>
-                  <th style={{ ...S.th, minWidth: 140 }}>Teléfono</th>
-                  <th style={{ ...S.th, width: 120 }}>Canal</th>
-                  <th style={{ ...S.th, width: 56 }}>Suc.</th>
-                  <th style={{ ...S.th, width: 120 }}>{
+                  {/* Con table-layout fijo estos anchos por fin mandan. El
+                      reparto sigue la importancia: la identidad manda, el
+                      correo —un identificador que nadie lee de un vistazo, en
+                      un CRM donde se prospecta por WhatsApp— deja de ser la
+                      columna más ancha de la tabla, y la empresa gana lo que
+                      aquel suelta: es el mejor indicio de si el lead vale la
+                      llamada, y cortarla para dejar entero un @icloud.com era
+                      el cambio exactamente al revés. */}
+                  <th className="fija1" style={{ ...S.th, width: 108 }}>Llegó</th>
+                  <th className="fija2" style={{ ...S.th, width: 190 }}>Lead</th>
+                  <th style={{ ...S.th, width: 186 }}>Empresa</th>
+                  <th style={{ ...S.th, width: 160 }}>Correo</th>
+                  <th style={{ ...S.th, width: 124 }}>Teléfono</th>
+                  <th style={{ ...S.th, width: 98 }}>Canal</th>
+                  <th className="num" style={{ ...S.th, width: 66 }} title="Cuántas sucursales le interesan">Sucs.</th>
+                  <th style={{ ...S.th, width: 166 }}>{
                     etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
                     : etapa === 'rezagados' ? 'Última señal'
                     : etapa === 'oportunidad' ? 'Última actividad'
                     : etapa === 'no_interesados' ? 'Por qué no' : 'Campaña'}</th>
-                  <th style={{ ...S.th, width: 96 }}>Etapa</th>
-                  <th style={{ ...S.th, width: 108 }}>Estatus</th>
+                  {/* Etapa y Estatus solo aparecen donde de verdad varían. En
+                      "Leads nuevos" la pestaña se define como etapa=lead Y
+                      estatus=nuevo: es imposible que esas dos columnas digan
+                      otra cosa, así que eran 204 px repitiendo el nombre de la
+                      pestaña cien veces — y encima con pastillas de color, que
+                      son lo que más pesa en la fila. Se siguen pudiendo cambiar
+                      desde el ⋮ y desde la ficha. */}
+                  {verEtapa && <th style={{ ...S.th, width: 96 }}>Etapa</th>}
+                  {verEstatus && <th style={{ ...S.th, width: 116 }}>Estatus</th>}
                   <th style={{ ...S.th, width: 96 }}>Reunión</th>
                   <th style={{ ...S.th, width: 92 }}>Llamadas</th>
-                  <th style={{ ...S.th, width: 44 }} />
+                  <th className="derecha" style={{ ...S.th, width: 92 }} />
                 </tr>
               </thead>
               <tbody>
                 {lista.length === 0 && (
-                  <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={13}>Nada con estos filtros.</td></tr>
+                  <tr><td style={{ ...S.td, ...S.vacio }} colSpan={nCols}>Nada con estos filtros.</td></tr>
                 )}
                 {lista.map((c: any, iFila: number) => {
                   const o = origenDe(origenDeRegistro(c));
@@ -1218,18 +1369,44 @@ export default function LeadsTab() {
                     <tr>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
-                      <td style={S.td}>
+                      <td className="fija1" style={S.td}>
                         {c.created_at ? (
                           <span title={new Date(c.created_at).toLocaleString('es-MX')}>
-                            <span style={{ fontWeight: fechaCorta(c.created_at) === 'hoy' ? 800 : 600, color: fechaCorta(c.created_at) === 'hoy' ? '#1E8A63' : '#4a4a52', fontSize: '0.76rem' }}>
+                            {/* "hoy" iba en verde, y el verde de esta paleta
+                                significa "hay dinero en la mesa": lo más verde
+                                de la pantalla acababa siendo una marca de
+                                tiempo. Ahora es negro con un punto morado. */}
+                            <span style={{ fontWeight: fechaCorta(c.created_at) === 'hoy' ? 800 : 600, color: fechaCorta(c.created_at) === 'hoy' ? '#16151c' : '#4a4a52', fontSize: '0.76rem' }}>
+                              {fechaCorta(c.created_at) === 'hoy' && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 99, background: '#5B4BD6', marginRight: 5, verticalAlign: 'middle' }} />}
                               {fechaCorta(c.created_at)}
                             </span>
-                            <span style={{ display: 'block', fontSize: '0.66rem', color: '#b3b1bb' }}>{horaCorta(c.created_at)}</span>
+                            {/* DOS líneas, siempre las mismas dos: fecha
+                                arriba y, abajo, la que de verdad decide.
+                                Sin la columna de Estatus la bandeja del día se
+                                había quedado sin semáforo —un lead del 19/ago
+                                se veía igual de tranquilo que uno de hoy—, así
+                                que la antigüedad se cuenta aquí, que es la
+                                columna que ya habla de tiempo y además va
+                                congelada, o sea que sobrevive al scroll.
+                                La HORA solo aparece el mismo día, que es cuando
+                                dice algo; en un lead de hace once días, "07:01
+                                a. m." no cambia ninguna decisión y estaba
+                                gastando el renglón que necesitaba la urgencia
+                                — con la tercera línea, además, cada fila medía
+                                distinto y se perdía el ritmo para bajar. */}
+                            {(() => {
+                              const hoy = fechaCorta(c.created_at) === 'hoy';
+                              if (hoy) return <span style={{ ...S.sub, display: 'block' }}>{horaCorta(c.created_at)}</span>;
+                              if (!verEstatus && d != null && d > 0) return (
+                                <span style={{ ...S.sub, display: 'block', color: d > 14 ? '#C0554E' : d > 3 ? '#8a5a3c' : '#71707C', fontWeight: d > 14 ? 700 : 500 }}>{d} d sin tocar</span>
+                              );
+                              return <span style={{ ...S.sub, display: 'block' }}>{horaCorta(c.created_at)}</span>;
+                            })()}
                           </span>
-                        ) : <span style={{ color: '#c9c7d0' }}>—</span>}
+                        ) : <span style={S.vacio}>—</span>}
                       </td>
-                      <td style={S.td}>
-                        <div style={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => setVerContacto(c.id)}>
+                      <td className="fija2" style={S.td}>
+                        <div style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                         </div>
                         {c.historial && (() => {
@@ -1250,29 +1427,61 @@ export default function LeadsTab() {
                           return <span title={pr.fin ? `Termina el ${pr.fin}` : 'Sin fecha de término'}
                             style={{ display: 'inline-block', marginTop: 3, marginLeft: c.historial ? 5 : 0, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: bg, color: fg }}>{txt}</span>;
                         })()}
-                        {c.puesto && <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.puesto}</div>}
+                        {c.puesto && <div style={S.sub} title={c.puesto}>{c.puesto}</div>}
                       </td>
-                      <td style={S.td}>{c.companies?.nombre || <span style={{ color: '#c9c7d0' }}>—</span>}</td>
-                      <td style={{ ...S.td, fontSize: '0.72rem', color: '#6b6b74' }}>{c.email || <span style={{ color: '#c9c7d0' }}>sin correo</span>}</td>
-                      <td style={S.td}>{tel || <span style={{ fontSize: '0.72rem', color: '#c9c7d0' }}>sin teléfono</span>}</td>
+                      <td style={{ ...S.td, ...S.dato2 }} title={c.companies?.nombre || undefined}>{c.companies?.nombre || <span style={S.vacio}>—</span>}</td>
+                      <td style={{ ...S.td, ...S.dato2 }} title={c.email || undefined}>{c.email || <span style={S.vacio}>—</span>}</td>
+                      {/* El hueco SÍ se nombra: "sin teléfono" no es un dato
+                          ausente, es un veredicto —a este no se le puede
+                          escribir por WhatsApp, que es como se vende. Y cuando
+                          SÍ hay número, el número ES el enlace: era texto
+                          muerto en medio de la fila, justo lo que cualquiera
+                          intenta clicar para escribir. La acción principal deja
+                          de depender de llegar hasta la orilla derecha. */}
+                      <td style={{ ...S.td, ...S.dato2 }}>
+                        {tel
+                          ? <a className="fila-tel" href={waLink(tel)} target="_blank" rel="noreferrer"
+                              title="Escribir por WhatsApp a este número"
+                              onClick={e => e.stopPropagation()}
+                              style={{ color: 'inherit', textDecoration: 'none' }}>{tel}</a>
+                          : <span style={S.vacio}>sin teléfono</span>}
+                      </td>
                       <td style={S.td}>
-                        <span style={{ ...S.tag('#f6f5f9', '#4a4a52'), display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ width: 7, height: 7, borderRadius: 99, background: o.color, display: 'inline-block' }} />{o.l}
+                        {/* Sin fondo: era la tercera pastilla de la fila y no
+                            se puede tocar. Si todo es pastilla, ninguna
+                            significa nada y el ojo se va al color más fuerte,
+                            que aquí no era el dato que decide. */}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, lineHeight: '20px', fontSize: '0.75rem', fontWeight: 600, color: '#4a4a52' }}>
+                          <span style={{ width: 7, height: 7, borderRadius: 99, background: o.color, display: 'inline-block', flexShrink: 0 }} />{o.l}
                         </span>
                       </td>
-                      <td style={S.td}>{c.sucursales_interes || c.companies?.sucursales || <span style={{ color: '#c9c7d0' }}>—</span>}</td>
+                      {/* Es el TAMAÑO del prospecto, no un número de local.
+                          Con todos los valores pesando igual había que leer
+                          nueve "1" para encontrar al de cinco sucursales; con
+                          la rampa, el cliente grande salta de un barrido. */}
+                      <td className="num" style={S.td} title="Cuántas sucursales le interesan">{(() => {
+                        const n = Number(c.sucursales_interes || c.companies?.sucursales || 0);
+                        if (!n) return <span style={S.vacio}>—</span>;
+                        if (n >= 5) return <b style={{ color: '#5B4BD6', background: '#EEECFE', borderRadius: 6, padding: '1px 7px' }}>{n}</b>;
+                        return <span style={{ color: n > 1 ? '#3f3856' : '#9d9aab', fontWeight: n > 1 ? 600 : 400 }}>{n}</span>;
+                      })()}</td>
                       <td style={S.td}>{(() => {
                         // La columna cuenta lo que ESA pestaña necesita saber
                         // de cada renglón; en "Todos" vuelve a ser la Etapa.
                         if (etapa === 'nuevos' || etapa === 'contactados' || etapa === 'oportunidad' || etapa === 'todos') return c.campana
-                          ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
-                          : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
+                          ? <div><span role="button" tabIndex={0}
+                              onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
+                              onKeyDown={e => { if (e.key === 'Enter') setBusca(c.campana); }}
+                              title={`Ver solo los leads de "${c.campana}"`}
+                              className="fila-camp"
+                              style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
+                          : <span style={{ ...S.dato2, color: '#6d6a7a' }}>orgánico</span>;
                         if (etapa === 'calificados') return c.calificacion_motivo
-                          ? <span style={{ fontSize: '0.72rem', color: '#4a4a52' }}>{c.calificacion_motivo}</span>
-                          : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
+                          ? <span style={{ color: '#4a4a52' }} title={c.calificacion_motivo}>{c.calificacion_motivo}</span>
+                          : <span style={S.vacio}>sin motivo capturado</span>;
                         if (etapa === 'prueba') {
                           const pr = prueba(c);
-                          if (!pr) return <span style={{ color: '#c9c7d0' }}>—</span>;
+                          if (!pr) return <span style={S.vacio}>—</span>;
                           const ini = Date.parse((c.propiedades?.prueba_inicio || '') + 'T12:00:00');
                           const fin = c.propiedades?.prueba_fin ? Date.parse(c.propiedades.prueba_fin + 'T12:00:00') : null;
                           const dia = Math.max(1, Math.floor((Date.now() - ini) / 86400000) + 1);
@@ -1291,7 +1500,7 @@ export default function LeadsTab() {
                               return (
                                 <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                                   <span style={{ ...S.tag(colorNota(cal.nota) + '1f', colorNota(cal.nota)), fontVariantNumeric: 'tabular-nums' }}>{cal.nota}/10</span>
-                                  <span style={{ fontSize: '0.62rem', color: '#8a8a92', lineHeight: 1.35 }}>
+                                  <span style={{ ...S.sub, marginTop: 0 }}>
                                     {cal.motivos.length ? cal.motivos.join(' · ') : 'no ha tocado el sistema'}
                                   </span>
                                 </div>
@@ -1302,8 +1511,8 @@ export default function LeadsTab() {
                         if (etapa === 'no_interesados') {
                           const cat = opcionesDe('descarte_categoria', CATS_DESCARTE).find(x => x.v === c.descarte_categoria);
                           return (cat || c.calificacion_motivo)
-                            ? <div>{cat && <span style={S.tag('#f4f4f6', '#6B7280')}>{cat.l}</span>}{c.calificacion_motivo && <div style={{ fontSize: '0.68rem', color: '#8a8a92', marginTop: cat ? 3 : 0 }}>{c.calificacion_motivo}</div>}</div>
-                            : <span style={{ color: '#c9c7d0' }}>sin motivo capturado</span>;
+                            ? <div>{cat && <span style={S.tag('#f4f4f6', '#6B7280')}>{cat.l}</span>}{c.calificacion_motivo && <div style={{ ...S.sub, marginTop: cat ? 3 : 0 }}>{c.calificacion_motivo}</div>}</div>
+                            : <span style={S.vacio}>sin motivo capturado</span>;
                         }
                         if (etapa === 'rezagados' || etapa === 'oportunidad') {
                           // Lo que decide a quién marcarle es lo que hizo ÉL, no
@@ -1314,12 +1523,12 @@ export default function LeadsTab() {
                           // el color del sistema cuando fue suya.
                           const ua = c.ultima_actividad;
                           const t = c.esfuerzo?.total || 0;
-                          if (!ua) return <div style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{t === 0 ? 'nunca contactado' : 'sin señal suya'}</div>;
+                          if (!ua) return <div style={S.vacio}>{t === 0 ? 'nunca contactado' : 'sin señal suya'}</div>;
                           const suya = esSuya(ua.tipo);
                           return (
-                            <div style={{ fontSize: '0.72rem', color: suya ? '#5B4BD6' : '#4a4a52', fontWeight: suya ? 700 : 400 }}>
+                            <div style={{ color: suya ? '#5B4BD6' : '#4a4a52', fontWeight: suya ? 700 : 400 }}>
                               {actLabel(ua.tipo)}
-                              <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2, fontWeight: 400 }}>
+                              <div style={{ ...S.sub, fontWeight: 400 }}>
                                 {fechaCorta(ua.at)}
                                 {c.cotizacion?.total > 0 && <span style={{ color: '#1E8A63', fontWeight: 800 }}> · {dineroCorto(c.cotizacion.total)}</span>}
                               </div>
@@ -1327,15 +1536,22 @@ export default function LeadsTab() {
                           );
                         }
                         return c.campana
-                          ? <div><span style={S.tag('#E3EDFD', '#2C5FC4')}>{c.campana}</span>{c.propiedades?.tiktok?.anuncio && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 3 }}>{c.propiedades.tiktok.anuncio}</div>}</div>
-                          : <span style={{ color: '#c9c7d0' }}>orgánico</span>;
+                          ? <div><span role="button" tabIndex={0}
+                              onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
+                              onKeyDown={e => { if (e.key === 'Enter') setBusca(c.campana); }}
+                              title={`Ver solo los leads de "${c.campana}"`}
+                              className="fila-camp"
+                              style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
+                          : <span style={{ ...S.dato2, color: '#6d6a7a' }}>orgánico</span>;
                       })()}</td>
                       {/* Las columnas fijas: cada celda abre su modal para VER
                           el dato y cambiarlo entre las opciones. */}
+                      {verEtapa && (
                       <td style={S.td}>
                         <span role="button" onClick={() => setEditando({ c, campo: 'etapa' })} title="Cambiar la etapa del ciclo de vida"
                           style={{ ...S.tag(et.bg, et.fg), cursor: 'pointer' }}>{et.l}</span>
-                      </td>
+                      </td>)}
+                      {verEstatus && (
                       <td style={S.td}>
                         {(() => {
                           // La pastilla del estatus operativo (la misma del
@@ -1354,17 +1570,17 @@ export default function LeadsTab() {
                                 onClick={() => setEditando({ c, campo: 'estatus' })}
                                 style={{ ...S.tag(pe.fondo, pe.tinta), cursor: 'pointer', boxShadow: activa ? `inset 0 0 0 1px ${pe.tinta}` : 'none' }}>{pe.label}</span>
                               {d != null && d > 0 && (
-                                <div style={{ fontSize: '0.62rem', color: d > 14 ? '#C0554E' : '#a5a2af', marginTop: 3 }}>{d} d sin contacto</div>
+                                <div style={{ ...S.sub, color: d > 14 ? '#C0554E' : S.sub.color, fontWeight: d > 14 ? 700 : 400 }}>{d} d sin contacto</div>
                               )}
                             </div>
                           );
                         })()}
-                      </td>
+                      </td>)}
                       <td style={S.td}>
                         <span role="button" onClick={() => setEditando({ c, campo: 'reunion' })} title="Ver y cambiar el estado de sus reuniones" style={{ cursor: 'pointer', display: 'inline-block' }}>
                           {(() => {
                             const r = c.reunion;
-                            if (!r) return <span style={{ color: '#c9c7d0' }}>—</span>;
+                            if (!r) return <span style={S.vacio}>—</span>;
                             if (r.proxima) return <span style={S.tag('#E3EDFD', '#2C5FC4')}>{fechaCorta(r.proxima) === 'hoy' ? 'HOY' : r.proxima.slice(5)}</span>;
                             if (r.ultima_estado === 'asistio') return <span style={S.tag('#EAF8F2', '#1E8A63')}>Asistió</span>;
                             if (r.ultima_estado === 'no_asistio') return <div><span style={S.tag('#FEF0EF', '#C0554E')}>No asistió</span>{r.sin_reagendar && <div style={{ fontSize: '0.62rem', color: '#C0554E', marginTop: 3 }}>sin reagendar</div>}</div>;
@@ -1375,15 +1591,30 @@ export default function LeadsTab() {
                       <td style={S.td}>
                         <span role="button" onClick={() => { setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); }} title="Ver llamadas y registrar una" style={{ cursor: 'pointer', display: 'inline-block' }}>
                           {(c.llamadas?.n || 0) > 0 || (c.esfuerzo?.llamadas || 0) > 0
-                            ? <div><b style={{ fontSize: '0.8rem' }}>{(c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)}</b>{c.llamadas?.discovery && <span style={{ ...S.tag('#EEECFE', '#5B4BD6'), marginLeft: 5 }}>discovery</span>}{c.llamadas?.ultima && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>última hace {diasDesde(c.llamadas.ultima)} d</div>}</div>
-                            : <span style={{ color: '#c9c7d0' }}>—</span>}
+                            ? <div><b style={{ fontSize: '0.78rem' }}>{(c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)}</b>{c.llamadas?.discovery && <span style={{ ...S.tag('#EEECFE', '#5B4BD6'), marginLeft: 5 }}>discovery</span>}{c.llamadas?.ultima && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>última hace {diasDesde(c.llamadas.ultima)} d</div>}</div>
+                            : <span style={S.vacio}>—</span>}
                         </span>
                       </td>
-                      {/* Las acciones viven en el menú de tres puntos, como en
-                          Cotizaciones y Cobranza. Dos botones sueltos se comían
-                          130 px en todos los renglones para dos acciones que se
-                          usan de vez en cuando. */}
-                      <td style={{ ...S.td, textAlign: 'right' }}>
+                      {/* El resto de las acciones vive en el menú de tres
+                          puntos —dos botones sueltos se comían 130 px en todos
+                          los renglones—, pero WhatsApp no es "de vez en
+                          cuando": es el trabajo de esta pantalla. Estaba a dos
+                          clics y como sexto renglón de un menú, debajo de
+                          "Calificar" y "No le interesa". Ahora está en la fila,
+                          tenue hasta que el cursor pasa por encima para no
+                          ensuciar el barrido. */}
+                      <td className="derecha" style={{ ...S.td, padding: '9px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {tel && (
+                          <a className="fila-wa" href={waLink(tel)} target="_blank" rel="noreferrer"
+                            title={`Escribir por WhatsApp a ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
+                            aria-label="Escribir por WhatsApp"
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: 26, height: 26, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#1E8A63', verticalAlign: 'middle', marginRight: 2 }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+                              <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.2A8.5 8.5 0 1121 11.5z" strokeLinejoin="round" />
+                            </svg>
+                          </a>
+                        )}
                         <button aria-label="Acciones"
                           onClick={e => {
                             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1397,6 +1628,7 @@ export default function LeadsTab() {
                 })}
               </tbody>
             </table>
+          </div>
           </div>
           )}
         </div>

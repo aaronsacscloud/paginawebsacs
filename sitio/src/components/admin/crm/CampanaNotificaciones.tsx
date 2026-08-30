@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
 
@@ -14,6 +15,41 @@ import { useIsMobile } from '../../../lib/ui/mobile';
  * miras, llegan mientras no.
  */
 
+/* ═══ La clasificación ═══
+ *
+ * El panel era una lista sola: 40 avisos de cinco naturalezas distintas en el
+ * mismo montón, del más nuevo al más viejo. Un mensaje de WhatsApp, un ticket
+ * de soporte y un lead que acaba de entrar no son la misma cosa y no los atiende
+ * la misma persona, pero se leían igual y había que clasificarlos con la vista,
+ * uno por uno, cada vez.
+ *
+ * Las familias salen de los tipos que de verdad existen en la tabla (medido
+ * sobre crm_notificaciones, no inventado): los wa_ son conversación, los
+ * ticket_ y soporte_sla son soporte, los lead_, cotizacion_, demo_ y prueba_
+ * son venta, y los pago_ y cobro_ son dinero. Lo que no case cae en "Otras" — y que exista esa
+ * bolsa es a propósito: si mañana nace un tipo nuevo, aparece en el drawer en
+ * vez de desaparecer sin que nadie se entere. */
+export const FAMILIAS = [
+  { id: 'venta', l: 'Ventas', casa: (t: string) => /^(lead_|cotizacion_|demo_|prueba_)/.test(t), color: '#5B4BD6' },
+  { id: 'conversacion', l: 'Conversaciones', casa: (t: string) => /^wa_/.test(t), color: '#1A8F7A' },
+  { id: 'soporte', l: 'Soporte', casa: (t: string) => /^(ticket_|soporte_)/.test(t), color: '#C2410C' },
+  { id: 'dinero', l: 'Dinero', casa: (t: string) => /^(pago_|cobro_|suscripcion_|factura_)/.test(t), color: '#1E8A63' },
+];
+const familiaDe = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.id || 'otras';
+const colorFamilia = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.color || '#7d7a8a';
+
+/* Y el otro eje: cuándo pasó. Con 40 avisos seguidos no se sabe si lo de arriba
+   es de hace 10 minutos o de la semana pasada. */
+function bloqueDe(iso: string): string {
+  const d = new Date(iso); const hoy = new Date();
+  const dia = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const difDias = Math.round((dia(hoy) - dia(d)) / 86400000);
+  if (difDias <= 0) return 'Hoy';
+  if (difDias === 1) return 'Ayer';
+  if (difDias < 7) return 'Esta semana';
+  return 'Antes';
+}
+
 const NIVEL: Record<string, { punto: string; fondo: string }> = {
   urgente: { punto: '#b93333', fondo: '#fff6f6' },
   alerta:  { punto: '#c2410c', fondo: '#fffaf3' },
@@ -21,6 +57,16 @@ const NIVEL: Record<string, { punto: string; fondo: string }> = {
 };
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+
+/* Los títulos vienen con emoji desde quien crea el aviso ("🔴 Lead sin primer
+   toque…", "⏰ …"). En pantalla sobran: el nivel ya lo dice el punto de color y
+   la familia el filo de la izquierda, así que el emoji solo repite en dibujito
+   lo que la interfaz ya codificó — y el estándar del producto es sin iconos
+   decorativos. Se limpia al pintar, no en la base: el dato que mandó el
+   servidor se queda como está. */
+const sinEmoji = (t?: string | null) => String(t || '')
+  .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/gu, '')
+  .replace(/\s{2,}/g, ' ').trim();
 
 function hace(iso: string): string {
   const s = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 1000));
@@ -46,10 +92,6 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
     if (controlado) { if (!next) onCerrar?.(); return; }
     setAbiertoLocal(next);
   };
-  // Dónde nace el panel cuando la campana vive en el menú: se ancla al botón,
-  // no a la esquina de la pantalla. Un panel fijo arriba a la derecha, con el
-  // botón abajo a la izquierda, obliga a cruzar la vista de punta a punta.
-  const [ancla, setAncla] = useState<{ left: number; bottom: number } | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [cargando, setCargando] = useState(false);
@@ -93,23 +135,46 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
     if (n.destino && onIrA) { setAbierto(false); onIrA(n.destino); }
   }
 
-  // El panel sale PEGADO al renglón del menú. La variante suelta arriba a la
-  // derecha era de la campana flotante, que ya no existe.
   // Abierto desde la hoja del mobile nadie llamó a `cargar`: se hace aquí.
   useEffect(() => { if (controlado && abierto) cargar(); }, [controlado, abierto, cargar]);
 
-  const panel: any = isMobile
-    ? { position: 'fixed', top: 64, left: 8, right: 8, maxHeight: '72vh' }
-    : ancla
-      ? { position: 'fixed', left: ancla.left, bottom: ancla.bottom, width: 400, maxHeight: '72vh' }
-      : { position: 'fixed', left: 230, bottom: 12, width: 400, maxHeight: '78vh' };
+  /* CAJÓN POR LA DERECHA, no un globo pegado al botón. El globo nacía en la
+     esquina de abajo a la izquierda, medía 400×72vh y se le acababa el alto a
+     la mitad de la lista; además tapaba el menú, que es justo donde uno va
+     después de leer un aviso. Por la derecha entra sobre el contenido, cabe
+     completo de arriba abajo y se cierra sin tocar nada del menú. */
+  const panel: any = {
+    position: 'fixed', top: 0, right: 0, bottom: 0,
+    width: isMobile ? '100%' : 'min(430px, 92vw)',
+  };
 
-  const alternar = (e: any) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    setAncla({ left: r.right + 8, bottom: Math.max(12, window.innerHeight - r.bottom) });
+  const alternar = () => {
     setAbierto(a => !a);
     if (!abierto) cargar();
   };
+
+  // Escape cierra: es un cajón, y de un cajón se sale sin buscar la X.
+  useEffect(() => {
+    if (!abierto) return;
+    const onTecla = (e: KeyboardEvent) => { if (e.key === 'Escape') setAbierto(false); };
+    document.addEventListener('keydown', onTecla);
+    return () => document.removeEventListener('keydown', onTecla);
+  });
+
+  /* El filtro por familia y lo no leído. `filtro` vacío = todas. */
+  const [filtro, setFiltro] = useState<string>('');
+  const [soloNuevas, setSoloNuevas] = useState(false);
+  const visibles = data.filter((n: any) =>
+    (!filtro || familiaDe(n.tipo) === filtro) && (!soloNuevas || !n.leida_at));
+  const cuantas = (id: string) => data.filter((n: any) => familiaDe(n.tipo) === id).length;
+  /* Agrupadas por cuándo, en el orden en que ya vienen (la consulta las trae de
+     la más nueva a la más vieja), así que basta recorrer y cortar. */
+  const bloques: { t: string; items: any[] }[] = [];
+  for (const n of visibles) {
+    const b = bloqueDe(n.created_at);
+    if (bloques[bloques.length - 1]?.t !== b) bloques.push({ t: b, items: [] });
+    bloques[bloques.length - 1].items.push(n);
+  }
 
   // Alguna sin leer que de verdad urge: solo entonces el contador se pinta rojo.
   const hayUrgente = data.some((n: any) => !n.leida_at && n.nivel === 'urgente');
@@ -152,52 +217,122 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
         </button>
       )}
 
-      {abierto && (
+      {/* Va por PORTAL al body. Un elemento fijo se posiciona contra el
+          viewport… salvo que algún ancestro tenga transform, filter o
+          will-change: entonces ESE se vuelve su marco de referencia. La campana
+          vive dentro del menú, así que `right: 0` colocaba el cajón en la
+          orilla derecha DEL MENÚ — medido: salía en x = −211, casi todo fuera
+          de la pantalla. Colgándolo del body, la orilla vuelve a ser la orilla. */}
+      {abierto && typeof document !== 'undefined' && createPortal(
         <>
-          <div onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 107, background: isMobile ? 'rgba(0,0,0,0.35)' : 'transparent' }} />
-          <div style={{
-            ...panel, zIndex: 109, background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12,
-            boxShadow: '0 12px 40px rgba(0,0,0,0.16)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          <style>{`
+            @keyframes notif-entra { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+            @media (prefers-reduced-motion: reduce) { .notif-cajon { animation: none !important; } }
+          `}</style>
+          <div onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 107, background: 'rgba(16,24,40,.28)' }} />
+          <div className="notif-cajon" role="dialog" aria-modal="true" aria-label="Notificaciones" style={{
+            ...panel, zIndex: 109, background: '#fff', borderLeft: '1px solid #eae7f2',
+            boxShadow: '-14px 0 44px rgba(16,24,40,.16)', display: 'flex', flexDirection: 'column',
+            animation: 'notif-entra 180ms ease',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderBottom: '1px solid #f0f0f0' }}>
-              <b style={{ fontSize: '0.88rem' }}>Notificaciones</b>
-              {noLeidas > 0 && <span style={{ fontSize: '0.7rem', color: '#b93333', fontWeight: 700 }}>{noLeidas} sin leer</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '16px 16px 12px', borderBottom: '1px solid #f3f1f8' }}>
+              <b style={{ fontSize: '1rem', color: '#241d43', letterSpacing: '-.01em' }}>Notificaciones</b>
+              {noLeidas > 0 && (
+                <span style={{ fontSize: '0.63rem', fontWeight: 800, color: '#fff', background: hayUrgente ? '#C0554E' : '#9B8CFA', borderRadius: 20, padding: '2px 8px' }}>
+                  {noLeidas > 99 ? '99+' : noLeidas} sin leer
+                </span>
+              )}
               <div style={{ flex: 1 }} />
-              {noLeidas > 0 && <button onClick={marcarTodas} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.73rem', color: '#4B7BE5', fontWeight: 700 }}>Marcar todas</button>}
-              <button onClick={() => setAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: '#999' }}>✕</button>
+              {noLeidas > 0 && <button onClick={marcarTodas} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#5B4BD6', fontWeight: 700, fontFamily: 'inherit' }}>Marcar todas</button>}
+              <button onClick={() => setAbierto(false)} aria-label="Cerrar"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8e88a8', width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
             </div>
 
-            <div style={{ overflowY: 'auto' }}>
-              {data.length === 0 ? (
-                <div style={{ padding: 26, textAlign: 'center', color: '#999', fontSize: '0.82rem' }}>
-                  {cargando ? 'Cargando…' : 'Nada nuevo. Aquí van a caer los cobros automáticos, los rebotes y el dinero sin dueño.'}
-                </div>
-              ) : data.map((n: any) => {
-                const cfg = NIVEL[n.nivel] || NIVEL.info;
-                const empresa = Array.isArray(n.companies) ? n.companies[0] : n.companies;
-                return (
-                  <div key={n.id} onClick={() => abrir(n)}
-                    style={{
-                      padding: '11px 14px', borderBottom: '1px solid #f6f6f6', cursor: 'pointer',
-                      background: n.leida_at ? '#fff' : cfg.fondo,
+            {/* Los filtros: cada familia con su cuenta, y solo si tiene algo.
+                Una pestaña vacía es una promesa rota — se ve, se toca y no hay
+                nada; mejor que no esté. */}
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', borderBottom: '1px solid #f3f1f8' }}>
+              <button onClick={() => setSoloNuevas(v => !v)} style={{
+                flexShrink: 0, border: '1px solid', borderColor: soloNuevas ? '#5B4BD6' : '#e8e5f0',
+                background: soloNuevas ? '#EEECFE' : '#fff', color: soloNuevas ? '#5B4BD6' : '#5a5a63',
+                borderRadius: 20, padding: '5px 11px', fontSize: '0.72rem', fontWeight: soloNuevas ? 800 : 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>Sin leer</button>
+              <span style={{ width: 1, background: '#eeebf6', flexShrink: 0, margin: '2px 2px' }} />
+              {[{ id: '', l: 'Todas', n: data.length, color: '#5a5a63' },
+                ...FAMILIAS.map(f => ({ id: f.id, l: f.l, n: cuantas(f.id), color: f.color })),
+                { id: 'otras', l: 'Otras', n: cuantas('otras'), color: '#7d7a8a' }]
+                .filter(f => f.id === '' || f.n > 0)
+                .map(f => {
+                  const on = filtro === f.id;
+                  return (
+                    <button key={f.id || 'todas'} onClick={() => setFiltro(f.id)} style={{
+                      flexShrink: 0, border: '1px solid', borderColor: on ? f.color : '#e8e5f0',
+                      background: on ? f.color : '#fff', color: on ? '#fff' : '#5a5a63',
+                      borderRadius: 20, padding: '5px 11px', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
+                      cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5,
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: 99, background: n.leida_at ? '#ddd' : cfg.punto, marginTop: 6, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.82rem', fontWeight: n.leida_at ? 500 : 700, color: '#1a1a1a', lineHeight: 1.35 }}>{n.titulo}</div>
-                        {n.detalle && <div style={{ fontSize: '0.73rem', color: '#777', lineHeight: 1.45, marginTop: 2 }}>{n.detalle}</div>}
-                        <div style={{ fontSize: '0.68rem', color: '#aaa', marginTop: 3 }}>
-                          {empresa?.nombre ? empresa.nombre + ' · ' : ''}{hace(n.created_at)}
+                      {f.l}
+                      <span style={{ fontSize: '0.66rem', fontWeight: 700, opacity: on ? 0.85 : 0.55 }}>{f.n}</span>
+                    </button>
+                  );
+                })}
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {visibles.length === 0 ? (
+                <div style={{ padding: '40px 26px', textAlign: 'center', color: '#8e88a8', fontSize: '0.83rem', lineHeight: 1.6 }}>
+                  {cargando ? 'Cargando…'
+                    : filtro || soloNuevas ? 'Nada con este filtro.'
+                    : 'Nada nuevo. Aquí van a caer los leads que entran, los mensajes de WhatsApp, los tickets de soporte y los cobros.'}
+                </div>
+              ) : bloques.map(b => (
+                <div key={b.t}>
+                  {/* El rótulo del bloque se queda pegado mientras se recorre:
+                      bajando 40 avisos, sin él se pierde de cuándo son. */}
+                  <div style={{
+                    position: 'sticky', top: 0, zIndex: 1, background: '#FBFAFF',
+                    padding: '6px 16px', fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.08em',
+                    textTransform: 'uppercase', color: '#8e88a8', borderBottom: '1px solid #f3f1f8',
+                  }}>{b.t}</div>
+                  {b.items.map((n: any) => {
+                    const cfg = NIVEL[n.nivel] || NIVEL.info;
+                    const empresa = Array.isArray(n.companies) ? n.companies[0] : n.companies;
+                    const cf = colorFamilia(n.tipo);
+                    return (
+                      <div key={n.id} onClick={() => abrir(n)} role="button" tabIndex={0}
+                        onKeyDown={e => { if (e.key === 'Enter') abrir(n); }}
+                        style={{
+                          padding: '12px 16px', borderBottom: '1px solid #f6f5fa', cursor: 'pointer',
+                          background: n.leida_at ? '#fff' : cfg.fondo,
+                          /* La familia se ve en el filo de la izquierda: dice de
+                             qué va el aviso antes de leer una sola palabra. */
+                          borderLeft: `3px solid ${n.leida_at ? 'transparent' : cf}`,
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FBFAFF'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = n.leida_at ? '#fff' : cfg.fondo; }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: 99, background: n.leida_at ? '#ddd' : cfg.punto, marginTop: 6, flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.83rem', fontWeight: n.leida_at ? 500 : 700, color: '#1a1a1a', lineHeight: 1.35 }}>{sinEmoji(n.titulo)}</div>
+                            {n.detalle && <div style={{ fontSize: '0.74rem', color: '#71707C', lineHeight: 1.45, marginTop: 2 }}>{n.detalle}</div>}
+                            <div style={{ fontSize: '0.68rem', color: '#8e88a8', marginTop: 4 }}>
+                              {empresa?.nombre ? empresa.nombre + ' · ' : ''}{hace(n.created_at)}
+                            </div>
+                          </div>
+                          {n.monto != null && <div style={{ fontSize: '0.83rem', fontWeight: 800, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{money(n.monto)}</div>}
                         </div>
                       </div>
-                      {n.monto != null && <div style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{money(n.monto)}</div>}
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
 
       {cliente && <ClienteDrawer360 companyId={cliente} onClose={() => setCliente(null)} onChanged={cargar} />}
