@@ -205,6 +205,12 @@ const prueba = (c: any) => {
  *  pero no es un lead nuevo: ya se cerró. */
 const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
 
+/* El corte de «atorado»: 3 días sin atenderlo. Vive aquí y no dentro del
+   render del teléfono porque ahora lo usan las dos vistas, y dos copias de un
+   umbral es un umbral que va a divergir. */
+export const DIAS_ATORADO = 3;
+export const diasDeLead = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
+
 /** Llegó dentro de los últimos 7 días (hoy incluido). */
 const esDeLaSemana = (c: any) => {
   const d = diaLocal(c.created_at);
@@ -453,22 +459,9 @@ export default function LeadsTab() {
      navegador reparte el sobrante entre todas y los `left` de las columnas
      congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
      con puntos suspensivos empieza a morder donde no debe. */
+
   const anchoTabla = 1230 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
-  /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
-     por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
-  const rejaRef = useRef<HTMLDivElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const medir = () => rejaRef.current?.setAttribute('data-mas', el.scrollWidth - el.clientWidth - el.scrollLeft > 8 ? '1' : '0');
-    medir();
-    el.addEventListener('scroll', medir, { passive: true });
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null;
-    ro?.observe(el);
-    return () => { el.removeEventListener('scroll', medir); ro?.disconnect(); };
-  });
 
   const lista = useMemo(() => {
     let r = listaBase;
@@ -498,6 +491,68 @@ export default function LeadsTab() {
     }
     return r;
   }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden]);
+
+  /* AGRUPACIÓN EN EL ESCRITORIO. La inteligencia de «qué está atorado» existía
+     solo en el teléfono: la pantalla grande —donde de verdad se trabaja— era
+     una lista plana de 333 renglones sin una sola ancla. Bajando cien filas se
+     pierde el sitio, se hace scroll de más y las de abajo no se atienden nunca.
+     Aquí se calcula qué rótulo va ANTES de cada fila; la fila en sí no cambia.
+     No se agrupa cuando el usuario pidió otro orden —agrupar por antigüedad
+     pisaría justo el criterio que eligió— ni en las pestañas donde el grupo no
+     significa nada. */
+  const { filasTabla, rotuloAntes } = useMemo(() => {
+    const m = new Map<string, { t: string; n: number }>();
+    if (orden !== 'reciente' || ['no_interesados', 'todos', 'rezagados', 'oportunidad'].includes(etapa)) {
+      return { filasTabla: lista, rotuloAntes: m };
+    }
+    const cubo = (c: any) => { const d = diasDeLead(c); return d >= DIAS_ATORADO ? 'Atorados' : d === 0 ? 'Hoy' : 'Esta semana'; };
+    const cuenta: Record<string, number> = {};
+    for (const c of lista) cuenta[cubo(c)] = (cuenta[cubo(c)] || 0) + 1;
+    // Un solo grupo no es agrupación: es un rótulo de adorno sobre la lista
+    // entera. Con todo al día, la tabla se queda callada.
+    if (Object.keys(cuenta).length < 2) return { filasTabla: lista, rotuloAntes: m };
+    /* Y los atorados SUBEN, como en el teléfono. Agrupar sin reordenar deja
+       lo urgente donde estaba —abajo, después de lo de hoy— y entonces el
+       rótulo solo describe el desorden en vez de arreglarlo. Dentro de
+       Atorados manda el que lleva más tiempo esperando. */
+    const ORDEN_G = ['Atorados', 'Hoy', 'Esta semana'];
+    const filas = [...lista].sort((a: any, b: any) => {
+      const ga = ORDEN_G.indexOf(cubo(a)), gb = ORDEN_G.indexOf(cubo(b));
+      if (ga !== gb) return ga - gb;
+      return cubo(a) === 'Atorados' ? diasDeLead(b) - diasDeLead(a) : 0;
+    });
+    let previo = '';
+    for (const c of filas) {
+      const g = cubo(c);
+      if (g !== previo) { m.set(c.id, { t: g, n: cuenta[g] }); previo = g; }
+    }
+    return { filasTabla: filas, rotuloAntes: m };
+  }, [lista, etapa, orden]);
+
+  /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
+     por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
+  const rejaRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current, reja = rejaRef.current;
+    if (!el || !reja) return;
+    const medir = () => {
+      reja.setAttribute('data-mas', el.scrollWidth - el.clientWidth - el.scrollLeft > 8 ? '1' : '0');
+      // Y de paso el alto real que le queda a la reja hasta el borde de abajo.
+      const arriba = reja.getBoundingClientRect().top;
+      reja.style.setProperty('--lead-alto', `${Math.max(280, Math.round(window.innerHeight - arriba - 24))}px`);
+    };
+    medir();
+    el.addEventListener('scroll', medir, { passive: true });
+    window.addEventListener('resize', medir);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null;
+    ro?.observe(el); ro?.observe(document.body);
+    return () => { el.removeEventListener('scroll', medir); window.removeEventListener('resize', medir); ro?.disconnect(); };
+    // Sin array de dependencias se re-registraban el listener y un
+    // ResizeObserver NUEVOS en cada render. Con estas basta: son las que
+    // cambian el ancho o el alto de la reja.
+  }, [verEtapa, verEstatus, verReunion, verLlamadas, lista.length]);
+
   // Para la tarjeta del Dashboard: el funnel del pool ABIERTO completo, sin
   // los filtros de la lista — es la foto del negocio, no de la vista.
   const conteosFunnel = useMemo(() => {
@@ -636,7 +691,12 @@ export default function LeadsTab() {
         .lead-tabla tbody tr.sel td, .lead-tabla tbody tr.sel td.fija0,
         .lead-tabla tbody tr.sel td.fija1, .lead-tabla tbody tr.sel td.fija2,
         .lead-tabla tbody tr.sel td.derecha { background:#F1EEFE; }
-        .lead-tabla input[type=checkbox] { width:16px; height:16px; accent-color:#5B4BD6; cursor:pointer; margin:0; }
+        .lead-tabla input[type=checkbox] { width:16px; height:16px; accent-color:#5B4BD6; cursor:pointer; margin:0 auto; display:block; }
+        /* La celda de la casilla queda FUERA del recorte con puntos
+           suspensivos: ahí no hay texto que recortar, y la regla le pintaba un
+           «…» al lado de cada casilla porque la caja del control mide más que
+           la columna de 40 px. */
+        .lead-tabla th.fija0, .lead-tabla td.fija0 { text-overflow:clip; }
         /* Los rótulos que ordenan se sienten tocables y reservan el sitio de la
            flecha, para que el ancho no salte al aparecer. */
         .lead-tabla th.ord { cursor:pointer; user-select:none; }
@@ -656,7 +716,11 @@ export default function LeadsTab() {
            thead no tenía de dónde despegarse y los rótulos se perdían igual a
            la fila diez — exactamente lo que se quería evitar. */
         .lead-reja { position:relative; }
-        .lead-scroll { overflow:auto; max-height:calc(100dvh - 250px); }
+        /* El alto lo mide el propio contenedor (--lead-alto), no un número
+           inventado: con un 100dvh menos 250px fijo, en cuanto la barra de
+           filtros crecía un renglón, el fondo de la tabla quedaba por debajo
+           pantalla y aparecían dos barras de scroll peleando. */
+        .lead-scroll { overflow:auto; max-height:var(--lead-alto, calc(100dvh - 250px)); }
         /* Y el aviso del borde va como capa aparte, no como ::after del
            scroller: un pseudo con height:100% dentro de una caja de alto
            automático mide cero, y siendo float su sitio natural es debajo de la
@@ -1209,7 +1273,7 @@ export default function LeadsTab() {
                 // Como la referencia: lo atorado (≥3 días sin atender) arriba con su
                 // sección, lo demás abajo. Sin atorados no hay cabeceras: estado sano
                 // en silencio. Solo aplica en pestañas "vivas" (nuevos/contactados…).
-                const dias = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
+                const dias = diasDeLead;
                 const agrupa = !['no_interesados', 'todos', 'rezagados'].includes(etapa);
                 // En Oportunidad y Rezagados el orden que sirve NO es por
                 // cuándo entró el lead: es por qué tan reciente fue lo último
@@ -1233,8 +1297,8 @@ export default function LeadsTab() {
                 // criterio que se pidió —lo que tuvo movimiento va primero—.
                 // Una lista, un orden: el que sirve para decidir a quién llamar.
                 const agrupaEff = agrupa && !porActividad;
-                const atorados = (agrupaEff ? listaOrd.filter((c: any) => dias(c) >= 3) : []).sort((a: any, b: any) => dias(b) - dias(a));
-                const alDia = agrupaEff ? listaOrd.filter((c: any) => dias(c) < 3) : listaOrd;
+                const atorados = (agrupaEff ? listaOrd.filter((c: any) => dias(c) >= DIAS_ATORADO) : []).sort((a: any, b: any) => dias(b) - dias(a));
+                const alDia = agrupaEff ? listaOrd.filter((c: any) => dias(c) < DIAS_ATORADO) : listaOrd;
                 const conSec = atorados.length > 0 && alDia.length > 0;
                 const fila = (c: any) => {
                 const o = origenDe(origenDeRegistro(c));
@@ -1415,13 +1479,32 @@ export default function LeadsTab() {
                 {lista.length === 0 && (
                   <tr><td style={{ ...S.td, ...S.vacio }} colSpan={nCols}>Nada con estos filtros.</td></tr>
                 )}
-                {lista.map((c: any, iFila: number) => {
+                {filasTabla.map((c: any, iFila: number) => {
                   const o = origenDe(origenDeRegistro(c));
                   const tel = c.whatsapp || c.telefono;
                   const d = dias(c.last_contact_at || c.created_at);
                   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
                   return (
                     <Fragment key={c.id}>
+                    {/* El rótulo del grupo. Va como una fila más, y su
+                        contenido se queda pegado a la izquierda al desplazarse:
+                        un <td> con colSpan viaja con la tabla, así que sin eso
+                        el rótulo se iría de la pantalla justo cuando estás
+                        mirando las columnas de la derecha. */}
+                    {rotuloAntes.has(c.id) && (() => {
+                      const g = rotuloAntes.get(c.id)!;
+                      const urge = g.t === 'Atorados';
+                      return (
+                        <tr>
+                          <td colSpan={nCols} style={{ padding: 0, borderBottom: '1px solid #ebe9f0', background: urge ? '#FDF6F5' : '#FBFAFF' }}>
+                            <div style={{ position: 'sticky', left: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', width: 'fit-content' }}>
+                              <span style={{ fontSize: '0.63rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: urge ? '#A8443D' : '#6B6A76' }}>{g.t}</span>
+                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: urge ? '#A8443D' : '#8a8896', background: urge ? '#F7E4E2' : '#eeecf4', borderRadius: 20, padding: '1px 7px' }}>{g.n}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })()}
                     <tr className={sel.has(c.id) ? 'sel' : undefined}>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
@@ -2031,6 +2114,11 @@ export default function LeadsTab() {
                 <button style={{ ...opcion, color: '#C0554E' }} onClick={() => { setCalificando({ ...c, _modo: 'descartar' }); setMotivoCal(''); setCatDescarte(''); setMenu(null); }}>No le interesa</button>
               )}
               {tel && <a style={{ ...opcion, color: '#1E8A63' }} href={waLink(tel)} target="_blank" rel="noreferrer" onClick={() => setMenu(null)}>Escribir por WhatsApp</a>}
+              {/* Llamar existía solo en la vista rápida del teléfono. En el
+                  escritorio no hay marcador, pero el tel: abre el softphone o
+                  manda el número al celular enlazado — y sobre todo evita
+                  copiarlo a mano, que es donde se equivoca uno. */}
+              {tel && <a style={opcion} href={`tel:${String(tel).replace(/[^\d+]/g, '')}`} onClick={() => setMenu(null)}>Llamar</a>}
               {c.email && <a style={opcion} href={`mailto:${c.email}`} onClick={() => setMenu(null)}>Mandar correo</a>}
               {/* En rojo "outline", como en la ficha del cliente: visible sin
                   esconderse en un submenú, pero sin competir con lo que sí se
