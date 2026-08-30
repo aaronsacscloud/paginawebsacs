@@ -26,8 +26,20 @@ with hechos as (
     ct.estatus_lead as actual, ct.respondio_at as respondio_guardado
   from contacts ct
   left join lateral (
-    select count(*) filter (where m.direccion = 'saliente') salientes,
-           min(m.created_at) filter (where m.direccion = 'saliente') primer_saliente,
+    /* UN TOQUE ES DE UNA PERSONA, no del robot.
+       El saludo automático de bienvenida sale 2 segundos después de que entra
+       el lead, y contaba como toque: el recálculo lo pasaba de «nuevo» a
+       «contactado» dentro de la primera hora, sin que nadie lo hubiera
+       atendido. Así desaparecía de la bandeja de «Nuevos» —la que se usa
+       precisamente para no dejar a nadie sin atender— antes de que alguien lo
+       viera. Caso real: Arturo entró 08:15, la plantilla salió 08:15:22 y a
+       las 09:01 ya estaba «contactado».
+       El campo autor separa limpio: los 18,908 mensajes humanos lo traen y
+       las 59 plantillas automáticas no. Las 7 plantillas que sí mandó una
+       persona siguen contando, que es lo correcto.
+       Medido antes de aplicarlo: 9 leads vuelven a «nuevo». */
+    select count(*) filter (where m.direccion = 'saliente' and m.autor is not null) salientes,
+           min(m.created_at) filter (where m.direccion = 'saliente' and m.autor is not null) primer_saliente,
            min(m.created_at) filter (where m.direccion = 'entrante') primer_entrante
     from wa_conversaciones w join wa_mensajes m on m.conversation_id = w.id
     where w.contact_id = ct.id

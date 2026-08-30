@@ -635,21 +635,39 @@ export function ListaCampanas({ datos, onAbrirConv, movil }: {
               </span>
               <span style={{ fontSize: 13, color: '#a5a2af', flexShrink: 0 }}>{on ? '▾' : '›'}</span>
             </button>
+            {/* MISMA FORMA QUE LA LISTA DE ACTIVOS, a propósito: nombre arriba
+                en negrita, empresa y tamaño debajo, estado en gris a la
+                derecha. Dos pantallas que hacen lo mismo tienen que verse
+                igual, o cada una hay que aprenderla por separado.
+
+                SIN FONDO PROPIO. Antes las filas iban en #FAFAFD para
+                «hundirlas» bajo la fuente. En claro se veía bien; en oscuro el
+                barrido del tema aclara el TEXTO pero ese blanco se quedaba
+                puesto, así que los nombres salían casi invisibles sobre tiras
+                blancas. La sangría y la barrita ya dicen que son hijas de la
+                fuente — un fondo distinto no hacía falta y costaba caro. */}
             {on && f.leads.map(l => (
               <button key={l.id} onClick={() => onAbrirConv(l)}
-                style={{ display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', border: 'none',
-                  background: '#FAFAFD', cursor: 'pointer', fontFamily: 'inherit',
-                  padding: movil ? '11px 16px 11px 26px' : '9px 14px 9px 24px', borderBottom: '1px solid #f1f0f5' }}>
-                <span style={{ fontSize: movil ? 14 : 13, color: '#241d43', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</span>
-                {l.empresa && <span style={{ fontSize: 12, color: '#9b98a8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                  {l.empresa}{l.sucursales ? ` · ${l.sucursales} suc.` : ''}
-                </span>}
-                {/* Sin conversación es peor que sin agendar: a ese nadie le ha
-                    escrito todavía. Se dice, porque cambia a quién llamas
-                    primero. */}
-                <span style={{ marginLeft: 'auto', fontSize: 11.5, color: l.wa_conversation_id ? '#a5a2af' : '#B45309', fontWeight: l.wa_conversation_id ? 400 : 700, flexShrink: 0 }}>
-                  {l.wa_conversation_id ? (l.dias === 0 ? 'hoy' : `${l.dias} d`) : 'sin tocar'}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                  background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  border: 'none', borderLeft: '3px solid #efeef2',
+                  padding: movil ? '12px 16px 12px 19px' : '10px 14px 10px 17px', borderBottom: '1px solid #f1f0f5' }}>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ display: 'block', fontSize: movil ? 14.5 : 13.5, fontWeight: 700, color: '#241d43',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</span>
+                  <span style={{ display: 'block', fontSize: 12, color: '#8b8896', marginTop: 3,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {[l.empresa, l.sucursales ? `${l.sucursales} suc.` : null,
+                      l.dias === 0 ? 'entró hoy' : `entró hace ${l.dias} d`].filter(Boolean).join(' · ')}
+                  </span>
                 </span>
+                {/* «Sin tocar» es peor que «sin agendar»: a ese nadie le ha
+                    escrito todavía, y eso cambia a quién llamas primero. Es lo
+                    único con color en la fila. */}
+                {!l.wa_conversation_id && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#B45309', background: '#FEF3C7',
+                    borderRadius: 999, padding: '3px 9px', flexShrink: 0 }}>sin tocar</span>
+                )}
               </button>
             ))}
           </div>
