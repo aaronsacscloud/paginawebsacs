@@ -96,9 +96,23 @@ export const GET: APIRoute = async ({ url, request }) => {
   const presupuestoMs = Math.min(240000, Number(url.searchParams.get('ms')) || 50000);
   const arranque = Date.now();
   const transcurrido = () => Date.now() - arranque;
+  /* QUIÉN ENTRA A LA MEDICIÓN.
+     Antes solo las empresas con `companies.sacs_account`. Pero una cuenta de
+     PRUEBA se liga en `company_sacs_accounts` —que es la tabla buena, la que
+     aguanta varias cuentas por empresa— y esa columna se queda vacía. Efecto:
+     el lead en prueba gratis nunca se medía, justo el caso donde saber si
+     subió productos o hizo una venta vale más que en ningún otro.
+     Se juntan las dos fuentes. Medido: hoy hay 145 enlaces en la tabla y solo
+     1 empresa que existe ahí y no en la columna — la de la prueba. */
+  const { data: enlaces } = await supabase.from('company_sacs_accounts').select('company_id');
+  const idsLigados = [...new Set((enlaces || []).map((e: any) => e.company_id).filter(Boolean))];
+
   const { data: companies, error } = await supabase.from('companies')
     .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at, uso_sacs, soporte_abiertos, soporte_estancado, soporte_sentimiento')
-    .not('sacs_account', 'is', null).is('archived_at', null)
+    .or(idsLigados.length
+      ? `sacs_account.not.is.null,id.in.(${idsLigados.join(',')})`
+      : 'sacs_account.not.is.null')
+    .is('archived_at', null)
     .order('actividad_sync_at', { ascending: true, nullsFirst: true })
     .limit(limit);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });

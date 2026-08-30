@@ -259,12 +259,23 @@ export const GET: APIRoute = async ({ url }) => {
       const permanente = sec.modo === 'permanente';
       if (permanente) {
         const cadaDias = Math.max(1, Number((sec.entrada || {}).cada_dias) || 14);
-        const yaEnviados = Object.keys(m.enviados || {}).length;
+        // ── Tres carriles, no una lista ──
+        // Cada día de la semana tiene su tipo de contenido y avanza por su
+        // cuenta. Sin esto, cargar tres insights seguidos le mandaría tres
+        // lunes de insight y ningún tip: la rotación es POR CARRIL.
+        const todos = (sec.pasos || []).filter((p: any) =>
+          p.activo !== false && (!p.vigente_hasta || p.vigente_hasta >= hoyISO));
+        const conCarril = todos.some((p: any) => p.dia_semana);
+        const listos = conCarril
+          ? todos.filter((p: any) => p.dia_semana === diaIso)
+          : todos;
+        const idsCarril = new Set(listos.map((p: any) => p.id));
+        const yaEnviados = conCarril
+          ? Object.keys(m.enviados || {}).filter(id => idsCarril.has(id)).length
+          : Object.keys(m.enviados || {}).length;
         const ultimo = Object.values(m.enviados || {}).map((x: any) => Date.parse(String(x))).filter(Boolean).sort().pop();
         // Los pasos vencidos se saltan: una "novedad" de hace seis meses ya no
         // lo es, y mandarla resta credibilidad en vez de sumarla.
-        const listos = (sec.pasos || []).filter((p: any) =>
-          p.activo !== false && (!p.vigente_hasta || p.vigente_hasta >= hoyISO));
         // Se acabó el contenido: no se repite, se espera a que haya algo nuevo.
         if (!listos.length || yaEnviados >= listos.length) continue;
         if (ultimo && (ahora.getTime() - ultimo) / 86400000 < cadaDias) continue;
