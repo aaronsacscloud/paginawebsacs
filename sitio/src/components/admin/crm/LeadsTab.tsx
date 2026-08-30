@@ -161,6 +161,14 @@ const diasDesde = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse
 
 /** En qué pestaña vive este contacto. null = solo en Todos (clientes, perdidos). */
 function pestanaDe(c: any): string | null {
+  /* Las etapas CERRADAS, cada una a su casa. Antes cualquier cosa fuera de
+     ABIERTOS devolvía null, o sea: no pertenecía a ninguna pestaña — y como
+     «Todos» no filtraba por etapa, un descalificado terminaba viéndose SOLO
+     ahí, mezclado con los leads vivos. El peor sitio posible: invisible donde
+     lo buscarías y presente donde estorba. */
+  if (c.lifecycle_stage === 'descalificado') return 'no_interesados';
+  if (c.lifecycle_stage === 'rezagado') return 'rezagados';
+  // Cliente y dado de baja NO son leads: viven en Clientes. Sin pestaña.
   if (!ABIERTOS.includes(c.lifecycle_stage)) return null;
   // "No le interesa" es decisión humana explícita (calificacion=no_califica →
   // estatus descartado): gana sobre todo lo demás. NO va a Rezagados a
@@ -397,7 +405,14 @@ export default function LeadsTab() {
     // el dueño— no abren renglón propio: son de ese negocio, no leads aparte.
     // Viven en la tarjeta Personas de su ficha.
     let r = (rows || []).filter((c: any) => !c.contacto_de);
-    if (etapa !== 'todos') r = r.filter((c: any) => pestanaDe(c) === etapa);
+    /* «Todos» son todos los LEADS VIVOS, no todos los registros. Antes no
+       filtraba nada: metía los 142 clientes, los 24 dados de baja y los
+       descalificados en la misma lista que la bandeja del día. Un cajón de
+       sastre no es una vista. Los descartados tienen su propia pestaña, que es
+       donde se les busca cuando se les busca. */
+    r = etapa === 'todos'
+      ? r.filter((c: any) => { const t = pestanaDe(c); return t !== null && t !== 'no_interesados'; })
+      : r.filter((c: any) => pestanaDe(c) === etapa);
     if (origen !== 'todo') r = r.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
@@ -576,7 +591,10 @@ export default function LeadsTab() {
     if (origen !== 'todo') base = base.filter((c: any) => (origenDeRegistro(c) || 'sin_definir') === origen);
     const t = busca.trim().toLowerCase();
     if (t) base = base.filter((c: any) => `${c.nombre || ''} ${c.apellido || ''} ${c.email || ''} ${c.companies?.nombre || ''}`.toLowerCase().includes(t));
-    const cae = (c: any, k: string) => k === 'todos' ? true : pestanaDe(c) === k;
+    const cae = (c: any, k: string) => {
+      const t = pestanaDe(c);
+      return k === 'todos' ? (t !== null && t !== 'no_interesados') : t === k;
+    };
     const out: Record<string, number> = {};
     for (const v of VISTAS) out[v.v] = base.filter((c: any) => cae(c, v.v)).length;
     return out;
@@ -1906,8 +1924,16 @@ export default function LeadsTab() {
                 <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Etapa del ciclo de vida · {nombre}</div>
                 <div style={{ fontSize: '0.74rem', color: '#8a8a92', marginTop: 4 }}>Quién ES en la relación. La mueves tú (o una regla, como agendar → Oportunidad).</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 14 }}>
+                  {/* Descalificar mueve las DOS cosas a la vez. Antes solo
+                      cambiaba la etapa, así que el lead quedaba «Descalificado»
+                      con la pastilla en «nuevo»: dos campos contándose
+                      historias distintas del mismo lead, y todo lo que enruta
+                      por estatus —bandejas, avisos, contadores— seguía
+                      tratándolo como si acabara de entrar. */}
                   {etapasCat.map(e2 => (
-                    <button key={e2.id} onClick={() => put({ lifecycle_stage: e2.id })} style={btnOp(c.lifecycle_stage === e2.id, e2.bg, e2.fg)}>
+                    <button key={e2.id} onClick={() => put(e2.id === 'descalificado'
+                      ? { lifecycle_stage: e2.id, estatus_lead: 'descartado' }
+                      : { lifecycle_stage: e2.id })} style={btnOp(c.lifecycle_stage === e2.id, e2.bg, e2.fg)}>
                       {(e2 as any).emoji && (e2 as any).emoji !== '·' ? (e2 as any).emoji + ' ' : ''}{e2.label}
                     </button>
                   ))}
