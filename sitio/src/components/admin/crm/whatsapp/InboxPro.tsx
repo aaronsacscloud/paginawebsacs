@@ -9,6 +9,7 @@ import { S, Aviso } from '../email/ui';
 import Cargando from '../ui/Cargando';
 import { EsqueletoChat, EsqueletoLista, EsqueletoPanel } from './Esqueletos';
 import ActionSheet from '../ui/ActionSheet';
+import FilaDeslizable from '../ui/FilaDeslizable';
 import { useJalarParaRefrescar } from '../../../../lib/ui/jalarParaRefrescar';
 import JalarIndicador from '../ui/JalarIndicador';
 import Sheet from '../ui/Sheet';
@@ -843,7 +844,21 @@ export default function InboxPro() {
                 ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8f8d98" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 : (ws.length >= 2 ? ws[0][0] + ws[1][0] : String(nom).slice(0, 2)).toUpperCase();
               return (
-                <div key={c.id} className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
+                <FilaDeslizable key={c.id}
+                  izquierda={c.wa_id && c.estado_crm !== 'resuelta' ? {
+                    etiqueta: 'Resuelta', color: '#1E8A63', fondo: '#EAF8F2',
+                    onAccion: async () => {
+                      // Se manda 4 s después del gesto (el componente sostiene
+                      // el «Deshacer»). Si el usuario se arrepiente, esto no
+                      // llega a correr.
+                      await fetch('/api/crm/whatsapp/hilo', {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: c.wa_id, estado_crm: 'resuelta' }),
+                      }).catch(() => {});
+                      cargarLista(filtrosRef.current);
+                    },
+                  } : undefined}>
+                <div className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
                   <div className="m-ini">{ini}</div>
                   <div className="m-tx">
                     {/* El NOMBRE solo. Antes iba "Nombre · Empresa" en el mismo
@@ -900,6 +915,7 @@ export default function InboxPro() {
                     {esperaRespuesta(c) && <span className="m-pend" title="Espera tu respuesta" />}
                   </div>
                 </div>
+                </FilaDeslizable>
               );
             };
             return (
