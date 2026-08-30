@@ -1374,6 +1374,17 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .wa-hilo-m [style*="border: 1px solid rgb(229, 231, 235)"] { background: #1d1d24 !important; border-color: #26262e !important; }
       [data-crm-dark="1"] .wa-hilo-m textarea, [data-crm-dark="1"] .wa-hilo-m input[type="text"] { background: transparent !important; color: #F2F1F7 !important; }
       [data-crm-dark="1"] .wa-hilo-m [style*="border-bottom: 1px solid rgb(243, 244, 246)"] { border-bottom-color: #26262e !important; }
+      /* Separadores del popover, POR CLASE y no por cadena de estilo.
+         Medido: un elemento con border:'none' + borderBottom se serializa en
+         LONGHAND —border-width: medium medium 1px; border-style: none none
+         solid; border-color: …— así que la subcadena "border-bottom: 1px
+         solid rgb(…)" nunca aparece en el atributo y TODA esa familia de
+         reglas falla sin avisar. Pasaba justo aquí: las filas de snippets
+         salían separadas por rayas casi blancas (g50 = #F9FAFB) sobre el
+         panel oscuro. Apuntar a la clase no depende de la serialización. */
+      [data-crm-dark="1"] .wa-pop button, [data-crm-dark="1"] .wa-pop > div {
+        border-color: #26262e !important;
+      }
       /* El divisor de la barra de herramientas del composer se quedó con el
          gris claro: en oscuro era una raya casi blanca cruzando el composer. */
       [data-crm-dark="1"] .wa-hilo-m [style*="border-top: 1px solid rgb(243, 244, 246)"] { border-top-color: #26262e !important; }
@@ -1883,6 +1894,17 @@ const CRM_MOBILE_CSS = `
        herramientas, el CTA de plantilla y los atajos. La regla de 36 los dejaba
        por debajo del mínimo aunque el componente pidiera 44. */
     .m-tabin .wa-barra button { min-height: 44px !important; min-width: 44px !important; }
+    /* Los popovers del composer (snippets, adjuntar, emoji, variables, IA…)
+       se anclan bajo el icono que los abre con un left calculado para
+       escritorio. En 390 px ese left saca la mitad del popup de la pantalla:
+       el de snippets, con 320 de ancho, terminaba en 395 —y no hay scroll
+       lateral que lo rescate, así que su borde derecho era inalcanzable—.
+       Aquí no hace falta apuntar a nada: se le da el ancho del composer, que
+       es además lo que se espera de un panel en el teléfono. Poner right:0 y
+       left:0 con width:auto gana sobre el width inline sin tocar el JS. */
+    .m-tabin .wa-pop {
+      left: 0 !important; right: 0 !important; width: auto !important; max-width: none !important;
+    }
     .m-tabin .wa-cerrada button { min-height: 44px !important; }
     .cs-modal-close { min-width: 40px !important; min-height: 40px !important; box-sizing: border-box !important; }
     /* Action-links de fila (el "Ver" de cotizaciones ×25): son botones con

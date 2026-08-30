@@ -13,6 +13,7 @@ import { optimizarImagen } from '../../../../lib/crm/imagen';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario, IcoCamara } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
+import { marcarReciente, ordenarPorReciente, cuantosRecientes } from '../../../../lib/crm/recientes';
 
 type Modo = 'wa' | 'correo' | 'nota';
 type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar';
@@ -42,6 +43,10 @@ const IA_ACCIONES = [
   { id: 'ortografia', l: 'Corregir ortografía y gramática' },
   { id: 'simplificar', l: 'Simplificar lenguaje' },
 ];
+
+/* Estos popovers los monta media pantalla y no reciben `movil` por props; se
+   le pregunta al aparato. Sirve para NO levantar el teclado al abrirlos. */
+const esTactil = () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches;
 
 const LIMITES: Record<string, number> = { image: 5, video: 16, audio: 16, document: 100 };  // MB
 const claseDe = (mime: string) => mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document';
@@ -512,6 +517,46 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 que se viene a leer, y la barra de herramientas ocupaba un
                 tercio de la pantalla sin que nadie la estuviera usando. Al
                 tocar la caja, crece y aparecen las herramientas. */}
+            {/* ══ EN REPOSO: lo que NO necesita que escribas, a un solo toque ══
+                Antes, con el composer cerrado no había ni un icono: para mandar
+                una foto había que enfocar el campo (abriendo el teclado), tocar
+                el clip, elegir "cámara"… tres pasos y un teclado de por medio
+                para algo que no lleva texto.
+                Estas cuatro acciones se completan SIN escribir una letra, así
+                que viven arriba: foto, adjuntar, plantilla y voz. Lo demás —IA,
+                emoji, variables, interactivos— sí modifica el texto y aparece
+                cuando hay texto que modificar. */}
+            {/* `relative` en la barra a propósito: los popups se anclan con
+                position:absolute y sin eso se colgarían de un ancestro más
+                arriba, apareciendo lejos del icono que los abrió. */}
+            {!grabando && !bloqueadoWa && movil && !escribiendoMovil && !texto && (
+              <div className="wa-barra" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative' }}>
+                <button title="Enviar una foto" aria-label="Enviar una foto" style={toolBtn(false)}
+                  onClick={() => camaraRef.current?.click()}><IcoCamara size={19} /></button>
+                {modo === 'wa' && <button title="Adjuntar" aria-label="Adjuntar" style={toolBtn(pop === 'adjuntar')}
+                  onClick={() => setPop(pop === 'adjuntar' ? null : 'adjuntar')}><IcoClip size={19} /></button>}
+                {modo === 'wa' && <button title="Plantillas" aria-label="Plantillas" style={toolBtn(false)}
+                  onClick={() => setModalPlantilla(true)}><IcoDoc size={19} /></button>}
+                {/* El snippet TAMPOCO se escribe: se elige y ya queda el texto
+                    puesto. Estaba dos toques más adentro —abrir el teclado,
+                    tocar «Más», tocar el marcador—, que es todo lo contrario a
+                    lo que sirve: la respuesta guardada existe justamente para
+                    no teclear. */}
+                {snippets.length > 0 && <button title="Snippets" aria-label="Snippets" style={toolBtn(pop === 'snippets')}
+                  onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={19} /></button>}
+                <button title="Grabar nota de voz" aria-label="Grabar nota de voz" style={toolBtn(false)}
+                  onClick={iniciar}><IcoMic size={19} /></button>
+                {pop === 'adjuntar' && (
+                  <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
+                    onCamara={() => { setPop(null); camaraRef.current?.click(); }}
+                    onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')} />
+                )}
+                {pop === 'snippets' && (
+                  <PopSnippets snippets={snippets} resolver={resolver} onElegir={usarSnippet}
+                    onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
+                )}
+              </div>
+            )}
             {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !texto) ? null : (
               <div className="wa-barra" onPointerDown={() => { tocandoBarra.current = true; setTimeout(() => { tocandoBarra.current = false; }, 600); }}
                 style={{ display: 'flex', alignItems: 'center', gap: movil ? 4 : 2, padding: '6px 10px', borderTop: `1px solid ${C.g100}`, position: 'relative',
@@ -663,7 +708,7 @@ function PopIA({ onAccion }: { onAccion: (instr: string) => void }) {
   const instrDe = (a: any, sub?: string) =>
     a.id === 'tono' ? `Cambia el tono a ${sub}` : a.id === 'traducir' ? `Traduce al ${sub}` : a.id === 'ortografia' ? 'Corrige ortografía y gramática' : 'Simplifica el lenguaje';
   return (
-    <div style={popup(288, 0)}>
+    <div className="wa-pop" style={popup(288, 0)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 12px', borderBottom: `1px solid ${C.g100}` }}>
         <IcoVarita size={15} style={{ color: C.moradoTinta }} /><b style={{ fontSize: 13 }}>AI Prompts</b>
       </div>
@@ -705,7 +750,7 @@ function PopEmoji({ onElegir, left }: { onElegir: (e: string) => void; left: num
   const c = EMOJI_CATS.find(x => x.id === cat)!;
   const lista = q ? EMOJI_CATS.flatMap(x => x.lista).filter((e, i, a) => a.indexOf(e) === i).slice(0, 60) : c.lista;
   return (
-    <div style={popup(320, left)}>
+    <div className="wa-pop" style={popup(320, left)}>
       <div style={{ display: 'flex', borderBottom: `1px solid ${C.g100}` }}>
         {EMOJI_CATS.map(x => (
           <button key={x.id} onClick={() => { setCat(x.id); setQ(''); }} title={x.nombre}
@@ -733,7 +778,7 @@ function PopEmoji({ onElegir, left }: { onElegir: (e: string) => void; left: num
 
 function PopVariables({ onElegir, left }: { onElegir: (k: string) => void; left: number }) {
   return (
-    <div style={popup(256, left)}>
+    <div className="wa-pop" style={popup(256, left)}>
       <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.g100}`, fontSize: 13, fontWeight: 700 }}>Variables del contacto</div>
       {VARIABLES.map(v => (
         <button key={v.key} onClick={() => onElegir(v.key)}
@@ -750,11 +795,16 @@ function PopVariables({ onElegir, left }: { onElegir: (k: string) => void; left:
 function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[]; resolver: (t: string) => string; onElegir: (s: any) => void; onNuevo: () => void }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('todos');
+  const tactil = esTactil();
   const cats = [...new Set(snippets.map(s => s.categoria).filter(Boolean))];
-  const lista = snippets.filter(s => (cat === 'todos' || s.categoria === cat) &&
+  const filtrados = snippets.filter(s => (cat === 'todos' || s.categoria === cat) &&
     (!q || `${s.titulo || ''} ${s.atajo} ${s.texto}`.toLowerCase().includes(q.toLowerCase())));
+  // Los últimos que usé, arriba. Al BUSCAR no: ahí el orden lo manda lo que
+  // escribí, y reacomodar bajo el dedo mientras se teclea marea.
+  const lista = q ? filtrados : ordenarPorReciente('snippets', filtrados, s => s.id);
+  const nRec = q ? 0 : Math.min(cuantosRecientes('snippets', filtrados, s => s.id), lista.length);
   return (
-    <div style={popup(320, 88)}>
+    <div className="wa-pop" style={popup(320, 88)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 12px', borderBottom: `1px solid ${C.g100}` }}>
         <IcoMarcador size={15} style={{ color: C.moradoTinta }} /><b style={{ fontSize: 13 }}>Snippets</b>
         <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '1px 7px' }}>{snippets.length}</span>
@@ -767,15 +817,27 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
           ))}
         </div>
       )}
+      {/* En el teléfono el buscador NO se enfoca solo: levantar el teclado al
+          abrir tapa la lista, que es exactamente lo que se venía a mirar, y
+          elegir un snippet no requiere escribir nada. En escritorio sí, que es
+          donde de verdad se busca tecleando. */}
       <div style={{ padding: '8px 10px' }}>
-        <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar snippet…"
-          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit' }} />
+        <input autoFocus={!tactil} value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar snippet…"
+          style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: tactil ? '9px 11px' : '6px 8px', fontSize: tactil ? 16 : 12, fontFamily: 'inherit' }} />
       </div>
-      <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+      <div style={{ maxHeight: tactil ? '46vh' : 260, overflowY: 'auto' }}>
         {!lista.length && <div style={{ padding: 12, fontSize: 12, color: C.g400 }}>{snippets.length ? 'No se encontraron snippets' : 'No hay snippets configurados'}</div>}
-        {lista.map(s => (
-          <button key={s.id} onClick={() => onElegir(s)}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 12px', borderBottom: `1px solid ${C.g50}` }}
+        {lista.map((s, i) => (
+          <div key={s.id}>
+            {/* La raya solo aparece si de verdad hay dos grupos: sin historial
+                todavía, o cuando ya se usaron todos, sobra y solo estorba. */}
+            {!q && nRec > 0 && (i === 0 || i === nRec) && lista.length > nRec && (
+              <div style={{ padding: '7px 12px 3px', fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: C.g400 }}>
+                {i === 0 ? 'Recientes' : 'Todos'}
+              </div>
+            )}
+          <button onClick={() => { marcarReciente('snippets', s.id); onElegir(s); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: tactil ? '12px' : '9px 12px', borderBottom: `1px solid ${C.g50}` }}
             onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <b style={{ fontSize: 13, color: C.g900 }}>{s.titulo || s.atajo}</b>
@@ -785,11 +847,15 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
             </span>
             <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 12, color: C.g500, marginTop: 2, lineHeight: 1.45 }}>{resolver(s.texto)}</span>
           </button>
+          </div>
         ))}
       </div>
-      <div style={{ padding: '8px 12px', borderTop: `1px solid ${C.g100}`, display: 'flex', justifyContent: 'space-between' }}>
-        <button onClick={onNuevo} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, color: C.moradoTinta }}>+ Nuevo snippet</button>
-        <a href="/admin/crm?tab=wa-config&sec=snippets" style={{ fontSize: 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none' }}>Gestionar snippets →</a>
+      {/* alignItems: los dos textos caían en líneas base distintas —el <a> no
+          hereda la caja del <button>— y el pie se veía chueco. Y con 11 px sin
+          alto mínimo, en el teléfono eran dos blancos de menos de 20 px. */}
+      <div style={{ padding: '8px 12px', borderTop: `1px solid ${C.g100}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+        <button onClick={onNuevo} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: tactil ? 12 : 11, fontWeight: 700, color: C.moradoTinta, minHeight: tactil ? 40 : undefined, padding: 0, display: 'inline-flex', alignItems: 'center' }}>+ Nuevo snippet</button>
+        <a href="/admin/crm?tab=wa-config&sec=snippets" style={{ fontSize: tactil ? 12 : 11, fontWeight: 700, color: C.emerald700, textDecoration: 'none', minHeight: tactil ? 40 : undefined, display: 'inline-flex', alignItems: 'center' }}>Gestionar snippets →</a>
       </div>
     </div>
   );
@@ -804,7 +870,7 @@ function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar, onCamara 
     </button>
   );
   return (
-    <div style={popup(224, 116)}>
+    <div className="wa-pop" style={popup(224, 116)}>
       {/* En el teléfono, la foto del producto o del comprobante se toma en el
           momento: la cámara va primero y el explorador después. */}
       {onCamara && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCamara size={15} /></span>, 'Tomar una foto', 'Abre la cámara', onCamara)}
@@ -1000,13 +1066,21 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
   }, []);
   const idiomas = [...new Set((lista || []).map(p => p.idioma))];
   const cats = [...new Set((lista || []).map(p => p.categoria))];
-  const visibles = (lista || []).filter(p => (tab === 'todas' || p.status === 'APPROVED') && (!idioma || p.idioma === idioma) && (!cat || p.categoria === cat)
+  const coinciden = (lista || []).filter(p => (tab === 'todas' || p.status === 'APPROVED') && (!idioma || p.idioma === idioma) && (!cat || p.categoria === cat)
     && (!q || `${p.nombre} ${p.cuerpo}`.toLowerCase().includes(q.toLowerCase())));
+  // Las últimas que mandé, arriba. Una cuenta con 30 plantillas aprobadas usa
+  // tres; sin esto había que buscarlas escribiendo cada vez. Al BUSCAR se
+  // respeta el orden natural: reacomodar mientras se teclea confunde.
+  const visibles = q ? coinciden : ordenarPorReciente('plantillas', coinciden, p => p.nombre);
+  const nRecPl = q ? 0 : Math.min(cuantosRecientes('plantillas', coinciden, p => p.nombre), visibles.length);
   const enviar = async () => {
     setOcupado(true); setError('');
     const r = await api.enviarPlantilla({ nombre: sel.nombre, idioma: sel.idioma, params, header_media_url: headerUrl || undefined, otp: otp || undefined }, telefono);
     setOcupado(false);
     if (r?.error) { setError(r.error_detalle ? `${r.error_detalle.titulo}. ${r.error_detalle.que_hacer}` : r.error); return; }
+    // Reciente = la que SÍ salió. Marcarla al seleccionarla llenaría la lista
+    // de plantillas que se abrieron, se leyeron y se descartaron.
+    marcarReciente('plantillas', sel.nombre);
     onClose();
   };
   return (
@@ -1038,7 +1112,12 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
             media palabra y no había forma de tocarlo. El buscador se queda con
             todo el primer renglón y los dos selectores bajan al siguiente. */}
         <div style={{ display: 'flex', gap: 8, padding: '10px 20px', flexWrap: 'wrap' }}>
-          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar plantilla…" style={{ flex: movilPl ? '1 0 100%' : 1, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '10px 12px' : '7px 10px', fontSize: movilPl ? 16 : 12, fontFamily: 'inherit' }} />
+          {/* SIN autoFocus en el teléfono. Enfocar el buscador al abrir levanta
+              el teclado, que se come media pantalla y tapa justo la lista que
+              se venía a mirar: para elegir una plantilla de la lista había que
+              cerrar el teclado primero. En escritorio no estorba y ahí se
+              queda, porque ahí sí se busca escribiendo. */}
+          <input autoFocus={!movilPl} value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar plantilla…" style={{ flex: movilPl ? '1 0 100%' : 1, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '10px 12px' : '7px 10px', fontSize: movilPl ? 16 : 12, fontFamily: 'inherit' }} />
           <select value={idioma} onChange={e => setIdioma(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Idioma</option>{idiomas.map(i => <option key={i} value={i}>{i}</option>)}</select>
           <select value={cat} onChange={e => setCat(e.target.value)} style={{ flex: movilPl ? 1 : undefined, minWidth: 0, border: `1px solid ${C.g200}`, borderRadius: 8, padding: movilPl ? '9px 10px' : '6px 8px', fontSize: movilPl ? 16 : 12, minHeight: movilPl ? 40 : undefined, fontFamily: 'inherit' }}><option value="">Categoría</option>{cats.map(c => <option key={c} value={c}>{c}</option>)}</select>
         </div>
@@ -1046,11 +1125,18 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
         <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, padding: '0 12px 12px' }}>
           {lista === null && <div style={{ padding: 16, fontSize: 12, color: C.g400 }}>Cargando plantillas…</div>}
           {lista !== null && !visibles.length && <div style={{ padding: 16, fontSize: 12, color: C.g400 }}>No se encontraron plantillas.</div>}
-          {visibles.map(p => {
+          {visibles.map((p, i) => {
             const ok = p.status === 'APPROVED';
             return (
-              <button key={p.id} disabled={!ok} onClick={() => { setSel(p); setHeaderUrl(p.header_media_url || ''); setOtp(''); setParams(Array.from({ length: p.variables || 0 }, (_, i) => valorVariable((p.variables_map || [])[i] || '', contacto, api.yo?.()))); }}
-                style={{ display: 'block', width: '100%', textAlign: 'left', cursor: ok ? 'pointer' : 'not-allowed', fontFamily: 'inherit', borderRadius: 10, padding: '9px 12px', opacity: ok ? 1 : .5, border: sel?.id === p.id ? `2px solid ${C.morado}` : `1px solid ${C.g200}`, background: sel?.id === p.id ? C.moradoSuave : '#fff', marginBottom: 6 }}>
+              <div key={p.id}>
+              {/* Solo si de verdad hay dos grupos que separar. */}
+              {!q && nRecPl > 0 && (i === 0 || i === nRecPl) && visibles.length > nRecPl && (
+                <div style={{ padding: '8px 6px 4px', fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: C.g400 }}>
+                  {i === 0 ? 'Recientes' : 'Todas'}
+                </div>
+              )}
+              <button disabled={!ok} onClick={() => { setSel(p); setHeaderUrl(p.header_media_url || ''); setOtp(''); setParams(Array.from({ length: p.variables || 0 }, (_, i) => valorVariable((p.variables_map || [])[i] || '', contacto, api.yo?.()))); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', cursor: ok ? 'pointer' : 'not-allowed', fontFamily: 'inherit', borderRadius: 10, padding: movilPl ? '12px' : '9px 12px', opacity: ok ? 1 : .5, border: sel?.id === p.id ? `2px solid ${C.morado}` : `1px solid ${C.g200}`, background: sel?.id === p.id ? C.moradoSuave : '#fff', marginBottom: 6 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <b style={{ fontSize: 13 }}>{p.nombre}</b>
                   <span style={{ fontSize: 10, color: C.g400 }}>{p.idioma} ·</span>
@@ -1059,6 +1145,7 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
                 </span>
                 <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 12, color: C.g500, marginTop: 3 }}>{p.cuerpo}</span>
               </button>
+              </div>
             );
           })}
           {sel && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(String(sel.header_tipo || '').toUpperCase()) && (
@@ -1111,7 +1198,7 @@ function PopCotizaciones({ waId, onElegir }: { waId?: string | null; onElegir: (
   const money = (n: any, m?: string) => `$${Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}${m && m !== 'MXN' ? ` ${m}` : ''}`;
   const est: Record<string, string> = { borrador: 'Borrador', enviada: 'Enviada', aceptada: 'Aceptada', rechazada: 'Rechazada', pagada: 'Pagada', vencida: 'Vencida' };
   return (
-    <div style={popup(340, 150)}>
+    <div className="wa-pop" style={popup(340, 150)}>
       <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Cotizaciones de esta cuenta</div>
       {lista === null && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>Cargando…</div>}
       {lista?.length === 0 && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>No hay cotizaciones. Créala desde el panel (Acciones → Nueva cotización).</div>}
@@ -1141,7 +1228,7 @@ function PopAgendar({ contacto, telefono, onElegir }: { contacto?: any; telefono
   if (contacto?.empresa) qs.set('empresa', contacto.empresa);
   qs.set('utm_source', 'whatsapp'); qs.set('utm_medium', 'inbox');
   return (
-    <div style={popup(320, 150)}>
+    <div className="wa-pop" style={popup(320, 150)}>
       <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>Agendar · el link ya lleva sus datos</div>
       {tipos === null && <div style={{ padding: '6px 12px 12px', fontSize: 12, color: C.g400 }}>Cargando…</div>}
       {(tipos || []).map(t => (

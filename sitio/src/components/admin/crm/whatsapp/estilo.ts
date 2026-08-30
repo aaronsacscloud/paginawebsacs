@@ -44,7 +44,19 @@ export const toolBtn = (activo?: boolean, accent?: boolean): CSSProperties => ({
   color: (activo || accent) ? C.moradoTinta : C.g400, fontFamily: 'inherit', flexShrink: 0,
 });
 
-/** Popup flotante del composer (bottom-full). */
+/**
+ * Popup flotante del composer (bottom-full).
+ *
+ * El `left` está pensado para escritorio: dice bajo qué icono de la barra cae
+ * el popup. En 390 px eso se rompe solo —snippets abría en left 88 con 320 de
+ * ancho y su borde derecho caía en 395, fuera de la pantalla y sin scroll que
+ * lo alcanzara—. En el teléfono no se intenta corregir el `left`: se le da al
+ * popup TODO el ancho del composer, con la clase `wa-pop` (la regla vive junto
+ * al resto del móvil, en CrmDashboard). Recortar el left con calc(100vw…) no
+ * funciona —el offset se mide contra la barra, no contra la pantalla, así que
+ * el número queda corrido por el padding: medido, seguía saliéndose 5 px—.
+ * Quien use esta función DEBE poner también className="wa-pop".
+ */
 export const popup = (w: number, left = 0): CSSProperties => ({
   position: 'absolute', bottom: '100%', marginBottom: 8, left, width: w, zIndex: 950,
   background: '#fff', border: `1px solid ${C.g200}`, borderRadius: 12,
