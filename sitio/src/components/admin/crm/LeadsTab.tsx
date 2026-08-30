@@ -449,7 +449,9 @@ export default function LeadsTab() {
      que los de nuevos/contactados/calificados/rezagados. O sea que ahí la
      columna solo puede decir "—". Es el mismo criterio que ya se aplicó a
      Etapa y Estatus, que estaba a medias. */
-  useEffect(() => { setSel(new Set()); }, [etapa, estatusF, busca]);
+  /* Con cualquier cambio de filtro. Faltaban los avanzados (conds/lógica),
+     reunión y pausa: aplicar uno dejaba marcada gente que ya no se veía. */
+  useEffect(() => { setSel(new Set()); }, [etapa, estatusF, busca, conds, logicaF, reunionF, pausaF]);
   const verReunion = !['nuevos', 'contactados', 'calificados', 'rezagados'].includes(etapa);
   /* Llamadas se decide con los datos a la vista, no con la pestaña: si en esta
      vista nadie ha llamado a nadie, la columna es una fila de guiones. */
@@ -1446,10 +1448,21 @@ export default function LeadsTab() {
                   {/* El rótulo ordena. Antes el único control de orden eran dos
                       opciones de un select del toolbar; con 333 filas, ordenar
                       es lo primero que hace cualquiera. */}
-                  <th scope="col" className="fija1 ord" aria-sort={orden === 'reciente' ? 'descending' : 'ascending'}
-                    onClick={() => setOrden(orden === 'reciente' ? 'frio' : 'reciente')}
-                    title="Ordenar por cuándo llegó / más fríos primero"
-                    style={{ ...S.th, width: 108 }}>Llegó<span className="fl" aria-hidden="true">{orden === 'reciente' ? '↓' : '↑'}</span></th>
+                  {/* Ordena, y con el teclado también: era un th con onClick,
+                      o sea solo de ratón — el único control de orden de la
+                      tabla, inalcanzable para quien no usa mouse.
+                      Y la flecha se calla cuando hay grupos: ahí las filas NO
+                      van por fecha (lo atorado sube), así que un ↓ diciendo
+                      "lo más nuevo arriba" sobre una lista que empieza en
+                      19/ago es una flecha que miente. */}
+                  <th scope="col" className="fija1 ord" aria-sort={rotuloAntes.size ? 'none' : (orden === 'reciente' ? 'descending' : 'ascending')}
+                    style={{ ...S.th, width: 108, padding: 0 }}>
+                    <button type="button" onClick={() => setOrden(orden === 'reciente' ? 'frio' : 'reciente')}
+                      title={rotuloAntes.size ? 'Ordenado por prioridad: lo atorado primero. Cambia a más fríos primero' : 'Ordenar por cuándo llegó / más fríos primero'}
+                      style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer', boxSizing: 'border-box' }}>
+                      Llegó<span className="fl" aria-hidden="true">{rotuloAntes.size ? '' : orden === 'reciente' ? '↓' : '↑'}</span>
+                    </button>
+                  </th>
                   <th scope="col" className="fija2" style={{ ...S.th, width: 190 }}>Lead</th>
                   <th scope="col" style={{ ...S.th, width: 186 }}>Empresa</th>
                   <th scope="col" style={{ ...S.th, width: 160 }}>Correo</th>
@@ -1468,8 +1481,8 @@ export default function LeadsTab() {
                       pestaña cien veces — y encima con pastillas de color, que
                       son lo que más pesa en la fila. Se siguen pudiendo cambiar
                       desde el ⋮ y desde la ficha. */}
-                  {verEtapa && <th style={{ ...S.th, width: 96 }}>Etapa</th>}
-                  {verEstatus && <th style={{ ...S.th, width: 116 }}>Estatus</th>}
+                  {verEtapa && <th scope="col" style={{ ...S.th, width: 96 }}>Etapa</th>}
+                  {verEstatus && <th scope="col" style={{ ...S.th, width: 116 }}>Estatus</th>}
                   {verReunion && <th scope="col" style={{ ...S.th, width: 96 }}>Reunión</th>}
                   {verLlamadas && <th scope="col" style={{ ...S.th, width: 92 }}>Llamadas</th>}
                   <th scope="col" className="derecha" style={{ ...S.th, width: 92 }}><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Acciones</span></th>
@@ -1499,7 +1512,7 @@ export default function LeadsTab() {
                           <td colSpan={nCols} style={{ padding: 0, borderBottom: '1px solid #ebe9f0', background: urge ? '#FDF6F5' : '#FBFAFF' }}>
                             <div style={{ position: 'sticky', left: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', width: 'fit-content' }}>
                               <span style={{ fontSize: '0.63rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: urge ? '#A8443D' : '#6B6A76' }}>{g.t}</span>
-                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: urge ? '#A8443D' : '#8a8896', background: urge ? '#F7E4E2' : '#eeecf4', borderRadius: 20, padding: '1px 7px' }}>{g.n}</span>
+                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: urge ? '#A8443D' : '#5f5d6b', background: urge ? '#F7E4E2' : '#eeecf4', borderRadius: 20, padding: '1px 7px' }}>{g.n}</span>
                             </div>
                           </td>
                         </tr>
@@ -1770,12 +1783,12 @@ export default function LeadsTab() {
                             </svg>
                           </a>
                         )}
-                        <button aria-label="Acciones"
+                        <button aria-label={`Acciones de ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
                           onClick={e => {
                             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                             setMenu(menu?.c?.id === c.id ? null : { c, x: r.right, y: r.bottom });
                           }}
-                          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: menu?.c?.id === c.id ? '#f6f4fb' : 'none', color: menu?.c?.id === c.id ? '#5B4BD6' : '#a5a2af', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>⋮</button>
+                          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: menu?.c?.id === c.id ? '#f6f4fb' : 'none', color: menu?.c?.id === c.id ? '#5B4BD6' : '#6B6A76', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>⋮</button>
                       </td>
                     </tr>
                     </Fragment>
@@ -1801,14 +1814,20 @@ export default function LeadsTab() {
                 style={S.btnSel}>Exportar</button>
               <select disabled={aplicando} value="" onChange={async e => {
                 const et = e.target.value; if (!et) return;
-                const cuantos = sel.size;
+                /* Los ids salen de `lista`, NO del Set crudo: si alguien marca
+                   ocho, filtra a dos y cambia la etapa, el Set todavía trae los
+                   ocho y se moverían seis que ya no están en pantalla. Es la
+                   misma fuente que usa Exportar. */
+                const ids = lista.filter((c: any) => sel.has(c.id)).map((c: any) => c.id);
+                const cuantos = ids.length;
+                if (!cuantos) { e.target.value = ''; return; }
                 if (!await confirmar(`¿Mover ${cuantos} ${cuantos === 1 ? 'lead' : 'leads'} a "${(ETAPAS[et] || ETAPAS.lead).l}"?`, { accion: 'Mover', peligro: false })) { e.target.value = ''; return; }
                 setAplicando(true);
                 /* De uno en uno contra el endpoint que ya existe: no hay ruta
                    masiva y no se inventa una para esto. Si alguna falla, se
                    dice — un "listo" que tapa un error es peor que el error. */
                 let fallaron = 0;
-                for (const id of Array.from(sel)) {
+                for (const id of ids) {
                   const r = await fetch('/api/crm/contacts', {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, lifecycle_stage: et }),
@@ -2095,10 +2114,17 @@ export default function LeadsTab() {
         return (
           <>
             <div onClick={() => setMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 300 }} />
-            <div style={{ position: 'fixed', left: izq, top: menu.y + 6, zIndex: 301, width: ancho, background: '#fff', border: '1px solid #eceaf4', borderRadius: 11, boxShadow: '0 12px 34px rgba(40,20,90,.18)', padding: 6 }}>
+            {/* Menú de verdad: se anuncia como menú, Escape lo cierra y el foco
+                entra al primer renglón. Antes se pintaba al final del DOM, así
+                que quien lo abría con el teclado no tenía cómo llegar adentro:
+                un menú que solo existe para el ratón. */}
+            <div role="menu" aria-label={`Acciones de ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
+              ref={el => { if (el) (el.querySelector('button') as HTMLElement | null)?.focus(); }}
+              onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenu(null); } }}
+              style={{ position: 'fixed', left: izq, top: menu.y + 6, zIndex: 301, width: ancho, background: '#fff', border: '1px solid #eceaf4', borderRadius: 11, boxShadow: '0 12px 34px rgba(40,20,90,.18)', padding: 6 }}>
               <div style={{ padding: '7px 12px 8px', borderBottom: '1px solid #f5f4f8', marginBottom: 4 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}</div>
-                <div style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{c.companies?.nombre || 'sin empresa'}</div>
+                <div style={{ fontSize: '0.68rem', color: '#6B6A76' }}>{c.companies?.nombre || 'sin empresa'}</div>
               </div>
               <button style={opcion} onClick={() => { setVerContacto(c.id); setMenu(null); }}>Abrir ficha</button>
               {c.lifecycle_stage === 'lead' && (
