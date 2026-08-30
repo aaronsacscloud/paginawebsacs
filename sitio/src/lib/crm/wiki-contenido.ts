@@ -493,7 +493,10 @@ export const WIKI: PaginaWiki[] = [
 <p>En <b>WhatsApp escribe Fernanda</b>, del equipo. En la sesión consultiva está <b>Andrea</b>, la consultora de moda.</p>
 <p>No es un detalle de firma: separar las voces le da peso a Andrea. Si su nombre contesta también los acuses automáticos de las once de la noche, se gasta antes de llegar a la sesión. Así, cuando aparece, es porque la conversación subió de nivel.</p>
 <div class="w-caja"><span class="w-k">Cómo se ve en la práctica</span><p>El acuse automático y los botones de los correos van a nombre del equipo. Las plantillas invitan así: «<i>te agendo una sesión con Andrea, nuestra consultora — ella acompañó a las marcas de nuestros casos de éxito</i>». Fernanda no es el premio de consolación: es la puerta.</p></div>
-<div class="w-caja w-bad"><span class="w-k">Pendiente</span><p>Dos plantillas aprobadas por Meta todavía dicen Andrea: <code>cadencia_consultora</code> y <code>cadencia_consultora_moda</code>. Cambiarles el cuerpo exige volver a aprobación, así que hay que dar de alta las nuevas y apagar esas dos cuando pasen.</p></div>`,
+<div class="w-caja"><span class="w-k">Las nuevas ya están en Meta</span><p>Meta no deja editar el cuerpo de una plantilla, así que las que decían Andrea no se corrigieron: se dieron de alta las de Fernanda —<code>cadencia_equipo</code> y <code>cadencia_equipo_moda</code>— y la vieja genérica ya se borró.</p>
+<p><code>cadencia_consultora_moda</code> <b>sigue viva a propósito</b>: está dentro de una secuencia, y quitarla antes de que su reemplazo esté aprobado dejaría ese paso mudo. Se apunta la secuencia a la nueva y se borra la vieja, en ese orden.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">Una regla de Meta que cuesta encontrar</span><p>El cuerpo <b>no puede empezar ni terminar con una variable</b>. Si empieza con <code>{{1}}</code>, Meta devuelve un error 100 genérico —«Petición inválida»— que no dice nada hasta que se abre el detalle. Ya costó cuatro rechazos: se le antepone el saludo y listo.</p></div>`,
   },
   {
     id: 'wa-candados', grupo: 'Referencia', titulo: 'Los candados de WhatsApp',
