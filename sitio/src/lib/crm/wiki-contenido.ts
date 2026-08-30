@@ -107,7 +107,22 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Rezagado y Descalificado se ganan, no se deducen</span>
 <p>Los dos describen algo que <b>una persona hizo</b> —intentó y no hubo respuesta; revisó y descartó—, nunca algo que el calendario hizo solo.</p>
 <p>Marcar por antigüedad es la forma más fácil de equivocarse: <b>ya pasó una vez</b>, con 40 leads marcados por edad que hubo que revertir. Un lead de 10 días sin contactar no es un rezagado: <b>es un pendiente</b>.</p>
-<p>Para «viejo pero todavía sin tocar» ya existe el <b>Estatus «Sin tocar»</b>, que el sistema calcula solo. Filtrar por antigüedad es una <b>vista</b>, no una etapa.</p></div>`,
+<p>Para «viejo pero todavía sin tocar» ya existe el <b>Estatus «Sin tocar»</b>, que el sistema calcula solo. Filtrar por antigüedad es una <b>vista</b>, no una etapa.</p></div>
+
+<h3>Lo que recibe mientras está aquí</h3>
+<p>Un rezagado no se abandona: entra a la cadencia <b>«Rezagados · top of mind»</b>, que no persigue —acompaña—. Tres carriles fijos, cada uno con su tipo de contenido y su propio ritmo:</p>
+<table class="w-tab"><thead><tr><th>Día</th><th>Qué recibe</th><th>A qué invita</th></tr></thead><tbody>
+<tr><td><b>Lunes</b></td><td>Un <b>insight</b> de la operación de una marca de moda, con su gráfica o su foto.</td><td>Agendar. Es una conversación de negocio.</td></tr>
+<tr><td><b>Miércoles</b></td><td>Un <b>tip</b> que se hace esa misma semana, sin sistema y sin costo.</td><td>WhatsApp. Es una conversación de operación.</td></tr>
+<tr><td><b>Viernes</b></td><td>Una <b>función</b> de Sacs, con la pantalla real.</td><td>Depende: se cuenta o se muestra.</td></tr>
+</tbody></table>
+
+<h3>Y cuatro WhatsApp, uno al mes</h3>
+<p>Caen en las semanas <b>3, 6, 9 y 12</b>, intercalados entre los correos. Los escribe <b>Fernanda</b>, no Andrea.</p>
+<div class="w-caja"><span class="w-k">Por qué uno al mes y no uno por semana</span><p>WhatsApp no es correo: Meta lo cobra por mensaje, entra al teléfono personal y a la tercera semana seguida de mensajes de marca uno bloquea. Un carril propio de WhatsApp habría disparado uno cada semana; por eso van <b>dentro</b> de los carriles que ya existen, en las posiciones que los dejan caer separados.</p></div>
+<div class="w-caja"><span class="w-k">El último pregunta si le paramos</span><p>En la semana 12 llega un mensaje que ofrece dejar de escribir. No es rendirse: <b>es lo que más respuestas saca</b> de un rezagado, y el que contesta «sigue, me sirve» vale más que diez que nunca dijeron nada.</p></div>
+
+<div class="w-caja"><span class="w-k">Se sale sola en cuanto hay señal</span><p>Si el lead responde, abre varios correos o vuelve al sitio, sale de la cadencia y regresa como <b>lead reciclado</b> — que aparece en el inicio del móvil, porque es el momento más caliente del embudo y no debe quedarse en una nota que solo ve quien ya está adentro.</p></div>`,
   },
   {
     id: 'e-perdido', grupo: 'Las etapas', titulo: '🌙 Perdido',
