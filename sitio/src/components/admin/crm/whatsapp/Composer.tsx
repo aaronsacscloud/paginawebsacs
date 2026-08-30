@@ -13,7 +13,7 @@ import { optimizarImagen } from '../../../../lib/crm/imagen';
 import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario, IcoCamara } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
-import { marcarReciente, ordenarPorReciente, cuantosRecientes } from '../../../../lib/crm/recientes';
+import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } from '../../../../lib/crm/recientes';
 import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
 
 type Modo = 'wa' | 'correo' | 'nota';
@@ -788,7 +788,15 @@ function PopEmoji({ onElegir, left }: { onElegir: (e: string) => void; left: num
   const [cat, setCat] = useState('frecuentes');
   const [q, setQ] = useState('');
   const c = EMOJI_CATS.find(x => x.id === cat)!;
-  const lista = q ? EMOJI_CATS.flatMap(x => x.lista).filter((e, i, a) => a.indexOf(e) === i).slice(0, 60) : c.lista;
+  // «Frecuentes» era una lista FIJA: se llamaba frecuentes y nunca aprendía de
+  // nadie. Ahora son de verdad los últimos que usaste, y la lista de fábrica
+  // solo rellena lo que falta para que la pestaña nunca se vea vacía el primer
+  // día. Se lee al abrir (no en cada tecla) porque toca localStorage.
+  const mios = useMemo(() => (cat === 'frecuentes' ? leerRecientes('emoji') : []), [cat]);
+  const frecuentes = [...mios, ...c.lista.filter(e => !mios.includes(e))];
+  const lista = q
+    ? EMOJI_CATS.flatMap(x => x.lista).filter((e, i, a) => a.indexOf(e) === i).slice(0, 60)
+    : (cat === 'frecuentes' ? frecuentes : c.lista);
   return (
     <div className="wa-pop" style={popup(320, left)}>
       <div style={{ display: 'flex', borderBottom: `1px solid ${C.g100}` }}>
@@ -807,7 +815,7 @@ function PopEmoji({ onElegir, left }: { onElegir: (e: string) => void; left: num
       <div style={{ padding: '6px 10px 2px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>{q ? 'Resultados' : c.nombre}</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 2, padding: '0 10px 10px', maxHeight: 200, overflowY: 'auto' }}>
         {lista.map((e, i) => (
-          <button key={`${e}-${i}`} onClick={() => onElegir(e)}
+          <button key={`${e}-${i}`} onClick={() => { marcarReciente('emoji', e, 16); onElegir(e); }}
             style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, borderRadius: 6 }}
             onMouseEnter={ev => (ev.currentTarget.style.background = C.g100)} onMouseLeave={ev => (ev.currentTarget.style.background = 'none')}>{e}</button>
         ))}

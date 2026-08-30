@@ -17,7 +17,7 @@
  * orden de siempre — nunca revienta la lista por no poder recordar.
  */
 
-const TOPE = 8;
+const TOPE = 8;   // por omisión; los emojis piden más (caben dos renglones)
 
 const leer = (clave: string): string[] => {
   try {
@@ -28,11 +28,11 @@ const leer = (clave: string): string[] => {
 };
 
 /** Lo pone al frente y recorta. Llamarlo AL ELEGIR, no al mostrar. */
-export function marcarReciente(clave: string, id: string | number | null | undefined) {
+export function marcarReciente(clave: string, id: string | number | null | undefined, tope = TOPE) {
   if (id === null || id === undefined || id === '') return;
   try {
     const v = String(id);
-    const lista = [v, ...leer(clave).filter(x => x !== v)].slice(0, TOPE);
+    const lista = [v, ...leer(clave).filter(x => x !== v)].slice(0, tope);
     localStorage.setItem(`rec:${clave}`, JSON.stringify(lista));
   } catch { /* sin memoria: se queda el orden natural */ }
 }
@@ -54,6 +54,9 @@ export function ordenarPorReciente<T>(clave: string, items: T[], idDe: (x: T) =>
   arriba.sort((a, b) => (pos.get(String(idDe(a)))! - pos.get(String(idDe(b)))!));
   return [...arriba, ...resto];
 }
+
+/** Los ids recordados, del más reciente al más viejo. Para listas propias. */
+export function leerRecientes(clave: string): string[] { return leer(clave); }
 
 /** Cuántos de la lista son "recientes" — para dibujar la separación. */
 export function cuantosRecientes<T>(clave: string, items: T[], idDe: (x: T) => string | number | null | undefined): number {
