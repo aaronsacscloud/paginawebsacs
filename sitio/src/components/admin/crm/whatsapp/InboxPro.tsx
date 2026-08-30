@@ -86,7 +86,10 @@ export default function InboxPro() {
   const armarQS = useCallback((f: Filtros) => {
     const p = new URLSearchParams();
     p.set('filtro', mostrar === 'pospuestas' ? 'pospuestas' : f.filtro);
-    if (f.etapa) p.set('etapa', f.etapa);
+    // La vista «Descalificados» ES un filtro de ciclo: manda sobre el que
+    // hubiera puesto el menú, porque se entró a propósito a verlos.
+    if (mostrar === 'descalificados') p.set('etapa', 'descalificado');
+    else if (f.etapa) p.set('etapa', f.etapa);
     if (f.search) p.set('search', f.search);
     if (mostrar === 'abiertas') p.set('estado', 'abierta');
     if (mostrar === 'resueltas') p.set('estado', 'resuelta');
@@ -1050,6 +1053,12 @@ export default function InboxPro() {
                         const ETAPAS: [string, string][] = [
                           ['lead', 'Leads'], ['lead_calificado', 'Calificados'], ['oportunidad', 'Oportunidades'],
                           ['cliente', 'Clientes'], ['rezagado', 'Rezagados'], ['churned', 'Bajas'],
+                          /* Descalificados: la ÚNICA puerta para verlos. En el
+                             resto de las vistas ya no salen —ni siquiera en
+                             «todas»—, porque alguien ya decidió que no y
+                             tenerlos en medio obliga a volver a decidirlo cada
+                             vez que se abre el inbox. */
+                          ['descalificado', 'Descalificados'],
                         ];
                         const vivas = ETAPAS.filter(([k]) => (porEtapa[k] || 0) > 0);
                         if (!vivas.length) return [];

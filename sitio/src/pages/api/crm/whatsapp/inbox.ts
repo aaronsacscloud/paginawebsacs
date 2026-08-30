@@ -251,6 +251,15 @@ const _GET: APIRoute = async ({ request, url }) => {
   const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
     if (c.interna) continue;   // no cuentan en ninguna bandeja: no son trabajo
+    /* Un descalificado tampoco es trabajo. Alguien ya lo revisó y lo descartó,
+       así que sumarlo a «sin respuesta» o «no contestadas» pide contestarle a
+       quien ya se decidió que no. Se ve en su vista y en ningún otro lado —
+       pero SÍ se cuenta para el ciclo de vida, o su propia vista no tendría
+       número y el menú no la enseñaría. */
+    if (c.contacto?.lifecycle_stage === 'descalificado') {
+      if (c.estado_crm !== 'resuelta') counts.por_etapa.descalificado = (counts.por_etapa.descalificado || 0) + 1;
+      continue;
+    }
     if (c.virtual) continue;   // los contactos sin conversación no inflan las bandejas
     if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
     counts.todas++;
@@ -371,6 +380,10 @@ const _GET: APIRoute = async ({ request, url }) => {
     if (fi === 'sin_respuesta') l = l.filter(c => c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta');
     if (fi === 'accion') l = l.filter(requiereAccion);
     if (f.etapa) l = l.filter(c => c.contacto?.lifecycle_stage === f.etapa);
+    /* Los descalificados solo se ven cuando se piden. En cualquier otra vista
+       —incluida «todas»— se van: ya se decidió que no, y tenerlos en medio
+       obliga a volver a decidirlo cada vez que se abre el inbox. */
+    else l = l.filter(c => c.contacto?.lifecycle_stage !== 'descalificado');
     if (f.tipo) l = l.filter(c => c.contacto?.tipo === f.tipo);
     if (f.plan) l = l.filter(c => c.empresa?.plan === f.plan);
     if (f.etiqueta) { const set = porEtiqueta.get(f.etiqueta) || new Set<string>(); l = l.filter(c => c.company_id && set.has(c.company_id)); }

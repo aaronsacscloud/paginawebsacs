@@ -57,6 +57,13 @@ const MOSTRAR = [
   { v: 'abiertas', l: 'Abiertas' },
   { v: 'resueltas', l: 'Resueltas' },
   { v: 'pospuestas', l: 'Pospuestas' },
+  { v: 'div', l: '' },
+  /* La ÚNICA puerta en escritorio para ver los descalificados. En el resto de
+     las vistas ya no salen —ni en «Todas»—: alguien los revisó y los descartó,
+     y tenerlos en medio obliga a volver a decidirlo cada vez que se abre el
+     inbox. Aquí abajo, separados, porque no son una bandeja de trabajo: son un
+     archivo al que se entra a propósito. */
+  { v: 'descalificados', l: 'Descalificados' },
 ];
 const ORDEN = [
   { v: 'recientes', l: 'Más recientes' }, { v: 'antiguas', l: 'Más antiguas' },
@@ -117,7 +124,7 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
   const chips = [
     { v: 'conversaciones', l: 'Todas' }, { v: 'abiertas', l: 'Abiertas' }, { v: 'resueltas', l: 'Resueltas' },
   ];
-  const chipActivo = ['todas', 'solo_contactos', 'pospuestas'].includes(mostrar) ? 'conversaciones' : mostrar;
+  const chipActivo = ['todas', 'solo_contactos', 'pospuestas', 'descalificados'].includes(mostrar) ? 'conversaciones' : mostrar;
   const mostrarLabel = MOSTRAR.find(m => m.v === mostrar)?.l || 'Todas';
   const ordenLabel = ORDEN.find(o => o.v === orden)?.l || '';
   const nCond = filtrosAdHoc?.condiciones?.length || 0;
