@@ -44,7 +44,14 @@ export const VARIABLES = [
   { id: 'sucursales', etiqueta: 'Sucursales' },
 ] as const;
 
-const RE_VAR = /\{\{\s*([a-z_]+)\s*(?:\|([^}]*))?\}\}/gi;
+/* El nombre de la variable admite DÍGITOS.
+ *
+ * Era `[a-z_]+` y por eso `{{ahorro_10}}`, `{{monto_5}}` y `{{limite_15}}` no
+ * casaban con nada: se quedaban literales en el correo. El fallo es silencioso
+ * —no lanza, no avisa— y sale hasta que alguien mira el asunto ya enviado y lee
+ * «{{ahorro_10|10%}} menos si renuevas». Es más permisivo que antes, así que
+ * ninguna plantilla existente cambia de comportamiento. */
+const RE_VAR = /\{\{\s*([a-z0-9_]+)\s*(?:\|([^}]*))?\}\}/gi;
 
 /** Sustituye variables. Sin dato y sin respaldo → cadena vacía, nunca "null". */
 export function interpolar(texto: string, ctx: Contexto): string {
@@ -76,7 +83,17 @@ const txt = (s: unknown, ctx: Contexto) => escapar(interpolar(String(s ?? ''), c
 // resaltar media frase ("**Fase 1:** ..."). Se aplica SIEMPRE después de
 // escapar: para cuando corre, el texto ya no tiene < ni >, así que lo único
 // que puede aparecer es el <strong> que ponemos aquí. Nunca al revés.
-const negritas = (s: string) => s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+/* Negritas, y la limpieza de los pares que quedaron vacíos.
+ *
+ * `**{{fecha}}**` con la variable sin dato se convierte en `****`, que el regex
+ * de arriba NO puede casar —necesita algo entre los asteriscos— así que
+ * sobrevivían tal cual hasta la bandeja del cliente. Se le habrían enviado
+ * cuatro asteriscos donde debía ir una fecha.
+ *
+ * Se barren DESPUÉS de aplicar las negritas para no comerse las buenas. */
+const negritas = (s: string) => s
+  .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+  .replace(/\*\*+/g, '');
 const rico = (s: unknown, ctx: Contexto) => negritas(txt(s, ctx));
 /** Una URL que no sea `javascript:` ni `data:` — el correo no ejecuta scripts. */
 const url = (s: unknown, ctx: Contexto) => {
@@ -297,8 +314,14 @@ ${preheader(preview)}
 export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
   const p: string[] = [];
   for (const b of bloques || []) {
-    // Los ** de las negritas se quitan: en texto plano son ruido.
-    const i = (s: unknown) => interpolar(String(s ?? ''), ctx).replace(/\*\*([^*\n]+)\*\*/g, '$1');
+    /* Los ** de las negritas se quitan: en texto plano son ruido.
+       El segundo replace barre los pares que quedaron VACÍOS —`**{{x}}**` con la
+       variable sin dato deja `****`, que el primero no puede casar— igual que en
+       la versión HTML. Sin él, la copia de texto plano del correo llevaba
+       asteriscos sueltos. */
+    const i = (s: unknown) => interpolar(String(s ?? ''), ctx)
+      .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+      .replace(/\*\*+/g, '');
     switch (b.tipo) {
       case 'hero': p.push(i(b.titulo).toUpperCase(), b.subtitulo ? i(b.subtitulo) : ''); break;
       case 'encabezado': p.push('', i(b.texto).toUpperCase()); break;

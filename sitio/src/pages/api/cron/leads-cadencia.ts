@@ -22,6 +22,7 @@ import { cumpleCondsLead } from '../../../lib/crm/leads-filtros';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/presion';
 import { entregarInapp, retirarInapp, cuentaDelLead, campanasDeSecuencia } from '../../../lib/crm/secuencia-inapp';
+import { ctxRenovacion } from '../../../lib/crm/renovacion';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
@@ -32,12 +33,22 @@ const json = (o: any) => new Response(JSON.stringify(o), { headers: { 'Content-T
 // miembro cuando su avance ALCANZA el objetivo (o lo rebasa). Así "agendó"
 // es salida para la secuencia de seguimiento (objetivo agendo) pero es la
 // ENTRADA de la de demo agendada (objetivo demo_hecha).
+/** La ventana de la cadencia de renovación: empieza a 90 días de la fecha.
+ *  Se declara aquí porque la usan dos lugares —el enrolamiento y el cálculo del
+ *  día— y si se separan, alguien entra en su día 3 creyendo que es el 1. */
+const VENTANA_RENOVACION = 90;
+
 const RANGO: Record<string, number> = { respondio: 1, descubrimiento: 1, agendado: 2, demo_hecha: 3, cotizado: 4, negociando: 4 };
 const UMBRAL: Record<string, number> = { respondio: 1, agendo: 2, demo_hecha: 3, convertido: 99 };
-function motivoSalida(c: any, objetivo: string): string | null {
+function motivoSalida(c: any, objetivo: string, paraClientes = false): string | null {
   if (c.archived_at) return 'archivado';
   if (c.estatus_lead === 'descartado' || c.calificacion === 'no_califica') return 'descartado';
-  if (c.lifecycle_stage === 'cliente') return 'convertido';
+  /* En una cadencia de adquisición, convertir ES el final: quien ya compró no
+     debe seguir recibiendo correos de venta. En una de RETENCIÓN —renovación,
+     onboarding del cliente nuevo, cuenta dormida— ser cliente es el requisito
+     de entrada, no la salida. Sin este `paraClientes` el cliente salía el
+     primer día y ninguna cadencia de post-venta era construible. */
+  if (c.lifecycle_stage === 'cliente' && !paraClientes) return 'convertido';
   const umbral = UMBRAL[objetivo] ?? 2;
   const rango = Math.max(RANGO[c.estatus_lead] || 0, c.lifecycle_stage === 'oportunidad' ? 2 : 0);
   if (rango >= umbral && objetivo !== 'convertido') return objetivo;
@@ -209,13 +220,33 @@ export const GET: APIRoute = async ({ url }) => {
      * Si alguien vuelve a agregar una tabla al select sin su FK, se entera hoy
      * y no dentro de tres meses. */
     const { data: miembros, error: eMiembros } = await supabase.from('crm_secuencia_miembros')
-      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at, reciclado_veces, ultima_actividad_venta_at, ultima_actividad_venta_tipo, eng_emails_leidos, company_id, prueba_cuenta)')
+      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at, reciclado_veces, ultima_actividad_venta_at, ultima_actividad_venta_tipo, eng_emails_leidos, company_id, prueba_cuenta, companies(nombre, nombre_comercial))')
       .eq('secuencia_id', sec.id).is('detenida_at', null).limit(300);
     if (eMiembros) {
       console.error(`[secuencias] "${sec.nombre}" NO PUDO LEER SUS MIEMBROS — no se envió nada:`, eMiembros.message);
       res.errores = res.errores || [];
       res.errores.push({ secuencia: sec.nombre, error: eMiembros.message });
       continue;
+    }
+
+    /* ── CUÁNTOS DÍAS LE FALTAN PARA RENOVAR ───────────────────────────────
+       Solo si la secuencia cuenta hacia atrás. Una consulta para todos los
+       miembros, no una por lead. */
+    const renovaFaltan: Record<string, number> = {};
+    if (String((sec.entrada || {}).ancla || '') === 'renovacion') {
+      const ids = Array.from(new Set((miembros || []).map((m: any) => m.contacts?.company_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: subs } = await supabase.from('subscriptions')
+          .select('company_id, proxima_factura').in('company_id', ids)
+          .eq('estado', 'activa').in('ciclo', ['anual', 'vitalicia'])
+          .order('proxima_factura', { ascending: true });
+        const porEmpresa: Record<string, string> = {};
+        for (const x of subs || []) if (!porEmpresa[x.company_id]) porEmpresa[x.company_id] = x.proxima_factura;
+        for (const mm of miembros || []) {
+          const f = porEmpresa[(mm as any).contacts?.company_id];
+          if (f) renovaFaltan[mm.contact_id] = Math.ceil((Date.parse(String(f).slice(0, 10) + 'T12:00:00Z') - ahora.getTime()) / 86400000);
+        }
+      }
     }
 
     /* ── QUIÉN YA PAGÓ ─────────────────────────────────────────────────────
@@ -323,10 +354,26 @@ export const GET: APIRoute = async ({ url }) => {
       }
 
       const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
-      const desde = anclaSec === 'prueba_inicio' ? (c as any).prueba_inicio
-                  : anclaSec === 'created_at'    ? c.created_at
-                  : m.inicio;
-      const dias = Math.floor((ahora.getTime() - Date.parse(desde || m.inicio)) / 86400000) + 1;
+      /* ── El ancla, y el único caso que corre AL REVÉS ──
+         Las demás cuentan días hacia adelante desde una fecha que ya pasó. La
+         de renovación cuenta hacia ATRÁS hacia una que todavía no llega: su
+         «día 1» es «faltan 90» y su último es «faltan 35».
+         Se traduce a la misma escala (1, 2, 3…) para que el resto del bucle
+         —`p.dia > dias`, el corte, los topes— siga funcionando igual sin
+         tocarlo. Un motor con dos formas de contar el tiempo se rompe en la
+         primera regla que se olvide de una de las dos. */
+      let dias: number;
+      if (anclaSec === 'renovacion') {
+        const faltan = renovaFaltan[c.id];
+        if (faltan == null) { res.saltados.push({ lead: c.id, motivo: 'sin_renovacion' }); continue; }
+        dias = VENTANA_RENOVACION - faltan + 1;
+        if (dias < 1) { res.saltados.push({ lead: c.id, motivo: 'todavia_lejos', faltan }); continue; }
+      } else {
+        const desde = anclaSec === 'prueba_inicio' ? (c as any).prueba_inicio
+                    : anclaSec === 'created_at'    ? c.created_at
+                    : m.inicio;
+        dias = Math.floor((ahora.getTime() - Date.parse(desde || m.inicio)) / 86400000) + 1;
+      }
       const cd: Record<string, any> = { ...(m.canales_detenidos || {}) };
       let cdCambio = false;
 
@@ -389,8 +436,10 @@ export const GET: APIRoute = async ({ url }) => {
       /* Pagó su licencia: se acabó la cadencia, sea cual sea su etapa. Es la
          salida más importante de todas — el que ya pagó y sigue recibiendo «te
          doy 35% si contratas» aprende que le cobraron de más. */
-      const pago = c.company_id && yaPagaron.has(c.company_id) ? 'pago_licencia' : null;
-      const motivo = pago || motivoSalida(c, objetivoSec) || (dias > sec.corte_dias ? 'corte' : null)
+      /* …y en una cadencia de cliente esta salida tampoco aplica: todos pagaron,
+         por eso están ahí. Es la salida de la prueba gratis, no de la renovación. */
+      const pago = (!(sec.entrada || {}).para_clientes && c.company_id && yaPagaron.has(c.company_id)) ? 'pago_licencia' : null;
+      const motivo = pago || motivoSalida(c, objetivoSec, !!(sec.entrada || {}).para_clientes) || (dias > sec.corte_dias ? 'corte' : null)
         || (ambos ? 'respondio' : null)
         || (objetivoSec === 'respondio' && respondioAlgo ? 'respondio' : null);
       if (motivo) {
@@ -524,7 +573,26 @@ export const GET: APIRoute = async ({ url }) => {
         if (p.canal === 'inapp' && (inappHecho || !p.inapp_campana_id)) continue;
         if (dry) { res.envios.push({ sec: sec.nombre, lead: c.id, dia: dias, paso: p.orden, canal: p.canal }); if (p.canal === 'correo') correoHecho = true; else if (p.canal === 'wa') waHecho = true; else inappHecho = true; continue; }
         const primerNombre = String(c.nombre || '').trim().split(/\s+/)[0] || null;
-        const ctx = { nombre: primerNombre, campana: c.campana || null, ...extrasReunion(c.id) };
+        /* Las variables de renovación —su fecha, su monto, sus dos fechas
+           límite y lo que ahorra en cada tramo— solo se calculan si la
+           secuencia las va a usar. `plantillas.ts` ya declaraba
+           `monto_renovacion`, `plan` y `sucursales` como variables desde
+           siempre; lo que faltaba era alguien que las llenara.
+
+           Sin esto, el correo diría «renueva antes y te damos 10%» sin decir
+           antes de cuándo ni sobre cuánto — y hacer esa cuenta le tocaría al
+           que lo recibe, que es como no ofrecer nada. */
+        let extraRenov: any = {};
+        if (anclaSec === 'renovacion') {
+          const r = await ctxRenovacion(c.company_id);
+          /* Sin contexto NO se manda. Una suscripción sin fecha de próxima
+             factura o sin monto —hay varias así en la base— produciría un correo
+             que dice «tu renovación es el  por », con los huecos donde iban los
+             datos. Es preferible saltarlo y que quede anotado. */
+          if (!r) { res.saltados.push({ lead: c.id, motivo: 'sin_datos_de_renovacion' }); continue; }
+          extraRenov = r;
+        }
+        const ctx = { nombre: primerNombre, campana: c.campana || null, empresa: (c as any).companies?.nombre_comercial || (c as any).companies?.nombre || null, ...extrasReunion(c.id), ...extraRenov };
         try {
           if (p.canal === 'correo') {
             // A/B: si el paso tiene variante B, el lead cae en A o B por el

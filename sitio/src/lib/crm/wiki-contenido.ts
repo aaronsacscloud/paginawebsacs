@@ -424,6 +424,55 @@ export const WIKI: PaginaWiki[] = [
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
+    id: 'renovacion', grupo: 'El proceso', titulo: '↻ Rumbo a la renovación',
+    bajada: 'La primera cadencia de cliente.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    cuerpo: `
+<p>Noventa días antes de pedirle dinero a un cliente, enseñarle qué valió el año. Doce pasos por los tres canales, y una entrega limpia al cobro que ya existe.</p>
+
+<div class="w-caja"><span class="w-k">Qué NO es</span><p><code>arr-reminders</code> ya manda el recordatorio de renovación a <b>30, 15 y 7 días</b> y hace dunning de las vencidas. Eso funciona y no se toca. Pero ese correo es transaccional —dice cuándo y cuánto— y le llega a alguien que lleva un año sin que nadie le muestre qué obtuvo. A esas alturas la decisión ya está tomada.</p>
+<p>Esta cadencia corre <b>antes</b>: de D-90 a D-18. Cuando arranca el recordatorio de cobro, el cliente ya vio su año, ya le ofreciste tres veces una revisión y ya sabe cuánto se ahorra por decidir temprano.</p></div>
+
+<h3>Las doce paradas</h3>
+<table class="w-tab"><thead><tr><th>Falta</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
+<tr><td><b>90 d</b></td><td>Tu año en números</td><td>—</td><td>—</td></tr>
+<tr><td><b>80 d</b></td><td>—</td><td>Lo que ya pagas y no usas</td><td>—</td></tr>
+<tr><td><b>60 d</b></td><td>Sesión 1 · ¿qué te cuesta trabajo?</td><td>Calendario</td><td>—</td></tr>
+<tr><td><b>52 d</b></td><td>Sesión 2 · lo que no se ve desde afuera</td><td>—</td><td>—</td></tr>
+<tr><td><b>45 d</b></td><td>—</td><td>—</td><td>La sesión, por si no abriste</td></tr>
+<tr><td><b>40 d</b></td><td>Sesión 3 · la última antes de decidir</td><td>—</td><td>—</td></tr>
+<tr><td><b>33 d</b></td><td><b>Renueva con 10%</b></td><td>Banner del 10%</td><td>—</td></tr>
+<tr><td><b>25 d</b></td><td>—</td><td>—</td><td>Se pasó el 10%, queda el 5%</td></tr>
+<tr><td><b>18 d</b></td><td><b>Últimos días del 5%</b></td><td>Banner del 5%</td><td>—</td></tr>
+<tr><td><b>15 d</b></td><td colspan="3">↳ toma <code>arr-reminders</code></td></tr>
+</tbody></table>
+
+<h3>El descuento por decidir temprano</h3>
+<table class="w-tab"><thead><tr><th>Si renueva…</th><th>Paga</th></tr></thead><tbody>
+<tr><td>con <b>30 días</b> o más de anticipación</td><td><b>10% menos</b></td></tr>
+<tr><td>con <b>15 días</b> o más</td><td><b>5% menos</b></td></tr>
+<tr><td>después de eso</td><td>precio normal</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Y cada quien ve SUS números</span><p>El correo no dice «te damos 10%»: dice <b>tu monto, tu fecha límite y cuánto te ahorras</b>, calculado desde tu suscripción real. Un descuento sin la cuenta hecha se lo tiene que calcular el que lo recibe — y no lo hace.</p>
+<p>Las fechas límite se calculan restando a la fecha de renovación, nunca sumando a hoy. Si se calcularan desde hoy, el correo de los 60 días y el de los 40 darían fechas distintas y parecería que se la estamos moviendo.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">Si no hay datos, no se manda</span><p>Una suscripción sin fecha de próxima factura o sin monto produciría un correo que dice «tu renovación es el&nbsp;&nbsp;por&nbsp;». El paso se salta y queda anotado como <code>sin_datos_de_renovacion</code>. Hoy hay <b>9 suscripciones activas en ese caso</b>: esas nunca entran hasta que alguien les ponga fecha.</p></div>
+
+<h3>Los tres correos de la sesión no repiten el argumento</h3>
+<table class="w-tab"><thead><tr><th>Cuál</th><th>Qué dice distinto</th></tr></thead><tbody>
+<tr><td><b>D-60</b></td><td>Pregunta qué le cuesta trabajo. No un error del sistema — eso que resuelve a mano cada semana.</td></tr>
+<tr><td><b>D-52</b></td><td>Desde aquí vemos qué módulos usa; lo que <b>no</b> vemos es por qué no usa los otros. Y hay tres razones muy distintas.</td></tr>
+<tr><td><b>D-40</b></td><td>Dice para qué la queremos: para saber si le estamos sirviendo. Y ofrece dejar de insistir con un «ahorita no».</td></tr>
+</tbody></table>
+<p>La sesión es sin costo <b>aunque al final decida no renovar</b>. No es una concesión: una conversación honesta vale igual en los dos casos, y condicionarla a la compra en el momento de decidir es la forma más rápida de que la decisión sea no.</p>
+
+<h3>Cuándo se para</h3>
+<table class="w-tab"><thead><tr><th>Sale si…</th><th>Por qué</th></tr></thead><tbody>
+<tr><td><b>Renovó</b></td><td>La fecha de próxima factura se movió. Seguir empujando después del pago enseña que le cobraste de más.</td></tr>
+<tr><td><b>Respondió</b></td><td>A partir de ahí manda la persona, no la cadencia.</td></tr>
+<tr><td><b>Lleva 30+ días sin vender</b></td><td>Ni siquiera entra. «Mira todo lo que lograste» a quien no usó el sistema es sordo — ese va a la cadencia de cuenta dormida.</td></tr>
+</tbody></table>`,
+  },
+  {
     id: 'canal-inapp', grupo: 'El proceso', titulo: 'Hablarle dentro de Sacs',
     bajada: 'El tercer canal de las secuencias.', chip: { texto: 'nuevo', tono: 'ok' },
     cuerpo: `
@@ -437,6 +486,13 @@ export const WIKI: PaginaWiki[] = [
 <p>El selector no ofrece cualquier campaña de Outbound, y es a propósito. La audiencia de una campaña normal se resuelve por condiciones, y ahí <b>«sin condiciones» significa TODAS las empresas</b>, no ninguna. Elegir una de esas en un paso de secuencia le habría mandado el mensaje del día 2 de una prueba gratis a toda la base.</p>
 <div class="w-caja w-bad"><span class="w-k">Medido, no supuesto</span><p>La misma definición de audiencia sin la marca de «gobernada por secuencia» resuelve a <b>143 cuentas</b>. Con la marca, a <b>1</b>.</p></div>
 <p>Una campaña de secuencia nace con la audiencia <b>vacía</b> y va creciendo: cada lead que llega a ese paso entra, y al salir de la secuencia, sale.</p>
+
+<h3>Dos cosas que el motor aprendió con esta cadencia</h3>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>Contar hacia atrás</b></td><td>Las cadencias de lead cuentan días <i>desde</i> una fecha que ya pasó. Una de renovación cuenta <i>hacia</i> una que no ha llegado. Se declara con el ancla «Su fecha de renovación».</td></tr>
+<tr><td><b>No expulsar clientes</b></td><td>El motor sacaba a todo cliente de toda secuencia con motivo «convertido» — correcto para adquisición, imposible para retención. Una secuencia marcada <b>de cliente</b> apaga esa regla solo para ella.</td></tr>
+</tbody></table>
+<p>Sin esas dos, ninguna cadencia de post-venta era construible: ni renovación, ni onboarding del cliente nuevo, ni cuenta dormida, ni winback.</p>
 
 <h3>No compite con los otros canales</h3>
 <table class="w-tab"><thead><tr><th>Regla</th><th>Por qué</th></tr></thead><tbody>
