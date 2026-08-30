@@ -263,7 +263,23 @@ export const WIKI: PaginaWiki[] = [
     cuerpo: `
 <p>Etapa nueva, entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
 <div class="w-caja"><span class="w-k">La fecha se sella sola</span><p>Al mover a alguien a esta etapa, el sistema guarda <b>cuándo empezó su prueba</b>. Esa fecha es la que manda: la cadencia cuenta sus 14 días desde ahí, no desde que lo marcaste. Solo se sella la primera vez — si sale y vuelve a entrar, su prueba no empieza de nuevo.</p></div>
-<div class="w-caja w-bad"><span class="w-k">Hoy hay que marcarla a mano</span><p>Nada la asigna sola todavía: el alta de la prueba en el sistema no está conectada al CRM. <b>Si nadie mueve la etapa, el lead no recibe ni un correo de onboarding.</b></p></div>`,
+<h3>La cuenta se crea desde aquí</h3>
+<p>Antes eran tres pasos en dos sistemas: entrar a SACS, crear la cuenta a mano, y acordarse de anotar en el CRM cuál cuenta era de quién. El último casi nunca pasaba — por eso <b>ningún lead tenía cuenta ligada</b> y el CRM no sabía que alguien estaba probando el producto, que es justo cuando más importa saberlo.</p>
+<p>Ahora es un solo movimiento y deja las tres cosas atadas: <b>crea la cuenta</b> marcada como prueba con sus días, <b>la liga al lead</b> y <b>deja la actividad en su ficha</b>, para que la prueba aparezca en su línea de tiempo como cualquier otro hecho.</p>
+
+<div class="w-caja"><span class="w-k">Dos datos que se dicen mal seguido</span><p>Se entra siempre por <b>app.sacscloud.com</b>: <b>no hay una dirección por cuenta</b>. El identificador de la cuenta —el que eliges al crearla— es el nombre del tenant, no un subdominio; dictarlo como si fuera una URL manda al cliente a una página que no existe, y eso es lo primero que ve de su prueba.</p>
+<p>Y la contraseña temporal <b>se enseña una sola vez</b> para dictarla. No queda guardada en el CRM: el cliente la cambia en su primer acceso.</p></div>
+
+<h3>Qué se sabe de una prueba sin preguntarle a nadie</h3>
+<p>Cada madrugada el sistema mira la cuenta y trae dos cosas al CRM:</p>
+<table class="w-tab"><thead><tr><th>Dato</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>Días que le quedan</b></td><td>Ya calculados. La fecha de fin se sella al crear la cuenta, así que no depende de que alguien la vuelva a contar — que es como terminan existiendo dos fechas para la misma prueba.</td></tr>
+<tr><td><b>Si arrancó o no</b></td><td>Productos subidos, ventas y cortes de caja, con la fecha del último movimiento.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">El catálogo avisa antes que la venta</span><p>Nadie vende antes de subir su catálogo, así que <b>«subió productos» llega días antes que «hizo una venta»</b>. Es la señal más temprana de que la prueba arrancó — y su ausencia, la más temprana de que se está muriendo sola. Una cuenta en cero al día 3 no necesita el correo del día 5: necesita una llamada.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">La etapa sigue siendo a mano</span><p>Crear la cuenta desde el CRM no mueve la etapa del lead. <b>Si nadie la mueve a Prueba gratis, no recibe ni un correo de onboarding</b> — la cadencia se cuelga de la etapa, no de la cuenta.</p></div>`,
   },
   {
     id: 'p37', grupo: 'El proceso', titulo: '↳ El relevo: prueba gratis',
