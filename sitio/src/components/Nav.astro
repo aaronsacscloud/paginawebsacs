@@ -132,7 +132,9 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     <div class="moda-extra">
                       <div class="moda-head">
                         <span class="moda-eyebrow moda-eyebrow-alt">Módulos extraordinarios</span>
-                        <h3 class="moda-title moda-title-sm">Lo que solo una marca de moda necesita.</h3>
+                        <h3 class="moda-title moda-title-sm">
+                          <a href={getLocalizedUrl('/extraordinarios', locale)} class="moda-title-link">Lo que solo una marca de moda necesita →</a>
+                        </h3>
                         <p class="moda-extra-nota">Se cotizan aparte, sobre la misma operación.</p>
                       </div>
                       <div class="moda-extra-lista">
@@ -1726,6 +1728,8 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     font-weight: 700; color: var(--color-text-primary); margin: 0;
   }
   .moda-title-sm { font-size: 0.9688rem; }
+  .moda-title-link { color: inherit; text-decoration: none; }
+  .moda-title-link:hover { color: #DB2777; }
   .moda-extra-nota { margin: 6px 0 0; font-size: 0.75rem; color: var(--color-text-tertiary); }
 
   /* ── El ciclo: tres etapas con hilo conector ── */

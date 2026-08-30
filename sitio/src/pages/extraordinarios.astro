@@ -1,0 +1,368 @@
+---
+/**
+ * Módulos extraordinarios — la vitrina de lo que solo una plataforma de moda
+ * tiene: probador virtual, foto y video con IA, outfits, lookbooks y
+ * pre-órdenes.
+ *
+ * Registro editorial (más color y más escala que el resto del sitio, a
+ * petición del dueño): carrusel a pantalla con imagen a sangre, número
+ * gigante y un acento propio por módulo. Misma tipografía y mismo cierre
+ * que el resto: Sora en titulares y CtaDudas al final.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CtaDudas from '../components/CtaDudas.astro';
+import { extraordinarios } from '../data/extraordinarios';
+import { waLink } from '../lib/whatsapp';
+import XrLienzo from '../components/extraordinarios/XrLienzo.astro';
+
+const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para mi marca de moda (probador virtual, foto y video con IA).');
+---
+
+<BaseLayout
+  title="Módulos extraordinarios — Sacs para moda"
+  description="Probador virtual en tienda, fotografía y video de producto con IA, outfits sugeridos, lookbooks digitales y pre-órdenes de colección. Lo que solo una marca de moda necesita."
+>
+  <!-- ═══ Portada editorial ═══ -->
+  <section class="xr-hero">
+    <div class="xr-hero-bg" aria-hidden="true"></div>
+    <div class="xr-hero-inner">
+      <span class="xr-eyebrow">Módulos extraordinarios</span>
+      <h1 class="xr-hero-title">
+        Lo que tu competencia<br />
+        <em>todavía no puede</em><br />
+        ofrecerle a tu clienta.
+      </h1>
+      <p class="xr-hero-sub">
+        Seis módulos que existen solo aquí: la pantalla donde se prueba sin quitarse nada,
+        la IA que convierte una foto en campaña, el video que TikTok te pide cada semana.
+        Se cotizan aparte, sobre la operación que ya tienes.
+      </p>
+      <div class="xr-hero-chips">
+        {extraordinarios.map((m) => (
+          <a href={`#${m.id}`} class="xr-chip" style={`--c:${m.color};`}>{m.nombre}</a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ El carrusel ═══ -->
+  <section class="xr-carrusel" id="xr">
+    <div class="xr-track" id="xr-track">
+      <div class="xr-escena" id="xr-escena">
+        <XrLienzo imagenes={extraordinarios.map((m) => m.imagen)} />
+      </div>
+      {extraordinarios.map((m, i) => (
+        <article
+          class:list={['xr-slide', { activo: i === 0 }]}
+          id={m.id}
+          data-i={i}
+          style={`--c:${m.color}; --c2:${m.color2}; --tinta:${m.tinta};`}
+        >
+          <div class="xr-slide-media">
+            <img src={m.imagen} alt={m.alt} width="1500" height="1000" loading={i === 0 ? 'eager' : 'lazy'} />
+            <span class="xr-slide-num" aria-hidden="true">{m.num}</span>
+          </div>
+          <div class="xr-slide-panel">
+            <span class="xr-slide-kicker">Módulo {m.num}</span>
+            <h2 class="xr-slide-nombre">{m.nombre}</h2>
+            <p class="xr-slide-gancho">{m.gancho}</p>
+            <p class="xr-slide-desc">{m.descripcion}</p>
+            <ul class="xr-slide-puntos">
+              {m.puntos.map((pt) => <li>{pt}</li>)}
+            </ul>
+            <div class="xr-slide-pie">
+              <span class="xr-slide-precio">{m.precio}</span>
+              <a href="/contacto" class="xr-slide-cta">Verlo en una demo</a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <div class="xr-nav">
+      <button class="xr-btn" id="xr-prev" aria-label="Módulo anterior">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="xr-dots" id="xr-dots">
+        {extraordinarios.map((m, i) => (
+          <button class:list={['xr-dot', { activo: i === 0 }]} data-i={i} style={`--c:${m.color};`} aria-label={m.nombre}>
+            <span class="xr-dot-label">{m.corto}</span>
+          </button>
+        ))}
+      </div>
+      <button class="xr-btn" id="xr-next" aria-label="Módulo siguiente">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══ Cómo se contratan ═══ -->
+  <section class="xr-como">
+    <div class="xr-como-inner">
+      <span class="xr-eyebrow xr-eyebrow-dark">Cómo se contratan</span>
+      <h2 class="xr-como-title">Van encima de tu plan, no en lugar de él.</h2>
+      <div class="xr-como-grid">
+        <div class="xr-como-paso">
+          <span class="xr-como-num">01</span>
+          <h3>Ya tienes Sacs operando</h3>
+          <p>Tu catálogo con tallas y colores, tus tiendas y tu venta ya viven en el sistema. Los módulos se montan encima de eso.</p>
+        </div>
+        <div class="xr-como-paso">
+          <span class="xr-como-num">02</span>
+          <h3>Eliges los que te sirven</h3>
+          <p>Se cotizan por tienda y por año, cada uno por separado. Puedes empezar con uno y sumar otro la próxima temporada.</p>
+        </div>
+        <div class="xr-como-paso">
+          <span class="xr-como-num">03</span>
+          <h3>Lo montamos contigo</h3>
+          <p>El probador se instala en tu piso; la IA de foto y video se entrena con tus prendas y tu marca. No te dejamos un manual.</p>
+        </div>
+      </div>
+      <div class="xr-como-ctas">
+        <a href="/contacto" class="xr-btn-lleno">Agenda una demo</a>
+        <a href={wa} class="xr-btn-linea" target="_blank" rel="noopener noreferrer">Pregunta por WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <CtaDudas demoDesc="Te mostramos los módulos con tus prendas y tu marca. 30 min, sin compromiso." />
+
+  <style>
+    /* ═══ Portada ═══ */
+    .xr-hero {
+      position: relative; overflow: hidden;
+      background: #0B0B12;
+      padding: clamp(96px, 13vw, 168px) clamp(20px, 4vw, 48px) clamp(72px, 9vw, 120px);
+    }
+    .xr-hero-bg {
+      position: absolute; inset: -30% -10% auto -10%; height: 150%;
+      background:
+        radial-gradient(45% 55% at 18% 22%, rgba(124,58,237,.55), transparent 68%),
+        radial-gradient(42% 52% at 78% 30%, rgba(219,39,119,.48), transparent 66%),
+        radial-gradient(40% 50% at 52% 84%, rgba(234,88,12,.38), transparent 68%);
+      filter: blur(8px);
+    }
+    .xr-hero-inner { position: relative; max-width: 1100px; margin: 0 auto; }
+    .xr-eyebrow {
+      display: block; font-size: 0.75rem; font-weight: 800; letter-spacing: .22em;
+      text-transform: uppercase; color: rgba(255,255,255,.72); margin-bottom: 22px;
+    }
+    .xr-eyebrow-dark { color: var(--color-primary); }
+    .xr-hero-title {
+      font-family: var(--font-display); font-weight: 800; color: #fff;
+      font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: .98; letter-spacing: -.035em; margin: 0;
+    }
+    .xr-hero-title em {
+      font-style: italic; font-weight: 400;
+      background: linear-gradient(92deg, #F472B6, #C084FC 45%, #FDBA74);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .xr-hero-sub {
+      margin: 26px 0 0; max-width: 60ch; font-size: clamp(1rem, 1.6vw, 1.1875rem);
+      line-height: 1.65; color: rgba(255,255,255,.76);
+    }
+    .xr-hero-chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 32px; }
+    .xr-chip {
+      padding: 9px 16px; border-radius: 999px; font-size: 0.8125rem; font-weight: 700;
+      color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.06); transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .xr-chip:hover { background: var(--c); border-color: var(--c); transform: translateY(-2px); }
+
+    /* ═══ Carrusel ═══ */
+    .xr-carrusel { background: #0B0B12; padding: 0 0 clamp(40px, 6vw, 72px); }
+    .xr-track { position: relative; z-index: 1; }
+    .xr-carrusel { position: relative; }
+    .xr-slide {
+      display: none;
+      grid-template-columns: 1.15fr 1fr;
+      min-height: clamp(460px, 62vh, 640px);
+      animation: xrIn .5s cubic-bezier(.22,.61,.36,1) both;
+    }
+    .xr-slide.activo { display: grid; }
+    @keyframes xrIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+    /* El lienzo WebGL se monta sobre la columna de imagen del slide activo;
+       cuando está vivo, las <img> se ocultan (siguen ahí para SEO y respaldo). */
+    /* Ocupa solo la columna de imagen (la fracción 1.15 de 1.15fr+1fr) y jamás
+       intercepta el puntero: los dots y las flechas deben seguir clicables. */
+    .xr-escena {
+      position: absolute; top: 0; left: 0; height: 100%;
+      width: calc(1.15 / 2.15 * 100%);
+      pointer-events: none; z-index: 2; overflow: hidden;
+    }
+    .xr-carrusel.con-lienzo .xr-slide-media img { opacity: 0; }
+    .xr-carrusel.con-lienzo .xr-slide-media { background: #0B0B12; }
+
+    .xr-slide-media { position: relative; overflow: hidden; }
+    .xr-slide-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .xr-slide-media::after {
+      content: ''; position: absolute; inset: 0; z-index: 3;
+      background: linear-gradient(100deg, transparent 55%, rgba(11,11,18,.85));
+    }
+    .xr-escena::after {
+      content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background: linear-gradient(100deg, transparent 55%, rgba(11,11,18,.85));
+    }
+    .xr-slide-num {
+      position: absolute; left: clamp(18px, 3vw, 42px); bottom: clamp(6px, 1vw, 12px);
+      font-family: var(--font-display); font-size: clamp(5rem, 13vw, 11rem); font-weight: 800;
+      line-height: .8; letter-spacing: -.06em; color: transparent;
+      -webkit-text-stroke: 2px rgba(255,255,255,.34); z-index: 4; pointer-events: none;
+    }
+    .xr-slide-panel {
+      display: flex; flex-direction: column; justify-content: center; gap: 14px;
+      padding: clamp(32px, 5vw, 64px) clamp(24px, 4.5vw, 68px);
+      background: linear-gradient(150deg, color-mix(in srgb, var(--c) 22%, #0B0B12), #0B0B12 70%);
+      color: #fff;
+    }
+    .xr-slide-kicker {
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--c2);
+    }
+    .xr-slide-nombre {
+      font-family: var(--font-display); font-size: clamp(1.9rem, 3.4vw, 2.9rem); font-weight: 800;
+      line-height: 1.02; letter-spacing: -.03em; margin: 0; color: #fff;
+    }
+    .xr-slide-gancho {
+      margin: 0; font-family: var(--font-display); font-size: clamp(1.05rem, 1.9vw, 1.4rem);
+      font-weight: 400; font-style: italic; color: var(--c2); line-height: 1.25;
+    }
+    .xr-slide-desc { margin: 4px 0 0; font-size: 0.9688rem; line-height: 1.65; color: rgba(255,255,255,.78); max-width: 46ch; }
+    .xr-slide-puntos { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+    .xr-slide-puntos li {
+      position: relative; padding-left: 20px; font-size: 0.875rem; line-height: 1.5; color: rgba(255,255,255,.9);
+    }
+    .xr-slide-puntos li::before {
+      content: ''; position: absolute; left: 0; top: 7px; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--c2);
+    }
+    .xr-slide-pie {
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+      margin-top: 14px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.14);
+    }
+    .xr-slide-precio { font-size: 0.8125rem; font-weight: 700; color: rgba(255,255,255,.62); }
+    .xr-slide-cta {
+      display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 999px;
+      background: #fff; color: #0B0B12; font-size: 0.875rem; font-weight: 800;
+      text-decoration: none; transition: transform .16s ease, background .16s ease;
+    }
+    .xr-slide-cta:hover { transform: translateY(-2px); background: var(--c2); color: #fff; }
+
+    /* ── Navegación ── */
+    .xr-nav {
+      position: relative; z-index: 5;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      max-width: 1180px; margin: 0 auto; flex-wrap: wrap;
+      padding: clamp(22px, 3vw, 34px) clamp(20px, 4vw, 48px) 0;
+    }
+    .xr-btn {
+      width: 44px; height: 44px; flex: none; border-radius: 50%; cursor: pointer;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.2); color: #fff;
+      display: grid; place-items: center; transition: background .16s ease, transform .16s ease;
+    }
+    .xr-btn:hover { background: rgba(255,255,255,.16); transform: scale(1.06); }
+    .xr-dots { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; min-width: 0; }
+    .xr-dot {
+      padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+      background: transparent; border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.62);
+      transition: all .18s ease;
+    }
+    .xr-dot:hover { color: #fff; border-color: rgba(255,255,255,.42); }
+    .xr-dot.activo { background: var(--c); border-color: var(--c); color: #fff; }
+
+    /* ═══ Cómo se contratan ═══ */
+    .xr-como { background: #fff; padding: clamp(64px, 9vw, 120px) clamp(20px, 4vw, 48px); }
+    .xr-como-inner { max-width: 1100px; margin: 0 auto; }
+    .xr-como-title {
+      font-family: var(--font-display); font-size: clamp(1.75rem, 3.4vw, 2.6rem); font-weight: 700;
+      color: var(--color-text-primary); margin: 0 0 40px; letter-spacing: -.02em;
+    }
+    .xr-como-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .xr-como-paso { display: grid; gap: 8px; align-content: start; }
+    .xr-como-num {
+      font-family: var(--font-display); font-size: 0.8125rem; font-weight: 800; color: var(--color-primary);
+    }
+    .xr-como-paso h3 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0; color: var(--color-text-primary); }
+    .xr-como-paso p { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--color-text-secondary); }
+    .xr-como-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 42px; }
+    .xr-btn-lleno, .xr-btn-linea {
+      display: inline-flex; align-items: center; padding: 14px 28px; border-radius: 999px;
+      font-size: 0.9375rem; font-weight: 700; text-decoration: none; transition: transform .16s ease;
+    }
+    .xr-btn-lleno { background: var(--color-primary); color: #fff; }
+    .xr-btn-lleno:hover { background: var(--color-primary-hover); transform: translateY(-2px); }
+    .xr-btn-linea { border: 1.5px solid var(--color-border); color: var(--color-text-primary); }
+    .xr-btn-linea:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+    @media (max-width: 900px) {
+      .xr-slide { grid-template-columns: 1fr; }
+      .xr-slide-media { aspect-ratio: 4 / 3; }
+      .xr-escena { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+      .xr-slide-media::after { background: linear-gradient(180deg, transparent 55%, rgba(11,11,18,.9)); }
+      .xr-como-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .xr-slide { animation: none; }
+    }
+  </style>
+
+  <script>
+    const slides = [...document.querySelectorAll<HTMLElement>('.xr-slide')];
+    const dots = [...document.querySelectorAll<HTMLElement>('.xr-dot')];
+    if (slides.length) {
+      let i = 0;
+      const ir = (n: number) => {
+        i = (n + slides.length) % slides.length;
+        slides.forEach((s, k) => s.classList.toggle('activo', k === i));
+        dots.forEach((d, k) => d.classList.toggle('activo', k === i));
+        // el lienzo WebGL hace su propia transición hacia este módulo
+        window.dispatchEvent(new CustomEvent('xr:ir', { detail: i }));
+      };
+
+      // Cuando el lienzo cobra vida, el carrusel le cede la imagen.
+      const car = document.getElementById('xr');
+      const vigilar = new MutationObserver(() => {
+        if (document.querySelector('.xr-lienzo.vivo')) {
+          car?.classList.add('con-lienzo');
+          vigilar.disconnect();
+        }
+      });
+      const lienzo = document.getElementById('xr-lienzo');
+      if (lienzo) vigilar.observe(lienzo, { attributes: true, attributeFilter: ['class'] });
+      document.getElementById('xr-prev')?.addEventListener('click', () => ir(i - 1));
+      document.getElementById('xr-next')?.addEventListener('click', () => ir(i + 1));
+      dots.forEach((d, k) => d.addEventListener('click', () => ir(k)));
+      // Los chips de la portada abren su módulo en vez de saltar por ancla.
+      document.querySelectorAll<HTMLAnchorElement>('.xr-chip').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          const id = a.getAttribute('href')?.slice(1);
+          const k = slides.findIndex((s) => s.id === id);
+          if (k >= 0) {
+            e.preventDefault();
+            ir(k);
+            document.getElementById('xr')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+      // Flechas del teclado cuando el carrusel está a la vista.
+      document.addEventListener('keydown', (e) => {
+        const car = document.getElementById('xr');
+        if (!car) return;
+        const r = car.getBoundingClientRect();
+        if (r.top > window.innerHeight || r.bottom < 0) return;
+        if (e.key === 'ArrowRight') ir(i + 1);
+        if (e.key === 'ArrowLeft') ir(i - 1);
+      });
+      // Arrastre en táctil.
+      let x0: number | null = null;
+      const track = document.getElementById('xr-track');
+      track?.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+      track?.addEventListener('touchend', (e) => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 48) ir(dx < 0 ? i + 1 : i - 1);
+        x0 = null;
+      });
+    }
+  </script>
+</BaseLayout>

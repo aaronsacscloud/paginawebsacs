@@ -1,0 +1,225 @@
+---
+/**
+ * XrLienzo — el lienzo WebGL de los módulos extraordinarios.
+ *
+ * Un solo quad con shader propio (sin Three.js: para un plano con transición
+ * son ~6 KB contra ~600 KB, y el manual del sitio ya retiró Three.js una vez
+ * por peso). Hace tres cosas que una <img> no puede:
+ *   · transición líquida entre módulos con desplazamiento por ruido,
+ *   · aberración cromática durante el cambio, que es el gesto editorial,
+ *   · parallax y ondulación suave siguiendo el cursor.
+ *
+ * Mejora progresiva: el <img> del slide se queda como está y este lienzo se
+ * monta encima solo si hay WebGL y el visitante no pidió menos movimiento.
+ * Si algo falla, la página sigue siendo el carrusel de imágenes.
+ */
+interface Props { imagenes: string[]; }
+const { imagenes } = Astro.props;
+---
+
+<canvas class="xr-lienzo" id="xr-lienzo" data-imgs={JSON.stringify(imagenes)} aria-hidden="true"></canvas>
+
+<style>
+  .xr-lienzo {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: none; z-index: 1;
+  }
+  .xr-lienzo.vivo { display: block; }
+</style>
+
+<script>
+  const cv = document.getElementById('xr-lienzo') as HTMLCanvasElement | null;
+  const menosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (cv && !menosMovimiento) {
+    const gl = cv.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false });
+    if (gl) {
+      const VERT = `
+        attribute vec2 p;
+        varying vec2 uv;
+        void main() { uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }
+      `;
+      // El ruido es un value-noise barato: alcanza para deformar y no cuesta.
+      const FRAG = `
+        precision highp float;
+        varying vec2 uv;
+        uniform sampler2D texA, texB;
+        uniform float mezcla, tiempo, razonLienzo, razonImg;
+        uniform vec2 raton;
+
+        float hash(vec2 v) { return fract(sin(dot(v, vec2(127.1, 311.7))) * 43758.5453); }
+        float ruido(vec2 v) {
+          vec2 i = floor(v), f = fract(v);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1,0)), u.x),
+                     mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
+        }
+
+        // cover: la imagen llena el lienzo sin deformarse
+        vec2 cubrir(vec2 c) {
+          vec2 s = razonLienzo > razonImg
+            ? vec2(1.0, razonImg / razonLienzo)
+            : vec2(razonLienzo / razonImg, 1.0);
+          return (c - 0.5) / s + 0.5;
+        }
+
+        void main() {
+          vec2 c = uv;
+
+          // ondulación viva + parallax del cursor
+          float onda = ruido(c * 3.0 + tiempo * 0.06) - 0.5;
+          c += onda * 0.006;
+          c += (raton - 0.5) * 0.018;
+
+          // la transición empuja los píxeles en diagonal según el ruido
+          float m = smoothstep(0.0, 1.0, mezcla);
+          float d = ruido(c * 4.5 + tiempo * 0.03);
+          vec2 empuje = vec2(0.16, -0.09) * (d - 0.5);
+          float fuerza = sin(m * 3.14159);
+
+          vec2 ca = cubrir(c + empuje * fuerza);
+          vec2 cb = cubrir(c - empuje * fuerza);
+
+          // aberración cromática solo mientras cambia: el gesto editorial
+          float ab = 0.010 * fuerza;
+          vec4 a = vec4(
+            texture2D(texA, ca + vec2(ab, 0.0)).r,
+            texture2D(texA, ca).g,
+            texture2D(texA, ca - vec2(ab, 0.0)).b, 1.0);
+          vec4 b = vec4(
+            texture2D(texB, cb + vec2(ab, 0.0)).r,
+            texture2D(texB, cb).g,
+            texture2D(texB, cb - vec2(ab, 0.0)).b, 1.0);
+
+          vec4 col = mix(a, b, m);
+          // grano fino, para que no se vea plano de CGI
+          col.rgb += (hash(uv * 900.0 + tiempo) - 0.5) * 0.026;
+          gl_FragColor = col;
+        }
+      `;
+
+      const compilar = (tipo: number, src: string) => {
+        const sh = gl.createShader(tipo)!;
+        gl.shaderSource(sh, src); gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh) || 'shader');
+        return sh;
+      };
+
+      try {
+        const prog = gl.createProgram()!;
+        gl.attachShader(prog, compilar(gl.VERTEX_SHADER, VERT));
+        gl.attachShader(prog, compilar(gl.FRAGMENT_SHADER, FRAG));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link');
+        gl.useProgram(prog);
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+        const locP = gl.getAttribLocation(prog, 'p');
+        gl.enableVertexAttribArray(locP);
+        gl.vertexAttribPointer(locP, 2, gl.FLOAT, false, 0, 0);
+
+        const u = (n: string) => gl.getUniformLocation(prog, n);
+        const uMezcla = u('mezcla'), uTiempo = u('tiempo'), uRaton = u('raton');
+        const uRazonL = u('razonLienzo'), uRazonI = u('razonImg');
+        gl.uniform1i(u('texA'), 0); gl.uniform1i(u('texB'), 1);
+
+        const hacerTex = () => {
+          const t = gl.createTexture()!;
+          gl.bindTexture(gl.TEXTURE_2D, t);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([11,11,18,255]));
+          return t;
+        };
+        const texA = hacerTex(), texB = hacerTex();
+        let razonImg = 1.5;
+
+        const cargar = (url: string, tex: WebGLTexture) => new Promise<void>((ok) => {
+          const im = new Image();
+          im.crossOrigin = 'anonymous';
+          im.onload = () => {
+            razonImg = im.naturalWidth / im.naturalHeight;
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+            ok();
+          };
+          im.onerror = () => ok();
+          im.src = url;
+        });
+
+        const imgs: string[] = JSON.parse(cv.dataset.imgs || '[]');
+        let actual = 0, mezcla = 0, animando = false;
+        const raton = { x: 0.5, y: 0.5 }, ratonSuave = { x: 0.5, y: 0.5 };
+
+        const medir = () => {
+          const r = cv.getBoundingClientRect();
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          cv.width = Math.max(1, Math.round(r.width * dpr));
+          cv.height = Math.max(1, Math.round(r.height * dpr));
+          gl.viewport(0, 0, cv.width, cv.height);
+          gl.uniform1f(uRazonL, cv.width / Math.max(1, cv.height));
+        };
+
+        const t0 = performance.now();
+        const pintar = () => {
+          ratonSuave.x += (raton.x - ratonSuave.x) * 0.06;
+          ratonSuave.y += (raton.y - ratonSuave.y) * 0.06;
+          gl.uniform1f(uTiempo, (performance.now() - t0) / 1000);
+          gl.uniform2f(uRaton, ratonSuave.x, ratonSuave.y);
+          gl.uniform1f(uMezcla, mezcla);
+          gl.uniform1f(uRazonI, razonImg);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          requestAnimationFrame(pintar);
+        };
+
+        // Arranque: primera imagen en las dos texturas y lienzo visible.
+        cargar(imgs[0], texA).then(() => cargar(imgs[0], texB)).then(() => {
+          medir();
+          cv.classList.add('vivo');
+          gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texA);
+          gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texB);
+          requestAnimationFrame(pintar);
+        });
+
+        window.addEventListener('resize', medir);
+        // El lienzo nace fuera de vista y sin tamaño: hay que medirlo cuando
+        // el layout se lo da, no una sola vez al arrancar.
+        if ('ResizeObserver' in window) new ResizeObserver(() => medir()).observe(cv);
+        // Y el parallax escucha en el carrusel, porque el lienzo ya no recibe
+        // punteros (los dots tienen que seguir clicables).
+        document.getElementById('xr')?.addEventListener('pointermove', (e) => {
+          const r = cv.getBoundingClientRect();
+          raton.x = (e.clientX - r.left) / r.width;
+          raton.y = 1 - (e.clientY - r.top) / r.height;
+        });
+
+        // El carrusel avisa a qué módulo va; el lienzo hace la transición.
+        window.addEventListener('xr:ir', (async (e: Event) => {
+          const destino = (e as CustomEvent).detail as number;
+          if (destino === actual || animando) return;
+          animando = true;
+          gl.activeTexture(gl.TEXTURE1);
+          await cargar(imgs[destino], texB);
+          const ini = performance.now(), dur = 900;
+          const paso = () => {
+            const t = Math.min(1, (performance.now() - ini) / dur);
+            mezcla = t;
+            if (t < 1) requestAnimationFrame(paso);
+            else {
+              // lo nuevo pasa a ser lo actual, sin volver a descargar
+              cargar(imgs[destino], texA).then(() => { mezcla = 0; actual = destino; animando = false; });
+            }
+          };
+          requestAnimationFrame(paso);
+        }) as EventListener);
+      } catch (err) {
+        // Sin shader no pasa nada: se queda el carrusel de imágenes.
+      }
+    }
+  }
+</script>
