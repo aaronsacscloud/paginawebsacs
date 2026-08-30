@@ -40,9 +40,27 @@ const VENTANA_RENOVACION = 90;
 
 const RANGO: Record<string, number> = { respondio: 1, descubrimiento: 1, agendado: 2, demo_hecha: 3, cotizado: 4, negociando: 4 };
 const UMBRAL: Record<string, number> = { respondio: 1, agendo: 2, demo_hecha: 3, convertido: 99 };
-function motivoSalida(c: any, objetivo: string, paraClientes = false): string | null {
+/**
+ * Por qué este contacto sale de esta secuencia. Null = se queda.
+ *
+ * `ignorar` es la lista de motivos que NO aplican a esta cadencia. Existe por
+ * un caso concreto: los 24 clientes que hicieron churn tienen TODOS
+ * `estatus_lead = 'descartado'`, y esta función expulsa a todo descartado. Sin
+ * la lista, el winback los habría enrolado y sacado en la misma corrida — cero
+ * envíos, y en el reporte «graduados: 24», que se lee como trabajo hecho.
+ *
+ * Y el diagnóstico de secuencias tampoco lo habría cachado: esa pantalla revisa
+ * las reglas de ENTRADA y esta es de SALIDA. Habría dicho «entra: sí» mientras
+ * el contacto no recibía nada.
+ *
+ * `archivado` NO se puede ignorar, y por eso se comprueba ANTES de consultar la
+ * lista: un contacto archivado está fuera del CRM y ninguna cadencia debería
+ * poder resucitarlo.
+ */
+function motivoSalida(c: any, objetivo: string, paraClientes = false, ignorar: string[] = []): string | null {
   if (c.archived_at) return 'archivado';
-  if (c.estatus_lead === 'descartado' || c.calificacion === 'no_califica') return 'descartado';
+  const omite = (m: string) => ignorar.includes(m);
+  if (!omite('descartado') && (c.estatus_lead === 'descartado' || c.calificacion === 'no_califica')) return 'descartado';
   /* En una cadencia de adquisición, convertir ES el final: quien ya compró no
      debe seguir recibiendo correos de venta. En una de RETENCIÓN —renovación,
      onboarding del cliente nuevo, cuenta dormida— ser cliente es el requisito
@@ -439,7 +457,8 @@ export const GET: APIRoute = async ({ url }) => {
       /* …y en una cadencia de cliente esta salida tampoco aplica: todos pagaron,
          por eso están ahí. Es la salida de la prueba gratis, no de la renovación. */
       const pago = (!(sec.entrada || {}).para_clientes && c.company_id && yaPagaron.has(c.company_id)) ? 'pago_licencia' : null;
-      const motivo = pago || motivoSalida(c, objetivoSec, !!(sec.entrada || {}).para_clientes) || (dias > sec.corte_dias ? 'corte' : null)
+      const ignorarSalidas: string[] = Array.isArray((sec.entrada || {}).ignorar_salidas) ? (sec.entrada as any).ignorar_salidas : [];
+      const motivo = pago || motivoSalida(c, objetivoSec, !!(sec.entrada || {}).para_clientes, ignorarSalidas) || (dias > sec.corte_dias ? 'corte' : null)
         || (ambos ? 'respondio' : null)
         || (objetivoSec === 'respondio' && respondioAlgo ? 'respondio' : null);
       if (motivo) {

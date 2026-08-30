@@ -461,7 +461,11 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja"><span class="w-k">Y la minuta es obligatoria</span><p>Aquí más que en ninguna otra reunión: lo que se diga ahí es <b>la única fuente honesta</b> que tenemos de por qué se van los clientes. Si no queda escrito, se pierde.</p></div>
 
 <h3>Cuándo se para</h3>
-<p>En cuanto <b>conteste por cualquier canal</b>. Nadie que acaba de decirte por qué se fue debe recibir al día siguiente el correo automático número 6 — a partir de ahí manda la persona.</p>`,
+<p>En cuanto <b>conteste por cualquier canal</b>. Nadie que acaba de decirte por qué se fue debe recibir al día siguiente el correo automático número 6 — a partir de ahí manda la persona.</p>
+
+<div class="w-caja w-bad"><span class="w-k">La regla que casi la deja muda</span><p>Los 24 churned tienen todos <code>estatus_lead = 'descartado'</code>, y el motor <b>expulsa a todo descartado de toda secuencia</b>. Sin arreglarlo, esta cadencia los habría enrolado y sacado en la misma corrida: cero envíos, y en el reporte «graduados: 24» — que se lee como trabajo hecho.</p>
+<p>Peor: el <b>diagnóstico de secuencias no lo habría detectado</b>, porque revisa las reglas de ENTRADA y esta es de SALIDA. Habría dicho «entra: sí» mientras el contacto no recibía nada.</p>
+<p>Se resolvió con una lista por secuencia de motivos de salida que no aplican — no con un interruptor global: la regla sigue valiendo para las otras siete, donde un descartado sí debe salir. Aquí «descartado» no es una decisión sobre ese contacto, es su estado normal.</p></div>`,
   },
   {
     id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
