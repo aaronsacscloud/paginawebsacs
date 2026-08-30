@@ -57,17 +57,33 @@ export async function alRecibirMensaje(convId: string) {
     }
   }
 
-  // Bienvenida: solo la primera vez que esta conversación recibe algo.
-  if (cfg.bienvenida_activa && cfg.bienvenida_texto && !conv.auto_bienvenida_at) {
-    await mandarAuto(conv.id, conv.telefono, cfg.bienvenida_texto, 'auto_bienvenida_at');
-    return;   // no encimar dos autos en el mismo mensaje
+  // ── Acuse: siempre que alguien ABRE conversación, a cualquier hora ──
+  //
+  // "Siempre" es por conversación abierta, no por mensaje: si el lead manda
+  // tres mensajes seguidos no le contestamos tres veces la misma frase. Se
+  // rearma a las 20 h, igual que el aviso de fuera de horario, para que quien
+  // vuelve al día siguiente sí reciba señal de que lo leímos.
+  //
+  // Y el texto cambia con la hora, porque la promesa tiene que ser verdad:
+  // dentro de horario se contesta en minutos; a medianoche no, y decir que sí
+  // es peor que no decir nada.
+  const enHorario = dentroDeHorario(cfg.horario);
+  const hace20h = Date.now() - 20 * 3600 * 1000;
+  const yaSaludamos = conv.auto_bienvenida_at && new Date(conv.auto_bienvenida_at).getTime() >= hace20h;
+  const yaAvisamosFuera = conv.auto_fuera_at && new Date(conv.auto_fuera_at).getTime() >= hace20h;
+
+  if (enHorario) {
+    if (cfg.bienvenida_activa && cfg.bienvenida_texto && !yaSaludamos) {
+      await mandarAuto(conv.id, conv.telefono, cfg.bienvenida_texto, 'auto_bienvenida_at');
+    }
+    return;
   }
 
-  // Fuera de horario: máximo una cada 20 h.
-  if (cfg.fuera_activa && cfg.fuera_texto && !dentroDeHorario(cfg.horario)) {
-    const hace20h = Date.now() - 20 * 3600 * 1000;
-    if (!conv.auto_fuera_at || new Date(conv.auto_fuera_at).getTime() < hace20h) {
-      await mandarAuto(conv.id, conv.telefono, cfg.fuera_texto, 'auto_fuera_at');
-    }
+  // Fuera de horario gana el texto de fuera; si no está configurado, cae al
+  // de bienvenida antes que dejar al lead sin respuesta.
+  if (cfg.fuera_activa && cfg.fuera_texto && !yaAvisamosFuera) {
+    await mandarAuto(conv.id, conv.telefono, cfg.fuera_texto, 'auto_fuera_at');
+  } else if (cfg.bienvenida_activa && cfg.bienvenida_texto && !yaSaludamos && !yaAvisamosFuera) {
+    await mandarAuto(conv.id, conv.telefono, cfg.bienvenida_texto, 'auto_bienvenida_at');
   }
 }

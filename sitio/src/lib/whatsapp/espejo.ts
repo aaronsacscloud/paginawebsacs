@@ -171,7 +171,18 @@ export async function registrarMensaje(o: {
   {
     const { data: cvv } = await supabase.from('wa_conversaciones').select('contact_id').eq('id', conv.id).maybeSingle();
     if (cvv?.contact_id) {
-      if (o.direccion === 'entrante') await marcarRespondio(cvv.contact_id).catch(() => {});
+      if (o.direccion === 'entrante') {
+        await marcarRespondio(cvv.contact_id).catch(() => {});
+        // Contacto CONOCIDO que escribe: marcarRespondio no alcanza — solo mueve
+        // a quien está en 'nuevo'/'contactado'/'sin_respuesta', así que alguien
+        // en 'cotizado' no cambiaba nada y nadie se enteraba. Si el texto viene
+        // de uno de nuestros CTA, se etiqueta y se avisa CON contexto.
+        const { registrarIntencionEntrante } = await import('../crm/wa-intencion');
+        await registrarIntencionEntrante({
+          contactId: cvv.contact_id, conversationId: conv.id,
+          texto: o.cuerpo || o.transcript || null, mensajeId: o.kapsoMessageId || null,
+        }).catch(e => console.warn('[wa-intencion]', e?.message || e));
+      }
       else if (o.autorId) await marcarContactado(cvv.contact_id).catch(() => {});
     } else {
       // LA PUERTA (Leads v2): número sin contacto → alta automática con
