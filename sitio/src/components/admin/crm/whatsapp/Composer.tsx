@@ -609,7 +609,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                     onPrueba={contacto?.contact_id ? () => setPop('prueba') : undefined}
                     pruebaSub={contacto?.prueba_estado === 'activa' ? 'Ya tiene una activa' : 'Crea la cuenta y escribe el mensaje'} />
                 )}
-                {pop === 'prueba' && <PopPrueba contacto={contacto} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
+                {pop === 'prueba' && <PopPrueba contacto={contacto} onCerrar={() => setPop(null)} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
                 {pop === 'snippets' && (
                   <PopSnippets snippets={snippets} resolver={resolver} onElegir={usarSnippet}
                     onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
@@ -702,7 +702,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 {/* Reemplaza el borrador en vez de insertar en el cursor: los
                     datos de acceso no se mezclan con lo que se estaba
                     escribiendo, se dictan enteros o no se dictan. */}
-                {pop === 'prueba' && <PopPrueba contacto={contacto} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
+                {pop === 'prueba' && <PopPrueba contacto={contacto} onCerrar={() => setPop(null)} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
               </div>
             ))}
           </>)}
@@ -1314,7 +1314,7 @@ function PopCotizaciones({ waId, onElegir }: { waId?: string | null; onElegir: (
  * no se decide porque es visible para el cliente para siempre: una heurística
  * que se equivoca deja un nombre feo que ya no se cambia.
  */
-function PopPrueba({ contacto, onListo }: { contacto?: any; onListo: (texto: string) => void }) {
+function PopPrueba({ contacto, onListo, onCerrar }: { contacto?: any; onListo: (texto: string) => void; onCerrar: () => void }) {
   const sugerido = String(contacto?.empresa || contacto?.nombre || '')
     .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '').slice(0, 24);
@@ -1345,8 +1345,19 @@ function PopPrueba({ contacto, onListo }: { contacto?: any; onListo: (texto: str
   };
 
   return (
-    <div className="wa-pop" style={popup(300, 150)}>
-      <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+    /* Overlay fijo y NO un popup del composer.
+     *
+     * Los popups se anclan con `bottom:100%` dentro de `.wa-comp-caja`, que
+     * tiene `overflow:hidden` — medido: la tarjeta empieza en y=832 y este
+     * formulario mide 173 px, así que sus dos campos y su título quedaban
+     * FUERA. Un menú de cuatro renglones aguanta ese recorte; un formulario en
+     * el que hay que escribir el identificador de una cuenta, no.
+     *
+     * Además resuelve el teléfono de una vez: centrado y sin depender del
+     * ancho de la barra. */
+    <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(360px, 94vw)', boxShadow: '0 24px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 16px 8px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>
         Prueba gratis · se crea y se escribe sola
       </div>
       {yaTiene ? (
@@ -1377,6 +1388,10 @@ function PopPrueba({ contacto, onListo }: { contacto?: any; onListo: (texto: str
           </div>
         </div>
       )}
+      <div style={{ padding: '0 16px 14px' }}>
+        <button onClick={onCerrar} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '7px 14px', background: '#fff', fontSize: 12, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>Cancelar</button>
+      </div>
+    </div>
     </div>
   );
 }

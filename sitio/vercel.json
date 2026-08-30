@@ -96,6 +96,10 @@
     {
       "path": "/api/cron/leads-cadencia",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/prueba-vencimientos",
+      "schedule": "45 9 * * *"
     }
   ]
 }
