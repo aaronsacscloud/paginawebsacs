@@ -271,6 +271,22 @@ export const PUT: APIRoute = async ({ request }) => {
   if ('estado_crm' in b && ['abierta', 'pendiente', 'resuelta'].includes(b.estado_crm)) {
     cambios.estado_crm = b.estado_crm;
     if (b.estado_crm === 'resuelta') {
+      // ── No se cierra sobre un mensaje del cliente sin leer ──
+      // "Resuelta" saca la conversación de TODOS los filtros del inbox, y
+      // además silencia la alerta de "lleva rato esperando" (ver el webhook,
+      // caso conversation.inactive). Cerrar con la última palabra del cliente
+      // sin contestar equivale a perderlo en silencio: pasó con Rafael, que
+      // contestó "Si" a las 17:23 y a las 18:00 quedó fuera de los cuatro
+      // filtros. Se puede hacer igual, pero a propósito (`forzar: true`).
+      const { data: est } = await supabase.from('wa_conversaciones')
+        .select('ultima_direccion, no_leidos').eq('id', b.id).maybeSingle();
+      if (!b.forzar && est?.ultima_direccion === 'entrante' && (est?.no_leidos || 0) > 0) {
+        return json({
+          error: 'El último mensaje es del cliente y sigue sin leer. Si la cierras ahora desaparece de todos los filtros y deja de avisarte.',
+          hay_pendiente: true,
+          se_puede_forzar: true,
+        }, 409);
+      }
       // Nota de cierre categorizada: de aquí salen las métricas de "por qué se cierra".
       cambios.cierre_categoria = b.cierre_categoria ? String(b.cierre_categoria).slice(0, 80) : null;
       cambios.cierre_nota = b.cierre_nota ? String(b.cierre_nota).slice(0, 1000) : null;
