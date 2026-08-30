@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
+import { useLeadsActivos, ListaLeadsActivos } from './LeadsActivos';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 // Los millones de la cartera no caben en una tarjeta; los pesos del negocio sí.
@@ -68,6 +69,7 @@ const seg = (on: boolean) => ({
 }) as const;
 
 export default function DashboardTab() {
+  const activos = useLeadsActivos(7);
   const [aMano, setAMano] = useState(false);
   const [desde, setDesde] = useState(inicioDeMes());
   const [hasta, setHasta] = useState(iso(new Date()));
@@ -149,6 +151,26 @@ export default function DashboardTab() {
         <Dinero d={d} ver={setDetalle} />
         <Motor d={d} ver={setDetalle} />
         <CohorteYTiempo d={d} />
+        {/* MISMO dato que el Inicio del teléfono, mismo componente y mismo
+            endpoint: si el criterio de qué cuenta como actividad viviera dos
+            veces terminarían siendo dos números distintos en dos pantallas. Lo
+            único que cambia es el envase: aquí tarjeta, allá hoja. */}
+        {!!activos?.total && (
+          <div style={S.card}>
+            <div style={S.titulo}>
+              Leads que se movieron
+              <span style={S.der}>{activos.total} en 7 días · {activos.con_senal} por su cuenta</span>
+            </div>
+            <div style={S.lead}>
+              Quién dio señales esta semana, de lo más reciente a lo más viejo. El punto morado es lo que hizo el lead
+              —te escribió, entró al sitio, abrió la cotización—; el gris, lo que hicimos nosotros. Los cambios de etapa
+              y las bienvenidas automáticas no cuentan: si contaran, cualquiera tocado por un cron saldría como activo.
+            </div>
+            <div style={{ maxHeight: 420, overflowY: 'auto', border: '1px solid #ececf1', borderRadius: 10, marginTop: 10 }}>
+              <ListaLeadsActivos leads={activos.leads} />
+            </div>
+          </div>
+        )}
         <Compromisos d={d} abrir={setAbierto} />
         <Salud d={d} />
       </div>

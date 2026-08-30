@@ -10,6 +10,8 @@ import { swrGet } from '../../../lib/crm/swr';
 //
 // En escritorio este componente no existe: el Dashboard completo sigue igual.
 import { useEffect, useState } from 'react';
+import Sheet from './ui/Sheet';
+import { useLeadsActivos, ListaLeadsActivos, type LeadActivo } from './LeadsActivos';
 
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
@@ -25,6 +27,11 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   const [wa, setWa] = useState<{ esperan: number; sinResp: number } | null>(null);
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
+  // Quién se movió esta semana. Va aquí y no en el pipeline porque la pregunta
+  // que contesta —«¿a quién le toco hoy?»— es de arranque de día, no de
+  // gestión: si hay que entrar a otra pantalla a buscarla, no se hace.
+  const activos = useLeadsActivos(7);
+  const [verActivos, setVerActivos] = useState(false);
 
   useEffect(() => {
     const hoy = new Date();
@@ -107,7 +114,7 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       ))}
 
       {/* Necesita tu atención — solo habla la excepción */}
-      {(venc || tickets || wa?.esperan || wa?.sinResp) && <div className="m-sec">Necesita tu atención</div>}
+      {(venc || tickets || wa?.esperan || wa?.sinResp || !!activos?.total) && <div className="m-sec">Necesita tu atención</div>}
       {/* Primero los que YA contestaron: ahí la pelota es nuestra y cada hora
           que pasa cuesta. Después los que no respondieron, que es seguimiento. */}
       {!!wa?.esperan && (
@@ -124,6 +131,21 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
           <div className="m-tx">
             <div className="m-n1">{wa.sinResp} sin respuesta de ellos</div>
             <div className="m-n2">les escribiste y no volvieron</div>
+          </div>
+          <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
+        </div>
+      )}
+      {/* Después de WhatsApp —donde la pelota ya es nuestra— y antes de
+          tickets: esto no es urgente, es la lista de a quién conviene tocar.
+          Se dice cuántos hicieron algo ELLOS, que es el número accionable; el
+          total va en la segunda línea para no perderlo. */}
+      {!!activos?.total && (
+        <div className="m-row" onClick={() => setVerActivos(true)}>
+          <div className="m-tx">
+            <div className="m-n1">{activos.total} lead{activos.total > 1 ? 's' : ''} con actividad</div>
+            <div className="m-n2">
+              últimos 7 días{activos.con_senal ? ` · ${activos.con_senal} ${activos.con_senal === 1 ? 'se movió' : 'se movieron'} por su cuenta` : ''}
+            </div>
           </div>
           <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
         </div>
@@ -147,6 +169,17 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
         </div>
       )}
       <div style={{ height: 24 }} />
+
+      <Sheet open={verActivos} onClose={() => setVerActivos(false)}
+        title="Leads con actividad · 7 días">
+        <ListaLeadsActivos movil leads={activos?.leads || []}
+          onAbrir={(l: LeadActivo) => {
+            // Abre la conversación si tiene WhatsApp —que es donde de verdad se
+            // actúa— y si no, su ficha en el pipeline.
+            setVerActivos(false);
+            onIrA(l.whatsapp ? `whatsapp?tel=${encodeURIComponent(l.whatsapp)}` : `pipeline?contacto=${l.id}`);
+          }} />
+      </Sheet>
     </div>
   );
 }
