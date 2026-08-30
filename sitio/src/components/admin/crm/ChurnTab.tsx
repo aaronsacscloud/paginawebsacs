@@ -52,6 +52,12 @@ export default function ChurnTab() {
   const [busca, setBusca] = useState('');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [verTablero, setVerTablero] = useState(false);
+  const [tab, setTab] = useState<any>(null);
+  useEffect(() => {
+    if (!verTablero || tab) return;
+    fetch('/api/crm/churn/tablero').then(r => r.json()).then(setTab).catch(() => setTab({}));
+  }, [verTablero, tab]);
   const rejaRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -142,12 +148,15 @@ export default function ChurnTab() {
             {p.l}<span className="n">{cuenta[p.id] ?? 0}</span>
           </button>
         ))}
+        <button className={`churn-chip ${verTablero ? 'on' : ''}`} onClick={() => setVerTablero(v => !v)}
+          style={{ marginLeft: 'auto' }}>{verTablero ? '← Volver a la lista' : 'Ver el tablero'}</button>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o acuerdo…"
-          style={{ marginLeft: 'auto', minWidth: 240, border: '1px solid #e2e4e9', borderRadius: 10, padding: '8px 12px',
+          style={{ minWidth: 240, border: '1px solid #e2e4e9', borderRadius: 10, padding: '8px 12px',
             fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
       </div>
 
-      {filas === null ? <div style={{ padding: 40, color: '#8e88a8' }}>Cargando…</div>
+      {verTablero ? <Tablero d={tab} />
+      : filas === null ? <div style={{ padding: 40, color: '#8e88a8' }}>Cargando…</div>
       : lista.length === 0 ? (
         <div style={{ padding: '46px 20px', textAlign: 'center', color: '#71707C', background: '#fff',
           border: '1px solid #eae7f2', borderRadius: 14 }}>
@@ -351,6 +360,89 @@ function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto,
         );
       })}
       {abierto && <ChurnCaso id={abierto} onCerrar={() => setAbierto(null)} onCambio={recargar} />}
+    </div>
+  );
+}
+
+/* ── El tablero: de qué nos morimos y cuánto recuperamos ───────────────── */
+function Tablero({ d }: { d: any }) {
+  if (!d) return <div style={{ padding: 40, color: '#8e88a8' }}>Cargando el tablero…</div>;
+  const caja: any = { background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 18, marginBottom: 14 };
+  const rot: any = { fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 12 };
+  const maxMrr = Math.max(1, ...(d.motivos || []).map((m: any) => m.mrr));
+  const maxMes = Math.max(1, ...(d.meses || []).flatMap((m: any) => [m.perdido, m.recuperado]));
+  return (
+    <div>
+      <div style={caja}>
+        <div style={rot}>De qué nos morimos</div>
+        {/* Ordenado por DINERO, no por conteo: cinco casos chicos importan
+            menos que uno grande, y el orden lo decide lo que duele. */}
+        {(d.motivos || []).map((m: any) => (
+          <div key={m.id} style={{ marginBottom: 11 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 4 }}>
+              <span style={{ color: '#241d43', fontWeight: 600 }}>{m.l}</span>
+              <span style={{ color: '#71707C', fontVariantNumeric: 'tabular-nums' }}>
+                {dinero(m.mrr)} · {m.n} {m.n === 1 ? 'caso' : 'casos'}
+              </span>
+            </div>
+            <div style={{ height: 8, borderRadius: 20, background: '#f1f0f5', overflow: 'hidden' }}>
+              <div style={{ width: `${(m.mrr / maxMrr) * 100}%`, height: '100%', borderRadius: 20,
+                background: m.id === 'mal_servicio' ? '#C0554E' : m.id === 'no_uso' ? '#a06600' : '#7C6BF0' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={caja}>
+        <div style={rot}>Perdido contra recuperado, por mes</div>
+        <div style={{ fontSize: '0.76rem', color: '#71707C', marginBottom: 12 }}>
+          Sale del ledger de MRR, no de sumar casos: es la misma cifra que la ARR.
+        </div>
+        {(d.meses || []).length === 0 ? <div style={{ color: '#71707C', fontSize: '0.83rem' }}>Todavía sin movimientos en el período.</div>
+        : (d.meses || []).map((m: any) => (
+          <div key={m.mes} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{ width: 62, fontSize: '0.75rem', color: '#71707C', fontVariantNumeric: 'tabular-nums' }}>{m.mes}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 7, width: `${(m.perdido / maxMes) * 100}%`, background: '#C0554E', borderRadius: 20, marginBottom: 3 }} />
+              <div style={{ height: 7, width: `${(m.recuperado / maxMes) * 100}%`, background: '#1E8A63', borderRadius: 20 }} />
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#71707C', fontVariantNumeric: 'tabular-nums', minWidth: 130, textAlign: 'right' }}>
+              −{dinero(m.perdido)} · +{dinero(m.recuperado)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ ...caja, flex: '1 1 300px' }}>
+          <div style={rot}>El embudo</div>
+          {(d.embudo || []).map((e: any) => (
+            <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', padding: '5px 0' }}>
+              <span>{e.l}</span><b style={{ fontVariantNumeric: 'tabular-nums' }}>{e.n}</b>
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #f1f0f5', marginTop: 8, paddingTop: 8, fontSize: '0.8rem', color: '#71707C' }}>
+            {d.resumen?.tasa == null ? 'Todavía no se cierra ningún caso.'
+              : `${d.resumen.tasa}% de los ${d.resumen.cerrados} cerrados volvieron.`}
+            {d.resumen?.dias_promedio != null && (
+              /* El promedio va con su n: un promedio sin decir sobre cuántos
+                 se calculó es un rumor. Y solo cuenta fechas reales. */
+              <div style={{ marginTop: 4 }}>Rescatar tarda {d.resumen.dias_promedio} días en promedio (sobre {d.resumen.dias_base} casos con fecha real).</div>
+            )}
+          </div>
+        </div>
+        <div style={{ ...caja, flex: '1 1 300px' }}>
+          <div style={rot}>Qué acuerdos funcionan</div>
+          {(d.acuerdos || []).length === 0
+            ? <div style={{ fontSize: '0.83rem', color: '#71707C' }}>Todavía no se cierra ninguna gracia. Cuando haya, aquí sale cuál trae más gente de vuelta.</div>
+            : (d.acuerdos || []).map((a: any) => (
+              <div key={a.l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.83rem', padding: '5px 0' }}>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.l}</span>
+                <b style={{ color: a.ok ? '#1E8A63' : '#71707C', whiteSpace: 'nowrap', marginLeft: 10 }}>{a.ok}/{a.n}</b>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }

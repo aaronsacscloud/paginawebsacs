@@ -34,6 +34,9 @@ export const FAMILIAS = [
   { id: 'conversacion', l: 'Conversaciones', casa: (t: string) => /^wa_/.test(t), color: '#1A8F7A' },
   { id: 'soporte', l: 'Soporte', casa: (t: string) => /^(ticket_|soporte_)/.test(t), color: '#C2410C' },
   { id: 'dinero', l: 'Dinero', casa: (t: string) => /^(pago_|cobro_|suscripcion_|factura_)/.test(t), color: '#1E8A63' },
+  /* Churn tiene familia propia: no es venta ni soporte. Mezclarlo con ventas
+     escondería el aviso más caro del CRM entre los leads del día. */
+  { id: 'churn', l: 'Churn', casa: (t: string) => /^churn_/.test(t), color: '#C0554E' },
 ];
 const familiaDe = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.id || 'otras';
 const colorFamilia = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.color || '#7d7a8a';
@@ -142,6 +145,7 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
     marcarLeida(n);
     setAbierto(false);
     const m = n.metadata || {};
+    if (m.churn_caso_id && onIrA) { onIrA(`churn?caso=${m.churn_caso_id}`); return; }
     if (m.conversation_id && onIrA) { onIrA(`whatsapp?wa_conv=${m.conversation_id}`); return; }
     if (m.contact_id && onIrA) { onIrA(`pipeline?lead=${m.contact_id}`); return; }
     if (n.company_id) { setCliente(n.company_id); return; }
