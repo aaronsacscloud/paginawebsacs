@@ -17,6 +17,7 @@ import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
+import Sheet from '../ui/Sheet';
 import { useGestoAtras } from '../../../../lib/ui/gestoAtras';
 import { tic, ticListo } from '../../../../lib/ui/tacto';
 
@@ -67,6 +68,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   // Mensaje sobre el que se mantuvo el dedo. Una sola hoja para todo el hilo:
   // montar una por burbuja multiplicaría el árbol por cada mensaje en pantalla.
   const [accionesMsg, setAccionesMsg] = useState<any>(null);
+  // El correo que se está mirando. Sus datos ya vinieron con el hilo, así que
+  // abrirlo no cuesta un viaje.
+  const [correoAbierto, setCorreoAbierto] = useState<any>(null);
 
   // ── VOLVER ─────────────────────────────────────────────────────────────
   // El hilo ya se cerraba con el botón físico y con el gesto del sistema
@@ -526,6 +530,17 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g500, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
                   {item.detalle}{item._veces > 1 ? ` · ${item._veces} veces` : ''}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
+                  {/* «Le mandamos un correo y lo abrió» está bien para enterarse,
+                      pero para RETOMAR hace falta saber cuál. Se abre aquí
+                      mismo: salir del inbox a buscarlo es el paso que hace que
+                      no se mire, y entonces se responde sin el contexto. */}
+                  {item.correo && (
+                    <button onClick={() => setCorreoAbierto(item.correo)}
+                      style={{ border: 'none', background: 'none', padding: '0 0 0 6px', cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 11, fontWeight: 700, fontStyle: 'normal', color: C.moradoTinta }}>
+                      ver correo
+                    </button>
+                  )}
                 </span>
               ) : item._clase === 'nota' ? (
                 <span style={{ ...burbuja.nota, boxShadow: conRing ? `0 0 0 2px ${C.morado}` : 'none', transition: 'box-shadow .3s' }}>
@@ -609,6 +624,57 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
+
+      {/* ══ EL CORREO, SIN SALIR DEL INBOX ═══════════════════════════════ */}
+      <Sheet open={!!correoAbierto} onClose={() => setCorreoAbierto(null)} title="Correo enviado" width={520}>
+        {correoAbierto && (
+          <div style={{ padding: '6px 16px 20px' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#241d43', lineHeight: 1.35 }}>
+              {correoAbierto.asunto || 'Sin asunto registrado'}
+            </div>
+            <div style={{ fontSize: 12, color: '#8b8896', marginTop: 4 }}>
+              Enviado {new Date(correoAbierto.enviado_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+            </div>
+
+            {/* LO ABRIÓ O NO, arriba y en una frase. Es lo que se viene a ver. */}
+            <div style={{ marginTop: 12, borderRadius: 10, padding: '10px 12px',
+              background: correoAbierto.abierto_at ? '#EAF8F2' : '#F6F6F9',
+              border: `1px solid ${correoAbierto.abierto_at ? '#BFE7D6' : '#e9e8ef'}` }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: correoAbierto.abierto_at ? '#0F766E' : '#6b6875' }}>
+                {correoAbierto.abierto_at
+                  ? `Lo abrió${correoAbierto.aperturas > 1 ? ` ${correoAbierto.aperturas} veces` : ''}`
+                  : correoAbierto.estado === 'bounced' ? 'Rebotó: no llegó a su bandeja' : 'Todavía no lo abre'}
+              </div>
+              {correoAbierto.abierto_at && (
+                <div style={{ fontSize: 12, color: '#4b4956', marginTop: 3 }}>
+                  La primera vez, {new Date(correoAbierto.abierto_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                </div>
+              )}
+              {correoAbierto.clics > 0 && (
+                <div style={{ fontSize: 12, color: '#4b4956', marginTop: 3 }}>
+                  Dio clic {correoAbierto.clics === 1 ? 'una vez' : `${correoAbierto.clics} veces`}
+                  {Array.isArray(correoAbierto.links) && correoAbierto.links.length
+                    ? `: ${correoAbierto.links.slice(0, 3).join(', ')}` : ''}
+                </div>
+              )}
+            </div>
+
+            {correoAbierto.extracto ? (
+              <>
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af', margin: '16px 0 6px' }}>Cómo empieza</div>
+                <div style={{ fontSize: 13, color: '#4b4956', lineHeight: 1.6 }}>{correoAbierto.extracto}…</div>
+              </>
+            ) : (
+              /* Se dice POR QUÉ no está, en vez de dejar un hueco: los correos
+                 de antes de este cambio no guardaron su contenido, y eso no se
+                 puede recuperar hacia atrás. */
+              <div style={{ fontSize: 12.5, color: '#8b8896', marginTop: 16, lineHeight: 1.55 }}>
+                De este envío no se guardó el contenido — es anterior al cambio que empezó a registrarlo. Los que salgan de ahora en adelante sí lo traen.
+              </div>
+            )}
+          </div>
+        )}
+      </Sheet>
 
       {/* ══ ACCIONES DEL MENSAJE (táctil) ══════════════════════════════════
           Lo que en escritorio son tres iconos al pasar el ratón. El orden no

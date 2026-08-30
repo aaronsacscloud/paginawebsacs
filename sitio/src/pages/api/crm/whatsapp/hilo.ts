@@ -221,14 +221,37 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
   if (conv.contact_id) {
     const { data: envs } = await supabase.from('email_sends')
-      .select('id, estado, sent_at, opened_at, clicked_at, created_at, email_templates(nombre, asunto)')
+      .select('id, estado, sent_at, opened_at, first_opened_at, open_count, clicked_at, click_count, clicked_links, created_at, asunto, extracto, email_templates(nombre, asunto)')
       .eq('contact_id', conv.contact_id).order('created_at', { ascending: false }).limit(15);
     for (const en of envs || []) {
       if (['queued', 'failed'].includes(String(en.estado))) continue;
       const t: any = (en as any).email_templates;
-      const que = en.clicked_at ? 'lo abrió y dio clic' : en.opened_at ? 'lo abrió' : en.estado === 'bounced' ? 'rebotó' : 'enviado';
-      eventos.push({ id: `em-${en.id}`, tipo: 'campana', created_at: en.sent_at || en.created_at, autor: null,
-        detalle: `Correo «${t?.asunto || t?.nombre || 'campaña'}»: ${que}` });
+      /* El asunto propio del envío manda. La plantilla es el respaldo, y
+         «campaña» el último recurso — que era lo ÚNICO que se veía, porque
+         ningún envío trae plantilla: un relleno que no dice de qué correo
+         habla, justo lo que hace falta para retomar la conversación. */
+      const asunto = (en as any).asunto || t?.asunto || t?.nombre || null;
+      const nAb = Number((en as any).open_count || 0);
+      const que = en.clicked_at ? 'lo abrió y dio clic'
+        : en.opened_at ? (nAb > 1 ? `lo abrió ${nAb} veces` : 'lo abrió')
+        : en.estado === 'bounced' ? 'rebotó' : 'enviado, sin abrir';
+      eventos.push({
+        id: `em-${en.id}`, tipo: 'campana', created_at: en.sent_at || en.created_at, autor: null,
+        detalle: asunto ? `Correo «${asunto}»: ${que}` : `Correo: ${que}`,
+        /* Todo lo que hace falta para el detalle viaja YA en este viaje: abrir
+           el correo desde el hilo no debe costar otra vuelta al servidor. */
+        correo: {
+          id: en.id,
+          asunto,
+          extracto: (en as any).extracto || null,
+          estado: en.estado,
+          enviado_at: en.sent_at || en.created_at,
+          abierto_at: (en as any).first_opened_at || en.opened_at || null,
+          aperturas: nAb,
+          clics: Number((en as any).click_count || 0),
+          links: (en as any).clicked_links || [],
+        },
+      });
     }
   }
   eventos.sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
