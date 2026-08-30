@@ -18,6 +18,7 @@ import HealthScoreBadge from './HealthScoreBadge';
 import { swrGet } from '../../../lib/crm/swr';
 import VistaRapida, { HojaEsqueleto } from './ui/VistaRapida';
 import FilaDeslizable from './ui/FilaDeslizable';
+import EstadoVacio from './ui/EstadoVacio';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -752,10 +753,23 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               </button>
             </div>
             <div>
+              {/* Tres vacíos distintos, no uno. «Nadie en riesgo» es BUENA
+                  noticia y no lleva botón —no hay nada que arreglar—; una
+                  búsqueda sin resultados sí, porque la causa es un filtro que
+                  uno puso y en el teléfono no hay panel a la vista para
+                  deshacerlo. Antes los tres eran el mismo renglón gris. */}
               {listaM.length === 0 && (
-                <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
-                  {chipCl === 'riesgo' ? 'Nadie en riesgo. Todo al corriente.' : 'Nada con esa búsqueda.'}
-                </div>
+                chipCl === 'riesgo' ? (
+                  <EstadoVacio tono="bien" titulo="Nadie en riesgo"
+                    pista="Ninguna cuenta con pagos vencidos ni señales de baja. Es la buena noticia del día." />
+                ) : buscaM.trim() ? (
+                  <EstadoVacio titulo={`Sin resultados para “${buscaM.trim()}”`}
+                    pista="Se busca por nombre comercial, razón social, cuenta de SACS y datos del contacto."
+                    accion="Quitar la búsqueda" onAccion={() => setBuscaM('')} />
+                ) : (
+                  <EstadoVacio titulo="Todavía no hay clientes"
+                    pista="Cuando ganes una oportunidad, el cliente aparece aquí con su plan y su cuenta de SACS." />
+                )
               )}
               {listaM.slice(0, visMovil).map((c: any) => {
                 // Solo presentación (lección de Leads): "Super carnes rivera" rompe el ritmo.

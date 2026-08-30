@@ -58,6 +58,7 @@ const horaCorta = (d?: string | null) => {
 import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type EstatusLead } from '../../../lib/crm/estatus-lead';
 import { camposLeads, cumpleCondsLead, CATS_DESCARTE, type CondLead } from '../../../lib/crm/leads-filtros';
 import FilaDeslizable from './ui/FilaDeslizable';
+import EstadoVacio from './ui/EstadoVacio';
 
 // Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
 // mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
@@ -1002,8 +1003,24 @@ export default function LeadsTab() {
               Tap → el mismo drawer del lead que en escritorio. */}
           {esMovil ? (
             <div>
+              {/* «Nada con estos filtros» informaba y ahí te dejaba. En el
+                  teléfono no hay panel de filtros a la vista, así que el camino
+                  de vuelta hay que darlo aquí. Búsqueda y filtro se separan
+                  porque la salida es distinta: borrar lo que escribí no es lo
+                  mismo que soltar los filtros que dejé puestos ayer. */}
               {lista.length === 0 && (
-                <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>Nada con estos filtros.</div>
+                busca.trim() ? (
+                  <EstadoVacio titulo={`Sin resultados para “${busca.trim()}”`}
+                    pista="Se busca por nombre, empresa, correo y teléfono."
+                    accion="Quitar la búsqueda" onAccion={() => setBusca('')} />
+                ) : nFiltros > 0 ? (
+                  <EstadoVacio titulo="Ningún lead con estos filtros"
+                    pista={`Tienes ${nFiltros} ${nFiltros === 1 ? 'filtro puesto' : 'filtros puestos'}. Puede que la combinación no deje pasar a nadie.`}
+                    accion="Quitar los filtros" onAccion={limpiarFiltros} />
+                ) : (
+                  <EstadoVacio titulo="Aquí no hay leads todavía"
+                    pista="Los que lleguen por la página, TikTok o el widget aparecen solos en esta lista." />
+                )
               )}
               {(() => {
                 // Como la referencia: lo atorado (≥3 días sin atender) arriba con su
