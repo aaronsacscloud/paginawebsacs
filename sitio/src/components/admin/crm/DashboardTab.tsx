@@ -69,7 +69,9 @@ const seg = (on: boolean) => ({
 }) as const;
 
 export default function DashboardTab() {
-  const [diasAct, setDiasAct] = useState(7);
+  // Arranca en HOY: la pregunta de la mañana es «¿quién se movió mientras no
+  // miraba?», no «¿qué pasó esta semana».
+  const [diasAct, setDiasAct] = useState(1);
   const activos = useLeadsActivos(diasAct);
   const [filtroAct, setFiltroAct] = useState('todos');
   const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);

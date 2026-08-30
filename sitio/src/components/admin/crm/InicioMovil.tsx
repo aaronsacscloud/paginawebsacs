@@ -30,7 +30,9 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   // Quién se movió esta semana. Va aquí y no en el pipeline porque la pregunta
   // que contesta —«¿a quién le toco hoy?»— es de arranque de día, no de
   // gestión: si hay que entrar a otra pantalla a buscarla, no se hace.
-  const [diasAct, setDiasAct] = useState(7);
+  // Arranca en HOY: la pregunta de la mañana es «¿quién se movió mientras no
+  // miraba?», no «¿qué pasó esta semana».
+  const [diasAct, setDiasAct] = useState(1);
   const activos = useLeadsActivos(diasAct);
   const [verActivos, setVerActivos] = useState(false);
   const [filtroAct, setFiltroAct] = useState('todos');

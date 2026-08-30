@@ -21,6 +21,8 @@
 //  3. TENDENCIA. Cinco señales el lunes y nada desde entonces NO es lo mismo
 //     que dos ayer, aunque sumen parecido. «Enfriándose» es accionable hoy.
 import { useEffect, useMemo, useState } from 'react';
+import FilaDeslizable from './ui/FilaDeslizable';
+import { archivar, desarchivar, estaArchivado } from '../../../lib/crm/archivo-actividad';
 import { swrGet } from '../../../lib/crm/swr';
 import Sheet from './ui/Sheet';
 import EstadoVacio from './ui/EstadoVacio';
@@ -137,8 +139,17 @@ export function filtrosDe(d: DatosActivos | null): Filtro[] {
 }
 
 export function aplicarFiltro(leads: LeadActivo[], f: string): LeadActivo[] {
-  if (f === 'todos') return leads;
-  if (f === 'pelota') return leads.filter(l => l.pelota === 'nosotros');
+  if (f === 'todos') return leads;   // ya vienen por recencia del servidor
+  if (f === 'pelota') {
+    /* AQUÍ SÍ manda la deuda, porque es lo que la vista promete. Primero los
+       calientes —la deuda más vieja no es la más cara: un frío de 6 días no
+       vale más que quien abrió la cotización ayer— y con el mismo calor, quien
+       lleva más esperando. En «Todos» este orden estaría escondido y se leería
+       como una lista desordenada. */
+    const t = (x: LeadActivo) => (x.temperatura === 'caliente' ? 3 : x.temperatura === 'tibio' ? 2 : 1);
+    return leads.filter(l => l.pelota === 'nosotros')
+      .sort((a, b) => (t(a) !== t(b) ? t(b) - t(a) : (b.horas_esperando || 0) - (a.horas_esperando || 0)));
+  }
   if (f === 'caliente') return leads.filter(l => l.temperatura === 'caliente');
   if (f === 'enfriandose') return leads.filter(l => l.tendencia === 'enfriandose');
   if (f.startsWith('tipo:')) {
@@ -174,13 +185,28 @@ const BARRA: Record<string, string> = { caliente: '#E4674F', tibio: '#E8B04B', f
 export function ListaLeadsActivos({ leads, onAbrir, movil }: {
   leads: LeadActivo[]; onAbrir?: (l: LeadActivo) => void; movil?: boolean;
 }) {
-  if (!leads.length) {
-    return <EstadoVacio titulo="Nadie con esa condición"
-      pista="Prueba con otro filtro. «Todos» trae a cualquiera que se haya movido en la ventana." />;
+  /* Se archiva contra un estado local para que la fila desaparezca YA. Volver
+     a pedir la lista al servidor por cada gesto la haría sentir pesada, y el
+     archivo vive en este aparato de todos modos. */
+  const [tick, setTick] = useState(0);
+  const visibles = useMemo(
+    () => leads.filter(l => !estaArchivado(l.id, l.ultima?.cuando)),
+    [leads, tick],
+  );
+  const ocultos = leads.length - visibles.length;
+
+  if (!visibles.length) {
+    return (
+      <EstadoVacio
+        titulo={ocultos ? 'Todo archivado por ahora' : 'Nadie con esa condición'}
+        pista={ocultos
+          ? 'Vuelven a aparecer solos en cuanto alguno se mueva otra vez.'
+          : 'Prueba con otro filtro. «Todos» trae a cualquiera que se haya movido en la ventana.'} />
+    );
   }
   return (
     <div>
-      {leads.map(l => {
+      {visibles.map(l => {
         const suyo = l.ultima?.de === 'lead';
         const horas = l.horas_esperando || 0;
         const debe = l.pelota === 'nosotros' && horas >= 1;
@@ -206,8 +232,8 @@ export function ListaLeadsActivos({ leads, onAbrir, movil }: {
           l.tendencia === 'enfriandose' ? 'enfriándose' : l.su_record ? 'su mejor racha' : null,
         ].filter(Boolean);
 
-        return (
-          <button key={l.id} onClick={() => onAbrir?.(l)}
+        const fila = (
+          <button onClick={() => onAbrir?.(l)}
             style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none',
               cursor: onAbrir ? 'pointer' : 'default', fontFamily: 'inherit',
               border: 'none', borderLeft: `3px solid ${BARRA[l.temperatura]}`,
@@ -245,7 +271,32 @@ export function ListaLeadsActivos({ leads, onAbrir, movil }: {
             </span>
           </button>
         );
+
+        /* Deslizar para archivar SOLO en el teléfono: con ratón no hay gesto, y
+           ahí esta lista es una tarjeta del tablero, no una bandeja.
+           FilaDeslizable ya trae el «Deshacer» de 4 s, así que archivar por
+           accidente se repara sin ir a buscar nada. */
+        if (!movil) return <div key={l.id}>{fila}</div>;
+        return (
+          <FilaDeslizable key={l.id}
+            izquierda={{
+              etiqueta: 'Archivada',
+              color: '#fff',
+              fondo: '#6b6875',
+              onAccion: () => { archivar(l.id, l.ultima?.cuando || new Date().toISOString()); setTick(t => t + 1); },
+            }}
+            alDeshacer={() => { desarchivar(l.id); setTick(t => t + 1); }}>
+            {fila}
+          </FilaDeslizable>
+        );
       })}
+      {/* Se dice cuántas se ocultaron: una lista que encoge sin explicar por
+          qué se siente rota, aunque uno mismo la haya encogido. */}
+      {ocultos > 0 && (
+        <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#a5a2af' }}>
+          {ocultos === 1 ? '1 actividad archivada' : `${ocultos} actividades archivadas`}. Reaparecen si el lead vuelve a moverse.
+        </div>
+      )}
     </div>
   );
 }
@@ -501,15 +552,25 @@ export function EfectividadSeguimiento({ datos }: { datos: DatosActivos | null }
   );
 }
 
-/** Rango de la ventana. El 7 no tenía ninguna razón: un ciclo de venta de ERP no cabe en una semana. */
+/**
+ * RANGO DE LA VENTANA: hoy · 7 · 14, y se acabó.
+ *
+ * «Hoy» es el que se usa al arrancar el día —quién se movió mientras no
+ * mirabas— y por eso va primero y es el que abre. Los 30 días se quitaron: a
+ * esa distancia la lista deja de ser una lista de trabajo y se vuelve un
+ * reporte, y para lo viejo ya está «se están cayendo solos», que además
+ * distingue señal fuerte de ruido.
+ */
+export const RANGOS = [{ d: 1, l: 'Hoy' }, { d: 7, l: '7 d' }, { d: 14, l: '14 d' }];
+
 export function RangoDias({ valor, onCambiar }: { valor: number; onCambiar: (d: number) => void }) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
-      {[7, 14, 30].map(d => (
-        <button key={d} onClick={() => onCambiar(d)}
+      {RANGOS.map(r => (
+        <button key={r.d} onClick={() => onCambiar(r.d)}
           style={{ minHeight: 32, padding: '0 11px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-            border: `1px solid ${valor === d ? '#5B4BD6' : '#e2e0ea'}`, background: valor === d ? '#5B4BD6' : '#fff', color: valor === d ? '#fff' : '#4b4956' }}>
-          {d} d
+            border: `1px solid ${valor === r.d ? '#5B4BD6' : '#e2e0ea'}`, background: valor === r.d ? '#5B4BD6' : '#fff', color: valor === r.d ? '#fff' : '#4b4956' }}>
+          {r.l}
         </button>
       ))}
     </div>

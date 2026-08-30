@@ -340,24 +340,15 @@ const _GET: APIRoute = async ({ url }) => {
     f.tendencia = f.senales_recientes > f.senales_antes ? 'subiendo'
       : (f.senales_recientes === 0 && f.senales_antes > 0) ? 'enfriandose' : 'estable';
     return f;
-  }).sort((a, b) => {
-    /* EL ORDEN ES LA OPINIÓN DE LA PANTALLA. Antes era «lo más reciente
-       primero», que pone arriba a quien ya atendiste hace diez minutos y
-       entierra a quien lleva tres días esperándote. Ahora manda la deuda:
-       primero lo que te toca a ti, de más tiempo esperando a menos; después
-       el resto por recencia. */
-    if (a.pelota !== b.pelota) return a.pelota === 'nosotros' ? -1 : 1;
-    if (a.pelota === 'nosotros') {
-      /* Dentro de lo que te toca, PRIMERO LOS CALIENTES. Ordenar solo por
-         tiempo de espera ponía arriba a un lead frío por llevar 152 h y
-         enterraba al que abrió la cotización ayer: la deuda más vieja no es
-         la más cara. Con el mismo calor, sí manda quien lleva más esperando. */
-      const t = (x: any) => (x.temperatura === 'caliente' ? 3 : x.temperatura === 'tibio' ? 2 : 1);
-      if (t(a) !== t(b)) return t(b) - t(a);
-      return (b.horas_esperando || 0) - (a.horas_esperando || 0);
-    }
-    return a.ultima?.cuando < b.ultima?.cuando ? 1 : -1;
-  });
+  }).sort((a, b) => (a.ultima?.cuando < b.ultima?.cuando ? 1 : -1));
+  /* «TODOS» VA POR RECENCIA, A SECAS. Antes esta lista metía la deuda por
+     delante en TODAS las vistas, y el resultado se leía roto: 18 h, 4 d, 5 d,
+     11 h. El criterio existía y era defendible, pero estaba ESCONDIDO — nadie
+     puede adivinar por qué un renglón de hace 5 días va arriba de uno de hace
+     11 horas, y una lista cuyo orden no se entiende se siente rota aunque no
+     lo esté.
+     El orden por deuda no se pierde: vive en el filtro «Te toca a ti», que es
+     donde se pide a propósito. Cada vista ordena como su nombre promete. */
 
   /* Se recorta ANTES de contar. Antes los contadores se calculaban sobre la
      lista completa y solo se enviaban 100 leads: con más de 100, el chip decía

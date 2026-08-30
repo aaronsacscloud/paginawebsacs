@@ -10,7 +10,7 @@ import { C, toolBtn, popup } from './estilo';
 import ModalInteractivo from './Interactivos';
 import MockupWhatsApp from './MockupWhatsApp';
 import { optimizarImagen } from '../../../../lib/crm/imagen';
-import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCalendario, IcoCamara } from './Iconos';
+import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar, IcoBuscar, IcoChispas, IcoBurbuja, IcoChevronDer, IcoDoc, IcoCotizacion, IcoCalendario, IcoCamara } from './Iconos';
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } from '../../../../lib/crm/recientes';
@@ -584,10 +584,28 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   onClick={() => setPop(pop === 'snippets' ? null : 'snippets')}><IcoMarcador size={19} /></button>}
                 <button title="Grabar nota de voz" aria-label="Grabar nota de voz" style={toolBtn(false)}
                   onClick={iniciar}><IcoMic size={19} /></button>
+
+                {/* ══ LOS DOS QUE CIERRAN VENTAS, APARTE ═══════════════════
+                    Mandar la cotización y mandar el link para agendar vivían
+                    dentro del popover de adjuntar, mezclados con «tomar una
+                    foto» y «elegir un archivo». Pero no son adjuntos: son los
+                    dos movimientos que hacen avanzar una venta, y se usan
+                    varias veces al día. Estaban a dos toques y detrás de una
+                    lista que hay que leer.
+                    El divisor no es adorno: separa «mandar algo» de «mover la
+                    venta», que son dos intenciones distintas, y evita que la
+                    fila se lea como seis botones iguales. */}
+                {modo === 'wa' && (<>
+                  <span aria-hidden="true" style={{ width: 1, height: 20, background: C.g200, margin: '0 3px', flexShrink: 0 }} />
+                  <button title="Mandar una cotización" aria-label="Mandar una cotización" style={toolBtn(pop === 'cotizacion')}
+                    onClick={() => setPop(pop === 'cotizacion' ? null : 'cotizacion')}><IcoCotizacion size={19} /></button>
+                  <button title="Mandar el link para agendar" aria-label="Mandar el link para agendar" style={toolBtn(pop === 'agendar')}
+                    onClick={() => setPop(pop === 'agendar' ? null : 'agendar')}><IcoCalendario size={19} /></button>
+                </>)}
+
                 {pop === 'adjuntar' && (
                   <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
-                    onCamara={() => { setPop(null); camaraRef.current?.click(); }}
-                    onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')} />
+                    onCamara={() => { setPop(null); camaraRef.current?.click(); }} />
                 )}
                 {pop === 'snippets' && (
                   <PopSnippets snippets={snippets} resolver={resolver} onElegir={usarSnippet}

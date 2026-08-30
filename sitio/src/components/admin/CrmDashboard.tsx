@@ -1434,6 +1434,17 @@ const CRM_MOBILE_CSS = `
       /*  3) TINTAS OSCURAS QUE FALTABAN en el barrido: #374151 y #4b5563 son
             los grises de texto más usados del CRM y quedaban negro sobre
             negro. */
+      /* LA JERARQUÍA SE INVERTÍA EN OSCURO. La línea importante de cada fila
+         —lo que hizo el lead— va en #3d3a4d y la secundaria en #8b8896. Sobre
+         blanco eso es correcto: oscuro pesa más que gris. Sobre #131318 pasa lo
+         contrario, y la línea que MÁS importaba era la menos visible: «Te
+         escribió por WhatsApp» se leía más apagado que «Le escribimos».
+         Se invierte el par a mano, no se aclara todo por igual: si las dos
+         suben, se pierde la jerarquía en vez de arreglarse. */
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(61, 58, 77)"] { color: #E6E4EE !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(139, 136, 150)"] { color: #85828f !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(165, 162, 175)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(155, 152, 168)"] { color: #7e7b89 !important; }
       [data-crm-dark="1"] .crm-sheet [style*="color: rgb(55, 65, 81)"],
       [data-crm-dark="1"] .crm-sheet [style*="color: rgb(75, 85, 99)"],
       [data-crm-dark="1"] .crm-sheet [style*="color: rgb(31, 41, 55)"] { color: #d7d5de !important; }
