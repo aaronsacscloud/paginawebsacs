@@ -11,7 +11,7 @@ import { swrGet } from '../../../lib/crm/swr';
 // En escritorio este componente no existe: el Dashboard completo sigue igual.
 import { useEffect, useState } from 'react';
 import Sheet from './ui/Sheet';
-import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, ParaRescatarLista, EmpresasActivas, EfectividadSeguimiento, RangoDias, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
+import { useLeadsActivos, ListaLeadsActivos, FiltrosActivos, DrawerLead, ParaRescatarLista, EmpresasActivas, EfectividadSeguimiento, RangoDias, useCampanas, ListaCampanas, aplicarFiltro, rutaConversacion, type LeadActivo } from './LeadsActivos';
 
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
@@ -37,6 +37,10 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   const [verActivos, setVerActivos] = useState(false);
   const [filtroAct, setFiltroAct] = useState('todos');
   const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
+  // Lo que trajo la pauta y todavía nadie siguió. 30 días porque una campaña se
+  // mide en semanas, no en días: en 7 no cabe ni un ciclo de seguimiento.
+  const campanas = useCampanas(30);
+  const [verCampanas, setVerCampanas] = useState(false);
 
   useEffect(() => {
     const hoy = new Date();
@@ -155,6 +159,20 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
           <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
         </div>
       )}
+      {/* Después de los leads con actividad: aquellos ya se movieron, estos ni
+          siquiera agendaron. Es la cola de seguimiento de la pauta. */}
+      {!!campanas?.sin_agendar && (
+        <div className="m-row" onClick={() => setVerCampanas(true)}>
+          <div className="m-tx">
+            <div className="m-n1">{campanas.sin_agendar} de campaña sin agendar</div>
+            <div className="m-n2">
+              {campanas.fuentes[0] ? `${campanas.fuentes[0].sin_agendar} de ${campanas.fuentes[0].etiqueta}` : ''}
+              {' · '}de {campanas.total} que entraron en 30 días
+            </div>
+          </div>
+          <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
+        </div>
+      )}
       {tickets != null && (
         <div className="m-row" onClick={() => onIrA('soporte')}>
           <div className="m-tx">
@@ -192,6 +210,22 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
               ? `whatsapp?wa_conv=${encodeURIComponent(r.wa_conversation_id)}`
               : r.whatsapp ? `whatsapp?wa_search=${encodeURIComponent(r.whatsapp.replace(/\D/g, ''))}&wa_nuevo=1`
               : `pipeline?contacto=${r.id}`;
+            setTimeout(() => onIrA(ruta), 140);
+          }} />
+        <div style={{ height: 20 }} />
+      </Sheet>
+
+      <Sheet open={verCampanas} onClose={() => setVerCampanas(false)} title="Sin agendar · 30 días">
+        <div style={{ padding: '10px 16px 0', fontSize: 12.5, color: '#7c7a86', lineHeight: 1.5 }}>
+          Entraron por campaña y no han agendado nada. Los marcados «sin tocar» ni siquiera tienen conversación abierta.
+        </div>
+        <ListaCampanas movil datos={campanas}
+          onAbrirConv={(l) => {
+            setVerCampanas(false);
+            const ruta = l.wa_conversation_id
+              ? `whatsapp?wa_conv=${encodeURIComponent(l.wa_conversation_id)}`
+              : l.whatsapp ? `whatsapp?wa_search=${encodeURIComponent(l.whatsapp.replace(/\D/g, ''))}&wa_nuevo=1`
+              : `pipeline?contacto=${l.id}`;
             setTimeout(() => onIrA(ruta), 140);
           }} />
         <div style={{ height: 20 }} />

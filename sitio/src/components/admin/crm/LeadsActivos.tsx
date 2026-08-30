@@ -34,7 +34,7 @@ export type ActividadItem = {
 export type Pagina = { ruta: string; n: number; caliente: boolean };
 export type Cotizacion = { id: string | null; folio: string | null; total: number; estado: string | null; vistas: number; cuando: string };
 export type LeadActivo = {
-  id: string; nombre: string; empresa: string | null; whatsapp: string | null; email: string | null;
+  id: string; nombre: string; empresa: string | null; sucursales: number | null; whatsapp: string | null; email: string | null;
   ciclo: string | null; etapa: string | null;
   senales: number; puntos: number; temperatura: 'caliente' | 'tibio' | 'frio';
   pelota: 'nosotros' | 'ellos'; horas_esperando: number | null;
@@ -244,7 +244,14 @@ export function ListaLeadsActivos({ leads, onAbrir, movil }: {
             <span style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
               <b style={{ fontSize: movil ? 15 : 13.5, color: '#241d43', letterSpacing: '-0.01em',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</b>
-              {l.empresa && <span style={{ fontSize: 12.5, color: '#9b98a8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{l.empresa}</span>}
+              {/* Sucursales pegado a la marca: dice el TAMAÑO de la venta de
+                  un vistazo, y va en la misma voz baja que la empresa para no
+                  competir con el nombre. */}
+              {l.empresa && (
+                <span style={{ fontSize: 12.5, color: '#9b98a8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                  {l.empresa}{l.sucursales ? ` · ${l.sucursales} suc.` : ''}
+                </span>
+              )}
               <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#a5a2af', flexShrink: 0 }}>{l.ultima ? haceCuanto(l.ultima.cuando) : ''}</span>
             </span>
 
@@ -332,7 +339,7 @@ export function DrawerLead({ lead, onCerrar, onWhatsApp }: {
           <span style={{ fontSize: 11, fontWeight: 800, background: t.bg, color: t.fg, borderRadius: 999, padding: '3px 9px' }}>{t.l}</span>
           <span style={{ fontSize: 11, fontWeight: 800, background: '#EEF2FF', color: '#4338CA', borderRadius: 999, padding: '3px 9px' }}>{CICLO[lead.ciclo || ''] || lead.ciclo}</span>
           {lead.etapa && <span style={{ fontSize: 11, fontWeight: 800, background: '#EEEEF3', color: '#4b5563', borderRadius: 999, padding: '3px 9px', textTransform: 'capitalize' }}>{lead.etapa}</span>}
-          {lead.empresa && <span style={{ fontSize: 12, color: '#8b8896' }}>{lead.empresa}</span>}
+          {lead.empresa && <span style={{ fontSize: 12, color: '#8b8896' }}>{lead.empresa}{lead.sucursales ? ` · ${lead.sucursales} ${lead.sucursales === 1 ? 'sucursal' : 'sucursales'}` : ''}</span>}
         </div>
 
         {/* POR QUÉ está caliente (o no). En prosa, no en número. */}
@@ -573,6 +580,81 @@ export function RangoDias({ valor, onCambiar }: { valor: number; onCambiar: (d: 
           {r.l}
         </button>
       ))}
+    </div>
+  );
+}
+
+/* ══ LO QUE TRAJO LA PAUTA Y NADIE SIGUIÓ ═════════════════════════════════
+   El CRM sabía cuántos entraron y sabía quién agendó, pero nadie había cruzado
+   las dos cosas — que es justo donde está el trabajo pendiente. Medido: de 73
+   leads de TikTok en 30 días, 71 no agendaron nada. */
+export type CampanaFuente = {
+  fuente: string; etiqueta: string; entraron: number; sin_agendar: number; sin_tocar: number;
+  leads: { id: string; nombre: string; empresa: string | null; sucursales: number | null;
+    whatsapp: string | null; ciclo: string | null; wa_conversation_id: string | null; dias: number }[];
+};
+export type DatosCampanas = { dias: number; total: number; sin_agendar: number; fuentes: CampanaFuente[] };
+
+export function useCampanas(dias = 30) {
+  const [d, setD] = useState<DatosCampanas | null>(null);
+  useEffect(() => {
+    swrGet(`/api/crm/reports/campanas?dias=${dias}`, (j: any) => {
+      if (j?.error || !Array.isArray(j?.fuentes)) return;
+      setD(j as DatosCampanas);
+    }).catch(() => {});
+  }, [dias]);
+  return d;
+}
+
+export function ListaCampanas({ datos, onAbrirConv, movil }: {
+  datos: DatosCampanas | null; onAbrirConv: (l: CampanaFuente['leads'][0]) => void; movil?: boolean;
+}) {
+  const [abierta, setAbierta] = useState<string | null>(datos?.fuentes[0]?.fuente || null);
+  if (!datos?.fuentes.length) {
+    return <EstadoVacio tono="bien" titulo="Todos agendaron"
+      pista="Nadie de los que entraron en la ventana se quedó sin cita. Es la buena noticia del día." />;
+  }
+  return (
+    <div>
+      {datos.fuentes.map(f => {
+        const on = abierta === f.fuente;
+        return (
+          <div key={f.fuente}>
+            {/* La fuente se pliega: con seis fuentes abiertas de golpe esto
+                vuelve a ser la pantalla saturada de la que se venía. */}
+            <button onClick={() => setAbierta(on ? null : f.fuente)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none',
+                background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                padding: movil ? '13px 16px' : '11px 14px', borderBottom: '1px solid #f1f0f5' }}>
+              <span style={{ minWidth: 0, flex: 1 }}>
+                <b style={{ display: 'block', fontSize: movil ? 15 : 13.5, color: '#241d43' }}>{f.etiqueta}</b>
+                <span style={{ display: 'block', fontSize: 12, color: '#8b8896', marginTop: 3 }}>
+                  {f.sin_agendar} sin agendar de {f.entraron} que entraron
+                  {f.sin_tocar > 0 && ` · ${f.sin_tocar} sin conversación siquiera`}
+                </span>
+              </span>
+              <span style={{ fontSize: 13, color: '#a5a2af', flexShrink: 0 }}>{on ? '▾' : '›'}</span>
+            </button>
+            {on && f.leads.map(l => (
+              <button key={l.id} onClick={() => onAbrirConv(l)}
+                style={{ display: 'flex', alignItems: 'baseline', gap: 8, width: '100%', textAlign: 'left', border: 'none',
+                  background: '#FAFAFD', cursor: 'pointer', fontFamily: 'inherit',
+                  padding: movil ? '11px 16px 11px 26px' : '9px 14px 9px 24px', borderBottom: '1px solid #f1f0f5' }}>
+                <span style={{ fontSize: movil ? 14 : 13, color: '#241d43', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.nombre}</span>
+                {l.empresa && <span style={{ fontSize: 12, color: '#9b98a8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                  {l.empresa}{l.sucursales ? ` · ${l.sucursales} suc.` : ''}
+                </span>}
+                {/* Sin conversación es peor que sin agendar: a ese nadie le ha
+                    escrito todavía. Se dice, porque cambia a quién llamas
+                    primero. */}
+                <span style={{ marginLeft: 'auto', fontSize: 11.5, color: l.wa_conversation_id ? '#a5a2af' : '#B45309', fontWeight: l.wa_conversation_id ? 400 : 700, flexShrink: 0 }}>
+                  {l.wa_conversation_id ? (l.dias === 0 ? 'hoy' : `${l.dias} d`) : 'sin tocar'}
+                </span>
+              </button>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

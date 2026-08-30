@@ -93,7 +93,7 @@ const _GET: APIRoute = async ({ url }) => {
 
   const { data: contactos, error: e1 } = await supabase
     .from('contacts')
-    .select('id, nombre, email, whatsapp, lifecycle_stage, pipeline_stage, company_id, companies(nombre)')
+    .select('id, nombre, email, whatsapp, lifecycle_stage, pipeline_stage, sucursales_interes, company_id, companies(nombre, sucursales)')
     .in('lifecycle_stage', ETAPAS_LEAD);
   if (e1) return json({ error: e1.message }, 500);
 
@@ -184,6 +184,11 @@ const _GET: APIRoute = async ({ url }) => {
         id: c.id,
         nombre: c.nombre || 'Sin nombre',
         empresa: (c as any).companies?.nombre || null,
+        /* Cuántas sucursales. Manda la de la EMPRESA cuando existe (es la
+           contratada, o sea el hecho) y si no, la que declaró el lead al
+           registrarse. Es el dato que dice de qué tamaño es la venta, y estaba
+           en la base sin que nadie lo enseñara: 115 de 160 leads lo tienen. */
+        sucursales: (c as any).companies?.sucursales ?? c.sucursales_interes ?? null,
         company_id: c.company_id || null,
         whatsapp: c.whatsapp || null,
         email: c.email || null,

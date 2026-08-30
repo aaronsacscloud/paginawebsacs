@@ -1097,7 +1097,22 @@ export default function LeadsTab() {
                     })()}</div>
                     <div className="m-tx">
                       <div className="m-n1">{cased([c.nombre, c.apellido].filter(Boolean).join(' ')) || 'Sin nombre'}</div>
-                      <div className="m-n2">{c.empresa_nombre || o?.l || c.email || '—'}</div>
+                      {/* EMPRESA Y SUCURSALES, no el origen. `empresa_nombre`
+                          no existe en esta respuesta —viene de otro endpoint—,
+                          así que esto SIEMPRE caía al canal y todas las filas
+                          decían «TikTok», que no distingue a nadie. El nombre
+                          de la empresa y su tamaño sí: son lo que dice con
+                          quién estás hablando y de qué tamaño es la venta.
+                          El canal pasa a ser el último recurso. */}
+                      <div className="m-n2">
+                        {(() => {
+                          const emp = c.companies?.nombre_comercial || c.companies?.nombre || c.empresa_nombre;
+                          const suc = c.companies?.sucursales ?? c.sucursales_interes;
+                          if (emp) return suc ? `${emp} · ${suc} suc.` : emp;
+                          if (suc) return `${suc} ${suc === 1 ? 'sucursal' : 'sucursales'}`;
+                          return o?.l || c.email || '—';
+                        })()}
+                      </div>
                       {/* Lo que de verdad decide a quién contactar: QUÉ pasó al
                           final —abrió el correo, vio la cotización, te escribió—
                           y, si hay cotización, CUÁNTO hay sobre la mesa. Antes
