@@ -236,6 +236,28 @@ export const WIKI: PaginaWiki[] = [
 <p>Los recordatorios de 24 h y 1 h sí funcionan, porque viven en el sistema de reuniones y no en la secuencia.</p></div>`,
   },
   {
+    id: 'p36', grupo: 'El proceso', titulo: '↳ El relevo: ya cotizaste',
+    bajada: 'Doce días de credibilidad.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    cuerpo: `
+<p>Cuando el lead llega a <b>Oportunidad</b> ya vio la demo y ya tiene precio. No hay nada que explicar y todo que demostrar, así que esta secuencia no repite el producto ni ofrece descuento: a esa altura las dos cosas restan.</p>
+<p>Son <b>ocho correos en doce días</b>, todos con botón de WhatsApp. Cero WhatsApps automáticos: aquí el WhatsApp es del vendedor.</p>
+
+<table class="w-tab"><thead><tr><th>Día</th><th>Qué se lleva el lead</th></tr></thead><tbody>
+<tr><td><b>1</b></td><td>Diez cosas que un sistema genérico no hace. No supone nada de su operación — cada lead llega distinto.</td></tr>
+<tr><td><b>3</b></td><td>Las 7 preguntas para evaluar cualquier sistema, con nuestra respuesta a cada una.</td></tr>
+<tr><td><b>5</b></td><td>El hueco de curva: por qué su compra repite el mismo error cada temporada.</td></tr>
+<tr><td><b>6</b></td><td>La cuenta que solo existe con varias tiendas: lo que falta aquí ya está pagado allá.</td></tr>
+<tr><td><b>8</b></td><td>Las marcas que ponen el ejemplo, y qué hay debajo de esa experiencia.</td></tr>
+<tr><td><b>9</b></td><td>El caso de LiveShow con número — y su parte fea, dicha antes de firmar.</td></tr>
+<tr><td><b>11</b></td><td>El probador virtual: en tu tienda caben 200 prendas, en tu catálogo hay 2,000.</td></tr>
+<tr><td><b>12</b></td><td>La decisión: arancel, calendario de compra y la resta hasta el Buen Fin.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">La regla que la distingue</span><p>Como es 100% correo, una respuesta por WhatsApp <b>no la detiene</b> — y eso es a propósito. Los correos siguen nutriendo mientras el vendedor conversa por el canal personal. Solo se detiene si responde por correo, se hace cliente o se descarta.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>. Prenderla manda correos a prospectos reales con cotización en la mano: es una decisión de negocio, no un paso de configuración.</p></div>`,
+  },
+  {
     id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',
     bajada: 'Dónde vive el dato y qué falta para tenerlo a la mano.',
     cuerpo: `
@@ -301,6 +323,57 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>Mandarle los horarios</b></td><td>Un clic manda los próximos horarios + el link público. Cuando el cliente elige, <b>todo</b> se confirma solo.</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">Reglas del vendedor</span><p>El correo del cliente es <b>obligatorio</b> para confirmar una reunión. Si la ventana de WhatsApp está cerrada, el sistema lo dice y ofrece el camino que sí entrega. Todo usa los mismos precios y canales del CRM: <b>nada de rutas paralelas</b>.</p></div>`,
+  },
+  {
+    id: 'wa-entrante', grupo: 'El proceso', titulo: 'Cuando el lead nos escribe',
+    bajada: 'Todo lo que pasa en los primeros segundos.', chip: { texto: 'construido', tono: 'ok' },
+    cuerpo: `
+<p>Un WhatsApp entrante no cae en el vacío. Antes de que nadie lo vea, el sistema ya decidió tres cosas: <b>quién es</b>, <b>qué contestarle</b> y <b>a quién avisarle</b>.</p>
+
+<h3>1 · Quién es</h3>
+<table class="w-tab"><thead><tr><th>Caso</th><th>Qué hace el sistema</th></tr></thead><tbody>
+<tr><td><b>El teléfono ya es de alguien</b></td><td>Se liga a su ficha y avanza a «respondió». No se duplica nada. Es el caso de todo lead que viene de un correo nuestro.</td></tr>
+<tr><td><b>Desconocido · la IA dice ventas</b></td><td>Crea el contacto y entra al funnel como «respondió».</td></tr>
+<tr><td><b>Desconocido · dice soporte</b></td><td>Se marca y se queda solo como conversación, sin ensuciar el funnel.</td></tr>
+<tr><td><b>Desconocido · dice spam</b></td><td>No crea nada.</td></tr>
+<tr><td><b>La IA no contesta</b></td><td>Se asume ventas. Peor es perder un lead que sobrar un contacto.</td></tr>
+</tbody></table>
+
+<h3>2 · Qué contestarle</h3>
+<p>Sale un acuse en segundos, <b>a cualquier hora</b>. El texto cambia según el reloj, porque la promesa tiene que ser verdad:</p>
+<table class="w-tab"><thead><tr><th>Momento</th><th>Lo que recibe</th></tr></thead><tbody>
+<tr><td><b>Dentro de horario</b><br />L-S, 9 a 19</td><td>«Te leo 👋 Soy Andrea, consultora de moda en Sacs. Dame unos minutos y te contesto por aquí mismo.»</td></tr>
+<tr><td><b>Fuera de horario</b></td><td>«…Ahorita ya estamos fuera de horario — te contesto en cuanto abramos, a partir de las 9 de la mañana.»</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Una vez por conversación, no por mensaje</span><p>Si el lead manda tres mensajes seguidos <b>no</b> recibe tres veces la misma frase. El acuse se rearma a las 20 h, para que quien vuelve al día siguiente sí reciba señal de que lo leímos.</p></div>
+
+<h3>3 · De dónde venía</h3>
+<p>Todos nuestros botones de WhatsApp mandan el mensaje ya escrito. Ese texto no dice solo «me escribieron»: dice <b>en qué punto del argumento se convenció</b>. El sistema lo reconoce, etiqueta la ficha y el aviso al equipo llega con contexto:</p>
+<div class="w-caja"><span class="w-k">Así se ve el aviso</span><p><b>Regina de Kali Studio te escribió por WhatsApp</b><br />Viene de: Correo 3 · El hueco de curva<br />Quiere: Probar el motor con un estilo suyo de la temporada pasada<br />Etapa: oportunidad · cotizado</p></div>
+<p>Se reconoce por una frase distintiva, no por el texto completo: WhatsApp deja editar antes de enviar y casi siempre agregan algo. Si el lead escribió por su cuenta <b>no se inventa etiqueta</b> — el acuse sale igual y el contador de no leídos hace su trabajo.</p>
+
+<div class="w-caja"><span class="w-k">Dónde se configura</span><p>Todo esto vive en <b>Automatización ▸ Secuencias ▸ «WhatsApp entrante · atención y control»</b>. Es una secuencia por evento: no corre por días, reacciona en el momento. Si está apagada, no sale acuse.</p></div>`,
+  },
+  {
+    id: 'wa-candados', grupo: 'Referencia', titulo: 'Los candados de WhatsApp',
+    bajada: 'Por qué a veces el sistema te frena.',
+    cuerpo: `
+<p>Tres candados, cada uno puesto por algo que ya pasó de verdad.</p>
+
+<h3>Un WhatsApp por lead por día</h3>
+<p>El candado cuenta los mensajes <b>reales</b>, así que incluye lo que manda la cadencia <i>y</i> lo que manda una persona desde la bandeja. Antes la cadencia llevaba su propia cuenta y los envíos manuales le eran invisibles: a un lead le salieron dos plantillas con <b>tres minutos</b> de diferencia.</p>
+<p>Desde la bandeja <b>se puede forzar</b>, porque ahí hay una persona decidiendo. La cadencia nunca fuerza: ahí no hay nadie mirando.</p>
+
+<h3>Si tomas el hilo, la máquina se calla</h3>
+<p>Cuando un vendedor manda algo a mano, la cadencia automática se aparta <b>5 días</b>. Se reanuda sola si el hilo se queda quieto. El lead no debe escuchar dos voces a la vez — mientras el vendedor habla, gana él.</p>
+
+<h3>No se cierra sobre un mensaje sin leer</h3>
+<p>Marcar «resuelta» no saca la conversación de un filtro: la saca de <b>los cuatro</b> —abiertas, no contestadas, sin respuesta y sin asignar—, porque todos excluyen ese estado.</p>
+<div class="w-caja w-bad"><span class="w-k">Lo que pasó</span><p>Un lead de TikTok contestó «Si» a las 17:23. A las 18:00 la conversación se cerró con ese mensaje sin leer. Ocho minutos después el sistema detectó que el cliente llevaba rato esperando, <b>y no avisó porque estaba cerrada</b>. Seis horas fuera de la fila.</p></div>
+<p>Ahora, cerrar con la última palabra del cliente sin contestar pide confirmación. Cerrar sigue siendo normal —y es lo que se hace la mayoría de las veces—; lo que no puede pasar es perder a alguien en silencio.</p>
+
+<h3>Responder ajusta el canal, no lo saca todo</h3>
+<p>Si el lead responde por WhatsApp, se detienen los <b>WhatsApps</b> automáticos y los correos siguen. Si responde por correo, al revés. La asimetría es a propósito: <b>WhatsApp es más personal</b>, y por eso una respuesta ahí pesa más.</p>`,
   },
   {
     id: 'verificar', grupo: 'Referencia', titulo: 'Cómo verificar',
