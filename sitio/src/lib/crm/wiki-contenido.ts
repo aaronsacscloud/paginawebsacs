@@ -329,6 +329,33 @@ export const WIKI: PaginaWiki[] = [
     cuerpo: `
 <p>Once correos que llevan al usuario de cero a operar. Cada uno enseña <b>dónde está la cosa</b> con captura del sistema real y la ruta exacta del menú, para qué sirve, qué hacer hoy y qué viene después. El CTA nunca es comprar: es preguntar por WhatsApp.</p>
 
+<h3>La secuencia final, día por día</h3>
+<p>Tres canales a la vez. El correo enseña, el mensaje <b>dentro de Sacs</b> acompaña mientras trabaja, y el WhatsApp queda para cuando pregunta.</p>
+<table class="w-tab"><thead><tr><th>Día</th><th>Correo</th><th>Dentro de Sacs</th></tr></thead><tbody>
+<tr><td><b>1</b></td><td>La Academia</td><td>—</td></tr>
+<tr><td><b>2</b></td><td>Sesión con Andrea</td><td><b>Sesión con consultor (1 de 3)</b> · modal con calendario</td></tr>
+<tr><td><b>3</b></td><td>Tu primer producto</td><td>—</td></tr>
+<tr><td><b>4</b></td><td>—</td><td><b>Tu promoción del anual</b> · tarjeta en inicio, no interrumpe</td></tr>
+<tr><td><b>5</b></td><td>Talla × color</td><td>—</td></tr>
+<tr><td><b>6</b></td><td>—</td><td><b>Sesión con consultor (2 de 3)</b></td></tr>
+<tr><td><b>7</b></td><td>Abrir caja y vender</td><td>—</td></tr>
+<tr><td><b>8</b></td><td>Sesión con Andrea (mitad)</td><td>—</td></tr>
+<tr><td><b>9</b></td><td>Existencias por sucursal</td><td><b>Sesión con consultor (3 de 3)</b></td></tr>
+<tr><td><b>11</b></td><td>La orden de compra</td><td><b>Pregunta por WhatsApp</b> · deja de pedir cita</td></tr>
+<tr><td><b>13</b></td><td>La nivelación</td><td><b>Contratar con el 35%</b> · modal con precio</td></tr>
+<tr><td><b>14</b></td><td>Lo que lograste</td><td><b>Último día</b> · o pide más días</td></tr>
+<tr><td><b>15</b></td><td>35% en el pago anual</td><td>—</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">Tres veces la sesión, y luego se cambia la pregunta</span><p>La sesión con consultor se ofrece en los días 2, 6 y 9, y <b>el texto cambia cada vez</b>: arrancas · vas a la mitad · te queda poco. Tres veces la misma frase se lee como un robot y la tercera ya no se abre.</p>
+<p>En el día 11 se <b>deja de pedir cita</b> y se pide la duda concreta por WhatsApp. Quien no agendó tres veces no va a agendar la cuarta; lo que sí hace es escribir una pregunta si se la piden así.</p></div>
+
+<div class="w-caja"><span class="w-k">La promoción se avisa el día 4, no el último</span><p>Que sepa desde temprano que su prueba trae 35% en el anual — mientras decide, no cuando ya está decidiendo. Dicho el día 14 suena a rescate; dicho el día 4 es información.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">Y se para en cuanto paga</span><p>Suscripción <b>activa</b> de ciclo anual o vitalicia y la secuencia se cierra con motivo <code>pago_licencia</code> — <b>y se le baja de los mensajes dentro de Sacs</b>. Un cliente que acaba de pagar viendo el modal de «contrata con 35%» aprende que le cobraron de más.</p>
+<p>Un anual en <b>pendiente_pago</b> NO cuenta: ese es justo a quien todavía hay que empujar.</p></div>
+
+<h3>Qué enseña cada correo</h3>
 <table class="w-tab"><thead><tr><th>Día</th><th>Qué le enseña</th></tr></thead><tbody>
 <tr><td><b>1</b></td><td>La Academia. Y no lo invita a «ver videos»: la Academia está gamificada y paga <b>$500 de saldo</b> más una licencia gratis para regalar.</td></tr>
 <tr><td><b>2</b></td><td><b>Sesión con Andrea</b> para revisar sus flujos. Al principio a propósito: hacerla el día 12 resuelve dudas, hacerla el día 2 cambia cómo usa los doce que siguen.</td></tr>
@@ -388,6 +415,29 @@ export const WIKI: PaginaWiki[] = [
 
 <h3>Todo queda escrito</h3>
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
+  },
+  {
+    id: 'canal-inapp', grupo: 'El proceso', titulo: 'Hablarle dentro de Sacs',
+    bajada: 'El tercer canal de las secuencias.', chip: { texto: 'nuevo', tono: 'ok' },
+    cuerpo: `
+<p>Correo y WhatsApp le hablan al lead donde su atención está repartida. Cuando alguien está <b>usando Sacs</b> —una prueba gratis, un cliente nuevo— el mejor lugar para hablarle es el sistema que tiene abierto: ahí ya puso atención, el mensaje llega en el contexto de lo que está haciendo, y no cuesta ni un peso de Meta ni de SendGrid.</p>
+
+<h3>Cómo se arma un paso así</h3>
+<p>En el editor de la secuencia, el canal <b>Dentro de Sacs</b>. No se redacta ahí: <b>se elige una campaña de Outbound</b>. La campaña es el mensaje —con su formato, sus botones y su vista previa ya resueltos—; la secuencia decide a quién y cuándo.</p>
+<div class="w-caja"><span class="w-k">Por qué no se escribe dentro del paso</span><p>Habría dos editores de mensajes in-app, y se separan en la primera semana: Outbound estrena un formato y el de secuencias no lo tiene. Uno solo, y la secuencia lo usa.</p></div>
+
+<h3>Solo aparecen las campañas de secuencia</h3>
+<p>El selector no ofrece cualquier campaña de Outbound, y es a propósito. La audiencia de una campaña normal se resuelve por condiciones, y ahí <b>«sin condiciones» significa TODAS las empresas</b>, no ninguna. Elegir una de esas en un paso de secuencia le habría mandado el mensaje del día 2 de una prueba gratis a toda la base.</p>
+<div class="w-caja w-bad"><span class="w-k">Medido, no supuesto</span><p>La misma definición de audiencia sin la marca de «gobernada por secuencia» resuelve a <b>143 cuentas</b>. Con la marca, a <b>1</b>.</p></div>
+<p>Una campaña de secuencia nace con la audiencia <b>vacía</b> y va creciendo: cada lead que llega a ese paso entra, y al salir de la secuencia, sale.</p>
+
+<h3>No compite con los otros canales</h3>
+<table class="w-tab"><thead><tr><th>Regla</th><th>Por qué</th></tr></thead><tbody>
+<tr><td>No gasta el cupo de <b>un correo y un WhatsApp por día</b></td><td>No interrumpe: espera dentro del sistema a que el usuario entre.</td></tr>
+<tr><td>No se detiene cuando el lead responde por otro canal</td><td>Que conteste un correo no es razón para quitarle de la pantalla el modal que explica su promoción.</td></tr>
+<tr><td>Sin cuenta de SACS ligada, el paso se salta</td><td>Y queda anotado como saltado, no como enviado.</td></tr>
+<tr><td>Si falla, <b>no</b> se marca como enviado</td><td>La siguiente corrida lo reintenta. Dar por entregado algo que el usuario nunca vio es peor que no mandarlo.</td></tr>
+</tbody></table>`,
   },
   {
     id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',
