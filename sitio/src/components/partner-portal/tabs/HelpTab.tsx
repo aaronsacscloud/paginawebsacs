@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { SS, C } from './styles';
 import { Icon } from './icons';
+import { WHATSAPP_NUMBER } from '../../../lib/whatsapp';
 
-const SUPPORT_WHATSAPP = '5215536634392';
+const SUPPORT_WHATSAPP = WHATSAPP_NUMBER;   // fuente única: src/lib/whatsapp.ts
 const SUPPORT_EMAIL = 'partners@sacscloud.com';
 
 const FAQS: { q: string; a: string }[] = [

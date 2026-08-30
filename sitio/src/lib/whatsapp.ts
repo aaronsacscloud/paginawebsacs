@@ -4,7 +4,7 @@
 // es lo que define la conversación: si dice "prueba gratis", el asesor recibe
 // a alguien pidiendo trial; si dice "demo", recibe a alguien pidiendo demo.
 
-export const WHATSAPP_NUMBER = '5215536634392';
+export const WHATSAPP_NUMBER = '12058920417';
 
 /** Link a wa.me con el mensaje precargado. */
 export function waLink(message: string, number: string = WHATSAPP_NUMBER): string {

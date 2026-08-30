@@ -1,11 +1,12 @@
 ---
+import { WHATSAPP_NUMBER } from '../lib/whatsapp';
 // La "prueba gratis" ya NO usa un formulario que provisiona la cuenta sola.
 // Cualquier botón de prueba gratis del sitio llega aquí y se redirige de
 // inmediato a WhatsApp para SOLICITAR la prueba (proceso asistido por ventas).
 // Se conserva el `ref` de partner (de /p/[slug]) dentro del mensaje.
 export const prerender = false;
 
-const WA_NUMBER = '5215536634392';
+const WA_NUMBER = WHATSAPP_NUMBER;   // fuente única: src/lib/whatsapp.ts
 const ref = (Astro.url.searchParams.get('ref') || '').trim().slice(0, 60);
 const mensaje = `Hola 👋 Quiero solicitar una prueba gratis de SACS, por favor.${ref ? `\n\n(Referido por: ${ref})` : ''}`;
 const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(mensaje)}`;

@@ -293,7 +293,7 @@ export default function MyAccountTab({ user }: { user: { id: string; nombre: str
             <p style={SS.leadSm}>Por seguridad, cambiar tu email principal requiere validación humana. Escríbenos por WhatsApp con el nuevo email y validamos identidad en <strong>menos de 24h hábiles</strong>.</p>
             <Field label="Email actual"><input type="email" value={user.email} disabled style={{ ...inputStyle, opacity: 0.6 }} /></Field>
             <Field label="Nuevo email que quieres usar"><input type="email" style={inputStyle} placeholder="nuevo@email.mx" id="new-email-input" /></Field>
-            <a href={`https://wa.me/5215536634392?text=${encodeURIComponent(`Hola, soy ${user.nombre || 'partner'} (${user.email}). Quiero cambiar mi email principal a otro. Te confirmo los detalles aquí.`)}`}
+            <a href={`https://wa.me/12058920417?text=${encodeURIComponent(`Hola, soy ${user.nombre || 'partner'} (${user.email}). Quiero cambiar mi email principal a otro. Te confirmo los detalles aquí.`)}`}
               target="_blank" rel="noopener"
               style={{ ...SS.btn, marginTop: 14, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Icon.WhatsApp size={14} /> Pedir cambio por WhatsApp

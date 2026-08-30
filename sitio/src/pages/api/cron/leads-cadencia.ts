@@ -19,6 +19,7 @@ import { resolverTenant } from '../../../lib/email/tenant';
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { compilar, compilarTexto, interpolar } from '../../../lib/email/plantillas';
 import { cumpleCondsLead } from '../../../lib/crm/leads-filtros';
+import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/presion';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
 
@@ -62,7 +63,7 @@ export const GET: APIRoute = async ({ url }) => {
   const diaIso = cdmx.getUTCDay() === 0 ? 7 : cdmx.getUTCDay();   // 1=lun … 7=dom
   const t = await resolverTenant();
   const ahora = new Date();
-  const res: any = { enrolados: 0, graduados: 0, canales_detenidos: 0, calientes: 0, envios: [] };
+  const res: any = { enrolados: 0, graduados: 0, canales_detenidos: 0, calientes: 0, envios: [], saltados: [] };
 
   // Tope GLOBAL entre secuencias: máximo 1 correo y 1 WhatsApp al día por
   // lead, sin importar en cuántas secuencias esté metido.
@@ -353,6 +354,15 @@ export const GET: APIRoute = async ({ url }) => {
             correoHecho = true; corridaCorreos++; (envioHoy[c.id] = envioHoy[c.id] || {}).correo = true;
             await notaInbox(c.id, `Secuencia "${sec.nombre}" · día ${p.dia}: correo "${asunto}" enviado a ${c.email}.`);
           } else {
+            // ── Dos candados antes de escribirle ──
+            // 1. Un WhatsApp por lead por día, contando TODO lo que salió — el
+            //    cron, otra secuencia, o un vendedor desde la bandeja. Aquí no
+            //    se fuerza nunca: no hay nadie mirando.
+            // 2. Si una persona tomó la conversación, la cadencia se hace a un
+            //    lado 5 días. El lead no debe escuchar dos voces a la vez.
+            const presion = await puedeMandarWa(c.whatsapp);
+            if (!presion.ok) { res.saltados.push({ lead: c.id, motivo: 'presion_wa', libre_en: presion.libreEn?.toISOString() }); continue; }
+            if (await cadenciaPausadaPorPersona(c.whatsapp)) { res.saltados.push({ lead: c.id, motivo: 'la tomo una persona' }); continue; }
             await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', [primerNombre || '👋']);
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           }

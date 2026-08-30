@@ -48,11 +48,25 @@ export async function upsertConversacion(o: {
     conv = data;
   }
   if (!conv) {
+    // ── Sin filtrar por estado, A PROPÓSITO ──
+    // Antes esto pedía .eq('estado','active') y ahí estaba el bug: cuando la
+    // ventana de 24 h se cierra, la conversación pasa a 'ended'. Al mandar una
+    // plantilla —que es EXACTAMENTE para ese caso— ya no la encontraba y se iba
+    // al insert de abajo, creando un hilo nuevo con el mismo teléfono. El
+    // historial quedaba partido en dos y en la bandeja parecía que se habían
+    // borrado los mensajes anteriores. Caso real: Sugar store, +52 917 116 6173,
+    // dos conversaciones el 29 y el 30 de agosto de 2026.
+    // Ahora se toma la más reciente sea cual sea su estado y, si estaba cerrada,
+    // se reabre: escribirle a alguien ES reabrir la conversación.
     const { data } = await supabase.from('wa_conversaciones')
-      .select('id, contact_id, company_id, kapso_conversation_id')
-      .eq('telefono', e164).eq('estado', 'active')
-      .order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+      .select('id, contact_id, company_id, kapso_conversation_id, estado')
+      .eq('telefono', e164)
+      .order('ultimo_mensaje_at', { ascending: false, nullsFirst: false })
+      .limit(1).maybeSingle();
     conv = data;
+    if (conv && conv.estado !== 'active' && (!o.estado || o.estado === 'active')) {
+      await supabase.from('wa_conversaciones').update({ estado: 'active' }).eq('id', conv.id);
+    }
     // Si la encontramos por teléfono y ahora sí sabemos el id de Kapso, se ata.
     if (conv && o.kapsoConversationId && !conv.kapso_conversation_id) {
       await supabase.from('wa_conversaciones')

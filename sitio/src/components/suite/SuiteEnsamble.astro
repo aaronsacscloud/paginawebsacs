@@ -1,4 +1,5 @@
 ---
+import { WHATSAPP_NUMBER } from '../../lib/whatsapp';
 /**
  * SuiteEnsamble — el cierre de la página de giro, en tres actos.
  *
@@ -35,7 +36,6 @@ const {
   locale = 'es',
 } = Astro.props;
 
-const WHATSAPP_NUMBER = '5215536634392';
 const MENSAJE_WA = t('whatsapp.message', locale);
 const enlaceWa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MENSAJE_WA)}`;
 ---

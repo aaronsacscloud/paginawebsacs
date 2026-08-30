@@ -5,8 +5,9 @@
 import { useEffect, useState } from 'react';
 import { C } from './styles';
 import { Icon } from './icons';
+import { WHATSAPP_NUMBER } from '../../../lib/whatsapp';
 
-const SUPPORT_WHATSAPP = '5215536634392';
+const SUPPORT_WHATSAPP = WHATSAPP_NUMBER;   // fuente única: src/lib/whatsapp.ts
 
 type Props = {
   user: { id: string; nombre: string; email: string };

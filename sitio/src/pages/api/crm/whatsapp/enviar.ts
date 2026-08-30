@@ -15,6 +15,7 @@ import { usarNumero, enviarTexto, enviarPlantilla, enviarMediaLink, subirMediaKa
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { explicarError } from '../../../../lib/whatsapp/errores';
 import { upsertConversacion, registrarMensaje } from '../../../../lib/whatsapp/espejo';
+import { puedeMandarWa } from '../../../../lib/whatsapp/presion';
 import { textoConSv, conSv } from '../../../../lib/tracking/identidad';
 import { telefonoWhatsApp } from '../../../../lib/telefono';
 import { getSessionFromRequest } from '../../../../lib/auth/session';
@@ -223,6 +224,22 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (b.plantilla?.nombre) {
     try {
+      // ── Un WhatsApp por lead por día ──
+      // La cadencia ya se limitaba sola, pero no veía los envíos a mano; por eso
+      // a Sugar store le salieron dos plantillas con tres minutos de diferencia.
+      // El candado mira los mensajes reales, así que cuenta los dos orígenes.
+      // Se puede forzar (`forzar: true`) porque aquí SÍ hay una persona mirando
+      // y a veces el segundo mensaje es la respuesta correcta.
+      const presion = await puedeMandarWa(destino.telefono, { forzar: !!b.forzar });
+      if (!presion.ok) {
+        return json({
+          error: presion.motivo,
+          presion_alta: true,
+          libre_en: presion.libreEn?.toISOString() || null,
+          se_puede_forzar: true,
+        }, 429);
+      }
+
       const params = (Array.isArray(b.plantilla.params) ? b.plantilla.params : []).map(sanearParam);
       const { data: p } = await supabase.from('wa_plantillas')
         .select('cuerpo, header_tipo, header_media_url, botones, tipo_especial').eq('nombre', b.plantilla.nombre).eq('idioma', String(b.plantilla.idioma || 'es_MX')).maybeSingle();

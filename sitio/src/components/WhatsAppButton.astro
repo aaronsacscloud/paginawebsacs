@@ -1,11 +1,11 @@
 ---
+import { WHATSAPP_NUMBER } from '../lib/whatsapp';
 import { t } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
 
 interface Props { locale?: Locale; }
 const { locale = 'es' } = Astro.props;
 
-const WHATSAPP_NUMBER = '5215536634392';
 const DEFAULT_MESSAGE = t('whatsapp.message', locale);
 ---
 
