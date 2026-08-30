@@ -48,6 +48,15 @@ const CSS = `
   .cfm-hoja { border-radius: 16px; max-width: 440px; padding-bottom: 18px; animation: none; }
 }
 @media (prefers-reduced-motion: reduce) { .cfm-hoja { animation: none; } }
+/* Modo oscuro. Sin esto la hoja salía blanca con texto oscuro sobre una
+   pantalla negra — el mismo error que dejó la lista del inbox en dos colores.
+   Se copia la condición que usa el resto del tema del CRM. */
+@media (prefers-color-scheme: dark) and (max-width: 899px) {
+  [data-crm-dark="1"] .cfm-hoja { background: #1d1d24; box-shadow: 0 -10px 34px rgba(0,0,0,.5); }
+  [data-crm-dark="1"] .cfm-tit { color: #F2F1F7; }
+  [data-crm-dark="1"] .cfm-det { color: #b3b1bd; }
+  [data-crm-dark="1"] .cfm-no { background: #232329; border-color: #33333d; color: #d7d5de; }
+}
 `;
 
 function estilos() {

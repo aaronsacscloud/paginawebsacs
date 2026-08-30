@@ -1029,7 +1029,8 @@ export default function InboxPro() {
                       : 'Sin conversaciones abiertas. Bandeja limpia.'}</div>
                     {chipWa !== 'abiertas' && chipWa !== 'resueltas' && (
                       <button onClick={() => setChipWa('abiertas')}
-                        style={{ marginTop: 12, minHeight: 44, padding: '0 16px', border: '1px solid #ddd6fb', borderRadius: 10, background: '#fff', color: '#5B4BD6', fontWeight: 700, fontSize: '0.84rem', fontFamily: 'inherit', cursor: 'pointer' }}>
+                        className="m-chip"
+                        style={{ marginTop: 12, minHeight: 44, padding: '0 16px', borderRadius: 10, fontWeight: 700, fontSize: '0.84rem', color: 'var(--m-acc)' }}>
                         Ver todas las abiertas ›
                       </button>
                     )}
