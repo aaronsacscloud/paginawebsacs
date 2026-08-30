@@ -424,6 +424,39 @@ export const WIKI: PaginaWiki[] = [
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
+    id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
+    bajada: 'Al cliente que ya opera bien.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    cuerpo: `
+<p>Trece pasos en setenta días para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
+
+<div class="w-caja"><span class="w-k">El tono es la decisión</span><p>No dice «te falta». Dice <b>«ya dominaste esto»</b>. Quien recibe estos correos vende, corta caja y mueve inventario — tratarlo como si le faltara algo insulta el trabajo que sí hizo. Cuando alguien ya domina el día a día, lo que sigue no es aprender el sistema: es <b>qué más se puede quitar de encima</b>.</p></div>
+
+<h3>Las cinco cosas que se enseñan</h3>
+<table class="w-tab"><thead><tr><th>Día</th><th>Qué</th><th>El argumento</th></tr></thead><tbody>
+<tr><td><b>12</b></td><td><b>Axo</b></td><td>No te explica dónde está el botón: te lleva a la pantalla y, si se lo pides, lo hace él. Con los mismos permisos que ya tienes.</td></tr>
+<tr><td><b>24</b></td><td><b>Empleados</b></td><td>Asistencias, contratos, actas y clima laboral. La operación de la tienda vive en el sistema; la de su gente, en un cuaderno.</td></tr>
+<tr><td><b>36</b></td><td><b>Administración</b></td><td>Gastos, cuentas por cobrar y por pagar, bancos. Sacs ya dice cuánto vendiste; falta a dónde se fue.</td></tr>
+<tr><td><b>48</b></td><td><b>Nivelación</b></td><td>Qué transferir entre sucursales y qué comprar de verdad — después de mover lo que ya pagaste.</td></tr>
+<tr><td><b>60</b></td><td><b>Personalizaciones</b></td><td>La pregunta no es «¿Sacs lo hace?» sino «¿esto que hago a mano cada semana se puede automatizar?».</td></tr>
+</tbody></table>
+<p>El día 1 abre la serie diciendo qué viene, y el día 72 cierra preguntando cuál le movió — y ofreciendo dejar de mandarlos si ninguno.</p>
+
+<h3>Siempre las dos opciones</h3>
+<p>Cada paso ofrece <b>agendar 45 minutos</b> o <b>escribir por WhatsApp</b>, en ese orden. Quien prefiere hablar agenda; quien prefiere escribir, escribe. Obligar a una sola pierde a la mitad — y de una cadencia de expansión, la mitad que se pierde suele ser la que ya te iba a comprar.</p>
+<div class="w-caja"><span class="w-k">Con su propio tipo de reunión</span><p><b>Sesión de crecimiento</b>, 45 minutos, en <code>/agendar/crecimiento</code>. No reusa «consultoría» por dos razones: el nombre es lo primero que ve el cliente en el agendador —y «consultoría» a quien ya paga suena a que algo salió mal—, y en el reporte de reuniones mezclarlas haría imposible saber cuántas sesiones de crecimiento hubo y en qué acabaron.</p>
+<p>Hereda dueño y horarios de consultoría: si se copiaran a mano, el día que alguien cambie su disponibilidad este tipo ofrecería horas que ya no existen.</p></div>
+
+<h3>Sin precios, a propósito</h3>
+<p>Los correos dicen que son <b>extensiones</b> del plan y que lo que implica cada una se ve por WhatsApp, sobre su caso y su número de sucursales. Se aclara desde el primer correo: si no se dice, el cliente asume que viene incluido y el reclamo llega después.</p>
+
+<h3>Quién entra</h3>
+<table class="w-tab"><thead><tr><th>Regla</th><th>Por qué</th></tr></thead><tbody>
+<tr><td>Cliente <b>con menos de 15 días sin vender</b></td><td>A quien no está usando el sistema no se le ofrece más sistema. Ese va a la cadencia de cuenta dormida, que es otra conversación.</td></tr>
+<tr><td>El arco cuenta desde que <b>entra</b>, no desde que es cliente</td><td>Con la fecha de alta, los clientes actuales aparecerían en su día 500 y recibirían los siete correos de golpe. Así cada uno camina su propio arco.</td></tr>
+<tr><td>WhatsApp <b>solo dos veces</b> en 70 días</td><td>Es cliente, no lead. Uno a media serie y otro al final, cuando ya vio todo.</td></tr>
+</tbody></table>`,
+  },
+  {
     id: 'renovacion', grupo: 'El proceso', titulo: '↻ Rumbo a la renovación',
     bajada: 'La primera cadencia de cliente.', chip: { texto: 'cargada, apagada', tono: 'warn' },
     cuerpo: `
