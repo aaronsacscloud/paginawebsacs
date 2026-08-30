@@ -362,6 +362,13 @@ export const PUT: APIRoute = async ({ request }) => {
     if (cr.error && /column .* does not exist|schema cache/i.test(cr.error.message || '')) {
       await supabase.from('churn_events').insert(churn).select().maybeSingle();
     }
+    /* Y se abre el CASO de rescate, que es donde se trabaja. El churn_event
+       es contabilidad; el caso es el trabajo. Va en try porque una cancelación
+       nunca debe fallar por esto: el barrido nocturno lo recoge. */
+    try {
+      const { abrirCasoSiAplica } = await import('../../../../lib/crm/churn.lib');
+      await abrirCasoSiAplica(String(data.company_id));
+    } catch (e) { console.warn('[churn] no se pudo abrir el caso:', e); }
   }
   return new Response(JSON.stringify({ data, ...(stripeAviso ? { advertencia: stripeAviso } : {}) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
