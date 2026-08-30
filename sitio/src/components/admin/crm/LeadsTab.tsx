@@ -13,6 +13,7 @@ import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { confirmar } from '../../../lib/ui/confirmar';
+import { CSS_TABLA, T, DIAS_ATORADO as DIAS_ATORADO_CRM } from '../../../lib/crm/tabla.estilo';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 // REGLA DE VELOCIDAD: el kanban de escritorio y el drawer bajan al usarse.
@@ -216,7 +217,7 @@ const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
 /* El corte de «atorado»: 3 días sin atenderlo. Vive aquí y no dentro del
    render del teléfono porque ahora lo usan las dos vistas, y dos copias de un
    umbral es un umbral que va a divergir. */
-export const DIAS_ATORADO = 3;
+export const DIAS_ATORADO = DIAS_ATORADO_CRM;
 export const diasDeLead = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
 
 /** Llegó dentro de los últimos 7 días (hoy incluido). */
@@ -245,33 +246,32 @@ const S = {
      Y se queda pegada arriba al hacer scroll, con sombra —sin ella las filas
      se le meten por debajo sin ninguna capa que las separe—: en 13 columnas,
      perder los rótulos a la tercera fila es perder de qué habla cada dato. */
-  th: { fontSize: '0.6875rem', fontWeight: 600, color: '#6B6A76', textTransform: 'uppercase' as const, letterSpacing: '.04em', textAlign: 'left' as const, padding: '9px 14px', background: '#fff', position: 'sticky' as const, top: 0, zIndex: 2, whiteSpace: 'nowrap' as const, boxShadow: '0 1px 0 #e8e6ef, 0 6px 10px -8px rgba(16,24,40,.22)' } as const,
+  th: T.th,
   /* Alineación ARRIBA, no al centro. Cada celda apila lo suyo (la hora bajo
      la fecha, el anuncio bajo la campaña, los días bajo el estatus) y con
      `middle` una celda de tres renglones empujaba al nombre de al lado hacia
      abajo: en la misma fila, ningún dato principal quedaba a la altura del
      otro. Arriba, TODOS los valores principales caen en la primera línea y la
      fila se lee de un barrido. */
-  td: { padding: '9px 14px', fontSize: '0.75rem', borderBottom: '1px solid #ebe9f0', verticalAlign: 'top' as const, lineHeight: '20px', fontVariantNumeric: 'tabular-nums' as const } as const,
+  td: T.td,
   /* El ancla de la fila: UN solo dato por encima de 0.8rem. Antes nombre,
      empresa, correo y teléfono medían lo mismo (0.78) y la mancha de tinta más
      grande de cada renglón era el correo — o sea, el dato por el que nadie
      recuerda a un lead ganaba sobre el nombre. */
-  nombre: { fontSize: '0.87rem', fontWeight: 700, color: '#16151c', letterSpacing: '-.01em', cursor: 'pointer', lineHeight: '20px' } as const,
+  nombre: T.nombre,
   /* Lo que acompaña al nombre (empresa, correo, teléfono): un escalón abajo,
      para que se lea sin competir. */
-  dato2: { fontSize: '0.75rem', color: '#5c5870', lineHeight: '20px' } as const,
+  dato2: T.dato2,
   /* UN solo estilo para la segunda línea de cualquier celda. Andaban sueltos
      0.62, 0.66, 0.68 y 0.72 rem con cuatro grises distintos: mismo papel,
      cuatro voces. */
-  sub: { fontSize: '0.65rem', color: '#71707C', marginTop: 2, lineHeight: 1.35 } as const,
+  sub: T.sub,
   /* El dato que no está: siempre igual y siempre más claro que un dato real,
      para que un guión nunca compita con un valor. */
-  vacio: { color: '#74727F' } as const,
+  vacio: T.vacio,
   /* Los botones de la barra de selección: sobre el morado oscuro, contorno
      claro. Van aquí y no en línea porque son cuatro y tienen que verse iguales. */
-  btnSel: { border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff',
-    borderRadius: 9, padding: '7px 13px', fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as const,
+  btnSel: T.btnSel,
   chip: (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? '#f7f4ff' : '#fff',
     color: on ? '#5B4BD6' : '#555', borderRadius: 9, padding: '7px 12px', fontSize: '0.77rem',
@@ -288,7 +288,7 @@ const S = {
      así que en la misma fila el nombre caía 3 px arriba de la pastilla de al
      lado: se arregló la alineación de las celdas de texto y se rompió la de
      las de pastilla. Ahora 20 px es la unidad común de la primera línea. */
-  tag: (bg: string, fg: string) => ({ fontSize: '0.66rem', fontWeight: 700, background: bg, color: fg, borderRadius: 20, padding: '0 9px', whiteSpace: 'nowrap' as const, display: 'inline-flex' as const, alignItems: 'center' as const, height: 20, lineHeight: 1, maxWidth: '100%', overflow: 'hidden' as const }) as const,
+  tag: T.tag,
 };
 
 export default function LeadsTab() {
@@ -557,7 +557,7 @@ export default function LeadsTab() {
       reja.setAttribute('data-mas', el.scrollWidth - el.clientWidth - el.scrollLeft > 8 ? '1' : '0');
       // Y de paso el alto real que le queda a la reja hasta el borde de abajo.
       const arriba = reja.getBoundingClientRect().top;
-      reja.style.setProperty('--lead-alto', `${Math.max(280, Math.round(window.innerHeight - arriba - 24))}px`);
+      reja.style.setProperty('--crm-tabla-alto', `${Math.max(280, Math.round(window.innerHeight - arriba - 24))}px`);
     };
     medir();
     el.addEventListener('scroll', medir, { passive: true });
@@ -654,101 +654,7 @@ export default function LeadsTab() {
            barra morada del hover sí se veía). Asi se habían quedado sin pintar
            la regla bajo la cabecera pegajosa y el filo de la columna congelada;
            en modo separado con spacing 0 se ven las dos y no cambia nada mas. */
-        .lead-tabla { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; }
-        /* NINGÚN dato parte renglón por su cuenta. Era lo que desordenaba la
-           tabla: "09:30 a.m." se rompía en dos, "3 d sin contacto" en dos, un
-           nombre largo en tres — y cada fila medía distinto, así que el ojo no
-           encontraba el ritmo para bajar. Ahora cada línea es UNA línea y lo
-           que no cabe se corta con puntos suspensivos (el valor completo sigue
-           en el titulo emergente y en la ficha del lead). Las filas quedan
-           alto salvo cuando de verdad hay un segundo dato que contar. */
-        .lead-tabla tbody td { overflow:hidden; }
-        .lead-tabla tbody td, .lead-tabla tbody td > div, .lead-tabla tbody td > span,
-        .lead-tabla tbody td > div > div { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; max-width:100%; }
-        /* La fila entera se ilumina al pasar: en 13 columnas, seguir un
-           renglón hasta la orilla sin una guía es contar con la suerte. El
-           #faf9fd anterior daba 1.03:1 contra el blanco —o sea, no se veía—,
-           así que la marca de verdad es la barra morada del borde izquierdo. */
-        .lead-tabla tbody tr:hover td { background:#f5f3fc; }
-        /* La campaña ya no es tinta muerta: un clic deja solo los leads de
-           ese anuncio. Era la mancha más fuerte de la fila, con color de
-           enlace, y no llevaba a ningún lado — el dueño la quiere para saber
-           de qué anuncio viene cada cosa, y así de verdad sirve para cortar. */
-        /* Se ven QUIETAS. Depender del cursor para descubrir que el teléfono
-           abre WhatsApp y que la campaña filtra, entre trece columnas, es
-           depender de que nunca se descubra: el subrayado punteado tenue lo
-           insinúa sin gritar, y al pasar encima se vuelve sólido y de color. */
-        .lead-tabla .fila-nom { all:unset; display:block; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .lead-tabla .fila-nom:focus-visible, .lead-tabla [role="button"]:focus-visible, .lead-tabla a:focus-visible {
-          outline:2px solid #5B4BD6; outline-offset:2px; border-radius:4px; }
-        .lead-tabla .fila-tel, .lead-tabla .fila-camp { text-decoration:underline dotted; text-decoration-color:#d3cfe2; text-underline-offset:3px; }
-        .lead-tabla .fila-camp:hover { color:#5B4BD6; text-decoration:underline solid; text-decoration-color:currentColor; text-underline-offset:2px; }
-        .lead-tabla .fila-tel:hover { color:#1E8A63; text-decoration:underline; text-underline-offset:2px; }
-        .lead-tabla .fila-wa { opacity:.5; transition:opacity .12s ease, background .12s ease; }
-        .lead-tabla tbody tr:hover .fila-wa { opacity:1; }
-        .lead-tabla .fila-wa:hover, .lead-tabla .fila-wa:focus-visible { opacity:1; background:#E8F7F0; }
-        .lead-tabla tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #5B4BD6; }
-        /* Un conteo va a la DERECHA, no centrado: alineados por la unidad se
-           comparan de un vistazo. El !important no es capricho — S.th trae
-           textAlign en línea y un estilo en línea le gana siempre a la clase,
-           que es por lo que el rótulo salía a la izquierda y los dígitos al
-           centro, leyéndose como dos columnas distintas. */
-        .lead-tabla th.num, .lead-tabla td.num { text-align:right !important; }
-        /* La identidad no se pierde al irse a la derecha: las dos primeras
-           columnas quedan congeladas. Si al hacer scroll ves "HOY" en Reunión
-           pero ya no sabes de quién es la fila, tienes que volver, contar
-           renglones y regresar. */
-        .lead-tabla th.fija0, .lead-tabla td.fija0 { position:sticky; left:0; background:#fff; text-align:center; padding-left:0; padding-right:0; }
-        .lead-tabla th.fija1, .lead-tabla td.fija1 { position:sticky; left:40px; background:#fff; }
-        .lead-tabla th.fija2, .lead-tabla td.fija2 { position:sticky; left:148px; background:#fff; box-shadow:1px 0 0 #eceaf2; }
-        .lead-tabla th.derecha, .lead-tabla td.derecha { position:sticky; right:0; background:#fff; box-shadow:-1px 0 0 #eceaf2; }
-        .lead-tabla tbody tr:hover td.derecha { background:#f5f3fc; }
-        .lead-tabla th.fija0, .lead-tabla th.fija1, .lead-tabla th.fija2, .lead-tabla th.derecha { z-index:3; }
-        .lead-tabla td.fija0, .lead-tabla td.fija1, .lead-tabla td.fija2 { z-index:1; }
-        /* La fila seleccionada se ve seleccionada en TODO su ancho, congeladas
-           incluidas: si solo se pinta el centro, al desplazarse a la derecha la
-           selección parece haberse perdido. */
-        .lead-tabla tbody tr.sel td, .lead-tabla tbody tr.sel td.fija0,
-        .lead-tabla tbody tr.sel td.fija1, .lead-tabla tbody tr.sel td.fija2,
-        .lead-tabla tbody tr.sel td.derecha { background:#F1EEFE; }
-        .lead-tabla input[type=checkbox] { width:16px; height:16px; accent-color:#5B4BD6; cursor:pointer; margin:0 auto; display:block; }
-        /* La celda de la casilla queda FUERA del recorte con puntos
-           suspensivos: ahí no hay texto que recortar, y la regla le pintaba un
-           «…» al lado de cada casilla porque la caja del control mide más que
-           la columna de 40 px. */
-        .lead-tabla th.fija0, .lead-tabla td.fija0 { text-overflow:clip; }
-        /* Los rótulos que ordenan se sienten tocables y reservan el sitio de la
-           flecha, para que el ancho no salte al aparecer. */
-        .lead-tabla th.ord { cursor:pointer; user-select:none; }
-        .lead-tabla th.ord:hover { color:#5B4BD6; }
-        .lead-tabla th.ord .fl { display:inline-block; width:10px; margin-left:5px; opacity:0; }
-        .lead-tabla th.ord:hover .fl { opacity:.45; }
-        .lead-tabla th.ord[aria-sort]:not([aria-sort="none"]) { color:#5B4BD6; }
-        .lead-tabla th.ord[aria-sort]:not([aria-sort="none"]) .fl { opacity:1; }
-        /* Congelada + hover: si no se repinta el fondo, la fila se parte en
-           dos colores justo en el borde de lo que se quedó fijo. */
-        .lead-tabla tbody tr:hover td.fija0, .lead-tabla tbody tr:hover td.fija1, .lead-tabla tbody tr:hover td.fija2 { background:#f5f3fc; }
-        /* Y el aviso de que hay más columnas a la derecha: sin esto el borde
-           es un corte blanco seco y la única acción por fila (el ⋮) vive
-           fuera de la pantalla sin que nada lo insinúe. */
-        /* El contenedor ACOTA su altura. Sin esto el encabezado pegajoso era
-           decorativo: quien hacía scroll era la página, no la reja, así que el
-           thead no tenía de dónde despegarse y los rótulos se perdían igual a
-           la fila diez — exactamente lo que se quería evitar. */
-        .lead-reja { position:relative; }
-        /* El alto lo mide el propio contenedor (--lead-alto), no un número
-           inventado: con un 100dvh menos 250px fijo, en cuanto la barra de
-           filtros crecía un renglón, el fondo de la tabla quedaba por debajo
-           pantalla y aparecían dos barras de scroll peleando. */
-        .lead-scroll { overflow:auto; max-height:var(--lead-alto, calc(100dvh - 250px)); }
-        /* Y el aviso del borde va como capa aparte, no como ::after del
-           scroller: un pseudo con height:100% dentro de una caja de alto
-           automático mide cero, y siendo float su sitio natural es debajo de la
-           tabla, no al costado. Aquí es una capa absoluta sobre la reja. */
-        .lead-reja .lead-orilla { position:absolute; top:0; right:0; bottom:0; width:36px; pointer-events:none;
-          opacity:0; transition:opacity .15s ease;
-          background:linear-gradient(90deg, rgba(255,255,255,0), rgba(16,24,40,.11)); }
-        .lead-reja[data-mas="1"] .lead-orilla { opacity:1; }
+        ${CSS_TABLA}
       `}</style>
 
       {/* ══ Cabecera MÓVIL v5 (mockup Leads): título + ＋Nuevo, héroe con el
@@ -1443,10 +1349,10 @@ export default function LeadsTab() {
               })()}
             </div>
           ) : (
-          <div className="lead-reja" ref={rejaRef}>
-          <span className="lead-orilla" aria-hidden="true" />
-          <div className="lead-scroll" ref={scrollRef}>
-            <table className="lead-tabla" style={{ minWidth: anchoTabla }}>
+          <div className="crm-reja" ref={rejaRef}>
+          <span className="crm-orilla" aria-hidden="true" />
+          <div className="crm-scroll-tabla" ref={scrollRef}>
+            <table className="crm-tabla" style={{ minWidth: anchoTabla }}>
               <thead>
                 <tr>
                   {/* Con table-layout fijo estos anchos por fin mandan. El
@@ -1586,7 +1492,7 @@ export default function LeadsTab() {
                             existía sin ratón — no se podía enfocar, no
                             respondía a Enter y un lector de pantalla no lo
                             anunciaba. */}
-                        <button type="button" className="fila-nom" style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
+                        <button type="button" className="crm-fila-nom" style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                         </button>
                         {c.historial && (() => {
@@ -1620,7 +1526,7 @@ export default function LeadsTab() {
                           de depender de llegar hasta la orilla derecha. */}
                       <td style={{ ...S.td, ...S.dato2 }}>
                         {tel
-                          ? <a className="fila-tel" href={waLink(tel)} target="_blank" rel="noreferrer"
+                          ? <a className="crm-fila-tel" href={waLink(tel)} target="_blank" rel="noreferrer"
                               title="Escribir por WhatsApp a este número"
                               onClick={e => e.stopPropagation()}
                               style={{ color: 'inherit', textDecoration: 'none' }}>{tel}</a>
@@ -1653,7 +1559,7 @@ export default function LeadsTab() {
                               onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
                               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBusca(busca === c.campana ? '' : c.campana); } }}
                               title={`Ver solo los leads de "${c.campana}"`}
-                              className="fila-camp"
+                              className="crm-fila-camp"
                               style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
                           : <span style={{ ...S.dato2, color: '#6d6a7a' }}>orgánico</span>;
                         if (etapa === 'calificados') return c.calificacion_motivo
@@ -1720,7 +1626,7 @@ export default function LeadsTab() {
                               onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
                               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBusca(busca === c.campana ? '' : c.campana); } }}
                               title={`Ver solo los leads de "${c.campana}"`}
-                              className="fila-camp"
+                              className="crm-fila-camp"
                               style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
                           : <span style={{ ...S.dato2, color: '#6d6a7a' }}>orgánico</span>;
                       })()}</td>
@@ -1791,7 +1697,7 @@ export default function LeadsTab() {
                           ensuciar el barrido. */}
                       <td className="derecha" style={{ ...S.td, padding: '9px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {tel && (
-                          <a className="fila-wa" href={waLink(tel)} target="_blank" rel="noreferrer"
+                          <a className="crm-fila-wa" href={waLink(tel)} target="_blank" rel="noreferrer"
                             title={`Escribir por WhatsApp a ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
                             aria-label="Escribir por WhatsApp"
                             onClick={e => e.stopPropagation()}

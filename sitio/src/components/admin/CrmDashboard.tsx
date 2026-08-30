@@ -10,6 +10,7 @@ import InicioMovil from './crm/InicioMovil';
 import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
+import ChurnTab from './crm/ChurnTab';
 import Wiki from './crm/Wiki';
 import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
 import { EsqueletoLista } from './crm/whatsapp/Esqueletos';
@@ -82,7 +83,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -94,6 +95,7 @@ type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' |
 // lee "inicio", no una cuenta), Leads era un grupo de personas idéntico al de
 // Colaboradores, y Oportunidades era un rayo, que ahí no significa nada.
 const ICONS: Record<string, string> = {
+  churn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21H5a2 2 0 01-2-2V5a2 2 0 012-2h9"/><path d="M17 8l4 4-4 4"/><path d="M21 12h-9"/></svg>',
   hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>',
   pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8z" fill="currentColor" opacity=".18"/><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
@@ -172,6 +174,9 @@ const NAV_SECTIONS = [
     items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
+      /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
+         cuando se va: mismo grupo, siguiente renglón. */
+      { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
       { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       // Reuniones se junta con las cuentas: es con quien te sientas. Antes
       // vivía en Ventas y su gemela "Agenda" en Sistema, en grupos distintos.
@@ -1065,6 +1070,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
+        ) : tab === 'churn' ? (
+          <ErrorBoundary><ChurnTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (
           <ClientesTab onConfig={() => goConfigPipeline('cliente')} />
         ) : tab === 'sacs' ? (

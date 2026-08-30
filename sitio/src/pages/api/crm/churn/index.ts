@@ -16,7 +16,8 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 
 const SELECT = `*,
   companies(id, nombre, nombre_comercial, sacs_account, sucursales, plan, estado_cuenta,
-            dias_sin_venta, uso_sacs, actividad_sync_at, health_score),
+            dias_sin_venta, uso_sacs, actividad_sync_at, health_score,
+            contacts(id, nombre, apellido, whatsapp, telefono)),
   subscriptions!churn_casos_subscription_id_fkey(id, nombre_plan, ciclo, mrr, cancelada_at, razon_cancelacion)`;
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -41,7 +42,15 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data, error } = await q;
   if (error) return json({ error: error.message }, 500);
 
-  let filas = data || [];
+  /* El teléfono con el que se le escribe vive en el CONTACTO, no en la
+     empresa. Se resuelve aquí para que la fila no tenga que pedir nada más:
+     un renglón que obliga a otra petición para poder escribir es un renglón
+     desde el que nadie escribe. */
+  let filas = (data || []).map((c: any) => {
+    const cts = c.companies?.contacts || [];
+    const con = cts.find((x: any) => x.whatsapp || x.telefono);
+    return { ...c, _tel: con?.whatsapp || con?.telefono || null, _contacto: con || null };
+  });
   if (busca) {
     const t = busca.toLowerCase();
     filas = filas.filter((c: any) =>
