@@ -71,6 +71,13 @@ export function variablesSinRespaldo(bloques: Bloque[]): string[] {
 }
 
 const txt = (s: unknown, ctx: Contexto) => escapar(interpolar(String(s ?? ''), ctx));
+// ── Negritas dentro de un párrafo: **así** ──
+// El editor solo da formato por BLOQUES, y un correo de venta necesita poder
+// resaltar media frase ("**Fase 1:** ..."). Se aplica SIEMPRE después de
+// escapar: para cuando corre, el texto ya no tiene < ni >, así que lo único
+// que puede aparecer es el <strong> que ponemos aquí. Nunca al revés.
+const negritas = (s: string) => s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+const rico = (s: unknown, ctx: Contexto) => negritas(txt(s, ctx));
 /** Una URL que no sea `javascript:` ni `data:` — el correo no ejecuta scripts. */
 const url = (s: unknown, ctx: Contexto) => {
   const u = interpolar(String(s ?? ''), ctx).trim();
@@ -97,7 +104,7 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       return fila(`<div class="em-tinta ${n === 1 ? 'em-h1' : ''}" style="${FA}font-size:${tam}px;font-weight:800;color:#1a1633;line-height:1.3;padding-top:20px;">${txt(b.texto, ctx)}</div>`);
     }
     case 'texto':
-      return fila(`<div class="em-tinta" style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${txt(b.texto, ctx)}</div>`);
+      return fila(`<div class="em-tinta" style="${FA}font-size:15px;line-height:1.65;color:#333;padding-top:12px;white-space:pre-line;">${rico(b.texto, ctx)}</div>`);
     case 'imagen': {
       // `ancho` (px) la hace logo/sello en vez de imagen a todo lo ancho;
       // `align` la acomoda. Sin ancho, se comporta como siempre.
@@ -120,7 +127,7 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
       // llegar un WhatsApp"). Fondo agua fijo + tinta del acento del tenant.
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>
         <td style="background:#EEECFE;border-radius:12px;padding:14px 18px;">
-          <div style="${FA}font-size:14.5px;line-height:1.6;font-weight:600;color:${acento};">${txt(b.texto || '', ctx)}</div>
+          <div style="${FA}font-size:14.5px;line-height:1.6;font-weight:600;color:${acento};">${rico(b.texto || '', ctx)}</div>
         </td></tr></table>`);
     case 'metricas': {
       // Sellos de confianza: 2-4 columnas de cifra + texto ("+14 años",
@@ -143,19 +150,19 @@ function bloqueHtml(b: Bloque, ctx: Contexto, t: Tenant): string {
     // cuenta son webmail/teléfono, y dos columnas a 300px son ilegibles.
     const col = (c: any) => `<td width="50%" valign="top" class="em-col em-tinta" style="${FA}font-size:14px;line-height:1.6;color:#444;padding:0 8px;">
         ${c?.titulo ? `<div class="em-tinta" style="font-weight:700;color:#1a1633;margin-bottom:4px;font-size:15px;">${txt(c.titulo, ctx)}</div>` : ''}
-        ${txt(c?.texto || '', ctx)}</td>`;
+        ${rico(c?.texto || '', ctx)}</td>`;
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>${col(b.izquierda)}${col(b.derecha)}</tr></table>`);
     }
     case 'cita':
       return fila(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr>
         <td style="border-left:3px solid ${acento};padding:4px 0 4px 16px;${FA}">
-          <div class="em-tinta" style="font-size:15px;line-height:1.6;color:#333;font-style:italic;">"${txt(b.texto, ctx)}"</div>
+          <div class="em-tinta" style="font-size:15px;line-height:1.6;color:#333;font-style:italic;">"${rico(b.texto, ctx)}"</div>
           ${b.autor ? `<div class="em-suave" style="font-size:13px;color:#8a8a92;margin-top:7px;">— ${txt(b.autor, ctx)}</div>` : ''}
         </td></tr></table>`);
     case 'lista': {
       const items = (Array.isArray(b.items) ? b.items : []).map((i: any) =>
         `<tr><td valign="top" style="${FA}font-size:15px;line-height:1.6;color:${acento};padding:5px 9px 0 0;font-weight:800;">&bull;</td>
-             <td class="em-tinta" style="${FA}font-size:15px;line-height:1.6;color:#333;padding-top:5px;">${txt(i, ctx)}</td></tr>`).join('');
+             <td class="em-tinta" style="${FA}font-size:15px;line-height:1.6;color:#333;padding-top:5px;">${rico(i, ctx)}</td></tr>`).join('');
       return fila(`<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:14px;">${items}</table>`);
     }
     case 'planes': {
@@ -290,7 +297,8 @@ ${preheader(preview)}
 export function compilarTexto(bloques: Bloque[], ctx: Contexto): string {
   const p: string[] = [];
   for (const b of bloques || []) {
-    const i = (s: unknown) => interpolar(String(s ?? ''), ctx);
+    // Los ** de las negritas se quitan: en texto plano son ruido.
+    const i = (s: unknown) => interpolar(String(s ?? ''), ctx).replace(/\*\*([^*\n]+)\*\*/g, '$1');
     switch (b.tipo) {
       case 'hero': p.push(i(b.titulo).toUpperCase(), b.subtitulo ? i(b.subtitulo) : ''); break;
       case 'encabezado': p.push('', i(b.texto).toUpperCase()); break;
