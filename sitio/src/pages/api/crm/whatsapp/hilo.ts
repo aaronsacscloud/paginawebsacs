@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro';
 import { marcarLeido } from '../../../../lib/whatsapp/kapso-api';
 import { sincronizarEstadoKapso, sincronizarAsignacionKapso, sincronizarContactoKapso, preferenciasMarketingKapso } from '../../../../lib/whatsapp/kapso-sync';
 import { supabase } from '../../../../lib/supabase';
+import { configEntrante } from '../../../../lib/whatsapp/config-entrante';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { resolverTenant, puedeEnviar } from '../../../../lib/email/tenant';
 
@@ -278,9 +279,11 @@ export const PUT: APIRoute = async ({ request }) => {
       // sin contestar equivale a perderlo en silencio: pasó con Rafael, que
       // contestó "Si" a las 17:23 y a las 18:00 quedó fuera de los cuatro
       // filtros. Se puede hacer igual, pero a propósito (`forzar: true`).
+      const cfgCierre = await configEntrante();
       const { data: est } = await supabase.from('wa_conversaciones')
         .select('ultima_direccion, no_leidos').eq('id', b.id).maybeSingle();
-      if (!b.forzar && est?.ultima_direccion === 'entrante' && (est?.no_leidos || 0) > 0) {
+      if (cfgCierre.cierre.bloquear_con_no_leidos && !b.forzar
+          && est?.ultima_direccion === 'entrante' && (est?.no_leidos || 0) > 0) {
         return json({
           error: 'El último mensaje es del cliente y sigue sin leer. Si la cierras ahora desaparece de todos los filtros y deja de avisarte.',
           hay_pendiente: true,

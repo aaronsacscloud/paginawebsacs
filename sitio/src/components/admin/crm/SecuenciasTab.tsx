@@ -29,6 +29,10 @@ export default function SecuenciasTab() {
   const [msg, setMsg] = useState('');
   const [simul, setSimul] = useState<any>(null);
   const [simulando, setSimulando] = useState(false);
+  // Atajo para las secuencias por evento: toda su configuración vive en
+  // `entrada`, y sin esto cada checkbox tendría que reescribir el objeto entero.
+  const ent: any = (edit?.entrada || {});
+  const setEnt = (parche: any) => setEdit({ ...edit, entrada: { ...ent, ...parche } });
   const cargar = () => fetch('/api/crm/secuencias').then(r => r.json()).then(j => setLista(j.secuencias || [])).catch(() => setLista([]));
   useEffect(() => {
     cargar();
@@ -60,6 +64,85 @@ export default function SecuenciasTab() {
           <input style={{ ...inp, width: '100%' }} value={edit.nombre || ''} onChange={e => setEdit({ ...edit, nombre: e.target.value })} placeholder="Seguimiento a leads sin respuesta" />
           <span style={lbl}>Qué busca esta secuencia</span>
           <input style={{ ...inp, width: '100%' }} value={edit.descripcion || ''} onChange={e => setEdit({ ...edit, descripcion: e.target.value })} placeholder="Construir confianza y agendar la sesión consultiva" />
+          {edit.disparador === 'wa_entrante' ? (<>
+          {/* ── Secuencia por EVENTO: no hay días ni estatus, hay reglas ── */}
+          <div style={{ background: P.violetaAgua, border: '1px solid #ddd3fa', borderRadius: 10, padding: '10px 13px', margin: '14px 0 4px', fontSize: '0.72rem', lineHeight: 1.55, color: P.violetaTinta }}>
+            <b>Esta secuencia no corre por días.</b> Reacciona en el momento en que un lead nos escribe por WhatsApp — venga de un correo, del sitio o por su cuenta.
+          </div>
+
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '16px 0 8px', color: '#666' }}>1 · El acuse que recibe</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={ent.acuse?.activo !== false} onChange={e => setEnt({ acuse: { ...(ent.acuse || {}), activo: e.target.checked } })} />
+            Contestar automáticamente en cuanto escriban
+          </label>
+          <span style={lbl}>Dentro de horario</span>
+          <textarea rows={2} style={{ ...inp, width: '100%', resize: 'vertical' }} value={ent.acuse?.en_horario || ''}
+            onChange={e => setEnt({ acuse: { ...(ent.acuse || {}), en_horario: e.target.value } })} />
+          <span style={lbl}>Fuera de horario</span>
+          <textarea rows={2} style={{ ...inp, width: '100%', resize: 'vertical' }} value={ent.acuse?.fuera || ''}
+            onChange={e => setEnt({ acuse: { ...(ent.acuse || {}), fuera: e.target.value } })} />
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>
+            El acuse sale una vez por conversación abierta, no por mensaje — si mandan tres seguidos no reciben tres veces lo mismo. Se rearma a las {ent.acuse?.rearme_horas ?? 20} h para quien vuelve al día siguiente.
+          </p>
+
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '18px 0 8px', color: '#666' }}>2 · Horario de atención (CDMX)</div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {[['L',1],['M',2],['M',3],['J',4],['V',5],['S',6],['D',7]].map(([l,d],i) => {
+              const ds: number[] = ent.horario?.dias?.length ? ent.horario.dias : [1,2,3,4,5,6];
+              const on = ds.includes(d as number);
+              return (
+                <button key={i} onClick={() => setEnt({ horario: { ...(ent.horario || {}), dias: on ? ds.filter(x => x !== d) : [...ds, d as number].sort() } })}
+                  style={{ width: 32, height: 32, borderRadius: 99, border: '1.5px solid', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: 800,
+                    borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? P.violetaAgua : '#fff', color: on ? P.violetaTinta : '#a5a2af' }}>{l}</button>
+              );
+            })}
+          </div>
+          <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+            <input type="time" style={{ ...inp, width: 110 }} value={ent.horario?.desde || '09:00'} onChange={e => setEnt({ horario: { ...(ent.horario || {}), desde: e.target.value } })} />
+            <span style={{ fontSize: '0.75rem', color: '#888' }}>a</span>
+            <input type="time" style={{ ...inp, width: 110 }} value={ent.horario?.hasta || '19:00'} onChange={e => setEnt({ horario: { ...(ent.horario || {}), hasta: e.target.value } })} />
+          </span>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>Sin horario, todo se trata como «abierto» y a medianoche prometeríamos respuesta en minutos.</p>
+
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '18px 0 8px', color: '#666' }}>3 · Cuánto lo podemos molestar</div>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <div><span style={lbl}>Horas entre WhatsApps</span>
+              <input type="number" min={1} max={168} style={{ ...inp, width: 84 }} value={ent.presion?.horas_entre_whatsapps ?? 24}
+                onChange={e => setEnt({ presion: { ...(ent.presion || {}), horas_entre_whatsapps: Number(e.target.value) } })} /></div>
+            <div><span style={lbl}>Días de pausa si un humano contesta</span>
+              <input type="number" min={0} max={30} style={{ ...inp, width: 84 }} value={ent.presion?.dias_pausa_por_manual ?? 5}
+                onChange={e => setEnt({ presion: { ...(ent.presion || {}), dias_pausa_por_manual: Number(e.target.value) } })} /></div>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer', marginTop: 10 }}>
+            <input type="checkbox" checked={ent.presion?.permitir_forzar_manual !== false} onChange={e => setEnt({ presion: { ...(ent.presion || {}), permitir_forzar_manual: e.target.checked } })} />
+            Dejar que un vendedor mande de todos modos, confirmando
+          </label>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>
+            El candado cuenta los mensajes REALES, así que incluye lo que manda la cadencia y lo que manda una persona desde la bandeja. Cero días de pausa = la cadencia nunca se aparta.
+          </p>
+
+          <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '18px 0 8px', color: '#666' }}>4 · Qué hacemos con la señal</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={ent.intencion?.etiquetar !== false} onChange={e => setEnt({ intencion: { ...(ent.intencion || {}), etiquetar: e.target.checked } })} />
+            Etiquetar la ficha con el CTA del que vino
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer', marginTop: 6 }}>
+            <input type="checkbox" checked={ent.intencion?.notificar !== false} onChange={e => setEnt({ intencion: { ...(ent.intencion || {}), notificar: e.target.checked } })} />
+            Avisar al equipo con contexto (de dónde viene y qué quiere)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer', marginTop: 6 }}>
+            <input type="checkbox" checked={ent.cierre?.bloquear_con_no_leidos !== false} onChange={e => setEnt({ cierre: { ...(ent.cierre || {}), bloquear_con_no_leidos: e.target.checked } })} />
+            No dejar cerrar una conversación con un mensaje del cliente sin leer
+          </label>
+          <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: '11px 13px', marginTop: 12, fontSize: '0.7rem', lineHeight: 1.6, color: '#555' }}>
+            <b>Los casos que cubre:</b><br />
+            · <b>Viene de un CTA nuestro</b> — se reconoce de cuál de los correos o del sitio, se etiqueta y el aviso dice qué quiere.<br />
+            · <b>Escribe por su cuenta</b> — no se inventa etiqueta; el acuse sale igual y el contador de no leídos hace su trabajo.<br />
+            · <b>Ya le habíamos escrito hoy</b> — el candado retiene el siguiente; desde la bandeja se puede forzar si tiene sentido.<br />
+            · <b>Un vendedor toma el hilo</b> — la cadencia se aparta y el lead no escucha dos voces.<br />
+            · <b>Contesta y alguien cierra sin leerlo</b> — se avisa antes, porque cerrada desaparece de los cuatro filtros y hasta se silencia la alerta de «lleva rato esperando».
+          </div>
+          </>) : (<>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
             <div><span style={lbl}>Corte (días)</span>
               <input type="number" min={1} max={60} style={{ ...inp, width: 80 }} value={edit.corte_dias ?? 14} onChange={e => setEdit({ ...edit, corte_dias: Number(e.target.value) })} /></div>
@@ -109,9 +192,13 @@ export default function SecuenciasTab() {
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '7px 0 0' }}>
             Al cumplir el objetivo, la secuencia ENTERA termina para ese lead (correos y WhatsApps). Con «Que agende demo» o «Que se haga cliente», responder solo detiene el canal por el que respondió — el otro sigue nutriendo hacia el objetivo.
           </p>
+          </>)}
         </div>
 
-        {/* Las reglas: quién entra, quién sale. Fijas y a la vista. */}
+        {/* Las reglas: quién entra, quién sale. Fijas y a la vista.
+            Solo aplican al modelo por TIEMPO; la secuencia por evento ya lleva
+            su propio recuadro de casos cubiertos. */}
+        {edit.disparador !== 'wa_entrante' && (
         <div style={{ background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
           <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Las reglas (las aplica el sistema, siempre)</div>
           <div style={{ fontSize: '0.78rem', color: '#4a4a52', lineHeight: 1.7 }}>
@@ -123,7 +210,10 @@ export default function SecuenciasTab() {
             <b>El vendedor siempre se entera:</b> cada correo enviado, cada canal detenido y cada salida dejan una nota en el hilo del inbox, y desde el detalle de la conversación puede pausar o reanudar la secuencia de ese lead.
           </div>
         </div>
-
+        )}
+        {/* Una secuencia por evento no tiene pasos por día: su "paso" es el
+            acuse, y eso se configura arriba. */}
+        {edit.disparador !== 'wa_entrante' && (
         <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '15px 17px', marginTop: 12 }}>
           <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Los pasos (WhatsApp y correo, una sola secuencia)</div>
           {pasos.map((p, i) => (
@@ -178,6 +268,7 @@ export default function SecuenciasTab() {
           <button style={{ ...btnG, marginTop: 4 }} onClick={() => setEdit({ ...edit, pasos: [...pasos, { dia: (pasos[pasos.length - 1]?.dia || 0) + 1, canal: 'correo', activo: true }] })}>+ Agregar paso</button>
           <p style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 8 }}>Los correos se editan por bloques en Email ▸ Plantillas; los WhatsApps son plantillas aprobadas por Meta. Máximo un correo y un WhatsApp por corrida por lead.</p>
         </div>
+        )}
 
         {simul && (
           <div style={{ background: P.violetaAgua, border: '1px solid #ddd6fb', borderRadius: 10, padding: '11px 14px', marginTop: 12, fontSize: '0.78rem', color: '#4a4a52' }}>

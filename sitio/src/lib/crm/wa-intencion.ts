@@ -20,6 +20,7 @@
  */
 import { supabase } from '../supabase';
 import { intencionDe } from '../whatsapp/intencion';
+import { configEntrante } from '../whatsapp/config-entrante';
 import { notificar } from './notificaciones';
 
 /** Color de la etiqueta según qué tan cerca está de cerrar. */
@@ -48,6 +49,9 @@ export async function registrarIntencionEntrante(o: {
   texto?: string | null;
   mensajeId?: string | null;
 }): Promise<void> {
+  const cfg = await configEntrante();
+  if (!cfg.activa) return;   // la secuencia manda: apagada, no hace nada
+
   const intencion = intencionDe(o.texto);
   if (!intencion) return;   // escribió por su cuenta: no hay CTA que atribuir
 
@@ -60,7 +64,7 @@ export async function registrarIntencionEntrante(o: {
   const donde = empresa ? ` de ${empresa}` : '';
   const etapa = [c?.lifecycle_stage, c?.estatus_lead].filter(Boolean).join(' · ');
 
-  await etiquetar(o.contactId, `WA: ${intencion.fuente}`, COLOR[intencion.temperatura]);
+  if (cfg.intencion.etiquetar) await etiquetar(o.contactId, `WA: ${intencion.fuente}`, COLOR[intencion.temperatura]);
 
   await supabase.from('activities').insert({
     contact_id: o.contactId,
@@ -76,6 +80,7 @@ export async function registrarIntencionEntrante(o: {
     },
   }).then(() => {}, () => {});
 
+  if (!cfg.intencion.notificar) return;
   await notificar({
     // Una notificación por mensaje: si escribe dos veces del mismo correo, son
     // dos hechos distintos y el vendedor querrá ver los dos.

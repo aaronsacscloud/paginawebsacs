@@ -46,7 +46,42 @@ export const POST: APIRoute = async ({ request }) => {
     const ds = b.dias_envio.map(Number).filter((d: number) => d >= 1 && d <= 7);
     if (ds.length) fila.dias_envio = [...new Set(ds)].sort();
   }
-  if (b.entrada && typeof b.entrada === 'object') {
+  // ── Secuencia por EVENTO ──
+  // Con disparador 'wa_entrante' no hay estatus, ni etapa, ni días: la entrada
+  // guarda las reglas de qué pasa cuando el lead nos escribe. Se valida aparte
+  // porque nada del bloque de abajo aplica.
+  if (b.disparador === 'wa_entrante') {
+    const e = b.entrada && typeof b.entrada === 'object' ? b.entrada : {};
+    const s0 = (x: any, max = 900) => String(x ?? '').slice(0, max);
+    const dias = Array.isArray(e.horario?.dias)
+      ? [...new Set(e.horario.dias.map(Number).filter((d: number) => d >= 1 && d <= 7))].sort()
+      : [1, 2, 3, 4, 5, 6];
+    const hora = (x: any, d: string) => (/^\d{2}:\d{2}$/.test(String(x)) ? String(x) : d);
+    fila.disparador = 'wa_entrante';
+    fila.entrada = {
+      acuse: {
+        activo: e.acuse?.activo !== false,
+        en_horario: s0(e.acuse?.en_horario),
+        fuera: s0(e.acuse?.fuera),
+        // Nunca menos de 1 h: con 0 le contestaríamos lo mismo a cada mensaje.
+        rearme_horas: Math.max(1, Math.min(168, Number(e.acuse?.rearme_horas) || 20)),
+      },
+      horario: { dias, desde: hora(e.horario?.desde, '09:00'), hasta: hora(e.horario?.hasta, '19:00') },
+      presion: {
+        // Tope duro de 1 h aunque la pantalla mande 0: nadie debe poder
+        // configurar "un WhatsApp por minuto" desde una caja de texto.
+        horas_entre_whatsapps: Math.max(1, Math.min(168, Number(e.presion?.horas_entre_whatsapps) || 24)),
+        dias_pausa_por_manual: Math.max(0, Math.min(30, Number(e.presion?.dias_pausa_por_manual) ?? 5)),
+        permitir_forzar_manual: e.presion?.permitir_forzar_manual !== false,
+      },
+      intencion: {
+        etiquetar: e.intencion?.etiquetar !== false,
+        notificar: e.intencion?.notificar !== false,
+        solo_desde_cta: e.intencion?.solo_desde_cta !== false,
+      },
+      cierre: { bloquear_con_no_leidos: e.cierre?.bloquear_con_no_leidos !== false },
+    };
+  } else if (b.entrada && typeof b.entrada === 'object') {
     const ESTATUS_OK = ['nuevo', 'contactado', 'sin_respuesta', 'respondio', 'descubrimiento', 'agendado'];
     const LIFECYCLE_OK = ['lead', 'lead_calificado', 'oportunidad', 'cliente', 'rezagado'];
     const est = Array.isArray(b.entrada.estatus) ? b.entrada.estatus.filter((x: string) => ESTATUS_OK.includes(x)) : [];

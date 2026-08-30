@@ -13,12 +13,11 @@
  */
 import { supabase } from '../supabase';
 import { telefonoWhatsApp } from '../telefono';
+import { configEntrante } from './config-entrante';
 
-/** Un WhatsApp por lead por día. Es la regla del negocio, no un detalle técnico. */
+/** Valores de respaldo. Los de verdad se editan en Secuencias ▸ "WhatsApp
+ *  entrante · atención y control"; estos rigen si esa fila no existe. */
 export const HORAS_ENTRE_WHATSAPPS = 24;
-
-/** Si una persona tomó la conversación, la automatización se hace a un lado
- *  este tiempo. Se reanuda sola si el hilo se queda quieto. */
 export const DIAS_PAUSA_POR_MANUAL = 5;
 
 export interface UltimoSaliente {
@@ -64,14 +63,17 @@ export async function puedeMandarWa(telefono: string, opts?: { forzar?: boolean 
   const ultimo = await ultimoSalienteWa(telefono);
   if (!ultimo) return { ok: true };
 
+  const cfg = await configEntrante();
+  const tope = cfg.presion.horas_entre_whatsapps;
   const horas = (Date.now() - ultimo.cuando.getTime()) / 36e5;
-  if (horas >= HORAS_ENTRE_WHATSAPPS) return { ok: true };
+  if (horas >= tope) return { ok: true };
 
-  const libreEn = new Date(ultimo.cuando.getTime() + HORAS_ENTRE_WHATSAPPS * 36e5);
-  if (opts?.forzar) return { ok: true, libreEn, fueManual: !!ultimo.autor };
+  const libreEn = new Date(ultimo.cuando.getTime() + tope * 36e5);
+  // Forzar es una decisión del agente, y la pantalla puede tenerla prohibida.
+  if (opts?.forzar && cfg.presion.permitir_forzar_manual) return { ok: true, libreEn, fueManual: !!ultimo.autor };
 
   const quien = ultimo.autor ? `${ultimo.autor} le escribió` : 'ya le salió un mensaje automático';
-  const falta = Math.max(1, Math.round(HORAS_ENTRE_WHATSAPPS - horas));
+  const falta = Math.max(1, Math.round(tope - horas));
   return {
     ok: false,
     libreEn,
@@ -92,7 +94,9 @@ export async function puedeMandarWa(telefono: string, opts?: { forzar?: boolean 
 export async function cadenciaPausadaPorPersona(telefono: string): Promise<boolean> {
   const tel = telefonoWhatsApp(telefono);
   if (!tel) return false;
-  const desde = new Date(Date.now() - DIAS_PAUSA_POR_MANUAL * 864e5).toISOString();
+  const cfg = await configEntrante();
+  if (!cfg.presion.dias_pausa_por_manual) return false;   // 0 = la cadencia nunca se aparta
+  const desde = new Date(Date.now() - cfg.presion.dias_pausa_por_manual * 864e5).toISOString();
   const { data } = await supabase
     .from('wa_mensajes')
     .select('id, wa_conversaciones!inner(telefono)')
