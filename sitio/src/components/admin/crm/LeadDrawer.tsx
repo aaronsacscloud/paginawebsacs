@@ -340,7 +340,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
           {/* La prueba gratis va ARRIBA, no al final: es un reloj corriendo. Al
               fondo de la pestaña, debajo de la línea de tiempo, había que
               acordarse de bajar para enterarse de que vencía pasado mañana. */}
-          {tab === 'seguimiento' && <PruebaGratis c={c} guardar={guardar} flash={flash} />}
+          {tab === 'seguimiento' && <PruebaGratis c={c} recargar={cargar} flash={flash} />}
           {tab === 'seguimiento' && <RegistrarToque c={c} recargar={cargar} flash={flash} />}
           {tab === 'seguimiento' && <LineaDeTiempo c={c} />}
           {tab === 'seguimiento' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} setSucio={setSucio} />}
@@ -1039,23 +1039,72 @@ function Evaluacion({ c, evaluacion, guardar, guardando, setSucio }: any) {
   );
 }
 
-function PruebaGratis({ c, guardar, flash }: any) {
-  const p = c.propiedades || {};
-  const [abierto, setAbierto] = useState(false);
-  // El inicio también se captura: muchas pruebas se abren días antes de que
-  // alguien las registre, y poner "hoy" a fuerza falsea cuándo vence.
-  const [ini, setIni] = useState(hoy());
-  const [fin, setFin] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().slice(0, 10); });   // la prueba estándar dura 3 días
-  // "Activa" incluye la VENCIDA a propósito: una prueba que terminó sigue
-  // siendo una prueba abierta hasta que alguien la cierre, y es justo la que
-  // hay que ver. Lo que cambia es el color, no si aparece.
-  const activa = !!p.prueba_inicio;
-  const restan = p.prueba_fin ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000) : null;
-  const urge = restan != null && restan <= 3;
+/**
+ * La prueba gratis, de punta a punta y sin salir de la ficha.
+ *
+ * Antes esto solo capturaba dos fechas en `propiedades`, con 3 días por
+ * omisión — y esas fechas NO eran las que miraba la cadencia de onboarding, que
+ * lee la columna. Quien registraba aquí una prueba creía haberla registrado y
+ * el cliente no recibía ninguno de los 14 correos. Nada fallaba: simplemente
+ * no pasaba nada.
+ *
+ * Ahora escribe donde se lee, y las tres acciones que faltaban —crear la cuenta
+ * en SACS, extenderla, cerrarla con su aviso— viven aquí y dejan rastro en la
+ * línea de tiempo, que es la misma que pinta el inbox.
+ */
+function PruebaGratis({ c, recargar, flash }: any) {
+  const [modo, setModo] = useState<'' | 'crear' | 'extender' | 'reabrir'>('');
+  const [cuenta, setCuenta] = useState('');
+  const [dias, setDias] = useState(14);
+  const [ocupado, setOcupado] = useState(false);
+  const [acceso, setAcceso] = useState<any>(null);   // se enseña UNA vez
+
+  const estado: string | null = c.prueba_estado || null;
+  const restan = c.prueba_fin ? Math.ceil((Date.parse(c.prueba_fin) - Date.now()) / 86400000) : null;
+  const activa = estado === 'activa';
+  const vencida = activa && restan != null && restan < 0;
+  const urge = activa && restan != null && restan >= 0 && restan <= 3;
+
+  /* El identificador se PROPONE, no se inventa: es visible para el cliente
+     (vive en su acceso) y una heurística que se equivoca deja un nombre feo
+     para siempre. Se sugiere y quien lo crea lo corrige. */
+  const sugerido = String(c.companies?.nombre_comercial || c.companies?.nombre || c.nombre || '')
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '').slice(0, 24);
+
+  const accion = async (a: string, extra?: any) => {
+    setOcupado(true);
+    const r = await fetch('/api/crm/prueba-accion', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: c.id, accion: a, ...extra }),
+    }).then(x => x.json()).catch(() => ({ error: 'Sin conexión' }));
+    setOcupado(false);
+    if (r.error) { flash(r.error); return; }
+    setModo('');
+    flash(a === 'extender' ? 'Prueba extendida' : a === 'reactivar' ? 'Prueba reabierta'
+        : a === 'convertir' ? 'Marcada como cliente' : 'Prueba cerrada');
+    recargar?.();
+  };
+
+  const crear = async () => {
+    setOcupado(true);
+    const r = await fetch('/api/crm/sacs-prueba', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: c.id, cuenta: cuenta.trim().toLowerCase(), dias }),
+    }).then(x => x.json()).catch(() => ({ error: 'Sin conexión' }));
+    setOcupado(false);
+    if (r.error) { flash(r.error); return; }
+    setAcceso(r);          // la contraseña se enseña una vez y no se guarda
+    setModo('');
+    flash('Cuenta creada y prueba iniciada');
+    recargar?.();
+  };
+
+  const tono = vencida ? { borderColor: '#f0c4bd', background: '#fffbfa' }
+             : urge ? { borderColor: '#f5dfae', background: '#fffdf7' } : null;
 
   return (
-    /* Morado: las fechas de la prueba las captura una persona. */
-    <div style={{ ...D.cardM, ...(activa && urge ? { borderColor: '#f0c4bd', background: '#fffbfa' } : null) }}>
+    <div style={{ ...D.cardM, ...(tono || {}) }}>
       <div style={D.h}>
         Prueba gratis
         {activa && restan != null && (
@@ -1063,52 +1112,106 @@ function PruebaGratis({ c, guardar, flash }: any) {
             {restan < 0 ? `venció hace ${Math.abs(restan)} d` : restan === 0 ? 'termina hoy' : `quedan ${restan} d`}
           </span>
         )}
+        {estado === 'terminada' && <span style={{ ...D.chip('#f1f0f4', '#6b6b74'), letterSpacing: 0, textTransform: 'none' }}>terminada</span>}
+        {estado === 'cancelada' && <span style={{ ...D.chip('#FBECEA', '#C0554E'), letterSpacing: 0, textTransform: 'none' }}>cancelada</span>}
+        {estado === 'convertida' && <span style={{ ...D.chip('#EAF8F2', '#1E8A63'), letterSpacing: 0, textTransform: 'none' }}>se volvió cliente</span>}
       </div>
-      {/* El orden de las ramas importa y era el bug: estaba `activa ? … :
-          abierto ? …`, así que con una prueba activa la rama del formulario
-          NUNCA se alcanzaba. "Cambiar fechas" prendía un estado que nadie
-          dibujaba, y el botón se veía muerto. El formulario va primero. */}
-      {abierto ? (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-            <div><div style={D.fl}>Empieza</div><input type="date" value={ini} onChange={e => setIni(e.target.value)} style={D.fi} /></div>
-            <div><div style={D.fl}>Termina</div><input type="date" value={fin} onChange={e => setFin(e.target.value)} style={D.fi} /></div>
+
+      {/* Los datos de acceso se enseñan UNA vez, para dictarlos. No se guardan
+          en el CRM: una contraseña almacenada «por comodidad» es una fuga
+          esperando su turno, y el cliente la cambia en su primer acceso. */}
+      {acceso && (
+        <div style={{ background: '#F3F0FF', border: '1.5px solid #ddd6fb', borderRadius: 10, padding: '11px 13px', marginBottom: 11 }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#5B4BD6', marginBottom: 6 }}>DÍCTALE ESTO — no se vuelve a mostrar</div>
+          <div style={{ fontSize: '0.78rem', lineHeight: 1.7 }}>
+            <div>Entra en <b>app.sacscloud.com</b></div>
+            <div>Cuenta: <b>{acceso.cuenta}</b></div>
+            <div>Correo: <b>{acceso.email}</b></div>
+            <div>Contraseña: <b style={{ fontFamily: 'ui-monospace, monospace' }}>{acceso.password_temporal}</b></div>
           </div>
-          <div style={{ fontSize: '0.68rem', color: fin > ini ? '#a5a2af' : '#C0554E', marginTop: 6 }}>
-            {ini && fin && fin > ini ? `${Math.round((Date.parse(fin) - Date.parse(ini)) / 86400000)} días de prueba.` : 'La fecha de término tiene que ser posterior al inicio.'}
+          <button style={{ ...D.btnG, marginTop: 8 }} onClick={() => setAcceso(null)}>Ya la dicté</button>
+        </div>
+      )}
+
+      {modo === 'crear' ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 9 }}>
+            <div>
+              <div style={D.fl}>Identificador de la cuenta</div>
+              <input value={cuenta} onChange={e => setCuenta(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder={sugerido || 'mimarca'} style={D.fi} />
+            </div>
+            <div><div style={D.fl}>Días</div>
+              <input type="number" min={1} max={60} value={dias} onChange={e => setDias(Number(e.target.value))} style={D.fi} /></div>
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 6, lineHeight: 1.6 }}>
+            Se entra siempre por <b>app.sacscloud.com</b>: el identificador es el nombre de la cuenta, <b>no un subdominio</b>. Dictarlo como dirección manda al cliente a una página que no existe.
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
-            <button style={{ ...D.btnP, opacity: fin > ini ? 1 : .5 }} disabled={!(fin > ini)}
-              onClick={() => guardar({ propiedades: { ...p, prueba_inicio: ini, prueba_fin: fin } }).then(() => { setAbierto(false); flash(activa ? 'Fechas actualizadas' : 'Prueba registrada'); })}>Guardar</button>
-            <button style={D.btnG} onClick={() => setAbierto(false)}>Cancelar</button>
+            <button style={{ ...D.btnP, opacity: cuenta.trim().length >= 3 && !ocupado ? 1 : .5 }}
+              disabled={cuenta.trim().length < 3 || ocupado} onClick={crear}>
+              {ocupado ? 'Creando…' : 'Crear cuenta y arrancar'}
+            </button>
+            <button style={D.btnG} onClick={() => setModo('')}>Cancelar</button>
           </div>
         </>
-      ) : activa ? (
+      ) : modo === 'extender' || modo === 'reabrir' ? (
+        <>
+          <div style={D.fl}>{modo === 'extender' ? 'Días extra' : 'Días de la nueva prueba'}</div>
+          <input type="number" min={1} max={60} value={dias} onChange={e => setDias(Number(e.target.value))} style={{ ...D.fi, maxWidth: 120 }} />
+          <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
+            <button style={D.btnP} disabled={ocupado}
+              onClick={() => accion(modo === 'extender' ? 'extender' : 'reactivar', { dias })}>
+              {ocupado ? 'Guardando…' : modo === 'extender' ? 'Extender' : 'Reabrir la cuenta'}
+            </button>
+            <button style={D.btnG} onClick={() => setModo('')}>Cancelar</button>
+          </div>
+        </>
+      ) : estado ? (
         <>
           <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-            Activa desde el {fmtLargo(p.prueba_inicio)}
+            {c.prueba_cuenta ? <>Cuenta <span style={{ fontFamily: 'ui-monospace, monospace' }}>{c.prueba_cuenta}</span></> : 'Sin cuenta de SACS ligada'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: urge ? '#C0554E' : '#6b6b74', marginTop: 3 }}>
-            {restan != null ? (restan >= 0 ? `Termina el ${fmtLargo(p.prueba_fin)} · ${restan} ${restan === 1 ? 'día' : 'días'}` : `Venció el ${fmtLargo(p.prueba_fin)}, hace ${Math.abs(restan)} días`) : 'Sin fecha de término'}
+          <div style={{ fontSize: '0.75rem', color: vencida ? '#C0554E' : '#6b6b74', marginTop: 3 }}>
+            {activa
+              ? (restan != null && restan >= 0 ? `Termina el ${fmtLargo(c.prueba_fin)} · ${restan} ${restan === 1 ? 'día' : 'días'}` : `Venció el ${fmtLargo(c.prueba_fin)}`)
+              : `Empezó el ${fmtLargo(c.prueba_inicio)} · ${c.prueba_dias || '—'} días`}
           </div>
-          {/* Una prueba vencida sin cerrar es la que se olvida: el sistema no
-              sabe si compró, si se le acabó o si nadie volvió a hablarle. */}
-          {restan != null && restan < 0 && (
+
+          {/* Vencida ≠ terminada. Vencida es que la fecha pasó; terminada es que
+              ya se asumió y se bloqueó la cuenta. Esta franja es esa ventana. */}
+          {vencida && (
             <div style={{ marginTop: 9, background: '#FBECEA', border: '1px solid #f7c9c5', borderRadius: 9, padding: '9px 12px', fontSize: '0.76rem', color: '#C0554E', lineHeight: 1.5 }}>
-              La prueba ya terminó y sigue abierta. Ciérrala o extiéndela: mientras siga así, nadie sabe en qué quedó.
+              Ya venció y la cuenta sigue abierta. El cron la cierra de madrugada; si quieres el aviso hoy, ciérrala aquí.
             </div>
           )}
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            <button style={D.btnA} onClick={() => { setIni(p.prueba_inicio || hoy()); setFin(p.prueba_fin || hoy()); setAbierto(true); }}>Cambiar fechas</button>
-            <button style={D.btnG} onClick={() => guardar({ propiedades: { ...p, prueba_fin: null, prueba_inicio: null } }).then(() => flash('Prueba cerrada'))}>Cerrar prueba</button>
+          {(estado === 'terminada' || estado === 'cancelada') && (
+            <div style={{ marginTop: 9, background: c.prueba_bloqueada_at ? '#f7f6fb' : '#FBECEA', border: `1px solid ${c.prueba_bloqueada_at ? '#e7e4f2' : '#f7c9c5'}`, borderRadius: 9, padding: '9px 12px', fontSize: '0.75rem', color: c.prueba_bloqueada_at ? '#6b6b74' : '#C0554E', lineHeight: 1.55 }}>
+              {c.prueba_bloqueada_at
+                ? 'La cuenta muestra el aviso de fin de prueba, con su botón de WhatsApp para contratar.'
+                : 'La cuenta NO tiene el aviso puesto. El cron lo reintenta cada madrugada.'}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+            {activa && <button style={D.btnA} onClick={() => { setDias(7); setModo('extender'); }}>Extender</button>}
+            {activa && <button style={D.btnG} disabled={ocupado} onClick={() => accion('terminar')}>Cerrar ya</button>}
+            {!activa && estado !== 'convertida' && <button style={D.btnA} onClick={() => { setDias(7); setModo('reabrir'); }}>Reabrir</button>}
+            {estado !== 'convertida' && <button style={D.btnG} disabled={ocupado} onClick={() => accion('convertir')}>Ya compró</button>}
+            {c.whatsapp && (
+              <a style={D.btnG} target="_blank" rel="noreferrer"
+                href={`https://wa.me/${String(c.whatsapp).replace(/\D/g, '')}`}>WhatsApp</a>
+            )}
           </div>
         </>
       ) : (
         <>
           <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55 }}>
-            Sin prueba activa. Si le abres una cuenta de prueba, se registra aquí con su vencimiento.
+            Sin prueba. Al crearle la cuenta, el lead pasa a la etapa <b>Prueba gratis</b> y entra solo a la cadencia de onboarding de 14 días.
           </div>
-          <div style={{ marginTop: 9 }}><button style={D.btnA} onClick={() => setAbierto(true)}>Registrar prueba gratis</button></div>
+          <div style={{ marginTop: 9 }}>
+            <button style={D.btnP} onClick={() => { setCuenta(sugerido); setModo('crear'); }}>Crear cuenta de prueba</button>
+          </div>
         </>
       )}
     </div>

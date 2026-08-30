@@ -40,7 +40,9 @@ export function camposLeads(din: { campanas?: string[]; giros?: string[] } = {})
     { id: 'reuniones_n', label: 'Reuniones totales', ops: OPS.num, valores: [] },
     { id: 'no_shows', label: 'No-shows', ops: OPS.num, valores: [] },
     { id: 'prueba', label: 'Prueba', ops: OPS.esSolo, valores: [
-      { v: 'activa', l: 'Activa' }, { v: 'vencida', l: 'Vencida sin cerrar' }, { v: 'sin', l: 'Sin prueba' }] },
+      { v: 'activa', l: 'Activa' }, { v: 'vencida', l: 'Vencida sin cerrar' },
+      { v: 'terminada', l: 'Terminada' }, { v: 'convertida', l: 'Se volvió cliente' },
+      { v: 'sin', l: 'Sin prueba' }] },
     { id: 'pausa', label: 'Pausa (pidió tiempo)', ops: OPS.esSolo, valores: [
       { v: 'activa', l: 'En pausa' }, { v: 'vencida', l: 'Pausa vencida' }, { v: 'sin', l: 'Sin pausa' }] },
     { id: 'descarte', label: 'Motivo de descarte', ops: OPS.es, valores: CATS_DESCARTE },
@@ -73,10 +75,16 @@ export function cumpleCondLead(c: any, k: CondLead): boolean {
       break;
     }
     case 'prueba': {
-      const fin = p.prueba_fin ? Date.parse(p.prueba_fin + 'T12:00:00') : null;
-      const activa = !!p.prueba_inicio;
-      ok = k.valor === 'sin' ? !activa
+      /* Las columnas, no `propiedades`. El jsonb era lo que escribía el panel
+         de la ficha mientras la cadencia leía la columna — por eso quien
+         registraba una prueba aquí nunca entraba a la secuencia. */
+      const fin = c.prueba_fin ? Date.parse(c.prueba_fin) : null;
+      const estado = c.prueba_estado || null;
+      const activa = estado === 'activa';
+      ok = k.valor === 'sin' ? !estado
         : k.valor === 'vencida' ? (activa && fin != null && fin < Date.now())
+        : k.valor === 'terminada' ? (estado === 'terminada' || estado === 'cancelada')
+        : k.valor === 'convertida' ? estado === 'convertida'
         : (activa && (fin == null || fin >= Date.now()));
       break;
     }

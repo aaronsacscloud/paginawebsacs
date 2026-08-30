@@ -17,7 +17,7 @@ import { marcarReciente, ordenarPorReciente, cuantosRecientes, leerRecientes } f
 import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
 
 type Modo = 'wa' | 'correo' | 'nota';
-type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar';
+type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar' | 'prueba';
 
 // ── Catálogos portados ──
 const EMOJI_CATS: { id: string; icono: string; nombre: string; lista: string[] }[] = [
@@ -605,8 +605,11 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
 
                 {pop === 'adjuntar' && (
                   <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
-                    onCamara={() => { setPop(null); camaraRef.current?.click(); }} />
+                    onCamara={() => { setPop(null); camaraRef.current?.click(); }}
+                    onPrueba={contacto?.contact_id ? () => setPop('prueba') : undefined}
+                    pruebaSub={contacto?.prueba_estado === 'activa' ? 'Ya tiene una activa' : 'Crea la cuenta y escribe el mensaje'} />
                 )}
+                {pop === 'prueba' && <PopPrueba contacto={contacto} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
                 {pop === 'snippets' && (
                   <PopSnippets snippets={snippets} resolver={resolver} onElegir={usarSnippet}
                     onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
@@ -692,8 +695,14 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                 {pop === 'adjuntar' && (
                   <PopAdjuntar onSubir={() => fileRef.current?.click()} onBiblioteca={() => { setPop(null); setBiblioteca(true); }}
                     onCamara={movil ? () => { setPop(null); camaraRef.current?.click(); } : undefined}
-                    onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')} />
+                    onCotizacion={() => setPop('cotizacion')} onAgendar={() => setPop('agendar')}
+                    onPrueba={contacto?.contact_id ? () => setPop('prueba') : undefined}
+                    pruebaSub={contacto?.prueba_estado === 'activa' ? 'Ya tiene una activa' : 'Crea la cuenta y escribe el mensaje'} />
                 )}
+                {/* Reemplaza el borrador en vez de insertar en el cursor: los
+                    datos de acceso no se mezclan con lo que se estaba
+                    escribiendo, se dictan enteros o no se dictan. */}
+                {pop === 'prueba' && <PopPrueba contacto={contacto} onListo={(txt) => { setTexto(txt); setPop(null); }} />}
               </div>
             ))}
           </>)}
@@ -927,7 +936,7 @@ function PopSnippets({ snippets, resolver, onElegir, onNuevo }: { snippets: any[
   );
 }
 
-function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar, onCamara }: { onSubir: () => void; onBiblioteca: () => void; onCotizacion?: () => void; onAgendar?: () => void; onCamara?: () => void }) {
+function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar, onCamara, onPrueba, pruebaSub }: { onSubir: () => void; onBiblioteca: () => void; onCotizacion?: () => void; onAgendar?: () => void; onCamara?: () => void; onPrueba?: () => void; pruebaSub?: string }) {
   const item = (icono: React.ReactNode, t: string, s: string, onClick: () => void) => (
     <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '9px 12px' }}
       onMouseEnter={e => (e.currentTarget.style.background = C.g50)} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -944,6 +953,11 @@ function PopAdjuntar({ onSubir, onBiblioteca, onCotizacion, onAgendar, onCamara 
       {item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.emerald50, color: C.emerald700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoMarcador size={15} /></span>, 'Biblioteca de medios', 'Archivos pre-configurados', onBiblioteca)}
       {onCotizacion && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.azulAgua, color: C.azulTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoDoc size={15} /></span>, 'Cotización del CRM', 'Manda el link de una cotización', onCotizacion)}
       {onAgendar && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.ambar100, color: C.ambar700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><IcoCalendario size={15} /></span>, 'Link para agendar', 'Prellenado con sus datos', onAgendar)}
+      {/* La prueba gratis se abría en otra pestaña: salir del inbox, buscar al
+          lead, crear la cuenta, volver y escribir los datos de memoria. Cuatro
+          pasos con el cliente esperando del otro lado. Aquí es uno, y el
+          mensaje sale escrito con la cuenta y la contraseña ya adentro. */}
+      {onPrueba && item(<span style={{ width: 30, height: 30, borderRadius: 8, background: C.moradoAgua, color: C.moradoTinta, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🎁</span>, 'Prueba gratis', pruebaSub || 'Crea la cuenta y escribe el mensaje', onPrueba)}
     </div>
   );
 }
@@ -1279,6 +1293,90 @@ function PopCotizaciones({ waId, onElegir }: { waId?: string | null; onElegir: (
           <span style={{ fontSize: 9, fontWeight: 700, background: c.estado === 'aceptada' || c.estado === 'pagada' ? C.emerald50 : C.g100, color: c.estado === 'aceptada' || c.estado === 'pagada' ? C.emerald700 : C.g500, borderRadius: 999, padding: '1px 7px' }}>{est[c.estado] || c.estado}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+// ───────────────────────── 10 bis) Prueba gratis ─────────────────────────
+/**
+ * Crear la cuenta de prueba SIN salir de la conversación.
+ *
+ * El flujo que reemplaza: abrir otra pestaña, buscar al lead, crear la cuenta,
+ * volver, y escribir de memoria los datos de acceso. Cuatro pasos con el
+ * cliente esperando — y el paso de «escribir de memoria» es donde nacía el
+ * error más caro: dictar el identificador como si fuera una dirección web.
+ *
+ * Al terminar deja el mensaje escrito en el composer, no lo manda: quien
+ * atiende lo lee, le agrega lo suyo y lo envía. Un mensaje con la contraseña
+ * de alguien no se dispara solo.
+ *
+ * El identificador se PROPONE a partir de la empresa o el nombre. Se propone y
+ * no se decide porque es visible para el cliente para siempre: una heurística
+ * que se equivoca deja un nombre feo que ya no se cambia.
+ */
+function PopPrueba({ contacto, onListo }: { contacto?: any; onListo: (texto: string) => void }) {
+  const sugerido = String(contacto?.empresa || contacto?.nombre || '')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '').slice(0, 24);
+  const [cuenta, setCuenta] = useState(sugerido);
+  const [dias, setDias] = useState(14);
+  const [ocupado, setOcupado] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const yaTiene = contacto?.prueba_estado === 'activa';
+
+  const crear = async () => {
+    if (!contacto?.contact_id) { setErr('Esta conversación no está ligada a un contacto del CRM.'); return; }
+    setOcupado(true); setErr(null);
+    const r = await fetch('/api/crm/sacs-prueba', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: contacto.contact_id, cuenta: cuenta.trim().toLowerCase(), dias }),
+    }).then(x => x.json()).catch(() => ({ error: 'Sin conexión' }));
+    setOcupado(false);
+    if (r.error) { setErr(r.error); return; }
+    onListo(
+      `Ya te dejé lista tu prueba de ${dias} días 🎁\n\n` +
+      `Entra en app.sacscloud.com\n` +
+      `Cuenta: ${r.cuenta}\n` +
+      `Usuario: ${r.email}\n` +
+      `Contraseña: ${r.password_temporal}\n\n` +
+      `La contraseña la puedes cambiar en cuanto entres. Cualquier duda me escribes por aquí.`
+    );
+  };
+
+  return (
+    <div className="wa-pop" style={popup(300, 150)}>
+      <div style={{ padding: '10px 12px 6px', fontSize: 10, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+        Prueba gratis · se crea y se escribe sola
+      </div>
+      {yaTiene ? (
+        <div style={{ padding: '4px 12px 12px', fontSize: 12, color: C.g400, lineHeight: 1.6 }}>
+          Este contacto <b>ya tiene una prueba activa</b>{contacto?.prueba_cuenta ? <> en <b>{contacto.prueba_cuenta}</b></> : null}. Para extenderla o cerrarla, entra a su ficha.
+        </div>
+      ) : (
+        <div style={{ padding: '4px 12px 12px' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, marginBottom: 3 }}>IDENTIFICADOR</div>
+              <input value={cuenta} onChange={e => setCuenta(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="mimarca" style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            </div>
+            <div style={{ width: 62 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.g400, marginBottom: 3 }}>DÍAS</div>
+              <input type="number" min={1} max={60} value={dias} onChange={e => setDias(Number(e.target.value))}
+                style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+            </div>
+          </div>
+          {err && <div style={{ fontSize: 11, color: '#C0554E', marginTop: 6, lineHeight: 1.5 }}>{err}</div>}
+          <button onClick={crear} disabled={ocupado || cuenta.trim().length < 3}
+            style={{ marginTop: 8, width: '100%', border: 'none', borderRadius: 8, padding: '8px 10px', background: C.moradoTinta, color: '#fff', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: ocupado || cuenta.trim().length < 3 ? 'default' : 'pointer', opacity: ocupado || cuenta.trim().length < 3 ? .5 : 1 }}>
+            {ocupado ? 'Creando la cuenta…' : 'Crear y escribir el mensaje'}
+          </button>
+          <div style={{ fontSize: 10, color: C.g400, marginTop: 6, lineHeight: 1.5 }}>
+            Pasa a la etapa <b>Prueba gratis</b> y entra solo a la cadencia de 14 días.
+          </div>
+        </div>
+      )}
     </div>
   );
 }

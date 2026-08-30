@@ -95,8 +95,46 @@ if (gate) return gate;
         // puede estar a medias (un deslizamiento, un menú abriéndose).
         return Date.now() - ultimoToque < 3000;
       };
-      const refrescar = () => { if (!ocupado()) location.reload(); else setTimeout(refrescar, 4000); };
+      /* ── QUE NUNCA SE QUEDE ATORADO EN SILENCIO ─────────────────────────
+         Antes: si estabas ocupado, difería 4 s y volvía a intentar. Con la
+         pantalla en uso —un panel abierto, o el dedo tocando cada pocos
+         segundos— `ocupado()` puede ser cierto indefinidamente, así que la
+         versión nueva se quedaba esperando un momento libre que no llegaba y
+         NADA lo decía. Desde fuera: «desplegué y no veo los cambios».
+         Ahora hay un plazo. Si en 12 segundos no hubo un hueco, se enseña un
+         aviso tocable y la decisión pasa a ser tuya. Lo que NO se hace es
+         recargar encima de lo que estás haciendo: eso ya pasó una vez y se
+         llevó por delante una hoja recién abierta. */
+      let intentos = 0;
+      const refrescar = () => {
+        if (!ocupado()) { location.reload(); return; }
+        if (++intentos >= 3) { avisoVisible(); return; }   // ~12 s
+        setTimeout(refrescar, 4000);
+      };
       setTimeout(refrescar, 1500);
+
+      function avisoVisible() {
+        if (document.getElementById('crm-nueva-version')) return;
+        const b = document.createElement('button');
+        b.id = 'crm-nueva-version';
+        b.textContent = 'Versión nueva lista · Actualizar';
+        /* Abajo y centrado, encima de la barra de pestañas: arriba compite con
+           la cabecera de cada pantalla y en el teléfono queda lejos del pulgar. */
+        b.style.cssText = [
+          'position:fixed', 'left:50%', 'transform:translateX(-50%)',
+          'bottom:calc(var(--crm-bottomnav-h, 64px) + 12px)', 'z-index:1200',
+          'border:none', 'border-radius:999px', 'padding:11px 18px',
+          'background:#5B4BD6', 'color:#fff', 'font:600 13.5px/1 inherit',
+          'box-shadow:0 6px 22px rgba(91,75,214,.45)', 'cursor:pointer',
+          'animation:crm-nv-sube 220ms ease both',
+        ].join(';');
+        b.onclick = () => location.reload();
+        const st = document.createElement('style');
+        st.textContent = '@keyframes crm-nv-sube{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}'
+          + '@media (prefers-reduced-motion:reduce){#crm-nueva-version{animation:none}}';
+        document.head.appendChild(st);
+        document.body.appendChild(b);
+      }
     });
   }
 })();

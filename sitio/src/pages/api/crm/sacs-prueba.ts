@@ -10,13 +10,21 @@
 //   1. crea la cuenta en SACS con la marca de prueba y sus días,
 //   2. la liga al contacto y a su empresa en el CRM,
 //   3. deja una actividad en la ficha, para que aparezca en la línea de tiempo
-//      como cualquier otro hecho del lead.
+//      como cualquier otro hecho del lead —y por lo tanto también en el inbox,
+//      que pinta esa misma línea en su panel de detalle.
+//   4. LO MUEVE A LA ETAPA «Prueba gratis», que es lo que lo mete a la cadencia
+//      de onboarding. Sin este paso, el flujo anterior creaba la cuenta y ahí
+//      se acababa: el lead se quedaba en «oportunidad» y no recibía ninguno de
+//      los 14 correos. No fallaba nada; simplemente no pasaba nada. Medido
+//      antes de este cambio: 14 correos cargados, 0 leads en prueba.
 //
 // Lo que NO hace: inventar el slug. El identificador de la cuenta es visible
 // para el cliente (vive en su URL) y no puede salir de una heurística: se pide
 // explícito y se valida contra el mismo pre-check que usa el registro público.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { iniciarPrueba, DIAS_PRUEBA } from '../../../lib/crm/prueba';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -31,10 +39,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (!REGISTER_SECRET) {
     return json({ error: 'Falta SACS_REGISTER_SECRET en el entorno: sin ese secreto SACS rechaza el alta.' }, 500);
   }
+  const user = await getCurrentUser(request);
+  if (!user) return json({ error: 'No autenticado' }, 403);
+
   const b = await request.json().catch(() => ({}));
   const cuenta = String(b.cuenta || '').trim().toLowerCase();
   const contactId = String(b.contact_id || '').trim();
-  const dias = Math.max(1, Math.min(60, Number(b.dias) || 14));
+  const dias = Math.max(1, Math.min(60, Number(b.dias) || DIAS_PRUEBA));
 
   if (!SLUG_OK.test(cuenta)) {
     return json({ error: 'El identificador de la cuenta solo admite minúsculas, números y guiones (3 a 40).' }, 400);
@@ -82,15 +93,19 @@ export const POST: APIRoute = async ({ request }) => {
       .then(() => {}, () => {});
   }
 
-  await supabase.from('activities').insert({
-    contact_id: c.id, company_id: c.company_id || null,
-    tipo: 'prueba_iniciada', automatico: false,
-    titulo: `Prueba gratis de ${dias} días · cuenta ${cuenta}`,
-    metadata: { cuenta, dias },
-  }).then(() => {}, () => {});
+  /* Fechas, etapa, estado y actividad — todo en `iniciarPrueba`, que es la
+     única definición de qué significa arrancar una prueba. La fecha de fin se
+     toma de la que SACS grabó en la cuenta cuando la manda: recalcularla aquí
+     produciría dos fechas para la misma prueba, con horas de diferencia. */
+  const finSacs = Number(r?.data?.prueba?.termina) || null;
+  const { fin } = await iniciarPrueba(c, {
+    cuenta, dias,
+    fin: finSacs ? new Date(finSacs).toISOString() : null,
+    quien: (user as any).email || (user as any).id || null,
+  });
 
   return json({
-    ok: true, cuenta, dias,
+    ok: true, cuenta, dias, fin,
     /* SIEMPRE app.sacscloud.com. NO hay subdominio por cuenta: el slug es el
        identificador del tenant, no un host. Yo devolvía `{cuenta}.sacscloud.com`
        —inventado— y eso es peor que no devolver nada: un link que no resuelve,

@@ -186,17 +186,18 @@ function pestanaDe(c: any): string | null {
   return eDeLead(c) === 'nuevo' ? 'nuevos' : 'contactados';
 }
 
-/** La prueba gratis del lead: vive en `propiedades.prueba_inicio/prueba_fin`.
- *  Una prueba VENCIDA sigue contando como abierta hasta que alguien la cierre —
- *  y es justo la que hay que ver: mientras siga así, nadie sabe si compró, si
- *  se le acabó o si nadie volvió a hablarle. */
+/** La prueba gratis del lead. Sale de las COLUMNAS `prueba_*`, que son la
+ *  única verdad desde que se retiró el jsonb: mientras hubo dos lugares, la
+ *  lista y la ficha se contradecían y la cadencia no veía a nadie.
+ *
+ *  Solo se pinta la que sigue ABIERTA. Una vencida sin cerrar es justo la que
+ *  hay que ver —nadie sabe si compró, si se le acabó o si nadie volvió a
+ *  hablarle—, así que cuenta como abierta hasta que el cron o una persona la
+ *  cierre. */
 const prueba = (c: any) => {
-  const p = c?.propiedades || {};
-  if (!p.prueba_inicio) return null;
-  const restan = p.prueba_fin
-    ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000)
-    : null;
-  return { ini: p.prueba_inicio, fin: p.prueba_fin || null, restan, urge: restan != null && restan <= 3 };
+  if (c?.prueba_estado !== 'activa') return null;
+  const restan = c.prueba_fin ? Math.ceil((Date.parse(c.prueba_fin) - Date.now()) / 86400000) : null;
+  return { ini: c.prueba_inicio, fin: c.prueba_fin || null, restan, urge: restan != null && restan <= 3 };
 };
 
 /** Los que todavía se pueden convertir. Un perdido de ayer llegó esta semana

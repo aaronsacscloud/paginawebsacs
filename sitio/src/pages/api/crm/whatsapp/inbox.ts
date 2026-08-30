@@ -67,7 +67,7 @@ const _GET: APIRoute = async ({ request, url }) => {
   const limit = Math.min(Number(url.searchParams.get('limit') || 50), 200);
   const offset = Number(url.searchParams.get('offset') || 0);
 
-  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
+  const SELECT_JOINS = 'contacts(id, nombre, apellido, email, lifecycle_stage, tipo, fuente, created_at, next_followup, owner_id, estatus_lead, respondio_at, retenido_hasta, prueba_estado, prueba_cuenta, prueba_fin), companies(id, nombre, nombre_comercial, plan, mrr, sucursales, giro, estado_cuenta, sacs_account, fecha_renovacion, dias_sin_venta, ultima_venta_at, last_payment_at, health_score)';
   const [{ data: convsWa, error }, { data: convsEm }, { data: lecturas }, { data: mencionesRaw }, { data: notasRaw }] = await Promise.all([
     supabase.from('wa_conversaciones').select(`*, ${SELECT_JOINS}`)
       .order('ultimo_mensaje_at', { ascending: false }).limit(1000),
