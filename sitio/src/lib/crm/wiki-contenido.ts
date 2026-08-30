@@ -283,6 +283,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>El día que vence</b></td><td>La prueba se marca <b>terminada</b> y la cuenta muestra el aviso de fin de prueba — el <b>mismo</b> que pondría una persona desde sacs3 al suspender por falta de pago, con su título, su mensaje, <b>su botón de WhatsApp</b> y el link a planes. Se deja la actividad en la ficha y se avisa por la campana.</td></tr>
 </tbody></table>
 <p>Los textos de ese aviso no se escriben aquí: salen de la configuración central de SACS (<i>Configuración ▸ Cuentas ▸ bloqueo</i>), la misma que usa el bloqueo por adeudo. Si mañana se cambia el texto allá, este también cambia.</p>
+<p>Qué ve exactamente, hasta dónde alcanza el candado y cómo revocar una cuenta a mano: <b>Revocar una cuenta</b>.</p>
 
 <div class="w-caja"><span class="w-k">Vencida no es lo mismo que terminada</span><p><b>Vencida</b> es que la fecha pasó. <b>Terminada</b> es que ya se asumió y la cuenta tiene el aviso. Entre las dos hay una ventana —hasta que corre el cron de las 3:45 am— y es la que la ficha pinta en rojo. Si quieres el aviso hoy y no mañana, hay un botón «Cerrar ya».</p>
 <p>Y si el aviso no se pudo poner —cuenta borrada, API caída— la prueba queda terminada pero <b>sin</b> marca de bloqueo, y el cron lo reintenta cada madrugada. Sin eso, un timeout de una noche dejaba una cuenta vencida abierta para siempre y en silencio.</p></div>
@@ -339,6 +340,39 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>, y le faltan los tres WhatsApps de los días 2, 6 y 10: ninguna de las 33 plantillas aprobadas sirve para onboarding —todas son de leads, demos y cotizaciones— así que hay que darlas de alta y esperar a Meta.</p></div>
 
 <div class="w-caja"><span class="w-k">El día 14 y el bloqueo van juntos</span><p>El correo del día 14 —«lo que lograste y qué pasa con tu cuenta»— y el aviso de fin de prueba en la cuenta salen del <b>mismo</b> plazo. Si algún día se cambian los 14 días de la cadencia, hay que cambiar también los días que se otorgan al crear la cuenta, o el correo de cierre llega cuando el cliente ya no puede entrar.</p></div>`,
+  },
+  {
+    id: 'revocar', grupo: 'El proceso', titulo: 'Revocar una cuenta',
+    bajada: 'Apagarle el acceso sin salir del CRM.', chip: { texto: 'nueva', tono: 'ok' },
+    cuerpo: `
+<p>Antes esto se hacía en <i>sacs3 ▸ Configuración ▸ Cuentas</i>: otro sistema, otra sesión, y buscar la cuenta entre 560. Quien está cobrando tiene el hilo de WhatsApp abierto delante y la ficha al lado — ese es el momento de apretar el botón, no quince minutos después en otra pestaña.</p>
+<p>Ahora la tarjeta <b>Cuenta de SACS</b> aparece en <b>la ficha del lead o cliente</b> (pestaña Seguimiento) y en <b>el inbox</b> (panel de detalle ▸ Acciones). Es la misma tarjeta en los dos lados a propósito: tenerla dos veces garantizaba que un día dijeran cosas distintas de la misma cuenta.</p>
+
+<div class="w-caja"><span class="w-k">Es la MISMA operación, no una paralela</span><p>Mismo motor del lado de SACS, mismos textos, mismo candado en la lista de cuentas y misma bitácora. Lo único que cambia es desde dónde se dispara — y que en la bitácora queda <b>tu correo</b>, no «el sistema».</p></div>
+
+<h3>Los tres motivos</h3>
+<table class="w-tab"><thead><tr><th>Motivo</th><th>Qué ve el cliente</th></tr></thead><tbody>
+<tr><td><b>Falta de pago</b></td><td>El adeudo y los datos para depositar. <b>Pide el monto</b>: un aviso que dice «no especificado» le quita toda la fuerza al mensaje.</td></tr>
+<tr><td><b>Se acabó la prueba</b></td><td>La invitación a contratar, con botón de WhatsApp y link a planes. Es el que pone el cron cuando vence una prueba.</td></tr>
+<tr><td><b>Violación de términos</b></td><td>El aviso legal, sin datos de pago.</td></tr>
+</tbody></table>
+<p>Los textos exactos <b>no se escriben en el CRM</b>: salen de la configuración central de SACS. Si mañana se cambian allá, cambian aquí.</p>
+
+<h3>Qué le pasa al cliente</h3>
+<p>Al entrar le sale un <b>aviso a pantalla completa</b>, con el fondo difuminado, encima de todo. No es un banner que se cierra: no tiene forma de quitarlo, y el único botón es <b>cerrar sesión</b>. Vive en el armazón de sacs3, así que da igual a qué módulo intente entrar o si abre un link directo — el aviso está ahí.</p>
+
+<div class="w-caja w-bad"><span class="w-k">El candado es de la web, no del sistema entero</span><p>Verificado, no supuesto: <b>la API no valida el bloqueo en ninguna ruta</b> y <b>la app móvil no lo mira</b>. Quien tenga la APK abierta puede seguir vendiendo con la cuenta revocada.</p>
+<p>Para cobrar funciona —el dueño usa la web y ahí se topa de frente con el aviso—, pero no des por hecho que la operación se detuvo. Si el caso es grave, revócala <b>y</b> avisa.</p></div>
+
+<div class="w-caja"><span class="w-k">Y no es retroactivo en la sesión abierta</span><p>El aviso se consulta al entrar. Quien ya tenga sacs3 abierto lo verá cuando recargue, no en el segundo en que aprietas el botón.</p></div>
+
+<h3>Reabrir</h3>
+<p>El mismo botón, en verde. Le quita el aviso y limpia los datos del bloqueo anterior — importante, porque si no, el adeudo viejo reaparecería la próxima vez que se apague por otro motivo.</p>
+
+<div class="w-caja"><span class="w-k">Si dice «no se pudo consultar»</span><p>La tarjeta lee el estado de SACS cada vez que se abre; no lo recuerda. Si la consulta falla, lo dice y <b>esconde los botones</b> en vez de suponer «activa». Apretar a ciegas puede reabrirle la cuenta a quien la tenías apagada por términos.</p></div>
+
+<h3>Todo queda escrito</h3>
+<p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
     id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',

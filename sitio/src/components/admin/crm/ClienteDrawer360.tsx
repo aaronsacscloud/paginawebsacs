@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Etiquetas from './Etiquetas';
+import CuentaSacs from './CuentaSacs';
 import { CamposFicha, useCampos } from './CamposPersonalizados';
 // El MISMO cálculo que corre en el servidor: si el front adivinara las fechas
 // por su cuenta, la vista previa acabaría prometiendo días distintos a los que
@@ -404,6 +405,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   cuando NO hay ninguna ligada —el único caso en que hace falta— y
                   aquí, en Actividad, que es de donde salen esos datos. */}
               {tab === 'resumen' && !co?.sacs_account && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {/* Revocar el acceso vive en Actividad y no en Facturación a
+                  propósito: se decide mirando si el cliente está usando el
+                  sistema, no mirando el saldo. La MISMA tarjeta que la ficha del
+                  lead y que el inbox — tres copias serían tres verdades. */}
+              {tab === 'resumen' && <CuentaSacs companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
