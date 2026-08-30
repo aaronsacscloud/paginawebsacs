@@ -152,10 +152,32 @@ export function cumpleCondLead(c: any, k: CondLead): boolean {
       break;
     }
     case 'dueno': ok = (k.valor === 'nadie') === !c.owner_id; break;
-    default: return true;
+    /* Campo desconocido: pasa, PERO se queja.
+     *
+     * `return true` a secas es la razón de que dos cadencias llevaran filtros
+     * que no filtraban nada: se escribió `dias_sin_venta` —que no existe; el
+     * campo se llama `sin_actividad`— y con operador `menor_que` —que tampoco;
+     * es `hace_menos`—. Las dos condiciones pasaban SIEMPRE y las secuencias
+     * admitían a todo el mundo sin que nada fallara.
+     *
+     * Se conserva el `true` a propósito: devolver `false` dejaría fuera a todos
+     * de golpe, y una audiencia vacía se nota tan poco como una que no filtra.
+     * Lo que cambia es que ahora deja rastro — una vez por campo y por proceso,
+     * no en cada evaluación, que serían miles de líneas por corrida. */
+    default:
+      if (!_avisados.has(k.campo)) {
+        _avisados.add(k.campo);
+        console.warn(`[filtros] campo desconocido "${k.campo}": la condición se ignora y TODOS pasan. Campos válidos: ${CAMPOS_VALIDOS.join(', ')}`);
+      }
+      return true;
   }
   return neg ? !ok : ok;
 }
+
+/** Campos que el switch de arriba sí sabe evaluar. Se usa solo para el aviso. */
+const CAMPOS_VALIDOS = ['campana', 'descarte', 'dueno', 'estatus', 'giro', 'llego', 'no_shows', 'pausa', 'prueba', 'reunion', 'reuniones_n', 'sin_actividad', 'sucursales', 'telefono', 'toques', 'ultimo_contacto', 'visitas_n', 'visito_ruta'];
+/** Un aviso por campo y por proceso: en cada evaluación serían miles por corrida. */
+const _avisados = new Set<string>();
 
 export function cumpleCondsLead(c: any, conds: CondLead[], logica: 'AND' | 'OR' = 'AND'): boolean {
   const vivas = (conds || []).filter(x => x.campo && x.op);

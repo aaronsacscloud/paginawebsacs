@@ -36,6 +36,25 @@ for (const [k, v] of Object.entries(env)) if (!process.env[k]) process.env[k] = 
 
 export const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+/**
+ * ⚠️ EL CANDADO. No lo quites.
+ *
+ * Una secuencia de prueba ACTIVA recluta a todo contacto real que cumpla su
+ * entrada. Pasó: una secuencia qa con la entrada por omisión enroló a 199 leads
+ * reales y le mandó un correo a 59 de ellos. El arnés estaba corriendo contra
+ * la base de producción y nada lo impedía.
+ *
+ * Ahora TODA secuencia del arnés lleva un filtro por esta campaña, y TODO
+ * contacto del arnés la trae puesta. Ningún contacto real la tiene, así que
+ * ninguno puede entrar — el candado es de datos, no de disciplina.
+ *
+ * Y por si alguien crea una secuencia sin pasar por `secuencia()`, `cron()`
+ * verifica después de cada corrida que no haya entrado nadie de fuera, apaga
+ * todo y truena.
+ */
+export const MARCA = 'qa-arnes-cadencias';
+const FILTRO_MARCA = { campo: 'campana', op: 'es', valor: MARCA };
+
 /* El cron se compila una vez y se reusa. `import.meta.env` → process.env para
    que las variables lleguen igual que en Vercel. */
 let _cron = null;
@@ -47,7 +66,20 @@ export async function cron({ dry = false } = {}) {
     _cron = require(out);
   }
   const r = await _cron.GET({ url: new URL(`http://qa/${dry ? '?dry=1' : ''}`), request: { headers: { get: () => '1' } } });
-  return JSON.parse(await r.text());
+  const salida = JSON.parse(await r.text());
+
+  /* Red de seguridad: ¿entró alguien que no es del arnés? Se comprueba SIEMPRE,
+     no solo cuando algo falla, porque el daño de esto no se nota hasta que un
+     cliente contesta un correo que nunca debió recibir. */
+  const { data: colados } = await sb.from('crm_secuencia_miembros')
+    .select('contact_id, crm_secuencias!inner(nombre), contacts!inner(email, campana)')
+    .like('crm_secuencias.nombre', 'qa-%').neq('contacts.campana', MARCA).limit(5);
+  if (colados?.length) {
+    await sb.from('crm_secuencias').update({ activa: false }).like('nombre', 'qa-%');
+    throw new Error(`🚨 ${colados.length}+ contactos REALES entraron a una secuencia del arnés. Todas apagadas. ` +
+      `Primero: ${colados.map(x => x.contacts?.email).join(', ')}`);
+  }
+  return salida;
 }
 
 // ── Afirmaciones ─────────────────────────────────────────────────────────────
@@ -80,7 +112,9 @@ export async function contacto(campos = {}) {
   const id = randomUUID();
   const { error } = await sb.from('contacts').insert({
     id, nombre: 'QA', apellido: id.slice(0, 6), email: `qa-${id.slice(0, 8)}@example.invalid`,
-    whatsapp: null, tipo: 'lead', lifecycle_stage: 'lead', estatus_lead: 'contactado', ...campos,
+    whatsapp: null, tipo: 'lead', lifecycle_stage: 'lead', estatus_lead: 'contactado',
+    ...campos,
+    campana: MARCA,   // el candado: va DESPUÉS del spread para que nadie lo pise
   });
   if (error) throw new Error('sembrando contacto: ' + error.message);
   CREADOS.contacts.push(id);
@@ -90,10 +124,18 @@ export async function contacto(campos = {}) {
 /** Una secuencia desechable, activa por omisión. */
 export async function secuencia(campos = {}, pasos = []) {
   const id = randomUUID();
+  /* El filtro de la marca se AÑADE a los que traiga el caso, y con lógica AND.
+     Si el caso pide lógica OR, el candado se rompería —bastaría cumplir la otra
+     condición— así que en ese caso se rechaza el montaje en vez de correr con
+     una secuencia que puede reclutar gente real. */
+  const entradaBase = campos.entrada || { estatus: ['nuevo', 'contactado', 'sin_respuesta'], lifecycle: ['lead'] };
+  if (entradaBase.logica === 'OR') throw new Error('El arnés no admite lógica OR: rompería el candado de la campaña.');
+  const entrada = { ...entradaBase, filtros: [...(entradaBase.filtros || []), FILTRO_MARCA], logica: 'AND' };
+
   const { error } = await sb.from('crm_secuencias').insert({
     id, nombre: `qa-${id.slice(0, 8)}`, activa: true, corte_dias: 3650, objetivo: 'respondio',
     hora_inicio: 0, hora_fin: 24, dias_envio: [1, 2, 3, 4, 5, 6, 7],
-    entrada: { estatus: ['nuevo', 'contactado', 'sin_respuesta'], lifecycle: ['lead'] }, ...campos,
+    ...campos, entrada,
   });
   if (error) throw new Error('sembrando secuencia: ' + error.message);
   CREADOS.secuencias.push(id);
