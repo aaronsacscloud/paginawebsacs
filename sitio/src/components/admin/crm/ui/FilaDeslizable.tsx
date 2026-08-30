@@ -24,6 +24,7 @@
  * El tap normal sigue funcionando: si no hubo desplazamiento, se deja pasar.
  */
 import { useEffect, useRef, useState } from 'react';
+import { tic, ticListo } from '../../../../lib/ui/tacto';
 
 /* La fila necesita fondo OPACO —si no, se ve la acción de atrás a través del
  * texto— pero NO puede ser un blanco fijo: el CRM tiene modo oscuro en el
@@ -74,6 +75,11 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
   if (!izquierda) return <>{children}</>;
 
   const armada = x <= -UMBRAL;
+  // Un golpecito EN EL MOMENTO en que el gesto se arma: es la señal de que
+  // soltar ya ejecuta. Antes solo cambiaba el tono del fondo, que es
+  // justamente lo que el pulgar está tapando mientras desliza.
+  const armadaPrev = useRef(false);
+  useEffect(() => { if (armada && !armadaPrev.current) tic(); armadaPrev.current = armada; }, [armada]);
 
   const soltar = () => {
     ini.current = null;
@@ -82,7 +88,7 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
     if (!armada) { setX(0); return; }
     // Regla 4: se va de la lista YA, y la acción sale con retraso para que
     // quepa un arrepentimiento.
-    setIdo(true);
+    setIdo(true); ticListo();
     temporizador.current = setTimeout(() => { izquierda.onAccion(); }, 4000);
   };
 

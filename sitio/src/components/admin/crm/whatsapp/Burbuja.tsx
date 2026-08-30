@@ -6,6 +6,7 @@
 // "responder" (cita) en hover.
 import { useRef, useState } from 'react';
 import { C, burbuja } from './estilo';
+import { tic } from '../../../../lib/ui/tacto';
 import { extensionDe } from './VisorMedia';
 import EstadoEntrega, { errorLegible } from './EstadoEntrega';
 
@@ -115,9 +116,30 @@ const ETIQUETA_INTERACTIVO: Record<string, string> = { button_reply: 'Eligió el
 
 const IcoReenviar = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="m15 7 5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 12H10a6 6 0 0 0-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
 
+/**
+ * Al soltar el dedo tras una pulsación larga, el navegador manda ADEMÁS un
+ * click en esas coordenadas. Para entonces la hoja de acciones ya está abierta
+ * y ocupa la pantalla: el click cae en su fondo y la cierra sola, sin que dé
+ * tiempo de leerla (medido — abría y desaparecía en el mismo gesto).
+ *
+ * No sirve ignorar los clicks "durante los primeros N ms": el dedo se levanta
+ * cuando quiera, medio segundo o tres después de que la hoja apareció. Lo que
+ * define a este click es que pertenece AL MISMO toque, así que se traga
+ * exactamente uno, en captura y antes de que llegue a nadie. El plazo de 700 ms
+ * es solo la red de seguridad para el caso en que ese click nunca llegue
+ * (Android a veces no lo manda) y no quede un oyente colgado.
+ */
+function tragarSiguienteClick() {
+  if (typeof document === 'undefined') return;
+  const swallow = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); limpiar(); };
+  const limpiar = () => { document.removeEventListener('click', swallow, true); clearTimeout(t); };
+  document.addEventListener('click', swallow, true);
+  const t = setTimeout(limpiar, 700);
+}
+
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, mismoAutorQueElAnterior }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, mismoAutorQueElAnterior }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
@@ -126,8 +148,35 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   onReintentar?: (item: any) => void;
   onReenviar?: (item: any) => void;
   onReaccionar?: (item: any, emoji: string) => void;
+  /** Táctil: mantener el dedo sobre la burbuja pide las acciones al padre. */
+  onMantener?: (item: any) => void;
 }) {
   const [pickReac, setPickReac] = useState(false);
+
+  // ── MANTENER PRESIONADO ─────────────────────────────────────────────────
+  // Responder/reaccionar/reenviar se revelan con hover, y en el teléfono el
+  // hilo los apagaba por completo (.wa-hilo-m .wa-citar { display: none }).
+  // O sea: en el teléfono NO se podía responder a un mensaje. El gesto que la
+  // gente ya trae aprendido de WhatsApp es mantener el dedo encima, así que es
+  // el que se usa; la hoja de acciones la abre el padre, UNA sola para todo el
+  // hilo en vez de una por burbuja.
+  const pres = useRef<{ t: any; x: number; y: number; disparado: boolean }>({ t: null, x: 0, y: 0, disparado: false });
+  const cancelarPres = () => { if (pres.current.t) { clearTimeout(pres.current.t); pres.current.t = null; } };
+  const gestos = onMantener ? {
+    onTouchStart: (e: any) => {
+      if (e.touches.length !== 1) return;
+      pres.current = { t: null, x: e.touches[0].clientX, y: e.touches[0].clientY, disparado: false };
+      pres.current.t = setTimeout(() => { pres.current.disparado = true; tic(); onMantener(item); }, 420);
+    },
+    // Si el dedo se mueve es scroll, no una pulsación: se abandona. Sin esto,
+    // recorrer el hilo abriría la hoja a media lectura.
+    onTouchMove: (e: any) => {
+      const d = Math.abs(e.touches[0].clientX - pres.current.x) + Math.abs(e.touches[0].clientY - pres.current.y);
+      if (d > 10) cancelarPres();
+    },
+    onTouchEnd: () => { cancelarPres(); if (pres.current.disparado) tragarSiguienteClick(); },
+    onTouchCancel: cancelarPres,
+  } : {};
   const saliente = item.direccion === 'saliente';
   const claro = saliente;
   const src = srcMedia(item);
@@ -256,7 +305,11 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   }
 
   return (
-    <span className="wa-msg" style={{ display: 'flex', flexDirection: 'column', alignItems: saliente ? 'flex-end' : 'flex-start', gap: 2, position: 'relative' }}>
+    <span className="wa-msg" {...gestos} style={{ display: 'flex', flexDirection: 'column', alignItems: saliente ? 'flex-end' : 'flex-start', gap: 2, position: 'relative',
+      // Sin esto, mantener el dedo dispara ADEMÁS el menú nativo de iOS
+      // ("Copiar / Buscar") encima del nuestro. Copiar no se pierde: va como
+      // acción de la hoja, igual que en WhatsApp.
+      ...(onMantener ? { WebkitTouchCallout: 'none' as any, WebkitUserSelect: 'none' as any, userSelect: 'none' as const } : {}) }}>
       {/* El nombre solo cuando CAMBIA de autor: con tres mensajes seguidos
           tuyos se repetía tres veces y partía el bloque en tres. */}
       {saliente && !mismoAutorQueElAnterior && <span style={{ fontSize: 10, color: C.g400, padding: '0 4px' }}>{item.autor || 'Equipo SACS'}</span>}

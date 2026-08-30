@@ -16,6 +16,8 @@ import VisorMedia from './VisorMedia';
 import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 import { confirmar } from '../../../../lib/ui/confirmar';
+import ActionSheet from '../ui/ActionSheet';
+import { tic, ticListo } from '../../../../lib/ui/tacto';
 
 // Borradores por conversación (viven mientras la pestaña esté abierta).
 
@@ -61,6 +63,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const etapasCat = useLifecycle();
   const sugerenciasDe = (stage?: string | null) => (etapasCat.find(e => e.id === stage) as any)?.sugerencias || [];
   const [reenviar, setReenviar] = useState<any>(null);       // 12) mensaje a reenviar
+  // Mensaje sobre el que se mantuvo el dedo. Una sola hoja para todo el hilo:
+  // montar una por burbuja multiplicaría el árbol por cada mensaje en pantalla.
+  const [accionesMsg, setAccionesMsg] = useState<any>(null);
   const [, setReloj] = useState(0);                            // 5) re-render del contador de ventana
   useEffect(() => { const t = setInterval(() => setReloj(x => x + 1), 30000); return () => clearInterval(t); }, []);
   useEffect(() => { setCita(null); }, [hilo?.conversacion?.id]);
@@ -537,7 +542,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   mismoAutorQueElAnterior={mismoAutor}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
-                  onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined} />
+                  onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined}
+                  onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined} />
               )}
             </span>
           );
@@ -582,6 +588,59 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
+
+      {/* ══ ACCIONES DEL MENSAJE (táctil) ══════════════════════════════════
+          Lo que en escritorio son tres iconos al pasar el ratón. El orden no
+          es decorativo: «Responder» primero porque es el 90% de los casos, y
+          las reacciones ARRIBA de la lista —como fila de emojis— porque son de
+          un solo toque y no merecen leerse como renglón de menú. */}
+      <ActionSheet
+        open={!!accionesMsg}
+        onClose={() => setAccionesMsg(null)}
+        title={accionesMsg ? (
+          <span style={{ display: 'block' }}>
+            {/* textTransform en 'none' a propósito: el título de la hoja va en
+                mayúsculas por diseño, pero aquí lo que se cita son las palabras
+                del cliente y ponerlas a gritar se lee mal y además se entiende
+                peor. Es una etiqueta de contexto, no un encabezado. */}
+            <span style={{ display: 'block', fontSize: 12.5, color: C.g500, textTransform: 'none', letterSpacing: 0, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {resumenMensaje(accionesMsg) || 'Mensaje'}
+            </span>
+            {conv.id && api.reaccionar && accionesMsg.direccion === 'entrante' && accionesMsg.kapso_message_id && (
+              <span style={{ display: 'flex', gap: 4, marginTop: 10, justifyContent: 'space-between' }}>
+                {['👍', '❤️', '😂', '😮', '🙏', '✅'].map(e => (
+                  <button key={e} onClick={() => { ticListo(); api.reaccionar(accionesMsg.kapso_message_id, e); setAccionesMsg(null); }}
+                    style={{ flex: 1, minHeight: 46, border: `1px solid ${C.g200}`, borderRadius: 12, background: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>{e}</button>
+                ))}
+              </span>
+            )}
+          </span>
+        ) : undefined}
+        items={accionesMsg ? [
+          ...(conv.id && accionesMsg.kapso_message_id ? [{
+            label: 'Responder',
+            onClick: () => { tic(); setCita(accionesMsg); setAccionesMsg(null); },
+          }] : []),
+          // Copiar existe porque el gesto largo apaga el menú nativo de iOS,
+          // que era de donde se copiaba antes. Se devuelve lo que se quitó.
+          ...(resumenMensaje(accionesMsg) ? [{
+            label: 'Copiar texto',
+            onClick: async () => {
+              const t = accionesMsg.cuerpo || accionesMsg.transcript || '';
+              try { await navigator.clipboard.writeText(t); ticListo(); } catch { /* sin permiso de portapapeles */ }
+              setAccionesMsg(null);
+            },
+          }] : []),
+          ...(conv.id && (accionesMsg.cuerpo || accionesMsg.transcript || accionesMsg.media_url) ? [{
+            label: 'Reenviar a otra conversación',
+            onClick: () => { tic(); setReenviar(accionesMsg); setAccionesMsg(null); },
+          }] : []),
+          ...(accionesMsg.status === 'failed' && api.reintentar ? [{
+            label: 'Reintentar envío',
+            onClick: () => { tic(); api.reintentar(accionesMsg); setAccionesMsg(null); },
+          }] : []),
+        ] : []}
+      />
       {cierre && <ModalCierre onCerrar={() => setCierre(false)} onResolver={async (categoria: string, nota: string) => {
         const r = await api.patchConversacion({ estado_crm: 'resuelta', cierre_categoria: categoria, cierre_nota: nota });
         if (!r?.error) setCierre(false);

@@ -14,6 +14,7 @@ import { IcoVarita, IcoEmoji, IcoArroba, IcoMarcador, IcoClip, IcoMic, IcoEnviar
 import { BadgeWhatsApp, BadgeCorreo } from './Iconos';
 import { esMP4, mp4OpusAOgg } from '../../../../lib/whatsapp/ogg';
 import { marcarReciente, ordenarPorReciente, cuantosRecientes } from '../../../../lib/crm/recientes';
+import { tic, ticListo, ticError } from '../../../../lib/ui/tacto';
 
 type Modo = 'wa' | 'correo' | 'nota';
 type Popup = 'cotizacion' | 'agendar' | null | 'ia' | 'emoji' | 'variables' | 'snippets' | 'adjuntar';
@@ -81,6 +82,7 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
   const cargarProgramados = () => { api.listarProgramados?.().then((l: any[]) => setProgramados(l || [])); };
   // Elegir un snippet (desde "/" o desde el popup): texto + su adjunto si lo tiene.
   const usarSnippet = (r: any) => {
+    tic();
     setTexto(r.texto);
     if (r.media_url) setRemotos(rs => rs.some(x => x.url === r.media_url) ? rs : [...rs, { url: r.media_url, nombre: r.titulo || r.atajo || 'archivo', clase: r.media_tipo || 'document' }]);
     api.marcarUsoRespuesta?.(r.id); setPop(null); areaRef.current?.focus();
@@ -246,6 +248,10 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
       if (!r?.error) { setRemotos([]); api.refrescar?.(); }
     } else r = await api.enviarTexto(t, cita?.kapso_message_id || null);
     setOcupado(false);
+    // El resultado se confirma también por el dedo: mandar es la acción que más
+    // se repite del día y mirar la pantalla para saber si entró es el impuesto
+    // que se está quitando. Dos golpes = falló, y eso se distingue sin ver.
+    if (r?.error) ticError(); else ticListo();
     if (!r?.error) { onQuitarCita?.(); if (modo === 'wa' && siguiente && !r?.encolado) setSugerirSiguiente(true); }
     if (r?.ventana_cerrada) { setModalPlantilla(true); return; }
     if (r?.error) { setError(r.error, r.error_detalle || null); return; }

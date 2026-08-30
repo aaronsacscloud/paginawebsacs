@@ -17,6 +17,7 @@ import { useIsMobile, useDrawerHistory } from '../../../../lib/ui/mobile';
 import { C, L, CSS_INBOX } from './estilo';
 import { telefonoLegible } from '../../../../lib/telefono';
 import AvisoNuevo from './AvisoNuevo';
+import { ticListo } from '../../../../lib/ui/tacto';
 import { agregarACola, quitarDeCola, actualizarEnCola, leerCola, colaDe, suscribirCola, marcaUnica, type EnCola } from '../../../../lib/crm/cola-envio';
 import SidebarInbox, { useCamposFiltro } from './SidebarInbox';
 // REGLA DE VELOCIDAD: lo que no se ve al pintar la bandeja baja después.
@@ -267,8 +268,10 @@ export default function InboxPro() {
         o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.12);
       } catch { /* sin audio */ }
       // E7.3 · Vibración corta con la app abierta. Es lo que hace que te
-      // enteres con el teléfono en la mano y en silencio.
-      try { navigator.vibrate?.(30); } catch { /* el escritorio no vibra */ }
+      // enteres con el teléfono en la mano y en silencio. Va por el vocabulario
+      // común (lib/ui/tacto) y no suelto: así respeta «menos movimiento» y
+      // suena igual que el resto de confirmaciones del CRM.
+      ticListo();
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
         try { new Notification('WhatsApp · CRM SACS', { body: 'Tienes mensajes nuevos en el inbox' }); } catch { /* nada */ }
       }
