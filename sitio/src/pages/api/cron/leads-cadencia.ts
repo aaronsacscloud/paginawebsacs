@@ -234,6 +234,15 @@ export const GET: APIRoute = async ({ url }) => {
        esbuild no ve ninguna de las dos — solo aparecen al correr. */
     const anclaSec = String((sec.entrada || {}).ancla || 'estatus_lead_at');
 
+    /* Los pasos se cargan AQUÍ y no más abajo porque el modo permanente los
+       necesita para elegir el del carril, y ese bloque corre antes del envío.
+       Vivían cargados después: el permanente leía `sec.pasos` —un campo que NO
+       existe, porque la secuencia se trae con `select('*')` y ahí no hay
+       relación— así que el carril salía SIEMPRE vacío, el miembro se saltaba y
+       la cadencia no mandaba nada. «Rezagados», con 34 pasos, estaba muerta. */
+    const { data: pasos } = await supabase.from('crm_secuencia_pasos')
+      .select('*').eq('secuencia_id', sec.id).eq('activo', true).order('orden');
+
     // 2) GRADUAR + canales — miembros vigentes: salida total con motivo, o
     //    detención del canal por el que respondió.
     /* ⚠️ El `error` de aquí NO se puede tragar.
@@ -359,7 +368,7 @@ export const GET: APIRoute = async ({ url }) => {
         // Cada día de la semana tiene su tipo de contenido y avanza por su
         // cuenta. Sin esto, cargar tres insights seguidos le mandaría tres
         // lunes de insight y ningún tip: la rotación es POR CARRIL.
-        const todos = (sec.pasos || []).filter((p: any) =>
+        const todos = (pasos || []).filter((p: any) =>
           p.activo !== false && (!p.vigente_hasta || p.vigente_hasta >= hoyISO));
         const conCarril = todos.some((p: any) => p.dia_semana);
         const listos = conCarril
@@ -499,8 +508,7 @@ export const GET: APIRoute = async ({ url }) => {
     // 3) ENVIAR — ventana y días de ESTA secuencia (dry los ignora para simular).
     const diasEnvio: number[] = Array.isArray(sec.dias_envio) && sec.dias_envio.length ? sec.dias_envio : [1, 2, 3, 4, 5];
     if (!dry && (hora < sec.hora_inicio || hora >= sec.hora_fin || !diasEnvio.includes(diaIso))) continue;
-    const { data: pasos } = await supabase.from('crm_secuencia_pasos')
-      .select('*').eq('secuencia_id', sec.id).eq('activo', true).order('orden');
+
     // Freno de ráfaga: si una campaña mete cientos de leads, cada corrida
     // manda máximo esto por canal; el resto sale la siguiente hora solo.
     const MAX_POR_CORRIDA = 60;

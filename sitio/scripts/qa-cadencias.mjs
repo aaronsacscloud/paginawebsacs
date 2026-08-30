@@ -34,6 +34,17 @@ const env = Object.fromEntries(readFileSync(new URL('../.env', import.meta.url),
   .split('\n').filter(l => l.includes('=')).map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim().replace(/^"|"$/g, '')]));
 for (const [k, v] of Object.entries(env)) if (!process.env[k]) process.env[k] = v;
 
+/* El `.env` local es mínimo: los secretos viven en Vercel. Para probar el canal
+   dentro de Sacs hace falta el del puente, o `entregarInapp` corta en su primera
+   línea y la prueba falla por entorno y no por lógica — que es la peor forma de
+   fallar, porque parece un bug del producto.
+   Se lee de un archivo fuera de git; sin él, las pruebas de in-app se saltan. */
+try {
+  const s = readFileSync('/tmp/claude-1000/-opt-sacs/9ad95d89-8308-4172-a31d-660b3c9d0dd5/scratchpad/.nuevo-secreto', 'utf8').trim();
+  if (s && !process.env.CRM_SYNC_SECRET) process.env.CRM_SYNC_SECRET = s;
+} catch { /* sin secreto: las pruebas de in-app lo dirán */ }
+export const HAY_PUENTE = !!process.env.CRM_SYNC_SECRET;
+
 export const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 /**
@@ -167,6 +178,22 @@ export async function suscripcion(companyId, campos = {}) {
   return id;
 }
 
+/**
+ * Deja activa SOLO esta secuencia del arnés.
+ *
+ * Hace falta por el tope global de «un correo por lead por día entre TODAS las
+ * secuencias»: si quedan vivas las de bloques anteriores, el contacto del bloque
+ * de ahora gasta su cupo diario en ellas y el caso que se quería probar da 0
+ * envíos por una razón que no es la que se está probando.
+ *
+ * Es aislamiento de prueba, no un candado de seguridad — el candado es la marca
+ * de campaña.
+ */
+export async function soloEsta(secuenciaId) {
+  await sb.from('crm_secuencias').update({ activa: false }).like('nombre', 'qa-%');
+  await sb.from('crm_secuencias').update({ activa: true }).eq('id', secuenciaId);
+}
+
 /** Estado de un contacto dentro de una secuencia. */
 export async function miembro(secuenciaId, contactId) {
   const { data } = await sb.from('crm_secuencia_miembros')
@@ -188,9 +215,16 @@ export async function limpiar() {
   for (const id of CREADOS.secuencias) await sb.from('crm_secuencias').delete().eq('id', id);
   for (const id of CREADOS.campanas) await sb.from('inapp_campanas').delete().eq('id', id);
   for (const id of CREADOS.contacts) {
+    /* `email_sends` tiene FK a contacts, así que borrar el contacto sin soltarla
+       FALLA — y el error de Supabase no se lanza, se devuelve. Sin esto los
+       contactos de prueba se acumulaban corrida tras corrida: como todos llevan
+       la marca, cada secuencia nueva enrolaba a los de todas las pruebas
+       anteriores y los conteos dejaban de significar nada. */
+    await sb.from('email_sends').delete().eq('contact_id', id);
     await sb.from('activities').delete().eq('contact_id', id);
     await sb.from('crm_secuencia_miembros').delete().eq('contact_id', id);
-    await sb.from('contacts').delete().eq('id', id);
+    const { error } = await sb.from('contacts').delete().eq('id', id);
+    if (error) console.warn(`  ⚠ no se pudo borrar el contacto de prueba ${id}: ${error.message}`);
   }
   for (const id of CREADOS.companies) await sb.from('companies').delete().eq('id', id);
   const n = Object.values(CREADOS).reduce((a, x) => a + x.length, 0);
