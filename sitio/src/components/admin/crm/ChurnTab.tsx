@@ -319,8 +319,9 @@ function exportar(filas: any[]) {
 function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto, recargar }: any) {
   return (
     <div>
-      <div className="m-hdr"><div className="m-tt">Churn</div></div>
-      <div style={{ padding: '0 20px 10px' }}>
+      {/* Sin encabezado propio: el armazón del móvil ya pinta el título de la
+          sección, y ponerlo otra vez lo repetía dos veces en la misma pantalla. */}
+      <div style={{ padding: '14px 20px 10px' }}>
         <div style={{ fontSize: '2rem', fontWeight: 800, color: '#C0554E', letterSpacing: '-.02em' }}>{dinero(kpis.mrr_en_rescate)}</div>
         <div style={{ fontSize: '0.82rem', color: 'var(--m-soft)' }}>en rescate · {cuenta.todos || 0} casos abiertos</div>
       </div>
@@ -339,7 +340,7 @@ function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto,
         const salud = saludDeGracia(c, emp);
         const quedan = diasDeGracia(c);
         return (
-          <div key={c.id} className="m-row m-conv" onClick={() => setAbierto(c.id)}>
+          <div key={c.id} className="m-row m-conv m-sin-avatar" onClick={() => setAbierto(c.id)}>
             <div className="m-tx">
               <div className="m-cab">
                 <div className="m-n1">{emp.nombre || 'Sin nombre'}</div>

@@ -301,7 +301,7 @@ function TabCargando() {
   return <div aria-busy="true"><EsqueletoLista filas={8} mobile alInstante /></div>;
 }
 
-const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
+const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'whatsapp', 'cotizaciones', 'pagos', 'soporte'];
 // Pantallas ADAPTADAS al modo oscuro móvil. El dark se scopea a esta lista con
 // data-crm-dark en <html>: una pantalla no adaptada se queda en claro LEGIBLE
 // en vez de heredar fondo negro con texto negro (el reporte del usuario).
@@ -312,7 +312,7 @@ const M_HDR_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp', 'cot
 // ficha dentro de la hoja): se escribieron en claro con estilos inline y se
 // repintan por valor serializado en vez de tocar 17 archivos.
 const M_AUTO_DARK: Tab[] = ['suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
-const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
+const M_DARK_TABS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'churn', 'cotizaciones', 'pagos', 'soporte', 'whatsapp', 'suscripciones', 'mejoras', 'oportunidades', 'reuniones', 'commissions', 'email', 'automations', 'outbound', 'wa-metricas', 'wa-masivos', 'agents', 'secuencias', 'partners', 'content-review', 'desempeno', 'wa-config'];
 const BOTTOM_IDS: Tab[] = ['dashboard', 'pipeline', 'clientes', 'whatsapp'];
 // Cómo se llama cada destino en la barra (más corto que el label del sidebar).
 const BOTTOM_LABELS: Record<string, string> = { dashboard: 'Inicio', pipeline: 'Leads', clientes: 'Clientes', whatsapp: 'Inbox' };
@@ -1324,6 +1324,10 @@ const CRM_MOBILE_CSS = `
        las listas de Leads, Soporte, Plantillas y demás. */
     .m-row.m-conv { align-items: flex-start; padding: 11px 20px 11px 16px; gap: 11px; min-height: 0; }
     .m-row.m-conv::after { left: 65px; right: 0; }
+    /* Sin avatar, la sangría del divisor no tiene de qué colgar: se alinea al
+       texto, que es donde de verdad empieza la fila. */
+    .m-row.m-conv.m-sin-avatar { padding-left: 20px; }
+    .m-row.m-conv.m-sin-avatar::after { left: 20px; }
     /* La última fila SÍ lleva línea aquí: en una bandeja que sigue cargando,
        la fila sin divisor se lee como "aquí se acabó" y no siempre es cierto. */
     .m-row.m-conv:last-child::after { display: block; }
