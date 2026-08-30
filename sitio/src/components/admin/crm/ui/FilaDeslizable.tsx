@@ -25,6 +25,20 @@
  */
 import { useEffect, useRef, useState } from 'react';
 
+/* La fila necesita fondo OPACO —si no, se ve la acción de atrás a través del
+ * texto— pero NO puede ser un blanco fijo: el CRM tiene modo oscuro en el
+ * teléfono y un #fff aquí pinta cada renglón de blanco sobre la pantalla negra.
+ * Pasó tal cual: el usuario abrió el inbox y la lista salió en dos colores.
+ * Va por clase para que el tema oscuro pueda alcanzarla. */
+const CSS_DESLIZ = `
+.wa-desliz-fila { background: #fff; }
+.wa-desliz-hecho { background: #f7f6fa; color: #6b6875; }
+@media (prefers-color-scheme: dark) and (max-width: 899px) {
+  [data-crm-dark="1"] .wa-desliz-fila { background: #131318; }
+  [data-crm-dark="1"] .wa-desliz-hecho { background: #1d1d24; color: #b3b1bd; }
+}
+`;
+
 const UMBRAL = 84;
 const TOPE = 128;
 
@@ -48,7 +62,14 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
   const eje = useRef<'?' | 'x' | 'y'>('?');
   const temporizador = useRef<any>(null);
 
-  useEffect(() => () => { if (temporizador.current) clearTimeout(temporizador.current); }, []);
+  useEffect(() => {
+    if (typeof document !== 'undefined' && !document.getElementById('wa-desliz-css')) {
+      const el = document.createElement('style');
+      el.id = 'wa-desliz-css'; el.textContent = CSS_DESLIZ;
+      document.head.appendChild(el);
+    }
+    return () => { if (temporizador.current) clearTimeout(temporizador.current); };
+  }, []);
 
   if (!izquierda) return <>{children}</>;
 
@@ -74,8 +95,9 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
 
   if (ido) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 16px', background: '#f7f6fa' }}>
-        <span style={{ fontSize: '0.82rem', color: '#6b6875' }}>{izquierda.etiqueta}</span>
+      <div className="wa-desliz-hecho" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 16px' }}>
+        {/* sin color inline: lo pone la clase, que sí tiene variante oscura */}
+        <span style={{ fontSize: '0.82rem' }}>{izquierda.etiqueta}</span>
         <button onClick={deshacer}
           style={{ border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 800, fontSize: '0.82rem', fontFamily: 'inherit', cursor: 'pointer', minHeight: 44, padding: '0 4px' }}>
           Deshacer
@@ -118,8 +140,9 @@ export default function FilaDeslizable({ children, izquierda, alDeshacer }: {
         style={{
           transform: `translateX(${x}px)`,
           transition: x === 0 ? 'transform 180ms ease' : 'none',
-          position: 'relative', background: '#fff',
-        }}>
+          position: 'relative',
+        }}
+        className="wa-desliz-fila">
         {children}
       </div>
     </div>
