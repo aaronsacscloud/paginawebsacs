@@ -271,9 +271,21 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [ocupado, setOcupado] = useState(false);
   const [hecho, setHecho] = useState<'agendada' | 'enviado_wa' | 'enviado_correo' | ''>('');
   const [msg, setMsg] = useState('');
+  /* DOS CAMINOS, y se eligen ANTES de ver nada más.
+     Antes esta pantalla era un formulario de reserva con el «mándale los
+     horarios» escondido debajo: para la mitad de los casos —el cliente todavía
+     no dijo cuándo puede— había que bajar hasta el pie y adivinar que eso
+     existía. Son dos intenciones distintas y ahora se preguntan de frente. */
+  const [ruta, setRuta] = useState<null | 'reservar' | 'lista'>(null);
+  /* Cuántos días entran en la lista. «Hoy» sirve para cerrar el mismo día;
+     7 días es para quien anda ocupado y necesita opciones. */
+  const [rango, setRango] = useState<1 | 3 | 7>(3);
 
   useEffect(() => {
-    const from = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    /* Desde HOY, no desde mañana. «Mándale los horarios de hoy» era imposible
+       porque la consulta empezaba el día siguiente: quien contesta a las 10 de
+       la mañana con hueco a las 5 de la tarde no podía cerrar el mismo día. */
+    const from = new Date().toISOString().slice(0, 10);
     const to = new Date(Date.now() + 11 * 86400000).toISOString().slice(0, 10);
     fetch(`/api/scheduling/available-slots?slug=demo&from=${from}&to=${to}`)
       .then(r => r.json()).then(j => setSlots(j.dates || {})).catch(() => setSlots({}));
@@ -308,7 +320,22 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     refrescar?.();
   };
 
-  const textoHorarios = `${primerNombre}, estos son los horarios más próximos para tu sesión consultiva (30-60 min, sin costo):\n\n${primeros.map(s => `• ${s}`).join('\n')}\n\nElige el que te acomode aquí y queda confirmada al momento (te llega la invitación por correo y WhatsApp):\n${BASE}/agendar/demo`;
+  /* Los huecos DEL RANGO elegido, agrupados por día. Se listan hasta 4 horarios
+     por día: una lista de veinte se lee como formulario y nadie contesta «el
+     tercero de la segunda fila». */
+  const porDiaDelRango = useMemo(() => {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const limite = new Date(hoy.getTime() + (rango - 1) * 86400000).toISOString().slice(0, 10);
+    return Object.keys(slots || {}).sort()
+      .filter(f => f <= limite && ((slots as any)[f] || []).length)
+      .map(f => ({ fecha: f, horas: ((slots as any)[f] as string[]).slice(0, 4) }));
+  }, [slots, rango]);
+
+  const textoHorarios = porDiaDelRango.length
+    ? `${primerNombre}, estos son los horarios disponibles para tu sesión consultiva (30-60 min, sin costo):\n\n`
+      + porDiaDelRango.map(d => `${fechaHumana(d.fecha)}: ${d.horas.map(horaHumana).join(', ')}`).join('\n')
+      + `\n\n¿Cuál te queda mejor? Con que me digas el día y la hora, yo la agendo.`
+    : `${primerNombre}, ¿qué día te queda bien para tu sesión consultiva? La agendo y te llega la invitación.`;
   const enviarFechasWA = async () => {
     setMsg('');
     const r = await fetch('/api/crm/whatsapp/enviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversation_id: conv?.id || undefined, telefono: conv?.id ? undefined : telefono, texto: textoHorarios }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
@@ -345,9 +372,71 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           Horarios enviados {hecho === 'enviado_wa' ? 'por WhatsApp' : 'por correo'} ✓ — cuando elija, todo se confirma solo (correo + WhatsApp + secuencia).
         </div>
       )}
+      {/* ══ LAS DOS RUTAS, DE FRENTE ═══════════════════════════════════════
+          Antes esto era un formulario de reserva con «mándale los horarios»
+          escondido en el pie. Pero cuando el cliente todavía no dijo cuándo
+          puede —que es la mitad de las veces— reservar por él es adivinar.
+          Se pregunta primero qué quieres hacer, y cada ruta enseña solo lo suyo. */}
+      {!ruta && slots !== null && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          <button onClick={() => setRuta('lista')}
+            style={{ ...btnP, minHeight: 46, textAlign: 'left', padding: '0 14px' }}>
+            Enviar lista de horarios
+            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 500, opacity: .85, marginTop: 2 }}>
+              Él elige y tú la agendas después
+            </span>
+          </button>
+          <button onClick={() => setRuta('reservar')}
+            style={{ ...btnG, minHeight: 46, textAlign: 'left', padding: '0 14px' }}>
+            Agendar reunión
+            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: C.g500, marginTop: 2 }}>
+              Ya sabes el día y la hora
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* ══ RUTA 1 · MANDAR LA LISTA ══════════════════════════════════════ */}
+      {ruta === 'lista' && slots !== null && (
+        <div style={{ marginTop: 4 }}>
+          <span style={lbl}>Qué tanto abarcar</span>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
+              <button key={d} onClick={() => setRango(d)} style={pill(rango === d)}>{l}</button>
+            ))}
+          </div>
+
+          {/* Se enseña EL MENSAJE, no una promesa de mensaje: va a salir tal
+              cual y con el nombre del cliente adentro. */}
+          <span style={{ ...lbl, marginTop: 12 }}>Esto es lo que se manda</span>
+          <div style={{ border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: C.g700, whiteSpace: 'pre-line', lineHeight: 1.5, maxHeight: 190, overflowY: 'auto' }}>
+            {textoHorarios}
+          </div>
+          {!porDiaDelRango.length && (
+            <div style={{ fontSize: 11, color: C.ambar700, marginTop: 6, lineHeight: 1.45 }}>
+              No hay horarios libres en ese rango. Prueba con más días — o mándalo así y que él proponga.
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={enviarFechasWA} disabled={!ventanaAbierta}
+              style={{ ...btnP, flex: 1, ...(!ventanaAbierta ? { opacity: .45, cursor: 'not-allowed' } : {}) }}
+              title={!ventanaAbierta ? 'Ventana de 24 h cerrada: usa el correo o una plantilla desde el composer' : ''}>
+              Enviar por WhatsApp
+            </button>
+            <button onClick={enviarFechasCorreo}
+              style={{ ...btnG, flex: 1, color: C.moradoTinta, ...(!(email.trim() || contacto?.email) ? { opacity: .45, cursor: 'not-allowed' } : {}) }}>
+              Por correo
+            </button>
+          </div>
+          <button onClick={() => setRuta(null)}
+            style={{ ...btnG, marginTop: 8, width: '100%', color: C.g500 }}>Volver</button>
+        </div>
+      )}
+
       {slots === null && <p style={{ fontSize: 11, color: C.g400 }}>Cargando horarios disponibles…</p>}
-      {slots !== null && !dias.length && <p style={{ fontSize: 11, color: C.rojo700 }}>No hay horarios disponibles en los próximos 10 días — revisa la disponibilidad en Agenda.</p>}
-      {dias.length > 0 && <>
+      {ruta === 'reservar' && slots !== null && !dias.length && <p style={{ fontSize: 11, color: C.rojo700 }}>No hay horarios disponibles en los próximos 10 días — revisa la disponibilidad en Agenda.</p>}
+      {ruta === 'reservar' && dias.length > 0 && <>
         <span style={lbl}>Día</span>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {dias.map(f => <button key={f} onClick={() => { setFecha(f); setHora(''); }} style={pill(fecha === f)}>{fechaHumana(f)}</button>)}
@@ -363,15 +452,12 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
         <button className="accv-grande" style={{ ...btnP, width: '100%', marginTop: 10, background: fecha && hora && emailValido ? C.moradoTinta : C.g300 }} disabled={!fecha || !hora || !emailValido || ocupado} onClick={agendar}>
           {ocupado ? 'Agendando…' : !emailValido ? 'Falta un correo válido' : fecha && hora ? `Agendar ${fechaHumana(fecha)} · ${horaHumana(hora)}` : 'Elige día y horario'}
         </button>
-        <div style={{ borderTop: `1px solid ${C.g100}`, margin: '14px 0 10px', paddingTop: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.g700, marginBottom: 6 }}>¿Prefieres que elija él? Mándale los horarios:</div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button style={{ ...btnG, flex: 1, color: '#059669', borderColor: '#A7F3D0', ...(!telefono || !ventanaAbierta ? { opacity: .45, cursor: 'not-allowed', filter: 'grayscale(.6)' } : {}) }} disabled={!telefono || !ventanaAbierta} onClick={enviarFechasWA}
-              title={!ventanaAbierta ? 'Ventana de 24 h cerrada: usa el correo o una plantilla desde el composer' : ''}>Por WhatsApp</button>
-            <button style={{ ...btnG, flex: 1, color: C.moradoTinta, ...(!(email.trim() || contacto?.email) ? { opacity: .45, cursor: 'not-allowed' } : {}) }} disabled={!(email.trim() || contacto?.email)} onClick={enviarFechasCorreo}>Por correo</button>
-          </div>
-          {!ventanaAbierta && telefono && <p style={{ fontSize: 10, color: C.ambar700, margin: '6px 0 0' }}>La ventana de WhatsApp está cerrada — por correo sí sale ya, con el link para que elija.</p>}
-        </div>
+        {/* El «¿prefieres que elija él?» que vivía aquí se fue arriba, a su
+            propia ruta: escondido al pie de un formulario de reserva, había que
+            bajar hasta el final y adivinar que existía. Ahora se pregunta antes
+            de nada, y esta pantalla se dedica solo a reservar. */}
+        <button onClick={() => setRuta(null)}
+          style={{ ...btnG, marginTop: 10, width: '100%', color: C.g500 }}>Volver</button>
       </>}
       {msg && <p style={{ fontSize: 11, color: C.rojo700, margin: '8px 0 0' }}>{msg}</p>}
     </div>
