@@ -252,7 +252,7 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'p36', grupo: 'El proceso', titulo: '↳ El relevo: ya cotizaste',
-    bajada: 'Doce días de credibilidad.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    bajada: 'Doce días de credibilidad.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Cuando el lead llega a <b>Oportunidad</b> ya vio la demo y ya tiene precio. No hay nada que explicar y todo que demostrar, así que esta secuencia no repite el producto ni ofrece descuento: a esa altura las dos cosas restan.</p>
 <p>Son <b>ocho correos en doce días</b>, todos con botón de WhatsApp. Cero WhatsApps automáticos: aquí el WhatsApp es del vendedor.</p>
@@ -325,7 +325,7 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'p37', grupo: 'El proceso', titulo: '↳ El relevo: prueba gratis',
-    bajada: 'Catorce días, del primer login al nivelador.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    bajada: 'Catorce días, del primer login al nivelador.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Once correos que llevan al usuario de cero a operar. Cada uno enseña <b>dónde está la cosa</b> con captura del sistema real y la ruta exacta del menú, para qué sirve, qué hacer hoy y qué viene después. El CTA nunca es comprar: es preguntar por WhatsApp.</p>
 
@@ -386,7 +386,7 @@ export const WIKI: PaginaWiki[] = [
 <p>Los correos del día 2 y del día 8 llevan botón de WhatsApp. Cuando esa solicitud llega, el sistema <b>contesta con los horarios reales del calendario</b> y el link que los confirma — sin esperar a que alguien abra la bandeja. El que elija queda confirmado al momento, con su invitación por correo y por WhatsApp.</p>
 <p>Es la misma redacción que usa el vendedor a mano, para que el lead reciba lo mismo lo conteste una persona o el sistema.</p>
 
-<div class="w-caja"><span class="w-k">Antes de prenderla</span><p>Está <b>completa y apagada</b>. Los tres WhatsApps ya están aprobados por Meta (30 ago 2026) y enganchados; ningún paso apunta a una plantilla sin aprobar. Lo único que falta es prenderla.</p></div>
+<div class="w-caja"><span class="w-k">Antes de prenderla</span><p>Está <b>completa</b>. Las plantillas de WhatsApp están aprobadas por Meta y enganchadas, y ningún paso apunta a nada sin aprobar. Lo único que falta es prenderla.</p></div>
 
 <div class="w-caja"><span class="w-k">El día 14 y el bloqueo van juntos</span><p>El correo del día 14 —«lo que lograste y qué pasa con tu cuenta»— y el aviso de fin de prueba en la cuenta salen del <b>mismo</b> plazo. Si algún día se cambian los 14 días de la cadencia, hay que cambiar también los días que se otorgan al crear la cuenta, o el correo de cierre llega cuando el cliente ya no puede entrar.</p></div>`,
   },
@@ -425,7 +425,7 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
-    bajada: 'Al cliente que ya opera bien.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    bajada: 'Al cliente que ya opera bien.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Veintitrés pasos en cuatro meses para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
 
@@ -475,7 +475,7 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'renovacion', grupo: 'El proceso', titulo: '↻ Rumbo a la renovación',
-    bajada: 'La primera cadencia de cliente.', chip: { texto: 'cargada, apagada', tono: 'warn' },
+    bajada: 'La primera cadencia de cliente.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Noventa días antes de pedirle dinero a un cliente, enseñarle qué valió el año. Doce pasos por los tres canales, y una entrega limpia al cobro que ya existe.</p>
 
@@ -653,6 +653,40 @@ export const WIKI: PaginaWiki[] = [
 <p>Se reconoce por una frase distintiva, no por el texto completo: WhatsApp deja editar antes de enviar y casi siempre agregan algo. Si el lead escribió por su cuenta <b>no se inventa etiqueta</b> — el acuse sale igual y el contador de no leídos hace su trabajo.</p>
 
 <div class="w-caja"><span class="w-k">Dónde se configura</span><p>Todo esto vive en <b>Automatización ▸ Secuencias ▸ «WhatsApp entrante · atención y control»</b>. Es una secuencia por evento: no corre por días, reacciona en el momento. Si está apagada, no sale acuse.</p></div>`,
+  },
+  {
+    id: 'secuencias-estado', grupo: 'Referencia', titulo: 'Las secuencias, de un vistazo',
+    bajada: 'Qué hay cargado y qué manda cada una.', chip: { texto: 'todas apagadas', tono: 'warn' },
+    cuerpo: `
+<p>Siete cadencias, <b>124 pasos</b> por tres canales. Todas están <b>apagadas</b>: prenderlas es una decisión, no un trámite.</p>
+
+<table class="w-tab"><thead><tr><th>Secuencia</th><th>A quién</th><th>Correo</th><th>WhatsApp</th><th>En Sacs</th></tr></thead><tbody>
+<tr><td><b>Rezagados · top of mind</b></td><td>Lead que se enfrió</td><td>30</td><td>4</td><td>—</td></tr>
+<tr><td><b>Prueba gratis · 14 días</b></td><td>Está probando</td><td>11</td><td>6</td><td>7</td></tr>
+<tr><td><b>Crecimiento · lo que sigue</b></td><td>Cliente que opera bien</td><td>10</td><td>4</td><td>9</td></tr>
+<tr><td><b>Seguimiento a leads sin respuesta</b></td><td>Lead nuevo</td><td>8</td><td>7</td><td>—</td></tr>
+<tr><td><b>Rumbo a la renovación</b></td><td>Cliente que renueva pronto</td><td>6</td><td>2</td><td>4</td></tr>
+<tr><td><b>Demo agendada · rumbo a la sesión</b></td><td>Ya agendó</td><td>5</td><td>3</td><td>—</td></tr>
+<tr><td><b>Oportunidad · Moda multitienda</b></td><td>Ya tiene cotización</td><td>8</td><td>—</td><td>—</td></tr>
+</tbody></table>
+
+<p>Y una octava que <b>sí está prendida</b>: <b>WhatsApp entrante · atención y control</b>, que no manda nada — reacciona cuando el lead escribe.</p>
+
+<h3>Cuál va con cuál</h3>
+<table class="w-tab"><thead><tr><th>Momento</th><th>Secuencia</th></tr></thead><tbody>
+<tr><td>Llegó y nadie lo ha tocado</td><td>Seguimiento a leads sin respuesta</td></tr>
+<tr><td>Agendó una demo</td><td>Demo agendada</td></tr>
+<tr><td>Ya cotizaste</td><td>Oportunidad · Moda multitienda</td></tr>
+<tr><td>Está probando el sistema</td><td>Prueba gratis · 14 días</td></tr>
+<tr><td>Se enfrió sin comprar</td><td>Rezagados · top of mind</td></tr>
+<tr><td><b>Ya es cliente y opera bien</b></td><td>Crecimiento · lo que sigue</td></tr>
+<tr><td><b>Su renovación viene</b></td><td>Rumbo a la renovación</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">Las dos últimas son de CLIENTE</span><p>Y por eso el motor tuvo que aprender dos cosas: contar hacia atrás hacia una fecha futura, y dejar de expulsar a quien ya compró. Antes toda secuencia sacaba al cliente con motivo «convertido» — correcto para adquisición, imposible para retención.</p></div>
+
+<div class="w-caja w-bad"><span class="w-k">Antes de prender cualquiera</span><p>Verifica que ningún paso apunte a una plantilla que no exista o no esté aprobada. <b>Un paso huérfano no falla: se salta en silencio</b>, y nadie se entera de que ese lead no recibió nada. Esa consulta pesa más que contar plantillas.</p>
+<p>Para las de WhatsApp hay un atajo: <code>node scripts/estado-plantillas-wa.mjs</code>.</p></div>`,
   },
   {
     id: 'wa-voces', grupo: 'Referencia', titulo: 'Quién escribe por dónde',
