@@ -57,6 +57,7 @@ const horaCorta = (d?: string | null) => {
 
 import { pintaEstatus, ESTATUS_LEAD, ESTATUS_LABEL, GRUPO_DE, COLOR_GRUPO, type EstatusLead } from '../../../lib/crm/estatus-lead';
 import { camposLeads, cumpleCondsLead, CATS_DESCARTE, type CondLead } from '../../../lib/crm/leads-filtros';
+import FilaDeslizable from './ui/FilaDeslizable';
 
 // Los 5 grupos del funnel, en el orden en que se trabajan. El color viene del
 // mismo lib que pinta la pastilla: inbox y tabla no pueden discrepar.
@@ -1047,7 +1048,24 @@ export default function LeadsTab() {
                 const d = dias(c);
                 const atorado = agrupa && d >= 3;
                 return (
-                  <div key={c.id} className="m-row" onClick={() => setRapidaL(c)}>
+                  <FilaDeslizable key={c.id}
+                    izquierda={{
+                      etiqueta: 'Archivado', color: '#C0554E', fondo: '#FEF0EF',
+                      onAccion: async () => {
+                        // ARCHIVAR, no borrar. Un lead borrado se lleva su
+                        // historial —toques, cotizaciones, de dónde vino— y eso
+                        // no se recupera; archivado desaparece de la lista y se
+                        // puede devolver. Con el «Deshacer» de 4 s encima, son
+                        // dos redes para un gesto que se hace con el pulgar sin
+                        // mirar.
+                        await fetch('/api/crm/contacts', {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: c.id, archived_at: new Date().toISOString() }),
+                        }).catch(() => {});
+                        cargar();
+                      },
+                    }}>
+                  <div className="m-row" onClick={() => setRapidaL(c)}>
                     {/* La inicial. La misma persona salía con círculo en Inbox y
                         en Clientes y como texto pelón aquí: tres pantallas del
                         mismo CRM contando la misma lista de gente de dos formas.
@@ -1107,6 +1125,7 @@ export default function LeadsTab() {
                           : null)}
                     </div>
                   </div>
+                  </FilaDeslizable>
                 );
                 };
                 const todasFilas = [...atorados, ...alDia];

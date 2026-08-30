@@ -17,6 +17,7 @@ import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import { swrGet } from '../../../lib/crm/swr';
 import VistaRapida, { HojaEsqueleto } from './ui/VistaRapida';
+import FilaDeslizable from './ui/FilaDeslizable';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -767,7 +768,23 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   ? Math.max(1, Math.floor((Date.parse(hoyIso) - Date.parse(String(c.proxima_factura).slice(0, 10))) / 86400000)) : 0;
                 const salud = c.health_score == null ? null : Number(c.health_score);
                 return (
-                  <div key={c.id} className="m-row" onClick={() => setRapida(c)}>
+                  <FilaDeslizable key={c.id}
+                    izquierda={{
+                      etiqueta: 'Archivado', color: '#C0554E', fondo: '#FEF0EF',
+                      onAccion: async () => {
+                        // Archivar, NUNCA borrar. Una empresa tiene 57 llaves
+                        // foráneas colgando —suscripciones, pagos, cotizaciones,
+                        // conversaciones—: borrarla de verdad se lleva el
+                        // historial de dinero de ese cliente. Archivada
+                        // desaparece de la lista y se puede devolver.
+                        await fetch('/api/crm/companies', {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: c.id, archived_at: new Date().toISOString() }),
+                        }).catch(() => {});
+                        load();
+                      },
+                    }}>
+                  <div className="m-row" onClick={() => setRapida(c)}>
                     <div className="m-ini">{iniciales(nombre)}</div>
                     <div className="m-tx">
                       <div className="m-n1">{nombre}</div>
@@ -782,6 +799,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                           : null)}
                     </div>
                   </div>
+                  </FilaDeslizable>
                 );
               })}
               <div ref={finListaRef} style={{ height: 1 }} />
