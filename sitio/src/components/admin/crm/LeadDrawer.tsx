@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { minutaLlena, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
 import MinutaLead from './MinutaLead';
+import CuentaSacs from './CuentaSacs';
 import Cargando, { Corazones } from './ui/Cargando';
 import SenalesContacto from './email/SenalesContacto';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
@@ -341,6 +342,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
               fondo de la pestaña, debajo de la línea de tiempo, había que
               acordarse de bajar para enterarse de que vencía pasado mañana. */}
           {tab === 'seguimiento' && <PruebaGratis c={c} recargar={cargar} flash={flash} />}
+          {/* Debajo de la prueba a propósito: la secuencia real es
+              prueba → se acaba → se revoca, y así se lee en ese orden.
+              No se pinta si no hay cuenta ligada. */}
+          {tab === 'seguimiento' && <CuentaSacs contactId={c.id} companyId={c.company_id} alCambiar={cargar} />}
           {tab === 'seguimiento' && <RegistrarToque c={c} recargar={cargar} flash={flash} />}
           {tab === 'seguimiento' && <LineaDeTiempo c={c} />}
           {tab === 'seguimiento' && <Evaluacion c={c} evaluacion={evaluacion} guardar={guardar} guardando={guardando} setSucio={setSucio} />}

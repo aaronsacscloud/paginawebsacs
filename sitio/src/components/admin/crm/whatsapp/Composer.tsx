@@ -595,12 +595,19 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                     El divisor no es adorno: separa «mandar algo» de «mover la
                     venta», que son dos intenciones distintas, y evita que la
                     fila se lea como seis botones iguales. */}
+                {/* Estos dos NO abren un popover de links: abren el flujo de
+                    verdad, el que ya existe en «Acciones de venta» —cotizar es
+                    plan → crear → link → enviar, y agendar es día → horarios
+                    reales → confirmar y avisar—. Estaban a tres toques detrás
+                    del menú ⋮, y son las dos cosas que cierran una venta.
+                    Se reusa ese panel en vez de rehacerlo aquí: dos sitios que
+                    agendan terminan ofreciendo horarios que ya no existen. */}
                 {modo === 'wa' && (<>
                   <span aria-hidden="true" style={{ width: 1, height: 20, background: C.g200, margin: '0 3px', flexShrink: 0 }} />
-                  <button title="Mandar una cotización" aria-label="Mandar una cotización" style={toolBtn(pop === 'cotizacion')}
-                    onClick={() => setPop(pop === 'cotizacion' ? null : 'cotizacion')}><IcoCotizacion size={19} /></button>
-                  <button title="Mandar el link para agendar" aria-label="Mandar el link para agendar" style={toolBtn(pop === 'agendar')}
-                    onClick={() => setPop(pop === 'agendar' ? null : 'agendar')}><IcoCalendario size={19} /></button>
+                  <button title="Crear y mandar una cotización" aria-label="Crear y mandar una cotización" style={toolBtn(false)}
+                    onClick={() => document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'cotizar' }))}><IcoCotizacion size={19} /></button>
+                  <button title="Agendar una cita" aria-label="Agendar una cita" style={toolBtn(false)}
+                    onClick={() => document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'agendar' }))}><IcoCalendario size={19} /></button>
                 </>)}
 
                 {pop === 'adjuntar' && (

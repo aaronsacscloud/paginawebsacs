@@ -29,18 +29,20 @@ import { notificar } from './notificaciones';
 export type EstadoPrueba = 'activa' | 'terminada' | 'convertida' | 'cancelada';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-/* Los DOS nombres a propósito.
+/* Dos secretos distintos, y cada uno abre lo suyo.
  *
- * En Vercel la variable se llama `REGISTER_API_SECRET` —así se llama también
- * del lado de la API de SACS, que es quien la valida— y este código buscaba
- * `SACS_REGISTER_SECRET`, que no existe en ningún entorno. Resultado: el alta
- * de pruebas devolvía 500 «Falta SACS_REGISTER_SECRET» en producción desde el
- * día uno, y por eso no hay ni una cuenta creada desde el CRM.
+ * · CREAR una cuenta usa el de registro. En Vercel se llama
+ *   `REGISTER_API_SECRET` —igual que del lado de la API, que es quien lo
+ *   valida— y este código buscaba `SACS_REGISTER_SECRET`, que no existe en
+ *   ningún entorno: el alta devolvía 500 desde el día uno, y por eso no había
+ *   ni una cuenta creada desde el CRM. Se leen los dos nombres.
  *
- * No se renombra la de Vercel: la tiene puesta desde hace meses y renombrar
- * una variable de entorno para arreglar un typo es cambiar la infraestructura
- * para no tocar el código. Se leen las dos, con la específica primero. */
+ * · BLOQUEAR usa el del puente CRM ↔ SACS (`CRM_SYNC_SECRET`), que es el canal
+ *   por donde el CRM ya habla con SACS para todo lo demás. No se reutiliza el
+ *   de registro: ese lo tiene también el alta pública, y una cosa es dejar
+ *   crear cuentas y otra muy distinta dejar apagarlas. */
 const SECRETO = (import.meta.env.SACS_REGISTER_SECRET || import.meta.env.REGISTER_API_SECRET || '').trim();
+const SECRETO_PUENTE = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 
 /** Los días de prueba por omisión. Es el largo de la cadencia de onboarding:
  *  si se cambia uno hay que cambiar el otro, o el correo del día 14 llega
@@ -105,12 +107,12 @@ async function actividad(c: any, tipo: string, titulo: string, metadata?: any, d
  * reintentar el bloqueo sin volver a mover el estado.
  */
 export async function avisoEnCuenta(cuenta: string, accion: 'bloquear' | 'desbloquear'): Promise<{ ok: boolean; error?: string }> {
-  if (!SECRETO) return { ok: false, error: 'Falta el secreto de registro en el entorno' };
+  if (!SECRETO_PUENTE) return { ok: false, error: 'Falta CRM_SYNC_SECRET en el entorno' };
   if (!cuenta) return { ok: false, error: 'El contacto no tiene cuenta de SACS ligada.' };
   try {
     const r = await fetch(SACS_API + '/interno/prueba/bloqueo', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-register-secret': SECRETO },
+      headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SECRETO_PUENTE },
       body: JSON.stringify({ cuenta, accion }),
     });
     const j: any = await r.json().catch(() => null);
@@ -255,4 +257,64 @@ export async function convertirPrueba(c: any, quien?: string) {
     { desbloqueo: desbloqueo.ok, quien: quien || null },
     desbloqueo.ok ? 'La cuenta quedó abierta y sin avisos.' : 'Revisa la cuenta: puede seguir con el aviso de fin de prueba.');
   return { desbloqueo };
+}
+
+/** Los tres motivos por los que se apaga una cuenta, con su nombre de persona. */
+export const MOTIVOS_REVOCACION = [
+  { id: 'pago',     label: 'Falta de pago',        pide_monto: true,
+    ayuda: 'El cliente ve el adeudo y los datos para depositar.' },
+  { id: 'prueba',   label: 'Se acabó la prueba',   pide_monto: false,
+    ayuda: 'El cliente ve la invitación a contratar, con WhatsApp.' },
+  { id: 'terminos', label: 'Violación de términos', pide_monto: false,
+    ayuda: 'El cliente ve el aviso legal, sin datos de pago.' },
+] as const;
+
+/**
+ * Revocar o reabrir CUALQUIER cuenta desde el CRM.
+ *
+ * Distinta de `avisoEnCuenta`, que es la del cron y solo sabe de pruebas. Esta
+ * es la acción humana: cubre los tres motivos y sirve para un cliente que dejó
+ * de pagar, no solo para una prueba que se acabó.
+ *
+ * `quien` viaja hasta la bitácora de SACS. Es lo único que separa «lo apagó
+ * Aarón un martes» de «lo apagó el sistema», y del lado de la API se exige.
+ */
+export async function revocarCuenta(o: {
+  cuenta: string; accion: 'bloquear' | 'desbloquear'; quien: string;
+  motivo?: 'pago' | 'prueba' | 'terminos'; adeudo?: string | number; diasBorrado?: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!SECRETO_PUENTE) return { ok: false, error: 'Falta CRM_SYNC_SECRET en el entorno' };
+  if (!o.cuenta) return { ok: false, error: 'No hay cuenta de SACS ligada a este cliente.' };
+  try {
+    const r = await fetch(SACS_API + '/interno/crm/cuenta-bloqueo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SECRETO_PUENTE },
+      body: JSON.stringify({
+        cuenta: o.cuenta, accion: o.accion, quien: o.quien,
+        blockType: o.motivo || 'pago', totalDebt: o.adeudo, deletionDays: o.diasBorrado || 30,
+      }),
+    });
+    const j: any = await r.json().catch(() => null);
+    if (!r.ok || !j?.success) return { ok: false, error: j?.msg || `HTTP ${r.status}` };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+/** Cómo está la cuenta HOY según SACS, no según lo que el CRM anotó. */
+export async function estadoCuenta(cuenta: string): Promise<{ bloqueada: boolean; motivo?: string | null; desde?: number | null; error?: string }> {
+  if (!SECRETO_PUENTE) return { bloqueada: false, error: 'Falta CRM_SYNC_SECRET en el entorno' };
+  if (!cuenta) return { bloqueada: false, error: 'sin cuenta ligada' };
+  try {
+    const r = await fetch(`${SACS_API}/interno/crm/cuenta-bloqueo?cuenta=${encodeURIComponent(cuenta)}`, {
+      headers: { 'x-crm-sync-secret': SECRETO_PUENTE },
+    });
+    const j: any = await r.json().catch(() => null);
+    if (!r.ok || !j?.success) return { bloqueada: false, error: j?.msg || `HTTP ${r.status}` };
+    const d = j.data || {};
+    return { bloqueada: d.isBlocked === true, motivo: d.blockType || null, desde: d.blockedAt || null };
+  } catch (e: any) {
+    return { bloqueada: false, error: String(e?.message || e) };
+  }
 }

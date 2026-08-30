@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { C } from './estilo';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
+import CuentaSacs from '../CuentaSacs';
 
 const BASE = 'https://www.sacscloud.com';
 const PLANES_VENDIBLES = PLANS.filter(p => PLAN_PRICES[p] > 0);
@@ -69,6 +70,16 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
             onClick={() => a.onClick ? a.onClick() : (a.href && (window.location.href = a.href))} />
         ))}
       </div>
+
+      {/* La cuenta, al final y no arriba: revocarla es lo último que se hace y
+          lo que menos veces se hace. Arriba estorbaría a lo que sí se usa cada
+          día. Se pinta sola solo si hay cuenta ligada — misma tarjeta que la
+          ficha del lead, para que las dos digan exactamente lo mismo. */}
+      {contacto?.id && (
+        <div style={{ marginTop: 14 }}>
+          <CuentaSacs contactId={contacto.id} companyId={empresa?.id} compacto alCambiar={refrescar} />
+        </div>
+      )}
     </div>
   );
 }

@@ -71,6 +71,15 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   // El correo que se está mirando. Sus datos ya vinieron con el hilo, así que
   // abrirlo no cuesta un viaje.
   const [correoAbierto, setCorreoAbierto] = useState<any>(null);
+  /* Con qué acción abre el panel de ventas. El composer lo pide por evento
+     —no puede llamar aquí directo— y así los dos iconos nuevos entran al MISMO
+     flujo que el menú ⋮, en vez de tener su propia versión a medias. */
+  const [accionInicial, setAccionInicial] = useState<'cotizar' | 'agendar' | null>(null);
+  useEffect(() => {
+    const h = (e: any) => { setAccionInicial(e?.detail === 'agendar' ? 'agendar' : 'cotizar'); setAcciones(true); };
+    document.addEventListener('wa-acciones', h);
+    return () => document.removeEventListener('wa-acciones', h);
+  }, []);
 
   // ── VOLVER ─────────────────────────────────────────────────────────────
   // El hilo ya se cerraba con el botón físico y con el gesto del sistema
@@ -593,7 +602,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {/* ── Composer ── */}
       {mobile && acciones && (
         <>
-          <div onClick={() => setAcciones(false)} style={{ position: 'fixed', inset: 0, zIndex: 950, background: 'rgba(8,7,12,.62)' }} />
+          <div onClick={() => { setAcciones(false); setAccionInicial(null); }} style={{ position: 'fixed', inset: 0, zIndex: 950, background: 'rgba(8,7,12,.62)' }} />
           <div className="menu-hoja" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 951, background: '#fff', borderRadius: '20px 20px 0 0', maxHeight: '86dvh', overflowY: 'auto', boxShadow: '0 -14px 40px rgba(12,11,18,.3)', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}>
             <span style={{ display: 'block', width: 40, height: 5, borderRadius: 99, background: '#e2e1e8', margin: '10px auto 4px' }} />
             <AccionesVenta
@@ -602,7 +611,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
               conv={conv}
               ventanaAbierta={!!hilo?.ventana?.expira_at && new Date(hilo.ventana.expira_at) > new Date()}
               abrirFicha={() => { setAcciones(false); onVerDetalle?.(); }}
-              accionInicial={null}
+              accionInicial={accionInicial}
               refrescar={() => api.refrescar?.()}
             />
           </div>
