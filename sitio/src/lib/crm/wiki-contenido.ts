@@ -690,6 +690,9 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>Fuera de horario</b></td><td>«…Ahorita ya estamos fuera de horario — te contesto en cuanto abramos, a partir de las 9 de la mañana.»</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">Una vez por conversación, no por mensaje</span><p>Si el lead manda tres mensajes seguidos <b>no</b> recibe tres veces la misma frase. El acuse se rearma a las 20 h, para que quien vuelve al día siguiente sí reciba señal de que lo leímos.</p></div>
+<div class="w-caja"><span class="w-k">Y se calla si tú ya estás ahí</span><p>Si alguien del equipo escribió en esa conversación en las últimas <b>6 horas</b>, el acuse <b>no sale</b>. Pasó en real un domingo: el asesor le escribió a las 15:58, la clienta contestó a las 16:17 y el sistema le soltó «ya estamos fuera de horario, te contesto a partir de las 9 de la mañana» — porque el horario configurado es de lunes a sábado. El asesor le respondió doce minutos después. El bot tenía razón según su configuración y aun así el sistema quedó mintiendo delante de la clienta.</p>
+<p>El acuse existe para que nadie se quede sin respuesta. Si ya hay una persona atendiendo, ese trabajo está hecho y el acuse solo puede estorbar: promete algo que ya está pasando, o contradice a quien está escribiendo. La ventana se ajusta en la misma pantalla; con <b>0</b> se apaga el candado.</p>
+<p>Cuenta como «alguien del equipo» solo lo que sale del <b>composer del inbox</b> o de un mensaje programado. Un WhatsApp de cadencia no cuenta: ese es el sistema, no una persona.</p></div>
 
 <h3>3 · De dónde venía</h3>
 <p>Todos nuestros botones de WhatsApp mandan el mensaje ya escrito. Ese texto no dice solo «me escribieron»: dice <b>en qué punto del argumento se convenció</b>. El sistema lo reconoce, etiqueta la ficha y el aviso al equipo llega con contexto:</p>

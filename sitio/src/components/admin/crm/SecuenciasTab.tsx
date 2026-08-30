@@ -100,6 +100,18 @@ export default function SecuenciasTab() {
             El acuse sale una vez por conversación abierta, no por mensaje — si mandan tres seguidos no reciben tres veces lo mismo. Se rearma a las {ent.acuse?.rearme_horas ?? 20} h para quien vuelve al día siguiente.
           </p>
 
+          {/* El candado que evita que el acuse contradiga a quien está atendiendo. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: '0.78rem', flexWrap: 'wrap' }}>
+            <span>Callar el acuse durante</span>
+            <input type="number" min={0} max={168} style={{ ...inp, width: 66 }}
+              value={ent.acuse?.silencio_humano_horas ?? 6}
+              onChange={e => setEnt({ acuse: { ...(ent.acuse || {}), silencio_humano_horas: Number(e.target.value) } })} />
+            <span>h después de que alguien del equipo escribió</span>
+          </div>
+          <p style={{ fontSize: '0.68rem', color: '#a5a2af', margin: '5px 0 0' }}>
+            Si ya estás en la conversación, el acuse sobra: o promete algo que ya está pasando, o —en domingo o de noche— le dice «abrimos a las 9» a alguien a quien le vas a contestar en dos minutos. Con <b>0</b> se apaga este candado y el acuse sale siempre.
+          </p>
+
           <div style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', margin: '18px 0 8px', color: '#666' }}>2 · Horario de atención (CDMX)</div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {[['L',1],['M',2],['M',3],['J',4],['V',5],['S',6],['D',7]].map(([l,d],i) => {

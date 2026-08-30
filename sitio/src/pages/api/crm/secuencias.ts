@@ -77,6 +77,8 @@ export const POST: APIRoute = async ({ request }) => {
         fuera: s0(e.acuse?.fuera),
         // Nunca menos de 1 h: con 0 le contestaríamos lo mismo a cada mensaje.
         rearme_horas: Math.max(1, Math.min(168, Number(e.acuse?.rearme_horas) || 20)),
+        // 0 = apagar el silencio (vuelve al comportamiento viejo); nunca negativo.
+        silencio_humano_horas: Math.max(0, Math.min(168, Number(e.acuse?.silencio_humano_horas ?? 6))),
       },
       horario: { dias, desde: hora(e.horario?.desde, '09:00'), hasta: hora(e.horario?.hasta, '19:00') },
       presion: {

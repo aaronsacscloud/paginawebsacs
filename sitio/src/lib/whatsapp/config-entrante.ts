@@ -25,7 +25,10 @@ export interface ConfigEntrante {
   /** La secuencia existe y está encendida. Con false rige lo de abajo igual,
    *  pero el acuse no sale: encender es una decisión explícita. */
   activa: boolean;
-  acuse: { activo: boolean; en_horario: string; fuera: string; rearme_horas: number };
+  acuse: { activo: boolean; en_horario: string; fuera: string; rearme_horas: number;
+           /** Horas de silencio del acuse después de que un HUMANO escribió en
+            *  esa conversación. Ver `alRecibirMensaje`. */
+           silencio_humano_horas: number };
   horario: Horario | null;
   presion: { horas_entre_whatsapps: number; dias_pausa_por_manual: number; permitir_forzar_manual: boolean };
   intencion: { etiquetar: boolean; notificar: boolean; solo_desde_cta: boolean };
@@ -37,7 +40,7 @@ export interface ConfigEntrante {
  *  toda cuenta nueva. */
 export const POR_DEFECTO: ConfigEntrante = {
   activa: false,
-  acuse: { activo: false, en_horario: '', fuera: '', rearme_horas: 20 },
+  acuse: { activo: false, en_horario: '', fuera: '', rearme_horas: 20, silencio_humano_horas: 6 },
   horario: null,
   presion: { horas_entre_whatsapps: 24, dias_pausa_por_manual: 5, permitir_forzar_manual: true },
   intencion: { etiquetar: true, notificar: true, solo_desde_cta: true },
@@ -65,6 +68,7 @@ export async function configEntrante(): Promise<ConfigEntrante> {
           en_horario: txt(e.acuse?.en_horario, POR_DEFECTO.acuse.en_horario),
           fuera: txt(e.acuse?.fuera, POR_DEFECTO.acuse.fuera),
           rearme_horas: num(e.acuse?.rearme_horas, POR_DEFECTO.acuse.rearme_horas),
+          silencio_humano_horas: num(e.acuse?.silencio_humano_horas, POR_DEFECTO.acuse.silencio_humano_horas),
         },
         horario: e.horario?.desde && e.horario?.hasta ? e.horario as Horario : null,
         presion: {

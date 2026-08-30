@@ -66,6 +66,29 @@ export async function alRecibirMensaje(convId: string) {
   const cfgE = await configEntrante();
   if (!cfgE.activa || !cfgE.acuse.activo) return;
 
+  /* ── SILENCIO CUANDO YA HAY UN HUMANO EN LA CONVERSACIÓN ──
+     Caso real del 30 de agosto: el asesor le escribió a las 15:58, ella
+     contestó a las 16:17 y el bot le soltó «ya estamos fuera de horario, te
+     contesto a partir de las 9 de la mañana» — porque era domingo y el
+     horario configurado es de lunes a sábado. El asesor le respondió doce
+     minutos después. Delante del cliente, el sistema quedó mintiendo.
+
+     El acuse existe para que nadie se quede sin respuesta. Si un compañero ya
+     está en esa conversación, ese trabajo ya está hecho, y el acuse solo puede
+     estorbar: o promete algo que ya está pasando («dame unos minutos») o
+     contradice a quien está escribiendo («abrimos a las 9»).
+
+     Se mide por el ÚLTIMO SALIENTE CON `autor_id`, que es lo único que
+     distingue a una persona de una automatización: solo el composer del CRM y
+     los mensajes programados lo llenan. Ventana configurable; 0 la apaga. */
+  if (cfgE.acuse.silencio_humano_horas > 0) {
+    const desde = new Date(Date.now() - cfgE.acuse.silencio_humano_horas * 3600 * 1000).toISOString();
+    const { data: humano } = await supabase.from('wa_mensajes')
+      .select('id').eq('conversation_id', convId).eq('direccion', 'saliente')
+      .not('autor_id', 'is', null).gte('created_at', desde).limit(1).maybeSingle();
+    if (humano) return;
+  }
+
   const enHorario = dentroDeHorario(cfgE.horario);
   const rearme = Date.now() - cfgE.acuse.rearme_horas * 3600 * 1000;
   const yaSaludamos = conv.auto_bienvenida_at && new Date(conv.auto_bienvenida_at).getTime() >= rearme;
