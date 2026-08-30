@@ -17,6 +17,7 @@ import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
+import { useGestoAtras } from '../../../../lib/ui/gestoAtras';
 import { tic, ticListo } from '../../../../lib/ui/tacto';
 
 // Borradores por conversación (viven mientras la pestaña esté abierta).
@@ -66,6 +67,22 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   // Mensaje sobre el que se mantuvo el dedo. Una sola hoja para todo el hilo:
   // montar una por burbuja multiplicaría el árbol por cada mensaje en pantalla.
   const [accionesMsg, setAccionesMsg] = useState<any>(null);
+
+  // ── VOLVER ─────────────────────────────────────────────────────────────
+  // El hilo ya se cerraba con el botón físico y con el gesto del sistema
+  // (abrirlo empuja al historial), pero sin que la pantalla se moviera: el
+  // gesto era invisible y el cambio, un corte seco. Aquí la pantalla sigue al
+  // dedo, y el botón ← hace la MISMA salida, para que ir hacia atrás se vea
+  // igual venga de donde venga.
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const volver = () => {
+    const el = panelRef.current;
+    if (!mobile || !el || !onBack) { onBack?.(); return; }
+    el.style.transition = 'transform 200ms cubic-bezier(.22,.61,.36,1)';
+    el.style.transform = `translateX(${el.getBoundingClientRect().width || window.innerWidth}px)`;
+    setTimeout(() => onBack(), 195);
+  };
+  useGestoAtras(panelRef, !!mobile && !!onBack, () => onBack?.());
   const [, setReloj] = useState(0);                            // 5) re-render del contador de ventana
   useEffect(() => { const t = setInterval(() => setReloj(x => x + 1), 30000); return () => clearInterval(t); }, []);
   useEffect(() => { setCita(null); }, [hilo?.conversacion?.id]);
@@ -236,9 +253,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       ? `${filaActiva.contacto.nombre} ${filaActiva.contacto.apellido || ''}`.trim()
       : (filaActiva?.telefono ? telefonoLegible(String(filaActiva.telefono)) : '');
     return (
-      <div className={mobile ? 'wa-hilo-m' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
+      <div ref={panelRef} className={mobile ? 'wa-hilo-m wa-hilo-entra' : undefined} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
         <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
-          {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
+          {onBack && <button onClick={volver} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
           {nom
             ? <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{nom}</b>
             : <span style={{ flex: 1, height: 13, maxWidth: 160, borderRadius: 6, background: C.g100 }} />}
@@ -275,7 +292,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
     <div className={mobile ? 'wa-hilo-m' : undefined} style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
       {/* ── Header h-44 ── */}
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
-        {onBack && <button onClick={onBack} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
+        {onBack && <button onClick={volver} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
         <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
           <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}

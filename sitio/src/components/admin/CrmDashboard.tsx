@@ -1902,6 +1902,15 @@ const CRM_MOBILE_CSS = `
        Aquí no hace falta apuntar a nada: se le da el ancho del composer, que
        es además lo que se espera de un panel en el teléfono. Poner right:0 y
        left:0 con width:auto gana sobre el width inline sin tocar el JS. */
+    /* Entrar a una conversación era un corte seco: la lista desaparecía y el
+       hilo aparecía ya puesto, sin nada que dijera de dónde salió. Entra
+       deslizándose desde la derecha, que es de donde viene —y es el mismo
+       movimiento que el gesto de volver hace al revés—. Solo a la ENTRADA:
+       la salida la maneja el hilo, para poder animar también el botón ←. */
+    @keyframes wa-hilo-entra { from { transform: translateX(14%); opacity: .55; } to { transform: none; opacity: 1; } }
+    .wa-hilo-entra { animation: wa-hilo-entra 210ms cubic-bezier(.22,.61,.36,1); }
+    @media (prefers-reduced-motion: reduce) { .wa-hilo-entra { animation: none; } }
+
     .m-tabin .wa-pop {
       left: 0 !important; right: 0 !important; width: auto !important; max-width: none !important;
     }
