@@ -55,7 +55,7 @@ const _GET: APIRoute = async ({ url }) => {
   const ventanaFin = [hasta, hoy].sort().reverse()[0];
 
   const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, payQ, reuQ, mejQ, reuTodasQ] = await Promise.all([
-    supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago, fecha_inicio'),
+    supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, arr, proxima_factura, estado, mp_link_pago, fecha_inicio'),
     supabase.from('companies').select('id, nombre, nombre_comercial, estado_cuenta, created_at').is('archived_at', null),
     supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, aceptado_fecha, company_id, deal_id'),
     supabase.from('deals').select('id, valor_total, stage, created_at, company_id'),
@@ -146,7 +146,24 @@ const _GET: APIRoute = async ({ url }) => {
   const sumaT = (t: string) => movs.filter((m: any) => m.tipo === t).reduce((a: number, m: any) => a + num(m.mrr_delta), 0);
   const nuevo = sumaT('new'), expansion = sumaT('expansion'), churn = sumaT('churn'), contraccion = sumaT('contraction'), react = sumaT('reactivation');
   const a12 = (v: number) => Math.round(v * 12);
-  const mrrDe = (s: any) => s.ciclo === 'mensual' ? num(s.monto_proximo ?? s.precio) : num(s.monto_proximo ?? s.precio) / 12;
+  /* El ARR sale de la COLUMNA `arr`, no de `monto_proximo`.
+   *
+   * Antes se calculaba con `monto_proximo ?? precio`, y ese campo guarda a
+   * propósito los ADD-ONS y descuentos del próximo cobro — cosas que se cobran
+   * una vez o que no son plan base. Sumarlos infla el recurrente con dinero que
+   * no se repite.
+   *
+   * Medido el 2026-08-30 en producción: 5 suscripciones tenían add-ons en
+   * `monto_proximo` (Jose hernandez +$9,176, amalove +$4,767, cafevaboutique
+   * +$1,872, boomfitness +$1,860, elbombazo +$1,365) y hacían que el tablero
+   * dijera $1,924,569 mientras la pantalla de Suscripciones —que sí lee la
+   * columna— decía $1,905,529. **$19,040 de diferencia entre dos pantallas del
+   * mismo producto**, sin que ninguna estuviera marcada como aproximada. El
+   * dueño lo vio desde el teléfono.
+   *
+   * La columna `arr` es el valor canónico de una suscripción en este CRM. Con
+   * ella, Inicio y Suscripciones dan el mismo número. */
+  const mrrDe = (s: any) => num(s.arr) / 12;
   const mrr = activas.reduce((a: number, s: any) => a + mrrDe(s), 0);
   const arr = mrr * 12;
 
