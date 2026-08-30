@@ -13,9 +13,9 @@ import AjustesWA from './AjustesWA';
 import NumeroWA from './NumeroWA';
 import { confirmar } from '../../../../lib/ui/confirmar';
 
-type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia' | 'duplicados';
+export type Seccion = 'plantillas' | 'snippets' | 'etiquetas' | 'archivos' | 'etapas' | 'motivos' | 'automatizacion' | 'numero' | 'telefonia' | 'duplicados';
 
-const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
+export const SECCIONES: { id: Seccion; label: string; desc: string }[] = [
   { id: 'plantillas', label: 'Plantillas de Meta', desc: 'Mensajes aprobados para abrir conversación' },
   { id: 'snippets', label: 'Snippets', desc: 'Respuestas rápidas con "/" en el chat' },
   { id: 'etiquetas', label: 'Etiquetas', desc: 'El catálogo transversal del CRM' },
@@ -62,20 +62,31 @@ export default function ConfigWhatsApp({ inicial }: { inicial?: Seccion }) {
           </button>
         ))}
       </aside>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {sec === 'plantillas' && <PlantillasMeta />}
-        {sec === 'snippets' && <Snippets />}
-        {sec === 'etiquetas' && <EtiquetasCatalogo />}
-        {sec === 'archivos' && <Archivos />}
-        {sec === 'etapas' && <EtapasModal inline />}
-        {sec === 'motivos' && <MotivosCierre />}
-        {sec === 'automatizacion' && <AjustesWA inline />}
-        {sec === 'numero' && (<><PagosMeta /><NumeroWA /></>)}
-        {sec === 'telefonia' && <Telefonia />}
-        {sec === 'duplicados' && <Duplicados />}
-      </div>
+      <div style={{ flex: 1, minWidth: 0 }}><SeccionWA id={sec} /></div>
     </div>
   );
+}
+
+/**
+ * UNA sección suelta. Existe porque estos ajustes ya no viven solo aquí: la
+ * Configuración del sistema los muestra como renglones propios, cada uno con su
+ * nombre y su explicación, junto a los ajustes de todo lo demás. Tener el
+ * cuerpo en un solo lugar es lo que evita que las dos pantallas se separen con
+ * el tiempo — que es exactamente como esto acabó regado en 4 sitios la vez
+ * pasada.
+ */
+export function SeccionWA({ id }: { id: Seccion }) {
+  if (id === 'plantillas') return <PlantillasMeta />;
+  if (id === 'snippets') return <Snippets />;
+  if (id === 'etiquetas') return <EtiquetasCatalogo />;
+  if (id === 'archivos') return <Archivos />;
+  if (id === 'etapas') return <EtapasModal inline />;
+  if (id === 'motivos') return <MotivosCierre />;
+  if (id === 'automatizacion') return <AjustesWA inline />;
+  if (id === 'numero') return (<><PagosMeta /><NumeroWA /></>);
+  if (id === 'telefonia') return <Telefonia />;
+  if (id === 'duplicados') return <Duplicados />;
+  return null;
 }
 
 // ═════════════ Etiquetas: el catálogo transversal del CRM ═════════════

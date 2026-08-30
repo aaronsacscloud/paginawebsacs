@@ -82,6 +82,7 @@ function detalleVistas(meta: any): string {
 }
 import { calcQuoteTotals } from '../../lib/quotes/totals';
 import Cargando, { Corazones } from './crm/ui/Cargando';
+import { SeccionWA } from './crm/whatsapp/ConfigWhatsApp';
 
 interface Client {
   id: string; empresa: string; contacto: string; email: string; whatsapp: string;
@@ -130,6 +131,9 @@ const CFG_ICONOS: Record<string, string> = {
   agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4" stroke-linecap="round"/></svg>',
   catalogo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5-8 4.5-8-4.5z" stroke-linejoin="round"/><path d="M4 12l8 4.5 8-4.5M4 16.5L12 21l8-4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 01-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 015.4-5.4z" stroke-linejoin="round"/></svg>',
+  wa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.2A8.5 8.5 0 1121 11.5z" stroke-linejoin="round"/></svg>',
+  etiqueta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12V4h8l9 9-8 8-9-9z" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>',
+  tel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h4l2 5-2.5 1.5a12 12 0 006 6L16 13l5 2v4a2 2 0 01-2 2A16 16 0 013 5a2 2 0 012-2z" stroke-linejoin="round"/></svg>',
 };
 
 function CfgFila({ it, ruta, onAbrir }: { it: CfgItem; ruta?: string; onAbrir: () => void }) {
@@ -4064,6 +4068,50 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             { g: 'Acompañamiento', mods: [
               { id: 'consultoria', nom: 'Consultoría', sub: 'Los compromisos que se pactan con el cliente.', items: [] },
               { id: 'radar', nom: 'Radar de ventas', sub: 'Qué cuentas se marcan como oportunidad.', items: [] },
+            ]},
+            /* WhatsApp: sus ajustes vivían en una pantalla aparte colgada
+               del menú del canal. Que ESTE módulo guardara su configuración en
+               otro sitio que todos los demás obligaba a recordarlo cada vez.
+               Aquí abajo son renglones como cualquier otro, y el cuerpo de cada
+               uno es el MISMO componente que ya existía (SeccionWA): una sola
+               copia, para que las dos no se separen con el tiempo. */
+            { g: 'WhatsApp', mods: [
+              { id: 'wa-mensajes', nom: 'Mensajes', sub: 'Con qué se responde y con qué se abre una conversación.', items: [
+                { id: 'plantillas', ico: 'doc', t: 'Plantillas de Meta',
+                  d: 'Los mensajes aprobados por Meta, que son los únicos con los que se puede escribir primero fuera de la ventana de 24 horas.',
+                  editor: <SeccionWA id="plantillas" /> },
+                { id: 'snippets', ico: 'tool', t: 'Snippets',
+                  d: 'Respuestas guardadas que salen escribiendo "/" en el chat. Lo que se contesta veinte veces al día se escribe una.',
+                  editor: <SeccionWA id="snippets" /> },
+                { id: 'archivos', ico: 'catalogo', t: 'Archivos',
+                  d: 'La biblioteca de imágenes y documentos que se adjuntan desde el chat sin volver a subirlos.',
+                  editor: <SeccionWA id="archivos" /> },
+              ]},
+              { id: 'wa-conversacion', nom: 'La conversación', sub: 'Por dónde pasa un contacto y qué corre solo.', items: [
+                { id: 'etapas', ico: 'pipe', t: 'Ciclo de vida',
+                  d: 'Las etapas por las que pasa un contacto del inbox. Son las mismas que ordenan las vistas de la bandeja.',
+                  editor: <SeccionWA id="etapas" /> },
+                { id: 'motivos', ico: 'folio', t: 'Motivos de cierre',
+                  d: 'Por qué se da por resuelta una conversación. Es lo que después permite contar en qué se están yendo.',
+                  editor: <SeccionWA id="motivos" /> },
+                { id: 'etiquetas', ico: 'etiqueta', t: 'Etiquetas',
+                  d: 'El catálogo transversal del CRM: la misma etiqueta sirve en conversaciones, leads y clientes.',
+                  editor: <SeccionWA id="etiquetas" /> },
+                { id: 'automatizacion', ico: 'tool', t: 'Automatización',
+                  d: 'Mensaje de bienvenida, horario de atención y a quién se le asigna lo que entra.',
+                  editor: <SeccionWA id="automatizacion" /> },
+              ]},
+              { id: 'wa-numero', nom: 'El número', sub: 'La línea con la que se escribe y lo que Meta cobra por ella.', items: [
+                { id: 'numero', ico: 'wa', t: 'Número y pagos',
+                  d: 'Salud del número, perfil del negocio que ve el cliente y la facturación de Meta.',
+                  editor: <SeccionWA id="numero" /> },
+                { id: 'telefonia', ico: 'tel', t: 'Telefonía',
+                  d: 'Llamadas normales con número de México, para cuando WhatsApp no alcanza.',
+                  editor: <SeccionWA id="telefonia" /> },
+                { id: 'duplicados', ico: 'gente', t: 'Duplicados',
+                  d: 'Contactos repetidos detectados por teléfono o correo, listos para fusionar.',
+                  editor: <SeccionWA id="duplicados" /> },
+              ]},
             ]},
             { g: 'Automatización', mods: [
               { id: 'email', nom: 'Email marketing', sub: 'Con qué cara salen los correos.', items: [] },
