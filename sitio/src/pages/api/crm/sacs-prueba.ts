@@ -91,7 +91,12 @@ export const POST: APIRoute = async ({ request }) => {
 
   return json({
     ok: true, cuenta, dias,
-    url: `https://${cuenta}.sacscloud.com`,
+    /* SIEMPRE app.sacscloud.com. NO hay subdominio por cuenta: el slug es el
+       identificador del tenant, no un host. Yo devolvía `{cuenta}.sacscloud.com`
+       —inventado— y eso es peor que no devolver nada: un link que no resuelve,
+       dictado a un cliente, quema el primer minuto de su prueba. Es la misma
+       dirección que ya manda el correo de bienvenida de SACS. */
+    url: 'https://app.sacscloud.com',
     email: c.email,
     /* Se devuelve una sola vez y no se guarda en ningún lado. */
     password_temporal: temporal,
