@@ -88,6 +88,21 @@ const REGLAS: Regla[] = [
     quiere: 'Ayuda para empezar la Academia', temperatura: 'media',
     frases: ['empezar la academia'] },
 
+  // ── Secuencia "Rumbo a la renovación" ──
+  // Todos sus botones —correo y mensajes dentro de Sacs— llevan aquí, no al
+  // agendador: para un cliente que ya te conoce, abrir un calendario es más
+  // fricción que escribir. Por eso el mensaje prellenado cambia en cada paso:
+  // es lo único que le dice a quien atiende de dónde viene, sin preguntarle.
+  { clave: 'renovacion-consultor', fuente: 'Renovación · sesión con consultor (día 60 o 40)',
+    quiere: 'Platicar antes de decidir su renovación', temperatura: 'alta',
+    frases: ['platicar con un consultor antes de mi renovacion', 'antes de decidir mi renovacion'] },
+  { clave: 'renovacion-modulos', fuente: 'Renovación · lo que no usa (día 52)',
+    quiere: 'Saber qué módulos le sirven de los que no usa', temperatura: 'media',
+    frases: ['no estoy usando y quiero entender cuales me sirven', 'preguntanos cual te sirve'] },
+  { clave: 'renovacion-descuento', fuente: 'Renovación · el 10% o el 5%',
+    quiere: 'RENOVAR — viene por el descuento por anticipación', temperatura: 'alta',
+    frases: ['renovar aprovechando el descuento por anticipacion', 'renovar con el 5%'] },
+
   // ── CTAs del sitio ──
   { clave: 'sitio-demo-giro', fuente: 'Sitio · Demo desde una página de giro',
     quiere: 'Demo de su vertical (el giro viene en el mensaje)', temperatura: 'alta',

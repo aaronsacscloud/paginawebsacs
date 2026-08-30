@@ -436,7 +436,7 @@ export const WIKI: PaginaWiki[] = [
 <table class="w-tab"><thead><tr><th>Falta</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
 <tr><td><b>90 d</b></td><td>Tu año en números</td><td>—</td><td>—</td></tr>
 <tr><td><b>80 d</b></td><td>—</td><td>Lo que ya pagas y no usas</td><td>—</td></tr>
-<tr><td><b>60 d</b></td><td>Sesión 1 · ¿qué te cuesta trabajo?</td><td>Calendario</td><td>—</td></tr>
+<tr><td><b>60 d</b></td><td>Sesión 1 · ¿qué te cuesta trabajo?</td><td>Modal · escribir a un consultor</td><td>—</td></tr>
 <tr><td><b>52 d</b></td><td>Sesión 2 · lo que no se ve desde afuera</td><td>—</td><td>—</td></tr>
 <tr><td><b>45 d</b></td><td>—</td><td>—</td><td>La sesión, por si no abriste</td></tr>
 <tr><td><b>40 d</b></td><td>Sesión 3 · la última antes de decidir</td><td>—</td><td>—</td></tr>
@@ -456,6 +456,11 @@ export const WIKI: PaginaWiki[] = [
 <p>Las fechas límite se calculan restando a la fecha de renovación, nunca sumando a hoy. Si se calcularan desde hoy, el correo de los 60 días y el de los 40 darían fechas distintas y parecería que se la estamos moviendo.</p></div>
 
 <div class="w-caja w-bad"><span class="w-k">Si no hay datos, no se manda</span><p>Una suscripción sin fecha de próxima factura o sin monto produciría un correo que dice «tu renovación es el&nbsp;&nbsp;por&nbsp;». El paso se salta y queda anotado como <code>sin_datos_de_renovacion</code>. Hoy hay <b>9 suscripciones activas en ese caso</b>: esas nunca entran hasta que alguien les ponga fecha.</p></div>
+
+<h3>Todos los botones llevan a WhatsApp</h3>
+<p>Ninguno abre el agendador, y es a propósito. Para un <b>lead</b>, agendar es el compromiso que se busca: pone fecha y obliga a prepararse. Para un <b>cliente</b> que ya te conoce es fricción — tiene que encontrar hueco y esperar tres días para preguntar algo que se contesta en dos mensajes.</p>
+<p>Y las tres cosas que quiere un cliente antes de renovar —resolver una duda, ver un upgrade, pedir algo específico— caben en un hilo y no en una junta. Si la conversación amerita la sesión, el consultor se la ofrece ahí mismo.</p>
+<div class="w-caja"><span class="w-k">El mensaje prellenado cambia en cada paso</span><p>Cuando llega a la bandeja, quien atiende ve <b>de qué correo viene</b> sin preguntar, y el inbox lo etiqueta solo. Un «hola» a secas obliga a reconstruir el contexto y a que el cliente lo explique otra vez — que es justo lo que veníamos a evitarle.</p></div>
 
 <h3>Los tres correos de la sesión no repiten el argumento</h3>
 <table class="w-tab"><thead><tr><th>Cuál</th><th>Qué dice distinto</th></tr></thead><tbody>
