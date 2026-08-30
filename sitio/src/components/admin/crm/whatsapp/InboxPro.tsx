@@ -1019,7 +1019,20 @@ export default function InboxPro() {
                 {lista === null && <EsqueletoLista filas={7} mobile alInstante />}
                 {lista !== null && convs.length === 0 && (
                   <div style={{ padding: '28px 24px', color: '#8f8d98', fontSize: '0.86rem' }}>
-                    {chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.' : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.' : 'Sin conversaciones abiertas. Bandeja limpia.'}
+                    {/* Decir que está vacío no basta: cuando la bandeja de
+                        trabajo se acaba, lo útil es ofrecer la siguiente. Desde
+                        «No contestadas» vacía se manda a «Abiertas», que es
+                        donde queda el seguimiento; desde «Mías», a todas. */}
+                    <div>{chipWa === 'mias' ? 'Nada asignado a ti. Bandeja limpia.'
+                      : chipWa === 'resueltas' ? 'Aún no hay conversaciones resueltas.'
+                      : chipWa === 'nocontestadas' ? 'Nadie espera respuesta. Bandeja limpia.'
+                      : 'Sin conversaciones abiertas. Bandeja limpia.'}</div>
+                    {chipWa !== 'abiertas' && chipWa !== 'resueltas' && (
+                      <button onClick={() => setChipWa('abiertas')}
+                        style={{ marginTop: 12, minHeight: 44, padding: '0 16px', border: '1px solid #ddd6fb', borderRadius: 10, background: '#fff', color: '#5B4BD6', fontWeight: 700, fontSize: '0.84rem', fontFamily: 'inherit', cursor: 'pointer' }}>
+                        Ver todas las abiertas ›
+                      </button>
+                    )}
                   </div>
                 )}
                 {pendientes.length > 0 && <div className="m-sec">Esperan tu respuesta</div>}
