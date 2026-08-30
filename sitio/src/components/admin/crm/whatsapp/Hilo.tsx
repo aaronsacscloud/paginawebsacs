@@ -789,6 +789,20 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
           <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
             style={{ display: 'block', padding: movil ? '13px 20px' : '9px 12px', fontSize: movil ? 15 : 12, color: C.g700, fontWeight: movil ? 500 : 600, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
+          {/* MARCAR COMO INTERNA. El número propio recibe los avisos del CRM y
+              el de pruebas las respuestas automáticas: encabezaban «Sin
+              respuesta» —nadie le contesta a un robot— y empujaban hacia abajo
+              a quien sí esperaba. No borra ni bloquea nada: la conversación
+              sigue ahí y se ve pidiendo la vista «Internas». */}
+          <button onClick={async () => {
+            setAbierto(false);
+            const r = await api.accionKapso?.({ accion: 'interna', valor: !conv.interna });
+            if (r?.error) alert(r.error); else api.refrescar?.();
+          }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>
+            {conv.interna ? 'Quitar de internas (vuelve al inbox)' : 'Marcar como interna (sacar del inbox)'}
+          </button>
+          <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'resincronizar' }); if (r?.error) alert(r.error); }}
             style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>Enviar datos del CRM a Kapso</button>
           {/bloqueado/i.test(conv.alerta || '') ? (

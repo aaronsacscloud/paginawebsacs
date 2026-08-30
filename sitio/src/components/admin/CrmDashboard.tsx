@@ -1452,6 +1452,15 @@ const CRM_MOBILE_CSS = `
       /* ══ Inbox oscuro (lista + hilo + composer). Los estilos son inline: se
          pisan por atributo, siempre con contraste AA sobre #131318. ══ */
       [data-crm-dark="1"] .wa-hilo-m, [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(255, 255, 255)"] { background: #131318 !important; }
+      /* Superficies en g50 (#F9FAFB) DENTRO de una burbuja: la tarjeta de un
+         contacto compartido, el bloque de un documento del encabezado. El
+         barrido de arriba solo caza el blanco puro, así que estas se quedaban
+         casi blancas dentro de una burbuja oscura — el «cuadro blanco» con el
+         nombre ilegible que aparece al recibir un contacto de WhatsApp.
+         Va a superficie, no a fondo de hilo: es una tarjeta DENTRO del mensaje
+         y tiene que seguir distinguiéndose de la burbuja que la contiene. */
+      [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(249, 250, 251)"] { background: #2b2b33 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .wa-hilo-m [style*="background: rgb(249, 250, 251)"] b { color: #F2F1F7 !important; }
       [data-crm-dark="1"] .wa-hilo-m [style*="color: rgb(17, 24, 39)"], [data-crm-dark="1"] .wa-hilo-m b { color: #F2F1F7 !important; }
       /* burbujas: saliente morado profundo, entrante superficie */
       [data-crm-dark="1"] .wa-hilo-m [style*="border-radius: 16px 16px 6px"] { background: #2a2440 !important; color: #F2F1F7 !important; }

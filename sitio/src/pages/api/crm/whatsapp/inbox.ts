@@ -134,6 +134,10 @@ const _GET: APIRoute = async ({ request, url }) => {
       ventana_expira_at: c.ultimo_entrante_at ? new Date(new Date(c.ultimo_entrante_at).getTime() + 24 * 3600e3).toISOString() : null,
       alerta: c.alerta || null, mencion: mencionesPend.has(c.id), tiene_notas: conNota.has(c.id),
       estado_crm: c.estado_crm || 'abierta', snooze_until: c.snooze_until || null,
+      // La fila se arma con una lista EXPLÍCITA de campos, no con ...c: si no
+      // se nombra aquí, el filtro de más abajo nunca lo ve. Marcar una
+      // conversación como interna se guardaba bien y no pasaba nada.
+      interna: !!c.interna,
       asignado_a: c.asignado_a, contact_id: c.contact_id, company_id: c.company_id,
       contacto: contactoDe(c), empresa: empresaDe(c),
       _extra: extraDe(c),
@@ -214,6 +218,7 @@ const _GET: APIRoute = async ({ request, url }) => {
   );
   const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
+    if (c.interna) continue;   // no cuentan en ninguna bandeja: no son trabajo
     if (c.virtual) continue;   // los contactos sin conversación no inflan las bandejas
     if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
     counts.todas++;
@@ -225,8 +230,12 @@ const _GET: APIRoute = async ({ request, url }) => {
     // dos mitades del seguimiento y hasta ahora solo se contaba una, así que la
     // pantalla de Inicio no podía avisar de la que se queda sin cerrar.
     if (c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta') counts.sin_respuesta++;
+    /* El ciclo se cuenta SOLO sobre lo no resuelto, que es el universo al que
+       lleva el menú de vistas. Contando también las resueltas, el menú decía
+       «Oportunidades 6» y al entrar salían 0 — un número que no corresponde
+       con lo que se ve es peor que no tener número. */
     const e = c.contacto?.lifecycle_stage;
-    if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
+    if (e && c.estado_crm !== 'resuelta') counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
   }
 
   // Etiquetas: si la vista o el filtro las usan, se cargan y se pegan a _extra.
@@ -314,8 +323,14 @@ const _GET: APIRoute = async ({ request, url }) => {
   }) => {
     const fi = f.filtro || 'todas';
     let l = base;
+    /* LAS INTERNAS, FUERA DE TODO. Son los avisos que el CRM se manda a sí
+       mismo y los números de prueba: no son clientes y encabezaban «Sin
+       respuesta» —porque nadie le contesta a un robot— empujando hacia abajo a
+       quien sí espera. Se ven solo pidiéndolas por su nombre. */
+    if (fi === 'internas') l = l.filter(c => c.interna);
+    else l = l.filter(c => !c.interna);
     if (fi === 'pospuestas') l = l.filter(pospuesta);
-    else l = l.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
+    else if (fi !== 'internas') l = l.filter(c => !pospuesta(c));   // dormidas fuera de todo lo demás
     if (fi === 'mias' && user) l = l.filter(c => c.asignado_a === user.id);
     if (fi === 'sin_asignar') l = l.filter(c => !c.asignado_a && c.estado_crm !== 'resuelta');
     // «no_leidas» es el nombre viejo de la MISMA cola: el cliente escribió y

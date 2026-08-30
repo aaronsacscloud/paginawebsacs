@@ -1,5 +1,6 @@
 // WHATSAPP · Acciones de Etapa E sobre un contacto en Kapso/Meta.
 // POST { accion:'bloquear'|'desbloquear', conversation_id }
+// POST { accion:'interna', conversation_id, valor:boolean } → la saca del inbox
 // POST { accion:'gdpr', conversation_id }  → borra en Kapso (conversaciones, mensajes, media) y en el espejo local
 // POST { accion:'resincronizar', conversation_id } → manda nombre/empresa/etapa del CRM a Kapso
 // POST { accion:'webhook', inactivity_minutes } → actualiza eventos/inactividad del webhook
@@ -34,6 +35,18 @@ export const POST: APIRoute = async ({ request }) => {
   if (!b.conversation_id) return json({ error: 'Falta conversation_id' }, 400);
   const { data: conv } = await supabase.from('wa_conversaciones').select('id, telefono, contact_id, company_id, contacts(nombre, apellido, lifecycle_stage), companies(nombre, nombre_comercial, plan)').eq('id', b.conversation_id).maybeSingle();
   if (!conv) return json({ error: 'Conversación no encontrada' }, 404);
+
+  /* MARCAR COMO INTERNA. El número propio del dueño recibe los avisos
+     operativos del CRM y el de pruebas recibe las respuestas automáticas: las
+     dos salían en el inbox mezcladas con clientes, y encabezaban «Sin
+     respuesta» porque, en efecto, nadie le contesta a un robot.
+     No toca Kapso ni borra nada: es una marca local y reversible. */
+  if (b.accion === 'interna') {
+    const { error } = await supabase.from('wa_conversaciones')
+      .update({ interna: b.valor !== false }).eq('id', conv.id);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, interna: b.valor !== false });
+  }
 
   if (b.accion === 'bloquear' || b.accion === 'desbloquear') {
     const r = await bloquearKapso(conv.telefono, b.accion === 'bloquear');

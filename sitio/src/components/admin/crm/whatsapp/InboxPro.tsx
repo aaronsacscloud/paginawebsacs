@@ -993,8 +993,10 @@ export default function InboxPro() {
                       </button>
                     );
                   })}
-                  {/* Las bandejas que ya no caben arriba y las vistas guardadas. */}
-                  <button className="m-chip" onClick={() => setMenuVistas(true)}>Más ›</button>
+                  {/* El pill «Más ›» se quitó: duplicaba exactamente lo que ya
+                      hace el botón de las tres rayas, dos dedos más a la
+                      derecha y detrás de un scroll horizontal. Dos puertas a la
+                      misma habitación solo obligan a decidir cuál usar. */}
                   <ActionSheet
                     open={menuVistas} onClose={() => setMenuVistas(false)} title="Ir a"
                     items={[
@@ -1009,6 +1011,43 @@ export default function InboxPro() {
                           active: chipWa === v2,
                           onClick: () => { setChipWa(v2 as any); setMenuVistas(false); },
                         })),
+                      /* EL CICLO DE VIDA. El filtro `etapa` y el conteo
+                         `counts.por_etapa` ya existían en el API desde siempre;
+                         lo único que faltaba era esta puerta. Sin ella, para ver
+                         solo las conversaciones de oportunidades había que
+                         salirse del inbox.
+                         Solo se listan las etapas que TIENEN conversaciones: un
+                         menú con seis renglones en cero enseña a no leerlo. */
+                      ...(() => {
+                        const porEtapa = (counts?.por_etapa || {}) as Record<string, number>;
+                        const ETAPAS: [string, string][] = [
+                          ['lead', 'Leads'], ['lead_calificado', 'Calificados'], ['oportunidad', 'Oportunidades'],
+                          ['cliente', 'Clientes'], ['rezagado', 'Rezagados'], ['churned', 'Bajas'],
+                        ];
+                        const vivas = ETAPAS.filter(([k]) => (porEtapa[k] || 0) > 0);
+                        if (!vivas.length) return [];
+                        return [
+                          { label: <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af' }}>Por ciclo de vida</span>,
+                            disabled: true, onClick: () => {} },
+                          ...(filtros.etapa ? [{
+                            label: 'Quitar el filtro de ciclo',
+                            onClick: () => { setFiltros(f => ({ ...f, etapa: '' })); setMenuVistas(false); },
+                          }] : []),
+                          ...vivas.map(([k, l]) => ({
+                            label: <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, width: '100%' }}>
+                              <span>{l}</span><span style={{ color: '#8f8d98', fontVariantNumeric: 'tabular-nums' }}>{porEtapa[k]}</span>
+                            </span>,
+                            active: filtros.etapa === k,
+                            /* Se abre la bandeja ANCHA al elegir un ciclo. Si
+                               no, el ciclo se aplica ENCIMA de la bandeja
+                               actual: estando en «No contestadas» (2 filas),
+                               pedir Oportunidades daba 0 aunque el menú
+                               anunciara 6. Quien elige «Oportunidades» quiere
+                               las oportunidades, no la intersección. */
+                            onClick: () => { setChipWa('abiertas'); setFiltros(f => ({ ...f, etapa: k })); setMenuVistas(false); },
+                          })),
+                        ];
+                      })(),
                       // Y las vistas guardadas, con el conteo que trajo el viaje
                       // único. Si todavía no llegan, se dice; una lista que
                       // aparece a medias se lee como que no hay más.
