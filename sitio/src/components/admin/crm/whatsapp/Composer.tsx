@@ -614,6 +614,20 @@ export default function Composer({ ventana, api, telefono, equipo = [], canales,
                   <PopSnippets snippets={snippets} resolver={resolver} onElegir={usarSnippet}
                     onNuevo={() => { setPop(null); setNuevoSnippet({ atajo: '', texto: '' }); }} />
                 )}
+                {/* Los popovers de cotizar y agendar TAMBIÉN aquí. Puse sus
+                    botones en esta barra pero los paneles solo se montaban en la
+                    barra expandida: tocarlos ponía `pop` y no aparecía nada — se
+                    veía como que la pantalla se quedaba en blanco y no
+                    respondía. Un botón que no abre nada es peor que no tenerlo,
+                    porque enseña a no volver a tocarlo. */}
+                {pop === 'cotizacion' && (
+                  <PopCotizaciones waId={canales?.wa_id}
+                    onElegir={(txt) => { insertarEnCursor((texto.trim() ? '\n' : '') + txt); setPop(null); }} />
+                )}
+                {pop === 'agendar' && (
+                  <PopAgendar contacto={contacto} telefono={telefono}
+                    onElegir={(txt) => { insertarEnCursor((texto.trim() ? '\n' : '') + txt); setPop(null); }} />
+                )}
               </div>
             )}
             {!grabando && (bloqueadoWa ? null : (movil && !escribiendoMovil && !hayQueMandar()) ? null : (
