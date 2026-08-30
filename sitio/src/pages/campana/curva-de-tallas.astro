@@ -1,0 +1,464 @@
+---
+/**
+ * /campana/curva-de-tallas — la landing del día 3 de la secuencia "Oportunidad".
+ *
+ * Por qué existe una sola landing en toda la secuencia: es la única idea del
+ * arco que es MEJOR interactiva que escrita. Las otras seis van a páginas que
+ * ya existen. Diez landings flacas son peores que ninguna.
+ *
+ * Lo que hace: el visitante mete su propia venta por talla, marca cuáles se le
+ * agotaron, y ve en vivo cómo cambia la sugerencia de compra según el método.
+ * Es una segunda demo sin agendar nada.
+ *
+ * El detalle que la hace honesta —y que además es el mejor gancho del
+ * formulario—: el método de "histórico de esa talla" NO se puede calcular aquí,
+ * porque necesita SUS datos. Se dice con todas sus letras en vez de inventar un
+ * número. El método que elija se manda al CRM como señal para el vendedor.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="La talla que vendió cero porque nunca estuvo | Sacs"
+  description="Calcula cuánto cambia tu próxima compra cuando el sistema distingue entre una talla que no gustó y una que se agotó."
+  noindex={true}
+>
+
+<section class="cv-hero">
+  <div class="cv-wrap">
+    <p class="cv-eyebrow">Para marcas de moda con más de una tienda</p>
+    <h1 class="cv-h1">La talla que vendió cero<br /><em>porque nunca estuvo.</em></h1>
+    <p class="cv-sub">
+      La M se agotó el día 9. Los otros cincuenta y un días vendió cero — porque no había qué vender.
+      Cuando llega el momento de comprar, tu reporte no distingue eso de una talla que nadie quiso.
+      <strong>Y con ese hueco adentro compras la siguiente temporada.</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ═══ LA CALCULADORA ═══ -->
+<section class="cv-calc">
+  <div class="cv-wrap">
+    <div class="cv-panel">
+      <div class="cv-panel-head">
+        <h2>Pruébalo con tus números</h2>
+        <p>Escribe cuánto vendiste de cada talla y marca las que se te agotaron.</p>
+      </div>
+
+      <div class="cv-tabla-wrap">
+        <table class="cv-tabla" id="cv-tabla">
+          <thead>
+            <tr>
+              <th class="cv-th-lbl">Talla</th>
+              <th>XS</th><th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="cv-th-lbl">Vendiste</th>
+              <td><input type="number" min="0" max="999" value="4"  data-i="0" class="cv-in" aria-label="Vendidas XS" /></td>
+              <td><input type="number" min="0" max="999" value="11" data-i="1" class="cv-in" aria-label="Vendidas S" /></td>
+              <td><input type="number" min="0" max="999" value="3"  data-i="2" class="cv-in" aria-label="Vendidas M" /></td>
+              <td><input type="number" min="0" max="999" value="14" data-i="3" class="cv-in" aria-label="Vendidas L" /></td>
+              <td><input type="number" min="0" max="999" value="8"  data-i="4" class="cv-in" aria-label="Vendidas XL" /></td>
+              <td><input type="number" min="0" max="999" value="3"  data-i="5" class="cv-in" aria-label="Vendidas XXL" /></td>
+            </tr>
+            <tr class="cv-row-ago">
+              <th class="cv-th-lbl">¿Se agotó?</th>
+              <td><button type="button" class="cv-tog" data-i="0" aria-pressed="false">No</button></td>
+              <td><button type="button" class="cv-tog" data-i="1" aria-pressed="false">No</button></td>
+              <td><button type="button" class="cv-tog" data-i="2" aria-pressed="true">Sí</button></td>
+              <td><button type="button" class="cv-tog" data-i="3" aria-pressed="false">No</button></td>
+              <td><button type="button" class="cv-tog" data-i="4" aria-pressed="false">No</button></td>
+              <td><button type="button" class="cv-tog" data-i="5" aria-pressed="false">No</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="cv-nota" id="cv-nota"></p>
+    </div>
+
+    <!-- resultado -->
+    <div class="cv-panel cv-panel-res">
+      <div class="cv-panel-head">
+        <h2>Lo que compraría cada método</h2>
+        <p>El mismo dato de venta. Cinco lecturas distintas de qué pedir.</p>
+      </div>
+
+      <div class="cv-metodos" id="cv-metodos"></div>
+
+      <div class="cv-cierre">
+        <p class="cv-cierre-t" id="cv-cierre-t"></p>
+        <p class="cv-cierre-s">Ninguno es «el correcto». El correcto es el que tú elijas sabiendo qué hace cada uno — que es exactamente lo que hoy no puedes hacer si el sistema solo te dice cuánto se vendió.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LO QUE NO SE PUEDE CALCULAR AQUÍ ═══ -->
+<section class="cv-honesto">
+  <div class="cv-wrap cv-wrap-sm">
+    <h2>Hay un sexto que esta página no puede hacer</h2>
+    <p>
+      El método más preciso es estimar la talla agotada con <strong>su propia venta en un periodo más largo</strong>:
+      si la M estuvo agotada estos dos meses pero el año pasado vendía 22 al mes, esa es la respuesta y no un promedio.
+    </p>
+    <p>
+      Eso no se puede calcular aquí porque necesita <em>tu</em> histórico, no seis números que acabas de escribir.
+      Lo digo en vez de inventarte una cifra bonita.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ FORM ═══ -->
+<section class="cv-cta" id="cv-cta">
+  <div class="cv-wrap cv-wrap-sm">
+    <h2>Hazlo con tu catálogo real</h2>
+    <p class="cv-cta-sub">
+      Traes un estilo de la temporada pasada —el que se te haya descabalado más rápido— y te enseñamos
+      cuánto cambia la orden de compra con cada método, sobre tus datos. Sin instalar nada.
+    </p>
+
+    <form class="cv-form" id="cv-form">
+      <div class="cv-f">
+        <label for="cv-nombre">Tu nombre</label>
+        <input type="text" id="cv-nombre" name="nombre" required autocomplete="name" placeholder="Ej. María García" />
+      </div>
+      <div class="cv-f">
+        <label for="cv-empresa">Tu marca</label>
+        <input type="text" id="cv-empresa" name="empresa" required autocomplete="organization" placeholder="Ej. Kali Studio" />
+      </div>
+      <div class="cv-f">
+        <label for="cv-tiendas">¿Cuántas tiendas?</label>
+        <select id="cv-tiendas" name="tiendas">
+          <option value="1">1 tienda</option>
+          <option value="2-3" selected>2 o 3</option>
+          <option value="4-9">De 4 a 9</option>
+          <option value="10+">10 o más</option>
+        </select>
+      </div>
+      <div class="cv-f">
+        <label for="cv-whatsapp">WhatsApp</label>
+        <input type="tel" id="cv-whatsapp" name="whatsapp" required autocomplete="tel" placeholder="55 1234 5678" />
+      </div>
+      <div class="cv-f cv-f-full">
+        <label for="cv-email">Correo</label>
+        <input type="email" id="cv-email" name="email" required autocomplete="email" placeholder="tu@marca.com" />
+      </div>
+      <button type="submit" class="cv-btn" id="cv-btn">
+        <span class="cv-btn-t">Quiero verlo con mi catálogo</span>
+        <span class="cv-btn-l" style="display:none">Enviando…</span>
+      </button>
+      <p class="cv-legal">Te contacta Andrea, consultora de moda. Sin llamadas automáticas.</p>
+    </form>
+  </div>
+</section>
+
+<style>
+  /* Todo sale de los tokens de global.css: la landing es de campaña, pero no es
+     un mundo aparte. Lo único propio son las reglas de la calculadora. */
+  .cv-wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  .cv-wrap-sm { max-width: 680px; }
+
+  /* ---- hero ---- */
+  .cv-hero {
+    background: var(--color-bg-dark);
+    padding: clamp(56px, 9vw, 104px) 0 clamp(40px, 6vw, 72px);
+  }
+  .cv-eyebrow {
+    font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--color-accent); margin: 0 0 20px;
+  }
+  .cv-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(44px, 6.4vw, 72px); line-height: .98; letter-spacing: -.04em;
+    font-weight: 700; margin: 0 0 22px; text-wrap: balance;
+    /* Explícito: el layout trae un color global para h1 que le gana a heredar
+       del contenedor oscuro, y el título se vuelve casi invisible. */
+    color: var(--color-text-on-dark);
+  }
+  .cv-h1 em { font-style: italic; font-weight: 400; color: var(--color-accent); }
+  .cv-sub {
+    font-size: clamp(17px, 2vw, 20px); line-height: 1.65;
+    color: var(--color-text-on-dark-muted); max-width: 62ch; margin: 0;
+  }
+  .cv-sub strong { color: var(--color-text-on-dark); font-weight: 600; }
+
+  /* ---- calculadora ---- */
+  .cv-calc { background: var(--color-bg-primary); padding: clamp(48px, 6vw, 96px) 0; }
+  .cv-calc .cv-wrap { display: grid; gap: 24px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { .cv-calc .cv-wrap { grid-template-columns: 1.05fr .95fr; align-items: start; } }
+
+  .cv-panel {
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg); padding: clamp(24px, 3vw, 32px);
+  }
+  .cv-panel-head h2 {
+    font-family: var(--font-body); font-size: 22px; font-weight: 600; line-height: 1.25;
+    margin: 0 0 6px; color: var(--color-text-primary);
+  }
+  .cv-panel-head p { font-size: 16px; line-height: 1.55; color: var(--color-text-secondary); margin: 0 0 24px; }
+
+  .cv-tabla-wrap { overflow-x: auto; margin: 0 -6px; padding: 0 6px; }
+  .cv-tabla { border-collapse: separate; border-spacing: 6px 8px; width: 100%; min-width: 430px; }
+  .cv-tabla th {
+    font-size: 12px; font-weight: 600; color: var(--color-text-tertiary);
+    text-transform: uppercase; letter-spacing: .12em; padding-bottom: 2px;
+  }
+  .cv-th-lbl { text-align: left !important; white-space: nowrap; padding-right: 8px; }
+  .cv-in {
+    width: 100%; min-width: 46px; padding: 12px 4px; text-align: center;
+    font-family: var(--font-body); font-size: 18px; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: var(--color-text-primary);
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    background: var(--color-bg-primary); -moz-appearance: textfield;
+  }
+  .cv-in::-webkit-outer-spin-button, .cv-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .cv-in:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; border-color: transparent; }
+  .cv-in.esta-cero { color: var(--color-error); background: #FDF3F3; border-color: #F2C9C9; }
+
+  .cv-tog {
+    width: 100%; min-width: 46px; padding: 9px 4px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: var(--radius-full);
+    background: var(--color-bg-card); color: var(--color-text-tertiary);
+    transition: transform .15s cubic-bezier(.25,.1,.25,1), background .15s, color .15s, border-color .15s;
+  }
+  .cv-tog:hover { transform: scale(1.03); border-color: var(--color-text-tertiary); }
+  .cv-tog[aria-pressed="true"] { background: var(--color-error); border-color: var(--color-error); color: #fff; }
+  .cv-tog:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+  .cv-nota {
+    font-size: 16px; line-height: 1.55; color: var(--color-text-secondary);
+    margin: 20px 0 0; border-top: 1px solid var(--color-border-light); padding-top: 16px;
+  }
+
+  /* ---- métodos ----
+     Estas tarjetas las escribe el JS con innerHTML, así que NO llevan el atributo
+     de ámbito que Astro le pone al marcado del template. Sin :global() ninguna de
+     estas reglas les aplica y las celdas de talla se apilan en vertical. */
+  .cv-metodos { display: flex; flex-direction: column; gap: 10px; }
+  :global(.cv-nota b) { color: var(--color-error); font-weight: 700; }
+  :global(.cv-met) {
+    border: 1px solid var(--color-border-light); border-radius: var(--radius-md);
+    padding: 14px 16px; background: var(--color-bg-primary);
+  }
+  :global(.cv-met-top) { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  :global(.cv-met-n) { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+  :global(.cv-met-tot) {
+    font-size: 16px; font-weight: 700; color: var(--color-primary);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  :global(.cv-met-d) { font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); margin: 6px 0 10px; }
+  :global(.cv-met-curva) { display: flex; gap: 5px; }
+  :global(.cv-met-c) {
+    flex: 1; text-align: center; padding: 7px 2px; border-radius: var(--radius-sm);
+    background: var(--color-bg-card); border: 1px solid var(--color-border-light);
+    font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-primary);
+  }
+  :global(.cv-met-c.res) { background: #FDF3F3; border-color: #F2C9C9; color: var(--color-error); }
+  :global(.cv-met-c i) {
+    display: block; font-style: normal; font-size: 10px; font-weight: 600;
+    color: var(--color-text-tertiary); letter-spacing: .08em; margin-bottom: 2px;
+  }
+
+  .cv-cierre { margin-top: 20px; border-top: 1px solid var(--color-border-light); padding-top: 16px; }
+  .cv-cierre-t { font-size: 17px; font-weight: 600; color: var(--color-text-primary); margin: 0 0 8px; line-height: 1.45; }
+  .cv-cierre-s { font-size: 16px; line-height: 1.6; color: var(--color-text-secondary); margin: 0; }
+
+  /* ---- honesto ---- */
+  .cv-honesto { background: var(--color-bg-secondary); padding: clamp(48px, 6vw, 80px) 0; }
+  .cv-honesto h2 {
+    font-family: var(--font-body); font-size: clamp(28px, 3.4vw, 36px); font-weight: 600;
+    line-height: 1.2; margin: 0 0 18px; color: var(--color-text-primary);
+  }
+  .cv-honesto p { font-size: 17px; line-height: 1.7; color: var(--color-text-secondary); margin: 0 0 14px; }
+  .cv-honesto p:last-child { margin-bottom: 0; }
+  .cv-honesto strong { color: var(--color-text-primary); font-weight: 600; }
+
+  /* ---- cta ---- */
+  .cv-cta { background: var(--color-bg-dark); padding: clamp(56px, 7vw, 96px) 0; }
+  .cv-cta h2 {
+    font-family: var(--font-body); font-size: clamp(28px, 3.6vw, 40px); font-weight: 600;
+    line-height: 1.2; margin: 0 0 16px; color: var(--color-text-on-dark);
+  }
+  .cv-cta-sub { font-size: 17px; line-height: 1.65; color: var(--color-text-on-dark-muted); margin: 0 0 32px; }
+  .cv-form { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 620px) { .cv-form { grid-template-columns: 1fr 1fr; } .cv-f-full { grid-column: 1 / -1; } }
+  .cv-f { display: flex; flex-direction: column; gap: 8px; }
+  .cv-f label {
+    font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--color-text-on-dark-subtle);
+  }
+  .cv-f input, .cv-f select {
+    padding: 14px 16px; font-family: var(--font-body); font-size: 16px;
+    color: var(--color-text-primary); background: var(--color-bg-card);
+    border: 1px solid transparent; border-radius: var(--radius-md); width: 100%;
+  }
+  .cv-f input:focus, .cv-f select:focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .cv-btn {
+    grid-column: 1 / -1; justify-self: start; padding: 18px 36px;
+    font-family: var(--font-body); font-size: 16px; font-weight: 700; cursor: pointer;
+    background: var(--color-primary); color: #fff; border: 0;
+    border-radius: var(--radius-full); box-shadow: var(--shadow-primary);
+    transition: transform .15s cubic-bezier(.25,.1,.25,1), background .15s;
+  }
+  .cv-btn:hover:not(:disabled) { background: var(--color-primary-hover); transform: scale(1.03); }
+  .cv-btn:disabled { opacity: .6; cursor: default; }
+  .cv-legal { grid-column: 1 / -1; font-size: 14px; color: var(--color-text-on-dark-subtle); margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cv-tog, .cv-btn { transition: none; }
+    .cv-tog:hover, .cv-btn:hover:not(:disabled) { transform: none; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var TALLAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  // La curva objetivo de la categoría, la misma que se configura en el sistema.
+  var CURVA = [1, 2, 3, 3, 2, 1];
+  var MIN_FIJO = 3;
+
+  var agotada = [false, false, true, false, false, false];
+
+  function vendidas() {
+    return [].slice.call(document.querySelectorAll('.cv-in')).map(function (el) {
+      var n = parseInt(el.value, 10);
+      return isNaN(n) || n < 0 ? 0 : n;
+    });
+  }
+
+  function suma(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+
+  function calcular(v) {
+    var sanas = v.filter(function (_, i) { return !agotada[i]; });
+    var promSanas = sanas.length ? Math.round(suma(sanas) / sanas.length) : 0;
+    var totalSano = suma(v.filter(function (_, i) { return !agotada[i]; }));
+
+    function aplicar(fn) {
+      return v.map(function (n, i) { return agotada[i] ? fn(i) : n; });
+    }
+    // La plantilla de curva se escala al volumen que sí vendió.
+    var pesoSano = suma(CURVA.filter(function (_, i) { return !agotada[i]; }));
+    var factor = pesoSano > 0 ? totalSano / pesoSano : 0;
+
+    return [
+      { n: 'Promedio de tallas hermanas',
+        d: 'Rellena el hueco con el promedio de lo que sí vendió. Equilibrado — es el recomendado.',
+        c: aplicar(function () { return promSanas; }) },
+      { n: 'Mínimo fijo por talla',
+        d: 'Trae al menos ' + MIN_FIJO + ' de cada talla faltante. Tú defines cuántas.',
+        c: aplicar(function () { return MIN_FIJO; }) },
+      { n: 'Plantilla de curva por categoría',
+        d: 'Usa la curva objetivo que definiste para esta categoría (' + CURVA.join(':') + '), escalada a tu volumen.',
+        c: aplicar(function (i) { return Math.max(1, Math.round(CURVA[i] * factor)); }) },
+      { n: 'No estimar',
+        d: 'Solo marca el hueco y tú decides a mano. Conservador — y es lo que hace hoy tu sistema, sin decírtelo.',
+        c: aplicar(function () { return 0; }) }
+    ];
+  }
+
+  function pintar() {
+    var v = vendidas();
+    var nAgo = agotada.filter(Boolean).length;
+
+    // marcar visualmente los inputs de tallas agotadas
+    [].slice.call(document.querySelectorAll('.cv-in')).forEach(function (el, i) {
+      el.classList.toggle('esta-cero', agotada[i]);
+    });
+
+    var nota = document.getElementById('cv-nota');
+    if (!nAgo) {
+      nota.innerHTML = 'Sin tallas agotadas no hay nada que estimar: los cinco métodos dan lo mismo. <b>Marca la que se te acabó primero</b> y mira qué pasa.';
+    } else {
+      var nombres = TALLAS.filter(function (_, i) { return agotada[i]; }).join(', ');
+      nota.innerHTML = 'Tu reporte dice que la <b>' + nombres + '</b> vendió poco. En realidad no tuvo oportunidad de venderse.';
+    }
+
+    var metodos = calcular(v);
+    document.getElementById('cv-metodos').innerHTML = metodos.map(function (m) {
+      var celdas = m.c.map(function (n, i) {
+        return '<div class="cv-met-c' + (agotada[i] ? ' res' : '') + '"><i>' + TALLAS[i] + '</i>' + n + '</div>';
+      }).join('');
+      return '<div class="cv-met">' +
+        '<div class="cv-met-top"><span class="cv-met-n">' + m.n + '</span>' +
+        '<span class="cv-met-tot">' + suma(m.c) + ' pzas</span></div>' +
+        '<p class="cv-met-d">' + m.d + '</p>' +
+        '<div class="cv-met-curva">' + celdas + '</div></div>';
+    }).join('');
+
+    var totales = metodos.map(function (m) { return suma(m.c); });
+    var dif = Math.max.apply(null, totales) - Math.min.apply(null, totales);
+    var t = document.getElementById('cv-cierre-t');
+    t.textContent = nAgo
+      ? 'Entre el método más generoso y el más conservador hay ' + dif + ' piezas de diferencia. De un solo estilo.'
+      : 'Marca una talla como agotada para ver cuánto se separan los métodos.';
+  }
+
+  [].slice.call(document.querySelectorAll('.cv-in')).forEach(function (el) {
+    el.addEventListener('input', pintar);
+  });
+  [].slice.call(document.querySelectorAll('.cv-tog')).forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = parseInt(b.getAttribute('data-i'), 10);
+      agotada[i] = !agotada[i];
+      b.setAttribute('aria-pressed', agotada[i] ? 'true' : 'false');
+      b.textContent = agotada[i] ? 'Sí' : 'No';
+      pintar();
+    });
+  });
+  pintar();
+
+  // ── el envío ──
+  var form = document.getElementById('cv-form');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('cv-btn');
+      var bt = form.querySelector('.cv-btn-t');
+      var bl = form.querySelector('.cv-btn-l');
+      btn.disabled = true; bt.style.display = 'none'; bl.style.display = 'inline';
+
+      var fd = new FormData(form);
+      var data = {};
+      fd.forEach(function (val, k) { data[k] = val; });
+
+      // Lo que ya jugó en la calculadora viaja con el lead: el vendedor abre la
+      // ficha y sabe de qué hablar sin preguntar nada.
+      var v = vendidas();
+      var ctx = 'Tallas agotadas: ' + (TALLAS.filter(function (_, i) { return agotada[i]; }).join(', ') || 'ninguna') +
+                ' · Venta capturada: ' + TALLAS.map(function (t, i) { return t + ':' + v[i]; }).join(' ') +
+                ' · Tiendas: ' + (data.tiendas || '');
+
+      var qs = new URLSearchParams(location.search);
+      var utm = ['utm_source', 'utm_campaign', 'utm_content'].map(function (k) { return qs.get(k); }).filter(Boolean).join(' | ');
+
+      try { localStorage.setItem('sacs_visitor_email', data.email || ''); } catch (err) {}
+
+      fetch('/api/save-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: data.nombre, empresa: data.empresa, email: data.email, whatsapp: data.whatsapp,
+          paso: 'Curva de tallas — ' + ctx + (utm ? ' | ' + utm : ''),
+          plan: 'campana-curva-tallas'
+        })
+      }).catch(function () {}).then(function () {
+        try {
+          if (typeof ttq !== 'undefined') {
+            var tel = (data.whatsapp || '').replace(/\D/g, '');
+            ttq.identify({ email: data.email || '', phone_number: tel ? '+52' + tel : '' });
+            ttq.track('SubmitForm', { content_id: 'campana-curva-tallas', content_name: 'curva-de-tallas', content_type: 'product' });
+          }
+        } catch (err) {}
+        window.location.href = '/bienvenida';
+      });
+    });
+  }
+})();
+</script>
+
+</BaseLayout>

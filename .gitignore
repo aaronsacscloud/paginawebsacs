@@ -23,3 +23,6 @@ sitio/.astro/
 # es de CUENTA, no de proyecto — puede borrar proyectos enteros, y en el
 # historial de GitHub quedaria para siempre. Vive en el servidor con perms 600.
 .supabase-token
+
+# Token suelto de captura de leads: es un secreto, nunca al historial.
+leads-captura-token.txt
