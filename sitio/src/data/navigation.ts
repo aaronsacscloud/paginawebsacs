@@ -54,6 +54,11 @@ export interface ModuloExtra {
   description: string;
   precio: string;
   href: string;
+  /** Llave del ícono en Nav.astro. */
+  icono: string;
+  /** Acento del cuadro del ícono. */
+  color: string;
+  bg: string;
 }
 
 export interface NavLink {
@@ -114,36 +119,54 @@ export const modulosExtraordinarios: ModuloExtra[] = [
     description: 'Pantalla en el piso donde tu clienta se prueba el look sin quitarse nada: otro color, otra talla, el outfit completo.',
     precio: 'Desde $19,900 por tienda/año',
     href: '/contacto',
+    icono: 'probador',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
   },
   {
     label: 'Fotografía de producto con IA',
     description: 'Subes la foto de la prenda y sale la campaña: modelo virtual, poses, fondos y todos tus colorways. En minutos, sin sesión.',
     precio: 'Desde $14,900 por tienda/año',
     href: '/contacto',
+    icono: 'camara',
+    color: '#DB2777',
+    bg: '#FDF2F8',
   },
   {
     label: 'Video de producto con IA',
     description: 'La misma foto se vuelve video para TikTok, Reels y tu tienda en línea: movimiento, ángulos y cambios de color.',
     precio: 'Desde $17,900 por tienda/año',
     href: '/contacto',
+    icono: 'video',
+    color: '#EA580C',
+    bg: '#FFF7ED',
   },
   {
     label: 'Sugerencia de outfits con IA',
     description: 'La IA arma el look completo en el mostrador y en línea, con lo que sí tienes en existencia.',
     precio: 'Desde $8,900 por tienda/año',
     href: '/contacto',
+    icono: 'chispa',
+    color: '#0D9488',
+    bg: '#F0FDFA',
   },
   {
     label: 'Lookbooks digitales',
     description: 'El catálogo de la colección que tu vendedora manda por WhatsApp a su cartera de clientas.',
     precio: 'Desde $4,900 por tienda/año',
     href: '/contacto',
+    icono: 'lookbook',
+    color: '#4B7BE5',
+    bg: '#EEF2FF',
   },
   {
     label: 'Pre-órdenes de colección',
     description: 'Tus clientas VIP apartan la pieza antes del drop, con anticipo y aviso cuando llega.',
     precio: 'Desde $6,900 por tienda/año',
     href: '/contacto',
+    icono: 'estrella',
+    color: '#B45309',
+    bg: '#FFFBEB',
   },
 ];
 
@@ -663,15 +686,18 @@ export const navLinks: NavLink[] = [
         ],
       },
     ],
-    temporada: cicloTemporada,
-    extraordinarios: modulosExtraordinarios,
   },
   {
     label: 'Tu negocio',
     href: '/giros',
     sectors: modaSectors,
   },
-  { label: 'Enterprise', href: '/enterprise' },
+  {
+    label: 'Temporada e IA',
+    href: '/planes',
+    temporada: cicloTemporada,
+    extraordinarios: modulosExtraordinarios,
+  },
   { label: 'Partners', href: '/partners' },
   { label: 'Planes', href: '/planes' },
   { label: 'Casos de éxito', href: '/casos-de-exito' },
