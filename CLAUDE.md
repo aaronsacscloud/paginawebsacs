@@ -126,8 +126,21 @@ curl -s -c /tmp/crm.jar -X POST http://localhost:4321/api/admin/login \
 curl -s -b /tmp/crm.jar http://localhost:4321/api/crm/secuencias
 ```
 
-Para capturas con Chromium headless hay que inyectar la cookie en el perfil, o
-más simple: usar Playwright, hacer el login en la página y de ahí navegar.
+Para capturas hay un helper que ya hace el login y avisa de errores de JS —
+que es justo lo que no se ve compilando:
+
+```bash
+cd sitio && npm run dev                       # en otra terminal
+node scripts/qa-crm.mjs secuencias            # o leads, embudos, wiki…
+node scripts/qa-crm.mjs leads --completa      # página entera
+```
+
+⚠️ **Playwright está en devDependencies y Vercel corre `npm ci --include=dev`.**
+Sin candado, CADA build se bajaría Chromium. Por eso el proyecto tiene
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` en sus variables de entorno (los tres
+entornos). Si algún día un build empieza a tardar de más en el install, revisa
+que esa variable siga puesta. En local el navegador ya está en
+`~/.cache/ms-playwright`; si falta: `npx playwright install chromium`.
 
 ⚠️ **La contraseña NO va en el repo ni en un commit.** Es la cuenta real del
 dueño: quien la tenga entra al CRM completo. Si se filtra, se cambia desde
