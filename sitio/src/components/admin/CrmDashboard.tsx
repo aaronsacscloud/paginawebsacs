@@ -880,7 +880,20 @@ export default function CrmDashboard() {
         {tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
              zonas — el Dashboard completo es de escritorio. */
-          <ErrorBoundary>{isMobile ? <InicioMovil onIrA={(t) => switchTab(t as Tab)} /> : <DashboardTab />}</ErrorBoundary>
+          /* Inicio puede mandar a una BANDEJA concreta, no solo a una pestaña
+             ("whatsapp?bandeja=nocontestadas"). Se separa el destino de su
+             filtro y el filtro viaja por la URL, que es donde el inbox ya sabe
+             buscarlo — así el enlace también funciona si se comparte o se
+             recarga la página. */
+          <ErrorBoundary>{isMobile ? <InicioMovil onIrA={(t) => {
+            const [destino, qs] = String(t).split('?');
+            if (qs) {
+              const u = new URL(window.location.href);
+              new URLSearchParams(qs).forEach((v2, k) => u.searchParams.set(k, v2));
+              window.history.replaceState({}, '', u);
+            }
+            switchTab(destino as Tab);
+          }} /> : <DashboardTab />}</ErrorBoundary>
         ) : tab === 'hoy' ? (
           <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (

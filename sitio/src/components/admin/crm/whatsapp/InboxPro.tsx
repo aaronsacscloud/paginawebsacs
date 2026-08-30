@@ -364,6 +364,13 @@ export default function InboxPro() {
   // el mismo). Se carga SOLO al abrirlo: la mayoría de las veces el usuario
   // trabaja con las tres pestañas y nunca lo necesita, así que pagarlo al
   // entrar sería gastar dos peticiones por nada.
+  // ?bandeja=... — de dónde llega quien tocó un aviso de Inicio. Se lee UNA vez
+  // al montar: después manda lo que el usuario elija con los chips.
+  useEffect(() => {
+    const b = new URLSearchParams(window.location.search).get('bandeja');
+    if (b && ['nocontestadas', 'sinrespuesta', 'abiertas', 'mias', 'resueltas'].includes(b)) setChipWa(b as any);
+  }, []);
+
   const [menuVistas, setMenuVistas] = useState(false);
   const [vistasGuardadas, setVistasGuardadas] = useState<any[] | null>(null);
   const [contVistas, setContVistas] = useState<Record<string, number>>({});

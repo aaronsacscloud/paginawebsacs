@@ -18,6 +18,11 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   const [meta, setMeta] = useState<number>(0);
   const [venc, setVenc] = useState<{ monto: number; n: number } | null>(null);
   const [tickets, setTickets] = useState<number | null>(null);
+  // Las DOS mitades del seguimiento por WhatsApp: los que ya contestaron y
+  // esperan (la pelota está de nuestro lado) y los que no volvieron a
+  // responder (la pelota está del suyo y se enfría). Sin esto había que entrar
+  // al inbox y contar a ojo cuál de las dos colas estaba creciendo.
+  const [wa, setWa] = useState<{ esperan: number; sinResp: number } | null>(null);
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -35,6 +40,12 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       setMeta(Number(v?.recurrente?.arr_hoy ?? 0));
       setCargando(false);
     }).catch(() => setCargando(false));
+    // limit=1 porque solo interesan los CONTADORES: el universo se arma igual
+    // en el servidor, pero no viajan 50 conversaciones que aquí no se pintan.
+    swrGet('/api/crm/whatsapp/inbox?limit=1', (j: any) => {
+      const k = j?.counts || {};
+      setWa({ esperan: Number(k.no_leidas || 0), sinResp: Number(k.sin_respuesta || 0) });
+    }).catch(() => {});
     swrGet('/api/crm/cobranza', (c: any) => {
       const k = c?.kpis || {};
       setVenc(k.vencido > 0 ? { monto: k.vencido, n: k.vencido_n || 0 } : null);
@@ -96,7 +107,27 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       ))}
 
       {/* Necesita tu atención — solo habla la excepción */}
-      {(venc || tickets) && <div className="m-sec">Necesita tu atención</div>}
+      {(venc || tickets || wa?.esperan || wa?.sinResp) && <div className="m-sec">Necesita tu atención</div>}
+      {/* Primero los que YA contestaron: ahí la pelota es nuestra y cada hora
+          que pasa cuesta. Después los que no respondieron, que es seguimiento. */}
+      {!!wa?.esperan && (
+        <div className="m-row" onClick={() => onIrA('whatsapp?bandeja=nocontestadas')}>
+          <div className="m-tx">
+            <div className="m-n1">{wa.esperan} {wa.esperan === 1 ? 'lead contestó' : 'leads contestaron'} y esperan</div>
+            <div className="m-n2">la respuesta te toca a ti</div>
+          </div>
+          <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
+        </div>
+      )}
+      {!!wa?.sinResp && (
+        <div className="m-row" onClick={() => onIrA('whatsapp?bandeja=sinrespuesta')}>
+          <div className="m-tx">
+            <div className="m-n1">{wa.sinResp} sin respuesta de ellos</div>
+            <div className="m-n2">les escribiste y no volvieron</div>
+          </div>
+          <div className="m-fin" style={{ alignSelf: 'center' }}><div className="m-m2">›</div></div>
+        </div>
+      )}
       {tickets != null && (
         <div className="m-row" onClick={() => onIrA('soporte')}>
           <div className="m-tx">

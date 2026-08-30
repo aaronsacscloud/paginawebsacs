@@ -212,7 +212,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
   );
-  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
+  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
     if (c.virtual) continue;   // los contactos sin conversación no inflan las bandejas
     if (pospuesta(c)) { counts.pospuestas++; continue; }   // dormidas: solo su cajón
@@ -220,7 +220,11 @@ const _GET: APIRoute = async ({ request, url }) => {
     if (requiereAccion(c)) counts.accion++;
     if (user && c.asignado_a === user.id) counts.mias++;
     if (!c.asignado_a && c.estado_crm !== 'resuelta') counts.sin_asignar++;
-    if (c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') counts.no_leidas++;   // "Sin respuesta": el cliente habló y nadie contestó
+    if (c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') counts.no_leidas++;   // el cliente habló y nadie contestó
+    // El espejo: nosotros escribimos al último y ELLOS no volvieron. Son las
+    // dos mitades del seguimiento y hasta ahora solo se contaba una, así que la
+    // pantalla de Inicio no podía avisar de la que se queda sin cerrar.
+    if (c.ultima_direccion === 'saliente' && c.estado_crm !== 'resuelta') counts.sin_respuesta++;
     const e = c.contacto?.lifecycle_stage;
     if (e) counts.por_etapa[e] = (counts.por_etapa[e] || 0) + 1;
   }
