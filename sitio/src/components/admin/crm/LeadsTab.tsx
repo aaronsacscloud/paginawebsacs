@@ -2069,6 +2069,14 @@ export default function LeadsTab() {
             claves={[
               { k: 'WhatsApp', v: c.whatsapp ? telBonito(c.whatsapp) : '—', tono: c.whatsapp ? undefined : 'rojo' as const },
               { k: 'Correo', v: c.email || '—' },
+              /* Cuántas sucursales le interesan: es el tamaño del prospecto, y
+                 decide el tono de la llamada antes de marcar. Estaba en la
+                 lista y en la tabla pero no aquí, que es la pantalla desde la
+                 que se decide a quién se le habla. */
+              { k: 'Sucursales', v: (() => {
+                const n2 = Number(c.sucursales_interes || c.companies?.sucursales || 0);
+                return n2 ? `${n2} ${n2 === 1 ? 'sucursal' : 'sucursales'}` : '—';
+              })() },
               { k: 'Origen', v: o.l },
             ]}
             verTodoLabel="Ver ficha completa ›"

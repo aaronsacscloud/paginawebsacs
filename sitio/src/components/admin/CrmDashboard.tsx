@@ -2062,8 +2062,16 @@ const CRM_MOBILE_CSS = `
        (excepción estándar de WCAG para links en línea de texto); las acciones
        primarias del sistema (m-row 60px, fichas 44px, barra 56px) ya cumplen
        ≥44 por su cuenta. */
-    .m-tabin button:not(.m-chip), .m-tabin [role="button"],
+    .m-tabin button:not(.m-chip):not([style*="min-height"]), .m-tabin [role="button"]:not([style*="min-height"]),
     .cs-modal-close { min-height: 36px !important; }
+    /* El :not([style*="min-height"]) es el arreglo de un piso que funcionaba
+       como techo. Esta regla se escribió para LEVANTAR los botones chicos, y
+       con !important también bajaba a los que declaran su propio tamaño: las
+       tres rayas del inbox pedían 44 en línea y se quedaban en 36 —por debajo
+       del mínimo táctil— así que los toques se perdían y el menú "no hacía
+       nada". Barrido en producción: era el único botón del CRM al que le
+       pasaba, pero era el único que hacía falta para romperlo. Un botón que
+       declara su tamaño sabe por qué; el piso es para los que no dicen nada. */
     /* …salvo los renglones de una hoja de menú, que son la lista de acciones
        del hilo y se tocan con el pulgar: 48. La regla de arriba los dejaba en
        36 aunque el componente pidiera más. */

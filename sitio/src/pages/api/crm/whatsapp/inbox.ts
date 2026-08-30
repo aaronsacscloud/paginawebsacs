@@ -30,6 +30,34 @@ async function notasConCache(): Promise<{ data: any[] }> {
   notasCache = { at: Date.now(), data: data || [] };
   return { data: notasCache.data };
 }
+/* ═══ Los números del propio equipo NO son bandeja ═══
+ *
+ * El CRM se manda avisos a sí mismo —«Aviso de tu cuenta del CRM: 1 lead sin
+ * primer toque»— al WhatsApp de cada team_member, que es a donde `aviso-lead`
+ * los envía. Esos hilos aparecían en el inbox como si fueran un cliente
+ * esperando respuesta: ocupaban un renglón de la bandeja del día y sumaban a
+ * los contadores de «no contestadas». Nadie le contesta a su propio sistema.
+ *
+ * La regla se saca de team_members, no de una lista escrita a mano: al dar de
+ * alta a alguien con su número, su hilo desaparece del inbox solo, sin que
+ * nadie se acuerde de marcarlo. Los mensajes SIGUEN llegando y guardándose —
+ * esto solo decide qué se enseña.
+ *
+ * Se comparan los últimos 10 dígitos: en la base conviven "+52155…", "52155…"
+ * y "55…" para el mismo teléfono, así que comparar el texto tal cual no
+ * encuentra nada.
+ */
+const digitos = (t?: string | null) => String(t || '').replace(/\D/g, '').slice(-10);
+let equipoCache: { at: number; tels: Set<string> } | null = null;
+async function telsDelEquipo(): Promise<Set<string>> {
+  if (equipoCache && Date.now() - equipoCache.at < 300_000) return equipoCache.tels;
+  const { data } = await supabase.from('team_members')
+    .select('whatsapp').not('whatsapp', 'is', null);
+  const tels = new Set<string>((data || []).map((m: any) => digitos(m.whatsapp)).filter(Boolean));
+  equipoCache = { at: Date.now(), tels };
+  return tels;
+}
+
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
   status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
@@ -83,6 +111,7 @@ const _GET: APIRoute = async ({ request, url }) => {
     // una consulta de mil filas cada seis segundos por pestaña abierta.
     notasConCache(),
   ]);
+  const telsEquipo = await telsDelEquipo();
   if (error) return json({ error: error.message }, 500);
   const leidoAt = new Map<string, string>((lecturas || []).map((l: any) => [l.conversation_id, l.leido_at]));
   // Conteo personal: entrantes desde mi última lectura. Si nunca la abrí, vale
@@ -137,7 +166,10 @@ const _GET: APIRoute = async ({ request, url }) => {
       // La fila se arma con una lista EXPLÍCITA de campos, no con ...c: si no
       // se nombra aquí, el filtro de más abajo nunca lo ve. Marcar una
       // conversación como interna se guardaba bien y no pasaba nada.
-      interna: !!c.interna,
+      // Interna por marca manual O por ser un número del propio equipo. Lo
+      // segundo no se puede desmarcar desde el hilo a propósito: si alguien lo
+      // quitara, el aviso automático volvería a la bandeja al día siguiente.
+      interna: !!c.interna || telsEquipo.has(digitos(c.telefono)),
       asignado_a: c.asignado_a, contact_id: c.contact_id, company_id: c.company_id,
       contacto: contactoDe(c), empresa: empresaDe(c),
       _extra: extraDe(c),
