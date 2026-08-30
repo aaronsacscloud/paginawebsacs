@@ -424,6 +424,46 @@ export const WIKI: PaginaWiki[] = [
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
+    id: 'winback', grupo: 'El proceso', titulo: '↩ Winback · los que se fueron',
+    bajada: 'Primero escuchar. La oferta va al final.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
+    cuerpo: `
+<p>Veinte pasos en 135 días para los <b>24 clientes que se fueron</b>. Quince correos y cinco WhatsApp — y ni un mensaje dentro de Sacs.</p>
+
+<div class="w-caja"><span class="w-k">Por qué no hay in-app aquí</span><p>Un cliente que se fue <b>no entra al sistema</b>. Medido: de los 24, doce llevan más de 90 días sin vender y nueve no tienen ni dato de actividad. Un mensaje dentro de Sacs se quedaría esperando para siempre a alguien que no va a abrir la puerta. Correo y WhatsApp son los únicos canales que llegan.</p></div>
+
+<h3>Cuatro fases, y el orden es todo el diseño</h3>
+<table class="w-tab"><thead><tr><th>Fase</th><th>Días</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>1 · Escuchar</b></td><td>1 – 25</td><td>No se ofrece <b>nada</b>. Solo la pregunta de qué pasó, y el director pidiendo media hora.</td></tr>
+<tr><td><b>2 · Lo que cambió</b></td><td>31 – 73</td><td>Tampoco se pide nada. Se cuenta qué se arregló, incluido lo que estaba mal.</td></tr>
+<tr><td><b>3 · La oferta</b></td><td>83 – 130</td><td>El año sin costo, la garantía, y por qué se lo ofrecemos.</td></tr>
+<tr><td><b>4 · La puerta</b></td><td>135</td><td>Se cierra bien. Sin última oferta.</td></tr>
+</tbody></table>
+
+<div class="w-caja w-bad"><span class="w-k">La oferta NO va en el primer correo</span><p>Mandar un año gratis antes de preguntar qué falló sería el mismo error que los hizo irse: resolver con dinero algo que era de confianza. A quien ya se fue, una oferta desesperada le confirma su decisión.</p>
+<p>Por eso los cuatro primeros correos no traen nada y tres <b>ni siquiera llevan botón</b>: el primero solo pide que contesten con una línea. Bajar el umbral hasta ahí es lo único que funciona con alguien que ya no te debe nada.</p></div>
+
+<h3>La oferta, cuando llega</h3>
+<p>Un <b>año completo</b> de Sacs sin costo, en el plan más avanzado. No un descuento ni un mes de prueba.</p>
+<table class="w-tab"><thead><tr><th>Incluye</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><b>El plan más completo</b></td><td>No una versión recortada.</td></tr>
+<tr><td><b>Acompañamiento de arranque</b></td><td>Una persona asignada con nombre, plan por escrito, y nosotros cargamos el catálogo — no una plantilla de Excel para que la llene él.</td></tr>
+<tr><td><b>Garantía de implementación</b></td><td>Si no queda operando, no seguimos y no cuesta nada. El punto de «listo» se acuerda ANTES de empezar, no lo definimos al final.</td></tr>
+<tr><td><b>Sus datos de vuelta</b></td><td>Donde los dejó.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">El tono es modesto a propósito</span><p>No dice «volvimos mejores»: dice <b>«te fallamos y no preguntamos por qué»</b>. Y el correo 13 llega a decir que la oferta <b>nos conviene</b> —aprender de un cliente que se fue vale más que el año que regalamos— porque fingir generosidad con alguien que ya nos vio fallar es la forma más rápida de perderlo otra vez.</p></div>
+
+<div class="w-caja"><span class="w-k">Los datos son suyos, y se dice sin condiciones</span><p>El correo 9 ofrece <b>exportarle todo</b> aunque nunca vuelva a hablarnos. No es una palanca de negociación, y ponerlo a mitad de la cadencia —antes de la oferta— es lo que lo hace creíble.</p></div>
+
+<h3>Con su propio tipo de reunión</h3>
+<p><b>Conversación con dirección</b>, 30 minutos, en <code>/agendar/direccion</code>. El nombre dice quién va a estar del otro lado, que es lo único que la hace distinta: a alguien que ya se fue no lo mueve otra consultoría, lo mueve que quien manda quiera escucharlo.</p>
+<p>Media hora y no una: se pide para <b>escuchar</b>, no para presentar. Pedir una hora a quien ya decidió irse manda el mensaje equivocado sobre cuánto vamos a hablar nosotros.</p>
+<div class="w-caja"><span class="w-k">Y la minuta es obligatoria</span><p>Aquí más que en ninguna otra reunión: lo que se diga ahí es <b>la única fuente honesta</b> que tenemos de por qué se van los clientes. Si no queda escrito, se pierde.</p></div>
+
+<h3>Cuándo se para</h3>
+<p>En cuanto <b>conteste por cualquier canal</b>. Nadie que acaba de decirte por qué se fue debe recibir al día siguiente el correo automático número 6 — a partir de ahí manda la persona.</p>`,
+  },
+  {
     id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
     bajada: 'Al cliente que ya opera bien.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
@@ -658,7 +698,7 @@ export const WIKI: PaginaWiki[] = [
     id: 'secuencias-estado', grupo: 'Referencia', titulo: 'Las secuencias, de un vistazo',
     bajada: 'Qué hay cargado y qué manda cada una.', chip: { texto: 'todas apagadas', tono: 'warn' },
     cuerpo: `
-<p>Siete cadencias, <b>124 pasos</b> por tres canales. Todas están <b>apagadas</b>: prenderlas es una decisión, no un trámite.</p>
+<p>Ocho cadencias, <b>144 pasos</b> por tres canales. Todas están <b>apagadas</b>: prenderlas es una decisión, no un trámite.</p>
 
 <table class="w-tab"><thead><tr><th>Secuencia</th><th>A quién</th><th>Correo</th><th>WhatsApp</th><th>En Sacs</th></tr></thead><tbody>
 <tr><td><b>Rezagados · top of mind</b></td><td>Lead que se enfrió</td><td>30</td><td>4</td><td>—</td></tr>
@@ -668,6 +708,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>Rumbo a la renovación</b></td><td>Cliente que renueva pronto</td><td>6</td><td>2</td><td>4</td></tr>
 <tr><td><b>Demo agendada · rumbo a la sesión</b></td><td>Ya agendó</td><td>5</td><td>3</td><td>—</td></tr>
 <tr><td><b>Oportunidad · Moda multitienda</b></td><td>Ya tiene cotización</td><td>8</td><td>—</td><td>—</td></tr>
+<tr><td><b>Winback · los que se fueron</b></td><td>Cliente que se fue</td><td>15</td><td>5</td><td>—</td></tr>
 </tbody></table>
 
 <p>Y una octava que <b>sí está prendida</b>: <b>WhatsApp entrante · atención y control</b>, que no manda nada — reacciona cuando el lead escribe.</p>
@@ -681,6 +722,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Se enfrió sin comprar</td><td>Rezagados · top of mind</td></tr>
 <tr><td><b>Ya es cliente y opera bien</b></td><td>Crecimiento · lo que sigue</td></tr>
 <tr><td><b>Su renovación viene</b></td><td>Rumbo a la renovación</td></tr>
+<tr><td><b>Se fue</b></td><td>Winback · los que se fueron</td></tr>
 </tbody></table>
 
 <div class="w-caja"><span class="w-k">Las dos últimas son de CLIENTE</span><p>Y por eso el motor tuvo que aprender dos cosas: contar hacia atrás hacia una fecha futura, y dejar de expulsar a quien ya compró. Antes toda secuencia sacaba al cliente con motivo «convertido» — correcto para adquisición, imposible para retención.</p></div>

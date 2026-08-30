@@ -34,6 +34,8 @@ const ESPERANDO = [
   'renovacion_sesion', 'renovacion_descuento',
   'crecimiento_sesion', 'crecimiento_proceso', 'crecimiento_nivelacion',
   'crecimiento_catalogo_ia',
+  'winback_direccion', 'winback_una_frase', 'winback_cambios',
+  'winback_ano_sin_costo', 'winback_puerta',
 ];
 
 const env = Object.fromEntries(readFileSync(RUTA_LOGIN, 'utf8')
