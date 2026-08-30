@@ -108,6 +108,31 @@ curl -X PATCH "https://api.vercel.com/v2/teams/$TEAM" \
 `sitio/.env` no se commitea (`.gitignore`). Los tokens de Supabase, SendGrid
 y demás viven ahí y en las variables de entorno de Vercel.
 
+### Entrar al CRM para QA con navegador
+
+Muchas pantallas del CRM (`/admin/crm`) piden sesión, así que sin login no se
+puede verificar nada de verdad: se compila, se despliega y se descubre el error
+en producción. Las credenciales viven en **`.crm-login`** en la raíz del repo
+(perms 600, **ignorado por git**), con el formato `CRM_EMAIL` / `CRM_PASSWORD`.
+
+Se entra por POST a `/api/admin/login` y se guarda la cookie:
+
+```bash
+set -a; . ./.crm-login; set +a
+curl -s -c /tmp/crm.jar -X POST http://localhost:4321/api/admin/login \
+  -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$CRM_EMAIL\",\"password\":\"$CRM_PASSWORD\"}"
+# y luego, con la sesión puesta:
+curl -s -b /tmp/crm.jar http://localhost:4321/api/crm/secuencias
+```
+
+Para capturas con Chromium headless hay que inyectar la cookie en el perfil, o
+más simple: usar Playwright, hacer el login en la página y de ahí navegar.
+
+⚠️ **La contraseña NO va en el repo ni en un commit.** Es la cuenta real del
+dueño: quien la tenga entra al CRM completo. Si se filtra, se cambia desde
+`/admin` — no se busca en el historial.
+
 ### Management API de Supabase (correr SQL sin depender de nadie)
 
 El token personal del dueño vive en **`.supabase-token`** en la raíz del repo

@@ -26,3 +26,6 @@ sitio/.astro/
 
 # Token suelto de captura de leads: es un secreto, nunca al historial.
 leads-captura-token.txt
+
+# Credenciales del CRM para QA con navegador: nunca al historial.
+.crm-login

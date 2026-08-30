@@ -316,7 +316,11 @@ export default function SecuenciasTab() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
               <b style={{ fontSize: '0.95rem' }}>{s.nombre}</b>
               <span style={{ fontSize: '0.64rem', fontWeight: 800, borderRadius: 999, padding: '3px 10px', background: s.activa ? P.verdeAgua : '#f4f3f6', color: s.activa ? P.verdeTinta : '#6b6b74', textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.activa ? 'Activa' : 'Apagada'}</span>
-              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{(s.pasos || []).length} pasos · corte {s.corte_dias} d · {s.hora_inicio}-{s.hora_fin} h · {(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}</span>
+              {/* Una secuencia por evento no tiene pasos, corte ni días: enseñarle
+                  "0 pasos · corte 0 d" es ruido que además parece un error. */}
+              <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>{s.disparador === 'wa_entrante'
+                ? `Al recibir un WhatsApp · ${s.entrada?.horario?.desde || '09:00'}-${s.entrada?.horario?.hasta || '19:00'} · ${(s.entrada?.horario?.dias?.length ? s.entrada.horario.dias : [1,2,3,4,5,6]).map((d: number) => 'LMMJVSD'[d-1]).join('')} · 1 WhatsApp cada ${s.entrada?.presion?.horas_entre_whatsapps ?? 24} h`
+                : `${(s.pasos || []).length} pasos · corte ${s.corte_dias} d · ${s.hora_inicio}-${s.hora_fin} h · ${(Array.isArray(s.dias_envio) && s.dias_envio.length ? s.dias_envio : [1,2,3,4,5]).map((d: number) => 'LMMJVSD'[d-1]).join('')}`}</span>
               {!esMovilSec && <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexBasis: esMovilSec ? '100%' : undefined, marginTop: esMovilSec ? 4 : 0 }}>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}) }} onClick={() => setEdit({ ...s })}>Editar</button>
                 <button style={{ ...btnG, minHeight: 44, ...(esMovilSec ? { flex: 1 } : {}), color: s.activa ? P.rojoTinta : P.verdeTinta, fontWeight: 700 }}
