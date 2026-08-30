@@ -39,13 +39,113 @@ export interface ModeloNegocio {
   href: string;
 }
 
+/** Una etapa del ciclo de temporada de moda, para el mega-menú de Plataforma. */
+export interface EtapaTemporada {
+  clave: string;
+  label: string;
+  description: string;
+  href: string;
+  items: string[];
+}
+
+/** Módulo especializado que se cotiza aparte (catálogo de plugins de moda). */
+export interface ModuloExtra {
+  label: string;
+  description: string;
+  precio: string;
+  href: string;
+}
+
 export interface NavLink {
   label: string;
   href: string;
   children?: NavSubItem[];
   pillars?: NavPillar[];
   sectors?: BusinessSector[];
+  /** El ciclo de la temporada (pre / en / post), bajo los pilares. */
+  temporada?: EtapaTemporada[];
+  /** Módulos especializados que se cotizan aparte. */
+  extraordinarios?: ModuloExtra[];
 }
+
+/** El ciclo de la temporada de moda: lo que pasa antes, durante y después.
+ *  Lo marcado «pronto» va en la ruta publicada en /planes. */
+export const cicloTemporada: EtapaTemporada[] = [
+  {
+    clave: '01',
+    label: 'Antes · la compra',
+    description: 'Decides con seis meses de anticipación qué comprar y para qué tienda.',
+    href: '/planes',
+    items: [
+      'Presupuesto de compra por temporada (OTB) · pronto',
+      'Plan de surtido: cuánto de cada modelo a cada tienda · pronto',
+      'Tope de presupuesto que prioriza por venta perdida al día',
+    ],
+  },
+  {
+    clave: '02',
+    label: 'En temporada · el piso',
+    description: 'La mercancía se mueve sola a donde sí se está vendiendo.',
+    href: '/producto/nivelacion-de-inventario',
+    items: [
+      'Salud de la curva por color: qué corrida se rompió',
+      'El traspaso que completa la corrida, propuesto por IA',
+      'Sell-through por modelo, talla y tienda',
+    ],
+  },
+  {
+    clave: '03',
+    label: 'Después · rebajas y saldos',
+    description: 'Qué remarcar y cuándo, para no regalar el margen de la temporada.',
+    href: '/producto/promociones',
+    items: [
+      'La etiqueta de salida frena el resurtido en toda la red',
+      'Rebajas programadas, iguales en todas tus tiendas',
+      'Cadencia de rebaja por semanas en piso · pronto',
+    ],
+  },
+];
+
+/** Módulos extraordinarios: lo que solo una marca de moda necesita.
+ *  Precios del catálogo de complementos; se cotizan aparte del plan. */
+export const modulosExtraordinarios: ModuloExtra[] = [
+  {
+    label: 'Probador virtual en tienda',
+    description: 'Pantalla en el piso donde tu clienta se prueba el look sin quitarse nada: otro color, otra talla, el outfit completo.',
+    precio: 'Desde $19,900 por tienda/año',
+    href: '/contacto',
+  },
+  {
+    label: 'Fotografía de producto con IA',
+    description: 'Subes la foto de la prenda y sale la campaña: modelo virtual, poses, fondos y todos tus colorways. En minutos, sin sesión.',
+    precio: 'Desde $14,900 por tienda/año',
+    href: '/contacto',
+  },
+  {
+    label: 'Video de producto con IA',
+    description: 'La misma foto se vuelve video para TikTok, Reels y tu tienda en línea: movimiento, ángulos y cambios de color.',
+    precio: 'Desde $17,900 por tienda/año',
+    href: '/contacto',
+  },
+  {
+    label: 'Sugerencia de outfits con IA',
+    description: 'La IA arma el look completo en el mostrador y en línea, con lo que sí tienes en existencia.',
+    precio: 'Desde $8,900 por tienda/año',
+    href: '/contacto',
+  },
+  {
+    label: 'Lookbooks digitales',
+    description: 'El catálogo de la colección que tu vendedora manda por WhatsApp a su cartera de clientas.',
+    precio: 'Desde $4,900 por tienda/año',
+    href: '/contacto',
+  },
+  {
+    label: 'Pre-órdenes de colección',
+    description: 'Tus clientas VIP apartan la pieza antes del drop, con anticipo y aviso cuando llega.',
+    precio: 'Desde $6,900 por tienda/año',
+    href: '/contacto',
+  },
+];
 
 export const businessSectors: BusinessSector[] = [
   {
@@ -563,6 +663,8 @@ export const navLinks: NavLink[] = [
         ],
       },
     ],
+    temporada: cicloTemporada,
+    extraordinarios: modulosExtraordinarios,
   },
   {
     label: 'Tu negocio',

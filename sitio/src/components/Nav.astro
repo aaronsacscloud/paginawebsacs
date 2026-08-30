@@ -62,6 +62,45 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
                     </div>
                   ))}
                 </div>
+                {link.temporada && (
+                  <div class="mega-temporada">
+                    <div class="mega-temporada-head">
+                      <span class="mega-temporada-eyebrow">El ciclo de la temporada</span>
+                      <h4 class="mega-temporada-title">Compras, vendes y remarcas — Sacs va contigo en las tres.</h4>
+                    </div>
+                    <div class="mega-temporada-grid">
+                      {link.temporada.map((et) => (
+                        <a href={getLocalizedUrl(et.href, locale)} class="mega-etapa">
+                          <span class="mega-etapa-num">{et.clave}</span>
+                          <span class="mega-etapa-label">{et.label}</span>
+                          <span class="mega-etapa-desc">{et.description}</span>
+                          <ul class="mega-etapa-items">
+                            {et.items.map((it) => <li>{it}</li>)}
+                          </ul>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {link.extraordinarios && (
+                  <div class="mega-extra">
+                    <div class="mega-temporada-head">
+                      <span class="mega-temporada-eyebrow">Módulos extraordinarios</span>
+                      <h4 class="mega-temporada-title">Lo que solo una marca de moda necesita.</h4>
+                      <p class="mega-extra-sub">Se cotizan aparte de tu plan, sobre la misma operación.</p>
+                    </div>
+                    <div class="mega-extra-grid">
+                      {link.extraordinarios.map((m) => (
+                        <a href={getLocalizedUrl(m.href, locale)} class="mega-extra-card" title={m.description}>
+                          <span class="mega-extra-label">{m.label}</span>
+                          <span class="mega-extra-precio">{m.precio}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div class="mega-footer">
                   <div class="mega-footer-cards">
                     <a href={getLocalizedUrl('/contacto', locale)} class="mega-footer-card">
@@ -1641,6 +1680,58 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     font-weight: 600;
     color: var(--color-text-primary);
     text-decoration: none;
+  }
+
+  /* ─── El ciclo de la temporada y los módulos extraordinarios ─── */
+  .mega-temporada, .mega-extra {
+    margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--color-border-light);
+  }
+  .mega-temporada-head { margin-bottom: 10px; }
+  .mega-temporada-eyebrow {
+    display: block; font-size: 0.6875rem; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--color-primary); margin-bottom: 4px;
+  }
+  .mega-temporada-title {
+    font-family: var(--font-display); font-size: 0.9375rem; font-weight: 700;
+    color: var(--color-text-primary); margin: 0;
+  }
+  .mega-extra-sub { margin: 4px 0 0; font-size: 0.75rem; color: var(--color-text-tertiary); }
+
+  .mega-temporada-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mega-etapa {
+    display: grid; gap: 3px; align-content: start; padding: 11px 13px;
+    border: 1px solid var(--color-border-light); border-radius: 11px; text-decoration: none;
+    background: var(--color-bg-primary); transition: border-color .15s ease, background .15s ease;
+  }
+  .mega-etapa:hover { border-color: var(--color-primary); background: #fff; }
+  .mega-etapa-num { font-family: var(--font-display); font-size: 0.6875rem; font-weight: 800; color: var(--color-primary); }
+  .mega-etapa-label { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--color-text-primary); }
+  .mega-etapa-desc { font-size: 0.75rem; line-height: 1.45; color: var(--color-text-secondary); }
+  .mega-etapa-items { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+  .mega-etapa-items li {
+    font-size: 0.6875rem; line-height: 1.4; color: var(--color-text-tertiary); padding-left: 10px; position: relative;
+  }
+  .mega-etapa-items li::before {
+    content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--color-primary); opacity: .5;
+  }
+
+  .mega-extra-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .mega-extra-card {
+    display: grid; gap: 2px; align-content: start; padding: 10px 11px;
+    border: 1px solid var(--color-border-light); border-radius: 12px; text-decoration: none;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .mega-extra-card:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+  .mega-extra-label { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; line-height: 1.25; color: var(--color-text-primary); }
+  .mega-extra-desc { font-size: 0.71rem; line-height: 1.45; color: var(--color-text-secondary); }
+  .mega-extra-precio { font-size: 0.6875rem; font-weight: 700; color: var(--color-primary); margin-top: 2px; }
+
+  @media (max-width: 1240px) {
+    .mega-extra-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 1100px) {
+    .mega-temporada-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 
