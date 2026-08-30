@@ -143,13 +143,26 @@ export default function InboxPro() {
 
     setError(''); setLista(j.conversaciones || []); setCounts(j.counts || {});
     setTotalLista(j.total_filtrado || 0); setHayMasLista(!!j.hay_mas);
-    // Cambió la vista/filtro y el chat abierto ya no pertenece a la lista →
-    // se cierra el hilo. Sin esto quedaba un spinner eterno (peor con filas
-    // virtuales, que no tienen hilo que cargar).
+    /* Cambió la vista/filtro y el chat abierto ya no pertenece a la lista →
+       se cierra el hilo. Sin esto quedaba un spinner eterno (peor con filas
+       virtuales, que no tienen hilo que cargar).
+
+       DOS CANDADOS, porque este guardia cerraba hilos que sí pertenecían:
+
+       1. La lista viene PAGINADA (50 por página). Que una conversación no esté
+          en la página no prueba que el filtro la excluya — solo que está más
+          abajo. Si la página vino llena, no hay prueba de nada y no se cierra.
+       2. La que se abrió por liga (una notificación, un push) se respeta la
+          primera vez. Al entrar, `armarQS` cambia solo —la bandeja por omisión
+          se aplica después de montar— y este guardia corría contra una lista
+          que todavía no era la definitiva: el hilo abría y se cerraba UN
+          SEGUNDO después. Medido así: HH........ */
     if (filtroCambio.current) {
       filtroCambio.current = false;
       const act = activaRef.current;
-      if (act && !(j.conversaciones || []).some((c: any) => c.id === act.id)) setActiva(null);
+      const paginaLlena = (j.conversaciones || []).length >= 50;
+      if (porLink.current) porLink.current = false;
+      else if (act && !paginaLlena && !(j.conversaciones || []).some((c: any) => c.id === act.id)) setActiva(null);
     }
   }, [armarQS]);
   const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
@@ -325,6 +338,9 @@ export default function InboxPro() {
 
   // Deep-links: ?wa_conv=<id> | ?wa_search=<tel> (una sola vez).
   const deepLink = useRef(false);
+  /* Se abrió por liga: el guardia de «ya no pertenece a la lista» tiene que
+     dejarla en paz la primera vez (ver cargarLista). */
+  const porLink = useRef(false);
   useEffect(() => {
     if (deepLink.current || lista === null) return;
     deepLink.current = true;
@@ -338,6 +354,7 @@ export default function InboxPro() {
         // desde la lista.
         const fila = (lista || []).find((c: any) => c.wa_id === conv || c.id === conv);
         setNuevosAlAbrir(Number(fila?.no_leidos || 0));
+        porLink.current = true;
         setActiva({ id: fila?.id || conv, wa: conv, email: null });
       }
       else if (tel) {
@@ -348,7 +365,7 @@ export default function InboxPro() {
         const hit = limpio.length >= 10
           ? lista.find((c: any) => String(c.telefono || '').replace(/\D/g, '').endsWith(limpio.slice(-10)))
           : null;
-        if (hit) { setNuevosAlAbrir(Number(hit.no_leidos || 0)); setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id }); }
+        if (hit) { porLink.current = true; setNuevosAlAbrir(Number(hit.no_leidos || 0)); setActiva({ id: hit.id, wa: hit.wa_id, email: hit.email_id }); }
         // Sin conversación previa no hay nada que buscar: se arranca. Un
         // contacto recién agregado NUNCA tiene conversación, y dejar la
         // búsqueda vacía hacía parecer que el contacto no existía.

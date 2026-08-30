@@ -383,6 +383,24 @@ export default function CrmDashboard() {
      menú medía 25 renglones y había que hacer scroll dentro de él para llegar
      a Partners. Así siempre mide lo mismo. */
   const grupoDeTab = (t: Tab) => NAV_SECTIONS.find(g => g.items.some(i => i.id === t))?.label || null;
+  /* Ir a un destino que puede traer parámetros: "pipeline?lead=<id>",
+     "whatsapp?wa_conv=<id>". Los parámetros se escriben en la URL ANTES de
+     cambiar de pestaña, porque cada pantalla los lee al montarse — así el
+     click cae en la ficha o en el hilo, no en la lista.
+     `leads` es el nombre viejo del destino: hay avisos guardados con él y la
+     pestaña se llama `pipeline` desde hace rato. Sin este alias, media
+     notificación llevaba a una pestaña que no existe. */
+  const irADestino = (t: string) => {
+    const [destinoRaw, qs] = String(t).split('?');
+    const destino = destinoRaw === 'leads' ? 'pipeline' : destinoRaw;
+    if (qs) {
+      const u = new URL(window.location.href);
+      new URLSearchParams(qs).forEach((v2, k) => u.searchParams.set(k, v2));
+      window.history.replaceState({}, '', u);
+    }
+    switchTab(destino as Tab);
+  };
+
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(() => grupoDeTab(getInitialTab()));
   // Al cambiar de pantalla (buscador global, atajo, link) se abre su grupo: si
   // no, el menú se queda enseñando otro y uno no sabe dónde está parado.
@@ -837,7 +855,7 @@ export default function CrmDashboard() {
         {!sidebarCollapsed ? (
           <div style={{ borderTop: '1px solid #e7e0f7', background: 'rgba(255,255,255,.5)' }}>
             <div style={{ padding: '6px 0 2px' }}>
-              {!isMobile && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
+              {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
 
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
@@ -934,15 +952,7 @@ export default function CrmDashboard() {
              filtro y el filtro viaja por la URL, que es donde el inbox ya sabe
              buscarlo — así el enlace también funciona si se comparte o se
              recarga la página. */
-          <ErrorBoundary>{isMobile ? <InicioMovil onIrA={(t) => {
-            const [destino, qs] = String(t).split('?');
-            if (qs) {
-              const u = new URL(window.location.href);
-              new URLSearchParams(qs).forEach((v2, k) => u.searchParams.set(k, v2));
-              window.history.replaceState({}, '', u);
-            }
-            switchTab(destino as Tab);
-          }} /> : <DashboardTab />}</ErrorBoundary>
+          <ErrorBoundary>{isMobile ? <InicioMovil onIrA={irADestino} /> : <DashboardTab />}</ErrorBoundary>
         ) : tab === 'hoy' ? (
           <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
@@ -1157,7 +1167,7 @@ export default function CrmDashboard() {
       {/* El panel de notificaciones en mobile: sin renglón propio, lo abre la
           hoja "Más". Antes lo abría una campana flotante que tapaba la pantalla. */}
       {isMobile && (
-        <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)}
+        <CampanaNotificaciones onIrA={irADestino}
           abiertoDesdeFuera={notifOpen} onCerrar={() => setNotifOpen(false)} />
       )}
       <Sheet open={mobileSearchOpen} onClose={() => { setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]); }} title="Buscar" zIndex={920}>

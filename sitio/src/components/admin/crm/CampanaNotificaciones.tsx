@@ -129,10 +129,23 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
     cargar();
   }
 
+  /* A DÓNDE LLEVA UN AVISO. De lo más concreto a lo más vago: si el aviso
+     sabe de qué conversación habla, el clic tiene que caer en ESA
+     conversación, no en la bandeja; si sabe de qué lead, en su ficha.
+     Antes ganaba `company_id`, que casi todos los avisos traen, así que un
+     «WhatsApp de Fulano: quiero saber el costo» abría la ficha 360 de la
+     cuenta —con el dato de la conversación ahí mismo, en metadata, sin usar—
+     y para contestar había que volver a buscar el hilo a mano. Y los avisos
+     de lead sin primer toque no traen destino ni empresa: no hacían
+     absolutamente nada al tocarlos. */
   function abrir(n: any) {
     marcarLeida(n);
-    if (n.company_id) { setAbierto(false); setCliente(n.company_id); return; }
-    if (n.destino && onIrA) { setAbierto(false); onIrA(n.destino); }
+    setAbierto(false);
+    const m = n.metadata || {};
+    if (m.conversation_id && onIrA) { onIrA(`whatsapp?wa_conv=${m.conversation_id}`); return; }
+    if (m.contact_id && onIrA) { onIrA(`pipeline?lead=${m.contact_id}`); return; }
+    if (n.company_id) { setCliente(n.company_id); return; }
+    if (n.destino && onIrA) onIrA(n.destino);
   }
 
   // Abierto desde la hoja del mobile nadie llamó a `cargar`: se hace aquí.
