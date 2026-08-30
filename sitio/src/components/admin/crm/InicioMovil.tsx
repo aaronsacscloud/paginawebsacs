@@ -25,6 +25,11 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
   // responder (la pelota está del suyo y se enfría). Sin esto había que entrar
   // al inbox y contar a ojo cuál de las dos colas estaba creciendo.
   const [wa, setWa] = useState<{ esperan: number; sinResp: number } | null>(null);
+  // Quién volvió del rezago esta semana. Es el momento más caliente del embudo
+  // —alguien que nos ignoró un mes vuelve a levantar la mano— y hasta ahora
+  // solo dejaba una nota en el hilo, que la ve quien YA está dentro de esa
+  // conversación. Aquí lo ve quien todavía no ha entrado, que es el punto.
+  const [reciclados, setReciclados] = useState<any[]>([]);
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   // Quién se movió esta semana. Va aquí y no en el pipeline porque la pregunta
@@ -123,7 +128,23 @@ export default function InicioMovil({ onIrA }: { onIrA: (tab: string) => void })
       ))}
 
       {/* Necesita tu atención — solo habla la excepción */}
-      {(venc || tickets || wa?.esperan || wa?.sinResp || !!activos?.total) && <div className="m-sec">Necesita tu atención</div>}
+      {(venc || tickets || wa?.esperan || wa?.sinResp || !!activos?.total || reciclados.length > 0) && <div className="m-sec">Necesita tu atención</div>}
+      {/* Arriba de todo: volvió alguien que ya te había ignorado. No es un lead
+          nuevo —ya te conoce— y no va a esperar otro mes. */}
+      {reciclados.length > 0 && (
+        <button className="m-card m-card-btn" onClick={() => onIrA('leads')}
+          style={{ borderLeft: '3px solid #C77D0A' }}>
+          <div className="m-card-top">
+            <span className="m-card-t">♻️ {reciclados.length === 1 ? 'Volvió un lead' : `Volvieron ${reciclados.length} leads`}</span>
+            <span className="m-card-n" style={{ color: '#C77D0A' }}>{reciclados.length}</span>
+          </div>
+          <div className="m-card-d">
+            {reciclados.slice(0, 2).map((r: any) => r.nombre).filter(Boolean).join(' · ')}
+            {reciclados.length > 2 ? ` y ${reciclados.length - 2} más` : ''}
+            {' — estaban rezagados y volvieron a mostrar interés.'}
+          </div>
+        </button>
+      )}
       {/* Primero los que YA contestaron: ahí la pelota es nuestra y cada hora
           que pasa cuesta. Después los que no respondieron, que es seguimiento. */}
       {!!wa?.esperan && (

@@ -19,6 +19,7 @@ import { resolverTenant } from '../../../lib/email/tenant';
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { compilar, compilarTexto, interpolar } from '../../../lib/email/plantillas';
 import { cumpleCondsLead } from '../../../lib/crm/leads-filtros';
+import { notificar } from '../../../lib/crm/notificaciones';
 import { puedeMandarWa, cadenciaPausadaPorPersona } from '../../../lib/whatsapp/presion';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCalientes } from '../../../lib/crm/aviso-lead';
@@ -78,6 +79,15 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   for (const sec of lista) {
+    // ── Blackout ──
+    // Una marca de moda en pleno Buen Fin está vendiendo, no evaluando
+    // software. La secuencia se congela sola: no manda ni gradúa, y al terminar
+    // el rango continúa donde iba sin haber perdido a nadie.
+    const hoyISO = ahora.toISOString().slice(0, 10);
+    const congelada = (Array.isArray(sec.blackout) ? sec.blackout : [])
+      .some((b: any) => b?.desde && b?.hasta && hoyISO >= b.desde && hoyISO <= b.hasta);
+    if (congelada) { res.saltados.push({ sec: sec.nombre, motivo: 'blackout' }); continue; }
+
     const entrada = sec.entrada || {};
     const estatusIn = entrada.estatus?.length ? entrada.estatus : ['contactado', 'sin_respuesta'];
     const lifecycleIn = entrada.lifecycle?.length ? entrada.lifecycle : ['lead', 'lead_calificado'];
@@ -186,7 +196,7 @@ export const GET: APIRoute = async ({ url }) => {
     // 2) GRADUAR + canales — miembros vigentes: salida total con motivo, o
     //    detención del canal por el que respondió.
     const { data: miembros } = await supabase.from('crm_secuencia_miembros')
-      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at)')
+      .select('id, contact_id, inicio, enviados, canales_detenidos, contacts(id, nombre, apellido, email, whatsapp, campana, estatus_lead, lifecycle_stage, calificacion, retenido_hasta, wa_optout, archived_at, propiedades, prueba_inicio, created_at, reciclado_veces, ultima_actividad_venta_at, ultima_actividad_venta_tipo, eng_emails_leidos)')
       .eq('secuencia_id', sec.id).is('detenida_at', null).limit(300);
 
     // Detección de respuesta POR CANAL, en lote (solo si alguien respondió).
@@ -251,7 +261,10 @@ export const GET: APIRoute = async ({ url }) => {
         const cadaDias = Math.max(1, Number((sec.entrada || {}).cada_dias) || 14);
         const yaEnviados = Object.keys(m.enviados || {}).length;
         const ultimo = Object.values(m.enviados || {}).map((x: any) => Date.parse(String(x))).filter(Boolean).sort().pop();
-        const listos = (sec.pasos || []).filter((p: any) => p.activo !== false);
+        // Los pasos vencidos se saltan: una "novedad" de hace seis meses ya no
+        // lo es, y mandarla resta credibilidad en vez de sumarla.
+        const listos = (sec.pasos || []).filter((p: any) =>
+          p.activo !== false && (!p.vigente_hasta || p.vigente_hasta >= hoyISO));
         // Se acabó el contenido: no se repite, se espera a que haya algo nuevo.
         if (!listos.length || yaEnviados >= listos.length) continue;
         if (ultimo && (ahora.getTime() - ultimo) / 86400000 < cadaDias) continue;
@@ -269,6 +282,20 @@ export const GET: APIRoute = async ({ url }) => {
       const dias = Math.floor((ahora.getTime() - Date.parse(desde || m.inicio)) / 86400000) + 1;
       const cd: Record<string, any> = { ...(m.canales_detenidos || {}) };
       let cdCambio = false;
+
+      // ── Ventana de respeto ──
+      // Si acaba de pasar algo de verdad —una reunión, una cotización, un
+      // mensaje suyo— mandarle "te extrañamos" es sordo. El sin_actividad
+      // protege la ENTRADA; esto protege a quien ya está adentro cuando la vida
+      // cambia. Solo aplica al goteo permanente: en un arco los pasos son una
+      // conversación con hilo y saltarse uno la rompe.
+      if (sec.modo === 'permanente') {
+        const act = (c as any).ultima_actividad_venta_at;
+        if (act && (ahora.getTime() - Date.parse(act)) / 86400000 < 7) {
+          res.saltados.push({ lead: c.id, motivo: 'actividad_reciente' });
+          continue;
+        }
+      }
 
       // ── La baja manda sobre todo ──
       // Quien se dio de baja no es un lead frío al que le bajamos el ritmo: es
@@ -433,6 +460,8 @@ export const GET: APIRoute = async ({ url }) => {
           if (p.canal === 'correo') {
             // A/B: si el paso tiene variante B, el lead cae en A o B por el
             // hash de su id — estable entre corridas, mitad y mitad.
+            // A/B: también en permanente. Es donde MÁS sirve, porque corre
+            // indefinidamente y hay tiempo de que la mitad y la mitad digan algo.
             let tid = p.email_template_id, variante: string | null = null;
             if (p.email_template_id_b) {
               const par = parseInt(String(c.id).replace(/-/g, '').slice(0, 8), 16) % 2;
@@ -532,6 +561,20 @@ async function ejecutarAcciones(sec: any, c: any, motivo: string, dias: number) 
   const acc = (sec.acciones || {}).al_salir;
   if (!acc || !MOTIVOS_DE_EXITO.has(motivo)) return;
 
+  // ── Tope de reciclajes ──
+  // A la tercera vuelta completa sin comprar ya no es un lead tibio: es un
+  // suscriptor. Devolverlo otra vez a la misma cadencia que ya ignoró dos veces
+  // es gastar la relación y el remitente. Se queda donde está y se avisa.
+  const vueltas = Number(c.reciclado_veces) || 0;
+  const tope = Number((sec.acciones || {}).tope_reciclajes ?? 3);
+  if (acc.marcar === 'reciclado' && vueltas >= tope) {
+    await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_accion', automatico: true,
+      titulo: `Mostró interés por ${vueltas + 1}ª vez pero NO se recicla: llegó al tope`,
+      metadata: { secuencia: sec.nombre, vueltas, tope, motivo } }).then(() => {}, () => {});
+    await notaInbox(c.id, `Volvió a mostrar interés (vuelta ${vueltas + 1}), pero ya llegó al tope de reciclajes. Vale una llamada, no otra cadencia.`);
+    return;
+  }
+
   const parche: any = {};
   if (acc.lifecycle) parche.lifecycle_stage = acc.lifecycle;
   if (acc.marcar) {
@@ -557,5 +600,26 @@ async function ejecutarAcciones(sec: any, c: any, motivo: string, dias: number) 
   // cumple la entrada de la otra, meterlo a la fuerza sería saltarse su filtro.
   if (acc.inscribir_en) {
     await notaInbox(c.id, `Reciclado: vuelve como ${acc.lifecycle || 'lead'} y queda listo para "${acc.inscribir_en}".`);
+  }
+
+  // ── La campana ──
+  // Es el momento más caliente de todo el embudo: alguien que nos ignoró un mes
+  // vuelve a levantar la mano. Dejarlo solo como nota en el hilo es esconderlo
+  // — la nota la ve quien ya está dentro de esa conversación, y justo aquí lo
+  // que hace falta es que alguien ENTRE.
+  if (acc.marcar === 'reciclado') {
+    const quien = [c.nombre, c.apellido].filter(Boolean).join(' ').trim() || 'Un lead';
+    const eng = Number(c.eng_emails_leidos) || 0;
+    const senal = c.ultima_actividad_venta_tipo ? ` Su última señal fue por ${c.ultima_actividad_venta_tipo}.` : '';
+    await notificar({
+      clave: `reciclado:${c.id}:${new Date().toISOString().slice(0, 10)}`,
+      tipo: 'lead_reciclado', nivel: 'alerta',
+      titulo: `${quien} volvió después de estar rezagado`,
+      detalle: `Estuvo ${dias} días en la cadencia de rezagados y mostró interés (${motivo}).${senal}`
+             + (eng ? ` Ha leído ${eng} de nuestros correos.` : '')
+             + (vueltas ? ` Es su vuelta número ${vueltas + 1}.` : ''),
+      destino: 'leads',
+      metadata: { contact_id: c.id, secuencia: sec.nombre, motivo, vueltas: vueltas + 1, dias },
+    }).catch(() => {});
   }
 }

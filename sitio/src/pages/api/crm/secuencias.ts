@@ -46,6 +46,13 @@ export const POST: APIRoute = async ({ request }) => {
     hora_fin: Math.max(1, Math.min(24, Number(b.hora_fin) ?? 18)),
   };
   if (['respondio', 'agendo', 'demo_hecha', 'convertido'].includes(b.objetivo)) fila.objetivo = b.objetivo;
+  if (['arco', 'permanente'].includes(b.modo)) fila.modo = b.modo;
+  if (b.acciones && typeof b.acciones === 'object') fila.acciones = b.acciones;
+  if (Array.isArray(b.blackout)) {
+    fila.blackout = b.blackout
+      .filter((r: any) => /^\d{4}-\d{2}-\d{2}$/.test(r?.desde) && /^\d{4}-\d{2}-\d{2}$/.test(r?.hasta))
+      .slice(0, 12);
+  }
   // Días de la semana en que SÍ envía (1=lun … 7=dom) y reglas de entrada.
   if (Array.isArray(b.dias_envio)) {
     const ds = b.dias_envio.map(Number).filter((d: number) => d >= 1 && d <= 7);
@@ -114,6 +121,27 @@ export const POST: APIRoute = async ({ request }) => {
     const ancla = ANCLAS.includes(b.entrada.ancla) ? b.entrada.ancla : 'estatus_lead_at';
     fila.entrada = { estatus: estFinal, lifecycle, filtros, logica, ancla };
   }
+  // ── No se prende una cadencia vacía ──
+  // Hoy "Rezagados" se podía activar con cero pasos y no hacer absolutamente
+  // nada, en silencio — el peor modo de falla que hay, porque parece que
+  // funciona. Una permanente además necesita fondo: con 30 pasos cada 14 días
+  // son catorce meses de contenido, que es lo que dura estar en top of mind sin
+  // repetirse. Un arco solo necesita tener algo.
+  if (b.activa) {
+    const nPasos = Array.isArray(b.pasos)
+      ? b.pasos.filter((p: any) => p?.activo !== false && (p.email_template_id || p.wa_plantilla)).length
+      : 0;
+    const minimo = b.modo === 'permanente' ? 30 : 1;
+    if (nPasos < minimo) {
+      return json({
+        error: b.modo === 'permanente'
+          ? `Una cadencia permanente necesita al menos ${minimo} pasos entre correos y WhatsApp — lleva ${nPasos}. Con menos se repite y deja de servir para estar en top of mind.`
+          : 'No se puede prender una secuencia sin pasos: no haría nada y parecería que sí.',
+        faltan: minimo - nPasos,
+      }, 400);
+    }
+  }
+
   let id = b.id || null;
   if (id) {
     const { error } = await supabase.from('crm_secuencias').update(fila).eq('id', id);
