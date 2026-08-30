@@ -23,6 +23,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { CAMPOS_PRUEBA, terminarPrueba, avisoEnCuenta, diasRestantes, WHATSAPP_VENTAS } from '../../../lib/crm/prueba';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 
 export const prerender = false;
 
@@ -33,7 +34,14 @@ const MAX = 200;
 
 const nombreDe = (c: any) => [c.nombre, c.apellido].filter(Boolean).join(' ').trim() || c.email || 'un lead';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  /* Cerrado como los demás crons que mutan algo. Este además llama a la API de
+     SACS para BLOQUEAR cuentas: dejarlo abierto es dejar un botón público que
+     apaga pruebas. La ventana de vencimiento lo acota (solo toca lo ya
+     vencido), pero acotar el daño no es lo mismo que cerrar la puerta. */
+  if (!isAuthorizedCron(request)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
   const hechos = { vencidas: 0, avisadas: 0, reintentos: 0, errores: [] as string[] };
 
   // ── 1. Las que ya vencieron ────────────────────────────────────────────────
