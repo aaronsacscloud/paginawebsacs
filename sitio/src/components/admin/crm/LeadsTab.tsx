@@ -12,6 +12,7 @@ import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // gente de etapa.
 import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { confirmar } from '../../../lib/ui/confirmar';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 // REGLA DE VELOCIDAD: el kanban de escritorio y el drawer bajan al usarse.
@@ -253,6 +254,10 @@ const S = {
   /* El dato que no está: siempre igual y siempre más claro que un dato real,
      para que un guión nunca compita con un valor. */
   vacio: { color: '#74727F' } as const,
+  /* Los botones de la barra de selección: sobre el morado oscuro, contorno
+     claro. Van aquí y no en línea porque son cuatro y tienen que verse iguales. */
+  btnSel: { border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff',
+    borderRadius: 9, padding: '7px 13px', fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as const,
   chip: (on: boolean) => ({
     border: '1px solid', borderColor: on ? '#c9bcf7' : '#e2e4e9', background: on ? '#f7f4ff' : '#fff',
     color: on ? '#5B4BD6' : '#555', borderRadius: 9, padding: '7px 12px', fontSize: '0.77rem',
@@ -320,6 +325,11 @@ export default function LeadsTab() {
   // tabla con scroll, un menú en flujo se recorta contra el borde.
   const [menu, setMenu] = useState<{ c: any; x: number; y: number } | null>(null);
   const [verContacto, setVerContacto] = useState<string | null>(null);
+  /* SELECCIÓN MÚLTIPLE. Con 333 filas, tocar veinte leads era veinte vueltas
+     por el menú de tres puntos: abrir, leer siete opciones, elegir, repetir.
+     Un data table sin esto es una lista bonita. */
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [aplicando, setAplicando] = useState(false);
   const esMovil = useIsMobile();
   // Móvil: la búsqueda vive tras el icono de la cabecera (la referencia no lleva campo fijo).
   const [buscaMovil, setBuscaMovil] = useState(false);
@@ -338,9 +348,9 @@ export default function LeadsTab() {
   const [nuevo, setNuevo] = useState(false);
   const [importTikTok, setImportTikTok] = useState(false);
 
-  function exportar() {
+  function exportar(soloEstos?: any[]) {
     const cols = ['Llegó', 'Nombre', 'Empresa', 'Correo', 'Teléfono', 'Canal', 'Sucursales', 'Etapa', 'Estatus', 'Sin contacto (días)'];
-    const filas = lista.map((c: any) => [
+    const filas = (soloEstos || lista).map((c: any) => [
       diaLocal(c.created_at),
       [c.nombre, c.apellido].filter(Boolean).join(' '), c.companies?.nombre || '', c.email || '',
       c.whatsapp || c.telefono || '', origenDe(origenDeRegistro(c)).l,
@@ -428,12 +438,22 @@ export default function LeadsTab() {
      "No interesados" fija el estatus. Ahí esas columnas se van. */
   const verEtapa = !['nuevos', 'contactados', 'calificados'].includes(etapa);
   const verEstatus = !['nuevos', 'no_interesados'].includes(etapa);
-  const nCols = 11 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0);
+  /* Reunión no puede tener contenido en estas pestañas: pestanaDe() manda a
+     «Oportunidad» a cualquier lead con una reunión, y ese return corre ANTES
+     que los de nuevos/contactados/calificados/rezagados. O sea que ahí la
+     columna solo puede decir "—". Es el mismo criterio que ya se aplicó a
+     Etapa y Estatus, que estaba a medias. */
+  useEffect(() => { setSel(new Set()); }, [etapa, estatusF, busca]);
+  const verReunion = !['nuevos', 'contactados', 'calificados', 'rezagados'].includes(etapa);
+  /* Llamadas se decide con los datos a la vista, no con la pestaña: si en esta
+     vista nadie ha llamado a nadie, la columna es una fila de guiones. */
+  const verLlamadas = useMemo(() => (listaBase || []).some((c: any) => (c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0) > 0), [listaBase]);
+  const nCols = 10 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0) + (verReunion ? 1 : 0) + (verLlamadas ? 1 : 0);
   /* La suma EXACTA de los anchos declarados. Si el mínimo es mayor, el
      navegador reparte el sobrante entre todas y los `left` de las columnas
      congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
      con puntos suspensivos empieza a morder donde no debe. */
-  const anchoTabla = 1378 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0);
+  const anchoTabla = 1230 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
   /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
      por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
@@ -579,9 +599,17 @@ export default function LeadsTab() {
            ese anuncio. Era la mancha más fuerte de la fila, con color de
            enlace, y no llevaba a ningún lado — el dueño la quiere para saber
            de qué anuncio viene cada cosa, y así de verdad sirve para cortar. */
-        .lead-tabla .fila-camp:hover { color:#5B4BD6; text-decoration:underline; text-underline-offset:2px; }
+        /* Se ven QUIETAS. Depender del cursor para descubrir que el teléfono
+           abre WhatsApp y que la campaña filtra, entre trece columnas, es
+           depender de que nunca se descubra: el subrayado punteado tenue lo
+           insinúa sin gritar, y al pasar encima se vuelve sólido y de color. */
+        .lead-tabla .fila-nom { all:unset; display:block; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lead-tabla .fila-nom:focus-visible, .lead-tabla [role="button"]:focus-visible, .lead-tabla a:focus-visible {
+          outline:2px solid #5B4BD6; outline-offset:2px; border-radius:4px; }
+        .lead-tabla .fila-tel, .lead-tabla .fila-camp { text-decoration:underline dotted; text-decoration-color:#d3cfe2; text-underline-offset:3px; }
+        .lead-tabla .fila-camp:hover { color:#5B4BD6; text-decoration:underline solid; text-decoration-color:currentColor; text-underline-offset:2px; }
         .lead-tabla .fila-tel:hover { color:#1E8A63; text-decoration:underline; text-underline-offset:2px; }
-        .lead-tabla .fila-wa { opacity:.28; transition:opacity .12s ease, background .12s ease; }
+        .lead-tabla .fila-wa { opacity:.5; transition:opacity .12s ease, background .12s ease; }
         .lead-tabla tbody tr:hover .fila-wa { opacity:1; }
         .lead-tabla .fila-wa:hover, .lead-tabla .fila-wa:focus-visible { opacity:1; background:#E8F7F0; }
         .lead-tabla tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #5B4BD6; }
@@ -595,15 +623,31 @@ export default function LeadsTab() {
            columnas quedan congeladas. Si al hacer scroll ves "HOY" en Reunión
            pero ya no sabes de quién es la fila, tienes que volver, contar
            renglones y regresar. */
-        .lead-tabla th.fija1, .lead-tabla td.fija1 { position:sticky; left:0; background:#fff; }
-        .lead-tabla th.fija2, .lead-tabla td.fija2 { position:sticky; left:108px; background:#fff; box-shadow:1px 0 0 #eceaf2; }
+        .lead-tabla th.fija0, .lead-tabla td.fija0 { position:sticky; left:0; background:#fff; text-align:center; padding-left:0; padding-right:0; }
+        .lead-tabla th.fija1, .lead-tabla td.fija1 { position:sticky; left:40px; background:#fff; }
+        .lead-tabla th.fija2, .lead-tabla td.fija2 { position:sticky; left:148px; background:#fff; box-shadow:1px 0 0 #eceaf2; }
         .lead-tabla th.derecha, .lead-tabla td.derecha { position:sticky; right:0; background:#fff; box-shadow:-1px 0 0 #eceaf2; }
         .lead-tabla tbody tr:hover td.derecha { background:#f5f3fc; }
-        .lead-tabla th.fija1, .lead-tabla th.fija2, .lead-tabla th.derecha { z-index:3; }
-        .lead-tabla td.fija1, .lead-tabla td.fija2 { z-index:1; }
+        .lead-tabla th.fija0, .lead-tabla th.fija1, .lead-tabla th.fija2, .lead-tabla th.derecha { z-index:3; }
+        .lead-tabla td.fija0, .lead-tabla td.fija1, .lead-tabla td.fija2 { z-index:1; }
+        /* La fila seleccionada se ve seleccionada en TODO su ancho, congeladas
+           incluidas: si solo se pinta el centro, al desplazarse a la derecha la
+           selección parece haberse perdido. */
+        .lead-tabla tbody tr.sel td, .lead-tabla tbody tr.sel td.fija0,
+        .lead-tabla tbody tr.sel td.fija1, .lead-tabla tbody tr.sel td.fija2,
+        .lead-tabla tbody tr.sel td.derecha { background:#F1EEFE; }
+        .lead-tabla input[type=checkbox] { width:16px; height:16px; accent-color:#5B4BD6; cursor:pointer; margin:0; }
+        /* Los rótulos que ordenan se sienten tocables y reservan el sitio de la
+           flecha, para que el ancho no salte al aparecer. */
+        .lead-tabla th.ord { cursor:pointer; user-select:none; }
+        .lead-tabla th.ord:hover { color:#5B4BD6; }
+        .lead-tabla th.ord .fl { display:inline-block; width:10px; margin-left:5px; opacity:0; }
+        .lead-tabla th.ord:hover .fl { opacity:.45; }
+        .lead-tabla th.ord[aria-sort]:not([aria-sort="none"]) { color:#5B4BD6; }
+        .lead-tabla th.ord[aria-sort]:not([aria-sort="none"]) .fl { opacity:1; }
         /* Congelada + hover: si no se repinta el fondo, la fila se parte en
            dos colores justo en el borde de lo que se quedó fijo. */
-        .lead-tabla tbody tr:hover td.fija1, .lead-tabla tbody tr:hover td.fija2 { background:#f5f3fc; }
+        .lead-tabla tbody tr:hover td.fija0, .lead-tabla tbody tr:hover td.fija1, .lead-tabla tbody tr:hover td.fija2 { background:#f5f3fc; }
         /* Y el aviso de que hay más columnas a la derecha: sin esto el borde
            es un corte blanco seco y la única acción por fila (el ⋮) vive
            fuera de la pantalla sin que nada lo insinúe. */
@@ -1329,14 +1373,26 @@ export default function LeadsTab() {
                       aquel suelta: es el mejor indicio de si el lead vale la
                       llamada, y cortarla para dejar entero un @icloud.com era
                       el cambio exactamente al revés. */}
-                  <th className="fija1" style={{ ...S.th, width: 108 }}>Llegó</th>
-                  <th className="fija2" style={{ ...S.th, width: 190 }}>Lead</th>
-                  <th style={{ ...S.th, width: 186 }}>Empresa</th>
-                  <th style={{ ...S.th, width: 160 }}>Correo</th>
-                  <th style={{ ...S.th, width: 124 }}>Teléfono</th>
-                  <th style={{ ...S.th, width: 98 }}>Canal</th>
-                  <th className="num" style={{ ...S.th, width: 66 }} title="Cuántas sucursales le interesan">Sucs.</th>
-                  <th style={{ ...S.th, width: 166 }}>{
+                  <th scope="col" className="fija0" style={{ ...S.th, width: 40 }}>
+                    <input type="checkbox" aria-label="Seleccionar todos los de esta vista"
+                      checked={lista.length > 0 && sel.size === lista.length}
+                      ref={el => { if (el) el.indeterminate = sel.size > 0 && sel.size < lista.length; }}
+                      onChange={e => setSel(e.target.checked ? new Set(lista.map((c: any) => c.id)) : new Set())} />
+                  </th>
+                  {/* El rótulo ordena. Antes el único control de orden eran dos
+                      opciones de un select del toolbar; con 333 filas, ordenar
+                      es lo primero que hace cualquiera. */}
+                  <th scope="col" className="fija1 ord" aria-sort={orden === 'reciente' ? 'descending' : 'ascending'}
+                    onClick={() => setOrden(orden === 'reciente' ? 'frio' : 'reciente')}
+                    title="Ordenar por cuándo llegó / más fríos primero"
+                    style={{ ...S.th, width: 108 }}>Llegó<span className="fl" aria-hidden="true">{orden === 'reciente' ? '↓' : '↑'}</span></th>
+                  <th scope="col" className="fija2" style={{ ...S.th, width: 190 }}>Lead</th>
+                  <th scope="col" style={{ ...S.th, width: 186 }}>Empresa</th>
+                  <th scope="col" style={{ ...S.th, width: 160 }}>Correo</th>
+                  <th scope="col" style={{ ...S.th, width: 124 }}>Teléfono</th>
+                  <th scope="col" style={{ ...S.th, width: 98 }}>Canal</th>
+                  <th scope="col" className="num" style={{ ...S.th, width: 66 }} title="Cuántas sucursales le interesan">Sucs.</th>
+                  <th scope="col" style={{ ...S.th, width: 166 }}>{
                     etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
                     : etapa === 'rezagados' ? 'Última señal'
                     : etapa === 'oportunidad' ? 'Última actividad'
@@ -1350,9 +1406,9 @@ export default function LeadsTab() {
                       desde el ⋮ y desde la ficha. */}
                   {verEtapa && <th style={{ ...S.th, width: 96 }}>Etapa</th>}
                   {verEstatus && <th style={{ ...S.th, width: 116 }}>Estatus</th>}
-                  <th style={{ ...S.th, width: 96 }}>Reunión</th>
-                  <th style={{ ...S.th, width: 92 }}>Llamadas</th>
-                  <th className="derecha" style={{ ...S.th, width: 92 }} />
+                  {verReunion && <th scope="col" style={{ ...S.th, width: 96 }}>Reunión</th>}
+                  {verLlamadas && <th scope="col" style={{ ...S.th, width: 92 }}>Llamadas</th>}
+                  <th scope="col" className="derecha" style={{ ...S.th, width: 92 }}><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -1366,9 +1422,14 @@ export default function LeadsTab() {
                   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
                   return (
                     <Fragment key={c.id}>
-                    <tr>
+                    <tr className={sel.has(c.id) ? 'sel' : undefined}>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
+                      <td className="fija0" style={S.td} onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={sel.has(c.id)}
+                          aria-label={`Seleccionar a ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
+                          onChange={e => setSel(prev => { const n = new Set(prev); if (e.target.checked) n.add(c.id); else n.delete(c.id); return n; })} />
+                      </td>
                       <td className="fija1" style={S.td}>
                         {c.created_at ? (
                           <span title={new Date(c.created_at).toLocaleString('es-MX')}>
@@ -1406,9 +1467,14 @@ export default function LeadsTab() {
                         ) : <span style={S.vacio}>—</span>}
                       </td>
                       <td className="fija2" style={S.td}>
-                        <div style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
+                        {/* Botón de verdad, no un div con onClick: abrir la
+                            ficha es lo que más se hace en esta pantalla y no
+                            existía sin ratón — no se podía enfocar, no
+                            respondía a Enter y un lector de pantalla no lo
+                            anunciaba. */}
+                        <button type="button" className="fila-nom" style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
-                        </div>
+                        </button>
                         {c.historial && (() => {
                           const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
                           return <span title={c.historial.titulo} style={{ display: 'inline-block', marginTop: 3, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: h.bg, color: h.fg }}>{h.label}</span>;
@@ -1463,7 +1529,7 @@ export default function LeadsTab() {
                         const n = Number(c.sucursales_interes || c.companies?.sucursales || 0);
                         if (!n) return <span style={S.vacio}>—</span>;
                         if (n >= 5) return <b style={{ color: '#5B4BD6', background: '#EEECFE', borderRadius: 6, padding: '1px 7px' }}>{n}</b>;
-                        return <span style={{ color: n > 1 ? '#3f3856' : '#9d9aab', fontWeight: n > 1 ? 600 : 400 }}>{n}</span>;
+                        return <span style={{ color: n > 1 ? '#3f3856' : '#6f6c7c', fontWeight: n > 1 ? 600 : 400 }}>{n}</span>;
                       })()}</td>
                       <td style={S.td}>{(() => {
                         // La columna cuenta lo que ESA pestaña necesita saber
@@ -1471,7 +1537,7 @@ export default function LeadsTab() {
                         if (etapa === 'nuevos' || etapa === 'contactados' || etapa === 'oportunidad' || etapa === 'todos') return c.campana
                           ? <div><span role="button" tabIndex={0}
                               onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
-                              onKeyDown={e => { if (e.key === 'Enter') setBusca(c.campana); }}
+                              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBusca(busca === c.campana ? '' : c.campana); } }}
                               title={`Ver solo los leads de "${c.campana}"`}
                               className="fila-camp"
                               style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
@@ -1538,7 +1604,7 @@ export default function LeadsTab() {
                         return c.campana
                           ? <div><span role="button" tabIndex={0}
                               onClick={e => { e.stopPropagation(); setBusca(busca === c.campana ? '' : c.campana); }}
-                              onKeyDown={e => { if (e.key === 'Enter') setBusca(c.campana); }}
+                              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBusca(busca === c.campana ? '' : c.campana); } }}
                               title={`Ver solo los leads de "${c.campana}"`}
                               className="fila-camp"
                               style={{ ...S.dato2, fontWeight: busca === c.campana ? 700 : 500, cursor: 'pointer' }}>{String(c.campana).replace(/^Campaña\s+/i, '')}</span>{c.propiedades?.tiktok?.anuncio && <div style={S.sub}>{c.propiedades.tiktok.anuncio}</div>}</div>
@@ -1548,7 +1614,8 @@ export default function LeadsTab() {
                           el dato y cambiarlo entre las opciones. */}
                       {verEtapa && (
                       <td style={S.td}>
-                        <span role="button" onClick={() => setEditando({ c, campo: 'etapa' })} title="Cambiar la etapa del ciclo de vida"
+                        <span role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditando({ c, campo: 'etapa' }); } }}
+                          onClick={() => setEditando({ c, campo: 'etapa' })} title="Cambiar la etapa del ciclo de vida"
                           style={{ ...S.tag(et.bg, et.fg), cursor: 'pointer' }}>{et.l}</span>
                       </td>)}
                       {verEstatus && (
@@ -1566,7 +1633,8 @@ export default function LeadsTab() {
                                   este estatus (y sale como pastilla removible
                                   en la fila de filtros); otro click lo quita.
                                   Cero chrome extra en la barra. */}
-                              <span role="button" title="Ver y cambiar el estatus"
+                              <span role="button" tabIndex={0} title="Ver y cambiar el estatus"
+                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditando({ c, campo: 'estatus' }); } }}
                                 onClick={() => setEditando({ c, campo: 'estatus' })}
                                 style={{ ...S.tag(pe.fondo, pe.tinta), cursor: 'pointer', boxShadow: activa ? `inset 0 0 0 1px ${pe.tinta}` : 'none' }}>{pe.label}</span>
                               {d != null && d > 0 && (
@@ -1576,8 +1644,10 @@ export default function LeadsTab() {
                           );
                         })()}
                       </td>)}
+                      {verReunion && (
                       <td style={S.td}>
-                        <span role="button" onClick={() => setEditando({ c, campo: 'reunion' })} title="Ver y cambiar el estado de sus reuniones" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                        <span role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditando({ c, campo: 'reunion' }); } }}
+                          onClick={() => setEditando({ c, campo: 'reunion' })} title="Ver y cambiar el estado de sus reuniones" style={{ cursor: 'pointer', display: 'inline-block' }}>
                           {(() => {
                             const r = c.reunion;
                             if (!r) return <span style={S.vacio}>—</span>;
@@ -1587,14 +1657,16 @@ export default function LeadsTab() {
                             return <span style={S.tag('#f4f4f6', '#6B7280')}>{r.ultima_estado || 'cancelada'}</span>;
                           })()}
                         </span>
-                      </td>
+                      </td>)}
+                      {verLlamadas && (
                       <td style={S.td}>
-                        <span role="button" onClick={() => { setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); }} title="Ver llamadas y registrar una" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                        <span role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); } }}
+                          onClick={() => { setEditando({ c, campo: 'llamadas' }); setLlamadaRes(''); setLlamadaNota(''); }} title="Ver llamadas y registrar una" style={{ cursor: 'pointer', display: 'inline-block' }}>
                           {(c.llamadas?.n || 0) > 0 || (c.esfuerzo?.llamadas || 0) > 0
                             ? <div><b style={{ fontSize: '0.78rem' }}>{(c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0)}</b>{c.llamadas?.discovery && <span style={{ ...S.tag('#EEECFE', '#5B4BD6'), marginLeft: 5 }}>discovery</span>}{c.llamadas?.ultima && <div style={{ fontSize: '0.62rem', color: '#a5a2af', marginTop: 2 }}>última hace {diasDesde(c.llamadas.ultima)} d</div>}</div>
                             : <span style={S.vacio}>—</span>}
                         </span>
-                      </td>
+                      </td>)}
                       {/* El resto de las acciones vive en el menú de tres
                           puntos —dos botones sueltos se comían 130 px en todos
                           los renglones—, pero WhatsApp no es "de vez en
@@ -1629,6 +1701,46 @@ export default function LeadsTab() {
               </tbody>
             </table>
           </div>
+          {/* La barra de la selección. Aparece pegada abajo del contenedor,
+              donde ya está la vista, y dice PRIMERO cuántos son: actuar sobre
+              veinte registros sin ver el número es como firmar sin leer. */}
+          {sel.size > 0 && (
+            <div style={{
+              position: 'sticky', bottom: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 10,
+              padding: '11px 16px', background: '#241d43', color: '#fff',
+              borderRadius: '0 0 12px 12px', boxShadow: '0 -8px 24px rgba(16,24,40,.18)', flexWrap: 'wrap',
+            }}>
+              <b style={{ fontSize: '0.83rem' }}>{sel.size} {sel.size === 1 ? 'lead' : 'leads'}</b>
+              <button onClick={() => setSel(new Set())}
+                style={{ background: 'none', border: 'none', color: '#c9c2ec', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 600 }}>Quitar la selección</button>
+              <div style={{ flex: 1 }} />
+              <button disabled={aplicando} onClick={() => exportar(lista.filter((c: any) => sel.has(c.id)))}
+                style={S.btnSel}>Exportar</button>
+              <select disabled={aplicando} value="" onChange={async e => {
+                const et = e.target.value; if (!et) return;
+                const cuantos = sel.size;
+                if (!await confirmar(`¿Mover ${cuantos} ${cuantos === 1 ? 'lead' : 'leads'} a "${(ETAPAS[et] || ETAPAS.lead).l}"?`, { accion: 'Mover', peligro: false })) { e.target.value = ''; return; }
+                setAplicando(true);
+                /* De uno en uno contra el endpoint que ya existe: no hay ruta
+                   masiva y no se inventa una para esto. Si alguna falla, se
+                   dice — un "listo" que tapa un error es peor que el error. */
+                let fallaron = 0;
+                for (const id of Array.from(sel)) {
+                  const r = await fetch('/api/crm/contacts', {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, lifecycle_stage: et }),
+                  }).then(x => x.json()).catch(() => ({ error: 1 }));
+                  if (r?.error) fallaron++;
+                }
+                setAplicando(false); setSel(new Set()); e.target.value = '';
+                if (fallaron) alert(`${fallaron} de ${cuantos} no se pudieron mover.`);
+                cargar();
+              }} style={{ ...S.btnSel, appearance: 'none' as const, paddingRight: 26 }}>
+                <option value="">Cambiar etapa…</option>
+                {Object.entries(ETAPAS).map(([k, v2]: any) => <option key={k} value={k} style={{ color: '#241d43' }}>{v2.l}</option>)}
+              </select>
+            </div>
+          )}
           </div>
           )}
         </div>

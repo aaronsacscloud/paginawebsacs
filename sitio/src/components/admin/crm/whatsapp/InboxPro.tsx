@@ -874,13 +874,14 @@ export default function InboxPro() {
                       cargarLista(filtrosRef.current);
                     },
                   } : undefined}>
-                <div className="m-row" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
+                <div className="m-row m-conv" onPointerDown={() => precargarHilo(c)} onClick={() => abrir(c)}>
                   <div className="m-ini">{ini}</div>
                   <div className="m-tx">
                     {/* El NOMBRE solo. Antes iba "Nombre · Empresa" en el mismo
                         renglón y con el ancho del teléfono se comían el uno al
                         otro; la empresa baja a su propia línea, chica, donde se
                         lee sin pelear. */}
+                    <div className="m-cab">
                     <div className="m-n1" style={noLeida ? { fontWeight: 700 } : undefined}>
                       {nom}
                       {/* E8.1 · Alguien del equipo dejó una nota interna aquí.
@@ -888,34 +889,52 @@ export default function InboxPro() {
                           toda la conversación. */}
                       {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
                     </div>
+                    {/* La hora sube a la línea del nombre. Estaba en su propia
+                        columna a la derecha, tan arriba que no se leía junto a
+                        nadie; aquí "quién" y "cuándo" se leen de una vez. */}
+                    <span className="m-hora" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : undefined}>{horaV5(c.ultimo_mensaje_at)}</span>
+                    </div>
                     {/* Empresa y tamaño: con cuántas sucursales trata uno es lo
                         que cambia el tono de la conversación, y tenerlo aquí
                         evita abrir la ficha solo para saberlo. */}
                     {/* Boolean() a propósito: con `emp` nulo y `suc` en 0, la
                         expresión valía 0 — y React PINTA el cero. Salía un "0"
                         suelto bajo el teléfono en las filas sin empresa. */}
-                    {Boolean(emp || suc > 0) && (
+                    {/* Empresa, tamaño y ETAPA en el mismo renglón. La etapa
+                        venía como pastilla de color al pie de la fila: un
+                        cuarto renglón, y el elemento con más peso visual de
+                        toda la lista puesto en el dato menos urgente de todos.
+                        Aquí se lee igual —dice en qué punto va— pero como
+                        contexto, que es lo que es, y la fila baja un renglón. */}
+                    {Boolean(emp || suc > 0 || etq) && (
                       <div className="m-emp">
                         {[emp, suc ? `${suc} ${suc === 1 ? 'sucursal' : 'sucursales'}` : null].filter(Boolean).join(' · ')}
+                        {etq && (emp || suc > 0) && <span className="m-sep" aria-hidden="true"> · </span>}
+                        {etq && <span className="m-ciclo" style={etq.color ? { color: etq.color } : undefined}>{etq.nombre}</span>}
                       </div>
                     )}
                     <div className="m-n2" style={!c.ultimo_mensaje_texto ? { fontStyle: 'italic' } : undefined}>
                       {/* Un borrador a medias es trabajo empezado: si la lista no
                           lo dice, se olvida y el cliente se queda esperando. */}
-                      {hayBorrador(c.id) ? <span style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
-                        : c.ultimo_mensaje_texto ? `${c.ultima_direccion === 'saliente' ? 'Tú: ' : ''}${c.ultimo_mensaje_texto}` : 'Sin mensajes'}
+                      {hayBorrador(c.id) ? <span className="m-txt" style={{ color: '#a06600', fontWeight: 600 }}>Borrador: {leerBorrador(c.id)}</span>
+                        : c.ultimo_mensaje_texto ? (<>
+                            {/* Quién habló al final, en una flecha. Antes solo
+                                lo saliente llevaba "Tú: " —tres caracteres del
+                                ancho útil— y lo entrante no decía nada, así que
+                                había que deducirlo por ausencia. La flecha se
+                                lee sin leer y ocupa lo mismo en los dos casos. */}
+                            <span className="m-dir" aria-hidden="true" style={{ color: c.ultima_direccion === 'saliente' ? '#5B4BD6' : '#1E8A63' }}>
+                              {c.ultima_direccion === 'saliente' ? '↗' : '↙'}
+                            </span>
+                            <span className="m-txt">{c.ultimo_mensaje_texto}</span>
+                          </>)
+                        : <span className="m-txt">Sin mensajes</span>}
                     </div>
-                    {/* En qué punto del embudo va, sin abrir la conversación.
-                        Es el dato que decide a quién contestar primero cuando
-                        hay veinte esperando. */}
-                    {etq && (
-                      <div className="m-etq" style={etq.color ? { background: etq.color + '22', color: etq.color } : undefined}>
-                        {etq.emoji ? etq.emoji + ' ' : ''}{etq.nombre}
-                      </div>
-                    )}
+                    {/* (La etapa subió a la línea de la empresa.) */}
                   </div>
                   <div className="m-fin">
-                    <div className="m-m1" style={noLeida ? { color: '#5B4BD6', fontWeight: 700 } : { fontWeight: 500, color: '#8f8d98', fontSize: '0.85rem' }}>{horaV5(c.ultimo_mensaje_at)}</div>
+                    {/* La hora se fue a la línea del nombre: aquí solo
+                        quedan las señales que piden acción. */}
                     {/* Ventana de 24 h por cerrarse: pasado ese punto ya solo se
                         puede mandar plantilla, así que se avisa ANTES. */}
                     {(() => {

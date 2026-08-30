@@ -1240,7 +1240,7 @@ const CRM_MOBILE_CSS = `
     :root {
       /* El gris secundario subió de #8f8d98 (3.27:1 sobre blanco) a #6b7280
          (4.83:1): es el texto que se lee para decidir qué fila abrir. */
-      --m-ink: #1a1a1a; --m-soft: #6b7280; --m-line: #efeef2;
+      --m-ink: #1a1a1a; --m-soft: #6b7280; --m-line: #e3e1ea;
       --m-neutro: #f4f3f6; --m-acc: #5B4BD6; --m-acc-suave: #EEECFE;
       --m-dinero: #1E8A63; --m-rojo: #C0554E; --m-ambar: #a06600;
     }
@@ -1296,6 +1296,48 @@ const CRM_MOBILE_CSS = `
     .m-row .m-act .m-nota-uso { font-weight: 800; font-size: 0.7rem; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
     .m-row .m-act .m-suya { color: var(--m-acc); font-weight: 700; }
     .m-row .m-act .m-monto { font-weight: 800; color: var(--m-dinero, #1E8A63); font-variant-numeric: tabular-nums; }
+    /* ═══ La fila del INBOX ═══
+       La lista se veía deshilachada: filas de 130 px con cuatro renglones
+       sueltos, el divisor invisible y el avatar flotando a media altura, lejos
+       del nombre al que pertenece. Aquí va apretada y con estructura, como
+       cualquier bandeja: arriba nombre y hora en la MISMA línea, debajo la
+       empresa, luego el mensaje —con una flecha que dice quién habló al final,
+       que es lo primero que uno quiere saber— y al pie la etiqueta.
+       Es una variante y no un cambio de .m-row porque esa clase la comparten
+       las listas de Leads, Soporte, Plantillas y demás. */
+    .m-row.m-conv { align-items: flex-start; padding: 11px 20px 11px 16px; gap: 11px; min-height: 0; }
+    .m-row.m-conv::after { left: 65px; right: 0; }
+    /* La última fila SÍ lleva línea aquí: en una bandeja que sigue cargando,
+       la fila sin divisor se lee como "aquí se acabó" y no siempre es cierto. */
+    .m-row.m-conv:last-child::after { display: block; }
+    .m-row.m-conv .m-ini { width: 38px; height: 38px; margin-top: 1px; }
+    /* Nombre y hora comparten renglón: son la cabecera de la fila. */
+    .m-row.m-conv .m-cab { display: flex; align-items: baseline; gap: 8px; }
+    .m-row.m-conv .m-cab .m-n1 { flex: 1; min-width: 0; }
+    .m-row.m-conv .m-cab .m-hora { flex: none; font-size: 0.76rem; color: var(--m-soft); font-variant-numeric: tabular-nums; }
+    .m-row.m-conv .m-emp { margin-top: 2px; font-size: 0.74rem; }
+    /* La etapa, en la misma línea que la empresa. Sin fondo y en semibold: se
+       distingue del nombre de la empresa por peso, no por una pastilla — la
+       jerarquía la hace el peso, no el color de relleno. */
+    .m-row.m-conv .m-ciclo { font-weight: 700; }
+    .m-row.m-conv .m-sep { opacity: .55; }
+    /* Con un renglón menos, el aire se reparte: la fila respira en vez de
+       apretar cuatro datos pegados. */
+    .m-row.m-conv .m-n2 { margin-top: 5px; }
+    /* El mensaje es el CONTENIDO de la fila, no una etiqueta: va más oscuro
+       que la empresa. Antes los dos eran el mismo gris y no se sabía cuál de
+       los dos renglones era lo que dijo el cliente. */
+    .m-row.m-conv .m-n2 { margin-top: 3px; color: #4a4756; display: flex; align-items: center; gap: 5px; }
+    .m-row.m-conv .m-n2 .m-dir { flex: none; font-size: 0.82rem; line-height: 1; }
+    .m-row.m-conv .m-n2 .m-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* La pastilla, más chica: en la fila es una nota al pie, no un botón. A
+       0.75rem con 3 px de aire arriba y abajo se comía 26 px de los 127 que
+       medía la fila. */
+    .m-row.m-conv .m-etq { margin-top: 6px; font-size: 0.7rem; padding: 2px 8px; }
+    .m-row.m-conv .m-fin { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 6px; padding-top: 2px; }
+    @media (prefers-color-scheme: dark) and (max-width: 899px) {
+      [data-crm-dark="1"] .m-row.m-conv .m-n2 { color: #c2c0cc; }
+    }
     .m-row .m-etq { display: inline-block; margin-top: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: .01em;
       padding: 3px 9px; border-radius: 99px; background: var(--m-acc-suave); color: var(--m-acc);
       max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1382,7 +1424,7 @@ const CRM_MOBILE_CSS = `
 
     @media (prefers-color-scheme: dark) and (max-width: 899px) {
       :root[data-crm-dark="1"] {
-        --m-ink: #F2F1F7; --m-soft: #918fa0; --m-line: #26262e;
+        --m-ink: #F2F1F7; --m-soft: #918fa0; --m-line: #313039;
         --m-neutro: #232329; --m-acc: #A78BFA; --m-acc-suave: #2a2440;
         --m-dinero: #34D399; --m-rojo: #F0857A; --m-ambar: #E8B04B;
       }
