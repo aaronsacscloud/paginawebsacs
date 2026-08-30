@@ -1405,10 +1405,20 @@ const CRM_MOBILE_CSS = `
             hojas —el barrido de texto es global— solo que nadie lo veía
             porque nadie miraba estas pantallas en oscuro. Se oscurece el
             fondo del chip para que el texto ya aclarado funcione. */
-      [data-crm-dark="1"] .crm-sheet [style*="rgb(238, 236, 254)"] { background: #2a2440 !important; }
+      /* Ojo con las VARIANTES CON ALFA: rgba(238, 236, 254, 0.35) no casa con
+         el patrón rgb(238, 236, 254) —la coma y el punto rompen la subcadena—
+         y dos chips se quedaron claros. Se cazan las dos formas. */
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(238, 236, 254)"],
+      [data-crm-dark="1"] .crm-sheet [style*="rgba(238, 236, 254"] { background: #2a2440 !important; }
       [data-crm-dark="1"] .crm-sheet [style*="rgb(227, 237, 253)"] { background: #1b2740 !important; }
       [data-crm-dark="1"] .crm-sheet [style*="rgb(234, 248, 242)"] { background: #14312a !important; }
-      [data-crm-dark="1"] .crm-sheet [style*="rgb(254, 243, 199)"] { background: #33280f !important; }
+      [data-crm-dark="1"] .crm-sheet [style*="rgb(254, 243, 199)"],
+      [data-crm-dark="1"] .crm-sheet [style*="rgba(254, 243, 199"] { background: #33280f !important; }
+      /* El ámbar oscuro (#B45309) sobre ese fondo daba 2.88:1 — por debajo del
+         mínimo. Se aclara la TINTA en vez del fondo, que perdería el sentido
+         de aviso. */
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(180, 83, 9)"],
+      [data-crm-dark="1"] .crm-sheet [style*="color: rgb(146, 64, 14)"] { color: #E8B04B !important; }
       /*  3) TINTAS OSCURAS QUE FALTABAN en el barrido: #374151 y #4b5563 son
             los grises de texto más usados del CRM y quedaban negro sobre
             negro. */
