@@ -52,7 +52,11 @@ const _GET: APIRoute = async ({ request, url }) => {
       // `total` y el estado de la cotización, no solo el conteo: en Oportunidad
       // lo que decide a quién llamar primero es CUÁNTO hay sobre la mesa, y
       // saberlo obligaba a abrir la ficha una por una.
-      supabase.from('quotes').select('contact_id, total, estado, created_at').in('contact_id', ids).order('created_at', { ascending: false }),
+      /* Las BORRADAS no cuentan. Sin este filtro, 9 de las 34 cotizaciones
+         de leads —el 26%— seguían sumando: un lead cuya única cotización se
+         borró aparecía con cotización y con monto, y el filtro «tiene
+         cotización» habría mentido desde el primer día. */
+      supabase.from('quotes').select('contact_id, total, estado, created_at').in('contact_id', ids).neq('estado', 'deleted').order('created_at', { ascending: false }),
     ]);
     const porContacto = new Map<string, { llamadas: number; correos: number; whatsapp: number; reuniones: any[]; cotizaciones: number }>();
     const dame = (id: string) => {

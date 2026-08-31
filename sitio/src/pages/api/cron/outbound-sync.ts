@@ -367,7 +367,26 @@ async function reevaluarContinuas(deadline: number): Promise<number> {
     if ((c.materializada?.at || '').slice(0, 10) === hoy) continue; // ya se re-evaluó hoy
     try {
       const res = await resolverAudiencia(c.audiencia || {});
-      if (!res.cuentas.length) continue;
+      /* Quedarse en CERO no es «no hay nada que hacer»: es que esta campaña ya
+         no le toca a nadie, y lo publicado en SACS sigue vivo hasta que se
+         retire. Con el `continue` de antes, una campaña mal publicada se
+         quedaba sirviéndose para siempre aunque el CRM ya dijera que su
+         audiencia estaba vacía — que es exactamente lo que pasó con las seis
+         de «Prueba»: publicadas a 143 cuentas el 30-ago a las 19:15, siete
+         minutos antes de que existiera el candado que lo impide, y ninguna
+         corrida posterior las bajó porque todas caían en este `continue`.
+         Clientes que pagan vieron «Mañana termina tu prueba». */
+      if (!res.cuentas.length) {
+        if (c.publicada_at) {
+          await despublicarCampana(c.id);
+          await supabase.from('inapp_campanas').update({
+            materializada: { cuentas: 0, companies: 0, cuentas_lista: [], at: new Date().toISOString(), retirada_por: 'audiencia vacía' },
+            updated_at: new Date().toISOString(),
+          }).eq('id', c.id);
+          re++;
+        }
+        continue;
+      }
       await sacs('/interno/crm/campanas-publicar', { campanas: [docParaSacs(c, res.cuentas)] });
       await supabase.from('inapp_campanas').update({
         publicada_at: c.publicada_at || new Date().toISOString(),

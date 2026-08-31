@@ -383,6 +383,7 @@ export default function LeadsTab() {
   const pedirOrden = (k: string) => setOrdenCol(o => o?.k === k ? (o.desc ? { k, desc: false } : null) : { k, desc: true });
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
   const [estatusF, setEstatusF] = useState('');   // '' | 'g:<grupo>' | '<estatus fino>'
+  const [cotF, setCotF] = useState('');   // '' | con | sin | esperando | ganada | perdida
   const [reunionF, setReunionF] = useState('');   // '' | agendada | asistio | no_asistio | cancelada | sin_reagendar | nunca
   const [conds, setConds] = useState<CondLead[]>([]);          // filtro condicional del builder
   const [logicaF, setLogicaF] = useState<'AND' | 'OR'>('AND');
@@ -568,7 +569,7 @@ export default function LeadsTab() {
      Etapa y Estatus, que estaba a medias. */
   /* Con cualquier cambio de filtro. Faltaban los avanzados (conds/lógica),
      reunión y pausa: aplicar uno dejaba marcada gente que ya no se veía. */
-  useEffect(() => { setSel(new Set()); }, [etapa, estatusF, busca, conds, logicaF, reunionF, pausaF]);
+  useEffect(() => { setSel(new Set()); }, [etapa, estatusF, busca, conds, logicaF, reunionF, pausaF, cotF, etiquetaF]);
   const verReunion = !['nuevos', 'contactados', 'calificados', 'rezagados'].includes(etapa);
   /* Llamadas se decide con los datos a la vista, no con la pestaña: si en esta
      vista nadie ha llamado a nadie, la columna es una fila de guiones. */
@@ -608,6 +609,15 @@ export default function LeadsTab() {
         : reunionF === 'cancelada' ? (x?.canceladas || 0) > 0
         : x?.ultima_estado === reunionF;
     });
+    if (cotF) r = r.filter((c: any) => {
+      const n = Number(c.cotizaciones || 0);
+      const e = String(c.cotizacion?.estado || '');
+      if (cotF === 'sin') return n === 0;
+      if (cotF === 'con') return n > 0;
+      if (cotF === 'esperando') return n > 0 && (e === 'sent' || e === 'draft');
+      if (cotF === 'ganada') return e === 'accepted' || e === 'paid';
+      return e === 'rejected' || e === 'expired';
+    });
     if (pausaF) r = r.filter((c: any) => {
       const f = c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
       return pausaF === 'activa' ? (f != null && f > Date.now()) : (f != null && f <= Date.now());
@@ -626,7 +636,7 @@ export default function LeadsTab() {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
-  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, etiquetaF]);
+  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, etiquetaF, cotF]);
 
   /* La tabla va PLANA. Tenía rótulos de grupo —Atorados · Hoy · Esta
      semana— que partían la lista en tres y subían lo atorado; con la banda de
@@ -773,6 +783,36 @@ export default function LeadsTab() {
       options: [{ v: '7', l: 'Más de 7 días' }, { v: '14', l: 'Más de 14 días' }, { v: '30', l: 'Más de 30 días' }],
       apply: () => true,
     },
+    /* Reunión sube de «Más filtros» a la vista: es de los pocos hechos duros
+       que tiene un lead. Se le agregó «Reagendada», que era el único estado
+       de la agenda sin forma de pedirse. */
+    reunion: {
+      key: 'reunion', label: 'Reunión',
+      options: [
+        { v: 'agendada', l: 'Tiene una agendada' },
+        { v: 'asistio', l: 'Completada: asistió' },
+        { v: 'no_asistio', l: 'No asistió' },
+        { v: 'sin_reagendar', l: 'No asistió y sin reagendar' },
+        { v: 'reagendada', l: 'Reagendada' },
+        { v: 'cancelada', l: 'Tuvo una cancelada' },
+        { v: 'nunca', l: 'Nunca ha tenido' },
+      ],
+      apply: () => true,
+    },
+    /* Cotización: por estado, no solo sí/no. «Enviada sin respuesta» es la
+       lista que de verdad se trabaja — dinero puesto sobre la mesa que nadie
+       ha contestado. */
+    cotizacion: {
+      key: 'cotizacion', label: 'Cotización',
+      options: [
+        { v: 'con', l: 'Tiene cotización' },
+        { v: 'esperando', l: 'Enviada sin respuesta' },
+        { v: 'ganada', l: 'Aceptada o pagada' },
+        { v: 'perdida', l: 'Rechazada o vencida' },
+        { v: 'sin', l: 'Sin cotización' },
+      ],
+      apply: () => true,
+    },
   }), [meses, ETIQUETAS]);
 
   // Lo aplicado, en pastillas: un filtro que no se ve es un filtro que se
@@ -795,10 +835,11 @@ export default function LeadsTab() {
     reunionF && { k: 'reu', l: `Reunión: ${({ agendada: 'agendada', asistio: 'asistió', no_asistio: 'no asistió', cancelada: 'cancelada', sin_reagendar: 'sin reagendar', nunca: 'nunca' } as any)[reunionF]}`, quitar: () => setReunionF('') },
     pausaF && { k: 'pau', l: pausaF === 'activa' ? 'En pausa' : 'Pausa vencida', quitar: () => setPausaF('') },
     etiquetaF && { k: 'etq', l: `Etiqueta: ${etiquetaF}`, quitar: () => setEtiquetaF('') },
+    cotF && { k: 'cot', l: (QD.cotizacion.options.find(o => o.v === cotF)?.l) || 'Cotización', quitar: () => setCotF('') },
     conds.length > 0 && { k: 'conds', l: vistaId ? `Vista: ${vistasLeads.find(v => v.id === vistaId)?.nombre || 'guardada'}` : `${conds.length} condición${conds.length === 1 ? '' : 'es'}`, quitar: () => { setConds([]); setVistaId(''); } },
   ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
   const nFiltros = chips.length;
-  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setPausaF(''); setEtiquetaF(''); setConds([]); setVistaId(''); };
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setPausaF(''); setEtiquetaF(''); setCotF(''); setConds([]); setVistaId(''); };
 
   if (rows === null) return <Cargando texto="Cargando leads…" />;
 
@@ -1111,6 +1152,8 @@ export default function LeadsTab() {
                   varias, así que se filtra como lo que es: por etiqueta. Con la
                   otra forma, cada etiqueta nueva pedía un control nuevo. */}
               {ETIQUETAS.length > 0 && <FiltroDesplegable qd={QD.etiqueta} valor={etiquetaF} onElegir={setEtiquetaF} isMobile={false} />}
+              <FiltroDesplegable qd={QD.reunion} valor={reunionF} onElegir={setReunionF} isMobile={false} />
+              <FiltroDesplegable qd={QD.cotizacion} valor={cotF} onElegir={setCotF} isMobile={false} />
               {cuando === 'rango' && (
                 <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                   <input type="date" value={desde} onChange={e => setDesde(e.target.value)} aria-label="Desde" style={{ ...S.fsel, width: 145, margin: 0 }} />
@@ -1140,17 +1183,6 @@ export default function LeadsTab() {
                       <option value="">Cualquiera</option>
                       <option value="activa">En pausa ahora</option>
                       <option value="vencida">Pausa vencida: márcales</option>
-                    </select>
-
-                    <div style={S.fk}>Reunión</div>
-                    <select value={reunionF} onChange={e => setReunionF(e.target.value)} style={S.fsel}>
-                      <option value="">Cualquiera</option>
-                      <option value="agendada">Tiene agendada</option>
-                      <option value="asistio">Asistió a la última</option>
-                      <option value="no_asistio">No asistió</option>
-                      <option value="sin_reagendar">No asistió y sin reagendar</option>
-                      <option value="cancelada">Tuvo cancelada</option>
-                      <option value="nunca">Nunca ha tenido</option>
                     </select>
 
                     {/* El builder: condiciones campo·operador·valor con Y/O.
