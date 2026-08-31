@@ -379,10 +379,19 @@ export default function TablaEnterprise({
         </div>
       ) : (
         <>
-          {/* Solo las acciones arriba. Los filtros bajan al renglón del
-              buscador, debajo de las pestañas: es el orden de Cotizaciones
-              —primero eliges DE QUÉ lista hablas, luego la afinas—. */}
-          {actions && <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', justifyContent: 'flex-end', marginBottom: 12 }}>{actions}</div>}
+          {/* Arriba va lo que manda sobre TODA la sección: `quickExtra` recorta
+              los datos ANTES de que lleguen aquí, así que los contadores de las
+              pestañas ya salen recortados por él — ponerlo abajo lo haría ver
+              como si dependiera de la pestaña, cuando es al revés. Los filtros
+              rápidos, en cambio, afinan DENTRO de la pestaña y bajan con el
+              buscador. Tres escalones que se leen de arriba abajo: filtro de
+              todo → en qué pestaña estoy → buscar dentro de ella. */}
+          {(quickExtra || actions) && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+              {quickExtra}
+              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
+            </div>
+          )}
         </>
       )}
 
@@ -458,7 +467,6 @@ export default function TablaEnterprise({
               style={{ ...E.input, width: '100%', height: 38, fontWeight: 500, padding: '0 14px 0 38px' }} />
           </div>
           {quickSelects}
-          {quickExtra}
           <button style={{ ...E.btn, height: 38, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
             <SlidersHorizontal size={15} strokeWidth={2} />
             Más filtros
