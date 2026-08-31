@@ -931,7 +931,11 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
                 elemento serían un "tipo nuevo" en cada render y React desmontaría el tab
                 en cada polling (Clasificación parpadeaba). */}
             {tab === 'info' && (subInfo === 'info' ? (detalle ? DetalleInfo() : TabInfo()) : subInfo === 'actividad' ? TabActividad() : <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} />)}
-            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={null} refrescar={() => setNonceCtx(n => n + 1)} />}
+            {/* `accionInicial` también aquí: el evento `wa-acciones` cae en ESTA
+                rama (pone tab='acciones'), y al pasarle null el «agendar» se
+                perdía — abrías el menú de acciones y tenías que elegir otra vez
+                lo que ya habías pedido. */}
+            {tab === 'acciones' && <AccionesVenta contacto={contactoBase} empresa={empresa} conv={conv} ventanaAbierta={ventanaAbierta} abrirFicha={() => setFicha(true)} accionInicial={accionInicial} refrescar={() => setNonceCtx(n => n + 1)} />}
             {tab === 'adjuntos' && TabAdjuntos()}
             {tab === 'notas' && TabNotas()}
           </div>
