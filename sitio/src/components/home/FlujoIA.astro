@@ -388,10 +388,11 @@ const pasos = [
   .fl-barra span { display: block; height: 100%; width: 14%; background: #fff; transition: width .35s ease; }
 
   /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja.
-     520vh entre 7 pasos ≈ 74vh por paso, y de esos la mitad la foto se queda
-     QUIETA (ver REPOSO en el script). Si se agregan pasos hay que subirlo o la
-     cinta los pasa de corrido. */
-  .fl-recorrido { height: 520vh; }
+     640vh: el último 18% es COLA —el riel sigue pero la cinta ya no avanza—
+     para que dé tiempo de ver el descuento de la matriz. Del resto, cada paso
+     ocupa ~87vh y la mitad de eso la foto se queda QUIETA (ver REPOSO).
+     Si se agregan pasos hay que subirlo o la cinta los pasa de corrido. */
+  .fl-recorrido { height: 640vh; }
 
   .vo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
@@ -455,7 +456,10 @@ const pasos = [
       sec.classList.toggle('vendido', k === N - 1);
     };
 
-    // La cinta: la tarjeta que se va baja, la que entra llega desde arriba.
+    // La cinta va CON el scroll, no contra él: al bajar, el contenido sube.
+    // La tarjeta que se va sale por arriba y la que entra llega desde abajo.
+    // (La primera versión hacía lo contrario y se sentía al revés: el dedo
+    // empujaba hacia un lado y la imagen viajaba hacia el otro.)
     // La saliente va un poco más lenta (88 vs 100) para que la nueva la cubra
     // al pasar — sin eso las dos se mueven parejo y no se lee como tarjetas.
     const colocar = (f: number) => {
@@ -465,7 +469,7 @@ const pasos = [
         const c = cartas[i];
         c.style.visibility = fuera ? 'hidden' : 'visible';
         if (fuera) continue;
-        const y = (d >= 0 ? d * 88 : d * 100);
+        const y = (d >= 0 ? -d * 88 : -d * 100);
         const esc = 1 - Math.min(Math.abs(d), 1) * 0.05;
         c.style.transform = `translate3d(0, ${y.toFixed(2)}%, 0) scale(${esc.toFixed(3)})`;
         c.style.zIndex = String(i + 1);
@@ -480,8 +484,13 @@ const pasos = [
     // arranque y frenado suaves. Sin esta pausa el movimiento es continuo y la
     // foto nunca llega a verse: se siente que te empujan al siguiente paso.
     const REPOSO = 0.5;
+    // La última parte del riel no avanza: se queda en el paso final para que dé
+    // tiempo de ver el descuento en la matriz. Sin esta cola, la animación
+    // arranca justo cuando el riel termina y el scroll ya te llevó de largo.
+    const COLA = 0.18;
     const suave = (x: number) => x * x * (3 - 2 * x);
-    const avanceCinta = (p: number) => {
+    const avanceCinta = (p0: number) => {
+      const p = Math.min(1, p0 / (1 - COLA));
       const tramo = p * (N - 1);
       const i = Math.min(N - 2, Math.floor(tramo));
       const t = Math.min(1, Math.max(0, tramo - i));
