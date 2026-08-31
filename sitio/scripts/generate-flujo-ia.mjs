@@ -26,11 +26,11 @@ const PASOS = [
   // 06 · le llega directo al cliente. En la pantalla va la FOTO, nunca la
   // interfaz de WhatsApp ni de ninguna app: falsificar la pantalla de otra
   // marca sería inventar un aval que no tenemos.
-  ['06-clientes', `A hand holding a phone at arm's length; the phone screen shows one clean photograph of ${PRENDA} filling the screen edge to edge, with absolutely no interface, no icons, no buttons and no text on the screen. Behind the hand, a warm boutique interior falls softly out of focus. Editorial, intimate, natural light. ${BASE}`],
+  ['06-clientes', `A young Mexican woman sitting at a sunlit café table, clearly a CUSTOMER and not a shop worker — casual clothes, coffee cup beside her — smiling as she holds her phone up in both hands, the screen angled toward the camera. On the screen, one clean photograph of ${PRENDA} fills the upper two thirds, with the lower third of the screen left as an EMPTY flat surface with no icons and no text. Warm natural daylight, shallow depth of field, editorial lifestyle photography. ${BASE}`],
   // 07 · se vende y se descuenta en todas las sucursales. Tres tiendas
   // DISTINTAS con la misma prenda: así se ve que es multisucursal sin tener
   // que explicarlo con texto.
-  ['07-sucursales', `One wide editorial photograph showing THREE different boutique interiors side by side, separated by architecture, each store with its own character and warm ambient light — and the same ${PRENDA} hanging on a rack in each of the three. Real Mexican retail spaces, cinematic depth, calm and premium. No screens, no monitors, no text. ${BASE}`],
+  ['07-sucursales', `One wide editorial photograph of THREE adjacent boutique bays under matching arches, each bay a different store with its own warm light. In the LEFT and CENTRE bays, the same ${PRENDA} hangs on a slim black rack. In the RIGHT bay the identical rack holds only a bare wooden hanger — empty, nothing on it — and a wrapped paper shopping bag rests on the floor beneath: that piece has just been sold. Identical framing and lighting across the three bays so the difference reads instantly. Real Mexican retail spaces, cinematic. No screens, no text. ${BASE}`],
 ];
 
 await fs.mkdir(IMG, { recursive: true });

@@ -14,6 +14,12 @@
  *  · Se apaga solo en móvil, con prefers-reduced-motion y si el panel no cabe:
  *    ahí se vuelve una lista de cuatro pasos, que funciona igual.
  */
+// Los logos son los MISMOS SVG que ya usa el Hero para las integraciones. NO
+// se le pide a la IA que los dibuje: siempre salen deformados, y un logo ajeno
+// mal dibujado sí es un problema de marca. Uso nominativo, como en el resto
+// del sitio.
+const LOGOS_CANALES = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8z"/></svg><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
+
 const pasos = [
   {
     n: '01',
@@ -63,15 +69,15 @@ const pasos = [
     titulo: 'Y le llega a tus clientes.',
     texto: 'La misma pieza sale por WhatsApp a toda tu base y por correo a quien te compró antes — con su foto, su precio y su liga para comprar. No es un blast a ciegas: es tu catálogo, en el teléfono de tu clienta.',
     img: '/images/flujo/06-clientes.webp',
-    alt: 'Un teléfono en la mano con la foto de la prenda ocupando toda la pantalla',
-    tono: '#116DBB', zoom: -0.9, foco: [0.5, 0.5],
+    alt: 'Una clienta en un café mira la prenda en su teléfono, con el botón de comprar debajo',
+    tono: '#116DBB', zoom: -0.86, foco: [0.5, 0.5],
   },
   {
     n: '07',
     titulo: 'Se vende y se descuenta solo.',
     texto: 'En cuanto alguien compra —en línea o en el mostrador— la pieza sale del inventario de ESA sucursal. Tus otras tiendas lo ven al instante y nadie captura nada: un solo inventario para todos tus canales y todas tus sucursales.',
     img: '/images/flujo/07-sucursales.webp',
-    alt: 'Tres boutiques distintas con la misma prenda colgada, una en cada tienda',
+    alt: 'Tres tiendas con la misma prenda: en dos sigue colgada y en la tercera solo queda el gancho vacío y la bolsa de la venta',
     // Las tres tiendas tienen que verse: sin acercar.
     tono: '#0E78B8', zoom: 1.0, foco: [0.5, 0.5],
   },
@@ -89,6 +95,11 @@ const pasos = [
           ))}
         </div>
         <span class="fl-num" id="fl-num" aria-hidden="true">01</span>
+        <div class="fl-canales" aria-hidden="true">
+          <span class="fl-canales-txt">Publicado en</span>
+          <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
+          <span class="fl-canales-txt">+ tu tienda en línea</span>
+        </div>
       </div>
 
       <div class="fl-panel">
@@ -105,6 +116,12 @@ const pasos = [
                        width={p.img.includes('04-') ? 1000 : 1500} height={p.img.includes('04-') ? 1500 : 1000} />
                 </figure>
                 <p>{p.texto}</p>
+                {p.img.includes('05-') && (
+                  <div class="fl-canales-movil" aria-hidden="true">
+                    <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
+                    <span class="fl-canales-txt">+ tu tienda en línea</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -174,6 +191,29 @@ const pasos = [
     -webkit-text-stroke: 2px rgba(255,255,255,.26);
   }
 
+  /* La tira de canales solo aparece en el paso 05, que es el que habla de
+     publicar. El paso activo se marca con data-paso en la sección. */
+  .fl-canales {
+    /* Arriba a la derecha: abajo la tapa el widget flotante de WhatsApp y
+       arriba del todo la taparía el menú. */
+    position: absolute; right: clamp(18px, 2.4vw, 34px); top: clamp(90px, 13vh, 132px);
+    z-index: 4; display: flex; align-items: center; gap: 12px;
+    padding: 9px 16px; border-radius: 999px;
+    background: rgba(8, 14, 30, .62); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px);
+    opacity: 0; transform: translateY(8px); pointer-events: none;
+    transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+  .fl[data-paso='4'] .fl-canales { opacity: 1; transform: none; }
+  .fl-canales-logos { display: inline-flex; align-items: center; gap: 10px; }
+  .fl-canales-logos :global(svg) { display: block; }
+  .fl-canales-txt {
+    font-size: 0.6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(255,255,255,.72); white-space: nowrap;
+  }
+  .fl-canales-movil { display: none; align-items: center; gap: 12px; margin-top: 12px; }
+  .fl-canales-movil .fl-canales-logos :global(svg) { display: block; }
+
   /* ── El panel ── */
   .fl-panel {
     display: flex; flex-direction: column; justify-content: center; gap: 20px;
@@ -241,6 +281,7 @@ const pasos = [
   }
   .fl.sin-riel .fl-paso-foto img { display: block; width: 100%; height: auto; }
   .fl.sin-riel .fl-paso p { max-width: none; }
+  .fl.sin-riel .fl-canales-movil { display: flex; }
   .fl.sin-riel .fl-panel { gap: 14px; padding: clamp(32px, 8vw, 56px) clamp(20px, 6vw, 40px); }
 
   @media (max-width: 980px) {
@@ -250,6 +291,7 @@ const pasos = [
     .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, var(--fl-fondo)); }
     .fl-paso { opacity: 1; grid-template-columns: 1fr; gap: 8px; padding: 26px 0 30px; }
     .fl-paso p { display: block; max-width: none; }
+    .fl-canales-movil { display: flex; }
     .fl-barra { display: none; }
     .fl-lienzo-caja { display: none; }
     .fl-insignia { display: none; }
@@ -294,6 +336,7 @@ const pasos = [
       pasos.forEach((p, i) => p.classList.toggle('on', i === k));
       fotos.forEach((f, i) => f.classList.toggle('on', i === k));
       if (numEl) numEl.textContent = imgs[k] ? String(k + 1).padStart(2, '0') : '01';
+      sec.dataset.paso = String(k);
       if (imgs[k]) {
         sec.style.setProperty('--fl-fondo', imgs[k].tono);
         sec.style.setProperty('--fl-lienzo-fondo', oscuro(imgs[k].tono));
