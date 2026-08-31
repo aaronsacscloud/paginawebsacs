@@ -4753,9 +4753,11 @@ const useCases = [
 
   /* Mobile: hide the legacy mobile-cards (mc-tabs + mc-step×4),
      mostramos los pillar-section completos en stack vertical.
-     Las "continuation sections" (sq-features, ops-admin) siguen ocultas en móvil. */
+     ops-admin sigue oculta en móvil; WhatsApp Commerce (.sq-features--unified)
+     YA NO: estaba apagada con display:none y el visitante de teléfono nunca
+     veía una de las secciones que más vende. Ahora se muestra con el teléfono
+     pegado arriba y los pasos pasando debajo — así no queda de chorizo. */
   @media (max-width: 1023px) {
-    .sq-features--unified,
     .ops-admin-section { display: none; }
     /* mobile-cards (mc-tabs + 4 mc-step) ya no se usa: pillar-section toma su lugar */
     .mobile-cards { display: none !important; }
@@ -12162,6 +12164,42 @@ const useCases = [
 
   .sq-feature-block:last-child {
     border-bottom: none;
+  }
+
+  /* En móvil el teléfono se queda pegado arriba y los pasos pasan por debajo:
+     el que está activo se ve entero y los demás se apagan. Sin esto la sección
+     es una columna larga de texto y el teléfono deja de significar algo. */
+  @media (max-width: 1023px) {
+    .sq-features--sc .sq-feature-block {
+      /* Cada paso necesita su pantalla: sin min-height los cinco caben en
+         900 px, el teléfono pegado casi no viaja y el scroll se salta pasos
+         (medido: del 1 brincaba al 4). */
+      min-height: 58vh;
+      display: flex; flex-direction: column; justify-content: center;
+      opacity: .34;
+      transform: translateY(10px);
+      transition: opacity .45s ease, transform .45s cubic-bezier(.2,.7,.3,1);
+    }
+    .sq-features--sc .sq-feature-block.active {
+      opacity: 1;
+      transform: none;
+    }
+    .sq-features--sc .sq-feature-block .sq-feature-desc {
+      max-height: 0; overflow: hidden;
+      transition: max-height .45s ease, opacity .3s ease;
+      opacity: 0;
+    }
+    .sq-features--sc .sq-feature-block.active .sq-feature-desc {
+      max-height: 20em; opacity: 1;
+    }
+    /* El primero y el último necesitan aire o el observador nunca los marca:
+       su umbral cae fuera de la ventana. */
+    .sq-features--sc .sq-feature-block:first-child { padding-top: 8vh; }
+    .sq-features--sc .sq-feature-block:last-child { padding-bottom: 16vh; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sq-features--sc .sq-feature-block { opacity: 1; transform: none; }
+    .sq-features--sc .sq-feature-block .sq-feature-desc { max-height: none; opacity: 1; }
   }
 
   .sq-feature-title {
