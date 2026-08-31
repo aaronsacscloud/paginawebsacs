@@ -12185,13 +12185,10 @@ const useCases = [
       transition: opacity .45s ease, transform .45s cubic-bezier(.2,.7,.3,1);
     }
     .sq-features--sc .sq-feature-block.active { opacity: 1; }
-    /* El activo se distingue por una guía a la izquierda, no por ser el único
-       legible. */
-    .sq-features--sc .sq-feature-block {
-      border-left: 2px solid transparent; padding-left: 14px;
-      transition: opacity .45s ease, border-color .45s ease;
-    }
-    .sq-features--sc .sq-feature-block.active { border-left-color: #25D366; }
+    /* El paso activo lo marca el BADGE del número, que ya existe y cambia de
+       color. Aquí hubo una guía verde a la izquierda y sobraba: además pisaba
+       el padding-left: 40px que le deja sitio al badge, y el número acababa
+       encima de la primera letra del título. */
     /* El primero y el último necesitan aire o el observador nunca los marca:
        su umbral cae fuera de la ventana. */
     .sq-features--sc .sq-feature-block:first-child { padding-top: 8vh; }
