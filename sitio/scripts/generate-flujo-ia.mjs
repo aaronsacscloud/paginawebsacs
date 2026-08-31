@@ -18,6 +18,19 @@ const PASOS = [
   ['02-variantes', `A clean horizontal row of FIVE identical ${PRENDA}, each in a different solid color — rust, sage green, black, cream, lilac — all photographed identically on invisible mannequins, evenly spaced on a seamless dark backdrop. Catalog grid feeling, perfectly consistent lighting across all five. ${BASE}`],
   ['03-modelo', `A striking Mexican female model wearing ${PRENDA}, full-length editorial pose, confident stance, dramatic single key light carving her silhouette from a deep dark background. High fashion campaign quality. ${BASE}`],
   ['04-reel', `Vertical 9:16 fashion campaign frame: a professionally dressed Mexican woman wearing ${PRENDA}, standing and walking forward toward the camera in a well-lit studio, full-length, modest and elegant posture, arms relaxed. Composed like a frame from a short brand video. ${BASE}`],
+  // 05 · publicar en todos lados. SIN logos ni interfaz: falsificar la marca de
+  // TikTok o Instagram en el home sería inventar un aval que no tenemos. La
+  // idea se cuenta con los formatos —cuadrado, vertical, historia—, que es lo
+  // que de verdad cambia al publicar en cada canal.
+  ['05-canales', `A printed campaign contact sheet: NINE photographic prints of ${PRENDA} on an invisible mannequin, each print a different size and shape — square, tall, wide — arranged edge to edge in a neat grid on a dark surface, like proofs laid out on a studio table before publishing. The garment alone in every print, identical lighting. No people, no phones, no screens, no icons. ${BASE}`],
+  // 06 · le llega directo al cliente. En la pantalla va la FOTO, nunca la
+  // interfaz de WhatsApp ni de ninguna app: falsificar la pantalla de otra
+  // marca sería inventar un aval que no tenemos.
+  ['06-clientes', `A hand holding a phone at arm's length; the phone screen shows one clean photograph of ${PRENDA} filling the screen edge to edge, with absolutely no interface, no icons, no buttons and no text on the screen. Behind the hand, a warm boutique interior falls softly out of focus. Editorial, intimate, natural light. ${BASE}`],
+  // 07 · se vende y se descuenta en todas las sucursales. Tres tiendas
+  // DISTINTAS con la misma prenda: así se ve que es multisucursal sin tener
+  // que explicarlo con texto.
+  ['07-sucursales', `One wide editorial photograph showing THREE different boutique interiors side by side, separated by architecture, each store with its own character and warm ambient light — and the same ${PRENDA} hanging on a rack in each of the three. Real Mexican retail spaces, cinematic depth, calm and premium. No screens, no monitors, no text. ${BASE}`],
 ];
 
 await fs.mkdir(IMG, { recursive: true });
