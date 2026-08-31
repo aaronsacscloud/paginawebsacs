@@ -173,11 +173,58 @@ const pasos = [
               <span class="fl-paso-n">{p.n}</span>
               <div class="fl-paso-cuerpo">
                 <h3>{p.titulo}</h3>
-                <figure class="fl-paso-foto">
-                  <img src={p.img} alt={p.alt} loading="lazy" decoding="async"
-                       width={p.img.includes('04-') ? 1000 : 1500}
-                       height={p.img.includes('04-') ? 1500 : 1000} />
-                </figure>
+                {p.img.includes('04-') ? (
+                  <div class="fl-post fl-post--movil">
+                    <div class="fl-post-cab">
+                      <span class="fl-post-logo" set:html={LOGO_IG} />
+                      <span class="fl-post-user">moda.chic</span>
+                      <span class="fl-post-mas" aria-hidden="true">•••</span>
+                    </div>
+                    <img src={p.img} alt={p.alt} class="fl-post-foto" loading="lazy" decoding="async" width="1000" height="1500" />
+                    <div class="fl-post-pie">
+                      <span class="fl-post-iconos" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20.8 6.6a5 5 0 0 0-7.1 0L12 8.3l-1.7-1.7a5 5 0 1 0-7.1 7.1l8.8 8.8 8.8-8.8a5 5 0 0 0 0-7.1z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.8L3 21l1.9-5a8.4 8.4 0 0 1 3.7-11.4 8.6 8.6 0 0 1 12.4 6.9z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                      </span>
+                      <span class="fl-post-txt"><strong>moda.chic</strong> Vestido Slip · nueva colección</span>
+                    </div>
+                  </div>
+                ) : (
+                  <figure class="fl-paso-foto">
+                    <img src={p.img} alt={p.alt} loading="lazy" decoding="async" width={1500} height={1000} />
+                  </figure>
+                )}
+
+                {p.img.includes('05-') && (
+                  <div class="fl-canales fl-canales--movil" aria-hidden="true">
+                    <span class="fl-canales-txt">Publicado en</span>
+                    <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
+                  </div>
+                )}
+
+                {p.img.includes('07-') && (
+                  <div class="fl-matriz fl-matriz--movil">
+                    <div class="fl-matriz-cab">
+                      <strong>Vestido Slip</strong>
+                      <span>existencias por sucursal</span>
+                    </div>
+                    <table class="fl-tabla">
+                      <thead>
+                        <tr><th scope="col"><span class="vo">Sucursal</span></th>
+                          <th scope="col">Terracota</th><th scope="col">Negro</th><th scope="col">Crema</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><th scope="row">Polanco</th>
+                          <td class="fl-baja"><span class="fl-antes">3</span><span class="fl-despues">2</span></td>
+                          <td>2</td><td>4</td></tr>
+                        <tr><th scope="row">Roma Norte</th><td>2</td><td>5</td><td>1</td></tr>
+                        <tr><th scope="row">Guadalajara</th><td>4</td><td>1</td><td>3</td></tr>
+                      </tbody>
+                    </table>
+                    <p class="fl-matriz-pie"><span class="fl-chip">−1</span> Punto de venta · Polanco</p>
+                  </div>
+                )}
                 <p>{p.texto}</p>
               </div>
             </div>
@@ -395,6 +442,35 @@ const pasos = [
   .fl-recorrido { height: 640vh; }
 
   .vo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* ── Las versiones de móvil de los tres añadidos ──
+     Mismo CSS que en la tarjeta; aquí solo dejan de ser flotantes y pasan a
+     ocupar su lugar en la columna, que es como se leen con el pulgar. */
+  .fl-post--movil, .fl-canales--movil, .fl-matriz--movil { display: none; }
+  .fl.sin-riel .fl-post--movil,
+  .fl.sin-riel .fl-canales--movil,
+  .fl.sin-riel .fl-matriz--movil { display: flex; }
+  .fl.sin-riel .fl-post--movil { flex-direction: column; width: 100%; margin: 12px 0 14px; }
+  .fl.sin-riel .fl-canales--movil {
+    position: static; transform: none; margin: 0 0 14px; width: fit-content;
+  }
+  .fl.sin-riel .fl-matriz--movil {
+    position: static; width: 100%; margin: 0 0 14px; flex-direction: column;
+    /* En móvil el descuento no depende del riel: se enseña ya aplicado. */
+  }
+  .fl.sin-riel .fl-matriz--movil .fl-antes { display: none; }
+  .fl.sin-riel .fl-matriz--movil .fl-despues { position: static; opacity: 1; transform: none; }
+  .fl.sin-riel .fl-matriz--movil .fl-matriz-pie { opacity: 1; transform: none; }
+  @media (max-width: 980px) {
+    .fl-post--movil, .fl-canales--movil { display: flex; }
+    .fl-matriz--movil { display: flex; }
+    .fl-post--movil { flex-direction: column; width: 100%; margin: 12px 0 14px; }
+    .fl-canales--movil { position: static; transform: none; margin: 0 0 14px; width: fit-content; }
+    .fl-matriz--movil { position: static; width: 100%; margin: 0 0 14px; flex-direction: column; }
+    .fl-matriz--movil .fl-antes { display: none; }
+    .fl-matriz--movil .fl-despues { position: static; opacity: 1; transform: none; }
+    .fl-matriz--movil .fl-matriz-pie { opacity: 1; transform: none; }
+  }
 
   /* ── Sin riel: móvil, poco movimiento o panel que no cabe ── */
   .fl.sin-riel .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }

@@ -12171,27 +12171,27 @@ const useCases = [
      es una columna larga de texto y el teléfono deja de significar algo. */
   @media (max-width: 1023px) {
     .sq-features--sc .sq-feature-block {
-      /* Cada paso necesita su pantalla: sin min-height los cinco caben en
-         900 px, el teléfono pegado casi no viaja y el scroll se salta pasos
-         (medido: del 1 brincaba al 4). */
-      min-height: 58vh;
-      display: flex; flex-direction: column; justify-content: center;
-      opacity: .34;
-      transform: translateY(10px);
+      /* Alto suficiente para que el teléfono pegado viaje y el observador
+         marque paso por paso (sin esto los cinco caben en 900 px y el scroll
+         brinca del 1 al 4), pero NO tanto como para dejar huecos: el texto va
+         ARRIBA, pegado al teléfono, no flotando al centro de una caja alta. */
+      min-height: 42vh;
+      display: flex; flex-direction: column; justify-content: flex-start;
+      padding-top: 22px;
+      /* El paso que viene se lee desde antes de ser el activo. Apagarlo a .34
+         con la descripción plegada dejaba un hueco enorme con un número
+         fantasma, y mientras scrolleas eso parece un error, no un efecto. */
+      opacity: .52;
       transition: opacity .45s ease, transform .45s cubic-bezier(.2,.7,.3,1);
     }
-    .sq-features--sc .sq-feature-block.active {
-      opacity: 1;
-      transform: none;
+    .sq-features--sc .sq-feature-block.active { opacity: 1; }
+    /* El activo se distingue por una guía a la izquierda, no por ser el único
+       legible. */
+    .sq-features--sc .sq-feature-block {
+      border-left: 2px solid transparent; padding-left: 14px;
+      transition: opacity .45s ease, border-color .45s ease;
     }
-    .sq-features--sc .sq-feature-block .sq-feature-desc {
-      max-height: 0; overflow: hidden;
-      transition: max-height .45s ease, opacity .3s ease;
-      opacity: 0;
-    }
-    .sq-features--sc .sq-feature-block.active .sq-feature-desc {
-      max-height: 20em; opacity: 1;
-    }
+    .sq-features--sc .sq-feature-block.active { border-left-color: #25D366; }
     /* El primero y el último necesitan aire o el observador nunca los marca:
        su umbral cae fuera de la ventana. */
     .sq-features--sc .sq-feature-block:first-child { padding-top: 8vh; }
