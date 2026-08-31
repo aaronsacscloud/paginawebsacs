@@ -28,7 +28,7 @@
  *    canvas y el <h2> dibujan EXACTAMENTE lo mismo, que es lo único que hace
  *    que el relevo entre partículas y texto no se note.
  */
-const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más rápido.'];
+const LINEAS = ['AXO, nuestra IA de moda,', 'hace tu trabajo', '20 a 50 veces más rápido.'];
 ---
 
 <section class="pi" id="pattern-ia" data-lineas={JSON.stringify(LINEAS)}>
@@ -37,11 +37,11 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
       <canvas class="pi-lienzo" id="pi-lienzo" aria-hidden="true"></canvas>
 
       <div class="pi-caja">
-        <span class="pi-kicker">Fotografía con IA · una función de Sacs</span>
+        <span class="pi-kicker">AXO · la IA de moda de Sacs</span>
         <h2 class="pi-claim" id="pi-claim">
           {LINEAS.map((l) => <span class="pi-linea">{l}</span>)}
         </h2>
-        <p class="pi-lead">Pon una foto en Sacs y todo lo demás lo hacemos por ti.</p>
+        <p class="pi-lead">Pon una foto en Sacs y AXO hace todo lo demás por ti.</p>
         <p class="pi-nota">Sin estudio, sin fotógrafo y sin volver a montar una sesión por cada drop.</p>
         <span class="pi-abajo" aria-hidden="true">Así funciona</span>
       </div>
