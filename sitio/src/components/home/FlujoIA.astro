@@ -1,0 +1,359 @@
+---
+/**
+ * FlujoIA — la función insignia del home: de la foto que TÚ tomas, a tus
+ * variantes, a la modelo, al reel.
+ *
+ * Es una sección a pantalla completa que se recorre con el scroll: el panel
+ * se queda fijo y la imagen se transforma paso a paso con el mismo lienzo
+ * WebGL de /extraordinarios (transición líquida + aberración cromática).
+ *
+ * Reglas de esta pieza, aprendidas del sitio:
+ *  · Un solo fondo (#0B0B12) y un solo acento. Nada de gradientes de colores.
+ *  · El riel va como caja propia, nunca como padding: un sticky solo viaja
+ *    dentro del content box de quien lo contiene (trampa ya pagada en los giros).
+ *  · Se apaga solo en móvil, con prefers-reduced-motion y si el panel no cabe:
+ *    ahí se vuelve una lista de cuatro pasos, que funciona igual.
+ */
+const pasos = [
+  {
+    n: '01',
+    titulo: 'Tu foto. La que ya tienes.',
+    texto: 'La que tomaste con el celular en tu tienda, colgada en el gancho, con la luz que había. No necesitas estudio ni sesión.',
+    img: '/images/flujo/01-tu-foto.webp',
+    alt: 'Vestido colgado en un gancho fotografiado con celular dentro de una boutique',
+  },
+  {
+    n: '02',
+    titulo: 'Tus colorways, solos.',
+    texto: 'La IA genera la misma prenda en todos los colores del drop, con la misma luz y el mismo encuadre. Y escribe la descripción de cada una.',
+    img: '/images/flujo/02-variantes.webp',
+    alt: 'La misma prenda repetida en cinco colores distintos con iluminación idéntica',
+  },
+  {
+    n: '03',
+    titulo: 'Tu modelo, tuya.',
+    texto: 'Eliges la modelo, la pose y el fondo — y queda igual en toda la temporada. Tu marca deja de verse improvisada.',
+    img: '/images/flujo/03-modelo.webp',
+    alt: 'Modelo con el vestido en una toma editorial de campaña',
+  },
+  {
+    n: '04',
+    titulo: 'Y se vuelve reel.',
+    texto: 'De ahí sale el video vertical para TikTok, Reels y tu tienda en línea. El contenido de la semana, sin volver a producir nada.',
+    img: '/images/flujo/04-reel.webp',
+    alt: 'La misma modelo en movimiento, en formato vertical de video social',
+  },
+];
+---
+
+<section class="fl" id="flujo" data-imgs={JSON.stringify(pasos.map((p) => p.img))}>
+  <div class="fl-riel">
+    <div class="fl-pegado">
+      <div class="fl-lienzo-caja">
+        <canvas class="fl-lienzo" id="fl-lienzo" aria-hidden="true"></canvas>
+        <div class="fl-fallback">
+          {pasos.map((p, i) => (
+            <img src={p.img} alt={p.alt} class:list={['fl-img', { on: i === 0 }]} data-i={i} loading={i === 0 ? 'eager' : 'lazy'} width="1500" height="1000" />
+          ))}
+        </div>
+        <span class="fl-num" id="fl-num" aria-hidden="true">01</span>
+      </div>
+
+      <div class="fl-panel">
+        <span class="fl-insignia">Función insignia · solo en Sacs</span>
+        <h2 class="fl-titulo">De tu foto<br /><em>a tu reel.</em></h2>
+        <div class="fl-pasos">
+          {pasos.map((p, i) => (
+            <div class:list={['fl-paso', { on: i === 0 }]} data-i={i}>
+              <span class="fl-paso-n">{p.n}</span>
+              <div>
+                <h3>{p.titulo}</h3>
+                <p>{p.texto}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="fl-barra" aria-hidden="true"><span id="fl-avance"></span></div>
+        <a href="/extraordinarios#fotografia" class="fl-cta">Ver cómo funciona</a>
+      </div>
+    </div>
+    <div class="fl-recorrido" aria-hidden="true"></div>
+  </div>
+</section>
+
+<style>
+  .fl { position: relative; background: #0B0B12; color: #fff; }
+  .fl-riel { position: relative; }
+  .fl-pegado {
+    position: sticky; top: 0; min-height: 100vh;
+    display: grid; grid-template-columns: 1.1fr 1fr; align-items: stretch;
+  }
+
+  /* ── La imagen ── */
+  .fl-lienzo-caja { position: relative; overflow: hidden; background: #0B0B12; }
+  .fl-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+  .fl-lienzo.vivo { display: block; }
+  .fl-lienzo.vivo ~ .fl-fallback { opacity: 0; }
+  .fl-fallback { position: absolute; inset: 0; transition: opacity .3s ease; }
+  .fl-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transition: opacity .6s ease;
+  }
+  .fl-img.on { opacity: 1; }
+  .fl-lienzo-caja::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: linear-gradient(100deg, transparent 58%, rgba(11,11,18,.9));
+  }
+  .fl-num {
+    position: absolute; left: clamp(20px, 3vw, 46px); bottom: clamp(14px, 2vw, 30px); z-index: 3;
+    font-family: var(--font-display); font-size: clamp(5rem, 11vw, 9.5rem); font-weight: 800;
+    line-height: .8; letter-spacing: -.06em; color: transparent;
+    -webkit-text-stroke: 2px rgba(255,255,255,.26);
+  }
+
+  /* ── El panel ── */
+  .fl-panel {
+    display: flex; flex-direction: column; justify-content: center; gap: 20px;
+    padding: clamp(40px, 6vw, 88px) clamp(24px, 5vw, 80px);
+  }
+  .fl-insignia {
+    align-self: flex-start; padding: 7px 14px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.05);
+    font-size: 0.6875rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+  }
+  .fl-titulo {
+    font-family: var(--font-display); font-size: clamp(2.2rem, 4.6vw, 3.6rem); font-weight: 800;
+    line-height: 1; letter-spacing: -.035em; margin: 0; color: #fff;
+  }
+  .fl-titulo em { font-style: italic; font-weight: 400; color: rgba(255,255,255,.5); }
+
+  .fl-pasos { display: grid; gap: 4px; margin-top: 6px; }
+  .fl-paso {
+    display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start;
+    padding: 13px 0; border-top: 1px solid rgba(255,255,255,.09);
+    opacity: .34; transition: opacity .4s ease;
+  }
+  .fl-paso.on { opacity: 1; }
+  .fl-paso-n {
+    font-family: var(--font-display); font-size: 0.75rem; font-weight: 800;
+    color: rgba(255,255,255,.55); padding-top: 3px;
+  }
+  .fl-paso h3 {
+    font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0 0 3px; color: #fff;
+  }
+  .fl-paso p { margin: 0; font-size: 0.875rem; line-height: 1.55; color: rgba(255,255,255,.66); max-width: 44ch; }
+  .fl-paso:not(.on) p { display: none; }
+
+  .fl-barra { height: 2px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .fl-barra span { display: block; height: 100%; width: 25%; background: #fff; transition: width .35s ease; }
+
+  .fl-cta {
+    align-self: flex-start; margin-top: 12px; padding: 13px 26px; border-radius: 999px;
+    background: #fff; color: #0B0B12; font-size: 0.875rem; font-weight: 800; text-decoration: none;
+    transition: transform .16s ease;
+  }
+  .fl-cta:hover { transform: translateY(-2px); }
+
+  /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja. */
+  .fl-recorrido { height: 300vh; }
+
+  /* ── Sin riel: móvil, poco movimiento o panel que no cabe ── */
+  .fl.sin-riel .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
+  .fl.sin-riel .fl-recorrido { display: none; }
+  .fl.sin-riel .fl-lienzo-caja { aspect-ratio: 4 / 3; }
+  .fl.sin-riel .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, rgba(11,11,18,.9)); }
+  .fl.sin-riel .fl-paso { opacity: 1; }
+  .fl.sin-riel .fl-paso p { display: block; }
+  .fl.sin-riel .fl-barra { display: none; }
+  .fl.sin-riel .fl-img:first-child { opacity: 1; }
+
+  @media (max-width: 980px) {
+    .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
+    .fl-recorrido { display: none; }
+    .fl-lienzo-caja { aspect-ratio: 4 / 3; }
+    .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, rgba(11,11,18,.9)); }
+    .fl-paso { opacity: 1; }
+    .fl-paso p { display: block; }
+    .fl-barra { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fl-pegado { position: static; min-height: 0; }
+    .fl-recorrido { display: none; }
+  }
+</style>
+
+<script>
+  const sec = document.getElementById('flujo');
+  const cv = document.getElementById('fl-lienzo') as HTMLCanvasElement | null;
+  if (sec && cv) {
+    const imgs: string[] = JSON.parse(sec.dataset.imgs || '[]');
+    const pasos = [...sec.querySelectorAll<HTMLElement>('.fl-paso')];
+    const fotos = [...sec.querySelectorAll<HTMLElement>('.fl-img')];
+    const numEl = document.getElementById('fl-num');
+    const avance = document.getElementById('fl-avance');
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let actual = 0;
+
+    // Estado visible del paso (funciona con y sin WebGL)
+    const marcar = (k: number) => {
+      if (k === actual) return;
+      actual = k;
+      pasos.forEach((p, i) => p.classList.toggle('on', i === k));
+      fotos.forEach((f, i) => f.classList.toggle('on', i === k));
+      if (numEl) numEl.textContent = imgs[k] ? String(k + 1).padStart(2, '0') : '01';
+      if (avance) (avance as HTMLElement).style.width = `${((k + 1) / imgs.length) * 100}%`;
+      window.dispatchEvent(new CustomEvent('fl:paso', { detail: k }));
+    };
+
+    // El riel: el scroll dentro del recorrido elige el paso.
+    const riel = sec.querySelector<HTMLElement>('.fl-riel');
+    const pegado = sec.querySelector<HTMLElement>('.fl-pegado');
+    const recorrido = sec.querySelector<HTMLElement>('.fl-recorrido');
+    const alturaRiel = () => riel?.offsetHeight || 0;
+
+    const revisarCabe = () => {
+      // Un riel que secuestra el scroll para enseñar algo cortado es peor que
+      // no tenerlo: si el panel no cabe entero, se apaga.
+      const cabe = window.innerHeight >= 620 && window.innerWidth > 980 && !menos;
+      sec.classList.toggle('sin-riel', !cabe);
+      return cabe;
+    };
+
+    let ticking = false;
+    const alScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        if (sec.classList.contains('sin-riel')) return;
+        const top = sec.getBoundingClientRect().top;
+        const total = alturaRiel() - (pegado?.offsetHeight || window.innerHeight);
+        if (total <= 0) return;
+        const p = Math.min(1, Math.max(0, -top / total));
+        marcar(Math.min(imgs.length - 1, Math.floor(p * imgs.length * 0.999)));
+      });
+    };
+
+    revisarCabe();
+    window.addEventListener('scroll', alScroll, { passive: true });
+    window.addEventListener('resize', () => { revisarCabe(); alScroll(); });
+
+    // ── El lienzo: mismo shader que /extraordinarios ──
+    if (!menos) {
+      const gl = cv.getContext('webgl', { antialias: true, alpha: false });
+      if (gl) {
+        const VERT = `attribute vec2 p; varying vec2 uv;
+          void main(){ uv = p*0.5+0.5; gl_Position = vec4(p,0.0,1.0); }`;
+        const FRAG = `precision highp float;
+          varying vec2 uv;
+          uniform sampler2D texA, texB;
+          uniform float mezcla, tiempo, razonLienzo, razonA, razonB;
+          float hash(vec2 v){ return fract(sin(dot(v, vec2(127.1,311.7)))*43758.5453); }
+          float ruido(vec2 v){ vec2 i=floor(v), f=fract(v); vec2 u=f*f*(3.0-2.0*f);
+            return mix(mix(hash(i),hash(i+vec2(1,0)),u.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x), u.y); }
+          vec2 cubrir(vec2 c, float rImg){
+            vec2 s = razonLienzo > rImg ? vec2(1.0, rImg/razonLienzo) : vec2(razonLienzo/rImg, 1.0);
+            return (c-0.5)/s + 0.5; }
+          void main(){
+            vec2 c = uv;
+            c += (ruido(c*3.0 + tiempo*0.05) - 0.5) * 0.005;
+            float m = smoothstep(0.0, 1.0, mezcla);
+            float f = sin(m*3.14159);
+            vec2 emp = vec2(0.14,-0.08) * (ruido(c*4.5 + tiempo*0.03) - 0.5);
+            vec2 ca = cubrir(c + emp*f, razonA), cb = cubrir(c - emp*f, razonB);
+            float ab = 0.009*f;
+            vec4 a = vec4(texture2D(texA, ca+vec2(ab,0.0)).r, texture2D(texA, ca).g, texture2D(texA, ca-vec2(ab,0.0)).b, 1.0);
+            vec4 b = vec4(texture2D(texB, cb+vec2(ab,0.0)).r, texture2D(texB, cb).g, texture2D(texB, cb-vec2(ab,0.0)).b, 1.0);
+            vec4 col = mix(a,b,m);
+            col.rgb += (hash(uv*900.0 + tiempo)-0.5)*0.024;
+            gl_FragColor = col; }`;
+        const comp = (t: number, src: string) => {
+          const sh = gl.createShader(t)!; gl.shaderSource(sh, src); gl.compileShader(sh);
+          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error('shader');
+          return sh; };
+        try {
+          const pr = gl.createProgram()!;
+          gl.attachShader(pr, comp(gl.VERTEX_SHADER, VERT));
+          gl.attachShader(pr, comp(gl.FRAGMENT_SHADER, FRAG));
+          gl.linkProgram(pr);
+          if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error('link');
+          gl.useProgram(pr);
+          const bf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bf);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+          const lp = gl.getAttribLocation(pr, 'p');
+          gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
+          const u = (n: string) => gl.getUniformLocation(pr, n);
+          const uM = u('mezcla'), uT = u('tiempo'), uRL = u('razonLienzo'), uRA = u('razonA'), uRB = u('razonB');
+          gl.uniform1i(u('texA'), 0); gl.uniform1i(u('texB'), 1);
+
+          const nuevaTex = () => {
+            const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, t);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([11,11,18,255]));
+            return t; };
+          const texA = nuevaTex(), texB = nuevaTex();
+          const razones = [1.5, 1.5, 1.5, 0.667];  // el reel es vertical
+          let rA = 1.5, rB = 1.5;
+
+          const cargar = (url: string, tex: WebGLTexture) => new Promise<number>((ok) => {
+            const im = new Image();
+            im.onload = () => {
+              gl.bindTexture(gl.TEXTURE_2D, tex);
+              gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+              ok(im.naturalWidth / im.naturalHeight); };
+            im.onerror = () => ok(1.5);
+            im.src = url; });
+
+          const medir = () => {
+            const r = cv.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            cv.width = Math.max(1, Math.round(r.width * dpr));
+            cv.height = Math.max(1, Math.round(r.height * dpr));
+            gl.viewport(0, 0, cv.width, cv.height);
+            gl.uniform1f(uRL, cv.width / Math.max(1, cv.height)); };
+
+          let mezcla = 0, animando = false, vistoPor = 0;
+          const t0 = performance.now();
+          const pintar = () => {
+            gl.uniform1f(uT, (performance.now() - t0) / 1000);
+            gl.uniform1f(uM, mezcla); gl.uniform1f(uRA, rA); gl.uniform1f(uRB, rB);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            requestAnimationFrame(pintar); };
+
+          gl.activeTexture(gl.TEXTURE0);
+          cargar(imgs[0], texA).then((r) => { rA = r; rB = r;
+            gl.activeTexture(gl.TEXTURE1);
+            return cargar(imgs[0], texB); }).then(() => {
+              medir(); cv.classList.add('vivo');
+              gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texA);
+              gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texB);
+              requestAnimationFrame(pintar); });
+
+          if ('ResizeObserver' in window) new ResizeObserver(() => medir()).observe(cv);
+          window.addEventListener('resize', medir);
+
+          window.addEventListener('fl:paso', (async (e: Event) => {
+            const k = (e as CustomEvent).detail as number;
+            if (k === vistoPor || animando) return;
+            animando = true;
+            gl.activeTexture(gl.TEXTURE1);
+            rB = await cargar(imgs[k], texB);
+            const ini = performance.now(), dur = 760;
+            const paso = () => {
+              const t = Math.min(1, (performance.now() - ini) / dur);
+              mezcla = t;
+              if (t < 1) requestAnimationFrame(paso);
+              else { gl.activeTexture(gl.TEXTURE0);
+                cargar(imgs[k], texA).then((r) => { rA = r; mezcla = 0; vistoPor = k; animando = false; }); } };
+            requestAnimationFrame(paso);
+          }) as EventListener);
+        } catch (err) { /* sin shader queda el fundido de imágenes */ }
+      }
+    }
+  }
+</script>

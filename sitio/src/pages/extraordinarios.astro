@@ -135,12 +135,9 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       padding: clamp(96px, 13vw, 168px) clamp(20px, 4vw, 48px) clamp(72px, 9vw, 120px);
     }
     .xr-hero-bg {
-      position: absolute; inset: -30% -10% auto -10%; height: 150%;
-      background:
-        radial-gradient(45% 55% at 18% 22%, rgba(124,58,237,.55), transparent 68%),
-        radial-gradient(42% 52% at 78% 30%, rgba(219,39,119,.48), transparent 66%),
-        radial-gradient(40% 50% at 52% 84%, rgba(234,88,12,.38), transparent 68%);
-      filter: blur(8px);
+      position: absolute; inset: -20% -10% auto -10%; height: 140%;
+      background: radial-gradient(52% 60% at 24% 30%, rgba(124,58,237,.30), transparent 70%);
+      filter: blur(10px);
     }
     .xr-hero-inner { position: relative; max-width: 1100px; margin: 0 auto; }
     .xr-eyebrow {
@@ -152,11 +149,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       font-family: var(--font-display); font-weight: 800; color: #fff;
       font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: .98; letter-spacing: -.035em; margin: 0;
     }
-    .xr-hero-title em {
-      font-style: italic; font-weight: 400;
-      background: linear-gradient(92deg, #F472B6, #C084FC 45%, #FDBA74);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
+    .xr-hero-title em { font-style: italic; font-weight: 400; color: rgba(255,255,255,.5); }
     .xr-hero-sub {
       margin: 26px 0 0; max-width: 60ch; font-size: clamp(1rem, 1.6vw, 1.1875rem);
       line-height: 1.65; color: rgba(255,255,255,.76);
@@ -167,7 +160,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.22);
       background: rgba(255,255,255,.06); transition: background .18s ease, border-color .18s ease, transform .18s ease;
     }
-    .xr-chip:hover { background: var(--c); border-color: var(--c); transform: translateY(-2px); }
+    .xr-chip:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.45); transform: translateY(-2px); }
 
     /* ═══ Carrusel ═══ */
     .xr-carrusel { background: #0B0B12; padding: 0 0 clamp(40px, 6vw, 72px); }
@@ -213,11 +206,11 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
     .xr-slide-panel {
       display: flex; flex-direction: column; justify-content: center; gap: 14px;
       padding: clamp(32px, 5vw, 64px) clamp(24px, 4.5vw, 68px);
-      background: linear-gradient(150deg, color-mix(in srgb, var(--c) 22%, #0B0B12), #0B0B12 70%);
+      background: #0B0B12;
       color: #fff;
     }
     .xr-slide-kicker {
-      font-size: 0.6875rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--c2);
+      font-size: 0.6875rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.45);
     }
     .xr-slide-nombre {
       font-family: var(--font-display); font-size: clamp(1.9rem, 3.4vw, 2.9rem); font-weight: 800;
@@ -225,7 +218,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
     }
     .xr-slide-gancho {
       margin: 0; font-family: var(--font-display); font-size: clamp(1.05rem, 1.9vw, 1.4rem);
-      font-weight: 400; font-style: italic; color: var(--c2); line-height: 1.25;
+      font-weight: 400; font-style: italic; color: rgba(255,255,255,.62); line-height: 1.25;
     }
     .xr-slide-desc { margin: 4px 0 0; font-size: 0.9688rem; line-height: 1.65; color: rgba(255,255,255,.78); max-width: 46ch; }
     .xr-slide-puntos { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
@@ -234,7 +227,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
     }
     .xr-slide-puntos li::before {
       content: ''; position: absolute; left: 0; top: 7px; width: 8px; height: 8px;
-      border-radius: 50%; background: var(--c2);
+      border-radius: 50%; background: rgba(255,255,255,.32);
     }
     .xr-slide-pie {
       display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
@@ -246,7 +239,7 @@ const wa = waLink('¡Hola! Quiero ver los módulos extraordinarios de Sacs para 
       background: #fff; color: #0B0B12; font-size: 0.875rem; font-weight: 800;
       text-decoration: none; transition: transform .16s ease, background .16s ease;
     }
-    .xr-slide-cta:hover { transform: translateY(-2px); background: var(--c2); color: #fff; }
+    .xr-slide-cta:hover { transform: translateY(-2px); background: rgba(255,255,255,.86); }
 
     /* ── Navegación ── */
     .xr-nav {
