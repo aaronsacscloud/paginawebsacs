@@ -1239,12 +1239,25 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
         <div className="wa-scroll" style={{ overflowY: 'auto', flex: 1, padding: '0 12px 12px' }}>
           {lista === null && <div style={{ padding: 16, fontSize: 12, color: C.g400 }}>Cargando plantillas…</div>}
           {lista !== null && !visibles.length && <div style={{ padding: 16, fontSize: 12, color: C.g400 }}>No se encontraron plantillas.</div>}
-          {visibles.map((p, i) => {
+          {/* Al elegir una, la lista se colapsa a ESA sola.
+              Era el bug reportado como "le doy clic y no sigue": los campos de
+              las variables y la vista previa se dibujan DESPUÉS de la lista, y
+              con 56 plantillas quedaban a 56 renglones de scroll. Se
+              seleccionaba arriba, no cambiaba nada a la vista, y el botón
+              Enviar seguía apagado sin decir por qué —porque las variables
+              estaban vacías, allá abajo—. */}
+          {sel && (
+            <button onClick={() => { setSel(null); setParams([]); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: C.moradoTinta, padding: '8px 4px' }}>
+              ← Elegir otra plantilla
+            </button>
+          )}
+          {(sel ? visibles.filter(p => p.id === sel.id) : visibles).map((p, i) => {
             const ok = p.status === 'APPROVED';
             return (
               <div key={p.id}>
               {/* Solo si de verdad hay dos grupos que separar. */}
-              {!q && nRecPl > 0 && (i === 0 || i === nRecPl) && visibles.length > nRecPl && (
+              {!sel && !q && nRecPl > 0 && (i === 0 || i === nRecPl) && visibles.length > nRecPl && (
                 <div style={{ padding: '8px 6px 4px', fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: C.g400 }}>
                   {i === 0 ? 'Recientes' : 'Todas'}
                 </div>
@@ -1290,6 +1303,11 @@ export function SelectorPlantilla({ telefono, api, onClose, contacto, preselecci
           )}
         </div>
         <div className="hoja-pie" style={{ display: 'flex', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C.g100}`, justifyContent: 'flex-end' }}>
+          {sel && params.some(v => !String(v || '').trim()) && (
+            <span style={{ marginRight: 'auto', fontSize: 11, color: C.ambar700, fontWeight: 600, alignSelf: 'center' }}>
+              Falta llenar {params.filter(v => !String(v || '').trim()).length === 1 ? 'una variable' : `${params.filter(v => !String(v || '').trim()).length} variables`} arriba.
+            </span>
+          )}
           <button onClick={onClose} style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '8px 14px', background: '#fff', fontSize: 12, fontWeight: 600, color: C.g700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
           <button disabled={!sel || ocupado || (sel?.tipo_especial === 'otp' ? !otp.trim() : params.some(v => !String(v || '').trim())) || (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(String(sel?.header_tipo || '').toUpperCase()) && !/^https?:\/\//.test(headerUrl))}
             title={sel && params.some(v => !String(v || '').trim()) ? 'Llena todas las variables' : ''}
