@@ -384,6 +384,7 @@ export default function LeadsTab() {
     /* Reunión ordena por CUÁNDO, no por texto: una fecha ordenada
        alfabéticamente pone "ayer" antes que "hoy" y no significa nada. */
     reunion: c => Date.parse(c.reunion?.proxima || c.reunion?.ultima || 0) || 0,
+    respuesta: c => Date.parse(c.toque_cliente?.at || 0) || 0,
   };
   const pedirOrden = (k: string) => setOrdenCol(o => o?.k === k ? (o.desc ? { k, desc: false } : null) : { k, desc: true });
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
@@ -586,13 +587,13 @@ export default function LeadsTab() {
   /* Llamadas se decide con los datos a la vista, no con la pestaña: si en esta
      vista nadie ha llamado a nadie, la columna es una fila de guiones. */
   const verLlamadas = useMemo(() => (listaBase || []).some((c: any) => (c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0) > 0), [listaBase]);
-  const nCols = 9 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0) + (verReunion ? 1 : 0) + (verLlamadas ? 1 : 0);
+  const nCols = 10 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0) + (verReunion ? 1 : 0) + (verLlamadas ? 1 : 0);
   /* La suma EXACTA de los anchos declarados. Si el mínimo es mayor, el
      navegador reparte el sobrante entre todas y los `left` de las columnas
      congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
      con puntos suspensivos empieza a morder donde no debe. */
 
-  const anchoTabla = 1090 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
+  const anchoTabla = 1220 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
 
   /* El rótulo ES el botón, y lleva el MISMO indicador que el datatable
@@ -644,8 +645,31 @@ export default function LeadsTab() {
     // Contactados no hacía absolutamente nada. Un control que miente en la
     // pestaña por omisión es peor que no tenerlo, y "más fríos primero" es
     // justo el triage que pide esta bandeja.
-    if (orden === 'reciente' && (etapa === 'nuevos' || etapa === 'contactados')) {
-      r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
+    /* CADA PESTAÑA SE ORDENA POR LO QUE LA DEFINE:
+       · Leads nuevos y Todos → por cuándo LLEGÓ, lo más nuevo arriba. Es una
+         bandeja de entrada y se lee como tal.
+       · Contactados y Calificados → por la última vez que el CLIENTE respondió
+         (WhatsApp suyo, llamada que tomó, correo contestado, visita al sitio,
+         apertura de correo o vista de la cotización). Aquí ya todos fueron
+         tocados: lo que decide a quién llamar no es cuándo entró, sino quién
+         dio señales de vida al último. Ordenar por «última actividad» a secas
+         pondría arriba a quien MÁS PERSEGUIMOS, que es lo contrario.
+       Quien no ha respondido nunca cae al final, no al principio: sin señal no
+       hay prioridad, y ponerlo arriba con fecha cero sería inventarla. */
+    if (orden === 'reciente') {
+      const porRespuesta = etapa === 'contactados' || etapa === 'calificados';
+      /* Oportunidad se ordena por DINERO, de mayor a menor. Ahí ya no se
+         decide a quién llamar por quién contestó al último: se decide por
+         cuánto hay sobre la mesa. Sin cotización, al final —no arriba: un
+         cero no es una oportunidad grande, es una sin número. */
+      const cuando = (c: any) => etapa === 'oportunidad'
+        ? (Number(c.cotizacion?.total) > 0 ? Number(c.cotizacion.total) : -Infinity)
+        : porRespuesta
+          ? (c.toque_cliente?.at ? Date.parse(c.toque_cliente.at) : -Infinity)
+          : Date.parse(llegoReal(c));
+      if (porRespuesta || ['nuevos', 'todos', 'oportunidad'].includes(etapa)) {
+        r = [...r].sort((a: any, b: any) => cuando(b) - cuando(a));
+      }
     }
     return r;
   }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, etiquetaF, cotF]);
@@ -1377,14 +1401,16 @@ export default function LeadsTab() {
                       return d !== 0 ? d : actAt(b) - actAt(a);
                     })
                   : porActividad ? [...lista].sort((a: any, b: any) => actAt(b) - actAt(a)) : lista;
-                // Con orden por actividad NO se agrupa en «Atorados / Recientes»:
-                // ese grupo reordena por días sin tocar y pisaría justo el
-                // criterio que se pidió —lo que tuvo movimiento va primero—.
-                // Una lista, un orden: el que sirve para decidir a quién llamar.
-                const agrupaEff = agrupa && !porActividad;
-                const atorados = (agrupaEff ? listaOrd.filter((c: any) => dias(c) >= DIAS_ATORADO) : []).sort((a: any, b: any) => dias(b) - dias(a));
-                const alDia = agrupaEff ? listaOrd.filter((c: any) => dias(c) < DIAS_ATORADO) : listaOrd;
-                const conSec = atorados.length > 0 && alDia.length > 0;
+                /* SIN grupos, igual que la tabla de escritorio. «Atorados /
+                   Recientes» partía la lista en dos y subía lo viejo, así que
+                   la bandeja abría con lo de hace once días y lo de ayer
+                   quedaba hasta abajo — al revés de como se lee una bandeja.
+                   Lo atorado no se pierde: cada fila sigue diciendo sus «N
+                   días sin tocar» en rojo, y esa lista se pide con el filtro
+                   «Sin contacto». Una lista, un orden. */
+                const atorados: any[] = [];
+                const alDia = listaOrd;
+                const conSec = false;
                 const fila = (c: any) => {
                 const o = origenDe(origenDeRegistro(c));
                 const et = ETAPA_DE(c.lifecycle_stage);
@@ -1395,7 +1421,7 @@ export default function LeadsTab() {
                 // Solo presentación: 'AILYN PROAÑO' rompe el ritmo de la lista.
                 const cased = (t: string) => t.replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
                 const d = dias(c);
-                const atorado = agrupa && d >= 3;
+                const atorado = d >= 3;
                 return (
                   <FilaDeslizable key={c.id}
                     izquierda={{
@@ -1551,6 +1577,10 @@ export default function LeadsTab() {
                       por WhatsApp, y el valor completo sigue en la ficha. */}
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 128, padding: 0 }}><Rot k="correo">Correo</Rot></th>
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'telefono' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 124, padding: 0 }}><Rot k="telefono">Teléfono</Rot></th>
+                  {/* La última vez que EL CLIENTE dio señales. Es el criterio
+                      con el que se ordenan Contactados y Calificados, así que
+                      tiene que poder verse y no solo actuar por detrás. */}
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'respuesta' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 130, padding: 0 }} title="La última vez que el cliente respondió: WhatsApp suyo, llamada que tomó, correo contestado, visita al sitio, apertura de correo o vista de la cotización"><Rot k="respuesta">Respondió</Rot></th>
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'canal' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 98, padding: 0 }}><Rot k="canal">Canal</Rot></th>
                   <th scope="col" className="num ord" aria-sort={ordenCol?.k === 'sucs' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 66, padding: 0 }} title="Cuántas sucursales le interesan"><Rot k="sucs" num>Sucs.</Rot></th>
                   {(() => {
@@ -1707,6 +1737,18 @@ export default function LeadsTab() {
                               onClick={e => e.stopPropagation()}
                               style={{ color: 'inherit', textDecoration: 'none' }}>{tel}</a>
                           : <span style={S.vacio}>sin teléfono</span>}
+                      </td>
+                      {/* Cuándo respondió el cliente, y CÓMO. El «cómo» importa
+                          tanto como el cuándo: abrir un correo y contestar por
+                          WhatsApp no valen lo mismo, y un solo dato sin su tipo
+                          los volvería iguales. */}
+                      <td style={S.td}>
+                        {c.toque_cliente?.at ? (
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ ...S.dato2, color: '#3f3b4d' }}>{fechaCorta(c.toque_cliente.at)}</div>
+                            <div style={{ ...S.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.toque_cliente.tipo}</div>
+                          </div>
+                        ) : <span style={S.vacio}>nunca</span>}
                       </td>
                       <td style={S.td}>
                         {/* Sin fondo: era la tercera pastilla de la fila y no

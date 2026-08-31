@@ -839,4 +839,27 @@ export const WIKI: PaginaWiki[] = [
 </tbody></table>
 <div class="w-caja"><span class="w-k">Y el límite de fondo</span><p>El algoritmo <b>necesita volumen para aprender</b>. La diferencia aparece cuando hay decenas de señales acumuladas — por eso importa que sea un hábito y no un esfuerzo de una semana.</p></div>`,
   },
+  {
+    id: 'toques', grupo: 'Referencia', titulo: 'Los tres toques',
+    bajada: 'Qué respondió el cliente, qué hicimos nosotros, y qué se movió al final.',
+    cuerpo: `
+<p>Cada lead trae <b>tres fechas de actividad</b>, y la diferencia entre ellas es la que decide a quién llamar. Mezclarlas en un solo dato es el error clásico: ordenar por «última actividad» a secas pone arriba <b>a quien más perseguimos</b>, no a quien contestó.</p>
+<table class="w-tab"><thead><tr><th>Campo</th><th>Qué es</th><th>De qué sale</th></tr></thead><tbody>
+<tr><td><b>Respondió</b><br><span class="w-mut">toque del cliente</span></td><td>La última vez que <b>él</b> hizo algo hacia nosotros. Es la señal de interés: la única que dice si sigue vivo.</td><td>WhatsApp suyo · llamada que tomó · correo contestado · abrió un correo · visitó el sitio · vio la cotización</td></tr>
+<tr><td><b>Le tocamos</b><br><span class="w-mut">toque nuestro</span></td><td>La última vez que <b>nosotros</b> hicimos algo hacia él. Es esfuerzo, no interés.</td><td>WhatsApp nuestro · llamada marcada sin contestar · correo enviado · cotización enviada</td></tr>
+<tr><td><b>Último movimiento</b><br><span class="w-mut">consolidado</span></td><td>El más reciente de los dos, con quién habló. Sirve para «cuánto lleva quieta esta ficha» sin importar de qué lado vino.</td><td>El mayor entre los dos anteriores</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Por qué una llamada cuenta de los dos lados</span>
+<p>Una llamada <b>contestada</b> es del cliente: tomó el teléfono. Una <b>marcada y no contestada</b> es nuestra: es esfuerzo. El mismo hecho cae de un lado o del otro según si hubo alguien del otro lado.</p></div>
+<h3>Cómo se ordena cada pestaña</h3>
+<table class="w-tab"><thead><tr><th>Pestaña</th><th>Orden</th><th>Por qué</th></tr></thead><tbody>
+<tr><td>Todos · Leads nuevos</td><td>Por <b>cuándo llegó</b>, lo más nuevo arriba</td><td>Es una bandeja de entrada y se lee como tal</td></tr>
+<tr><td>Contactados · Calificados</td><td>Por <b>Respondió</b>, lo más reciente arriba</td><td>Aquí ya todos fueron tocados: lo que decide es quién dio señales de vida al último</td></tr>
+<tr><td>Oportunidad</td><td>Por <b>monto de la cotización</b>, de mayor a menor</td><td>Ahí ya no se prioriza por quién contestó, sino por cuánto hay sobre la mesa</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Quien nunca respondió cae al final</span>
+<p>No al principio. Sin señal no hay prioridad, y ponerlo arriba con fecha cero sería inventarla. En la columna dice <b>«nunca»</b>, que es la verdad.</p></div>
+<h3>Dónde se calculan</h3>
+<p>Se calculan <b>al vuelo</b>, cada vez que se pide la lista — no son columnas guardadas. Es a propósito: una columna guardada hay que refrescarla y se queda vieja. Ya pasó con <code>ultima_actividad_venta_at</code>, que existe desde agosto y solo se calculó una vez, el día que se creó.</p>`,
+  },
 ];

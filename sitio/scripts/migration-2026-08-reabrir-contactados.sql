@@ -48,7 +48,7 @@ select (select count(*) from _obj) leads_tocados,
        (select count(*) from wa_conversaciones where estado_crm='abierta') convs_abiertas,
        (select count(*) from wa_conversaciones where estado_crm='resuelta') convs_resueltas;
 
-rollback;
+commit;
 
 -- ── Ensayo del 31-ago (rollback): 45 tocados · 45 respaldados ·
 --    conversaciones abiertas 23 → 48 · resueltas 256 → 231.

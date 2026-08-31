@@ -107,9 +107,11 @@ const _GET: APIRoute = async ({ request, url }) => {
     }
 
     // Llamadas de WhatsApp por contacto (una consulta para el lote): la
-    // columna "Llamadas" de la tabla vive de esto.
+    // columna "Llamadas" de la tabla vive de esto. `answered_at` y `direccion`
+    // se piden además para los TOQUES: una llamada que nadie tomó es esfuerzo
+    // nuestro, no señal del cliente.
     const { data: llam } = await supabase.from('wa_llamadas')
-      .select('duracion_seg, minuta, created_at, wa_conversaciones!inner(contact_id)')
+      .select('duracion_seg, minuta, created_at, answered_at, direccion, wa_conversaciones!inner(contact_id)')
       .in('wa_conversaciones.contact_id', ids);
     const llamPor = new Map<string, { n: number; ultima: string | null; discovery: boolean }>();
     for (const l of (llam || []) as any[]) {
@@ -120,6 +122,81 @@ const _GET: APIRoute = async ({ request, url }) => {
       llamPor.set(cid, x);
     }
     for (const q of (qs.data || [])) dame(q.contact_id).cotizaciones++;
+
+    /* ═══ LOS TRES TOQUES ═══════════════════════════════════════════════════
+       Se calculan AQUÍ y no en una columna guardada por la misma razón que la
+       etapa: una columna hay que mantenerla y se queda vieja. (Ya pasó:
+       `contacts.ultima_actividad_venta_at` existe desde agosto y solo se
+       recalculó UNA vez, en su propia migración — nadie la refresca.)
+
+       · toque_cliente  — lo que el CLIENTE hizo hacia nosotros. Es la señal
+         de interés: la única que dice si sigue vivo.
+       · toque_nuestro  — lo que NOSOTROS hicimos hacia él. Es esfuerzo, no
+         interés: mandarle tres correos no lo vuelve un lead caliente.
+       · ultimo_toque   — el más reciente de los dos, para "cuánto lleva
+         quieta esta ficha" sin importar quién habló.
+
+       Mezclarlos en un solo campo era el error a evitar: ordenar por "última
+       actividad" ponía arriba a quien más perseguimos, no a quien contestó. */
+    const tCli = new Map<string, { at: string; tipo: string }>();
+    const tNos = new Map<string, { at: string; tipo: string }>();
+    const pon = (m: Map<string, { at: string; tipo: string }>, id: string, at?: string | null, tipo?: string) => {
+      if (!id || !at) return;
+      const y = m.get(id);
+      if (!y || at > y.at) m.set(id, { at, tipo: tipo || '' });
+    };
+
+    // WhatsApp: las dos marcas ya viven mantenidas en la conversación, así que
+    // no hay que barrer wa_mensajes (la tabla más grande del CRM).
+    const { data: convsT } = await supabase.from('wa_conversaciones')
+      .select('contact_id, ultimo_entrante_at, ultimo_saliente_at').in('contact_id', ids);
+    for (const v of convsT || []) {
+      pon(tCli, v.contact_id, v.ultimo_entrante_at, 'WhatsApp del cliente');
+      pon(tNos, v.contact_id, v.ultimo_saliente_at, 'WhatsApp nuestro');
+    }
+
+    // Llamadas: CONTESTADA es del cliente (tomó el teléfono); marcada y no
+    // contestada es solo esfuerzo nuestro.
+    for (const l of (llam || []) as any[]) {
+      const cid = l.wa_conversaciones?.contact_id; if (!cid) continue;
+      if (l.answered_at || (l.duracion_seg || 0) > 0) pon(tCli, cid, l.answered_at || l.created_at, 'Llamada contestada');
+      else pon(tNos, cid, l.created_at, 'Llamada sin contestar');
+    }
+
+    // Correo: entrante = contestó; saliente = le escribimos.
+    const { data: ecs } = await supabase.from('email_conversations').select('id, contact_id').in('contact_id', ids);
+    if (ecs?.length) {
+      const deConv: Record<string, string> = {};
+      for (const e of ecs) deConv[e.id] = e.contact_id as string;
+      const { data: ems } = await supabase.from('email_messages')
+        .select('conversation_id, direccion, created_at').in('conversation_id', ecs.map(e => e.id))
+        .order('created_at', { ascending: false }).limit(2000);
+      for (const m of ems || []) {
+        const cid = deConv[m.conversation_id]; if (!cid) continue;
+        if (m.direccion === 'entrante') pon(tCli, cid, m.created_at, 'Correo del cliente');
+        else pon(tNos, cid, m.created_at, 'Correo nuestro');
+      }
+    }
+    // Correos de campaña/secuencia: esfuerzo nuestro. La APERTURA sí es del
+    // cliente — abrir un correo es un acto suyo, aunque sea el más barato.
+    const { data: esends } = await supabase.from('email_sends')
+      .select('contact_id, created_at, first_opened_at').in('contact_id', ids)
+      .order('created_at', { ascending: false }).limit(2000);
+    for (const e of esends || []) {
+      pon(tNos, e.contact_id as string, e.created_at, 'Correo nuestro');
+      pon(tCli, e.contact_id as string, (e as any).first_opened_at, 'Abrió un correo');
+    }
+
+    // Visitas al sitio: acto del cliente, de los más fuertes.
+    const { data: vis } = await supabase.from('contact_visits')
+      .select('contact_id, created_at').in('contact_id', ids).order('created_at', { ascending: false }).limit(2000);
+    for (const v of vis || []) pon(tCli, v.contact_id as string, v.created_at, 'Visitó el sitio');
+
+    // Ver la cotización que le mandamos también es acto suyo; mandarla, nuestro.
+    const { data: qv } = await supabase.from('quote_vistas')
+      .select('contact_id, created_at').in('contact_id', ids).order('created_at', { ascending: false }).limit(2000);
+    for (const v of qv || []) pon(tCli, v.contact_id as string, v.created_at, 'Vio la cotización');
+    for (const q of (qs.data || []) as any[]) pon(tNos, q.contact_id, q.created_at, 'Cotización enviada');
 
     // ── ¿Ya lo conocíamos? ────────────────────────────────────────────────
     // Índices de clientes y cancelados para cruzar por correo, teléfono y
@@ -196,7 +273,15 @@ const _GET: APIRoute = async ({ request, url }) => {
         esfuerzo: { llamadas: x.llamadas, correos: x.correos, whatsapp: x.whatsapp, total: toques },
         n_reuniones: x.reuniones.length, n_cotizaciones: x.cotizaciones,
         ultima_actividad: ultimaAct.get(c.id) || null,
-        cotizacion: ultimaCot.get(c.id) || null };
+        cotizacion: ultimaCot.get(c.id) || null,
+        toque_cliente: tCli.get(c.id) || null,
+        toque_nuestro: tNos.get(c.id) || null,
+        ultimo_toque: (() => {
+          const a = tCli.get(c.id), b = tNos.get(c.id);
+          if (!a) return b ? { ...b, de: 'nosotros' } : null;
+          if (!b) return { ...a, de: 'cliente' };
+          return a.at >= b.at ? { ...a, de: 'cliente' } : { ...b, de: 'nosotros' };
+        })() };
     });
   }
 
