@@ -13,6 +13,7 @@ import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { confirmar } from '../../../lib/ui/confirmar';
+import { lifecycleDe } from '../../../lib/crm/lifecycle';
 import { CSS_TABLA, T, DIAS_ATORADO as DIAS_ATORADO_CRM } from '../../../lib/crm/tabla.estilo';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
@@ -120,13 +121,28 @@ const esSuya = (t?: string | null) => pesoSenal(t) >= 2;
 const actLabel = (t?: string | null) => (t ? (ACT_LABEL[t] || String(t).replace(/_/g, ' ')) : null);
 const dineroCorto = (n: number) => (n >= 1000 ? '$' + Math.round(n / 1000) + 'k' : '$' + Math.round(n));
 
-const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
-  lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
-  lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
-  oportunidad: { l: 'Oportunidad', bg: '#E3EDFD', fg: '#2C5FC4' },
-  cliente: { l: 'Cliente', bg: '#EAF8F2', fg: '#1E8A63' },
-  churned: { l: 'Perdido', bg: '#FEF0EF', fg: '#C0554E' },
+/* La etapa se lee del catálogo COMPARTIDO, no de un mapa propio.
+ *
+ * Este mapa tenía cinco etapas de las nueve que existen, y el fallback era
+ * `|| ETAPAS.lead` — o sea que un lead DESCALIFICADO se pintaba «Nuevo» en la
+ * columna Etapa. La respuesta más equivocada posible: no decía «no sé», decía
+ * exactamente lo contrario, y en la pestaña de No interesados los once salían
+ * como nuevos.
+ *
+ * Ahora sale de `lifecycleDe()`, que es el mismo catálogo que usa el editor de
+ * la propia tabla (por eso el modal SÍ decía «Descalificado» mientras la
+ * columna decía «Nuevo»: dos fuentes para el mismo dato). Y cuando una etapa
+ * no está en el catálogo se enseña su id crudo, no una inventada: un dato raro
+ * a la vista se arregla; un dato bonito y falso no se descubre nunca.
+ */
+const ETAPA_DE = (id?: string | null) => {
+  const e = lifecycleDe(id);
+  if (e) return { l: e.label, bg: e.bg, fg: e.fg };
+  return { l: id ? String(id) : '—', bg: '#f4f4f6', fg: '#6B7280' };
 };
+const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = new Proxy({}, {
+  get: (_t, k: string) => ETAPA_DE(k),
+}) as any;
 
 // Las 5 pestañas de trabajo + Todos. Cada lead vive en UNA sola (regla
 // anti-solape, prioridad Prueba > Oportunidad > Calificados > Campañas >
@@ -370,7 +386,7 @@ export default function LeadsTab() {
       diaLocal(c.created_at),
       [c.nombre, c.apellido].filter(Boolean).join(' '), c.companies?.nombre || '', c.email || '',
       c.whatsapp || c.telefono || '', origenDe(origenDeRegistro(c)).l,
-      c.sucursales_interes || c.companies?.sucursales || '', (ETAPAS[c.lifecycle_stage] || ETAPAS.lead).l,
+      c.sucursales_interes || c.companies?.sucursales || '', ETAPA_DE(c.lifecycle_stage).l,
       pintaEstatus(c.estatus_lead, c.retenido_hasta).label,
       dias(c.last_contact_at || c.created_at) ?? '',
     ]);
@@ -1230,7 +1246,7 @@ export default function LeadsTab() {
                 const conSec = atorados.length > 0 && alDia.length > 0;
                 const fila = (c: any) => {
                 const o = origenDe(origenDeRegistro(c));
-                const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+                const et = ETAPA_DE(c.lifecycle_stage);
                 const pr = prueba(c);
                 const excep = (c.historial && HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA])
                   || (pr && pr.restan != null && pr.restan <= 0 ? { label: pr.restan < 0 ? 'prueba vencida' : 'prueba termina hoy', bg: '#FFF4E5', fg: '#9a6a10' } : null);
@@ -1422,7 +1438,7 @@ export default function LeadsTab() {
                   const o = origenDe(origenDeRegistro(c));
                   const tel = c.whatsapp || c.telefono;
                   const d = dias(c.last_contact_at || c.created_at);
-                  const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+                  const et = ETAPA_DE(c.lifecycle_stage);
                   return (
                     <Fragment key={c.id}>
                     {/* El rótulo del grupo. Va como una fila más, y su
@@ -2096,7 +2112,7 @@ export default function LeadsTab() {
         const cased = (t: string) => String(t || '').replace(/\S+/g, w => w[0].toUpperCase() + (w.length > 2 && w === w.toUpperCase() ? w.slice(1).toLowerCase() : w.slice(1)));
         const nombre = cased([c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre');
         const o = origenDe(origenDeRegistro(c));
-        const et2 = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
+        const et2 = ETAPA_DE(c.lifecycle_stage);
         const dToque = c.last_contact_at ? Math.floor((Date.now() - Date.parse(c.last_contact_at)) / 86400000) : null;
         const tel = c.whatsapp || c.telefono;
         const acciones = [
