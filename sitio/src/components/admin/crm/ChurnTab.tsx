@@ -283,7 +283,8 @@ export default function ChurnTab() {
           </div>
         </div>
       ) : (
-      <div className="crm-reja" ref={rejaRef}>
+      <div className="crm-reja churn-reja" ref={rejaRef}
+        style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, overflow: 'hidden' }}>
         <span className="crm-orilla" aria-hidden="true" />
         <div className="crm-scroll-tabla" ref={scrollRef}>
           <table className="crm-tabla" style={{ minWidth: ancho }}>
@@ -315,9 +316,6 @@ export default function ChurnTab() {
               {verEtapa && <th scope="col" style={{ ...T.th, width: 120 }}>Etapa</th>}
               {verCierre && <th scope="col" style={{ ...T.th, width: 200 }}>Cierre</th>}
               <th scope="col" style={{ ...T.th, width: 150 }}>Siguiente paso</th>
-              <th scope="col" className="derecha" style={{ ...T.th, width: 92 }}>
-                <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Acciones</span>
-              </th>
             </tr></thead>
             <tbody>
               {lista.map((c: any) => {
@@ -326,7 +324,6 @@ export default function ChurnTab() {
                 const tono = TONOS[salud.tono];
                 const quedan = diasDeGracia(c);
                 const et = ETAPA(c.etapa);
-                const tel = c._tel || null;
                 return (
                   <Fragment key={c.id}>
                   <tr className={sel.has(c.id) ? 'sel' : undefined} onClick={() => setAbierto(c.id)}
@@ -408,17 +405,6 @@ export default function ChurnTab() {
                             <span style={{ ...T.sub, display: 'block', color: c.proximo_paso_at && c.proximo_paso_at < new Date().toISOString().slice(0, 10) ? '#C0554E' : undefined }}>
                               {c.proximo_paso_at || 'sin fecha'}</span></>)
                         : <span style={T.vacio}>sin definir</span>}
-                    </td>
-                    <td className="derecha" style={{ ...T.td, padding: '9px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {tel && (
-                        <a className="crm-fila-wa" href={'https://wa.me/' + String(tel).replace(/\D/g, '')} target="_blank" rel="noreferrer"
-                          aria-label="Escribir por WhatsApp" onClick={e => e.stopPropagation()}
-                          style={{ width: 26, height: 26, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#1E8A63', verticalAlign: 'middle' }}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
-                            <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.2A8.5 8.5 0 1121 11.5z" strokeLinejoin="round" /></svg>
-                        </a>
-                      )}
-
                     </td>
                   </tr>
                   </Fragment>
