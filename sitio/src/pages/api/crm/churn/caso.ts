@@ -59,10 +59,17 @@ export const GET: APIRoute = async ({ request, url }) => {
     .select('id, numero, estado, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos')
     .eq('churn_caso_id', id).order('created_at', { ascending: false });
 
+  /* Los compromisos, con su estado real: prometer en un PDF y no tener quién
+     lo persiga es exactamente cómo se perdió esta gente la primera vez. */
+  const { data: compromisos } = await supabase.from('mejoras')
+    .select('id, titulo, estado, fecha_compromiso, fecha_entrega')
+    .eq('company_id', caso.company_id).is('archived_at', null)
+    .order('fecha_compromiso', { ascending: true });
+
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
-  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [] });
+  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */

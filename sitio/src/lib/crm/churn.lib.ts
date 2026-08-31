@@ -175,6 +175,32 @@ export async function aceptarPropuestaRescate(q: any) {
     await anotar(caso, 'nota', r.ok ? 'Acceso devuelto en SACS' : 'No se pudo devolver el acceso en SACS', r.ok ? undefined : r.error);
   }
 
+  /* LOS COMPROMISOS SE VUELVEN TAREAS REALES, no texto en un PDF. Van a
+     `mejoras`, que es la tabla que el CRM ya usa para «lo que prometimos» —
+     con fecha, estado y dueño— y que el menú ya vigila con su contador de
+     vencidos. Prometer en un documento y no tener quién lo persiga es
+     exactamente cómo se perdió esta gente la primera vez.
+     La fecha por omisión es a mitad de la gracia: un compromiso que vence el
+     mismo día que termina el período no da tiempo a que sirva de nada. */
+  const compromisos: string[] = Array.isArray(q.rescate_compromisos) ? q.rescate_compromisos : [];
+  if (compromisos.length) {
+    const inicio = Date.now();
+    const fin = q.rescate_hasta ? Date.parse(String(q.rescate_hasta) + 'T12:00:00') : inicio + 30 * 86400000;
+    const mitad = new Date(inicio + (fin - inicio) / 2).toISOString().slice(0, 10);
+    await supabase.from('mejoras').insert(compromisos.map(c => ({
+      company_id: caso.company_id,
+      titulo: c,
+      descripcion: `Comprometido en la propuesta de rescate ${q.numero || ''}`.trim(),
+      estado: 'idea',
+      origen: 'manual',
+      quote_id: q.id,
+      fecha_compromiso: mitad,
+      visible_cliente: true,
+    }))).then(() => {}, () => {});
+    await anotar(caso, 'nota', `${compromisos.length} compromisos abiertos como tareas`,
+      `Con fecha ${mitad}. Se siguen desde Acompañamiento y cuentan en el contador de vencidos.`);
+  }
+
   // Y se avisa al equipo: alguien tiene que arrancar los compromisos.
   await supabase.from('crm_notificaciones').insert({
     tipo: 'churn_propuesta_aceptada', nivel: 'urgente',

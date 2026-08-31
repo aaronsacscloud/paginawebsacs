@@ -341,6 +341,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
 
             <BloquePropuesta d={d} id={id} onCambio={() => { cargar(); onCambio(); }} />
             <BloqueUso caso={caso} emp={emp} />
+            <BloqueCompromisos lista={d.compromisos || []} />
 
             {/* ── Registrar lo que pasó. Va ARRIBA de la historia porque es
                     lo que se hace al terminar una llamada, no al final de
@@ -615,6 +616,52 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ── LO QUE PROMETIMOS ──────────────────────────────────────────────────────
+   Los compromisos de la propuesta no se quedan en el PDF: se abren como
+   tareas con fecha en el mismo lugar donde vive el resto de lo prometido, y
+   el contador de vencidos del menú los vigila sin que nadie haga nada extra.
+   Prometer y no tener quién lo persiga es cómo se perdió esta gente. */
+function BloqueCompromisos({ lista }: { lista: any[] }) {
+  if (!lista.length) return null;
+  const hoy = new Date().toISOString().slice(0, 10);
+  const hechos = lista.filter(m => m.estado === 'entregada').length;
+  const TONO: any = { entregada: ['#EAF8F2', '#1E8A63', 'listo'], en_proceso: ['#E3EDFD', '#2C5FC4', 'en curso'], idea: ['#f4f4f6', '#5D6470', 'sin empezar'] };
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8' }}>
+          Lo que prometimos
+        </span>
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: hechos === lista.length ? '#1E8A63' : '#71707C' }}>
+          {hechos} de {lista.length} cumplidos
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: 7 }}>
+        {lista.map((m: any) => {
+          const [bg, fg, l] = TONO[m.estado] || TONO.idea;
+          // Vencido es rojo aunque el estado diga «en curso»: la fecha manda.
+          const vencido = m.estado !== 'entregada' && m.fecha_compromiso && m.fecha_compromiso < hoy;
+          return (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: '0.82rem' }}>
+              <span style={{ flex: 1, minWidth: 0, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.titulo}>{m.titulo}</span>
+              {m.fecha_compromiso && (
+                <span style={{ fontSize: '0.73rem', color: vencido ? '#C0554E' : '#8e88a8', fontWeight: vencido ? 700 : 400, whiteSpace: 'nowrap' }}>
+                  {vencido ? 'venció ' : ''}{m.fecha_compromiso}
+                </span>
+              )}
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, borderRadius: 20, padding: '2px 9px', background: bg, color: fg, whiteSpace: 'nowrap' }}>{l}</span>
+            </div>
+          );
+        })}
+      </div>
+      <a href="/admin/crm?tab=mejoras" style={{ display: 'inline-block', marginTop: 10, fontSize: '0.79rem', fontWeight: 700, color: '#5B4BD6' }}>
+        Trabajarlos en Acompañamiento ›
+      </a>
     </div>
   );
 }

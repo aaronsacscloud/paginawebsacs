@@ -43,6 +43,23 @@ export const GET: APIRoute = async ({ request, url }) => {
   return json({ data: data || [], compromisos: COMPROMISOS });
 };
 
+/**
+ * El folio de las propuestas va aparte de las cotizaciones (RES-, no COT-):
+ * son documentos distintos, se cuentan distinto, y compartir la serie haría
+ * que «llevamos 60 cotizaciones» incluyera rescates que no vendieron nada.
+ * Mismo patrón de reintento que el folio de cotizaciones: dos personas
+ * creando a la vez no pueden quedarse con el mismo número.
+ */
+async function siguienteFolio(): Promise<string> {
+  const { data } = await supabase.from('quotes').select('numero').eq('tipo', 'rescate');
+  let max = 0;
+  for (const r of data || []) {
+    const m = String(r?.numero || '').match(/(\d+)\s*$/);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return `RES-${String(max + 1).padStart(3, '0')}`;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'Sin sesión' }, 401);
@@ -81,6 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: q, error } = await supabase.from('quotes').insert({
     tipo: 'rescate',
+    numero: await siguienteFolio(),
     churn_caso_id: caso.id,
     company_id: caso.company_id,
     contact_id: b.contact_id || null,
