@@ -525,6 +525,57 @@ export const WIKI: PaginaWiki[] = [
 <p>Una reunión reagendada deja el booking viejo en <code>reagendada</code> y crea uno nuevo. <b>Dos reagendas de la misma cita suman 3 al total.</b> Por eso la columna de reagendadas existe: para poder restar y saber cuántas reuniones hubo de verdad.</p></div>`,
   },
   {
+    id: 'reunion-paso-a-paso', grupo: 'Hablar con el cliente', titulo: 'Una reunión, paso a paso',
+    bajada: 'Qué hace el sistema solo, en qué orden, y qué viene puesto de fábrica.',
+    cuerpo: `
+<p>Esto es lo que pasa desde que se propone un horario hasta que la reunión se cierra. <b>Casi todo corre solo</b>; lo que necesita una persona está marcado.</p>
+
+<h3>1 · Se propone el horario</h3>
+<p>Hay tres caminos y sirven para cosas distintas:</p>
+<table class="w-tab"><thead><tr><th>Camino</th><th>Cuándo se usa</th></tr></thead><tbody>
+<tr><td><b>Desde el inbox</b> — botón de proponer horarios</td><td>El de todos los días. El cliente recibe la lista y <b>toca uno</b>: se agenda solo, sin que nadie escriba nada. Es lo que más cierra.</td></tr>
+<tr><td><b>Link general</b> — sacscloud.com/agendar/…</td><td>Para campañas y firmas de correo. Da la cara quien diga el tipo de reunión.</td></tr>
+<tr><td><b>Link personal</b> — /agendar/u/… </td><td>El de cada vendedor. Ahí da la cara <b>esa</b> persona, con su nombre y su foto.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Los horarios que se ofrecen no son los primeros libres</span>
+<p>Se ordenan por <b>a qué horas y qué días la gente sí llegó</b> en los últimos 90 días. Ordenar por el hueco más cercano es ordenar por la comodidad del calendario, no por la probabilidad de que la reunión ocurra. Cuando todavía no hay historia suficiente, todo empata y vuelve a mandar la cercanía.</p>
+<p>Se ofrecen <b>máximo 2 horarios por día</b> para que la lista dé días distintos y no diez horas del mismo martes, y <b>10 en total</b>, que es el límite de WhatsApp.</p></div>
+
+<h3>2 · Al agendar</h3>
+<p>Salen la confirmación por correo y por WhatsApp con la liga de Meet, la fecha, la hora y el huso. Las dos se pueden apagar por separado en el tipo de reunión.</p>
+
+<h3>3 · Antes de la reunión</h3>
+<p>Los recordatorios que vienen <b>preconfigurados en los nueve tipos</b>:</p>
+<table class="w-tab"><thead><tr><th>Cuándo</th><th>Al cliente</th><th>Al vendedor</th></tr></thead><tbody>
+<tr><td><b>1 día antes</b></td><td>Correo y WhatsApp</td><td>WhatsApp</td></tr>
+<tr><td><b>3 horas antes</b></td><td>Correo y WhatsApp</td><td>WhatsApp</td></tr>
+<tr><td><b>10 minutos antes</b></td><td>Solo WhatsApp</td><td>WhatsApp</td></tr>
+</tbody></table>
+<p>Todo eso se cambia en <b>Configuración → Agenda → Editar → Avisos al cliente</b>. Ver <b>Los avisos de la reunión</b> para el detalle.</p>
+
+<h3>4 · Si el cliente toca «Reagendar»</h3>
+<p>El recordatorio trae ese botón. Al tocarlo recibe <b>en el acto</b> la liga para escoger otro horario, con su reunión nombrada — no espera a que alguien lea el chat. Quien toca ese botón está diciendo que sí quiere la reunión: es de las señales más fuertes que da un lead.</p>
+
+<h3>5 · Después de la reunión — ESTO SÍ LO HACE UNA PERSONA</h3>
+<div class="w-caja"><span class="w-k">Marcar «asistió» o «no asistió» es lo único que el sistema no puede adivinar</span>
+<p>Y de ahí cuelga <b>todo</b> lo demás: el seguimiento a quien no llegó, el conteo de inasistencias del tipo de reunión y la medición de si los recordatorios sirven. Si nadie marca, las tres cosas se apagan solas y en silencio, y la agenda se llena de reuniones «confirmadas» que ya ocurrieron.</p>
+<p><b>Tres horas después de terminar</b>, si sigue sin marcarse, sale un aviso en la campana preguntando si llegó.</p></div>
+
+<h3>6 · Si no llegó</h3>
+<p>Al marcar <b>no asistió</b> sale solo un correo y un WhatsApp invitándolo a escoger otro horario, con la liga lista. Se le escribe por plantilla: a quien no llegó casi nunca se le puede mandar texto libre —Meta solo lo permite si él escribió en las últimas 24 horas— y es justo a quien hay que alcanzar.</p>
+<p>El tipo de reunión puede <b>alertar tras N inasistencias</b>; eso se ve en la ficha del cliente.</p>
+
+<h3>Lo que viene puesto de fábrica</h3>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Por defecto</th></tr></thead><tbody>
+<tr><td>Confirmación al agendar</td><td>Correo <b>y</b> WhatsApp, encendidos</td></tr>
+<tr><td>Recordatorios</td><td>1 día · 3 horas · 10 minutos</td></tr>
+<tr><td>Aviso al vendedor</td><td>WhatsApp, con la misma anticipación</td></tr>
+<tr><td>Un tipo de reunión NUEVO</td><td>Nace con esos tres recordatorios, no mudo</td></tr>
+<tr><td>Quién da la cara</td><td><b>Andrea Araujo</b> en los nueve tipos. En un link personal, el vendedor de ese link.</td></tr>
+<tr><td>Zona horaria</td><td>Todo se dice en hora del centro de México, y a quien está en otra zona se le agrega su hora local</td></tr>
+</tbody></table>`,
+  },
+  {
     id: 'avisos-reunion', grupo: 'Hablar con el cliente', titulo: 'Los avisos de la reunión',
     bajada: 'Qué recibe el cliente cuando agenda y antes de conectarse.',
     cuerpo: `
@@ -543,6 +594,10 @@ export const WIKI: PaginaWiki[] = [
 </tbody></table>
 <div class="w-caja"><span class="w-k">Todos dicen la hora y el huso</span>
 <p>Cada aviso trae la hora <b>y</b> que es hora del centro de México. Un cliente en Tijuana y otro en Cancún llevan dos horas de diferencia entre sí: una hora sin huso es una reunión a la que alguien llega tarde.</p></div>
+<h3>Quién da la cara</h3>
+<p>En el mismo editor se define el <b>nombre y la foto</b> que ve el cliente en la página de agendar. Antes salía siempre el del dueño del tipo de reunión, y el dueño es quien decide de qué calendario salen los horarios — no necesariamente quien atiende. Vacío = el del dueño.</p>
+<p>En un <b>link personal</b> (/agendar/u/…) manda el vendedor de ese link, no este campo: para eso existe un link personal.</p>
+
 <h3>Lo que puedes configurar</h3>
 <ul>
 <li>Agregar o quitar recordatorios, los que quieras.</li>
