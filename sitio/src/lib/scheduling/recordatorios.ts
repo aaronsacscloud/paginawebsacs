@@ -144,3 +144,69 @@ export function datosEmail(b: DatosReunion, anticipacion?: string) {
     confirmar_url: b.token_cancelar ? `${BASE}/api/scheduling/confirm-attendance?token=${b.token_cancelar}` : '',
   };
 }
+
+// ══ Los parámetros de las plantillas de WhatsApp ═══════════════════════════
+//
+// SIEMPRE se manda por PLANTILLA, sin excepción. Medido el 31-ago: de 280
+// conversaciones solo 8 tenían la ventana de 24 h abierta, o sea que el texto
+// libre habría fallado en el 97% de los casos — y en silencio, porque el
+// error moría en la respuesta del cron. La plantilla llega siempre.
+
+export const PLANTILLA_CLIENTE = 'reunion_recordatorio';
+export const PLANTILLA_HOST = 'reunion_recordatorio_host';
+export const IDIOMA_PLANTILLA = 'es_MX';
+
+/** Meta rechaza saltos de línea y tabs dentro de un parámetro. */
+const limpio = (t: string) => String(t == null ? '' : t).replace(/\s+/g, ' ').trim().slice(0, 900) || '—';
+
+/** «miércoles 2 de septiembre de 2026, 4:30 p.m. a 5:30 p.m.» */
+export function cuandoLargo(b: DatosReunion): string {
+  return `${fmtFechaLarga(b.fecha)}, ${fmtRango(b.hora_inicio, b.event_types?.duracion_minutos)}`;
+}
+
+/**
+ * La hora del invitado, cuando NO vive en CDMX. Decir solo «hora del centro de
+ * México» es correcto pero le deja la cuenta a él, y una resta mal hecha es
+ * una reunión perdida. Devuelve '' si es la misma zona o si no la sabemos.
+ */
+export function horaLocalInvitado(b: DatosReunion & { timezone_invitado?: string | null }): string {
+  const tz = (b.timezone_invitado || '').trim();
+  if (!tz || tz === 'America/Mexico_City') return '';
+  try {
+    const d = new Date(inicioMs(b.fecha, b.hora_inicio));
+    const f = new Intl.DateTimeFormat('es-MX', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${f.format(d)} en tu zona (${tz})`;
+  } catch { return ''; }
+}
+
+/** «sesión 2 de 3» — sin esto, en una capacitación nadie sabe en cuál va. */
+export function etiquetaSerie(b: { serie_indice?: number | null; serie_total?: number | null }): string {
+  const i = Number(b?.serie_indice), n = Number(b?.serie_total);
+  return i > 0 && n > 1 ? `sesión ${i} de ${n}` : '';
+}
+
+/** Los 5 parámetros de `reunion_recordatorio`, en orden. */
+export function paramsCliente(b: DatosReunion & { timezone_invitado?: string | null; serie_indice?: number | null; serie_total?: number | null }, anticipacion: string): string[] {
+  const serie = etiquetaSerie(b);
+  const local = horaLocalInvitado(b);
+  return [
+    limpio((b.invitee_nombre || '').split(' ')[0] || 'hola'),
+    limpio(b.event_types?.nombre || 'reunión') + (serie ? ` (${serie})` : ''),
+    limpio(anticipacion),
+    limpio(cuandoLargo(b)) + (local ? ` · ${local}` : ''),
+    limpio(b.google_meet_link || 'te mandamos la liga antes de la sesión'),
+  ].map(limpio);
+}
+
+/** Los 5 de `reunion_recordatorio_host`. */
+export function paramsHost(b: DatosReunion & { invitee_empresa?: string | null; serie_indice?: number | null; serie_total?: number | null }, anticipacion: string): string[] {
+  const serie = etiquetaSerie(b);
+  const quien = [b.invitee_nombre, b.invitee_empresa ? `(${b.invitee_empresa})` : ''].filter(Boolean).join(' ');
+  return [
+    limpio(b.event_types?.nombre || 'reunión') + (serie ? ` (${serie})` : ''),
+    limpio(anticipacion),
+    limpio(quien || 'un cliente'),
+    limpio(cuandoLargo(b)),
+    limpio(b.google_meet_link || 'sin liga de Meet todavía'),
+  ].map(limpio);
+}

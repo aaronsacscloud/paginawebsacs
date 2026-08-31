@@ -188,10 +188,42 @@ export const GET: APIRoute = async ({ request, url }) => {
     });
   }
 
+  /* ══ ¿SIRVEN LOS RECORDATORIOS? ══
+     Tres recordatorios pueden bajar el no-show o pueden ser puro ruido, y sin
+     medirlo no hay forma de quitar el que no aporta. Se comparan las reuniones
+     que SÍ recibieron algún recordatorio contra las que no: es la única
+     comparación honesta, porque el que no recibió nada es el control. */
+  const recordatorios = await (async () => {
+    const ids = (bookings || []).map((b: any) => b.id);
+    if (!ids.length) return null;
+    const { data: avisos } = await supabase.from('activities')
+      .select('metadata').eq('tipo', 'sistema').not('metadata->>booking_recordatorio', 'is', null)
+      .in('metadata->>booking_id', ids);
+    const conAviso = new Set((avisos || []).map((a: any) => a?.metadata?.booking_id).filter(Boolean));
+    const tasa = (lista: any[]) => {
+      const cerradas = lista.filter(b => b.estado === 'realizada' || b.estado === 'no_show');
+      if (!cerradas.length) return null;
+      return Math.round((cerradas.filter(b => b.estado === 'no_show').length / cerradas.length) * 100);
+    };
+    const con = (bookings || []).filter((b: any) => conAviso.has(b.id));
+    const sin = (bookings || []).filter((b: any) => !conAviso.has(b.id));
+    return {
+      enviados: (avisos || []).length,
+      reuniones_con_recordatorio: con.length,
+      reuniones_sin_recordatorio: sin.length,
+      no_show_con: tasa(con),
+      no_show_sin: tasa(sin),
+      /* Sin base suficiente NO se pinta un porcentaje: con tres reuniones,
+         una falta es «33% de no-show» y eso no significa nada. */
+      base_suficiente: con.length >= 10 && sin.length >= 10,
+    };
+  })();
+
   return new Response(
     JSON.stringify({
       period_days: days,
       total,
+      recordatorios,
       by_estado: byEstado,
       no_show_rate: noShowRate,
       cancel_rate: cancelRate,

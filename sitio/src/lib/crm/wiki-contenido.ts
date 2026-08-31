@@ -551,8 +551,22 @@ export const WIKI: PaginaWiki[] = [
 <li>Apagar uno sin borrarlo, con la casilla <b>activo</b>.</li>
 <li>Apagar la confirmación de agendado, por canal.</li>
 </ul>
+<h3>El WhatsApp siempre sale por plantilla</h3>
+<p>Meta no deja mandar texto libre a quien no nos escribió en las últimas 24 horas, y casi nadie está en esa ventana: <b>de 280 conversaciones, 8</b>. Por eso los recordatorios usan plantilla aprobada («reunion_recordatorio»), que llega siempre. Si Meta todavía no la aprueba, el correo sale igual y <b>aparece un aviso en la campana</b> diciendo que WhatsApp no está saliendo.</p>
+<h3>Al vendedor también le llega</h3>
+<p>El host recibe su propio WhatsApp con la misma anticipación: con quién es, cuándo y la liga. Si el vendedor se distrae, el cliente entra a Meet solo — que es peor que si no llegara ninguno de los dos.</p>
+<h3>Lo que el sistema respeta y avisa</h3>
+<ul>
+<li><b>Quien pidió no recibir WhatsApp</b> no lo recibe, ni siquiera recordatorios. Eso no es preferencia, es cumplimiento.</li>
+<li>Si <b>falta la liga de Meet</b> cuando toca el recordatorio, el aviso sale igual —la hora es lo que importa— y salta una alerta para que alguien la ponga.</li>
+<li>Si un aviso <b>no logra salir</b>, aparece en la campana. Un recordatorio que no llegó y nadie supo es igual a no tener recordatorios, con la ilusión de tenerlos.</li>
+<li>Al cliente que está <b>fuera del centro del país</b> se le dice además su hora local. Tijuana lleva una hora menos y Cancún una más: hacer la resta no es su trabajo.</li>
+<li>En una <b>serie</b>, el aviso dice «sesión 2 de 3».</li>
+</ul>
 <div class="w-caja"><span class="w-k">Dos límites que conviene saber</span>
 <p>El reloj revisa cada <b>5 minutos</b>: un recordatorio de menos de 5 minutos no alcanza a salir. Y ninguno se manda tarde — si la reunión ya empezó, el aviso no sale: decir «es en 1 día» cuando faltan 20 horas es peor que no decir nada.</p></div>
+<div class="w-caja"><span class="w-k">¿Sirven?</span>
+<p>En Agenda → Estadísticas se compara el no-show de las reuniones que <b>sí</b> recibieron recordatorio contra las que no. Con menos de diez de cada lado no se pinta el porcentaje: con tres reuniones, una falta es «33%» y eso no significa nada.</p></div>
 <div class="w-caja"><span class="w-k">Cada aviso queda registrado</span>
 <p>En la ficha del lead aparece qué recordatorio salió, por dónde y cuándo. Si el cliente dice que no le llegó, ahí se ve. Y nunca se manda dos veces, aunque el reloj corra dos veces por un reintento.</p></div>`,
   },

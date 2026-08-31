@@ -10,6 +10,7 @@
 import {
   aMinutos, etiqueta, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
   inicioMs, textoWhatsApp, TZ_ETIQUETA,
+  paramsCliente, paramsHost, etiquetaSerie, horaLocalInvitado,
 } from './recordatorios.ts';
 
 let ok = 0; const fallas: string[] = [];
@@ -94,6 +95,47 @@ const sinMeet = textoWhatsApp({ ...b, google_meet_link: null }, '1 día');
 cierto(!sinMeet.includes('meet.google.com'), 'sin liga no se inventa una');
 cierto(sinMeet.includes('antes de la sesión'), 'sin liga se dice que llegará');
 cierto(sinMeet.includes(TZ_ETIQUETA), 'sin liga, el huso sigue estando');
+
+// ── Los parámetros de las plantillas de Meta ─────────────────────────────
+const pc = paramsCliente(b as any, '3 horas');
+es(pc.length, 5, 'la plantilla del cliente lleva 5 parámetros');
+es(pc[0], 'Ana', 'primer nombre, no el completo');
+es(pc[2], '3 horas', 'la anticipación va tal cual');
+cierto(pc[3].includes('4:30 p.m.'), 'el parámetro de cuándo trae la hora');
+cierto(pc[4].includes('meet.google.com'), 'el quinto es la liga');
+// Meta RECHAZA saltos de línea dentro de un parámetro: si uno se cuela, la
+// plantilla falla al enviarse y el recordatorio no sale.
+cierto(pc.every(x => !/[\n\r\t]/.test(x)), 'ningún parámetro trae saltos de línea');
+cierto(pc.every(x => x.length > 0), 'ningún parámetro va vacío (Meta lo rechaza)');
+
+const sinLiga = paramsCliente({ ...b, google_meet_link: null } as any, '1 día');
+es(sinLiga[4], 'te mandamos la liga antes de la sesión', 'sin liga, el parámetro NO queda vacío');
+
+// La serie se anuncia: en una capacitación, saber en cuál va cambia si se conecta.
+es(etiquetaSerie({ serie_indice: 2, serie_total: 3 }), 'sesión 2 de 3', 'serie de 3');
+es(etiquetaSerie({ serie_indice: 1, serie_total: 1 }), '', 'una sola sesión no es serie');
+es(etiquetaSerie({}), '', 'sin serie, nada');
+cierto(paramsCliente({ ...b, serie_indice: 2, serie_total: 3 } as any, '1 día')[1].includes('sesión 2 de 3'),
+  'la serie viaja en el parámetro del tipo de reunión');
+
+// La hora local del invitado, solo cuando NO es CDMX.
+es(horaLocalInvitado({ ...b, timezone_invitado: 'America/Mexico_City' } as any), '', 'misma zona: no se repite');
+es(horaLocalInvitado(b as any), '', 'sin zona conocida: no se inventa');
+/* 3:30 y no 2:30: en septiembre Tijuana SÍ tiene horario de verano (UTC−7) y
+   CDMX no (UTC−6 fijo desde 2022), así que la diferencia es de UNA hora, no de
+   dos. Lo escribí mal la primera vez — que es exactamente el error que este
+   campo le evita al cliente. */
+cierto(horaLocalInvitado({ ...b, timezone_invitado: 'America/Tijuana' } as any).includes('3:30 p.m.'),
+  'Tijuana ve una hora menos');
+cierto(horaLocalInvitado({ ...b, timezone_invitado: 'America/Cancun' } as any).includes('5:30 p.m.'),
+  'Cancún ve una hora más');
+es(horaLocalInvitado({ ...b, timezone_invitado: 'Zona/Inventada' } as any), '', 'una zona inválida no truena');
+
+const ph = paramsHost({ ...b, invitee_empresa: 'Boutique Mila' } as any, '10 minutos');
+es(ph.length, 5, 'la plantilla del host lleva 5 parámetros');
+cierto(ph[2].includes('Ana Ruiz') && ph[2].includes('Boutique Mila'), 'el host ve con quién y de dónde');
+es(paramsHost({ ...b, google_meet_link: null } as any, '1 día')[4], 'sin liga de Meet todavía',
+  'al host se le dice que falta la liga');
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }
