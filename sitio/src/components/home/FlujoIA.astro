@@ -21,7 +21,7 @@ const pasos = [
     texto: 'La que tomaste con el celular en tu tienda, colgada en el gancho, con la luz que había. No necesitas estudio ni sesión.',
     img: '/images/flujo/01-tu-foto.webp',
     alt: 'Vestido colgado en un gancho fotografiado con celular dentro de una boutique',
-    tono: '#0D5561', zoom: -0.87, foco: [0.5, 0.5],
+    tono: '#125C93', zoom: -0.87, foco: [0.5, 0.5],
   },
   {
     n: '02',
@@ -97,21 +97,22 @@ const pasos = [
      terracota en vez de fundirlo, como pasaba en tierra sobre tierra.
      En claro NO se puede: las cuatro fotos son de estudio negro y sobre crema
      las dos que van en panel quedan como rectángulos negros flotando.
-     Van de teal a índigo, oscureciéndose, así la sección entrega al pilar
+     Todos son AZUL, sin teal: el verde no pega con el corte de arriba. Van
+     de océano a índigo, oscureciéndose, así la sección entrega al pilar
      Controla (#1D1D1F) sin un corte duro.
 
      El tono se registra como color para que el cambio de paso sea un fundido
      y no un salto. Donde @property no exista, cambia de golpe: se ve igual de
      bien, solo sin la transición. */
-  @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #0D5561; }
-  @property --fl-lienzo-fondo { syntax: '<color>'; inherits: true; initial-value: #052227; }
+  @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #125C93; }
+  @property --fl-lienzo-fondo { syntax: '<color>'; inherits: true; initial-value: #07253B; }
 
   .fl {
     position: relative; color: #fff;
     /* El menú flota encima: sin esto, saltar a #flujo deja el badge debajo. */
     scroll-margin-top: 80px;
-    --fl-fondo: #0D5561;
-    --fl-lienzo-fondo: #052227;
+    --fl-fondo: #125C93;
+    --fl-lienzo-fondo: #07253B;
     background: var(--fl-fondo);
     transition: --fl-fondo 1.1s cubic-bezier(.4,0,.2,1),
                 --fl-lienzo-fondo 1.1s cubic-bezier(.4,0,.2,1);
