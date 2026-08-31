@@ -58,11 +58,15 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data: pruebas } = await supabase.from('contacts')
     .select('id, nombre, prueba_cuenta, prueba_estado').eq('company_id', companyId)
     .not('prueba_cuenta', 'is', null).limit(5);
+  const { data: fis } = await supabase.from('companies')
+    .select('rfc, razon_social, regimen_fiscal, cp_fiscal, constancia_fiscal_url, constancia_fiscal_nombre')
+    .eq('id', companyId).maybeSingle();
   const { data: caso } = await supabase.from('onboarding_casos')
     .select('id, etapa, inicio').eq('company_id', companyId).is('cerrado_at', null).maybeSingle();
 
   return json({
     cuenta,
+    fiscales: fis || {},
     pruebas: pruebas || [],
     caso: caso || null,
     camino: cuenta
@@ -190,5 +194,30 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, cuenta, password_temporal: temporal, onboarding: onb });
   }
 
-  return json({ error: 'Acción desconocida: activar | ligar | crear' }, 400);
+  // ── FISCALES: la otra mitad del alta ─────────────────────────────────────
+  if (accion === 'fiscales') {
+    const rfc = String(b.rfc || '').trim().toUpperCase();
+    const razon = String(b.razon_social || '').trim();
+    const cp = String(b.cp_fiscal || '').trim();
+    const regimen = String(b.regimen_fiscal || '').trim();
+    if (!razon) return json({ error: 'Falta la razón social.' }, 400);
+    if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc)) return json({ error: 'Ese RFC no tiene la forma correcta (ej. XAXX010101000).' }, 400);
+    if (cp && !/^\d{5}$/.test(cp)) return json({ error: 'El código postal son 5 dígitos.' }, 400);
+    const { error } = await supabase.from('companies').update({
+      rfc, razon_social: razon,
+      cp_fiscal: cp || null,
+      regimen_fiscal: regimen || null,
+      ...(b.constancia_url ? { constancia_fiscal_url: String(b.constancia_url), constancia_fiscal_nombre: String(b.constancia_nombre || 'constancia') } : {}),
+      updated_at: new Date().toISOString(),
+    }).eq('id', companyId);
+    if (error) return json({ error: error.message }, 500);
+    await supabase.from('activities').insert({
+      company_id: companyId, tipo: 'sistema', automatico: false,
+      titulo: `Datos fiscales capturados: ${razon} (${rfc})${b.constancia_url ? ' · con constancia adjunta' : ''}`,
+      metadata: { onboarding: true, quien },
+    });
+    return json({ ok: true });
+  }
+
+  return json({ error: 'Acción desconocida: activar | ligar | crear | fiscales' }, 400);
 };

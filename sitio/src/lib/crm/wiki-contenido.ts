@@ -636,6 +636,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>Venía de prueba gratis</b></td><td><b>Activar</b>: la cuenta deja de ser prueba y queda indefinida — se apaga la marca en SACS, se desbloquea si estaba vencida, y el CRM marca la prueba como convertida. La liga ya existía.</td></tr>
 <tr><td><b>Nunca tuvo cuenta</b></td><td><b>Crear</b>: identificador + correo del dueño (los demás datos salen de la ficha). Nace SIN marca de prueba y ligada. La contraseña temporal se enseña UNA vez: dásela al cliente en ese momento.</td></tr>
 <tr><td><b>La cuenta existe pero nadie la ligó</b></td><td><b>Ligar</b>: se escribe la liga. Si la cuenta ya es de otra empresa, el botón lo dice y no la pisa — ese conflicto lo resuelve una persona.</td></tr>
+<tr><td><b>Y siempre: sus datos fiscales</b></td><td>Razón social, RFC, código postal y régimen fiscal, más su <b>constancia de situación fiscal adjunta</b> (PDF o foto, en el mismo recuadro). Sin esto no se le puede facturar, y el recuadro del alta no se cierra sin ellos.</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">Si algo falla, el pendiente no muere</span>
 <p>El cobro nunca se deshace y el error queda en la campana con sus palabras. Se reintenta desde el mismo botón. Nunca «se cobró pero quién sabe qué pasó con la cuenta».</p></div>
@@ -646,6 +647,7 @@ export const WIKI: PaginaWiki[] = [
 <li><b>Se cobra la cotización.</b> El sistema revisa solo la cuenta: si falta, el pendiente cae en la campana en ese momento.</li>
 <li><b>Se abre la ficha del cliente</b> (pestaña Resumen). Si hay trámite pendiente, ahí está el recuadro «Cuenta SACS · paso obligatorio del alta» con el camino que aplica. Si no aparece el recuadro, el trámite ya está cerrado.</li>
 <li><b>Se ejecuta el camino</b> — activar, crear o ligar. Al crear, la contraseña temporal se enseña UNA sola vez: cópiala y dásela al cliente en ese momento, no existe forma de volver a verla.</li>
+<li><b>Se capturan sus datos fiscales</b> en el mismo recuadro: razón social, RFC, C.P. y régimen tal como vienen en su constancia — y la constancia se adjunta ahí mismo. Pídesela en la misma llamada del alta: es cuando el cliente la tiene a la mano y la buena voluntad está fresca.</li>
 <li><b>Se confirma con el cliente que ya entró.</b> El alta no termina cuando el botón dice «listo»: termina cuando el cliente está adentro.</li>
 </ol>
 <div class="w-caja mut"><span class="w-k">Si «Activar» contesta que el puente está cerrado</span>
