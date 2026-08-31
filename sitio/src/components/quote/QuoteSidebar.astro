@@ -5,6 +5,9 @@ interface Props {
   initialTab: string;
   total: number;
   totalSinPromo?: number;
+  /* Rescate: el documento no cobra hoy, así que «Total $0» se lee como «no
+     vale nada» en vez de «no te cuesta». Se enseña a qué vuelve. */
+  rescate?: { hasta?: string | null; vuelve?: number | null } | null;
   moneda: string;
   empresa: string;
   numero?: string;
@@ -22,6 +25,7 @@ const {
   initialTab,
   total,
   totalSinPromo,
+  rescate,
   moneda,
   empresa,
   numero,
@@ -73,7 +77,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
 
   <!-- Total -->
   <div class={`qsb-total ${showCompareTotal ? 'qsb-total--expired' : ''}`}>
-    <div class="qsb-total-label">{showCompareTotal ? 'Total ahora' : 'Total'}</div>
+    <div class="qsb-total-label">{rescate ? 'Hoy pagas' : (showCompareTotal ? 'Total ahora' : 'Total')}</div>
     {showCompareTotal && (
       <div class="qsb-total-strike">
         <span class="qsb-total-strike-num">{fmt(total)}</span>

@@ -28,7 +28,8 @@ const PESTANAS: { id: string; l: string }[] = [
   { id: 'detectado', l: 'Detectados' },
   { id: 'conciliacion', l: 'En conciliación' },
   { id: 'gracia', l: 'En gracia' },
-  { id: 'recuperado', l: 'Recuperados' },
+  { id: 'recuperado', l: 'En observación' },
+  { id: 'estable', l: 'Estables' },
   { id: 'irrecuperable', l: 'Irrecuperables' },
   // No son «todos»: los cerrados tienen su pestaña. Llamarlo Todos mentía.
   { id: 'todos', l: 'Abiertos' },
@@ -105,7 +106,7 @@ export default function ChurnTab() {
      es siempre la misma y la columna sería el nombre de la pestaña repetido. */
   const verEtapa = etapa === 'todos';
   const verGracia = etapa === 'gracia' || etapa === 'todos';
-  const verCierre = etapa === 'recuperado' || etapa === 'irrecuperable';
+  const verCierre = ['recuperado', 'estable', 'irrecuperable'].includes(etapa);
   const nCols = 7 + (verEtapa ? 1 : 0) + (verGracia ? 1 : 0) + (verCierre ? 1 : 0);
   const ancho = 1040 + (verEtapa ? 120 : 0) + (verGracia ? 190 : 0) + (verCierre ? 200 : 0);
 
@@ -248,7 +249,7 @@ export default function ChurnTab() {
                   el acceso?»; en Detectados son cuentas ya bloqueadas, así que
                   medir su uso de hoy es una alarma sin información. Ahí lo que
                   vale es qué tanto lo usaba. */}
-              <th scope="col" style={{ ...T.th, width: 150 }}>{verGracia ? 'Uso del sistema' : 'Qué tanto lo usaba'}</th>
+              <th scope="col" style={{ ...T.th, width: 150 }}>{verGracia || etapa === 'recuperado' ? 'Uso del sistema' : 'Qué tanto lo usaba'}</th>
               {verEtapa && <th scope="col" style={{ ...T.th, width: 120 }}>Etapa</th>}
               {verCierre && <th scope="col" style={{ ...T.th, width: 200 }}>Cierre</th>}
               <th scope="col" style={{ ...T.th, width: 150 }}>Siguiente paso</th>
@@ -318,7 +319,10 @@ export default function ChurnTab() {
                       </td>
                     )}
                     <td style={T.td}>
-                      {c.etapa === 'gracia'
+                      {/* Con color en gracia y en observación —ahí el uso es la
+                          señal que decide— y sin alarma en el resto: que una cuenta
+                          cancelada no venda es lo esperado, no una urgencia. */}
+                      {c.etapa === 'gracia' || c.etapa === 'recuperado'
                         ? <span style={T.tag(tono.bg, tono.fg)}>{salud.texto}</span>
                         /* Fuera de gracia: sin color de alarma. Que una cuenta
                            cancelada no venda es lo esperado, no una urgencia. */
@@ -328,7 +332,9 @@ export default function ChurnTab() {
                     {verCierre && (
                       <td style={T.td}>
                         <span style={{ color: c.resultado === 'recuperado' ? '#1E8A63' : '#5D6470', fontWeight: 600 }}>
-                          {c.resultado === 'recuperado' ? `Volvió a ${dinero(c.gracia_mrr || c.mrr_perdido)}` : 'Perdido'}
+                          {c.etapa === 'recuperado' ? `En observación${c.observacion_hasta ? ` hasta ${c.observacion_hasta}` : ''}`
+                            : c.etapa === 'estable' ? 'Se quedó'
+                            : 'Perdido'}
                         </span>
                         {c.resultado_motivo && <span style={{ ...T.sub, display: 'block' }} title={c.resultado_motivo}>{c.resultado_motivo}</span>}
                       </td>

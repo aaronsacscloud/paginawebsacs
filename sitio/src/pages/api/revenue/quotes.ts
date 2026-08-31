@@ -470,6 +470,21 @@ export const PUT: APIRoute = async ({ request }) => {
     } catch (e) { console.error('[quotes PUT] cierre pagada:', e); }
   }
 
+  /* ── ACEPTAR UNA PROPUESTA DE RESCATE = PACTAR LA GRACIA ──
+     Los términos salen del documento que el cliente LEYÓ, no de que alguien
+     los vuelva a teclear después. Hoy el acuerdo, la fecha de fin y el precio
+     de regreso se capturan a mano y pueden no coincidir con lo que él aceptó;
+     así, lo que firmó y lo que el sistema vigila son el mismo dato — y el
+     desbloqueo del acceso se dispara con su firma, no con que alguien se
+     acuerde. Va en try porque la aceptación NUNCA debe fallar por esto: el
+     cliente ya dijo que sí y eso no se pierde. */
+  if (prev?.estado !== 'accepted' && data?.estado === 'accepted' && data?.tipo === 'rescate' && data?.churn_caso_id) {
+    try {
+      const { aceptarPropuestaRescate } = await import('../../../lib/crm/churn.lib');
+      await aceptarPropuestaRescate(data);
+    } catch (e) { console.error('[quotes PUT] propuesta de rescate:', e); }
+  }
+
   return jsonResponse(data);
 };
 

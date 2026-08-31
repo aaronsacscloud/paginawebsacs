@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
-import { ETAPAS, ETAPA, MOTIVOS, MOTIVO, diasDeGracia, saludDeGracia, type Etapa } from '../../../lib/crm/churn.reglas';
+import { ETAPAS, ETAPA, MOTIVOS, MOTIVO, diasDeGracia, saludDeGracia, modulosVivos, compararUso, veredictoRescate, type Etapa } from '../../../lib/crm/churn.reglas';
 import { confirmar } from '../../../lib/ui/confirmar';
 
 const dinero = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -339,6 +339,9 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               </div>
             )}
 
+            <BloquePropuesta d={d} id={id} onCambio={() => { cargar(); onCambio(); }} />
+            <BloqueUso caso={caso} emp={emp} />
+
             {/* ── Registrar lo que pasó. Va ARRIBA de la historia porque es
                     lo que se hace al terminar una llamada, no al final de
                     leerla. Y registrar un contacto real mueve el caso a
@@ -408,6 +411,210 @@ function Acciones({ onOk, onCancelar, guardando, peligro }: any) {
         {guardando ? 'Guardando…' : 'Guardar'}
       </button>
       <button onClick={onCancelar} style={btn('#fff', '#71707C')}>Cancelar</button>
+    </div>
+  );
+}
+
+/* ── QUÉ ESTÁ USANDO ────────────────────────────────────────────────────────
+   No un «sí lo usa» genérico: los módulos concretos con su movimiento. Es lo
+   que contesta si el rescate está funcionando — y sobre todo si está usando
+   AQUELLO por lo que se fue. Un cliente que se fue por soporte de inventario y
+   durante la gracia solo factura, se va a ir otra vez. */
+function BloqueUso({ caso, emp }: { caso: any; emp: any }) {
+  if (!emp?.sacs_account) {
+    return (
+      <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 8 }}>Qué está usando</div>
+        {/* No es un cero: es que no lo sabemos. La diferencia importa. */}
+        <div style={{ fontSize: '0.83rem', color: '#71707C' }}>Esta empresa no tiene cuenta de SACS ligada, así que no hay uso que medir. Ligarla es lo primero para poder seguir el rescate.</div>
+      </div>
+    );
+  }
+  const vivos = modulosVivos(emp.uso_sacs);
+  const cmp = compararUso(caso?.uso_al_abrir, emp.uso_sacs);
+  const ver = veredictoRescate(caso, emp);
+  const tonos: any = { bien: '#1E8A63', ojo: '#a06600', mal: '#C0554E', nd: '#74727F' };
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8' }}>Qué está usando</span>
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: tonos[ver.tono] }}>{ver.texto}</span>
+      </div>
+
+      {(cmp.arranco.length > 0 || cmp.dejo.length > 0) && (
+        <div style={{ fontSize: '0.8rem', marginBottom: 10, lineHeight: 1.55 }}>
+          {cmp.arranco.length > 0 && <div style={{ color: '#1E8A63' }}><b>Arrancó desde que se abrió el caso:</b> {cmp.arranco.join(' · ')}</div>}
+          {/* Dejar de usar algo es la señal temprana de que se va otra vez. */}
+          {cmp.dejo.length > 0 && <div style={{ color: '#C0554E' }}><b>Dejó de usar:</b> {cmp.dejo.join(' · ')}</div>}
+        </div>
+      )}
+
+      {vivos.length === 0 ? (
+        <div style={{ fontSize: '0.83rem', color: '#C0554E' }}>No ha tocado el sistema en 30 días.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 6 }}>
+          {vivos.slice(0, 7).map((m: any) => (
+            <div key={m.modulo} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.81rem' }}>
+              <span style={{ flex: 1, minWidth: 0, color: '#241d43', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {m.modulo}
+                {m.familia && <span style={{ color: '#8e88a8', fontSize: '0.74rem' }}> · {m.familia}</span>}
+              </span>
+              <span style={{ color: '#71707C', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                {m.docs_7d ? `${m.docs_7d} esta semana · ` : ''}{m.docs_30d} en 30 d
+              </span>
+            </div>
+          ))}
+          {vivos.length > 7 && <div style={{ fontSize: '0.76rem', color: '#8e88a8' }}>y {vivos.length - 7} módulos más</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── LA PROPUESTA DE RESCATE ───────────────────────────────────────────────
+   Es una cotización con forma de rescate: hereda PDF, link, conteo de vistas
+   y aceptación firmada del sistema que ya existe. Lo que se ve aquí es su
+   estado, que es lo que decide el siguiente movimiento: si no la ha visto, el
+   problema es de entrega; si la vio y no contesta, es de oferta. */
+function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: () => void }) {
+  const [abriendo, setAbriendo] = useState(false);
+  const [f, setF] = useState<any>({ meses: 3, rescate_mrr_regreso: '', rescate_compromisos: [], rescate_esperamos: '' });
+  const [err, setErr] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [compromisos, setCompromisos] = useState<string[]>([]);
+
+  const caso = d?.caso;
+  const props = d?.propuestas || [];
+  const vigente = props.find((p: any) => ['draft', 'sent', 'accepted'].includes(p.estado));
+
+  useEffect(() => {
+    if (!abriendo || compromisos.length) return;
+    fetch(`/api/crm/churn/propuesta?caso=${id}`).then(r => r.json())
+      .then(j => setCompromisos(j.compromisos || [])).catch(() => {});
+  }, [abriendo, compromisos.length, id]);
+
+  const inp: any = { width: '100%', boxSizing: 'border-box', border: '1px solid #e2e4e9', borderRadius: 9,
+    padding: '9px 11px', fontSize: '0.84rem', fontFamily: 'inherit', outline: 'none' };
+
+  async function crear() {
+    setGuardando(true); setErr('');
+    const r = await fetch('/api/crm/churn/propuesta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caso_id: id, ...f, rescate_mrr_regreso: Number(f.rescate_mrr_regreso) }) })
+      .then(x => x.json()).catch(() => ({ error: 'No se pudo crear' }));
+    setGuardando(false);
+    if (r?.error) { setErr(r.error); return; }
+    setAbriendo(false); onCambio();
+    window.open(r.url, '_blank');
+  }
+
+  if (!caso || ['estable', 'irrecuperable'].includes(caso.etapa)) return null;
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+      <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 10 }}>
+        Propuesta de rescate
+      </div>
+
+      {vigente ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+            <b style={{ fontSize: '0.88rem', color: '#241d43' }}>{vigente.numero || 'Propuesta'}</b>
+            {/* El estado se lee como conducta del cliente, no como jerga:
+                «no la ha visto» y «la vio y no contestó» piden guiones
+                distintos, y por eso se distinguen. */}
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, borderRadius: 20, padding: '3px 10px',
+              background: vigente.aceptado_fecha ? '#EAF8F2' : vigente.vistas ? '#E3EDFD' : '#FFF8EC',
+              color: vigente.aceptado_fecha ? '#1E8A63' : vigente.vistas ? '#2C5FC4' : '#a06600' }}>
+              {vigente.aceptado_fecha ? `Aceptada por ${vigente.aceptado_por || 'el cliente'}`
+                : vigente.rechazado_fecha ? 'Rechazada'
+                : vigente.vistas ? `La vio ${vigente.vistas} ${vigente.vistas === 1 ? 'vez' : 'veces'}`
+                : 'Todavía no la ve'}
+            </span>
+          </div>
+          <div style={{ fontSize: '0.81rem', color: '#4a4756', marginTop: 6, lineHeight: 1.5 }}>
+            Sin costo hasta <b>{vigente.rescate_hasta}</b> · después {dinero(vigente.rescate_mrr_regreso)}/mes
+            {(vigente.rescate_compromisos || []).length > 0 && (
+              <div style={{ color: '#71707C', marginTop: 4 }}>
+                Nos comprometimos a: {(vigente.rescate_compromisos || []).join(' · ')}
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <a href={`/cotizacion/${vigente.id}`} target="_blank" rel="noreferrer" style={{ ...btn('#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Ver el documento</a>
+            {!vigente.aceptado_fecha && (<>
+              <button style={btn('#fff', '#5B4BD6')} onClick={() => {
+                navigator.clipboard?.writeText(`${window.location.origin}/cotizacion/${vigente.id}`);
+              }}>Copiar el link</button>
+              <button style={btn('#fff', '#71707C')} onClick={() => setAbriendo(true)}>Hacer otra</button>
+            </>)}
+          </div>
+          {!vigente.aceptado_fecha && !vigente.vistas && (
+            <div style={{ fontSize: '0.78rem', color: '#a06600', marginTop: 8 }}>
+              Todavía no la abre. Si ya se la mandaste, el problema es de entrega — no de la oferta.
+            </div>
+          )}
+        </>
+      ) : !abriendo ? (
+        <>
+          <div style={{ fontSize: '0.82rem', color: '#71707C', lineHeight: 1.55 }}>
+            Un documento con su link: período sin costo, a qué nos comprometemos y a cuánto vuelve.
+            Al aceptarlo, la gracia se pacta sola con esos términos.
+          </div>
+          <button style={{ ...btn('#5B4BD6'), marginTop: 12 }} onClick={() => setAbriendo(true)}>Armar la propuesta</button>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {[1, 3, 6].map(m => (
+              <button key={m} onClick={() => setF({ ...f, meses: m })}
+                style={{ border: '1px solid', borderColor: f.meses === m ? '#5B4BD6' : '#e2dbf8',
+                  background: f.meses === m ? '#EEECFE' : '#fff', color: f.meses === m ? '#5B4BD6' : '#5a5a63',
+                  borderRadius: 20, padding: '5px 13px', fontSize: '0.76rem', fontWeight: f.meses === m ? 800 : 600,
+                  cursor: 'pointer', fontFamily: 'inherit' }}>
+                {m} {m === 1 ? 'mes' : 'meses'} sin costo
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 6 }}>
+            A qué nos comprometemos
+          </div>
+          {/* Esto es lo que de verdad rescata: el 65% del MRR perdido se fue
+              por servicio y cero por precio. Sin al menos uno, la propuesta es
+              un descuento disfrazado y el servidor la rechaza. */}
+          <div style={{ display: 'grid', gap: 5, marginBottom: 12 }}>
+            {compromisos.map((c: string) => {
+              const on = f.rescate_compromisos.includes(c);
+              return (
+                <label key={c} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={on} onChange={() => setF({ ...f,
+                    rescate_compromisos: on ? f.rescate_compromisos.filter((x: string) => x !== c) : [...f.rescate_compromisos, c] })} />
+                  {c}
+                </label>
+              );
+            })}
+          </div>
+
+          <label style={{ display: 'block', marginBottom: 10 }}>
+            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>A cuánto vuelve al terminar</span>
+            <input type="number" style={inp} value={f.rescate_mrr_regreso} placeholder={String(Math.round(Number(caso.mrr_perdido || 0)))}
+              onChange={e => setF({ ...f, rescate_mrr_regreso: e.target.value })} />
+          </label>
+          <label style={{ display: 'block', marginBottom: 12 }}>
+            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Qué esperamos de ti (opcional)</span>
+            <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={f.rescate_esperamos}
+              placeholder="ej. que cargues tu catálogo la primera semana y tengamos una llamada al mes"
+              onChange={e => setF({ ...f, rescate_esperamos: e.target.value })} />
+          </label>
+
+          {err && <div style={{ padding: '9px 12px', borderRadius: 9, background: '#FDF6F5', color: '#A8433C', fontSize: '0.8rem', marginBottom: 10 }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={crear} disabled={guardando} style={btn('#5B4BD6')}>{guardando ? 'Creando…' : 'Crear y ver el documento'}</button>
+            <button onClick={() => { setAbriendo(false); setErr(''); }} style={btn('#fff', '#71707C')}>Cancelar</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@
  * arrastrar el cliente de Supabase al navegador.
  */
 import { supabase } from '../supabase';
-import { ABIERTAS, type Etapa } from './churn.reglas';
+import { ABIERTAS, camposDeTransicion, type Etapa } from './churn.reglas';
 export * from './churn.reglas';
 
 /**
@@ -93,9 +93,14 @@ export async function abrirCasoSiAplica(companyId: string): Promise<{ creado: bo
   const mrrDelEpisodio = (deEsteEpisodio.length ? deEsteEpisodio : [ultima])
     .reduce((t, s) => t + Number(s.mrr || 0), 0);
 
+  /* La FOTO del uso al abrir. Es la única forma de decir después «lo usa más
+     que antes de irse»: sin el antes, el después no prueba nada. */
+  const { data: empUso } = await supabase.from('companies').select('uso_sacs').eq('id', companyId).single();
+
   const { data, error } = await supabase.from('churn_casos').insert({
     company_id: companyId,
     subscription_id: ultima.id,
+    uso_al_abrir: empUso?.uso_sacs || null,
     mrr_perdido: mrrDelEpisodio,
     motivo_original: ultima.razon_cancelacion || null,
     motivo_categoria: categorizarRazon(ultima.razon_cancelacion),
@@ -123,5 +128,59 @@ export function categorizarRazon(razon?: string | null): string | null {
   if (r.includes('precio') || r.includes('caro')) return 'precio';
   if (r.includes('dej') && r.includes('pagar')) return 'dejo_de_pagar';
   return 'otro';
+}
+
+/**
+ * El cliente aceptó la propuesta: el caso entra a GRACIA con los términos del
+ * documento. Es el paso que hace que todo el circuito valga la pena.
+ *
+ * Idempotente: si el caso ya está en gracia (porque alguien lo pactó a mano
+ * mientras tanto) no lo pisa. Y si el caso ya se cerró, NO lo reabre —se
+ * anota el conflicto para que una persona lo resuelva, porque revivir un caso
+ * cerrado desde una página pública sería dejar que el cliente mueva el
+ * embudo sin que nadie se entere.
+ */
+export async function aceptarPropuestaRescate(q: any) {
+  const { data: caso } = await supabase.from('churn_casos').select('*').eq('id', q.churn_caso_id).single();
+  if (!caso) return;
+
+  if (!ABIERTAS.includes(caso.etapa as any)) {
+    await anotar(caso, 'nota', 'El cliente ACEPTÓ la propuesta, pero el caso ya estaba cerrado',
+      `Aceptada por ${q.aceptado_por || 'el cliente'}. Hay que decidir a mano si se reabre en un episodio nuevo.`);
+    return;
+  }
+  if (caso.etapa === 'gracia') {
+    await anotar(caso, 'nota', 'El cliente aceptó la propuesta', 'El caso ya estaba en gracia: no se cambian los términos.');
+    return;
+  }
+
+  const campos: any = {
+    ...camposDeTransicion('gracia', {
+      gracia_acuerdo: `Propuesta ${q.numero || ''} aceptada: sin costo hasta ${q.rescate_hasta}`.trim(),
+      gracia_fin: q.rescate_hasta,
+      gracia_mrr: q.rescate_mrr_regreso,
+    }),
+    propuesta_id: q.id,
+  };
+  await supabase.from('churn_casos').update(campos).eq('id', caso.id).in('etapa', ABIERTAS);
+
+  await anotar(caso, 'nota', `El cliente ACEPTÓ la propuesta de rescate`,
+    `Firmada por ${q.aceptado_por || 'el cliente'} · sin costo hasta ${q.rescate_hasta} · vuelve a $${Number(q.rescate_mrr_regreso || 0).toLocaleString('es-MX')}`);
+
+  // Y se le devuelve el acceso, que es lo que el cliente espera al aceptar.
+  const { data: emp } = await supabase.from('companies').select('sacs_account').eq('id', caso.company_id).single();
+  if (emp?.sacs_account) {
+    const { avisoEnCuenta } = await import('./prueba');
+    const r = await avisoEnCuenta(emp.sacs_account, 'desbloquear');
+    await anotar(caso, 'nota', r.ok ? 'Acceso devuelto en SACS' : 'No se pudo devolver el acceso en SACS', r.ok ? undefined : r.error);
+  }
+
+  // Y se avisa al equipo: alguien tiene que arrancar los compromisos.
+  await supabase.from('crm_notificaciones').insert({
+    tipo: 'churn_propuesta_aceptada', nivel: 'urgente',
+    titulo: `Aceptó la propuesta de rescate`,
+    detalle: `Empieza la gracia hasta ${q.rescate_hasta}. Hay ${(q.rescate_compromisos || []).length} compromisos que cumplir.`,
+    company_id: caso.company_id, destino: 'churn', metadata: { churn_caso_id: caso.id },
+  }).then(() => {}, () => {});
 }
 

@@ -54,10 +54,15 @@ export const GET: APIRoute = async ({ request, url }) => {
     .select('whatsapp, telefono').eq('company_id', caso.company_id).limit(20);
   const tel = (cts || []).map((c: any) => c.whatsapp || c.telefono).find(Boolean) || null;
 
+  // Las propuestas del caso: la vigente y las que quedaron reemplazadas.
+  const { data: propuestas } = await supabase.from('quotes')
+    .select('id, numero, estado, vigencia, created_at, vistas, primera_vista_at, ultima_vista_at, aceptado_por, aceptado_fecha, rechazado_fecha, rescate_desde, rescate_hasta, rescate_mrr_regreso, rescate_compromisos, rescate_esperamos')
+    .eq('churn_caso_id', id).order('created_at', { ascending: false });
+
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
-  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel });
+  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [] });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */

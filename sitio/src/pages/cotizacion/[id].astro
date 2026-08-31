@@ -330,9 +330,19 @@ const hayPlan = planPagos.length > 0;
 // ninguno: es el calendario de lo que viene.
 const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminMode || hayPlan;
 
+/* ── PROPUESTA DE RESCATE ──────────────────────────────────────────────
+   Una cotización dice «esto cuesta». Una propuesta de rescate dice «esto no
+   te cuesta POR AHORA, esto nos comprometemos a hacer, y a partir de esta
+   fecha vuelves a pagar esto». Sin este bloque, el documento se leía como una
+   cotización de $0 —o sea, como algo sin valor— en vez de como una oferta. */
+const esRescate = quote.tipo === 'rescate';
+const rescateCompromisos: string[] = Array.isArray(quote.rescate_compromisos) ? quote.rescate_compromisos : [];
+const fmtFechaLarga = (f: any) => f ? new Date(String(f) + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+
 const tabsDef = [
   { id: 'minuta', label: 'Minuta', show: hasMinuta },
-  { id: 'inversion', label: 'Inversión', show: items.length > 0 || hasPagosContent || hasFeaturesReal || hasTimelineReal },
+  { id: 'rescate', label: 'La propuesta', show: esRescate },
+  { id: 'inversion', label: 'Inversión', show: !esRescate && (items.length > 0 || hasPagosContent || hasFeaturesReal || hasTimelineReal) },
   { id: 'pagos', label: isPaid ? 'Pagos ✓' : (paymentsList.length > 0 ? `Pagos (${paymentsList.length})` : 'Pagos'), show: showPagosTab },
   { id: 'roi', label: 'ROI', show: hasRoi },
   { id: 'comparativa', label: 'Comparativa', show: hasAntesDesp },
@@ -362,6 +372,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 <div class:list={['quote-layout', `quote-layout--${template}`]}>
   <aside class="quote-layout-sidebar no-print">
     <QuoteSidebar
+      rescate={esRescate ? { hasta: quote.rescate_hasta, vuelve: quote.rescate_mrr_regreso } : null}
       total={quote.total || 0}
       totalSinPromo={totalSinPromoConIva}
       moneda={quote.moneda || 'MXN'}
@@ -396,7 +407,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         ) : (
           <span class="quote-logo-text">Sacs</span>
         )}
-        <span class="quote-logo-tag">Cotización</span>
+        <span class="quote-logo-tag">{esRescate ? "Propuesta" : "Cotización"}</span>
       </div>
       <div class="quote-meta">
         {isPaid && (
@@ -554,6 +565,18 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     )}
 
     <style>
+  /* ── Propuesta de rescate ── */
+  .quote-rescate-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; margin:22px 0; }
+  .quote-rescate-caja { background:#fff; border:1px solid #e8e6ef; border-radius:16px; padding:20px 22px; }
+  .quote-rescate-k { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#8e88a8; }
+  .quote-rescate-v { font-size:1.5rem; font-weight:800; color:#241d43; letter-spacing:-.02em; margin-top:8px; line-height:1.25; }
+  .quote-rescate-n { font-size:.84rem; color:#71707C; margin-top:8px; line-height:1.5; }
+  .quote-rescate-bloque { background:#fff; border:1px solid #e8e6ef; border-radius:16px; padding:20px 22px; margin-bottom:16px; }
+  .quote-rescate-lista { margin:12px 0 0; padding-left:20px; }
+  .quote-rescate-lista li { margin:7px 0; color:#3f3856; font-size:.95rem; line-height:1.5; }
+  .quote-rescate-lista li::marker { color:#9B8CFA; }
+  .quote-rescate-p { margin:10px 0 0; color:#3f3856; font-size:.95rem; line-height:1.55; }
+
       .quote-asesor {
         padding: 16px 40px;
         border-top: 1px solid #e5e5e5;
@@ -631,6 +654,58 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         .quote-asesor-badge { font-size: 0.625rem; margin-top: 6px; }
       }
     </style>
+
+    {/* ══ LA PROPUESTA DE RESCATE ══
+         Cuatro bloques, en el orden en que se leen: qué te damos, a qué nos
+         comprometemos, qué esperamos de ti, y a qué vuelves. El último es el
+         que evita que acepte sin saber a qué regresa — y que al mes cuatro se
+         vaya otra vez, ahora enojado. */}
+    {esRescate && (
+      <section class="quote-tab-panel" data-tab="rescate">
+        <div class="quote-tab-intro">
+          <div class="quote-tab-intro-eyebrow">Para que lo vuelvas a intentar</div>
+          <h2 class="quote-tab-intro-title">Sin costo hasta el {fmtFechaLarga(quote.rescate_hasta)}</h2>
+          <p class="quote-tab-intro-text">
+            Sabemos que la primera vez no salió bien. Esta propuesta no es un descuento:
+            es el tiempo y el acompañamiento para que el sistema haga lo que necesitas,
+            sin que pagues mientras lo probamos.
+          </p>
+        </div>
+
+        <div class="quote-rescate-grid">
+          <div class="quote-rescate-caja">
+            <div class="quote-rescate-k">El período</div>
+            <div class="quote-rescate-v">
+              {quote.rescate_desde ? <>Del {fmtFechaLarga(quote.rescate_desde)}<br /></> : null}
+              al {fmtFechaLarga(quote.rescate_hasta)}
+            </div>
+            <div class="quote-rescate-n">Sin costo. Acceso completo al sistema.</div>
+          </div>
+          <div class="quote-rescate-caja">
+            <div class="quote-rescate-k">Después</div>
+            <div class="quote-rescate-v">${Math.round(Number(quote.rescate_mrr_regreso || 0)).toLocaleString('es-MX')} <span style="font-size:.6em;font-weight:600">/mes</span></div>
+            <div class="quote-rescate-n">A partir del {fmtFechaLarga(quote.rescate_hasta)}. Sin sorpresas.</div>
+          </div>
+        </div>
+
+        {rescateCompromisos.length > 0 && (
+          <div class="quote-rescate-bloque">
+            <div class="quote-rescate-k">A esto nos comprometemos</div>
+            <ul class="quote-rescate-lista">
+              {rescateCompromisos.map((c: string) => <li>{c}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {quote.rescate_esperamos && (
+          <div class="quote-rescate-bloque">
+            <div class="quote-rescate-k">Lo que esperamos de ti</div>
+            <p class="quote-rescate-p">{quote.rescate_esperamos}</p>
+            <p class="quote-rescate-n">Sin esto no funciona: el sistema solo sirve si se usa.</p>
+          </div>
+        )}
+      </section>
+    )}
 
     {/* ═══════════════════════════════════════════════
          HERO DE BIENVENIDA (vive dentro del tab Inversión)
@@ -1471,7 +1546,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     <div class="quote-modal-overlay no-print" id="accept-modal" style="display:none">
       <div class="quote-modal" style="max-width:400px">
         <div class="quote-modal-header">
-          <span class="quote-modal-title">Aceptar cotización</span>
+          <span class="quote-modal-title">{esRescate ? "Aceptar la propuesta" : "Aceptar cotización"}</span>
           <button class="quote-modal-close" id="btn-close-accept">✕</button>
         </div>
         <div class="quote-modal-body">
@@ -1718,7 +1793,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <canvas id="signature-canvas" class="quote-signature-canvas" width="500" height="150"></canvas>
         <div class="quote-signature-actions">
           <button class="quote-action-btn" id="btn-clear-sig">Limpiar</button>
-          <button class="quote-action-btn quote-action-btn--primary" id="btn-accept-sig">Aceptar cotización</button>
+          <button class="quote-action-btn quote-action-btn--primary" id="btn-accept-sig">{esRescate ? "Aceptar la propuesta" : "Aceptar cotización"}</button>
         </div>
       </div>
       <div class="quote-reject-wrap no-print">

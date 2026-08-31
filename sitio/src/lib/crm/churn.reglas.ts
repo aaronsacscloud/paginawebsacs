@@ -22,17 +22,22 @@
  * código es una regla que un script olvidará.
  */
 
-export type Etapa = 'detectado' | 'conciliacion' | 'gracia' | 'recuperado' | 'irrecuperable';
+export type Etapa = 'detectado' | 'conciliacion' | 'gracia' | 'recuperado' | 'estable' | 'irrecuperable';
 
 export const ETAPAS: { id: Etapa; l: string; bg: string; fg: string; d: string }[] = [
   { id: 'detectado', l: 'Detectado', bg: '#FFF8EC', fg: '#a06600', d: 'Canceló. Nadie lo ha tocado todavía.' },
   { id: 'conciliacion', l: 'En conciliación', bg: '#E3EDFD', fg: '#2C5FC4', d: 'Estamos hablando: qué pasó y qué le ofrecemos.' },
   { id: 'gracia', l: 'En gracia', bg: '#EEECFE', fg: '#5B4BD6', d: 'Usa el sistema bajo un acuerdo, con fecha de fin.' },
-  { id: 'recuperado', l: 'Recuperado', bg: '#EAF8F2', fg: '#1E8A63', d: 'Volvió a pagar. Cuenta en la ARR.' },
+  { id: 'recuperado', l: 'En observación', bg: '#EAF8F2', fg: '#1E8A63', d: 'Volvió a pagar. Se le sigue de cerca hasta que el uso demuestre que se quedó.' },
+  { id: 'estable', l: 'Estable', bg: '#E9F4EF', fg: '#146B4C', d: 'Aguantó la observación usando el sistema. Vuelve a ser un cliente normal.' },
   { id: 'irrecuperable', l: 'Irrecuperable', bg: '#f4f4f6', fg: '#5D6470', d: 'Se perdió. Cerrado con su motivo.' },
 ];
 export const ETAPA = (id?: string | null) => ETAPAS.find(e => e.id === id) || ETAPAS[0];
-export const ABIERTAS: Etapa[] = ['detectado', 'conciliacion', 'gracia'];
+/* Recuperado sigue ABIERTO: volver a pagar no es el final. Un cliente que se
+   fue una vez es frágil —las razones que lo hicieron irse siguen ahí hasta
+   que se prueban resueltas— así que se queda en la sección, en observación,
+   y solo se gradúa cuando el USO demuestra que se quedó. */
+export const ABIERTAS: Etapa[] = ['detectado', 'conciliacion', 'gracia', 'recuperado'];
 export const esAbierta = (e?: string | null) => ABIERTAS.includes(e as Etapa);
 
 /**
@@ -58,10 +63,18 @@ const PERMITIDAS: Record<Etapa, Etapa[]> = {
   detectado: ['conciliacion', 'gracia', 'recuperado', 'irrecuperable'],
   conciliacion: ['gracia', 'recuperado', 'irrecuperable'],
   gracia: ['recuperado', 'irrecuperable', 'conciliacion'],
+  /* Desde la observación se puede graduar… o recaer. Que un recuperado vuelva
+     a irse ANTES de graduarse no abre episodio nuevo: es el mismo rescate que
+     falló, y contarlo aparte escondería que la gracia no aguantó. */
+  recuperado: ['estable', 'irrecuperable', 'conciliacion'],
   // Terminales: para volver se abre un episodio nuevo, nunca se reabre este.
-  recuperado: [],
+  estable: [],
   irrecuperable: [],
 };
+
+/** Cuánto dura la observación. Un trimestre: menos no prueba nada, y más
+ *  convierte la sección en un archivo de gente que ya se quedó. */
+export const DIAS_OBSERVACION = 90;
 
 export type Falla = { error: string; campo?: string };
 
@@ -99,6 +112,16 @@ export function validarTransicion(caso: any, destino: Etapa, datos: any = {}): F
     return { error: 'Para marcar recuperado hace falta la suscripción nueva. Créala desde el caso.', campo: 'subscription_nueva_id' };
   }
 
+  if (destino === 'estable') {
+    if (origen !== 'recuperado') return { error: 'Solo se gradúa desde la observación.' };
+    /* No se gradúa a alguien que no está usando el sistema. Graduarlo sería
+       decir «este rescate funcionó» de alguien que va camino a irse otra vez:
+       el dato que ya tenemos dice justo lo contrario. */
+    if (datos.dias_sin_venta != null && Number(datos.dias_sin_venta) > 30) {
+      return { error: 'Lleva más de 30 días sin vender: graduarlo diría que el rescate funcionó cuando no está usando el sistema.' };
+    }
+  }
+
   if (destino === 'irrecuperable' && !String(datos.resultado_motivo || '').trim()) {
     return { error: 'Di por qué se perdió: es lo único que enseña para el siguiente rescate.', campo: 'resultado_motivo' };
   }
@@ -118,9 +141,17 @@ export function camposDeTransicion(destino: Etapa, datos: any = {}): Record<stri
     c.gracia_mrr = Number(datos.gracia_mrr);
   }
   if (destino === 'recuperado') {
-    c.cerrado_at = ahora; c.resultado = 'recuperado';
+    /* NO se pone cerrado_at: el caso sigue abierto en observación. Ponerlo
+       aquí era decir que el trabajo terminó al cobrar. */
+    c.resultado = 'recuperado';
+    c.observacion_hasta = new Date(Date.now() + DIAS_OBSERVACION * 86400000).toISOString().slice(0, 10);
+    if (datos.uso_al_recuperar) c.uso_al_recuperar = datos.uso_al_recuperar;
     c.subscription_nueva_id = datos.subscription_nueva_id;
     if (datos.resultado_motivo) c.resultado_motivo = String(datos.resultado_motivo).trim();
+  }
+  if (destino === 'estable') {
+    c.cerrado_at = ahora; c.resultado = 'recuperado';
+    c.resultado_motivo = String(datos.resultado_motivo || '').trim() || 'Aguantó la observación usando el sistema.';
   }
   if (destino === 'irrecuperable') {
     c.cerrado_at = ahora; c.resultado = 'perdido';
@@ -149,3 +180,64 @@ export function saludDeGracia(caso: any, empresa: any): { tono: 'bien' | 'ojo' |
   if (dias <= 14) return { tono: 'ojo', texto: `${dias} d sin vender` };
   return { tono: 'mal', texto: `${dias} d sin vender` };
 }
+
+/* ═══ QUÉ ESTÁ USANDO ═══════════════════════════════════════════════════
+ *
+ * `uso_sacs` trae el detalle por MÓDULO (usa / total / docs_7d / docs_30d /
+ * último / familia), no un sí-o-no. Eso permite contestar la pregunta que de
+ * verdad decide un rescate: ¿está usando lo que dijo que le faltaba?
+ *
+ * Y comparar contra la foto que se guardó al abrir el caso permite la única
+ * prueba real de que el rescate funcionó: lo usa MÁS que antes de irse.
+ */
+export type ModuloUso = { modulo: string; familia?: string; usa?: boolean; docs_7d?: number; docs_30d?: number; ultimo?: string | null; total?: number };
+
+export function modulosDe(uso: any): ModuloUso[] {
+  const m = uso?.modulos;
+  return Array.isArray(m) ? m : [];
+}
+
+/** Los que de verdad se están usando ahora, de más a menos movimiento. */
+export function modulosVivos(uso: any): ModuloUso[] {
+  return modulosDe(uso)
+    .filter(m => (m.docs_30d || 0) > 0)
+    .sort((a, b) => (b.docs_30d || 0) - (a.docs_30d || 0));
+}
+
+/**
+ * El antes contra el ahora. Devuelve qué módulos ARRANCÓ durante el rescate
+ * (los que no usaba y ahora sí) y cuáles DEJÓ de usar — que es la señal
+ * temprana de que se va otra vez.
+ */
+export function compararUso(antes: any, ahora: any): { arranco: string[]; dejo: string[]; sube: boolean | null } {
+  const A = new Map(modulosDe(antes).map(m => [m.modulo, m]));
+  const B = modulosDe(ahora);
+  if (!A.size || !B.length) return { arranco: [], dejo: [], sube: null };
+  const arranco: string[] = [], dejo: string[] = [];
+  let totalAntes = 0, totalAhora = 0;
+  for (const m of B) {
+    const a = A.get(m.modulo);
+    totalAhora += m.docs_30d || 0;
+    totalAntes += a?.docs_30d || 0;
+    if ((m.docs_30d || 0) > 0 && !(a?.docs_30d || 0)) arranco.push(m.modulo);
+    if (!(m.docs_30d || 0) && (a?.docs_30d || 0) > 0) dejo.push(m.modulo);
+  }
+  return { arranco, dejo, sube: totalAntes === totalAhora ? null : totalAhora > totalAntes };
+}
+
+/**
+ * ¿El rescate está funcionando? No es una opinión: es si el cliente usa hoy
+ * lo que no usaba cuando se fue. Un «sí lo usa» genérico no distingue al que
+ * factura todos los días del que entró una vez a ver.
+ */
+export function veredictoRescate(caso: any, empresa: any): { tono: 'bien' | 'ojo' | 'mal' | 'nd'; texto: string } {
+  if (!empresa?.sacs_account) return { tono: 'nd', texto: 'sin cuenta ligada' };
+  const vivos = modulosVivos(empresa.uso_sacs);
+  if (!vivos.length) return { tono: 'mal', texto: 'no ha tocado el sistema' };
+  const cmp = compararUso(caso?.uso_al_abrir, empresa.uso_sacs);
+  if (cmp.arranco.length) return { tono: 'bien', texto: `arrancó ${cmp.arranco.length === 1 ? cmp.arranco[0] : `${cmp.arranco.length} módulos nuevos`}` };
+  if (cmp.dejo.length) return { tono: 'ojo', texto: `dejó ${cmp.dejo.length === 1 ? cmp.dejo[0] : `${cmp.dejo.length} módulos`}` };
+  const top = vivos[0];
+  return { tono: 'bien', texto: `${top.modulo} · ${top.docs_30d} en 30 d` };
+}
+
