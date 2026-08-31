@@ -640,7 +640,16 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja"><span class="w-k">Si algo falla, el pendiente no muere</span>
 <p>El cobro nunca se deshace y el error queda en la campana con sus palabras. Se reintenta desde el mismo botón. Nunca «se cobró pero quién sabe qué pasó con la cuenta».</p></div>
 <div class="w-caja warn"><span class="w-k">La prueba de un empleado cuenta</span>
-<p>La cuenta se busca por EMPRESA, no solo por quien firmó la cotización: si un empleado probó con otra cuenta de la misma empresa, esa es la que se activa.</p></div>`,
+<p>La cuenta se busca por EMPRESA, no solo por quien firmó la cotización: si un empleado probó con otra cuenta de la misma empresa, esa es la que se activa.</p></div>
+<h3>El ritual, en orden</h3>
+<ol>
+<li><b>Se cobra la cotización.</b> El sistema revisa solo la cuenta: si falta, el pendiente cae en la campana en ese momento.</li>
+<li><b>Se abre la ficha del cliente</b> (pestaña Resumen). Si hay trámite pendiente, ahí está el recuadro «Cuenta SACS · paso obligatorio del alta» con el camino que aplica. Si no aparece el recuadro, el trámite ya está cerrado.</li>
+<li><b>Se ejecuta el camino</b> — activar, crear o ligar. Al crear, la contraseña temporal se enseña UNA sola vez: cópiala y dásela al cliente en ese momento, no existe forma de volver a verla.</li>
+<li><b>Se confirma con el cliente que ya entró.</b> El alta no termina cuando el botón dice «listo»: termina cuando el cliente está adentro.</li>
+</ol>
+<div class="w-caja mut"><span class="w-k">Si «Activar» contesta que el puente está cerrado</span>
+<p>Sale un mensaje sobre <code>CRM_SYNC_SECRET</code>: significa que la conexión segura con SACS está pendiente de configurarse del lado técnico. <b>La liga de la cuenta sí queda hecha</b>; solo la conversión de la marca de prueba queda pendiente y se reintenta desde el mismo botón cuando el puente abra. No es un error tuyo ni del cliente.</p></div>`,
   },
   {
     id: 'onboarding-30', grupo: 'Después de la venta', titulo: 'Los primeros 30 días',
@@ -664,8 +673,15 @@ export const WIKI: PaginaWiki[] = [
 </ul>
 <h3>La pantalla</h3>
 <p><b>Cuentas → Onboarding</b>: cada caso con su etapa, su día (N/30), sus tres hitos como puntos, si está atorado y su consultor (reasignable ahí mismo). El consultor trabaja los atorados primero: es una lista de a quién llamar hoy, no un tablero para admirar.</p>
+<h3>Cómo se enciende (y qué pasa al hacerlo)</h3>
+<ol>
+<li>Ir a <b>Cuentas → Onboarding</b>. Arriba a la derecha dice su estado: <b>Pausado</b> o <b>Encendido</b>.</li>
+<li>Tocar <b>Encender</b> y confirmar. Desde ese instante, todo cliente NUEVO con cuenta ligada entra solo a sus 30 días: correos de arranque, avisos al consultor y barrido nocturno.</li>
+<li>Los clientes que ya existían <b>no entran</b>. La línea que separa «nuevo» de «viejo» se fija la PRIMERA vez que se enciende y no se mueve aunque se apague y se vuelva a prender.</li>
+<li>Apagar detiene todo de inmediato: no se abre ningún caso nuevo ni sale ningún mensaje. Los casos abiertos se quedan como están, esperando.</li>
+</ol>
 <div class="w-caja warn"><span class="w-k">El interruptor: hoy está PAUSADO</span>
-<p>El motor completo existe y no manda nada hasta que el dueño lo encienda en la pantalla de Onboarding. Al encenderse, <b>solo entran clientes nuevos</b> (su primera suscripción posterior al encendido); los existentes no entran en masa — a uno de años, un «bienvenido» se le lee como error. Un cliente viejo se puede meter a mano, uno por uno.</p></div>
+<p>El motor completo existe y no manda nada hasta que el dueño lo encienda. Un cliente viejo se puede meter a mano, uno por uno, si el consultor quiere acompañarlo — esa es la única puerta para los de antes del encendido.</p></div>
 <div class="w-caja"><span class="w-k">De qué depende todo esto</span>
 <p>Del sync nocturno de uso. Si el dato tiene más de 48 horas, el barrido lo dice en la campana en vez de medir con datos viejos — un tablero leyendo datos viejos es peor que ninguno.</p></div>`,
   },
