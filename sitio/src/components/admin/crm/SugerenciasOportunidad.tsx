@@ -85,8 +85,10 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
         <b style={{ fontSize: '0.85rem' }}>💡 Sugerencias del sistema</b>
         {resumen && <span style={{ fontSize: '0.73rem', color: '#777' }}>
           {resumen.renovaciones} renovación(es) · {resumen.upsells} upsell(s)
-          {resumen.retencion ? ` · ${resumen.retencion} retención` : ''} · {money(resumen.mrr_sugerido)} MRR potencial
-          {resumen.mrr_en_riesgo ? <span style={{ color: '#b93333' }}> · {money(resumen.mrr_en_riesgo)} MRR en riesgo</span> : null}
+          {/* Al año, como el resto de la vista de clientes: comparar un
+              «potencial» mensual contra un ARR de cuenta no dice nada. */}
+          {resumen.retencion ? ` · ${resumen.retencion} retención` : ''} · {money((Number(resumen.mrr_sugerido) || 0) * 12)} ARR potencial
+          {resumen.mrr_en_riesgo ? <span style={{ color: '#b93333' }}> · {money((Number(resumen.mrr_en_riesgo) || 0) * 12)} ARR en riesgo</span> : null}
         </span>}
         {/* Se dice explícito: si alguien cree que ya está en el pipeline, el
             pronóstico se lee doble. */}
@@ -113,7 +115,7 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
             </div>
             <div style={{ textAlign: 'right', minWidth: 100 }}>
               <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{money(d.valor_total)}</div>
-              {Number(d.mrr) > 0 && <div style={{ fontSize: '0.68rem', color: '#999' }}>{money(d.mrr)}/mes</div>}
+              {Number(d.mrr) > 0 && <div style={{ fontSize: '0.68rem', color: '#999' }}>{money(Number(d.mrr) * 12)} al año</div>}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button disabled={busy === d.id} onClick={() => accion(d, 'aceptar')} style={{ ...btn, background: '#1A8F7A', color: '#fff', borderColor: '#1A8F7A' }}>✓ Aceptar</button>

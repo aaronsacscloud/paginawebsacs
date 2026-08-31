@@ -200,7 +200,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   // ══ Pantalla móvil v5 (mockup Clientes): búsqueda fija + chips + filas ══
   const [buscaM, setBuscaM] = useState('');
   const [chipCl, setChipCl] = useState<'activos' | 'riesgo'>('activos');
-  const [mrrAsc, setMrrAsc] = useState(false);
+  const [arrAsc, setArrAsc] = useState(false);
   // Vista rápida (mock aprobado): el tap abre el sheet mínimo; "Ver todo" la ficha
   const [rapida, setRapida] = useState<any>(null);
   // REGLA DE VELOCIDAD: 40 filas de inicio, el sentinel pide más al scrollear
@@ -724,7 +724,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         const nActivos = listaM.length;
         const nRiesgo = listaM.filter(enRiesgo).length;
         if (chipCl === 'riesgo') listaM = listaM.filter(enRiesgo);
-        listaM = [...listaM].sort((a: any, b: any) => (mrrAsc ? 1 : -1) * (Number(a.arr || 0) - Number(b.arr || 0)));
+        listaM = [...listaM].sort((a: any, b: any) => (arrAsc ? 1 : -1) * (Number(a.arr || 0) - Number(b.arr || 0)));
         const iniciales = (n: string) => {
           const stop = ['de', 'del', 'la', 'los', 'las', 'para', 'y', 'e'];
           const ws = String(n || '').split(/\s+/).filter(w => w && !stop.includes(w.toLowerCase()));
@@ -748,8 +748,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               <button className={'m-chip' + (chipCl === 'riesgo' ? ' on' : '')} onClick={() => setChipCl('riesgo')}>
                 Riesgo{chipCl === 'riesgo' ? ' ' + nRiesgo : ''}
               </button>
-              <button className="m-chip" onClick={() => setMrrAsc(v => !v)}>
-                ARR {mrrAsc ? '↑' : '↓'}
+              <button className="m-chip" onClick={() => setArrAsc(v => !v)}>
+                ARR {arrAsc ? '↑' : '↓'}
               </button>
             </div>
             <div>

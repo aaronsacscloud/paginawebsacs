@@ -359,7 +359,7 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
                   <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: '0.75rem' }}>
                     {selected.companies.plan && <span style={{ color: '#4B7BE5', fontWeight: 600 }}>Plan: {selected.companies.plan}</span>}
                     <span style={{ color: '#555' }}>{selected.companies.sucursales} suc.</span>
-                    {selected.companies.mrr > 0 && <span style={{ color: '#2AB5A0', fontWeight: 700 }}>{fmt(selected.companies.mrr)}/mes</span>}
+                    {selected.companies.mrr > 0 && <span style={{ color: '#2AB5A0', fontWeight: 700 }}>{fmt(Number(selected.companies.mrr) * 12)} ARR</span>}
                     <span style={{ fontSize: '0.625rem', padding: '1px 6px', borderRadius: 10, background: selected.companies.estado_cuenta === 'activo' ? '#e8f5e9' : '#f5f5f5', color: selected.companies.estado_cuenta === 'activo' ? '#2e7d32' : '#999' }}>{selected.companies.estado_cuenta}</span>
                   </div>
                 </div>

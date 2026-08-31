@@ -883,14 +883,12 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     </PropertyRow>
                   )}
                   <PropertyRow label="Sucursales">{contact.companies.sucursales}</PropertyRow>
-                  <PropertyRow label="MRR">
-                    <span style={{ fontWeight: 700, color: '#241d43' }}>
-                      {contact.companies.mrr > 0 ? fmt(contact.companies.mrr) : '\u2014'}
-                    </span>
-                  </PropertyRow>
+                  {/* Una sola cifra y es la del año: dos números para lo mismo
+                      obligaban a preguntarse cuál es «el bueno» cada vez. */}
                   <PropertyRow label="ARR">
                     <span style={{ fontWeight: 700, color: '#241d43' }}>
-                      {contact.companies.arr > 0 ? fmt(contact.companies.arr) : '\u2014'}
+                      {Number(contact.companies.arr) > 0 ? fmt(Number(contact.companies.arr))
+                        : Number(contact.companies.mrr) > 0 ? fmt(Number(contact.companies.mrr) * 12) : '\u2014'}
                     </span>
                   </PropertyRow>
                   <PropertyRow label="Estado">
@@ -941,11 +939,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                     <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 90, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
                         <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>ARR</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>{fmt(Number(c360.resumen?.arr) || 0)}</div>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 90, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
-                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>MRR</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>{fmt(Number(c360.resumen?.mrr) || 0)}</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>{fmt(Number(c360.resumen?.arr) || (Number(c360.resumen?.mrr) || 0) * 12)}</div>
                       </div>
                       <div style={{ flex: 1, minWidth: 110, background: '#f5f4f8', borderRadius: 8, padding: '8px 10px' }}>
                         <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase' }}>Próx. factura</div>

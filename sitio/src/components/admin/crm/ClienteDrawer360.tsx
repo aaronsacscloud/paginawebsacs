@@ -2081,8 +2081,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // Solo cuentan las ACTIVAS: una cancelada ya no genera nada, y sumarla
   // pintaría un ARR que no se va a cobrar.
   const activas = (subs || []).filter((x: any) => x.estado === 'activa');
-  const arrAct = activas.reduce((a: number, x: any) => a + Number(x.arr || 0), 0);
-  const mrrAct = activas.reduce((a: number, x: any) => a + Number(x.mrr || 0), 0);
+  // Todo el cliente se mide en ARR. Si una sub vieja no trae `arr`, se
+  // anualiza su mrr en vez de contarla como cero.
+  const arrAct = activas.reduce((a: number, x: any) => a + (Number(x.arr) || (Number(x.mrr) || 0) * 12), 0);
   // Un pago único —vitalicia o pago de una sola vez— NO es recurrencia: va
   // aparte para que nadie lo sume al ARR. Se cuenta lo efectivamente pagado.
   const vitalicias = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')));
@@ -2141,11 +2142,6 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           <div style={D.kl}>ARR de la cuenta</div>
           <div style={{ ...D.kv, color: '#5B4BD6' }}>{arrAct > 0 ? money(arrAct) : '—'}</div>
           <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{activas.length} licencia{activas.length === 1 ? '' : 's'} activa{activas.length === 1 ? '' : 's'}</div>
-        </div>
-        <div style={{ ...D.kpi, borderLeft: '3px solid #c9bcf7' , flex: '1 1 150px' }}>
-          <div style={D.kl}>Equivale al mes</div>
-          <div style={{ ...D.kv, color: '#5B4BD6' }}>{mrrAct > 0 ? money(mrrAct) : '—'}</div>
-          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>MRR · el anual repartido entre 12</div>
         </div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95', flex: '1 1 150px' }}>
           <div style={D.kl}>Pagos únicos</div>
@@ -4147,7 +4143,7 @@ function BloqueChurn({ companyId }: { companyId: string }) {
       </div>
       <div style={{ fontSize: '0.82rem', color: '#4a4756', marginTop: 6, lineHeight: 1.5 }}>
         Se fue por <b>{c.motivo_categoria ? MOTIVO_CHURN[c.motivo_categoria] || c.motivo_categoria : 'motivo sin clasificar'}</b>
-        {' · '}${Math.round(Number(c.mrr_perdido || 0)).toLocaleString('es-MX')} de MRR
+        {' · '}${Math.round(Number(c.mrr_perdido || 0) * 12).toLocaleString('es-MX')} de ARR
         {c.etapa === 'gracia' && quedan != null && (
           <> · gracia {quedan < 0 ? <b style={{ color: '#C0554E' }}>vencida hace {Math.abs(quedan)} d</b> : <>por {quedan} días más</>}</>
         )}

@@ -244,13 +244,9 @@ export default function NuevaOportunidadModal({ onClose, onCreated, companyIdIni
           {/* Los tres números que sí se leen. Mezclarlos es lo que hacía que el
               pipeline no significara nada. */}
           <div style={{ flex: '1 1 320px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 92, background: '#f7f9ff', border: '1px solid #e4ebff', borderRadius: 10, padding: '8px 10px' }}>
-              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#4B7BE5', textTransform: 'uppercase' }}>MRR</div>
-              <div style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{money(t.mrr)}</div>
-            </div>
             <div style={{ flex: 1, minWidth: 92, background: '#f2fbf8', border: '1px solid #bfe8df', borderRadius: 10, padding: '8px 10px' }}>
               <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#1A8F7A', textTransform: 'uppercase' }}>ARR</div>
-              <div style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{money(t.arr)}</div>
+              <div style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{money(Number(t.arr) || (Number(t.mrr) || 0) * 12)}</div>
             </div>
             <div style={{ flex: 1, minWidth: 92, background: '#fffaf3', border: '1px solid #f5e2b8', borderRadius: 10, padding: '8px 10px' }}>
               <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#a06600', textTransform: 'uppercase' }}>Pago único</div>

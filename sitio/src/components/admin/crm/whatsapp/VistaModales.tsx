@@ -193,7 +193,9 @@ function PreviewVista({ config }: { config: ConfigVista }) {
                 {etapa && <span style={{ fontSize: 9, fontWeight: 800, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '1px 6px' }}>{etapa.label}</span>}
               </span>
               <span style={{ display: 'block', fontSize: 10, color: C.g400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {[f.empresa?.nombre, f.empresa?.mrr ? `$${Number(f.empresa.mrr).toLocaleString('es-MX')} MRR` : null].filter(Boolean).join(' · ') || '—'}
+                {/* En ARR, como en toda la vista de clientes: si la empresa no
+                    trae `arr`, se anualiza el mrr. */}
+                {[f.empresa?.nombre, (Number(f.empresa?.arr) || Number(f.empresa?.mrr) * 12) ? `$${(Number(f.empresa?.arr) || Number(f.empresa?.mrr) * 12).toLocaleString('es-MX')} ARR` : null].filter(Boolean).join(' · ') || '—'}
               </span>
             </span>
           </div>
