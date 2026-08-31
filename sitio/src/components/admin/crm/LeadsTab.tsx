@@ -32,6 +32,8 @@ const CLAVE_INTENCION = 'crm:lead-abriendo';
 import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
+// El filtro del datatable estándar, el MISMO que usa Clientes.
+import { FiltroDesplegable } from './TablaEnterprise';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { useIsMobile } from '../../../lib/ui/mobile';
 
@@ -360,6 +362,16 @@ export default function LeadsTab() {
     campana: c => String(c.campana || '').toLowerCase(),
     llamadas: c => (c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0),
     dias: c => dias(c.last_contact_at || c.created_at) ?? -1,
+    /* El resto de las columnas con dato propio. En el datatable estándar toda
+       columna que tiene un valor se ordena; dejar la mitad muertas obliga a
+       adivinar cuáles responden al clic y cuáles no. */
+    telefono: c => String(c.whatsapp || c.telefono || '').replace(/\D/g, ''),
+    canal: c => String(origenDeRegistro(c) || '').toLowerCase(),
+    etapa: c => String(c.lifecycle_stage || '').toLowerCase(),
+    estatus: c => String(eDe(c) || '').toLowerCase(),
+    /* Reunión ordena por CUÁNDO, no por texto: una fecha ordenada
+       alfabéticamente pone "ayer" antes que "hoy" y no significa nada. */
+    reunion: c => Date.parse(c.reunion?.proxima || c.reunion?.ultima || 0) || 0,
   };
   const pedirOrden = (k: string) => setOrdenCol(o => o?.k === k ? (o.desc ? { k, desc: false } : null) : { k, desc: true });
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
@@ -563,16 +575,17 @@ export default function LeadsTab() {
   const anchoTabla = 1230 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
 
-  /* El rótulo ES el botón. Reserva el sitio de la flecha para que el ancho no
-     salte al aparecer, y responde a teclado como cualquier control. */
+  /* El rótulo ES el botón, y lleva el MISMO indicador que el datatable
+     estándar: ⇅ tenue cuando la columna se puede ordenar y no está ordenando,
+     ▾/▴ a color cuando manda. Responde a teclado como cualquier control. */
   const Rot = ({ k, children, num }: { k: string; children: any; num?: boolean }) => {
     const on = ordenCol?.k === k;
     return (
       <button type="button" onClick={() => pedirOrden(k)}
-        title="Ordenar por esta columna"
-        style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer',
-          boxSizing: 'border-box', textAlign: num ? 'right' : 'left', color: on ? '#5B4BD6' : 'inherit' }}>
-        {children}<span style={{ display: 'inline-block', width: 11, marginLeft: 5, opacity: on ? 1 : 0 }} aria-hidden="true">{on ? (ordenCol!.desc ? '↓' : '↑') : '↓'}</span>
+        title={on ? (ordenCol!.desc ? 'De mayor a menor — clic para invertir' : 'De menor a mayor — clic para quitar el orden') : 'Ordenar por esta columna'}
+        style={{ all: 'unset', display: 'block', width: '100%', padding: '10px 14px', cursor: 'pointer',
+          boxSizing: 'border-box', textAlign: num ? 'right' : 'left' }}>
+        {children}<span className="fl" aria-hidden="true">{on ? (ordenCol!.desc ? '\u25BE' : '\u25B4') : '\u21C5'}</span>
       </button>
     );
   };
@@ -717,6 +730,40 @@ export default function LeadsTab() {
     for (const c of rows || []) { const d = diaLocal(c.created_at); if (d) set.add(d.slice(0, 7)); }
     return [...set].sort().reverse();
   }, [rows]);
+
+  /* Los cuatro filtros de diario, con la forma que pide el control del
+     estándar. Se arman aquí y no fuera del componente porque uno de ellos
+     —los meses— sale de los datos que están cargados. */
+  const QD = useMemo(() => ({
+    cuando: {
+      key: 'cuando', label: 'Cuándo llegó',
+      options: [
+        { v: 'hoy', l: 'Hoy' }, { v: 'ayer', l: 'Ayer' },
+        { v: '7', l: 'Últimos 7 días' }, { v: '30', l: 'Últimos 30 días' },
+        ...meses.map(m => { const [y, mm] = m.split('-'); return { v: m, l: `${MESES[Number(mm) - 1]} ${y}` }; }),
+        { v: 'rango', l: 'Rango de fechas…' },
+      ],
+      apply: () => true,
+    },
+    canal: {
+      key: 'canal', label: 'Canal',
+      /* Plano y con el grupo delante: el desplegable del estándar no dibuja
+         optgroups, y sin el grupo "Meta" y "Manual" quedan sueltos sin decir
+         de qué familia son. */
+      options: [...ORIGENES.map(o => ({ v: o.v, l: `${o.grupo} · ${o.l}` })), { v: 'sin_definir', l: 'Sin definir' }],
+      apply: () => true,
+    },
+    estatus: {
+      key: 'estatus', label: 'Estatus',
+      options: ESTATUS_LEAD.map(e => ({ v: e, l: ESTATUS_LABEL[e] })),
+      apply: () => true,
+    },
+    sinContacto: {
+      key: 'sinContacto', label: 'Sin contacto',
+      options: [{ v: '7', l: 'Más de 7 días' }, { v: '14', l: 'Más de 14 días' }, { v: '30', l: 'Más de 30 días' }],
+      apply: () => true,
+    },
+  }), [meses]);
 
   // Lo aplicado, en pastillas: un filtro que no se ve es un filtro que se
   // olvida, y luego "faltan leads" es en realidad un mes puesto la semana pasada.
@@ -1111,83 +1158,41 @@ export default function LeadsTab() {
             </div>
           )}
 
-          {/* Búsqueda + un solo botón de filtros. Antes eran tres desplegables
-              creciendo hacia la derecha: cada filtro nuevo empeoraba la barra.
-              Lo aplicado se ve en pastillas que se quitan con la ✕. */}
-          <div style={esMovil
-            ? { display: buscaMovil ? 'flex' : 'none', alignItems: 'center', margin: '4px 24px 12px' }
-            : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: esMovil ? 'none' : 420 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder={esMovil ? 'Buscar' : 'Buscar nombre, empresa o correo…'}
-                style={esMovil
-                  ? { width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 36px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }
-                  : { width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
-            </div>
-
-            {!esMovil && <div style={{ position: 'relative' }}>
+          {/* ══ La barra del datatable ESTÁNDAR ══
+              Los cuatro filtros de diario salen a la vista como píldoras —el
+              MISMO control de Clientes, importado, no una copia parecida— y
+              «Más filtros» se queda con lo raro: reunión, pausa y el builder
+              de condiciones. Antes los seis vivían escondidos tras un botón:
+              para saber si algo estaba filtrado había que abrir el panel. */}
+          {!esMovil && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+              <FiltroDesplegable qd={QD.cuando} valor={cuando === 'todo' ? '' : cuando} onElegir={v => setCuando(v || 'todo')} isMobile={false} />
+              <FiltroDesplegable qd={QD.canal} valor={origen === 'todo' ? '' : origen} onElegir={v => setOrigen(v || 'todo')} isMobile={false} />
+              {/* El valor 'g:<grupo>' viene de los chips de arriba, no de este
+                  desplegable: se muestra vacío en vez de mentir con un estatus
+                  fino que nadie eligió. */}
+              <FiltroDesplegable qd={QD.estatus} valor={estatusF.startsWith('g:') ? '' : estatusF} onElegir={setEstatusF} isMobile={false} />
+              <FiltroDesplegable qd={QD.sinContacto} valor={sinContacto} onElegir={setSinContacto} isMobile={false} />
+              {cuando === 'rango' && (
+                <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                  <input type="date" value={desde} onChange={e => setDesde(e.target.value)} aria-label="Desde" style={{ ...S.fsel, width: 145, margin: 0 }} />
+                  <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} aria-label="Hasta" style={{ ...S.fsel, width: 145, margin: 0 }} />
+                </span>
+              )}
+              <div style={{ position: 'relative' }}>
               <button onClick={() => setPanelFiltros(!panelFiltros)} style={{
                 height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: '0.78rem', fontWeight: 700, padding: '0 14px',
                 background: nFiltros ? '#EEF1FE' : '#fff', border: `1px solid ${nFiltros ? '#d8e2fb' : '#e2e4e9'}`, color: nFiltros ? '#2C5FC4' : '#555',
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-                Filtros {nFiltros > 0 && <span style={{ background: '#2C5FC4', color: '#fff', fontSize: '0.62rem', borderRadius: 10, padding: '1px 6px' }}>{nFiltros}</span>}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="#fff" /><circle cx="15" cy="12" r="2" fill="#fff" /><circle cx="8" cy="18" r="2" fill="#fff" /></svg>
+                Más filtros {nFiltros > 0 && <span style={{ background: '#2C5FC4', color: '#fff', fontSize: '0.62rem', borderRadius: 10, padding: '1px 6px' }}>{nFiltros}</span>}
               </button>
 
               {panelFiltros && (
                 <>
                   <div onClick={() => setPanelFiltros(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
                   <div style={{ position: 'absolute', top: 42, left: 0, zIndex: 40, background: '#fff', border: '1px solid #e6e2f3', borderRadius: 12, padding: 14, width: 320, boxShadow: '0 12px 34px rgba(40,20,90,.16)' }}>
-                    <div style={S.fk}>Cuándo llegó</div>
-                    <select value={cuando} onChange={e => setCuando(e.target.value)} style={S.fsel}>
-                      <option value="todo">Todo el tiempo</option>
-                      <option value="hoy">Hoy</option>
-                      <option value="ayer">Ayer</option>
-                      <option value="7">Últimos 7 días</option>
-                      <option value="30">Últimos 30 días</option>
-                      {meses.length > 0 && (
-                        <optgroup label="Por mes">
-                          {meses.map(m => {
-                            const [y, mm] = m.split('-');
-                            return <option key={m} value={m}>{MESES[Number(mm) - 1]} {y}</option>;
-                          })}
-                        </optgroup>
-                      )}
-                      <option value="rango">Rango de fechas…</option>
-                    </select>
-                    {cuando === 'rango' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        <input type="date" value={desde} onChange={e => setDesde(e.target.value)} style={S.fsel} />
-                        <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} style={S.fsel} />
-                      </div>
-                    )}
-
-                    <div style={S.fk}>Canal</div>
-                    <select value={origen} onChange={e => setOrigen(e.target.value)} style={S.fsel}>
-                      <option value="todo">Todos los canales</option>
-                      {GRUPOS_ORIGEN.map(g => (
-                        <optgroup key={g} label={g}>
-                          {ORIGENES.filter(o => o.grupo === g).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                        </optgroup>
-                      ))}
-                      <option value="sin_definir">Sin definir</option>
-                    </select>
-
-                    <div style={S.fk}>Estatus del lead</div>
-                    <select value={estatusF.startsWith('g:') ? '' : estatusF} onChange={e => setEstatusF(e.target.value)} style={S.fsel}>
-                      <option value="">Cualquiera</option>
-                      {ESTATUS_LEAD.map(e => <option key={e} value={e}>{ESTATUS_LABEL[e]}</option>)}
-                    </select>
-
-                    <div style={S.fk}>Sin contacto</div>
-                    <select value={sinContacto} onChange={e => setSinContacto(e.target.value)} style={S.fsel}>
-                      <option value="">Cualquiera</option>
-                      <option value="7">Más de 7 días</option>
-                      <option value="14">Más de 14 días</option>
-                      <option value="30">Más de 30 días</option>
-                    </select>
-
                     <div style={S.fk}>Reunión</div>
                     <select value={reunionF} onChange={e => setReunionF(e.target.value)} style={S.fsel}>
                       <option value="">Cualquiera</option>
@@ -1255,8 +1260,27 @@ export default function LeadsTab() {
                   </div>
                 </>
               )}
-            </div>}
+              </div>
+            </div>
+          )}
 
+          {/* El buscador, ANCHO COMPLETO y debajo de los filtros: es el orden
+              del estándar (filtros → buscador → tabla) y el que ya tiene
+              Clientes. Compartiendo renglón con los filtros medía 420 px y
+              parecía un control más de la barra. */}
+          <div style={esMovil
+            ? { display: buscaMovil ? 'flex' : 'none', alignItems: 'center', margin: '4px 24px 12px' }
+            : { display: 'block', marginBottom: 12 }}>
+            <div style={{ position: 'relative', flex: esMovil ? '1 1 260px' : undefined }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a8" strokeWidth="2" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input className="te-search" value={busca} onChange={e => setBusca(e.target.value)} placeholder={esMovil ? 'Buscar' : 'Buscar nombre, empresa o correo…'}
+                style={esMovil
+                  ? { width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 36px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }
+                  : { width: '100%', height: 40, border: '1px solid #e2e4e9', borderRadius: 10, padding: '0 14px 0 38px', fontSize: '0.8rem', fontWeight: 500, background: '#fff', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+
+            {chips.length > 0 && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
             {chips.map(ch => (
               <span key={ch.k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, borderRadius: 20, padding: '0 6px 0 11px', fontSize: '0.72rem', fontWeight: 700, background: '#EEF1FE', color: '#2C5FC4', border: '1px solid #d8e2fb' }}>
                 {ch.l}
@@ -1264,6 +1288,7 @@ export default function LeadsTab() {
                   style={{ width: 18, height: 18, borderRadius: 99, background: 'rgba(44,95,196,.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.68rem' }}>✕</span>
               </span>
             ))}
+            </div>}
 
             {/* El conteo suelto y el «Ordenar» se fueron de aquí: el número ya
                 vive en la pestaña —que es donde se busca— y el orden ahora se
@@ -1483,25 +1508,26 @@ export default function LeadsTab() {
                       van por fecha (lo atorado sube), así que un ↓ diciendo
                       "lo más nuevo arriba" sobre una lista que empieza en
                       19/ago es una flecha que miente. */}
-                  <th scope="col" className="fija1 ord" aria-sort={rotuloAntes.size ? 'none' : (orden === 'reciente' ? 'descending' : 'ascending')}
-                    style={{ ...S.th, width: 108, padding: 0 }}>
-                    <button type="button" onClick={() => pedirOrden('llego')}
-                      title={rotuloAntes.size ? 'Ordenado por prioridad: lo atorado primero. Cambia a más fríos primero' : 'Ordenar por cuándo llegó / más fríos primero'}
-                      style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer', boxSizing: 'border-box' }}>
-                      Llegó<span className="fl" aria-hidden="true">{rotuloAntes.size ? '' : orden === 'reciente' ? '↓' : '↑'}</span>
-                    </button>
-                  </th>
-                  <th scope="col" className="fija2" aria-sort={ordenCol?.k === 'lead' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 190, padding: 0 }}><Rot k="lead">Lead</Rot></th>
-                  <th scope="col" aria-sort={ordenCol?.k === 'empresa' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 186, padding: 0 }}><Rot k="empresa">Empresa</Rot></th>
-                  <th scope="col" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 160, padding: 0 }}><Rot k="correo">Correo</Rot></th>
-                  <th scope="col" style={{ ...S.th, width: 124 }}>Teléfono</th>
-                  <th scope="col" style={{ ...S.th, width: 98 }}>Canal</th>
-                  <th scope="col" className="num" aria-sort={ordenCol?.k === 'sucs' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 66, padding: 0 }} title="Cuántas sucursales le interesan"><Rot k="sucs" num>Sucs.</Rot></th>
-                  <th scope="col" style={{ ...S.th, width: 166 }}>{
-                    etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
-                    : etapa === 'rezagados' ? 'Última señal'
-                    : etapa === 'oportunidad' ? 'Última actividad'
-                    : etapa === 'no_interesados' ? 'Por qué no' : 'Campaña'}</th>
+                  <th scope="col" className="fija1 ord" aria-sort={ordenCol?.k === 'llego' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'}
+                    style={{ ...S.th, width: 108, padding: 0 }}><Rot k="llego">Llegó</Rot></th>
+                  <th scope="col" className="fija2 ord" aria-sort={ordenCol?.k === 'lead' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 190, padding: 0 }}><Rot k="lead">Lead</Rot></th>
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'empresa' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 186, padding: 0 }}><Rot k="empresa">Empresa</Rot></th>
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 160, padding: 0 }}><Rot k="correo">Correo</Rot></th>
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'telefono' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 124, padding: 0 }}><Rot k="telefono">Teléfono</Rot></th>
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'canal' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 98, padding: 0 }}><Rot k="canal">Canal</Rot></th>
+                  <th scope="col" className="num ord" aria-sort={ordenCol?.k === 'sucs' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 66, padding: 0 }} title="Cuántas sucursales le interesan"><Rot k="sucs" num>Sucs.</Rot></th>
+                  {(() => {
+                    const rotulo = etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
+                      : etapa === 'rezagados' ? 'Última señal'
+                      : etapa === 'oportunidad' ? 'Última actividad'
+                      : etapa === 'no_interesados' ? 'Por qué no' : 'Campaña';
+                    /* Solo ordena cuando ese hueco de verdad muestra la
+                       campaña: en las demás pestañas enseña señal, prueba o
+                       motivo, que no comparten un valor con el que ordenar.
+                       Sin ⇅ se ve, correctamente, que ahí no hay orden. */
+                    if (rotulo !== 'Campaña') return <th scope="col" style={{ ...S.th, width: 166 }}>{rotulo}</th>;
+                    return <th scope="col" className="ord" aria-sort={ordenCol?.k === 'campana' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 166, padding: 0 }}><Rot k="campana">Campaña</Rot></th>;
+                  })()}
                   {/* Etapa y Estatus solo aparecen donde de verdad varían. En
                       "Leads nuevos" la pestaña se define como etapa=lead Y
                       estatus=nuevo: es imposible que esas dos columnas digan
@@ -1509,10 +1535,10 @@ export default function LeadsTab() {
                       pestaña cien veces — y encima con pastillas de color, que
                       son lo que más pesa en la fila. Se siguen pudiendo cambiar
                       desde el ⋮ y desde la ficha. */}
-                  {verEtapa && <th scope="col" style={{ ...S.th, width: 96 }}>Etapa</th>}
-                  {verEstatus && <th scope="col" style={{ ...S.th, width: 116 }}>Estatus</th>}
-                  {verReunion && <th scope="col" style={{ ...S.th, width: 96 }}>Reunión</th>}
-                  {verLlamadas && <th scope="col" style={{ ...S.th, width: 92, padding: 0 }}><Rot k="llamadas" num>Llamadas</Rot></th>}
+                  {verEtapa && <th scope="col" className="ord" aria-sort={ordenCol?.k === 'etapa' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 96, padding: 0 }}><Rot k="etapa">Etapa</Rot></th>}
+                  {verEstatus && <th scope="col" className="ord" aria-sort={ordenCol?.k === 'estatus' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 116, padding: 0 }}><Rot k="estatus">Estatus</Rot></th>}
+                  {verReunion && <th scope="col" className="ord" aria-sort={ordenCol?.k === 'reunion' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 96, padding: 0 }}><Rot k="reunion">Reunión</Rot></th>}
+                  {verLlamadas && <th scope="col" className="num ord" aria-sort={ordenCol?.k === 'llamadas' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 92, padding: 0 }}><Rot k="llamadas" num>Llamadas</Rot></th>}
                   <th scope="col" className="derecha" style={{ ...S.th, width: 92 }}><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Acciones</span></th>
                 </tr>
               </thead>

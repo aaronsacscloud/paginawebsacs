@@ -104,7 +104,11 @@ const E = {
 
    Panel lila translúcido con desenfoque detrás, y la opción elegida en rosa
    claro: el rosa marca la selección sin competir con el morado de la interfaz. */
-function FiltroDesplegable({ qd, valor, onElegir, isMobile }: { qd: QuickDef; valor: string; onElegir: (v: string) => void; isMobile: boolean }) {
+/* Se exporta porque el estándar no es solo esta tabla: Leads tiene su propia
+   tabla (pestañas de ciclo de vida, grupos, selección masiva) y aun así sus
+   filtros tienen que ser ESTOS, no unos parecidos. Dos desplegables distintos
+   en dos pantallas del mismo CRM se leen como dos productos. */
+export function FiltroDesplegable({ qd, valor, onElegir, isMobile }: { qd: QuickDef; valor: string; onElegir: (v: string) => void; isMobile: boolean }) {
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement | null>(null);
   useEffect(() => {

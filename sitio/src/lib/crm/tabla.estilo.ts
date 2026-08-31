@@ -31,6 +31,10 @@ export const CSS_TABLA = `
 .crm-tabla tbody td { overflow:hidden; }
 .crm-tabla tbody td, .crm-tabla tbody td > div, .crm-tabla tbody td > span,
 .crm-tabla tbody td > div > div { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; max-width:100%; }
+/* El aro de foco del buscador del estándar. Vive aquí porque esta tabla no
+   monta TablaEnterprise —que es donde estaba la regla— y sin ella el buscador
+   se veía igual pero no respondía al foco. */
+.te-search:focus { border-color:#4B7BE5 !important; box-shadow:0 0 0 3px rgba(75,123,229,0.12); }
 /* La fila entera se ilumina al pasar: en 13 columnas, seguir un
    renglón hasta la orilla sin una guía es contar con la suerte. El
    #faf9fd anterior daba 1.03:1 contra el blanco —o sea, no se veía—,
@@ -89,14 +93,19 @@ export const CSS_TABLA = `
    «…» al lado de cada casilla porque la caja del control mide más que
    la columna de 40 px. */
 .crm-tabla th.fija0, .crm-tabla td.fija0 { text-overflow:clip; }
-/* Los rótulos que ordenan se sienten tocables y reservan el sitio de la
-   flecha, para que el ancho no salte al aparecer. */
+/* El indicador de orden es el del estándar: un ⇅ TENUE pero visible en toda
+   columna ordenable —se ve que SE PUEDE sin gritarlo—, marcado al pasar el
+   mouse y vuelto ▾/▴ a color cuando esa columna manda. Antes la flecha vivía
+   en opacity:0 hasta el hover: quien no pasa el mouse por los rótulos nunca
+   se enteraba de que la tabla se podía ordenar. */
 .crm-tabla th.ord { cursor:pointer; user-select:none; }
-.crm-tabla th.ord:hover { color:#5B4BD6; }
-.crm-tabla th.ord .fl { display:inline-block; width:10px; margin-left:5px; opacity:0; }
-.crm-tabla th.ord:hover .fl { opacity:.45; }
+/* !important: T.th trae el fondo EN LÍNEA y un estilo en línea le gana a la
+   clase, así que sin esto el resaltado al pasar el mouse no se ve. */
+.crm-tabla th.ord:hover { background:#f3efff !important; }
+.crm-tabla th .fl { display:inline-block; width:11px; margin-left:5px; color:#c3bcdd; font-size:.92em; transition:color .12s ease; }
+.crm-tabla th.ord:hover .fl { color:#6b5fa8; }
 .crm-tabla th.ord[aria-sort]:not([aria-sort="none"]) { color:#5B4BD6; }
-.crm-tabla th.ord[aria-sort]:not([aria-sort="none"]) .fl { opacity:1; }
+.crm-tabla th.ord[aria-sort]:not([aria-sort="none"]) .fl { color:#5B4BD6; }
 /* Congelada + hover: si no se repinta el fondo, la fila se parte en
    dos colores justo en el borde de lo que se quedó fijo. */
 .crm-tabla tbody tr:hover td.fija0, .crm-tabla tbody tr:hover td.fija1, .crm-tabla tbody tr:hover td.fija2 { background:#f5f3fc; }
@@ -126,11 +135,13 @@ export const CSS_TABLA = `
 /** Los tokens de celda. Un solo lugar: el tamaño y el gris de la segunda
  *  línea andaban en cuatro variantes distintas antes de unificarlos. */
 export const T = {
-  /* Cabecera: 11 px en #6B6A76 (5.3:1) y peso 600 — a ese tamaño, en
-     mayúsculas y con letterSpacing, el peso 800 cierra las contraformas y la
-     palabra se ve como un bloque. Pegada arriba, con sombra: sin ella las
-     filas se le meten por debajo sin ninguna capa que las separe. */
-  th: { fontSize: '0.6875rem', fontWeight: 600, color: '#6B6A76', textTransform: 'uppercase' as const, letterSpacing: '.04em', textAlign: 'left' as const, padding: '9px 14px', background: '#fff', position: 'sticky' as const, top: 0, zIndex: 2, whiteSpace: 'nowrap' as const, boxShadow: '0 1px 0 #e8e6ef, 0 6px 10px -8px rgba(16,24,40,.22)' } as CSSProperties,
+  /* Cabecera: LA MISMA banda del datatable estándar (TablaEnterprise con
+     headerTint, el que ya usa Clientes) — lila #faf8ff, tinta #6b5fa8, 0.64
+     rem/700 y letterSpacing .06em. Dos tablas del mismo CRM con dos
+     cabeceras distintas se leen como dos productos. Pegada arriba y con
+     sombra: sin ella las filas se le meten por debajo sin ninguna capa que
+     las separe. */
+  th: { fontSize: '0.64rem', fontWeight: 700, color: '#6b5fa8', textTransform: 'uppercase' as const, letterSpacing: '.06em', textAlign: 'left' as const, padding: '10px 14px', background: '#faf8ff', position: 'sticky' as const, top: 0, zIndex: 2, whiteSpace: 'nowrap' as const, boxShadow: '0 1px 0 #e6ddfa, 0 6px 10px -8px rgba(16,24,40,.18)' } as CSSProperties,
   /* Alineación ARRIBA, no al centro: con `middle`, una celda de tres renglones
      empuja al dato de al lado hacia abajo y en la misma fila ningún valor
      principal queda a la altura del otro. */
