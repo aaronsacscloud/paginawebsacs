@@ -3,59 +3,84 @@
  * PatternIA — el corte a pantalla completa que encuadra la función de
  * fotografía con IA antes de enseñar el flujo del vestido.
  *
- * Las letras se arman con partículas (Three.js) y, cuando terminan de
- * asentarse, el titular de partículas se apaga y entra el <h2> de verdad:
- * el espectáculo es de partículas, pero lo que queda en pantalla es texto
- * real — legible, seleccionable y leído por Google.
+ * El titular se ESCRIBE con el scroll: las partículas van encontrando su letra
+ * conforme el visitante baja, y al final del recorrido se apagan y entra el
+ * <h2> de verdad. El espectáculo es de partículas, pero lo que queda en
+ * pantalla es texto real — legible, seleccionable y leído por Google.
+ *
+ * Va sobre el amarillo pastel de la familia ámbar de Sacs (#E8A838 → #F5E2B8).
+ * Es el corte de luz de la página: arriba queda WhatsApp en blanco, abajo el
+ * flujo en ciruela y después el pilar casi negro.
  *
  * Reglas de esta pieza:
+ *  · El recorrido va como caja propia DENTRO del riel, nunca como padding: un
+ *    sticky solo viaja dentro del content box de quien lo contiene.
  *  · Three.js entra por import() dinámico y solo cuando la sección está cerca:
- *    son ~150 KB que la home no debe pagar en la primera carga.
+ *    son ~688 KB de chunk que la home no debe pagar en la primera carga.
+ *  · Fondo claro = las partículas OSCURECEN. Nada de AdditiveBlending, que
+ *    sobre claro sólo lava el color y no se ve una letra.
  *  · El texto se ve SIEMPRE por defecto. Las partículas solo lo esconden si de
- *    verdad van a correr; si no hay WebGL o el visitante pidió menos
- *    movimiento, nadie se entera de que había un efecto.
- *  · Las líneas van partidas a mano y el tamaño se calcula para que quepan:
- *    el canvas y el <h2> dibujan EXACTAMENTE lo mismo, que es lo único que
- *    hace que el relevo entre partículas y texto no se note.
+ *    verdad van a correr; sin WebGL o con prefers-reduced-motion nadie se
+ *    entera de que había un efecto, y el riel ni siquiera aparece.
+ *  · Las líneas van partidas a mano y el tamaño se calcula para que quepan: el
+ *    canvas y el <h2> dibujan EXACTAMENTE lo mismo, que es lo único que hace
+ *    que el relevo entre partículas y texto no se note.
  */
-const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 veces más rápido.'];
+const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más rápido.'];
 ---
 
 <section class="pi" id="pattern-ia" data-lineas={JSON.stringify(LINEAS)}>
-  <canvas class="pi-lienzo" id="pi-lienzo" aria-hidden="true"></canvas>
+  <div class="pi-riel">
+    <div class="pi-pegado">
+      <canvas class="pi-lienzo" id="pi-lienzo" aria-hidden="true"></canvas>
 
-  <div class="pi-caja">
-    <span class="pi-kicker">Una función de Sacs · Fotografía con IA</span>
-    <h2 class="pi-claim" id="pi-claim">
-      {LINEAS.map((l) => <span class="pi-linea">{l}</span>)}
-    </h2>
-    <p class="pi-lead">Pon una foto en Sacs y todo lo demás lo hacemos por ti.</p>
-    <p class="pi-nota">Sin estudio, sin fotógrafo y sin volver a montar una sesión.</p>
-    <span class="pi-abajo" aria-hidden="true">Así funciona</span>
+      <div class="pi-caja">
+        <span class="pi-kicker">Fotografía con IA · una función de Sacs</span>
+        <h2 class="pi-claim" id="pi-claim">
+          {LINEAS.map((l) => <span class="pi-linea">{l}</span>)}
+        </h2>
+        <p class="pi-lead">Pon una foto en Sacs y todo lo demás lo hacemos por ti.</p>
+        <p class="pi-nota">Sin estudio, sin fotógrafo y sin volver a montar una sesión por cada drop.</p>
+        <span class="pi-abajo" aria-hidden="true">Así funciona</span>
+      </div>
+    </div>
+
+    <div class="pi-recorrido" aria-hidden="true"></div>
   </div>
 </section>
 
 <style>
   .pi {
     position: relative;
+    background: #F5E2B8;
+    color: #241A10;
+    scroll-margin-top: 80px;
+  }
+  .pi-riel { position: relative; }
+
+  .pi-pegado {
+    position: sticky;
+    top: 0;
     min-height: 100vh;
     min-height: 100svh;
     display: grid;
     place-items: center;
     padding: clamp(72px, 10vh, 120px) clamp(20px, 5vw, 72px) clamp(48px, 8vh, 96px);
-    background: #3A2233;
-    color: #fff;
     overflow: clip;
-    scroll-margin-top: 80px;
   }
-  /* Un solo halo, muy tenue: el color lo pone el fondo plano, no un degradado. */
-  .pi::before {
+  /* Un solo halo de luz al centro. El color lo pone el fondo plano. */
+  .pi-pegado::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(60% 46% at 50% 42%, rgba(255,255,255,.07), transparent 70%);
+    background: radial-gradient(58% 46% at 50% 42%, rgba(255,255,255,.55), transparent 72%);
     pointer-events: none;
   }
+
+  /* El recorrido solo existe si las partículas van a correr: si no, sería
+     scroll cobrado a cambio de nada. */
+  .pi-recorrido { height: 0; }
+  .pi.con-riel .pi-recorrido { height: 130vh; }
 
   .pi-lienzo {
     position: absolute;
@@ -78,13 +103,13 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     display: inline-block;
     padding: 7px 15px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.24);
-    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(36,26,16,.22);
+    background: rgba(255,255,255,.45);
     font-size: 0.6875rem;
     font-weight: 800;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.78);
+    color: #5A4526;
   }
 
   .pi-claim {
@@ -96,16 +121,18 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     line-height: 1.02;
     letter-spacing: -.035em;
     margin: clamp(20px, 3vh, 34px) 0 0;
-    color: #fff;
+    color: rgba(36,26,16,.52);
   }
+  /* El golpe va en la última línea, que es la promesa. */
   .pi-linea { display: block; }
+  .pi-linea:last-child { color: #241A10; }
+
   /* En pantalla angosta las 3 líneas fijas obligan a una letra de 23 px: ahí
      el texto fluye solo y se lee grande. Sin líneas fijas no hay partículas,
      que en un teléfono además es lo más caro de todo esto. */
   .pi.suelto .pi-linea { display: inline; }
   .pi.suelto .pi-linea + .pi-linea::before { content: ' '; }
   .pi.suelto .pi-claim { font-size: clamp(2.05rem, 8.6vw, 3.1rem); line-height: 1.06; }
-  .pi-linea:last-child { color: rgba(255,255,255,.62); }
 
   .pi-lead {
     margin: clamp(20px, 3vh, 32px) auto 0;
@@ -113,14 +140,14 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     font-size: clamp(1.0625rem, 1.9vw, 1.375rem);
     line-height: 1.45;
     font-weight: 600;
-    color: rgba(255,255,255,.94);
+    color: #33261A;
   }
   .pi-nota {
     margin: 10px auto 0;
-    max-width: 48ch;
+    max-width: 50ch;
     font-size: 0.9375rem;
     line-height: 1.5;
-    color: rgba(255,255,255,.58);
+    color: rgba(36,26,16,.6);
   }
   .pi-abajo {
     display: inline-block;
@@ -129,7 +156,7 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     font-weight: 800;
     letter-spacing: .16em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.5);
+    color: rgba(36,26,16,.55);
   }
   .pi-abajo::after {
     content: '';
@@ -137,37 +164,38 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     width: 1px;
     height: 34px;
     margin: 12px auto 0;
-    background: linear-gradient(rgba(255,255,255,.45), transparent);
+    background: linear-gradient(rgba(36,26,16,.45), transparent);
   }
 
-  /* Con partículas el titular se esconde hasta que terminan de armarlo. */
-  .pi.con-particulas .pi-claim { opacity: 0; }
-  .pi.con-particulas.asentado .pi-claim {
-    opacity: 1;
-    transition: opacity .55s ease;
-  }
-  /* Lo de alrededor entra después del titular, nunca antes. */
+  /* Con partículas el titular se esconde hasta que el scroll termina de
+     armarlo. Lo de alrededor entra con él, nunca antes. */
+  .pi.con-particulas .pi-claim,
   .pi.con-particulas .pi-kicker,
   .pi.con-particulas .pi-lead,
   .pi.con-particulas .pi-nota,
   .pi.con-particulas .pi-abajo {
     opacity: 0;
-    transform: translateY(12px);
+    transition: opacity .45s ease, transform .45s cubic-bezier(.2,.7,.3,1);
   }
+  .pi.con-particulas .pi-kicker,
+  .pi.con-particulas .pi-lead,
+  .pi.con-particulas .pi-nota,
+  .pi.con-particulas .pi-abajo { transform: translateY(10px); }
+
+  .pi.con-particulas.asentado .pi-claim,
   .pi.con-particulas.asentado .pi-kicker,
   .pi.con-particulas.asentado .pi-lead,
   .pi.con-particulas.asentado .pi-nota,
   .pi.con-particulas.asentado .pi-abajo {
     opacity: 1;
     transform: none;
-    transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1);
   }
-  .pi.con-particulas.asentado .pi-lead  { transition-delay: .10s; }
-  .pi.con-particulas.asentado .pi-nota  { transition-delay: .18s; }
-  .pi.con-particulas.asentado .pi-abajo { transition-delay: .26s; }
+  .pi.con-particulas.asentado .pi-lead  { transition-delay: .06s; }
+  .pi.con-particulas.asentado .pi-nota  { transition-delay: .12s; }
+  .pi.con-particulas.asentado .pi-abajo { transition-delay: .18s; }
 
   @media (max-width: 980px) {
-    .pi { padding: clamp(64px, 12vh, 96px) 22px clamp(40px, 8vh, 72px); }
+    .pi-pegado { padding: clamp(64px, 12vh, 96px) 22px clamp(40px, 8vh, 72px); }
     .pi-abajo { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -187,10 +215,12 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
   if (sec && cv && claim) {
     const lineas: string[] = JSON.parse(sec.dataset.lineas || '[]');
     const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const riel = sec.querySelector('.pi-riel') as HTMLElement | null;
+    const pegado = sec.querySelector('.pi-pegado') as HTMLElement | null;
+    const ANGOSTO = 700;
 
     // ── El tamaño de letra: el canvas y el <h2> tienen que dibujar lo mismo ──
     const regla = document.createElement('canvas').getContext('2d');
-    const ANGOSTO = 700;
     const ajustar = () => {
       if (!regla || !lineas.length) return 0;
       if (window.innerWidth < ANGOSTO) {
@@ -215,15 +245,15 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
     listo.then(() => ajustar());
     window.addEventListener('resize', () => ajustar());
 
-    // ── Las partículas ──────────────────────────────────────────────────────
+    // ── Las partículas, escritas por el scroll ──────────────────────────────
     let arrancado = false;
 
     const arrancar = async () => {
-      if (arrancado || menos || window.innerWidth < ANGOSTO) return;
+      if (arrancado || menos || window.innerWidth < ANGOSTO || !riel || !pegado) return;
       arrancado = true;
       try {
-        // Three.js entra aquí y no antes: son ~150 KB que la home no debe
-        // pagar en la primera carga por una sección que está más abajo.
+        // Three.js entra aquí y no antes: son ~688 KB de chunk que la home no
+        // debe pagar en la primera carga por una sección que está más abajo.
         const THREE = await import('three');
         await ((document as any).fonts?.ready || Promise.resolve());
 
@@ -231,12 +261,13 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
         if (!tam) return;
 
         const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        const W = sec.clientWidth;
-        const H = sec.clientHeight;
+        const W = pegado.clientWidth;
+        const H = pegado.clientHeight;
         if (W < 80 || H < 80) return;
 
-        // 1. Dibujar el titular en un lienzo 2D del tamaño de la sección, en el
-        //    mismo sitio donde va a quedar el <h2>: de ahí salen los destinos.
+        // 1. Dibujar el titular en un lienzo 2D del tamaño de la pantalla
+        //    pegada, en el mismo sitio donde va a quedar el <h2>: de ahí salen
+        //    los destinos de cada partícula.
         const molde = document.createElement('canvas');
         molde.width = Math.round(W * dpr);
         molde.height = Math.round(H * dpr);
@@ -245,26 +276,22 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
 
         const est = getComputedStyle(claim);
         const rc = claim.getBoundingClientRect();
-        const rs = sec.getBoundingClientRect();
-        const cx = (rc.left - rs.left + rc.width / 2) * dpr;
+        const rp = pegado.getBoundingClientRect();
+        const cx = rc.left - rp.left + rc.width / 2;
         const alto = parseFloat(est.lineHeight) || tam * 1.02;
-        const y0 = (rc.top - rs.top) * dpr;
+        const y0 = rc.top - rp.top;
 
         m.scale(dpr, dpr);
         m.font = `${est.fontWeight} ${tam}px ${est.fontFamily}`;
         m.textAlign = 'center';
         m.textBaseline = 'middle';
         m.fillStyle = '#fff';
-        lineas.forEach((l, i) => {
-          m.fillText(l, cx / dpr, (y0 / dpr) + alto * (i + 0.5));
-        });
+        lineas.forEach((l, i) => m.fillText(l, cx, y0 + alto * (i + 0.5)));
 
         // 2. Muestrear el dibujo. El paso se ajusta para no pasar del tope de
         //    puntos: más que eso no se ve mejor y sí se siente en un celular.
+        const TOPE = 22000;
         const datos = m.getImageData(0, 0, molde.width, molde.height).data;
-        // En celular se pide la mitad de puntos: la pantalla es chica, no se
-        // nota la diferencia, y el teléfono no tiene por qué sudar por esto.
-        const TOPE = W < 700 ? 9000 : 22000;
         let paso = Math.max(2, Math.round(3 * dpr));
         let dest: number[] = [];
         for (let intento = 0; intento < 8; intento++) {
@@ -296,16 +323,17 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
         const punto = new Float32Array(n);
         for (let i = 0; i < n; i++) {
           // Cada partícula nace DESPLAZADA de su propia letra, no en una nube
-          // suelta: así a media animación ya se leen las palabras armándose y
+          // suelta: así a media escritura ya se leen las palabras armándose y
           // no un polvo cualquiera que de pronto se vuelve texto.
           const a = Math.random() * Math.PI * 2;
           const d = 70 + Math.random() * Math.random() * 340;
           ini[i * 3] = pos[i * 3] + Math.cos(a) * d;
           ini[i * 3 + 1] = pos[i * 3 + 1] + Math.sin(a) * d * 0.62;
           ini[i * 3 + 2] = (Math.random() - 0.5) * 160;
-          // El retraso va por columna: la frase se escribe de izquierda a derecha
+          // El retraso va por columna: la frase se escribe de izquierda a
+          // derecha conforme el visitante baja.
           retraso[i] = Math.min(0.42, (pos[i * 3] / W) * 0.34 + Math.random() * 0.12);
-          punto[i] = (1.1 + Math.random() * 1.5) * dpr;
+          punto[i] = (1.7 + Math.random() * 1.9) * dpr;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
         geo.setAttribute('ini', new THREE.BufferAttribute(ini, 3));
@@ -315,7 +343,9 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
         const mat = new THREE.ShaderMaterial({
           transparent: true,
           depthTest: false,
-          blending: THREE.AdditiveBlending,
+          // Sobre amarillo pastel las partículas tienen que OSCURECER. Con
+          // AdditiveBlending sólo lavarían el fondo y no se leería una letra.
+          blending: THREE.NormalBlending,
           uniforms: { t: { value: 0 }, salida: { value: 0 } },
           vertexShader: [
             'attribute vec3 ini;',
@@ -338,52 +368,66 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
             'varying float vP;',
             'void main(){',
             '  vec2 d = gl_PointCoord - 0.5;',
-            '  float a = smoothstep(0.5, 0.12, length(d));',
-            '  vec3 col = mix(vec3(0.85, 0.72, 0.80), vec3(1.0), vP);',
-            '  gl_FragColor = vec4(col, a * (0.34 + 0.66 * vP) * (1.0 - salida));',
+            '  float a = smoothstep(0.5, 0.26, length(d));',
+            '  vec3 col = mix(vec3(0.34, 0.25, 0.13), vec3(0.09, 0.06, 0.04), vP);',
+            '  gl_FragColor = vec4(col, a * (0.55 + 0.45 * vP) * (1.0 - salida));',
             '}',
           ].join('\n'),
         });
 
-        const nube = new THREE.Points(geo, mat);
-        escena.add(nube);
-        sec.classList.add('con-particulas');
+        escena.add(new THREE.Points(geo, mat));
+        sec.classList.add('con-particulas', 'con-riel');
 
-        const T_ARMAR = 1550;
-        const T_SALIR = 700;
-        const t0 = performance.now();
-        let asentado = false;
+        // 4. El scroll es el que escribe. El avance del riel manda sobre las
+        //    partículas, así que subir deshace la frase igual que bajar la
+        //    arma — no es una animación que se dispara una vez.
+        const ESCRITO = 0.86; // aquí la frase ya está completa
+        const RELEVO = 0.93;  // aquí entra el texto de verdad
+        let visible = true;
+        let pintando = false;
+        let ultimaSalida = -1;
+
+        const avance = () => {
+          const total = riel.offsetHeight - pegado.offsetHeight;
+          if (total <= 0) return 1;
+          return Math.min(1, Math.max(0, -riel.getBoundingClientRect().top / total));
+        };
 
         const pintar = () => {
-          const ms = performance.now() - t0;
-          mat.uniforms.t.value = Math.min(1, ms / T_ARMAR);
+          if (!visible) { pintando = false; return; }
+          const p = avance();
+          mat.uniforms.t.value = Math.min(1, p / ESCRITO);
+          const s = Math.min(1, Math.max(0, (p - ESCRITO) / (1 - ESCRITO)));
+          mat.uniforms.salida.value = s;
 
-          if (!asentado && ms > T_ARMAR + 180) {
-            asentado = true;
-            sec.classList.add('asentado');
-          }
-          if (asentado) {
-            const s = Math.min(1, (ms - T_ARMAR - 180) / T_SALIR);
-            mat.uniforms.salida.value = s;
-            if (s >= 1) {
-              // Se apaga del todo: no tiene sentido seguir pintando un canvas
-              // invisible mientras el visitante sigue leyendo la página.
-              render.render(escena, cam);
-              cv.style.display = 'none';
-              geo.dispose();
-              mat.dispose();
-              render.dispose();
-              return;
-            }
-          }
-          render.render(escena, cam);
+          const debe = p >= RELEVO;
+          if (debe !== sec.classList.contains('asentado')) sec.classList.toggle('asentado', debe);
+
+          // Con las partículas apagadas del todo no hay nada que pintar.
+          if (!(s >= 1 && ultimaSalida >= 1)) render.render(escena, cam);
+          ultimaSalida = s;
           requestAnimationFrame(pintar);
         };
-        requestAnimationFrame(pintar);
+
+        const arrancarPintado = () => {
+          if (pintando || !visible) return;
+          pintando = true;
+          requestAnimationFrame(pintar);
+        };
+
+        // Solo se pinta mientras la sección se ve: fuera de pantalla no tiene
+        // sentido gastar cuadros en 22 mil puntos.
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(
+            (filas) => filas.forEach((f) => { visible = f.isIntersecting; arrancarPintado(); }),
+            { threshold: 0 },
+          ).observe(sec);
+        }
+        arrancarPintado();
       } catch (err) {
         // Sin WebGL, sin Three o con el canvas caído: queda el texto tal cual,
-        // que es lo que importa.
-        sec.classList.remove('con-particulas');
+        // que es lo que importa, y sin riel que cobre scroll de más.
+        sec.classList.remove('con-particulas', 'con-riel');
       }
     };
 
@@ -397,7 +441,7 @@ const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 v
             }
           });
         },
-        { threshold: 0.3 },
+        { rootMargin: '400px 0px' },
       );
       obs.observe(sec);
     }
