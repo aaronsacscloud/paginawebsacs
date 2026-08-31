@@ -4,6 +4,7 @@ import Hero from '../components/Hero.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
+import PatternIA from '../components/home/PatternIA.astro';
 import FlujoIA from '../components/home/FlujoIA.astro';
 import { modaSectors, modelosNegocio } from '../data/navigation';
 
@@ -54,7 +55,10 @@ const casosHome = [
     primaryCTA={{ label: 'Prueba 7 dias gratis', href: '/prueba-gratis' }}
     secondaryCTA={{ label: 'Agenda una demo', href: '/contacto' }}
   >
-    <FlujoIA slot="insignia" />
+    <Fragment slot="insignia">
+      <PatternIA />
+      <FlujoIA />
+    </Fragment>
   </Hero>
 
   <!-- ═══ ¿Cómo opera tu negocio? — el selector de camino ═══ -->

@@ -1,0 +1,405 @@
+---
+/**
+ * PatternIA — el corte a pantalla completa que encuadra la función de
+ * fotografía con IA antes de enseñar el flujo del vestido.
+ *
+ * Las letras se arman con partículas (Three.js) y, cuando terminan de
+ * asentarse, el titular de partículas se apaga y entra el <h2> de verdad:
+ * el espectáculo es de partículas, pero lo que queda en pantalla es texto
+ * real — legible, seleccionable y leído por Google.
+ *
+ * Reglas de esta pieza:
+ *  · Three.js entra por import() dinámico y solo cuando la sección está cerca:
+ *    son ~150 KB que la home no debe pagar en la primera carga.
+ *  · El texto se ve SIEMPRE por defecto. Las partículas solo lo esconden si de
+ *    verdad van a correr; si no hay WebGL o el visitante pidió menos
+ *    movimiento, nadie se entera de que había un efecto.
+ *  · Las líneas van partidas a mano y el tamaño se calcula para que quepan:
+ *    el canvas y el <h2> dibujan EXACTAMENTE lo mismo, que es lo único que
+ *    hace que el relevo entre partículas y texto no se note.
+ */
+const LINEAS = ['Usa la inteligencia artificial', 'para hacer tu trabajo', '20 veces más rápido.'];
+---
+
+<section class="pi" id="pattern-ia" data-lineas={JSON.stringify(LINEAS)}>
+  <canvas class="pi-lienzo" id="pi-lienzo" aria-hidden="true"></canvas>
+
+  <div class="pi-caja">
+    <span class="pi-kicker">Una función de Sacs · Fotografía con IA</span>
+    <h2 class="pi-claim" id="pi-claim">
+      {LINEAS.map((l) => <span class="pi-linea">{l}</span>)}
+    </h2>
+    <p class="pi-lead">Pon una foto en Sacs y todo lo demás lo hacemos por ti.</p>
+    <p class="pi-nota">Sin estudio, sin fotógrafo y sin volver a montar una sesión.</p>
+    <span class="pi-abajo" aria-hidden="true">Así funciona</span>
+  </div>
+</section>
+
+<style>
+  .pi {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: clamp(72px, 10vh, 120px) clamp(20px, 5vw, 72px) clamp(48px, 8vh, 96px);
+    background: #3A2233;
+    color: #fff;
+    overflow: clip;
+    scroll-margin-top: 80px;
+  }
+  /* Un solo halo, muy tenue: el color lo pone el fondo plano, no un degradado. */
+  .pi::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(60% 46% at 50% 42%, rgba(255,255,255,.07), transparent 70%);
+    pointer-events: none;
+  }
+
+  .pi-lienzo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    pointer-events: none;
+  }
+  .pi.con-particulas .pi-lienzo { display: block; }
+
+  .pi-caja {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 1240px);
+    text-align: center;
+  }
+
+  .pi-kicker {
+    display: inline-block;
+    padding: 7px 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.24);
+    background: rgba(255,255,255,.06);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.78);
+  }
+
+  .pi-claim {
+    font-family: var(--font-display);
+    font-weight: 800;
+    /* --pi-tam lo calcula el script para que las 3 líneas quepan exactas; el
+       clamp es lo que se ve mientras tanto y si el script no corre. */
+    font-size: var(--pi-tam, clamp(2rem, 5.4vw, 4.2rem));
+    line-height: 1.02;
+    letter-spacing: -.035em;
+    margin: clamp(20px, 3vh, 34px) 0 0;
+    color: #fff;
+  }
+  .pi-linea { display: block; }
+  /* En pantalla angosta las 3 líneas fijas obligan a una letra de 23 px: ahí
+     el texto fluye solo y se lee grande. Sin líneas fijas no hay partículas,
+     que en un teléfono además es lo más caro de todo esto. */
+  .pi.suelto .pi-linea { display: inline; }
+  .pi.suelto .pi-linea + .pi-linea::before { content: ' '; }
+  .pi.suelto .pi-claim { font-size: clamp(2.05rem, 8.6vw, 3.1rem); line-height: 1.06; }
+  .pi-linea:last-child { color: rgba(255,255,255,.62); }
+
+  .pi-lead {
+    margin: clamp(20px, 3vh, 32px) auto 0;
+    max-width: 42ch;
+    font-size: clamp(1.0625rem, 1.9vw, 1.375rem);
+    line-height: 1.45;
+    font-weight: 600;
+    color: rgba(255,255,255,.94);
+  }
+  .pi-nota {
+    margin: 10px auto 0;
+    max-width: 48ch;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgba(255,255,255,.58);
+  }
+  .pi-abajo {
+    display: inline-block;
+    margin-top: clamp(26px, 4vh, 48px);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.5);
+  }
+  .pi-abajo::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 34px;
+    margin: 12px auto 0;
+    background: linear-gradient(rgba(255,255,255,.45), transparent);
+  }
+
+  /* Con partículas el titular se esconde hasta que terminan de armarlo. */
+  .pi.con-particulas .pi-claim { opacity: 0; }
+  .pi.con-particulas.asentado .pi-claim {
+    opacity: 1;
+    transition: opacity .55s ease;
+  }
+  /* Lo de alrededor entra después del titular, nunca antes. */
+  .pi.con-particulas .pi-kicker,
+  .pi.con-particulas .pi-lead,
+  .pi.con-particulas .pi-nota,
+  .pi.con-particulas .pi-abajo {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  .pi.con-particulas.asentado .pi-kicker,
+  .pi.con-particulas.asentado .pi-lead,
+  .pi.con-particulas.asentado .pi-nota,
+  .pi.con-particulas.asentado .pi-abajo {
+    opacity: 1;
+    transform: none;
+    transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1);
+  }
+  .pi.con-particulas.asentado .pi-lead  { transition-delay: .10s; }
+  .pi.con-particulas.asentado .pi-nota  { transition-delay: .18s; }
+  .pi.con-particulas.asentado .pi-abajo { transition-delay: .26s; }
+
+  @media (max-width: 980px) {
+    .pi { padding: clamp(64px, 12vh, 96px) 22px clamp(40px, 8vh, 72px); }
+    .pi-abajo { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pi.con-particulas .pi-claim,
+    .pi.con-particulas .pi-kicker,
+    .pi.con-particulas .pi-lead,
+    .pi.con-particulas .pi-nota,
+    .pi.con-particulas .pi-abajo { opacity: 1; transform: none; }
+  }
+</style>
+
+<script>
+  const sec = document.getElementById('pattern-ia');
+  const cv = document.getElementById('pi-lienzo') as HTMLCanvasElement | null;
+  const claim = document.getElementById('pi-claim');
+
+  if (sec && cv && claim) {
+    const lineas: string[] = JSON.parse(sec.dataset.lineas || '[]');
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ── El tamaño de letra: el canvas y el <h2> tienen que dibujar lo mismo ──
+    const regla = document.createElement('canvas').getContext('2d');
+    const ANGOSTO = 700;
+    const ajustar = () => {
+      if (!regla || !lineas.length) return 0;
+      if (window.innerWidth < ANGOSTO) {
+        sec.classList.add('suelto');
+        sec.style.removeProperty('--pi-tam');
+        return 0;
+      }
+      sec.classList.remove('suelto');
+      const est = getComputedStyle(claim);
+      const caja = (sec.querySelector('.pi-caja') as HTMLElement)?.clientWidth || window.innerWidth;
+      const BASE = 100;
+      regla.font = `${est.fontWeight} ${BASE}px ${est.fontFamily}`;
+      const masAncha = Math.max(...lineas.map((l) => regla.measureText(l).width));
+      let tam = (caja * 0.94) / (masAncha / BASE);
+      // Techo por altura: tres líneas no pueden comerse la pantalla.
+      tam = Math.min(tam, window.innerHeight * 0.155, 96);
+      sec.style.setProperty('--pi-tam', `${tam.toFixed(1)}px`);
+      return tam;
+    };
+
+    const listo = (document as any).fonts?.ready || Promise.resolve();
+    listo.then(() => ajustar());
+    window.addEventListener('resize', () => ajustar());
+
+    // ── Las partículas ──────────────────────────────────────────────────────
+    let arrancado = false;
+
+    const arrancar = async () => {
+      if (arrancado || menos || window.innerWidth < ANGOSTO) return;
+      arrancado = true;
+      try {
+        // Three.js entra aquí y no antes: son ~150 KB que la home no debe
+        // pagar en la primera carga por una sección que está más abajo.
+        const THREE = await import('three');
+        await ((document as any).fonts?.ready || Promise.resolve());
+
+        const tam = ajustar();
+        if (!tam) return;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const W = sec.clientWidth;
+        const H = sec.clientHeight;
+        if (W < 80 || H < 80) return;
+
+        // 1. Dibujar el titular en un lienzo 2D del tamaño de la sección, en el
+        //    mismo sitio donde va a quedar el <h2>: de ahí salen los destinos.
+        const molde = document.createElement('canvas');
+        molde.width = Math.round(W * dpr);
+        molde.height = Math.round(H * dpr);
+        const m = molde.getContext('2d', { willReadFrequently: true });
+        if (!m) return;
+
+        const est = getComputedStyle(claim);
+        const rc = claim.getBoundingClientRect();
+        const rs = sec.getBoundingClientRect();
+        const cx = (rc.left - rs.left + rc.width / 2) * dpr;
+        const alto = parseFloat(est.lineHeight) || tam * 1.02;
+        const y0 = (rc.top - rs.top) * dpr;
+
+        m.scale(dpr, dpr);
+        m.font = `${est.fontWeight} ${tam}px ${est.fontFamily}`;
+        m.textAlign = 'center';
+        m.textBaseline = 'middle';
+        m.fillStyle = '#fff';
+        lineas.forEach((l, i) => {
+          m.fillText(l, cx / dpr, (y0 / dpr) + alto * (i + 0.5));
+        });
+
+        // 2. Muestrear el dibujo. El paso se ajusta para no pasar del tope de
+        //    puntos: más que eso no se ve mejor y sí se siente en un celular.
+        const datos = m.getImageData(0, 0, molde.width, molde.height).data;
+        // En celular se pide la mitad de puntos: la pantalla es chica, no se
+        // nota la diferencia, y el teléfono no tiene por qué sudar por esto.
+        const TOPE = W < 700 ? 9000 : 22000;
+        let paso = Math.max(2, Math.round(3 * dpr));
+        let dest: number[] = [];
+        for (let intento = 0; intento < 8; intento++) {
+          dest = [];
+          for (let y = 0; y < molde.height; y += paso) {
+            for (let x = 0; x < molde.width; x += paso) {
+              if (datos[(y * molde.width + x) * 4 + 3] > 130) {
+                dest.push(x / dpr, H - y / dpr, 0);
+              }
+            }
+          }
+          if (dest.length / 3 <= TOPE) break;
+          paso += 1;
+        }
+        const n = dest.length / 3;
+        if (n < 200) return;
+
+        // 3. La escena. Cámara ortográfica en píxeles: 1 unidad = 1 px CSS.
+        const escena = new THREE.Scene();
+        const cam = new THREE.OrthographicCamera(0, W, H, 0, -1000, 1000);
+        const render = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false });
+        render.setPixelRatio(dpr);
+        render.setSize(W, H, false);
+
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(dest);
+        const ini = new Float32Array(n * 3);
+        const retraso = new Float32Array(n);
+        const punto = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          // Cada partícula nace DESPLAZADA de su propia letra, no en una nube
+          // suelta: así a media animación ya se leen las palabras armándose y
+          // no un polvo cualquiera que de pronto se vuelve texto.
+          const a = Math.random() * Math.PI * 2;
+          const d = 70 + Math.random() * Math.random() * 340;
+          ini[i * 3] = pos[i * 3] + Math.cos(a) * d;
+          ini[i * 3 + 1] = pos[i * 3 + 1] + Math.sin(a) * d * 0.62;
+          ini[i * 3 + 2] = (Math.random() - 0.5) * 160;
+          // El retraso va por columna: la frase se escribe de izquierda a derecha
+          retraso[i] = Math.min(0.42, (pos[i * 3] / W) * 0.34 + Math.random() * 0.12);
+          punto[i] = (1.1 + Math.random() * 1.5) * dpr;
+        }
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('ini', new THREE.BufferAttribute(ini, 3));
+        geo.setAttribute('retraso', new THREE.BufferAttribute(retraso, 1));
+        geo.setAttribute('punto', new THREE.BufferAttribute(punto, 1));
+
+        const mat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthTest: false,
+          blending: THREE.AdditiveBlending,
+          uniforms: { t: { value: 0 }, salida: { value: 0 } },
+          vertexShader: [
+            'attribute vec3 ini;',
+            'attribute float retraso;',
+            'attribute float punto;',
+            'uniform float t;',
+            'varying float vP;',
+            'void main(){',
+            '  float p = clamp((t - retraso) / max(0.001, 1.0 - retraso), 0.0, 1.0);',
+            '  p = 1.0 - pow(1.0 - p, 3.0);',
+            '  vec3 q = mix(ini, position, p);',
+            '  vP = p;',
+            '  gl_PointSize = punto * (0.55 + 0.45 * p);',
+            '  gl_Position = projectionMatrix * modelViewMatrix * vec4(q, 1.0);',
+            '}',
+          ].join('\n'),
+          fragmentShader: [
+            'precision mediump float;',
+            'uniform float salida;',
+            'varying float vP;',
+            'void main(){',
+            '  vec2 d = gl_PointCoord - 0.5;',
+            '  float a = smoothstep(0.5, 0.12, length(d));',
+            '  vec3 col = mix(vec3(0.85, 0.72, 0.80), vec3(1.0), vP);',
+            '  gl_FragColor = vec4(col, a * (0.34 + 0.66 * vP) * (1.0 - salida));',
+            '}',
+          ].join('\n'),
+        });
+
+        const nube = new THREE.Points(geo, mat);
+        escena.add(nube);
+        sec.classList.add('con-particulas');
+
+        const T_ARMAR = 1550;
+        const T_SALIR = 700;
+        const t0 = performance.now();
+        let asentado = false;
+
+        const pintar = () => {
+          const ms = performance.now() - t0;
+          mat.uniforms.t.value = Math.min(1, ms / T_ARMAR);
+
+          if (!asentado && ms > T_ARMAR + 180) {
+            asentado = true;
+            sec.classList.add('asentado');
+          }
+          if (asentado) {
+            const s = Math.min(1, (ms - T_ARMAR - 180) / T_SALIR);
+            mat.uniforms.salida.value = s;
+            if (s >= 1) {
+              // Se apaga del todo: no tiene sentido seguir pintando un canvas
+              // invisible mientras el visitante sigue leyendo la página.
+              render.render(escena, cam);
+              cv.style.display = 'none';
+              geo.dispose();
+              mat.dispose();
+              render.dispose();
+              return;
+            }
+          }
+          render.render(escena, cam);
+          requestAnimationFrame(pintar);
+        };
+        requestAnimationFrame(pintar);
+      } catch (err) {
+        // Sin WebGL, sin Three o con el canvas caído: queda el texto tal cual,
+        // que es lo que importa.
+        sec.classList.remove('con-particulas');
+      }
+    };
+
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver(
+        (filas) => {
+          filas.forEach((f) => {
+            if (f.isIntersecting) {
+              obs.disconnect();
+              arrancar();
+            }
+          });
+        },
+        { threshold: 0.3 },
+      );
+      obs.observe(sec);
+    }
+  }
+</script>
