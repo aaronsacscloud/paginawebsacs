@@ -115,6 +115,19 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               color: '#8e88a8', width: 32, height: 32, borderRadius: 8, fontSize: '1.1rem' }}>✕</button>
           </div>
 
+          {/* Escribirle desde aquí: el rescate se hace hablando, y salir a
+              buscar el hilo a mano es donde se pierde la intención. */}
+          {(caso.companies?.id) && (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 20px 0', flexWrap: 'wrap' }}>
+              <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(d.tel || ''))}&wa_nuevo=1`}
+                style={{ ...btn('#1E8A63'), textDecoration: 'none', display: 'inline-block' }}>WhatsApp</a>
+              <a href={`/admin/crm?tab=cotizaciones&nueva=1&company=${caso.company_id}`}
+                style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Cotizar</a>
+              <a href={`/admin/crm?tab=reuniones&nueva=1&company=${caso.company_id}`}
+                style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Agendar</a>
+            </div>
+          )}
+
           <div style={{ padding: 18 }}>
             {/* ── Bloque RESCATE ── */}
             <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
@@ -140,6 +153,33 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   <div style={{ fontSize: '0.78rem', color: '#71707C', marginTop: 2 }}>
                     Al terminar vuelve a {dinero(caso.gracia_mrr)} · hasta {caso.gracia_fin}
                   </div>
+                </div>
+              )}
+
+              {/* De quién es. Un caso sin dueño es un caso que nadie trabaja
+                  — y con equipo, dos personas le escriben al mismo o ninguna. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.78rem', color: '#71707C' }}>Responsable:</span>
+                <select value={caso.owner_id || ''} disabled={guardando}
+                  onChange={async e => {
+                    setGuardando(true);
+                    await fetch('/api/crm/churn/caso', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id, owner_id: e.target.value || null }) }).catch(() => {});
+                    setGuardando(false); cargar(); onCambio();
+                  }}
+                  style={{ border: '1px solid #e2e4e9', borderRadius: 9, padding: '6px 10px', fontSize: '0.8rem',
+                    fontFamily: 'inherit', outline: 'none', background: caso.owner_id ? '#fff' : '#FFF8EC' }}>
+                  <option value="">Sin asignar</option>
+                  {(d.equipo || []).map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                </select>
+              </div>
+
+              {caso.proximo_paso && (
+                <div style={{ fontSize: '0.8rem', color: '#4a4756', marginTop: 10 }}>
+                  <b>Qué sigue:</b> {caso.proximo_paso}
+                  <span style={{ color: caso.proximo_paso_at && caso.proximo_paso_at < new Date().toISOString().slice(0, 10) ? '#C0554E' : '#71707C' }}>
+                    {' · '}{caso.proximo_paso_at}
+                  </span>
                 </div>
               )}
 

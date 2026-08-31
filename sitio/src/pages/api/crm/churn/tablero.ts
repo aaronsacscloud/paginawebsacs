@@ -17,10 +17,16 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'Sin sesión' }, 401);
-  const meses = Math.min(parseInt(url.searchParams.get('meses') || '6'), 24);
+  const meses = Math.min(Math.max(parseInt(url.searchParams.get('meses') || '12'), 0), 36);
 
-  const { data: casos } = await supabase.from('churn_casos')
+  /* Ventana temporal: sin ella, «de qué nos morimos» lo domina para siempre
+     el import de agosto y deja de contar lo que está pasando ahora. Por
+     omisión, los últimos 12 meses; `meses=0` para ver todo el histórico. */
+  const desdeCasos = new Date(); desdeCasos.setMonth(desdeCasos.getMonth() - (meses || 999));
+  let qc = supabase.from('churn_casos')
     .select('etapa, motivo_categoria, mrr_perdido, resultado, detectado_at, cerrado_at, gracia_acuerdo, gracia_mrr, fecha_estimada');
+  if (meses) qc = qc.gte('detectado_at', desdeCasos.toISOString());
+  const { data: casos } = await qc;
 
   // ── De qué nos morimos: por categoría, ordenado por DINERO, no por conteo.
   // Cinco casos chicos importan menos que uno grande, y el orden lo tiene que

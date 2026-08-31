@@ -704,6 +704,11 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
         <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#a5a2af' }}>Todo lo de abajo es de {etiquetaPeriodo}</span>
       </div>
 
+      {/* Si esta cuenta está en rescate, se dice ANTES que cualquier métrica:
+          quien abre la ficha de alguien que se fue tiene que enterarse por la
+          ficha, no por acordarse de ir a Churn. */}
+      <BloqueChurn companyId={co.id} />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 16 }}>
         <div style={kpi}>
           <div style={{ ...D.kl, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Suc. vendiendo</div>
@@ -4106,3 +4111,57 @@ function TimelineUnificado({ data }: any) {
     </div>
   );
 }
+
+/* ── El rescate, dentro de la ficha del cliente ─────────────────────────────
+   Un caso de churn abierto cambia cómo se lee TODO lo demás de esta pantalla:
+   los números de uso, la salud, el próximo paso. Por eso va arriba y no en una
+   pestaña. Si no hay caso, no se pinta nada — el que nunca se ha ido no tiene
+   por qué ver un bloque vacío que le recuerde que podría irse. */
+function BloqueChurn({ companyId }: { companyId: string }) {
+  const [c, setC] = useState<any>(null);
+  useEffect(() => {
+    if (!companyId) return;
+    fetch(`/api/crm/churn?etapa=todos`).then(r => r.json())
+      .then(j => setC((j.data || []).find((x: any) => x.company_id === companyId) || false))
+      .catch(() => setC(false));
+  }, [companyId]);
+  if (!c) return null;
+
+  const ETAPAS_L: Record<string, [string, string, string]> = {
+    detectado: ['Detectado', '#FFF8EC', '#a06600'],
+    conciliacion: ['En conciliación', '#E3EDFD', '#2C5FC4'],
+    gracia: ['En gracia', '#EEECFE', '#5B4BD6'],
+  };
+  const [l, bg, fg] = ETAPAS_L[c.etapa] || ['En rescate', '#f4f4f6', '#5D6470'];
+  const quedan = c.gracia_fin
+    ? Math.ceil((new Date(String(c.gracia_fin) + 'T23:59:59').getTime() - Date.now()) / 86400000) : null;
+
+  return (
+    <div style={{ background: '#FDF6F5', border: '1px solid #f3d9d6', borderRadius: 12, padding: '13px 16px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#A8433C' }}>
+          Esta cuenta está en rescate
+        </span>
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, borderRadius: 20, padding: '2px 9px', background: bg, color: fg }}>{l}</span>
+        {c.episodio > 1 && <span style={{ fontSize: '0.72rem', color: '#A8433C', fontWeight: 700 }}>{c.episodio}ª vez que se va</span>}
+      </div>
+      <div style={{ fontSize: '0.82rem', color: '#4a4756', marginTop: 6, lineHeight: 1.5 }}>
+        Se fue por <b>{c.motivo_categoria ? MOTIVO_CHURN[c.motivo_categoria] || c.motivo_categoria : 'motivo sin clasificar'}</b>
+        {' · '}${Math.round(Number(c.mrr_perdido || 0)).toLocaleString('es-MX')} de MRR
+        {c.etapa === 'gracia' && quedan != null && (
+          <> · gracia {quedan < 0 ? <b style={{ color: '#C0554E' }}>vencida hace {Math.abs(quedan)} d</b> : <>por {quedan} días más</>}</>
+        )}
+      </div>
+      <a href={`/admin/crm?tab=churn&caso=${c.id}`}
+        style={{ display: 'inline-block', marginTop: 8, fontSize: '0.8rem', fontWeight: 700, color: '#A8433C' }}>
+        Abrir el caso ›
+      </a>
+    </div>
+  );
+}
+
+const MOTIVO_CHURN: Record<string, string> = {
+  mal_servicio: 'mal servicio o soporte', no_uso: 'no lo usaba', dejo_de_pagar: 'dejó de pagar',
+  precio: 'precio', competencia: 'la competencia', implementacion: 'no completó la implementación',
+  cerro_negocio: 'cerró el negocio', otro: 'otro',
+};

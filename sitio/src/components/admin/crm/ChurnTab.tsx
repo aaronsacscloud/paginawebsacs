@@ -54,6 +54,9 @@ export default function ChurnTab() {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [abierto, setAbierto] = useState<string | null>(null);
   const [errorCarga, setErrorCarga] = useState('');
+  const [equipo, setEquipo] = useState<any[]>([]);
+  const [orden, setOrden] = useState<'mrr' | 'reciente'>('mrr');
+  const [alta, setAlta] = useState(false);
   const [verTablero, setVerTablero] = useState(false);
   const [tab, setTab] = useState<any>(null);
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function ChurnTab() {
          «Nadie sin atender», o sea una falla disfrazada de buena noticia. */
       .then(j => {
         if (j?.error) { setErrorCarga(j.error); setFilas([]); return; }
-        setErrorCarga(''); setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {});
+        setErrorCarga(''); setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {}); setEquipo(j.equipo || []);
       })
       .catch(() => { setErrorCarga('No se pudo cargar la lista.'); setFilas([]); });
   };
@@ -87,10 +90,16 @@ export default function ChurnTab() {
 
   const lista = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    if (!t) return filas || [];
-    return (filas || []).filter((c: any) =>
+    let r = !t ? (filas || []) : (filas || []).filter((c: any) =>
       `${c.companies?.nombre || ''} ${c.motivo_detalle || ''} ${c.gracia_acuerdo || ''}`.toLowerCase().includes(t));
-  }, [filas, busca]);
+    /* Por MRR de mayor a menor por omisión. Con 22 de 35 fechas estimadas —y
+       todas iguales, la del import— ordenar por fecha era ordenar al azar; el
+       dinero sí dice a quién llamar primero. */
+    r = [...r].sort((a: any, b: any) => orden === 'mrr'
+      ? Number(b.mrr_perdido || 0) - Number(a.mrr_perdido || 0)
+      : String(b.detectado_at || '').localeCompare(String(a.detectado_at || '')));
+    return r;
+  }, [filas, busca, orden]);
 
   /* Columnas que solo existen donde significan algo: en «Detectados» la etapa
      es siempre la misma y la columna sería el nombre de la pestaña repetido. */
@@ -115,6 +124,18 @@ export default function ChurnTab() {
     ro?.observe(el);
     return () => { el.removeEventListener('scroll', medir); window.removeEventListener('resize', medir); ro?.disconnect(); };
   }, [etapa, lista.length]);
+
+  async function enBloque(cuerpo: any) {
+    const ids = lista.filter((c: any) => sel.has(c.id)).map((c: any) => c.id);
+    if (!ids.length) return;
+    const r = await fetch('/api/crm/churn', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, ...cuerpo }) }).then(x => x.json()).catch(() => ({ error: 'No se pudo' }));
+    /* Se dice cuántos se movieron Y cuántos se ignoraron: un «listo» que tapa
+       que 4 de 10 no aplicaban es un listo que miente. */
+    if (r?.error) setErrorCarga(r.error);
+    else if (r?.ignorados) setErrorCarga(`Se movieron ${r.tocados}. ${r.ignorados} no aplicaban para esta acción.`);
+    setSel(new Set()); cargar();
+  }
 
   const K = ({ v, l, tono }: { v: any; l: string; tono?: 'rojo' | 'verde' }) => (
     <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: '13px 16px', minWidth: 150, flex: '1 1 150px' }}>
@@ -149,12 +170,32 @@ export default function ChurnTab() {
         <K v={kpis.gracia_vencida || 0} l="Gracias vencidas sin decidir" tono={kpis.gracia_vencida ? 'rojo' : undefined} />
       </div>
 
+      {/* Los vencidos NO son churn —eso es cobranza— pero conciliar ANTES de
+          que cancelen es más barato que rescatar después, así que se ven aquí:
+          es la única cifra de la pantalla que habla de gente que todavía no se
+          ha ido. */}
+      {kpis.por_caer > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FFF8EC',
+          border: '1px solid #f2e3c8', borderRadius: 12, padding: '11px 15px', marginBottom: 14 }}>
+          <b style={{ color: '#a06600', fontSize: '0.86rem' }}>{kpis.por_caer} cuentas por caer</b>
+          <span style={{ fontSize: '0.82rem', color: '#7a5a2a' }}>
+            {/* El monto solo si lo sabemos: medido, ninguna de las 23 vencidas
+                tiene MRR ni en la empresa ni en una sub viva, y pintar «$0 de
+                MRR vencido» sería decir que no hay nada en riesgo. */}
+            {kpis.por_caer_mrr > 0 ? `${dinero(kpis.por_caer_mrr)} de MRR vencido. ` : ''}
+            Todavía no cancelan: conciliar hoy cuesta menos que rescatar después.
+          </span>
+          <a href="/admin/crm?tab=pagos&vista=recuperacion" style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 700, color: '#a06600' }}>Ver cobranza ›</a>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
         {PESTANAS.map(p => (
           <button key={p.id} className={`churn-chip ${etapa === p.id ? 'on' : ''}`} onClick={() => setEtapa(p.id)}>
             {p.l}<span className="n">{cuenta[p.id] ?? 0}</span>
           </button>
         ))}
+        <button className="churn-chip" onClick={() => setAlta(true)} title="Un cliente que canceló por fuera del sistema">+ Alta manual</button>
         <button className={`churn-chip ${verTablero ? 'on' : ''}`} onClick={() => setVerTablero(v => !v)}
           style={{ marginLeft: 'auto' }}>{verTablero ? '← Volver a la lista' : 'Ver el tablero'}</button>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o acuerdo…"
@@ -192,7 +233,14 @@ export default function ChurnTab() {
               </th>
               <th scope="col" className="fija1" style={{ ...T.th, width: 104 }}>Canceló</th>
               <th scope="col" className="fija2" style={{ ...T.th, width: 210 }}>Cliente</th>
-              <th scope="col" className="num" style={{ ...T.th, width: 104 }}>MRR</th>
+              <th scope="col" className="num ord" aria-sort={orden === 'mrr' ? 'descending' : 'none'}
+                style={{ ...T.th, width: 104, padding: 0 }}>
+                <button type="button" onClick={() => setOrden(orden === 'mrr' ? 'reciente' : 'mrr')}
+                  title="Ordenar por MRR / por cuándo entró"
+                  style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer', boxSizing: 'border-box', textAlign: 'right' }}>
+                  MRR<span className="fl" aria-hidden="true">{orden === 'mrr' ? '↓' : ''}</span>
+                </button>
+              </th>
               <th scope="col" style={{ ...T.th, width: 190 }}>Por qué se fue</th>
               {verGracia && <th scope="col" style={{ ...T.th, width: 190 }}>Gracia</th>}
               {/* El rótulo cambia con la etapa porque el dato significa cosas
@@ -319,11 +367,18 @@ export default function ChurnTab() {
             <button onClick={() => setSel(new Set())} style={{ background: 'none', border: 'none', color: '#c9c2ec', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 600 }}>Quitar la selección</button>
             <div style={{ flex: 1 }} />
             <button style={T.btnSel} onClick={() => exportar(lista.filter((c: any) => sel.has(c.id)))}>Exportar</button>
+            <button style={T.btnSel} onClick={() => enBloque({ accion: 'conciliar' })}>Pasar a conciliación</button>
+            <select value="" style={{ ...T.btnSel, appearance: 'none' as const }}
+              onChange={e => { if (e.target.value) { enBloque({ accion: 'asignar', owner_id: e.target.value }); e.target.value = ''; } }}>
+              <option value="">Asignar a…</option>
+              {equipo.map((m: any) => <option key={m.id} value={m.id} style={{ color: '#241d43' }}>{m.nombre}</option>)}
+            </select>
           </div>
         )}
       </div>
       )}
 
+      {alta && <AltaManual equipo={equipo} onCerrar={() => setAlta(false)} onHecho={(id: string) => { setAlta(false); cargar(); setAbierto(id); }} />}
       {abierto && <ChurnCaso id={abierto} onCerrar={() => setAbierto(null)} onCambio={cargar} />}
     </div>
   );
@@ -473,5 +528,108 @@ function Tablero({ d }: { d: any }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Alta manual: «canceló por fuera del sistema» ───────────────────────────
+   El camino normal es automático; esto es la excepción, y por eso exige decir
+   por qué en vez de dejarlo en blanco. Queda auditado quién lo abrió. */
+function AltaManual({ equipo, onCerrar, onHecho }: any) {
+  const [q, setQ] = useState('');
+  const [ops, setOps] = useState<any[]>([]);
+  const [sel, setSel] = useState<any>(null);
+  const [f, setF] = useState<any>({ motivo_categoria: '', motivo_detalle: '', mrr_perdido: '' });
+  const [err, setErr] = useState('');
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (q.trim().length < 2) { setOps([]); return; }
+    const t = setTimeout(() => {
+      fetch(`/api/crm/empresas?search=${encodeURIComponent(q)}&limit=8`)
+        .then(r => r.json()).then(j => setOps(j.data || j.companies || [])).catch(() => setOps([]));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const inp: any = { width: '100%', boxSizing: 'border-box', border: '1px solid #e2e4e9', borderRadius: 9,
+    padding: '9px 11px', fontSize: '0.84rem', fontFamily: 'inherit', outline: 'none' };
+
+  async function guardar() {
+    if (!sel) { setErr('Elige la empresa.'); return; }
+    setGuardando(true); setErr('');
+    const r = await fetch('/api/crm/churn', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: sel.id, ...f, mrr_perdido: Number(f.mrr_perdido || 0) }) })
+      .then(x => x.json()).catch(() => ({ error: 'No se pudo guardar' }));
+    setGuardando(false);
+    if (r?.error) { setErr(r.error); return; }
+    if (r?.ya_existia) { setErr('Esa empresa ya tenía un caso abierto: se anotó ahí.'); }
+    onHecho(r.caso_id);
+  }
+
+  return (
+    <>
+      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.32)', zIndex: 900 }} />
+      <div role="dialog" aria-modal="true" aria-label="Alta manual de churn" className="crm-sheet" style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(460px, 94vw)',
+        background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(16,24,40,.24)', zIndex: 901, padding: 20,
+      }}>
+        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#241d43' }}>Abrir un caso a mano</div>
+        <div style={{ fontSize: '0.8rem', color: '#71707C', margin: '4px 0 14px', lineHeight: 1.5 }}>
+          Para el que canceló por fuera del sistema. Lo normal es que el caso se abra solo al cancelarse la suscripción.
+        </div>
+
+        <label style={{ display: 'block', marginBottom: 10 }}>
+          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Empresa</span>
+          {sel ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', border: '1px solid #c9bcf7', borderRadius: 9, background: '#F3F0FE' }}>
+              <b style={{ fontSize: '0.86rem', color: '#241d43', flex: 1 }}>{sel.nombre}</b>
+              <button onClick={() => { setSel(null); setQ(''); }} style={{ border: 'none', background: 'none', color: '#5B4BD6', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem' }}>cambiar</button>
+            </div>
+          ) : (
+            <>
+              <input style={inp} value={q} onChange={e => setQ(e.target.value)} placeholder="Escribe el nombre…" />
+              {ops.length > 0 && (
+                <div style={{ border: '1px solid #eae7f2', borderRadius: 9, marginTop: 4, maxHeight: 170, overflowY: 'auto' }}>
+                  {ops.map((o: any) => (
+                    <button key={o.id} onClick={() => { setSel(o); setOps([]); }}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none',
+                        padding: '8px 11px', fontSize: '0.83rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {o.nombre}{o.estado_cuenta ? <span style={{ color: '#8e88a8' }}> · {o.estado_cuenta}</span> : null}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </label>
+
+        <label style={{ display: 'block', marginBottom: 10 }}>
+          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Por qué canceló</span>
+          <select style={inp} value={f.motivo_categoria} onChange={e => setF({ ...f, motivo_categoria: e.target.value })}>
+            <option value="">Elige…</option>
+            {MOTIVOS.map(m => <option key={m.id} value={m.id}>{m.l}</option>)}
+          </select>
+        </label>
+        <label style={{ display: 'block', marginBottom: 10 }}>
+          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Detalle</span>
+          <textarea style={{ ...inp, minHeight: 60, resize: 'vertical' }} value={f.motivo_detalle}
+            onChange={e => setF({ ...f, motivo_detalle: e.target.value })} placeholder="Qué pasó, en tus palabras" />
+        </label>
+        <label style={{ display: 'block', marginBottom: 14 }}>
+          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>MRR que se pierde</span>
+          <input type="number" style={inp} value={f.mrr_perdido} onChange={e => setF({ ...f, mrr_perdido: e.target.value })} placeholder="0" />
+        </label>
+
+        {err && <div style={{ padding: '9px 12px', borderRadius: 9, background: '#FDF6F5', color: '#A8433C', fontSize: '0.8rem', marginBottom: 12 }}>{err}</div>}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={guardar} disabled={guardando} style={{ border: 'none', borderRadius: 10, padding: '10px 16px',
+            background: '#5B4BD6', color: '#fff', fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {guardando ? 'Guardando…' : 'Abrir el caso'}
+          </button>
+          <button onClick={onCerrar} style={{ border: '1.5px solid #71707C', borderRadius: 10, padding: '10px 16px',
+            background: '#fff', color: '#71707C', fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+        </div>
+      </div>
+    </>
   );
 }

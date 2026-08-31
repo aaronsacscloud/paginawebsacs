@@ -7,7 +7,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
-import { ABIERTAS, validarTransicion, anotar, type Etapa } from '../../../../lib/crm/churn.lib';
+import { ABIERTAS, camposDeTransicion, anotar } from '../../../../lib/crm/churn.lib';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), {
@@ -81,6 +81,18 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
   const cerrados = (cuenta.recuperado || 0) + (cuenta.irrecuperable || 0);
 
+  /* EL RADAR «POR CAER»: los vencidos NO entran al embudo —eso es cobranza,
+     no churn— pero tienen que verse desde aquí, porque conciliar ANTES de la
+     cancelación es más barato que rescatar después. Es la única cifra de la
+     pantalla que habla de gente que todavía no se ha ido. */
+  const { data: porCaer } = await supabase.from('companies')
+    .select('id, nombre, mrr, dias_sin_venta').eq('estado_cuenta', 'vencido').is('archived_at', null);
+
+  // Los dueños posibles, para el select del caso: se mandan con la lista para
+  // no pedir otra cosa al abrir cada caso.
+  const { data: equipo } = await supabase.from('team_members')
+    .select('id, nombre').eq('activo', true).order('nombre');
+
   return json({
     data: filas,
     cuenta,
@@ -91,8 +103,50 @@ export const GET: APIRoute = async ({ request, url }) => {
       // Sin casos cerrados la tasa no existe. Cero por cero es cero, y un 0%
       // pintado cuando todavía no cierras nada es una mentira desmoralizante.
       tasa_recuperacion: cerrados ? Math.round(((cuenta.recuperado || 0) / cerrados) * 100) : null,
+      por_caer: (porCaer || []).length,
+      por_caer_mrr: Math.round((porCaer || []).reduce((t: number, c: any) => t + Number(c.mrr || 0), 0)),
     },
+    equipo: equipo || [],
   });
+};
+
+/**
+ * Acciones en bloque. Los ids se validan contra lo que el servidor considera
+ * abierto: mandar una lista desde el cliente no es permiso para tocar lo que
+ * sea, y un caso cerrado no se mueve ni en bloque ni de uno en uno.
+ */
+export const PATCH: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return json({ error: 'Sin sesión' }, 401);
+  const b = await request.json().catch(() => ({}));
+  const ids: string[] = Array.isArray(b.ids) ? b.ids.filter(Boolean) : [];
+  if (!ids.length) return json({ error: 'No hay casos seleccionados.' }, 400);
+  if (ids.length > 100) return json({ error: 'Máximo 100 casos por acción.' }, 400);
+
+  const { data: casos } = await supabase.from('churn_casos')
+    .select('id, etapa, company_id').in('id', ids).in('etapa', ABIERTAS);
+  const vivos = casos || [];
+  if (!vivos.length) return json({ error: 'Ninguno de esos casos sigue abierto.' }, 400);
+
+  if (b.accion === 'asignar') {
+    await supabase.from('churn_casos')
+      .update({ owner_id: b.owner_id || null, updated_at: new Date().toISOString() })
+      .in('id', vivos.map(c => c.id));
+    return json({ ok: true, tocados: vivos.length, ignorados: ids.length - vivos.length });
+  }
+
+  if (b.accion === 'conciliar') {
+    // Solo los que están en «detectado»: los demás ya pasaron de ahí.
+    const mueven = vivos.filter(c => c.etapa === 'detectado');
+    if (mueven.length) {
+      await supabase.from('churn_casos')
+        .update(camposDeTransicion('conciliacion')).in('id', mueven.map(c => c.id)).eq('etapa', 'detectado');
+      for (const c of mueven) await anotar(c, 'nota', 'Pasó a En conciliación', 'En bloque desde la lista.', false);
+    }
+    return json({ ok: true, tocados: mueven.length, ignorados: ids.length - mueven.length });
+  }
+
+  return json({ error: 'Acción desconocida.' }, 400);
 };
 
 /** Alta manual: «canceló por fuera del sistema». Exige motivo y queda auditada. */

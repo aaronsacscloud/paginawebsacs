@@ -50,7 +50,14 @@ export const GET: APIRoute = async ({ request, url }) => {
     .neq('id', caso.subscription_id || '00000000-0000-0000-0000-000000000000')
     .order('created_at', { ascending: false });
 
-  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [] });
+  const { data: cts } = await supabase.from('contacts')
+    .select('whatsapp, telefono').eq('company_id', caso.company_id).limit(20);
+  const tel = (cts || []).map((c: any) => c.whatsapp || c.telefono).find(Boolean) || null;
+
+  const { data: equipo } = await supabase.from('team_members')
+    .select('id, nombre').eq('activo', true).order('nombre');
+
+  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */
