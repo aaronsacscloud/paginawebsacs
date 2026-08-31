@@ -19,6 +19,7 @@
 import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { registrarMensaje, actualizarStatus, upsertConversacion } from '../../../lib/whatsapp/espejo';
+import { esRespuestaDeAgenda, agendarDesdeRespuesta } from '../../../lib/whatsapp/agenda-auto';
 import { parsearMensaje } from '../../../lib/whatsapp/parse';
 import { explicarError } from '../../../lib/whatsapp/errores';
 import { marcarLeido } from '../../../lib/whatsapp/kapso-api';
@@ -93,6 +94,14 @@ export const POST: APIRoute = async ({ request, url }) => {
           status: entrante ? 'received' : (kapso.status || 'sent'),
           nombrePerfil: payload?.contact?.name || payload?.contact?.profile_name || null,
         });
+        // ── El cliente tocó uno de los horarios que le mandamos ──────────
+        // Va ANTES de la automatización: si la respuesta es una reserva, lo
+        // que toca es agendar, no dispararle la bienvenida.
+        if (entrante && r.inserted && p.metadata?.id && esRespuestaDeAgenda(p.metadata.id)) {
+          const base = new URL(request.url).origin;
+          agendarDesdeRespuesta({ idRespuesta: String(p.metadata.id), telefono, conversationId: r.conversationId || null, base })
+            .catch(e => console.warn('[wa-agenda]', e));
+        }
         if (entrante && r.inserted && r.conversationId) {
           // Automatización (bienvenida / fuera de horario / round-robin): SOLO
           // entrantes NUEVOS — un replay o un saliente jamás la disparan.

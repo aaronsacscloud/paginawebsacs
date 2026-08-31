@@ -40,7 +40,72 @@ export const GET: APIRoute = async ({ request, url }) => {
     .select('id, episodio, etapa, resultado, resultado_motivo, detectado_at, cerrado_at, mrr_perdido')
     .eq('company_id', caso.company_id).neq('id', id).order('episodio', { ascending: false });
 
-  return json({ caso, historia: historia || [], episodios: episodios || [] });
+  /* Las suscripciones VIVAS de la empresa: son las únicas con las que se
+     puede marcar recuperado, y mandarlas aquí evita que el vendedor tenga que
+     salir a Suscripciones, copiar un uuid y volver. */
+  const { data: subsVivas } = await supabase.from('subscriptions')
+    .select('id, nombre_plan, ciclo, mrr, estado, fecha_inicio')
+    .eq('company_id', caso.company_id)
+    .in('estado', ['activa', 'programada', 'pendiente_pago'])
+    .neq('id', caso.subscription_id || '00000000-0000-0000-0000-000000000000')
+    .order('created_at', { ascending: false });
+
+  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [] });
+};
+
+/** Un toque: lo que se hizo con el cliente, y qué sigue. */
+export const POST: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return json({ error: 'Sin sesión' }, 401);
+  const b = await request.json().catch(() => ({}));
+  const { data: caso } = await supabase.from('churn_casos').select('*').eq('id', b.id).single();
+  if (!caso) return json({ error: 'No existe ese caso.' }, 404);
+
+  if (b.accion === 'extender') {
+    if (caso.etapa !== 'gracia') return json({ error: 'Solo se extiende una gracia en curso.' }, 400);
+    if (!b.gracia_fin || String(b.gracia_fin) <= new Date().toISOString().slice(0, 10)) {
+      return json({ error: 'La nueva fecha tiene que ser futura.', campo: 'gracia_fin' }, 400);
+    }
+    /* La SEGUNDA extensión exige explicar por qué. No se prohíbe —a veces hay
+       razón— pero extender sin fin es regalar el sistema en cuotas, y la nota
+       es lo que obliga a que alguien lo decida en vez de dejarlo correr. */
+    if ((caso.gracia_extensiones || 0) >= 1 && !String(b.motivo || '').trim()) {
+      return json({ error: 'Es la segunda extensión: escribe por qué se extiende otra vez.', campo: 'motivo' }, 400);
+    }
+    await supabase.from('churn_casos').update({
+      gracia_fin: b.gracia_fin,
+      gracia_extensiones: (caso.gracia_extensiones || 0) + 1,
+      updated_at: new Date().toISOString(),
+    }).eq('id', b.id);
+    await anotar(caso, 'nota', `Gracia extendida hasta ${b.gracia_fin}`,
+      String(b.motivo || '') || `Extensión ${(caso.gracia_extensiones || 0) + 1}`, false);
+    return json({ ok: true });
+  }
+
+  // Un toque normal.
+  const texto = String(b.texto || '').trim();
+  if (!texto) return json({ error: 'Escribe qué pasó.' }, 400);
+  const tipo = ['nota', 'llamada', 'whatsapp', 'correo', 'reunion'].includes(b.tipo) ? b.tipo : 'nota';
+  const TIT: Record<string, string> = { nota: 'Nota', llamada: 'Llamada', whatsapp: 'WhatsApp', correo: 'Correo', reunion: 'Reunión' };
+  await anotar(caso, tipo, `${TIT[tipo]} · ${user.email || 'equipo'}`, texto, false);
+
+  const campos: any = { updated_at: new Date().toISOString() };
+  if (b.proximo_paso != null) {
+    if (String(b.proximo_paso).trim() && !b.proximo_paso_at) {
+      return json({ error: 'Ponle fecha al próximo paso: sin fecha, no vuelve solo.', campo: 'proximo_paso_at' }, 400);
+    }
+    campos.proximo_paso = String(b.proximo_paso).trim() || null;
+    campos.proximo_paso_at = b.proximo_paso_at || null;
+  }
+  /* Registrar un contacto REAL mueve el caso a conciliación solo. La etapa
+     describe lo que está pasando; pedirle además al vendedor que la mueva a
+     mano es pedirle que le cuente al sistema lo que el sistema ya vio. */
+  if (caso.etapa === 'detectado' && ['llamada', 'whatsapp', 'correo', 'reunion'].includes(tipo)) {
+    Object.assign(campos, camposDeTransicion('conciliacion'));
+    await anotar(caso, 'nota', 'Pasó a En conciliación', 'Automático: se registró el primer contacto.');
+  }
+  await supabase.from('churn_casos').update(campos).eq('id', b.id);
+  return json({ ok: true, etapa: campos.etapa || caso.etapa });
 };
 
 export const PUT: APIRoute = async ({ request }) => {
@@ -73,12 +138,35 @@ export const PUT: APIRoute = async ({ request }) => {
   const falla = validarTransicion(caso, destino, b);
   if (falla) return json(falla, 400);
 
+  /* Recuperado exige que la suscripción sea REAL, de esta empresa, viva y
+     distinta de la que se canceló. Con solo pedir que el uuid exista, pegar
+     el id de la sub cancelada pasaba la validación y el constraint: quedaba
+     un «recuperado» que no paga, que es justo el dato que esto existe para
+     impedir — y contaminaba la tasa, el MRR recuperado y el ledger. */
+  let subNueva: any = null;
+  if (destino === 'recuperado') {
+    const { data: sub } = await supabase.from('subscriptions')
+      .select('id, company_id, estado, mrr').eq('id', b.subscription_nueva_id).maybeSingle();
+    if (!sub) return json({ error: 'Esa suscripción no existe.', campo: 'subscription_nueva_id' }, 400);
+    if (sub.company_id !== caso.company_id) return json({ error: 'Esa suscripción es de otra empresa.', campo: 'subscription_nueva_id' }, 400);
+    if (sub.id === caso.subscription_id) return json({ error: 'Esa es la suscripción que canceló. Hace falta la NUEVA.', campo: 'subscription_nueva_id' }, 400);
+    if (!['activa', 'programada', 'pendiente_pago'].includes(sub.estado)) {
+      return json({ error: `Esa suscripción está ${sub.estado}: para recuperar tiene que estar viva.`, campo: 'subscription_nueva_id' }, 400);
+    }
+    subNueva = sub;
+  }
+
   const campos = camposDeTransicion(destino, b);
   if (b.motivo_categoria) campos.motivo_categoria = b.motivo_categoria;
   if (b.motivo_detalle) campos.motivo_detalle = String(b.motivo_detalle).trim();
 
-  const { error } = await supabase.from('churn_casos').update(campos).eq('id', b.id);
+  /* La etapa de origen va en el WHERE: entre leer el caso y escribirlo, otra
+     persona pudo moverlo. Sin esto, dos cierres simultáneos —uno «recuperado»
+     y otro «perdido»— se pisaban sin que nadie se enterara. */
+  const { data: tocadas, error } = await supabase.from('churn_casos')
+    .update(campos).eq('id', b.id).eq('etapa', caso.etapa).select('id');
   if (error) return json({ error: error.message }, 500);
+  if (!tocadas?.length) return json({ error: 'Alguien más movió este caso mientras lo trabajabas. Vuelve a abrirlo para ver cómo quedó.' }, 409);
 
   // Los campos hermanos, en el mismo acto.
   await sincronizarHermanos(caso, destino);

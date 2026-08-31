@@ -269,14 +269,14 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [email, setEmail] = useState(contacto?.email || '');
   const [proxima, setProxima] = useState<any>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [hecho, setHecho] = useState<'agendada' | 'enviado_wa' | 'enviado_correo' | ''>('');
+  const [hecho, setHecho] = useState<'agendada' | 'enviado_wa' | 'enviado_correo' | 'oferta' | ''>('');
   const [msg, setMsg] = useState('');
   /* DOS CAMINOS, y se eligen ANTES de ver nada más.
      Antes esta pantalla era un formulario de reserva con el «mándale los
      horarios» escondido debajo: para la mitad de los casos —el cliente todavía
      no dijo cuándo puede— había que bajar hasta el pie y adivinar que eso
      existía. Son dos intenciones distintas y ahora se preguntan de frente. */
-  const [ruta, setRuta] = useState<null | 'reservar' | 'lista'>(null);
+  const [ruta, setRuta] = useState<null | 'reservar' | 'lista' | 'auto'>(null);
   /* Cuántos días entran en la lista. «Hoy» sirve para cerrar el mismo día;
      7 días es para quien anda ocupado y necesita opciones. */
   const [rango, setRango] = useState<1 | 3 | 7>(3);
@@ -349,6 +349,31 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
     setHecho('enviado_correo');
   };
 
+  /* RUTA AUTOMÁTICA · el cliente toca un horario y queda agendado solo.
+     Es la diferencia entre «te mando los horarios y me dices» —que obliga a
+     alguien a volver a entrar— y que la reunión exista sin que nadie más
+     intervenga. El correo NO es opcional: ahí le llega la invitación de
+     calendario, y sin él tocaría un horario para nada. */
+  const [ofertaMsg, setOfertaMsg] = useState('');
+  const mandarOfertaTocable = async () => {
+    setMsg(''); setOfertaMsg('');
+    if (!emailValido) { setMsg('Escribe un correo válido: ahí le llega su invitación de calendario.'); return; }
+    setOcupado(true);
+    const r = await fetch('/api/crm/whatsapp/agenda-oferta', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: conv?.id || undefined, telefono: conv?.id ? undefined : telefono,
+        dias: rango, email: email.trim(), nombre: nombre || primerNombre,
+        empresa: empresa?.nombre_comercial || empresa?.nombre || undefined,
+      }),
+    }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    setOcupado(false);
+    if (r?.error) { setMsg(r.error); return; }
+    setOfertaMsg(`Le mandé ${(r.opciones || []).length} horarios.`);
+    setHecho('oferta');
+    refrescar?.();
+  };
+
   if (hecho === 'agendada') return (
     <div className="accv" style={{ padding: 14 }}>
       <Volver volver={volver} titulo="Reunión agendada ✓" />
@@ -367,6 +392,11 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           Ya tiene reunión el <b>{fechaHumana(String(proxima.fecha))} · {horaHumana(String(proxima.hora_inicio).slice(0, 5))}</b>. Antes de duplicar, mejor reagendar esa.
         </div>
       )}
+      {hecho === 'oferta' && (
+        <div style={{ border: `1px solid #A7F3D0`, background: C.emerald50, borderRadius: 10, padding: '8px 11px', fontSize: 11, color: C.emerald700, marginBottom: 10, lineHeight: 1.5 }}>
+          {ofertaMsg} Cuando toque uno, la reunión se agenda sola y le llega la confirmación por WhatsApp y correo. Aquí verás la línea en la conversación.
+        </div>
+      )}
       {(hecho === 'enviado_wa' || hecho === 'enviado_correo') && (
         <div style={{ border: `1px solid #A7F3D0`, background: C.emerald50, borderRadius: 10, padding: '8px 11px', fontSize: 11, color: C.emerald700, marginBottom: 10 }}>
           Horarios enviados {hecho === 'enviado_wa' ? 'por WhatsApp' : 'por correo'} ✓ — cuando elija, todo se confirma solo (correo + WhatsApp + secuencia).
@@ -379,10 +409,18 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
           Se pregunta primero qué quieres hacer, y cada ruta enseña solo lo suyo. */}
       {!ruta && slots !== null && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-          <button onClick={() => setRuta('lista')}
-            style={{ ...btnP, minHeight: 46, textAlign: 'left', padding: '0 14px' }}>
-            Enviar lista de horarios
+          <button onClick={() => setRuta('auto')} disabled={!ventanaAbierta}
+            title={!ventanaAbierta ? 'Ventana de 24 h cerrada: primero manda una plantilla desde el composer' : ''}
+            style={{ ...btnP, minHeight: 46, textAlign: 'left', padding: '0 14px', ...(!ventanaAbierta ? { opacity: .45, cursor: 'not-allowed' } : {}) }}>
+            Que elija y se agende solo
             <span style={{ display: 'block', fontSize: 10.5, fontWeight: 500, opacity: .85, marginTop: 2 }}>
+              Toca un horario en WhatsApp y queda hecho
+            </span>
+          </button>
+          <button onClick={() => setRuta('lista')}
+            style={{ ...btnG, minHeight: 46, textAlign: 'left', padding: '0 14px' }}>
+            Enviar lista de horarios
+            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 500, color: C.g500, marginTop: 2 }}>
               Él elige y tú la agendas después
             </span>
           </button>
@@ -393,6 +431,44 @@ function Agendar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
               Ya sabes el día y la hora
             </span>
           </button>
+        </div>
+      )}
+
+      {/* ══ RUTA 0 · QUE SE AGENDE SOLO ═══════════════════════════════════
+          Los mismos huecos de siempre, pero como lista tocable de WhatsApp:
+          el cliente elige y la reunión existe. Nadie tiene que volver a entrar
+          a capturarla, que es donde se perdían. */}
+      {ruta === 'auto' && slots !== null && (
+        <div style={{ marginTop: 4 }}>
+          <span style={lbl}>Cuántos días ofrecerle</span>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {([[1, 'Solo hoy'], [3, 'Próximos 3 días'], [7, 'Próximos 7 días']] as const).map(([d, l]) => (
+              <button key={d} onClick={() => setRango(d)} style={pill(rango === d)}>{l}</button>
+            ))}
+          </div>
+
+          <span style={{ ...lbl, marginTop: 12 }}>Correo del cliente (ahí llega su invitación)</span>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@correo.com" style={inp} />
+
+          <div style={{ border: `1px solid ${C.g200}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: C.g700, lineHeight: 1.5, marginTop: 10 }}>
+            Verá una lista con hasta 10 horarios —máximo dos por día, para que
+            tenga de dónde escoger— y con tocar uno queda agendado. Se le manda
+            la confirmación con fecha, hora, quién lo atiende y la liga de la
+            reunión, por WhatsApp y por correo.
+            {porDiaDelRango.length === 0 && (
+              <span style={{ display: 'block', color: C.ambar700, marginTop: 6 }}>
+                Ahora mismo no hay huecos en ese rango: prueba con más días.
+              </span>
+            )}
+          </div>
+
+          <button className="accv-grande" onClick={mandarOfertaTocable}
+            disabled={ocupado || !emailValido || !porDiaDelRango.length}
+            style={{ ...btnP, width: '100%', marginTop: 10, background: emailValido && porDiaDelRango.length ? C.moradoTinta : C.g300 }}>
+            {ocupado ? 'Mandando…' : !emailValido ? 'Falta un correo válido' : 'Mandarle los horarios'}
+          </button>
+          <button onClick={() => setRuta(null)}
+            style={{ ...btnG, marginTop: 8, width: '100%', color: C.g500 }}>Volver</button>
         </div>
       )}
 

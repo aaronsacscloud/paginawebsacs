@@ -148,7 +148,7 @@ function resumenCierre(j: any): string {
 function activityColor(tipo: string): string {
   const colors: Record<string, string> = {
     nota: '#4B7BE5', llamada: '#6C5CE7', whatsapp_enviado: '#25D366',
-    email_enviado: '#1565c0', demo_agendada: '#E8A838', demo_realizada: '#F39C12',
+    email_enviado: '#1565c0', email_respuesta: '#1565c0', demo_agendada: '#E8A838', demo_realizada: '#F39C12',
     cotizacion_creada: '#2AB5A0', cotizacion_enviada: '#2AB5A0', cotizacion_vista: '#6C5CE7',
     pago_recibido: '#2e7d32', stage_change: '#E8A838', lead_created: '#4B7BE5', sistema: '#ccc',
   };
@@ -157,7 +157,7 @@ function activityColor(tipo: string): string {
 function activityLabel(tipo: string): string {
   const labels: Record<string, string> = {
     nota: 'Nota', llamada: 'Llamada', whatsapp_enviado: 'WhatsApp enviado',
-    email_enviado: 'Email enviado', demo_agendada: 'Demo agendada', demo_realizada: 'Demo realizada',
+    email_enviado: 'Email enviado', email_respuesta: 'Te respondió por correo', demo_agendada: 'Demo agendada', demo_realizada: 'Demo realizada',
     cotizacion_creada: 'Cotización creada', cotizacion_enviada: 'Cotización enviada',
     cotizacion_vista: 'Cotización vista', pago_recibido: 'Pago recibido',
     stage_change: 'Cambio de etapa', lead_created: 'Lead creado', sistema: 'Sistema',

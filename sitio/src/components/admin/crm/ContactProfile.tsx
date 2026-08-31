@@ -127,6 +127,11 @@ function activityColor(tipo: string): string {
   const colors: Record<string, string> = {
     nota: '#7DA6F5', llamada: '#5B4BD6', whatsapp_enviado: '#25D366',
     whatsapp_recibido: '#25D366', email_enviado: '#2C5FC4', email_recibido: '#2C5FC4',
+    /* Lo que de verdad escribe el webhook de correo entrante. Los mapas solo
+       conocían `email_recibido`, un tipo que NADIE inserta: la respuesta de un
+       cliente se pintaba como el texto crudo «email_respuesta» con punto gris. */
+    email_respuesta: '#2C5FC4', email_opened: '#8C8C8C', email_clicked: '#5B4BD6',
+    email_unsubscribed: '#E54B4B',
     demo_agendada: '#E8A838', demo_realizada: '#E8A838',
     cotizacion_creada: '#4FBF95', cotizacion_enviada: '#4FBF95',
     cotizacion_vista: '#5B4BD6', cotizacion_aceptada: '#1E8A63',
@@ -140,7 +145,9 @@ function activityLabel(tipo: string): string {
   const labels: Record<string, string> = {
     nota: 'Nota', llamada: 'Llamada', whatsapp_enviado: 'WhatsApp enviado',
     whatsapp_recibido: 'WhatsApp recibido', email_enviado: 'Email enviado',
-    email_recibido: 'Email recibido', demo_agendada: 'Demo agendada',
+    email_recibido: 'Email recibido', email_respuesta: 'Te respondió por correo',
+    email_opened: 'Abrió el correo', email_clicked: 'Clic en el correo',
+    email_unsubscribed: 'Se dio de baja', demo_agendada: 'Demo agendada',
     demo_realizada: 'Demo realizada', cotizacion_creada: 'Cotizacion creada',
     cotizacion_enviada: 'Cotizacion enviada', cotizacion_vista: 'Cotizacion vista',
     cotizacion_aceptada: 'Cotizacion aceptada', pago_recibido: 'Pago recibido',
@@ -154,7 +161,9 @@ function activityIcon(tipo: string): string {
   const icons: Record<string, string> = {
     nota: '\u{1F4DD}', llamada: '\u{1F4DE}', whatsapp_enviado: '\u{1F4F1}',
     whatsapp_recibido: '\u{1F4F1}', email_enviado: '\u{2709}\u{FE0F}',
-    email_recibido: '\u{1F4E9}', demo_agendada: '\u{1F4C5}',
+    email_recibido: '\u{1F4E9}', email_respuesta: '\u{1F4E9}',
+    email_opened: '\u{1F440}', email_clicked: '\u{1F5B1}\u{FE0F}',
+    email_unsubscribed: '\u{1F6AB}', demo_agendada: '\u{1F4C5}',
     demo_realizada: '\u{2705}', cotizacion_creada: '\u{1F4C4}',
     cotizacion_enviada: '\u{1F4E4}', cotizacion_vista: '\u{1F440}',
     cotizacion_aceptada: '\u{1F389}', pago_recibido: '\u{1F4B0}',
@@ -1326,7 +1335,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   const isExpanded = expandedActivities.has(a.id);
                   const hasSummary = a.metadata?.summary || a.metadata?.puntos_clave;
                   const isStageChange = a.tipo === 'stage_change';
-                  const isEmail = a.tipo === 'email_enviado' || a.tipo === 'email_recibido';
+                  const isEmail = a.tipo === 'email_enviado' || a.tipo === 'email_recibido' || a.tipo === 'email_respuesta';
 
                   return (
                     <div key={a.id} style={{

@@ -19,6 +19,20 @@ export async function sincronizarHermanos(caso: any, destino: Etapa) {
   const empresa = destino === 'recuperado' ? 'activo' : destino === 'irrecuperable' ? 'cancelado' : null;
   if (empresa) {
     await supabase.from('companies').update({ estado_cuenta: empresa }).eq('id', caso.company_id);
+    /* Y SE VUELVE A CERRAR EL ACCESO al darlo por perdido. Entrar a gracia lo
+       desbloquea; sin esto, «cerrar como perdido» —la única acción
+       irreversible del módulo— dejaba al ex-cliente con el sistema abierto
+       gratis para siempre. Se reporta el fallo en la historia en vez de tirar
+       la transición: son dos hechos distintos, igual que al desbloquear. */
+    if (destino === 'irrecuperable') {
+      const { data: emp } = await supabase.from('companies').select('sacs_account').eq('id', caso.company_id).single();
+      if (emp?.sacs_account) {
+        const { avisoEnCuenta } = await import('./prueba');
+        const r = await avisoEnCuenta(emp.sacs_account, 'bloquear');
+        await anotar(caso, 'nota', r.ok ? 'Acceso cerrado en SACS' : 'No se pudo cerrar el acceso en SACS',
+          r.ok ? undefined : r.error, true);
+      }
+    }
     await supabase.from('contacts')
       .update({ lifecycle_stage: destino === 'recuperado' ? 'cliente' : 'churned' })
       .eq('company_id', caso.company_id)
@@ -65,13 +79,24 @@ export async function abrirCasoSiAplica(companyId: string): Promise<{ creado: bo
   canceladas.sort((a, b) => String(b.cancelada_at || b.updated_at || '').localeCompare(String(a.cancelada_at || a.updated_at || '')));
   const ultima = canceladas[0];
   const { data: previos } = await supabase.from('churn_casos')
-    .select('id, episodio').eq('company_id', companyId).order('episodio', { ascending: false }).limit(1);
+    .select('id, episodio, cerrado_at').eq('company_id', companyId).order('episodio', { ascending: false }).limit(1);
   const previo = previos?.[0];
+
+  /* Solo las bajas de ESTE episodio. Sumar todas las canceladas históricas
+     hacía que un cliente que se fue ($700), volvió y se fue otra vez ($900)
+     abriera el episodio 2 con $1,600 — dinero que el episodio 1 ya había
+     contado. Con reincidentes, que es justo lo que el modelo presume
+     soportar, la cifra se descomponía sola. */
+  const deEsteEpisodio = previo?.cerrado_at
+    ? canceladas.filter(s => String(s.cancelada_at || s.updated_at || '') > String(previo.cerrado_at))
+    : canceladas;
+  const mrrDelEpisodio = (deEsteEpisodio.length ? deEsteEpisodio : [ultima])
+    .reduce((t, s) => t + Number(s.mrr || 0), 0);
 
   const { data, error } = await supabase.from('churn_casos').insert({
     company_id: companyId,
     subscription_id: ultima.id,
-    mrr_perdido: canceladas.reduce((t, s) => t + Number(s.mrr || 0), 0),
+    mrr_perdido: mrrDelEpisodio,
     motivo_original: ultima.razon_cancelacion || null,
     motivo_categoria: categorizarRazon(ultima.razon_cancelacion),
     detectado_at: ultima.cancelada_at || new Date().toISOString(),

@@ -60,14 +60,23 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // Los contadores se calculan sobre TODO, no sobre la página: un número que
   // solo cuenta lo que cupo es un número que miente.
-  const { data: todos } = await supabase.from('churn_casos').select('etapa, mrr_perdido, gracia_fin, resultado, cerrado_at, gracia_mrr');
+  /* El MRR recuperado sale de la SUSCRIPCIÓN NUEVA, no de `gracia_mrr` (que es
+     el precio pactado, no lo que paga) ni de `mrr_perdido` (que es lo que
+     pagaba ANTES de irse). Con la fórmula vieja, un rescate al 50% se
+     reportaba al 100% y divergía del ledger que usa el tablero — dos cifras
+     que deberían ser la misma es la forma más rápida de que nadie confíe. */
+  const { data: todos } = await supabase.from('churn_casos')
+    .select('etapa, mrr_perdido, gracia_fin, resultado, cerrado_at, subscriptions!churn_casos_subscription_nueva_id_fkey(mrr)');
   const hoy = new Date().toISOString().slice(0, 10);
   const cuenta: any = { detectado: 0, conciliacion: 0, gracia: 0, recuperado: 0, irrecuperable: 0, todos: 0 };
   let mrrEnRescate = 0, mrrRecuperado = 0, graciaVencida = 0;
   for (const c of todos || []) {
     cuenta[c.etapa] = (cuenta[c.etapa] || 0) + 1;
     if (ABIERTAS.includes(c.etapa)) { cuenta.todos++; mrrEnRescate += Number(c.mrr_perdido || 0); }
-    if (c.etapa === 'recuperado') mrrRecuperado += Number(c.gracia_mrr || c.mrr_perdido || 0);
+    if (c.etapa === 'recuperado') {
+      const sn: any = (c as any).subscriptions;
+      mrrRecuperado += Number((Array.isArray(sn) ? sn[0]?.mrr : sn?.mrr) || 0);
+    }
     if (c.etapa === 'gracia' && c.gracia_fin && String(c.gracia_fin) < hoy) graciaVencida++;
   }
   const cerrados = (cuenta.recuperado || 0) + (cuenta.irrecuperable || 0);

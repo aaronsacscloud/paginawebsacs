@@ -85,6 +85,8 @@ const FUNNEL = [
 const ACT_LABEL: Record<string, string> = {
   whatsapp_recibido: 'te escribió', whatsapp_enviado: 'le escribimos',
   email_opened: 'abrió el correo', email_enviado: 'le mandamos correo',
+  // La señal más fuerte que existe: contestó. Faltaba en el diccionario.
+  email_respuesta: 'te respondió por correo',
   cotizacion_vista: 'vio la cotización', cotizacion: 'se le cotizó',
   page_visit: 'visitó la web', pago_recibido: 'pagó', llamada: 'llamada',
   lead_created: 'llegó', stage_change: 'cambió de etapa', etapa_cambio: 'cambió de etapa',

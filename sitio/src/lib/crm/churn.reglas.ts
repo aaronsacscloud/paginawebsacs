@@ -82,8 +82,16 @@ export function validarTransicion(caso: any, destino: Etapa, datos: any = {}): F
     // Una gracia sin fecha de fin es un cliente gratis para siempre.
     if (!String(datos.gracia_acuerdo || '').trim()) return { error: 'Escribe qué se pactó con el cliente.', campo: 'gracia_acuerdo' };
     if (!datos.gracia_fin) return { error: 'Ponle fecha de fin a la gracia: sin fecha, es un cliente gratis para siempre.', campo: 'gracia_fin' };
-    if (datos.gracia_mrr == null || Number(datos.gracia_mrr) < 0) return { error: 'Di a cuánto va a volver a pagar al terminar la gracia.', campo: 'gracia_mrr' };
-    if (String(datos.gracia_fin) <= new Date().toISOString().slice(0, 10)) return { error: 'La fecha de fin tiene que ser futura.', campo: 'gracia_fin' };
+    /* NaN y 0 pasaban: NaN estallaba después con un mensaje crudo de Postgres,
+       y 0 es exactamente el «cliente gratis para siempre» que esta regla
+       existe para impedir. */
+    const mrrVuelve = Number(datos.gracia_mrr);
+    if (!Number.isFinite(mrrVuelve) || mrrVuelve <= 0) return { error: 'Di a cuánto va a volver a pagar al terminar la gracia (más de cero).', campo: 'gracia_mrr' };
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (String(datos.gracia_fin) <= hoy) return { error: 'La fecha de fin tiene que ser futura.', campo: 'gracia_fin' };
+    // Y con techo: sin tope, «hasta 2036» es una gracia válida.
+    const tope = new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10);
+    if (String(datos.gracia_fin) > tope) return { error: 'Una gracia no puede pasar de 6 meses. Si hace falta más, se extiende después.', campo: 'gracia_fin' };
   }
 
   if (destino === 'recuperado' && !datos.subscription_nueva_id) {

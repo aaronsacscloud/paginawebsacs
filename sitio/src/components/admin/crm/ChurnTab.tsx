@@ -30,7 +30,8 @@ const PESTANAS: { id: string; l: string }[] = [
   { id: 'gracia', l: 'En gracia' },
   { id: 'recuperado', l: 'Recuperados' },
   { id: 'irrecuperable', l: 'Irrecuperables' },
-  { id: 'todos', l: 'Todos' },
+  // No son «todos»: los cerrados tienen su pestaña. Llamarlo Todos mentía.
+  { id: 'todos', l: 'Abiertos' },
 ];
 
 /* El semáforo del uso real. Es la columna que justifica el módulo: sale del
@@ -52,6 +53,7 @@ export default function ChurnTab() {
   const [busca, setBusca] = useState('');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [errorCarga, setErrorCarga] = useState('');
   const [verTablero, setVerTablero] = useState(false);
   const [tab, setTab] = useState<any>(null);
   useEffect(() => {
@@ -64,8 +66,13 @@ export default function ChurnTab() {
   const cargar = () => {
     fetch(`/api/crm/churn?etapa=${etapa}`)
       .then(r => r.json())
-      .then(j => { setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {}); })
-      .catch(() => setFilas([]));
+      /* Un error NO se pinta como lista vacía: el 403 de permisos salía como
+         «Nadie sin atender», o sea una falla disfrazada de buena noticia. */
+      .then(j => {
+        if (j?.error) { setErrorCarga(j.error); setFilas([]); return; }
+        setErrorCarga(''); setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {});
+      })
+      .catch(() => { setErrorCarga('No se pudo cargar la lista.'); setFilas([]); });
   };
   useEffect(() => { cargar(); }, [etapa]);
   // La selección no sobrevive a un cambio de vista: actuar en bloque sobre
@@ -91,7 +98,7 @@ export default function ChurnTab() {
   const verGracia = etapa === 'gracia' || etapa === 'todos';
   const verCierre = etapa === 'recuperado' || etapa === 'irrecuperable';
   const nCols = 7 + (verEtapa ? 1 : 0) + (verGracia ? 1 : 0) + (verCierre ? 1 : 0);
-  const ancho = 890 + (verEtapa ? 120 : 0) + (verGracia ? 190 : 0) + (verCierre ? 200 : 0);
+  const ancho = 1040 + (verEtapa ? 120 : 0) + (verGracia ? 190 : 0) + (verCierre ? 200 : 0);
 
   // El alto se mide contra el borde real, no con un número inventado.
   useEffect(() => {
@@ -155,7 +162,11 @@ export default function ChurnTab() {
             fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
       </div>
 
-      {verTablero ? <Tablero d={tab} />
+      {errorCarga ? (
+        <div style={{ padding: '30px 20px', background: '#FDF6F5', border: '1px solid #f3d9d6', borderRadius: 14, color: '#A8433C' }}>
+          <b>No se pudo cargar Churn.</b><div style={{ fontSize: '0.85rem', marginTop: 4 }}>{errorCarga}</div>
+        </div>
+      ) : verTablero ? <Tablero d={tab} />
       : filas === null ? <div style={{ padding: 40, color: '#8e88a8' }}>Cargando…</div>
       : lista.length === 0 ? (
         <div style={{ padding: '46px 20px', textAlign: 'center', color: '#71707C', background: '#fff',
@@ -163,7 +174,9 @@ export default function ChurnTab() {
           <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#241d43' }}>
             {etapa === 'detectado' ? 'Nadie sin atender.' : 'Nada en esta etapa.'}
           </div>
-          <div style={{ fontSize: '0.83rem', marginTop: 4 }}>{ETAPA(etapa as Etapa).d}</div>
+          <div style={{ fontSize: '0.83rem', marginTop: 4 }}>
+            {etapa === 'todos' ? 'No hay casos abiertos. Los cerrados están en sus pestañas.' : ETAPA(etapa as Etapa).d}
+          </div>
         </div>
       ) : (
       <div className="crm-reja" ref={rejaRef}>
@@ -182,7 +195,12 @@ export default function ChurnTab() {
               <th scope="col" className="num" style={{ ...T.th, width: 104 }}>MRR</th>
               <th scope="col" style={{ ...T.th, width: 190 }}>Por qué se fue</th>
               {verGracia && <th scope="col" style={{ ...T.th, width: 190 }}>Gracia</th>}
-              <th scope="col" style={{ ...T.th, width: 150 }}>Uso del sistema</th>
+              {/* El rótulo cambia con la etapa porque el dato significa cosas
+                  distintas: en gracia contesta «¿le sirvió que le devolviéramos
+                  el acceso?»; en Detectados son cuentas ya bloqueadas, así que
+                  medir su uso de hoy es una alarma sin información. Ahí lo que
+                  vale es qué tanto lo usaba. */}
+              <th scope="col" style={{ ...T.th, width: 150 }}>{verGracia ? 'Uso del sistema' : 'Qué tanto lo usaba'}</th>
               {verEtapa && <th scope="col" style={{ ...T.th, width: 120 }}>Etapa</th>}
               {verCierre && <th scope="col" style={{ ...T.th, width: 200 }}>Cierre</th>}
               <th scope="col" style={{ ...T.th, width: 150 }}>Siguiente paso</th>
@@ -207,13 +225,20 @@ export default function ChurnTab() {
                         onChange={e => setSel(prev => { const n = new Set(prev); e.target.checked ? n.add(c.id) : n.delete(c.id); return n; })} />
                     </td>
                     <td className="fija1" style={T.td}>
-                      <span style={{ fontWeight: 600, color: '#4a4a52', fontSize: '0.76rem' }}>{fechaCorta(c.detectado_at)}</span>
-                      {/* Los tiempos se calculan sobre fechas REALES: 22 de los
-                          35 históricos vinieron de Excel sin fecha, y decirlo
-                          es lo que evita que un promedio mienta. */}
-                      <span style={{ ...T.sub, display: 'block' }} title={c.fecha_estimada ? 'Fecha estimada: el registro vino de Excel sin fecha de cancelación' : undefined}>
-                        hace {diasDesde(c.detectado_at)} d{c.fecha_estimada ? ' ~' : ''}
-                      </span>
+                      {/* Con fecha estimada NO se pinta antigüedad. 22 de los
+                          35 históricos vinieron de Excel sin fecha y lo que se
+                          guardó fue la fecha del import: decir «canceló hace 7
+                          días» de alguien que lleva 400 sin vender no es un
+                          matiz, es un dato falso con cara de dato. */}
+                      {c.fecha_estimada ? (<>
+                        <span style={{ fontWeight: 600, color: '#74727F', fontSize: '0.76rem' }}>sin fecha</span>
+                        <span style={{ ...T.sub, display: 'block' }} title="El registro vino de Excel sin fecha de cancelación">
+                          en la lista desde {fechaCorta(c.detectado_at)}
+                        </span>
+                      </>) : (<>
+                        <span style={{ fontWeight: 600, color: '#4a4a52', fontSize: '0.76rem' }}>{fechaCorta(c.detectado_at)}</span>
+                        <span style={{ ...T.sub, display: 'block' }}>hace {diasDesde(c.detectado_at)} d</span>
+                      </>)}
                     </td>
                     <td className="fija2" style={T.td}>
                       <button type="button" className="crm-fila-nom" style={T.nombre} onClick={() => setAbierto(c.id)}
@@ -245,8 +270,11 @@ export default function ChurnTab() {
                       </td>
                     )}
                     <td style={T.td}>
-                      {/* La pregunta que de verdad decide: ¿lo está usando? */}
-                      <span style={T.tag(tono.bg, tono.fg)}>{salud.texto}</span>
+                      {c.etapa === 'gracia'
+                        ? <span style={T.tag(tono.bg, tono.fg)}>{salud.texto}</span>
+                        /* Fuera de gracia: sin color de alarma. Que una cuenta
+                           cancelada no venda es lo esperado, no una urgencia. */
+                        : <span style={{ ...T.dato2, color: '#62606C' }}>{salud.tono === 'nd' ? salud.texto : salud.texto.replace(' sin vender', ' sin vender antes')}</span>}
                     </td>
                     {verEtapa && <td style={T.td}><span style={T.tag(et.bg, et.fg)}>{et.l}</span></td>}
                     {verCierre && (

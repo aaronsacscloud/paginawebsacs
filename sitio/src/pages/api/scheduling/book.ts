@@ -7,7 +7,6 @@ import { marcarAgendado } from '../../../lib/crm/estatus-live';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
-import { sendWhatsApp } from '../../../lib/kapso';
 import { ligarVisitasPrevias } from '../../../lib/email/senales';
 import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../../lib/atribucion-marketing';
 import { notificar } from '../../../lib/crm/notificaciones';
@@ -900,32 +899,18 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Host email notification failed:', hostEmailErr);
   }
 
-  // 11. Send SMS/WhatsApp confirmation to invitee (Feature 11)
-  if (whatsapp) {
-    try {
-      const [y, mo, d] = fecha.split('-').map(Number);
-      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      const dateStr = `${d} ${months[mo - 1]} ${y}`;
-      const [h, m] = hora_inicio.split(':').map(Number);
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const timeStr = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-
-      const meetLink = google_meet_link || '';
-      const smsMessage = [
-        `✅ *Demo confirmada con SACS*`,
-        ``,
-        `📅 ${dateStr} a las ${timeStr}`,
-        `⏱ ${eventType.duracion_minutos} minutos`,
-        meetLink ? `📹 ${meetLink}` : '',
-        ``,
-        `Para reagendar o cancelar:`,
-        `https://www.sacscloud.com/agendar/cancelar?token=${booking.token_cancelar}`,
-      ].filter(Boolean).join('\n');
-
-      await sendWhatsApp(whatsapp, smsMessage);
-    } catch { /* WhatsApp confirmation is non-critical */ }
-  }
+  // 11. Confirmación por WhatsApp al cliente.
+  //
+  // Va por la MISMA vía que el inbox (`enviarTexto` + espejo), no por el
+  // `sendWhatsApp` viejo de lib/kapso: aquel apunta a otra API de Kapso, no
+  // espeja nada y devuelve `{sent:false}` que nadie leía — si estaba caído, la
+  // confirmación se perdía en silencio. Ahora además queda EN la conversación,
+  // así que quien abra el chat ve exactamente lo que el cliente recibió.
+  // Con el evento nuevo se le pasa también quién lo atiende, que faltaba.
+  try {
+    const { confirmarCitaPorWhatsApp } = await import('../../../lib/crm/confirmacion-cita');
+    await confirmarCitaPorWhatsApp(booking.id);
+  } catch { /* el aviso no tumba una cita ya agendada */ }
 
   // 12. Log activity
   await supabase.from('activities').insert({

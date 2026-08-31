@@ -103,7 +103,7 @@
     },
     {
       "path": "/api/cron/churn-barrido",
-      "schedule": "30 9 * * *"
+      "schedule": "50 9 * * *"
     }
   ]
 }

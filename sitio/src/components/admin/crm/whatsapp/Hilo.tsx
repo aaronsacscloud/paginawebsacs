@@ -809,6 +809,12 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             )}
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
+          {/* Agendar, a un toque y en los dos anchos: en el teléfono abre la
+              hoja de acciones y en escritorio el panel lateral, que escuchan
+              el mismo evento. Antes había que pasar por «Cotizar o agendar» y
+              elegir otra vez. */}
+          <button onClick={() => { setAbierto(false); document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'agendar' })); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '9px 14px', fontSize: movil ? 15 : 12, color: C.g700 }}>Agendar reunión</button>
           {/* E9 · Cerrar el ciclo sin salir del hilo. */}
           <button onClick={() => setRecordar(v => !v)}
             style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '12px 20px' : '9px 14px', fontSize: movil ? 15 : 12, color: C.g700 }}>

@@ -10,6 +10,7 @@
  * valida igual: aquí solo se evita el viaje en balde y se explica el porqué.
  */
 import { useEffect, useState } from 'react';
+import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import { ETAPAS, ETAPA, MOTIVOS, MOTIVO, diasDeGracia, saludDeGracia, type Etapa } from '../../../lib/crm/churn.reglas';
 import { confirmar } from '../../../lib/ui/confirmar';
 
@@ -30,6 +31,23 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
   const [form, setForm] = useState<any>({});
   const [pidiendo, setPidiendo] = useState<Etapa | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [toque, setToque] = useState<any>({ tipo: 'llamada', texto: '', proximo_paso: '', proximo_paso_at: '' });
+  const [extendiendo, setExtendiendo] = useState(false);
+  const esMovil = useIsMobile();
+  /* En el teléfono, «atrás» tiene que cerrar la hoja, no sacarte de la
+     sección: es el estándar de las 17 pantallas del CRM móvil. */
+  useDrawerHistory(esMovil, onCerrar);
+
+  async function registrar(cuerpo: any) {
+    setGuardando(true); setError('');
+    const r = await fetch('/api/crm/churn/caso', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...cuerpo }),
+    }).then(x => x.json()).catch(() => ({ error: 'No se pudo guardar' }));
+    setGuardando(false);
+    if (r?.error) { setError(r.error); return false; }
+    setToque({ tipo: 'llamada', texto: '', proximo_paso: '', proximo_paso_at: '' });
+    setExtendiendo(false); cargar(); onCambio(); return true;
+  }
 
   const cargar = () => fetch(`/api/crm/churn/caso?id=${id}`).then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
   useEffect(() => { cargar(); }, [id]);
@@ -70,7 +88,15 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
   return (
     <>
       <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.32)', zIndex: 900 }} />
-      <div role="dialog" aria-modal="true" aria-label="Caso de churn" style={{
+      {/* `crm-sheet` es lo que engancha el modo oscuro del CRM: sin esa clase,
+          el caso salía como un panel BLANCO a pantalla completa encima de una
+          app en oscuro. Y en el teléfono sube desde abajo, no entra por la
+          derecha: por la derecha es un gesto de escritorio. */}
+      <div className="crm-sheet" role="dialog" aria-modal="true" aria-label="Caso de churn" style={esMovil ? {
+        position: 'fixed', left: 0, right: 0, bottom: 0, top: 44, background: '#FBFAFF',
+        borderRadius: '16px 16px 0 0', boxShadow: '0 -12px 40px rgba(16,24,40,.22)', zIndex: 901,
+        display: 'flex', flexDirection: 'column', overflowY: 'auto',
+      } : {
         position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(560px, 96vw)', background: '#FBFAFF',
         borderLeft: '1px solid #eae7f2', boxShadow: '-14px 0 44px rgba(16,24,40,.16)', zIndex: 901,
         display: 'flex', flexDirection: 'column', overflowY: 'auto',
@@ -134,6 +160,9 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   {(caso.etapa === 'detectado' || caso.etapa === 'conciliacion') && (
                     <button onClick={() => setPidiendo('gracia')} style={btn('#7C6BF0')}>Pactar período de gracia</button>
                   )}
+                  {caso.etapa === 'gracia' && (
+                    <button onClick={() => setExtendiendo(true)} style={btn('#fff', '#5B4BD6')}>Extender la gracia</button>
+                  )}
                   {['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (<>
                     <button onClick={() => setPidiendo('recuperado')} style={btn('#1E8A63')}>Marcar recuperado</button>
                     <button onClick={() => setPidiendo('irrecuperable')} style={btn('#fff', '#C0554E')}>Cerrar como perdido</button>
@@ -143,6 +172,27 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                       Caso cerrado. Si este cliente vuelve a irse, se abre un episodio nuevo.
                     </div>
                   )}
+                </div>
+              )}
+
+              {extendiendo && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0eef7' }}>
+                  <Campo l="Nueva fecha de fin">
+                    <input type="date" style={inp} value={form.gracia_fin || ''} onChange={e => setForm({ ...form, gracia_fin: e.target.value })} />
+                  </Campo>
+                  {(caso.gracia_extensiones || 0) >= 1 && (
+                    <Campo l="Por qué se extiende otra vez">
+                      <textarea style={{ ...inp, minHeight: 56, resize: 'vertical' }} value={form.motivo || ''}
+                        onChange={e => setForm({ ...form, motivo: e.target.value })} />
+                    </Campo>
+                  )}
+                  <div style={{ fontSize: '0.75rem', color: '#71707C', marginBottom: 10 }}>
+                    {(caso.gracia_extensiones || 0) >= 1
+                      ? 'Es la segunda extensión: extender sin fin es regalar el sistema en cuotas, por eso hay que decir por qué.'
+                      : 'Queda registrado en la historia del caso.'}
+                  </div>
+                  <Acciones onCancelar={() => { setExtendiendo(false); setForm({}); }} guardando={guardando}
+                    onOk={() => registrar({ accion: 'extender', gracia_fin: form.gracia_fin, motivo: form.motivo })} />
                 </div>
               )}
 
@@ -181,13 +231,32 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               {pidiendo === 'recuperado' && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0eef7' }}>
                   <div style={{ fontSize: '0.82rem', color: '#4a4756', marginBottom: 10, lineHeight: 1.5 }}>
-                    Para marcar recuperado hace falta la suscripción nueva que lo respalda —
-                    un recuperado que no paga mentiría en la ARR. Créala en Suscripciones y pega su id aquí.
+                    Para marcar recuperado hace falta la suscripción nueva que lo respalda:
+                    un recuperado que no paga mentiría en la ARR.
                   </div>
-                  <Campo l="Id de la suscripción nueva">
-                    <input style={inp} value={form.subscription_nueva_id || ''} placeholder="uuid de la suscripción"
-                      onChange={e => setForm({ ...form, subscription_nueva_id: e.target.value })} />
-                  </Campo>
+                  {(d.subs_vivas || []).length === 0 ? (
+                    <div style={{ padding: '11px 13px', borderRadius: 10, background: '#FFF8EC', color: '#a06600',
+                      fontSize: '0.81rem', lineHeight: 1.5, marginBottom: 10 }}>
+                      Esta empresa no tiene ninguna suscripción viva. Créala primero en <b>Facturación → Suscripciones</b>
+                      y vuelve: aquí va a aparecer sola.
+                    </div>
+                  ) : (
+                    /* Un select con las subs vivas de ESTA empresa, no un campo
+                       de uuid: pegar el id de la sub cancelada pasaba antes
+                       todas las validaciones y dejaba un «recuperado» que no
+                       paga. Ahora ni siquiera es posible elegirlo. */
+                    <Campo l="Con qué suscripción volvió">
+                      <select style={inp} value={form.subscription_nueva_id || ''}
+                        onChange={e => setForm({ ...form, subscription_nueva_id: e.target.value })}>
+                        <option value="">Elige la suscripción…</option>
+                        {(d.subs_vivas || []).map((x: any) => (
+                          <option key={x.id} value={x.id}>
+                            {x.nombre_plan} · {dinero(x.mrr)}/mes · {x.estado}
+                          </option>
+                        ))}
+                      </select>
+                    </Campo>
+                  )}
                   <Acciones onCancelar={() => setPidiendo(null)} guardando={guardando}
                     onOk={() => mover('recuperado', { subscription_nueva_id: form.subscription_nueva_id })} />
                 </div>
@@ -227,6 +296,38 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                     {e.resultado_motivo && <div style={{ color: '#71707C', fontSize: '0.76rem' }}>{e.resultado_motivo}</div>}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* ── Registrar lo que pasó. Va ARRIBA de la historia porque es
+                    lo que se hace al terminar una llamada, no al final de
+                    leerla. Y registrar un contacto real mueve el caso a
+                    conciliación solo: la etapa describe lo que pasa, no es una
+                    tarea aparte que el vendedor tenga que acordarse de hacer. ── */}
+            {['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (
+              <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 10 }}>
+                  Registrar un toque
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {[['llamada', 'Llamada'], ['whatsapp', 'WhatsApp'], ['correo', 'Correo'], ['reunion', 'Reunión'], ['nota', 'Nota']].map(([v2, l]) => (
+                    <button key={v2} onClick={() => setToque({ ...toque, tipo: v2 })}
+                      style={{ border: '1px solid', borderColor: toque.tipo === v2 ? '#5B4BD6' : '#e2dbf8',
+                        background: toque.tipo === v2 ? '#EEECFE' : '#fff', color: toque.tipo === v2 ? '#5B4BD6' : '#5a5a63',
+                        borderRadius: 20, padding: '5px 12px', fontSize: '0.75rem', fontWeight: toque.tipo === v2 ? 800 : 600,
+                        cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+                  ))}
+                </div>
+                <textarea style={{ ...inp, minHeight: 62, resize: 'vertical' }} placeholder="Qué pasó…"
+                  value={toque.texto} onChange={e => setToque({ ...toque, texto: e.target.value })} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  <input style={{ ...inp, flex: '2 1 180px' }} placeholder="Qué sigue (opcional)"
+                    value={toque.proximo_paso} onChange={e => setToque({ ...toque, proximo_paso: e.target.value })} />
+                  <input type="date" style={{ ...inp, flex: '1 1 130px' }} value={toque.proximo_paso_at}
+                    onChange={e => setToque({ ...toque, proximo_paso_at: e.target.value })} />
+                </div>
+                <button disabled={guardando || !toque.texto.trim()} style={{ ...btn('#5B4BD6'), marginTop: 10, opacity: toque.texto.trim() ? 1 : .5 }}
+                  onClick={() => registrar(toque)}>{guardando ? 'Guardando…' : 'Guardar el toque'}</button>
               </div>
             )}
 
