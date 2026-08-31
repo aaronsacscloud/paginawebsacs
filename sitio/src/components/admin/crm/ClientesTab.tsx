@@ -674,21 +674,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   /* Sin pestañas de vistas: abre con TODOS los clientes, de mayor a menor ARR.
    * Antes abría en "Con ARR activo" y mostraba 78 de 218 — los otros 140
    * existían y nada en la pantalla decía que estaban escondidos. */
-  /* Las pestañas dicen lo mismo que las tarjetas de arriba: si una tarjeta
-     cuenta 12 «requieren atención», tiene que haber una pestaña que enseñe
-     esos 12. Cada una trae su contador, así que esconder filas ya no engaña
-     —que era la razón por la que estas pestañas estaban apagadas—. */
   const vistasBase: VistaDef[] = [
     { key: 'todos', nombre: 'Todos', config: { sort: { key: 'arr', dir: -1 } } },
-    { key: 'con_arr', nombre: 'Con ARR', config: { conds: [{ campo: 'arr', op: 'mayor', v1: '0' }], sort: { key: 'arr', dir: -1 } } },
-    { key: 'renov_vencida', nombre: 'Renovación vencida', config: { conds: [{ campo: 'renovacion', op: 'antes_hoy', v1: '' }], sort: { key: 'renovacion', dir: 1 } } },
-    /* Mismo criterio EXACTO que la tarjeta «Requieren atención»: 3 días o más
-       y con licencia viva. Con `mayor` que 2 (los días son enteros) y la
-       segunda condición, la pestaña y la tarjeta dan el mismo número — si
-       difieren aunque sea en uno, deja de creerse la pantalla. */
-    { key: 'sin_vender', nombre: 'Sin vender 3+ días', config: { conds: [{ campo: 'dias_sin_venta', op: 'mayor', v1: '2' }, { campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'dias_sin_venta', dir: -1 } } },
-    { key: 'vitalicias', nombre: 'Vitalicias', config: { conds: [{ campo: 'vitalicia', op: 'es', v1: 'si' }], sort: { key: 'pagado', dir: -1 } } },
-    { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }], sort: { key: 'arr', dir: -1 } } },
   ];
 
   if (loading) return <Cargando texto="Cargando clientes…" />;
@@ -856,10 +843,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           y se ve claro que se desliza); en desktop, grid multi-columna. */}
       <div style={isMobile
         ? { display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', marginBottom: 16, paddingBottom: 4, marginLeft: -2, marginRight: -2, paddingLeft: 2, paddingRight: 2 }
-        /* Las cinco en un renglón, como Cotizaciones. Con `auto-fit` y 230 de
-           mínimo, a 1400 px entraban cuatro y la quinta caía huérfana en un
-           segundo renglón, que se lee como si fuera de otra cosa. */
-        : { display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, marginBottom: 18 }}>
+        : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
         {(() => { const kStyle = isMobile ? { minWidth: '82vw', scrollSnapAlign: 'start' as const, flexShrink: 0 } : undefined; return (<>
         <KpiCard style={kStyle} franja={CL.violeta} label="Clientes" value={tot?.clientes ?? '—'}
           sub={<>{tot?.activos ?? 0} con ARR activo · {Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0))} sin ARR</>}
@@ -936,6 +920,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           cols={verExclientes ? colsExcliente : cols}
           quick={verExclientes ? [] : quick}
           vistasBase={vistasBase}
+          sinVistas
           quickExtra={verExclientes ? undefined : <FiltroRenovacion valor={rangoRenov} onCambio={setRangoRenov} />}
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder={verExclientes ? 'Buscar excliente, cuenta o motivo…' : 'Buscar cliente, cuenta o contacto…'}
