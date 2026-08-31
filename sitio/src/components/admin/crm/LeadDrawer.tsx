@@ -271,7 +271,10 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
                 {/* En Info general el héroe ya cuenta quién es: repetir correo y
                     teléfono a 10 px era el mismo dato dos veces. En las demás
                     pestañas el header sí carga la identidad completa. */}
-                {(tab === 'info' ? [c.companies?.nombre] : [c.companies?.nombre, c.email, tel]).filter(Boolean).join(' · ')}
+                {/* En Info general el héroe ya lleva la empresa: dejarla también
+                    aquí la escribía dos veces con dos centímetros de distancia.
+                    En las demás pestañas el header sí carga la identidad. */}
+                {(tab === 'info' ? [] : [c.companies?.nombre, c.email, tel]).filter(Boolean).join(' · ')}
               </div>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
@@ -1489,14 +1492,15 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           {!esMovilC && <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEECFE', color: '#4536BE', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '1.05rem', flexShrink: 0 }}>{iniciales}</div>}
           <div style={{ flex: 1, minWidth: 190 }}>
-            {!esMovilC && (<>
+            {/* El nombre ya está en la cabecera, dos centímetros arriba: aquí
+                se decía por tercera vez en la misma pantalla. El héroe se queda
+                con lo suyo, que es el negocio del que hablamos. */}
+            {!esMovilC && (
             <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.015em', lineHeight: 1.2 }}>
-              {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
+              {c.companies?.nombre || 'sin empresa capturada'}
+              {giroTxt && <span style={{ display: 'block', fontSize: '0.76rem', fontWeight: 500, color: '#8a8590', marginTop: 3 }}>{giroTxt}</span>}
             </div>
-            <div style={{ fontSize: '0.76rem', color: '#8a8590', marginTop: 3 }}>
-              {[c.companies?.nombre, giroTxt].filter(Boolean).join(' · ') || 'sin empresa capturada'}
-            </div>
-            </>)}
+            )}
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: esMovilC ? 0 : 8, alignItems: 'center' }}>
               {chip(estP.label, estP.fondo, estP.tinta, 'Estatus del lead (derivado de hechos)')}
               {o.l === 'Sin definir'
@@ -1509,15 +1513,21 @@ function Campos({ c, guardar, guardando, setSucio }: any) {
           <div className="ficha-acciones" style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
             {/* El mismo lugar en los dos modos: Editar se vuelve Guardar/Cancelar
                 y nada se recorre. El commit es inequívoco. */}
+            {/* Tres botones del mismo peso encima de la ficha hacían que ninguno
+                se leyera como el que sigue. Editar es el único con caja; pausar
+                y descartar bajan a texto: se hacen una vez y cierran el lead. */}
             {!editando ? (<>
               <button style={D.btnA} onClick={() => setEditando(true)}>Editar</button>
-              <button style={{ ...D.btnA, color: '#9a6a10', borderColor: '#f0dcb0' }} onClick={() => {
-                const d = new Date(); d.setDate(d.getDate() + 14);
-                setAccion(accion === 'pausa' ? '' : 'pausa'); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon('');
-              }}>Pidió tiempo</button>
-              {c.calificacion !== 'no_califica' && (
-                <button style={{ ...D.btnA, color: '#C0554E', borderColor: '#f0c4bd' }} onClick={() => { setAccion(accion === 'descarte' ? '' : 'descarte'); setCatDesc(''); setMotivoDesc(''); }}>No le interesa</button>
-              )}
+              <span style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%', marginTop: 2 }}>
+                <button onClick={() => {
+                  const d = new Date(); d.setDate(d.getDate() + 14);
+                  setAccion(accion === 'pausa' ? '' : 'pausa'); setPausaHasta(d.toISOString().slice(0, 10)); setPausaRazon('');
+                }} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 600, color: '#9a6a10' }}>Pidió tiempo</button>
+                {c.calificacion !== 'no_califica' && (
+                  <button onClick={() => { setAccion(accion === 'descarte' ? '' : 'descarte'); setCatDesc(''); setMotivoDesc(''); }}
+                    style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 600, color: '#C0554E' }}>No le interesa</button>
+                )}
+              </span>
             </>) : (<>
               {/* Mismo rincón en los dos modos; a media captura las acciones de
                   estatus no aplican y solo estorbarían. */}
@@ -2127,7 +2137,9 @@ function CicloDeVida({ c, guardar, guardando, flash }: any) {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#a5a2af' }}>Ciclo de vida</div>
           <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#241d43', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {etapas === null ? '…' : (actual ? `${actual.emoji ? actual.emoji + ' ' : ''}${actual.nombre}` : 'Sin etapa')}
+            {/* Sin el emoji de la etapa: la interfaz del CRM va sin iconos
+                decorativos, y el select de al lado ya dice lo mismo. */}
+            {etapas === null ? '…' : (actual ? actual.nombre : 'Sin etapa')}
           </div>
         </div>
         {esMovilCV ? (
