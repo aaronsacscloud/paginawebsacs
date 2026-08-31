@@ -104,7 +104,10 @@ const pasos = [
               width={p.img.includes('04-') ? 1000 : 1500}
               height={p.img.includes('04-') ? 1500 : 1000}
             />
-            <span class="fl-num" aria-hidden="true">{p.n}</span>
+            <figcaption class="fl-rotulo">
+              <span class="fl-rotulo-n">{p.n}</span>
+              <span class="fl-rotulo-t">{p.titulo}</span>
+            </figcaption>
 
             {p.img.includes('05-') && (
               <div class="fl-canales" aria-hidden="true">
@@ -205,11 +208,24 @@ const pasos = [
   .fl-foto.cover { object-fit: cover; object-position: 50% 45%; }
   .fl-foto.contain { object-fit: contain; }
 
-  .fl-num {
-    position: absolute; left: clamp(16px, 2vw, 30px); bottom: clamp(12px, 1.6vw, 24px);
-    font-family: var(--font-display); font-size: clamp(3.4rem, 7vw, 6rem); font-weight: 800;
-    line-height: .8; letter-spacing: -.06em; color: transparent;
-    -webkit-text-stroke: 2px rgba(255,255,255,.28);
+  /* El rótulo nombra la foto. Lleva su propio velo porque cae sobre imágenes
+     de todo tipo —estudio negro, tienda clara— y el texto tiene que leerse
+     en las dos sin depender de la foto. */
+  .fl-rotulo {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+    display: flex; align-items: baseline; gap: 12px;
+    padding: clamp(46px, 7vh, 76px) clamp(18px, 2.2vw, 30px) clamp(16px, 2vh, 26px);
+    background: linear-gradient(transparent, rgba(4, 8, 20, .82));
+    pointer-events: none;
+  }
+  .fl-rotulo-n {
+    font-family: var(--font-display); font-size: 0.75rem; font-weight: 800;
+    letter-spacing: .1em; color: rgba(255,255,255,.62); flex: none;
+  }
+  .fl-rotulo-t {
+    font-family: var(--font-display); font-size: clamp(1.0625rem, 1.7vw, 1.5rem);
+    font-weight: 700; line-height: 1.15; letter-spacing: -.02em; color: #fff;
+    text-wrap: balance;
   }
 
   /* ── La tira de canales (paso 05) ── */
@@ -232,7 +248,7 @@ const pasos = [
   .fl-matriz {
     /* Arriba a la derecha: abajo la tapa el widget flotante de WhatsApp. */
     position: absolute; right: clamp(12px, 1.6vw, 22px); top: clamp(14px, 2vw, 24px);
-    z-index: 5; width: min(340px, 76%);
+    z-index: 6; width: min(340px, 76%);
     padding: 14px 16px 12px; border-radius: 16px;
     background: rgba(7, 12, 26, .82); border: 1px solid rgba(255,255,255,.16);
     backdrop-filter: blur(14px);
@@ -318,9 +334,10 @@ const pasos = [
   .fl-barra span { display: block; height: 100%; width: 14%; background: #fff; transition: width .35s ease; }
 
   /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja.
-     400vh entre 7 pasos ≈ 57vh por paso. Si se agregan pasos hay que subirlo
-     o la cinta los pasa de corrido. */
-  .fl-recorrido { height: 400vh; }
+     520vh entre 7 pasos ≈ 74vh por paso, y de esos la mitad la foto se queda
+     QUIETA (ver REPOSO en el script). Si se agregan pasos hay que subirlo o la
+     cinta los pasa de corrido. */
+  .fl-recorrido { height: 520vh; }
 
   .vo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
@@ -404,6 +421,19 @@ const pasos = [
     const cabe = () => window.innerHeight >= 620 && window.innerWidth > 980 && !menos;
     const revisarCabe = () => { sec.classList.toggle('sin-riel', !cabe()); return cabe(); };
 
+    // El avance del scroll NO se traduce directo al de la cinta: la mitad de
+    // cada tramo la tarjeta se queda quieta y la otra mitad se mueve, con
+    // arranque y frenado suaves. Sin esta pausa el movimiento es continuo y la
+    // foto nunca llega a verse: se siente que te empujan al siguiente paso.
+    const REPOSO = 0.5;
+    const suave = (x: number) => x * x * (3 - 2 * x);
+    const avanceCinta = (p: number) => {
+      const tramo = p * (N - 1);
+      const i = Math.min(N - 2, Math.floor(tramo));
+      const t = Math.min(1, Math.max(0, tramo - i));
+      return t <= REPOSO ? i : i + suave((t - REPOSO) / (1 - REPOSO));
+    };
+
     let pidiendo = false;
     const alScroll = () => {
       if (pidiendo) return;
@@ -414,7 +444,7 @@ const pasos = [
         const total = riel.offsetHeight - pegado.offsetHeight;
         if (total <= 0) return;
         const p = Math.min(1, Math.max(0, -riel.getBoundingClientRect().top / total));
-        const f = p * (N - 1);
+        const f = avanceCinta(p);
         colocar(f);
         marcar(Math.round(f));
       });
