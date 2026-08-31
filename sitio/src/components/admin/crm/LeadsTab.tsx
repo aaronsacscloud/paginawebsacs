@@ -863,8 +863,13 @@ export default function LeadsTab() {
       {!esMovil && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.015em' }}>Leads</h1>
-          <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
+          {/* La MISMA cabecera que Clientes: 1.5rem, -0.02em y el subtítulo en
+              0.75rem sobre #9c99a6. Leads iba un escalón por debajo (1.375rem
+              con el subtítulo más grande y más oscuro), así que dos secciones
+              hermanas abrían con dos jerarquías distintas y la más importante
+              se veía más chica. */}
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Leads</h1>
+          <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 2 }}>
             {vista === 'midia' ? 'Lo accionable de HOY, en orden de ataque — cada lista se vacía sola'
               : vista === 'dashboard' ? 'Cómo va la entrada de leads y por dónde se están cayendo'
               : vista === 'pipeline' ? `${res?.abiertos ?? 0} abiertos, repartidos por etapa`
