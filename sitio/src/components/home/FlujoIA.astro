@@ -3,16 +3,21 @@
  * FlujoIA — la función insignia del home: de la foto que TÚ tomas, a tus
  * variantes, a la modelo, al reel.
  *
- * Es una sección a pantalla completa que se recorre con el scroll: el panel
- * se queda fijo y la imagen se transforma paso a paso con el mismo lienzo
- * WebGL de /extraordinarios (transición líquida + aberración cromática).
+ * Es una sección a pantalla completa que se recorre con el scroll: el panel se
+ * queda fijo y las fotos pasan como una CINTA DE TARJETAS — la que estaba se va
+ * hacia abajo y la siguiente entra desde arriba, atada al avance del riel.
+ *
+ * Antes esto era un lienzo WebGL con transición líquida. Se cambió por
+ * transform de CSS: pesa una fracción, se afina sin recompilar un shader y se
+ * comporta igual con el dedo que con la rueda. Si alguien quiere devolver el
+ * shader, que sepa que este efecto no lo necesita.
  *
  * Reglas de esta pieza, aprendidas del sitio:
- *  · Un solo fondo (#0B0B12) y un solo acento. Nada de gradientes de colores.
+ *  · Un solo fondo por paso y un solo acento. Nada de gradientes de colores.
  *  · El riel va como caja propia, nunca como padding: un sticky solo viaja
  *    dentro del content box de quien lo contiene (trampa ya pagada en los giros).
  *  · Se apaga solo en móvil, con prefers-reduced-motion y si el panel no cabe:
- *    ahí se vuelve una lista de cuatro pasos, que funciona igual.
+ *    ahí se vuelve una lista de pasos, que funciona igual.
  */
 // Los logos son los MISMOS SVG que ya usa el Hero para las integraciones. NO
 // se le pide a la IA que los dibuje: siempre salen deformados, y un logo ajeno
@@ -25,81 +30,114 @@ const pasos = [
     n: '01',
     titulo: 'Tu foto. La que ya tienes.',
     texto: 'La que tomaste con el celular en tu tienda, colgada en el gancho, con la luz que había. No necesitas estudio ni sesión.',
-    img: '/images/flujo/01-tu-foto.webp',
+    img: '/images/flujo/01-tu-foto.webp', ajuste: 'cover',
     alt: 'Vestido colgado en un gancho fotografiado con celular dentro de una boutique',
-    tono: '#1B3A82', zoom: -0.87, foco: [0.5, 0.5],
+    tono: '#1B3A82',
   },
   {
     n: '02',
     titulo: 'Tus colorways, solos.',
     texto: 'La IA genera la misma prenda en todos los colores del drop, con la misma luz y el mismo encuadre. Y escribe la descripción de cada una.',
-    img: '/images/flujo/02-variantes.webp',
+    img: '/images/flujo/02-variantes.webp', ajuste: 'contain',
     alt: 'La misma prenda repetida en cinco colores distintos con iluminación idéntica',
-    // Los cinco colores tienen que caber ENTEROS: este no se acerca nunca.
-    tono: '#1B4493', zoom: 1.0, foco: [0.5, 0.5],
+    tono: '#1B4493',
   },
   {
     n: '03',
     titulo: 'Tu modelo, tuya.',
     texto: 'Eliges la modelo, la pose y el fondo — y queda igual en toda la temporada. Tu marca deja de verse improvisada.',
-    img: '/images/flujo/03-modelo.webp',
+    img: '/images/flujo/03-modelo.webp', ajuste: 'cover',
     alt: 'Modelo con el vestido en una toma editorial de campaña',
-    tono: '#1A4EA3', zoom: -0.84, foco: [0.48, 0.5],
+    tono: '#1A4EA3',
   },
   {
     n: '04',
     titulo: 'Y se vuelve reel.',
     texto: 'De ahí sale el video vertical para TikTok, Reels y tu tienda en línea. El contenido de la semana, sin volver a producir nada.',
-    img: '/images/flujo/04-reel.webp',
+    img: '/images/flujo/04-reel.webp', ajuste: 'contain',
     alt: 'La misma modelo en movimiento, en formato vertical de video social',
-    // Vertical y de cuerpo entero: sin acercar, para no cortarle cabeza ni pies.
-    tono: '#1859AF', zoom: 1.0, foco: [0.5, 0.5],
+    tono: '#1859AF',
   },
   {
     n: '05',
     titulo: 'Y se publica en todos lados.',
     texto: 'TikTok Shop, Instagram, Facebook, tu tienda en línea y lo que venga después. Subes una vez y sale en todos tus canales, cada uno con su formato.',
-    img: '/images/flujo/05-canales.webp',
-    alt: 'El mostrador de la tienda con Sacs abierto en la laptop y la misma prenda en la tablet y el celular',
-    // Los tres aparatos tienen que caber enteros: este no se acerca.
-    tono: '#1563B7', zoom: 1.0, foco: [0.5, 0.5],
+    img: '/images/flujo/05-canales.webp', ajuste: 'cover',
+    alt: 'Dentro de la tienda, un cliente ve la misma prenda en su teléfono con su precio y el botón de comprar',
+    tono: '#1563B7',
   },
   {
     n: '06',
     titulo: 'Y le llega a tus clientes.',
     texto: 'La misma pieza sale por WhatsApp a toda tu base y por correo a quien te compró antes — con su foto, su precio y su liga para comprar. No es un blast a ciegas: es tu catálogo, en el teléfono de tu clienta.',
-    img: '/images/flujo/06-clientes.webp',
+    img: '/images/flujo/06-clientes.webp', ajuste: 'cover',
     alt: 'Una clienta en un café enseña en su teléfono el mensaje de WhatsApp con la foto de la prenda',
-    tono: '#116DBB', zoom: -0.86, foco: [0.5, 0.5],
+    tono: '#116DBB',
   },
   {
     n: '07',
     titulo: 'Se vende y se descuenta solo.',
     texto: 'En cuanto alguien compra —en línea o en el mostrador— la pieza sale del inventario de ESA sucursal. Tus otras tiendas lo ven al instante y nadie captura nada: un solo inventario para todos tus canales y todas tus sucursales.',
-    img: '/images/flujo/07-sucursales.webp',
-    alt: 'Manos envolviendo la prenda vendida, con el inventario de Sacs abierto en la tablet del mostrador',
-    // La tablet del mostrador no se puede recortar: este no se acerca.
-    tono: '#0E78B8', zoom: 1.0, foco: [0.5, 0.5],
+    img: '/images/flujo/07-sucursales.webp', ajuste: 'cover',
+    alt: 'Manos envolviendo la prenda vendida, con la prenda en la tablet del mostrador',
+    tono: '#0E78B8',
   },
 ];
 ---
 
-<section class="fl" id="flujo" data-imgs={JSON.stringify(pasos.map((p) => ({ src: p.img, zoom: p.zoom, foco: p.foco, tono: p.tono })))}>
+<section
+  class="fl"
+  id="flujo"
+  data-tonos={JSON.stringify(pasos.map((p) => p.tono))}
+>
   <div class="fl-riel">
     <div class="fl-pegado">
-      <div class="fl-lienzo-caja">
-        <canvas class="fl-lienzo" id="fl-lienzo" aria-hidden="true"></canvas>
-        <div class="fl-fallback">
-          {pasos.map((p, i) => (
-            <img src={p.img} alt={p.alt} class:list={['fl-img', { on: i === 0 }]} data-i={i} loading={i === 0 ? 'eager' : 'lazy'} width={p.img.includes('04-') ? 1000 : 1500} height={p.img.includes('04-') ? 1500 : 1000} />
-          ))}
-        </div>
-        <span class="fl-num" id="fl-num" aria-hidden="true">01</span>
-        <div class="fl-canales" aria-hidden="true">
-          <span class="fl-canales-txt">Publicado en</span>
-          <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
-          <span class="fl-canales-txt">+ tu tienda en línea</span>
-        </div>
+      <div class="fl-escena">
+        {pasos.map((p, i) => (
+          <figure class="fl-carta" data-i={i} style={`--tono:${p.tono}`}>
+            <img
+              src={p.img}
+              alt={p.alt}
+              class:list={['fl-foto', p.ajuste]}
+              loading={i < 2 ? 'eager' : 'lazy'}
+              decoding="async"
+              width={p.img.includes('04-') ? 1000 : 1500}
+              height={p.img.includes('04-') ? 1500 : 1000}
+            />
+            <span class="fl-num" aria-hidden="true">{p.n}</span>
+
+            {p.img.includes('05-') && (
+              <div class="fl-canales" aria-hidden="true">
+                <span class="fl-canales-txt">Publicado en</span>
+                <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
+                <span class="fl-canales-txt">+ tu tienda en línea</span>
+              </div>
+            )}
+
+            {p.img.includes('07-') && (
+              <div class="fl-matriz">
+                <div class="fl-matriz-cab">
+                  <strong>Vestido Slip</strong>
+                  <span>existencias por sucursal</span>
+                </div>
+                <table class="fl-tabla">
+                  <thead>
+                    <tr><th scope="col"><span class="vo">Sucursal</span></th>
+                      <th scope="col">Terracota</th><th scope="col">Negro</th><th scope="col">Crema</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr tabindex="0"><th scope="row">Polanco</th>
+                      <td class="fl-baja"><span class="fl-antes">3</span><span class="fl-despues">2</span></td>
+                      <td>2</td><td>4</td></tr>
+                    <tr tabindex="0"><th scope="row">Roma Norte</th><td>2</td><td>5</td><td>1</td></tr>
+                    <tr tabindex="0"><th scope="row">Guadalajara</th><td>4</td><td>1</td><td>3</td></tr>
+                  </tbody>
+                </table>
+                <p class="fl-matriz-pie"><span class="fl-chip">−1</span> Punto de venta · Polanco</p>
+              </div>
+            )}
+          </figure>
+        ))}
       </div>
 
       <div class="fl-panel">
@@ -107,21 +145,16 @@ const pasos = [
         <h2 class="fl-titulo">De tu foto<br /><em>a tu reel.</em></h2>
         <div class="fl-pasos">
           {pasos.map((p, i) => (
-            <div class:list={['fl-paso', { on: i === 0 }]} data-i={i} style={`--tp:${p.tono}`}>
+            <div class:list={['fl-paso', { on: i === 0 }]} data-i={i}>
               <span class="fl-paso-n">{p.n}</span>
               <div class="fl-paso-cuerpo">
                 <h3>{p.titulo}</h3>
                 <figure class="fl-paso-foto">
                   <img src={p.img} alt={p.alt} loading="lazy" decoding="async"
-                       width={p.img.includes('04-') ? 1000 : 1500} height={p.img.includes('04-') ? 1500 : 1000} />
+                       width={p.img.includes('04-') ? 1000 : 1500}
+                       height={p.img.includes('04-') ? 1500 : 1000} />
                 </figure>
                 <p>{p.texto}</p>
-                {p.img.includes('05-') && (
-                  <div class="fl-canales-movil" aria-hidden="true">
-                    <span class="fl-canales-logos" set:html={LOGOS_CANALES} />
-                    <span class="fl-canales-txt">+ tu tienda en línea</span>
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -129,90 +162,120 @@ const pasos = [
         <div class="fl-barra" aria-hidden="true"><span id="fl-avance"></span></div>
       </div>
     </div>
+
     <div class="fl-recorrido" aria-hidden="true"></div>
   </div>
 </section>
 
 <style>
-  /* Azules saturados: el COMPLEMENTO del amarillo del corte de arriba, que es
-     el par que más vibra (ámbar contra teal) y el que hace saltar al vestido
-     terracota en vez de fundirlo, como pasaba en tierra sobre tierra.
-     En claro NO se puede: las cuatro fotos son de estudio negro y sobre crema
-     las dos que van en panel quedan como rectángulos negros flotando.
-     Todos son AZUL, sin teal. La rampa va al REVÉS de lo que pide el instinto:
-     arranca en el azul del corte de arriba (#1B3A82) y se ACLARA paso a paso
-     hacia un azul tech, así la historia gana luz conforme avanza.
-     Techo #0E78B8 y ni un tono más claro: por encima, el texto blanco del
-     panel baja de 4.5:1 de contraste y el párrafo deja de leerse.
-     El corte contra el pilar Controla (#1D1D1F) es duro a propósito — el sitio
-     ya usa cortes secos entre secciones, no costuras degradadas.
-
-     El tono se registra como color para que el cambio de paso sea un fundido
+  /* El tono se registra como color para que el cambio de paso sea un fundido
      y no un salto. Donde @property no exista, cambia de golpe: se ve igual de
      bien, solo sin la transición. */
   @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #1B3A82; }
-  @property --fl-lienzo-fondo { syntax: '<color>'; inherits: true; initial-value: #0B1734; }
 
   .fl {
     position: relative; color: #fff;
-    /* El menú flota encima: sin esto, saltar a #flujo deja el badge debajo. */
     scroll-margin-top: 80px;
     --fl-fondo: #1B3A82;
-    --fl-lienzo-fondo: #0B1734;
     background: var(--fl-fondo);
-    transition: --fl-fondo 1.1s cubic-bezier(.4,0,.2,1),
-                --fl-lienzo-fondo 1.1s cubic-bezier(.4,0,.2,1);
+    transition: --fl-fondo 1.1s cubic-bezier(.4,0,.2,1);
   }
   .fl-riel { position: relative; }
   .fl-pegado {
-    position: sticky; top: 0; min-height: 100vh;
+    position: sticky; top: 0; min-height: 100vh; min-height: 100svh;
     display: grid; grid-template-columns: 1.1fr 1fr; align-items: stretch;
   }
 
-  /* ── La imagen ── */
-  .fl-lienzo-caja { position: relative; overflow: hidden; background: var(--fl-lienzo-fondo); }
-  .fl-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
-  .fl-lienzo.vivo { display: block; }
-  .fl-lienzo.vivo ~ .fl-fallback { opacity: 0; }
-  .fl-fallback { position: absolute; inset: 0; transition: opacity .3s ease; }
-  .fl-img {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
-    opacity: 0; transition: opacity .6s ease;
+  /* ── La cinta de tarjetas ── */
+  .fl-escena {
+    position: relative; overflow: hidden;
+    padding: clamp(84px, 10vh, 120px) clamp(20px, 2.4vw, 40px) clamp(28px, 4vh, 56px);
   }
-  .fl-img.on { opacity: 1; }
-  .fl-lienzo-caja::after {
-    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: linear-gradient(100deg, transparent 58%, var(--fl-fondo));
+  .fl-carta {
+    position: absolute; margin: 0;
+    inset: clamp(84px, 10vh, 120px) clamp(20px, 2.4vw, 40px) clamp(28px, 4vh, 56px);
+    border-radius: 22px; overflow: hidden;
+    background: color-mix(in srgb, var(--tono) 45%, #05070F);
+    box-shadow: 0 30px 70px rgba(3, 8, 22, .45);
+    /* el script escribe transform/zIndex; aquí solo el estado de reposo */
+    will-change: transform;
+    backface-visibility: hidden;
   }
+  .fl-foto { width: 100%; height: 100%; display: block; }
+  .fl-foto.cover { object-fit: cover; object-position: 50% 45%; }
+  .fl-foto.contain { object-fit: contain; }
+
   .fl-num {
-    position: absolute; left: clamp(20px, 3vw, 46px); bottom: clamp(14px, 2vw, 30px); z-index: 3;
-    font-family: var(--font-display); font-size: clamp(5rem, 11vw, 9.5rem); font-weight: 800;
+    position: absolute; left: clamp(16px, 2vw, 30px); bottom: clamp(12px, 1.6vw, 24px);
+    font-family: var(--font-display); font-size: clamp(3.4rem, 7vw, 6rem); font-weight: 800;
     line-height: .8; letter-spacing: -.06em; color: transparent;
-    -webkit-text-stroke: 2px rgba(255,255,255,.26);
+    -webkit-text-stroke: 2px rgba(255,255,255,.28);
   }
 
-  /* La tira de canales solo aparece en el paso 05, que es el que habla de
-     publicar. El paso activo se marca con data-paso en la sección. */
+  /* ── La tira de canales (paso 05) ── */
   .fl-canales {
-    /* Arriba a la derecha: abajo la tapa el widget flotante de WhatsApp y
-       arriba del todo la taparía el menú. */
-    position: absolute; right: clamp(18px, 2.4vw, 34px); top: clamp(90px, 13vh, 132px);
-    z-index: 4; display: flex; align-items: center; gap: 12px;
+    position: absolute; left: 50%; transform: translateX(-50%);
+    top: clamp(14px, 2vw, 24px); z-index: 4;
+    display: flex; align-items: center; gap: 12px;
     padding: 9px 16px; border-radius: 999px;
-    background: rgba(8, 14, 30, .62); border: 1px solid rgba(255,255,255,.16);
-    backdrop-filter: blur(10px);
-    opacity: 0; transform: translateY(8px); pointer-events: none;
-    transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
+    background: rgba(8, 14, 30, .66); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(10px); white-space: nowrap;
   }
-  .fl[data-paso='4'] .fl-canales { opacity: 1; transform: none; }
   .fl-canales-logos { display: inline-flex; align-items: center; gap: 10px; }
   .fl-canales-logos :global(svg) { display: block; }
   .fl-canales-txt {
     font-size: 0.6875rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-    color: rgba(255,255,255,.72); white-space: nowrap;
+    color: rgba(255,255,255,.72);
   }
-  .fl-canales-movil { display: none; align-items: center; gap: 12px; margin-top: 12px; }
-  .fl-canales-movil .fl-canales-logos :global(svg) { display: block; }
+
+  /* ── La matriz de existencias (paso 07) ── */
+  .fl-matriz {
+    /* Arriba a la derecha: abajo la tapa el widget flotante de WhatsApp. */
+    position: absolute; right: clamp(12px, 1.6vw, 22px); top: clamp(14px, 2vw, 24px);
+    z-index: 5; width: min(340px, 76%);
+    padding: 14px 16px 12px; border-radius: 16px;
+    background: rgba(7, 12, 26, .82); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 40px rgba(0,0,0,.4);
+  }
+  .fl-matriz-cab { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+  .fl-matriz-cab strong { font-size: 0.875rem; font-weight: 800; }
+  .fl-matriz-cab span {
+    font-size: 0.625rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+  }
+  .fl-tabla { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  .fl-tabla th, .fl-tabla td { padding: 6px 4px; text-align: center; }
+  .fl-tabla thead th {
+    font-size: 0.5625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    color: rgba(255,255,255,.5);
+  }
+  .fl-tabla tbody th {
+    text-align: left; font-weight: 700; color: rgba(255,255,255,.9); white-space: nowrap;
+  }
+  .fl-tabla tbody td { font-variant-numeric: tabular-nums; color: rgba(255,255,255,.82); }
+  .fl-tabla tbody tr { border-top: 1px solid rgba(255,255,255,.09); cursor: default; }
+  .fl-tabla tbody tr:hover,
+  .fl-tabla tbody tr:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+
+  /* La celda que baja: hasta que el paso entra, se ve el número de antes. */
+  .fl-baja { position: relative; }
+  .fl-baja .fl-antes,
+  .fl-baja .fl-despues { display: inline-block; transition: opacity .3s ease, transform .3s ease; }
+  .fl-baja .fl-despues { position: absolute; inset: 0; opacity: 0; transform: translateY(-6px); color: #fff; font-weight: 800; }
+  .fl-matriz-pie {
+    margin: 10px 0 0; display: flex; align-items: center; gap: 7px;
+    font-size: 0.625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+    opacity: 0; transform: translateY(4px); transition: opacity .4s ease .25s, transform .4s ease .25s;
+  }
+  .fl-chip {
+    padding: 2px 7px; border-radius: 999px; background: rgba(255,120,120,.18);
+    border: 1px solid rgba(255,140,140,.35); color: #FFB4B4; font-weight: 800;
+  }
+  .fl.vendido .fl-baja .fl-antes { opacity: 0; transform: translateY(6px); }
+  .fl.vendido .fl-baja .fl-despues { opacity: 1; transform: none; }
+  .fl.vendido .fl-matriz-pie { opacity: 1; transform: none; }
 
   /* ── El panel ── */
   .fl-panel {
@@ -231,10 +294,10 @@ const pasos = [
   }
   .fl-titulo em { font-style: italic; font-weight: 400; color: rgba(255,255,255,.5); }
 
-  .fl-pasos { display: grid; gap: 4px; margin-top: 6px; }
+  .fl-pasos { display: grid; gap: 2px; margin-top: 6px; }
   .fl-paso {
     display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start;
-    padding: 13px 0; border-top: 1px solid rgba(255,255,255,.09);
+    padding: 11px 0; border-top: 1px solid rgba(255,255,255,.09);
     opacity: .34; transition: opacity .4s ease;
   }
   .fl-paso.on { opacity: 1; }
@@ -242,62 +305,51 @@ const pasos = [
     font-family: var(--font-display); font-size: 0.75rem; font-weight: 800;
     color: rgba(255,255,255,.55); padding-top: 3px;
   }
-  .fl-paso h3 {
-    font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0 0 3px; color: #fff;
-  }
-  .fl-paso p { margin: 0; font-size: 0.875rem; line-height: 1.55; color: rgba(255,255,255,.66); max-width: 44ch; }
+  .fl-paso h3 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin: 0 0 3px; color: #fff; }
+  .fl-paso p { margin: 0; font-size: 0.875rem; line-height: 1.55; color: rgba(255,255,255,.68); max-width: 44ch; }
   .fl-paso:not(.on) p { display: none; }
   .fl-paso.on p { animation: fl-entra .5s cubic-bezier(.2,.7,.3,1) both; }
   @keyframes fl-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .fl-paso.on p { animation: none; } }
 
-  .fl-barra { height: 2px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; margin-top: 8px; }
-  .fl-barra span { display: block; height: 100%; width: 25%; background: #fff; transition: width .35s ease; }
+  /* La foto de cada paso solo existe sin riel: con riel manda la cinta. */
+  .fl-paso-foto { display: none; margin: 0; }
+
+  .fl-barra { height: 2px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; margin-top: 10px; }
+  .fl-barra span { display: block; height: 100%; width: 14%; background: #fff; transition: width .35s ease; }
 
   /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja.
-     400vh entre 7 pasos ≈ 57vh de scroll por paso: poco más de medio giro de
-     rueda. Si se agregan pasos hay que subir esta altura o el riel los pasa de
-     corrido. Con una pantalla entera por paso se sentía pesado — el riel se
-     nota cuando cobra más scroll del que el contenido merece. */
+     400vh entre 7 pasos ≈ 57vh por paso. Si se agregan pasos hay que subirlo
+     o la cinta los pasa de corrido. */
   .fl-recorrido { height: 400vh; }
 
-  /* La foto de cada paso solo existe sin riel: con riel manda el lienzo. */
-  .fl-paso-foto { display: none; margin: 0; }
+  .vo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
   /* ── Sin riel: móvil, poco movimiento o panel que no cabe ── */
   .fl.sin-riel .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
   .fl.sin-riel .fl-recorrido { display: none; }
-  .fl.sin-riel .fl-lienzo-caja { aspect-ratio: 4 / 3; }
-  .fl.sin-riel .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, var(--fl-fondo)); }
-  .fl.sin-riel .fl-paso { opacity: 1; }
-  .fl.sin-riel .fl-paso p { display: block; }
-  .fl.sin-riel .fl-barra { display: none; }
-  .fl.sin-riel .fl-lienzo-caja { display: none; }
+  .fl.sin-riel .fl-escena { display: none; }
   .fl.sin-riel .fl-insignia { display: none; }
-  .fl.sin-riel .fl-paso { grid-template-columns: 1fr; gap: 8px; padding: 26px 0 30px; }
+  .fl.sin-riel .fl-barra { display: none; }
+  .fl.sin-riel .fl-paso { grid-template-columns: 1fr; gap: 8px; padding: 26px 0 30px; opacity: 1; }
+  .fl.sin-riel .fl-paso p { display: block; max-width: none; animation: none; }
   .fl.sin-riel .fl-paso-foto {
     display: block; margin: 12px 0 14px; border-radius: 14px; overflow: hidden;
-    background: var(--tp); box-shadow: 0 12px 34px rgba(0,0,0,.34);
+    background: rgba(0,0,0,.25); box-shadow: 0 12px 34px rgba(0,0,0,.34);
   }
   .fl.sin-riel .fl-paso-foto img { display: block; width: 100%; height: auto; }
-  .fl.sin-riel .fl-paso p { max-width: none; }
-  .fl.sin-riel .fl-canales-movil { display: flex; }
   .fl.sin-riel .fl-panel { gap: 14px; padding: clamp(32px, 8vw, 56px) clamp(20px, 6vw, 40px); }
 
   @media (max-width: 980px) {
     .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
     .fl-recorrido { display: none; }
-    .fl-lienzo-caja { aspect-ratio: 4 / 3; }
-    .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, var(--fl-fondo)); }
-    .fl-paso { opacity: 1; grid-template-columns: 1fr; gap: 8px; padding: 26px 0 30px; }
-    .fl-paso p { display: block; max-width: none; }
-    .fl-canales-movil { display: flex; }
-    .fl-barra { display: none; }
-    .fl-lienzo-caja { display: none; }
+    .fl-escena { display: none; }
     .fl-insignia { display: none; }
+    .fl-barra { display: none; }
+    .fl-paso { grid-template-columns: 1fr; gap: 8px; padding: 26px 0 30px; opacity: 1; }
+    .fl-paso p { display: block; max-width: none; animation: none; }
     .fl-paso-foto {
       display: block; margin: 12px 0 14px; border-radius: 14px; overflow: hidden;
-      background: var(--tp); box-shadow: 0 12px 34px rgba(0,0,0,.34);
+      background: rgba(0,0,0,.25); box-shadow: 0 12px 34px rgba(0,0,0,.34);
     }
     .fl-paso-foto img { display: block; width: 100%; height: auto; }
     .fl-panel { gap: 14px; padding: clamp(32px, 8vw, 56px) clamp(20px, 6vw, 40px); }
@@ -305,247 +357,74 @@ const pasos = [
   @media (prefers-reduced-motion: reduce) {
     .fl-pegado { position: static; min-height: 0; }
     .fl-recorrido { display: none; }
+    .fl-carta { transition: none !important; }
   }
 </style>
 
 <script>
   const sec = document.getElementById('flujo');
-  const cv = document.getElementById('fl-lienzo') as HTMLCanvasElement | null;
-  if (sec && cv && sec.dataset.imgs && sec.dataset.imgs !== '[]') {
-    // Cada toma trae su encuadre: src, cuánto se acerca, qué punto va al
-    // centro y el tono de fondo con el que se funde.
-    const imgs = JSON.parse(sec.dataset.imgs || '[]');
-    const aRGB = (h: string) =>
-      [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-    // El relleno del lienzo es el mismo color de la sección pero apagado, para
-    // que el negro de estudio de las fotos no choque contra el color.
-    const OSCURO = 0.4;
-    const oscuro = (h: string) =>
-      '#' + aRGB(h).map((v) => Math.round(v * OSCURO * 255).toString(16).padStart(2, '0')).join('');
+  if (sec) {
+    const tonos = JSON.parse(sec.dataset.tonos || '[]');
+    const cartas = [...sec.querySelectorAll<HTMLElement>('.fl-carta')];
     const pasos = [...sec.querySelectorAll<HTMLElement>('.fl-paso')];
-    const fotos = [...sec.querySelectorAll<HTMLElement>('.fl-img')];
-    const numEl = document.getElementById('fl-num');
     const avance = document.getElementById('fl-avance');
+    const riel = sec.querySelector<HTMLElement>('.fl-riel');
+    const pegado = sec.querySelector<HTMLElement>('.fl-pegado');
     const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let actual = 0;
+    const N = cartas.length;
+    let actual = -1;
 
-    // Estado visible del paso (funciona con y sin WebGL)
     const marcar = (k: number) => {
       if (k === actual) return;
       actual = k;
       pasos.forEach((p, i) => p.classList.toggle('on', i === k));
-      fotos.forEach((f, i) => f.classList.toggle('on', i === k));
-      if (numEl) numEl.textContent = imgs[k] ? String(k + 1).padStart(2, '0') : '01';
-      sec.dataset.paso = String(k);
-      if (imgs[k]) {
-        sec.style.setProperty('--fl-fondo', imgs[k].tono);
-        sec.style.setProperty('--fl-lienzo-fondo', oscuro(imgs[k].tono));
+      if (tonos[k]) sec.style.setProperty('--fl-fondo', tonos[k]);
+      if (avance) avance.style.width = `${((k + 1) / N) * 100}%`;
+      // el descuento de inventario solo ocurre al llegar al último paso
+      sec.classList.toggle('vendido', k === N - 1);
+    };
+
+    // La cinta: la tarjeta que se va baja, la que entra llega desde arriba.
+    // La saliente va un poco más lenta (88 vs 100) para que la nueva la cubra
+    // al pasar — sin eso las dos se mueven parejo y no se lee como tarjetas.
+    const colocar = (f: number) => {
+      for (let i = 0; i < N; i++) {
+        const d = f - i;
+        const fuera = Math.abs(d) > 1.25;
+        const c = cartas[i];
+        c.style.visibility = fuera ? 'hidden' : 'visible';
+        if (fuera) continue;
+        const y = (d >= 0 ? d * 88 : d * 100);
+        const esc = 1 - Math.min(Math.abs(d), 1) * 0.05;
+        c.style.transform = `translate3d(0, ${y.toFixed(2)}%, 0) scale(${esc.toFixed(3)})`;
+        c.style.zIndex = String(i + 1);
       }
-      if (avance) (avance as HTMLElement).style.width = `${((k + 1) / imgs.length) * 100}%`;
-      window.dispatchEvent(new CustomEvent('fl:paso', { detail: k }));
     };
 
-    // El riel: el scroll dentro del recorrido elige el paso.
-    const riel = sec.querySelector<HTMLElement>('.fl-riel');
-    const pegado = sec.querySelector<HTMLElement>('.fl-pegado');
-    const recorrido = sec.querySelector<HTMLElement>('.fl-recorrido');
-    const alturaRiel = () => riel?.offsetHeight || 0;
+    const cabe = () => window.innerHeight >= 620 && window.innerWidth > 980 && !menos;
+    const revisarCabe = () => { sec.classList.toggle('sin-riel', !cabe()); return cabe(); };
 
-    const revisarCabe = () => {
-      // Un riel que secuestra el scroll para enseñar algo cortado es peor que
-      // no tenerlo: si el panel no cabe entero, se apaga.
-      const cabe = window.innerHeight >= 620 && window.innerWidth > 980 && !menos;
-      sec.classList.toggle('sin-riel', !cabe);
-      return cabe;
-    };
-
-    let ticking = false;
+    let pidiendo = false;
     const alScroll = () => {
-      if (ticking) return;
-      ticking = true;
+      if (pidiendo) return;
+      pidiendo = true;
       requestAnimationFrame(() => {
-        ticking = false;
-        if (sec.classList.contains('sin-riel')) return;
-        // Se mide desde el RIEL, no desde la sección: la sección ahora arranca
-        // con la entrada, y medir desde ahí daría el recorrido ya empezado —
-        // el flujo abriría en el paso 2 en vez del 1.
-        const top = (riel || sec).getBoundingClientRect().top;
-        const total = alturaRiel() - (pegado?.offsetHeight || window.innerHeight);
+        pidiendo = false;
+        if (sec.classList.contains('sin-riel') || !riel || !pegado) return;
+        const total = riel.offsetHeight - pegado.offsetHeight;
         if (total <= 0) return;
-        const p = Math.min(1, Math.max(0, -top / total));
-        marcar(Math.min(imgs.length - 1, Math.floor(p * imgs.length * 0.999)));
+        const p = Math.min(1, Math.max(0, -riel.getBoundingClientRect().top / total));
+        const f = p * (N - 1);
+        colocar(f);
+        marcar(Math.round(f));
       });
     };
 
     revisarCabe();
+    colocar(0);
+    marcar(0);
     window.addEventListener('scroll', alScroll, { passive: true });
     window.addEventListener('resize', () => { revisarCabe(); alScroll(); });
-
-    // ── El lienzo: mismo shader que /extraordinarios ──
-    if (!menos) {
-      const gl = cv.getContext('webgl', { antialias: true, alpha: false });
-      if (gl) {
-        const VERT = `attribute vec2 p; varying vec2 uv;
-          void main(){ uv = p*0.5+0.5; gl_Position = vec4(p,0.0,1.0); }`;
-        const FRAG = `precision highp float;
-          varying vec2 uv;
-          uniform sampler2D texA, texB;
-          uniform float mezcla, tiempo, razonLienzo, razonA, razonB, zoomA, zoomB;
-          uniform vec2 focoA, focoB;
-          uniform vec3 fondo;
-          float hash(vec2 v){ return fract(sin(dot(v, vec2(127.1,311.7)))*43758.5453); }
-          float ruido(vec2 v){ vec2 i=floor(v), f=fract(v); vec2 u=f*f*(3.0-2.0*f);
-            return mix(mix(hash(i),hash(i+vec2(1,0)),u.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x), u.y); }
-
-          // Encaja la foto SIN deformarla: escala el eje que sobra en lugar de
-          // estirar el que falta. zoom acerca (recortando) y foco dice qué
-          // punto de la foto queda al centro. Lo que cae fuera se pinta con el
-          // fondo de la sección — nunca con el pixel del borde repetido, que era
-          // el origen de las rayas verticales.
-          vec2 encuadre(vec2 c, float rImg, vec2 foco, float z){
-            vec2 k = rImg > razonLienzo ? vec2(1.0, rImg/razonLienzo) : vec2(razonLienzo/rImg, 1.0);
-            // z negativo se lee como fracción de "llenar el lienzo": -1 llena
-            // exacto y -0.87 deja un respiro arriba y abajo. Va relativo, no en
-            // números fijos, porque el alto del lienzo cambia con la pantalla y
-            // un encuadre fijo le corta la cabeza a la modelo en la mitad de
-            // los monitores. Ese respiro también la baja del menú, que flota
-            // encima de la sección.
-            float zz = z > 0.0 ? z : max(k.x, k.y) * (-z);
-            return (c - 0.5) * k / zz + foco; }
-          // El borde de la foto no puede ser una línea recta contra el tono de
-          // la sección: se le da pluma para que la oscuridad de la foto y la
-          // de la sección sean la misma. La pluma es angosta a propósito —
-          // en el paso de los colorways las prendas de los extremos casi tocan
-          // el borde y no se pueden apagar.
-          float dentro(vec2 q){
-            vec2 d = min(q, 1.0 - q);
-            vec2 f = smoothstep(vec2(0.0), vec2(0.028), d);
-            return f.x * f.y; }
-
-          void main(){
-            vec2 c = uv;
-            c += (ruido(c*3.0 + tiempo*0.05) - 0.5) * 0.005;
-            float m = smoothstep(0.0, 1.0, mezcla);
-            float f = sin(m*3.14159);
-            vec2 emp = vec2(0.14,-0.08) * (ruido(c*4.5 + tiempo*0.03) - 0.5);
-            vec2 ca = encuadre(c + emp*f, razonA, focoA, zoomA);
-            vec2 cb = encuadre(c - emp*f, razonB, focoB, zoomB);
-            float ab = 0.009*f;
-            vec3 a = mix(fondo, vec3(texture2D(texA, ca+vec2(ab,0.0)).r, texture2D(texA, ca).g, texture2D(texA, ca-vec2(ab,0.0)).b), dentro(ca));
-            vec3 b = mix(fondo, vec3(texture2D(texB, cb+vec2(ab,0.0)).r, texture2D(texB, cb).g, texture2D(texB, cb-vec2(ab,0.0)).b), dentro(cb));
-            vec3 col = mix(a, b, m);
-            col += (hash(uv*900.0 + tiempo)-0.5)*0.024;
-            gl_FragColor = vec4(col, 1.0); }`;
-        const comp = (t: number, src: string) => {
-          const sh = gl.createShader(t)!; gl.shaderSource(sh, src); gl.compileShader(sh);
-          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error('shader');
-          return sh; };
-        try {
-          const pr = gl.createProgram()!;
-          gl.attachShader(pr, comp(gl.VERTEX_SHADER, VERT));
-          gl.attachShader(pr, comp(gl.FRAGMENT_SHADER, FRAG));
-          gl.linkProgram(pr);
-          if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error('link');
-          gl.useProgram(pr);
-          const bf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bf);
-          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-          const lp = gl.getAttribLocation(pr, 'p');
-          gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
-          const u = (n: string) => gl.getUniformLocation(pr, n);
-          const uM = u('mezcla'), uT = u('tiempo'), uRL = u('razonLienzo'), uRA = u('razonA'), uRB = u('razonB');
-          const uZA = u('zoomA'), uZB = u('zoomB'), uFA = u('focoA'), uFB = u('focoB'), uFondo = u('fondo');
-          gl.uniform1i(u('texA'), 0); gl.uniform1i(u('texB'), 1);
-
-          const nuevaTex = () => {
-            const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, t);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([11,11,18,255]));
-            return t; };
-          const texA = nuevaTex(), texB = nuevaTex();
-          // Encuadre vivo: A es lo que se ve, B lo que entra. La razón la mide
-          // la propia imagen al cargar, así una foto que se cambie de tamaño no
-          // rompe nada.
-          let rA = 1.5, rB = 1.5;
-          let zA = imgs[0].zoom, zB = zA;
-          let fA = imgs[0].foco, fB = fA;
-          let colA = aRGB(imgs[0].tono).map((v) => v * OSCURO), colB = colA;
-
-          const cargar = (url: string, tex: WebGLTexture) => new Promise<number>((ok) => {
-            const im = new Image();
-            im.onload = () => {
-              gl.bindTexture(gl.TEXTURE_2D, tex);
-              gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-              ok(im.naturalWidth / im.naturalHeight); };
-            im.onerror = () => ok(1.5);
-            im.src = url; });
-
-          const medir = () => {
-            const r = cv.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            cv.width = Math.max(1, Math.round(r.width * dpr));
-            cv.height = Math.max(1, Math.round(r.height * dpr));
-            gl.viewport(0, 0, cv.width, cv.height);
-            gl.uniform1f(uRL, cv.width / Math.max(1, cv.height)); };
-
-          let mezcla = 0, animando = false, vistoPor = 0;
-          const t0 = performance.now();
-          const pintar = () => {
-            gl.uniform1f(uT, (performance.now() - t0) / 1000);
-            gl.uniform1f(uM, mezcla); gl.uniform1f(uRA, rA); gl.uniform1f(uRB, rB);
-            gl.uniform1f(uZA, zA); gl.uniform1f(uZB, zB);
-            gl.uniform2f(uFA, fA[0], fA[1]); gl.uniform2f(uFB, fB[0], fB[1]);
-            // El vacío de la foto se pinta del mismo tono que la sección, y el
-            // tono viaja junto con la mezcla: no hay costura entre los dos.
-            const q = Math.max(0, Math.min(1, mezcla));
-            gl.uniform3f(uFondo, colA[0] + (colB[0] - colA[0]) * q,
-                                 colA[1] + (colB[1] - colA[1]) * q,
-                                 colA[2] + (colB[2] - colA[2]) * q);
-            gl.drawArrays(gl.TRIANGLES, 0, 3);
-            requestAnimationFrame(pintar); };
-
-          gl.activeTexture(gl.TEXTURE0);
-          cargar(imgs[0].src, texA).then((r) => { rA = r; rB = r;
-            gl.activeTexture(gl.TEXTURE1);
-            return cargar(imgs[0].src, texB); }).then(() => {
-              medir(); cv.classList.add('vivo');
-              gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texA);
-              gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texB);
-              requestAnimationFrame(pintar); });
-
-          if ('ResizeObserver' in window) new ResizeObserver(() => medir()).observe(cv);
-          window.addEventListener('resize', medir);
-
-          let pendiente: number | null = null;
-          window.addEventListener('fl:paso', (async (e: Event) => {
-            const k = (e as CustomEvent).detail as number;
-            if (animando) { pendiente = k; return; }
-            if (k === vistoPor) return;
-            animando = true;
-            gl.activeTexture(gl.TEXTURE1);
-            rB = await cargar(imgs[k].src, texB);
-            zB = imgs[k].zoom; fB = imgs[k].foco; colB = aRGB(imgs[k].tono).map((v) => v * OSCURO);
-            const ini = performance.now(), dur = 620;
-            const paso = () => {
-              const t = Math.min(1, (performance.now() - ini) / dur);
-              mezcla = t;
-              if (t < 1) requestAnimationFrame(paso);
-              else { gl.activeTexture(gl.TEXTURE0);
-                cargar(imgs[k].src, texA).then((r) => {
-                  rA = r; zA = zB; fA = fB; colA = colB;
-                  mezcla = 0; vistoPor = k; animando = false;
-                  // atender el último paso que llegó mientras animaba
-                  if (pendiente !== null) {
-                    const q = pendiente; pendiente = null;
-                    if (q !== vistoPor) window.dispatchEvent(new CustomEvent('fl:paso', { detail: q }));
-                  } }); } };
-            requestAnimationFrame(paso);
-          }) as EventListener);
-        } catch (err) { /* sin shader queda el fundido de imágenes */ }
-      }
-    }
+    alScroll();
   }
 </script>
