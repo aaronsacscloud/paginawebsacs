@@ -1073,7 +1073,16 @@ export default function LeadsTab() {
               abierta. La jerarquía queda: filtro de todo → en qué pestaña
               estoy → buscar dentro de ella. */}
           {!esMovil && (
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
+              /* La jerarquía NO se resuelve con el orden: con los dos renglones
+                 al mismo peso, filtros y pestañas se leían como dos tiras
+                 gemelas peleándose. Esta es otra CAPA: banda lila a sangre en
+                 la tarjeta, con su propio fondo y su regla de cierre, de
+                 modo que las pestañas —que van debajo— sigan siendo lo más
+                 fuerte de la pantalla. Recorta toda la sección; las pestañas
+                 dicen dónde estás dentro de lo ya recortado. */
+              margin: '-18px -18px 14px', padding: '11px 18px', background: '#faf8ff',
+              borderBottom: '1px solid #ece7f8', borderRadius: '12px 12px 0 0' }}>
               <FiltroDesplegable qd={QD.cuando} valor={cuando === 'todo' ? '' : cuando} onElegir={v => setCuando(v || 'todo')} isMobile={false} />
               <FiltroDesplegable qd={QD.canal} valor={origen === 'todo' ? '' : origen} onElegir={v => setOrigen(v || 'todo')} isMobile={false} />
               {/* El valor 'g:<grupo>' viene de los chips de arriba, no de este
@@ -1169,6 +1178,29 @@ export default function LeadsTab() {
                 </>
               )}
               </div>
+              {/* ★VIP y las vistas guardadas SALIERON de la tira de pestañas.
+                  Son formas de recortar, no de navegar, así que su sitio es
+                  esta banda; y de paso la tira deja de desbordarse —con nueve
+                  pestañas más estos dos, «No interesados» y «Todos» quedaban
+                  tapados detrás de ellos en 1560 px—. */}
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
+                  style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e4e0ee',
+                    background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
+                    borderRadius: 9, padding: '0 12px', height: 36, fontSize: '0.78rem', fontWeight: soloVIP ? 800 : 600,
+                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
+                {vistasLeads.length > 0 && (
+                <select value={vistaId} onChange={e => {
+                  const v = vistasLeads.find(x => x.id === e.target.value);
+                  setVistaId(e.target.value);
+                  setConds(v?.config?.condiciones || []);
+                  setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
+                }} style={{ height: 36, border: '1px solid #e4e0ee', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 190 }}>
+                  <option value="">Vistas guardadas…</option>
+                  {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
+                </select>
+                )}
+              </span>
             </div>
           )}
 
@@ -1195,32 +1227,6 @@ export default function LeadsTab() {
                 </button>
               );
             })}
-            {/* Las vistas y los filtros viven DESPUÉS de la última pestaña, no
-                debajo: abajo se saturaba y el buscador competía con ellos.
-                Aquí se leen como lo que son — formas de recortar la pestaña en
-                la que ya estás. */}
-            {/* Pegado a la orilla derecha: con nueve pestañas la fila se
-                desborda en pantallas angostas y este bloque se iba fuera de
-                vista — o sea, las vistas guardadas dejaban de existir sin
-                avisar. Sticky las mantiene siempre a la mano. */}
-            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, paddingLeft: 30, flexShrink: 0, position: 'sticky', right: 0, background: 'linear-gradient(90deg, rgba(255,255,255,0), #fff 26px)' }}>
-              <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
-                style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
-                  background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
-                  borderRadius: 9, padding: '7px 12px', fontSize: '0.79rem', fontWeight: soloVIP ? 800 : 600,
-                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
-              {vistasLeads.length > 0 && (
-              <select value={vistaId} onChange={e => {
-                const v = vistasLeads.find(x => x.id === e.target.value);
-                setVistaId(e.target.value);
-                setConds(v?.config?.condiciones || []);
-                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
-              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
-                <option value="">Vistas guardadas…</option>
-                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
-              </select>
-              )}
-            </span>
           </div>}
 
           {!esMovil && etapa === 'contactados' && (() => {
