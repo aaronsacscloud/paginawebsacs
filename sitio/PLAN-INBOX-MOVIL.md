@@ -38,7 +38,19 @@ palabra. Si al revisar aparece algo más, se regresa antes de avanzar.
 
 ---
 
-## En cola: agendar desde el Inbox (móvil y web)
+## HECHO (2026-08-31): agendar desde el Inbox (móvil y web)
+
+Commits `4e665f01` y `a1396b96`. Las tres preguntas de análisis quedaron así:
+endpoints → `/api/scheduling/{available-slots,book}`; WhatsApp SÍ permite
+listas interactivas (10 filas, título de 24 caracteres); y la confirmación vive
+en `book.ts`, así que la ruta automática reserva por ahí en vez de abrir un
+camino paralelo. Detalle en la memoria `agenda-inbox-whatsapp`.
+
+Lo único que NO se probó de punta a punta es el toque real del cliente: hacerlo
+crea una reunión de verdad, con correo al host y evento en el calendario. Las
+piezas sí están verificadas por separado.
+
+## El pedido original: agendar desde el Inbox (móvil y web)
 
 Pedido del usuario (2026-08-28, después de los 8 puntos de arriba). Un botón
 de **agenda** en la conversación, con dos caminos:
