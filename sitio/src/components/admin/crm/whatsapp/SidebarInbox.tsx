@@ -23,6 +23,10 @@ const BANDEJAS = [
   { id: 'no_leidas', label: 'No contestadas', Ico: IcoBurbuja },
   { id: 'sin_respuesta', label: 'Sin respuesta de ellos', Ico: IcoBurbuja },
   { id: 'pospuestas', label: 'Pospuestas', Ico: IcoCalendario },
+  // El filtro existía en el backend y NO había cómo llegar a él: sacabas una
+  // conversación del inbox y no volvías a verla nunca, aunque el código sí
+  // sabía devolverla. Esconder sin poder recuperar se siente como borrar.
+  { id: 'internas', label: 'Fuera del inbox', Ico: IcoInbox },
 ];
 
 const fila = (activo: boolean): React.CSSProperties => ({

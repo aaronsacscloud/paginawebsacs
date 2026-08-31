@@ -248,9 +248,11 @@ const _GET: APIRoute = async ({ request, url }) => {
     (!!c._extra?.next_followup && c._extra.next_followup <= hoy && (!c.asignado_a || (user && c.asignado_a === user.id))) ||
     (!!c.ventana_expira_at && c.ultima_direccion === 'entrante' && (new Date(c.ventana_expira_at).getTime() - Date.now()) < 4 * 3600e3 && new Date(c.ventana_expira_at).getTime() > Date.now())
   );
-  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, por_etapa: {} as Record<string, number> };
+  const counts: any = { todas: 0, mias: 0, sin_asignar: 0, no_leidas: 0, sin_respuesta: 0, pospuestas: 0, accion: 0, internas: 0, por_etapa: {} as Record<string, number> };
   for (const c of todas) {
-    if (c.interna) continue;   // no cuentan en ninguna bandeja: no son trabajo
+    // No cuentan en ninguna bandeja porque no son trabajo, pero SÍ se cuentan
+    // aparte: esconder algo sin dejar ver cuánto escondiste es un agujero.
+    if (c.interna) { counts.internas++; continue; }
     /* Un descalificado tampoco es trabajo. Alguien ya lo revisó y lo descartó,
        así que sumarlo a «sin respuesta» o «no contestadas» pide contestarle a
        quien ya se decidió que no. Se ve en su vista y en ningún otro lado —

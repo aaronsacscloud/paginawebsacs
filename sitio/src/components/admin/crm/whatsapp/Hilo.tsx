@@ -874,18 +874,20 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
           <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
             style={{ display: 'block', padding: movil ? '13px 20px' : '9px 12px', fontSize: movil ? 15 : 12, color: C.g700, fontWeight: movil ? 500 : 600, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
-          {/* MARCAR COMO INTERNA. El número propio recibe los avisos del CRM y
-              el de pruebas las respuestas automáticas: encabezaban «Sin
-              respuesta» —nadie le contesta a un robot— y empujaban hacia abajo
-              a quien sí esperaba. No borra ni bloquea nada: la conversación
-              sigue ahí y se ve pidiendo la vista «Internas». */}
+          {/* SACAR DEL INBOX. Nació para los números propios —el del CRM y el
+              de pruebas encabezaban «Sin respuesta», porque nadie le contesta a
+              un robot— pero sirve igual para lo que no es un lead: el cliente
+              de un cliente preguntando de facturación. Se llamaba «Marcar como
+              interna», que no es lo que busca quien quiere quitarse un chat de
+              encima. No borra ni bloquea: la conversación queda en la bandeja
+              «Fuera del inbox» y vuelve con un clic. */}
           <button onClick={async () => {
             setAbierto(false);
             const r = await api.accionKapso?.({ accion: 'interna', valor: !conv.interna });
             if (r?.error) alert(r.error); else api.refrescar?.();
           }}
             style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>
-            {conv.interna ? 'Quitar de internas (vuelve al inbox)' : 'Marcar como interna (sacar del inbox)'}
+            {conv.interna ? 'Regresar al inbox' : 'Sacar del inbox (no es trabajo)'}
           </button>
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'resincronizar' }); if (r?.error) alert(r.error); }}
@@ -897,8 +899,8 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             <button onClick={async () => { setAbierto(false); if (!await confirmar('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Bloquear número (spam)</button>
           )}
-          <button onClick={async () => { setAbierto(false); if (!await confirmar('BORRADO GDPR: se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número. No se puede deshacer. ¿Continuar?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Borrar datos del cliente (GDPR)</button>
+          <button onClick={async () => { setAbierto(false); if (!await confirmar('Se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número (borrado GDPR). NO se puede deshacer.\n\nSi solo quieres quitártelo de encima, usa «Sacar del inbox», que sí se revierte.\n\n¿Eliminar de todos modos?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Eliminar chat y todo su historial</button>
         </span>
       )}
     </span>
