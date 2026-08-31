@@ -12,6 +12,7 @@ import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 // gente de etapa.
 import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { confirmar } from '../../../lib/ui/confirmar';
 import { lifecycleDe, LIFECYCLE } from '../../../lib/crm/lifecycle';
 import { CSS_TABLA, T, DIAS_ATORADO as DIAS_ATORADO_CRM } from '../../../lib/crm/tabla.estilo';
@@ -169,6 +170,12 @@ const VISTAS = [
   { v: 'no_interesados', l: 'No interesados' },
   { v: 'todos', l: 'Todos' },
 ];
+/* En la tira solo van las SEIS del embudo, que es el trabajo de todos los
+   días. «No interesados» y «Todos» —a las que se entra de vez en cuando— más
+   las vistas guardadas viven en «Ver más», con su cuenta cada una: el
+   desplegable no esconde nada, dice cuántos hay antes de entrar. */
+const VISTAS_TIRA = VISTAS.filter(v => !['no_interesados', 'todos'].includes(v.v));
+const VISTAS_MAS = VISTAS.filter(v => ['no_interesados', 'todos'].includes(v.v));
 
 // Qué filtro compone cada pestaña, en términos de los DOS campos del modelo:
 // lifecycle_stage (tipo de lead) + estatus_lead (el contacto). Se enseña bajo
@@ -338,7 +345,7 @@ export default function LeadsTab() {
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
   // Segmentar sin mover: el chip filtra la vista actual, no cambia de pestaña.
-  const [soloVIP, setSoloVIP] = useState(false);
+  const [etiquetaF, setEtiquetaF] = useState('');   // nombre de la etiqueta, '' = cualquiera
   const [etapa, setEtapa] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 899px)').matches ? 'todos' : 'nuevos');
   const [origen, setOrigen] = useState('todo');
@@ -606,8 +613,8 @@ export default function LeadsTab() {
       return pausaF === 'activa' ? (f != null && f > Date.now()) : (f != null && f <= Date.now());
     });
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
-    // El chip VIP filtra DENTRO de la pestaña en la que estás.
-    if (soloVIP) r = r.filter(esVIP);
+    // La etiqueta filtra DENTRO de la pestaña en la que estás.
+    if (etiquetaF) r = r.filter((c: any) => (c.etiquetas || []).some((e: any) => String(e?.nombre || '').trim() === etiquetaF));
     // En las pestañas de campaña manda la fecha REAL de llegada (la del
     // anuncio si existe), lo más reciente arriba: es la bandeja del día.
     // PERO solo cuando no se pidió otro orden: este re-ordenamiento era
@@ -619,55 +626,23 @@ export default function LeadsTab() {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
-  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, soloVIP]);
+  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, etiquetaF]);
 
-  /* AGRUPACIÓN EN EL ESCRITORIO. La inteligencia de «qué está atorado» existía
-     solo en el teléfono: la pantalla grande —donde de verdad se trabaja— era
-     una lista plana de 333 renglones sin una sola ancla. Bajando cien filas se
-     pierde el sitio, se hace scroll de más y las de abajo no se atienden nunca.
-     Aquí se calcula qué rótulo va ANTES de cada fila; la fila en sí no cambia.
-     No se agrupa cuando el usuario pidió otro orden —agrupar por antigüedad
-     pisaría justo el criterio que eligió— ni en las pestañas donde el grupo no
-     significa nada. */
-  const { filasTabla, rotuloAntes } = useMemo(() => {
-    /* El orden que pidió la persona manda sobre la agrupación: si eligió una
-       columna, es porque quiere ver la lista por ESO. */
-    if (ordenCol) {
-      const val = VALOR_COL[ordenCol.k] || (() => 0);
-      const filas = [...lista].sort((a: any, b: any) => {
-        const x = val(a), y = val(b);
-        const cmp = typeof x === 'string' ? x.localeCompare(y) : (x - y);
-        return ordenCol.desc ? -cmp : cmp;
-      });
-      return { filasTabla: filas, rotuloAntes: new Map<string, { t: string; n: number }>() };
-    }
-    const m = new Map<string, { t: string; n: number }>();
-    if (orden !== 'reciente' || ['no_interesados', 'todos', 'rezagados', 'oportunidad'].includes(etapa)) {
-      return { filasTabla: lista, rotuloAntes: m };
-    }
-    const cubo = (c: any) => { const d = diasDeLead(c); return d >= DIAS_ATORADO ? 'Atorados' : d === 0 ? 'Hoy' : 'Esta semana'; };
-    const cuenta: Record<string, number> = {};
-    for (const c of lista) cuenta[cubo(c)] = (cuenta[cubo(c)] || 0) + 1;
-    // Un solo grupo no es agrupación: es un rótulo de adorno sobre la lista
-    // entera. Con todo al día, la tabla se queda callada.
-    if (Object.keys(cuenta).length < 2) return { filasTabla: lista, rotuloAntes: m };
-    /* Y los atorados SUBEN, como en el teléfono. Agrupar sin reordenar deja
-       lo urgente donde estaba —abajo, después de lo de hoy— y entonces el
-       rótulo solo describe el desorden en vez de arreglarlo. Dentro de
-       Atorados manda el que lleva más tiempo esperando. */
-    const ORDEN_G = ['Atorados', 'Hoy', 'Esta semana'];
-    const filas = [...lista].sort((a: any, b: any) => {
-      const ga = ORDEN_G.indexOf(cubo(a)), gb = ORDEN_G.indexOf(cubo(b));
-      if (ga !== gb) return ga - gb;
-      return cubo(a) === 'Atorados' ? diasDeLead(b) - diasDeLead(a) : 0;
+  /* La tabla va PLANA. Tenía rótulos de grupo —Atorados · Hoy · Esta
+     semana— que partían la lista en tres y subían lo atorado; con la banda de
+     filtros arriba eran una tercera capa de estructura dentro de la propia
+     tabla, y saturaban. Lo atorado no se pierde de vista: cada fila trae sus
+     «N d sin tocar» en rojo debajo de la fecha, y quien quiera esa lista la
+     pide con el filtro «Sin contacto». Aquí solo manda el orden. */
+  const filasTabla = useMemo(() => {
+    if (!ordenCol) return lista;
+    const val = VALOR_COL[ordenCol.k] || (() => 0);
+    return [...lista].sort((a: any, b: any) => {
+      const x = val(a), y = val(b);
+      const cmp = typeof x === 'string' ? x.localeCompare(y) : (x - y);
+      return ordenCol.desc ? -cmp : cmp;
     });
-    let previo = '';
-    for (const c of filas) {
-      const g = cubo(c);
-      if (g !== previo) { m.set(c.id, { t: g, n: cuenta[g] }); previo = g; }
-    }
-    return { filasTabla: filas, rotuloAntes: m };
-  }, [lista, etapa, orden, ordenCol]);
+  }, [lista, ordenCol]);
 
   /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
      por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
@@ -731,10 +706,45 @@ export default function LeadsTab() {
     return [...set].sort().reverse();
   }, [rows]);
 
+  /* Cuántos caen en cada vista guardada. Un desplegable de vistas sin número
+     obliga a entrar a cada una para saber si tiene algo: con esto se decide
+     desde afuera. Mismo criterio que los contadores de las pestañas. */
+  const conteoVistas = useMemo(() => {
+    const base = (rows || []).filter((c: any) => !c.contacto_de && pestanaDe(c) !== null);
+    const out: Record<string, number> = {};
+    for (const v of vistasLeads) {
+      const cs = (v.config?.condiciones || []).filter((k: any) => k?.campo);
+      out[v.id] = cs.length
+        ? base.filter((c: any) => cumpleCondsLead(c, cs, v.config?.logica === 'OR' ? 'OR' : 'AND')).length
+        : base.length;
+    }
+    return out;
+  }, [rows, vistasLeads]);
+
+  const [menuVistas, setMenuVistas] = useState(false);
+  const btnMas = useRef<HTMLButtonElement | null>(null);
+
   /* Los cuatro filtros de diario, con la forma que pide el control del
      estándar. Se arman aquí y no fuera del componente porque uno de ellos
      —los meses— sale de los datos que están cargados. */
+  /* Todas las etiquetas que de verdad existen en los datos. VIP es UNA de
+     ellas; tenerla como botón aparte obligaba a inventar un control nuevo
+     cada vez que naciera otra etiqueta. */
+  const ETIQUETAS = useMemo(() => {
+    const set = new Map<string, number>();
+    for (const c of rows || []) for (const e of (c.etiquetas || [])) {
+      const n = String(e?.nombre || '').trim();
+      if (n) set.set(n, (set.get(n) || 0) + 1);
+    }
+    return [...set.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
+  }, [rows]);
+
   const QD = useMemo(() => ({
+    etiqueta: {
+      key: 'etiqueta', label: 'Etiqueta',
+      options: ETIQUETAS.map(e => ({ v: e, l: e })),
+      apply: () => true,
+    },
     cuando: {
       key: 'cuando', label: 'Cuándo llegó',
       options: [
@@ -763,7 +773,7 @@ export default function LeadsTab() {
       options: [{ v: '7', l: 'Más de 7 días' }, { v: '14', l: 'Más de 14 días' }, { v: '30', l: 'Más de 30 días' }],
       apply: () => true,
     },
-  }), [meses]);
+  }), [meses, ETIQUETAS]);
 
   // Lo aplicado, en pastillas: un filtro que no se ve es un filtro que se
   // olvida, y luego "faltan leads" es en realidad un mes puesto la semana pasada.
@@ -784,10 +794,11 @@ export default function LeadsTab() {
     (estatusF && estatusF.startsWith('g:')) && { k: 'estg', l: 'Funnel filtrado', quitar: () => setEstatusF('') },
     reunionF && { k: 'reu', l: `Reunión: ${({ agendada: 'agendada', asistio: 'asistió', no_asistio: 'no asistió', cancelada: 'cancelada', sin_reagendar: 'sin reagendar', nunca: 'nunca' } as any)[reunionF]}`, quitar: () => setReunionF('') },
     pausaF && { k: 'pau', l: pausaF === 'activa' ? 'En pausa' : 'Pausa vencida', quitar: () => setPausaF('') },
+    etiquetaF && { k: 'etq', l: `Etiqueta: ${etiquetaF}`, quitar: () => setEtiquetaF('') },
     conds.length > 0 && { k: 'conds', l: vistaId ? `Vista: ${vistasLeads.find(v => v.id === vistaId)?.nombre || 'guardada'}` : `${conds.length} condición${conds.length === 1 ? '' : 'es'}`, quitar: () => { setConds([]); setVistaId(''); } },
   ].filter(Boolean) as { k: string; l: string; quitar: () => void }[];
   const nFiltros = chips.length;
-  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setPausaF(''); setConds([]); setVistaId(''); };
+  const limpiarFiltros = () => { setCuando('todo'); setDesde(''); setHasta(''); setOrigen('todo'); setSinContacto(''); setEstatusF(''); setReunionF(''); setPausaF(''); setEtiquetaF(''); setConds([]); setVistaId(''); };
 
   if (rows === null) return <Cargando texto="Cargando leads…" />;
 
@@ -1091,6 +1102,10 @@ export default function LeadsTab() {
                   fino que nadie eligió. */}
               <FiltroDesplegable qd={QD.estatus} valor={estatusF.startsWith('g:') ? '' : estatusF} onElegir={setEstatusF} isMobile={false} />
               <FiltroDesplegable qd={QD.sinContacto} valor={sinContacto} onElegir={setSinContacto} isMobile={false} />
+              {/* VIP era un botón propio con su estrella. Es UNA etiqueta entre
+                  varias, así que se filtra como lo que es: por etiqueta. Con la
+                  otra forma, cada etiqueta nueva pedía un control nuevo. */}
+              {ETIQUETAS.length > 0 && <FiltroDesplegable qd={QD.etiqueta} valor={etiquetaF} onElegir={setEtiquetaF} isMobile={false} />}
               {cuando === 'rango' && (
                 <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                   <input type="date" value={desde} onChange={e => setDesde(e.target.value)} aria-label="Desde" style={{ ...S.fsel, width: 145, margin: 0 }} />
@@ -1190,29 +1205,6 @@ export default function LeadsTab() {
                 </>
               )}
               </div>
-              {/* ★VIP y las vistas guardadas SALIERON de la tira de pestañas.
-                  Son formas de recortar, no de navegar, así que su sitio es
-                  esta banda; y de paso la tira deja de desbordarse —con nueve
-                  pestañas más estos dos, «No interesados» y «Todos» quedaban
-                  tapados detrás de ellos en 1560 px—. */}
-              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
-                  style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e4e0ee',
-                    background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
-                    borderRadius: 9, padding: '0 12px', height: 36, fontSize: '0.78rem', fontWeight: soloVIP ? 800 : 600,
-                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
-                {vistasLeads.length > 0 && (
-                <select value={vistaId} onChange={e => {
-                  const v = vistasLeads.find(x => x.id === e.target.value);
-                  setVistaId(e.target.value);
-                  setConds(v?.config?.condiciones || []);
-                  setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
-                }} style={{ height: 36, border: '1px solid #e4e0ee', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 190 }}>
-                  <option value="">Vistas guardadas…</option>
-                  {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
-                </select>
-                )}
-              </span>
               </div>
               {/* El buscador, DENTRO de la banda y en su propio renglón. Es un
                   filtro más de la sección —de hecho recorta también los
@@ -1229,7 +1221,7 @@ export default function LeadsTab() {
           )}
 
           {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 14, overflowX: 'auto' }}>
-            {VISTAS.map(v => {
+            {VISTAS_TIRA.map(v => {
               const on = etapa === v.v;
               const n = conteos[v.v] ?? 0;
               return (
@@ -1253,6 +1245,87 @@ export default function LeadsTab() {
                 </button>
               );
             })}
+            {/* VER MÁS · lo que no es del día a día, con su cuenta. La vista
+                activa se anuncia en el propio botón: si no, entrar a «Todos»
+                o a una vista guardada dejaba la tira sin ninguna pestaña
+                marcada y no había forma de saber qué estabas viendo. */}
+            {(() => {
+              const act = VISTAS_MAS.find(v => v.v === etapa);
+              const vist = vistasLeads.find((v: any) => v.id === vistaId);
+              const puesto = act?.l || vist?.nombre;
+              const salir = () => setMenuVistas(false);
+              const aVista = (v: any) => {
+                setVistaId(v.id);
+                setConds(v?.config?.condiciones || []);
+                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
+                salir();
+              };
+              return (
+                <span style={{ position: 'relative', flexShrink: 0, marginLeft: 4 }}>
+                  <button ref={btnMas} onClick={() => setMenuVistas(m => !m)} style={{
+                    border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    padding: '9px 12px 10px', display: 'inline-flex', alignItems: 'center', gap: 7,
+                    fontSize: '0.88rem', fontWeight: puesto ? 800 : 650, whiteSpace: 'nowrap',
+                    color: puesto ? '#5B4BD6' : '#6d6a7a',
+                    borderBottom: puesto ? '2px solid #5B4BD6' : '2px solid transparent',
+                  }}>
+                    {puesto || 'Ver más'}
+                    <span style={{ fontSize: '0.6rem', color: '#b3afbd' }}>▾</span>
+                  </button>
+                  {/* El panel se dibuja en el <body>, no aquí dentro: la tira
+                      de pestañas lleva overflow-x para poder desplazarse, y un
+                      desplegable absoluto dentro de una caja con overflow SE
+                      RECORTA — el menú existía en el DOM y no se veía. */}
+                  {menuVistas && createPortal(
+                    <>
+                      <div onClick={salir} style={{ position: 'fixed', inset: 0, zIndex: 2147483000 }} />
+                      <div style={{ position: 'fixed', top: (btnMas.current?.getBoundingClientRect().bottom ?? 0) + 6, left: Math.max(12, (btnMas.current?.getBoundingClientRect().left ?? 0) - 90), zIndex: 2147483001, minWidth: 260, maxHeight: '70vh', overflowY: 'auto',
+                        background: 'rgba(250,248,255,0.98)', backdropFilter: 'blur(10px)',
+                        border: '1px solid #e6ddfa', borderRadius: 12, boxShadow: '0 14px 34px rgba(91,75,214,0.16)', padding: 6 }}>
+                        {VISTAS_MAS.map(v => {
+                          const on = etapa === v.v && !vistaId;
+                          return (
+                            <button key={v.v} onClick={() => { setEtapa(v.v); setVistaId(''); setConds([]); salir(); }} title={FILTRO_TAB[v.v] || undefined}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 'none', cursor: 'pointer',
+                                borderRadius: 8, padding: '8px 10px', fontFamily: 'inherit', fontSize: '0.79rem',
+                                fontWeight: on ? 800 : 600, background: on ? 'rgba(244,168,205,0.34)' : 'transparent',
+                                color: on ? '#9c3d70' : '#3f3b4d', textAlign: 'left' }}>
+                              <span style={{ flex: 1 }}>{v.l}</span>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7a7590' }}>{conteos[v.v] ?? 0}</span>
+                            </button>
+                          );
+                        })}
+                        {vistasLeads.length > 0 && (
+                          <>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase', color: '#a9a3bd', padding: '9px 10px 5px' }}>Vistas guardadas</div>
+                            {vistasLeads.map((v: any) => {
+                              const on = vistaId === v.id;
+                              return (
+                                <button key={v.id} onClick={() => aVista(v)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 'none', cursor: 'pointer',
+                                    borderRadius: 8, padding: '8px 10px', fontFamily: 'inherit', fontSize: '0.79rem',
+                                    fontWeight: on ? 800 : 600, background: on ? 'rgba(244,168,205,0.34)' : 'transparent',
+                                    color: on ? '#9c3d70' : '#3f3b4d', textAlign: 'left' }}>
+                                  <span style={{ flex: 1 }}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</span>
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7a7590' }}>{conteoVistas[v.id] ?? 0}</span>
+                                </button>
+                              );
+                            })}
+                          </>
+                        )}
+                        {vistaId && (
+                          <button onClick={() => { setVistaId(''); setConds([]); salir(); }}
+                            style={{ display: 'block', width: '100%', border: 'none', background: 'none', cursor: 'pointer',
+                              borderRadius: 8, padding: '8px 10px', fontFamily: 'inherit', fontSize: '0.76rem',
+                              fontWeight: 700, color: '#8a8594', textAlign: 'left', marginTop: 2 }}>
+                            Quitar la vista
+                          </button>
+                        )}
+                      </div>
+                    </>, document.body)}
+                </span>
+              );
+            })()}
           </div>}
 
           {/* El strip de subpestañas de «Contactados» (Respondieron ·
@@ -1558,25 +1631,6 @@ export default function LeadsTab() {
                   const et = ETAPA_DE(c.lifecycle_stage);
                   return (
                     <Fragment key={c.id}>
-                    {/* El rótulo del grupo. Va como una fila más, y su
-                        contenido se queda pegado a la izquierda al desplazarse:
-                        un <td> con colSpan viaja con la tabla, así que sin eso
-                        el rótulo se iría de la pantalla justo cuando estás
-                        mirando las columnas de la derecha. */}
-                    {rotuloAntes.has(c.id) && (() => {
-                      const g = rotuloAntes.get(c.id)!;
-                      const urge = g.t === 'Atorados';
-                      return (
-                        <tr>
-                          <td colSpan={nCols} style={{ padding: 0, borderBottom: '1px solid #ebe9f0', background: urge ? '#FDF6F5' : '#FBFAFF' }}>
-                            <div style={{ position: 'sticky', left: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', width: 'fit-content' }}>
-                              <span style={{ fontSize: '0.63rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: urge ? '#A8443D' : '#6B6A76' }}>{g.t}</span>
-                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: urge ? '#A8443D' : '#5f5d6b', background: urge ? '#F7E4E2' : '#eeecf4', borderRadius: 20, padding: '1px 7px' }}>{g.n}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })()}
                     <tr className={sel.has(c.id) ? 'sel' : undefined}>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
