@@ -1060,110 +1060,18 @@ export default function LeadsTab() {
           {/* Las etapas son PESTAÑAS con contador, como las vistas de
               Cotizaciones: cuántos hay en cada una se ve de golpe y se cambia
               con un clic, no abriendo un desplegable. */}
-          {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
-            {VISTAS.map(v => {
-              const on = etapa === v.v;
-              const n = conteos[v.v] ?? 0;
-              return (
-                <button key={v.v} onClick={() => setEtapa(v.v)} style={{
-                  padding: '10px 15px', background: on ? '#EEECFE' : 'transparent',
-                  borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
-                  borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
-                  /* Las pestañas pesan: son el control principal de la
-                     pantalla y competían en tamaño con el buscador. */
-                  color: on ? '#5B4BD6' : '#4a4756', fontWeight: on ? 800 : 650,
-                  fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
-                }}>
-                  {v.l}
-                  <span style={{
-                    marginLeft: 7, fontSize: '0.72rem', fontWeight: on ? 800 : 700,
-                    background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
-                    borderRadius: 20, padding: '2px 8px',
-                  }}>{n}</span>
-                </button>
-              );
-            })}
-            {/* Las vistas y los filtros viven DESPUÉS de la última pestaña, no
-                debajo: abajo se saturaba y el buscador competía con ellos.
-                Aquí se leen como lo que son — formas de recortar la pestaña en
-                la que ya estás. */}
-            {/* Pegado a la orilla derecha: con nueve pestañas la fila se
-                desborda en pantallas angostas y este bloque se iba fuera de
-                vista — o sea, las vistas guardadas dejaban de existir sin
-                avisar. Sticky las mantiene siempre a la mano. */}
-            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, paddingLeft: 30, flexShrink: 0, position: 'sticky', right: 0, background: 'linear-gradient(90deg, rgba(255,255,255,0), #fff 26px)' }}>
-              <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
-                style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
-                  background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
-                  borderRadius: 9, padding: '7px 12px', fontSize: '0.79rem', fontWeight: soloVIP ? 800 : 600,
-                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
-              {vistasLeads.length > 0 && (
-              <select value={vistaId} onChange={e => {
-                const v = vistasLeads.find(x => x.id === e.target.value);
-                setVistaId(e.target.value);
-                setConds(v?.config?.condiciones || []);
-                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
-              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
-                <option value="">Vistas guardadas…</option>
-                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
-              </select>
-              )}
-            </span>
-          </div>}
-
-          {!esMovil && etapa === 'contactados' && (() => {
-            // Contactados mezcla temperaturas MUY distintas: este strip las
-            // separa de un vistazo y cada contador filtra al click. "Pausa
-            // vencida" es lista-hueco: se vacía cuando les marcas.
-            const fP = (c: any) => c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
-            const grupos = [
-              { k: 'e:respondio', l: 'Respondieron', n: listaBase.filter((c: any) => eDe(c) === 'respondio').length, bg: '#EEECFE', fg: '#5B4BD6' },
-              { k: 'e:descubrimiento', l: 'Discovery hecho', n: listaBase.filter((c: any) => eDe(c) === 'descubrimiento').length, bg: '#EEECFE', fg: '#5B4BD6' },
-              { k: 'e:contactado', l: 'Esperando respuesta', n: listaBase.filter((c: any) => eDe(c) === 'contactado').length, bg: '#f4f4f6', fg: '#6B7280' },
-              { k: 'e:sin_respuesta', l: 'No contestan', n: listaBase.filter((c: any) => eDe(c) === 'sin_respuesta').length, bg: '#FEF0EF', fg: '#C0554E' },
-              { k: 'p:activa', l: 'En pausa', n: listaBase.filter((c: any) => (fP(c) ?? 0) > Date.now()).length, bg: '#FFF4E5', fg: '#9a6a10' },
-              { k: 'p:vencida', l: 'Pausa vencida: márcales', n: listaBase.filter((c: any) => { const f = fP(c); return f != null && f <= Date.now(); }).length, bg: '#FFF4E5', fg: '#9a6a10' },
-            ];
-            const activo = (k: string) => k.startsWith('e:') ? estatusF === k.slice(2) : pausaF === k.slice(2);
-            const toca = (k: string) => k.startsWith('e:')
-              ? setEstatusF(estatusF === k.slice(2) ? '' : k.slice(2))
-              : setPausaF(pausaF === k.slice(2) ? '' : k.slice(2));
-            return (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                {grupos.map(g => {
-                  const on = activo(g.k);
-                  return (
-                    <button key={g.k} onClick={() => toca(g.k)} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
-                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
-                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
-                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
-                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-
-          {/* Los chips de reuniones (Agendadas / Completadas / No asistieron…)
-              se QUITARON de aquí. En Oportunidad lo que decide a quién llamar
-              no es el estado de una reunión: es qué fue lo último que pasó y
-              cuánto hay cotizado. Ese filtro sigue viviendo en la vista de
-              Reuniones, que es donde sí tiene que ver. */}
-
-          {!esMovil && FILTRO_TAB[etapa] && (
-            <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
-              <span style={{ fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: '0.6rem', color: '#b3b1bb' }}>Filtro de esta pestaña · </span>
-              {FILTRO_TAB[etapa]}
-            </div>
-          )}
-
           {/* ══ La barra del datatable ESTÁNDAR ══
               Los cuatro filtros de diario salen a la vista como píldoras —el
               MISMO control de Clientes, importado, no una copia parecida— y
               «Más filtros» se queda con lo raro: reunión, pausa y el builder
               de condiciones. Antes los seis vivían escondidos tras un botón:
-              para saber si algo estaba filtrado había que abrir el panel. */}
+              para saber si algo estaba filtrado había que abrir el panel.
+
+              VAN ARRIBA DE LAS PESTAÑAS, no debajo: recortan TODA la sección
+              —los contadores de cada pestaña ya salen filtrados—, así que
+              ponerlos después las hacía ver como si dependieran de la pestaña
+              abierta. La jerarquía queda: filtro de todo → en qué pestaña
+              estoy → buscar dentro de ella. */}
           {!esMovil && (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
               <FiltroDesplegable qd={QD.cuando} valor={cuando === 'todo' ? '' : cuando} onElegir={v => setCuando(v || 'todo')} isMobile={false} />
@@ -1261,6 +1169,104 @@ export default function LeadsTab() {
                 </>
               )}
               </div>
+            </div>
+          )}
+
+          {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
+            {VISTAS.map(v => {
+              const on = etapa === v.v;
+              const n = conteos[v.v] ?? 0;
+              return (
+                <button key={v.v} onClick={() => setEtapa(v.v)} style={{
+                  padding: '10px 15px', background: on ? '#EEECFE' : 'transparent',
+                  borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
+                  borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+                  /* Las pestañas pesan: son el control principal de la
+                     pantalla y competían en tamaño con el buscador. */
+                  color: on ? '#5B4BD6' : '#4a4756', fontWeight: on ? 800 : 650,
+                  fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+                }}>
+                  {v.l}
+                  <span style={{
+                    marginLeft: 7, fontSize: '0.72rem', fontWeight: on ? 800 : 700,
+                    background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
+                    borderRadius: 20, padding: '2px 8px',
+                  }}>{n}</span>
+                </button>
+              );
+            })}
+            {/* Las vistas y los filtros viven DESPUÉS de la última pestaña, no
+                debajo: abajo se saturaba y el buscador competía con ellos.
+                Aquí se leen como lo que son — formas de recortar la pestaña en
+                la que ya estás. */}
+            {/* Pegado a la orilla derecha: con nueve pestañas la fila se
+                desborda en pantallas angostas y este bloque se iba fuera de
+                vista — o sea, las vistas guardadas dejaban de existir sin
+                avisar. Sticky las mantiene siempre a la mano. */}
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, paddingLeft: 30, flexShrink: 0, position: 'sticky', right: 0, background: 'linear-gradient(90deg, rgba(255,255,255,0), #fff 26px)' }}>
+              <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
+                style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
+                  background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
+                  borderRadius: 9, padding: '7px 12px', fontSize: '0.79rem', fontWeight: soloVIP ? 800 : 600,
+                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
+              {vistasLeads.length > 0 && (
+              <select value={vistaId} onChange={e => {
+                const v = vistasLeads.find(x => x.id === e.target.value);
+                setVistaId(e.target.value);
+                setConds(v?.config?.condiciones || []);
+                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
+              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
+                <option value="">Vistas guardadas…</option>
+                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
+              </select>
+              )}
+            </span>
+          </div>}
+
+          {!esMovil && etapa === 'contactados' && (() => {
+            // Contactados mezcla temperaturas MUY distintas: este strip las
+            // separa de un vistazo y cada contador filtra al click. "Pausa
+            // vencida" es lista-hueco: se vacía cuando les marcas.
+            const fP = (c: any) => c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
+            const grupos = [
+              { k: 'e:respondio', l: 'Respondieron', n: listaBase.filter((c: any) => eDe(c) === 'respondio').length, bg: '#EEECFE', fg: '#5B4BD6' },
+              { k: 'e:descubrimiento', l: 'Discovery hecho', n: listaBase.filter((c: any) => eDe(c) === 'descubrimiento').length, bg: '#EEECFE', fg: '#5B4BD6' },
+              { k: 'e:contactado', l: 'Esperando respuesta', n: listaBase.filter((c: any) => eDe(c) === 'contactado').length, bg: '#f4f4f6', fg: '#6B7280' },
+              { k: 'e:sin_respuesta', l: 'No contestan', n: listaBase.filter((c: any) => eDe(c) === 'sin_respuesta').length, bg: '#FEF0EF', fg: '#C0554E' },
+              { k: 'p:activa', l: 'En pausa', n: listaBase.filter((c: any) => (fP(c) ?? 0) > Date.now()).length, bg: '#FFF4E5', fg: '#9a6a10' },
+              { k: 'p:vencida', l: 'Pausa vencida: márcales', n: listaBase.filter((c: any) => { const f = fP(c); return f != null && f <= Date.now(); }).length, bg: '#FFF4E5', fg: '#9a6a10' },
+            ];
+            const activo = (k: string) => k.startsWith('e:') ? estatusF === k.slice(2) : pausaF === k.slice(2);
+            const toca = (k: string) => k.startsWith('e:')
+              ? setEstatusF(estatusF === k.slice(2) ? '' : k.slice(2))
+              : setPausaF(pausaF === k.slice(2) ? '' : k.slice(2));
+            return (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                {grupos.map(g => {
+                  const on = activo(g.k);
+                  return (
+                    <button key={g.k} onClick={() => toca(g.k)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
+                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
+                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
+                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Los chips de reuniones (Agendadas / Completadas / No asistieron…)
+              se QUITARON de aquí. En Oportunidad lo que decide a quién llamar
+              no es el estado de una reunión: es qué fue lo último que pasó y
+              cuánto hay cotizado. Ese filtro sigue viviendo en la vista de
+              Reuniones, que es donde sí tiene que ver. */}
+
+          {!esMovil && FILTRO_TAB[etapa] && (
+            <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: '0.6rem', color: '#b3b1bb' }}>Filtro de esta pestaña · </span>
+              {FILTRO_TAB[etapa]}
             </div>
           )}
 
