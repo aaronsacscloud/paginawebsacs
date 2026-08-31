@@ -21,6 +21,7 @@ const pasos = [
     texto: 'La que tomaste con el celular en tu tienda, colgada en el gancho, con la luz que había. No necesitas estudio ni sesión.',
     img: '/images/flujo/01-tu-foto.webp',
     alt: 'Vestido colgado en un gancho fotografiado con celular dentro de una boutique',
+    tono: '#0B0B12', zoom: -0.87, foco: [0.5, 0.5],
   },
   {
     n: '02',
@@ -28,6 +29,8 @@ const pasos = [
     texto: 'La IA genera la misma prenda en todos los colores del drop, con la misma luz y el mismo encuadre. Y escribe la descripción de cada una.',
     img: '/images/flujo/02-variantes.webp',
     alt: 'La misma prenda repetida en cinco colores distintos con iluminación idéntica',
+    // Los cinco colores tienen que caber ENTEROS: este no se acerca nunca.
+    tono: '#141020', zoom: 1.0, foco: [0.5, 0.5],
   },
   {
     n: '03',
@@ -35,6 +38,7 @@ const pasos = [
     texto: 'Eliges la modelo, la pose y el fondo — y queda igual en toda la temporada. Tu marca deja de verse improvisada.',
     img: '/images/flujo/03-modelo.webp',
     alt: 'Modelo con el vestido en una toma editorial de campaña',
+    tono: '#1A1014', zoom: -0.84, foco: [0.48, 0.5],
   },
   {
     n: '04',
@@ -42,18 +46,20 @@ const pasos = [
     texto: 'De ahí sale el video vertical para TikTok, Reels y tu tienda en línea. El contenido de la semana, sin volver a producir nada.',
     img: '/images/flujo/04-reel.webp',
     alt: 'La misma modelo en movimiento, en formato vertical de video social',
+    // Vertical y de cuerpo entero: sin acercar, para no cortarle cabeza ni pies.
+    tono: '#0A1418', zoom: 1.0, foco: [0.5, 0.5],
   },
 ];
 ---
 
-<section class="fl" id="flujo" data-imgs={JSON.stringify(pasos.map((p) => p.img))}>
+<section class="fl" id="flujo" data-imgs={JSON.stringify(pasos.map((p) => ({ src: p.img, zoom: p.zoom, foco: p.foco, tono: p.tono })))}>
   <div class="fl-riel">
     <div class="fl-pegado">
       <div class="fl-lienzo-caja">
         <canvas class="fl-lienzo" id="fl-lienzo" aria-hidden="true"></canvas>
         <div class="fl-fallback">
           {pasos.map((p, i) => (
-            <img src={p.img} alt={p.alt} class:list={['fl-img', { on: i === 0 }]} data-i={i} loading={i === 0 ? 'eager' : 'lazy'} width="1500" height="1000" />
+            <img src={p.img} alt={p.alt} class:list={['fl-img', { on: i === 0 }]} data-i={i} loading={i === 0 ? 'eager' : 'lazy'} width={i === 3 ? 1000 : 1500} height={i === 3 ? 1500 : 1000} />
           ))}
         </div>
         <span class="fl-num" id="fl-num" aria-hidden="true">01</span>
@@ -82,7 +88,17 @@ const pasos = [
 </section>
 
 <style>
-  .fl { position: relative; background: #0B0B12; color: #fff; }
+  /* El tono se registra como color para que el cambio de paso sea un fundido
+     y no un salto. Donde @property no exista, cambia de golpe: se ve igual de
+     bien, solo sin la transición. */
+  @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #0B0B12; }
+
+  .fl {
+    position: relative; color: #fff;
+    --fl-fondo: #0B0B12;
+    background: var(--fl-fondo);
+    transition: --fl-fondo 1.1s cubic-bezier(.4,0,.2,1);
+  }
   .fl-riel { position: relative; }
   .fl-pegado {
     position: sticky; top: 0; min-height: 100vh;
@@ -90,19 +106,19 @@ const pasos = [
   }
 
   /* ── La imagen ── */
-  .fl-lienzo-caja { position: relative; overflow: hidden; background: #0B0B12; }
+  .fl-lienzo-caja { position: relative; overflow: hidden; background: var(--fl-fondo); }
   .fl-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
   .fl-lienzo.vivo { display: block; }
   .fl-lienzo.vivo ~ .fl-fallback { opacity: 0; }
   .fl-fallback { position: absolute; inset: 0; transition: opacity .3s ease; }
   .fl-img {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
     opacity: 0; transition: opacity .6s ease;
   }
   .fl-img.on { opacity: 1; }
   .fl-lienzo-caja::after {
     content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: linear-gradient(100deg, transparent 58%, rgba(11,11,18,.9));
+    background: linear-gradient(100deg, transparent 58%, var(--fl-fondo));
   }
   .fl-num {
     position: absolute; left: clamp(20px, 3vw, 46px); bottom: clamp(14px, 2vw, 30px); z-index: 3;
@@ -144,6 +160,9 @@ const pasos = [
   }
   .fl-paso p { margin: 0; font-size: 0.875rem; line-height: 1.55; color: rgba(255,255,255,.66); max-width: 44ch; }
   .fl-paso:not(.on) p { display: none; }
+  .fl-paso.on p { animation: fl-entra .5s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes fl-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .fl-paso.on p { animation: none; } }
 
   .fl-barra { height: 2px; background: rgba(255,255,255,.12); border-radius: 2px; overflow: hidden; margin-top: 8px; }
   .fl-barra span { display: block; height: 100%; width: 25%; background: #fff; transition: width .35s ease; }
@@ -162,7 +181,7 @@ const pasos = [
   .fl.sin-riel .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
   .fl.sin-riel .fl-recorrido { display: none; }
   .fl.sin-riel .fl-lienzo-caja { aspect-ratio: 4 / 3; }
-  .fl.sin-riel .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, rgba(11,11,18,.9)); }
+  .fl.sin-riel .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, var(--fl-fondo)); }
   .fl.sin-riel .fl-paso { opacity: 1; }
   .fl.sin-riel .fl-paso p { display: block; }
   .fl.sin-riel .fl-barra { display: none; }
@@ -172,7 +191,7 @@ const pasos = [
     .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
     .fl-recorrido { display: none; }
     .fl-lienzo-caja { aspect-ratio: 4 / 3; }
-    .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, rgba(11,11,18,.9)); }
+    .fl-lienzo-caja::after { background: linear-gradient(180deg, transparent 60%, var(--fl-fondo)); }
     .fl-paso { opacity: 1; }
     .fl-paso p { display: block; }
     .fl-barra { display: none; }
@@ -186,8 +205,12 @@ const pasos = [
 <script>
   const sec = document.getElementById('flujo');
   const cv = document.getElementById('fl-lienzo') as HTMLCanvasElement | null;
-  if (sec && cv) {
-    const imgs: string[] = JSON.parse(sec.dataset.imgs || '[]');
+  if (sec && cv && sec.dataset.imgs && sec.dataset.imgs !== '[]') {
+    // Cada toma trae su encuadre: src, cuánto se acerca, qué punto va al
+    // centro y el tono de fondo con el que se funde.
+    const imgs = JSON.parse(sec.dataset.imgs || '[]');
+    const aRGB = (h: string) =>
+      [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
     const pasos = [...sec.querySelectorAll<HTMLElement>('.fl-paso')];
     const fotos = [...sec.querySelectorAll<HTMLElement>('.fl-img')];
     const numEl = document.getElementById('fl-num');
@@ -202,6 +225,7 @@ const pasos = [
       pasos.forEach((p, i) => p.classList.toggle('on', i === k));
       fotos.forEach((f, i) => f.classList.toggle('on', i === k));
       if (numEl) numEl.textContent = imgs[k] ? String(k + 1).padStart(2, '0') : '01';
+      if (imgs[k]) sec.style.setProperty('--fl-fondo', imgs[k].tono);
       if (avance) (avance as HTMLElement).style.width = `${((k + 1) / imgs.length) * 100}%`;
       window.dispatchEvent(new CustomEvent('fl:paso', { detail: k }));
     };
@@ -248,26 +272,52 @@ const pasos = [
         const FRAG = `precision highp float;
           varying vec2 uv;
           uniform sampler2D texA, texB;
-          uniform float mezcla, tiempo, razonLienzo, razonA, razonB;
+          uniform float mezcla, tiempo, razonLienzo, razonA, razonB, zoomA, zoomB;
+          uniform vec2 focoA, focoB;
+          uniform vec3 fondo;
           float hash(vec2 v){ return fract(sin(dot(v, vec2(127.1,311.7)))*43758.5453); }
           float ruido(vec2 v){ vec2 i=floor(v), f=fract(v); vec2 u=f*f*(3.0-2.0*f);
             return mix(mix(hash(i),hash(i+vec2(1,0)),u.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x), u.y); }
-          vec2 cubrir(vec2 c, float rImg){
-            vec2 s = razonLienzo > rImg ? vec2(1.0, rImg/razonLienzo) : vec2(razonLienzo/rImg, 1.0);
-            return (c-0.5)/s + 0.5; }
+
+          // Encaja la foto SIN deformarla: escala el eje que sobra en lugar de
+          // estirar el que falta. zoom acerca (recortando) y foco dice qué
+          // punto de la foto queda al centro. Lo que cae fuera se pinta con el
+          // fondo de la sección — nunca con el pixel del borde repetido, que era
+          // el origen de las rayas verticales.
+          vec2 encuadre(vec2 c, float rImg, vec2 foco, float z){
+            vec2 k = rImg > razonLienzo ? vec2(1.0, rImg/razonLienzo) : vec2(razonLienzo/rImg, 1.0);
+            // z negativo se lee como fracción de "llenar el lienzo": -1 llena
+            // exacto y -0.87 deja un respiro arriba y abajo. Va relativo, no en
+            // números fijos, porque el alto del lienzo cambia con la pantalla y
+            // un encuadre fijo le corta la cabeza a la modelo en la mitad de
+            // los monitores. Ese respiro también la baja del menú, que flota
+            // encima de la sección.
+            float zz = z > 0.0 ? z : max(k.x, k.y) * (-z);
+            return (c - 0.5) * k / zz + foco; }
+          // El borde de la foto no puede ser una línea recta contra el tono de
+          // la sección: se le da pluma para que la oscuridad de la foto y la
+          // de la sección sean la misma. La pluma es angosta a propósito —
+          // en el paso de los colorways las prendas de los extremos casi tocan
+          // el borde y no se pueden apagar.
+          float dentro(vec2 q){
+            vec2 d = min(q, 1.0 - q);
+            vec2 f = smoothstep(vec2(0.0), vec2(0.028), d);
+            return f.x * f.y; }
+
           void main(){
             vec2 c = uv;
             c += (ruido(c*3.0 + tiempo*0.05) - 0.5) * 0.005;
             float m = smoothstep(0.0, 1.0, mezcla);
             float f = sin(m*3.14159);
             vec2 emp = vec2(0.14,-0.08) * (ruido(c*4.5 + tiempo*0.03) - 0.5);
-            vec2 ca = cubrir(c + emp*f, razonA), cb = cubrir(c - emp*f, razonB);
+            vec2 ca = encuadre(c + emp*f, razonA, focoA, zoomA);
+            vec2 cb = encuadre(c - emp*f, razonB, focoB, zoomB);
             float ab = 0.009*f;
-            vec4 a = vec4(texture2D(texA, ca+vec2(ab,0.0)).r, texture2D(texA, ca).g, texture2D(texA, ca-vec2(ab,0.0)).b, 1.0);
-            vec4 b = vec4(texture2D(texB, cb+vec2(ab,0.0)).r, texture2D(texB, cb).g, texture2D(texB, cb-vec2(ab,0.0)).b, 1.0);
-            vec4 col = mix(a,b,m);
-            col.rgb += (hash(uv*900.0 + tiempo)-0.5)*0.024;
-            gl_FragColor = col; }`;
+            vec3 a = mix(fondo, vec3(texture2D(texA, ca+vec2(ab,0.0)).r, texture2D(texA, ca).g, texture2D(texA, ca-vec2(ab,0.0)).b), dentro(ca));
+            vec3 b = mix(fondo, vec3(texture2D(texB, cb+vec2(ab,0.0)).r, texture2D(texB, cb).g, texture2D(texB, cb-vec2(ab,0.0)).b), dentro(cb));
+            vec3 col = mix(a, b, m);
+            col += (hash(uv*900.0 + tiempo)-0.5)*0.024;
+            gl_FragColor = vec4(col, 1.0); }`;
         const comp = (t: number, src: string) => {
           const sh = gl.createShader(t)!; gl.shaderSource(sh, src); gl.compileShader(sh);
           if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error('shader');
@@ -285,6 +335,7 @@ const pasos = [
           gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
           const u = (n: string) => gl.getUniformLocation(pr, n);
           const uM = u('mezcla'), uT = u('tiempo'), uRL = u('razonLienzo'), uRA = u('razonA'), uRB = u('razonB');
+          const uZA = u('zoomA'), uZB = u('zoomB'), uFA = u('focoA'), uFB = u('focoB'), uFondo = u('fondo');
           gl.uniform1i(u('texA'), 0); gl.uniform1i(u('texB'), 1);
 
           const nuevaTex = () => {
@@ -296,8 +347,13 @@ const pasos = [
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([11,11,18,255]));
             return t; };
           const texA = nuevaTex(), texB = nuevaTex();
-          const razones = [1.5, 1.5, 1.5, 0.667];  // el reel es vertical
+          // Encuadre vivo: A es lo que se ve, B lo que entra. La razón la mide
+          // la propia imagen al cargar, así una foto que se cambie de tamaño no
+          // rompe nada.
           let rA = 1.5, rB = 1.5;
+          let zA = imgs[0].zoom, zB = zA;
+          let fA = imgs[0].foco, fB = fA;
+          let colA = aRGB(imgs[0].tono), colB = colA;
 
           const cargar = (url: string, tex: WebGLTexture) => new Promise<number>((ok) => {
             const im = new Image();
@@ -322,13 +378,21 @@ const pasos = [
           const pintar = () => {
             gl.uniform1f(uT, (performance.now() - t0) / 1000);
             gl.uniform1f(uM, mezcla); gl.uniform1f(uRA, rA); gl.uniform1f(uRB, rB);
+            gl.uniform1f(uZA, zA); gl.uniform1f(uZB, zB);
+            gl.uniform2f(uFA, fA[0], fA[1]); gl.uniform2f(uFB, fB[0], fB[1]);
+            // El vacío de la foto se pinta del mismo tono que la sección, y el
+            // tono viaja junto con la mezcla: no hay costura entre los dos.
+            const q = Math.max(0, Math.min(1, mezcla));
+            gl.uniform3f(uFondo, colA[0] + (colB[0] - colA[0]) * q,
+                                 colA[1] + (colB[1] - colA[1]) * q,
+                                 colA[2] + (colB[2] - colA[2]) * q);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
             requestAnimationFrame(pintar); };
 
           gl.activeTexture(gl.TEXTURE0);
-          cargar(imgs[0], texA).then((r) => { rA = r; rB = r;
+          cargar(imgs[0].src, texA).then((r) => { rA = r; rB = r;
             gl.activeTexture(gl.TEXTURE1);
-            return cargar(imgs[0], texB); }).then(() => {
+            return cargar(imgs[0].src, texB); }).then(() => {
               medir(); cv.classList.add('vivo');
               gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texA);
               gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texB);
@@ -342,14 +406,17 @@ const pasos = [
             if (k === vistoPor || animando) return;
             animando = true;
             gl.activeTexture(gl.TEXTURE1);
-            rB = await cargar(imgs[k], texB);
+            rB = await cargar(imgs[k].src, texB);
+            zB = imgs[k].zoom; fB = imgs[k].foco; colB = aRGB(imgs[k].tono);
             const ini = performance.now(), dur = 760;
             const paso = () => {
               const t = Math.min(1, (performance.now() - ini) / dur);
               mezcla = t;
               if (t < 1) requestAnimationFrame(paso);
               else { gl.activeTexture(gl.TEXTURE0);
-                cargar(imgs[k], texA).then((r) => { rA = r; mezcla = 0; vistoPor = k; animando = false; }); } };
+                cargar(imgs[k].src, texA).then((r) => {
+                  rA = r; zA = zB; fA = fB; colA = colB;
+                  mezcla = 0; vistoPor = k; animando = false; }); } };
             requestAnimationFrame(paso);
           }) as EventListener);
         } catch (err) { /* sin shader queda el fundido de imágenes */ }
