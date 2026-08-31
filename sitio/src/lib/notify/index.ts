@@ -592,6 +592,33 @@ const templates: Record<string, Template> = {
     `,
     text: `El pago de tu suscripción ${d.plan} venció el ${d.fecha} (${d.dias} días). Monto: $${d.monto} MXN.${d.pago_url ? ' Regulariza aquí: ' + d.pago_url : ''}`,
   }),
+  // ═══ Onboarding: los primeros 30 días del cliente nuevo ═══
+  onboarding_bienvenida: (d) => ({
+    subject: `Bienvenido a Sacs${d.empresa ? `, ${d.empresa}` : ''} — por aquí se empieza`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Tu cuenta está lista</h2>
+        <p style="color:#555;line-height:1.55">Hola${d.nombre ? ' ' + esc(d.nombre) : ''}, ya puedes entrar a tu sistema:</p>
+        <p style="margin:16px 0"><a href="https://app.sacscloud.com/${esc(d.cuenta || '')}" style="display:inline-block;padding:13px 30px;background:#5B4BD6;color:#fff;border-radius:10px;text-decoration:none;font-weight:700">Entrar a mi cuenta</a></p>
+        <p style="color:#555;line-height:1.55">Lo que más ayuda la primera semana es una <b>sesión de configuración</b> con nuestro equipo: cargamos tu catálogo contigo y dejamos todo listo para tu primera venta.</p>
+        ${d.agendar_url ? `<p style="margin:14px 0"><a href="${esc(d.agendar_url)}" style="color:#5B4BD6;font-weight:700">Agendar mi sesión de configuración →</a></p>` : ''}
+        <p style="color:#999;font-size:.8125rem;margin-top:22px">Estos 30 días te acompañamos de cerca. Si algo no sale, contesta este correo y una persona te ayuda.</p>
+      </div>`,
+    text: `Tu cuenta de Sacs está lista: https://app.sacscloud.com/${d.cuenta || ''}
+Agenda tu sesión de configuración: ${d.agendar_url || ''}`,
+  }),
+  onboarding_configura: (d) => ({
+    subject: `Tu catálogo en Sacs, en una sesión${d.nombre ? ` — ${d.nombre}` : ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Vamos a dejarlo andando</h2>
+        <p style="color:#555;line-height:1.55">Hola${d.nombre ? ' ' + esc(d.nombre) : ''}, vimos que tu cuenta todavía no tiene el catálogo cargado. Es el paso que más cuesta arrancar solo — y el que hacemos contigo en media hora.</p>
+        ${d.agendar_url ? `<p style="margin:16px 0"><a href="${esc(d.agendar_url)}" style="display:inline-block;padding:13px 30px;background:#5B4BD6;color:#fff;border-radius:10px;text-decoration:none;font-weight:700">Agendar sesión de configuración</a></p>` : ''}
+        <p style="color:#555;line-height:1.55">Si prefieres hacerlo por tu cuenta: entra a <b>Catálogo → Productos</b> y usa «Importar» — acepta tu Excel tal como lo tengas.</p>
+      </div>`,
+    text: `Tu catálogo de Sacs sigue vacío. Agendemos tu sesión de configuración: ${d.agendar_url || ''}`,
+  }),
+
   // ═══ Agenda: recordatorios de reunión y follow-up de no-show ═══
   booking_reminder: (d) => ({
     subject: `⏰ Recordatorio: tu ${d.evento || 'reunión'} con SACS es ${d.cuando || 'pronto'} — ${d.fecha || ''} ${d.hora || ''}`,

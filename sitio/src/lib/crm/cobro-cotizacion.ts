@@ -265,6 +265,47 @@ export async function aplicarCobroDeCotizacion(
 
   out.aplicado = out.subs.length > 0;
   if (!out.aplicado && !out.motivo) out.motivo = 'no había ninguna licencia por activar (todas ya tenían pagos)';
+
+  /* ══ EL PASO QUE FALTABA: la cuenta de SACS ══
+     Cobrar dejaba al cliente pagado… y su cuenta a la memoria de alguien.
+     Aquí se cierra el circuito: si la empresa quedó SIN cuenta ligada, sale
+     el pendiente a la campana (con el botón de la ficha como destino); si la
+     cuenta ligada venía de prueba, se avisa que hay que activarla. Y se
+     intenta abrir el onboarding — que solo abre si el interruptor global
+     está encendido; apagado, no pasa nada y no estorba. Best-effort: nada de
+     esto puede tumbar un cobro que ya se aplicó. */
+  if (out.aplicado && q.company_id) {
+    try {
+      const { data: liga } = await supabase.from('company_sacs_accounts').select('cuenta').eq('company_id', q.company_id).limit(1);
+      const { data: co2 } = await supabase.from('companies').select('nombre, nombre_comercial, sacs_account').eq('id', q.company_id).maybeSingle();
+      const cuenta = liga?.[0]?.cuenta || co2?.sacs_account || null;
+      const nombreCo = co2?.nombre_comercial || co2?.nombre || 'el cliente';
+      if (!cuenta) {
+        await supabase.from('crm_notificaciones').insert({
+          tipo: 'onboarding_sin_cuenta', nivel: 'alerta', destino: 'clientes', company_id: q.company_id,
+          titulo: `${nombreCo} ya pagó y no tiene cuenta de SACS`,
+          detalle: 'Crear la cuenta (o ligar la que ya exista) es el paso obligatorio al ganar un cliente. Se hace desde su ficha, botón «Cuenta SACS».',
+          metadata: { quote_id: q.id },
+        });
+        out.avisos.push('El cliente no tiene cuenta de SACS ligada: quedó el pendiente en la campana.');
+      } else {
+        const { data: enPrueba } = await supabase.from('contacts').select('id')
+          .eq('company_id', q.company_id).eq('prueba_cuenta', cuenta)
+          .neq('prueba_estado', 'convertida').not('prueba_estado', 'is', null).limit(1);
+        if (enPrueba?.length) {
+          await supabase.from('crm_notificaciones').insert({
+            tipo: 'onboarding_activar_pendiente', nivel: 'alerta', destino: 'clientes', company_id: q.company_id,
+            titulo: `${nombreCo} pagó y su cuenta sigue marcada como prueba`,
+            detalle: `Actívala desde su ficha para que quede indefinida: mientras tanto, el vencimiento de la prueba sigue corriendo sobre «${cuenta}».`,
+            metadata: { cuenta, quote_id: q.id },
+          });
+          out.avisos.push('Su cuenta sigue marcada como prueba: actívala desde la ficha.');
+        }
+        const { abrirOnboardingSiAplica } = await import('./onboarding.lib');
+        await abrirOnboardingSiAplica(q.company_id, { quien: 'cobro de cotización' });
+      }
+    } catch { /* el cobro ya está aplicado; el pendiente saldrá en el barrido */ }
+  }
   return out;
 }
 

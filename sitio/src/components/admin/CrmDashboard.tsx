@@ -11,6 +11,7 @@ import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
 import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import ChurnTab from './crm/ChurnTab';
+const OnboardingTab = lazySeguro(() => import('./crm/OnboardingTab'));
 import Wiki from './crm/Wiki';
 import { leerSnap, guardarSnap, limpiarSnaps } from '../../lib/crm/snapshot';
 import { EsqueletoLista } from './crm/whatsapp/Esqueletos';
@@ -81,7 +82,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -174,6 +175,7 @@ const NAV_SECTIONS = [
       /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
          cuando se va: mismo grupo, siguiente renglón. */
       { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
+      { id: 'onboarding' as Tab, label: 'Onboarding', icon: 'mejoras' },
       // Reuniones se junta con las cuentas: es con quien te sientas. Antes
       // vivía en Ventas y su gemela "Agenda" en Sistema, en grupos distintos.
       { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
@@ -1066,6 +1068,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'churn' ? (
           <ErrorBoundary><ChurnTab /></ErrorBoundary>
+        ) : tab === 'onboarding' ? (
+          <ErrorBoundary><Suspense fallback={<Cargando texto="Cargando onboarding…" alto={280} />}><OnboardingTab /></Suspense></ErrorBoundary>
         ) : tab === 'clientes' ? (
           <ClientesTab onConfig={() => goConfigPipeline('cliente')} />
         ) : tab === 'sacs' ? (

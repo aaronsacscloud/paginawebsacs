@@ -626,6 +626,50 @@ export const WIKI: PaginaWiki[] = [
 <p>En la ficha del lead aparece qué recordatorio salió, por dónde y cuándo. Si el cliente dice que no le llegó, ahí se ve. Y nunca se manda dos veces, aunque el reloj corra dos veces por un reintento.</p></div>`,
   },
   {
+    id: 'alta-cliente', grupo: 'Después de la venta', titulo: 'El alta del cliente',
+    bajada: 'Toda venta termina con su cuenta de SACS ligada. Sin excepción.',
+    cuerpo: `
+<p>Cobrar deja al cliente pagado. <b>El alta lo deja usando el sistema</b> — y ese paso es obligatorio: un cliente sin cuenta ligada es un pendiente visible que el sistema recuerda solo, en la campana y en el barrido nocturno, hasta que se cierra.</p>
+<h3>El botón «Cuenta SACS» de su ficha</h3>
+<p>Pregunta solo qué camino aplica y enseña solo ese:</p>
+<table class="w-tab"><thead><tr><th>Caso</th><th>Qué se hace</th></tr></thead><tbody>
+<tr><td><b>Venía de prueba gratis</b></td><td><b>Activar</b>: la cuenta deja de ser prueba y queda indefinida — se apaga la marca en SACS, se desbloquea si estaba vencida, y el CRM marca la prueba como convertida. La liga ya existía.</td></tr>
+<tr><td><b>Nunca tuvo cuenta</b></td><td><b>Crear</b>: identificador + correo del dueño (los demás datos salen de la ficha). Nace SIN marca de prueba y ligada. La contraseña temporal se enseña UNA vez: dásela al cliente en ese momento.</td></tr>
+<tr><td><b>La cuenta existe pero nadie la ligó</b></td><td><b>Ligar</b>: se escribe la liga. Si la cuenta ya es de otra empresa, el botón lo dice y no la pisa — ese conflicto lo resuelve una persona.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Si algo falla, el pendiente no muere</span>
+<p>El cobro nunca se deshace y el error queda en la campana con sus palabras. Se reintenta desde el mismo botón. Nunca «se cobró pero quién sabe qué pasó con la cuenta».</p></div>
+<div class="w-caja warn"><span class="w-k">La prueba de un empleado cuenta</span>
+<p>La cuenta se busca por EMPRESA, no solo por quien firmó la cotización: si un empleado probó con otra cuenta de la misma empresa, esa es la que se activa.</p></div>`,
+  },
+  {
+    id: 'onboarding-30', grupo: 'Después de la venta', titulo: 'Los primeros 30 días',
+    bajada: 'El onboarding: etapas medidas por hechos, con el consultor donde el dato dice que se atoró.',
+    cuerpo: `
+<p>Cuando el alta se cierra, el cliente entra a sus 30 días acompañados. <b>Las etapas avanzan solas</b>, leyendo su uso real cada noche — al cliente no se le pregunta si ya configuró: se ve en sus datos.</p>
+<table class="w-tab"><thead><tr><th>Etapa</th><th>Se cumple cuando…</th></tr></thead><tbody>
+<tr><td><b>Cuenta lista</b></td><td>Tiene acceso; todavía no la hace suya</td></tr>
+<tr><td><b>Configurado</b></td><td>Catálogo con ≥10 productos y ≥2 usuarios (los umbrales son editables)</td></tr>
+<tr><td><b>Primer uso</b></td><td>Su primera venta real</td></tr>
+<tr><td><b>Uso constante</b></td><td>Vende varios días por semana</td></tr>
+<tr><td><b>Graduado</b></td><td>Día 30 con uso constante — el onboarding terminó bien</td></tr>
+</tbody></table>
+<h3>Qué hace el sistema solo</h3>
+<ul>
+<li><b>Día 0</b>: correo de bienvenida con su acceso y el botón para agendar su Sesión de configuración.</li>
+<li><b>Día 3 sin configurar</b>: guía de arranque (solo si el hito falta — a quien ya vende no se le manda «carga tu catálogo»).</li>
+<li><b>Día 7 sin primera venta</b>: aviso al CONSULTOR, no al cliente. Ahí lo que toca es llamada.</li>
+<li><b>Atorado</b> (5–7 días sin avanzar): aviso escalonado al consultor con el dato que lo prueba.</li>
+<li><b>Cancela a media rampa</b>: el caso cierra como perdido temprano y CHURN toma la estafeta — los dos módulos se pasan la bola, nunca conviven abiertos.</li>
+</ul>
+<h3>La pantalla</h3>
+<p><b>Cuentas → Onboarding</b>: cada caso con su etapa, su día (N/30), sus tres hitos como puntos, si está atorado y su consultor (reasignable ahí mismo). El consultor trabaja los atorados primero: es una lista de a quién llamar hoy, no un tablero para admirar.</p>
+<div class="w-caja warn"><span class="w-k">El interruptor: hoy está PAUSADO</span>
+<p>El motor completo existe y no manda nada hasta que el dueño lo encienda en la pantalla de Onboarding. Al encenderse, <b>solo entran clientes nuevos</b> (su primera suscripción posterior al encendido); los existentes no entran en masa — a uno de años, un «bienvenido» se le lee como error. Un cliente viejo se puede meter a mano, uno por uno.</p></div>
+<div class="w-caja"><span class="w-k">De qué depende todo esto</span>
+<p>Del sync nocturno de uso. Si el dato tiene más de 48 horas, el barrido lo dice en la campana en vez de medir con datos viejos — un tablero leyendo datos viejos es peor que ninguno.</p></div>`,
+  },
+  {
     id: 'renovacion', grupo: 'Después de la venta', titulo: 'Rumbo a la renovación',
     bajada: 'La primera cadencia de cliente.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `

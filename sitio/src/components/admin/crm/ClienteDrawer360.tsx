@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Etiquetas from './Etiquetas';
 import CuentaSacs from './CuentaSacs';
+import CuentaCliente from './CuentaCliente';
 import { CamposFicha, useCampos } from './CamposPersonalizados';
 // El MISMO cálculo que corre en el servidor: si el front adivinara las fechas
 // por su cuenta, la vista previa acabaría prometiendo días distintos a los que
@@ -419,6 +420,9 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                   propósito: se decide mirando si el cliente está usando el
                   sistema, no mirando el saldo. La MISMA tarjeta que la ficha del
                   lead y que el inbox — tres copias serían tres verdades. */}
+              {/* El alta obligatoria: activar la prueba, crear o ligar la
+                  cuenta. Solo se pinta cuando hay trámite pendiente. */}
+              {tab === 'resumen' && <CuentaCliente companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'resumen' && <CuentaSacs companyId={companyId} alCambiar={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}

@@ -100,6 +100,7 @@ const SECCION_POR_RUTA: { pre: string; sec: Seccion }[] = [
      mandaba a `config` por omisión y el vendedor con cuentas:edit veía el
      renglón y recibía 403 — el mismo bug que ya documentó contacto-senales. */
   { pre: '/api/crm/churn', sec: 'cuentas' },
+  { pre: '/api/crm/onboarding', sec: 'cuentas' },
   { pre: '/api/crm/leads', sec: 'cuentas' },
   { pre: '/api/crm/deals', sec: 'cuentas' },
   { pre: '/api/crm/oportunidades', sec: 'cuentas' },
