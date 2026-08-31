@@ -252,7 +252,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
                       <button onClick={() => irA('reuniones')} style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', fontFamily: 'inherit' }}>Agendar</button>
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'stretch', padding: embebido ? '4px 0 4px' : '18px 24px 4px' }}>
+                  {/* Embebida —dentro del caso de churn— las cifras sobran: la
+                      pantalla de arriba ya puso el ARR y el reloj, y aquí salía
+                      un «ARR $0» pegado al filo que contradecía al de arriba. */}
+                  <div style={{ display: embebido ? 'none' : 'flex', alignItems: 'stretch', padding: '18px 24px 4px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>ARR</div>
                       <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{money(arrAct)}</div>

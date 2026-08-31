@@ -174,7 +174,9 @@ export default function ChurnTab() {
   );
 
   if (esMovil) return <ChurnMovil lista={lista} etapa={etapa} setEtapa={setEtapa} cuenta={cuenta} kpis={kpis}
-    abierto={abierto} setAbierto={setAbierto} recargar={cargar} />;
+    abierto={abierto} setAbierto={setAbierto} recargar={cargar}
+    busca={busca} setBusca={setBusca} porCaer={porCaer}
+    clienteAbierto={clienteAbierto} setClienteAbierto={setClienteAbierto} />;
 
   return (
     <div style={{ padding: '18px 22px 40px' }}>
@@ -463,51 +465,118 @@ function exportar(filas: any[]) {
 }
 
 /* ── Móvil: la misma información con los estándares m-* ───────────────── */
-function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto, recargar }: any) {
+function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto, recargar, busca, setBusca, porCaer, clienteAbierto, setClienteAbierto }: any) {
+  /* Mismo armazón que la lista de Clientes en el teléfono: título, buscador,
+     chips y filas con inicial. Antes esta pantalla abría con una cifra de dos
+     centímetros y sin buscador, así que no se parecía a ninguna otra del CRM y
+     con 35 casos no había forma de llegar a uno por nombre. */
+  const iniciales = (n: string) => {
+    const stop = ['de', 'del', 'la', 'los', 'las', 'y', 'e'];
+    /* Solo palabras que EMPIEZAN por letra o número: hay clientes escritos
+       «manuel ( aura activewear)» y la inicial salía «M(». */
+    const ws = String(n || '').split(/\s+/)
+      .filter(w => w && !stop.includes(w.toLowerCase()) && /^[\p{L}\p{N}]/u.test(w));
+    return (ws.length >= 2 ? ws[0][0] + ws[1][0] : (ws[0] || String(n || '??')).slice(0, 2)).toUpperCase();
+  };
+  const enPorCancelar = etapa === 'por_cancelar';
+  const t = String(busca || '').trim().toLowerCase();
+  const cuentas = !t ? (porCaer || []) : (porCaer || []).filter((c: any) =>
+    `${c.nombre_comercial || ''} ${c.nombre || ''} ${c.sacs_account || ''}`.toLowerCase().includes(t));
+
   return (
+    /* Sin `m-bleed`: esa clase existe para anular los 16 px de padding del
+       contenedor, y la pestaña de churn cuelga de `.m-tabin`, que no los tiene
+       —con ella la lista se salía 16 px por cada lado—. */
     <div>
-      {/* Sin encabezado propio: el armazón del móvil ya pinta el título de la
-          sección, y ponerlo otra vez lo repetía dos veces en la misma pantalla. */}
-      <div style={{ padding: '14px 20px 10px' }}>
-        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#C0554E', letterSpacing: '-.02em' }}>{dinero((Number(kpis.mrr_en_rescate) || 0) * 12)}</div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--m-soft)' }}>de ARR en rescate · {cuenta.todos || 0} casos abiertos</div>
+      <div className="m-hdr">
+        <div className="m-tt">Churn</div>
       </div>
-      <div className="crm-scroll-x" style={{ display: 'flex', gap: 6, padding: '4px 20px 12px', overflowX: 'auto' }}>
-        {PESTANAS.map((p: any) => (
-          <button key={p.id} onClick={() => setEtapa(p.id)} className={etapa === p.id ? 'seg-on' : undefined}
-            style={{ flex: 'none', border: 'none', borderRadius: 20, padding: '0 14px', minHeight: 38, fontFamily: 'inherit',
-              fontSize: 13, fontWeight: etapa === p.id ? 800 : 600, cursor: 'pointer',
-              background: etapa === p.id ? '#EEECFE' : 'transparent', color: etapa === p.id ? '#5B4BD6' : 'var(--m-soft)' }}>
-            {p.l} {cuenta[p.id] ?? 0}
-          </button>
-        ))}
+      {/* La cifra baja a subtítulo: es contexto, no el título de la pantalla. */}
+      <div style={{ margin: '-6px 24px 10px', fontSize: '0.84rem', color: 'var(--m-soft)' }}>
+        <b style={{ color: '#C0554E' }}>{dinero((Number(kpis.mrr_en_rescate) || 0) * 12)}</b> de ARR en rescate · {cuenta.todos || 0} casos abiertos
       </div>
-      {(lista || []).map((c: any) => {
+      <div style={{ margin: '4px 24px 12px', position: 'relative' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a98a4" strokeWidth="2" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+        <input value={busca || ''} onChange={e => setBusca(e.target.value)} placeholder={enPorCancelar ? 'Buscar cuenta' : 'Cliente o acuerdo'}
+          style={{ width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 38px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }} />
+      </div>
+      <div className="m-chips">
+        {PESTANAS.map((p: any) => {
+          const n = p.id === 'por_cancelar' ? (kpis.por_caer || 0) : (cuenta[p.id] ?? 0);
+          return (
+            <button key={p.id} onClick={() => setEtapa(p.id)} className={'m-chip' + (etapa === p.id ? ' on' : '')}>
+              {p.l}{etapa === p.id ? ' ' + n : ''}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* «Por cancelar» son otra cosa: todavía no se van y se abren con la
+          ficha del cliente. La señal es desde cuándo no venden, no el dinero. */}
+      {/* Qué es esta pestaña, dicho una vez: en el teléfono no hay tabla ni
+          cabecera que lo explique, y «Por cancelar» a secas se confunde con
+          los casos ya cancelados de las otras pestañas. */}
+      {enPorCancelar && !!(porCaer || []).length && (
+        <div style={{ margin: '0 24px 12px', background: '#FFF8EC', border: '1px solid #f2e3c8', borderRadius: 12,
+          padding: '11px 14px', fontSize: '0.82rem', color: '#7a5a2a', lineHeight: 1.45 }}>
+          Estas <b>{(porCaer || []).length}</b> todavía no cancelan: están vencidas de pago.
+          Conciliar hoy cuesta menos que rescatar después.
+        </div>
+      )}
+      {enPorCancelar && cuentas.map((c: any) => (
+        <div key={c.id} className="m-row" onClick={() => setClienteAbierto(c.id)}>
+          <div className="m-ini">{iniciales(c.nombre_comercial || c.nombre)}</div>
+          <div className="m-tx">
+            <div className="m-n1">{c.nombre_comercial || c.nombre || 'Sin nombre'}</div>
+            <div className="m-n2">
+              {c.sacs_account || 'sin cuenta'}{c.sucursales ? ` · ${c.sucursales} ${c.sucursales === 1 ? 'sucursal' : 'sucursales'}` : ''}
+            </div>
+          </div>
+          <div className="m-fin">
+            {/* La cifra arriba y qué es abajo, como en Clientes. Puesto al
+                revés se leía «vendió hoy / sin vender», que se contradice. */}
+            <div className="m-m1" style={{ color: c.dias_sin_venta >= 15 ? '#C0554E' : c.dias_sin_venta >= 3 ? '#a06600' : undefined }}>
+              {c.dias_sin_venta == null ? '—' : c.dias_sin_venta === 0 ? 'hoy' : `${c.dias_sin_venta} d`}
+            </div>
+            <div className="m-m2">{c.dias_sin_venta == null ? 'sin datos' : c.dias_sin_venta === 0 ? 'última venta' : 'sin vender'}</div>
+          </div>
+        </div>
+      ))}
+      {enPorCancelar && !cuentas.length && (
+        <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--m-soft)', fontSize: '0.86rem' }}>
+          Ninguna cuenta vencida.
+        </div>
+      )}
+
+      {!enPorCancelar && (lista || []).map((c: any) => {
         const emp = c.companies || {};
         const salud = saludDeGracia(c, emp);
         const quedan = diasDeGracia(c);
         return (
-          <div key={c.id} className="m-row m-conv m-sin-avatar" onClick={() => setAbierto(c.id)}>
+          /* Con inicial y en dos renglones, como Clientes. Antes eran tres
+             renglones sin avatar: la lista se leía como de otra aplicación y
+             pesaba el doble de alto por fila. */
+          <div key={c.id} className="m-row" onClick={() => setAbierto(c.id)}>
+            <div className="m-ini">{iniciales(emp.nombre)}</div>
             <div className="m-tx">
-              <div className="m-cab">
-                <div className="m-n1">{emp.nombre || 'Sin nombre'}</div>
-                <span className="m-hora" style={{ fontWeight: 700, color: '#C0554E' }}>{dinero((Number(c.mrr_perdido) || 0) * 12)}</span>
-              </div>
-              <div className="m-emp">
-                {MOTIVO(c.motivo_categoria)}
-                <span className="m-sep"> · </span>
-                <span className="m-ciclo">{ETAPA(c.etapa).l}</span>
-              </div>
-              <div className="m-n2">
-                <span className="m-txt" style={{ color: TONOS[salud.tono].fg, fontWeight: 600 }}>
-                  {c.etapa === 'gracia' && quedan != null ? `${quedan < 0 ? 'gracia vencida' : `quedan ${quedan} d`} · ` : ''}{salud.texto}
-                </span>
+              <div className="m-n1">{emp.nombre || 'Sin nombre'}</div>
+              <div className="m-n2">{MOTIVO(c.motivo_categoria)}</div>
+            </div>
+            <div className="m-fin">
+              <div className="m-m1" style={{ color: '#C0554E' }}>{dinero((Number(c.mrr_perdido) || 0) * 12)}</div>
+              <div className="m-m2" style={{ color: TONOS[salud.tono].fg }}>
+                {c.etapa === 'gracia' && quedan != null ? (quedan < 0 ? 'gracia vencida' : `quedan ${quedan} d`) : salud.texto}
               </div>
             </div>
           </div>
         );
       })}
       {abierto && <ChurnCaso id={abierto} onCerrar={() => setAbierto(null)} onCambio={recargar} />}
+      {clienteAbierto && (
+        <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}>
+          <ClienteDrawer360 companyId={clienteAbierto} onClose={() => setClienteAbierto(null)} onChanged={recargar} />
+        </Suspense>
+      )}
     </div>
   );
 }

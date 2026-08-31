@@ -1474,6 +1474,11 @@ const CRM_MOBILE_CSS = `
       [data-crm-dark="1"] .crm-sheet { background: #131318 !important; color: #F2F1F7; }
       [data-crm-dark="1"] .crm-sheet-hdr { background: #131318 !important; border-bottom-color: #26262e !important; }
       [data-crm-dark="1"] .crm-sheet-hdr button { color: #F2F1F7 !important; }
+      /* Segmentado de la hoja (churn, ficha embebida): en claro es track gris
+         con pastilla blanca; sin esto en oscuro quedaba una barra blanca. */
+      [data-crm-dark="1"] .crm-sheet .fic-seg { background: #232329 !important; }
+      [data-crm-dark="1"] .crm-sheet .fic-seg button[style*="background: rgb(255, 255, 255)"] { background: #3a3a46 !important; color: #F2F1F7 !important; }
+      [data-crm-dark="1"] .crm-sheet .fic-seg-fade { background: linear-gradient(90deg, rgba(35,35,41,0), #232329 75%) !important; }
       /* tarjetas y superficies blancas dentro de la hoja */
       [data-crm-dark="1"] .crm-sheet [style*="background: rgb(255, 255, 255)"] { background: #1d1d24 !important; }
       /* las tintas oscuras que el código escribe en línea (#241d43, #111827,

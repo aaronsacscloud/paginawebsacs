@@ -100,9 +100,9 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
           app en oscuro. Y en el teléfono sube desde abajo, no entra por la
           derecha: por la derecha es un gesto de escritorio. */}
       <div className="crm-sheet" role="dialog" aria-modal="true" aria-label="Caso de churn" style={esMovil ? {
-        position: 'fixed', left: 0, right: 0, bottom: 0, top: 44, background: '#FBFAFF',
-        borderRadius: '16px 16px 0 0', boxShadow: '0 -12px 40px rgba(16,24,40,.22)', zIndex: 901,
-        display: 'flex', flexDirection: 'column', overflowY: 'auto',
+        position: 'fixed', left: 0, right: 0, bottom: 0, top: 'auto', height: '94dvh', background: '#fff',
+        borderRadius: '24px 24px 0 0', boxShadow: '0 -12px 40px rgba(16,24,40,.22)', zIndex: 901,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden auto',
       } : {
         /* Mismo ancho y mismo fondo que la ficha de Clientes: a 560 px todo
            caía en una columna angosta y larguísima, y la misma información se
@@ -116,6 +116,83 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               una línea de identidad debajo y las acciones a la derecha —no
               sueltas en su propio renglón, que las hacía competir con las
               decisiones del caso—. */}
+          {/* ══ Cabecera MÓVIL, la misma de la ficha de Clientes: agarradera,
+              «Volver», inicial + nombre, las dos acciones que se hacen desde el
+              teléfono y las dos cifras que deciden. Las pestañas van en el
+              segmentado gris, no subrayadas: subrayadas no se ven de reojo y a
+              390 px la última quedaba cortada sin que nada lo dijera. ══ */}
+          {esMovil ? (() => {
+            const nombre = String(emp.nombre || emp.sacs_account || 'Cliente');
+            const vacias = ['de', 'del', 'la', 'los', 'las', 'y', 'e'];
+            const ws = nombre.split(/\s+/).filter(w => w && !vacias.includes(w.toLowerCase()) && /[a-zA-ZÁÉÍÓÚÑáéíóúñ0-9]/.test(w[0]));
+            const ini = (ws.length >= 2 ? ws[0][0] + ws[1][0] : (ws[0] || nombre).slice(0, 2)).toUpperCase();
+            const tel = String(d.tel || '').replace(/\D/g, '');
+            const nSeg = (d.historia || []).filter((h: any) => h.churn_caso_id).length;
+            const PESTANAS: [string, string][] = [['resumen', 'Resumen'], ['conciliacion', 'Conciliación'],
+              ['seguimiento', `Seguimiento${nSeg ? ` (${nSeg})` : ''}`], ['cliente', 'Ficha del cliente']];
+            return (
+              <div style={{ background: '#fff' }}>
+                <div onClick={onCerrar} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', cursor: 'pointer' }} aria-label="Cerrar">
+                  <div style={{ width: 44, height: 5, borderRadius: 99, background: '#e2e1e8' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '2px 12px 6px' }}>
+                  <button onClick={onCerrar} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, border: 'none', background: 'none', padding: '8px 12px 8px 8px', fontSize: '0.95rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                    Volver
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0 20px' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f3f6', color: '#6a6875', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1.05rem', flex: 'none' }}>{ini}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{nombre}</div>
+                    <div style={{ fontSize: '0.88rem', color: '#8f8d98', marginTop: 3, lineHeight: 1.4 }}>
+                      {ETAPA(caso.etapa).l} · canceló {caso.fecha_estimada ? 'sin fecha' : String(caso.detectado_at || '').slice(0, 10)}
+                      {caso.episodio > 1 && <b style={{ color: '#C0554E' }}> · {caso.episodio}ª vez</b>}
+                    </div>
+                  </div>
+                </div>
+                {tel && (
+                  <div style={{ display: 'flex', gap: 10, padding: '16px 20px 0' }}>
+                    <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(d.tel || ''))}&wa_nuevo=1`}
+                      style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none' }}>WhatsApp</a>
+                    <a href={'tel:' + tel}
+                      style={{ flex: 1, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 14, fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none' }}>Llamar</a>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'stretch', padding: '16px 20px 4px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>ARR que se fue</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2, color: '#C0554E' }}>{dinero((Number(caso.mrr_perdido) || 0) * 12)}</div>
+                  </div>
+                  <div style={{ width: 1, background: '#ececf1', margin: '2px 18px' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* En gracia lo que aprieta es el reloj del acuerdo; fuera de
+                        gracia, cuánto lleva sin vender —que es lo que dice si
+                        todavía hay algo que rescatar—. */}
+                    <div style={{ fontSize: '0.88rem', color: '#8f8d98' }}>{caso.etapa === 'gracia' && quedan != null ? (quedan < 0 ? 'Gracia vencida' : 'Quedan de gracia') : 'Sin vender'}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', marginTop: 2,
+                      color: caso.etapa === 'gracia' && quedan != null && quedan < 0 ? '#C0554E' : '#1a1a1a' }}>
+                      {caso.etapa === 'gracia' && quedan != null ? `${Math.abs(quedan)} d` : (emp.dias_sin_venta != null ? `${emp.dias_sin_venta} d` : '—')}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ position: 'relative', margin: '14px 16px 0' }}>
+                  <div className="fic-seg" style={{ display: 'flex', gap: 2, background: '#f2f2f5', borderRadius: 12, padding: 3, overflowX: 'auto' }}>
+                    {PESTANAS.map(([k, l]) => (
+                      <button key={k} onClick={() => setVista(k as any)} style={{
+                        flex: 'none', padding: '9px 15px', borderRadius: 10, border: 'none',
+                        background: vista === k ? '#fff' : 'transparent', boxShadow: vista === k ? '0 1px 3px rgba(16,24,40,.14)' : 'none',
+                        fontWeight: 700, color: vista === k ? '#1a1a1a' : '#8f8d98', fontSize: '0.88rem',
+                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      }}>{l}</button>
+                    ))}
+                  </div>
+                  {/* El degradado avisa que hay más pestañas a la derecha. */}
+                  <div className="fic-seg-fade" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30, background: 'linear-gradient(90deg, rgba(242,242,245,0), #f2f2f5 75%)', borderRadius: '0 12px 12px 0', pointerEvents: 'none' }} />
+                </div>
+              </div>
+            );
+          })() : (<>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec',
             display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 22px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -136,10 +213,6 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               color: '#8e88a8', width: 32, height: 32, borderRadius: 8, fontSize: '1.1rem', flexShrink: 0 }}>✕</button>
           </div>
 
-          {/* Pestañas, como en la ficha de Clientes. Antes todo vivía en la
-              misma pantalla: cuatro decisiones, la propuesta, el uso, el
-              formulario de toque y la historia, todo abierto a la vez. Cada
-              cosa tiene ahora su lugar y al entrar se ve UNA sola. */}
           <div style={{ position: 'sticky', top: 64, zIndex: 4, background: '#fff', borderBottom: '1px solid #ececec', padding: '0 22px' }}>
             <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', overflowX: 'auto' }}>
               {([['resumen', 'Resumen'], ['conciliacion', 'Conciliación'], ['seguimiento', `Seguimiento${(d.historia || []).filter((h: any) => h.churn_caso_id).length ? ` (${(d.historia || []).filter((h: any) => h.churn_caso_id).length})` : ''}`], ['cliente', 'Ficha del cliente']] as const).map(([k, l]) => (
@@ -153,6 +226,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               ))}
             </div>
           </div>
+          </>)}
 
           {vista === 'cliente' ? (
             /* La ficha del cliente ENTERA, la misma de Clientes: cotizaciones,
@@ -172,6 +246,17 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             <style>{`
               .caso-reja { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
               .caso-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+              /* En el teléfono: el aire de la ficha de Clientes, botón y campo
+                 de 44 px —que es lo que un pulgar acierta— y 16 px de letra en
+                 los campos, porque menos hace que iOS haga zoom al escribir. */
+              @media (max-width: 760px) {
+                .caso-reja { padding: 16px 16px 28px !important; gap: 12px; }
+                .caso-reja button { min-height: 44px; }
+                .caso-reja input, .caso-reja select, .caso-reja textarea { min-height: 44px; font-size: 16px; }
+                /* Las decisiones del caso, a todo lo ancho: en el teléfono un
+                   botón a la mitad del renglón se lee como si fuera opcional. */
+                .caso-acc > button { width: 100%; }
+              }
             `}</style>
             <div className="caso-col" style={{ display: vista === 'resumen' ? 'flex' : 'none' }}>
             {/* ── Bloque RESCATE ── */}
@@ -241,7 +326,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
 
               {/* ── Los botones que existen desde esta etapa ── */}
               {!pidiendo && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+                <div className="caso-acc" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
                   {caso.etapa === 'detectado' && (
                     <button onClick={() => mover('conciliacion')} disabled={guardando} style={btn('#5B4BD6')}>Empezar conciliación</button>
                   )}
