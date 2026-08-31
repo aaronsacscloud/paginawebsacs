@@ -199,8 +199,19 @@ function pestanaDe(c: any): string | null {
   // sin seguimiento REAL se marcó rezagado. La marca se deshace sola: un
   // contacto posterior a ella lo regresa a su pestaña (la identidad
   // lead_calificado no se toca, solo dónde se enseña).
+  /* La marca del barrido se deshace con CUALQUIER señal de vida posterior, no
+     solo con que nosotros lo contactemos.
+     Medido: de los 106 marcados, 90 tienen `last_contact_at` en NULL — o sea
+     que para ellos la puerta estaba soldada: la única forma de salir exigía un
+     campo que nunca se les escribe. Solo 1 había salido. Si el lead respondió
+     o hubo actividad después de la marca, está vivo y la marca ya no aplica. */
   const marcaR = c.propiedades?.rezagado_marcado;
-  const retocado = marcaR && c.last_contact_at && Date.parse(c.last_contact_at) > Date.parse(marcaR);
+  const despuesDeLaMarca = (f?: string | null) => !!(f && Date.parse(f) > Date.parse(marcaR));
+  const retocado = marcaR && (
+    despuesDeLaMarca(c.last_contact_at) ||
+    despuesDeLaMarca(c.respondio_at) ||
+    despuesDeLaMarca(c.ultima_actividad?.at)
+  );
   if (marcaR && !retocado) return 'rezagados';
   if (c.lifecycle_stage === 'lead_calificado') return 'calificados';
   // Rezagado: frío (sin señal viva), llegó hace +14 días y nadie lo ha tocado
@@ -1627,7 +1638,18 @@ export default function LeadsTab() {
                           // el color del sistema cuando fue suya.
                           const ua = c.ultima_actividad;
                           const t = c.esfuerzo?.total || 0;
-                          if (!ua) return <div style={S.vacio}>{t === 0 ? 'nunca contactado' : 'sin señal suya'}</div>;
+                          /* Por qué está AQUÍ. Un «Calificado» dentro de
+                             Rezagados se lee como error hasta que la fila
+                             explica que lo metió el barrido de agosto — la
+                             pestaña no es la etapa: la etapa dice quién es, la
+                             pestaña dice dónde está en la fila de trabajo. */
+                          const porBarrido = etapa === 'rezagados' && c.propiedades?.rezagado_marcado;
+                          if (!ua) return (
+                            <div style={S.vacio}>
+                              {t === 0 ? 'nunca contactado' : 'sin señal suya'}
+                              {porBarrido && <div style={{ ...S.sub, color: '#8a5a3c' }}>marcado en el barrido</div>}
+                            </div>
+                          );
                           const suya = esSuya(ua.tipo);
                           return (
                             <div style={{ color: suya ? '#5B4BD6' : '#4a4a52', fontWeight: suya ? 700 : 400 }}>
