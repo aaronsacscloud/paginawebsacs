@@ -21,7 +21,7 @@ const pasos = [
     texto: 'La que tomaste con el celular en tu tienda, colgada en el gancho, con la luz que había. No necesitas estudio ni sesión.',
     img: '/images/flujo/01-tu-foto.webp',
     alt: 'Vestido colgado en un gancho fotografiado con celular dentro de una boutique',
-    tono: '#3A2A10', zoom: -0.87, foco: [0.5, 0.5],
+    tono: '#0D5561', zoom: -0.87, foco: [0.5, 0.5],
   },
   {
     n: '02',
@@ -30,7 +30,7 @@ const pasos = [
     img: '/images/flujo/02-variantes.webp',
     alt: 'La misma prenda repetida en cinco colores distintos con iluminación idéntica',
     // Los cinco colores tienen que caber ENTEROS: este no se acerca nunca.
-    tono: '#2B2A15', zoom: 1.0, foco: [0.5, 0.5],
+    tono: '#0F4A73', zoom: 1.0, foco: [0.5, 0.5],
   },
   {
     n: '03',
@@ -38,7 +38,7 @@ const pasos = [
     texto: 'Eliges la modelo, la pose y el fondo — y queda igual en toda la temporada. Tu marca deja de verse improvisada.',
     img: '/images/flujo/03-modelo.webp',
     alt: 'Modelo con el vestido en una toma editorial de campaña',
-    tono: '#43260F', zoom: -0.84, foco: [0.48, 0.5],
+    tono: '#1B3A82', zoom: -0.84, foco: [0.48, 0.5],
   },
   {
     n: '04',
@@ -47,7 +47,7 @@ const pasos = [
     img: '/images/flujo/04-reel.webp',
     alt: 'La misma modelo en movimiento, en formato vertical de video social',
     // Vertical y de cuerpo entero: sin acercar, para no cortarle cabeza ni pies.
-    tono: '#241E10', zoom: 1.0, foco: [0.5, 0.5],
+    tono: '#232B63', zoom: 1.0, foco: [0.5, 0.5],
   },
 ];
 ---
@@ -92,24 +92,26 @@ const pasos = [
 </section>
 
 <style>
-  /* Familia ámbar en oscuro, la misma del pastel del corte de arriba (#F5E2B8).
+  /* Azules saturados: el COMPLEMENTO del amarillo del corte de arriba, que es
+     el par que más vibra (ámbar contra teal) y el que hace saltar al vestido
+     terracota en vez de fundirlo, como pasaba en tierra sobre tierra.
      En claro NO se puede: las cuatro fotos son de estudio negro y sobre crema
      las dos que van en panel quedan como rectángulos negros flotando.
-     Los tonos van de más cerca del amarillo a más cerca del negro, así la
-     sección entrega al pilar Controla (#1D1D1F) sin un corte duro.
+     Van de teal a índigo, oscureciéndose, así la sección entrega al pilar
+     Controla (#1D1D1F) sin un corte duro.
 
      El tono se registra como color para que el cambio de paso sea un fundido
      y no un salto. Donde @property no exista, cambia de golpe: se ve igual de
      bien, solo sin la transición. */
-  @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #3A2A10; }
-  @property --fl-lienzo-fondo { syntax: '<color>'; inherits: true; initial-value: #171106; }
+  @property --fl-fondo { syntax: '<color>'; inherits: true; initial-value: #0D5561; }
+  @property --fl-lienzo-fondo { syntax: '<color>'; inherits: true; initial-value: #052227; }
 
   .fl {
     position: relative; color: #fff;
     /* El menú flota encima: sin esto, saltar a #flujo deja el badge debajo. */
     scroll-margin-top: 80px;
-    --fl-fondo: #3A2A10;
-    --fl-lienzo-fondo: #171106;
+    --fl-fondo: #0D5561;
+    --fl-lienzo-fondo: #052227;
     background: var(--fl-fondo);
     transition: --fl-fondo 1.1s cubic-bezier(.4,0,.2,1),
                 --fl-lienzo-fondo 1.1s cubic-bezier(.4,0,.2,1);
