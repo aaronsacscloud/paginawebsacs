@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useMemo, useRef, useState } from 'react';
+import { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -273,6 +273,26 @@ export default function TablaEnterprise({
     loadVistas();
   }
 
+  // El filtrado, en una sola función, porque se usa dos veces: para la tabla y
+  // para contar cuántas filas tiene CADA pestaña sin cambiar de vista.
+  const aplicarFiltros = useCallback((filas: any[], cfg: VistaConfig) => {
+    let out = filas;
+    const q = String(cfg.search || '').trim().toLowerCase();
+    if (q) out = out.filter(r => searchText(r).toLowerCase().includes(q));
+    for (const qd of quick) { const v = cfg.quick?.[qd.key]; if (v) out = out.filter(r => qd.apply(r, v)); }
+    for (const c of (cfg.conds || [])) { const col = colBy[c.campo]; if (col) out = out.filter(r => evalCond(col, r, c)); }
+    return out;
+  }, [quick, colBy, searchText]);
+
+  // Cuántas filas tiene cada pestaña. Sin este número, una pestaña que esconde
+  // filas hace leer una lista corta creyendo que está completa — por eso antes
+  // había pantallas con las pestañas apagadas.
+  const conteoVistas = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const v of vistas) m[v.key] = aplicarFiltros(data, v.config).length;
+    return m;
+  }, [vistas, data, aplicarFiltros]);
+
   // ── Pipeline de datos: search → quick → condiciones → orden → página
   const filtrados = useMemo(() => {
     let out = data;
@@ -359,17 +379,10 @@ export default function TablaEnterprise({
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-            {quickSelects}
-            {quickExtra}
-            <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
-              <SlidersHorizontal size={15} strokeWidth={2} />
-              Más filtros
-              {conds.length > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '17px' }}>{conds.length}</span>}
-            </button>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
-          </div>
-          {showFiltros && <div style={{ marginBottom: 12 }}>{condsPanel}</div>}
+          {/* Solo las acciones arriba. Los filtros bajan al renglón del
+              buscador, debajo de las pestañas: es el orden de Cotizaciones
+              —primero eliges DE QUÉ lista hablas, luego la afinas—. */}
+          {actions && <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap', justifyContent: 'flex-end', marginBottom: 12 }}>{actions}</div>}
         </>
       )}
 
@@ -398,18 +411,20 @@ export default function TablaEnterprise({
         .te-sort-on { color: #1a1a1a !important; font-size: 0.95em; }
         .te-th-sort:hover { background: #f4f6f9; }
       `}</style>
-      <div style={{ position: 'relative', marginBottom: 12 }}>
-        <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a8', pointerEvents: 'none' }} />
-        <input className="te-search" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder={searchPlaceholder}
-          style={{ ...E.input, width: '100%', height: 40, fontWeight: 500, padding: '0 14px 0 38px' }} />
-      </div>
-
       {/* ③ TABS DE VISTAS + guardar */}
       {!sinVistas && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 0, overflowX: 'auto', flexWrap: 'nowrap' }}>
         {vistas.map(v => (
           <button key={v.key} style={E.tab(v.key === vistaKey)} onClick={() => aplicarVista(v)} title={v.fija ? 'Vista predefinida' : 'Vista guardada'}>
             {v.nombre}
+            {/* Pegado al texto, «Todos 142» se lee como una sola palabra. En
+                cero va más tenue: una pestaña vacía no debe invitar al clic. */}
+            <span style={{
+              marginLeft: 6, fontSize: '0.66rem', fontWeight: v.key === vistaKey ? 800 : 700,
+              background: v.key === vistaKey ? '#fff' : '#f3f3f6',
+              color: v.key === vistaKey ? '#5B4BD6' : conteoVistas[v.key] === 0 ? '#c4c4cc' : '#8a8a92',
+              borderRadius: 20, padding: '2px 8px',
+            }}>{conteoVistas[v.key] ?? 0}</span>
             {!v.fija && v.key === vistaKey && <span onClick={e => borrarVista(v, e)} title="Eliminar vista" style={{ color: '#b93333', fontWeight: 800, marginLeft: 4, padding: isMobile ? '10px 10px' : '2px 6px', minWidth: isMobile ? 40 : 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{confirmVista === v.key ? '✕?' : '✕'}</span>}
           </button>
         ))}
@@ -431,6 +446,34 @@ export default function TablaEnterprise({
           <button style={{ ...E.btnDark, padding: '8px 12px' }} onClick={() => setShowGuardar(true)}>+ Guardar como vista</button>
         </div>
       )}
+
+      {/* ② BUSCADOR + FILTROS, en un solo renglón y debajo de las pestañas.
+          Antes el buscador ocupaba el ancho completo y los filtros vivían
+          arriba del todo, separados de lo que filtran. */}
+      {!isMobile && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '12px 0 0' }}>
+          <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: 440, minWidth: 220 }}>
+            <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a8', pointerEvents: 'none' }} />
+            <input className="te-search" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder={searchPlaceholder}
+              style={{ ...E.input, width: '100%', height: 38, fontWeight: 500, padding: '0 14px 0 38px' }} />
+          </div>
+          {quickSelects}
+          {quickExtra}
+          <button style={{ ...E.btn, height: 38, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
+            <SlidersHorizontal size={15} strokeWidth={2} />
+            Más filtros
+            {conds.length > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '17px' }}>{conds.length}</span>}
+          </button>
+        </div>
+      )}
+      {isMobile && (
+        <div style={{ position: 'relative', padding: '12px 0 0' }}>
+          <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 12, top: 'calc(50% + 6px)', transform: 'translateY(-50%)', color: '#9aa0a8', pointerEvents: 'none' }} />
+          <input className="te-search" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder={searchPlaceholder}
+            style={{ ...E.input, width: '100%', height: 44, fontWeight: 500, padding: '0 14px 0 38px' }} />
+        </div>
+      )}
+      {!isMobile && showFiltros && <div style={{ paddingTop: 12 }}>{condsPanel}</div>}
 
       {/* Chips de condiciones activas */}
       {conds.length > 0 && (
