@@ -130,7 +130,7 @@ export default function ImportarTikTok({ onCerrar, onListo }: { onCerrar: () => 
                   </tr></thead>
                   <tbody>
                     {(r.reporte || []).map((f: any, i: number) => {
-                      const t = TAG[f.accion] || TAG.duplicado;
+                      const t = TAG[f.accion] || { bg: '#f4f4f6', fg: '#5D6470', l: f.accion || '—' };
                       return (
                         <tr key={i}>
                           <td style={S.td}>

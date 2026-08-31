@@ -17,6 +17,7 @@
 // ahora vive en Seguimiento, que es su pestaña. Un lead rara vez se enfría por
 // falta de interés; se enfría porque nadie supo cuál era el siguiente paso.
 import { useEffect, useMemo, useState } from 'react';
+import { lifecycleDe } from '../../../lib/crm/lifecycle';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { minutaLlena, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
 import MinutaLead from './MinutaLead';
@@ -108,12 +109,13 @@ function useGiros() {
   return g;
 }
 
-const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
-  lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
-  lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
-  oportunidad: { l: 'Oportunidad', bg: '#E3EDFD', fg: '#2C5FC4' },
-  cliente: { l: 'Cliente', bg: '#EAF8F2', fg: '#1E8A63' },
-  churned: { l: 'Perdido', bg: '#FEF0EF', fg: '#C0554E' },
+/* Del catálogo COMPARTIDO. Este mapa tenía cinco de las nueve etapas y caía
+   en `|| ETAPAS.lead`: la pastilla junto al nombre pintaba «Nuevo» a un lead
+   descalificado. El mismo bug que tenía la tabla, en la ficha. */
+const ETAPA_DE = (id?: string | null) => {
+  const e = lifecycleDe(id);
+  if (e) return { l: e.label, bg: e.bg, fg: e.fg };
+  return { l: id ? String(id) : '—', bg: '#f4f4f6', fg: '#6B7280' };
 };
 
 /* Colores de la etapa DEDUCIDA, la de la ruta.
@@ -233,7 +235,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
   const eta = evaluacion?.etapa as Etapa | undefined;
   const et = eta
     ? { l: ETAPA_LABEL[eta], ...COLOR_ETAPA[eta] }
-    : (ETAPAS[c.lifecycle_stage] || ETAPAS.lead);
+    : ETAPA_DE(c.lifecycle_stage);
   // Select con el acabado del input: el chevron nativo del navegador
   // desentonaba junto a los campos de texto.
   const selE = { ...D.fi, appearance: 'none' as const, WebkitAppearance: 'none' as const,

@@ -21,6 +21,7 @@
 //  3. TENDENCIA. Cinco señales el lunes y nada desde entonces NO es lo mismo
 //     que dos ayer, aunque sumen parecido. «Enfriándose» es accionable hoy.
 import { useEffect, useMemo, useState } from 'react';
+import { lifecycleDe } from '../../../lib/crm/lifecycle';
 import FilaDeslizable from './ui/FilaDeslizable';
 import { archivar, desarchivar, estaArchivado } from '../../../lib/crm/archivo-actividad';
 import { swrGet } from '../../../lib/crm/swr';
@@ -77,10 +78,12 @@ export function useLeadsActivos(dias = 7) {
 
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
 
-const CICLO: Record<string, string> = {
-  lead: 'Lead', lead_calificado: 'Calificado', oportunidad: 'Oportunidad',
-  rezagado: 'Rezagado', cliente: 'Cliente', churned: 'Baja', descalificado: 'Descalificado',
-};
+/* Del catálogo compartido: siete de las nueve etapas escritas a mano ya se
+   habían quedado cortas dos veces. Aquí el fallback SÍ era honesto (mostraba
+   el id crudo), pero la lista igual se desincronizaba en las etiquetas. */
+const CICLO = new Proxy({} as Record<string, string>, {
+  get: (_t, k: string) => lifecycleDe(k)?.label || '',
+});
 
 const TEMP: Record<string, { l: string; bg: string; fg: string }> = {
   caliente: { l: 'Caliente', bg: '#FEE7E3', fg: '#9A3412' },

@@ -82,7 +82,7 @@ export function PlanOptions({ plans }: { plans: any[] }) {
 }
 
 export function Estado({ e }: { e: string }) {
-  const cfg = ESTADOS[e] || ESTADOS.programada;
+  const cfg = ESTADOS[e] || { label: e || '—', bg: '#f4f4f6', color: '#5D6470' };
   return <span style={{ ...S.badge, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
 }
 

@@ -100,7 +100,7 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
       {msg && <div style={{ padding: '0 14px 8px', fontSize: '0.75rem', color: '#4B7BE5' }}>{msg}</div>}
 
       {abierto && data.map((d: any) => {
-        const c = CAT[d.categoria] || CAT.nuevo;
+        const c = CAT[d.categoria] || { label: d.categoria || '—', bg: '#f4f4f6', color: '#5D6470' };
         return (
           <div key={d.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 14px', borderTop: '1px solid #efecfb', flexWrap: 'wrap', background: '#fff' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: c.bg, color: c.color, whiteSpace: 'nowrap' }}>{c.label}</span>

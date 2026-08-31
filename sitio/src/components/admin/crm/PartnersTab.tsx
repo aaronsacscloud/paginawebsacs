@@ -471,7 +471,7 @@ export default function PartnersTab() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {filtered.map(it => {
               const tipoInfo = TIPO_LABELS[it.tipo] || { label: it.tipo, color: '#999', tagline: '' };
-              const estadoInfo = ESTADO_LABELS[it.estado] || ESTADO_LABELS.draft;
+              const estadoInfo = ESTADO_LABELS[it.estado] || it.estado || '—';
               const tmid = (it as any).team_member_id;
               return (
                 <div
@@ -533,7 +533,7 @@ export default function PartnersTab() {
             <tbody>
               {filtered.map(it => {
                 const tipoInfo = TIPO_LABELS[it.tipo] || { label: it.tipo, color: '#999', tagline: '' };
-                const estadoInfo = ESTADO_LABELS[it.estado] || ESTADO_LABELS.draft;
+                const estadoInfo = ESTADO_LABELS[it.estado] || it.estado || '—';
                 const views = Number(it.view_count || 0);
                 const lastViewed = it.last_viewed_at;
                 // Heat color based on engagement

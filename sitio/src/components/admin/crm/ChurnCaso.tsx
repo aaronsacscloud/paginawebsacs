@@ -643,7 +643,7 @@ function BloqueCompromisos({ lista }: { lista: any[] }) {
       </div>
       <div style={{ display: 'grid', gap: 7 }}>
         {lista.map((m: any) => {
-          const [bg, fg, l] = TONO[m.estado] || TONO.idea;
+          const [bg, fg, l] = TONO[m.estado] || ['#f4f4f6', '#5D6470', m.estado || '—'];
           // Vencido es rojo aunque el estado diga «en curso»: la fecha manda.
           const vencido = m.estado !== 'entregada' && m.fecha_compromiso && m.fecha_compromiso < hoy;
           return (
