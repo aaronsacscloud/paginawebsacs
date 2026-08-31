@@ -112,10 +112,13 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 
 // `embebido`: la ficha vive DENTRO de la hoja (VistaRapida). La hoja ya pone
 // superficie, asa, identidad y acciones; aquí se apagan para no duplicarlas.
-export default function ClienteDrawer360({ companyId, onClose, onChanged, embebido }: { companyId: string; onClose: () => void; onChanged: () => void; embebido?: boolean }) {
+export default function ClienteDrawer360({ companyId, onClose, onChanged, embebido, tabInicial }: { companyId: string; onClose: () => void; onChanged: () => void; embebido?: boolean;
+  /** Con qué pestaña abre. La usa el caso de churn, que entra buscando la
+   *  actividad y no el resumen. */
+  tabInicial?: string }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'reuniones' | 'mejoras' | 'act' | 'outbound' | 'soporte' | 'whatsapp'>((tabInicial as any) || 'resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -285,7 +288,11 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged, embebi
             })()}
             {!isMobile && (
             <div style={D.head}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              {/* Embebida, la fila de identidad sobra: quien la contiene ya puso
+                  el nombre arriba, y repetirlo trae además un «Eliminar» y una
+                  ✕ que ahí no significan lo mismo —la ✕ no cierra nada y el
+                  borrado se dispararía desde una pantalla que no es la suya—. */}
+              <div style={{ display: embebido ? 'none' : 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   {/* El título es la EMPRESA y se puede corregir aquí mismo: el
                       nombre se sugirió partiendo la cuenta SACS, y cuando la

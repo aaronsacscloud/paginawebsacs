@@ -9,8 +9,12 @@
  * Las transiciones piden lo que la etapa destino exige y NO más. El servidor
  * valida igual: aquí solo se evita el viaje en balde y se explica el porqué.
  */
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
+/* La ficha del cliente entera, reusada tal cual: cotizaciones, soporte,
+   reuniones y actividad se ven aquí exactamente como en Clientes. */
+const ClienteDrawer360 = lazySeguro(() => import('./ClienteDrawer360'));
 import { ETAPAS, ETAPA, MOTIVOS, MOTIVO, diasDeGracia, saludDeGracia, modulosVivos, compararUso, veredictoRescate, type Etapa } from '../../../lib/crm/churn.reglas';
 import { confirmar } from '../../../lib/ui/confirmar';
 
@@ -32,6 +36,9 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
   const [pidiendo, setPidiendo] = useState<Etapa | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [toque, setToque] = useState<any>({ tipo: 'llamada', texto: '', proximo_paso: '', proximo_paso_at: '' });
+  /* En qué pestaña estás. Abre en «Resumen»: al entrar a un caso lo primero
+     que se necesita es saber quién es, desde cuándo y por qué se fue. */
+  const [vista, setVista] = useState<'resumen' | 'conciliacion' | 'seguimiento' | 'cliente'>('resumen');
   const [extendiendo, setExtendiendo] = useState(false);
   const esMovil = useIsMobile();
   /* En el teléfono, «atrás» tiene que cerrar la hoja, no sacarte de la
@@ -123,27 +130,50 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
                 <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(d.tel || ''))}&wa_nuevo=1`}
                   style={{ ...btn('#fff', '#1E8A63'), textDecoration: 'none', display: 'inline-block' }}>WhatsApp</a>
-                <a href={`/admin/crm?tab=cotizaciones&nueva=1&company=${caso.company_id}`}
-                  style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Cotizar</a>
-                <a href={`/admin/crm?tab=reuniones&nueva=1&company=${caso.company_id}`}
-                  style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Agendar</a>
               </div>
             )}
             <button onClick={onCerrar} aria-label="Cerrar" style={{ border: 'none', background: 'none', cursor: 'pointer',
               color: '#8e88a8', width: 32, height: 32, borderRadius: 8, fontSize: '1.1rem', flexShrink: 0 }}>✕</button>
           </div>
 
-          {/* A 1240 px una sola columna deja media pantalla en blanco y obliga a
-              bajar por todo para ver el uso. Dos columnas: a la izquierda el
-              caso y lo que hay que decidir, a la derecha el contexto que
-              sustenta la decisión. En pantallas chicas se apilan solas. */}
+          {/* Pestañas, como en la ficha de Clientes. Antes todo vivía en la
+              misma pantalla: cuatro decisiones, la propuesta, el uso, el
+              formulario de toque y la historia, todo abierto a la vez. Cada
+              cosa tiene ahora su lugar y al entrar se ve UNA sola. */}
+          <div style={{ position: 'sticky', top: 64, zIndex: 4, background: '#fff', borderBottom: '1px solid #ececec', padding: '0 22px' }}>
+            <div style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', overflowX: 'auto' }}>
+              {([['resumen', 'Resumen'], ['conciliacion', 'Conciliación'], ['seguimiento', `Seguimiento${(d.historia || []).filter((h: any) => h.churn_caso_id).length ? ` (${(d.historia || []).filter((h: any) => h.churn_caso_id).length})` : ''}`], ['cliente', 'Ficha del cliente']] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setVista(k as any)} style={{
+                  background: vista === k ? '#EEECFE' : 'none', border: 'none',
+                  borderRadius: '9px 9px 0 0', borderBottom: vista === k ? '2px solid #9B8CFA' : '2px solid transparent',
+                  color: vista === k ? '#5B4BD6' : '#666', fontWeight: vista === k ? 800 : 500,
+                  fontSize: '0.8125rem', padding: '10px 14px', cursor: 'pointer', fontFamily: 'inherit',
+                  whiteSpace: 'nowrap', marginBottom: -1, flexShrink: 0,
+                }}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          {vista === 'cliente' ? (
+            /* La ficha del cliente ENTERA, la misma de Clientes: cotizaciones,
+               tickets de soporte, reuniones, actividad, WhatsApp. No se copia
+               nada — si algo cambia allá, cambia aquí. Abre en Actividad, que
+               es el historial que se viene a ver desde un caso. */
+            caso.company_id
+              ? <Suspense fallback={<div style={{ padding: 40, color: '#8e88a8' }}>Cargando la ficha…</div>}>
+                  <ClienteDrawer360 companyId={caso.company_id} embebido tabInicial="resumen" onClose={() => {}} onChanged={() => { cargar(); onCambio(); }} />
+                </Suspense>
+              : <div style={{ padding: 40, textAlign: 'center', color: '#71707C' }}>
+                  <div style={{ fontWeight: 700, color: '#241d43' }}>Este caso no tiene empresa ligada.</div>
+                  <div style={{ fontSize: '0.83rem', marginTop: 4 }}>Sin empresa no hay ficha que mostrar: lígala desde el alta del caso.</div>
+                </div>
+          ) : (
           <div className="caso-reja" style={{ padding: 18 }}>
             <style>{`
-              .caso-reja { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14; align-items: start; }
-              @media (min-width: 1080px) { .caso-reja { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; } }
+              .caso-reja { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
               .caso-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
             `}</style>
-            <div className="caso-col">
+            <div className="caso-col" style={{ display: vista === 'resumen' ? 'flex' : 'none' }}>
             {/* ── Bloque RESCATE ── */}
             <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
@@ -221,10 +251,17 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   {caso.etapa === 'gracia' && (
                     <button onClick={() => setExtendiendo(true)} style={btn('#fff', '#5B4BD6')}>Extender la gracia</button>
                   )}
-                  {['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (<>
-                    <button onClick={() => setPidiendo('recuperado')} style={btn('#fff', '#1E8A63')}>Marcar recuperado</button>
-                    <button onClick={() => setPidiendo('irrecuperable')} style={btn('#fff', '#C0554E')}>Cerrar como perdido</button>
-                  </>)}
+                  {/* Cerrar el caso NO es una cuarta opción del mismo peso: se
+                      hace una vez y al final. Va en texto, debajo, para que
+                      arriba quede solo lo que mueve el rescate. */}
+                  {['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (
+                    <span style={{ display: 'flex', gap: 14, alignItems: 'center', width: '100%', marginTop: 4, fontSize: '0.78rem' }}>
+                      <button onClick={() => setPidiendo('recuperado')}
+                        style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, color: '#1E8A63' }}>Marcar recuperado</button>
+                      <button onClick={() => setPidiendo('irrecuperable')}
+                        style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 600, color: '#C0554E' }}>Cerrar como perdido</button>
+                    </span>
+                  )}
                   {!['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (
                     <div style={{ fontSize: '0.8rem', color: '#71707C' }}>
                       Caso cerrado. Si este cliente vuelve a irse, se abre un episodio nuevo.
@@ -360,12 +397,62 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
               </div>
             )}
 
-            <BloquePropuesta d={d} id={id} onCambio={() => { cargar(); onCambio(); }} />
+            {/* Datos duros del cliente: lo primero que se pregunta al abrir un
+                caso es desde cuándo, por qué y de qué tamaño era. Estaba
+                repartido entre la cabecera y la tabla de atrás. */}
+            <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 12 }}>
+                El cliente
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
+                {[
+                  { l: 'Canceló', v: caso.fecha_estimada
+                      ? <>sin fecha<span style={{ display: 'block', fontSize: '0.72rem', color: '#8e88a8', fontWeight: 500 }}>en la lista desde {String(caso.detectado_at || '').slice(0, 10)}</span></>
+                      : <>{String(caso.detectado_at || '').slice(0, 10)}<span style={{ display: 'block', fontSize: '0.72rem', color: '#8e88a8', fontWeight: 500 }}>hace {Math.max(0, Math.round((Date.now() - Date.parse(String(caso.detectado_at))) / 86400000))} dias</span></> },
+                  { l: 'Motivo', v: MOTIVO(caso.motivo_categoria) || '\u2014' },
+                  { l: 'Sucursales', v: emp.sucursales ? String(emp.sucursales) : '\u2014' },
+                  { l: 'Plan', v: emp.plan || '\u2014' },
+                  { l: 'ARR que se fue', v: dinero((Number(caso.mrr_perdido) || 0) * 12) },
+                  { l: 'Cuenta SACS', v: emp.sacs_account || <span style={{ color: '#a06600' }}>sin ligar</span> },
+                ].map(c => (
+                  <div key={c.l}>
+                    <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{c.l}</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#241d43', marginTop: 3 }}>{c.v}</div>
+                  </div>
+                ))}
+              </div>
+              {(caso.motivo_detalle || caso.motivo_original) && (
+                <div style={{ fontSize: '0.82rem', color: '#4a4756', marginTop: 14, lineHeight: 1.5, paddingTop: 12, borderTop: '1px solid #f2f0f7' }}>
+                  {caso.motivo_detalle || caso.motivo_original}
+                </div>
+              )}
+            </div>
+            <BloqueUso caso={caso} emp={emp} />
             </div>
 
-            <div className="caso-col">
-            <BloqueUso caso={caso} emp={emp} />
+            <div className="caso-col" style={{ display: vista === 'conciliacion' ? 'flex' : 'none' }}>
+            {/* Qué es la conciliación, dicho antes de pedir nada. Estaba
+                implícito: quien abría el caso veía cuatro botones y ninguno
+                explicaba qué se estaba decidiendo. */}
+            <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 8 }}>
+                Qué es conciliar
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#4a4756', lineHeight: 1.55 }}>
+                Es sentarse con el cliente que ya canceló y acordar en qué términos vuelve:
+                un período sin costo, a qué nos comprometemos nosotros y a cuánto vuelve a
+                pagar al terminar. Si acepta, la gracia queda pactada con esos términos y el
+                caso pasa a seguirse solo.
+                {caso.etapa === 'detectado' && <span style={{ display: 'block', marginTop: 6, color: '#a06600' }}>
+                  Este caso todavía no entra a conciliación. Empieza desde el resumen.
+                </span>}
+              </div>
+            </div>
+            <BloquePropuesta d={d} id={id} onCambio={() => { cargar(); onCambio(); }} />
             <BloqueCompromisos lista={d.compromisos || []} />
+            </div>
+
+            <div className="caso-col" style={{ display: vista === 'seguimiento' ? 'flex' : 'none' }}>
 
             {/* ── Registrar lo que pasó. Va ARRIBA de la historia porque es
                     lo que se hace al terminar una llamada, no al final de
@@ -419,6 +506,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             </div>
             </div>
           </div>
+          )}
         </>)}
       </div>
     </>
