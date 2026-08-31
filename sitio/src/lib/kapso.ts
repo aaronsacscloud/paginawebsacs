@@ -10,7 +10,7 @@
 // sale por la MISMA vía que el inbox —la que se usa todo el día y por lo tanto
 // se sabe viva— y además queda espejado en la conversación del cliente, que es
 // donde alguien lo va a buscar.
-import { enviarTexto, usarNumero } from './whatsapp/kapso-api';
+import { enviarTexto, usarNumero, KapsoError } from './whatsapp/kapso-api';
 import { registrarMensaje } from './whatsapp/espejo';
 import { telefonoWhatsApp } from './telefono';
 import { supabase } from './supabase';
@@ -42,6 +42,12 @@ export async function sendWhatsApp(to: string, message: string, autor = 'Sistema
     }
     return { sent: true };
   } catch (err: any) {
+    // Meta no acepta texto libre fuera de la ventana de 24 h. Antes esto se
+    // perdía en un `{sent:false}` sin motivo; ahora el que llama puede decidir
+    // (mandar plantilla, avisar al equipo) en vez de suponer que salió.
+    if (err instanceof KapsoError && /131047|window|24/i.test(String(err.message))) {
+      return { sent: false, error: 'Ventana de 24 h cerrada: este mensaje necesita plantilla' };
+    }
     return { sent: false, error: String(err?.message || err) };
   }
 }

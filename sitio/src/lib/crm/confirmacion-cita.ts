@@ -13,7 +13,7 @@
 // Aquí se usa el mismo `enviarTexto` + `registrarMensaje` que el inbox, que
 // es el que se sabe vivo porque se usa todo el día.
 import { supabase } from '../supabase';
-import { enviarTexto, usarNumero } from '../whatsapp/kapso-api';
+import { enviarTexto, enviarPlantilla, usarNumero, KapsoError } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { telefonoWhatsApp } from '../telefono';
 
@@ -91,13 +91,33 @@ export async function confirmarCitaPorWhatsApp(bookingId: string): Promise<{ ok:
       .select('id, phone_number_id').eq('telefono', destino).maybeSingle();
     usarNumero((conv as any)?.phone_number_id || null);
 
-    const r = await enviarTexto(destino, texto);
-    const wamid = r?.messages?.[0]?.id;
+    // Meta no deja mandar texto libre fuera de la ventana de 24 h. Quien
+    // agenda desde el inbox acaba de escribir, así que su ventana está
+    // abierta; pero quien agenda desde la página pública puede no habernos
+    // escrito nunca. Para ese caso hay plantilla, que es lo único que Meta
+    // permite ahí: dice menos, pero llega — y el resto va por correo.
+    let wamid: string | null = null;
+    let cuerpo = texto;
+    let claseMsj: 'text' | 'template' = 'text';
+    try {
+      const r = await enviarTexto(destino, texto);
+      wamid = r?.messages?.[0]?.id || null;
+    } catch (e: any) {
+      const cerrada = e instanceof KapsoError && /131047|window|24/i.test(String(e.message));
+      if (!cerrada) throw e;
+      const cuando = `${fechaLarga(b.fecha as string)} a las ${horaAmPm(String(b.hora_inicio))}`;
+      const quien = String(b.invitee_nombre || '').trim().split(/\s+/)[0] || 'hola';
+      const r = await enviarPlantilla(destino, 'reunion_confirmar', 'es_MX', [quien, cuando]);
+      wamid = r?.messages?.[0]?.id || null;
+      cuerpo = `Hola ${quien}, te escribo para confirmar nuestra reunión del ${cuando}.`;
+      claseMsj = 'template';
+    }
+
     if (wamid) {
       await registrarMensaje({
         kapsoMessageId: wamid, telefono: destino, direccion: 'saliente',
-        tipo: 'text', cuerpo: texto, status: 'sent', autor: 'Agenda',
-        metadata: { confirmacion_cita: bookingId },
+        tipo: claseMsj, cuerpo, status: 'sent', autor: 'Agenda',
+        metadata: { confirmacion_cita: bookingId, ...(claseMsj === 'template' ? { plantilla: 'reunion_confirmar' } : {}) },
       });
     }
     return { ok: true };
