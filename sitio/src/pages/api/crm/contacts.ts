@@ -196,6 +196,28 @@ const _GET: APIRoute = async ({ request, url }) => {
     });
   }
 
+  /* Las etiquetas de la EMPRESA viajan con el lead. El catálogo solo admite
+     company/deal/subscription —no contactos— y tiene sentido: «VIP» o «más de
+     5 sucursales» son del negocio, no de la persona. Se pegan aquí para que la
+     lista pueda marcarlos sin pedir otra cosa; un renglón que necesita otra
+     petición para saber si es VIP es un renglón que nunca lo va a decir. */
+  try {
+    const idsEmp = [...new Set((filas || []).map((c: any) => c.company_id).filter(Boolean))];
+    if (idsEmp.length) {
+      const { data: asig } = await supabase.from('crm_etiqueta_asignaciones')
+        .select('entidad_id, crm_etiquetas(nombre, color)')
+        .eq('entidad', 'company').in('entidad_id', idsEmp);
+      const mapa = new Map<string, any[]>();
+      for (const a of asig || []) {
+        const e: any = Array.isArray((a as any).crm_etiquetas) ? (a as any).crm_etiquetas[0] : (a as any).crm_etiquetas;
+        if (!e) continue;
+        const k = String((a as any).entidad_id);
+        mapa.set(k, [...(mapa.get(k) || []), { nombre: e.nombre, color: e.color }]);
+      }
+      for (const c of filas || []) (c as any).etiquetas = c.company_id ? (mapa.get(String(c.company_id)) || []) : [];
+    }
+  } catch { /* las etiquetas nunca rompen la lista */ }
+
   return new Response(JSON.stringify({ contacts: filas, total: count }));
 };
 

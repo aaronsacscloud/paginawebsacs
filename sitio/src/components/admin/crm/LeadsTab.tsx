@@ -13,7 +13,7 @@ import VistaRapida, { telBonito, HojaEsqueleto } from './ui/VistaRapida';
 import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { confirmar } from '../../../lib/ui/confirmar';
-import { lifecycleDe } from '../../../lib/crm/lifecycle';
+import { lifecycleDe, LIFECYCLE } from '../../../lib/crm/lifecycle';
 import { CSS_TABLA, T, DIAS_ATORADO as DIAS_ATORADO_CRM } from '../../../lib/crm/tabla.estilo';
 import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
@@ -199,27 +199,16 @@ function pestanaDe(c: any): string | null {
   // sin seguimiento REAL se marcó rezagado. La marca se deshace sola: un
   // contacto posterior a ella lo regresa a su pestaña (la identidad
   // lead_calificado no se toca, solo dónde se enseña).
-  /* La marca del barrido se deshace con CUALQUIER señal de vida posterior, no
-     solo con que nosotros lo contactemos.
-     Medido: de los 106 marcados, 90 tienen `last_contact_at` en NULL — o sea
-     que para ellos la puerta estaba soldada: la única forma de salir exigía un
-     campo que nunca se les escribe. Solo 1 había salido. Si el lead respondió
-     o hubo actividad después de la marca, está vivo y la marca ya no aplica. */
-  const marcaR = c.propiedades?.rezagado_marcado;
-  const despuesDeLaMarca = (f?: string | null) => !!(f && Date.parse(f) > Date.parse(marcaR));
-  const retocado = marcaR && (
-    despuesDeLaMarca(c.last_contact_at) ||
-    despuesDeLaMarca(c.respondio_at) ||
-    despuesDeLaMarca(c.ultima_actividad?.at)
-  );
-  if (marcaR && !retocado) return 'rezagados';
   if (c.lifecycle_stage === 'lead_calificado') return 'calificados';
-  // Rezagado: frío (sin señal viva), llegó hace +14 días y nadie lo ha tocado
-  // en +14 días. Sale solo de aquí en cuanto se le da seguimiento real.
-  const frio = ['nuevo', 'contactado', 'sin_respuesta'].includes(eDeLead(c));
-  const viejo = (diasDesde(llegoReal(c)) ?? 0) > 14;
-  const abandonado = c.last_contact_at == null || (diasDesde(c.last_contact_at) ?? 0) > 14;
-  if (frio && viejo && abandonado) return 'rezagados';
+  /* REZAGADOS SOLO POR ETAPA. Antes esta pestaña se CALCULABA —marca del
+     barrido, o frío+viejo+abandonado— y por eso metía leads cuya etapa decía
+     otra cosa: 55 «lead» y 34 «Calificado». Un Calificado dentro de Rezagados
+     se lee como error, y con razón: la etapa y la pestaña contaban historias
+     distintas del mismo lead.
+     Ahora es al revés — quien decida que alguien es rezagado ESCRIBE la etapa
+     (a mano o con el barrido nocturno), y la pestaña solo la refleja. Es la
+     misma regla que ya rige a Descalificado, y la que evita que la lista
+     vuelva a llenarse de gente que no es lo que dice ser. */
   // Campañas se parte en DOS pestañas: lo nuevo sin contactar (la bandeja
   // del día) y lo que ya se está trabajando.
   return eDeLead(c) === 'nuevo' ? 'nuevos' : 'contactados';
@@ -248,6 +237,10 @@ const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
    umbral es un umbral que va a divergir. */
 export const DIAS_ATORADO = DIAS_ATORADO_CRM;
 export const diasDeLead = (c: any) => c.created_at ? Math.floor((Date.now() - Date.parse(c.created_at)) / 86400000) : 0;
+
+/** VIP: la etiqueta vive en la EMPRESA (el catálogo no admite contactos), y
+ *  llega pegada al lead desde el endpoint. */
+export const esVIP = (c: any) => (c?.etiquetas || []).some((e: any) => String(e?.nombre).toLowerCase() === 'vip');
 
 /** Llegó dentro de los últimos 7 días (hoy incluido). */
 const esDeLaSemana = (c: any) => {
@@ -333,6 +326,8 @@ export default function LeadsTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [res, setRes] = useState<any>(null);
   const [busca, setBusca] = useState('');
+  // Segmentar sin mover: el chip filtra la vista actual, no cambia de pestaña.
+  const [soloVIP, setSoloVIP] = useState(false);
   const [etapa, setEtapa] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 899px)').matches ? 'todos' : 'nuevos');
   const [origen, setOrigen] = useState('todo');
@@ -525,6 +520,8 @@ export default function LeadsTab() {
       return pausaF === 'activa' ? (f != null && f > Date.now()) : (f != null && f <= Date.now());
     });
     if (conds.length) r = r.filter((c: any) => cumpleCondsLead(c, conds, logicaF));
+    // El chip VIP filtra DENTRO de la pestaña en la que estás.
+    if (soloVIP) r = r.filter(esVIP);
     // En las pestañas de campaña manda la fecha REAL de llegada (la del
     // anuncio si existe), lo más reciente arriba: es la bandeja del día.
     // PERO solo cuando no se pidió otro orden: este re-ordenamiento era
@@ -536,7 +533,7 @@ export default function LeadsTab() {
       r = [...r].sort((a: any, b: any) => Date.parse(llegoReal(b)) - Date.parse(llegoReal(a)));
     }
     return r;
-  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden]);
+  }, [listaBase, estatusF, reunionF, pausaF, conds, logicaF, etapa, orden, soloVIP]);
 
   /* AGRUPACIÓN EN EL ESCRITORIO. La inteligencia de «qué está atorado» existía
      solo en el teléfono: la pantalla grande —donde de verdad se trabaja— era
@@ -1188,6 +1185,13 @@ export default function LeadsTab() {
               </span>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.68rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#a5a2af' }}>
                 Ordenar
+                {/* Segmentar sin sacarlos de su pestaña: el VIP sigue
+                    apareciendo donde le toca y además se puede aislar. */}
+                <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
+                  style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
+                    background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
+                    borderRadius: 9, padding: '7px 12px', fontSize: '0.78rem', fontWeight: soloVIP ? 800 : 600,
+                    cursor: 'pointer', fontFamily: 'inherit', marginRight: 8 }}>★ VIP</button>
                 <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')}
                   style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff', color: '#3f3b4d', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
                   <option value="reciente">Más recientes primero</option>
@@ -1522,6 +1526,15 @@ export default function LeadsTab() {
                             respondía a Enter y un lector de pantalla no lo
                             anunciaba. */}
                         <button type="button" className="crm-fila-nom" style={S.nombre} title={[c.nombre, c.apellido].filter(Boolean).join(' ') || undefined} onClick={() => setVerContacto(c.id)}>
+                          {esVIP(c) && (
+                            /* VIP se ve DONDE YA ESTÁ, no en una pestaña
+                               aparte: las pestañas son anti-solape, así que un
+                               VIP que además es nuevo desaparecería de la
+                               bandeja del día. VIP no es una etapa, es un
+                               atributo perpendicular al embudo. */
+                            <span title="VIP · más de 5 sucursales" aria-label="VIP"
+                              style={{ color: '#a06600', marginRight: 5, fontSize: '0.9em' }}>★</span>
+                          )}
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                         </button>
                         {c.historial && (() => {
@@ -1803,7 +1816,11 @@ export default function LeadsTab() {
                 cargar();
               }} style={{ ...S.btnSel, appearance: 'none' as const, paddingRight: 26 }}>
                 <option value="">Cambiar etapa…</option>
-                {Object.entries(ETAPAS).map(([k, v2]: any) => <option key={k} value={k} style={{ color: '#241d43' }}>{v2.l}</option>)}
+                {/* Del catálogo, no de Object.entries(ETAPAS): ETAPAS es un
+                    Proxy sin llaves propias —resuelve por consulta— así que
+                    enumerarlo devolvía [] y este menú salía VACÍO. Lo destapó
+                    querer usarlo; un selector vacío no avisa, solo no sirve. */}
+                {LIFECYCLE.map(e => <option key={e.id} value={e.id} style={{ color: '#241d43' }}>{e.label}</option>)}
               </select>
             </div>
           )}
