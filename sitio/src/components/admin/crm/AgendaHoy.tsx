@@ -19,7 +19,10 @@ const diasAtraso = (d: string) => {
   return Math.max(1, Math.round((hoy - fu) / 86400000));
 };
 
-export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact: (id: string) => void; onGoDeals: () => void }) {
+/* `onGoDeals` se quitó con el módulo de Oportunidades: los cierres próximos se
+   siguen VIENDO —son la agenda de la semana— pero ya no llevan a una pantalla
+   que no existe. */
+export default function AgendaHoy({ onOpenContact }: { onOpenContact: (id: string) => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<any[]>([]);
@@ -150,7 +153,7 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
       {cierresProximos.length > 0 && (
         <Section title="💰 Cierres próximos (7 días)" color="#2AB5A0" count={cierresProximos.length}>
           {cierresProximos.map(d => (
-            <Row key={d.id} onClick={onGoDeals}
+            <Row key={d.id}
               nombre={d.nombre} sub={d.companies?.nombre || d.contacts?.nombre || ''}
               right={<span style={{ fontWeight: 800, color: '#1a1a1a', fontSize: '0.8rem' }}>{money(d.valor_total)}</span>}
               badge={fmtDate(d.fecha_cierre_esperada)} badgeColor="#2AB5A0" />

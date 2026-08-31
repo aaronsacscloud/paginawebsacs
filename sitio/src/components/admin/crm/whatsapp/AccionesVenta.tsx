@@ -49,7 +49,6 @@ export default function AccionesVenta({ contacto, empresa, conv, ventanaAbierta,
 
   // ── Los atajos que solo navegan (sin flujo propio todavía) ──
   const atajos = [
-    { e: '🎯', t: 'Oportunidad', d: 'Nueva oportunidad', href: `/admin/crm?tab=oportunidades`, ok: !!(empresa || contacto) },
     { e: '👤', t: 'Ficha 360', d: 'Ver completa', onClick: abrirFicha, ok: !!empresa },
     { e: '🧾', t: 'Estado de cuenta', d: 'Suscripciones', href: `/admin/crm?tab=suscripciones`, ok: !!empresa },
     { e: '📣', t: 'Masivo', d: 'Incluir en campaña', href: `/admin/crm?tab=wa-masivos`, ok: true },

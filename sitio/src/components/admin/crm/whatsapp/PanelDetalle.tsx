@@ -648,7 +648,6 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
               <span style={{ color: C.emerald700, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(d.monto ?? d.amount)}</span>
             </div>
           ))}
-          <a href="/admin/crm?tab=oportunidades" style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: C.moradoTinta, textDecoration: 'none' }}>{dealsAbiertos.length ? 'Ver en Oportunidades →' : 'Crear oportunidad →'}</a>
         </>)}
         {detalle === 'origen' && (<>
           <div style={{ fontSize: 12, color: C.g700, lineHeight: 1.8, marginBottom: 8 }}>

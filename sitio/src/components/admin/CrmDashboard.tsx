@@ -30,7 +30,6 @@ const PRECARGA_TAB: Record<string, () => Promise<any>> = {
   oportunidades: () => import('./crm/OportunidadesTab'),
   reuniones: () => import('./crm/ReunionesTab'),
   mejoras: () => import('./crm/MejorasTab'),
-  deals: () => import('./crm/DealsTab'),
 };
 try {
   const t0 = new URLSearchParams(window.location.search).get('tab') || '';
@@ -38,7 +37,6 @@ try {
   else PRECARGA_TAB[t0]?.();
 } catch { /* SSR u otro entorno: nada */ }
 
-const DealsTab = lazySeguro(() => import('./crm/DealsTab'));
 const AutomationsTab = lazySeguro(() => import('./crm/AutomationsTab'));
 const EmailTab = lazySeguro(() => import('./crm/email/EmailTab'));
 const SecuenciasTab = lazySeguro(() => import('./crm/SecuenciasTab'));
@@ -83,7 +81,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -101,7 +99,6 @@ const ICONS: Record<string, string> = {
   pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8z" fill="currentColor" opacity=".18"/><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   marca: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9.5" r="5.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="9.5" r="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 14.5 8 22l4-2.2L16 22l-1-7.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   clientes: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="currentColor" opacity=".18"/><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h1.5M13.5 8H15M9 12h1.5M13.5 12H15M10 21v-4h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  deals: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 17l5-5 4 3 7-8v13H4z" fill="currentColor" opacity=".18"/><path d="M4 17l5-5 4 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   agenda: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" opacity=".18"/><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   cotizaciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6z" fill="currentColor" opacity=".18"/><path d="M6 3h9l4 4v14H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   pagos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".18"/><rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.8"/><path d="M6 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -177,7 +174,6 @@ const NAV_SECTIONS = [
       /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
          cuando se va: mismo grupo, siguiente renglón. */
       { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
-      { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       // Reuniones se junta con las cuentas: es con quien te sientas. Antes
       // vivía en Ventas y su gemela "Agenda" en Sistema, en grupos distintos.
       { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
@@ -459,7 +455,6 @@ export default function CrmDashboard() {
     }, 4000);
   }, []);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [initialDealId, setInitialDealId] = useState<string | null>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   // Auto-colapsar el sidebar al entrar a layout mobile.
@@ -662,7 +657,8 @@ export default function CrmDashboard() {
                     return (
                       <div key={i} onClick={() => {
                           if (r.type === 'contact') setProfileContactId(r.id);
-                          else if (r.type === 'deal') { setInitialDealId(r.id); switchTab('deals'); }
+                          /* Oportunidades se retiró: un resultado de ese tipo
+                             ya no tiene a dónde ir, así que no se ofrece. */
                           else if (r.type === 'company') switchTab('clientes');
                           else if (r.type === 'quote') switchTab('cotizaciones');
                           setShowSearch(false); setSearchQuery('');
@@ -959,11 +955,9 @@ export default function CrmDashboard() {
              recarga la página. */
           <ErrorBoundary>{isMobile ? <InicioMovil onIrA={irADestino} /> : <DashboardTab />}</ErrorBoundary>
         ) : tab === 'hoy' ? (
-          <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
+          <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
           <ErrorBoundary><LeadsTab /></ErrorBoundary>
-        ) : tab === 'deals' ? (
-          <DealsTab onConfig={() => goConfigPipeline('oportunidad')} initialDealId={initialDealId} onDealConsumed={() => setInitialDealId(null)} />
         ) : tab === 'suscripciones' ? (
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
         ) : tab === 'cobros' ? (
@@ -1201,7 +1195,6 @@ export default function CrmDashboard() {
               onClick={() => {
                 setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]);
                 if (r.type === 'contact') setProfileContactId(r.id);
-                else if (r.type === 'deal') { setInitialDealId(r.id); switchTab('deals'); }
                 else if (r.type === 'company') switchTab('clientes');
                 else if (r.type === 'quote') switchTab('cotizaciones');
               }}
