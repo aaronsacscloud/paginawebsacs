@@ -1210,13 +1210,6 @@ const useCases = [
     </div>
   </div>
 
-  <!-- La sección insignia va aquí, antes de WhatsApp Commerce: cae dentro del
-       recorrido de "Vende más en cada punto", que es lo que se está viendo, y
-       no nueve pantallas más abajo. Se puede meter aquí porque el acordeón
-       avanza por clic/temporizador y los bloques de WhatsApp se miden solos:
-       ninguno depende del alto total de esta sección. -->
-  <slot name="insignia" />
-
   <!-- ── Vende continuation: WhatsApp Commerce (sq-features--sc) ── -->
   <section class="sq-features sq-features--sc sq-features--unified">
     <div class="sq-features-header sq-header-reveal">
@@ -1262,6 +1255,11 @@ const useCases = [
       </div>
     </div>
   </section>
+
+  <!-- La sección insignia va aquí: cierra el bloque de "Vende" y entra antes
+       del pilar Controla. Cuidado con el color — Controla es #1D1D1F, así que
+       esta sección NO puede ser casi negra o las dos se leen como una sola. -->
+  <slot name="insignia" />
 
   <!-- ── Pillar 2: Controla ── -->
   <div class="pillar-section pillar-section--stock pillar-section--left" data-pillar="stock">
