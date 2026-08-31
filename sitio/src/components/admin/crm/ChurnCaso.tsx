@@ -106,7 +106,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.01em' }}>{emp.nombre || 'Sin nombre'}</div>
               <div style={{ fontSize: '0.79rem', color: '#71707C', marginTop: 2 }}>
-                {dinero(caso.mrr_perdido)} de MRR · canceló {String(caso.detectado_at || '').slice(0, 10)}
+                {dinero((Number(caso.mrr_perdido) || 0) * 12)} de ARR · canceló {String(caso.detectado_at || '').slice(0, 10)}
                 {caso.fecha_estimada && <span title="El registro vino de Excel sin fecha de cancelación"> (estimada)</span>}
                 {caso.episodio > 1 && <b style={{ color: '#C0554E' }}> · {caso.episodio}ª vez</b>}
               </div>
@@ -151,7 +151,10 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#4a4756', marginTop: 4 }}>{caso.gracia_acuerdo}</div>
                   <div style={{ fontSize: '0.78rem', color: '#71707C', marginTop: 2 }}>
-                    Al terminar vuelve a {dinero(caso.gracia_mrr)} · hasta {caso.gracia_fin}
+                    {/* Precio que se le cobra: al mes, porque así se pactó y así
+                        lo firma. La conversión a año solo vive en las cifras de
+                        negocio (ARR perdido, ARR en rescate). */}
+                    Al terminar vuelve a {dinero(caso.gracia_mrr)}/mes · hasta {caso.gracia_fin}
                   </div>
                 </div>
               )}
@@ -256,7 +259,10 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   <Campo l="Hasta cuándo">
                     <input type="date" style={inp} value={form.gracia_fin || ''} onChange={e => setForm({ ...form, gracia_fin: e.target.value })} />
                   </Campo>
-                  <Campo l="A cuánto vuelve a pagar al terminar">
+                  {/* AL MES, dicho con todas sus letras. Es un precio pactado y
+                      así se guarda; ponerle rótulo de ARR y dividir por dentro
+                      haría que el acuerdo que firma el cliente saliera ×12 mal. */}
+                  <Campo l="A cuánto vuelve a pagar al mes, al terminar">
                     <input type="number" style={inp} value={form.gracia_mrr ?? ''} placeholder={String(caso.mrr_perdido)}
                       onChange={e => setForm({ ...form, gracia_mrr: e.target.value })} />
                   </Campo>
@@ -598,7 +604,9 @@ function BloquePropuesta({ d, id, onCambio }: { d: any; id: string; onCambio: ()
           </div>
 
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>A cuánto vuelve al terminar</span>
+            {/* Igual: al mes. Este número se imprime tal cual en el PDF de la
+                propuesta que ve el cliente. */}
+            <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>A cuánto vuelve al mes, al terminar</span>
             <input type="number" style={inp} value={f.rescate_mrr_regreso} placeholder={String(Math.round(Number(caso.mrr_perdido || 0)))}
               onChange={e => setF({ ...f, rescate_mrr_regreso: e.target.value })} />
           </label>

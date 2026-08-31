@@ -89,6 +89,11 @@ export default function ChurnTab() {
     if (id && id.length > 20) setAbierto(id);
   }, []);
 
+  /* El ÚNICO ×12 de la pantalla. En base y en el endpoint todo es mensual
+     (mrr_perdido, gracia_mrr, rescate_mrr_regreso, mrr_movements); si además
+     se convirtiera allá, saldría ×144. */
+  const alAnio = (v: any) => (Number(v) || 0) * 12;
+
   const lista = useMemo(() => {
     const t = busca.trim().toLowerCase();
     let r = !t ? (filas || []) : (filas || []).filter((c: any) =>
@@ -101,6 +106,9 @@ export default function ChurnTab() {
       : String(b.detectado_at || '').localeCompare(String(a.detectado_at || '')));
     return r;
   }, [filas, busca, orden]);
+  // Para la cabecera: cuántos hay en la pestaña y cuántos deja ver el buscador.
+  const total = (filas || []).length;
+  const visibles = lista.length;
 
   /* Columnas que solo existen donde significan algo: en «Detectados» la etapa
      es siempre la misma y la columna sería el nombre de la pestaña repetido. */
@@ -138,11 +146,16 @@ export default function ChurnTab() {
     setSel(new Set()); cargar();
   }
 
-  const K = ({ v, l, tono }: { v: any; l: string; tono?: 'rojo' | 'verde' }) => (
-    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: '13px 16px', minWidth: 150, flex: '1 1 150px' }}>
-      <div style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-.01em', fontVariantNumeric: 'tabular-nums',
+  /* Misma tarjeta que Cotizaciones: franja de color a la izquierda, etiqueta
+     en versalitas arriba y la cifra grande abajo. La franja dice de qué habla
+     el número antes de leerlo. */
+  const K = ({ v, l, sub, tono }: { v: any; l: string; sub?: any; tono?: 'rojo' | 'verde' }) => (
+    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderLeft: `3px solid ${tono === 'rojo' ? '#EF7A72' : tono === 'verde' ? '#4FBF95' : '#9B8CFA'}`,
+      borderRadius: 14, padding: '14px 16px', minWidth: 0, boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
+      <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
+      <div style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-.01em', fontVariantNumeric: 'tabular-nums', marginTop: 6,
         color: tono === 'rojo' ? '#C0554E' : tono === 'verde' ? '#1E8A63' : '#241d43' }}>{v}</div>
-      <div style={{ fontSize: '0.72rem', color: '#71707C', marginTop: 2, lineHeight: 1.35 }}>{l}</div>
+      {sub != null && <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 4, lineHeight: 1.35 }}>{sub}</div>}
     </div>
   );
 
@@ -159,16 +172,39 @@ export default function ChurnTab() {
         .churn-chip .n { font-size:0.7rem; font-weight:700; opacity:.6; font-variant-numeric:tabular-nums; }
       `}</style>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-.02em', color: '#241d43', margin: 0 }}>Churn</h1>
-        <span style={{ fontSize: '0.83rem', color: '#71707C' }}>Los que cancelaron y se están rescatando.</span>
+      {/* Cabecera de Cotizaciones: el subtítulo DEBAJO del título con el conteo
+          de la vista, y las acciones de la pantalla a la derecha —no revueltas
+          con las pestañas, que son otra cosa—. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-.02em', color: '#241d43', margin: 0 }}>Churn</h1>
+          <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>
+            Los que cancelaron y se están rescatando · {total} totales{total !== visibles ? ` · ${visibles} en vista` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+          <button onClick={() => setVerTablero(v => !v)}
+            style={{ height: 36, padding: '0 14px', border: '1px solid #d9d5ea', borderRadius: 10, background: '#fff',
+              color: '#5B4BD6', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {verTablero ? '← Volver a la lista' : 'Ver el tablero'}
+          </button>
+          <button onClick={() => setAlta(true)} title="Un cliente que canceló por fuera del sistema"
+            style={{ height: 36, padding: '0 16px', border: 'none', borderRadius: 10, background: '#9B8CFA',
+              color: '#fff', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            + Alta manual
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '16px 0 18px' }}>
-        <K v={dinero(kpis.mrr_en_rescate)} l="MRR en rescate (casos abiertos)" tono="rojo" />
-        <K v={dinero(kpis.mrr_recuperado)} l="MRR recuperado" tono="verde" />
-        <K v={kpis.tasa_recuperacion == null ? '—' : kpis.tasa_recuperacion + '%'} l="De los cerrados, cuántos volvieron" />
-        <K v={kpis.gracia_vencida || 0} l="Gracias vencidas sin decidir" tono={kpis.gracia_vencida ? 'rojo' : undefined} />
+      {/* El dinero se PINTA al año, como en el resto de la vista de clientes,
+          pero en base sigue siendo mensual (mrr_perdido, gracia_mrr…) y el
+          endpoint también lo manda mensual: el ×12 vive AQUÍ y en ningún otro
+          lado, o sale ×144. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, margin: '0 0 18px' }}>
+        <K v={dinero(alAnio(kpis.mrr_en_rescate))} l="ARR en rescate" sub="casos abiertos" tono="rojo" />
+        <K v={dinero(alAnio(kpis.mrr_recuperado))} l="ARR recuperado" sub="de los que volvieron" tono="verde" />
+        <K v={kpis.tasa_recuperacion == null ? '—' : kpis.tasa_recuperacion + '%'} l="Tasa de recuperación" sub="de los cerrados, cuántos volvieron" />
+        <K v={kpis.gracia_vencida || 0} l="Gracias vencidas" sub="sin decidir" tono={kpis.gracia_vencida ? 'rojo' : undefined} />
       </div>
 
       {/* Los vencidos NO son churn —eso es cobranza— pero conciliar ANTES de
@@ -182,26 +218,46 @@ export default function ChurnTab() {
           <span style={{ fontSize: '0.82rem', color: '#7a5a2a' }}>
             {/* El monto solo si lo sabemos: medido, ninguna de las 23 vencidas
                 tiene MRR ni en la empresa ni en una sub viva, y pintar «$0 de
-                MRR vencido» sería decir que no hay nada en riesgo. */}
-            {kpis.por_caer_mrr > 0 ? `${dinero(kpis.por_caer_mrr)} de MRR vencido. ` : ''}
+                ARR vencido» sería decir que no hay nada en riesgo. */}
+            {kpis.por_caer_mrr > 0 ? `${dinero(alAnio(kpis.por_caer_mrr))} de ARR vencido. ` : ''}
             Todavía no cancelan: conciliar hoy cuesta menos que rescatar después.
           </span>
           <a href="/admin/crm?tab=pagos&vista=recuperacion" style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 700, color: '#a06600' }}>Ver cobranza ›</a>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
-        {PESTANAS.map(p => (
-          <button key={p.id} className={`churn-chip ${etapa === p.id ? 'on' : ''}`} onClick={() => setEtapa(p.id)}>
-            {p.l}<span className="n">{cuenta[p.id] ?? 0}</span>
-          </button>
-        ))}
-        <button className="churn-chip" onClick={() => setAlta(true)} title="Un cliente que canceló por fuera del sistema">+ Alta manual</button>
-        <button className={`churn-chip ${verTablero ? 'on' : ''}`} onClick={() => setVerTablero(v => !v)}
-          style={{ marginLeft: 'auto' }}>{verTablero ? '← Volver a la lista' : 'Ver el tablero'}</button>
-        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o acuerdo…"
-          style={{ minWidth: 240, border: '1px solid #e2e4e9', borderRadius: 10, padding: '8px 12px',
-            fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
+      {/* Pestañas subrayadas con el contador en pastilla, como Cotizaciones. En
+          píldoras y con las acciones metidas en la misma fila, «+ Alta manual»
+          se leía como una pestaña más. En cero el contador va tenue: una
+          pestaña vacía no debe invitar al clic. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e8eaee', overflowX: 'auto', flexWrap: 'nowrap' }}>
+        {PESTANAS.map(p => {
+          const on = etapa === p.id; const n = cuenta[p.id] ?? 0;
+          return (
+            <button key={p.id} onClick={() => setEtapa(p.id)} style={{
+              background: 'none', border: 'none', borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+              color: on ? '#5B4BD6' : '#666', fontWeight: on ? 800 : 500, fontSize: '0.8125rem',
+              padding: '10px 14px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1, flexShrink: 0,
+            }}>
+              {p.l}
+              <span style={{
+                marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                background: on ? '#EEECFE' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
+                borderRadius: 20, padding: '2px 8px',
+              }}>{n}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '12px 0 14px' }}>
+        <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: 440, minWidth: 220 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2"
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente o acuerdo…"
+            style={{ width: '100%', height: 38, boxSizing: 'border-box', border: '1px solid #e2e4e9', borderRadius: 10, padding: '0 12px 0 36px',
+              fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none' }} />
+        </div>
       </div>
 
       {errorCarga ? (
@@ -237,9 +293,9 @@ export default function ChurnTab() {
               <th scope="col" className="num ord" aria-sort={orden === 'mrr' ? 'descending' : 'none'}
                 style={{ ...T.th, width: 104, padding: 0 }}>
                 <button type="button" onClick={() => setOrden(orden === 'mrr' ? 'reciente' : 'mrr')}
-                  title="Ordenar por MRR / por cuándo entró"
+                  title="Ordenar por ARR / por cuándo entró"
                   style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer', boxSizing: 'border-box', textAlign: 'right' }}>
-                  MRR<span className="fl" aria-hidden="true">{orden === 'mrr' ? '↓' : ''}</span>
+                  ARR<span className="fl" aria-hidden="true">{orden === 'mrr' ? '↓' : ''}</span>
                 </button>
               </th>
               <th scope="col" style={{ ...T.th, width: 190 }}>Por qué se fue</th>
@@ -297,7 +353,7 @@ export default function ChurnTab() {
                         {c.episodio > 1 && <b style={{ color: '#C0554E', marginLeft: 6 }}>·  {c.episodio}ª vez que se va</b>}
                       </span>
                     </td>
-                    <td className="num" style={{ ...T.td, fontWeight: 700, color: '#241d43' }}>{dinero(c.mrr_perdido)}</td>
+                    <td className="num" style={{ ...T.td, fontWeight: 700, color: '#241d43' }}>{dinero(alAnio(c.mrr_perdido))}</td>
                     <td style={T.td}>
                       {c.motivo_categoria
                         ? <span style={T.tag('#f4f4f6', '#5D6470')}>{MOTIVO(c.motivo_categoria)}</span>
@@ -391,9 +447,12 @@ export default function ChurnTab() {
 }
 
 function exportar(filas: any[]) {
-  const cols = ['Canceló', 'Cliente', 'MRR', 'Motivo', 'Detalle', 'Etapa', 'Acuerdo de gracia', 'Fin de gracia', 'Días sin vender'];
+  // La columna se llama ARR y lleva el valor anual: si dijera «MRR» con el
+  // número de la pantalla, quien cruce el CSV contra la base vería ×12 sin
+  // explicación.
+  const cols = ['Canceló', 'Cliente', 'ARR', 'Motivo', 'Detalle', 'Etapa', 'Acuerdo de gracia', 'Fin de gracia', 'Días sin vender'];
   const datos = filas.map((c: any) => [
-    String(c.detectado_at || '').slice(0, 10), c.companies?.nombre || '', c.mrr_perdido,
+    String(c.detectado_at || '').slice(0, 10), c.companies?.nombre || '', (Number(c.mrr_perdido) || 0) * 12,
     MOTIVO(c.motivo_categoria), c.motivo_detalle || c.motivo_original || '',
     ETAPA(c.etapa).l, c.gracia_acuerdo || '', c.gracia_fin || '', c.companies?.dias_sin_venta ?? '',
   ]);
@@ -411,8 +470,8 @@ function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto,
       {/* Sin encabezado propio: el armazón del móvil ya pinta el título de la
           sección, y ponerlo otra vez lo repetía dos veces en la misma pantalla. */}
       <div style={{ padding: '14px 20px 10px' }}>
-        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#C0554E', letterSpacing: '-.02em' }}>{dinero(kpis.mrr_en_rescate)}</div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--m-soft)' }}>en rescate · {cuenta.todos || 0} casos abiertos</div>
+        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#C0554E', letterSpacing: '-.02em' }}>{dinero((Number(kpis.mrr_en_rescate) || 0) * 12)}</div>
+        <div style={{ fontSize: '0.82rem', color: 'var(--m-soft)' }}>de ARR en rescate · {cuenta.todos || 0} casos abiertos</div>
       </div>
       <div className="crm-scroll-x" style={{ display: 'flex', gap: 6, padding: '4px 20px 12px', overflowX: 'auto' }}>
         {PESTANAS.map((p: any) => (
@@ -433,7 +492,7 @@ function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto,
             <div className="m-tx">
               <div className="m-cab">
                 <div className="m-n1">{emp.nombre || 'Sin nombre'}</div>
-                <span className="m-hora" style={{ fontWeight: 700, color: '#C0554E' }}>{dinero(c.mrr_perdido)}</span>
+                <span className="m-hora" style={{ fontWeight: 700, color: '#C0554E' }}>{dinero((Number(c.mrr_perdido) || 0) * 12)}</span>
               </div>
               <div className="m-emp">
                 {MOTIVO(c.motivo_categoria)}
@@ -472,7 +531,7 @@ function Tablero({ d }: { d: any }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: 4 }}>
               <span style={{ color: '#241d43', fontWeight: 600 }}>{m.l}</span>
               <span style={{ color: '#71707C', fontVariantNumeric: 'tabular-nums' }}>
-                {dinero(m.mrr)} · {m.n} {m.n === 1 ? 'caso' : 'casos'}
+                {dinero((Number(m.mrr) || 0) * 12)} · {m.n} {m.n === 1 ? 'caso' : 'casos'}
               </span>
             </div>
             <div style={{ height: 8, borderRadius: 20, background: '#f1f0f5', overflow: 'hidden' }}>
@@ -486,7 +545,8 @@ function Tablero({ d }: { d: any }) {
       <div style={caja}>
         <div style={rot}>Perdido contra recuperado, por mes</div>
         <div style={{ fontSize: '0.76rem', color: '#71707C', marginBottom: 12 }}>
-          Sale del ledger de MRR, no de sumar casos: es la misma cifra que la ARR.
+          Sale del ledger, no de sumar casos: es la misma cifra que el ARR. Cada
+          mes, anualizado.
         </div>
         {(d.meses || []).length === 0 ? <div style={{ color: '#71707C', fontSize: '0.83rem' }}>Todavía sin movimientos en el período.</div>
         : (d.meses || []).map((m: any) => (
@@ -497,7 +557,7 @@ function Tablero({ d }: { d: any }) {
               <div style={{ height: 7, width: `${(m.recuperado / maxMes) * 100}%`, background: '#1E8A63', borderRadius: 20 }} />
             </div>
             <span style={{ fontSize: '0.75rem', color: '#71707C', fontVariantNumeric: 'tabular-nums', minWidth: 130, textAlign: 'right' }}>
-              −{dinero(m.perdido)} · +{dinero(m.recuperado)}
+              −{dinero((Number(m.perdido) || 0) * 12)} · +{dinero((Number(m.recuperado) || 0) * 12)}
             </span>
           </div>
         ))}
@@ -622,8 +682,17 @@ function AltaManual({ equipo, onCerrar, onHecho }: any) {
             onChange={e => setF({ ...f, motivo_detalle: e.target.value })} placeholder="Qué pasó, en tus palabras" />
         </label>
         <label style={{ display: 'block', marginBottom: 14 }}>
-          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>MRR que se pierde</span>
+          {/* Se teclea AL MES porque al mes se guarda (mrr_perdido). Cambiarlo a
+              anual aquí y dividir por dentro es justo la clase de conversión
+              callada que hace que un acuerdo salga ×12 mal; en vez de eso se
+              dice la unidad y se enseña el equivalente al año. */}
+          <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8e88a8', marginBottom: 4 }}>Lo que se pierde al mes</span>
           <input type="number" style={inp} value={f.mrr_perdido} onChange={e => setF({ ...f, mrr_perdido: e.target.value })} placeholder="0" />
+          {Number(f.mrr_perdido) > 0 && (
+            <span style={{ display: 'block', fontSize: '0.72rem', color: '#8e88a8', marginTop: 4 }}>
+              En la lista se verá como {dinero(Number(f.mrr_perdido) * 12)} de ARR.
+            </span>
+          )}
         </label>
 
         {err && <div style={{ padding: '9px 12px', borderRadius: 9, background: '#FDF6F5', color: '#A8433C', fontSize: '0.8rem', marginBottom: 12 }}>{err}</div>}
