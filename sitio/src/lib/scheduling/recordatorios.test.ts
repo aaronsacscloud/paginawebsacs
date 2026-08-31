@@ -1,0 +1,100 @@
+/**
+ * Pruebas de los recordatorios de reunión.
+ *
+ * Lo que se protege aquí es lo que rompe una reunión de verdad: que la hora
+ * salga mal, que falte el huso, que un recordatorio se dispare dos veces o
+ * que la lista quede en el orden equivocado.
+ *
+ * Correr:  node --experimental-strip-types src/lib/scheduling/recordatorios.test.ts
+ */
+import {
+  aMinutos, etiqueta, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
+  inicioMs, textoWhatsApp, TZ_ETIQUETA,
+} from './recordatorios.ts';
+
+let ok = 0; const fallas: string[] = [];
+const es = (a: unknown, e: unknown, q: string) => {
+  if (JSON.stringify(a) === JSON.stringify(e)) { ok++; return; }
+  fallas.push(`${q}\n    esperaba ${JSON.stringify(e)}\n    obtuvo   ${JSON.stringify(a)}`);
+};
+const cierto = (a: boolean, q: string) => es(a, true, q);
+
+// ── Las cuatro unidades a minutos ────────────────────────────────────────
+es(aMinutos({ cantidad: 10, unidad: 'minutos' }), 10, '10 minutos');
+es(aMinutos({ cantidad: 3, unidad: 'horas' }), 180, '3 horas');
+es(aMinutos({ cantidad: 1, unidad: 'dias' }), 1440, '1 día');
+es(aMinutos({ cantidad: 2, unidad: 'semanas' }), 20160, '2 semanas');
+es(aMinutos({ cantidad: -5, unidad: 'horas' }), 0, 'una cantidad negativa no manda al pasado');
+
+// ── El singular importa: «1 días antes» se lee como error ────────────────
+es(etiqueta({ cantidad: 1, unidad: 'dias' }), '1 día', 'singular en días');
+es(etiqueta({ cantidad: 3, unidad: 'horas' }), '3 horas', 'plural en horas');
+es(etiqueta({ cantidad: 1, unidad: 'horas' }), '1 hora', 'singular en horas');
+es(etiqueta({ cantidad: 10, unidad: 'minutos' }), '10 minutos', 'plural en minutos');
+
+// ── Leer la configuración sin confiar en su forma ────────────────────────
+es(leerRecordatorios(null).length, 0, 'null no truena');
+es(leerRecordatorios('{}' as any).length, 0, 'una cadena no truena');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'horas', email: true, activo: false }]).length, 0,
+  'un recordatorio apagado no se envía');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'horas', email: false, whatsapp: false }]).length, 0,
+  'sin ningún canal no hay nada que enviar');
+es(leerRecordatorios([{ cantidad: 0, unidad: 'horas', email: true }]).length, 0,
+  'cero de anticipación no es un recordatorio');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'lunas', email: true }])[0].unidad, 'minutos',
+  'una unidad inventada cae en la más chica, no truena');
+
+// EL ORDEN: de mayor a menor anticipación. Si dos caen en la misma corrida,
+// manda el más lejano — decir «falta 1 día» cuando faltan 3 horas es peor
+// que no decir nada.
+const tres = leerRecordatorios([
+  { id: 'r3', cantidad: 10, unidad: 'minutos', whatsapp: true },
+  { id: 'r1', cantidad: 1, unidad: 'dias', email: true },
+  { id: 'r2', cantidad: 3, unidad: 'horas', email: true },
+]);
+es(tres.map(r => r.id), ['r1', 'r2', 'r3'], 'se ordenan de mayor a menor anticipación');
+
+// ── La fecha y la hora, como las lee una persona en México ───────────────
+es(fmtFechaLarga('2026-09-02'), 'miércoles 2 de septiembre de 2026', 'fecha larga con día de la semana');
+es(fmtHora('16:30'), '4:30 p.m.', 'tarde en 12 h');
+es(fmtHora('09:05'), '9:05 a.m.', 'mañana con cero a la izquierda');
+es(fmtHora('00:00'), '12:00 a.m.', 'medianoche no es 0:00');
+es(fmtHora('12:00'), '12:00 p.m.', 'mediodía no es 0:00 p.m.');
+es(fmtRango('16:30', 45), '4:30 p.m. a 5:15 p.m.', 'el rango cruza la hora');
+es(fmtRango('23:30', 60), '11:30 p.m. a 12:30 a.m.', 'el rango cruza la medianoche');
+es(fmtRango('10:00', null), '10:00 a.m.', 'sin duración, solo la hora de inicio');
+
+// ── El instante: la reunión se guarda en hora CDMX (UTC−6 fijo) ──────────
+es(new Date(inicioMs('2026-09-02', '16:30')).toISOString(), '2026-09-02T22:30:00.000Z',
+  'las 4:30 p.m. de CDMX son las 22:30 UTC');
+
+// ── El texto: SIEMPRE la hora y SIEMPRE el huso ──────────────────────────
+const b = {
+  invitee_nombre: 'Ana Ruiz', fecha: '2026-09-02', hora_inicio: '16:30',
+  google_meet_link: 'https://meet.google.com/abc-defg-hij',
+  token_reagendar: 'tok123',
+  event_types: { nombre: 'Demo personalizada', duracion_minutos: 60 },
+};
+const conf = textoWhatsApp(b);
+cierto(conf.includes('4:30 p.m.'), 'la confirmación trae la hora');
+cierto(conf.includes(TZ_ETIQUETA), 'la confirmación dice el huso horario');
+cierto(conf.includes('miércoles 2 de septiembre de 2026'), 'la confirmación trae la fecha completa');
+cierto(conf.includes('https://meet.google.com/abc-defg-hij'), 'la confirmación trae la liga de Meet');
+cierto(conf.includes('Ana'), 'la confirmación saluda por el nombre de pila');
+cierto(!conf.includes('Recordatorio'), 'la confirmación no se anuncia como recordatorio');
+
+const rec = textoWhatsApp(b, '3 horas');
+cierto(rec.includes('en 3 horas'), 'el recordatorio dice cuánto falta');
+cierto(rec.includes('4:30 p.m.'), 'el recordatorio trae la hora');
+cierto(rec.includes(TZ_ETIQUETA), 'el recordatorio dice el huso horario');
+cierto(rec.includes('https://meet.google.com/abc-defg-hij'), 'el recordatorio trae la liga de Meet');
+
+// Sin liga de Meet NO se miente: se dice que va a llegar.
+const sinMeet = textoWhatsApp({ ...b, google_meet_link: null }, '1 día');
+cierto(!sinMeet.includes('meet.google.com'), 'sin liga no se inventa una');
+cierto(sinMeet.includes('antes de la sesión'), 'sin liga se dice que llegará');
+cierto(sinMeet.includes(TZ_ETIQUETA), 'sin liga, el huso sigue estando');
+
+console.log(`\n  ${ok} casos pasaron`);
+if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }
+console.log('  todo bien\n');

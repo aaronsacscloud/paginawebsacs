@@ -79,6 +79,16 @@ export const POST: APIRoute = async ({ request }) => {
       tipo_reunion: body.tipo_reunion || 'one_on_one',
       ubicacion_tipo: body.ubicacion_tipo || 'google_meet',
       color: body.color || '#4B7BE5',
+      /* Un tipo NUEVO nace con avisos, no mudo. Si el default fuera la lista
+         vacía, cada tipo que alguien cree empezaría sin recordatorios y nadie
+         se enteraría hasta que un cliente no llegara. */
+      recordatorios: Array.isArray(body.recordatorios) ? body.recordatorios : [
+        { id: 'r1', cantidad: 1, unidad: 'dias', email: true, whatsapp: true, activo: true },
+        { id: 'r2', cantidad: 3, unidad: 'horas', email: true, whatsapp: true, activo: true },
+        { id: 'r3', cantidad: 10, unidad: 'minutos', email: false, whatsapp: true, activo: true },
+      ],
+      confirmacion_email: body.confirmacion_email !== false,
+      confirmacion_whatsapp: body.confirmacion_whatsapp !== false,
       owner_id,
     })
     .select()

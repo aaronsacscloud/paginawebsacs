@@ -10,6 +10,7 @@ import { escapeHtml } from '../../../lib/scheduling/email-utils';
 import { ligarVisitasPrevias } from '../../../lib/email/senales';
 import { resolverAtribucion, columnasUtm, bloqueAtribucion, resumenAtribucion } from '../../../lib/atribucion-marketing';
 import { notificar } from '../../../lib/crm/notificaciones';
+import { TZ_ETIQUETA } from '../../../lib/scheduling/recordatorios';
 import { origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 
 export const prerender = false;
@@ -688,7 +689,7 @@ export const POST: APIRoute = async ({ request }) => {
         const [h, m] = hora_inicio.split(':').map(Number);
         const ampm = h >= 12 ? 'PM' : 'AM';
         const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm} (${TZ_ETIQUETA})`;
       })();
 
       // Build answers HTML
@@ -792,7 +793,10 @@ export const POST: APIRoute = async ({ request }) => {
       const [h, m] = hora_inicio.split(':').map(Number);
       const ampm = h >= 12 ? 'PM' : 'AM';
       const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+      /* CON EL HUSO. Decía «4:30 PM» a secas: el cliente puede estar en
+         Tijuana o en Cancún, que entre sí llevan dos horas de diferencia, y
+         una hora sin huso es una reunión a la que alguien llega tarde. */
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm} (${TZ_ETIQUETA})`;
     })();
 
     const tokenData = { nombre, empresa, fecha: fechaDisplay, hora: horaDisplay, duracion: eventType.duracion_minutos, meet_link: google_meet_link || '' };
@@ -841,7 +845,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const inviteeEmailHtml = buildEmailHtml(emailHeading, emailBody, extrasHtml);
 
-    await sendEmail(email, emailSubject, inviteeEmailHtml);
+    /* La casilla del tipo de reunión MANDA. Sin esto, «Correo de confirmación»
+       sería un control que se puede apagar y no apaga nada — la peor clase de
+       control, porque uno cree que ya lo resolvió. */
+    if ((eventType as any).confirmacion_email !== false) {
+      await sendEmail(email, emailSubject, inviteeEmailHtml);
+    }
   } catch (inviteeEmailErr) {
     console.error('Invitee email notification failed:', inviteeEmailErr);
   }
@@ -908,8 +917,10 @@ export const POST: APIRoute = async ({ request }) => {
   // así que quien abra el chat ve exactamente lo que el cliente recibió.
   // Con el evento nuevo se le pasa también quién lo atiende, que faltaba.
   try {
-    const { confirmarCitaPorWhatsApp } = await import('../../../lib/crm/confirmacion-cita');
-    await confirmarCitaPorWhatsApp(booking.id);
+    if ((eventType as any).confirmacion_whatsapp !== false) {
+      const { confirmarCitaPorWhatsApp } = await import('../../../lib/crm/confirmacion-cita');
+      await confirmarCitaPorWhatsApp(booking.id);
+    }
   } catch { /* el aviso no tumba una cita ya agendada */ }
 
   // 12. Log activity

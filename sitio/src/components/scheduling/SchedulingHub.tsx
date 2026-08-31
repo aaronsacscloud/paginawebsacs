@@ -840,6 +840,9 @@ function EventTypeModal({
     categoria: (eventType as any)?.categoria || 'otro',
     alerta_inasistencias: (eventType as any)?.alerta_inasistencias ?? '',
     requiere_minuta: (eventType as any)?.requiere_minuta !== false,
+    confirmacion_email: (eventType as any)?.confirmacion_email !== false,
+    confirmacion_whatsapp: (eventType as any)?.confirmacion_whatsapp !== false,
+    recordatorios: Array.isArray((eventType as any)?.recordatorios) ? (eventType as any).recordatorios : [],
   });
   const [saving, setSaving] = useState(false);
   const [emailConfig, setEmailConfig] = useState<Record<string, any>>(() => {
@@ -856,7 +859,9 @@ function EventTypeModal({
     }));
   };
 
-  const updateForm = (field: string, value: string | number | boolean) => {
+  // `unknown[]` además de los escalares: la lista de recordatorios es un
+  // arreglo y antes aquí solo cabían valores sueltos.
+  const updateForm = (field: string, value: string | number | boolean | unknown[]) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       if (field === 'nombre' && !eventType) {
@@ -885,6 +890,9 @@ function EventTypeModal({
       categoria: form.categoria || 'otro',
       alerta_inasistencias: form.alerta_inasistencias === '' ? null : Number(form.alerta_inasistencias),
       requiere_minuta: form.requiere_minuta !== false,
+      confirmacion_email: form.confirmacion_email !== false,
+      confirmacion_whatsapp: form.confirmacion_whatsapp !== false,
+      recordatorios: form.recordatorios,
       routing_rules: {
         ...(eventType?.routing_rules || {}),
         emails: emailConfig,
@@ -1012,6 +1020,70 @@ function EventTypeModal({
               <option value="1">Pedir minuta al cerrarla</option>
               <option value="0">No pedir minuta</option>
             </select>
+          </div>
+        </div>
+
+        {/* ══ AVISOS AL CLIENTE ══
+            La política de recordatorios vive en el tipo de reunión, no en el
+            código del cron: cambiarla no debe requerir un despliegue. Cada
+            renglón dice cuánto antes y por dónde. */}
+        <div style={{ border: '1px solid #e6e2f3', borderRadius: 10, padding: 12, marginBottom: 12, background: '#fbfaff' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#6b5fa8', marginBottom: 8 }}>Avisos al cliente</div>
+
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10, fontSize: '0.78rem' }}>
+            <span style={{ fontWeight: 700, color: '#3f3b4d' }}>Al agendar:</span>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.confirmacion_email !== false} onChange={e => updateForm('confirmacion_email', e.target.checked)} /> Correo de confirmación
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.confirmacion_whatsapp !== false} onChange={e => updateForm('confirmacion_whatsapp', e.target.checked)} /> WhatsApp con la liga de Meet
+            </label>
+          </div>
+
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#3f3b4d', marginBottom: 6 }}>Recordatorios antes de la reunión</div>
+          {(form.recordatorios || []).length === 0 && (
+            <div style={{ fontSize: '0.72rem', color: '#8a8590', marginBottom: 8 }}>Sin recordatorios: el cliente solo recibe la confirmación al agendar.</div>
+          )}
+          {(form.recordatorios || []).map((r: any, i: number) => {
+            const pon = (parte: any) => {
+              const n = [...(form.recordatorios || [])];
+              n[i] = { ...n[i], ...parte };
+              updateForm('recordatorios', n);
+            };
+            return (
+              <div key={r.id || i} style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7, paddingBottom: 7, borderBottom: '1px solid #efecf8' }}>
+                <input type="number" min={1} value={r.cantidad ?? 1}
+                  onChange={e => pon({ cantidad: Math.max(1, Number(e.target.value) || 1) })}
+                  style={{ ...selectStyle, width: 74 }} aria-label="Cuánto antes" />
+                <select value={r.unidad || 'horas'} onChange={e => pon({ unidad: e.target.value })} style={{ ...selectStyle, width: 118 }} aria-label="Unidad">
+                  <option value="minutos">minutos</option>
+                  <option value="horas">horas</option>
+                  <option value="dias">días</option>
+                  <option value="semanas">semanas</option>
+                </select>
+                <span style={{ fontSize: '0.75rem', color: '#6b6a76' }}>antes, por</span>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={r.email !== false} onChange={e => pon({ email: e.target.checked })} /> correo
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={r.whatsapp !== false} onChange={e => pon({ whatsapp: e.target.checked })} /> WhatsApp
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={r.activo !== false} onChange={e => pon({ activo: e.target.checked })} /> activo
+                </label>
+                <button type="button" onClick={() => updateForm('recordatorios', (form.recordatorios || []).filter((_: any, j: number) => j !== i))}
+                  aria-label="Quitar recordatorio"
+                  style={{ border: 'none', background: 'none', color: '#b93333', cursor: 'pointer', fontSize: '0.9rem', padding: '0 4px' }}>✕</button>
+              </div>
+            );
+          })}
+          <button type="button" onClick={() => updateForm('recordatorios', [...(form.recordatorios || []),
+            { id: `r${Date.now().toString(36)}`, cantidad: 1, unidad: 'horas', email: true, whatsapp: true, activo: true }])}
+            style={{ border: '1px solid #ddd6fb', background: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: '0.74rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 }}>
+            + Agregar recordatorio
+          </button>
+          <div style={{ fontSize: '0.68rem', color: '#8a8590', marginTop: 8, lineHeight: 1.5 }}>
+            Todos los avisos dicen la fecha, la hora y que es hora del centro de México, y traen la liga de Meet cuando ya existe. Un recordatorio de menos de 5 minutos no alcanza a salir: el reloj revisa cada 5.
           </div>
         </div>
 

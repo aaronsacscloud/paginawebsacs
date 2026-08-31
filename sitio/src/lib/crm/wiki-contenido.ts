@@ -19,7 +19,11 @@ export type PaginaWiki = {
   cuerpo: string;
 };
 
-export const GRUPOS_WIKI = ['Empezar aquí', 'Las etapas', 'El proceso', 'Referencia'] as const;
+/* El índice lateral es UN RECORRIDO, no un cajón de temas: quien entra a
+   vender por primera vez lo lee de arriba abajo y en ese orden aprende el
+   trabajo. Los títulos van sin emoji — treinta y tres iconos distintos en una
+   columna se leen como ruido, no como jerarquía. */
+export const GRUPOS_WIKI = ['Empezar aquí', 'El proceso de venta', 'Los relevos', 'Las etapas', 'Hablar con el cliente', 'Después de la venta', 'Referencia'] as const;
 
 export const WIKI: PaginaWiki[] = [
   {
@@ -42,99 +46,7 @@ export const WIKI: PaginaWiki[] = [
 <p>La vara es <b>la huella en el contacto</b> (<code>propiedades → tiktok</code>), no el campo <code>fuente</code> ni el número de filas de la hoja. <b>Contar por fuente subcuenta; contar filas sobrecuenta.</b></p></div>`,
   },
   {
-    id: 'e-lead', grupo: 'Las etapas', titulo: '✨ Nuevo lead',
-    bajada: 'El estado en que TikTok lo entregó.', chip: { texto: 'No se reporta', tono: 'mut' },
-    cuerpo: `
-<p>Donde nace todo lead de campaña. <b>No significa abandono:</b> el Estatus puede decir que ya respondió, que hubo tres llamadas o que está cotizado. Significa únicamente que <b>nadie ha decidido todavía quién es</b>.</p>
-<div class="w-caja"><span class="w-k">Por qué no se reporta</span><p>Decirle a TikTok «este lead es un lead» no le enseña nada — él lo entregó. Y cada etapa reportada compite con las demás por la atención del algoritmo: con demasiadas señales, ninguna pesa.</p></div>
-<h3>Cuándo sacarlo de aquí</h3>
-<p>En cuanto una persona lo trabaje y sepa quién es. Es el único paso manual de toda la cadena, y hoy es el que separa 30 señales de 81.</p>`,
-  },
-  {
-    id: 'e-calificado', grupo: 'Las etapas', titulo: '✅ Calificado',
-    bajada: 'Sí era del perfil.', chip: { texto: 'Qualified', tono: 'ok' },
-    cuerpo: `
-<p>Una persona lo revisó y confirmó que <b>es el cliente que buscamos</b>: giro que atendemos, tamaño que nos corresponde, necesidad real.</p>
-<h3>Qué mirar para decidirlo</h3>
-<ul>
-<li><b>Sucursales declaradas en el formulario.</b> De 2 en adelante es nuestro terreno.</li>
-<li><b>Sistema actual.</b> Quien ya usa algo (Eleventa, Sicar, Alegra, Avelon…) tiene la intención más alta: ya decidió que necesita un sistema, solo está eligiendo cuál.</li>
-<li><b>Giro.</b> Hoy el foco es <b>fashion retail</b>: ropa, calzado, joyería y accesorios.</li>
-</ul>
-<div class="w-caja w-ok"><span class="w-k">Es la señal más rentable de mover</span><p>No cuesta nada y es la más frecuente. Un lead que contestó y encaja debería estar aquí el mismo día.</p></div>`,
-  },
-  {
-    id: 'e-oportunidad', grupo: 'Las etapas', titulo: '🎯 Oportunidad',
-    bajada: 'Hay dinero en la mesa.', chip: { texto: 'Opportunity', tono: 'ok' },
-    cuerpo: `
-<p>Pasó de interesado a <b>proceso de venta abierto</b>: agendó demo, pidió cotización o está negociando.</p>
-<div class="w-caja"><span class="w-k">Se mueve sola</span><p><b>Agendar una reunión promueve el lead a Oportunidad automáticamente.</b> No hay que hacerlo a mano. Si alguien agendó y sigue en Nuevo lead, algo no se registró por el canal correcto.</p></div>`,
-  },
-  {
-    id: 'e-cliente', grupo: 'Las etapas', titulo: '💚 Cliente',
-    bajada: 'Pagó.', chip: { texto: 'Converted + monto', tono: 'ok' },
-    cuerpo: `
-<p>La señal más fuerte del sistema, y la única que <b>viaja con dinero</b>.</p>
-<div class="w-caja w-ok"><span class="w-k">Por qué importa el monto</span>
-<p>Sale de su suscripción, y es lo que hace que TikTok persiga <b>clientes grandes</b> en vez de clientes cualesquiera. Sin suscripción registrada se reporta <b>sin</b> monto — nunca en cero, porque un cero le enseñaría que esa venta no valió nada.</p></div>
-<div class="w-caja w-bad"><span class="w-k">Muévela cuando pasa, no en lote</span>
-<p>TikTok guarda los leads <b>90 días</b>. Pasado eso el lead ya no existe de su lado y la señal no tiene a qué pegarse.</p>
-<p>Ya estuvo a punto de costarnos: tres clientes que sumaban <b>$53,240 de ARR</b> casi quedan fuera porque su etapa se movió semanas después de la venta.</p></div>`,
-  },
-  {
-    id: 'e-descalificado', grupo: 'Las etapas', titulo: '🚫 Descalificado',
-    bajada: 'Nunca fue del perfil.', chip: { texto: 'Unqualified', tono: 'bad' },
-    cuerpo: `
-<p>Es la <b>única señal negativa</b> del sistema, y la que faltaba hasta agosto de 2026. Con puros positivos el algoritmo aprende media lección: a quién buscar, pero nunca a quién <b>dejar</b> de buscar.</p>
-<h3>Cuándo usarla</h3>
-<ul>
-<li><b>Giro fuera del foco.</b> Hoy el foco es fashion retail; una taquería o una tienda de celulares no lo es.</li>
-<li><b>Tamaño que no corresponde</b> a lo que resolvemos.</li>
-<li><b>Dato falso o inservible</b> — sin forma de contactarlo.</li>
-</ul>
-<div class="w-caja w-bad"><span class="w-k">La regla, y no admite excepciones</span>
-<p>Solo se marca Descalificado <b>lo que una persona revisó y descartó</b>. Un lead sin trabajar <b>no</b> es un descalificado.</p>
-<p><b>Un negativo equivocado hace más daño que un positivo faltante</b>, porque el algoritmo lo usa para <i>excluir</i> gente parecida. Marcar por flojera enseña a TikTok a evitar a tu próximo mejor cliente.</p></div>
-<div class="w-caja w-warn"><span class="w-k">Efecto secundario que hay que vigilar</span>
-<p>Si descalificas por giro de forma sistemática, revisa que la <b>página web no siga invitando ese giro</b>. Mientras el sitio muestre jugueterías, florerías o ferreterías —aunque sea en «próximamente»— vas a seguir pagando por leads que después descartas.</p></div>`,
-  },
-  {
-    id: 'e-rezagado', grupo: 'Las etapas', titulo: '🕰️ Rezagado',
-    bajada: 'Se enfrió de nuestro lado.', chip: { texto: 'No se reporta', tono: 'mut' },
-    cuerpo: `
-<p>El lead que <b>sí era del perfil</b> pero dejamos enfriar: se intentó, no prosperó, y ya no está vivo el hilo. Sirve para separarlo de los que todavía nadie tocó, y para poder recuperarlo después.</p>
-<div class="w-caja"><span class="w-k">Por qué NO viaja a TikTok</span><p>Un rezagado habla de <b>nuestro proceso</b>, no de la calidad del lead. Reportarlo le enseñaría al algoritmo a evitar gente buena a la que simplemente no llamamos a tiempo. Mismo criterio que «Perdido».</p></div>
-<div class="w-caja w-bad"><span class="w-k">Rezagado y Descalificado se ganan, no se deducen</span>
-<p>Los dos describen algo que <b>una persona hizo</b> —intentó y no hubo respuesta; revisó y descartó—, nunca algo que el calendario hizo solo.</p>
-<p>Marcar por antigüedad es la forma más fácil de equivocarse: <b>ya pasó una vez</b>, con 40 leads marcados por edad que hubo que revertir. Un lead de 10 días sin contactar no es un rezagado: <b>es un pendiente</b>.</p>
-<p>Para «viejo pero todavía sin tocar» ya existe el <b>Estatus «Sin tocar»</b>, que el sistema calcula solo. Filtrar por antigüedad es una <b>vista</b>, no una etapa.</p></div>
-
-<h3>Lo que recibe mientras está aquí</h3>
-<p>Un rezagado no se abandona: entra a la cadencia <b>«Rezagados · top of mind»</b>, que no persigue —acompaña—. Tres carriles fijos, cada uno con su tipo de contenido y su propio ritmo:</p>
-<table class="w-tab"><thead><tr><th>Día</th><th>Qué recibe</th><th>A qué invita</th></tr></thead><tbody>
-<tr><td><b>Lunes</b></td><td>Un <b>insight</b> de la operación de una marca de moda, con su gráfica o su foto.</td><td>Agendar. Es una conversación de negocio.</td></tr>
-<tr><td><b>Miércoles</b></td><td>Un <b>tip</b> que se hace esa misma semana, sin sistema y sin costo.</td><td>WhatsApp. Es una conversación de operación.</td></tr>
-<tr><td><b>Viernes</b></td><td>Una <b>función</b> de Sacs, con la pantalla real.</td><td>Depende: se cuenta o se muestra.</td></tr>
-</tbody></table>
-
-<h3>Y cuatro WhatsApp, uno al mes</h3>
-<p>Caen en las semanas <b>3, 6, 9 y 12</b>, intercalados entre los correos. Los escribe <b>Fernanda</b>, no Andrea.</p>
-<div class="w-caja"><span class="w-k">Por qué uno al mes y no uno por semana</span><p>WhatsApp no es correo: Meta lo cobra por mensaje, entra al teléfono personal y a la tercera semana seguida de mensajes de marca uno bloquea. Un carril propio de WhatsApp habría disparado uno cada semana; por eso van <b>dentro</b> de los carriles que ya existen, en las posiciones que los dejan caer separados.</p></div>
-<div class="w-caja"><span class="w-k">El último pregunta si le paramos</span><p>En la semana 12 llega un mensaje que ofrece dejar de escribir. No es rendirse: <b>es lo que más respuestas saca</b> de un rezagado, y el que contesta «sigue, me sirve» vale más que diez que nunca dijeron nada.</p></div>
-
-<div class="w-caja"><span class="w-k">Se sale sola en cuanto hay señal</span><p>Si el lead responde, abre varios correos o vuelve al sitio, sale de la cadencia y regresa como <b>lead reciclado</b> — que aparece en el inicio del móvil, porque es el momento más caliente del embudo y no debe quedarse en una nota que solo ve quien ya está adentro.</p></div>`,
-  },
-  {
-    id: 'e-perdido', grupo: 'Las etapas', titulo: '🌙 Perdido',
-    bajada: 'Fue cliente y se fue.', chip: { texto: 'No se reporta', tono: 'mut' },
-    cuerpo: `
-<p>Un <code>churned</code>: alguien que sí compró y luego se dio de baja.</p>
-<div class="w-caja"><span class="w-k">Por qué no se manda</span>
-<p>Porque <b>contradiría el «Cliente» que ya reportamos</b> por esa misma persona. Para TikTok esa conversión sí ocurrió y sí fue real; que después se haya ido es información de retención, no de adquisición.</p>
-<p>No confundir con <b>Descalificado</b>, que es un lead que nunca avanzó y por eso sí es una etiqueta limpia.</p></div>`,
-  },
-  {
-    id: 'p1', grupo: 'El proceso', titulo: '1 · Llega el lead',
+    id: 'p1', grupo: 'El proceso de venta', titulo: '1 · Llega el lead',
     bajada: 'Todo automático. Nadie captura nada.', chip: { texto: 'validado', tono: 'ok' },
     cuerpo: `
 <p><b>Estado inicial:</b> Etapa = <i>Nuevo lead</i> · Estatus = <i>Sin tocar</i>.</p>
@@ -160,7 +72,7 @@ export const WIKI: PaginaWiki[] = [
 <b>3.</b> Mismo teléfono o correo ya registrado = <b>no</b> se duplica la ficha: se firma «volvió a levantar la mano» y se avisa.</p></div>`,
   },
   {
-    id: 'p2', grupo: 'El proceso', titulo: '2 · El tablero se mueve solo',
+    id: 'p2', grupo: 'El proceso de venta', titulo: '2 · El tablero se mueve solo',
     bajada: 'Cada hecho real mueve el Estatus sin que nadie capture.', chip: { texto: 'validado', tono: 'ok' },
     cuerpo: `
 <p>Todos los cambios <b>solo avanzan</b>; el recálculo nocturno (3 am) revisa los hechos completos y autocorrige. Todo queda firmado en la actividad del lead.</p>
@@ -183,7 +95,7 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja"><span class="w-k">Lo que NUNCA mueve el estatus</span><p>Las bienvenidas automáticas, los ecos y el backfill. <b>La automatización abre; el humano vende.</b></p></div>`,
   },
   {
-    id: 'p3', grupo: 'El proceso', titulo: '3 · La secuencia de seguimiento',
+    id: 'p3', grupo: 'El proceso de venta', titulo: '3 · La secuencia de seguimiento',
     bajada: 'Para el lead tocado que no responde.', chip: { texto: 'apagada · esperando OK', tono: 'warn' },
     cuerpo: `
 <p><b>Dónde vive:</b> Automatización ▸ Secuencias. Mezcla WhatsApp y correo en <b>un solo flujo</b>, enseña sus reglas siempre, y se mide sola.</p>
@@ -210,7 +122,40 @@ export const WIKI: PaginaWiki[] = [
 <p>Horario humano (10-18 CDMX, L-V) · máximo un correo y un WhatsApp por corrida por lead · el reloj arranca el día que la secuencia <b>ve</b> al lead, nunca ráfagas retroactivas · los leads más viejos que el corte no entran · optout y pausa se respetan · cada envío queda firmado.</p></div>`,
   },
   {
-    id: 'p35', grupo: 'El proceso', titulo: '↳ El relevo: demo agendada',
+    id: 'p4', grupo: 'El proceso de venta', titulo: '4 · El primer toque humano',
+    bajada: 'El único paso manual de toda la cadena.', chip: { texto: 'pendiente', tono: 'warn' },
+    cuerpo: `
+<div class="w-caja w-warn"><span class="w-k">Falta definir</span><p>El <b>round-robin de dueños</b>: faltan los nombres del equipo para repartir los leads entrantes.</p></div>
+<h3>Lo que ya sabemos</h3>
+<p>Hoy hay <b>51 leads esperando</b>. La medición dice que el equipo <b>sí atiende</b> —la mayoría tiene el Estatus movido, muchos respondieron— pero <b>nadie mueve la Etapa</b>, que es el único campo que TikTok lee.</p>
+<div class="w-caja w-ok"><span class="w-k">Y esa es la buena noticia</span>
+<p>No es un problema de seguimiento —eso sería caro y lento de arreglar—: es <b>un paso manual que falta</b>, y eso se arregla con un hábito. <b>Mover la Etapa después de cada llamada.</b></p></div>`,
+  },
+  {
+    id: 'p5', grupo: 'El proceso de venta', titulo: '5 · La señal de vuelta a TikTok',
+    bajada: 'Cerrar el círculo.', chip: { texto: 'validado', tono: 'ok' },
+    cuerpo: `
+<p><b>El problema:</b> TikTok sabe <i>cuántos</i> formularios se llenaron. No sabe <i>cuáles sirvieron</i>. Con esa información a medias optimiza por lo único que puede medir —la cantidad— y entrega los leads más baratos, que casi nunca son los que compran.</p>
+<p><b>El dato que le falta lo tenemos nosotros.</b></p>
+<table class="w-tab"><thead><tr><th>Etapa en el CRM</th><th>Lo que recibe TikTok</th><th>Qué le enseña</th></tr></thead><tbody>
+<tr><td>✅ Calificado</td><td><code>Qualified</code></td><td>«Este lead sí era del perfil»</td></tr>
+<tr><td>🎯 Oportunidad</td><td><code>Opportunity</code></td><td>«Este iba en serio»</td></tr>
+<tr><td>💚 Cliente</td><td><code>Converted</code> + el monto</td><td>«Este compró, y por esto»</td></tr>
+<tr><td>🚫 Descalificado</td><td><code>Unqualified</code></td><td>«Deja de buscar gente así»</td></tr>
+</tbody></table>
+<p><b>Las demás no se reportan, a propósito.</b> «Nuevo lead» es el estado en que TikTok ya lo entregó. «Perdido» contradiría el «Cliente» que ya mandamos. Y <b>«Rezagado» habla de nuestro proceso, no del lead</b>.</p>
+<h3>La cadena, y sus tiempos</h3>
+<table class="w-tab"><thead><tr><th>Paso</th><th>Qué pasa</th><th>Cuándo</th></tr></thead><tbody>
+<tr><td>1. El vendedor</td><td>Cambia la etapa en la ficha</td><td>—</td></tr>
+<tr><td>2. El CRM</td><td>Registra el cambio con su fecha real</td><td>al instante</td></tr>
+<tr><td>3. El puente</td><td>Escribe el estatus en el Google Sheet conectado</td><td><b>cada 3 h</b></td></tr>
+<tr><td>4. TikTok</td><td>Relee la hoja y usa la señal para optimizar</td><td>cada ~10 min</td></tr>
+</tbody></table>
+<p>Entre que mueves la etapa y TikTok se entera pasan <b>entre 10 minutos y 3 horas</b>. La integración vive en Ads Manager ▸ Leads Center ▸ CRM integration, en modo <b>Signal postback</b>.</p>
+<div class="w-caja w-warn"><span class="w-k">Clasificar no envía nada por sí solo</span><p>La señal sale cuando <b>el cron escribe la hoja</b> y TikTok la relee. Si clasificaste hace un rato, la señal todavía puede estar en camino.</p></div>`,
+  },
+  {
+    id: 'p35', grupo: 'Los relevos', titulo: 'El relevo: demo agendada',
     bajada: 'El enemigo es el no-show.', chip: { texto: 'construida · APAGADA', tono: 'warn' },
     cuerpo: `
 <p>El pase de estafeta es automático: agendar saca al lead de «Seguimiento sin respuesta» y la secuencia <b>«Demo agendada · rumbo a la sesión»</b> lo toma en su siguiente corrida.</p>
@@ -251,7 +196,7 @@ export const WIKI: PaginaWiki[] = [
 <p>Los recordatorios de 24 h y 1 h sí funcionan, porque viven en el sistema de reuniones y no en la secuencia.</p></div>`,
   },
   {
-    id: 'p36', grupo: 'El proceso', titulo: '↳ El relevo: ya cotizaste',
+    id: 'p36', grupo: 'Los relevos', titulo: 'El relevo: ya cotizaste',
     bajada: 'Doce días de credibilidad.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Cuando el lead llega a <b>Oportunidad</b> ya vio la demo y ya tiene precio. No hay nada que explicar y todo que demostrar, así que esta secuencia no repite el producto ni ofrece descuento: a esa altura las dos cosas restan.</p>
@@ -273,58 +218,7 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Antes de prenderla</span><p>Está <b>cargada pero apagada</b>. Prenderla manda correos a prospectos reales con cotización en la mano: es una decisión de negocio, no un paso de configuración.</p></div>`,
   },
   {
-    id: 'e-prueba', grupo: 'Las etapas', titulo: '🎁 Prueba gratis',
-    bajada: 'Ya está dentro. Todavía no paga.', chip: { texto: 'automática', tono: 'ok' },
-    cuerpo: `
-<p>Etapa entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
-
-<h3>Se crea de dos lugares, y en los dos es un clic</h3>
-<p>Antes eran tres pasos en dos sistemas: entrar a SACS, crear la cuenta a mano, y acordarse de anotar en el CRM cuál cuenta era de quién. El último casi nunca pasaba.</p>
-<table class="w-tab"><thead><tr><th>Desde dónde</th><th>Cómo</th></tr></thead><tbody>
-<tr><td><b>La ficha del lead</b></td><td>Pestaña <i>Seguimiento</i> ▸ tarjeta <b>Prueba gratis</b> ▸ «Crear cuenta de prueba». Propone el identificador con el nombre de la empresa y tú lo corriges.</td></tr>
-<tr><td><b>El inbox, en plena conversación</b></td><td>El 📎 del composer ▸ <b>Prueba gratis</b>. Crea la cuenta y <b>deja el mensaje escrito</b> con la cuenta, el usuario y la contraseña. No lo manda: lo lees, le agregas lo tuyo y lo envías. Funciona igual en computadora y en el teléfono.</td></tr>
-</tbody></table>
-
-<div class="w-caja"><span class="w-k">Un clic hace las cinco cosas</span><p>Crea la cuenta en SACS marcada como prueba con sus días · la liga al lead y a su empresa · <b>lo mueve a esta etapa</b> · sella las fechas de inicio y fin · y deja la actividad en su ficha. Ese tercer punto es el que faltaba: la cadencia de onboarding se cuelga de la etapa, así que sin él se creaba la cuenta y el cliente <b>no recibía ninguno de los 14 correos</b>. No fallaba nada — simplemente no pasaba nada.</p></div>
-
-<div class="w-caja"><span class="w-k">Dos datos que se dicen mal seguido</span><p>Se entra siempre por <b>app.sacscloud.com</b>: <b>no hay una dirección por cuenta</b>. El identificador —el que eliges al crearla— es el nombre del tenant, no un subdominio; dictarlo como si fuera una URL manda al cliente a una página que no existe, y eso es lo primero que ve de su prueba.</p>
-<p>Y la contraseña temporal <b>se enseña una sola vez</b> para dictarla. No queda guardada en el CRM: el cliente la cambia en su primer acceso. Por eso el botón del inbox deja el mensaje ya escrito — es el momento en que hay que dictarla.</p></div>
-
-<h3>Se acaba sola, y el cliente se entera</h3>
-<p>Cada madrugada el sistema revisa las pruebas vivas:</p>
-<table class="w-tab"><thead><tr><th>Cuándo</th><th>Qué pasa</th></tr></thead><tbody>
-<tr><td><b>Faltando 3 días</b></td><td>Aviso en la campana, con su WhatsApp a un toque.</td></tr>
-<tr><td><b>Faltando 1 día</b></td><td>El mismo aviso, en urgente.</td></tr>
-<tr><td><b>El día que vence</b></td><td>La prueba se marca <b>terminada</b> y la cuenta muestra el aviso de fin de prueba — el <b>mismo</b> que pondría una persona desde sacs3 al suspender por falta de pago, con su título, su mensaje, <b>su botón de WhatsApp</b> y el link a planes. Se deja la actividad en la ficha y se avisa por la campana.</td></tr>
-</tbody></table>
-<p>Los textos de ese aviso no se escriben aquí: salen de la configuración central de SACS (<i>Configuración ▸ Cuentas ▸ bloqueo</i>), la misma que usa el bloqueo por adeudo. Si mañana se cambia el texto allá, este también cambia.</p>
-<p>Qué ve exactamente, hasta dónde alcanza el candado y cómo revocar una cuenta a mano: <b>Revocar una cuenta</b>.</p>
-
-<div class="w-caja"><span class="w-k">Vencida no es lo mismo que terminada</span><p><b>Vencida</b> es que la fecha pasó. <b>Terminada</b> es que ya se asumió y la cuenta tiene el aviso. Entre las dos hay una ventana —hasta que corre el cron de las 3:45 am— y es la que la ficha pinta en rojo. Si quieres el aviso hoy y no mañana, hay un botón «Cerrar ya».</p>
-<p>Y si el aviso no se pudo poner —cuenta borrada, API caída— la prueba queda terminada pero <b>sin</b> marca de bloqueo, y el cron lo reintenta cada madrugada. Sin eso, un timeout de una noche dejaba una cuenta vencida abierta para siempre y en silencio.</p></div>
-
-<h3>Lo que puedes hacer desde la ficha</h3>
-<table class="w-tab"><thead><tr><th>Botón</th><th>Qué hace</th></tr></thead><tbody>
-<tr><td><b>Extender</b></td><td>Le suma días a una prueba viva. No toca la cuenta.</td></tr>
-<tr><td><b>Cerrar ya</b></td><td>La termina hoy y le pone el aviso, sin esperar al cron.</td></tr>
-<tr><td><b>Reabrir</b></td><td>Le quita el aviso a la cuenta y la abre otra vez con días nuevos. Es una decisión comercial, no un trámite — por eso está separada de «Extender».</td></tr>
-<tr><td><b>Ya compró</b></td><td>Cierra la prueba como <b>convertida</b> y le quita el aviso. Sin esto, el cliente que acaba de pagar se topa con la pantalla de «tu prueba terminó»: la peor primera impresión posible después de un cobro.</td></tr>
-</tbody></table>
-<p>Cerrar y cancelar se guardan distinto a propósito: <b>terminada</b> es que se acabó el tiempo, <b>cancelada</b> es que el cliente dijo que no antes. Mezclarlas hace que el reporte de conversión mienta.</p>
-
-<h3>Todo queda escrito, en los dos lados</h3>
-<p>Cada movimiento —creada, extendida, terminada, reabierta, convertida— deja una actividad en la ficha del lead. Y como el panel de detalle del inbox pinta <b>esa misma</b> línea de tiempo, quien atiende la conversación ve el contexto completo sin salir del chat: cuándo empezó su prueba, cuántos días le quedan y si alguien ya se la extendió.</p>
-
-<h3>Qué se sabe de una prueba sin preguntarle a nadie</h3>
-<table class="w-tab"><thead><tr><th>Dato</th><th>Para qué sirve</th></tr></thead><tbody>
-<tr><td><b>Días que le quedan</b></td><td>Ya calculados. La fecha de fin se sella al crear la cuenta, así que no depende de que alguien la vuelva a contar — que es como terminan existiendo dos fechas para la misma prueba.</td></tr>
-<tr><td><b>Si arrancó o no</b></td><td>Productos subidos, ventas y cortes de caja, con la fecha del último movimiento.</td></tr>
-</tbody></table>
-
-<div class="w-caja"><span class="w-k">El catálogo avisa antes que la venta</span><p>Nadie vende antes de subir su catálogo, así que <b>«subió productos» llega días antes que «hizo una venta»</b>. Es la señal más temprana de que la prueba arrancó — y su ausencia, la más temprana de que se está muriendo sola. Una cuenta en cero al día 3 no necesita el correo del día 5: necesita una llamada.</p></div>`,
-  },
-  {
-    id: 'p37', grupo: 'El proceso', titulo: '↳ El relevo: prueba gratis',
+    id: 'p37', grupo: 'Los relevos', titulo: 'El relevo: prueba gratis',
     bajada: 'Catorce días, del primer login al nivelador.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Once correos que llevan al usuario de cero a operar. Cada uno enseña <b>dónde está la cosa</b> con captura del sistema real y la ruta exacta del menú, para qué sirve, qué hacer hoy y qué viene después. El CTA nunca es comprar: es preguntar por WhatsApp.</p>
@@ -391,169 +285,279 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja"><span class="w-k">El día 14 y el bloqueo van juntos</span><p>El correo del día 14 —«lo que lograste y qué pasa con tu cuenta»— y el aviso de fin de prueba en la cuenta salen del <b>mismo</b> plazo. Si algún día se cambian los 14 días de la cadencia, hay que cambiar también los días que se otorgan al crear la cuenta, o el correo de cierre llega cuando el cliente ya no puede entrar.</p></div>`,
   },
   {
-    id: 'revocar', grupo: 'El proceso', titulo: 'Revocar una cuenta',
-    bajada: 'Apagarle el acceso sin salir del CRM.', chip: { texto: 'nueva', tono: 'ok' },
+    id: 'e-lead', grupo: 'Las etapas', titulo: 'Nuevo lead',
+    bajada: 'El estado en que TikTok lo entregó.', chip: { texto: 'No se reporta', tono: 'mut' },
     cuerpo: `
-<p>Antes esto se hacía en <i>sacs3 ▸ Configuración ▸ Cuentas</i>: otro sistema, otra sesión, y buscar la cuenta entre 560. Quien está cobrando tiene el hilo de WhatsApp abierto delante y la ficha al lado — ese es el momento de apretar el botón, no quince minutos después en otra pestaña.</p>
-<p>Ahora la tarjeta <b>Cuenta de SACS</b> aparece en <b>la ficha del lead o cliente</b> (pestaña Seguimiento) y en <b>el inbox</b> (panel de detalle ▸ Acciones). Es la misma tarjeta en los dos lados a propósito: tenerla dos veces garantizaba que un día dijeran cosas distintas de la misma cuenta.</p>
-
-<div class="w-caja"><span class="w-k">Es la MISMA operación, no una paralela</span><p>Mismo motor del lado de SACS, mismos textos, mismo candado en la lista de cuentas y misma bitácora. Lo único que cambia es desde dónde se dispara — y que en la bitácora queda <b>tu correo</b>, no «el sistema».</p></div>
-
-<h3>Los tres motivos</h3>
-<table class="w-tab"><thead><tr><th>Motivo</th><th>Qué ve el cliente</th></tr></thead><tbody>
-<tr><td><b>Falta de pago</b></td><td>El adeudo y los datos para depositar. <b>Pide el monto</b>: un aviso que dice «no especificado» le quita toda la fuerza al mensaje.</td></tr>
-<tr><td><b>Se acabó la prueba</b></td><td>La invitación a contratar, con botón de WhatsApp y link a planes. Es el que pone el cron cuando vence una prueba.</td></tr>
-<tr><td><b>Violación de términos</b></td><td>El aviso legal, sin datos de pago.</td></tr>
-</tbody></table>
-<p>Los textos exactos <b>no se escriben en el CRM</b>: salen de la configuración central de SACS. Si mañana se cambian allá, cambian aquí.</p>
-
-<h3>Qué le pasa al cliente</h3>
-<p>Al entrar le sale un <b>aviso a pantalla completa</b>, con el fondo difuminado, encima de todo. No es un banner que se cierra: no tiene forma de quitarlo, y el único botón es <b>cerrar sesión</b>. Vive en el armazón de sacs3, así que da igual a qué módulo intente entrar o si abre un link directo — el aviso está ahí.</p>
-
-<div class="w-caja w-bad"><span class="w-k">El candado es de la web, no del sistema entero</span><p>Verificado, no supuesto: <b>la API no valida el bloqueo en ninguna ruta</b> y <b>la app móvil no lo mira</b>. Quien tenga la APK abierta puede seguir vendiendo con la cuenta revocada.</p>
-<p>Para cobrar funciona —el dueño usa la web y ahí se topa de frente con el aviso—, pero no des por hecho que la operación se detuvo. Si el caso es grave, revócala <b>y</b> avisa.</p></div>
-
-<div class="w-caja"><span class="w-k">Y no es retroactivo en la sesión abierta</span><p>El aviso se consulta al entrar. Quien ya tenga sacs3 abierto lo verá cuando recargue, no en el segundo en que aprietas el botón.</p></div>
-
-<h3>Reabrir</h3>
-<p>El mismo botón, en verde. Le quita el aviso y limpia los datos del bloqueo anterior — importante, porque si no, el adeudo viejo reaparecería la próxima vez que se apague por otro motivo.</p>
-
-<div class="w-caja"><span class="w-k">Si dice «no se pudo consultar»</span><p>La tarjeta lee el estado de SACS cada vez que se abre; no lo recuerda. Si la consulta falla, lo dice y <b>esconde los botones</b> en vez de suponer «activa». Apretar a ciegas puede reabrirle la cuenta a quien la tenías apagada por términos.</p></div>
-
-<h3>Todo queda escrito</h3>
-<p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
+<p>Donde nace todo lead de campaña. <b>No significa abandono:</b> el Estatus puede decir que ya respondió, que hubo tres llamadas o que está cotizado. Significa únicamente que <b>nadie ha decidido todavía quién es</b>.</p>
+<div class="w-caja"><span class="w-k">Por qué no se reporta</span><p>Decirle a TikTok «este lead es un lead» no le enseña nada — él lo entregó. Y cada etapa reportada compite con las demás por la atención del algoritmo: con demasiadas señales, ninguna pesa.</p></div>
+<h3>Cuándo sacarlo de aquí</h3>
+<p>En cuanto una persona lo trabaje y sepa quién es. Es el único paso manual de toda la cadena, y hoy es el que separa 30 señales de 81.</p>`,
   },
   {
-    id: 'churn', grupo: 'El proceso', titulo: '🛟 Churn · rescatar al que canceló',
-    bajada: 'El que se fue no se archiva: se trabaja.', chip: { texto: '$38,608 en rescate', tono: 'bad' },
+    id: 'e-calificado', grupo: 'Las etapas', titulo: 'Calificado',
+    bajada: 'Sí era del perfil.', chip: { texto: 'Qualified', tono: 'ok' },
     cuerpo: `
-<p>Winback es la <b>cadencia automática</b> que les escribe. Churn es el <b>trabajo a mano</b> sobre cada uno: la sección que vive debajo de Clientes y lleva a un cliente cancelado de vuelta a pagar — o lo cierra con su porqué.</p>
-
-<h3>Las cuatro etapas</h3>
+<p>Una persona lo revisó y confirmó que <b>es el cliente que buscamos</b>: giro que atendemos, tamaño que nos corresponde, necesidad real.</p>
+<h3>Qué mirar para decidirlo</h3>
 <ul>
-<li><b>Detectado.</b> Canceló y nadie lo ha tocado. Entra <b>solo</b>: al cancelarse la suscripción se abre el caso, y un barrido a las 3:30 am recoge lo que se haya escapado por otro camino.</li>
-<li><b>En conciliación.</b> Ya estamos hablando: qué pasó de verdad y qué le ofrecemos.</li>
-<li><b>En gracia.</b> Usa el sistema bajo un acuerdo. Pactar exige <b>tres datos</b>: qué se pactó, hasta cuándo, y a cuánto vuelve a pagar. Sin los tres el sistema no deja — una gracia sin fecha de fin es un cliente gratis para siempre. Al guardar se le <b>devuelve el acceso en SACS automáticamente</b>.</li>
-<li><b>Recuperado.</b> Volvió a pagar. Exige la suscripción nueva que lo respalda: un recuperado que no paga mentiría en la ARR. Al cerrarse, la reactivación entra al ledger de MRR y la ARR lo cuenta sola.</li>
+<li><b>Sucursales declaradas en el formulario.</b> De 2 en adelante es nuestro terreno.</li>
+<li><b>Sistema actual.</b> Quien ya usa algo (Eleventa, Sicar, Alegra, Avelon…) tiene la intención más alta: ya decidió que necesita un sistema, solo está eligiendo cuál.</li>
+<li><b>Giro.</b> Hoy el foco es <b>fashion retail</b>: ropa, calzado, joyería y accesorios.</li>
 </ul>
-<p><b>Irrecuperable</b> cierra desde cualquier etapa, con motivo obligatorio. Es terminal: si el cliente vuelve, se abre un <b>episodio nuevo</b> ligado al anterior — nunca se reabre el viejo, para que la historia no se pise.</p>
+<div class="w-caja w-ok"><span class="w-k">Es la señal más rentable de mover</span><p>No cuesta nada y es la más frecuente. Un lead que contestó y encaja debería estar aquí el mismo día.</p></div>`,
+  },
+  {
+    id: 'e-oportunidad', grupo: 'Las etapas', titulo: 'Oportunidad',
+    bajada: 'Hay dinero en la mesa.', chip: { texto: 'Opportunity', tono: 'ok' },
+    cuerpo: `
+<p>Pasó de interesado a <b>proceso de venta abierto</b>: agendó demo, pidió cotización o está negociando.</p>
+<div class="w-caja"><span class="w-k">Se mueve sola</span><p><b>Agendar una reunión promueve el lead a Oportunidad automáticamente.</b> No hay que hacerlo a mano. Si alguien agendó y sigue en Nuevo lead, algo no se registró por el canal correcto.</p></div>`,
+  },
+  {
+    id: 'e-prueba', grupo: 'Las etapas', titulo: 'Prueba gratis',
+    bajada: 'Ya está dentro. Todavía no paga.', chip: { texto: 'automática', tono: 'ok' },
+    cuerpo: `
+<p>Etapa entre Oportunidad y Cliente. Antes esta gente caía en una de las dos y <b>ninguna era cierta</b>: no está negociando —ya decidió probar— y no ha pagado.</p>
 
-<div class="w-caja w-bad"><span class="w-k">Lo que el dato dice y cambia el guion</span>
-<p>De los $38,608 de MRR que se fueron, <b>$25,048 (el 65%) fue por mal servicio o soporte</b> y <b>cero por precio</b>. A esta gente no se le rescata con descuento: se le rescata resolviendo lo que quedó mal. Por eso la primera plantilla de gracia es «30 días con soporte dedicado», no un mes gratis.</p></div>
+<h3>Se crea de dos lugares, y en los dos es un clic</h3>
+<p>Antes eran tres pasos en dos sistemas: entrar a SACS, crear la cuenta a mano, y acordarse de anotar en el CRM cuál cuenta era de quién. El último casi nunca pasaba.</p>
+<table class="w-tab"><thead><tr><th>Desde dónde</th><th>Cómo</th></tr></thead><tbody>
+<tr><td><b>La ficha del lead</b></td><td>Pestaña <i>Seguimiento</i> ▸ tarjeta <b>Prueba gratis</b> ▸ «Crear cuenta de prueba». Propone el identificador con el nombre de la empresa y tú lo corriges.</td></tr>
+<tr><td><b>El inbox, en plena conversación</b></td><td>El 📎 del composer ▸ <b>Prueba gratis</b>. Crea la cuenta y <b>deja el mensaje escrito</b> con la cuenta, el usuario y la contraseña. No lo manda: lo lees, le agregas lo tuyo y lo envías. Funciona igual en computadora y en el teléfono.</td></tr>
+</tbody></table>
 
-<h3>La columna que de verdad decide</h3>
-<p>«Uso del sistema» dice, desde la lista y sin abrir nada, si el cliente está entrando a SACS. Sale del sync nocturno que ya existía. Lo importante no es cuántos días lleva la gracia: es si la está usando. <b>Una gracia de 30 días con el sistema en cero ya fracasó</b>, y el sistema te avisa a los 7 días — no el último.</p>
-<p>Cuando la empresa no tiene cuenta ligada, la columna dice «sin cuenta ligada» y no un cero: un cero ahí parecería abandono cuando es falta de dato.</p>
+<div class="w-caja"><span class="w-k">Un clic hace las cinco cosas</span><p>Crea la cuenta en SACS marcada como prueba con sus días · la liga al lead y a su empresa · <b>lo mueve a esta etapa</b> · sella las fechas de inicio y fin · y deja la actividad en su ficha. Ese tercer punto es el que faltaba: la cadencia de onboarding se cuelga de la etapa, así que sin él se creaba la cuenta y el cliente <b>no recibía ninguno de los 14 correos</b>. No fallaba nada — simplemente no pasaba nada.</p></div>
 
-<h3>Los avisos</h3>
+<div class="w-caja"><span class="w-k">Dos datos que se dicen mal seguido</span><p>Se entra siempre por <b>app.sacscloud.com</b>: <b>no hay una dirección por cuenta</b>. El identificador —el que eliges al crearla— es el nombre del tenant, no un subdominio; dictarlo como si fuera una URL manda al cliente a una página que no existe, y eso es lo primero que ve de su prueba.</p>
+<p>Y la contraseña temporal <b>se enseña una sola vez</b> para dictarla. No queda guardada en el CRM: el cliente la cambia en su primer acceso. Por eso el botón del inbox deja el mensaje ya escrito — es el momento en que hay que dictarla.</p></div>
+
+<h3>Se acaba sola, y el cliente se entera</h3>
+<p>Cada madrugada el sistema revisa las pruebas vivas:</p>
+<table class="w-tab"><thead><tr><th>Cuándo</th><th>Qué pasa</th></tr></thead><tbody>
+<tr><td><b>Faltando 3 días</b></td><td>Aviso en la campana, con su WhatsApp a un toque.</td></tr>
+<tr><td><b>Faltando 1 día</b></td><td>El mismo aviso, en urgente.</td></tr>
+<tr><td><b>El día que vence</b></td><td>La prueba se marca <b>terminada</b> y la cuenta muestra el aviso de fin de prueba — el <b>mismo</b> que pondría una persona desde sacs3 al suspender por falta de pago, con su título, su mensaje, <b>su botón de WhatsApp</b> y el link a planes. Se deja la actividad en la ficha y se avisa por la campana.</td></tr>
+</tbody></table>
+<p>Los textos de ese aviso no se escriben aquí: salen de la configuración central de SACS (<i>Configuración ▸ Cuentas ▸ bloqueo</i>), la misma que usa el bloqueo por adeudo. Si mañana se cambia el texto allá, este también cambia.</p>
+<p>Qué ve exactamente, hasta dónde alcanza el candado y cómo revocar una cuenta a mano: <b>Revocar una cuenta</b>.</p>
+
+<div class="w-caja"><span class="w-k">Vencida no es lo mismo que terminada</span><p><b>Vencida</b> es que la fecha pasó. <b>Terminada</b> es que ya se asumió y la cuenta tiene el aviso. Entre las dos hay una ventana —hasta que corre el cron de las 3:45 am— y es la que la ficha pinta en rojo. Si quieres el aviso hoy y no mañana, hay un botón «Cerrar ya».</p>
+<p>Y si el aviso no se pudo poner —cuenta borrada, API caída— la prueba queda terminada pero <b>sin</b> marca de bloqueo, y el cron lo reintenta cada madrugada. Sin eso, un timeout de una noche dejaba una cuenta vencida abierta para siempre y en silencio.</p></div>
+
+<h3>Lo que puedes hacer desde la ficha</h3>
+<table class="w-tab"><thead><tr><th>Botón</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>Extender</b></td><td>Le suma días a una prueba viva. No toca la cuenta.</td></tr>
+<tr><td><b>Cerrar ya</b></td><td>La termina hoy y le pone el aviso, sin esperar al cron.</td></tr>
+<tr><td><b>Reabrir</b></td><td>Le quita el aviso a la cuenta y la abre otra vez con días nuevos. Es una decisión comercial, no un trámite — por eso está separada de «Extender».</td></tr>
+<tr><td><b>Ya compró</b></td><td>Cierra la prueba como <b>convertida</b> y le quita el aviso. Sin esto, el cliente que acaba de pagar se topa con la pantalla de «tu prueba terminó»: la peor primera impresión posible después de un cobro.</td></tr>
+</tbody></table>
+<p>Cerrar y cancelar se guardan distinto a propósito: <b>terminada</b> es que se acabó el tiempo, <b>cancelada</b> es que el cliente dijo que no antes. Mezclarlas hace que el reporte de conversión mienta.</p>
+
+<h3>Todo queda escrito, en los dos lados</h3>
+<p>Cada movimiento —creada, extendida, terminada, reabierta, convertida— deja una actividad en la ficha del lead. Y como el panel de detalle del inbox pinta <b>esa misma</b> línea de tiempo, quien atiende la conversación ve el contexto completo sin salir del chat: cuándo empezó su prueba, cuántos días le quedan y si alguien ya se la extendió.</p>
+
+<h3>Qué se sabe de una prueba sin preguntarle a nadie</h3>
+<table class="w-tab"><thead><tr><th>Dato</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>Días que le quedan</b></td><td>Ya calculados. La fecha de fin se sella al crear la cuenta, así que no depende de que alguien la vuelva a contar — que es como terminan existiendo dos fechas para la misma prueba.</td></tr>
+<tr><td><b>Si arrancó o no</b></td><td>Productos subidos, ventas y cortes de caja, con la fecha del último movimiento.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">El catálogo avisa antes que la venta</span><p>Nadie vende antes de subir su catálogo, así que <b>«subió productos» llega días antes que «hizo una venta»</b>. Es la señal más temprana de que la prueba arrancó — y su ausencia, la más temprana de que se está muriendo sola. Una cuenta en cero al día 3 no necesita el correo del día 5: necesita una llamada.</p></div>`,
+  },
+  {
+    id: 'e-cliente', grupo: 'Las etapas', titulo: 'Cliente',
+    bajada: 'Pagó.', chip: { texto: 'Converted + monto', tono: 'ok' },
+    cuerpo: `
+<p>La señal más fuerte del sistema, y la única que <b>viaja con dinero</b>.</p>
+<div class="w-caja w-ok"><span class="w-k">Por qué importa el monto</span>
+<p>Sale de su suscripción, y es lo que hace que TikTok persiga <b>clientes grandes</b> en vez de clientes cualesquiera. Sin suscripción registrada se reporta <b>sin</b> monto — nunca en cero, porque un cero le enseñaría que esa venta no valió nada.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Muévela cuando pasa, no en lote</span>
+<p>TikTok guarda los leads <b>90 días</b>. Pasado eso el lead ya no existe de su lado y la señal no tiene a qué pegarse.</p>
+<p>Ya estuvo a punto de costarnos: tres clientes que sumaban <b>$53,240 de ARR</b> casi quedan fuera porque su etapa se movió semanas después de la venta.</p></div>`,
+  },
+  {
+    id: 'e-descalificado', grupo: 'Las etapas', titulo: 'Descalificado',
+    bajada: 'Nunca fue del perfil.', chip: { texto: 'Unqualified', tono: 'bad' },
+    cuerpo: `
+<p>Es la <b>única señal negativa</b> del sistema, y la que faltaba hasta agosto de 2026. Con puros positivos el algoritmo aprende media lección: a quién buscar, pero nunca a quién <b>dejar</b> de buscar.</p>
+<h3>Cuándo usarla</h3>
 <ul>
-<li><b>Sin tocar</b> a los 3 días de cancelar — el rescate en frío vale la mitad.</li>
-<li><b>Conciliación estancada</b> a los 7 días sin movimiento.</li>
-<li><b>Gracia por vencer</b> (7 días antes) y <b>gracia vencida</b>.</li>
-<li><b>La gracia no está funcionando</b>: lleva días de gracia y sigue sin vender.</li>
+<li><b>Giro fuera del foco.</b> Hoy el foco es fashion retail; una taquería o una tienda de celulares no lo es.</li>
+<li><b>Tamaño que no corresponde</b> a lo que resolvemos.</li>
+<li><b>Dato falso o inservible</b> — sin forma de contactarlo.</li>
 </ul>
-<p>Todos caen en el <b>caso exacto</b> al tocarlos, no en la lista.</p>
-
-<div class="w-caja"><span class="w-k">Las fechas con tilde</span>
-<p>22 de los 35 casos traen la fecha de cancelación marcada como <b>estimada</b>: vinieron de Excel sin fecha. El promedio de «cuánto tarda un rescate» solo cuenta los que tienen fecha real, y dice sobre cuántos se calculó. Un promedio sobre fechas inventadas sería un número con cara de dato.</p></div>
-`,
+<div class="w-caja w-bad"><span class="w-k">La regla, y no admite excepciones</span>
+<p>Solo se marca Descalificado <b>lo que una persona revisó y descartó</b>. Un lead sin trabajar <b>no</b> es un descalificado.</p>
+<p><b>Un negativo equivocado hace más daño que un positivo faltante</b>, porque el algoritmo lo usa para <i>excluir</i> gente parecida. Marcar por flojera enseña a TikTok a evitar a tu próximo mejor cliente.</p></div>
+<div class="w-caja w-warn"><span class="w-k">Efecto secundario que hay que vigilar</span>
+<p>Si descalificas por giro de forma sistemática, revisa que la <b>página web no siga invitando ese giro</b>. Mientras el sitio muestre jugueterías, florerías o ferreterías —aunque sea en «próximamente»— vas a seguir pagando por leads que después descartas.</p></div>`,
   },
   {
-    id: 'winback', grupo: 'El proceso', titulo: '↩ Winback · los que se fueron',
-    bajada: 'Primero escuchar. La oferta va al final.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
+    id: 'e-rezagado', grupo: 'Las etapas', titulo: 'Rezagado',
+    bajada: 'Se enfrió de nuestro lado.', chip: { texto: 'No se reporta', tono: 'mut' },
     cuerpo: `
-<p>Veinte pasos en 135 días para los <b>24 clientes que se fueron</b>. Quince correos y cinco WhatsApp — y ni un mensaje dentro de Sacs.</p>
+<p>El lead que <b>sí era del perfil</b> pero dejamos enfriar: se intentó, no prosperó, y ya no está vivo el hilo. Sirve para separarlo de los que todavía nadie tocó, y para poder recuperarlo después.</p>
+<div class="w-caja"><span class="w-k">Por qué NO viaja a TikTok</span><p>Un rezagado habla de <b>nuestro proceso</b>, no de la calidad del lead. Reportarlo le enseñaría al algoritmo a evitar gente buena a la que simplemente no llamamos a tiempo. Mismo criterio que «Perdido».</p></div>
+<div class="w-caja w-bad"><span class="w-k">Rezagado y Descalificado se ganan, no se deducen</span>
+<p>Los dos describen algo que <b>una persona hizo</b> —intentó y no hubo respuesta; revisó y descartó—, nunca algo que el calendario hizo solo.</p>
+<p>Marcar por antigüedad es la forma más fácil de equivocarse: <b>ya pasó una vez</b>, con 40 leads marcados por edad que hubo que revertir. Un lead de 10 días sin contactar no es un rezagado: <b>es un pendiente</b>.</p>
+<p>Para «viejo pero todavía sin tocar» ya existe el <b>Estatus «Sin tocar»</b>, que el sistema calcula solo. Filtrar por antigüedad es una <b>vista</b>, no una etapa.</p></div>
 
-<div class="w-caja"><span class="w-k">Por qué no hay in-app aquí</span><p>Un cliente que se fue <b>no entra al sistema</b>. Medido: de los 24, doce llevan más de 90 días sin vender y nueve no tienen ni dato de actividad. Un mensaje dentro de Sacs se quedaría esperando para siempre a alguien que no va a abrir la puerta. Correo y WhatsApp son los únicos canales que llegan.</p></div>
-
-<h3>Cuatro fases, y el orden es todo el diseño</h3>
-<table class="w-tab"><thead><tr><th>Fase</th><th>Días</th><th>Qué hace</th></tr></thead><tbody>
-<tr><td><b>1 · Escuchar</b></td><td>1 – 25</td><td>No se ofrece <b>nada</b>. Solo la pregunta de qué pasó, y el director pidiendo media hora.</td></tr>
-<tr><td><b>2 · Lo que cambió</b></td><td>31 – 73</td><td>Tampoco se pide nada. Se cuenta qué se arregló, incluido lo que estaba mal.</td></tr>
-<tr><td><b>3 · La oferta</b></td><td>83 – 130</td><td>El año sin costo, la garantía, y por qué se lo ofrecemos.</td></tr>
-<tr><td><b>4 · La puerta</b></td><td>135</td><td>Se cierra bien. Sin última oferta.</td></tr>
+<h3>Lo que recibe mientras está aquí</h3>
+<p>Un rezagado no se abandona: entra a la cadencia <b>«Rezagados · top of mind»</b>, que no persigue —acompaña—. Tres carriles fijos, cada uno con su tipo de contenido y su propio ritmo:</p>
+<table class="w-tab"><thead><tr><th>Día</th><th>Qué recibe</th><th>A qué invita</th></tr></thead><tbody>
+<tr><td><b>Lunes</b></td><td>Un <b>insight</b> de la operación de una marca de moda, con su gráfica o su foto.</td><td>Agendar. Es una conversación de negocio.</td></tr>
+<tr><td><b>Miércoles</b></td><td>Un <b>tip</b> que se hace esa misma semana, sin sistema y sin costo.</td><td>WhatsApp. Es una conversación de operación.</td></tr>
+<tr><td><b>Viernes</b></td><td>Una <b>función</b> de Sacs, con la pantalla real.</td><td>Depende: se cuenta o se muestra.</td></tr>
 </tbody></table>
 
-<div class="w-caja w-bad"><span class="w-k">La oferta NO va en el primer correo</span><p>Mandar un año gratis antes de preguntar qué falló sería el mismo error que los hizo irse: resolver con dinero algo que era de confianza. A quien ya se fue, una oferta desesperada le confirma su decisión.</p>
-<p>Por eso los cuatro primeros correos no traen nada y tres <b>ni siquiera llevan botón</b>: el primero solo pide que contesten con una línea. Bajar el umbral hasta ahí es lo único que funciona con alguien que ya no te debe nada.</p></div>
+<h3>Y cuatro WhatsApp, uno al mes</h3>
+<p>Caen en las semanas <b>3, 6, 9 y 12</b>, intercalados entre los correos. Los escribe <b>Fernanda</b>, no Andrea.</p>
+<div class="w-caja"><span class="w-k">Por qué uno al mes y no uno por semana</span><p>WhatsApp no es correo: Meta lo cobra por mensaje, entra al teléfono personal y a la tercera semana seguida de mensajes de marca uno bloquea. Un carril propio de WhatsApp habría disparado uno cada semana; por eso van <b>dentro</b> de los carriles que ya existen, en las posiciones que los dejan caer separados.</p></div>
+<div class="w-caja"><span class="w-k">El último pregunta si le paramos</span><p>En la semana 12 llega un mensaje que ofrece dejar de escribir. No es rendirse: <b>es lo que más respuestas saca</b> de un rezagado, y el que contesta «sigue, me sirve» vale más que diez que nunca dijeron nada.</p></div>
 
-<h3>La oferta, cuando llega</h3>
-<p>Un <b>año completo</b> de Sacs sin costo, en el plan más avanzado. No un descuento ni un mes de prueba.</p>
-<table class="w-tab"><thead><tr><th>Incluye</th><th>Qué significa</th></tr></thead><tbody>
-<tr><td><b>El plan más completo</b></td><td>No una versión recortada.</td></tr>
-<tr><td><b>Acompañamiento de arranque</b></td><td>Una persona asignada con nombre, plan por escrito, y nosotros cargamos el catálogo — no una plantilla de Excel para que la llene él.</td></tr>
-<tr><td><b>Garantía de implementación</b></td><td>Si no queda operando, no seguimos y no cuesta nada. El punto de «listo» se acuerda ANTES de empezar, no lo definimos al final.</td></tr>
-<tr><td><b>Sus datos de vuelta</b></td><td>Donde los dejó.</td></tr>
-</tbody></table>
-
-<div class="w-caja"><span class="w-k">El tono es modesto a propósito</span><p>No dice «volvimos mejores»: dice <b>«te fallamos y no preguntamos por qué»</b>. Y el correo 13 llega a decir que la oferta <b>nos conviene</b> —aprender de un cliente que se fue vale más que el año que regalamos— porque fingir generosidad con alguien que ya nos vio fallar es la forma más rápida de perderlo otra vez.</p></div>
-
-<div class="w-caja"><span class="w-k">Los datos son suyos, y se dice sin condiciones</span><p>El correo 9 ofrece <b>exportarle todo</b> aunque nunca vuelva a hablarnos. No es una palanca de negociación, y ponerlo a mitad de la cadencia —antes de la oferta— es lo que lo hace creíble.</p></div>
-
-<h3>Con su propio tipo de reunión</h3>
-<p><b>Conversación con dirección</b>, 30 minutos, en <code>/agendar/direccion</code>. El nombre dice quién va a estar del otro lado, que es lo único que la hace distinta: a alguien que ya se fue no lo mueve otra consultoría, lo mueve que quien manda quiera escucharlo.</p>
-<p>Media hora y no una: se pide para <b>escuchar</b>, no para presentar. Pedir una hora a quien ya decidió irse manda el mensaje equivocado sobre cuánto vamos a hablar nosotros.</p>
-<div class="w-caja"><span class="w-k">Y la minuta es obligatoria</span><p>Aquí más que en ninguna otra reunión: lo que se diga ahí es <b>la única fuente honesta</b> que tenemos de por qué se van los clientes. Si no queda escrito, se pierde.</p></div>
-
-<h3>Cuándo se para</h3>
-<p>En cuanto <b>conteste por cualquier canal</b>. Nadie que acaba de decirte por qué se fue debe recibir al día siguiente el correo automático número 6 — a partir de ahí manda la persona.</p>
-
-<div class="w-caja w-bad"><span class="w-k">La regla que casi la deja muda</span><p>Los 24 churned tienen todos <code>estatus_lead = 'descartado'</code>, y el motor <b>expulsa a todo descartado de toda secuencia</b>. Sin arreglarlo, esta cadencia los habría enrolado y sacado en la misma corrida: cero envíos, y en el reporte «graduados: 24» — que se lee como trabajo hecho.</p>
-<p>Peor: el <b>diagnóstico de secuencias no lo habría detectado</b>, porque revisa las reglas de ENTRADA y esta es de SALIDA. Habría dicho «entra: sí» mientras el contacto no recibía nada.</p>
-<p>Se resolvió con una lista por secuencia de motivos de salida que no aplican — no con un interruptor global: la regla sigue valiendo para las otras siete, donde un descartado sí debe salir. Aquí «descartado» no es una decisión sobre ese contacto, es su estado normal.</p></div>`,
+<div class="w-caja"><span class="w-k">Se sale sola en cuanto hay señal</span><p>Si el lead responde, abre varios correos o vuelve al sitio, sale de la cadencia y regresa como <b>lead reciclado</b> — que aparece en el inicio del móvil, porque es el momento más caliente del embudo y no debe quedarse en una nota que solo ve quien ya está adentro.</p></div>`,
   },
   {
-    id: 'crecimiento', grupo: 'El proceso', titulo: '↗ Crecimiento · lo que sigue',
-    bajada: 'Al cliente que ya opera bien.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
+    id: 'e-perdido', grupo: 'Las etapas', titulo: 'Perdido',
+    bajada: 'Fue cliente y se fue.', chip: { texto: 'No se reporta', tono: 'mut' },
     cuerpo: `
-<p>Veintitrés pasos en cuatro meses para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
-
-<div class="w-caja"><span class="w-k">El tono es la decisión</span><p>No dice «te falta». Dice <b>«ya dominaste esto»</b>. Quien recibe estos correos vende, corta caja y mueve inventario — tratarlo como si le faltara algo insulta el trabajo que sí hizo. Cuando alguien ya domina el día a día, lo que sigue no es aprender el sistema: es <b>qué más se puede quitar de encima</b>.</p></div>
-
-<h3>Las ocho cosas, y por qué canales viaja cada una</h3>
-<p>Ninguna va solo por correo. Cada capacidad se cuenta en el correo y se <b>recuerda dentro de Sacs</b> dos o tres días después, cuando el cliente está trabajando — que es donde el argumento se vuelve concreto.</p>
-<table class="w-tab"><thead><tr><th>Qué</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
-<tr><td><b>Axo</b> · el asistente que ejecuta</td><td>día 12</td><td>día 15</td><td>—</td></tr>
-<tr><td><b>Empleados</b> · asistencias, contratos, actas, clima</td><td>día 24</td><td>día 27</td><td>—</td></tr>
-<tr><td><b>Administración</b> · gastos, cobrar y pagar, bancos</td><td>día 36</td><td>día 39</td><td>—</td></tr>
-<tr><td><b>Nivelación</b> · qué mover y qué comprar</td><td>día 48</td><td>día 52</td><td><b>día 50</b></td></tr>
-<tr><td><b>Personalizaciones</b> · automatizar un proceso tuyo</td><td>día 60</td><td>día 68</td><td><b>día 66</b></td></tr>
-<tr><td><b>El plan que sigue</b> · el escalón completo</td><td>día 84</td><td>día 87</td><td>—</td></tr>
-<tr><td><b>Catálogo con IA</b> · modelos y probador virtual</td><td>día 96</td><td>día 99</td><td><b>día 102</b></td></tr>
-<tr><td><b>Renta de productos</b> · otro modelo de negocio</td><td>día 108</td><td>día 111</td><td>—</td></tr>
+<p>Un <code>churned</code>: alguien que sí compró y luego se dio de baja.</p>
+<div class="w-caja"><span class="w-k">Por qué no se manda</span>
+<p>Porque <b>contradiría el «Cliente» que ya reportamos</b> por esa misma persona. Para TikTok esa conversión sí ocurrió y sí fue real; que después se haya ido es información de retención, no de adquisición.</p>
+<p>No confundir con <b>Descalificado</b>, que es un lead que nunca avanzó y por eso sí es una etiqueta limpia.</p></div>`,
+  },
+  {
+    id: 'inbox', grupo: 'Hablar con el cliente', titulo: 'Vender desde el inbox',
+    bajada: 'Sin cambiar de pantalla.', chip: { texto: 'construido', tono: 'ok' },
+    cuerpo: `
+<p>En el panel derecho de cada conversación (pestaña <b>Acciones</b>) el vendedor ejecuta la venta completa.</p>
+<table class="w-tab"><thead><tr><th>Acción</th><th>Cómo funciona</th></tr></thead><tbody>
+<tr><td><b>Cotizar</b></td><td>Plan (precios del catálogo real), periodo (anual = 2 meses gratis), sucursales, implementación y extras → Crear → el link del cliente aparece al instante → enviar por WhatsApp o correo. Queda ligada al lead y su apertura se rastrea.</td></tr>
+<tr><td><b>Agendar</b></td><td>Días y horarios reales → confirmar ahí mismo. Al cliente le llega confirmación por correo + WhatsApp con su invitación y Meet. Si ya tiene reunión próxima, el panel avisa antes de duplicar.</td></tr>
+<tr><td><b>Mandarle los horarios</b></td><td>Un clic manda los próximos horarios + el link público. Cuando el cliente elige, <b>todo</b> se confirma solo.</td></tr>
 </tbody></table>
-<p>Más la apertura (día 1, correo + dentro de Sacs), un WhatsApp a media serie (día 30) y el cierre del día 120, que resume las ocho, pregunta cuál le movió y ofrece dejar de mandarlas si ninguna.</p>
+<div class="w-caja"><span class="w-k">Reglas del vendedor</span><p>El correo del cliente es <b>obligatorio</b> para confirmar una reunión. Si la ventana de WhatsApp está cerrada, el sistema lo dice y ofrece el camino que sí entrega. Todo usa los mismos precios y canales del CRM: <b>nada de rutas paralelas</b>.</p></div>`,
+  },
+  {
+    id: 'wa-entrante', grupo: 'Hablar con el cliente', titulo: 'Cuando el lead nos escribe',
+    bajada: 'Todo lo que pasa en los primeros segundos.', chip: { texto: 'construido', tono: 'ok' },
+    cuerpo: `
+<p>Un WhatsApp entrante no cae en el vacío. Antes de que nadie lo vea, el sistema ya decidió tres cosas: <b>quién es</b>, <b>qué contestarle</b> y <b>a quién avisarle</b>.</p>
 
-<div class="w-caja"><span class="w-k">Las tres últimas van al final a propósito</span><p>Las cinco primeras son cosas que puede usar <b>con lo que ya paga</b>. Subir de plan, cambiar cómo fotografía su catálogo o abrir un modelo de renta son decisiones más grandes — pedirlas antes de haber demostrado utilidad es pedir demasiado pronto.</p></div>
+<h3>1 · Quién es</h3>
+<table class="w-tab"><thead><tr><th>Caso</th><th>Qué hace el sistema</th></tr></thead><tbody>
+<tr><td><b>El teléfono ya es de alguien</b></td><td>Se liga a su ficha y avanza a «respondió». No se duplica nada. Es el caso de todo lead que viene de un correo nuestro.</td></tr>
+<tr><td><b>Desconocido · la IA dice ventas</b></td><td>Crea el contacto y entra al funnel como «respondió».</td></tr>
+<tr><td><b>Desconocido · dice soporte</b></td><td>Se marca y se queda solo como conversación, sin ensuciar el funnel.</td></tr>
+<tr><td><b>Desconocido · dice spam</b></td><td>No crea nada.</td></tr>
+<tr><td><b>La IA no contesta</b></td><td>Se asume ventas. Peor es perder un lead que sobrar un contacto.</td></tr>
+</tbody></table>
 
-<h3>El correo del plan lee SU plan</h3>
-<p>No manda una tabla comparativa: mira en qué escalón está el cliente y le cuenta el siguiente con <b>tres puntos concretos</b>. La escalera es <code>vende → controla → fideliza → automatiza</code>, y el asunto sale ya resuelto: «<i>Estás en Controla. Esto es lo que trae Fideliza</i>».</p>
-<div class="w-caja"><span class="w-k">Y si ya está en el tope, no se manda</span><p>El contexto sale vacío y el paso se salta con motivo. Ofrecerle subir a quien ya está arriba es la forma más rápida de que deje de leerte.</p></div>
-<p>Los tres puntos no salen de la descripción del catálogo («todo lo de Controla más…»), que sirve para una página de precios y no para un correo: a un cliente no le mueve una lista de módulos, le mueve saber <b>qué deja de hacer a mano</b>.</p>
+<h3>2 · Qué contestarle</h3>
+<p>Sale un acuse en segundos, <b>a cualquier hora</b>. El texto cambia según el reloj, porque la promesa tiene que ser verdad:</p>
+<table class="w-tab"><thead><tr><th>Momento</th><th>Lo que recibe</th></tr></thead><tbody>
+<tr><td><b>Dentro de horario</b><br />L-S, 9 a 19</td><td>«Te leo 👋 Soy Andrea, consultora de moda en Sacs. Dame unos minutos y te contesto por aquí mismo.»</td></tr>
+<tr><td><b>Fuera de horario</b></td><td>«…Ahorita ya estamos fuera de horario — te contesto en cuanto abramos, a partir de las 9 de la mañana.»</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Una vez por conversación, no por mensaje</span><p>Si el lead manda tres mensajes seguidos <b>no</b> recibe tres veces la misma frase. El acuse se rearma a las 20 h, para que quien vuelve al día siguiente sí reciba señal de que lo leímos.</p></div>
+<div class="w-caja"><span class="w-k">Y se calla si tú ya estás ahí</span><p>Si alguien del equipo escribió en esa conversación en las últimas <b>6 horas</b>, el acuse <b>no sale</b>. Pasó en real un domingo: el asesor le escribió a las 15:58, la clienta contestó a las 16:17 y el sistema le soltó «ya estamos fuera de horario, te contesto a partir de las 9 de la mañana» — porque el horario configurado es de lunes a sábado. El asesor le respondió doce minutos después. El bot tenía razón según su configuración y aun así el sistema quedó mintiendo delante de la clienta.</p>
+<p>El acuse existe para que nadie se quede sin respuesta. Si ya hay una persona atendiendo, ese trabajo está hecho y el acuse solo puede estorbar: promete algo que ya está pasando, o contradice a quien está escribiendo. La ventana se ajusta en la misma pantalla; con <b>0</b> se apaga el candado.</p>
+<p>Cuenta como «alguien del equipo» solo lo que sale del <b>composer del inbox</b> o de un mensaje programado. Un WhatsApp de cadencia no cuenta: ese es el sistema, no una persona.</p></div>
 
-<div class="w-caja"><span class="w-k">Por qué el in-app va DESPUÉS del correo, no el mismo día</span><p>Dos o tres días después. El correo cuenta el argumento; el mensaje dentro de Sacs lo encuentra ya trabajando, en la pantalla donde eso le serviría. El mismo día serían dos golpes del mismo mensaje; separados, uno le recuerda al otro.</p>
-<p>Y las que MÁS lo necesitan son Empleados y Administración: nadie busca un módulo de recursos humanos dentro de un sistema de punto de venta, así que si no aparece en su pantalla, no se entera de que existe.</p></div>
+<h3>3 · De dónde venía</h3>
+<p>Todos nuestros botones de WhatsApp mandan el mensaje ya escrito. Ese texto no dice solo «me escribieron»: dice <b>en qué punto del argumento se convenció</b>. El sistema lo reconoce, etiqueta la ficha y el aviso al equipo llega con contexto:</p>
+<div class="w-caja"><span class="w-k">Así se ve el aviso</span><p><b>Regina de Kali Studio te escribió por WhatsApp</b><br />Viene de: Correo 3 · El hueco de curva<br />Quiere: Probar el motor con un estilo suyo de la temporada pasada<br />Etapa: oportunidad · cotizado</p></div>
+<p>Se reconoce por una frase distintiva, no por el texto completo: WhatsApp deja editar antes de enviar y casi siempre agregan algo. Si el lead escribió por su cuenta <b>no se inventa etiqueta</b> — el acuse sale igual y el contador de no leídos hace su trabajo.</p>
 
-<div class="w-caja"><span class="w-k">WhatsApp solo cuatro veces en cuatro meses</span><p>Es cliente, no lead. Uno a media serie, uno para nivelación —la que más dinero mueve—, uno para el catálogo con IA y uno al final. Uno por capacidad habría sido demasiado: el canal personal se gasta rápido con quien ya te paga.</p>
-<p>El del catálogo con IA se ganó su lugar por una razón: es el que peor se explica por escrito y el único donde el cliente puede <b>mandar una foto suya por el mismo canal y recibirla hecha en minutos</b>. Un WhatsApp que termina en algo que el cliente ve vale más que tres que solo describen.</p></div>
+<div class="w-caja"><span class="w-k">Dónde se configura</span><p>Todo esto vive en <b>Automatización ▸ Secuencias ▸ «WhatsApp entrante · atención y control»</b>. Es una secuencia por evento: no corre por días, reacciona en el momento. Si está apagada, no sale acuse.</p></div>`,
+  },
+  {
+    id: 'canal-inapp', grupo: 'Hablar con el cliente', titulo: 'Hablarle dentro de Sacs',
+    bajada: 'El tercer canal de las secuencias.', chip: { texto: 'nuevo', tono: 'ok' },
+    cuerpo: `
+<p>Correo y WhatsApp le hablan al lead donde su atención está repartida. Cuando alguien está <b>usando Sacs</b> —una prueba gratis, un cliente nuevo— el mejor lugar para hablarle es el sistema que tiene abierto: ahí ya puso atención, el mensaje llega en el contexto de lo que está haciendo, y no cuesta ni un peso de Meta ni de SendGrid.</p>
 
-<h3>Siempre las dos opciones</h3>
-<p>Cada paso ofrece <b>agendar 45 minutos</b> o <b>escribir por WhatsApp</b>, en ese orden. Quien prefiere hablar agenda; quien prefiere escribir, escribe. Obligar a una sola pierde a la mitad — y de una cadencia de expansión, la mitad que se pierde suele ser la que ya te iba a comprar.</p>
-<div class="w-caja"><span class="w-k">Con su propio tipo de reunión</span><p><b>Sesión de crecimiento</b>, 45 minutos, en <code>/agendar/crecimiento</code>. No reusa «consultoría» por dos razones: el nombre es lo primero que ve el cliente en el agendador —y «consultoría» a quien ya paga suena a que algo salió mal—, y en el reporte de reuniones mezclarlas haría imposible saber cuántas sesiones de crecimiento hubo y en qué acabaron.</p>
-<p>Hereda dueño y horarios de consultoría: si se copiaran a mano, el día que alguien cambie su disponibilidad este tipo ofrecería horas que ya no existen.</p></div>
+<h3>Cómo se arma un paso así</h3>
+<p>En el editor de la secuencia, el canal <b>Dentro de Sacs</b>. No se redacta ahí: <b>se elige una campaña de Outbound</b>. La campaña es el mensaje —con su formato, sus botones y su vista previa ya resueltos—; la secuencia decide a quién y cuándo.</p>
+<div class="w-caja"><span class="w-k">Por qué no se escribe dentro del paso</span><p>Habría dos editores de mensajes in-app, y se separan en la primera semana: Outbound estrena un formato y el de secuencias no lo tiene. Uno solo, y la secuencia lo usa.</p></div>
 
-<h3>Sin precios, a propósito</h3>
-<p>Los correos dicen que son <b>extensiones</b> del plan y que lo que implica cada una se ve por WhatsApp, sobre su caso y su número de sucursales. Se aclara desde el primer correo: si no se dice, el cliente asume que viene incluido y el reclamo llega después.</p>
+<h3>Solo aparecen las campañas de secuencia</h3>
+<p>El selector no ofrece cualquier campaña de Outbound, y es a propósito. La audiencia de una campaña normal se resuelve por condiciones, y ahí <b>«sin condiciones» significa TODAS las empresas</b>, no ninguna. Elegir una de esas en un paso de secuencia le habría mandado el mensaje del día 2 de una prueba gratis a toda la base.</p>
+<div class="w-caja w-bad"><span class="w-k">Medido, no supuesto</span><p>La misma definición de audiencia sin la marca de «gobernada por secuencia» resuelve a <b>143 cuentas</b>. Con la marca, a <b>1</b>.</p></div>
+<p>Una campaña de secuencia nace con la audiencia <b>vacía</b> y va creciendo: cada lead que llega a ese paso entra, y al salir de la secuencia, sale.</p>
 
-<h3>Quién entra</h3>
+<h3>Dos cosas que el motor aprendió con esta cadencia</h3>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>Contar hacia atrás</b></td><td>Las cadencias de lead cuentan días <i>desde</i> una fecha que ya pasó. Una de renovación cuenta <i>hacia</i> una que no ha llegado. Se declara con el ancla «Su fecha de renovación».</td></tr>
+<tr><td><b>No expulsar clientes</b></td><td>El motor sacaba a todo cliente de toda secuencia con motivo «convertido» — correcto para adquisición, imposible para retención. Una secuencia marcada <b>de cliente</b> apaga esa regla solo para ella.</td></tr>
+</tbody></table>
+<p>Sin esas dos, ninguna cadencia de post-venta era construible: ni renovación, ni onboarding del cliente nuevo, ni cuenta dormida, ni winback.</p>
+
+<h3>No compite con los otros canales</h3>
 <table class="w-tab"><thead><tr><th>Regla</th><th>Por qué</th></tr></thead><tbody>
-<tr><td>Cliente <b>con menos de 15 días sin vender</b></td><td>A quien no está usando el sistema no se le ofrece más sistema. Ese va a la cadencia de cuenta dormida, que es otra conversación.</td></tr>
-<tr><td>El arco cuenta desde que <b>entra</b>, no desde que es cliente</td><td>Con la fecha de alta, los clientes actuales aparecerían en su día 500 y recibirían los siete correos de golpe. Así cada uno camina su propio arco.</td></tr>
-<tr><td>WhatsApp <b>solo dos veces</b> en 70 días</td><td>Es cliente, no lead. Uno a media serie y otro al final, cuando ya vio todo.</td></tr>
+<tr><td>No gasta el cupo de <b>un correo y un WhatsApp por día</b></td><td>No interrumpe: espera dentro del sistema a que el usuario entre.</td></tr>
+<tr><td>No se detiene cuando el lead responde por otro canal</td><td>Que conteste un correo no es razón para quitarle de la pantalla el modal que explica su promoción.</td></tr>
+<tr><td>Sin cuenta de SACS ligada, el paso se salta</td><td>Y queda anotado como saltado, no como enviado.</td></tr>
+<tr><td>Si falla, <b>no</b> se marca como enviado</td><td>La siguiente corrida lo reintenta. Dar por entregado algo que el usuario nunca vio es peor que no mandarlo.</td></tr>
 </tbody></table>`,
   },
   {
-    id: 'renovacion', grupo: 'El proceso', titulo: '↻ Rumbo a la renovación',
+    id: 'reuniones', grupo: 'Hablar con el cliente', titulo: 'El estatus de las reuniones',
+    bajada: 'Dónde vive el dato y qué falta para tenerlo a la mano.',
+    cuerpo: `
+<p>Hay <b>dos niveles</b>, y conviene no confundirlos.</p>
+<h3>1 · Por reunión</h3>
+<p>Cada cita tiene su propio estado, visible en la pestaña <b>Reuniones</b>:</p>
+<table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><code>confirmada</code></td><td>Agendada y por venir</td></tr>
+<tr><td><code>asistio</code></td><td>Se presentó — es lo que gradúa al lead a «Demo hecha»</td></tr>
+<tr><td><code>no_asistio</code></td><td>No-show. La métrica que la secuencia existe para bajar</td></tr>
+<tr><td><code>cancelada</code></td><td>La canceló</td></tr>
+<tr><td><code>reagendada</code></td><td>Se movió: esta queda marcada y nace una nueva ligada</td></tr>
+</tbody></table>
+<h3>2 · Por contacto</h3>
+<p>El <b>Estatus del lead</b> refleja el momento más avanzado: «Agendó demo» y luego «Demo hecha», los dos del grupo <i>comprometido</i>. Pero es <b>un solo estado</b>: no dice cuántas reuniones hubo ni qué pasó con cada una.</p>
+<div class="w-caja w-warn"><span class="w-k">Lo que falta y ya está escrito</span>
+<p>Hay una migración lista —<code>scripts/migration-2026-08-contador-reuniones.sql</code>— que agrega siete columnas al contacto: <b>total, agendadas, completadas, canceladas, no_asistio, reagendadas</b> y la fecha de la última. Se mantienen con un trigger sobre <code>bookings</code>, así que no dependen de que nadie las actualice.</p>
+<p><b>Falta correr el SQL.</b> Hasta entonces, para saber cuántas reuniones tuvo un lead hay que ir a mirarlas una por una.</p></div>
+<div class="w-caja"><span class="w-k">Una trampa al leer el total</span>
+<p>Una reunión reagendada deja el booking viejo en <code>reagendada</code> y crea uno nuevo. <b>Dos reagendas de la misma cita suman 3 al total.</b> Por eso la columna de reagendadas existe: para poder restar y saber cuántas reuniones hubo de verdad.</p></div>`,
+  },
+  {
+    id: 'avisos-reunion', grupo: 'Hablar con el cliente', titulo: 'Los avisos de la reunión',
+    bajada: 'Qué recibe el cliente cuando agenda y antes de conectarse.',
+    cuerpo: `
+<p>Cada tipo de reunión decide <b>qué avisos salen y cuándo</b>. No está escrito en el código: se cambia en <b>Configuración → Agenda → Editar el tipo de reunión → Avisos al cliente</b>, y aplica desde el siguiente agendado.</p>
+<h3>Al agendar</h3>
+<table class="w-tab"><thead><tr><th>Aviso</th><th>Qué lleva</th></tr></thead><tbody>
+<tr><td><b>Correo de confirmación</b></td><td>Fecha, hora con su huso, duración, la liga de Meet y los botones de reagendar y cancelar</td></tr>
+<tr><td><b>WhatsApp</b></td><td>Lo mismo, en el chat — y queda espejado en el inbox, así que quien abra la conversación ve exactamente lo que el cliente recibió</td></tr>
+</tbody></table>
+<h3>Antes de la reunión</h3>
+<p>Cada recordatorio dice <b>cuánto antes</b> y <b>por dónde</b>. Los que trae hoy toda reunión:</p>
+<table class="w-tab"><thead><tr><th>Cuándo</th><th>Canales</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>1 día antes</b></td><td>Correo y WhatsApp</td><td>Da tiempo de mover la agenda si no le queda</td></tr>
+<tr><td><b>3 horas antes</b></td><td>Correo y WhatsApp</td><td>Lo pone en el día del cliente, cuando todavía puede acomodarse</td></tr>
+<tr><td><b>10 minutos antes</b></td><td>Solo WhatsApp</td><td>Es para que se conecte: a diez minutos nadie abre el correo</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Todos dicen la hora y el huso</span>
+<p>Cada aviso trae la hora <b>y</b> que es hora del centro de México. Un cliente en Tijuana y otro en Cancún llevan dos horas de diferencia entre sí: una hora sin huso es una reunión a la que alguien llega tarde.</p></div>
+<h3>Lo que puedes configurar</h3>
+<ul>
+<li>Agregar o quitar recordatorios, los que quieras.</li>
+<li>La anticipación en <b>minutos, horas, días o semanas</b>.</li>
+<li>Por cuál canal sale cada uno: correo, WhatsApp o los dos.</li>
+<li>Apagar uno sin borrarlo, con la casilla <b>activo</b>.</li>
+<li>Apagar la confirmación de agendado, por canal.</li>
+</ul>
+<div class="w-caja"><span class="w-k">Dos límites que conviene saber</span>
+<p>El reloj revisa cada <b>5 minutos</b>: un recordatorio de menos de 5 minutos no alcanza a salir. Y ninguno se manda tarde — si la reunión ya empezó, el aviso no sale: decir «es en 1 día» cuando faltan 20 horas es peor que no decir nada.</p></div>
+<div class="w-caja"><span class="w-k">Cada aviso queda registrado</span>
+<p>En la ficha del lead aparece qué recordatorio salió, por dónde y cuándo. Si el cliente dice que no le llegó, ahí se ve. Y nunca se manda dos veces, aunque el reloj corra dos veces por un reintento.</p></div>`,
+  },
+  {
+    id: 'renovacion', grupo: 'Después de la venta', titulo: 'Rumbo a la renovación',
     bajada: 'La primera cadencia de cliente.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
 <p>Noventa días antes de pedirle dinero a un cliente, enseñarle qué valió el año. Doce pasos por los tres canales, y una entrega limpia al cobro que ya existe.</p>
@@ -607,134 +611,189 @@ export const WIKI: PaginaWiki[] = [
 </tbody></table>`,
   },
   {
-    id: 'canal-inapp', grupo: 'El proceso', titulo: 'Hablarle dentro de Sacs',
-    bajada: 'El tercer canal de las secuencias.', chip: { texto: 'nuevo', tono: 'ok' },
+    id: 'crecimiento', grupo: 'Después de la venta', titulo: 'Crecimiento · lo que sigue',
+    bajada: 'Al cliente que ya opera bien.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
-<p>Correo y WhatsApp le hablan al lead donde su atención está repartida. Cuando alguien está <b>usando Sacs</b> —una prueba gratis, un cliente nuevo— el mejor lugar para hablarle es el sistema que tiene abierto: ahí ya puso atención, el mensaje llega en el contexto de lo que está haciendo, y no cuesta ni un peso de Meta ni de SendGrid.</p>
+<p>Veintitrés pasos en cuatro meses para enseñarle a un cliente activo lo que Sacs también puede hacer. <b>107 clientes</b> cumplen hoy la condición de entrada.</p>
 
-<h3>Cómo se arma un paso así</h3>
-<p>En el editor de la secuencia, el canal <b>Dentro de Sacs</b>. No se redacta ahí: <b>se elige una campaña de Outbound</b>. La campaña es el mensaje —con su formato, sus botones y su vista previa ya resueltos—; la secuencia decide a quién y cuándo.</p>
-<div class="w-caja"><span class="w-k">Por qué no se escribe dentro del paso</span><p>Habría dos editores de mensajes in-app, y se separan en la primera semana: Outbound estrena un formato y el de secuencias no lo tiene. Uno solo, y la secuencia lo usa.</p></div>
+<div class="w-caja"><span class="w-k">El tono es la decisión</span><p>No dice «te falta». Dice <b>«ya dominaste esto»</b>. Quien recibe estos correos vende, corta caja y mueve inventario — tratarlo como si le faltara algo insulta el trabajo que sí hizo. Cuando alguien ya domina el día a día, lo que sigue no es aprender el sistema: es <b>qué más se puede quitar de encima</b>.</p></div>
 
-<h3>Solo aparecen las campañas de secuencia</h3>
-<p>El selector no ofrece cualquier campaña de Outbound, y es a propósito. La audiencia de una campaña normal se resuelve por condiciones, y ahí <b>«sin condiciones» significa TODAS las empresas</b>, no ninguna. Elegir una de esas en un paso de secuencia le habría mandado el mensaje del día 2 de una prueba gratis a toda la base.</p>
-<div class="w-caja w-bad"><span class="w-k">Medido, no supuesto</span><p>La misma definición de audiencia sin la marca de «gobernada por secuencia» resuelve a <b>143 cuentas</b>. Con la marca, a <b>1</b>.</p></div>
-<p>Una campaña de secuencia nace con la audiencia <b>vacía</b> y va creciendo: cada lead que llega a ese paso entra, y al salir de la secuencia, sale.</p>
-
-<h3>Dos cosas que el motor aprendió con esta cadencia</h3>
-<table class="w-tab"><thead><tr><th>Qué</th><th>Para qué sirve</th></tr></thead><tbody>
-<tr><td><b>Contar hacia atrás</b></td><td>Las cadencias de lead cuentan días <i>desde</i> una fecha que ya pasó. Una de renovación cuenta <i>hacia</i> una que no ha llegado. Se declara con el ancla «Su fecha de renovación».</td></tr>
-<tr><td><b>No expulsar clientes</b></td><td>El motor sacaba a todo cliente de toda secuencia con motivo «convertido» — correcto para adquisición, imposible para retención. Una secuencia marcada <b>de cliente</b> apaga esa regla solo para ella.</td></tr>
+<h3>Las ocho cosas, y por qué canales viaja cada una</h3>
+<p>Ninguna va solo por correo. Cada capacidad se cuenta en el correo y se <b>recuerda dentro de Sacs</b> dos o tres días después, cuando el cliente está trabajando — que es donde el argumento se vuelve concreto.</p>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Correo</th><th>Dentro de Sacs</th><th>WhatsApp</th></tr></thead><tbody>
+<tr><td><b>Axo</b> · el asistente que ejecuta</td><td>día 12</td><td>día 15</td><td>—</td></tr>
+<tr><td><b>Empleados</b> · asistencias, contratos, actas, clima</td><td>día 24</td><td>día 27</td><td>—</td></tr>
+<tr><td><b>Administración</b> · gastos, cobrar y pagar, bancos</td><td>día 36</td><td>día 39</td><td>—</td></tr>
+<tr><td><b>Nivelación</b> · qué mover y qué comprar</td><td>día 48</td><td>día 52</td><td><b>día 50</b></td></tr>
+<tr><td><b>Personalizaciones</b> · automatizar un proceso tuyo</td><td>día 60</td><td>día 68</td><td><b>día 66</b></td></tr>
+<tr><td><b>El plan que sigue</b> · el escalón completo</td><td>día 84</td><td>día 87</td><td>—</td></tr>
+<tr><td><b>Catálogo con IA</b> · modelos y probador virtual</td><td>día 96</td><td>día 99</td><td><b>día 102</b></td></tr>
+<tr><td><b>Renta de productos</b> · otro modelo de negocio</td><td>día 108</td><td>día 111</td><td>—</td></tr>
 </tbody></table>
-<p>Sin esas dos, ninguna cadencia de post-venta era construible: ni renovación, ni onboarding del cliente nuevo, ni cuenta dormida, ni winback.</p>
+<p>Más la apertura (día 1, correo + dentro de Sacs), un WhatsApp a media serie (día 30) y el cierre del día 120, que resume las ocho, pregunta cuál le movió y ofrece dejar de mandarlas si ninguna.</p>
 
-<h3>No compite con los otros canales</h3>
+<div class="w-caja"><span class="w-k">Las tres últimas van al final a propósito</span><p>Las cinco primeras son cosas que puede usar <b>con lo que ya paga</b>. Subir de plan, cambiar cómo fotografía su catálogo o abrir un modelo de renta son decisiones más grandes — pedirlas antes de haber demostrado utilidad es pedir demasiado pronto.</p></div>
+
+<h3>El correo del plan lee SU plan</h3>
+<p>No manda una tabla comparativa: mira en qué escalón está el cliente y le cuenta el siguiente con <b>tres puntos concretos</b>. La escalera es <code>vende → controla → fideliza → automatiza</code>, y el asunto sale ya resuelto: «<i>Estás en Controla. Esto es lo que trae Fideliza</i>».</p>
+<div class="w-caja"><span class="w-k">Y si ya está en el tope, no se manda</span><p>El contexto sale vacío y el paso se salta con motivo. Ofrecerle subir a quien ya está arriba es la forma más rápida de que deje de leerte.</p></div>
+<p>Los tres puntos no salen de la descripción del catálogo («todo lo de Controla más…»), que sirve para una página de precios y no para un correo: a un cliente no le mueve una lista de módulos, le mueve saber <b>qué deja de hacer a mano</b>.</p>
+
+<div class="w-caja"><span class="w-k">Por qué el in-app va DESPUÉS del correo, no el mismo día</span><p>Dos o tres días después. El correo cuenta el argumento; el mensaje dentro de Sacs lo encuentra ya trabajando, en la pantalla donde eso le serviría. El mismo día serían dos golpes del mismo mensaje; separados, uno le recuerda al otro.</p>
+<p>Y las que MÁS lo necesitan son Empleados y Administración: nadie busca un módulo de recursos humanos dentro de un sistema de punto de venta, así que si no aparece en su pantalla, no se entera de que existe.</p></div>
+
+<div class="w-caja"><span class="w-k">WhatsApp solo cuatro veces en cuatro meses</span><p>Es cliente, no lead. Uno a media serie, uno para nivelación —la que más dinero mueve—, uno para el catálogo con IA y uno al final. Uno por capacidad habría sido demasiado: el canal personal se gasta rápido con quien ya te paga.</p>
+<p>El del catálogo con IA se ganó su lugar por una razón: es el que peor se explica por escrito y el único donde el cliente puede <b>mandar una foto suya por el mismo canal y recibirla hecha en minutos</b>. Un WhatsApp que termina en algo que el cliente ve vale más que tres que solo describen.</p></div>
+
+<h3>Siempre las dos opciones</h3>
+<p>Cada paso ofrece <b>agendar 45 minutos</b> o <b>escribir por WhatsApp</b>, en ese orden. Quien prefiere hablar agenda; quien prefiere escribir, escribe. Obligar a una sola pierde a la mitad — y de una cadencia de expansión, la mitad que se pierde suele ser la que ya te iba a comprar.</p>
+<div class="w-caja"><span class="w-k">Con su propio tipo de reunión</span><p><b>Sesión de crecimiento</b>, 45 minutos, en <code>/agendar/crecimiento</code>. No reusa «consultoría» por dos razones: el nombre es lo primero que ve el cliente en el agendador —y «consultoría» a quien ya paga suena a que algo salió mal—, y en el reporte de reuniones mezclarlas haría imposible saber cuántas sesiones de crecimiento hubo y en qué acabaron.</p>
+<p>Hereda dueño y horarios de consultoría: si se copiaran a mano, el día que alguien cambie su disponibilidad este tipo ofrecería horas que ya no existen.</p></div>
+
+<h3>Sin precios, a propósito</h3>
+<p>Los correos dicen que son <b>extensiones</b> del plan y que lo que implica cada una se ve por WhatsApp, sobre su caso y su número de sucursales. Se aclara desde el primer correo: si no se dice, el cliente asume que viene incluido y el reclamo llega después.</p>
+
+<h3>Quién entra</h3>
 <table class="w-tab"><thead><tr><th>Regla</th><th>Por qué</th></tr></thead><tbody>
-<tr><td>No gasta el cupo de <b>un correo y un WhatsApp por día</b></td><td>No interrumpe: espera dentro del sistema a que el usuario entre.</td></tr>
-<tr><td>No se detiene cuando el lead responde por otro canal</td><td>Que conteste un correo no es razón para quitarle de la pantalla el modal que explica su promoción.</td></tr>
-<tr><td>Sin cuenta de SACS ligada, el paso se salta</td><td>Y queda anotado como saltado, no como enviado.</td></tr>
-<tr><td>Si falla, <b>no</b> se marca como enviado</td><td>La siguiente corrida lo reintenta. Dar por entregado algo que el usuario nunca vio es peor que no mandarlo.</td></tr>
+<tr><td>Cliente <b>con menos de 15 días sin vender</b></td><td>A quien no está usando el sistema no se le ofrece más sistema. Ese va a la cadencia de cuenta dormida, que es otra conversación.</td></tr>
+<tr><td>El arco cuenta desde que <b>entra</b>, no desde que es cliente</td><td>Con la fecha de alta, los clientes actuales aparecerían en su día 500 y recibirían los siete correos de golpe. Así cada uno camina su propio arco.</td></tr>
+<tr><td>WhatsApp <b>solo dos veces</b> en 70 días</td><td>Es cliente, no lead. Uno a media serie y otro al final, cuando ya vio todo.</td></tr>
 </tbody></table>`,
   },
   {
-    id: 'reuniones', grupo: 'El proceso', titulo: 'El estatus de las reuniones',
-    bajada: 'Dónde vive el dato y qué falta para tenerlo a la mano.',
+    id: 'churn', grupo: 'Después de la venta', titulo: 'Churn · rescatar al que canceló',
+    bajada: 'El que se fue no se archiva: se trabaja.', chip: { texto: '$38,608 en rescate', tono: 'bad' },
     cuerpo: `
-<p>Hay <b>dos niveles</b>, y conviene no confundirlos.</p>
-<h3>1 · Por reunión</h3>
-<p>Cada cita tiene su propio estado, visible en la pestaña <b>Reuniones</b>:</p>
-<table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
-<tr><td><code>confirmada</code></td><td>Agendada y por venir</td></tr>
-<tr><td><code>asistio</code></td><td>Se presentó — es lo que gradúa al lead a «Demo hecha»</td></tr>
-<tr><td><code>no_asistio</code></td><td>No-show. La métrica que la secuencia existe para bajar</td></tr>
-<tr><td><code>cancelada</code></td><td>La canceló</td></tr>
-<tr><td><code>reagendada</code></td><td>Se movió: esta queda marcada y nace una nueva ligada</td></tr>
-</tbody></table>
-<h3>2 · Por contacto</h3>
-<p>El <b>Estatus del lead</b> refleja el momento más avanzado: «Agendó demo» y luego «Demo hecha», los dos del grupo <i>comprometido</i>. Pero es <b>un solo estado</b>: no dice cuántas reuniones hubo ni qué pasó con cada una.</p>
-<div class="w-caja w-warn"><span class="w-k">Lo que falta y ya está escrito</span>
-<p>Hay una migración lista —<code>scripts/migration-2026-08-contador-reuniones.sql</code>— que agrega siete columnas al contacto: <b>total, agendadas, completadas, canceladas, no_asistio, reagendadas</b> y la fecha de la última. Se mantienen con un trigger sobre <code>bookings</code>, así que no dependen de que nadie las actualice.</p>
-<p><b>Falta correr el SQL.</b> Hasta entonces, para saber cuántas reuniones tuvo un lead hay que ir a mirarlas una por una.</p></div>
-<div class="w-caja"><span class="w-k">Una trampa al leer el total</span>
-<p>Una reunión reagendada deja el booking viejo en <code>reagendada</code> y crea uno nuevo. <b>Dos reagendas de la misma cita suman 3 al total.</b> Por eso la columna de reagendadas existe: para poder restar y saber cuántas reuniones hubo de verdad.</p></div>`,
+<p>Winback es la <b>cadencia automática</b> que les escribe. Churn es el <b>trabajo a mano</b> sobre cada uno: la sección que vive debajo de Clientes y lleva a un cliente cancelado de vuelta a pagar — o lo cierra con su porqué.</p>
+
+<h3>Las cuatro etapas</h3>
+<ul>
+<li><b>Detectado.</b> Canceló y nadie lo ha tocado. Entra <b>solo</b>: al cancelarse la suscripción se abre el caso, y un barrido a las 3:30 am recoge lo que se haya escapado por otro camino.</li>
+<li><b>En conciliación.</b> Ya estamos hablando: qué pasó de verdad y qué le ofrecemos.</li>
+<li><b>En gracia.</b> Usa el sistema bajo un acuerdo. Pactar exige <b>tres datos</b>: qué se pactó, hasta cuándo, y a cuánto vuelve a pagar. Sin los tres el sistema no deja — una gracia sin fecha de fin es un cliente gratis para siempre. Al guardar se le <b>devuelve el acceso en SACS automáticamente</b>.</li>
+<li><b>Recuperado.</b> Volvió a pagar. Exige la suscripción nueva que lo respalda: un recuperado que no paga mentiría en la ARR. Al cerrarse, la reactivación entra al ledger de MRR y la ARR lo cuenta sola.</li>
+</ul>
+<p><b>Irrecuperable</b> cierra desde cualquier etapa, con motivo obligatorio. Es terminal: si el cliente vuelve, se abre un <b>episodio nuevo</b> ligado al anterior — nunca se reabre el viejo, para que la historia no se pise.</p>
+
+<div class="w-caja w-bad"><span class="w-k">Lo que el dato dice y cambia el guion</span>
+<p>De los $38,608 de MRR que se fueron, <b>$25,048 (el 65%) fue por mal servicio o soporte</b> y <b>cero por precio</b>. A esta gente no se le rescata con descuento: se le rescata resolviendo lo que quedó mal. Por eso la primera plantilla de gracia es «30 días con soporte dedicado», no un mes gratis.</p></div>
+
+<h3>La columna que de verdad decide</h3>
+<p>«Uso del sistema» dice, desde la lista y sin abrir nada, si el cliente está entrando a SACS. Sale del sync nocturno que ya existía. Lo importante no es cuántos días lleva la gracia: es si la está usando. <b>Una gracia de 30 días con el sistema en cero ya fracasó</b>, y el sistema te avisa a los 7 días — no el último.</p>
+<p>Cuando la empresa no tiene cuenta ligada, la columna dice «sin cuenta ligada» y no un cero: un cero ahí parecería abandono cuando es falta de dato.</p>
+
+<h3>Los avisos</h3>
+<ul>
+<li><b>Sin tocar</b> a los 3 días de cancelar — el rescate en frío vale la mitad.</li>
+<li><b>Conciliación estancada</b> a los 7 días sin movimiento.</li>
+<li><b>Gracia por vencer</b> (7 días antes) y <b>gracia vencida</b>.</li>
+<li><b>La gracia no está funcionando</b>: lleva días de gracia y sigue sin vender.</li>
+</ul>
+<p>Todos caen en el <b>caso exacto</b> al tocarlos, no en la lista.</p>
+
+<div class="w-caja"><span class="w-k">Las fechas con tilde</span>
+<p>22 de los 35 casos traen la fecha de cancelación marcada como <b>estimada</b>: vinieron de Excel sin fecha. El promedio de «cuánto tarda un rescate» solo cuenta los que tienen fecha real, y dice sobre cuántos se calculó. Un promedio sobre fechas inventadas sería un número con cara de dato.</p></div>
+`,
   },
   {
-    id: 'p4', grupo: 'El proceso', titulo: '4 · El primer toque humano',
-    bajada: 'El único paso manual de toda la cadena.', chip: { texto: 'pendiente', tono: 'warn' },
+    id: 'winback', grupo: 'Después de la venta', titulo: 'Winback · los que se fueron',
+    bajada: 'Primero escuchar. La oferta va al final.', chip: { texto: 'lista · falta prenderla', tono: 'ok' },
     cuerpo: `
-<div class="w-caja w-warn"><span class="w-k">Falta definir</span><p>El <b>round-robin de dueños</b>: faltan los nombres del equipo para repartir los leads entrantes.</p></div>
-<h3>Lo que ya sabemos</h3>
-<p>Hoy hay <b>51 leads esperando</b>. La medición dice que el equipo <b>sí atiende</b> —la mayoría tiene el Estatus movido, muchos respondieron— pero <b>nadie mueve la Etapa</b>, que es el único campo que TikTok lee.</p>
-<div class="w-caja w-ok"><span class="w-k">Y esa es la buena noticia</span>
-<p>No es un problema de seguimiento —eso sería caro y lento de arreglar—: es <b>un paso manual que falta</b>, y eso se arregla con un hábito. <b>Mover la Etapa después de cada llamada.</b></p></div>`,
+<p>Veinte pasos en 135 días para los <b>24 clientes que se fueron</b>. Quince correos y cinco WhatsApp — y ni un mensaje dentro de Sacs.</p>
+
+<div class="w-caja"><span class="w-k">Por qué no hay in-app aquí</span><p>Un cliente que se fue <b>no entra al sistema</b>. Medido: de los 24, doce llevan más de 90 días sin vender y nueve no tienen ni dato de actividad. Un mensaje dentro de Sacs se quedaría esperando para siempre a alguien que no va a abrir la puerta. Correo y WhatsApp son los únicos canales que llegan.</p></div>
+
+<h3>Cuatro fases, y el orden es todo el diseño</h3>
+<table class="w-tab"><thead><tr><th>Fase</th><th>Días</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>1 · Escuchar</b></td><td>1 – 25</td><td>No se ofrece <b>nada</b>. Solo la pregunta de qué pasó, y el director pidiendo media hora.</td></tr>
+<tr><td><b>2 · Lo que cambió</b></td><td>31 – 73</td><td>Tampoco se pide nada. Se cuenta qué se arregló, incluido lo que estaba mal.</td></tr>
+<tr><td><b>3 · La oferta</b></td><td>83 – 130</td><td>El año sin costo, la garantía, y por qué se lo ofrecemos.</td></tr>
+<tr><td><b>4 · La puerta</b></td><td>135</td><td>Se cierra bien. Sin última oferta.</td></tr>
+</tbody></table>
+
+<div class="w-caja w-bad"><span class="w-k">La oferta NO va en el primer correo</span><p>Mandar un año gratis antes de preguntar qué falló sería el mismo error que los hizo irse: resolver con dinero algo que era de confianza. A quien ya se fue, una oferta desesperada le confirma su decisión.</p>
+<p>Por eso los cuatro primeros correos no traen nada y tres <b>ni siquiera llevan botón</b>: el primero solo pide que contesten con una línea. Bajar el umbral hasta ahí es lo único que funciona con alguien que ya no te debe nada.</p></div>
+
+<h3>La oferta, cuando llega</h3>
+<p>Un <b>año completo</b> de Sacs sin costo, en el plan más avanzado. No un descuento ni un mes de prueba.</p>
+<table class="w-tab"><thead><tr><th>Incluye</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><b>El plan más completo</b></td><td>No una versión recortada.</td></tr>
+<tr><td><b>Acompañamiento de arranque</b></td><td>Una persona asignada con nombre, plan por escrito, y nosotros cargamos el catálogo — no una plantilla de Excel para que la llene él.</td></tr>
+<tr><td><b>Garantía de implementación</b></td><td>Si no queda operando, no seguimos y no cuesta nada. El punto de «listo» se acuerda ANTES de empezar, no lo definimos al final.</td></tr>
+<tr><td><b>Sus datos de vuelta</b></td><td>Donde los dejó.</td></tr>
+</tbody></table>
+
+<div class="w-caja"><span class="w-k">El tono es modesto a propósito</span><p>No dice «volvimos mejores»: dice <b>«te fallamos y no preguntamos por qué»</b>. Y el correo 13 llega a decir que la oferta <b>nos conviene</b> —aprender de un cliente que se fue vale más que el año que regalamos— porque fingir generosidad con alguien que ya nos vio fallar es la forma más rápida de perderlo otra vez.</p></div>
+
+<div class="w-caja"><span class="w-k">Los datos son suyos, y se dice sin condiciones</span><p>El correo 9 ofrece <b>exportarle todo</b> aunque nunca vuelva a hablarnos. No es una palanca de negociación, y ponerlo a mitad de la cadencia —antes de la oferta— es lo que lo hace creíble.</p></div>
+
+<h3>Con su propio tipo de reunión</h3>
+<p><b>Conversación con dirección</b>, 30 minutos, en <code>/agendar/direccion</code>. El nombre dice quién va a estar del otro lado, que es lo único que la hace distinta: a alguien que ya se fue no lo mueve otra consultoría, lo mueve que quien manda quiera escucharlo.</p>
+<p>Media hora y no una: se pide para <b>escuchar</b>, no para presentar. Pedir una hora a quien ya decidió irse manda el mensaje equivocado sobre cuánto vamos a hablar nosotros.</p>
+<div class="w-caja"><span class="w-k">Y la minuta es obligatoria</span><p>Aquí más que en ninguna otra reunión: lo que se diga ahí es <b>la única fuente honesta</b> que tenemos de por qué se van los clientes. Si no queda escrito, se pierde.</p></div>
+
+<h3>Cuándo se para</h3>
+<p>En cuanto <b>conteste por cualquier canal</b>. Nadie que acaba de decirte por qué se fue debe recibir al día siguiente el correo automático número 6 — a partir de ahí manda la persona.</p>
+
+<div class="w-caja w-bad"><span class="w-k">La regla que casi la deja muda</span><p>Los 24 churned tienen todos <code>estatus_lead = 'descartado'</code>, y el motor <b>expulsa a todo descartado de toda secuencia</b>. Sin arreglarlo, esta cadencia los habría enrolado y sacado en la misma corrida: cero envíos, y en el reporte «graduados: 24» — que se lee como trabajo hecho.</p>
+<p>Peor: el <b>diagnóstico de secuencias no lo habría detectado</b>, porque revisa las reglas de ENTRADA y esta es de SALIDA. Habría dicho «entra: sí» mientras el contacto no recibía nada.</p>
+<p>Se resolvió con una lista por secuencia de motivos de salida que no aplican — no con un interruptor global: la regla sigue valiendo para las otras siete, donde un descartado sí debe salir. Aquí «descartado» no es una decisión sobre ese contacto, es su estado normal.</p></div>`,
   },
   {
-    id: 'p5', grupo: 'El proceso', titulo: '5 · La señal de vuelta a TikTok',
-    bajada: 'Cerrar el círculo.', chip: { texto: 'validado', tono: 'ok' },
+    id: 'revocar', grupo: 'Después de la venta', titulo: 'Revocar una cuenta',
+    bajada: 'Apagarle el acceso sin salir del CRM.', chip: { texto: 'nueva', tono: 'ok' },
     cuerpo: `
-<p><b>El problema:</b> TikTok sabe <i>cuántos</i> formularios se llenaron. No sabe <i>cuáles sirvieron</i>. Con esa información a medias optimiza por lo único que puede medir —la cantidad— y entrega los leads más baratos, que casi nunca son los que compran.</p>
-<p><b>El dato que le falta lo tenemos nosotros.</b></p>
-<table class="w-tab"><thead><tr><th>Etapa en el CRM</th><th>Lo que recibe TikTok</th><th>Qué le enseña</th></tr></thead><tbody>
-<tr><td>✅ Calificado</td><td><code>Qualified</code></td><td>«Este lead sí era del perfil»</td></tr>
-<tr><td>🎯 Oportunidad</td><td><code>Opportunity</code></td><td>«Este iba en serio»</td></tr>
-<tr><td>💚 Cliente</td><td><code>Converted</code> + el monto</td><td>«Este compró, y por esto»</td></tr>
-<tr><td>🚫 Descalificado</td><td><code>Unqualified</code></td><td>«Deja de buscar gente así»</td></tr>
+<p>Antes esto se hacía en <i>sacs3 ▸ Configuración ▸ Cuentas</i>: otro sistema, otra sesión, y buscar la cuenta entre 560. Quien está cobrando tiene el hilo de WhatsApp abierto delante y la ficha al lado — ese es el momento de apretar el botón, no quince minutos después en otra pestaña.</p>
+<p>Ahora la tarjeta <b>Cuenta de SACS</b> aparece en <b>la ficha del lead o cliente</b> (pestaña Seguimiento) y en <b>el inbox</b> (panel de detalle ▸ Acciones). Es la misma tarjeta en los dos lados a propósito: tenerla dos veces garantizaba que un día dijeran cosas distintas de la misma cuenta.</p>
+
+<div class="w-caja"><span class="w-k">Es la MISMA operación, no una paralela</span><p>Mismo motor del lado de SACS, mismos textos, mismo candado en la lista de cuentas y misma bitácora. Lo único que cambia es desde dónde se dispara — y que en la bitácora queda <b>tu correo</b>, no «el sistema».</p></div>
+
+<h3>Los tres motivos</h3>
+<table class="w-tab"><thead><tr><th>Motivo</th><th>Qué ve el cliente</th></tr></thead><tbody>
+<tr><td><b>Falta de pago</b></td><td>El adeudo y los datos para depositar. <b>Pide el monto</b>: un aviso que dice «no especificado» le quita toda la fuerza al mensaje.</td></tr>
+<tr><td><b>Se acabó la prueba</b></td><td>La invitación a contratar, con botón de WhatsApp y link a planes. Es el que pone el cron cuando vence una prueba.</td></tr>
+<tr><td><b>Violación de términos</b></td><td>El aviso legal, sin datos de pago.</td></tr>
 </tbody></table>
-<p><b>Las demás no se reportan, a propósito.</b> «Nuevo lead» es el estado en que TikTok ya lo entregó. «Perdido» contradiría el «Cliente» que ya mandamos. Y <b>«Rezagado» habla de nuestro proceso, no del lead</b>.</p>
-<h3>La cadena, y sus tiempos</h3>
-<table class="w-tab"><thead><tr><th>Paso</th><th>Qué pasa</th><th>Cuándo</th></tr></thead><tbody>
-<tr><td>1. El vendedor</td><td>Cambia la etapa en la ficha</td><td>—</td></tr>
-<tr><td>2. El CRM</td><td>Registra el cambio con su fecha real</td><td>al instante</td></tr>
-<tr><td>3. El puente</td><td>Escribe el estatus en el Google Sheet conectado</td><td><b>cada 3 h</b></td></tr>
-<tr><td>4. TikTok</td><td>Relee la hoja y usa la señal para optimizar</td><td>cada ~10 min</td></tr>
-</tbody></table>
-<p>Entre que mueves la etapa y TikTok se entera pasan <b>entre 10 minutos y 3 horas</b>. La integración vive en Ads Manager ▸ Leads Center ▸ CRM integration, en modo <b>Signal postback</b>.</p>
-<div class="w-caja w-warn"><span class="w-k">Clasificar no envía nada por sí solo</span><p>La señal sale cuando <b>el cron escribe la hoja</b> y TikTok la relee. Si clasificaste hace un rato, la señal todavía puede estar en camino.</p></div>`,
+<p>Los textos exactos <b>no se escriben en el CRM</b>: salen de la configuración central de SACS. Si mañana se cambian allá, cambian aquí.</p>
+
+<h3>Qué le pasa al cliente</h3>
+<p>Al entrar le sale un <b>aviso a pantalla completa</b>, con el fondo difuminado, encima de todo. No es un banner que se cierra: no tiene forma de quitarlo, y el único botón es <b>cerrar sesión</b>. Vive en el armazón de sacs3, así que da igual a qué módulo intente entrar o si abre un link directo — el aviso está ahí.</p>
+
+<div class="w-caja w-bad"><span class="w-k">El candado es de la web, no del sistema entero</span><p>Verificado, no supuesto: <b>la API no valida el bloqueo en ninguna ruta</b> y <b>la app móvil no lo mira</b>. Quien tenga la APK abierta puede seguir vendiendo con la cuenta revocada.</p>
+<p>Para cobrar funciona —el dueño usa la web y ahí se topa de frente con el aviso—, pero no des por hecho que la operación se detuvo. Si el caso es grave, revócala <b>y</b> avisa.</p></div>
+
+<div class="w-caja"><span class="w-k">Y no es retroactivo en la sesión abierta</span><p>El aviso se consulta al entrar. Quien ya tenga sacs3 abierto lo verá cuando recargue, no en el segundo en que aprietas el botón.</p></div>
+
+<h3>Reabrir</h3>
+<p>El mismo botón, en verde. Le quita el aviso y limpia los datos del bloqueo anterior — importante, porque si no, el adeudo viejo reaparecería la próxima vez que se apague por otro motivo.</p>
+
+<div class="w-caja"><span class="w-k">Si dice «no se pudo consultar»</span><p>La tarjeta lee el estado de SACS cada vez que se abre; no lo recuerda. Si la consulta falla, lo dice y <b>esconde los botones</b> en vez de suponer «activa». Apretar a ciegas puede reabrirle la cuenta a quien la tenías apagada por términos.</p></div>
+
+<h3>Todo queda escrito</h3>
+<p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
   },
   {
-    id: 'inbox', grupo: 'El proceso', titulo: 'Vender desde el inbox',
-    bajada: 'Sin cambiar de pantalla.', chip: { texto: 'construido', tono: 'ok' },
+    id: 'toques', grupo: 'Referencia', titulo: 'Los tres toques',
+    bajada: 'Qué respondió el cliente, qué hicimos nosotros, y qué se movió al final.',
     cuerpo: `
-<p>En el panel derecho de cada conversación (pestaña <b>Acciones</b>) el vendedor ejecuta la venta completa.</p>
-<table class="w-tab"><thead><tr><th>Acción</th><th>Cómo funciona</th></tr></thead><tbody>
-<tr><td><b>Cotizar</b></td><td>Plan (precios del catálogo real), periodo (anual = 2 meses gratis), sucursales, implementación y extras → Crear → el link del cliente aparece al instante → enviar por WhatsApp o correo. Queda ligada al lead y su apertura se rastrea.</td></tr>
-<tr><td><b>Agendar</b></td><td>Días y horarios reales → confirmar ahí mismo. Al cliente le llega confirmación por correo + WhatsApp con su invitación y Meet. Si ya tiene reunión próxima, el panel avisa antes de duplicar.</td></tr>
-<tr><td><b>Mandarle los horarios</b></td><td>Un clic manda los próximos horarios + el link público. Cuando el cliente elige, <b>todo</b> se confirma solo.</td></tr>
+<p>Cada lead trae <b>tres fechas de actividad</b>, y la diferencia entre ellas es la que decide a quién llamar. Mezclarlas en un solo dato es el error clásico: ordenar por «última actividad» a secas pone arriba <b>a quien más perseguimos</b>, no a quien contestó.</p>
+<table class="w-tab"><thead><tr><th>Campo</th><th>Qué es</th><th>De qué sale</th></tr></thead><tbody>
+<tr><td><b>Respondió</b><br><span class="w-mut">toque del cliente</span></td><td>La última vez que <b>él</b> hizo algo hacia nosotros. Es la señal de interés: la única que dice si sigue vivo.</td><td>WhatsApp suyo · llamada que tomó · correo contestado · abrió un correo · visitó el sitio · vio la cotización</td></tr>
+<tr><td><b>Le tocamos</b><br><span class="w-mut">toque nuestro</span></td><td>La última vez que <b>nosotros</b> hicimos algo hacia él. Es esfuerzo, no interés.</td><td>WhatsApp nuestro · llamada marcada sin contestar · correo enviado · cotización enviada</td></tr>
+<tr><td><b>Último movimiento</b><br><span class="w-mut">consolidado</span></td><td>El más reciente de los dos, con quién habló. Sirve para «cuánto lleva quieta esta ficha» sin importar de qué lado vino.</td><td>El mayor entre los dos anteriores</td></tr>
 </tbody></table>
-<div class="w-caja"><span class="w-k">Reglas del vendedor</span><p>El correo del cliente es <b>obligatorio</b> para confirmar una reunión. Si la ventana de WhatsApp está cerrada, el sistema lo dice y ofrece el camino que sí entrega. Todo usa los mismos precios y canales del CRM: <b>nada de rutas paralelas</b>.</p></div>`,
-  },
-  {
-    id: 'wa-entrante', grupo: 'El proceso', titulo: 'Cuando el lead nos escribe',
-    bajada: 'Todo lo que pasa en los primeros segundos.', chip: { texto: 'construido', tono: 'ok' },
-    cuerpo: `
-<p>Un WhatsApp entrante no cae en el vacío. Antes de que nadie lo vea, el sistema ya decidió tres cosas: <b>quién es</b>, <b>qué contestarle</b> y <b>a quién avisarle</b>.</p>
-
-<h3>1 · Quién es</h3>
-<table class="w-tab"><thead><tr><th>Caso</th><th>Qué hace el sistema</th></tr></thead><tbody>
-<tr><td><b>El teléfono ya es de alguien</b></td><td>Se liga a su ficha y avanza a «respondió». No se duplica nada. Es el caso de todo lead que viene de un correo nuestro.</td></tr>
-<tr><td><b>Desconocido · la IA dice ventas</b></td><td>Crea el contacto y entra al funnel como «respondió».</td></tr>
-<tr><td><b>Desconocido · dice soporte</b></td><td>Se marca y se queda solo como conversación, sin ensuciar el funnel.</td></tr>
-<tr><td><b>Desconocido · dice spam</b></td><td>No crea nada.</td></tr>
-<tr><td><b>La IA no contesta</b></td><td>Se asume ventas. Peor es perder un lead que sobrar un contacto.</td></tr>
+<div class="w-caja"><span class="w-k">Por qué una llamada cuenta de los dos lados</span>
+<p>Una llamada <b>contestada</b> es del cliente: tomó el teléfono. Una <b>marcada y no contestada</b> es nuestra: es esfuerzo. El mismo hecho cae de un lado o del otro según si hubo alguien del otro lado.</p></div>
+<h3>Cómo se ordena cada pestaña</h3>
+<table class="w-tab"><thead><tr><th>Pestaña</th><th>Orden</th><th>Por qué</th></tr></thead><tbody>
+<tr><td>Todos · Leads nuevos</td><td>Por <b>cuándo llegó</b>, lo más nuevo arriba</td><td>Es una bandeja de entrada y se lee como tal</td></tr>
+<tr><td>Contactados · Calificados</td><td>Por <b>Respondió</b>, lo más reciente arriba</td><td>Aquí ya todos fueron tocados: lo que decide es quién dio señales de vida al último</td></tr>
+<tr><td>Oportunidad</td><td>Por <b>monto de la cotización</b>, de mayor a menor</td><td>Ahí ya no se prioriza por quién contestó, sino por cuánto hay sobre la mesa</td></tr>
 </tbody></table>
-
-<h3>2 · Qué contestarle</h3>
-<p>Sale un acuse en segundos, <b>a cualquier hora</b>. El texto cambia según el reloj, porque la promesa tiene que ser verdad:</p>
-<table class="w-tab"><thead><tr><th>Momento</th><th>Lo que recibe</th></tr></thead><tbody>
-<tr><td><b>Dentro de horario</b><br />L-S, 9 a 19</td><td>«Te leo 👋 Soy Andrea, consultora de moda en Sacs. Dame unos minutos y te contesto por aquí mismo.»</td></tr>
-<tr><td><b>Fuera de horario</b></td><td>«…Ahorita ya estamos fuera de horario — te contesto en cuanto abramos, a partir de las 9 de la mañana.»</td></tr>
-</tbody></table>
-<div class="w-caja"><span class="w-k">Una vez por conversación, no por mensaje</span><p>Si el lead manda tres mensajes seguidos <b>no</b> recibe tres veces la misma frase. El acuse se rearma a las 20 h, para que quien vuelve al día siguiente sí reciba señal de que lo leímos.</p></div>
-<div class="w-caja"><span class="w-k">Y se calla si tú ya estás ahí</span><p>Si alguien del equipo escribió en esa conversación en las últimas <b>6 horas</b>, el acuse <b>no sale</b>. Pasó en real un domingo: el asesor le escribió a las 15:58, la clienta contestó a las 16:17 y el sistema le soltó «ya estamos fuera de horario, te contesto a partir de las 9 de la mañana» — porque el horario configurado es de lunes a sábado. El asesor le respondió doce minutos después. El bot tenía razón según su configuración y aun así el sistema quedó mintiendo delante de la clienta.</p>
-<p>El acuse existe para que nadie se quede sin respuesta. Si ya hay una persona atendiendo, ese trabajo está hecho y el acuse solo puede estorbar: promete algo que ya está pasando, o contradice a quien está escribiendo. La ventana se ajusta en la misma pantalla; con <b>0</b> se apaga el candado.</p>
-<p>Cuenta como «alguien del equipo» solo lo que sale del <b>composer del inbox</b> o de un mensaje programado. Un WhatsApp de cadencia no cuenta: ese es el sistema, no una persona.</p></div>
-
-<h3>3 · De dónde venía</h3>
-<p>Todos nuestros botones de WhatsApp mandan el mensaje ya escrito. Ese texto no dice solo «me escribieron»: dice <b>en qué punto del argumento se convenció</b>. El sistema lo reconoce, etiqueta la ficha y el aviso al equipo llega con contexto:</p>
-<div class="w-caja"><span class="w-k">Así se ve el aviso</span><p><b>Regina de Kali Studio te escribió por WhatsApp</b><br />Viene de: Correo 3 · El hueco de curva<br />Quiere: Probar el motor con un estilo suyo de la temporada pasada<br />Etapa: oportunidad · cotizado</p></div>
-<p>Se reconoce por una frase distintiva, no por el texto completo: WhatsApp deja editar antes de enviar y casi siempre agregan algo. Si el lead escribió por su cuenta <b>no se inventa etiqueta</b> — el acuse sale igual y el contador de no leídos hace su trabajo.</p>
-
-<div class="w-caja"><span class="w-k">Dónde se configura</span><p>Todo esto vive en <b>Automatización ▸ Secuencias ▸ «WhatsApp entrante · atención y control»</b>. Es una secuencia por evento: no corre por días, reacciona en el momento. Si está apagada, no sale acuse.</p></div>`,
+<div class="w-caja"><span class="w-k">Quien nunca respondió cae al final</span>
+<p>No al principio. Sin señal no hay prioridad, y ponerlo arriba con fecha cero sería inventarla. En la columna dice <b>«nunca»</b>, que es la verdad.</p></div>
+<h3>Dónde se calculan</h3>
+<p>Se calculan <b>al vuelo</b>, cada vez que se pide la lista — no son columnas guardadas. Es a propósito: una columna guardada hay que refrescarla y se queda vieja. Ya pasó con <code>ultima_actividad_venta_at</code>, que existe desde agosto y solo se calculó una vez, el día que se creó.</p>`,
   },
   {
     id: 'secuencias-estado', grupo: 'Referencia', titulo: 'Las secuencias, de un vistazo',
@@ -838,28 +897,5 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Solo leads de TikTok</td><td>Los que llegaron por otro canal se ignoran</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">Y el límite de fondo</span><p>El algoritmo <b>necesita volumen para aprender</b>. La diferencia aparece cuando hay decenas de señales acumuladas — por eso importa que sea un hábito y no un esfuerzo de una semana.</p></div>`,
-  },
-  {
-    id: 'toques', grupo: 'Referencia', titulo: 'Los tres toques',
-    bajada: 'Qué respondió el cliente, qué hicimos nosotros, y qué se movió al final.',
-    cuerpo: `
-<p>Cada lead trae <b>tres fechas de actividad</b>, y la diferencia entre ellas es la que decide a quién llamar. Mezclarlas en un solo dato es el error clásico: ordenar por «última actividad» a secas pone arriba <b>a quien más perseguimos</b>, no a quien contestó.</p>
-<table class="w-tab"><thead><tr><th>Campo</th><th>Qué es</th><th>De qué sale</th></tr></thead><tbody>
-<tr><td><b>Respondió</b><br><span class="w-mut">toque del cliente</span></td><td>La última vez que <b>él</b> hizo algo hacia nosotros. Es la señal de interés: la única que dice si sigue vivo.</td><td>WhatsApp suyo · llamada que tomó · correo contestado · abrió un correo · visitó el sitio · vio la cotización</td></tr>
-<tr><td><b>Le tocamos</b><br><span class="w-mut">toque nuestro</span></td><td>La última vez que <b>nosotros</b> hicimos algo hacia él. Es esfuerzo, no interés.</td><td>WhatsApp nuestro · llamada marcada sin contestar · correo enviado · cotización enviada</td></tr>
-<tr><td><b>Último movimiento</b><br><span class="w-mut">consolidado</span></td><td>El más reciente de los dos, con quién habló. Sirve para «cuánto lleva quieta esta ficha» sin importar de qué lado vino.</td><td>El mayor entre los dos anteriores</td></tr>
-</tbody></table>
-<div class="w-caja"><span class="w-k">Por qué una llamada cuenta de los dos lados</span>
-<p>Una llamada <b>contestada</b> es del cliente: tomó el teléfono. Una <b>marcada y no contestada</b> es nuestra: es esfuerzo. El mismo hecho cae de un lado o del otro según si hubo alguien del otro lado.</p></div>
-<h3>Cómo se ordena cada pestaña</h3>
-<table class="w-tab"><thead><tr><th>Pestaña</th><th>Orden</th><th>Por qué</th></tr></thead><tbody>
-<tr><td>Todos · Leads nuevos</td><td>Por <b>cuándo llegó</b>, lo más nuevo arriba</td><td>Es una bandeja de entrada y se lee como tal</td></tr>
-<tr><td>Contactados · Calificados</td><td>Por <b>Respondió</b>, lo más reciente arriba</td><td>Aquí ya todos fueron tocados: lo que decide es quién dio señales de vida al último</td></tr>
-<tr><td>Oportunidad</td><td>Por <b>monto de la cotización</b>, de mayor a menor</td><td>Ahí ya no se prioriza por quién contestó, sino por cuánto hay sobre la mesa</td></tr>
-</tbody></table>
-<div class="w-caja"><span class="w-k">Quien nunca respondió cae al final</span>
-<p>No al principio. Sin señal no hay prioridad, y ponerlo arriba con fecha cero sería inventarla. En la columna dice <b>«nunca»</b>, que es la verdad.</p></div>
-<h3>Dónde se calculan</h3>
-<p>Se calculan <b>al vuelo</b>, cada vez que se pide la lista — no son columnas guardadas. Es a propósito: una columna guardada hay que refrescarla y se queda vieja. Ya pasó con <code>ultima_actividad_venta_at</code>, que existe desde agosto y solo se calculó una vez, el día que se creó.</p>`,
   },
 ];
