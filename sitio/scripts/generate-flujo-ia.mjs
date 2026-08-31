@@ -26,7 +26,7 @@ const PASOS = [
   // 06 · le llega directo al cliente. En la pantalla va la FOTO, nunca la
   // interfaz de WhatsApp ni de ninguna app: falsificar la pantalla de otra
   // marca sería inventar un aval que no tenemos.
-  ['06-clientes', `A young Mexican woman sitting at a sunlit café table, clearly a CUSTOMER and not a shop worker — casual clothes, coffee cup beside her — smiling as she holds her phone up in both hands, the screen angled toward the camera. On the screen, one clean photograph of ${PRENDA} fills the upper two thirds, with the lower third of the screen left as an EMPTY flat surface with no icons and no text. Warm natural daylight, shallow depth of field, editorial lifestyle photography. ${BASE}`],
+  ['06-clientes', `A young Mexican woman sitting at a sunlit café table, clearly a CUSTOMER and not a shop worker — casual clothes, coffee cup beside her — smiling as she holds her phone up in both hands, the screen angled toward the camera. On the screen, one clean photograph of ${PRENDA} fills the upper two thirds against a very light warm background, and the lower third of the screen is left as an EMPTY flat light surface with no icons and no text. Warm natural daylight, shallow depth of field, editorial lifestyle photography. ${BASE}`],
   // 07 · se vende y se descuenta en todas las sucursales. Tres tiendas
   // DISTINTAS con la misma prenda: así se ve que es multisucursal sin tener
   // que explicarlo con texto.
