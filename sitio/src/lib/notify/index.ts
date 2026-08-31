@@ -326,7 +326,7 @@ const templates: Record<string, Template> = {
         </div>
         <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">Tu Plan Fideliza está listo, ${d.nombre || ''}</h2>
         <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
-          Como parte del programa, te activamos una cuenta completa de SACS en el plan <strong>Fideliza</strong> (valor $14,000 MXN/año). Úsalo para tu propio negocio o para hacer demos en vivo a tus prospectos.
+          Como parte del programa, te activamos una cuenta completa de SACS en el plan <strong>Fideliza</strong> (valor $18,900 MXN/año). Úsalo para tu propio negocio o para hacer demos en vivo a tus prospectos.
         </p>
         ${d.nota ? `<div style="background:#fff8e1;border-left:3px solid #E8A838;padding:12px 14px;margin:18px 0;font-size:0.875rem;color:#5a4a1f;line-height:1.55">${d.nota}</div>` : ''}
         <div style="background:#1a1a1a;color:#fff;padding:24px;border-radius:10px;margin:18px 0;text-align:center">

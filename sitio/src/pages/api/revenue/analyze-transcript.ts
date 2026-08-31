@@ -9,13 +9,13 @@ Analiza la siguiente transcripción de una llamada de ventas y extrae informaci�
 
 PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
 
-1. VENDE ($600 MXN/mes, $500 anual) — Para marcas que arrancan su primera tienda.
+1. VENDE ($810 MXN/mes, $675 anual) — Para marcas que arrancan su primera tienda.
    - POS online y offline, tienda en línea básica, cotizaciones, pedidos, apartados
    - Ventas a crédito, listas de precios, Facebook/Instagram/WhatsApp/TikTok
    - Productos con variantes, kits, control básico de inventario
    - 20 folios de facturación, 1 sucursal, soporte 9 AM–5 PM con tickets en 30–90 min
 
-2. CONTROLA ($900 MXN/mes, $750 anual) — Para marcas con varias sucursales.
+2. CONTROLA ($1,215 MXN/mes, $1,013 anual) — Para marcas con varias sucursales.
    - Todo de Vende +
    - Multi-sucursal en tiempo real, CEDIS, traspasos, reabasto sugerido
    - Conteo físico desde celular, kardex, control de mermas
@@ -24,7 +24,7 @@ PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
    - 50+ reportes, 20+ KPIs, ABC, sell-through, costeo por producto
    - Migración gratis (3 días)
 
-3. FIDELIZA ($1,400 MXN/mes, $1,167 anual) — Para marcas que quieren clientes que regresan.
+3. FIDELIZA ($1,890 MXN/mes, $1,575 anual) — Para marcas que quieren clientes que regresan.
    - Todo de Controla +
    - Monedero electrónico y programa de lealtad con niveles
    - Notificaciones automáticas por WhatsApp, promociones avanzadas
@@ -32,7 +32,7 @@ PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
    - 3 créditos de Addons incluidos
    - Soporte 9 AM–5 PM con tickets en 15–30 min, migración en 1 día
 
-4. AUTOMATIZA ($2,800 MXN/mes, $2,333 anual) — Operación en piloto automático con IA.
+4. AUTOMATIZA ($3,780 MXN/mes, $3,150 anual) — Operación en piloto automático con IA.
    - Todo de Fideliza +
    - IA: nivelación, reabasto y traspasos automáticos
    - AXO copiloto IA: consultas, detección de problemas, sugerencias

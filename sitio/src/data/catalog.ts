@@ -27,8 +27,8 @@ export const PLANS: Plan[] = [
   {
     id: 'controla',
     nombre: 'Controla',
-    precio_mensual: 900,
-    precio_anual: 9000,
+    precio_mensual: 1215,
+    precio_anual: 12150,
     sucursales_min: 1,
     descripcion: 'Plan base: POS + inventario + reportes',
     features: ['POS multi-terminal', 'Inventario en tiempo real', 'Reportes de ventas', 'Multi-sucursal', 'WhatsApp tickets'],
@@ -36,8 +36,8 @@ export const PLANS: Plan[] = [
   {
     id: 'fideliza',
     nombre: 'Fideliza',
-    precio_mensual: 1400,
-    precio_anual: 14000,
+    precio_mensual: 1890,
+    precio_anual: 18900,
     sucursales_min: 1,
     descripcion: 'Controla + CRM + programa de lealtad + e-commerce',
     features: ['Todo Controla', 'CRM integrado', 'Programa de lealtad', 'Tienda en línea', 'Social commerce', 'Email marketing', 'Promociones avanzadas'],
@@ -45,8 +45,8 @@ export const PLANS: Plan[] = [
   {
     id: 'automatiza',
     nombre: 'Automatiza',
-    precio_mensual: 2800,
-    precio_anual: 28000,
+    precio_mensual: 3780,
+    precio_anual: 37800,
     sucursales_min: 1,
     descripcion: 'Fideliza + AXO IA + automatizaciones + integraciones ilimitadas',
     features: ['Todo Fideliza', 'AXO copiloto IA', 'Automatizaciones sin código', 'Integraciones ilimitadas', 'Workflows personalizados', 'Reportes predictivos', 'Soporte prioritario'],

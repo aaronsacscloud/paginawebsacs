@@ -137,7 +137,7 @@ export const prerender = false;
             <div class="signup-plan-summary" id="plan-summary">
               <span class="signup-plan-summary-label">Tu plan</span>
               <strong class="signup-plan-summary-name" id="plan-name-display">Controla</strong>
-              <span class="signup-plan-summary-price" id="plan-price-display">$900 MXN/mes por sucursal</span>
+              <span class="signup-plan-summary-price" id="plan-price-display">$1,215 MXN/mes por sucursal</span>
             </div>
 
             <div class="signup-field">
@@ -787,10 +787,10 @@ export const prerender = false;
   const refAccountParam = giftParam ? '' : (urlParams.get('ref_account') || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
   const planParam = (giftParam || refAccountParam) ? 'vende' : (urlParams.get('plan') || 'controla');
   const planInfo: Record<string, { name: string; price: string }> = {
-    vende: { name: 'Vende', price: '$600 MXN/mes por sucursal' },
-    controla: { name: 'Controla', price: '$900 MXN/mes por sucursal' },
-    fideliza: { name: 'Fideliza', price: '$1,400 MXN/mes por sucursal' },
-    automatiza: { name: 'Automatiza', price: '$2,800 MXN/mes por sucursal' },
+    vende: { name: 'Vende', price: '$810 MXN/mes por sucursal' },
+    controla: { name: 'Controla', price: '$1,215 MXN/mes por sucursal' },
+    fideliza: { name: 'Fideliza', price: '$1,890 MXN/mes por sucursal' },
+    automatiza: { name: 'Automatiza', price: '$3,780 MXN/mes por sucursal' },
   };
   const plan = planInfo[planParam] || planInfo['controla'];
 
@@ -812,13 +812,13 @@ export const prerender = false;
     if (regTitle) regTitle.textContent = '🎁 Activa tu regalo — Plan Vende';
     if (regSubtitle) regSubtitle.textContent = 'Tu primer año del Plan Vende es de regalo ($0 hoy). Tu tarjeta solo se usará para la renovación automática del segundo año.';
     if (planNameDisplay) planNameDisplay.textContent = 'Plan Vende — Regalo Buddy';
-    if (planPriceDisplay) planPriceDisplay.textContent = '🎁 Primer año gratis · después $6,000 MXN/año';
+    if (planPriceDisplay) planPriceDisplay.textContent = '🎁 Primer año gratis · después $8,100 MXN/año';
   } else if (refAccountParam) {
     // Embajador: copy especial — 50% off el primer año
     if (regTitle) regTitle.textContent = '🤝 Te recomendaron Sacs — Plan Vende con 50%';
     if (regSubtitle) regSubtitle.textContent = 'Tienes 50% de descuento en tu primer año del Plan Vende. Hoy pagas la mitad; después renueva a precio normal.';
     if (planNameDisplay) planNameDisplay.textContent = 'Plan Vende — 50% primer año';
-    if (planPriceDisplay) planPriceDisplay.textContent = '🤝 50% off: $3,000 hoy (1er año) · después $6,000 MXN/año';
+    if (planPriceDisplay) planPriceDisplay.textContent = '🤝 50% off: $4,050 hoy (1er año) · después $8,100 MXN/año';
   }
 
   // ─── Field validation ───
@@ -1012,7 +1012,7 @@ export const prerender = false;
         const cleanPhone = rawPhone.replace(/\D/g, '');
         const e164Phone = cleanPhone ? lada + cleanPhone : '';
         ttq.identify({ email, phone_number: e164Phone });
-        const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2800 };
+        const planPrices: Record<string, number> = { vende: 810, controla: 1215, fideliza: 1890, automatiza: 3780 };
         ttq.track('InitiateCheckout', {
           content_id: selectedPlan || 'unknown',
           content_name: selectedPlan || 'unknown',
@@ -1181,7 +1181,7 @@ export const prerender = false;
         // TikTok: registration complete with value
         try {
           if (typeof ttq !== 'undefined') {
-            const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2800 };
+            const planPrices: Record<string, number> = { vende: 810, controla: 1215, fideliza: 1890, automatiza: 3780 };
             ttq.track('CompleteRegistration', {
               content_id: selectedPlan || 'unknown',
               content_name: selectedPlan || 'unknown',
@@ -1196,7 +1196,7 @@ export const prerender = false;
         // pixel sitewide solo debe inicializar; el evento va donde la accion pasa.
         try {
           if (typeof (window as any).oaiq !== 'undefined') {
-            const planPreciosOai: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2800 };
+            const planPreciosOai: Record<string, number> = { vende: 810, controla: 1215, fideliza: 1890, automatiza: 3780 };
             (window as any).oaiq('measure', 'registration_completed', {
               type: 'customer_action',
               amount: planPreciosOai[selectedPlan] || 0,

@@ -22,10 +22,10 @@ const json = (o: any, s = 200) =>
 // trae `id`, así que las suscripciones que nazcan ahí quedan sin ligar: es un
 // modo degradado, no el camino normal.
 const FALLBACK = [
-  { slug: 'vende', nombre: 'Plan Vende', precio_mensual: 600, precio_anual: 6000, a_la_medida: false, categoria: 'plan', orden: 1 },
-  { slug: 'controla', nombre: 'Plan Controla', precio_mensual: 900, precio_anual: 9000, a_la_medida: false, categoria: 'plan', orden: 2 },
-  { slug: 'fideliza', nombre: 'Plan Fideliza', precio_mensual: 1400, precio_anual: 14000, a_la_medida: false, categoria: 'plan', orden: 3 },
-  { slug: 'automatiza', nombre: 'Plan Automatiza', precio_mensual: 2800, precio_anual: 28000, a_la_medida: false, categoria: 'plan', orden: 4 },
+  { slug: 'vende', nombre: 'Plan Vende', precio_mensual: 810, precio_anual: 8100, a_la_medida: false, categoria: 'plan', orden: 1 },
+  { slug: 'controla', nombre: 'Plan Controla', precio_mensual: 1215, precio_anual: 12150, a_la_medida: false, categoria: 'plan', orden: 2 },
+  { slug: 'fideliza', nombre: 'Plan Fideliza', precio_mensual: 1890, precio_anual: 18900, a_la_medida: false, categoria: 'plan', orden: 3 },
+  { slug: 'automatiza', nombre: 'Plan Automatiza', precio_mensual: 3780, precio_anual: 37800, a_la_medida: false, categoria: 'plan', orden: 4 },
   { slug: 'personalizada', nombre: 'Licencia personalizada', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 5 },
   { slug: 'soporte_premium', nombre: 'Soporte premium', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 6 },
   { slug: 'vitalicia_legacy', nombre: 'Licencia Vitalicia Legacy', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plan', orden: 7 },

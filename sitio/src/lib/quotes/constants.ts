@@ -4,10 +4,10 @@ export const PLANS = ['vende', 'controla', 'fideliza', 'automatiza', 'personaliz
 export type PlanId = (typeof PLANS)[number];
 
 export const PLAN_PRICES: Record<string, number> = {
-  vende: 600,
-  controla: 900,
-  fideliza: 1400,
-  automatiza: 2800,
+  vende: 810,
+  controla: 1215,
+  fideliza: 1890,
+  automatiza: 3780,
   personalizada: 0,      // precio a la medida (se define en la cotización)
   soporte_premium: 0,    // póliza de soporte: precio según alcance
 };

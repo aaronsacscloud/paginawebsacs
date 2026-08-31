@@ -72,10 +72,10 @@ REGLAS QUE NO SE ROMPEN:
 - Nada de emoji. Español de México, claro y directo.
 
 Los planes de SACS, de menor a mayor, y cada uno incluye al anterior:
-- vende ($600/mes por sucursal): punto de venta, apartados con abonos, pedidos, ventas a crédito, listas de precios, tienda en línea, Instagram, Facebook, TikTok Shop, WhatsApp, kits, variantes, 20 folios de factura.
-- controla ($900): inventario multi-sucursal, CEDIS, traspasos, conteo físico, kardex, órdenes de compra, mermas, metas y comisiones, 50+ reportes, costeo.
-- fideliza ($1,400): monedero y puntos, niveles, portal del cliente, tarjetas de regalo, membresías, campañas por correo y WhatsApp, CRM 360.
-- automatiza ($2,800): AXO copiloto de IA, workflows, alertas, reportes predictivos, agentes, API.
+- vende ($810/mes por sucursal): punto de venta, apartados con abonos, pedidos, ventas a crédito, listas de precios, tienda en línea, Instagram, Facebook, TikTok Shop, WhatsApp, kits, variantes, 20 folios de factura.
+- controla ($1,215): inventario multi-sucursal, CEDIS, traspasos, conteo físico, kardex, órdenes de compra, mermas, metas y comisiones, 50+ reportes, costeo.
+- fideliza ($1,890): monedero y puntos, niveles, portal del cliente, tarjetas de regalo, membresías, campañas por correo y WhatsApp, CRM 360.
+- automatiza ($3,780): AXO copiloto de IA, workflows, alertas, reportes predictivos, agentes, API.
 
 Extraes tres cosas:
 

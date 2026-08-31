@@ -712,7 +712,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     }).grandTotal;
 
     const addPlanItem = () => {
-      setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
+      setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 1215, periodo: 'mensual', descuento_pct: 0, subtotal: 1215 }] });
     };
 
     const addExtraItem = () => {
@@ -2342,7 +2342,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 <button onClick={() => {
                   const r = analysisResult;
                   const rec = r.recommendation || {};
-                  const planPrice = PLAN_PRICES[rec.plan] || 900;
+                  const planPrice = PLAN_PRICES[rec.plan] || 1215;
                   const discPct = parseFloat(rec.descuento_pct) || 0;
                   const suc = parseInt(rec.sucursales) || 1;
                   const isAnn = rec.periodo === 'anual';
