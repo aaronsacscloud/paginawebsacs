@@ -8,17 +8,18 @@
  * <h2> de verdad. El espectáculo es de partículas, pero lo que queda en
  * pantalla es texto real — legible, seleccionable y leído por Google.
  *
- * Va sobre el amarillo pastel de la familia ámbar de Sacs (#E8A838 → #F5E2B8).
- * Es el corte de luz de la página: arriba queda WhatsApp en blanco, abajo el
- * flujo en ciruela y después el pilar casi negro.
+ * Va sobre el mismo azul océano del flujo (#0F4A73), así el corte y el flujo
+ * se leen como un solo capítulo azul. El interrupt es contra lo de arriba:
+ * WhatsApp en blanco. Abajo sigue el flujo y después el pilar casi negro.
  *
  * Reglas de esta pieza:
  *  · El recorrido va como caja propia DENTRO del riel, nunca como padding: un
  *    sticky solo viaja dentro del content box de quien lo contiene.
  *  · Three.js entra por import() dinámico y solo cuando la sección está cerca:
  *    son ~688 KB de chunk que la home no debe pagar en la primera carga.
- *  · Fondo claro = las partículas OSCURECEN. Nada de AdditiveBlending, que
- *    sobre claro sólo lava el color y no se ve una letra.
+ *  · Fondo oscuro = las partículas son LUZ (AdditiveBlending). Si algún día
+ *    vuelve un fondo claro hay que invertir el material completo —blending,
+ *    color, tamaño y opacidad—, no sólo el color de fondo.
  *  · El texto se ve SIEMPRE por defecto. Las partículas solo lo esconden si de
  *    verdad van a correr; sin WebGL o con prefers-reduced-motion nadie se
  *    entera de que había un efecto, y el riel ni siquiera aparece.
@@ -52,8 +53,8 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
 <style>
   .pi {
     position: relative;
-    background: #F5E2B8;
-    color: #241A10;
+    background: #0F4A73;
+    color: #fff;
     scroll-margin-top: 80px;
   }
   .pi-riel { position: relative; }
@@ -73,7 +74,7 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(58% 46% at 50% 42%, rgba(255,255,255,.55), transparent 72%);
+    background: radial-gradient(58% 46% at 50% 42%, rgba(255,255,255,.10), transparent 72%);
     pointer-events: none;
   }
 
@@ -103,13 +104,13 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     display: inline-block;
     padding: 7px 15px;
     border-radius: 999px;
-    border: 1px solid rgba(36,26,16,.22);
-    background: rgba(255,255,255,.45);
+    border: 1px solid rgba(255,255,255,.26);
+    background: rgba(255,255,255,.08);
     font-size: 0.6875rem;
     font-weight: 800;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: #5A4526;
+    color: rgba(255,255,255,.80);
   }
 
   .pi-claim {
@@ -121,11 +122,11 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     line-height: 1.02;
     letter-spacing: -.035em;
     margin: clamp(20px, 3vh, 34px) 0 0;
-    color: rgba(36,26,16,.52);
+    color: rgba(255,255,255,.58);
   }
   /* El golpe va en la última línea, que es la promesa. */
   .pi-linea { display: block; }
-  .pi-linea:last-child { color: #241A10; }
+  .pi-linea:last-child { color: #fff; }
 
   /* En pantalla angosta las 3 líneas fijas obligan a una letra de 23 px: ahí
      el texto fluye solo y se lee grande. Sin líneas fijas no hay partículas,
@@ -140,14 +141,14 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     font-size: clamp(1.0625rem, 1.9vw, 1.375rem);
     line-height: 1.45;
     font-weight: 600;
-    color: #33261A;
+    color: rgba(255,255,255,.94);
   }
   .pi-nota {
     margin: 10px auto 0;
     max-width: 50ch;
     font-size: 0.9375rem;
     line-height: 1.5;
-    color: rgba(36,26,16,.6);
+    color: rgba(255,255,255,.62);
   }
   .pi-abajo {
     display: inline-block;
@@ -156,7 +157,7 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     font-weight: 800;
     letter-spacing: .16em;
     text-transform: uppercase;
-    color: rgba(36,26,16,.55);
+    color: rgba(255,255,255,.55);
   }
   .pi-abajo::after {
     content: '';
@@ -164,7 +165,7 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
     width: 1px;
     height: 34px;
     margin: 12px auto 0;
-    background: linear-gradient(rgba(36,26,16,.45), transparent);
+    background: linear-gradient(rgba(255,255,255,.45), transparent);
   }
 
   /* Con partículas el titular se esconde hasta que el scroll termina de
@@ -345,7 +346,7 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
           // El retraso va por columna: la frase se escribe de izquierda a
           // derecha conforme el visitante baja.
           retraso[i] = Math.min(0.42, (pos[i * 3] / W) * 0.34 + Math.random() * 0.12);
-          punto[i] = (1.7 + Math.random() * 1.9) * dpr;
+          punto[i] = (1.1 + Math.random() * 1.5) * dpr;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
         geo.setAttribute('ini', new THREE.BufferAttribute(ini, 3));
@@ -355,9 +356,8 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
         const mat = new THREE.ShaderMaterial({
           transparent: true,
           depthTest: false,
-          // Sobre amarillo pastel las partículas tienen que OSCURECER. Con
-          // AdditiveBlending sólo lavarían el fondo y no se leería una letra.
-          blending: THREE.NormalBlending,
+          // Sobre azul oscuro las partículas son luz: suman en vez de tapar.
+          blending: THREE.AdditiveBlending,
           uniforms: { t: { value: 0 }, salida: { value: 0 } },
           vertexShader: [
             'attribute vec3 ini;',
@@ -380,9 +380,9 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
             'varying float vP;',
             'void main(){',
             '  vec2 d = gl_PointCoord - 0.5;',
-            '  float a = smoothstep(0.5, 0.26, length(d));',
-            '  vec3 col = mix(vec3(0.34, 0.25, 0.13), vec3(0.09, 0.06, 0.04), vP);',
-            '  gl_FragColor = vec4(col, a * (0.55 + 0.45 * vP) * (1.0 - salida));',
+            '  float a = smoothstep(0.5, 0.12, length(d));',
+            '  vec3 col = mix(vec3(0.55, 0.78, 0.92), vec3(1.0), vP);',
+            '  gl_FragColor = vec4(col, a * (0.34 + 0.66 * vP) * (1.0 - salida));',
             '}',
           ].join('\n'),
         });
