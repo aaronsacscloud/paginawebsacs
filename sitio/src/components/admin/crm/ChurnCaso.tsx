@@ -427,6 +427,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                 </div>
               )}
             </div>
+            <UsoAntes u={d.uso_antes} />
             <BloqueUso caso={caso} emp={emp} />
             </div>
 
@@ -534,6 +535,59 @@ function Acciones({ onOk, onCancelar, guardando, peligro }: any) {
    que contesta si el rescate está funcionando — y sobre todo si está usando
    AQUELLO por lo que se fue. Un cliente que se fue por soporte de inventario y
    durante la gracia solo factura, se va a ir otra vez. */
+/* ── ¿ESTE CLIENTE SÍ LO USABA? ────────────────────────────────────────────
+   La ventana viva marca cero para todo el que se fue, así que no distingue al
+   que operaba todos los días del que nunca arrancó — y esa diferencia decide
+   si vale la pena rescatarlo. Se contesta con lo que sí sobrevive: la foto que
+   se guarda al abrir el caso, el mejor mes del histórico y su última venta.
+
+   Cuando no hay registro NO se pintan ceros: un cero se lee como «nunca lo
+   usó», y lo que pasa casi siempre es que se fue antes de que empezáramos a
+   medir. Eso se dice con todas sus letras. */
+function UsoAntes({ u }: { u: any }) {
+  if (!u) return null;
+  const hayNumeros = Number(u.mejor_ventas) > 0 || Number(u.mejor_monto) > 0;
+  const fecha = (f: any) => f ? String(f).slice(0, 10) : null;
+  return (
+    <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
+      <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 10 }}>
+        Cuando todavía lo usaba
+      </div>
+
+      {hayNumeros ? (<>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
+          {[
+            { l: 'Su mejor mes', v: dinero(u.mejor_monto) },
+            { l: 'Ventas en ese mes', v: Number(u.mejor_ventas).toLocaleString('es-MX') },
+            { l: 'Usuarios operando', v: u.usuarios ? String(u.usuarios) : '\u2014' },
+            { l: 'Meses como cliente', v: u.meses_activo ? String(u.meses_activo) : '\u2014' },
+          ].map(c => (
+            <div key={c.l}>
+              <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.05em' }}>{c.l}</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#241d43', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>{c.v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: '0.78rem', color: '#71707C', marginTop: 12, paddingTop: 10, borderTop: '1px solid #f2f0f7', lineHeight: 1.5 }}>
+          Es el mejor mes del que tenemos registro{fecha(u.mejor_fecha) ? ` (medido el ${fecha(u.mejor_fecha)})` : ''}.
+          {fecha(u.ultima_venta_at) && <> Su última venta fue el <b>{fecha(u.ultima_venta_at)}</b>{u.dias_sin_venta != null ? `, hace ${u.dias_sin_venta} días` : ''}.</>}
+        </div>
+      </>) : (
+        <div style={{ fontSize: '0.84rem', color: '#4a4756', lineHeight: 1.55 }}>
+          {fecha(u.ultima_venta_at) ? (<>
+            No tenemos registro de cómo lo usaba: dejó de vender el <b>{fecha(u.ultima_venta_at)}</b>
+            {u.dias_sin_venta != null ? ` —hace ${u.dias_sin_venta} días—` : ''}
+            {fecha(u.historico_desde) ? `, antes de que empezáramos a guardar el histórico (${fecha(u.historico_desde)})` : ''}.
+            {u.meses_activo ? <> Alcanzó a ser cliente <b>{u.meses_activo} meses</b>.</> : null}
+          </>) : (
+            <>No hay registro de uso ni fecha de última venta. Sin cuenta de SACS ligada no hay nada que medir: ligarla es lo primero.</>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BloqueUso({ caso, emp }: { caso: any; emp: any }) {
   if (!emp?.sacs_account) {
     return (

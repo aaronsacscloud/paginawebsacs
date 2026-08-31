@@ -25,9 +25,47 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const { data: caso, error } = await supabase.from('churn_casos')
     .select(`*, companies(id, nombre, nombre_comercial, sacs_account, sucursales, plan, estado_cuenta,
-             dias_sin_venta, uso_sacs, actividad_sync_at, health_score)`)
+             dias_sin_venta, uso_sacs, actividad, actividad_sync_at, ultima_venta_at, months_active, health_score)`)
     .eq('id', id).single();
   if (error || !caso) return json({ error: 'No existe ese caso.' }, 404);
+
+  /* ── ¿ESTE CLIENTE SÍ LO USABA? ────────────────────────────────────────
+     La ventana viva marca cero para todo el que se fue, así que no distingue
+     al que operaba todos los días del que nunca arrancó — y esa diferencia es
+     la que decide si vale la pena rescatarlo.
+     Se contesta con lo que sí sobrevive: la foto que se guarda al abrir el
+     caso, el mejor mes del histórico diario y la fecha de su última venta.
+     Cuando no hay nada, se dice que no hay registro; pintar ceros diría que
+     nunca lo usó, que es una afirmación distinta y probablemente falsa. */
+  const co: any = (caso as any).companies || {};
+  const { data: snaps } = await supabase.from('uso_snapshots')
+    .select('fecha, ventas_30d, total_30d, usuarios_operando')
+    .eq('company_id', (caso as any).company_id)
+    .order('total_30d', { ascending: false, nullsFirst: false })
+    .limit(1);
+  const mejor = (snaps || [])[0] || null;
+  const foto = (caso as any).actividad_al_abrir?.actividad || null;
+  const usoAntes = {
+    // El mejor 30 días del que tengamos registro, venga de la foto del caso o
+    // del histórico diario — se queda el mayor de los dos.
+    mejor_ventas: Math.max(Number(mejor?.ventas_30d || 0), Number(foto?.ventas_30d || 0)) || 0,
+    mejor_monto: Math.max(Number(mejor?.total_30d || 0), Number(foto?.total_30d || 0)) || 0,
+    mejor_fecha: Number(foto?.total_30d || 0) >= Number(mejor?.total_30d || 0) && foto
+      ? ((caso as any).actividad_al_abrir?.tomada_at || null) : (mejor?.fecha || null),
+    usuarios: Math.max(Number(mejor?.usuarios_operando || 0), Number(foto?.usuarios || 0)) || 0,
+    ultima_venta_at: (caso as any).actividad_al_abrir?.ultima_venta_at || co.ultima_venta_at || null,
+    dias_sin_venta: (caso as any).actividad_al_abrir?.dias_sin_venta ?? co.dias_sin_venta ?? null,
+    meses_activo: (caso as any).actividad_al_abrir?.months_active ?? co.months_active ?? null,
+    hay_registro: !!(mejor || foto),
+    // Desde cuándo existe el histórico: sin esta fecha, un cero se lee como
+    // «no lo usaba» cuando en realidad es «se fue antes de que midiéramos».
+    historico_desde: null as string | null,
+  };
+  if (!usoAntes.mejor_ventas && !usoAntes.mejor_monto) {
+    const { data: primero } = await supabase.from('uso_snapshots')
+      .select('fecha').order('fecha', { ascending: true }).limit(1);
+    usoAntes.historico_desde = (primero || [])[0]?.fecha || null;
+  }
 
   // La historia del caso y la de la cuenta son la MISMA: se pide por empresa,
   // no por caso, para que el rescate se lea con todo lo que ya pasó antes.
@@ -69,7 +107,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
-  return json({ caso, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
+  return json({ caso, uso_antes: usoAntes, historia: historia || [], episodios: episodios || [], subs_vivas: subsVivas || [], equipo: equipo || [], tel, propuestas: propuestas || [], compromisos: compromisos || [] });
 };
 
 /** Un toque: lo que se hizo con el cliente, y qué sigue. */

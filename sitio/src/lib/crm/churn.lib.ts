@@ -94,13 +94,30 @@ export async function abrirCasoSiAplica(companyId: string): Promise<{ creado: bo
     .reduce((t, s) => t + Number(s.mrr || 0), 0);
 
   /* La FOTO del uso al abrir. Es la única forma de decir después «lo usa más
-     que antes de irse»: sin el antes, el después no prueba nada. */
-  const { data: empUso } = await supabase.from('companies').select('uso_sacs').eq('id', companyId).single();
+     que antes de irse»: sin el antes, el después no prueba nada.
+     Guarda también la ACTIVIDAD DE VENTAS, que es lo que contesta la pregunta
+     que de verdad se hace al abrir un caso —«¿este cliente sí lo usaba?»—. Sin
+     ella, a los 30 días la ventana viva marca cero y no hay forma de saber si
+     era un cliente que operaba o uno que nunca arrancó: el histórico diario
+     (uso_snapshots) solo llega hasta donde llega, y para quien se fue hace un
+     año no alcanza. */
+  const { data: empUso } = await supabase.from('companies')
+    .select('uso_sacs, actividad, ultima_venta_at, dias_sin_venta, months_active, health_score')
+    .eq('id', companyId).single();
+  const fotoActividad = empUso ? {
+    tomada_at: new Date().toISOString(),
+    actividad: (empUso as any).actividad || null,
+    ultima_venta_at: (empUso as any).ultima_venta_at || null,
+    dias_sin_venta: (empUso as any).dias_sin_venta ?? null,
+    months_active: (empUso as any).months_active ?? null,
+    health_score: (empUso as any).health_score ?? null,
+  } : null;
 
   const { data, error } = await supabase.from('churn_casos').insert({
     company_id: companyId,
     subscription_id: ultima.id,
     uso_al_abrir: empUso?.uso_sacs || null,
+    actividad_al_abrir: fotoActividad,
     mrr_perdido: mrrDelEpisodio,
     motivo_original: ultima.razon_cancelacion || null,
     motivo_categoria: categorizarRazon(ultima.razon_cancelacion),
