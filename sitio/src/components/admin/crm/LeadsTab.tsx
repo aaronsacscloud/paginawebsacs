@@ -913,8 +913,16 @@ export default function LeadsTab() {
           </div>
         </div>
       )}
+      {/* La cabecera se alinea con el CONTENIDO de la tarjeta, no con su borde.
+          Medido: todo lo de abajo —píldoras, buscador, pestañas y el primer
+          rótulo de la tabla— arranca en 295 px, y el título arrancaba en 276:
+          un escalón de 19 px hacia la izquierda que hacía que el título se
+          viera desalineado con todo lo que uno lee debajo de él. 19 = los
+          18 px de relleno de la tarjeta más su borde de 1. (En Clientes el
+          título ya cuadra: ahí lo que sigue son tarjetas de KPI que empiezan
+          en el borde, no contenido metido dentro de una.) */}
       {!esMovil && (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12, padding: '0 19px' }}>
         <div>
           {/* La MISMA cabecera que Clientes: 1.5rem, -0.02em y el subtítulo en
               0.75rem sobre #9c99a6. Leads iba un escalón por debajo (1.375rem
