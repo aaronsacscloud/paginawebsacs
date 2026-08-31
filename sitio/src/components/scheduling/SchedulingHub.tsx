@@ -840,6 +840,8 @@ function EventTypeModal({
     categoria: (eventType as any)?.categoria || 'otro',
     alerta_inasistencias: (eventType as any)?.alerta_inasistencias ?? '',
     requiere_minuta: (eventType as any)?.requiere_minuta !== false,
+    anfitrion_nombre: (eventType as any)?.anfitrion_nombre || '',
+    anfitrion_foto: (eventType as any)?.anfitrion_foto || '',
     confirmacion_email: (eventType as any)?.confirmacion_email !== false,
     confirmacion_whatsapp: (eventType as any)?.confirmacion_whatsapp !== false,
     recordatorios: Array.isArray((eventType as any)?.recordatorios) ? (eventType as any).recordatorios : [],
@@ -858,6 +860,9 @@ function EventTypeModal({
       [emailKey]: { ...prev[emailKey], [field]: value },
     }));
   };
+
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [errorFoto, setErrorFoto] = useState('');
 
   // `unknown[]` además de los escalares: la lista de recordatorios es un
   // arreglo y antes aquí solo cabían valores sueltos.
@@ -890,6 +895,8 @@ function EventTypeModal({
       categoria: form.categoria || 'otro',
       alerta_inasistencias: form.alerta_inasistencias === '' ? null : Number(form.alerta_inasistencias),
       requiere_minuta: form.requiere_minuta !== false,
+      anfitrion_nombre: String(form.anfitrion_nombre || '').trim() || null,
+      anfitrion_foto: String(form.anfitrion_foto || '').trim() || null,
       confirmacion_email: form.confirmacion_email !== false,
       confirmacion_whatsapp: form.confirmacion_whatsapp !== false,
       recordatorios: form.recordatorios,
@@ -1020,6 +1027,48 @@ function EventTypeModal({
               <option value="1">Pedir minuta al cerrarla</option>
               <option value="0">No pedir minuta</option>
             </select>
+          </div>
+        </div>
+
+        {/* ══ QUIÉN DA LA CARA ══
+            El nombre y la foto que ve el cliente en la página de agendar.
+            Antes salía SIEMPRE el nombre del dueño del tipo de evento, y el
+            dueño es quien decide de qué calendario salen los horarios — no
+            necesariamente quien atiende. Vacío = se usa el del dueño. */}
+        <div style={{ border: '1px solid #e6e2f3', borderRadius: 10, padding: 12, marginBottom: 12, background: '#fbfaff' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#6b5fa8', marginBottom: 8 }}>Quién da la cara</div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <label style={{ cursor: 'pointer', flexShrink: 0 }} title="Cambiar la foto">
+              {form.anfitrion_foto
+                ? <img src={String(form.anfitrion_foto)} alt="" style={{ width: 56, height: 56, borderRadius: 99, objectFit: 'cover', display: 'block', border: '1px solid #e2e4e9' }} />
+                : <span style={{ width: 56, height: 56, borderRadius: 99, background: '#EEECFE', color: '#5B4BD6', fontSize: '0.7rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', lineHeight: 1.2 }}>Subir<br />foto</span>}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                const f = e.target.files?.[0]; if (!f) return;
+                setSubiendoFoto(true); setErrorFoto('');
+                try {
+                  /* Se optimiza en el navegador y se sube firmada, igual que el
+                     resto de las imágenes del CRM: la función serverless no
+                     toca bytes y no aplica el tope de 4.5 MB de Vercel. */
+                  const { optimizarImagen, subirAStorage } = await import('../../lib/crm/imagen');
+                  const o = await optimizarImagen(f, 'perfil');
+                  const url = await subirAStorage(o.blob, o.nombre, o.mime, 'anfitriones');
+                  updateForm('anfitrion_foto', url);
+                } catch (err: any) { setErrorFoto(String(err?.message || err)); }
+                setSubiendoFoto(false);
+              }} />
+            </label>
+            <div style={{ flex: 1, minWidth: 220 }}>
+              <label style={label}>Nombre que ve el cliente</label>
+              <input value={String(form.anfitrion_nombre || '')} onChange={e => updateForm('anfitrion_nombre', e.target.value)}
+                placeholder={(eventType as any)?.team_members?.nombre || 'El del dueño del tipo de evento'} style={input} />
+              <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 3 }}>
+                {subiendoFoto ? 'Subiendo la foto…' : errorFoto ? `No se pudo subir: ${errorFoto}` : 'Vacío = el nombre del dueño. La foto se recorta cuadrada; sin foto se ven las iniciales.'}
+              </div>
+              {form.anfitrion_foto && (
+                <button type="button" onClick={() => updateForm('anfitrion_foto', '')}
+                  style={{ border: 'none', background: 'none', color: '#b93333', cursor: 'pointer', fontSize: '0.7rem', padding: '4px 0', fontFamily: 'inherit' }}>Quitar la foto</button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -12,6 +12,8 @@ interface EventTypeData {
   tipo_reunion?: string;
   owner_id: string;
   team_members: { nombre: string; email: string } | null;
+  anfitrion_nombre?: string | null;
+  anfitrion_foto?: string | null;
 }
 
 interface QuestionData {
@@ -603,7 +605,15 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   };
 
   // ── Render helpers ──
-  const hostName = eventType.team_members?.nombre || 'Equipo Sacs';
+  /* El nombre del tipo de evento MANDA sobre el del dueño. Quien es dueño del
+     registro no siempre es quien da la cara: Andrea tiene el calendario
+     conectado y la página decía otro nombre, y cambiar el dueño no era opción
+     porque el dueño decide de qué calendario salen los horarios. */
+  const hostName = (eventType as any).anfitrion_nombre || eventType.team_members?.nombre || 'Equipo Sacs';
+  const hostFoto = (eventType as any).anfitrion_foto || '';
+  /* Sin foto, las iniciales — no un hueco ni un ícono genérico: un nombre con
+     cara, aunque sea de letras, se lee como una persona y no como un sistema. */
+  const hostIniciales = String(hostName).trim().split(/\s+/).slice(0, 2).map((x: string) => x[0] || '').join('').toUpperCase();
 
   const locationLabel = (tipo: string): string => {
     const labels: Record<string, string> = {
@@ -644,10 +654,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           </svg>
           {eventType.duracion_minutos} min
         </span>
-        <span style={styles.badge}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-          </svg>
+        <span style={{ ...styles.badge, paddingLeft: 4 }}>
+          {hostFoto
+            ? <img src={hostFoto} alt="" width={24} height={24} style={{ width: 24, height: 24, borderRadius: 99, objectFit: 'cover', display: 'block' }} />
+            : <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: 99, background: '#EEECFE', color: '#5B4BD6', fontSize: '0.65rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{hostIniciales}</span>}
           {hostName}
         </span>
         <span style={styles.badge}>
