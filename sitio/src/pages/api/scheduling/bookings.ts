@@ -191,10 +191,36 @@ export const PUT: APIRoute = async ({ request }) => {
           data: { nombre: current.invitee_nombre, evento, fecha: current.fecha, hora: current.hora_inicio, reagendar_url: reagendarUrl },
         });
       }
+      /* POR PLANTILLA. Esto salía con texto libre por `sendWhatsApp`, y Meta
+         no lo deja fuera de la ventana de 24 h: de 280 conversaciones solo 8
+         la tienen abierta, así que el seguimiento del no-show casi nunca
+         llegaba — y devolvía {sent:false} que nadie miraba. Justo a quien no
+         llegó es a quien hay que alcanzar. */
       if (current.invitee_whatsapp) {
-        const { sendWhatsApp } = await import('../../../lib/kapso');
-        await sendWhatsApp(current.invitee_whatsapp,
-          `Hola ${current.invitee_nombre || ''} 👋 teníamos tu ${evento} de SACS hoy y no logramos coincidir. Reagenda en 1 minuto aquí:\n${reagendarUrl}`);
+        const { enviarPlantilla } = await import('../../../lib/whatsapp/kapso-api');
+        const { telefonoWhatsApp } = await import('../../../lib/telefono');
+        const { fmtFechaLarga, fmtHora } = await import('../../../lib/scheduling/recordatorios');
+        const tel = telefonoWhatsApp(current.invitee_whatsapp);
+        const { data: pl } = await supabase.from('wa_plantillas')
+          .select('status').eq('nombre', 'reunion_no_llegaste').eq('idioma', 'es_MX').maybeSingle();
+        if (tel && pl?.status === 'APPROVED') {
+          await enviarPlantilla(tel, 'reunion_no_llegaste', 'es_MX', [
+            String(current.invitee_nombre || '').split(' ')[0] || 'hola',
+            evento,
+            `${fmtFechaLarga(current.fecha)} a las ${fmtHora(String(current.hora_inicio))}`,
+            reagendarUrl,
+          ]);
+        } else {
+          /* Si la plantilla no está aprobada, se DICE. Antes esto fallaba en
+             silencio y el no-show se quedaba sin seguimiento sin que nadie
+             supiera que había un seguimiento. */
+          await supabase.from('crm_notificaciones').insert({
+            tipo: 'agenda_noshow_sin_plantilla', nivel: 'alerta',
+            titulo: `No se pudo escribirle a ${current.invitee_nombre || 'quien no llegó'}`,
+            detalle: 'La plantilla «reunion_no_llegaste» no está aprobada por Meta, así que el seguimiento del no-show no salió por WhatsApp. El correo sí.',
+            destino: 'agenda', metadata: { booking_id: current.id },
+          });
+        }
       }
     } catch { /* no bloquear el marcado */ }
 

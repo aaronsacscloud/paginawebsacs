@@ -14,7 +14,11 @@ export const GET: APIRoute = async ({ url }) => {
     .from('bookings')
     .select('hora_inicio, fecha, estado')
     .gte('fecha', ninetyDaysAgo)
-    .in('estado', ['realizada', 'no_show']);
+    /* `asistio`/`no_asistio` es el vocabulario que la base GUARDA (medido:
+       27 y 3; cero de `realizada`/`no_show`). Con los literales viejos este
+       endpoint leía cero historia y todos los horarios puntuaban igual — o
+       sea que la inteligencia que promete no existía. */
+    .in('estado', ['asistio', 'no_asistio']);
 
   // Count completions by hour
   const hourCounts: Record<string, { total: number; realized: number }> = {};
@@ -24,12 +28,12 @@ export const GET: APIRoute = async ({ url }) => {
     const hour = b.hora_inicio?.slice(0, 2) || '09';
     if (!hourCounts[hour]) hourCounts[hour] = { total: 0, realized: 0 };
     hourCounts[hour].total++;
-    if (b.estado === 'realizada') hourCounts[hour].realized++;
+    if (b.estado === 'asistio') hourCounts[hour].realized++;
 
     const dow = new Date(b.fecha + 'T12:00:00').getDay();
     if (!dayCounts[dow]) dayCounts[dow] = { total: 0, realized: 0 };
     dayCounts[dow].total++;
-    if (b.estado === 'realizada') dayCounts[dow].realized++;
+    if (b.estado === 'asistio') dayCounts[dow].realized++;
   }
 
   // Find best hours and days by completion rate

@@ -59,13 +59,20 @@ try {
       .maybeSingle();
     eventType = data;
 
-    if (eventType?.owner_id) {
-      const { data: host } = await supabase
-        .from('team_members')
-        .select('nombre, email')
-        .eq('id', eventType.owner_id)
-        .single();
-      if (host) eventType.team_members = host;
+    /* En un link PERSONAL da la cara la persona del link, no la del tipo de
+       evento. El override `anfitrion_nombre` sirve para la página general
+       —donde no hay nadie en particular— pero aquí haría que el link de un
+       vendedor mostrara el nombre de otro, que es lo contrario de para qué
+       existe un link personal. Se pisa a propósito. */
+    const { data: host } = await supabase
+      .from('team_members')
+      .select('nombre, email, foto_url')
+      .eq('id', teamMemberId)
+      .maybeSingle();
+    if (host) {
+      eventType.team_members = host;
+      eventType.anfitrion_nombre = host.nombre;
+      eventType.anfitrion_foto = (host as any).foto_url || null;
     }
 
     if (eventType) {

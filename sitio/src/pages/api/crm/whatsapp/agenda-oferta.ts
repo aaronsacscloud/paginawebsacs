@@ -91,11 +91,23 @@ export const POST: APIRoute = async ({ request }) => {
     .then(r => r.json()).catch(() => null);
   if (!libres || libres.error) return json({ error: libres?.error || 'No se pudo leer la agenda' }, 502);
 
-  // Máximo 2 por día para que la lista ofrezca DÍAS distintos y no diez horas
-  // del mismo martes; tope de 10, que es el límite de Meta.
+  /* Los horarios se eligen por la HISTORIA, no por el orden del calendario.
+     Antes se mandaban los primeros libres de cada día: eso ordena por la
+     comodidad de la agenda y no por la probabilidad de que la reunión de
+     verdad ocurra. Con poca historia todo empata y vuelve a mandar la
+     cercanía, que es el criterio anterior.
+     Sigue el tope de 2 por día —para ofrecer DÍAS distintos y no diez horas
+     del mismo martes— y el de 10, que es el límite de Meta. */
+  const { puntajesHistoricos, puntuar } = await import('../../../../lib/scheduling/mejores-horarios');
+  const pts = await puntajesHistoricos();
   const opciones: { n: number; fecha: string; hora: string }[] = [];
   for (const fecha of Object.keys(libres.dates || {}).sort()) {
-    const horas: string[] = (libres.dates[fecha] || []).slice(0, 2);
+    const horas: string[] = [...(libres.dates[fecha] || [])]
+      .sort((a: string, b: string) => puntuar(pts, fecha, b) - puntuar(pts, fecha, a))
+      .slice(0, 2)
+      /* Dentro del día se reordenan por hora: una lista que salta de 5 p.m. a
+         10 a.m. se lee como desorden aunque el puntaje lo justifique. */
+      .sort();
     for (const hora of horas) {
       if (opciones.length >= 10) break;
       opciones.push({ n: opciones.length + 1, fecha, hora: String(hora).slice(0, 5) });

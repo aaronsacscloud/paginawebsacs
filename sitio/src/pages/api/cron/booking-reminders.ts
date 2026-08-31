@@ -261,5 +261,30 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
-  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  /* ══ LO QUE PASÓ Y NADIE MARCÓ ══
+     Todo lo del no-show cuelga de que alguien ponga «asistió» o «no asistió»:
+     el seguimiento automático, el conteo de inasistencias del tipo de evento y
+     la métrica de si los recordatorios sirven. Si nadie marca, las tres cosas
+     se apagan solas y en silencio, y la agenda se ve llena de reuniones
+     «confirmadas» que ya ocurrieron. Tres horas después de terminar, se pide
+     el veredicto. */
+  const limite = new Date(now - MX_OFFSET_MS - 3 * 3600e3);
+  const fLim = limite.toISOString().slice(0, 10);
+  const hLim = limite.toISOString().slice(11, 16);
+  const { data: pendientes } = await supabase.from('bookings')
+    .select('id, fecha, hora_inicio, invitee_nombre, company_id, event_types(nombre)')
+    .in('estado', ['confirmada', 'agendada'])
+    .or(`fecha.lt.${fLim},and(fecha.eq.${fLim},hora_inicio.lt.${hLim})`)
+    .gte('fecha', new Date(now - MX_OFFSET_MS - 30 * 86400000).toISOString().slice(0, 10))
+    .order('fecha', { ascending: false }).limit(200);
+
+  let sinMarcar = 0;
+  for (const b of (pendientes || []) as any[]) {
+    sinMarcar++;
+    await avisarFalla(b, `¿Llegó ${b.invitee_nombre || 'el cliente'}?`,
+      `La ${b.event_types?.nombre || 'reunión'} del ${b.fecha} a las ${b.hora_inicio?.slice(0, 5)} ya pasó y sigue sin marcarse. Sin eso no sale el seguimiento ni cuenta como inasistencia.`,
+      'agenda_sin_marcar');
+  }
+
+  return new Response(JSON.stringify({ ...out, sin_marcar: sinMarcar }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };

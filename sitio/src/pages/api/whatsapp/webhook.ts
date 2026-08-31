@@ -102,6 +102,21 @@ export const POST: APIRoute = async ({ request, url }) => {
           agendarDesdeRespuesta({ idRespuesta: String(p.metadata.id), telefono, conversationId: r.conversationId || null, base })
             .catch(e => console.warn('[wa-agenda]', e));
         }
+        /* ── El cliente tocó «Reagendar» en un recordatorio ──────────────
+           Los botones de una plantilla llegan como un mensaje de texto con el
+           texto del botón, nada más: sin esto, «Reagendar» caía en el inbox y
+           ahí moría. Quien lo toca está diciendo que sí quiere la reunión —es
+           de las señales más fuertes que da un lead— y merece la liga en el
+           acto, no cuando alguien lea el chat. */
+        if (entrante && r.inserted && r.conversationId) {
+          const t = String(p.cuerpo || '').trim().toLowerCase();
+          if (/^(reagendar|quiero reagendar)$/.test(t)) {
+            (async () => {
+              const { ligaParaReagendar } = await import('../../../lib/scheduling/reagendar-wa');
+              await ligaParaReagendar(String(r.conversationId), telefono);
+            })().catch(e => console.warn('[wa-reagendar]', e));
+          }
+        }
         if (entrante && r.inserted && r.conversationId) {
           // Automatización (bienvenida / fuera de horario / round-robin): SOLO
           // entrantes NUEVOS — un replay o un saliente jamás la disparan.
