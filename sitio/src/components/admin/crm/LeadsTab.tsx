@@ -573,13 +573,13 @@ export default function LeadsTab() {
   /* Llamadas se decide con los datos a la vista, no con la pestaña: si en esta
      vista nadie ha llamado a nadie, la columna es una fila de guiones. */
   const verLlamadas = useMemo(() => (listaBase || []).some((c: any) => (c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0) > 0), [listaBase]);
-  const nCols = 10 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0) + (verReunion ? 1 : 0) + (verLlamadas ? 1 : 0);
+  const nCols = 9 + (verEtapa ? 1 : 0) + (verEstatus ? 1 : 0) + (verReunion ? 1 : 0) + (verLlamadas ? 1 : 0);
   /* La suma EXACTA de los anchos declarados. Si el mínimo es mayor, el
      navegador reparte el sobrante entre todas y los `left` de las columnas
      congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
      con puntos suspensivos empieza a morder donde no debe. */
 
-  const anchoTabla = 1230 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
+  const anchoTabla = 1138 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
 
   /* El rótulo ES el botón, y lleva el MISMO indicador que el datatable
@@ -1622,7 +1622,10 @@ export default function LeadsTab() {
                   {verEstatus && <th scope="col" className="ord" aria-sort={ordenCol?.k === 'estatus' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 116, padding: 0 }}><Rot k="estatus">Estatus</Rot></th>}
                   {verReunion && <th scope="col" className="ord" aria-sort={ordenCol?.k === 'reunion' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 96, padding: 0 }}><Rot k="reunion">Reunión</Rot></th>}
                   {verLlamadas && <th scope="col" className="num ord" aria-sort={ordenCol?.k === 'llamadas' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 92, padding: 0 }}><Rot k="llamadas" num>Llamadas</Rot></th>}
-                  <th scope="col" className="derecha" style={{ ...S.th, width: 92 }}><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Acciones</span></th>
+                  {/* La columna de acciones se QUITÓ: 92 px congelados a la
+                      derecha que en reposo solo enseñaban un ⋮ por fila. Ahora
+                      la fila entera abre la ficha —igual que en Churn— y el
+                      menú sigue ahí con clic derecho. */}
                 </tr>
               </thead>
               <tbody>
@@ -1636,7 +1639,10 @@ export default function LeadsTab() {
                   const et = ETAPA_DE(c.lifecycle_stage);
                   return (
                     <Fragment key={c.id}>
-                    <tr className={sel.has(c.id) ? 'sel' : undefined}>
+                    <tr className={sel.has(c.id) ? 'sel' : undefined}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setVerContacto(c.id)}
+                      onContextMenu={e => { e.preventDefault(); setMenu({ c, x: e.clientX, y: e.clientY }); }}>
                       {/* Cuándo entró a SACS. Lo de hoy se marca para que la
                           bandeja del día se lea sin contar renglones. */}
                       <td className="fija0" style={S.td} onClick={e => e.stopPropagation()}>
@@ -1699,8 +1705,21 @@ export default function LeadsTab() {
                           {[c.nombre, c.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                         </button>
                         {c.historial && (() => {
+                          /* Era una PASTILLA en mayúsculas debajo del nombre.
+                             «VOLVIÓ A ESCRIBIR» en versalitas y con fondo pesaba
+                             más que el nombre del lead —el dato principal de la
+                             fila—, medía casi el ancho de la columna y volvía la
+                             fila de tres renglones. Ahora es un punto de color y
+                             el texto en la misma voz que la segunda línea del
+                             resto de la tabla: se ve, no grita, y no ensancha
+                             nada porque se recorta con el resto. */
                           const h = HISTORIAL_ETIQUETA[c.historial.tipo as keyof typeof HISTORIAL_ETIQUETA];
-                          return <span title={c.historial.titulo} style={{ display: 'inline-block', marginTop: 3, fontSize: '0.55rem', fontWeight: 800, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '.05em', background: h.bg, color: h.fg }}>{h.label}</span>;
+                          return (
+                            <div title={c.historial.titulo} style={{ ...S.dato2, color: h.fg, display: 'flex', alignItems: 'center', gap: 5, marginTop: 1, minWidth: 0 }}>
+                              <span aria-hidden="true" style={{ width: 5, height: 5, borderRadius: 99, background: h.fg, flexShrink: 0 }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.label}</span>
+                            </div>
+                          );
                         })()}
                         {/* La alerta de la prueba viaja pegada al nombre, no en
                             una columna suya: es un reloj corriendo y tiene que
@@ -1909,25 +1928,6 @@ export default function LeadsTab() {
                           "Calificar" y "No le interesa". Ahora está en la fila,
                           tenue hasta que el cursor pasa por encima para no
                           ensuciar el barrido. */}
-                      <td className="derecha" style={{ ...S.td, padding: '9px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        {tel && (
-                          <a className="crm-fila-wa" href={waLink(tel)} target="_blank" rel="noreferrer"
-                            title={`Escribir por WhatsApp a ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
-                            aria-label="Escribir por WhatsApp"
-                            onClick={e => e.stopPropagation()}
-                            style={{ width: 26, height: 26, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#1E8A63', verticalAlign: 'middle', marginRight: 2 }}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
-                              <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.2A8.5 8.5 0 1121 11.5z" strokeLinejoin="round" />
-                            </svg>
-                          </a>
-                        )}
-                        <button aria-label={`Acciones de ${[c.nombre, c.apellido].filter(Boolean).join(' ') || 'este lead'}`}
-                          onClick={e => {
-                            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            setMenu(menu?.c?.id === c.id ? null : { c, x: r.right, y: r.bottom });
-                          }}
-                          style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: menu?.c?.id === c.id ? '#f6f4fb' : 'none', color: menu?.c?.id === c.id ? '#5B4BD6' : '#6B6A76', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>⋮</button>
-                      </td>
                     </tr>
                     </Fragment>
                   );
