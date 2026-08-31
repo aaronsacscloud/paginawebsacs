@@ -9,11 +9,15 @@
  * entró como si ESTÁ USANDO EL SISTEMA. Una gracia de 30 días con el sistema
  * en cero ya fracasó, y eso se tiene que ver desde la lista, sin abrir nada.
  */
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
+import Cargando from './ui/Cargando';
 import { CSS_TABLA, T } from '../../../lib/crm/tabla.estilo';
 import { ETAPAS, ETAPA, MOTIVOS, MOTIVO, diasDeGracia, saludDeGracia, type Etapa } from '../../../lib/crm/churn.reglas';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import ChurnCaso from './ChurnCaso';
+// El drawer del cliente pesa: se trae solo cuando se abre una cuenta de «Por cancelar».
+const ClienteDrawer360 = lazySeguro(() => import('./ClienteDrawer360'));
 
 const dinero = (n: any) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const diasDesde = (iso?: string | null) => iso ? Math.floor((Date.now() - Date.parse(iso)) / 86400000) : null;
@@ -33,6 +37,10 @@ const PESTANAS: { id: string; l: string }[] = [
   { id: 'irrecuperable', l: 'Irrecuperables' },
   // No son «todos»: los cerrados tienen su pestaña. Llamarlo Todos mentía.
   { id: 'todos', l: 'Abiertos' },
+  /* Los que TODAVÍA NO cancelan. No son casos de churn —son cobranza— pero se
+     analizan desde aquí porque conciliar antes cuesta menos que rescatar
+     después. Van al final: primero lo que ya se perdió. */
+  { id: 'por_cancelar', l: 'Por cancelar' },
 ];
 
 /* El semáforo del uso real. Es la columna que justifica el módulo: sale del
@@ -58,6 +66,11 @@ export default function ChurnTab() {
   const [equipo, setEquipo] = useState<any[]>([]);
   const [orden, setOrden] = useState<'mrr' | 'reciente'>('mrr');
   const [alta, setAlta] = useState(false);
+  // Las cuentas vencidas que aún no cancelan, para la pestaña «Por cancelar».
+  const [porCaer, setPorCaer] = useState<any[]>([]);
+  // Se abren con el drawer del CLIENTE, no con la ficha de caso: todavía son
+  // clientes, no un caso de churn.
+  const [clienteAbierto, setClienteAbierto] = useState<string | null>(null);
   const [verTablero, setVerTablero] = useState(false);
   const [tab, setTab] = useState<any>(null);
   useEffect(() => {
@@ -75,6 +88,7 @@ export default function ChurnTab() {
       .then(j => {
         if (j?.error) { setErrorCarga(j.error); setFilas([]); return; }
         setErrorCarga(''); setFilas(j.data || []); setCuenta(j.cuenta || {}); setKpis(j.kpis || {}); setEquipo(j.equipo || []);
+        setPorCaer(j.por_caer || []);
       })
       .catch(() => { setErrorCarga('No se pudo cargar la lista.'); setFilas([]); });
   };
@@ -207,32 +221,16 @@ export default function ChurnTab() {
         <K v={kpis.gracia_vencida || 0} l="Gracias vencidas" sub="sin decidir" tono={kpis.gracia_vencida ? 'rojo' : undefined} />
       </div>
 
-      {/* Los vencidos NO son churn —eso es cobranza— pero conciliar ANTES de
-          que cancelen es más barato que rescatar después, así que se ven aquí:
-          es la única cifra de la pantalla que habla de gente que todavía no se
-          ha ido. */}
-      {kpis.por_caer > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FFF8EC',
-          border: '1px solid #f2e3c8', borderRadius: 12, padding: '11px 15px', marginBottom: 14 }}>
-          <b style={{ color: '#a06600', fontSize: '0.86rem' }}>{kpis.por_caer} cuentas por caer</b>
-          <span style={{ fontSize: '0.82rem', color: '#7a5a2a' }}>
-            {/* El monto solo si lo sabemos: medido, ninguna de las 23 vencidas
-                tiene MRR ni en la empresa ni en una sub viva, y pintar «$0 de
-                ARR vencido» sería decir que no hay nada en riesgo. */}
-            {kpis.por_caer_mrr > 0 ? `${dinero(alAnio(kpis.por_caer_mrr))} de ARR vencido. ` : ''}
-            Todavía no cancelan: conciliar hoy cuesta menos que rescatar después.
-          </span>
-          <a href="/admin/crm?tab=pagos&vista=recuperacion" style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 700, color: '#a06600' }}>Ver cobranza ›</a>
-        </div>
-      )}
-
       {/* Pestañas subrayadas con el contador en pastilla, como Cotizaciones. En
           píldoras y con las acciones metidas en la misma fila, «+ Alta manual»
           se leía como una pestaña más. En cero el contador va tenue: una
           pestaña vacía no debe invitar al clic. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e8eaee', overflowX: 'auto', flexWrap: 'nowrap' }}>
         {PESTANAS.map(p => {
-          const on = etapa === p.id; const n = cuenta[p.id] ?? 0;
+          const on = etapa === p.id;
+          // «Por cancelar» no vive en `cuenta` (esa cuenta casos de churn):
+          // su número es el de las cuentas vencidas.
+          const n = p.id === 'por_cancelar' ? (kpis.por_caer || 0) : (cuenta[p.id] ?? 0);
           return (
             <button key={p.id} onClick={() => setEtapa(p.id)} style={{
               background: 'none', border: 'none', borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
@@ -265,6 +263,14 @@ export default function ChurnTab() {
           <b>No se pudo cargar Churn.</b><div style={{ fontSize: '0.85rem', marginTop: 4 }}>{errorCarga}</div>
         </div>
       ) : verTablero ? <Tablero d={tab} />
+      : etapa === 'por_cancelar' ? (
+        /* Otra tabla, porque son otra cosa: no hay caso, no hay etapa y no hay
+           motivo de baja —todavía no se van—. Lo que sí hay, y es lo que se
+           analiza, es desde cuándo no venden. El dinero NO se pinta: medido,
+           ninguna de las 23 tiene precio ni en la empresa ni en una sub viva, y
+           una columna de ceros diría que no hay nada en riesgo. */
+        <PorCancelar filas={porCaer} busca={busca} onAbrir={setClienteAbierto} />
+      )
       : filas === null ? <div style={{ padding: 40, color: '#8e88a8' }}>Cargando…</div>
       : lista.length === 0 ? (
         <div style={{ padding: '46px 20px', textAlign: 'center', color: '#71707C', background: '#fff',
@@ -323,7 +329,8 @@ export default function ChurnTab() {
                 const tel = c._tel || null;
                 return (
                   <Fragment key={c.id}>
-                  <tr className={sel.has(c.id) ? 'sel' : undefined}>
+                  <tr className={sel.has(c.id) ? 'sel' : undefined} onClick={() => setAbierto(c.id)}
+                    style={{ cursor: 'pointer' }}>
                     <td className="fija0" style={T.td} onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={sel.has(c.id)}
                         aria-label={`Seleccionar a ${emp.nombre || 'este cliente'}`}
@@ -411,9 +418,7 @@ export default function ChurnTab() {
                             <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3 21l2.2-5.2A8.5 8.5 0 1121 11.5z" strokeLinejoin="round" /></svg>
                         </a>
                       )}
-                      <button aria-label={`Abrir el caso de ${emp.nombre || 'este cliente'}`} onClick={() => setAbierto(c.id)}
-                        style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid transparent', background: 'none',
-                          color: '#6B6A76', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'inherit' }}>›</button>
+
                     </td>
                   </tr>
                   </Fragment>
@@ -442,6 +447,14 @@ export default function ChurnTab() {
 
       {alta && <AltaManual equipo={equipo} onCerrar={() => setAlta(false)} onHecho={(id: string) => { setAlta(false); cargar(); setAbierto(id); }} />}
       {abierto && <ChurnCaso id={abierto} onCerrar={() => setAbierto(null)} onCambio={cargar} />}
+      {/* Las cuentas de «Por cancelar» se abren con el MISMO drawer de Clientes:
+          siguen siendo clientes, no un caso de churn, y así el detalle se lee
+          igual que en su pantalla de siempre. */}
+      {clienteAbierto && (
+        <Suspense fallback={<Cargando texto="Cargando cliente…" alto={260} />}>
+          <ClienteDrawer360 companyId={clienteAbierto} onClose={() => setClienteAbierto(null)} onChanged={cargar} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -514,6 +527,83 @@ function ChurnMovil({ lista, etapa, setEtapa, cuenta, kpis, abierto, setAbierto,
 }
 
 /* ── El tablero: de qué nos morimos y cuánto recuperamos ───────────────── */
+/* ── «Por cancelar»: las que están vencidas y todavía no se van ────────────
+   Se ven aquí porque conciliar hoy cuesta menos que rescatar después, pero no
+   son casos: se abren con el drawer del CLIENTE, que es lo que siguen siendo.
+   La columna que decide es «sin vender», no el dinero: estas cuentas no traen
+   precio en la empresa ni en una sub viva, y una columna de ceros diría que no
+   hay nada en riesgo. */
+function PorCancelar({ filas, busca, onAbrir }: { filas: any[]; busca: string; onAbrir: (id: string) => void }) {
+  const t = busca.trim().toLowerCase();
+  const vistas = !t ? filas : filas.filter((c: any) =>
+    `${c.nombre_comercial || ''} ${c.nombre || ''} ${c.sacs_account || ''}`.toLowerCase().includes(t));
+
+  if (!vistas.length) return (
+    <div style={{ padding: '46px 20px', textAlign: 'center', color: '#71707C', background: '#fff', border: '1px solid #eae7f2', borderRadius: 14 }}>
+      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#241d43' }}>Ninguna cuenta vencida.</div>
+      <div style={{ fontSize: '0.83rem', marginTop: 4 }}>Nadie está a punto de caerse por falta de pago.</div>
+    </div>
+  );
+
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#FFF8EC',
+        border: '1px solid #f2e3c8', borderRadius: 12, padding: '11px 15px', marginBottom: 12 }}>
+        <span style={{ fontSize: '0.82rem', color: '#7a5a2a' }}>
+          Estas <b>{filas.length}</b> todavía no cancelan: están vencidas de pago. Conciliar hoy cuesta menos que rescatar después.
+        </span>
+        <a href="/admin/crm?tab=pagos&vista=recuperacion" style={{ marginLeft: 'auto', fontSize: '0.8rem', fontWeight: 700, color: '#a06600' }}>Ver cobranza ›</a>
+      </div>
+
+      <div className="reja" style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+            <thead><tr>
+              <th scope="col" style={{ ...T.th, width: 240 }}>Cliente</th>
+              <th scope="col" style={{ ...T.th, width: 150 }}>Sin vender</th>
+              <th scope="col" style={{ ...T.th, width: 130 }}>Última venta</th>
+              <th scope="col" style={{ ...T.th, width: 130 }}>Plan</th>
+            </tr></thead>
+            <tbody>
+              {vistas.map((c: any) => {
+                const d = c.dias_sin_venta;
+                /* El color solo donde significa: a partir de 15 días sin vender
+                   una cuenta vencida es la que de verdad se está yendo. */
+                const grave = d != null && d >= 15;
+                return (
+                  <tr key={c.id} onClick={() => onAbrir(c.id)} style={{ cursor: 'pointer' }}>
+                    <td style={T.td}>
+                      <span className="crm-fila-nom" style={{ ...T.nombre, display: 'block' }}>{c.nombre_comercial || c.nombre || 'Sin nombre'}</span>
+                      <span style={{ ...T.sub, display: 'block' }}>
+                        {c.sacs_account || '—'}{c.sucursales ? ` · ${c.sucursales} ${c.sucursales === 1 ? 'sucursal' : 'sucursales'}` : ''}
+                      </span>
+                    </td>
+                    <td style={T.td}>
+                      {d == null ? <span style={T.vacio}>sin datos</span> : (
+                        <span style={{ fontWeight: 700, color: grave ? '#C0554E' : d >= 3 ? '#a06600' : '#241d43' }}>
+                          {d === 0 ? 'vendió hoy' : `${d} ${d === 1 ? 'día' : 'días'}`}
+                        </span>
+                      )}
+                    </td>
+                    <td style={T.td}>
+                      {c.ultima_venta_at
+                        ? <span style={{ ...T.dato2, color: '#62606C' }}>{fechaCorta(c.ultima_venta_at)}</span>
+                        : <span style={T.vacio}>nunca</span>}
+                    </td>
+                    <td style={T.td}>
+                      {c.plan ? <span style={{ ...T.dato2, color: '#62606C' }}>{c.plan}</span> : <span style={T.vacio}>—</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function Tablero({ d }: { d: any }) {
   if (!d) return <div style={{ padding: 40, color: '#8e88a8' }}>Cargando el tablero…</div>;
   const caja: any = { background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 18, marginBottom: 14 };

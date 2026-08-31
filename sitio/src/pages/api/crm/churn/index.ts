@@ -86,15 +86,22 @@ export const GET: APIRoute = async ({ request, url }) => {
      cancelación es más barato que rescatar después. Es la única cifra de la
      pantalla que habla de gente que todavía no se ha ido. */
   const { data: porCaer } = await supabase.from('companies')
-    .select('id, nombre, mrr, dias_sin_venta').eq('estado_cuenta', 'vencido').is('archived_at', null);
+    .select('id, nombre, nombre_comercial, sacs_account, mrr, arr, dias_sin_venta, fecha_renovacion, ultima_venta_at, plan, sucursales')
+    .eq('estado_cuenta', 'vencido').is('archived_at', null);
 
   // Los dueños posibles, para el select del caso: se mandan con la lista para
   // no pedir otra cosa al abrir cada caso.
   const { data: equipo } = await supabase.from('team_members')
     .select('id, nombre').eq('activo', true).order('nombre');
 
+  // La lista, no solo el conteo: estas cuentas tienen su propia pestaña («Por
+  // cancelar») y ahí hay que poder verlas una por una. Se ordenan por lo que
+  // más duele, que es a quién llamar primero.
+  const porCaerLista = [...(porCaer || [])].sort((a: any, b: any) => Number(b.mrr || 0) - Number(a.mrr || 0));
+
   return json({
     data: filas,
+    por_caer: porCaerLista,
     cuenta,
     kpis: {
       mrr_en_rescate: Math.round(mrrEnRescate),

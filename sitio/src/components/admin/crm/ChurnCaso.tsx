@@ -87,7 +87,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
 
   return (
     <>
-      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.32)', zIndex: 900 }} />
+      <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(12,11,18,.55)', zIndex: 900 }} />
       {/* `crm-sheet` es lo que engancha el modo oscuro del CRM: sin esa clase,
           el caso salía como un panel BLANCO a pantalla completa encima de una
           app en oscuro. Y en el teléfono sube desde abajo, no entra por la
@@ -97,38 +97,53 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
         borderRadius: '16px 16px 0 0', boxShadow: '0 -12px 40px rgba(16,24,40,.22)', zIndex: 901,
         display: 'flex', flexDirection: 'column', overflowY: 'auto',
       } : {
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(560px, 96vw)', background: '#FBFAFF',
-        borderLeft: '1px solid #eae7f2', boxShadow: '-14px 0 44px rgba(16,24,40,.16)', zIndex: 901,
+        /* Mismo ancho y mismo fondo que la ficha de Clientes: a 560 px todo
+           caía en una columna angosta y larguísima, y la misma información se
+           leía como otra pantalla distinta. */
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(1240px, 97vw)', background: '#fafafa',
+        boxShadow: '-12px 0 40px rgba(0,0,0,.18)', zIndex: 901,
         display: 'flex', flexDirection: 'column', overflowY: 'auto',
       }}>
         {!d ? <div style={{ padding: 30, color: '#8e88a8' }}>Cargando…</div> : !caso ? <div style={{ padding: 30 }}>No existe ese caso.</div> : (<>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '18px 20px 12px', borderBottom: '1px solid #f0eef7', background: '#fff' }}>
+          {/* Cabecera de la ficha de Clientes: pegada arriba, nombre grande,
+              una línea de identidad debajo y las acciones a la derecha —no
+              sueltas en su propio renglón, que las hacía competir con las
+              decisiones del caso—. */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec',
+            display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 22px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.01em' }}>{emp.nombre || 'Sin nombre'}</div>
-              <div style={{ fontSize: '0.79rem', color: '#71707C', marginTop: 2 }}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#241d43', letterSpacing: '-.01em' }}>{emp.nombre || 'Sin nombre'}</div>
+              <div style={{ fontSize: '0.8rem', color: '#71707C', marginTop: 3 }}>
                 {dinero((Number(caso.mrr_perdido) || 0) * 12)} de ARR · canceló {String(caso.detectado_at || '').slice(0, 10)}
                 {caso.fecha_estimada && <span title="El registro vino de Excel sin fecha de cancelación"> (estimada)</span>}
                 {caso.episodio > 1 && <b style={{ color: '#C0554E' }}> · {caso.episodio}ª vez</b>}
               </div>
             </div>
+            {caso.companies?.id && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+                <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(d.tel || ''))}&wa_nuevo=1`}
+                  style={{ ...btn('#fff', '#1E8A63'), textDecoration: 'none', display: 'inline-block' }}>WhatsApp</a>
+                <a href={`/admin/crm?tab=cotizaciones&nueva=1&company=${caso.company_id}`}
+                  style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Cotizar</a>
+                <a href={`/admin/crm?tab=reuniones&nueva=1&company=${caso.company_id}`}
+                  style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Agendar</a>
+              </div>
+            )}
             <button onClick={onCerrar} aria-label="Cerrar" style={{ border: 'none', background: 'none', cursor: 'pointer',
-              color: '#8e88a8', width: 32, height: 32, borderRadius: 8, fontSize: '1.1rem' }}>✕</button>
+              color: '#8e88a8', width: 32, height: 32, borderRadius: 8, fontSize: '1.1rem', flexShrink: 0 }}>✕</button>
           </div>
 
-          {/* Escribirle desde aquí: el rescate se hace hablando, y salir a
-              buscar el hilo a mano es donde se pierde la intención. */}
-          {(caso.companies?.id) && (
-            <div style={{ display: 'flex', gap: 8, padding: '10px 20px 0', flexWrap: 'wrap' }}>
-              <a href={`/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(d.tel || ''))}&wa_nuevo=1`}
-                style={{ ...btn('#1E8A63'), textDecoration: 'none', display: 'inline-block' }}>WhatsApp</a>
-              <a href={`/admin/crm?tab=cotizaciones&nueva=1&company=${caso.company_id}`}
-                style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Cotizar</a>
-              <a href={`/admin/crm?tab=reuniones&nueva=1&company=${caso.company_id}`}
-                style={{ ...btn('#fff', '#5B4BD6'), textDecoration: 'none', display: 'inline-block' }}>Agendar</a>
-            </div>
-          )}
-
-          <div style={{ padding: 18 }}>
+          {/* A 1240 px una sola columna deja media pantalla en blanco y obliga a
+              bajar por todo para ver el uso. Dos columnas: a la izquierda el
+              caso y lo que hay que decidir, a la derecha el contexto que
+              sustenta la decisión. En pantallas chicas se apilan solas. */}
+          <div className="caso-reja" style={{ padding: 18 }}>
+            <style>{`
+              .caso-reja { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14; align-items: start; }
+              @media (min-width: 1080px) { .caso-reja { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; } }
+              .caso-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+            `}</style>
+            <div className="caso-col">
             {/* ── Bloque RESCATE ── */}
             <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
@@ -201,13 +216,13 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                     <button onClick={() => mover('conciliacion')} disabled={guardando} style={btn('#5B4BD6')}>Empezar conciliación</button>
                   )}
                   {(caso.etapa === 'detectado' || caso.etapa === 'conciliacion') && (
-                    <button onClick={() => setPidiendo('gracia')} style={btn('#7C6BF0')}>Pactar período de gracia</button>
+                    <button onClick={() => setPidiendo('gracia')} style={btn('#fff', '#5B4BD6')}>Pactar período de gracia</button>
                   )}
                   {caso.etapa === 'gracia' && (
                     <button onClick={() => setExtendiendo(true)} style={btn('#fff', '#5B4BD6')}>Extender la gracia</button>
                   )}
                   {['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (<>
-                    <button onClick={() => setPidiendo('recuperado')} style={btn('#1E8A63')}>Marcar recuperado</button>
+                    <button onClick={() => setPidiendo('recuperado')} style={btn('#fff', '#1E8A63')}>Marcar recuperado</button>
                     <button onClick={() => setPidiendo('irrecuperable')} style={btn('#fff', '#C0554E')}>Cerrar como perdido</button>
                   </>)}
                   {!['detectado', 'conciliacion', 'gracia'].includes(caso.etapa) && (
@@ -346,6 +361,9 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             )}
 
             <BloquePropuesta d={d} id={id} onCambio={() => { cargar(); onCambio(); }} />
+            </div>
+
+            <div className="caso-col">
             <BloqueUso caso={caso} emp={emp} />
             <BloqueCompromisos lista={d.compromisos || []} />
 
@@ -382,7 +400,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
             )}
 
             {/* ── La línea de tiempo: la MISMA de la ficha 360 ── */}
-            <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16, marginTop: 14 }}>
+            <div style={{ background: '#fff', border: '1px solid #eae7f2', borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.07em', color: '#8e88a8', marginBottom: 10 }}>
                 Todo lo que ha pasado con este cliente
               </div>
@@ -398,6 +416,7 @@ export default function ChurnCaso({ id, onCerrar, onCambio }: { id: string; onCe
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </>)}
