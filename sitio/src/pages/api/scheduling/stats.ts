@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { isPartner } from '../../../lib/scheduling/scope';
@@ -196,19 +197,38 @@ export const GET: APIRoute = async ({ request, url }) => {
   const recordatorios = await (async () => {
     const ids = (bookings || []).map((b: any) => b.id);
     if (!ids.length) return null;
-    const { data: avisos } = await supabase.from('activities')
-      .select('metadata').eq('tipo', 'sistema').not('metadata->>booking_recordatorio', 'is', null)
-      .in('metadata->>booking_id', ids);
-    const conAviso = new Set((avisos || []).map((a: any) => a?.metadata?.booking_id).filter(Boolean));
+    /* POR LOTES. Sin esto PostgREST corta en 1000 filas: con ~3 recordatorios
+       por reunión y hasta 3 canales cada uno son ~9 activities por reunión,
+       o sea que a partir de unas 110 reuniones el conjunto quedaba incompleto
+       y las que SÍ recibieron recordatorio se contaban como que no —sesgando
+       justo la comparación que este bloque existe para hacer—. Además, meter
+       cientos de ids en un solo `in` arma una URL que puede dar 414. */
+    const conAviso = new Set<string>();
+    let enviados = 0;
+    for (let i = 0; i < ids.length; i += 60) {
+      const { data: avisos } = await supabase.from('activities')
+        .select('metadata').eq('tipo', 'sistema').not('metadata->>booking_recordatorio', 'is', null)
+        .in('metadata->>booking_id', ids.slice(i, i + 60)).limit(1000);
+      for (const a of avisos || []) {
+        const id = (a as any)?.metadata?.booking_id;
+        if (id) { conAviso.add(id); enviados++; }
+      }
+    }
+    /* Por `normalizaEstado`, no por literales: la base guarda `asistio` y
+       `no_asistio`, no `realizada`/`no_show`. Comparando contra los literales
+       viejos el conjunto quedaba SIEMPRE vacío y la métrica devolvía null
+       para siempre — la pregunta que este bloque contesta no se podía
+       contestar nunca. */
     const tasa = (lista: any[]) => {
-      const cerradas = lista.filter(b => b.estado === 'realizada' || b.estado === 'no_show');
+      const cerradas = lista.map(b => normalizaEstado(b.estado))
+        .filter(e => e === 'asistio' || e === 'no_asistio');
       if (!cerradas.length) return null;
-      return Math.round((cerradas.filter(b => b.estado === 'no_show').length / cerradas.length) * 100);
+      return Math.round((cerradas.filter(e => e === 'no_asistio').length / cerradas.length) * 100);
     };
     const con = (bookings || []).filter((b: any) => conAviso.has(b.id));
     const sin = (bookings || []).filter((b: any) => !conAviso.has(b.id));
     return {
-      enviados: (avisos || []).length,
+      enviados,
       reuniones_con_recordatorio: con.length,
       reuniones_sin_recordatorio: sin.length,
       no_show_con: tasa(con),

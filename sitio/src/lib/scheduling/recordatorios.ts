@@ -48,10 +48,16 @@ export function leerRecordatorios(raw: any): Recordatorio[] {
     .map((r, i) => ({
       id: String(r.id || `r${i + 1}`),
       cantidad: Math.max(0, Number(r.cantidad) || 0),
-      unidad: (UNIDADES.some(u => u.v === r.unidad) ? r.unidad : 'minutos') as Unidad,
+      /* Una unidad que no reconocemos se DESCARTA (queda como null y el
+         filtro de abajo la tira). Degradarla a minutos era peor que fallar:
+         «5 semanas» se volvía «5 minutos» y el aviso salía cinco minutos
+         antes diciendo «5 minutos» — un recordatorio equivocado en vez de
+         ninguno. Pasa con datos que no vienen de la pantalla (SQL a mano,
+         importaciones). */
+      unidad: (UNIDADES.some(u => u.v === r.unidad) ? r.unidad : null) as Unidad,
       email: !!r.email, whatsapp: !!r.whatsapp, activo: true,
     }))
-    .filter(r => r.cantidad > 0)
+    .filter(r => r.cantidad > 0 && !!r.unidad)
     /* De mayor a menor anticipación: si dos caen en la misma corrida del cron,
        manda el más lejano — decir «falta 1 día» cuando ya faltan 3 horas es
        peor que no decir nada. */
@@ -131,6 +137,11 @@ export function textoWhatsApp(b: DatosReunion, anticipacion?: string): string {
 export function datosEmail(b: DatosReunion, anticipacion?: string) {
   return {
     nombre: b.invitee_nombre || '',
+    /* `fecha` a secas es lo que LEE la plantilla booking_reminder (asunto,
+       HTML y texto plano). Pasar solo `fecha_larga` dejaba el correo sin
+       fecha: «tu Demo es en 3 horas —  4:30 p.m.» y «📅  a las 4:30 p.m.».
+       Se mandan las dos para no depender de cuál lea la plantilla. */
+    fecha: fmtFechaLarga(b.fecha),
     evento: b.event_types?.nombre || 'reunión',
     anticipacion: anticipacion || '',
     cuando: anticipacion ? `en ${anticipacion}` : '',
@@ -174,8 +185,16 @@ export function horaLocalInvitado(b: DatosReunion & { timezone_invitado?: string
   if (!tz || tz === 'America/Mexico_City') return '';
   try {
     const d = new Date(inicioMs(b.fecha, b.hora_inicio));
-    const f = new Intl.DateTimeFormat('es-MX', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
-    return `${f.format(d)} en tu zona (${tz})`;
+    const hora = new Intl.DateTimeFormat('es-MX', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true }).format(d);
+    /* Con el DÍA cuando allá es otro. `timezone_invitado` lo llena el
+       navegador del que agenda, así que puede ser cualquier zona del mundo:
+       una reunión a las 8 p.m. de CDMX es la madrugada del día SIGUIENTE en
+       Madrid, y decir solo «4:00 a.m.» junto a una fecha de CDMX manda a
+       alguien el día equivocado. */
+    const diaCdmx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(d);
+    const diaAlla = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
+    const dia = diaAlla !== diaCdmx ? `${fmtFechaLarga(diaAlla)}, ` : '';
+    return `${dia}${hora} en tu zona (${tz})`;
   } catch { return ''; }
 }
 

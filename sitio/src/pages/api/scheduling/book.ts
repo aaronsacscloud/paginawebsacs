@@ -689,7 +689,7 @@ export const POST: APIRoute = async ({ request }) => {
         const [h, m] = hora_inicio.split(':').map(Number);
         const ampm = h >= 12 ? 'PM' : 'AM';
         const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-        return `${h12}:${String(m).padStart(2, '0')} ${ampm} (${TZ_ETIQUETA})`;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm} — ${TZ_ETIQUETA}`;
       })();
 
       // Build answers HTML
@@ -796,7 +796,7 @@ export const POST: APIRoute = async ({ request }) => {
       /* CON EL HUSO. Decía «4:30 PM» a secas: el cliente puede estar en
          Tijuana o en Cancún, que entre sí llevan dos horas de diferencia, y
          una hora sin huso es una reunión a la que alguien llega tarde. */
-      return `${h12}:${String(m).padStart(2, '0')} ${ampm} (${TZ_ETIQUETA})`;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm} — ${TZ_ETIQUETA}`;
     })();
 
     const tokenData = { nombre, empresa, fecha: fechaDisplay, hora: horaDisplay, duracion: eventType.duracion_minutos, meet_link: google_meet_link || '' };

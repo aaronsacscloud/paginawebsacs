@@ -42,8 +42,8 @@ es(leerRecordatorios([{ cantidad: 5, unidad: 'horas', email: false, whatsapp: fa
   'sin ningún canal no hay nada que enviar');
 es(leerRecordatorios([{ cantidad: 0, unidad: 'horas', email: true }]).length, 0,
   'cero de anticipación no es un recordatorio');
-es(leerRecordatorios([{ cantidad: 5, unidad: 'lunas', email: true }])[0].unidad, 'minutos',
-  'una unidad inventada cae en la más chica, no truena');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'lunas', email: true }]).length, 0,
+  'una unidad inventada NO se degrada a minutos: se descarta');
 
 // EL ORDEN: de mayor a menor anticipación. Si dos caen en la misma corrida,
 // manda el más lejano — decir «falta 1 día» cuando faltan 3 horas es peor
@@ -136,6 +136,31 @@ es(ph.length, 5, 'la plantilla del host lleva 5 parámetros');
 cierto(ph[2].includes('Ana Ruiz') && ph[2].includes('Boutique Mila'), 'el host ve con quién y de dónde');
 es(paramsHost({ ...b, google_meet_link: null } as any, '1 día')[4], 'sin liga de Meet todavía',
   'al host se le dice que falta la liga');
+
+// ── Lo que encontró el review, protegido para que no vuelva ──────────────
+import { datosEmail } from './recordatorios.ts';
+const de = datosEmail(b as any, '3 horas');
+// La plantilla booking_reminder lee `d.fecha`. Mandar solo `fecha_larga`
+// dejaba el correo SIN fecha: «es en 3 horas —  4:30 p.m.».
+cierto(!!de.fecha && de.fecha.includes('septiembre'), 'el correo lleva `fecha`, que es lo que lee la plantilla');
+cierto(!!de.fecha_larga, 'y también `fecha_larga`');
+cierto(de.zona.includes('CDMX'), 'el correo dice el huso');
+
+// Una unidad desconocida se DESCARTA, no degrada a minutos: «5 semanas» que
+// se vuelve «5 minutos» es un recordatorio equivocado, peor que ninguno.
+es(leerRecordatorios([{ cantidad: 5, unidad: 'semana', email: true }]).length, 0,
+  'unidad en singular: se descarta, no se degrada');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'lunas', email: true }]).length, 0,
+  'unidad inventada: se descarta');
+es(leerRecordatorios([{ cantidad: 5, unidad: 'semanas', email: true }])[0].unidad, 'semanas',
+  'la unidad correcta sí pasa');
+
+// La hora local sin el DÍA local manda a alguien el día equivocado cuando su
+// zona cruza la medianoche respecto a CDMX.
+const madrid = horaLocalInvitado({ ...b, hora_inicio: '20:00', timezone_invitado: 'Europe/Madrid' } as any);
+cierto(madrid.includes('jueves 3 de septiembre'), 'Madrid ve el día siguiente, y se le dice');
+cierto(!horaLocalInvitado({ ...b, timezone_invitado: 'America/Tijuana' } as any).includes('de septiembre'),
+  'dentro de México no se repite la fecha: es el mismo día');
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }

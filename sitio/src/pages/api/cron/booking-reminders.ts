@@ -29,15 +29,36 @@ export const prerender = false;
 /** Ancho de la ventana: la corrida (5 min) más un minuto de margen. */
 const VENTANA_MIN = 6;
 
+/** Tope explícito de la consulta. PostgREST corta en 1000 aunque no se pida. */
+const TOPE = 1000;
+
+/* Los hitos VIEJOS del cron anterior ('24h' de correo, '1h' de WhatsApp)
+   valen como el nuevo que ocupa su lugar. Sin esto, el día del despliegue una
+   reunión que ya recibió el correo de 24 h no tiene marcador `r1` y lo vuelve
+   a recibir: dos correos idénticos con menos de una hora de diferencia. */
+const HITOS_VIEJOS: Record<string, string[]> = { r1: ['24h'], r2: [], r3: ['1h'] };
+
 async function yaAvisado(bookingId: string, hito: string, canal: string): Promise<boolean> {
-  const { data } = await supabase.from('activities').select('id')
-    .contains('metadata', { booking_recordatorio: hito, booking_id: bookingId, canal })
-    .limit(1);
-  return !!(data && data.length);
+  for (const h of [hito, ...(HITOS_VIEJOS[hito] || [])]) {
+    const { data } = await supabase.from('activities').select('id')
+      .contains('metadata', { booking_recordatorio: h, booking_id: bookingId, canal })
+      .limit(1);
+    if (data && data.length) return true;
+  }
+  return false;
 }
 
-async function marcarAvisado(b: any, hito: string, canal: string, cuanto: string) {
-  await supabase.from('activities').insert({
+/**
+ * Marca el hito. Devuelve si de VERDAD quedó marcado.
+ *
+ * Es el único candado contra el doble envío —la ventana (6 min) es más ancha
+ * que la corrida (5 min) a propósito, para que ninguna se caiga entre dos—,
+ * así que si este insert falla y nadie lo mira, cinco minutos después el
+ * cliente recibe otra vez la misma plantilla y el mismo correo, y el cron
+ * reporta dos envíos buenos.
+ */
+async function marcarAvisado(b: any, hito: string, canal: string, cuanto: string): Promise<boolean> {
+  const { error } = await supabase.from('activities').insert({
     tipo: 'sistema',
     titulo: `Recordatorio de ${cuanto} antes enviado por ${canal}: ${b.invitee_nombre} — ${b.fecha} ${b.hora_inicio}`,
     contact_id: b.contact_id || null,
@@ -45,6 +66,7 @@ async function marcarAvisado(b: any, hito: string, canal: string, cuanto: string
     automatico: true,
     metadata: { booking_recordatorio: hito, booking_id: b.id, canal },
   });
+  return !error;
 }
 
 /** Lo que no salió tiene que verse. Uno por reunión y motivo, no por intento. */
@@ -66,9 +88,15 @@ export const GET: APIRoute = async ({ request }) => {
 
   const now = Date.now();
   const hoyMx = new Date(now - MX_OFFSET_MS).toISOString().slice(0, 10);
-  /* Cubre la anticipación más larga que alguien pueda configurar sin traerse
-     la agenda entera en cada corrida. */
-  const hastaMx = new Date(now - MX_OFFSET_MS + 30 * 86400000).toISOString().slice(0, 10);
+
+  /* El horizonte sale de la anticipación MÁS LARGA que esté configurada, no
+     de un número fijo. Con 30 días escritos a mano, un «5 semanas antes»
+     —que la pantalla deja poner— nunca disparaba: cuando la reunión entraba
+     a su ventana estaba a 35 días y la consulta solo miraba 30. Se
+     configuraba, se guardaba y no salía nada. */
+  const { data: tipos } = await supabase.from('event_types').select('recordatorios').is('archived_at', null);
+  const maxMin = Math.max(1440, ...(tipos || []).flatMap((t: any) => leerRecordatorios(t.recordatorios).map(aMinutos)));
+  const hastaMx = new Date(now - MX_OFFSET_MS + (maxMin + VENTANA_MIN) * 60000).toISOString().slice(0, 10);
 
   const { data: bookings, error } = await supabase.from('bookings')
     .select(`id, fecha, hora_inicio, estado, invitee_nombre, invitee_email, invitee_whatsapp, invitee_empresa,
@@ -77,7 +105,14 @@ export const GET: APIRoute = async ({ request }) => {
       contacts(wa_optout),
       event_types(nombre, duracion_minutos, recordatorios)`)
     .eq('estado', 'confirmada')
-    .gte('fecha', hoyMx).lte('fecha', hastaMx);
+    .gte('fecha', hoyMx).lte('fecha', hastaMx)
+    /* Orden y tope EXPLÍCITOS. PostgREST corta en 1000 filas por su cuenta y
+       sin decir nada: con más reuniones que eso, las de más allá no recibían
+       ningún recordatorio, sin error y sin aviso. Ahora el orden es por fecha
+       —lo más próximo primero, que es lo que urge— y si se llega al tope se
+       dice en la respuesta en vez de fingir que se revisó todo. */
+    .order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
+    .limit(TOPE);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   /* Una plantilla que Meta todavía no aprueba NO se puede mandar. Sin esta
@@ -85,12 +120,18 @@ export const GET: APIRoute = async ({ request }) => {
      aviso en la campana dice exactamente qué pasa y qué falta. Se consulta una
      vez por corrida, no por reunión. */
   const { data: plts } = await supabase.from('wa_plantillas')
-    .select('nombre, status').in('nombre', [PLANTILLA_CLIENTE, PLANTILLA_HOST]);
+    /* Con el IDIOMA: `wa_plantillas` es única por (nombre, idioma). Si
+       existiera `reunion_recordatorio` en 'es' aprobada y la de 'es_MX'
+       pendiente, la puerta abría y Meta tronaba con un 132001 — justo el
+       error que este candado quería evitar. */
+    .select('nombre, status').eq('idioma', IDIOMA_PLANTILLA).in('nombre', [PLANTILLA_CLIENTE, PLANTILLA_HOST]);
   const aprobada = (n: string) => (plts || []).some((p: any) => p.nombre === n && p.status === 'APPROVED');
   const okCliente = aprobada(PLANTILLA_CLIENTE);
   const okHost = aprobada(PLANTILLA_HOST);
 
   const out = {
+    horizonte_dias: Math.ceil(maxMin / 1440),
+    truncado: (bookings || []).length >= TOPE,
     plantilla_cliente: okCliente ? 'APPROVED' : 'no disponible',
     plantilla_host: okHost ? 'APPROVED' : 'no disponible',
     revisadas: (bookings || []).length,
@@ -110,15 +151,12 @@ export const GET: APIRoute = async ({ request }) => {
            llega a las 20 horas dice una hora que ya no es. */
         if (!(faltaMin >= en && faltaMin < en + VENTANA_MIN)) continue;
         const cuanto = etiqueta(r);
-
-        /* SIN LIGA DE MEET: el aviso sale igual —la hora es lo que importa—
-           pero el host se entera de que falta, que es quien puede ponerla. */
-        if (!b.google_meet_link) {
-          out.sin_liga++;
-          await avisarFalla(b, `Falta la liga de Meet: ${b.invitee_nombre}`,
-            `La reunión es en ${cuanto} (${cuandoLargo(b)}) y todavía no tiene liga. El recordatorio salió sin ella.`,
-            'agenda_sin_liga');
-        }
+        /* UNO por corrida, y como la lista viene de mayor a menor
+           anticipación, es el más lejano. Sin este corte, dos recordatorios a
+           menos de 6 minutos entre sí —«1 hora» y «55 minutos», o un «3
+           horas» duplicado como «180 minutos»— le llegaban los dos seguidos
+           al cliente. La bandera se levanta al final del bloque. */
+        let disparo = false;
 
         // ── Correo al cliente ──
         if (r.email && b.invitee_email && !(await yaAvisado(b.id, r.id, 'email'))) {
@@ -126,7 +164,16 @@ export const GET: APIRoute = async ({ request }) => {
             channel: 'email', to: b.invitee_email, template: 'booking_reminder',
             data: { ...datosEmail(b, cuanto), serie: etiquetaSerie(b) },
           });
-          if (res.ok) { await marcarAvisado(b, r.id, 'email', cuanto); out.correos++; }
+          if (res.ok) {
+            const marcado = await marcarAvisado(b, r.id, 'email', cuanto);
+            out.correos++; disparo = true;
+            if (!marcado) {
+              out.fallas++;
+              await avisarFalla(b, `Riesgo de recordatorio repetido: ${b.invitee_nombre}`,
+                `El correo de ${cuanto} antes salió, pero no se pudo dejar la marca que impide repetirlo. Puede volver a salir en la siguiente corrida.`,
+                'agenda_marca_falla');
+            }
+          }
           else {
             out.fallas++; out.errores.push(`${b.id} ${r.id} email: ${res.reason}`);
             await avisarFalla(b, `No salió el recordatorio de ${b.invitee_nombre}`,
@@ -152,7 +199,14 @@ export const GET: APIRoute = async ({ request }) => {
               try {
                 const params = paramsCliente(b, cuanto);
                 const rp = await enviarPlantilla(tel, PLANTILLA_CLIENTE, IDIOMA_PLANTILLA, params);
-                await marcarAvisado(b, r.id, 'whatsapp', cuanto); out.whatsapps++;
+                const marcado = await marcarAvisado(b, r.id, 'whatsapp', cuanto);
+                out.whatsapps++; disparo = true;
+                if (!marcado) {
+                  out.fallas++;
+                  await avisarFalla(b, `Riesgo de recordatorio repetido: ${b.invitee_nombre}`,
+                    `El WhatsApp de ${cuanto} antes salió, pero no se pudo dejar la marca que impide repetirlo.`,
+                    'agenda_marca_falla');
+                }
                 /* Espejado en el inbox: quien abra el chat ve lo que el cliente
                    recibió, no tiene que confiar en que salió. */
                 await registrarMensaje({
@@ -179,12 +233,28 @@ export const GET: APIRoute = async ({ request }) => {
           if (telH) {
             try {
               await enviarPlantilla(telH, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsHost(b, cuanto));
-              await marcarAvisado(b, r.id, 'host', cuanto); out.host_whatsapps++;
+              await marcarAvisado(b, r.id, 'host', cuanto); out.host_whatsapps++; disparo = true;
             } catch (e: any) {
               out.fallas++; out.errores.push(`${b.id} ${r.id} host: ${e?.message || e}`);
             }
           }
         }
+
+        /* SIN LIGA DE MEET. Va DESPUÉS de enviar y solo si de verdad salió
+           algo: antes se levantaba de entrada y afirmaba «el recordatorio
+           salió sin ella» aunque después no saliera nada —por opt-out, por
+           plantilla sin aprobar o porque el lead no tiene correo—. El aviso
+           sale igual: la hora es lo que importa, y quien puede poner la liga
+           es el host. */
+        if (disparo && !b.google_meet_link) {
+          out.sin_liga++;
+          await avisarFalla(b, `Falta la liga de Meet: ${b.invitee_nombre}`,
+            `La reunión es en ${cuanto} (${cuandoLargo(b)}) y todavía no tiene liga. El recordatorio salió sin ella.`,
+            'agenda_sin_liga');
+        }
+
+        // Uno por corrida: ver el comentario de `disparo`.
+        if (disparo) break;
       }
     } catch (e: any) {
       out.errores.push(`${b.id}: ${e?.message || String(e)}`);
