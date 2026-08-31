@@ -1073,7 +1073,7 @@ export default function LeadsTab() {
               abierta. La jerarquía queda: filtro de todo → en qué pestaña
               estoy → buscar dentro de ella. */}
           {!esMovil && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10,
               /* La jerarquía NO se resuelve con el orden: con los dos renglones
                  al mismo peso, filtros y pestañas se leían como dos tiras
                  gemelas peleándose. Esta es otra CAPA: banda lila a sangre en
@@ -1081,8 +1081,9 @@ export default function LeadsTab() {
                  modo que las pestañas —que van debajo— sigan siendo lo más
                  fuerte de la pantalla. Recorta toda la sección; las pestañas
                  dicen dónde estás dentro de lo ya recortado. */
-              margin: '-18px -18px 14px', padding: '11px 18px', background: '#faf8ff',
+              margin: '-18px -18px 14px', padding: '12px 18px 14px', background: '#faf8ff',
               borderBottom: '1px solid #ece7f8', borderRadius: '12px 12px 0 0' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <FiltroDesplegable qd={QD.cuando} valor={cuando === 'todo' ? '' : cuando} onElegir={v => setCuando(v || 'todo')} isMobile={false} />
               <FiltroDesplegable qd={QD.canal} valor={origen === 'todo' ? '' : origen} onElegir={v => setOrigen(v || 'todo')} isMobile={false} />
               {/* El valor 'g:<grupo>' viene de los chips de arriba, no de este
@@ -1110,6 +1111,17 @@ export default function LeadsTab() {
                 <>
                   <div onClick={() => setPanelFiltros(false)} style={{ position: 'fixed', inset: 0, zIndex: 39 }} />
                   <div style={{ position: 'absolute', top: 42, left: 0, zIndex: 40, background: '#fff', border: '1px solid #e6e2f3', borderRadius: 12, padding: 14, width: 320, boxShadow: '0 12px 34px rgba(40,20,90,.16)' }}>
+                    {/* Vivía en el strip de subpestañas de «Contactados».
+                        Sin esto, quitar aquel strip dejaba la pausa sin ningún
+                        camino: un filtro que existe en el código y ya no se
+                        puede pedir. */}
+                    <div style={S.fk}>Pausa</div>
+                    <select value={pausaF} onChange={e => setPausaF(e.target.value)} style={S.fsel}>
+                      <option value="">Cualquiera</option>
+                      <option value="activa">En pausa ahora</option>
+                      <option value="vencida">Pausa vencida: márcales</option>
+                    </select>
+
                     <div style={S.fk}>Reunión</div>
                     <select value={reunionF} onChange={e => setReunionF(e.target.value)} style={S.fsel}>
                       <option value="">Cualquiera</option>
@@ -1201,15 +1213,29 @@ export default function LeadsTab() {
                 </select>
                 )}
               </span>
+              </div>
+              {/* El buscador, DENTRO de la banda y en su propio renglón. Es un
+                  filtro más de la sección —de hecho recorta también los
+                  contadores de las pestañas—, así que su sitio es esta capa y
+                  no el hueco entre las pestañas y la tabla, donde parecía
+                  pertenecer a la pestaña abierta. Renglón aparte, no metido
+                  entre las píldoras: es lo primero que se usa. */}
+              <div style={{ position: 'relative' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a8" strokeWidth="2" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                <input className="te-search" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar nombre, empresa o correo…"
+                  style={{ width: '100%', height: 38, border: '1px solid #e4e0ee', borderRadius: 10, padding: '0 14px 0 38px', fontSize: '0.8rem', fontWeight: 500, background: '#fff', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
             </div>
           )}
 
-          {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 12, overflowX: 'auto' }}>
+          {!esMovil && <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 14, overflowX: 'auto' }}>
             {VISTAS.map(v => {
               const on = etapa === v.v;
               const n = conteos[v.v] ?? 0;
               return (
-                <button key={v.v} onClick={() => setEtapa(v.v)} style={{
+                /* Lo que decía la línea que se quitó vive aquí: al detenerse
+                 sobre la pestaña dice qué filtra, sin ocupar un renglón. */
+              <button key={v.v} onClick={() => setEtapa(v.v)} title={FILTRO_TAB[v.v] || undefined} style={{
                   padding: '10px 15px', background: on ? '#EEECFE' : 'transparent',
                   borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
                   borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
@@ -1229,39 +1255,13 @@ export default function LeadsTab() {
             })}
           </div>}
 
-          {!esMovil && etapa === 'contactados' && (() => {
-            // Contactados mezcla temperaturas MUY distintas: este strip las
-            // separa de un vistazo y cada contador filtra al click. "Pausa
-            // vencida" es lista-hueco: se vacía cuando les marcas.
-            const fP = (c: any) => c.retenido_hasta ? Date.parse(c.retenido_hasta) : null;
-            const grupos = [
-              { k: 'e:respondio', l: 'Respondieron', n: listaBase.filter((c: any) => eDe(c) === 'respondio').length, bg: '#EEECFE', fg: '#5B4BD6' },
-              { k: 'e:descubrimiento', l: 'Discovery hecho', n: listaBase.filter((c: any) => eDe(c) === 'descubrimiento').length, bg: '#EEECFE', fg: '#5B4BD6' },
-              { k: 'e:contactado', l: 'Esperando respuesta', n: listaBase.filter((c: any) => eDe(c) === 'contactado').length, bg: '#f4f4f6', fg: '#6B7280' },
-              { k: 'e:sin_respuesta', l: 'No contestan', n: listaBase.filter((c: any) => eDe(c) === 'sin_respuesta').length, bg: '#FEF0EF', fg: '#C0554E' },
-              { k: 'p:activa', l: 'En pausa', n: listaBase.filter((c: any) => (fP(c) ?? 0) > Date.now()).length, bg: '#FFF4E5', fg: '#9a6a10' },
-              { k: 'p:vencida', l: 'Pausa vencida: márcales', n: listaBase.filter((c: any) => { const f = fP(c); return f != null && f <= Date.now(); }).length, bg: '#FFF4E5', fg: '#9a6a10' },
-            ];
-            const activo = (k: string) => k.startsWith('e:') ? estatusF === k.slice(2) : pausaF === k.slice(2);
-            const toca = (k: string) => k.startsWith('e:')
-              ? setEstatusF(estatusF === k.slice(2) ? '' : k.slice(2))
-              : setPausaF(pausaF === k.slice(2) ? '' : k.slice(2));
-            return (
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                {grupos.map(g => {
-                  const on = activo(g.k);
-                  return (
-                    <button key={g.k} onClick={() => toca(g.k)} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
-                      cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.72rem', fontWeight: on ? 800 : 600,
-                      border: `1px solid ${on ? g.fg : '#e6e5ec'}`, background: on ? g.bg : '#fff',
-                      color: on ? g.fg : g.n === 0 ? '#c4c4cc' : '#5c5966', whiteSpace: 'nowrap',
-                    }}>{g.l}<span style={{ fontWeight: 800, fontSize: '0.68rem' }}>{g.n}</span></button>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          {/* El strip de subpestañas de «Contactados» (Respondieron ·
+              Discovery hecho · Esperando respuesta · No contestan · En pausa ·
+              Pausa vencida) se QUITÓ: era una tercera tira de controles que
+              aparecía solo en una pestaña, con la misma forma de píldora que
+              las otras dos, y ahí ya nadie sabía cuál mandaba sobre cuál. Lo
+              que filtraba no se perdió: el estatus vive en su píldora de la
+              banda y la pausa bajó a «Más filtros». */}
 
           {/* Los chips de reuniones (Agendadas / Completadas / No asistieron…)
               se QUITARON de aquí. En Oportunidad lo que decide a quién llamar
@@ -1269,26 +1269,19 @@ export default function LeadsTab() {
               cuánto hay cotizado. Ese filtro sigue viviendo en la vista de
               Reuniones, que es donde sí tiene que ver. */}
 
-          {!esMovil && FILTRO_TAB[etapa] && (
-            <div style={{ fontSize: '0.7rem', color: '#a5a2af', margin: '-2px 2px 11px', lineHeight: 1.5 }}>
-              <span style={{ fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', fontSize: '0.6rem', color: '#b3b1bb' }}>Filtro de esta pestaña · </span>
-              {FILTRO_TAB[etapa]}
-            </div>
-          )}
+          {/* La línea «Filtro de esta pestaña» se quitó: era un renglón de
+              texto entre las pestañas y el buscador que empujaba la tabla
+              hacia abajo en todas las vistas. Lo que decía no se perdió —va
+              como título emergente de cada pestaña, ahí donde uno pregunta. */}
 
-          {/* El buscador, ANCHO COMPLETO y debajo de los filtros: es el orden
-              del estándar (filtros → buscador → tabla) y el que ya tiene
-              Clientes. Compartiendo renglón con los filtros medía 420 px y
-              parecía un control más de la barra. */}
-          <div style={esMovil
-            ? { display: buscaMovil ? 'flex' : 'none', alignItems: 'center', margin: '4px 24px 12px' }
-            : { display: 'block', marginBottom: 12 }}>
-            <div style={{ position: 'relative', flex: esMovil ? '1 1 260px' : undefined }}>
+          {/* En el teléfono el buscador sigue siendo el suyo: se despliega
+              con la lupa de la barra superior y va a sangre. La banda de
+              filtros no existe en móvil, así que aquí no hay dónde meterlo. */}
+          <div style={{ display: esMovil && buscaMovil ? 'flex' : 'none', alignItems: 'center', margin: '4px 24px 12px' }}>
+            <div style={{ position: 'relative', flex: '1 1 260px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a8" strokeWidth="2" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              <input className="te-search" value={busca} onChange={e => setBusca(e.target.value)} placeholder={esMovil ? 'Buscar' : 'Buscar nombre, empresa o correo…'}
-                style={esMovil
-                  ? { width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 36px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }
-                  : { width: '100%', height: 40, border: '1px solid #e2e4e9', borderRadius: 10, padding: '0 14px 0 38px', fontSize: '0.8rem', fontWeight: 500, background: '#fff', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar"
+                style={{ width: '100%', height: 44, border: 'none', borderRadius: 10, padding: '0 12px 0 36px', fontSize: '1rem', background: '#f2f2f5', fontFamily: 'inherit', outline: 'none' }} />
             </div>
 
 
