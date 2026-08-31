@@ -174,8 +174,11 @@ const pasos = [
   }
   .fl-cta:hover { transform: translateY(-2px); }
 
-  /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja. */
-  .fl-recorrido { height: 300vh; }
+  /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja.
+     420vh + la pantalla pegada = poco más de una pantalla de scroll por paso:
+     da tiempo de leer cada uno y de ver la transición completa, en lugar de
+     pasar los cuatro de un tirón. */
+  .fl-recorrido { height: 420vh; }
 
   /* ── Sin riel: móvil, poco movimiento o panel que no cabe ── */
   .fl.sin-riel .fl-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
