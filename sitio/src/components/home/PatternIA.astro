@@ -241,6 +241,18 @@ const LINEAS = ['La inteligencia artificial', 'hace tu trabajo', '20 veces más 
       return tam;
     };
 
+    // El riel se reserva DESDE EL ARRANQUE, no cuando cargan las partículas:
+    // si no, la página crece 1,170 px a media lectura y todo lo de abajo se
+    // recorre solo. Se decide con lo que se puede saber sin cargar nada.
+    const habraParticulas = () => {
+      if (menos || window.innerWidth < ANGOSTO) return false;
+      try {
+        const t = document.createElement('canvas');
+        return !!(t.getContext('webgl') || t.getContext('experimental-webgl'));
+      } catch { return false; }
+    };
+    if (habraParticulas()) sec.classList.add('con-riel');
+
     const listo = (document as any).fonts?.ready || Promise.resolve();
     listo.then(() => ajustar());
     window.addEventListener('resize', () => ajustar());
