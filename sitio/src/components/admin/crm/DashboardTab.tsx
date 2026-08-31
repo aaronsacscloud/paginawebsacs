@@ -20,7 +20,9 @@
 // pagan $98". Un tablero que hay que saber leer no lo lee nadie. Y lo que no
 // se puede calcular se dice: un número inventado en una pantalla que puede ver
 // un inversionista es peor que un hueco.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { lazySeguro } from '../../../lib/ui/lazySeguro';
+const LeadsDashboard = lazySeguro(() => import('./LeadsDashboard'));
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
@@ -76,6 +78,20 @@ export default function DashboardTab() {
   const [filtroAct, setFiltroAct] = useState('todos');
   const [leadAbierto, setLeadAbierto] = useState<LeadActivo | null>(null);
   const [aMano, setAMano] = useState(false);
+  /* El tablero de LEADS se mudó aquí desde la sección Leads, donde vivía
+     detrás de un selector «Lista · Dashboard». Allá uno entra a trabajar la
+     lista; aquí, a ver cómo va todo. Se queda con la ruta en la URL para que
+     un enlace a esta vista siga cayendo en ella. */
+  const [sub, setSub] = useState<'negocio' | 'leads'>(
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('sub') === 'leads' ? 'leads' : 'negocio');
+  const irA = (v: 'negocio' | 'leads') => {
+    setSub(v);
+    try {
+      const u = new URL(window.location.href);
+      if (v === 'leads') u.searchParams.set('sub', 'leads'); else u.searchParams.delete('sub');
+      window.history.replaceState({}, '', u.toString());
+    } catch { /* sin URL utilizable, la vista igual cambia */ }
+  };
   const [desde, setDesde] = useState(inicioDeMes());
   const [hasta, setHasta] = useState(iso(new Date()));
   const [d, setD] = useState<any>(null);
@@ -95,8 +111,35 @@ export default function DashboardTab() {
 
   const alMes = () => { setAMano(false); setDesde(inicioDeMes()); setHasta(iso(new Date())); };
 
-  if (err) return <div style={{ ...S.wrap, color: ROJO, fontSize: '0.85rem' }}>{err}</div>;
-  if (!d) return <div style={S.wrap}><Cargando texto="Cargando tablero…" /></div>;
+  /* La tira va ANTES de los cortes por carga y por error: si el tablero de
+     negocio truena o tarda, la pestaña de Leads tiene que seguir alcanzable.
+     Con la tira dentro del render de abajo, un error dejaba encerrado al
+     usuario en una pantalla roja sin salida. */
+  const tira = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 16 }}>
+      {([['negocio', 'Negocio'], ['leads', 'Leads']] as const).map(([v, l]) => {
+        const on = sub === v;
+        return (
+          <button key={v} onClick={() => irA(v)} style={{
+            border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            padding: '9px 14px 10px', fontSize: '0.88rem', fontWeight: on ? 800 : 650,
+            color: on ? '#5B4BD6' : '#6d6a7a',
+            borderBottom: on ? '2px solid #5B4BD6' : '2px solid transparent',
+          }}>{l}</button>
+        );
+      })}
+    </div>
+  );
+
+  if (sub === 'leads') return (
+    <div style={S.wrap}>
+      {tira}
+      <Suspense fallback={<Cargando texto="Cargando el tablero de leads…" alto={280} />}><LeadsDashboard /></Suspense>
+    </div>
+  );
+
+  if (err) return <div style={S.wrap}>{tira}<div style={{ color: ROJO, fontSize: '0.85rem' }}>{err}</div></div>;
+  if (!d) return <div style={S.wrap}>{tira}<Cargando texto="Cargando tablero…" /></div>;
 
   const p = d.periodo;
   const nomMes = new Date(desde + 'T12:00:00').toLocaleDateString('es-MX', { month: 'long' });
@@ -129,6 +172,7 @@ export default function DashboardTab() {
         @media (max-width: 620px)  { .tb-4, .tb-cuad { grid-template-columns:1fr; } }
       `}</style>
 
+      {tira}
       <div className="tb">
         <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
           <div>

@@ -38,7 +38,7 @@ import { FiltroDesplegable } from './TablaEnterprise';
 import { ORIGENES, GRUPOS_ORIGEN, origenDe, origenDeRegistro } from '../../../lib/crm/origenes';
 import { useIsMobile } from '../../../lib/ui/mobile';
 
-const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+export const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
 const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/\D/g, '') : '';
 
@@ -170,12 +170,17 @@ const VISTAS = [
   { v: 'no_interesados', l: 'No interesados' },
   { v: 'todos', l: 'Todos' },
 ];
-/* En la tira solo van las SEIS del embudo, que es el trabajo de todos los
-   días. «No interesados» y «Todos» —a las que se entra de vez en cuando— más
-   las vistas guardadas viven en «Ver más», con su cuenta cada una: el
+/* «Todos» abre la tira, antes que «Leads nuevos»: es de donde se parte para
+   buscar a alguien o hacer algo sobre el conjunto, y mandarla al final —o peor,
+   adentro de «Ver más»— obligaba a dar dos pasos para lo primero que uno hace.
+   Después van las seis del embudo, que es el trabajo del día. «No interesados»
+   y las vistas guardadas se quedan en «Ver más», con su cuenta cada una: el
    desplegable no esconde nada, dice cuántos hay antes de entrar. */
-const VISTAS_TIRA = VISTAS.filter(v => !['no_interesados', 'todos'].includes(v.v));
-const VISTAS_MAS = VISTAS.filter(v => ['no_interesados', 'todos'].includes(v.v));
+const VISTAS_TIRA = [
+  VISTAS.find(v => v.v === 'todos')!,
+  ...VISTAS.filter(v => !['no_interesados', 'todos'].includes(v.v)),
+];
+const VISTAS_MAS = VISTAS.filter(v => v.v === 'no_interesados');
 
 // Qué filtro compone cada pestaña, en términos de los DOS campos del modelo:
 // lifecycle_stage (tipo de lead) + estatus_lead (el contacto). Se enseña bajo
@@ -248,7 +253,7 @@ const prueba = (c: any) => {
 
 /** Los que todavía se pueden convertir. Un perdido de ayer llegó esta semana
  *  pero no es un lead nuevo: ya se cerró. */
-const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
+export const ABIERTOS = ['lead', 'lead_calificado', 'oportunidad'];
 
 /* El corte de «atorado»: 3 días sin atenderlo. Vive aquí y no dentro del
    render del teléfono porque ahora lo usan las dos vistas, y dos copias de un
@@ -271,7 +276,7 @@ const esDeLaSemana = (c: any) => {
 const D_MI: CSSProperties = { display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 700, color: '#241d43', cursor: 'pointer', fontFamily: 'inherit' };
 const D_MISUB: CSSProperties = { display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 };
 
-const S = {
+export const S = {
   wrap: WRAP,
   card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
   kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' } as const,
@@ -463,7 +468,14 @@ export default function LeadsTab() {
   // Y, si la pantalla venía de una recarga de recuperación, se retoma la ficha
   // que el usuario había pedido: el clic no se pierde.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('lead');
+    const q = new URLSearchParams(window.location.search);
+    /* El funnel del tablero —que ahora vive en otra sección— manda aquí con la
+       vista ya puesta. Antes lo hacía cambiando estado interno; cruzando de
+       sección eso ya no existe, así que viaja por la URL. */
+    const et = q.get('etapa'); const es = q.get('estatus');
+    if (et) setEtapa(et);
+    if (es) setEstatusF(es);
+    const id = q.get('lead');
     if (id && id.length > 20) { setVerContacto(id); return; }   // los avisos agrupados mandan 'lista'
     try {
       const g = sessionStorage.getItem(CLAVE_INTENCION);
@@ -580,7 +592,7 @@ export default function LeadsTab() {
      congeladas dejan de cuadrar; si es menor, la tabla se encoge y el recorte
      con puntos suspensivos empieza a morder donde no debe. */
 
-  const anchoTabla = 1138 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
+  const anchoTabla = 1090 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
 
   /* El rótulo ES el botón, y lleva el MISMO indicador que el datatable
@@ -924,22 +936,11 @@ export default function LeadsTab() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
           {/* Segmentado, no tres botones sueltos: son la MISMA cosa vista de
               tres formas, y eso se dice con una sola pieza. */}
-          <div style={{ display: 'inline-flex', background: '#f5f4f8', borderRadius: 10, padding: 3 }}>
-            {/* Dos vistas, no cuatro. «Mi día» y «Pipeline» salieron: cuatro
-                destinos para la misma lista obligan a elegir antes de empezar
-                a trabajar, y la lista es donde se trabaja. */}
-            {([['lista', 'Lista'], ['dashboard', 'Dashboard']] as const).map(([v, l]) => {
-              const on = vista === v;
-              return (
-                <button key={v} onClick={() => setVista(v)}
-                  style={{
-                    border: 'none', background: on ? '#fff' : 'transparent', cursor: 'pointer', fontFamily: 'inherit',
-                    padding: '7px 15px', borderRadius: 8, fontSize: '0.81rem', fontWeight: 700,
-                    color: on ? '#5B4BD6' : '#6b7280', boxShadow: on ? '0 1px 3px rgba(36,29,67,.1)' : 'none',
-                  }}>{l}</button>
-              );
-            })}
-          </div>
+          {/* El selector «Lista · Dashboard» se quitó de aquí. El tablero de
+              leads se mudó a la sección Dashboard, que es donde uno va a ver
+              cómo va todo; en Leads uno viene a TRABAJAR la lista, y tener la
+              mitad de la pantalla ofreciendo irse a otra cosa era ruido. */}
+
           {/* Un botón que dice lo que hace, no tres puntos. Detrás había tres
               opciones y dos casi no se usaban; exportar sí, todos los días.
               Importar de TikTok vive ahora en el alta, que es donde se busca
@@ -1017,101 +1018,7 @@ export default function LeadsTab() {
         );
       })()}
 
-      {vista === 'midia' ? null : vista === 'pipeline' ? <Suspense fallback={<div style={{ padding: 32, color: '#8f8d98' }}>Cargando pipeline…</div>}><PipelineTab /></Suspense> : vista === 'dashboard' ? (<>
-        <div className="lead-4" style={{ marginBottom: 14 }}>
-          <div style={{ ...S.card, marginBottom: 0 }}>
-            <div style={S.kl}>Leads nuevos</div>
-            <div style={S.kv}>{res?.nuevos ?? '—'}</div>
-            <div style={S.ks}>en 30 días · <b style={{ color: '#3f3b4d' }}>{res?.abiertos ?? 0}</b> abiertos en total</div>
-            <div style={S.ke}>Gente que dejó sus datos y todavía no es cliente.</div>
-          </div>
-          <div style={{ ...S.card, marginBottom: 0 }}>
-            <div style={S.kl}>Convertidos</div>
-            <div style={{ ...S.kv, color: '#1E8A63' }}>{res?.convertidos ?? '—'}</div>
-            <div style={S.ks}>a cliente en 30 días{res?.arr_convertido ? <> · <b style={{ color: '#1E8A63' }}>{money(res.arr_convertido)}</b> de ARR</> : ''}</div>
-            <div style={S.ke}>Cuenta cuando nace su primera suscripción, no cuando se marca a mano.</div>
-          </div>
-          <div style={{ ...S.card, marginBottom: 0 }}>
-            <div style={S.kl}>Conversión</div>
-            <div style={{ ...S.kv, color: '#5B4BD6' }}>{res?.conversion != null ? `${res.conversion}%` : '—'}</div>
-            <div style={S.ks}>de {res?.cohorte ?? 0} leads que llegaron hace 60 días o más</div>
-            <div style={S.ke}>Los de esta semana no entran: todavía no tuvieron tiempo de decidir.</div>
-          </div>
-          <div style={{ ...S.card, marginBottom: 0 }}>
-            <div style={S.kl}>Sin seguimiento</div>
-            <div style={{ ...S.kv, color: (res?.sin_seguimiento || 0) > 0 ? '#C0554E' : '#1a1a1a' }}>{res?.sin_seguimiento ?? '—'}</div>
-            <div style={S.ks}>sin contacto en más de 7 días</div>
-            <div style={S.ke}>Es la fuga más cara: ya pagaste por traerlos.</div>
-          </div>
-        </div>
-
-        {/* El funnel operativo: en qué está el pool abierto. Los números
-            cliqueables llevan a la Lista ya filtrada — aquí vive el desglose
-            que en la Lista sería una fila más de pastillas. */}
-        <div style={{ ...S.card, marginBottom: 14 }}>
-          <div style={S.kl}>Funnel operativo</div>
-          <div style={{ display: 'flex', gap: 0, marginTop: 10, borderRadius: 9, overflow: 'hidden', border: '1px solid #ececec' }}>
-            {FUNNEL.filter(f => f.g !== 'fuera').map((f, i) => {
-              const n = conteosFunnel[f.g] || 0;
-              const col = COLOR_GRUPO[f.g];
-              return (
-                <button key={f.g} onClick={() => { setEstatusF(`g:${f.g}`); setEtapa('abiertos'); setVista('lista'); }}
-                  title={`Ver los ${n} en la lista`}
-                  style={{ flex: `${Math.max(n, 1)} 1 0`, minWidth: 128, border: 'none', borderLeft: i ? '1px solid #ececec' : 'none',
-                    background: '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: '10px 12px 12px' }}>
-                  <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#8a8a92', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                    <span style={{ width: 7, height: 7, borderRadius: 999, background: col.tinta, opacity: .8 }} />{f.l}
-                  </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: col.tinta, marginTop: 2 }}>{n}</div>
-                  <div style={{ height: 4, borderRadius: 4, background: col.fondo, marginTop: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: '100%', background: col.tinta, opacity: .55 }} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          {(() => {
-            const conR = (rows || []).filter((c: any) => ABIERTOS.includes(c.lifecycle_stage) && c.reunion);
-            if (!conR.length) return null;
-            const asis = conR.filter((c: any) => c.reunion.ultima_estado === 'asistio').length;
-            const noAsis = conR.filter((c: any) => c.reunion.ultima_estado === 'no_asistio').length;
-            const prox = conR.filter((c: any) => c.reunion.proxima).length;
-            const tasa = asis + noAsis > 0 ? Math.round((asis / (asis + noAsis)) * 100) : null;
-            return (
-              <div style={{ fontSize: '0.72rem', color: '#5c5966', marginTop: 10 }}>
-                Reuniones del pool: <b style={{ color: '#1E8A63' }}>{asis} completadas</b> · <b style={{ color: '#C0554E' }}>{noAsis} no asistieron</b> · {prox} próximas{tasa != null && <> · asistencia <b>{tasa}%</b></>}
-              </div>
-            );
-          })()}
-          <div style={{ ...S.ke, marginTop: 8 }}>Se calcula solo, de los hechos: mensajes, llamadas, reuniones y cotizaciones. Click en un número para ver quiénes son.</div>
-        </div>
-
-        {topOrigenes.length > 0 && (
-          <div style={S.card}>
-            <div style={S.h}>De dónde están llegando
-              <span style={{ marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#a5a2af' }}>leads y clientes · mismo catálogo</span>
-            </div>
-            {topOrigenes.map((o: any) => {
-              const info = origenDe(o.v);
-              return (
-                <div key={o.v} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid #f5f4f8', fontSize: '0.79rem' }}>
-                  <span style={{ fontWeight: 700, width: 170, flexShrink: 0 }}>{info.l}</span>
-                  <span style={{ flex: 1, height: 8, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden' }}>
-                    <span style={{ display: 'block', height: '100%', borderRadius: 9, background: info.color, width: `${Math.max(3, (o.n / maxOrigen) * 100)}%` }} />
-                  </span>
-                  <span style={{ width: 36, textAlign: 'right', fontWeight: 800 }}>{o.n}</span>
-                  <span style={{ width: 104, textAlign: 'right', fontSize: '0.68rem', color: o.pct >= 40 ? '#1E8A63' : '#a5a2af', fontWeight: o.pct >= 40 ? 700 : 400 }}>
-                    convierte {o.pct}%
-                  </span>
-                </div>
-              );
-            })}
-            <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 11, paddingTop: 10, borderTop: '1px solid #f5f4f8' }}>
-              Volumen y cierre juntos: el canal que más trae no siempre es el que mejor cierra, y ahí está la decisión de dónde poner el dinero.
-            </div>
-          </div>
-        )}
-      </>) : (<>
+      {vista === 'midia' ? null : vista === 'pipeline' ? <Suspense fallback={<div style={{ padding: 32, color: '#8f8d98' }}>Cargando pipeline…</div>}><PipelineTab /></Suspense> : (<>
 
         <div className={esMovil ? 'm-bleed' : undefined} style={esMovil ? { background: 'transparent' } : S.card}>
           {/* Las etapas son PESTAÑAS con contador, como las vistas de
@@ -1627,7 +1534,14 @@ export default function LeadsTab() {
                     style={{ ...S.th, width: 108, padding: 0 }}><Rot k="llego">Llegó</Rot></th>
                   <th scope="col" className="fija2 ord" aria-sort={ordenCol?.k === 'lead' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 190, padding: 0 }}><Rot k="lead">Lead</Rot></th>
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'empresa' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 186, padding: 0 }}><Rot k="empresa">Empresa</Rot></th>
-                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 160, padding: 0 }}><Rot k="correo">Correo</Rot></th>
+                  {/* 128 y no 160: con los anchos anteriores la tabla medía
+                      1230 px dentro de un contenedor de 1190 en una pantalla
+                      de 1560 — se pasaba 40 px, justo lo suficiente para
+                      cortar la última columna y no lo suficiente para que la
+                      barra de desplazamiento se pudiera agarrar. El correo es
+                      la columna que menos se lee de un vistazo: se prospecta
+                      por WhatsApp, y el valor completo sigue en la ficha. */}
+                  <th scope="col" className="ord" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 128, padding: 0 }}><Rot k="correo">Correo</Rot></th>
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'telefono' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 124, padding: 0 }}><Rot k="telefono">Teléfono</Rot></th>
                   <th scope="col" className="ord" aria-sort={ordenCol?.k === 'canal' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 98, padding: 0 }}><Rot k="canal">Canal</Rot></th>
                   <th scope="col" className="num ord" aria-sort={ordenCol?.k === 'sucs' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 66, padding: 0 }} title="Cuántas sucursales le interesan"><Rot k="sucs" num>Sucs.</Rot></th>
@@ -1640,8 +1554,8 @@ export default function LeadsTab() {
                        campaña: en las demás pestañas enseña señal, prueba o
                        motivo, que no comparten un valor con el que ordenar.
                        Sin ⇅ se ve, correctamente, que ahí no hay orden. */
-                    if (rotulo !== 'Campaña') return <th scope="col" style={{ ...S.th, width: 166 }}>{rotulo}</th>;
-                    return <th scope="col" className="ord" aria-sort={ordenCol?.k === 'campana' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 166, padding: 0 }}><Rot k="campana">Campaña</Rot></th>;
+                    if (rotulo !== 'Campaña') return <th scope="col" style={{ ...S.th, width: 150 }}>{rotulo}</th>;
+                    return <th scope="col" className="ord" aria-sort={ordenCol?.k === 'campana' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 150, padding: 0 }}><Rot k="campana">Campaña</Rot></th>;
                   })()}
                   {/* Etapa y Estatus solo aparecen donde de verdad varían. En
                       "Leads nuevos" la pestaña se define como etapa=lead Y
