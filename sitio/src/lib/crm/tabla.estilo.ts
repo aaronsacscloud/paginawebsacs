@@ -69,7 +69,13 @@ export const CSS_TABLA = `
 .crm-tabla th.fija2, .crm-tabla td.fija2 { position:sticky; left:148px; background:#fff; box-shadow:1px 0 0 #eceaf2; }
 .crm-tabla th.derecha, .crm-tabla td.derecha { position:sticky; right:0; background:#fff; box-shadow:-1px 0 0 #eceaf2; }
 .crm-tabla tbody tr:hover td.derecha { background:#f5f3fc; }
-.crm-tabla th.fija0, .crm-tabla th.fija1, .crm-tabla th.fija2, .crm-tabla th.derecha { z-index:3; }
+/* !important porque el token T.th trae zIndex 2 EN LÍNEA, y un estilo en
+   línea le gana a la clase. Con los dos en 2, mandaba el orden del DOM: al
+   desplazarse a la derecha, «Empresa» —que va después— se pintaba ENCIMA de
+   los rótulos congelados «Llegó» y «Lead», así que la cabecera parecía
+   desacomodarse mientras el cuerpo se quedaba en su sitio. Las celdas sí se
+   veían bien; era solo quién pinta arriba. */
+.crm-tabla th.fija0, .crm-tabla th.fija1, .crm-tabla th.fija2, .crm-tabla th.derecha { z-index:5 !important; }
 .crm-tabla td.fija0, .crm-tabla td.fija1, .crm-tabla td.fija2 { z-index:1; }
 /* La fila seleccionada se ve seleccionada en TODO su ancho, congeladas
    incluidas: si solo se pinta el centro, al desplazarse a la derecha la

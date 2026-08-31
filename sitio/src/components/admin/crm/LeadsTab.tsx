@@ -19,7 +19,16 @@ import { WRAP } from '../../../lib/crm/layout';
 import Cargando from './ui/Cargando';
 // REGLA DE VELOCIDAD: el kanban de escritorio y el drawer bajan al usarse.
 const PipelineTab = lazySeguro(() => import('./PipelineTab'));
-const LeadDrawer = lazySeguro(() => import('./LeadDrawer'));
+/* El mismo especificador para la carga diferida Y para la precarga: así el
+   navegador reutiliza el módulo y el primer clic ya no espera nada. */
+const CARGA_DRAWER = () => import('./LeadDrawer');
+const LeadDrawer = lazySeguro(CARGA_DRAWER);
+/* Dónde se recuerda qué ficha se estaba abriendo. Si el chunk del drawer
+   está muerto (HTML viejo servido por el service worker tras un deploy),
+   lazySeguro limpia el caché y RECARGA — y esa recarga se comía justo el
+   clic del usuario: «la primera vez no me abre, como que se recarga».
+   Guardar la intención hace que la ficha se abra sola al volver. */
+const CLAVE_INTENCION = 'crm:lead-abriendo';
 import { useLifecycle } from '../../../lib/crm/lifecycle';
 import { HISTORIAL_ETIQUETA } from '../../../lib/crm/lead-historial';
 import ImportarTikTok from './ImportarTikTok';
@@ -337,6 +346,22 @@ export default function LeadsTab() {
   const [hasta, setHasta] = useState('');
   // Lo nuevo primero. Es el orden natural de una bandeja: lo de hoy arriba.
   const [orden, setOrden] = useState<'reciente' | 'frio'>('reciente');
+  /* Ordenar por la columna que quieras, de mayor a menor. El select de dos
+     opciones fijas no servía: cada pestaña se prioriza por algo distinto —en
+     Rezagados por días sin tocar, en Todos por sucursales, en campañas por
+     cuándo llegó— y eso solo lo sabe quien está mirando. */
+  const [ordenCol, setOrdenCol] = useState<{ k: string; desc: boolean } | null>(null);
+  const VALOR_COL: Record<string, (c: any) => any> = {
+    llego: c => Date.parse(c.created_at || 0) || 0,
+    lead: c => `${c.nombre || ''} ${c.apellido || ''}`.trim().toLowerCase(),
+    empresa: c => String(c.companies?.nombre || '').toLowerCase(),
+    correo: c => String(c.email || '').toLowerCase(),
+    sucs: c => Number(c.sucursales_interes || c.companies?.sucursales || 0),
+    campana: c => String(c.campana || '').toLowerCase(),
+    llamadas: c => (c.llamadas?.n || 0) + (c.esfuerzo?.llamadas || 0),
+    dias: c => dias(c.last_contact_at || c.created_at) ?? -1,
+  };
+  const pedirOrden = (k: string) => setOrdenCol(o => o?.k === k ? (o.desc ? { k, desc: false } : null) : { k, desc: true });
   const [sinContacto, setSinContacto] = useState('');   // '' | '7' | '14' | '30'
   const [estatusF, setEstatusF] = useState('');   // '' | 'g:<grupo>' | '<estatus fino>'
   const [reunionF, setReunionF] = useState('');   // '' | agendada | asistio | no_asistio | cancelada | sin_reagendar | nunca
@@ -415,10 +440,44 @@ export default function LeadsTab() {
   // de una lista.
   const jalar = useJalarParaRefrescar(async () => { cargar(); }, esMovil);
   // Deep-link del aviso por WhatsApp: ?lead=<id> abre la ficha directo.
+  // Y, si la pantalla venía de una recarga de recuperación, se retoma la ficha
+  // que el usuario había pedido: el clic no se pierde.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('lead');
-    if (id && id.length > 20) setVerContacto(id);   // los avisos agrupados mandan 'lista'
+    if (id && id.length > 20) { setVerContacto(id); return; }   // los avisos agrupados mandan 'lista'
+    try {
+      const g = sessionStorage.getItem(CLAVE_INTENCION);
+      sessionStorage.removeItem(CLAVE_INTENCION);
+      if (g) {
+        const { id: lid, t } = JSON.parse(g);
+        /* Solo si fue hace un momento: una intención vieja abriría una ficha
+           que el usuario ya no está pidiendo. */
+        if (lid && Date.now() - Number(t || 0) < 60_000) setVerContacto(lid);
+      }
+    } catch { /* modo privado */ }
   }, []);
+
+  /* La ficha se BAJA ANTES de que la pidan. Dos cosas se arreglan de un tiro:
+     el primer clic deja de esperar la descarga, y si el chunk está muerto la
+     recarga de recuperación pasa mientras el usuario todavía lee la lista, no
+     encima de su clic. Va en tiempo muerto para no pelearse con la carga de
+     la tabla, que es lo que la persona sí está esperando. */
+  useEffect(() => {
+    const ocioso = (window as any).requestIdleCallback || ((f: any) => setTimeout(f, 1200));
+    const h = ocioso(() => { CARGA_DRAWER().catch(() => { /* lazySeguro se encarga al abrirla */ }); });
+    return () => { try { ((window as any).cancelIdleCallback || clearTimeout)(h); } catch { /* nada */ } };
+  }, []);
+
+  /* Se apunta la intención EN CUANTO se pide la ficha, no cuando se abre: si
+     el chunk truena, la recarga ocurre antes de que exista nada que apuntar. */
+  useEffect(() => {
+    if (!verContacto) return;
+    try { sessionStorage.setItem(CLAVE_INTENCION, JSON.stringify({ id: verContacto, t: Date.now() })); } catch { /* modo privado */ }
+    /* Ya se abrió: si la persona sigue aquí dentro de un segundo, la ficha
+       está viva y la intención ya no hace falta. */
+    const t = setTimeout(() => { try { sessionStorage.removeItem(CLAVE_INTENCION); } catch { /* nada */ } }, 1500);
+    return () => clearTimeout(t);
+  }, [verContacto]);
   useEffect(() => {
     fetch('/api/crm/vistas?tabla=leads').then(r => r.json()).then(j => setVistasLeads(j.data || [])).catch(() => {});
     fetch('/api/crm/campos-config').then(r => r.json()).then(j => setCfgCampos(j.campos || {})).catch(() => {});
@@ -504,6 +563,20 @@ export default function LeadsTab() {
   const anchoTabla = 1230 + (verEtapa ? 96 : 0) + (verEstatus ? 116 : 0) + (verReunion ? 96 : 0) + (verLlamadas ? 92 : 0);
 
 
+  /* El rótulo ES el botón. Reserva el sitio de la flecha para que el ancho no
+     salte al aparecer, y responde a teclado como cualquier control. */
+  const Rot = ({ k, children, num }: { k: string; children: any; num?: boolean }) => {
+    const on = ordenCol?.k === k;
+    return (
+      <button type="button" onClick={() => pedirOrden(k)}
+        title="Ordenar por esta columna"
+        style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer',
+          boxSizing: 'border-box', textAlign: num ? 'right' : 'left', color: on ? '#5B4BD6' : 'inherit' }}>
+        {children}<span style={{ display: 'inline-block', width: 11, marginLeft: 5, opacity: on ? 1 : 0 }} aria-hidden="true">{on ? (ordenCol!.desc ? '↓' : '↑') : '↓'}</span>
+      </button>
+    );
+  };
+
   const lista = useMemo(() => {
     let r = listaBase;
     if (estatusF) r = estatusF.startsWith('g:') ? r.filter((c: any) => GRUPO_DE[eDe(c)] === estatusF.slice(2)) : r.filter((c: any) => eDe(c) === estatusF);
@@ -544,6 +617,17 @@ export default function LeadsTab() {
      pisaría justo el criterio que eligió— ni en las pestañas donde el grupo no
      significa nada. */
   const { filasTabla, rotuloAntes } = useMemo(() => {
+    /* El orden que pidió la persona manda sobre la agrupación: si eligió una
+       columna, es porque quiere ver la lista por ESO. */
+    if (ordenCol) {
+      const val = VALOR_COL[ordenCol.k] || (() => 0);
+      const filas = [...lista].sort((a: any, b: any) => {
+        const x = val(a), y = val(b);
+        const cmp = typeof x === 'string' ? x.localeCompare(y) : (x - y);
+        return ordenCol.desc ? -cmp : cmp;
+      });
+      return { filasTabla: filas, rotuloAntes: new Map<string, { t: string; n: number }>() };
+    }
     const m = new Map<string, { t: string; n: number }>();
     if (orden !== 'reciente' || ['no_interesados', 'todos', 'rezagados', 'oportunidad'].includes(etapa)) {
       return { filasTabla: lista, rotuloAntes: m };
@@ -570,7 +654,7 @@ export default function LeadsTab() {
       if (g !== previo) { m.set(c.id, { t: g, n: cuenta[g] }); previo = g; }
     }
     return { filasTabla: filas, rotuloAntes: m };
-  }, [lista, etapa, orden]);
+  }, [lista, etapa, orden, ordenCol]);
 
   /* El degradado del borde derecho solo se pinta cuando de verdad falta algo
      por ver; si se deja fijo, se convierte en adorno y deja de avisar. */
@@ -737,7 +821,10 @@ export default function LeadsTab() {
           {/* Segmentado, no tres botones sueltos: son la MISMA cosa vista de
               tres formas, y eso se dice con una sola pieza. */}
           <div style={{ display: 'inline-flex', background: '#f5f4f8', borderRadius: 10, padding: 3 }}>
-            {([['midia', 'Mi día'], ['lista', 'Lista'], ['dashboard', 'Dashboard'], ['pipeline', 'Pipeline']] as const).map(([v, l]) => {
+            {/* Dos vistas, no cuatro. «Mi día» y «Pipeline» salieron: cuatro
+                destinos para la misma lista obligan a elegir antes de empezar
+                a trabajar, y la lista es donde se trabaja. */}
+            {([['lista', 'Lista'], ['dashboard', 'Dashboard']] as const).map(([v, l]) => {
               const on = vista === v;
               return (
                 <button key={v} onClick={() => setVista(v)}
@@ -749,34 +836,19 @@ export default function LeadsTab() {
               );
             })}
           </div>
-          <div style={{ position: 'relative' }}>
-            <button title="Importar, exportar y link de captura"
-              onClick={() => setMenuMas(m => !m)}
-              style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid #eeeef1', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: '1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
-            {menuMas && (
-              <>
-                <div onClick={() => setMenuMas(false)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
-                <div style={{ position: 'absolute', right: 0, top: 44, zIndex: 1401, width: 256, background: '#fff', border: '1px solid #eeeef1', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' }}>
-                  {/* El lead de un formulario instantáneo de TikTok nunca pasa
-                      por el sitio: capturado a mano se pierde la campaña que lo
-                      pagó. */}
-                  <button style={D_MI} onClick={() => { setMenuMas(false); setImportTikTok(true); }}>
-                    Importar de TikTok Ads<span style={D_MISUB}>Los formularios instantáneos no pasan por el sitio</span>
-                  </button>
-                  {/* Exportar arma el CSV con lo que está en pantalla —filtros
-                      incluidos—: bajar todo y filtrar en Excel es hacer dos
-                      veces el mismo trabajo. */}
-                  <button style={D_MI} onClick={() => { setMenuMas(false); exportar(); }}>
-                    Exportar lo que estás viendo<span style={D_MISUB}>Se lleva los filtros puestos</span>
-                  </button>
-                  <div style={{ height: 1, background: '#f5f4f8', margin: '5px 4px' }} />
-                  <button style={D_MI} onClick={() => { setMenuMas(false); navigator.clipboard?.writeText(`${window.location.origin}/contacto?ref=crm`); alert('Link de captura copiado.\n\nQuien lo llene cae directo en esta lista con su origen puesto.'); }}>
-                    Copiar link de captura<span style={D_MISUB}>Quien lo llene cae aquí con su origen puesto</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          {/* Un botón que dice lo que hace, no tres puntos. Detrás había tres
+              opciones y dos casi no se usaban; exportar sí, todos los días.
+              Importar de TikTok vive ahora en el alta, que es donde se busca
+              cuando hace falta. */}
+          <button onClick={() => exportar()} title="Se lleva los filtros que tengas puestos"
+            style={{ height: 38, borderRadius: 10, border: '1px solid #eeeef1', background: '#fff',
+              color: '#4a4756', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.8rem',
+              fontWeight: 700, padding: '0 14px', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v12" /><path d="M8 11l4 4 4-4" /><path d="M4 21h16" />
+            </svg>
+            Exportar
+          </button>
           <button style={S.btnP} onClick={() => setNuevo(true)}>+ Nuevo lead</button>
         </div>
       </div>
@@ -950,18 +1022,46 @@ export default function LeadsTab() {
                   padding: '10px 15px', background: on ? '#EEECFE' : 'transparent',
                   borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
                   borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
-                  color: on ? '#5B4BD6' : '#666', fontWeight: on ? 800 : 500,
-                  fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
+                  /* Las pestañas pesan: son el control principal de la
+                     pantalla y competían en tamaño con el buscador. */
+                  color: on ? '#5B4BD6' : '#4a4756', fontWeight: on ? 800 : 650,
+                  fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
                 }}>
                   {v.l}
                   <span style={{
-                    marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
+                    marginLeft: 7, fontSize: '0.72rem', fontWeight: on ? 800 : 700,
                     background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
                     borderRadius: 20, padding: '2px 8px',
                   }}>{n}</span>
                 </button>
               );
             })}
+            {/* Las vistas y los filtros viven DESPUÉS de la última pestaña, no
+                debajo: abajo se saturaba y el buscador competía con ellos.
+                Aquí se leen como lo que son — formas de recortar la pestaña en
+                la que ya estás. */}
+            {/* Pegado a la orilla derecha: con nueve pestañas la fila se
+                desborda en pantallas angostas y este bloque se iba fuera de
+                vista — o sea, las vistas guardadas dejaban de existir sin
+                avisar. Sticky las mantiene siempre a la mano. */}
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, paddingLeft: 30, flexShrink: 0, position: 'sticky', right: 0, background: 'linear-gradient(90deg, rgba(255,255,255,0), #fff 26px)' }}>
+              <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
+                style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
+                  background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
+                  borderRadius: 9, padding: '7px 12px', fontSize: '0.79rem', fontWeight: soloVIP ? 800 : 600,
+                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>★ VIP</button>
+              {vistasLeads.length > 0 && (
+              <select value={vistaId} onChange={e => {
+                const v = vistasLeads.find(x => x.id === e.target.value);
+                setVistaId(e.target.value);
+                setConds(v?.config?.condiciones || []);
+                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
+              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
+                <option value="">Vistas guardadas…</option>
+                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
+              </select>
+              )}
+            </span>
           </div>}
 
           {!esMovil && etapa === 'contactados' && (() => {
@@ -1025,17 +1125,6 @@ export default function LeadsTab() {
                   : { width: '100%', height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 12px 0 34px', fontSize: '0.79rem', background: '#fff', fontFamily: 'inherit', outline: 'none' }} />
             </div>
 
-            {!esMovil && vistasLeads.length > 0 && (
-              <select value={vistaId} onChange={e => {
-                const v = vistasLeads.find(x => x.id === e.target.value);
-                setVistaId(e.target.value);
-                setConds(v?.config?.condiciones || []);
-                setLogicaF(v?.config?.logica === 'OR' ? 'OR' : 'AND');
-              }} style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.78rem', background: '#fff', fontFamily: 'inherit', color: vistaId ? '#5B4BD6' : '#666', fontWeight: vistaId ? 700 : 500, maxWidth: 210 }}>
-                <option value="">Vistas guardadas…</option>
-                {vistasLeads.map(v => <option key={v.id} value={v.id}>{v.config?.emoji ? v.config.emoji + ' ' : ''}{v.nombre}</option>)}
-              </select>
-            )}
             {!esMovil && <div style={{ position: 'relative' }}>
               <button onClick={() => setPanelFiltros(!panelFiltros)} style={{
                 height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
@@ -1176,29 +1265,11 @@ export default function LeadsTab() {
               </span>
             ))}
 
-            {!esMovil && <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
-              {/* El conteo en pastilla (cuántos hay en ESTA vista) y el orden
-                  con su etiqueta: antes "7 leads" flotaba suelto junto al
-                  select y no se entendía qué era ni de qué hablaba. */}
-              <span style={{ fontSize: '0.73rem', fontWeight: 800, color: '#4a4a52', background: '#f4f4f6', borderRadius: 999, padding: '6px 13px', whiteSpace: 'nowrap' }}>
-                {lista.length} {lista.length === 1 ? 'lead' : 'leads'} en la vista
-              </span>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.68rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: '#a5a2af' }}>
-                Ordenar
-                {/* Segmentar sin sacarlos de su pestaña: el VIP sigue
-                    apareciendo donde le toca y además se puede aislar. */}
-                <button onClick={() => setSoloVIP(v => !v)} title="Solo los VIP (más de 5 sucursales)"
-                  style={{ border: '1px solid', borderColor: soloVIP ? '#a06600' : '#e2e4e9',
-                    background: soloVIP ? '#FFF8EC' : '#fff', color: soloVIP ? '#a06600' : '#5a5a63',
-                    borderRadius: 9, padding: '7px 12px', fontSize: '0.78rem', fontWeight: soloVIP ? 800 : 600,
-                    cursor: 'pointer', fontFamily: 'inherit', marginRight: 8 }}>★ VIP</button>
-                <select value={orden} onChange={e => setOrden(e.target.value as 'reciente' | 'frio')}
-                  style={{ height: 36, border: '1px solid #e2e4e9', borderRadius: 9, padding: '0 10px', fontSize: '0.77rem', fontFamily: 'inherit', background: '#fff', color: '#3f3b4d', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
-                  <option value="reciente">Más recientes primero</option>
-                  <option value="frio">Más fríos primero</option>
-                </select>
-              </label>
-            </span>}
+            {/* El conteo suelto y el «Ordenar» se fueron de aquí: el número ya
+                vive en la pestaña —que es donde se busca— y el orden ahora se
+                pide desde el rótulo de la columna que quieras, de mayor a
+                menor. Un select con dos opciones fijas no ordenaba por lo que
+                uno necesita en cada momento. Abajo queda solo el buscador. */}
           </div>
 
           {/* ══ M2 · Lista móvil (presupuesto v5) ══
@@ -1414,18 +1485,18 @@ export default function LeadsTab() {
                       19/ago es una flecha que miente. */}
                   <th scope="col" className="fija1 ord" aria-sort={rotuloAntes.size ? 'none' : (orden === 'reciente' ? 'descending' : 'ascending')}
                     style={{ ...S.th, width: 108, padding: 0 }}>
-                    <button type="button" onClick={() => setOrden(orden === 'reciente' ? 'frio' : 'reciente')}
+                    <button type="button" onClick={() => pedirOrden('llego')}
                       title={rotuloAntes.size ? 'Ordenado por prioridad: lo atorado primero. Cambia a más fríos primero' : 'Ordenar por cuándo llegó / más fríos primero'}
                       style={{ all: 'unset', display: 'block', width: '100%', padding: '9px 14px', cursor: 'pointer', boxSizing: 'border-box' }}>
                       Llegó<span className="fl" aria-hidden="true">{rotuloAntes.size ? '' : orden === 'reciente' ? '↓' : '↑'}</span>
                     </button>
                   </th>
-                  <th scope="col" className="fija2" style={{ ...S.th, width: 190 }}>Lead</th>
-                  <th scope="col" style={{ ...S.th, width: 186 }}>Empresa</th>
-                  <th scope="col" style={{ ...S.th, width: 160 }}>Correo</th>
+                  <th scope="col" className="fija2" aria-sort={ordenCol?.k === 'lead' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 190, padding: 0 }}><Rot k="lead">Lead</Rot></th>
+                  <th scope="col" aria-sort={ordenCol?.k === 'empresa' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 186, padding: 0 }}><Rot k="empresa">Empresa</Rot></th>
+                  <th scope="col" aria-sort={ordenCol?.k === 'correo' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 160, padding: 0 }}><Rot k="correo">Correo</Rot></th>
                   <th scope="col" style={{ ...S.th, width: 124 }}>Teléfono</th>
                   <th scope="col" style={{ ...S.th, width: 98 }}>Canal</th>
-                  <th scope="col" className="num" style={{ ...S.th, width: 66 }} title="Cuántas sucursales le interesan">Sucs.</th>
+                  <th scope="col" className="num" aria-sort={ordenCol?.k === 'sucs' ? (ordenCol.desc ? 'descending' : 'ascending') : 'none'} style={{ ...S.th, width: 66, padding: 0 }} title="Cuántas sucursales le interesan"><Rot k="sucs" num>Sucs.</Rot></th>
                   <th scope="col" style={{ ...S.th, width: 166 }}>{
                     etapa === 'calificados' ? 'Señal' : etapa === 'prueba' ? 'Prueba y uso'
                     : etapa === 'rezagados' ? 'Última señal'
@@ -1441,7 +1512,7 @@ export default function LeadsTab() {
                   {verEtapa && <th scope="col" style={{ ...S.th, width: 96 }}>Etapa</th>}
                   {verEstatus && <th scope="col" style={{ ...S.th, width: 116 }}>Estatus</th>}
                   {verReunion && <th scope="col" style={{ ...S.th, width: 96 }}>Reunión</th>}
-                  {verLlamadas && <th scope="col" style={{ ...S.th, width: 92 }}>Llamadas</th>}
+                  {verLlamadas && <th scope="col" style={{ ...S.th, width: 92, padding: 0 }}><Rot k="llamadas" num>Llamadas</Rot></th>}
                   <th scope="col" className="derecha" style={{ ...S.th, width: 92 }}><span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Acciones</span></th>
                 </tr>
               </thead>
