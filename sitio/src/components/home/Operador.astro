@@ -20,73 +20,80 @@
  *  · Sin riel (móvil, poco movimiento o pantalla corta) se vuelve una lista
  *    normal con todo abierto, que se lee igual de bien.
  */
+const COLORES = {
+  terracota: '#B4522F', negro: '#1F1F22', crema: '#E4D8C3', salvia: '#8A9A7B', lila: '#A78BC4',
+};
+
+// Cuatro decisiones, no seis: más grandes y sin competir entre ellas. El color
+// se usa SOLO para señalar el hueco (rosa) y el vencimiento (ámbar); todo lo
+// demás va en tinta. Antes eran seis acentos distintos y la rejilla se leía
+// como un semáforo.
 const tarjetas = [
   {
-    k: 'Traspaso urgente · desde el CEDIS',
-    c: '#8B5CF6',
-    t: 'El CEDIS tiene <b>128 pares</b> que tus tiendas están pidiendo a gritos.',
+    k: 'La curva rota · desde el CEDIS',
+    t: 'Polanco vende la <b>24</b> y la <b>25</b>. Las dos están en cero, y el CEDIS las tiene.',
     n: '$186,400',
     l: 'en venta recuperada',
-    chips: ['Seguro · la curva queda completa', '3 tiendas'],
+    prenda: 'Vestido slip · 3 colores',
+    colores: ['terracota', 'negro', 'crema'],
+    tallas: [['22', 6], ['23', 4], ['24', 0], ['25', 0], ['26', 3], ['27', 5]],
+    chips: ['La curva queda completa', '3 tiendas'],
     cta: 'Ver el plan',
-    nuevo: true,
   },
   {
-    k: 'Traspaso entre tiendas',
-    c: '#3B82F6',
-    t: 'Satélite tiene <b>46 piezas paradas</b> que Polanco vende en 12 días.',
+    k: 'El color que no se mueve · entre tiendas',
+    t: 'El <b>denim</b> lleva 46 piezas paradas en Satélite. En Polanco gira 5× más rápido.',
     n: '$58,900',
     l: 'en dinero parado',
-    chips: ['Gira 5× más rápido allá', 'Satélite → Polanco'],
+    prenda: 'Blusa satín · denim y hueso',
+    colores: ['negro', 'crema'],
+    tallas: [['S', 12], ['M', 18], ['L', 11], ['XL', 5]],
+    chips: ['Satélite → Polanco', 'Sin comprar nada'],
     cta: 'Ver el plan',
   },
   {
-    k: 'Compra · se está acabando',
-    c: '#10B981',
-    t: 'A la camisa de cuadros le quedan <b>9 días de vida</b> en tiendas. Es compra de lote.',
+    k: 'Se está acabando · compra de lote',
+    t: 'A la camisa de cuadros le quedan <b>9 días de vida</b>. Falta la M en las tres tiendas.',
     n: '$74,200',
     l: 'de venta en riesgo',
+    prenda: 'Camisa cuadros · 2 colores',
+    colores: ['salvia', 'negro'],
+    tallas: [['S', 4], ['M', 0], ['L', 2], ['XL', 6]],
     chips: ['Proveedor entrega en 12 días', 'Mejor margen del mes'],
     cta: 'Armar la compra',
-    nuevo: true,
   },
   {
     k: 'Rebaja · siguiente escalón',
-    c: '#EC4899',
-    t: 'La chamarra acolchada lleva <b>41 días dormida</b>: el −25% la saca en 3 semanas.',
+    t: 'La chamarra acolchada lleva <b>41 días dormida</b>: sobra la XL en las tres tiendas.',
     n: '$32,600',
     l: 'recuperables con rebaja',
-    chips: ['Escalón 2 de 3 · −25%', 'aún deja 38% de margen'],
+    prenda: 'Chamarra acolchada · lila y crema',
+    colores: ['lila', 'crema'],
+    tallas: [['S', 1], ['M', 2], ['L', 9], ['XL', 21]],
+    chips: ['Escalón 2 de 3 · −25%', 'Aún deja 38% de margen'],
     cta: 'Preparar la rebaja',
   },
-  {
-    k: 'Liquidación · la temporada se acaba',
-    c: '#F97316',
-    t: 'La temporada de chamarras <b>muere en 10 días</b>: 84 piezas deben salir ya.',
-    n: '$41,300',
-    l: 'antes de que sea merma',
-    chips: ['Configurable: tú pones las reglas'],
-    cta: 'Ver la liquidación',
-  },
-  {
-    k: 'La vida del producto',
-    c: '#0F172A',
-    t: '2 vidas piden una decisión hoy — su ciclo habla.',
-    n: '2',
-    l: 'fichas abiertas',
-    chips: ['Una ya pagó su lote', 'otra pide su primer escalón'],
-    cta: 'Abrir sus fichas',
-  },
+];
+
+// La corrida: la curva de la misma prenda, tienda por tienda. Es lo que nadie
+// alcanza a revisar a mano y donde se ve el hueco de un vistazo.
+const TALLAS = ['XS', 'S', 'M', 'L', 'XL'];
+const corrida = [
+  { tienda: 'Polanco',     v: [3, 5, 0, 0, 4] },
+  { tienda: 'Roma Norte',  v: [2, 0, 6, 4, 3] },
+  { tienda: 'Guadalajara', v: [4, 3, 5, 0, 2] },
+  { tienda: 'Satélite',    v: [1, 2, 3, 7, 18] },
 ];
 
 // Lo que va contando el panel de la izquierda conforme se arma el tablero.
 const etapas = [
-  { t: 'Un dato suelto no decide nada.', d: 'Sabes que el CEDIS tiene 128 pares parados. ¿Y luego? El dato no dice a qué tienda, ni cuánto, ni si vale la pena moverlos.' },
+  { t: 'Un dato suelto no decide nada.', d: 'Sabes que a Polanco le falta la 24. ¿Y luego? El dato no dice cuántas, ni de qué color, ni de dónde sacarlas sin romper otra tienda.' },
   { t: 'Dos ya son una comparación.', d: 'Ahora hay dinero parado en dos frentes. ¿Cuál primero? Aquí es donde normalmente empieza el Excel.' },
-  { t: 'Tres, y aparece la pregunta cara.', d: 'Mover, comprar o esperar. Cada respuesta cuesta dinero y cada una necesita datos que viven en reportes distintos.' },
-  { t: 'Seis frentes abiertos a la vez.', d: 'Traspasos, compra, rebaja, liquidación y ciclo de vida. Ninguna tienda tiene a alguien revisando esto todas las noches.' },
+  { t: 'Tres, y aparece la pregunta cara.', d: 'Mover, comprar o rebajar. Cada respuesta cuesta dinero, y cada una necesita tallas, colores y días de vida que viven en reportes distintos.' },
+  { t: 'Y la curva, tienda por tienda.', d: 'La misma prenda, sus cinco tallas y tus cuatro tiendas. Donde hay un cero hay venta que no ocurre — y nadie alcanza a revisar esto a mano todas las noches.' },
   { t: 'Tu analista se adelantó.', d: 'A las 3 de la mañana el operador ya recorrió tus tiendas, tu CEDIS y tu temporada. No te deja un reporte: te deja las decisiones tomadas y ordenadas por lo que cuesta no tomarlas.' },
   { t: 'Y cada tarjeta abre el plan, pieza por pieza.', d: 'Falta − lo que ya viene en camino = lo que de verdad se mueve. Nada se duplica, y nada sale de una tienda hasta que tú lo envías.' },
+  { t: 'Y cada prenda tiene su vida contada.', d: 'Cuándo llegó, qué día terminó de pagar su lote y qué te dejó limpio desde entonces. Una prenda no es una fila del inventario: es un ciclo, y el ciclo te dice cuándo volver a comprarla y cuándo dejarla ir.' },
 ];
 ---
 
@@ -140,12 +147,25 @@ const etapas = [
 
           <div class="op-rejilla">
             {tarjetas.map((c, i) => (
-              <article class="op-tarjeta" data-i={i} style={`--c:${c.c}`}>
-                <div class="op-tarjeta-cab">
-                  <span class="op-tarjeta-k">{c.k}</span>
-                  {c.nuevo && <span class="op-nuevo">Nuevo hoy</span>}
-                </div>
+              <article class="op-tarjeta" data-i={i}>
+                <span class="op-tarjeta-k">{c.k}</span>
                 <p class="op-tarjeta-t" set:html={c.t} />
+
+                <div class="op-prenda">
+                  <span class="op-swatches" aria-hidden="true">
+                    {c.colores.map((col) => <i style={`background:${COLORES[col]}`} />)}
+                  </span>
+                  <span class="op-prenda-txt">{c.prenda}</span>
+                </div>
+
+                <div class="op-curvita" aria-hidden="true">
+                  {c.tallas.map(([t, v]) => (
+                    <span class:list={['op-t', { cero: v === 0, sobra: v >= 18 }]}>
+                      <b>{v}</b><i>{t}</i>
+                    </span>
+                  ))}
+                </div>
+
                 <p class="op-tarjeta-n"><b>{c.n}</b><span>{c.l}</span></p>
                 <div class="op-chips">
                   {c.chips.map((ch) => <span class="op-chip">{ch}</span>)}
@@ -153,6 +173,72 @@ const etapas = [
                 <span class="op-cta">{c.cta} <i>→</i></span>
               </article>
             ))}
+          </div>
+
+        </div>
+
+        <!-- La corrida voltea SOBRE el tablero, no debajo: apilada no cabe en
+             la pantalla pegada y las tarjetas tendrían que encogerse. -->
+        <div class="op-corrida">
+            <div class="op-corrida-cab">
+              <span class="op-corrida-k">La corrida · vestido slip terracota</span>
+              <span class="op-corrida-pie">Donde hay un cero, hay venta que no ocurre</span>
+            </div>
+            <table class="op-corrida-tabla">
+              <thead>
+                <tr>
+                  <th scope="col"><span class="vo">Tienda</span></th>
+                  {TALLAS.map((t) => <th scope="col">{t}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {corrida.map((f) => (
+                  <tr>
+                    <th scope="row">{f.tienda}</th>
+                    {f.v.map((v) => (
+                      <td class:list={[{ cero: v === 0, sobra: v >= 18 }]}>{v}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p class="op-corrida-txt">
+              Cuatro tiendas, cinco tallas, una prenda. <b>Cinco huecos</b> y una talla que sobra
+              en Satélite — y todo se resuelve moviendo lo que ya tienes.
+            </p>
+        </div>
+
+        <!-- La vida del producto: el ciclo completo de una prenda. -->
+        <div class="op-vida">
+          <div class="op-vida-cab">
+            <div>
+              <span class="op-vida-k">Día 124 de su ciclo</span>
+              <h3>Vestido bordado vino</h3>
+              <div class="op-vida-chips">
+                <span class="op-estado"><i></i> Maduro — ritmo estable</span>
+                <span class="op-pago">★ Ya pagó su lote</span>
+              </div>
+            </div>
+            <div class="op-vida-cifras">
+              <span><b>78%</b><i>ya se vendió</i></span>
+              <span class="op-vida-limpio"><b>$37,325</b><i>te dejó, limpios</i></span>
+            </div>
+          </div>
+
+          <div class="op-grafica">
+            <svg viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
+              <path class="op-area" d="M8 128 C40 122 80 104 110 88 C145 70 205 48 250 36 C290 26 315 21 330 18 C355 15 375 13 392 12 L392 132 L8 132 Z" />
+              <path class="op-linea" d="M8 128 C40 122 80 104 110 88 C145 70 205 48 250 36 C290 26 315 21 330 18 C355 15 375 13 392 12" />
+            </svg>
+            <span class="op-hito op-hito--ini" style="left:2%"><i></i></span>
+            <span class="op-hito op-hito--lote" style="left:62.5%"><i>★</i></span>
+            <span class="op-hito op-hito--pico" style="left:82.5%"><i></i></span>
+          </div>
+
+          <div class="op-hitos">
+            <div><strong>día 0 · llegó</strong><span>158 piezas · lote de $94,800</span></div>
+            <div><strong>día 71 · pagó su lote</strong><span>desde aquí, todo es ganancia</span></div>
+            <div><strong>día 87 · su pico</strong><span>34 piezas en una semana</span></div>
           </div>
         </div>
 
@@ -203,8 +289,8 @@ const etapas = [
 <style>
   .op {
     position: relative;
-    background: #F4F3EF;
-    color: #0F172A;
+    background: #F5F3EE;
+    color: #1A1A1A;
     scroll-margin-top: 80px;
   }
   .op-riel { position: relative; }
@@ -212,7 +298,7 @@ const etapas = [
     position: sticky; top: 0; min-height: 100vh; min-height: 100svh;
     display: grid; grid-template-columns: 0.86fr 1.14fr; align-items: center;
     gap: clamp(20px, 3vw, 56px);
-    padding: clamp(80px, 11vh, 120px) clamp(20px, 4vw, 64px) clamp(28px, 5vh, 64px);
+    padding: clamp(74px, 9vh, 104px) clamp(20px, 4vw, 64px) clamp(18px, 3vh, 40px);
   }
 
   /* ── El panel ── */
@@ -220,13 +306,13 @@ const etapas = [
     display: inline-block; padding: 6px 13px; border-radius: 999px;
     border: 1px solid rgba(15,23,42,.14); background: rgba(255,255,255,.7);
     font-size: 0.6875rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-    color: #475569;
+    color: #4A4A4A;
   }
   .op-titulo {
     font-family: var(--font-display); font-size: clamp(1.9rem, 3.4vw, 2.9rem); font-weight: 800;
-    line-height: 1.04; letter-spacing: -.035em; margin: 16px 0 0; color: #0F172A;
+    line-height: 1.04; letter-spacing: -.035em; margin: 16px 0 0; color: #1A1A1A;
   }
-  .op-titulo em { font-style: normal; color: #64748B; }
+  .op-titulo em { font-style: normal; color: #4A4A4A; }
 
   .op-etapas { display: grid; gap: 2px; margin-top: clamp(18px, 3vh, 30px); }
   .op-etapa {
@@ -237,43 +323,43 @@ const etapas = [
   .op-etapa.on { opacity: 1; }
   .op-etapa-n {
     font-family: var(--font-display); font-size: 0.6875rem; font-weight: 800;
-    color: #94A3B8; padding-top: 3px;
+    color: #8C8C8C; padding-top: 3px;
   }
   .op-etapa h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin: 0 0 3px; }
-  .op-etapa p { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: #475569; max-width: 46ch; }
+  .op-etapa p { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: #4A4A4A; max-width: 46ch; }
   .op-etapa:not(.on) p { display: none; }
 
   .op-barra { height: 2px; background: rgba(15,23,42,.12); border-radius: 2px; overflow: hidden; margin-top: 14px; }
-  .op-barra span { display: block; height: 100%; width: 16%; background: #0F172A; transition: width .35s ease; }
+  .op-barra span { display: block; height: 100%; width: 16%; background: #1A1A1A; transition: width .35s ease; }
 
   /* ── El tablero ── */
   .op-lienzo { position: relative; }
   .op-tablero {
-    background: #FBFAF7; border: 1px solid rgba(15,23,42,.08); border-radius: 20px;
+    background: #FAFAF8; border: 1px solid rgba(15,23,42,.08); border-radius: 20px;
     padding: clamp(14px, 1.6vw, 22px);
     box-shadow: 0 30px 60px rgba(15,23,42,.10);
     transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
   }
   .op-tablero-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
   .op-marca { font-family: var(--font-display); font-weight: 800; font-size: 0.9375rem; letter-spacing: -.02em; }
-  .op-marca i { display: inline-block; width: 6px; height: 6px; border-radius: 2px; background: #10B981; margin: 0 6px; }
-  .op-sello { font-size: 0.625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94A3B8; }
+  .op-marca i { display: inline-block; width: 6px; height: 6px; border-radius: 2px; background: #2AB5A0; margin: 0 6px; }
+  .op-sello { font-size: 0.625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #8C8C8C; }
 
   /* El briefing entra al final: es la conclusión, no el punto de partida. */
   .op-briefing {
     display: flex; align-items: center; gap: clamp(12px, 1.6vw, 22px);
-    background: #0F172A; color: #fff; border-radius: 14px;
-    padding: clamp(12px, 1.6vw, 18px) clamp(14px, 1.8vw, 22px);
+    background: #1D1D1F; color: #fff; border-radius: 14px;
+    padding: clamp(10px, 1.2vw, 14px) clamp(14px, 1.8vw, 20px);
     opacity: 0; transform: translateY(-10px);
     transition: opacity .55s ease, transform .55s cubic-bezier(.2,.7,.3,1);
   }
   .op.brief .op-briefing { opacity: 1; transform: none; }
-  .op-anillo { position: relative; width: 76px; height: 76px; flex: none; display: grid; place-items: center; }
+  .op-anillo { position: relative; width: 66px; height: 66px; flex: none; display: grid; place-items: center; }
   .op-anillo svg { position: absolute; inset: 0; transform: rotate(-90deg); }
   .op-anillo circle { fill: none; stroke-width: 8; }
   .op-anillo-base { stroke: rgba(255,255,255,.14); }
   .op-anillo-val {
-    stroke: #10B981; stroke-linecap: round;
+    stroke: #2AB5A0; stroke-linecap: round;
     stroke-dasharray: 264; stroke-dashoffset: 264;
     transition: stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) .15s;
   }
@@ -286,57 +372,174 @@ const etapas = [
   }
   .op-briefing-k {
     display: block; font-size: 0.625rem; font-weight: 800; letter-spacing: .12em;
-    text-transform: uppercase; color: #34D399; margin-bottom: 4px;
+    text-transform: uppercase; color: #2AB5A0; margin-bottom: 4px;
   }
   .op-briefing-txt p { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: rgba(255,255,255,.86); }
   .op-briefing-txt b { color: #fff; }
 
   .op-rejilla {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 1vw, 14px);
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.1vw, 16px);
     margin-top: clamp(10px, 1.4vw, 16px);
   }
   .op-tarjeta {
     position: relative; background: #fff; border-radius: 14px; overflow: hidden;
-    padding: 14px 14px 12px; border: 1px solid rgba(15,23,42,.07);
+    padding: clamp(13px, 1.1vw, 17px); border: 1px solid rgba(15,23,42,.07);
     box-shadow: 0 6px 18px rgba(15,23,42,.05);
     /* Cada tarjeta entra sola: la sección existe para enseñar que un dato
        suelto no decide nada y seis juntos sí. */
     opacity: 0; transform: translateY(16px) scale(.97);
     transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
   }
-  .op-tarjeta::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--c);
-  }
   .op-tarjeta.on { opacity: 1; transform: none; }
-  .op-tarjeta-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
   .op-tarjeta-k {
-    font-size: 0.5625rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
-    color: var(--c); line-height: 1.3;
-  }
-  .op-nuevo {
-    margin-left: auto; flex: none; padding: 3px 7px; border-radius: 999px; background: #0F172A;
-    color: #fff; font-size: 0.5rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    display: block; font-size: 0.5625rem; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: #8C8C8C; margin-bottom: 8px;
   }
   .op-tarjeta-t {
-    font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; line-height: 1.25;
-    margin: 0 0 8px; color: #0F172A; letter-spacing: -.015em;
+    font-family: var(--font-display); font-size: 1rem; font-weight: 700; line-height: 1.26;
+    margin: 0 0 10px; color: #1A1A1A; letter-spacing: -.02em;
   }
-  .op-tarjeta-t :global(b) { color: var(--c); }
+  /* Lo resaltado es la TALLA o el COLOR del que se habla, no un color de
+     categoría: la rejilla dejó de leerse como semáforo. */
+  .op-tarjeta-t :global(b) { color: #1A1A1A; box-shadow: inset 0 -.42em 0 rgba(229,75,75,.16); }
+
+  .op-prenda { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+  .op-swatches { display: inline-flex; }
+  .op-swatches i {
+    width: 15px; height: 15px; border-radius: 50%; display: block;
+    border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(15,23,42,.12); margin-right: -5px;
+  }
+  .op-prenda-txt { font-size: 0.75rem; font-weight: 600; color: #4A4A4A; }
+
+  /* La curva de la prenda dentro de la tarjeta: el hueco se ve sin leer. */
+  .op-curvita { display: flex; gap: 4px; margin-bottom: 10px; }
+  .op-t {
+    flex: 1; text-align: center; padding: 5px 2px; border-radius: 8px;
+    background: #F5F3EE; border: 1px solid transparent;
+  }
+  .op-t b { display: block; font-family: var(--font-display); font-size: 0.9375rem; font-weight: 800; }
+  .op-t i { font-style: normal; font-size: 0.5625rem; font-weight: 700; color: #8C8C8C; }
+  .op-t.cero { background: #FDF2F2; border-color: #F3C9C9; }
+  .op-t.cero b { color: #E54B4B; }
+  .op-t.sobra { background: #FDF7EC; border-color: #F0DDB4; }
+  .op-t.sobra b { color: #B9781F; }
   .op-tarjeta-n { margin: 0 0 8px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-  .op-tarjeta-n b { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; letter-spacing: -.03em; }
+  .op-tarjeta-n b { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -.03em; }
   .op-tarjeta-n span {
-    font-size: 0.5625rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #94A3B8;
+    font-size: 0.5625rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #8C8C8C;
   }
-  .op-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .op-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
   .op-chip {
     padding: 3px 8px; border-radius: 999px; background: rgba(15,23,42,.05);
-    font-size: 0.5625rem; font-weight: 700; color: #475569;
+    font-size: 0.5625rem; font-weight: 700; color: #4A4A4A;
   }
   .op-cta {
     display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px;
-    background: #0F172A; color: #fff; font-size: 0.6875rem; font-weight: 800;
+    background: #1A1A1A; color: #fff; font-size: 0.6875rem; font-weight: 800;
   }
   .op-cta i { font-style: normal; }
+
+  /* ── La corrida: la curva en todas las tiendas a la vez ── */
+  .op-corrida {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column; justify-content: center;
+    background: #fff; border-radius: 20px;
+    padding: clamp(20px, 2.4vw, 34px); border: 1px solid rgba(15,23,42,.08);
+    box-shadow: 0 40px 80px rgba(15,23,42,.16);
+    opacity: 0; transform: translateY(20px) scale(.98); pointer-events: none;
+    transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+  .op.corrida .op-corrida { opacity: 1; transform: none; }
+  .op.corrida .op-tablero { opacity: .3; transform: scale(.985); }
+  .op-corrida-txt { margin: 14px 0 0; font-size: 0.875rem; line-height: 1.55; color: #4A4A4A; }
+  .op-corrida-txt b { color: #E54B4B; }
+  .op-corrida-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .op-corrida-k {
+    font-size: 0.5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #4A4A4A;
+  }
+  .op-corrida-pie { font-size: 0.6875rem; font-weight: 600; color: #E54B4B; }
+  .op-corrida-tabla { width: 100%; border-collapse: collapse; }
+  .op-corrida-tabla th, .op-corrida-tabla td { padding: clamp(9px, 1.1vh, 14px) 4px; text-align: center; }
+  .op-corrida-tabla thead th {
+    font-size: 0.5625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8C8C8C;
+  }
+  .op-corrida-tabla tbody th {
+    text-align: left; font-size: 0.9375rem; font-weight: 700; color: #1A1A1A; white-space: nowrap;
+  }
+  .op-corrida-tabla tbody td {
+    font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #334155;
+    font-variant-numeric: tabular-nums;
+  }
+  .op-corrida-tabla tbody tr { border-top: 1px solid rgba(15,23,42,.07); }
+  .op-corrida-tabla td.cero { color: #E54B4B; background: #FDF2F2; border-radius: 8px; }
+  .op-corrida-tabla td.sobra { color: #B9781F; background: #FDF7EC; border-radius: 8px; }
+
+  /* ── La vida del producto ── */
+  .op-vida {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 1.6vh, 22px);
+    background: #FAFAF8; border-radius: 20px;
+    padding: clamp(20px, 2.4vw, 34px); border: 1px solid rgba(26,26,26,.08);
+    box-shadow: 0 40px 80px rgba(26,26,26,.16);
+    opacity: 0; transform: translateY(20px) scale(.98); pointer-events: none;
+    transition: opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+  .op.vida .op-vida { opacity: 1; transform: none; }
+  .op.vida .op-tablero { opacity: .3; transform: scale(.985); }
+  .op-vida-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .op-vida-k { font-size: 0.625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8C8C8C; }
+  .op-vida-cab h3 {
+    font-family: var(--font-display); font-size: clamp(1.4rem, 2.4vw, 2.1rem); font-weight: 800;
+    letter-spacing: -.035em; margin: 4px 0 10px; color: #1A1A1A;
+  }
+  .op-vida-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-estado, .op-pago {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .op-estado { background: #E6F6F3; color: #14766A; }
+  .op-estado i { width: 7px; height: 7px; border-radius: 50%; background: #2AB5A0; }
+  .op-pago { background: #FDF3DE; color: #8A6413; }
+  .op-vida-cifras { display: flex; gap: clamp(16px, 2vw, 32px); }
+  .op-vida-cifras span { display: flex; flex-direction: column; }
+  .op-vida-cifras b { font-family: var(--font-display); font-size: clamp(1.6rem, 2.8vw, 2.4rem); font-weight: 800; letter-spacing: -.035em; color: #1A1A1A; }
+  .op-vida-cifras i {
+    font-style: normal; font-size: 0.5625rem; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: #8C8C8C;
+  }
+  .op-vida-limpio b { color: #2AB5A0; }
+
+  /* La curva se DIBUJA al llegar: el punto de la lámina es ver el ciclo
+     avanzar, no un gráfico ya hecho. */
+  .op-grafica { position: relative; flex: 1; min-height: clamp(100px, 17vh, 170px); max-height: 30vh; }
+  .op-grafica svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .op-area { fill: rgba(42,181,160,.13); opacity: 0; transition: opacity .6s ease .5s; }
+  .op-linea {
+    fill: none; stroke: #2AB5A0; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 460; stroke-dashoffset: 460;
+    transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1) .1s;
+  }
+  .op.vida .op-linea { stroke-dashoffset: 0; }
+  .op.vida .op-area { opacity: 1; }
+  .op-hito { position: absolute; bottom: 0; transform: translate(-50%, 0); opacity: 0; transition: opacity .4s ease; }
+  .op.vida .op-hito { opacity: 1; }
+  .op.vida .op-hito--ini { transition-delay: .3s; }
+  .op.vida .op-hito--lote { transition-delay: .9s; }
+  .op.vida .op-hito--pico { transition-delay: 1.2s; }
+  .op-hito i {
+    display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+    font-style: normal; font-size: 11px; color: #fff; box-shadow: 0 0 0 3px #FAFAF8;
+  }
+  .op-hito--ini { bottom: 6%; }
+  .op-hito--ini i { background: #4B7BE5; }
+  .op-hito--lote { bottom: 74%; }
+  .op-hito--lote i { background: #E8A838; color: #5A4310; }
+  .op-hito--pico { bottom: 86%; }
+  .op-hito--pico i { background: #2AB5A0; }
+  .op-hitos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+  .op-hitos strong { display: block; font-size: 0.8125rem; font-weight: 700; color: #1A1A1A; }
+  .op-hitos span { font-size: 0.6875rem; color: #4A4A4A; }
 
   /* ── El detalle: lo que pasa al abrir una tarjeta ── */
   .op-detalle {
@@ -352,27 +555,27 @@ const etapas = [
   .op.abre .op-tablero { opacity: .35; transform: scale(.985); }
   .op-detalle-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
   .op-detalle-cab h3 { font-family: var(--font-display); font-size: clamp(1.1rem, 1.8vw, 1.5rem); font-weight: 800; margin: 0 0 4px; letter-spacing: -.03em; }
-  .op-detalle-cab p { margin: 0; font-size: 0.8125rem; color: #64748B; }
+  .op-detalle-cab p { margin: 0; font-size: 0.8125rem; color: #4A4A4A; }
   .op-detalle-tag {
-    flex: none; padding: 6px 12px; border-radius: 999px; background: #F3EEFF;
-    color: #7C3AED; font-size: 0.5625rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+    flex: none; padding: 6px 12px; border-radius: 999px; background: #EDF2FD;
+    color: #4B7BE5; font-size: 0.5625rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   }
   .op-detalle-cuerpo { display: grid; grid-template-columns: 1.25fr 1fr; gap: clamp(10px, 1.4vw, 16px); flex: 1; min-height: 0; }
-  .op-movs, .op-curva { background: #F6F5F2; border-radius: 14px; padding: 14px; }
+  .op-movs, .op-curva { background: #F5F3EE; border-radius: 14px; padding: 14px; }
   .op-movs-k {
     display: block; font-size: 0.5625rem; font-weight: 800; letter-spacing: .1em;
-    text-transform: uppercase; color: #64748B; margin-bottom: 10px;
+    text-transform: uppercase; color: #4A4A4A; margin-bottom: 10px;
   }
   .op-mov {
     display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 10px;
     padding: 10px 12px; margin-bottom: 7px;
   }
-  .op-mov b { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: #7C3AED; flex: none; }
+  .op-mov b { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: #4B7BE5; flex: none; }
   .op-mov strong { display: block; font-size: 0.8125rem; font-weight: 700; }
-  .op-mov span { font-size: 0.6875rem; color: #64748B; }
-  .op-mov--ojo { background: #FFFBEB; border: 1px solid #FDE68A; }
+  .op-mov span { font-size: 0.6875rem; color: #4A4A4A; }
+  .op-mov--ojo { background: #FDF7EC; border: 1px solid #F0DDB4; }
   .op-ojo {
-    margin-left: auto; flex: none; padding: 3px 8px; border-radius: 999px; background: #FDE68A;
+    margin-left: auto; flex: none; padding: 3px 8px; border-radius: 999px; background: #F0DDB4;
     color: #92400E; font-size: 0.5625rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
   }
   .op-tallas { display: flex; gap: 6px; margin-bottom: 10px; }
@@ -381,20 +584,20 @@ const etapas = [
     border: 1px solid transparent;
   }
   .op-talla b { display: block; font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; }
-  .op-talla i { font-style: normal; font-size: 0.625rem; color: #94A3B8; }
-  .op-talla--cero { background: #FFF1F5; border-color: #FBCFE8; }
-  .op-talla--cero b { color: #EC4899; }
-  .op-curva-txt { margin: 0; font-size: 0.75rem; line-height: 1.5; color: #475569; }
-  .op-curva-txt b { color: #EC4899; }
+  .op-talla i { font-style: normal; font-size: 0.625rem; color: #8C8C8C; }
+  .op-talla--cero { background: #FDF2F2; border-color: #F3C9C9; }
+  .op-talla--cero b { color: #E54B4B; }
+  .op-curva-txt { margin: 0; font-size: 0.75rem; line-height: 1.5; color: #4A4A4A; }
+  .op-curva-txt b { color: #E54B4B; }
   .op-detalle-pie { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .op-boton {
-    padding: 12px 22px; border-radius: 999px; background: #7C3AED; color: #fff;
+    padding: 12px 22px; border-radius: 999px; background: #4B7BE5; color: #fff;
     font-size: 0.8125rem; font-weight: 800;
   }
-  .op-detalle-pie p { margin: 0; font-size: 0.6875rem; line-height: 1.45; color: #64748B; max-width: 42ch; }
+  .op-detalle-pie p { margin: 0; font-size: 0.6875rem; line-height: 1.45; color: #4A4A4A; max-width: 42ch; }
 
   /* El recorrido es caja propia, nunca padding: si no, el sticky no viaja. */
-  .op-recorrido { height: 520vh; }
+  .op-recorrido { height: 620vh; }
 
   /* ── Sin riel: móvil, poco movimiento o pantalla corta ── */
   .op.sin-riel .op-pegado { position: static; min-height: 0; grid-template-columns: 1fr; }
@@ -406,10 +609,17 @@ const etapas = [
   .op.sin-riel .op-briefing { opacity: 1; transform: none; }
   .op.sin-riel .op-anillo-val { stroke-dashoffset: 16; }
   .op.sin-riel .op-rejilla { grid-template-columns: 1fr; }
-  .op.sin-riel .op-detalle {
+  .op.sin-riel .op-corrida {
+    position: static; opacity: 1; transform: none; margin-top: 14px;
+    box-shadow: 0 12px 30px rgba(15,23,42,.08);
+  }
+  .op.sin-riel .op-detalle,
+  .op.sin-riel .op-vida {
     position: static; opacity: 1; transform: none; margin-top: 16px;
     box-shadow: 0 12px 30px rgba(15,23,42,.10);
   }
+  .op.sin-riel .op-linea { stroke-dashoffset: 0; }
+  .op.sin-riel .op-area, .op.sin-riel .op-hito { opacity: 1; }
   .op.sin-riel .op-detalle-cuerpo { grid-template-columns: 1fr; }
   .op.sin-riel .op-tablero { opacity: 1; transform: none; }
 
@@ -423,7 +633,15 @@ const etapas = [
     .op-briefing { opacity: 1; transform: none; }
     .op-anillo-val { stroke-dashoffset: 16; }
     .op-rejilla { grid-template-columns: 1fr; }
-    .op-detalle { position: static; opacity: 1; transform: none; margin-top: 16px; box-shadow: 0 12px 30px rgba(15,23,42,.10); }
+    .op-corrida {
+      position: static; opacity: 1; transform: none; margin-top: 14px;
+      box-shadow: 0 12px 30px rgba(15,23,42,.08);
+    }
+    .op-corrida-tabla tbody th { font-size: 0.75rem; }
+    .op-detalle, .op-vida { position: static; opacity: 1; transform: none; margin-top: 16px; box-shadow: 0 12px 30px rgba(15,23,42,.10); }
+    .op-linea { stroke-dashoffset: 0; }
+    .op-area, .op-hito { opacity: 1; }
+    .op-vida-cab { flex-direction: column; }
     .op-detalle-cuerpo { grid-template-columns: 1fr; }
     .op-tablero { opacity: 1; transform: none; }
     .op-detalle-cab { flex-direction: column; }
@@ -450,15 +668,17 @@ const etapas = [
     // Reparto del riel: las cuatro primeras etapas encienden tarjetas (1,2,3 y
     // luego las seis), la quinta trae el briefing y la sexta abre el detalle.
     // Cuántas tarjetas se ven en cada etapa:
-    const CUANTAS = [1, 2, 3, 6, 6, 6];
+    const CUANTAS = [1, 2, 3, 4, 4, 4, 4];
 
     const marcar = (k: number) => {
       if (k === actual) return;
       actual = k;
       etapas.forEach((e, i) => e.classList.toggle('on', i === k));
       tarjetas.forEach((t, i) => t.classList.toggle('on', i < (CUANTAS[k] ?? 6)));
+      sec.classList.toggle('corrida', k === 3);
       sec.classList.toggle('brief', k >= 4);
-      sec.classList.toggle('abre', k >= 5);
+      sec.classList.toggle('abre', k === 5);
+      sec.classList.toggle('vida', k >= 6);
       if (barra) barra.style.width = `${((k + 1) / N) * 100}%`;
     };
 
