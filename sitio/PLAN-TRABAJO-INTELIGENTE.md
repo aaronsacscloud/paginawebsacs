@@ -420,6 +420,26 @@ reseñas) — alimenta primer toque, briefing y campos · (20) **fin de semana:
 la IA cubre completo** — conversa, responde y agenda citas para el lunes;
 el lunes abre con estafetas ordenadas.
 
+## Estado de construcción (2026-09-01 — todo en producción)
+
+| Fase | Commit | Qué quedó vivo |
+|---|---|---|
+| F0 motor | 60c20cc3 | esquema ti_*, cadencia, transformaciones, API, cron |
+| Arranque | 007b227d | auditoría IA del backlog: 9 revividos, 39 a nutrición |
+| F1 panel | aae94f62 · 16d1bb33 | /admin/trabajo + tab en el CRM, 7 layouts |
+| F2 observador | e87bfc53 | respuestas y vistas → P1; relojes 3·7·14, 2d, 3d, 30d |
+| F3 datos | 04413f99 | registro de campos, detector, pestaña Datos con escritura |
+| F5+F6 copiloto | b09458b3 | wiki comercial, cobertura por SLA, ciclo de 24 h |
+
+Pendientes con dependencia externa:
+- **F4 Twilio**: el esqueleto existe (`lib/telefonia/twilio.ts`, token de voz,
+  TwiML, webhook de estado y grabación). Falta el NÚMERO y las envs
+  `TWILIO_*` en Vercel. Con eso: click-to-call, locución de grabación,
+  transcripción → extracción que alimenta las sugerencias del lote.
+- **Válvula de plantillas**: registrar T3/T6/T8 en Meta y mapearlas en
+  `ti_config.plantillas_meta`. Sin eso la válvula NO dispara (por diseño).
+- **Copiloto**: apagado por defecto — `node scripts/ti-copiloto.mjs --on`.
+
 ## Fases
 
 - **F0** — Modelo de datos + motor de cadencia + generador del plan +
