@@ -42,7 +42,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
         <button class="toggle-btn active" data-billing="monthly" aria-pressed="true">Mensual</button>
         <button class="toggle-btn" data-billing="annual" aria-pressed="false">
           Anual
-          <span class="toggle-savings">Ahorra 2 meses</span>
+          <span class="toggle-savings">35% de descuento</span>
         </button>
       </div>
     </div>
@@ -495,7 +495,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
           <div class="calc-results-divider"></div>
           <div class="calc-results-plan">
             <span class="calc-results-plan-label">Costo de Sacs · <strong id="calc-plan-name">Controla</strong></span>
-            <span class="calc-results-plan-price" id="calc-sacs-cost">$36,450 MXN/año</span>
+            <span class="calc-results-plan-price" id="calc-sacs-cost">$28,431 MXN/año</span>
             <span class="calc-results-plan-roi">Retorno de inversión: <strong id="calc-roi">4.2x</strong></span>
           </div>
           <a class="calc-results-btn" href="/prueba-gratis">Prueba 7 días gratis</a>
@@ -3258,7 +3258,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     const totalHrsYear = totalHrsMonth * 12;
     // Una temporada de operación de tienda ≈ 6 meses de jornada (960 h).
     const fte = totalHrsYear / 960;
-    const sacsCost = branches * selectedPlanPrice * 10; // annual = 10 months (2 months free)
+    const sacsCost = branches * selectedPlanPrice * 12 * 0.65; // anual = 35% de descuento sobre 12 meses
     const roi = sacsCost > 0 ? totalMoney / sacsCost : 0;
 
     if (moneyEl) moneyEl.textContent = formatMoney(totalMoney);

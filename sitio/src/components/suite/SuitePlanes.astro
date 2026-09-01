@@ -51,7 +51,7 @@ const planes = [
     nombre: 'Vende',
     para: 'Para tu primera tienda',
     precio: '$810',
-    anual: '$675',
+    anual: '$527',
     hereda: '',
     areas: [
       { a: 'Venta en tienda', i: 'Punto de venta con y sin internet · Cortes de caja y arqueos · Cambios, devoluciones y cancelaciones · Apartados y pedidos · Cotizaciones · Ventas a crédito · Listas de precios' },
@@ -67,7 +67,7 @@ const planes = [
     nombre: 'Controla',
     para: 'Para varias sucursales con orden',
     precio: '$1,215',
-    anual: '$1,013',
+    anual: '$790',
     hereda: 'Vende',
     areas: [
       { a: 'Inventario multisucursal', i: 'Existencias en tiempo real · Gestión de CEDIS · Traspasos entre tiendas · Reabasto sugerido · Alertas de stock bajo o exceso' },
@@ -84,7 +84,7 @@ const planes = [
     nombre: 'Fideliza y Multiplica',
     para: 'Para que la clienta regrese',
     precio: '$1,890',
-    anual: '$1,575',
+    anual: '$1,229',
     hereda: 'Controla',
     areas: [
       { a: 'Clientes y CRM', i: 'Perfil 360° con historial omnicanal · Segmentación por comportamiento de compra · Notas y seguimientos' },
@@ -102,7 +102,7 @@ const planes = [
     nombre: 'Automatiza',
     para: 'Para que la operación corra sola',
     precio: '$3,780',
-    anual: '$3,150',
+    anual: '$2,457',
     hereda: 'Fideliza',
     areas: [
       { a: 'Especialista de IA', i: 'Una persona real que diseña tus automatizaciones contigo · Sesión mensual de optimización · Onboarding completo' },
@@ -158,7 +158,7 @@ const planes = [
             <p class="pl-precio">
               <b>{p.precio}</b><span>/mes por sucursal</span>
             </p>
-            <p class="pl-anual">{p.anual} si pagas anual</p>
+            <p class="pl-anual">{p.anual} si pagas anual (35% de descuento)</p>
 
             {p.popular && comoSeVende === 'incluida' && <p class="pl-popular">El primero que trae la suite completa</p>}
             {p.suite && <p class="pl-suite">{comoSeVende === 'incluida' ? `${suite} incluida` : `Base para ${articulo} ${suite}`}</p>}
