@@ -204,6 +204,40 @@ export function etiquetaSerie(b: { serie_indice?: number | null; serie_total?: n
   return i > 0 && n > 1 ? `sesión ${i} de ${n}` : '';
 }
 
+/**
+ * El texto de la plantilla YA RESUELTO, para espejarlo en el inbox.
+ *
+ * El espejo guardaba el rótulo «Recordatorio de reunión (3 horas antes)» —
+ * un título, no el mensaje. Quien abría el chat no podía saber qué le llegó
+ * de verdad al cliente, que es justo para lo que existe el espejo. Este texto
+ * es el cuerpo aprobado de `reunion_recordatorio` con sus 5 variables puestas.
+ */
+export function textoPlantillaCliente(p: string[]): string {
+  return [
+    `Hola ${p[0]}, te recordamos tu ${p[1]} con Sacs: es en ${p[2]}.`,
+    ``,
+    `Cuándo: ${p[3]} — hora del centro de México (CDMX).`,
+    `Dónde: ${p[4]}`,
+    ``,
+    `Si no te queda, respóndenos por aquí y la movemos.`,
+    ``,
+    `[Botones: «Ahí estaré» · «Reagendar»]`,
+  ].join('\n');
+}
+
+/** Lo mismo para la del host. */
+export function textoPlantillaHost(p: string[]): string {
+  return [
+    `Recordatorio: tienes ${p[0]} en ${p[1]}.`,
+    ``,
+    `Con: ${p[2]}`,
+    `Cuándo: ${p[3]} — hora del centro de México (CDMX).`,
+    `Dónde: ${p[4]}`,
+    ``,
+    `Si ya no puedes, avísale al cliente y muévela desde el CRM.`,
+  ].join('\n');
+}
+
 /** Los 5 parámetros de `reunion_recordatorio`, en orden. */
 export function paramsCliente(b: DatosReunion & { timezone_invitado?: string | null; serie_indice?: number | null; serie_total?: number | null }, anticipacion: string): string[] {
   const serie = etiquetaSerie(b);

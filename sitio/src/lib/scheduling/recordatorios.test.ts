@@ -162,6 +162,21 @@ cierto(madrid.includes('jueves 3 de septiembre'), 'Madrid ve el día siguiente, 
 cierto(!horaLocalInvitado({ ...b, timezone_invitado: 'America/Tijuana' } as any).includes('de septiembre'),
   'dentro de México no se repite la fecha: es el mismo día');
 
+// ── El espejo del inbox: el texto REAL, no un rótulo ─────────────────────
+// El inbox mostraba «Recordatorio de reunión (3 horas antes)» —un título— y
+// quien abría el chat no podía saber qué le llegó al cliente, que es para lo
+// único que existe el espejo.
+import { textoPlantillaCliente, textoPlantillaHost } from './recordatorios.ts';
+const espejo = textoPlantillaCliente(paramsCliente(b as any, '3 horas'));
+cierto(espejo.includes('Ana'), 'el espejo trae el nombre');
+cierto(espejo.includes('4:30 p.m.'), 'el espejo trae la hora');
+cierto(espejo.includes('hora del centro de México'), 'el espejo trae el huso');
+cierto(espejo.includes('meet.google.com'), 'el espejo trae la liga');
+cierto(espejo.includes('Reagendar'), 'el espejo dice qué botones vio el cliente');
+cierto(!espejo.startsWith('Recordatorio de reunión ('), 'el espejo NO es el rótulo viejo');
+const espejoH = textoPlantillaHost(paramsHost({ ...b, invitee_empresa: 'Boutique Mila' } as any, '10 minutos'));
+cierto(espejoH.includes('Boutique Mila'), 'el espejo del host dice con quién es');
+
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }
 console.log('  todo bien\n');

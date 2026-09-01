@@ -34,16 +34,23 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
      que es lo honesto — pudo tocar el botón de un recordatorio de una reunión
      que ya se canceló. */
   const liga = b?.token_reagendar ? `${BASE}/agendar/reagendar?token=${b.token_reagendar}` : `${BASE}/agendar/demo`;
-  const cual = b
-    ? `tu ${(b as any).event_types?.nombre || 'reunión'} del ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))}`
-    : 'tu reunión';
-
-  const texto = [
-    `Claro, movemos ${cual} sin problema.`,
-    ``,
-    `Escoge el horario que te acomode aquí:`,
-    liga,
-  ].join('\n');
+  /* El texto tiene que dejar clarísimo que TODAVÍA NO se movió nada. El
+     anterior decía «Claro, movemos tu Reunión del lunes 31 a las 8:00 p.m.»
+     y se leía como si esa fuera la hora NUEVA y el cambio ya estuviera hecho
+     — el cliente creía tener cita nueva y nadie había escogido horario. */
+  const texto = b
+    ? [
+        `Claro que sí. Tu ${(b as any).event_types?.nombre || 'reunión'} está ahora mismo para el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México).`,
+        ``,
+        `Para moverla, escoge tu nuevo horario aquí:`,
+        liga,
+        ``,
+        `Hasta que elijas uno, tu reunión sigue en pie a la hora de arriba.`,
+      ].join('\n')
+    : [
+        `Claro que sí. Ahorita no encuentro una reunión próxima tuya, así que puedes escoger el horario que te acomode aquí:`,
+        liga,
+      ].join('\n');
 
   try {
     const r = await enviarTexto(telefono, texto);
@@ -64,4 +71,45 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
   } catch (e: any) {
     return { ok: false, motivo: String(e?.message || e) };
   }
+}
+
+/**
+ * El cliente tocó «Ahí estaré». Se le contesta y queda registrado.
+ *
+ * Antes ese toque caía en el inbox y ahí moría: el cliente confirmaba y del
+ * otro lado no pasaba nada, ni siquiera quedaba anotado que había confirmado
+ * — que es justo la señal que separa al que va a llegar del que no.
+ */
+export async function confirmoAsistencia(conversationId: string, telefono: string): Promise<void> {
+  const { data: conv } = await supabase.from('wa_conversaciones')
+    .select('contact_id').eq('id', conversationId).maybeSingle();
+  if (!conv?.contact_id) return;
+
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const { data: b } = await supabase.from('bookings')
+    .select('id, fecha, hora_inicio, google_meet_link, event_types(nombre)')
+    .eq('contact_id', conv.contact_id).in('estado', ['confirmada', 'agendada'])
+    .gte('fecha', hoy).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
+    .limit(1).maybeSingle();
+  if (!b) return;
+
+  const texto = [
+    `¡Perfecto! Te esperamos el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México).`,
+    b.google_meet_link ? `` : '',
+    b.google_meet_link ? `Aquí te conectas: ${b.google_meet_link}` : '',
+  ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  try {
+    const r = await enviarTexto(telefono, texto);
+    await registrarMensaje({
+      kapsoMessageId: r?.messages?.[0]?.id || null, telefono, direccion: 'saliente',
+      tipo: 'text', cuerpo: texto, status: 'sent', autor: 'Agenda',
+      metadata: { confirmo_asistencia: b.id },
+    }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
+    await supabase.from('activities').insert({
+      contact_id: conv.contact_id, tipo: 'sistema', automatico: true,
+      titulo: 'Confirmó asistencia desde el recordatorio',
+      metadata: { booking_id: b.id },
+    });
+  } catch { /* el aviso no puede tumbar nada */ }
 }

@@ -62,8 +62,18 @@ export function parsearMensaje(msj: any): MensajeParseado {
       break;
     }
     case 'button': {
-      base.cuerpo = msj.button?.text || null;
-      Object.assign(meta, { interactivo: 'button', id: msj.button?.payload || null });
+      /* El texto del botón, y si no viene, el payload. Meta manda a veces
+         solo el índice («2»), y «Eligió el botón 2» no le dice nada a nadie:
+         hay que poder leer QUÉ escogió el cliente sin ir a buscar la
+         plantilla. Cuando solo hay número, se deja dicho que es un índice
+         para que al menos no se lea como una respuesta del cliente. */
+      const txt = String(msj.button?.text || '').trim();
+      const pay = String(msj.button?.payload || '').trim();
+      const soloNumero = (v: string) => /^\d{1,2}$/.test(v);
+      base.cuerpo = txt && !soloNumero(txt) ? txt
+        : pay && !soloNumero(pay) ? pay
+        : txt || pay ? `Opción ${txt || pay} de la plantilla` : null;
+      Object.assign(meta, { interactivo: 'button', id: pay || null, boton_texto: txt || null });
       break;
     }
     case 'reaction': {

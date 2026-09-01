@@ -173,6 +173,69 @@ export const POST: APIRoute = async ({ request }) => {
     .update({ estado: 'reagendada' })
     .eq('id', booking_id);
 
+  /* ══ EL CALENDARIO. Esto FALTABA por completo ══
+     `createCalendarEvent` y `deleteCalendarEvent` estaban importados en la
+     primera línea de este archivo y no se llamaban en ninguna parte: reagendar
+     movía la fila en la base y NO tocaba Google. Resultado real (caso Jakob,
+     31-ago): la reunión nueva quedó `confirmada` sin evento y sin liga de
+     Meet, el evento viejo siguió vivo en el calendario, y al cliente se le
+     escribió «te llega la invitación actualizada a tu calendario» — una
+     promesa que el código no cumplía. Los recordatorios salían después
+     apuntando a una reunión sin dónde conectarse.
+
+     Orden a propósito: PRIMERO se crea el nuevo (si Google falla, el cliente
+     conserva el evento viejo en su calendario, que es mejor que quedarse sin
+     ninguno) y solo si el nuevo existe se borra el anterior. */
+  let gEventId: string | null = null;
+  let gMeet: string | null = null;
+  try {
+    const { data: hostMember } = await supabase.from('team_members')
+      .select('email').eq('id', oldBooking.host_id).maybeSingle();
+    const tzNueva = timezone || oldBooking.timezone_invitado || 'America/Mexico_City';
+    const gcal = await createCalendarEvent(oldBooking.host_id, {
+      summary: `${eventType.nombre} — ${oldBooking.invitee_nombre || ''} (${oldBooking.invitee_empresa || ''})`,
+      description: [
+        `Contacto: ${oldBooking.invitee_nombre || ''}`,
+        oldBooking.invitee_email ? `Email: ${oldBooking.invitee_email}` : '',
+        oldBooking.invitee_whatsapp ? `WhatsApp: ${oldBooking.invitee_whatsapp}` : '',
+        oldBooking.invitee_empresa ? `Empresa: ${oldBooking.invitee_empresa}` : '',
+        `\nReagendada desde ${oldBooking.fecha} ${String(oldBooking.hora_inicio).slice(0, 5)}`,
+        `CRM: https://www.sacscloud.com/admin/crm?tab=reuniones`,
+      ].filter(Boolean).join('\n'),
+      startDateTime: `${nueva_fecha}T${String(nueva_hora).slice(0, 5)}:00`,
+      endDateTime: `${nueva_fecha}T${String(nueva_hora_fin).slice(0, 5)}:00`,
+      timezone: tzNueva,
+      attendeeEmail: oldBooking.invitee_email || undefined,
+      hostEmail: hostMember?.email,
+    });
+    if (gcal) {
+      gEventId = gcal.eventId; gMeet = gcal.meetLink;
+      await supabase.from('bookings')
+        .update({ google_event_id: gEventId, google_meet_link: gMeet }).eq('id', newBooking.id);
+      (newBooking as any).google_event_id = gEventId;
+      (newBooking as any).google_meet_link = gMeet;
+      // El viejo se borra SOLO cuando el nuevo ya existe.
+      if (oldBooking.google_event_id) {
+        await deleteCalendarEvent(oldBooking.host_id, oldBooking.google_event_id).catch(() => null);
+      }
+    }
+  } catch (e) {
+    console.error('[reagendar] Google Calendar falló:', e);
+  }
+
+  /* Si el calendario NO respondió, la reunión existe pero sin invitación ni
+     liga: eso NO puede quedarse callado, porque al cliente ya se le dijo que
+     le llegaría. Sale aviso para que una persona la ponga a mano. */
+  if (!gEventId) {
+    await supabase.from('crm_notificaciones').insert({
+      tipo: 'agenda_reagendada_sin_calendario', nivel: 'alerta', destino: 'agenda',
+      company_id: oldBooking.company_id || null,
+      titulo: `Reagendada sin invitación: ${oldBooking.invitee_nombre || 'un cliente'}`,
+      detalle: `La reunión quedó el ${nueva_fecha} a las ${String(nueva_hora).slice(0, 5)}, pero Google Calendar no respondió: no hay evento ni liga de Meet. Créala a mano o vuelve a reagendar.`,
+      metadata: { booking_id: newBooking.id },
+    });
+  }
+
   // Log activity
   if (oldBooking.contact_id) {
     await supabase.from('activities').insert({

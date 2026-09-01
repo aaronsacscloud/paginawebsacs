@@ -110,6 +110,15 @@ export const POST: APIRoute = async ({ request, url }) => {
            acto, no cuando alguien lea el chat. */
         if (entrante && r.inserted && r.conversationId) {
           const t = String(p.cuerpo || '').trim().toLowerCase();
+          /* «Ahí estaré» también se contesta: el cliente confirmó y merece
+             saber que lo oímos. Antes su toque caía en el inbox sin respuesta
+             y sin dejar rastro de que había confirmado asistencia. */
+          if (/^(ahí estaré|ahi estare|entendido|confirmo)$/.test(t)) {
+            (async () => {
+              const { confirmoAsistencia } = await import('../../../lib/scheduling/reagendar-wa');
+              await confirmoAsistencia(String(r.conversationId), telefono);
+            })().catch(e => console.warn('[wa-confirma]', e));
+          }
           if (/^(reagendar|quiero reagendar)$/.test(t)) {
             (async () => {
               const { ligaParaReagendar } = await import('../../../lib/scheduling/reagendar-wa');

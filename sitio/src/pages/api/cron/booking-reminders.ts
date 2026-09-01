@@ -21,7 +21,7 @@ import { telefonoWhatsApp } from '../../../lib/telefono';
 import {
   MX_OFFSET_MS, aMinutos, etiqueta, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
-  cuandoLargo, etiquetaSerie,
+  cuandoLargo, etiquetaSerie, textoPlantillaCliente, textoPlantillaHost,
 } from '../../../lib/scheduling/recordatorios';
 
 export const prerender = false;
@@ -211,7 +211,9 @@ export const GET: APIRoute = async ({ request }) => {
                    recibió, no tiene que confiar en que salió. */
                 await registrarMensaje({
                   kapsoMessageId: rp?.messages?.[0]?.id || null, telefono: tel, direccion: 'saliente',
-                  tipo: 'template', cuerpo: `Recordatorio de reunión (${cuanto} antes)`, status: 'sent', autor: 'Agenda',
+                  /* El cuerpo REAL, no un rótulo: el espejo existe para que
+                     quien abra el chat vea lo que el cliente recibió. */
+                  tipo: 'template', cuerpo: textoPlantillaCliente(params), status: 'sent', autor: 'Agenda',
                   metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla: PLANTILLA_CLIENTE },
                 }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
               } catch (e: any) {
@@ -232,8 +234,16 @@ export const GET: APIRoute = async ({ request }) => {
           const telH = telefonoWhatsApp((host as any)?.whatsapp);
           if (telH) {
             try {
-              await enviarPlantilla(telH, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsHost(b, cuanto));
+              const ph = paramsHost(b, cuanto);
+              const rh = await enviarPlantilla(telH, PLANTILLA_HOST, IDIOMA_PLANTILLA, ph);
               await marcarAvisado(b, r.id, 'host', cuanto); out.host_whatsapps++; disparo = true;
+              /* El aviso al host TAMPOCO se espejaba: su chat quedaba sin
+                 rastro de que el sistema le escribió. */
+              await registrarMensaje({
+                kapsoMessageId: rh?.messages?.[0]?.id || null, telefono: telH, direccion: 'saliente',
+                tipo: 'template', cuerpo: textoPlantillaHost(ph), status: 'sent', autor: 'Agenda',
+                metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla: PLANTILLA_HOST },
+              }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
             } catch (e: any) {
               out.fallas++; out.errores.push(`${b.id} ${r.id} host: ${e?.message || e}`);
             }
