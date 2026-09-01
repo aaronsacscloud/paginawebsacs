@@ -607,75 +607,64 @@ const etapas = [
   .op.sin-riel .op-barra { display: none; }
   .op.sin-riel .op-anillo-val { stroke-dashoffset: 16; }
 
+  /* ── Móvil: la versión corta ──
+     Aquí NO se intenta reproducir el tablero. Se probaron el sticky que cambia
+     de pantalla y el carrusel: los dos terminan peleando con el pulgar o
+     tapando el texto. En el teléfono la sección se RESUME — el titular, lo que
+     el operador dejó hecho, las cuatro decisiones en una línea cada una y la
+     corrida, que es lo único que de verdad hay que ver. El recorrido completo
+     vive en escritorio. */
   @media (max-width: 1100px) {
-    .op-pegado {
-      /* En el DOM el panel va primero (es lo correcto para escritorio y para
-         quien lee sin CSS). En el teléfono el tablero tiene que ir ARRIBA o no
-         le queda recorrido para pegarse: se invierte el orden, no el markup. */
-      position: static; min-height: 0; display: flex; flex-direction: column;
-      padding: 40px 18px 20px;
-    }
-    /* display:contents deshace el panel como caja para poder ordenar sus hijos
-       uno por uno: título arriba, tablero pegado en medio, pasos debajo. */
-    .op-panel { display: contents; }
-    .op-kicker { order: 0; align-self: flex-start; }
-    .op-titulo { order: 0; margin-bottom: 18px; }
-    .op-lienzo { order: 1; }
-    .op-etapas { order: 2; }
+    .op-pegado { position: static; min-height: 0; display: block; padding: 44px 18px 32px; }
     .op-recorrido { display: none; }
     .op-barra { display: none; }
+    .op-titulo { margin-bottom: 14px; }
 
-    /* El tablero se pega arriba y los pasos pasan por debajo. */
-    .op-lienzo {
-      position: sticky; top: 58px; z-index: 3;
-      height: 52vh; min-height: 340px; margin-bottom: 18px;
-      /* a sangre: si el fondo no cubre el ancho completo, el título se ve
-         pasar por los costados del tablero pegado. */
-      background: #F5F3EE; margin-left: -18px; margin-right: -18px;
-      padding: 0 18px 10px;
-    }
-    .op-tablero { height: 100%; display: flex; flex-direction: column; opacity: 1; transform: none; padding: 12px; }
-    .op-tablero-cab { flex: none; margin-bottom: 8px; }
-    .op-marca { font-size: 0.8125rem; }
-    .op-sello { display: none; }
-    /* El briefing va en barra delgada: su párrafo largo ya lo cuenta el paso
-       05 en la columna, y aquí se comía la tarjeta. */
-    .op-briefing { flex: none; opacity: 1; transform: none; padding: 8px 12px; gap: 10px; }
+    /* De las siete etapas queda UNA: la que explica qué es esto. */
+    .op-etapas { margin: 0 0 18px; gap: 0; }
+    .op-etapa { display: none; }
+    .op-etapa[data-i='4'] { display: block; opacity: 1; border: none; padding: 0; }
+    .op-etapa[data-i='4'] .op-etapa-n, .op-etapa[data-i='4'] h3 { display: none; }
+    .op-etapa[data-i='4'] p { display: block; max-width: none; font-size: 0.875rem; }
+
+    .op-lienzo { margin: 0; }
+    .op-tablero { background: none; border: none; box-shadow: none; padding: 0; opacity: 1; transform: none; }
+    .op-tablero-cab { display: none; }
+
+    .op-briefing { opacity: 1; transform: none; padding: 12px 14px; gap: 12px; margin-bottom: 14px; }
     .op-briefing-txt p { display: none; }
-    .op-briefing-k { margin-bottom: 0; }
-    .op-anillo { width: 42px; height: 42px; }
-    .op-anillo-num { font-size: 0.8125rem; }
+    .op-briefing-k { margin-bottom: 0; font-size: 0.6875rem; }
+    .op-anillo { width: 48px; height: 48px; }
+    .op-anillo-num { font-size: 0.875rem; }
     .op-anillo-pie { display: none; }
     .op-anillo-val { stroke-dashoffset: 16; }
 
-    /* Las pantallas: solo una a la vez. Cuatro tarjetas apiladas en 390px no
-       se leen; en el teléfono se enseña la que toca. */
-    .op-rejilla { position: relative; flex: 1; min-height: 0; display: block; margin-top: 8px; }
+    /* Las cuatro decisiones, una línea cada una: kicker, frase, cifra y curva.
+       Sin chips ni botón — en el teléfono son ruido. */
+    .op-rejilla { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 0; }
     .op-tarjeta {
-      position: absolute; inset: 0; overflow: auto;
-      opacity: 0; transform: none; pointer-events: none;
+      position: static; opacity: 1; transform: none; padding: 14px;
+      box-shadow: 0 6px 18px rgba(26,26,26,.06);
     }
-    .op-tarjeta.on { opacity: 1; }
-    .op-corrida, .op-detalle, .op-vida {
-      position: absolute; inset: 0; margin: 0; border-radius: 14px;
-      box-shadow: 0 12px 30px rgba(15,23,42,.10); overflow: auto;
+    .op-tarjeta-t { font-size: 0.9375rem; margin-bottom: 8px; }
+    .op-prenda { margin-bottom: 8px; }
+    .op-curvita { margin-bottom: 8px; }
+    .op-tarjeta-n { margin-bottom: 0; }
+    .op-chips, .op-cta { display: none; }
+
+    /* La corrida se queda: es lo que no se puede contar con palabras. */
+    .op-corrida {
+      position: static; opacity: 1; transform: none; margin-top: 14px; padding: 16px;
+      border-radius: 14px; box-shadow: 0 6px 18px rgba(26,26,26,.06);
     }
     .op-corrida-tabla tbody th { font-size: 0.75rem; }
     .op-corrida-tabla tbody td { font-size: 1rem; }
-    .op-detalle-cuerpo, .op-vida-cab, .op-detalle-cab { grid-template-columns: 1fr; flex-direction: column; }
-    .op-hitos { grid-template-columns: 1fr; gap: 6px; text-align: left; }
-    .op-grafica { min-height: 90px; max-height: 22vh; }
+    .op-corrida-txt { font-size: 0.8125rem; }
 
-    /* Cada paso ocupa pantalla: sin esto el observador no alcanza a marcarlos
-       y la sección vuelve a ser una columna de texto. */
-    .op-etapa {
-      min-height: 46vh; display: flex; flex-direction: column; justify-content: center;
-      opacity: .42;
-    }
-    .op-etapa.on { opacity: 1; }
-    .op-etapa p { display: block; }
-    .op-etapa:last-child { padding-bottom: 22vh; }
+    /* El plan y la vida del producto son del recorrido de escritorio. */
+    .op-detalle, .op-vida { display: none; }
   }
+
   @media (prefers-reduced-motion: reduce) {
     .op-pegado { position: static; min-height: 0; }
     .op-recorrido { display: none; }
