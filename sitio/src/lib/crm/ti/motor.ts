@@ -92,7 +92,23 @@ export async function generarPlan() {
   const cfg = await leerConfig();
   const ahora = new Date();
   const finHoy = new Date(ahora); finHoy.setUTCHours(23 + 6, 59, 59, 0); // fin del día CDMX
-  const res: any = { deslizadas: 0, promesas_rotas: 0, tareas_nuevas: 0, reactivadas: 0, saltos_t8: 0 };
+  const res: any = { deslizadas: 0, promesas_rotas: 0, tareas_nuevas: 0, reactivadas: 0, saltos_t8: 0, enrolados: 0 };
+
+  // 0) EL SWITCH DEL ARRANQUE: con arranque_desde puesto, todo lead NUEVO que
+  //    entró después de esa fecha se enrola solo (T1 speed-to-lead). Mientras
+  //    sea null, nadie entra sin mano humana.
+  if (cfg.arranque_desde) {
+    const { data: nuevos } = await supabase.from('contacts')
+      .select('id, ti_cadencias(contact_id)')
+      .eq('lifecycle_stage', 'lead').eq('estatus_lead', 'nuevo')
+      .is('archived_at', null).gte('created_at', cfg.arranque_desde)
+      .limit(100);
+    for (const c of nuevos || []) {
+      if ((c as any).ti_cadencias?.length) continue; // ya adentro
+      const r = await enrolar(c.id);
+      if ((r as any).ok) res.enrolados++;
+    }
+  }
 
   // 1) TRANSFORMAR — nada muere en silencio.
   // 1a. Lo pendiente de días anteriores se DESLIZA a hoy, marcado atrasado

@@ -1,0 +1,15 @@
+---
+// TRABAJO INTELIGENTE · La página del panel — pantalla completa, una tarea.
+// Vive fuera del dashboard a propósito: la experiencia ES entrar y ejecutar.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TrabajoPanel from '../../components/admin/TrabajoPanel';
+import { requireFounder } from '../../lib/auth/requireFounder';
+
+export const prerender = false;
+const gate = await requireFounder(Astro);
+if (gate) return gate;
+---
+
+<BaseLayout title="Trabajo inteligente — Sacs" description="El plan del día" noindex={true} bareLayout={true}>
+  <TrabajoPanel client:only="react" />
+</BaseLayout>

@@ -115,7 +115,7 @@
     },
     {
       "path": "/api/cron/ti-plan",
-      "schedule": "45 14 * * 1-5"
+      "schedule": "*/15 14-23 * * 1-5"
     }
   ]
 }
