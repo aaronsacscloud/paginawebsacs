@@ -572,9 +572,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       // datos del lead se habían perdido en el camino.
       const p = new URLSearchParams((window as any).__crmParams || window.location.search);
       if (p.get('nueva') !== '1') return;
-      // Se consume una sola vez: si no, volver a esta pestaña reabriría una
-      // cotización nueva encima de la que se está capturando.
-      try { (window as any).__crmParams = ''; } catch { /* nada */ }
+      // NO se consume aquí. Este componente se re-monta mientras cargan sus
+      // datos, y borrar la foto en el primer montaje dejaba el cajón cerrado en
+      // el segundo: el efecto ya no encontraba nada que abrir. Se consume
+      // cuando el cajón se cierra o la cotización se crea — ahí ya cumplió.
       // Llegar desde la MINUTA DE UN LEAD: los conceptos ya se decidieron en la
       // junta, así que se traen de la reunión en vez de recapturarlos. La
       // cotización no se crea sola —el precio y el descuento los pone una
@@ -1038,6 +1039,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       }
 
       setShowDrawer(false);
+      // La foto de llegada ya cumplió: sin esto, volver a Cotizaciones abriría
+      // otra cotización nueva encima.
+      try { (window as any).__crmParams = ''; } catch { /* nada */ }
       setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
@@ -2593,7 +2597,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     </>
                   );
                 })()}
-                <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+                <button onClick={() => { setShowDrawer(false); try { (window as any).__crmParams = ''; } catch { /* nada */ } }} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
               </div>
             </div>
             {/* Split layout */}
