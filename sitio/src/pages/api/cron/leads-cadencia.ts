@@ -162,10 +162,19 @@ export const GET: APIRoute = async ({ url }) => {
         (c as any).visitas_recientes = r.length;
       }
     }
-    const nuevos = filtrosIn.length
+    let nuevos = filtrosIn.length
       ? (crudos || []).filter(c => cumpleCondsLead(c, filtrosIn, logicaIn)).slice(0, 60)
       : (crudos || []).slice(0, 60);
     if (filtrosIn.length) res.filtrados = (res.filtrados || 0) + ((crudos || []).length - nuevos.length);
+    // Candado de Trabajo Inteligente: un lead en cadencia HUMANA no se enrola
+    // a secuencias automáticas de seguimiento — los toques saldrían dobles.
+    // (El enrolamiento a la cadencia humana ya detuvo sus membresías vivas;
+    // este filtro evita que una corrida posterior lo vuelva a meter.)
+    if (nuevos.length) {
+      const { contactosEnCadenciaHumana } = await import('../../../lib/crm/ti/motor');
+      const enTi = await contactosEnCadenciaHumana(nuevos.map(c => c.id));
+      if (enTi.size) nuevos = nuevos.filter(c => !enTi.has(c.id));
+    }
     const candIds = (nuevos || []).map(c => c.id);
     const prevPor: Record<string, any> = {};
     if (candIds.length) {

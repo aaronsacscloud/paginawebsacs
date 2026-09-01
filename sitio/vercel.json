@@ -108,6 +108,14 @@
     {
       "path": "/api/cron/churn-barrido",
       "schedule": "50 9 * * *"
+    },
+    {
+      "path": "/api/cron/comisiones",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/ti-plan",
+      "schedule": "45 14 * * 1-5"
     }
   ]
 }
