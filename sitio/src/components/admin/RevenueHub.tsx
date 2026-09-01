@@ -626,9 +626,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         ...(banco ? { bank_account_id: banco.id, mostrar_banco: true } : {}),
       });
       setShowDrawer(true);
-      // Se limpia la barra de direcciones: recargar no debe volver a abrir una
-      // cotización nueva encima de la que se está capturando.
-      window.history.replaceState({}, '', window.location.pathname);
+      // Se limpia la barra de direcciones —recargar no debe volver a abrir una
+      // cotización nueva encima de la que se está capturando— pero CONSERVANDO
+      // la pestaña: desde que Revenue vive dentro del CRM, dejar el pathname
+      // pelado borra `tab=cotizaciones` y la recarga cae en el Tablero.
+      window.history.replaceState({}, '', window.location.pathname + '?tab=cotizaciones');
     }, [bankAccounts.length, condicionesTpl.length]);
     // El archivo se carga aparte: son pocas y no tienen por qué pesar en la
     // vista de todos los días.
