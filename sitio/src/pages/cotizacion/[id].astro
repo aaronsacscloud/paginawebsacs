@@ -859,11 +859,16 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         {items.map((item: any) => {
           const isAnnual = item.periodo === 'anual';
           const suc = parseInt(item.sucursales) || 1;
+          // Cada item guarda la regla con la que se cotizó (`meses_anual`):
+          // 7.8 = 12 meses con 35% de descuento (desde sep-2026). Las
+          // cotizaciones viejas no traen el campo → 10 ("2 meses gratis"),
+          // así su desglose sigue cuadrando con el total que firmó el cliente.
+          const mesesAnual = Number(item.meses_anual) || 10;
           const monthlyFull = (item.precio_unitario || 0) * suc * 12;
-          const annualPrice = (item.precio_unitario || 0) * suc * 10;
+          const annualPrice = Math.round((item.precio_unitario || 0) * suc * mesesAnual);
           const savings = isAnnual ? monthlyFull - annualPrice : 0;
           const hasDiscount = item.tipo === 'plan' && parseFloat(item.descuento_pct || 0) > 0;
-          const beforeDiscount = (item.precio_unitario || 0) * suc * (isAnnual ? 10 : 1);
+          const beforeDiscount = Math.round((item.precio_unitario || 0) * suc * (isAnnual ? mesesAnual : 1));
           const isPromo = item.es_promocion;
           const promoUnit = item.precio_unitario || item.monto || 0;
           const normalUnit = item.precio_original || 0;
@@ -879,8 +884,8 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
                 <strong>{item.tipo === 'plan' ? planDisplayName(item) : item.nombre}</strong>
                 {item.tipo === 'plan' && (
                   <div class="qt-desc">
-                    {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnnual ? '10 meses' : '1 mes'}
-                    {isAnnual && <span class="qt-savings"> · Ahorro: {fmt(savings)} (2 meses gratis)</span>}
+                    {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnnual ? (mesesAnual === 10 ? '10 meses' : '12 meses con 35% off') : '1 mes'}
+                    {isAnnual && <span class="qt-savings"> · Ahorro: {fmt(savings)} {mesesAnual === 10 ? '(2 meses gratis)' : '(35% de descuento)'}</span>}
                   </div>
                 )}
                 {item.descripcion && <div class="qt-desc">{item.descripcion}</div>}
@@ -1093,7 +1098,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             const promoRenewal = Math.round((i.subtotal || 0) * discountRatio);
             const planDiscPct = parseFloat(i.descuento_pct || 0);
             // Full anual sin descuento_pct ni descuento_global
-            const fullAnnual = (i.precio_unitario || 0) * suc * 10;
+            const fullAnnual = Math.round((i.precio_unitario || 0) * suc * (Number(i.meses_anual) || 10));
             const hasAnyDiscount = planDiscPct > 0 || hasDiscount;
             const fullPrice = hasAnyDiscount ? fullAnnual : (i.subtotal || 0);
             return { i, suc, promoRenewal, fullPrice, hasAnyDiscount };

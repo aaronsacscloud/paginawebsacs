@@ -12,7 +12,7 @@
 // los envíos van por los MISMOS endpoints del inbox — cero caminos paralelos.
 import { useEffect, useMemo, useState } from 'react';
 import { C } from './estilo';
-import { PLANS, PLAN_PRICES, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
+import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, fmt } from '../../../../lib/quotes/constants';
 import CuentaSacs from '../CuentaSacs';
 
 const BASE = 'https://www.sacscloud.com';
@@ -120,7 +120,7 @@ function Volver({ volver, titulo }: { volver: () => void; titulo: string }) {
 // ══ COTIZAR: crear + link + enviar, sin salir ═══════════════════════════════
 function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, ventanaAbierta, volver, refrescar }: any) {
   const [plan, setPlan] = useState('controla');
-  const [periodo, setPeriodo] = useState<'mensual' | 'anual'>('mensual');
+  const [periodo, setPeriodo] = useState<'mensual' | 'anual'>('anual');
   const [sucursales, setSucursales] = useState(String(empresa?.sucursales || 1));
   const [conImpl, setConImpl] = useState(false);
   const [extras, setExtras] = useState<{ nombre: string; monto: string; recurrente: boolean }[]>([]);
@@ -130,7 +130,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
   const [enviado, setEnviado] = useState<{ wa?: boolean; correo?: boolean }>({});
 
   const suc = Math.max(1, parseInt(sucursales) || 1);
-  const factorAnual = periodo === 'anual' ? 10 : 1;   // regla de planes: el año son 10 meses (2 gratis)
+  const factorAnual = periodo === 'anual' ? MESES_ANUAL : 1;   // regla de planes: 12 meses con 35% de descuento (×7.8)
   const subPlan = (PLAN_PRICES[plan] || 0) * suc * factorAnual;
   const subImpl = conImpl ? (IMPL_PRICES[plan] || 0) : 0;
   // Solo cuentan los extras COMPLETOS (concepto + monto): un extra a medias no
@@ -143,7 +143,7 @@ function Cotizar({ contacto, empresa, conv, telefono, nombre, primerNombre, vent
 
   const crear = async () => {
     setMsg(''); setCreando(true);
-    const items: any[] = [{ tipo: 'plan', nombre: plan, sucursales: suc, precio_unitario: PLAN_PRICES[plan] || 0, periodo, descuento_pct: 0, subtotal: subPlan }];
+    const items: any[] = [{ tipo: 'plan', nombre: plan, sucursales: suc, precio_unitario: PLAN_PRICES[plan] || 0, periodo, descuento_pct: 0, subtotal: subPlan, meses_anual: periodo === 'anual' ? MESES_ANUAL : undefined }];
     if (conImpl) items.push({ tipo: 'extra', categoria_comision: 'personalizacion', nombre: `Implementación ${plan.charAt(0).toUpperCase()}${plan.slice(1)}`, monto: subImpl, recurrente: false, subtotal: subImpl });
     for (const x of extrasValidos) {
       const monto = parseFloat(x.monto) || 0;

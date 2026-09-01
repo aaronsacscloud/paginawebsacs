@@ -12,6 +12,12 @@ export const PLAN_PRICES: Record<string, number> = {
   soporte_premium: 0,    // póliza de soporte: precio según alcance
 };
 
+// Factor del plan ANUAL: 12 meses con 35% de descuento = ×7.8.
+// (Antes era ×10 — "12 meses al precio de 10, 2 meses gratis". Cambió el
+// 2026-09-01 por decisión del dueño; las cotizaciones viejas guardan su
+// propio factor en el item como `meses_anual`, así que no se re-etiquetan.)
+export const MESES_ANUAL = 7.8;
+
 export const IMPL_PRICES: Record<string, number> = {
   vende: 2000,
   controla: 4000,

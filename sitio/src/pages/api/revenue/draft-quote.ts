@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import OpenAI from 'openai';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { PLAN_PRICES } from '../../../lib/quotes/constants';
+import { PLAN_PRICES, MESES_ANUAL } from '../../../lib/quotes/constants';
 
 export const prerender = false;
 
@@ -59,13 +59,16 @@ function sanitize(draft: any) {
       if (!(nombre in PLAN_PRICES)) continue; // plan no reconocido → fuera
       const sucursales = Math.round(clamp(it.sucursales, 1, 50));
       const desc = clamp(it.descuento_pct, 0, 15);
-      // Precio SIEMPRE del catálogo — jamás del LLM
-      const base = PLAN_PRICES[nombre] * sucursales;
+      // Precio SIEMPRE del catálogo — jamás del LLM. El borrador nace ANUAL
+      // (12 meses con 35% de descuento): es el default comercial; en el editor
+      // se puede bajar a mensual y ahí se recalcula.
+      const base = PLAN_PRICES[nombre] * sucursales * MESES_ANUAL;
       const subtotal = Math.round(base * (1 - desc / 100));
       out.items.push({
-        tipo: 'plan', nombre, sucursales, periodo: 'mensual', descuento_pct: desc,
+        tipo: 'plan', nombre, sucursales, periodo: 'anual', descuento_pct: desc,
         precio_unitario: PLAN_PRICES[nombre], subtotal, monto: subtotal,
-        recurrente: true, periodo_extra: 'mensual',
+        meses_anual: MESES_ANUAL,
+        recurrente: true, periodo_extra: 'anual',
         descripcion: `Plan ${nombre.charAt(0).toUpperCase() + nombre.slice(1)} · ${sucursales} sucursal${sucursales > 1 ? 'es' : ''}`,
       });
     } else if (it?.tipo === 'extra') {

@@ -6,7 +6,7 @@ export interface Plan {
   id: string;
   nombre: string;
   precio_mensual: number;        // MXN por sucursal
-  precio_anual: number;          // MXN por sucursal (usualmente 10 meses)
+  precio_anual: number;          // MXN por sucursal (12 meses con 35% de descuento)
   sucursales_min: number;
   descripcion: string;
   features: string[];
@@ -28,7 +28,7 @@ export const PLANS: Plan[] = [
     id: 'controla',
     nombre: 'Controla',
     precio_mensual: 1215,
-    precio_anual: 12150,
+    precio_anual: 9477,
     sucursales_min: 1,
     descripcion: 'Plan base: POS + inventario + reportes',
     features: ['POS multi-terminal', 'Inventario en tiempo real', 'Reportes de ventas', 'Multi-sucursal', 'WhatsApp tickets'],
@@ -37,7 +37,7 @@ export const PLANS: Plan[] = [
     id: 'fideliza',
     nombre: 'Fideliza',
     precio_mensual: 1890,
-    precio_anual: 18900,
+    precio_anual: 14742,
     sucursales_min: 1,
     descripcion: 'Controla + CRM + programa de lealtad + e-commerce',
     features: ['Todo Controla', 'CRM integrado', 'Programa de lealtad', 'Tienda en línea', 'Social commerce', 'Email marketing', 'Promociones avanzadas'],
@@ -46,7 +46,7 @@ export const PLANS: Plan[] = [
     id: 'automatiza',
     nombre: 'Automatiza',
     precio_mensual: 3780,
-    precio_anual: 37800,
+    precio_anual: 29484,
     sucursales_min: 1,
     descripcion: 'Fideliza + AXO IA + automatizaciones + integraciones ilimitadas',
     features: ['Todo Fideliza', 'AXO copiloto IA', 'Automatizaciones sin código', 'Integraciones ilimitadas', 'Workflows personalizados', 'Reportes predictivos', 'Soporte prioritario'],

@@ -16,7 +16,7 @@ import { SS, C, stagePillStyle } from './styles';
 import { Icon } from './icons';
 import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
-import { PLAN_PRICES, IMPL_PRICES, PLANS, COMISION_CATEGORIAS, COMISION_RATES, COMISION_LABELS } from '../../../lib/quotes/constants';
+import { PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, PLANS, COMISION_CATEGORIAS, COMISION_RATES, COMISION_LABELS } from '../../../lib/quotes/constants';
 import { calcComision, calcComisionQuote, categoriaDeItem, defaultCategoria } from '../../../lib/quotes/commissions';
 import { plans as PLANS_DATA } from '../../../data/plans';
 import { CASOS_GIRO } from '../../../data/casos-giro';
@@ -102,7 +102,7 @@ const TC_SUGERIDAS: Array<{ nombre: string; texto: string }> = [
   },
   {
     nombre: 'Licencia anual',
-    texto: 'El plan anual equivale a 12 meses al precio de 10 (2 meses gratis) y se cobra en una sola exhibición al inicio del periodo. La renovación se realiza al precio vigente en la fecha de renovación. No es reembolsable una vez activada la licencia. Precios en MXN más IVA salvo indicarse "IVA incluido".',
+    texto: 'El plan anual son 12 meses con 35% de descuento y se cobra',
   },
   {
     nombre: 'Hardware / equipo',
@@ -1361,7 +1361,9 @@ function QuoteEditor({
     items: (Array.isArray(initial?.items) ? initial.items : []).map((it: any) => {
       if (!it || it.tipo !== 'plan') return it;
       const sub = computeItemSubtotal(it);
-      return { ...it, subtotal: sub, monto: sub };
+      // `meses_anual` viaja con el item: la vista pública lo usa para pintar
+      // el desglose con la regla con la que se cotizó (viejas ×10, nuevas ×7.8).
+      return { ...it, subtotal: sub, monto: sub, meses_anual: it.periodo === 'anual' ? MESES_ANUAL : undefined };
     }),
   }));
   const [saving, setSaving] = useState(false);
@@ -1428,6 +1430,7 @@ function QuoteEditor({
     const arr = items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
     arr[idx].subtotal = computeItemSubtotal(arr[idx]);
     arr[idx].monto = arr[idx].subtotal;
+    if (arr[idx].tipo === 'plan') arr[idx].meses_anual = arr[idx].periodo === 'anual' ? MESES_ANUAL : undefined;
     setForm({ ...form, items: arr });
   };
 
@@ -2023,7 +2026,7 @@ function QuoteEditor({
                         if (isAutoPlanDesc(it.descripcion)) patch.descripcion = autoPlanDesc(n, it.sucursales || 1);
                         updateItem(idx, patch);
                       }} style={inputStyle}>
-                        {PLANS.map((p) => <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes · ${(PLAN_PRICES[p] * 10).toLocaleString('es-MX')}/año)</option>)}
+                        {PLANS.map((p) => <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes · ${Math.round(PLAN_PRICES[p] * MESES_ANUAL).toLocaleString('es-MX')}/año)</option>)}
                       </select>
                     </Field>
                     <Field label="Sucursales" small>
@@ -2037,13 +2040,13 @@ function QuoteEditor({
                     <Field label="Periodo" small>
                       <select value={it.periodo || 'mensual'} onChange={(e) => updateItem(idx, { periodo: e.target.value })} style={inputStyle}>
                         <option value="mensual">Mensual</option>
-                        <option value="anual">Anual (2 meses gratis)</option>
+                        <option value="anual">Anual (35% de descuento)</option>
                       </select>
                     </Field>
                   </div>
                   {it.periodo === 'anual' && (
                     <div style={{ fontSize: 11, color: C.greenDark, marginTop: 6 }}>
-                      Anual: {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1))}/mes × 10 meses = {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * 10)}/año · el cliente ahorra {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * 2)} (2 meses gratis)
+                      Anual: {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1))}/mes × 12 con 35% off = {fmt(Math.round(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * MESES_ANUAL))}/año · el cliente ahorra {fmt(Math.round(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * 12 * 0.35))} (35% de descuento)
                     </div>
                   )}
                   <div style={{ marginTop: 6 }}>
@@ -2944,9 +2947,9 @@ const COTIZADOR_MOBILE_CSS = `
 
 function computeItemSubtotal(it: any): number {
   if (it.tipo === 'plan') {
-    // Anual = 12 meses al precio de 10 (2 meses gratis) — misma regla que el editor admin
-    // y que la página pública (que desglosa "× 10 meses" y calcula el ahorro con ×10).
-    const meses = it.periodo === 'anual' ? 10 : 1;
+    // Anual = 12 meses con 35% de descuento (×7.8) — misma regla que el editor
+    // admin y que la página pública, que lee el factor del item (`meses_anual`).
+    const meses = it.periodo === 'anual' ? MESES_ANUAL : 1;
     const base = (PLAN_PRICES[it.nombre] || 0) * (it.sucursales || 1) * meses;
     const disc = (Number(it.descuento_pct) || 0) / 100;
     return Math.round(base * (1 - disc));

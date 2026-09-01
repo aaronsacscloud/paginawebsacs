@@ -1520,7 +1520,7 @@ function EditarSubModal({ sub, onClose, onDone, modoInicial }: { sub: Sub; onClo
             </select>
           </div>
           <div style={{ gridColumn: '1 / -1', fontSize: '0.72rem', color: '#888', marginTop: -4 }}>
-            {form.ciclo === 'anual' ? 'Anual: se cobra una vez al año; el precio es por año (suele traer 2 meses de regalo).' : 'Mensual: se cobra cada mes; el precio es por mes.'}
+            {form.ciclo === 'anual' ? 'Anual: se cobra una vez al año; el precio es por año (35% de descuento vs. mensual).' : 'Mensual: se cobra cada mes; el precio es por mes.'}
             {' · '}<span style={{ color: ESTADOS[form.estado]?.color }}>{ESTADO_INFO[form.estado]}</span>
           </div>
 

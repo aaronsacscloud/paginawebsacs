@@ -57,7 +57,7 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     costo_unico: 0,
     costo_mensual: 0,
     beneficios: [
-      { icon: 'gift',      title: 'Plan Fideliza gratis · sistema SACS completo', detail: 'Te activamos una cuenta SACS en plan Fideliza para usar en tu propio negocio: POS, inventario multi-sucursal, e-commerce, CRM, lealtad, marketing. Costo público: $18,900 MXN/año. Para ti: gratis durante toda tu participación.', value_label: 'Vale $14,000 MXN/año · Gratis' },
+      { icon: 'gift',      title: 'Plan Fideliza gratis · sistema SACS completo', detail: 'Te activamos una cuenta SACS en plan Fideliza para usar en tu propio negocio: POS, inventario multi-sucursal, e-commerce, CRM, lealtad, marketing. Costo público: $14,742 MXN/año. Para ti: gratis durante toda tu participación.', value_label: 'Vale $14,000 MXN/año · Gratis' },
       { icon: 'link',      title: 'Landing personalizada con tu link único',     detail: 'Tu propia página dentro de SACS con tu nombre, foto y link único (sacscloud.com/p/tu-slug). Cada visita y registro queda atribuido automáticamente a ti — sin códigos, sin formularios extra.' },
       { icon: 'dashboard', title: 'Portal de partner con métricas en tiempo real', detail: 'Dashboard personal con visitas a tu landing, registros generados, prospectos calificados, conversiones, comisiones acumuladas y pagos liquidados — todo actualizado al instante.' },
       { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones',     detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador. Te enviamos cada mes 3-5 palabras clave para enfocar el contenido.' },

@@ -19,7 +19,7 @@ import { GoogleCalendarPanel } from '../scheduling/GoogleCalendarPanel';
 import CotizacionesDashboard from './crm/CotizacionesDashboard';
 import RegistrarPagoModal, { resumenCierre } from './crm/RegistrarPagoModal';
 import { plans as plansData } from '../../data/plans';
-import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
+import { PLANS, PLAN_PRICES, MESES_ANUAL, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
 
 // ─── Gama del módulo ───
@@ -712,7 +712,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     }).grandTotal;
 
     const addPlanItem = () => {
-      setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 1215, periodo: 'mensual', descuento_pct: 0, subtotal: 1215 }] });
+      setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 1215, periodo: 'anual', descuento_pct: 0, subtotal: Math.round(1215 * MESES_ANUAL), meses_anual: MESES_ANUAL }] });
     };
 
     const addExtraItem = () => {
@@ -738,7 +738,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     /** Mete un plugin del catálogo como concepto, ya con su modalidad de cobro.
      *  `precio_es_total` avisa que el monto YA es el del periodo: sin él, un
      *  plugin de $9,900 al año se multiplicaría por 10 (la regla de los planes,
-     *  donde el monto se captura mensual y el año son 10 meses). */
+     *  donde el monto se captura mensual y el año son 12 meses con 35% de descuento, ×7.8). */
     const elegirPlugin = (p: any, modalidad: string) => {
       const precio = modalidad === 'vitalicio' ? p.precio_vitalicio
         : modalidad === 'anual' ? p.precio_anual : p.precio_mensual;
@@ -768,7 +768,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Plan</label><select value={item.nombre} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]})</option>)}</select></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Sucursales</label><input type="number" value={item.sucursales} onChange={e => updateItem(idx, 'sucursales', e.target.value)} style={S.input} /></div>
-                          <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (2 meses gratis)</option></select></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (35% de descuento)</option></select></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Desc. %</label><input type="number" value={item.descuento_pct || 0} onChange={e => updateItem(idx, 'descuento_pct', e.target.value)} style={S.input} /></div>
                         </div>
                         <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
@@ -834,17 +834,22 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         arr[idx].precio_unitario = p;
         const suc = parseInt(arr[idx].sucursales) || 1;
         const isAnn = arr[idx].periodo === 'anual';
-        const sub = p * suc * (isAnn ? 10 : 1);
+        const sub = Math.round(p * suc * (isAnn ? MESES_ANUAL : 1));
         const disc = sub * (parseFloat(arr[idx].descuento_pct || 0) / 100);
         arr[idx].subtotal = sub - disc;
+        // La cotización PÚBLICA re-deriva el desglose: sin este campo, las
+        // viejas (regla ×10) y las nuevas (×7.8) serían indistinguibles.
+        arr[idx].meses_anual = isAnn ? MESES_ANUAL : undefined;
       } else if (!arr[idx].es_promocion) {
         const base = parseFloat(arr[idx].monto) || 0;
         const pe = arr[idx].periodo_extra || (arr[idx].recurrente ? 'mensual' : 'unico');
         arr[idx].recurrente = pe === 'mensual' || pe === 'anual';
-        // El ×10 es la regla de los PLANES: el monto se captura mensual y el
-        // año son 10 meses (2 gratis). Un plugin del catálogo trae el precio ya
-        // del periodo, así que multiplicarlo cobraría diez veces de más.
-        arr[idx].subtotal = pe === 'anual' && !arr[idx].precio_es_total ? base * 10 : base;
+        // El factor anual es la regla de los PLANES (12 meses con 35% de
+        // descuento = ×7.8; el monto se captura mensual). Un plugin del
+        // catálogo trae el precio ya del periodo, así que multiplicarlo
+        // cobraría de más.
+        arr[idx].subtotal = pe === 'anual' && !arr[idx].precio_es_total ? Math.round(base * MESES_ANUAL) : base;
+        arr[idx].meses_anual = pe === 'anual' && !arr[idx].precio_es_total ? MESES_ANUAL : undefined;
       }
       setQf({ ...qf, items: arr });
     };
@@ -2345,22 +2350,24 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const planPrice = PLAN_PRICES[rec.plan] || 1215;
                   const discPct = parseFloat(rec.descuento_pct) || 0;
                   const suc = parseInt(rec.sucursales) || 1;
-                  const isAnn = rec.periodo === 'anual';
-                  const planSub = planPrice * suc * (isAnn ? 10 : 1);
+                  const isAnn = (rec.periodo || 'anual') === 'anual'; // sin periodo explícito → anual (default comercial)
+                  const planSub = Math.round(planPrice * suc * (isAnn ? MESES_ANUAL : 1));
                   const planDisc = planSub * (discPct / 100);
                   const planItems: any[] = [{
                     tipo: 'plan', nombre: rec.plan || 'controla',
                     sucursales: suc, precio_unitario: planPrice,
-                    periodo: rec.periodo || 'mensual',
+                    periodo: rec.periodo || 'anual',
                     descuento_pct: discPct,
                     subtotal: planSub - planDisc,
+                    meses_anual: isAnn ? MESES_ANUAL : undefined,
                   }];
                   const extraItems = (rec.extras || []).map((e: any) => ({
                     tipo: 'extra', nombre: e.nombre, monto: e.monto || 0,
                     descripcion: e.descripcion || '', nota: e.nota || '',
                     periodo_extra: e.periodo_extra || 'unico',
                     recurrente: e.periodo_extra === 'mensual' || e.periodo_extra === 'anual',
-                    subtotal: e.periodo_extra === 'anual' ? (e.monto || 0) * 10 : (e.monto || 0),
+                    subtotal: e.periodo_extra === 'anual' ? Math.round((e.monto || 0) * MESES_ANUAL) : (e.monto || 0),
+                    meses_anual: e.periodo_extra === 'anual' ? MESES_ANUAL : undefined,
                   }));
                   // Promoción
                   const promo = rec.promocion;

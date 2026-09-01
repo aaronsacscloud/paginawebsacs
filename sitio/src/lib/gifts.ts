@@ -1,7 +1,7 @@
 // Regalo Buddy — helpers compartidos.
 //
 // Un cliente Sacs (padrino, `account` de sacs3) regala el primer año del
-// Plan Vende ($8,100 MXN) a un negocio amigo. Tabla `gifts` en Supabase
+// Plan Vende ($6,318 MXN) a un negocio amigo. Tabla `gifts` en Supabase
 // (migración scripts/migration-2026-06-gifts.sql).
 //
 // APIs: /api/gifts/create (sacs3), /api/gifts/validate (landing),
@@ -11,7 +11,7 @@ import { supabase } from './supabase';
 
 export const GIFT_TTL_DAYS = 120;
 export const GIFT_COUPON_ID = 'GIFT_VENDE_YEAR';
-export const GIFT_PLAN_VALUE_MXN = 8100;
+export const GIFT_PLAN_VALUE_MXN = 6318;
 // Si un gift queda atorado en 'redeeming' (Stripe colgado / proceso muerto)
 // más de este tiempo, se revierte a 'pending' para poder reintentarse.
 export const GIFT_REDEEMING_STALE_MIN = 15;

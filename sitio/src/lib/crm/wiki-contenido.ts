@@ -433,7 +433,7 @@ export const WIKI: PaginaWiki[] = [
     cuerpo: `
 <p>En el panel derecho de cada conversación (pestaña <b>Acciones</b>) el vendedor ejecuta la venta completa.</p>
 <table class="w-tab"><thead><tr><th>Acción</th><th>Cómo funciona</th></tr></thead><tbody>
-<tr><td><b>Cotizar</b></td><td>Plan (precios del catálogo real), periodo (anual = 2 meses gratis), sucursales, implementación y extras → Crear → el link del cliente aparece al instante → enviar por WhatsApp o correo. Queda ligada al lead y su apertura se rastrea.</td></tr>
+<tr><td><b>Cotizar</b></td><td>Plan (precios del catálogo real), periodo (anual = 35% de descuento), sucursales, implementación y extras → Crear → el link del cliente aparece al instante → enviar por WhatsApp o correo. Queda ligada al lead y su apertura se rastrea.</td></tr>
 <tr><td><b>Agendar</b></td><td>Días y horarios reales → confirmar ahí mismo. Al cliente le llega confirmación por correo + WhatsApp con su invitación y Meet. Si ya tiene reunión próxima, el panel avisa antes de duplicar.</td></tr>
 <tr><td><b>Mandarle los horarios</b></td><td>Un clic manda los próximos horarios + el link público. Cuando el cliente elige, <b>todo</b> se confirma solo.</td></tr>
 </tbody></table>

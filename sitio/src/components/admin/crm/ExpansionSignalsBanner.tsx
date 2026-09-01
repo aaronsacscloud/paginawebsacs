@@ -15,7 +15,7 @@ interface Props {
 const SIGNAL_LABELS: Record<string, { title: string; cta: string; icon: string; color: string }> = {
   mensual_largo: {
     title: 'Candidato para plan anual',
-    cta: 'Ofrecer anual con 2 meses gratis',
+    cta: 'Ofrecer anual con 35% de descuento',
     icon: '📅',
     color: '#2AB5A0',
   },

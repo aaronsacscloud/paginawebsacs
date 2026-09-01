@@ -291,7 +291,7 @@ export async function syncCrmForSubscription(ctx: CrmSyncCtx): Promise<void> {
 
     // Upsert deal — reusar el deal abierto del contact si existe (creado al agendar demo)
     // Gift: el deal + activity los crea el webhook al confirmar la redención
-    // (origen regalo-buddy, valor $8,100, stage ganado) — aquí solo el contact.
+    // (origen regalo-buddy, valor $6,318, stage ganado) — aquí solo el contact.
     let dealId: string | null = null;
     if (contactId && !gift) {
       const { data: openDeal } = await supabase
