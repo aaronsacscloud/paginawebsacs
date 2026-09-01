@@ -48,6 +48,21 @@ const hoy = () => new Date().toISOString().slice(0, 10);
  * `wa_nuevo=1` le dice al inbox que, si no hay hilo todavía, lo arranque con
  * plantilla en vez de dejar una búsqueda vacía. Una conversación nueva no tiene
  * ventana de 24 h: la plantilla es la única forma de abrirla. */
+/** El link de "Cotizar", con lo que el CRM ya sabe.
+ *  Llevaba SOLO el nombre de la empresa, así que el formulario abría con correo
+ *  y WhatsApp vacíos — y esos dos campos rebotaban la cotización ya capturada.
+ *  Pedir dos veces un dato que ya está es lo que hacía perder el trabajo. */
+const urlCotizar = (c: any) => {
+  const q = new URLSearchParams({ nueva: '1' });
+  if (c?.companies?.nombre) q.set('empresa', c.companies.nombre);
+  const nom = [c?.nombre, c?.apellido].filter(Boolean).join(' ').trim();
+  if (nom) q.set('contacto', nom);
+  if (c?.email) q.set('email', c.email);
+  const tel = c?.whatsapp || c?.telefono;
+  if (tel) q.set('whatsapp', tel);
+  return '/admin/revenue?' + q.toString();
+};
+
 const waLink = (p?: string | null) => p
   ? `/admin/crm?tab=whatsapp&wa_nuevo=1&wa_search=${encodeURIComponent(String(p).replace(/[^\d+]/g, ''))}`
   : '';
@@ -280,7 +295,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0 }}>
               {!esMovil && tel && <a style={D.btnW} href={waLink(tel)}>WhatsApp</a>}
               {!esMovil && c.email && <a style={D.btnA} href={`mailto:${c.email}`}>Correo</a>}
-              {!esMovil && <button style={D.btnP} onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')}>Cotizar</button>}
+              {!esMovil && <button style={D.btnP} onClick={() => window.open(urlCotizar(c), '_blank', 'noopener')}>Cotizar</button>}
               {!esMovil && <button onClick={cerrar} aria-label="Cerrar"
                 style={{ width: 32, height: 32, border: '1px solid #e6e6ea', borderRadius: 9, background: '#fff', color: '#9c99a6', cursor: 'pointer', fontSize: '1.05rem', fontFamily: 'inherit' }}>✕</button>}
             </div>
@@ -292,7 +307,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged, onAbrirOtro,
             <div style={{ display: 'flex', gap: 8, padding: '10px 0 2px' }}>
               {tel && <a href={waLink(tel)} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#5B4BD6', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>WhatsApp</a>}
               {tel && <a href={'tel:' + String(tel).replace(/\D/g, '')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>Llamar</a>}
-              <button onClick={() => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>Cotizar</button>
+              <button onClick={() => window.open(urlCotizar(c), '_blank', 'noopener')} style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', color: '#1a1a1a', border: '1px solid #dddce3', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}>Cotizar</button>
             </div>
           )}
           {/* El orden es el de la conversación con el lead —quién es, en qué va,

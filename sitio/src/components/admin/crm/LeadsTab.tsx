@@ -40,6 +40,21 @@ import { useIsMobile } from '../../../lib/ui/mobile';
 
 export const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const dias = (d?: string | null) => d ? Math.floor((Date.now() - Date.parse(d)) / 86400000) : null;
+/** El link de "Cotizar", con lo que el CRM ya sabe.
+ *  Llevaba SOLO el nombre de la empresa, así que el formulario abría con correo
+ *  y WhatsApp vacíos — y esos dos campos rebotaban la cotización ya capturada.
+ *  Pedir dos veces un dato que ya está es lo que hacía perder el trabajo. */
+const urlCotizar = (c: any) => {
+  const q = new URLSearchParams({ nueva: '1' });
+  if (c?.companies?.nombre) q.set('empresa', c.companies.nombre);
+  const nom = [c?.nombre, c?.apellido].filter(Boolean).join(' ').trim();
+  if (nom) q.set('contacto', nom);
+  if (c?.email) q.set('email', c.email);
+  const tel = c?.whatsapp || c?.telefono;
+  if (tel) q.set('whatsapp', tel);
+  return '/admin/revenue?' + q.toString();
+};
+
 const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/\D/g, '') : '';
 
 // La fecha se compara SIEMPRE en día local. Un lead que entró a las 8 de la
@@ -2314,7 +2329,7 @@ export default function LeadsTab() {
         const acciones = [
           tel ? { label: 'WhatsApp', primaria: true, href: 'https://wa.me/' + String(tel).replace(/\D/g, '') } : null,
           tel ? { label: 'Llamar', href: 'tel:' + String(tel).replace(/[^\d+]/g, '') } : null,
-          { label: 'Cotizar', onClick: () => window.open('/admin/revenue?nueva=1&empresa=' + encodeURIComponent(c.companies?.nombre || ''), '_blank', 'noopener') },
+          { label: 'Cotizar', onClick: () => window.open(urlCotizar(c), '_blank', 'noopener') },
         ].filter(Boolean) as any[];
         return (
           <VistaRapida abierta onCerrar={() => setRapidaL(null)} onVerTodo={() => { const id = c.id; setRapidaL(null); setVerContacto(id); }}

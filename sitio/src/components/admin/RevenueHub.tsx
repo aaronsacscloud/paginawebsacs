@@ -614,7 +614,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       const monto = Math.max(0, Number(p.get('importe') || 0));
       const banco = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0];
       setQf({
-        empresa: p.get('empresa') || '', contacto: '', email: '', whatsapp: '',
+        // Llegan del botón "Cotizar" de la ficha. Sin esto el formulario abría
+        // con correo y WhatsApp VACÍOS, y `createQuote` los exige: llenabas
+        // toda la cotización, dabas Crear y te rebotaba con una alerta. El dato
+        // ya lo tiene el CRM; pedirlo otra vez es lo que perdía el trabajo.
+        empresa: p.get('empresa') || '', contacto: p.get('contacto') || '', email: p.get('email') || '', whatsapp: p.get('whatsapp') || '',
         company_id: p.get('company_id') || null,
         items: concepto ? [{ tipo: 'extra', categoria_comision: 'personalizacion', nombre: concepto, monto, recurrente: false, descripcion: p.get('detalle') || '' }] : [],
         iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern',
@@ -907,9 +911,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     });
 
     const createQuote = async () => {
-      // Validate required fields for TikTok tracking
-      if (!qf.empresa?.trim() || !qf.email?.trim() || !qf.whatsapp?.trim()) {
-        alert('Empresa, Email y WhatsApp son obligatorios');
+      // Lo ÚNICO sin lo que no hay cotización: a quién y qué. El correo y el
+      // WhatsApp se piden fuerte pero no bloquean —el servidor nunca los exigió,
+      // era un candado solo del navegador— y había leads reales que no tienen
+      // correo (Love Cosmetics entró por WhatsApp). Bloquear ahí no protegía
+      // nada: perdía la cotización ya capturada.
+      if (!qf.empresa?.trim() || !items.length) {
+        alert('Para crear la cotización hace falta la empresa y al menos un concepto.');
         return;
       }
       setSaving(true);
@@ -2537,7 +2545,45 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <div className="rh-quote-topbar" style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: M.violeta, color: '#fff', fontSize: '0.75rem', padding: '6px 16px' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar'}</button>
+                {/* Qué falta, DICHO. Antes el botón se veía disponible, se
+                    llenaba la cotización entera y al dar clic saltaba una
+                    alerta que se cierra sin leer: parecía que no se guardaba.
+                    Caso real: Love Cosmetics, cuya ficha no tiene correo. */}
+                {(() => {
+                  // Dos niveles, y la diferencia importa: BLOQUEA lo que hace
+                  // imposible la cotización (a quién y qué). El contacto solo
+                  // AVISA — se puede crear sin correo y decidirlo a sabiendas,
+                  // en vez de perder lo capturado por una alerta.
+                  const bloquea = [
+                    !qf.empresa?.trim() && 'la empresa',
+                    !items.length && 'al menos un concepto',
+                  ].filter(Boolean) as string[];
+                  const sinCorreo = !qf.email?.trim();
+                  const sinWa = !qf.whatsapp?.trim();
+                  const avisa = [sinCorreo && 'correo', sinWa && 'WhatsApp'].filter(Boolean) as string[];
+                  const etiqueta = qf.id ? 'Guardar cambios'
+                    : avisa.length === 2 ? 'Crear sin correo ni WhatsApp'
+                    : avisa.length === 1 ? `Crear sin ${avisa[0]}`
+                    : 'Crear y enviar';
+                  return (
+                    <>
+                      {bloquea.length > 0 ? (
+                        <span style={{ fontSize: '0.6875rem', color: '#C0554E', fontWeight: 600, marginRight: 8 }}>
+                          Falta {bloquea.join(' y ')}
+                        </span>
+                      ) : avisa.length > 0 && (
+                        <span style={{ fontSize: '0.6875rem', color: '#9a6a10', fontWeight: 600, marginRight: 8 }}>
+                          Sin {avisa.join(' ni ')}: se crea igual, pero no hay a dónde mandarla sola.
+                        </span>
+                      )}
+                      <button onClick={createQuote} disabled={saving || bloquea.length > 0}
+                        title={bloquea.length ? `Falta ${bloquea.join(' y ')}` : ''}
+                        style={{ ...S.btn, background: avisa.length && !bloquea.length ? '#E8A838' : M.violeta, color: '#fff', fontSize: '0.75rem', padding: '6px 16px', opacity: bloquea.length ? .5 : 1 }}>
+                        {saving ? 'Guardando...' : etiqueta}
+                      </button>
+                    </>
+                  );
+                })()}
                 <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
               </div>
             </div>
