@@ -79,6 +79,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
+  const [vistaTab, setVistaTab] = useState<'dia' | 'datos'>('dia');
   const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);
   const p1Vistos = useRef<Set<string>>(new Set());
@@ -111,7 +112,11 @@ export default function TrabajoPanel() {
 
   /* La tarjeta que estás viendo NUNCA se te quita de las manos: el reorden es
      ENTRE tareas. La actual queda fijada hasta que TÚ la termines. */
-  const tareas = plan?.tareas || [];
+  const todas = plan?.tareas || [];
+  /* El lote de datos (higiene P5) vive en su pestaña — el valle del día.
+     Las deudas bloqueantes/comerciales (P3/P4) siguen en la fila normal. */
+  const datos = todas.filter(x => x.familia === 'higiene' && x.prioridad >= 5);
+  const tareas = todas.filter(x => !(x.familia === 'higiene' && x.prioridad >= 5));
   const t = (actualId && tareas.find(x => x.id === actualId)) || tareas[0] || null;
   useEffect(() => { if (t && t.id !== actualId) setActualId(t.id); }, [t?.id]);
   // Al cambiar de tarjeta, los campos arrancan con lo suyo.
@@ -164,6 +169,20 @@ export default function TrabajoPanel() {
   }
 
   const linkInbox = t ? `/admin/crm?tab=whatsapp&wa_search=${encodeURIComponent(String(t.payload?.whatsapp || '').replace(/\D/g, ''))}` : '#';
+
+  /** El lote de datos: confirmar escribe al CRM (allow-list del registro). */
+  async function datoListo(x: Tarea, valor: any) {
+    if (guardando) return;
+    setGuardando(true); setErrEnvio('');
+    const r = await fetch('/api/crm/ti/tarea', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: x.id, accion: 'hecha', detalle: { campo: x.payload?.campo || x.payload?.campo_clave, valor } }),
+    }).then(y => y.json()).catch(() => ({ error: 'No se pudo guardar' }));
+    setGuardando(false);
+    if (r?.error) { setErrEnvio(r.error); return; }
+    setValorDato('');
+    await cargar();
+  }
 
   function zonaAccion() {
     if (!t) return null;
@@ -281,15 +300,67 @@ export default function TrabajoPanel() {
       <div className="ti-barra">
         <div className="ti-barra-fila">
           <span className="ti-tt">Trabajo inteligente</span>
-          <span className="ti-num">{plan ? (plan.tareas.length ? `Tarea 1 de ${plan.tareas.length}` : 'Día terminado') : 'Cargando…'}</span>
+          <span className="ti-num">{plan ? (tareas.length ? `Tarea 1 de ${tareas.length}` : 'Día terminado') : 'Cargando…'}</span>
           {!!plan?.resumen?.hechas_hoy && <span className="ti-badge verde">{plan.resumen.hechas_hoy} hechas hoy</span>}
           {!!plan?.resumen?.atrasadas && <span className="ti-badge ambar">{plan.resumen.atrasadas} atrasadas</span>}
           <button className="ti-verfila" onClick={() => setHojaFila(true)}>Ver fila</button>
         </div>
-        <div className="ti-prog"><div style={{ width: plan && (plan.resumen.hechas_hoy + plan.tareas.length) > 0 ? `${Math.round(100 * plan.resumen.hechas_hoy / (plan.resumen.hechas_hoy + plan.tareas.length))}%` : '2%' }} /></div>
+        <div className="ti-prog"><div style={{ width: plan && (plan.resumen.hechas_hoy + tareas.length) > 0 ? `${Math.round(100 * plan.resumen.hechas_hoy / (plan.resumen.hechas_hoy + tareas.length))}%` : '2%' }} /></div>
+        <div className="ti-tabs">
+          <button className={'ti-tab' + (vistaTab === 'dia' ? ' on' : '')} onClick={() => setVistaTab('dia')}>El día</button>
+          <button className={'ti-tab' + (vistaTab === 'datos' ? ' on' : '')} onClick={() => setVistaTab('datos')}>
+            Datos {datos.length > 0 && <span className="ti-tab-n">{datos.length}</span>}
+          </button>
+        </div>
       </div>
 
-      <div className="ti-lienzo">
+      {vistaTab === 'datos' && (
+        <div className="ti-lienzo">
+          {!datos.length ? (
+            <div className="ti-carta"><div className="ti-fin">
+              <h2>Sin datos pendientes</h2>
+              <p>El detector corre con cada plan: cuando falte un dato que importe, aparece aquí — nunca en medio de tus llamadas.</p>
+            </div></div>
+          ) : (() => { const x = datos[0]; const p = x.payload || {}; return (
+            <div className="ti-carta" key={x.id}>
+              <div className="ti-cab">
+                <div className="ti-chips">
+                  <span className="ti-chip chip-p2">Bloque de datos</span>
+                  <span className="ti-chip chip-tipo">{datos.length} en el lote</span>
+                </div>
+                <div className="ti-inst">{p.instruccion}</div>
+                {p.porque && <div className="ti-porque">{p.porque}</div>}
+              </div>
+              <div className="ti-accion">
+                {p.fuente && <div className="ti-burbuja sug"><div className="ti-b-eti">Sugerencia · {p.fuente}</div><b>{p.campo}:</b> {p.valor}</div>}
+                {Array.isArray(p.opciones)
+                  ? <div className="ti-res-chips" style={{ marginTop: 8 }}>
+                      {p.opciones.map((o: string) => (
+                        <button key={o} className={'ti-res-chip' + (valorDato === o ? ' on' : '')} onClick={() => setValorDato(o)}>{(p.opciones_l || {})[o] || o}</button>
+                      ))}
+                    </div>
+                  : !p.fuente && <input className="ti-campo" placeholder={p.input || p.campo} value={valorDato} onChange={e => setValorDato(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && valorDato) datoListo(x, valorDato); }} />}
+                <div className="ti-botones">
+                  <button className="ti-btn prim" disabled={guardando || (!valorDato && !p.valor)} onClick={() => datoListo(x, valorDato || p.valor)}>
+                    {p.fuente ? 'Confirmar y guardar' : 'Guardar y seguir'}
+                  </button>
+                </div>
+                {errEnvio && <div className="ti-error" style={{ marginTop: 12 }}>{errEnvio}</div>}
+              </div>
+              <div className="ti-pie">
+                <button className="ti-pie-txt" disabled={guardando} onClick={async () => {
+                  await fetch('/api/crm/ti/tarea', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: x.id, accion: 'posponer', horas: 24 }) });
+                  setValorDato(''); cargar();
+                }}>Saltar este dato</button>
+              </div>
+            </div>
+          ); })()}
+        </div>
+      )}
+
+      <div className="ti-lienzo" style={vistaTab === 'datos' ? { display: 'none' } : undefined}>
         {error && <div className="ti-error">{error}</div>}
         {!plan && !error && <div className="ti-cargando">Cargando tu plan…</div>}
 
@@ -430,6 +501,12 @@ const CSS = `
 .ti-badge.verde + .ti-badge.ambar { margin-left:0; }
 .ti-verfila { border:none; background:none; font-size:.78rem; font-weight:700; color:var(--morado-tinta); cursor:pointer; white-space:nowrap; padding:2px 0; }
 .ti-barra-fila:not(:has(.ti-badge)) .ti-verfila { margin-left:auto; }
+.ti-tabs { display:flex; gap:4px; max-width:760px; margin:9px auto -10px; }
+.ti-tab { border:none; background:none; padding:8px 13px; border-radius:9px 9px 0 0; font-size:.8rem; font-weight:700;
+  color:var(--suave); border-bottom:2px solid transparent; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
+.ti-tab.on { background:var(--morado-agua); color:var(--morado-tinta); font-weight:800; border-bottom-color:var(--morado); }
+.ti-tab-n { background:var(--neutro); color:var(--suave); border-radius:20px; font-size:.68rem; padding:1px 7px; font-weight:800; }
+.ti-tab.on .ti-tab-n { background:var(--carta); color:var(--morado-tinta); }
 .ti-prog { max-width:760px; margin:9px auto 0; height:5px; border-radius:99px; background:var(--neutro); overflow:hidden; }
 .ti-prog > div { height:100%; border-radius:99px; background:var(--morado); transition:width .5s ease; }
 .ti-lienzo { max-width:760px; margin:0 auto; padding:18px 14px 90px; }

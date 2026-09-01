@@ -46,6 +46,14 @@ export const POST: APIRoute = async ({ request }) => {
 
   // hecha — la llamada exige resultado: de eso depende la siguiente tarea.
   if (tarea.tipo === 'llamada' && !b.resultado) return json({ error: 'La llamada necesita su resultado (contestó/buzón/…)' }, 400);
+
+  // Un DATO confirmado ESCRIBE al CRM — solo por la allow-list del registro
+  // de campos. Si la escritura falla, la tarea NO se marca hecha.
+  if (tarea.tipo === 'dato' && (tarea.payload as any)?.campo_clave) {
+    const { escribirDato } = await import('../../../../lib/crm/ti/campos');
+    const w: any = await escribirDato((tarea.payload as any).campo_clave, (tarea.payload as any).sujeto, b.detalle?.valor);
+    if (w?.error) return json({ error: `No se guardó el dato: ${w.error}` }, 400);
+  }
   await supabase.from('ti_tareas').update({
     estado: 'hecha', resultado: b.resultado || null, resultado_detalle: b.detalle || null,
     hecho_at: ahora, hecho_por: user.id, updated_at: ahora,

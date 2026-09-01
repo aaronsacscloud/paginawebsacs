@@ -178,6 +178,13 @@ export async function generarPlan() {
   // 4) RELOJES DE ESTANCAMIENTO + VÁLVULA (umbrales aprobados: 3·7·14, 2d, 3d, 30d)
   try { Object.assign(res, await relojes(cfg, ahora)); } catch (e: any) { res.relojes_error = String(e?.message || e); }
 
+  // 5) DEUDAS DE DATO (F3): el registro de campos detecta lo que falta y lo
+  //    vuelve tareas de lote — con tope por corrida, nunca en tsunami.
+  try {
+    const { detectarDeudas } = await import('./campos');
+    Object.assign(res, await detectarDeudas());
+  } catch (e: any) { res.deudas_error = String(e?.message || e); }
+
   return res;
 }
 
