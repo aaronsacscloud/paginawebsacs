@@ -52,7 +52,10 @@ const urlCotizar = (c: any) => {
   if (c?.email) q.set('email', c.email);
   const tel = c?.whatsapp || c?.telefono;
   if (tel) q.set('whatsapp', tel);
-  return '/admin/revenue?' + q.toString();
+  // Directo al CRM: Revenue vive dentro desde que se unificaron, y pasar por
+  // /admin/revenue es un salto de más.
+  q.set('tab', 'cotizaciones');
+  return '/admin/crm?' + q.toString();
 };
 
 const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(p).replace(/\D/g, '') : '';

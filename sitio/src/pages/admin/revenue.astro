@@ -1,17 +1,26 @@
 ---
-// Redirect to unified CRM (con gate de admin primero)
+// Redirect to unified CRM (con gate de admin primero).
+//
+// CONSERVA la query. Antes redirigía a `?tab=dashboard` pelado y se comía los
+// parámetros: el botón "Cotizar" de una ficha manda `?nueva=1&empresa=…`, y al
+// perderse aterrizabas en el Tablero en vez de en una cotización nueva con los
+// datos puestos. Cualquier link viejo a /admin/revenue sigue funcionando.
 import { requireFounder } from '../../lib/auth/requireFounder';
 export const prerender = false;
 const gate = await requireFounder(Astro);
 if (gate) return gate;
+const q = new URLSearchParams(Astro.url.search);
+// Sin pestaña explícita: si trae `nueva=1` es una cotización, si no el tablero.
+if (!q.get('tab')) q.set('tab', q.get('nueva') === '1' ? 'cotizaciones' : 'dashboard');
+const destino = '/admin/crm?' + q.toString();
 ---
 <html>
 <head>
-  <meta http-equiv="refresh" content="0;url=/admin/crm?tab=dashboard" />
+  <meta http-equiv="refresh" content={`0;url=${destino}`} />
   <title>Redirecting...</title>
 </head>
 <body>
-  <script is:inline>window.location.replace('/admin/crm?tab=dashboard');</script>
-  <p>Redirigiendo a <a href="/admin/crm?tab=dashboard">CRM SACS</a>...</p>
+  <script is:inline define:vars={{ destino }}>window.location.replace(destino);</script>
+  <p>Redirigiendo a <a href={destino}>CRM SACS</a>...</p>
 </body>
 </html>
