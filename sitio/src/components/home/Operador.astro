@@ -605,46 +605,76 @@ const etapas = [
   .op.sin-riel .op-etapa { opacity: 1; }
   .op.sin-riel .op-etapa p { display: block; }
   .op.sin-riel .op-barra { display: none; }
-  .op.sin-riel .op-tarjeta { opacity: 1; transform: none; }
-  .op.sin-riel .op-briefing { opacity: 1; transform: none; }
   .op.sin-riel .op-anillo-val { stroke-dashoffset: 16; }
-  .op.sin-riel .op-rejilla { grid-template-columns: 1fr; }
-  .op.sin-riel .op-corrida {
-    position: static; opacity: 1; transform: none; margin-top: 14px;
-    box-shadow: 0 12px 30px rgba(15,23,42,.08);
-  }
-  .op.sin-riel .op-detalle,
-  .op.sin-riel .op-vida {
-    position: static; opacity: 1; transform: none; margin-top: 16px;
-    box-shadow: 0 12px 30px rgba(15,23,42,.10);
-  }
-  .op.sin-riel .op-linea { stroke-dashoffset: 0; }
-  .op.sin-riel .op-area, .op.sin-riel .op-hito { opacity: 1; }
-  .op.sin-riel .op-detalle-cuerpo { grid-template-columns: 1fr; }
-  .op.sin-riel .op-tablero { opacity: 1; transform: none; }
 
   @media (max-width: 1100px) {
-    .op-pegado { position: static; min-height: 0; grid-template-columns: 1fr; padding: 56px 20px; }
+    .op-pegado {
+      /* En el DOM el panel va primero (es lo correcto para escritorio y para
+         quien lee sin CSS). En el teléfono el tablero tiene que ir ARRIBA o no
+         le queda recorrido para pegarse: se invierte el orden, no el markup. */
+      position: static; min-height: 0; display: flex; flex-direction: column;
+      padding: 40px 18px 20px;
+    }
+    /* display:contents deshace el panel como caja para poder ordenar sus hijos
+       uno por uno: título arriba, tablero pegado en medio, pasos debajo. */
+    .op-panel { display: contents; }
+    .op-kicker { order: 0; align-self: flex-start; }
+    .op-titulo { order: 0; margin-bottom: 18px; }
+    .op-lienzo { order: 1; }
+    .op-etapas { order: 2; }
     .op-recorrido { display: none; }
-    .op-etapa { opacity: 1; }
-    .op-etapa p { display: block; }
     .op-barra { display: none; }
-    .op-tarjeta { opacity: 1; transform: none; }
-    .op-briefing { opacity: 1; transform: none; }
+
+    /* El tablero se pega arriba y los pasos pasan por debajo. */
+    .op-lienzo {
+      position: sticky; top: 58px; z-index: 3;
+      height: 52vh; min-height: 340px; margin-bottom: 18px;
+      /* a sangre: si el fondo no cubre el ancho completo, el título se ve
+         pasar por los costados del tablero pegado. */
+      background: #F5F3EE; margin-left: -18px; margin-right: -18px;
+      padding: 0 18px 10px;
+    }
+    .op-tablero { height: 100%; display: flex; flex-direction: column; opacity: 1; transform: none; padding: 12px; }
+    .op-tablero-cab { flex: none; margin-bottom: 8px; }
+    .op-marca { font-size: 0.8125rem; }
+    .op-sello { display: none; }
+    /* El briefing va en barra delgada: su párrafo largo ya lo cuenta el paso
+       05 en la columna, y aquí se comía la tarjeta. */
+    .op-briefing { flex: none; opacity: 1; transform: none; padding: 8px 12px; gap: 10px; }
+    .op-briefing-txt p { display: none; }
+    .op-briefing-k { margin-bottom: 0; }
+    .op-anillo { width: 42px; height: 42px; }
+    .op-anillo-num { font-size: 0.8125rem; }
+    .op-anillo-pie { display: none; }
     .op-anillo-val { stroke-dashoffset: 16; }
-    .op-rejilla { grid-template-columns: 1fr; }
-    .op-corrida {
-      position: static; opacity: 1; transform: none; margin-top: 14px;
-      box-shadow: 0 12px 30px rgba(15,23,42,.08);
+
+    /* Las pantallas: solo una a la vez. Cuatro tarjetas apiladas en 390px no
+       se leen; en el teléfono se enseña la que toca. */
+    .op-rejilla { position: relative; flex: 1; min-height: 0; display: block; margin-top: 8px; }
+    .op-tarjeta {
+      position: absolute; inset: 0; overflow: auto;
+      opacity: 0; transform: none; pointer-events: none;
+    }
+    .op-tarjeta.on { opacity: 1; }
+    .op-corrida, .op-detalle, .op-vida {
+      position: absolute; inset: 0; margin: 0; border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(15,23,42,.10); overflow: auto;
     }
     .op-corrida-tabla tbody th { font-size: 0.75rem; }
-    .op-detalle, .op-vida { position: static; opacity: 1; transform: none; margin-top: 16px; box-shadow: 0 12px 30px rgba(15,23,42,.10); }
-    .op-linea { stroke-dashoffset: 0; }
-    .op-area, .op-hito { opacity: 1; }
-    .op-vida-cab { flex-direction: column; }
-    .op-detalle-cuerpo { grid-template-columns: 1fr; }
-    .op-tablero { opacity: 1; transform: none; }
-    .op-detalle-cab { flex-direction: column; }
+    .op-corrida-tabla tbody td { font-size: 1rem; }
+    .op-detalle-cuerpo, .op-vida-cab, .op-detalle-cab { grid-template-columns: 1fr; flex-direction: column; }
+    .op-hitos { grid-template-columns: 1fr; gap: 6px; text-align: left; }
+    .op-grafica { min-height: 90px; max-height: 22vh; }
+
+    /* Cada paso ocupa pantalla: sin esto el observador no alcanza a marcarlos
+       y la sección vuelve a ser una columna de texto. */
+    .op-etapa {
+      min-height: 46vh; display: flex; flex-direction: column; justify-content: center;
+      opacity: .42;
+    }
+    .op-etapa.on { opacity: 1; }
+    .op-etapa p { display: block; }
+    .op-etapa:last-child { padding-bottom: 22vh; }
   }
   @media (prefers-reduced-motion: reduce) {
     .op-pegado { position: static; min-height: 0; }
@@ -670,15 +700,26 @@ const etapas = [
     // Cuántas tarjetas se ven en cada etapa:
     const CUANTAS = [1, 2, 3, 4, 4, 4, 4];
 
+    // En el teléfono el tablero enseña UNA pantalla a la vez; en escritorio las
+    // tarjetas se van sumando, que es lo que cuenta la historia ahí.
+    const movil = () => window.innerWidth <= 1100;
+
     const marcar = (k: number) => {
       if (k === actual) return;
       actual = k;
       etapas.forEach((e, i) => e.classList.toggle('on', i === k));
-      tarjetas.forEach((t, i) => t.classList.toggle('on', i < (CUANTAS[k] ?? 6)));
+      if (movil()) {
+        // pasos 0-2 = una tarjeta cada uno; del 3 en adelante manda la vista
+        const suya = k <= 2 ? k : -1;
+        tarjetas.forEach((t, i) => t.classList.toggle('on', i === suya));
+      } else {
+        tarjetas.forEach((t, i) => t.classList.toggle('on', i < (CUANTAS[k] ?? 4)));
+      }
       sec.classList.toggle('corrida', k === 3);
       sec.classList.toggle('brief', k >= 4);
+      // En móvil el detalle y la vida son pantallas: no se quedan puestas.
       sec.classList.toggle('abre', k === 5);
-      sec.classList.toggle('vida', k >= 6);
+      sec.classList.toggle('vida', movil() ? k === 6 : k >= 6);
       if (barra) barra.style.width = `${((k + 1) / N) * 100}%`;
     };
 
@@ -707,6 +748,21 @@ const etapas = [
         marcar(Math.round(f));
       });
     };
+
+    // En móvil no hay riel: el paso activo lo decide el que esté en pantalla,
+    // igual que en WhatsApp Commerce. Con el riel, el avance manda.
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver(
+        (filas) => {
+          if (!movil()) return;
+          filas.forEach((f) => {
+            if (f.isIntersecting) marcar(etapas.indexOf(f.target as HTMLElement));
+          });
+        },
+        { threshold: 0.4, rootMargin: '-24% 0px -30% 0px' },
+      );
+      etapas.forEach((e) => obs.observe(e));
+    }
 
     revisarCabe();
     marcar(0);
