@@ -107,3 +107,14 @@ insert into ti_config (id, valor) values (1, '{
   "alerta_gasto_ia_usd": 200
 }'::jsonb)
 on conflict (id) do nothing;
+
+-- ── La auditoría del backlog (el arranque): una propuesta por lead viejo ──
+create table if not exists ti_backlog (
+  contact_id uuid primary key references contacts(id) on delete cascade,
+  propuesta text not null,        -- revivir | nutricion | descartar | fresco
+  angulo text,                    -- si revivir: con qué ángulo
+  razon text not null,
+  evidencia jsonb,
+  estado text not null default 'propuesto',  -- propuesto | aprobado | rechazado | ejecutado
+  created_at timestamptz not null default now()
+);
