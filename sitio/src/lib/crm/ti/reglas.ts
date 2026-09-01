@@ -89,6 +89,9 @@ export const CONFIG_DEFAULT = {
   alerta_gasto_ia_usd: 200,
   /** null = el motor NO auto-enrola a nadie todavía (el switch del arranque). */
   arranque_desde: null as string | null,
+  /** El copiloto arranca APAGADO: responder solo a un lead real es un paso
+   *  que el dueño enciende cuando quiera (scripts/ti-copiloto.mjs --on). */
+  copiloto_activo: false,
 };
 export type TiConfig = typeof CONFIG_DEFAULT;
 

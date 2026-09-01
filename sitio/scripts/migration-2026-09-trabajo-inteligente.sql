@@ -118,3 +118,28 @@ create table if not exists ti_backlog (
   estado text not null default 'propuesto',  -- propuesto | aprobado | rechazado | ejecutado
   created_at timestamptz not null default now()
 );
+
+-- ── F5 · El copiloto: log total de comportamientos IA + playbook ──
+create table if not exists ia_log (
+  id uuid primary key default gen_random_uuid(),
+  accion text not null,            -- cubrir_sla | cubrir_fuera_horario | no_pudo | sugerencia_dato | error
+  contact_id uuid,
+  tarea_id uuid,
+  razon text,
+  contenido text,                  -- lo que la IA envió o quiso enviar
+  modelo text,
+  costo_usd numeric(10,6),
+  detalle jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists ia_log_reciente on ia_log (created_at desc);
+create table if not exists ia_jugadas (
+  id uuid primary key default gen_random_uuid(),
+  pregunta text not null,
+  respuesta text not null,
+  fuente text,
+  estado text not null default 'propuesta',  -- propuesta | aprobada | retirada
+  usos int not null default 0,
+  resultados jsonb,
+  created_at timestamptz not null default now()
+);

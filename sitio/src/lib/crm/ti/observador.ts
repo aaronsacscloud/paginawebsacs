@@ -135,6 +135,12 @@ export async function observar(): Promise<any> {
     res.vistas_cotizacion++;
   }
 
+  // ── 3) EL COPILOTO: cubre los P1 que el humano no alcanzó (F5) ──
+  try {
+    const { cubrirPendientes } = await import('./copiloto');
+    Object.assign(res, await cubrirPendientes());
+  } catch (e: any) { res.copiloto_error = String(e?.message || e); }
+
   await marcarObservado(ahora.toISOString());
   return res;
 }
