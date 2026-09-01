@@ -50,6 +50,7 @@ const SchedulingTab = lazySeguro(() => import('./crm/SchedulingTab'));
 const PasarelaMercadoPago = lazySeguro(() => import('./crm/PasarelaMercadoPago'));
 const ContactProfile = lazySeguro(() => import('./crm/ContactProfile'));
 const DashboardTab = lazySeguro(() => import('./crm/DashboardTab'));
+const TrabajoPanel = lazySeguro(() => import('./TrabajoPanel'));
 const PartnersTab = lazySeguro(() => import('./crm/PartnersTab'));
 const CommissionsTab = lazySeguro(() => import('./crm/CommissionsTab'));
 const ContentReviewTab = lazySeguro(() => import('./crm/ContentReviewTab'));
@@ -165,9 +166,9 @@ const NAV_SECTIONS = [
     // Hoy sigue existiendo para las ligas viejas (?tab=hoy).
     label: '',
     items: [
-      /* La sección PRINCIPAL del sistema, arriba de todo: el día del vendedor
-         vive en /admin/trabajo (página propia, pantalla completa). No es un
-         tab — switchTab navega. */
+      /* La sección PRINCIPAL del sistema, arriba de todo. Es un tab normal
+         (el panel se abre ADENTRO del CRM); /admin/trabajo sigue existiendo
+         para la pantalla completa. */
       { id: 'trabajo' as Tab, label: 'Trabajo inteligente', icon: 'trabajo' },
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
     ],
@@ -496,9 +497,6 @@ export default function CrmDashboard() {
   // pantalla cualquiera.
   const volverDeConfig = useRef<Tab>('dashboard');
   const switchTab = (t: Tab) => {
-    // Trabajo inteligente es una PÁGINA, no un tab: la experiencia es entrar
-    // a pantalla completa y ejecutar el día.
-    if ((t as any) === 'trabajo') { window.location.href = '/admin/trabajo'; return; }
     setTab(prev => { if (t === 'config' && prev !== 'config') volverDeConfig.current = prev; return t; });
     if (isMobile) setSidebarCollapsed(true);
     const url = new URL(window.location.href);
@@ -958,7 +956,11 @@ export default function CrmDashboard() {
             transición de entrada móvil (M6): 180ms de fade+rise, como una app. */}
         <div key={tab} className={isMobile ? ('m-tabin' + (M_AUTO_DARK.includes(tab) ? ' m-auto-dark' : '')) : undefined}>
         <Suspense fallback={<TabCargando />}>
-        {tab === 'dashboard' ? (
+        {(tab as any) === 'trabajo' ? (
+          /* La sección principal, ADENTRO del CRM: mismo panel de
+             /admin/trabajo (que sigue viva para pantalla completa). */
+          <ErrorBoundary><TrabajoPanel /></ErrorBoundary>
+        ) : tab === 'dashboard' ? (
           /* M4: en el teléfono, Inicio responde "¿cómo voy y qué me toca?" en 4
              zonas — el Dashboard completo es de escritorio. */
           /* Inicio puede mandar a una BANDEJA concreta, no solo a una pestaña
