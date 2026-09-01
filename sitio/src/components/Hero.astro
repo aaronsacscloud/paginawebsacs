@@ -1952,7 +1952,11 @@ const useCases = [
     </div>
   </section>
 
-  <!-- ── Pillar 3: Fideliza ── -->
+  <!-- El tablero operativo entra aquí, antes de Fideliza: primero se ve que el
+     sistema decide por ti, y de ahí se pasa a la relación con el cliente. -->
+<slot name="operador" />
+
+<!-- ── Pillar 3: Fideliza ── -->
   <div class="pillar-section pillar-section--crm pillar-section--right" data-pillar="crm">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
     <div class="pillar-inner container">

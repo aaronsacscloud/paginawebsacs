@@ -4,6 +4,7 @@ import Hero from '../components/Hero.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 import CtaDudas from '../components/CtaDudas.astro';
+import Operador from '../components/home/Operador.astro';
 import PatternIA from '../components/home/PatternIA.astro';
 import FlujoIA from '../components/home/FlujoIA.astro';
 import { modaSectors, modelosNegocio } from '../data/navigation';
@@ -59,6 +60,7 @@ const casosHome = [
       <PatternIA />
       <FlujoIA />
     </Fragment>
+    <Operador slot="operador" />
   </Hero>
 
   <!-- ═══ ¿Cómo opera tu negocio? — el selector de camino ═══ -->

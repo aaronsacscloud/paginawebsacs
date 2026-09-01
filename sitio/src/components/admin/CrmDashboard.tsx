@@ -94,6 +94,7 @@ type Tab = 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' 
 // lee "inicio", no una cuenta), Leads era un grupo de personas idéntico al de
 // Colaboradores, y Oportunidades era un rayo, que ahí no significa nada.
 const ICONS: Record<string, string> = {
+  trabajo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.2" fill="currentColor" opacity=".22"/></svg>',
   churn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21H5a2 2 0 01-2-2V5a2 2 0 012-2h9"/><path d="M17 8l4 4-4 4"/><path d="M21 12h-9"/></svg>',
   hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>',
@@ -164,6 +165,10 @@ const NAV_SECTIONS = [
     // Hoy sigue existiendo para las ligas viejas (?tab=hoy).
     label: '',
     items: [
+      /* La sección PRINCIPAL del sistema, arriba de todo: el día del vendedor
+         vive en /admin/trabajo (página propia, pantalla completa). No es un
+         tab — switchTab navega. */
+      { id: 'trabajo' as Tab, label: 'Trabajo inteligente', icon: 'trabajo' },
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
     ],
   },
@@ -491,6 +496,9 @@ export default function CrmDashboard() {
   // pantalla cualquiera.
   const volverDeConfig = useRef<Tab>('dashboard');
   const switchTab = (t: Tab) => {
+    // Trabajo inteligente es una PÁGINA, no un tab: la experiencia es entrar
+    // a pantalla completa y ejecutar el día.
+    if ((t as any) === 'trabajo') { window.location.href = '/admin/trabajo'; return; }
     setTab(prev => { if (t === 'config' && prev !== 'config') volverDeConfig.current = prev; return t; });
     if (isMobile) setSidebarCollapsed(true);
     const url = new URL(window.location.href);
@@ -785,6 +793,9 @@ export default function CrmDashboard() {
                    icono por un punto: con el icono puesto se veía igual que la
                    cabecera y no se entendía que colgaba de ella. */
                 const enGrupo = !sidebarCollapsed && !!section.label;
+                /* «Trabajo inteligente» se pinta como lo que es: la sección
+                   principal — lila siempre, letra morada y un pelo más alto. */
+                const esTrabajo = (item.id as any) === 'trabajo';
                 return (
                   <button
                     key={item.id}
@@ -804,15 +815,15 @@ export default function CrmDashboard() {
                       margin: sidebarCollapsed ? '2px auto' : '1px 8px',
                       minHeight: sidebarCollapsed ? 40 : 38,
                       borderRadius: sidebarCollapsed ? 11 : 9,
-                      background: isActive ? '#fff' : 'transparent',
+                      background: esTrabajo ? 'linear-gradient(92deg,#EEECFE,rgba(244,168,205,.16))' : isActive ? '#fff' : 'transparent',
                       boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
-                      color: isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
+                      color: esTrabajo ? '#4C3BD0' : isActive ? '#4C3BD0' : enGrupo ? '#665f7d' : '#3f3856',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       /* Nivel 2: más chico y más claro que su cabecera. Fuera
                        del grupo (Dashboard, que no cuelga de nada) conserva el
                        tamaño de siempre. */
                     fontSize: enGrupo ? '0.775rem' : '0.82rem',
-                    fontWeight: isActive ? 800 : enGrupo ? 500 : 600,
+                    fontWeight: esTrabajo ? 800 : isActive ? 800 : enGrupo ? 500 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
                       // desalineado del resto del menú.
