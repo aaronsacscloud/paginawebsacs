@@ -80,10 +80,15 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
  * otro lado no pasaba nada, ni siquiera quedaba anotado que había confirmado
  * — que es justo la señal que separa al que va a llegar del que no.
  */
-export async function confirmoAsistencia(conversationId: string, telefono: string): Promise<void> {
+export async function confirmoAsistencia(conversationId: string, telefono: string): Promise<boolean> {
+  /* Devuelve SI de verdad contestó. Antes era void y el webhook daba por
+     atendido el mensaje aun cuando esta función salía en silencio (sin
+     contacto o sin reunión futura): el cliente se quedaba sin la confirmación
+     Y sin la bienvenida automática — un mensaje entrante sin ninguna
+     respuesta, que es peor que las dos voces que se querían evitar. */
   const { data: conv } = await supabase.from('wa_conversaciones')
     .select('contact_id').eq('id', conversationId).maybeSingle();
-  if (!conv?.contact_id) return;
+  if (!conv?.contact_id) return false;
 
   const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
   const { data: b } = await supabase.from('bookings')
@@ -91,7 +96,7 @@ export async function confirmoAsistencia(conversationId: string, telefono: strin
     .eq('contact_id', conv.contact_id).in('estado', ['confirmada', 'agendada'])
     .gte('fecha', hoy).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
     .limit(1).maybeSingle();
-  if (!b) return;
+  if (!b) return false;
 
   const texto = [
     `¡Perfecto! Te esperamos el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México).`,
@@ -111,5 +116,6 @@ export async function confirmoAsistencia(conversationId: string, telefono: strin
       titulo: 'Confirmó asistencia desde el recordatorio',
       metadata: { booking_id: b.id },
     });
-  } catch { /* el aviso no puede tumbar nada */ }
+    return true;
+  } catch { return false; }
 }

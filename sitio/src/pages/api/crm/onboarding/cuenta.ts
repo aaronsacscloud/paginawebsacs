@@ -12,6 +12,7 @@
 // Cada camino termina intentando abrir el caso de ONBOARDING — que solo abre
 // si el interruptor está encendido; apagado, la liga queda hecha y el caso no.
 import type { APIRoute } from 'astro';
+import { notificar } from '../../../../lib/crm/notificaciones';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { abrirOnboardingSiAplica } from '../../../../lib/crm/onboarding.lib';
@@ -39,11 +40,30 @@ async function duenoDe(cuenta: string): Promise<{ company_id: string; nombre: st
   return r ? { company_id: r.company_id, nombre: r.companies?.nombre_comercial || r.companies?.nombre || '(sin nombre)' } : null;
 }
 
-async function ligar(companyId: string, cuenta: string) {
-  await supabase.from('company_sacs_accounts')
-    .upsert({ company_id: companyId, cuenta }, { onConflict: 'cuenta' });
-  await supabase.from('companies').update({ sacs_account: cuenta, updated_at: new Date().toISOString() })
-    .eq('id', companyId).is('sacs_account', null);
+/**
+ * Liga la cuenta a la empresa. Devuelve el error si NO se pudo.
+ *
+ * Antes hacía `.upsert(..., { onConflict: 'cuenta' })` y no miraba el
+ * resultado. El único índice único de company_sacs_accounts es sobre la
+ * EXPRESIÓN `lower(trim(cuenta))`, no sobre la columna, así que Postgres
+ * contestaba 42P10 —«no hay restricción que empate con ON CONFLICT»— y el
+ * alta reportaba ok:true sin haber escrito NADA. Los tres caminos mentían.
+ * Mismo patrón que arr/sacs-cuentas: buscar, insertar plano, revisar error.
+ */
+async function ligar(companyId: string, cuenta: string): Promise<string | null> {
+  const { data: ya } = await supabase.from('company_sacs_accounts')
+    .select('id, company_id').ilike('cuenta', cuenta).limit(1);
+  if (ya?.[0]) {
+    if (ya[0].company_id !== companyId) return 'Esa cuenta ya está ligada a otro cliente.';
+  } else {
+    const { error } = await supabase.from('company_sacs_accounts').insert({ company_id: companyId, cuenta });
+    if (error) return error.message;
+  }
+  /* Sin `.is(null)`: si la empresa ya traía otra cuenta principal, el
+     fallback anterior tampoco escribía y el alta no persistía nada. */
+  const { error: e2 } = await supabase.from('companies')
+    .update({ sacs_account: cuenta, updated_at: new Date().toISOString() }).eq('id', companyId);
+  return e2 ? e2.message : null;
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -92,6 +112,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (accion === 'activar') {
     const cuenta = String(b.cuenta || await cuentaDe(companyId) || '').trim().toLowerCase();
     if (!cuenta) return json({ error: 'No hay cuenta que activar: primero liga o crea una.' }, 400);
+    /* De quién es. `ligar` y `crear` ya lo validaban y `activar` no: se podía
+       mandar la cuenta de OTRO cliente y convertirle la prueba a indefinida
+       —y de paso repuntarla a la empresa equivocada—. */
+    const dueno = await duenoDe(cuenta);
+    if (dueno && dueno.company_id !== companyId) {
+      return json({ error: `Esa cuenta es de «${dueno.nombre}». No se activa desde aquí.` }, 409);
+    }
     if (!SYNC_SECRET) return json({ error: 'Falta CRM_SYNC_SECRET: el puente con SACS está cerrado y no se puede apagar la marca de prueba. La liga sí queda.' }, 502);
 
     const r = await fetch(SACS_API + '/interno/prueba/convertir', {
@@ -102,7 +129,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (!r?.success) {
       /* El fallo NO desliga ni esconde el pendiente: se dice y se reintenta
          desde el mismo botón. Nunca «se cobró pero quién sabe qué pasó». */
-      await supabase.from('crm_notificaciones').insert({
+      await notificar({
+        clave: `onb-activar-falla:${companyId}:${cuenta}`,
         tipo: 'onboarding_activar_falla', nivel: 'alerta', destino: 'clientes', company_id: companyId,
         titulo: `No se pudo activar la cuenta de ${co.nombre_comercial || co.nombre}`,
         detalle: `SACS contestó: ${r?.msg || r?.code || 'sin detalle'}. La marca de prueba sigue puesta; reintenta desde la ficha.`,
@@ -111,7 +139,8 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ error: `SACS no pudo convertir la prueba: ${r?.msg || r?.code || 'sin detalle'}`, reintentable: true }, 502);
     }
 
-    await ligar(companyId, cuenta);
+    const errLiga = await ligar(companyId, cuenta);
+    if (errLiga) return json({ error: `La cuenta se convirtió en SACS pero no se pudo ligar: ${errLiga}`, reintentable: true }, 500);
     // La marca del CRM en los contactos que probaron con ESTA cuenta.
     const { data: cs } = await supabase.from('contacts').select('id, nombre, apellido')
       .eq('company_id', companyId).eq('prueba_cuenta', cuenta);
@@ -136,7 +165,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (dueno && dueno.company_id !== companyId) {
       return json({ error: `Esa cuenta ya está ligada a «${dueno.nombre}». Ese conflicto lo resuelve una persona, no este botón.` }, 409);
     }
-    await ligar(companyId, cuenta);
+    const errL = await ligar(companyId, cuenta);
+    if (errL) return json({ error: `No se pudo ligar: ${errL}` }, 500);
     await supabase.from('activities').insert({
       company_id: companyId, tipo: 'sistema', automatico: false,
       titulo: `Cuenta ${cuenta} ligada al cliente`, metadata: { onboarding: true, cuenta, quien },
@@ -173,7 +203,8 @@ export const POST: APIRoute = async ({ request }) => {
     }).then(x => x.json()).catch(e => ({ success: false, msg: String(e?.message || e) }));
 
     if (!r?.success) {
-      await supabase.from('crm_notificaciones').insert({
+      await notificar({
+        clave: `onb-alta-falla:${companyId}:${cuenta}`,
         tipo: 'onboarding_alta_falla', nivel: 'alerta', destino: 'clientes', company_id: companyId,
         titulo: `No se pudo crear la cuenta de ${co.nombre_comercial || co.nombre}`,
         detalle: `SACS contestó: ${r?.msg || r?.error || 'sin detalle'}. El pendiente sigue; reintenta desde la ficha.`,
@@ -182,7 +213,8 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ error: `SACS no pudo crear la cuenta: ${r?.msg || r?.error || 'sin detalle'}`, reintentable: true }, 502);
     }
 
-    await ligar(companyId, cuenta);
+    const errC = await ligar(companyId, cuenta);
+    if (errC) return json({ error: `La cuenta se creó en SACS pero no se pudo ligar: ${errC}`, reintentable: true }, 500);
     await supabase.from('activities').insert({
       company_id: companyId, tipo: 'sistema', automatico: false,
       titulo: `Cuenta ${cuenta} creada y ligada (cliente, sin prueba)`,
@@ -202,11 +234,15 @@ export const POST: APIRoute = async ({ request }) => {
     const regimen = String(b.regimen_fiscal || '').trim();
     if (!razon) return json({ error: 'Falta la razón social.' }, 400);
     if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc)) return json({ error: 'Ese RFC no tiene la forma correcta (ej. XAXX010101000).' }, 400);
-    if (cp && !/^\d{5}$/.test(cp)) return json({ error: 'El código postal son 5 dígitos.' }, 400);
+    /* Obligatorios AQUÍ, no solo en el navegador: si la regla vive solo en la
+       pantalla, cualquier otro llamador cierra el alta a medias y el recuadro
+       vuelve a abrirse sin explicar por qué. */
+    if (!/^\d{5}$/.test(cp)) return json({ error: 'El código postal son 5 dígitos.' }, 400);
+    if (!regimen) return json({ error: 'Falta el régimen fiscal (viene en su constancia).' }, 400);
     const { error } = await supabase.from('companies').update({
       rfc, razon_social: razon,
-      cp_fiscal: cp || null,
-      regimen_fiscal: regimen || null,
+      cp_fiscal: cp,
+      regimen_fiscal: regimen,
       ...(b.constancia_url ? { constancia_fiscal_url: String(b.constancia_url), constancia_fiscal_nombre: String(b.constancia_nombre || 'constancia') } : {}),
       updated_at: new Date().toISOString(),
     }).eq('id', companyId);

@@ -23,6 +23,7 @@
 // Idempotente: una suscripción que YA tiene pagos registrados no se vuelve a
 // tocar (volver a marcar pagada, o el reintento de un webhook, no recorre la
 // fecha dos veces).
+import { notificar } from './notificaciones';
 import { supabase } from '../supabase';
 import { recordDelta } from './mrr-ledger';
 
@@ -274,14 +275,23 @@ export async function aplicarCobroDeCotizacion(
      intenta abrir el onboarding — que solo abre si el interruptor global
      está encendido; apagado, no pasa nada y no estorba. Best-effort: nada de
      esto puede tumbar un cobro que ya se aplicó. */
-  if (out.aplicado && q.company_id) {
+  /* `!dry` a propósito: /api/crm/arr/aplicar-cobros trae dry_run en TRUE por
+     omisión y recorre hasta 500 cotizaciones. Sin este candado, una simple
+     «vista previa» insertaba una alerta por empresa y abría casos de
+     onboarding de verdad — en una función cuyo contrato dice que simula sin
+     escribir nada. */
+  if (out.aplicado && !dry && q.company_id) {
     try {
       const { data: liga } = await supabase.from('company_sacs_accounts').select('cuenta').eq('company_id', q.company_id).limit(1);
       const { data: co2 } = await supabase.from('companies').select('nombre, nombre_comercial, sacs_account').eq('id', q.company_id).maybeSingle();
       const cuenta = liga?.[0]?.cuenta || co2?.sacs_account || null;
       const nombreCo = co2?.nombre_comercial || co2?.nombre || 'el cliente';
       if (!cuenta) {
-        await supabase.from('crm_notificaciones').insert({
+        /* Por `notificar()` y con CLAVE: reintentar un alta que falla tres
+           veces dejaba tres campanadas idénticas, y si el insert fallaba el
+           «pendiente que no muere» moría sin ruido. */
+        await notificar({
+          clave: `onb-sin-cuenta:${q.company_id}`,
           tipo: 'onboarding_sin_cuenta', nivel: 'alerta', destino: 'clientes', company_id: q.company_id,
           titulo: `${nombreCo} ya pagó y no tiene cuenta de SACS`,
           detalle: 'Crear la cuenta (o ligar la que ya exista) es el paso obligatorio al ganar un cliente. Se hace desde su ficha, botón «Cuenta SACS».',
@@ -293,7 +303,8 @@ export async function aplicarCobroDeCotizacion(
           .eq('company_id', q.company_id).eq('prueba_cuenta', cuenta)
           .neq('prueba_estado', 'convertida').not('prueba_estado', 'is', null).limit(1);
         if (enPrueba?.length) {
-          await supabase.from('crm_notificaciones').insert({
+          await notificar({
+            clave: `onb-activar:${q.company_id}:${cuenta}`,
             tipo: 'onboarding_activar_pendiente', nivel: 'alerta', destino: 'clientes', company_id: q.company_id,
             titulo: `${nombreCo} pagó y su cuenta sigue marcada como prueba`,
             detalle: `Actívala desde su ficha para que quede indefinida: mientras tanto, el vencimiento de la prueba sigue corriendo sobre «${cuenta}».`,

@@ -97,7 +97,15 @@ export const POST: APIRoute = async ({ request, url }) => {
         // ── El cliente tocó uno de los horarios que le mandamos ──────────
         // Va ANTES de la automatización: si la respuesta es una reserva, lo
         // que toca es agendar, no dispararle la bienvenida.
+        /* `atendido` = este mensaje YA recibió respuesta del sistema, así que
+           la bienvenida automática NO debe dispararse encima. Es lo que hacía
+           el hilo ilegible: el cliente tocaba «Reagendar», la agenda le
+           mandaba su liga, y un segundo después «Te leo 👋 Soy Fernanda, dame
+           unos minutos» — dos respuestas al mismo toque, contradiciéndose.
+           Medido: 13 «Soy Fernanda» en 10 días, varios encima de un botón. */
+        let atendido = false;
         if (entrante && r.inserted && p.metadata?.id && esRespuestaDeAgenda(p.metadata.id)) {
+          atendido = true;
           const base = new URL(request.url).origin;
           agendarDesdeRespuesta({ idRespuesta: String(p.metadata.id), telefono, conversationId: r.conversationId || null, base })
             .catch(e => console.warn('[wa-agenda]', e));
@@ -113,13 +121,18 @@ export const POST: APIRoute = async ({ request, url }) => {
           /* «Ahí estaré» también se contesta: el cliente confirmó y merece
              saber que lo oímos. Antes su toque caía en el inbox sin respuesta
              y sin dejar rastro de que había confirmado asistencia. */
-          if (/^(ahí estaré|ahi estare|entendido|confirmo)$/.test(t)) {
-            (async () => {
-              const { confirmoAsistencia } = await import('../../../lib/scheduling/reagendar-wa');
-              await confirmoAsistencia(String(r.conversationId), telefono);
-            })().catch(e => console.warn('[wa-confirma]', e));
+          /* SOLO el texto exacto de nuestros botones. Antes el regex incluía
+             «entendido» y «confirmo», palabras que cualquiera contesta a un
+             mensaje de ventas: entraban al flujo de asistencia sin haber
+             tocado nada. Y `atendido` se ponía ANTES de saber si la función
+             hacía algo, así que un cliente sin reunión futura se quedaba sin
+             confirmación Y sin bienvenida: sin ninguna respuesta. */
+          if (/^ah[íi] estar[ée]$/.test(t)) {
+            const { confirmoAsistencia } = await import('../../../lib/scheduling/reagendar-wa');
+            atendido = await confirmoAsistencia(String(r.conversationId), telefono).catch(e => { console.warn('[wa-confirma]', e); return false; });
           }
           if (/^(reagendar|quiero reagendar)$/.test(t)) {
+            atendido = true;
             (async () => {
               const { ligaParaReagendar } = await import('../../../lib/scheduling/reagendar-wa');
               await ligaParaReagendar(String(r.conversationId), telefono);
@@ -127,9 +140,12 @@ export const POST: APIRoute = async ({ request, url }) => {
           }
         }
         if (entrante && r.inserted && r.conversationId) {
-          // Automatización (bienvenida / fuera de horario / round-robin): SOLO
-          // entrantes NUEVOS — un replay o un saliente jamás la disparan.
-          await alRecibirMensaje(r.conversationId).catch(e => console.warn('[wa-auto]', e));
+          /* Automatización (bienvenida / fuera de horario / round-robin): SOLO
+             entrantes NUEVOS —un replay o un saliente jamás la disparan— y
+             SOLO si nadie contestó ya. Un toque de botón que la agenda acaba
+             de responder no necesita además que le digan «dame unos
+             minutos»: es hablarle dos veces con dos voces distintas. */
+          if (!atendido) await alRecibirMensaje(r.conversationId).catch(e => console.warn('[wa-auto]', e));
           // "Escribiendo…" hacia el cliente: señal de que alguien lo vio llegar.
           // La confirmación de LECTURA real la manda el hilo al abrirse.
           await marcarLeido(String(msj.id), true).catch(() => {});

@@ -44,9 +44,33 @@ async function mandar(texto: string, vars?: [string, string, string]): Promise<{
     catch (e: any) {
       console.warn('[aviso-lead] no se pudo avisar a', t, e?.message || e);
       res.push({ tel: t, ok: false, error: String(e?.message || e).slice(0, 300) });
+      /* UN aviso al día por número. Medido el 1-sep: de 65 avisos internos a
+         un mismo teléfono del equipo, 31 fallaron — y el único rastro era un
+         console.warn que nadie lee. Un canal de avisos roto a la mitad es
+         peor que no tenerlo: se cree que el equipo está enterado. */
+      await avisarCanalRoto(t, String(e?.message || e));
     }
   }
   return res;
+}
+
+/** Que un canal de avisos internos esté fallando TIENE que verse. */
+async function avisarCanalRoto(telefono: string, motivo: string) {
+  try {
+    const desde = new Date(Date.now() - 24 * 3600e3).toISOString();
+    const { data: ya } = await supabase.from('crm_notificaciones')
+      .select('id').eq('tipo', 'aviso_interno_falla').gte('created_at', desde)
+      .contains('metadata', { telefono }).limit(1);
+    if (ya?.length) return;
+    const { data: quien } = await supabase.from('team_members')
+      .select('nombre').eq('whatsapp', telefono).maybeSingle();
+    await supabase.from('crm_notificaciones').insert({
+      tipo: 'aviso_interno_falla', nivel: 'alerta', destino: 'config',
+      titulo: `No le están llegando los avisos a ${quien?.nombre || telefono}`,
+      detalle: `WhatsApp rechazó el aviso interno: ${motivo.slice(0, 180)}. Mientras esto siga así, esa persona NO se está enterando de los leads nuevos.`,
+      metadata: { telefono },
+    });
+  } catch { /* avisar del fallo no puede provocar otro */ }
 }
 
 /** Un lead nuevo, con su info básica y el link directo a su ficha. */

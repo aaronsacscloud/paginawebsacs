@@ -30,15 +30,24 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o, null, 2), { sta
 const ESCALONES = [3, 7, 14];
 const hoyMx = () => new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
 
-async function avisar(companyId: string, tipo: string, titulo: string, detalle: string, extra?: any) {
+async function avisar(companyId: string, tipo: string, titulo: string, detalle: string, extra?: any, consultor?: { nombre?: string; email?: string } | null) {
   const desde = new Date(Date.now() - 20 * 3600e3).toISOString();
   const { data: ya } = await supabase.from('crm_notificaciones')
     .select('id').eq('tipo', tipo).eq('company_id', companyId).gte('created_at', desde).limit(1);
   if (ya?.length) return false;
   await supabase.from('crm_notificaciones').insert({
     tipo, nivel: 'alerta', destino: 'onboarding', company_id: companyId, titulo, detalle,
-    metadata: extra || {},
+    metadata: { ...(extra || {}), consultor: consultor?.nombre || null },
   });
+  /* Y al CONSULTOR por correo. El join de team_members se traía y no se usaba:
+     el «aviso escalonado al consultor» dependía de que alguien mirara la
+     campana global, que es de todos y por lo tanto de nadie. */
+  if (consultor?.email) {
+    await notify({ channel: 'email', to: consultor.email, template: 'onboarding_consultor',
+      data: { asunto: titulo, titulo, cuerpo: detalle,
+        cta_url: 'https://www.sacscloud.com/admin/crm?tab=onboarding', cta_texto: 'Ver el caso' } })
+      .catch(() => null);
+  }
   return true;
 }
 
@@ -118,14 +127,24 @@ export const GET: APIRoute = async ({ request }) => {
       // ── Atorado: aviso escalonado al consultor, con el dato que lo prueba ──
       if (atorado) {
         out.atorados++;
-        if (ESCALONES.includes(sinMover)) {
+        /* Por umbral CRUZADO, no por igualdad. `includes(sinMover)` exigía
+           que el cron corriera justo el día 3, 7 o 14: un día sin corrida
+           —deploy, 500, límite de Vercel— hacía saltar de 2 a 4 y el aviso
+           no salía NUNCA. Ahora se compara contra el último escalón avisado. */
+        const yaAvisado = Number((caso.hitos || {})._escalon || 0);
+        const escalon = [...ESCALONES].reverse().find(e => sinMover >= e && e > yaAvisado);
+        if (escalon) {
           const prueba = etapaNueva === 'cuenta_lista' ? 'sigue sin cargar catálogo ni invitar a su equipo'
             : etapaNueva === 'configurado' ? 'configuró pero no ha hecho su primera venta'
             : 'dejó de vender esta semana';
           if (await avisar(co.id, 'onboarding_atorado',
             `${nombre} lleva ${sinMover} días atorado en «${ETAPA_ONB(etapaNueva).l}»`,
             `${prueba}. Día ${dias} de 30 — una llamada del consultor vale más que otro correo.`,
-            { onboarding_caso_id: caso.id })) out.avisos++;
+            { onboarding_caso_id: caso.id }, caso.team_members)) {
+            out.avisos++;
+            await supabase.from('onboarding_casos')
+              .update({ hitos: { ...hitos, _escalon: escalon } }).eq('id', caso.id);
+          }
         }
       }
 
@@ -159,13 +178,21 @@ export const GET: APIRoute = async ({ request }) => {
           data: { nombre: cont?.[0]?.nombre || '', empresa: nombre, cuenta: co.sacs_account || '', agendar_url: 'https://www.sacscloud.com/agendar/configuracion' },
         });
         if (r.ok) { await marcar('d3', 'Onboarding día 3: guía de configuración enviada'); out.correos++; }
+        else out.errores.push(`${co.id} d3: ${r.reason}`);
+      }
+      /* Sin ningún correo en la empresa, los pasos d0/d3 se saltaban en
+         silencio y el cliente arrancaba sin recibir NADA. Se dice una vez. */
+      if (!email && dias >= 1 && !(await enviado('sin_correo'))) {
+        if (await avisar(co.id, 'onboarding_sin_correo', `${nombre} no tiene correo`,
+          'Su onboarding no puede mandar la bienvenida ni la guía de arranque: captura un correo en su ficha.',
+          { onboarding_caso_id: caso.id })) { await marcar('sin_correo', 'Onboarding: sin correo para escribirle'); out.avisos++; }
       }
       if (dias >= 7 && !hitos.primer_uso && !(await enviado('d7'))) {
         // Al CONSULTOR, no al cliente: al día 7 sin vender, lo que toca es llamada.
         if (await avisar(co.id, 'onboarding_sin_primera_venta',
           `${nombre} lleva 7 días con cuenta y sin su primera venta`,
           'Es la señal de rescate temprano: una llamada del consultor, no otro correo.',
-          { onboarding_caso_id: caso.id })) { await marcar('d7', 'Onboarding día 7: aviso al consultor (sin primera venta)'); out.avisos++; }
+          { onboarding_caso_id: caso.id }, caso.team_members)) { await marcar('d7', 'Onboarding día 7: aviso al consultor (sin primera venta)'); out.avisos++; }
       }
     } catch (e: any) {
       out.errores.push(`${caso.id}: ${e?.message || e}`);

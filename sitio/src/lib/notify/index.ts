@@ -592,6 +592,22 @@ const templates: Record<string, Template> = {
     `,
     text: `El pago de tu suscripción ${d.plan} venció el ${d.fecha} (${d.dias} días). Monto: $${d.monto} MXN.${d.pago_url ? ' Regulariza aquí: ' + d.pago_url : ''}`,
   }),
+  /* Aviso interno al consultor. Existe porque el barrido de onboarding
+     necesitaba escribirle y yo llamé a una plantilla «generico» que NO
+     existía: `notify` habría contestado que no la conoce y el aviso al
+     consultor —lo único que hace que alguien llame al cliente atorado—
+     nunca habría salido. */
+  onboarding_consultor: (d) => ({
+    subject: String(d.asunto || 'Aviso de onboarding'),
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.2rem;margin:0 0 10px">${esc(d.titulo || '')}</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 18px">${esc(d.cuerpo || '')}</p>
+        <a href="${esc(d.cta_url || 'https://www.sacscloud.com/admin/crm?tab=onboarding')}" style="display:inline-block;padding:12px 26px;background:#5B4BD6;color:#fff;border-radius:10px;text-decoration:none;font-weight:700">${esc(d.cta_texto || 'Ver el caso')}</a>
+      </div>`,
+    text: `${d.titulo || ''}\n\n${d.cuerpo || ''}\n\n${d.cta_url || ''}`,
+  }),
+
   // ═══ Onboarding: los primeros 30 días del cliente nuevo ═══
   onboarding_bienvenida: (d) => ({
     subject: `Bienvenido a Sacs${d.empresa ? `, ${d.empresa}` : ''} — por aquí se empieza`,

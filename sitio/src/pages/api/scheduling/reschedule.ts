@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
 import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
@@ -132,6 +133,25 @@ export const POST: APIRoute = async ({ request }) => {
 
   const nueva_hora_fin = addMinutes(nueva_hora, eventType.duracion_minutos);
 
+  /* ══ EL CANDADO CONTRA LA CARRERA ══
+     La transición se hace ANTES y de forma CONDICIONAL: solo gana quien
+     encuentre la reunión todavía en 'confirmada'. Con la verificación suelta
+     y el update después, dos POST a la vez (doble clic en la página pública,
+     reintento del navegador) leían las dos 'confirmada', insertaban dos
+     reservas y —desde que esto toca Google— creaban DOS eventos con
+     invitación al cliente, dos correos y dos WhatsApps. Si no movió fila,
+     alguien más ya reagendó y aquí no hay nada que hacer. */
+  const { data: gano } = await supabase.from('bookings')
+    .update({ estado: 'reagendada' })
+    .eq('id', booking_id).eq('estado', 'confirmada')
+    .select('id');
+  if (!gano?.length) {
+    return new Response(JSON.stringify({
+      error: 'Esa reunión ya se movió (o se canceló) hace un momento. Recarga para ver cómo quedó.',
+      code: 'ya_reagendada',
+    }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+  }
+
   // Create new booking FIRST — si el insert falla, la reunión vieja debe
   // seguir confirmada (marcarla antes dejaba al lead SIN ninguna cita).
   const token_cancelar = generateToken();
@@ -165,13 +185,12 @@ export const POST: APIRoute = async ({ request }) => {
     .select()
     .single();
 
-  if (nbErr) return new Response(JSON.stringify({ error: nbErr.message }), { status: 500 });
-
-  // Ahora sí: la vieja pasa a 'reagendada' (la nueva ya existe).
-  await supabase
-    .from('bookings')
-    .update({ estado: 'reagendada' })
-    .eq('id', booking_id);
+  if (nbErr) {
+    /* La vieja ya está en 'reagendada' por el candado: si la nueva no nació,
+       hay que devolverla a 'confirmada' o el lead se queda SIN ninguna cita. */
+    await supabase.from('bookings').update({ estado: 'confirmada' }).eq('id', booking_id);
+    return new Response(JSON.stringify({ error: nbErr.message }), { status: 500 });
+  }
 
   /* ══ EL CALENDARIO. Esto FALTABA por completo ══
      `createCalendarEvent` y `deleteCalendarEvent` estaban importados en la
@@ -191,7 +210,13 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const { data: hostMember } = await supabase.from('team_members')
       .select('email').eq('id', oldBooking.host_id).maybeSingle();
-    const tzNueva = timezone || oldBooking.timezone_invitado || 'America/Mexico_City';
+    /* EL HUSO DEL HOST, no el del invitado. `nueva_hora` viene de
+       available-slots, que devuelve horarios de la agenda del host (CDMX), y
+       `timezone` es el del navegador del cliente. Crear el evento con el huso
+       del cliente movía la reunión: alguien en Madrid que reagenda a las
+       12:00 CDMX obtenía un evento a las 12:00 de Madrid — ocho horas antes
+       de la reunión real, con su invitación y su Meet a esa hora falsa. */
+    const tzNueva = oldBooking.timezone_host || 'America/Mexico_City';
     const gcal = await createCalendarEvent(oldBooking.host_id, {
       summary: `${eventType.nombre} — ${oldBooking.invitee_nombre || ''} (${oldBooking.invitee_empresa || ''})`,
       description: [
@@ -214,9 +239,22 @@ export const POST: APIRoute = async ({ request }) => {
         .update({ google_event_id: gEventId, google_meet_link: gMeet }).eq('id', newBooking.id);
       (newBooking as any).google_event_id = gEventId;
       (newBooking as any).google_meet_link = gMeet;
-      // El viejo se borra SOLO cuando el nuevo ya existe.
+      /* El viejo se borra SOLO cuando el nuevo ya existe. Y si NO se puede
+         borrar, se dice: el cliente se queda con dos reuniones en su
+         calendario y nadie lo sabría — el error se tragaba con un catch. */
       if (oldBooking.google_event_id) {
-        await deleteCalendarEvent(oldBooking.host_id, oldBooking.google_event_id).catch(() => null);
+        try {
+          await deleteCalendarEvent(oldBooking.host_id, oldBooking.google_event_id);
+        } catch (e) {
+          await notificar({
+            clave: `evento-viejo:${oldBooking.google_event_id}`,
+            tipo: 'agenda_evento_viejo_vivo', nivel: 'alerta', destino: 'agenda',
+            company_id: oldBooking.company_id || null,
+            titulo: `Quedó la reunión vieja en el calendario: ${oldBooking.invitee_nombre || 'un cliente'}`,
+            detalle: `Se creó la nueva del ${nueva_fecha}, pero la del ${oldBooking.fecha} no se pudo borrar de Google. El cliente ve DOS reuniones: bórrala a mano.`,
+            metadata: { booking_id: newBooking.id, evento_viejo: oldBooking.google_event_id },
+          });
+        }
       }
     }
   } catch (e) {
@@ -227,7 +265,8 @@ export const POST: APIRoute = async ({ request }) => {
      liga: eso NO puede quedarse callado, porque al cliente ya se le dijo que
      le llegaría. Sale aviso para que una persona la ponga a mano. */
   if (!gEventId) {
-    await supabase.from('crm_notificaciones').insert({
+    await notificar({
+      clave: `reagenda-sin-cal:${newBooking.id}`,
       tipo: 'agenda_reagendada_sin_calendario', nivel: 'alerta', destino: 'agenda',
       company_id: oldBooking.company_id || null,
       titulo: `Reagendada sin invitación: ${oldBooking.invitee_nombre || 'un cliente'}`,

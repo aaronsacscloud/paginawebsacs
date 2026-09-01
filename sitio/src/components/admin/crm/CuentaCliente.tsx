@@ -35,7 +35,12 @@ const REGIMENES = [
 export default function CuentaCliente({ companyId, alCambiar }: { companyId: string; alCambiar?: () => void }) {
   const [st, setSt] = useState<any>(null);
   const [fisc, setFisc] = useState<any>(null);        // null = cargando · {rfc, razon_social}
-  const [fiscForm, setFiscForm] = useState<any>({ rfc: '', razon_social: '', cp_fiscal: '', regimen_fiscal: '' });
+  /* `null` = «el usuario no ha escrito»; '' = «lo borró a propósito». Con
+     `||` un campo vaciado volvía a pintar el valor guardado y ESE se mandaba:
+     un RFC mal capturado no se podía corregir borrándolo, solo escribiendo
+     encima sin vaciar. */
+  const [fiscForm, setFiscForm] = useState<any>({ rfc: null, razon_social: null, cp_fiscal: null, regimen_fiscal: null });
+  const val = (k: string) => (fiscForm[k] ?? fisc?.[k] ?? '');
   const [constancia, setConstancia] = useState<{ url: string; nombre: string } | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [fiscOcupado, setFiscOcupado] = useState(false);
@@ -54,7 +59,13 @@ export default function CuentaCliente({ companyId, alCambiar }: { companyId: str
   }, [companyId]);
 
   if (!st || st.error) return null;
-  const pruebaViva = (st.pruebas || []).some((p: any) => p.prueba_estado && p.prueba_estado !== 'convertida');
+  /* El CAMINO lo calcula el servidor, que sí compara la prueba contra la
+     cuenta LIGADA. Mirar «alguna prueba sin convertir» de la empresa hacía
+     que, con una prueba de otra cuenta, el panel afirmara que la cuenta
+     ligada era de prueba: cada clic llamaba a SACS sobre una cuenta que nunca
+     lo fue, 502 permanente, una alerta en la campana por intento, y el
+     recuadro no se cerraba nunca. */
+  const pruebaViva = st.camino === 'activar';
   const faltanFiscales = fisc != null && (
     !String(fisc.rfc || '').trim() || !String(fisc.razon_social || '').trim()
     || !String(fisc.cp_fiscal || '').trim() || !String(fisc.regimen_fiscal || '').trim());
@@ -144,15 +155,15 @@ export default function CuentaCliente({ companyId, alCambiar }: { companyId: str
             Faltan sus <b>datos fiscales</b> — sin RFC y razón social no se le puede facturar.
           </div>
           <div style={{ display: 'grid', gap: 8, maxWidth: 420 }}>
-            <input value={fiscForm.razon_social || fisc?.razon_social || ''} onChange={e => setFiscForm({ ...fiscForm, razon_social: e.target.value })}
+            <input value={val('razon_social')} onChange={e => setFiscForm({ ...fiscForm, razon_social: e.target.value })}
               placeholder="Razón social (como en su constancia)" style={inp} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 8 }}>
-              <input value={fiscForm.rfc || fisc?.rfc || ''} onChange={e => setFiscForm({ ...fiscForm, rfc: e.target.value.toUpperCase() })}
+              <input value={val('rfc')} onChange={e => setFiscForm({ ...fiscForm, rfc: e.target.value.toUpperCase() })}
                 placeholder="RFC" style={{ ...inp, textTransform: 'uppercase' as const }} />
-              <input value={fiscForm.cp_fiscal || fisc?.cp_fiscal || ''} onChange={e => setFiscForm({ ...fiscForm, cp_fiscal: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+              <input value={val('cp_fiscal')} onChange={e => setFiscForm({ ...fiscForm, cp_fiscal: e.target.value.replace(/\D/g, '').slice(0, 5) })}
                 placeholder="C.P. fiscal" style={inp} inputMode="numeric" />
             </div>
-            <select value={fiscForm.regimen_fiscal || fisc?.regimen_fiscal || ''} onChange={e => setFiscForm({ ...fiscForm, regimen_fiscal: e.target.value })} style={inp as any}>
+            <select value={val('regimen_fiscal')} onChange={e => setFiscForm({ ...fiscForm, regimen_fiscal: e.target.value })} style={inp as any}>
               <option value="">Régimen fiscal…</option>
               {REGIMENES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -177,10 +188,10 @@ export default function CuentaCliente({ companyId, alCambiar }: { companyId: str
 
             <div>
               <button disabled={fiscOcupado || subiendo} onClick={async () => {
-                const rfc = String(fiscForm.rfc || fisc?.rfc || '').trim().toUpperCase();
-                const razon = String(fiscForm.razon_social || fisc?.razon_social || '').trim();
-                const cp = String(fiscForm.cp_fiscal || fisc?.cp_fiscal || '').trim();
-                const regimen = String(fiscForm.regimen_fiscal || fisc?.regimen_fiscal || '').trim();
+                const rfc = String(val('rfc')).trim().toUpperCase();
+                const razon = String(val('razon_social')).trim();
+                const cp = String(val('cp_fiscal')).trim();
+                const regimen = String(val('regimen_fiscal')).trim();
                 if (!razon) { setFiscError('Falta la razón social.'); return; }
                 if (!RFC_OK.test(rfc)) { setFiscError('Ese RFC no tiene la forma correcta (ej. XAXX010101000).'); return; }
                 if (!/^\d{5}$/.test(cp)) { setFiscError('El código postal son 5 dígitos.'); return; }

@@ -37,10 +37,18 @@ export async function abrirOnboardingSiAplica(companyId: string, o?: { quien?: s
   /* Cliente NUEVO = su primera suscripción viva es posterior al encendido.
      Es lo que evita que los 81 existentes entren en masa. */
   if (cfg.activado_at) {
-    const { data: viejas } = await supabase.from('subscriptions')
-      .select('id').eq('company_id', companyId).eq('estado', 'activa')
-      .lt('created_at', cfg.activado_at).limit(1);
-    if (viejas?.length) return { creado: false, motivo: 'cliente de antes del encendido' };
+    /* Por cuándo EMPEZÓ a pagar, no por cuándo se creó la fila. La licencia
+       se crea al cerrar la cotización y se activa al cobrar: mirando
+       `created_at`, un cliente cuya licencia nació la semana pasada y paga
+       hoy —después del encendido— se descartaba como «de antes» y su
+       onboarding no abría nunca. */
+    const { data: subs } = await supabase.from('subscriptions')
+      .select('fecha_inicio, created_at').eq('company_id', companyId).eq('estado', 'activa');
+    const arranque = (s: any) => Date.parse(s.fecha_inicio || s.created_at || 0) || 0;
+    const corte = Date.parse(cfg.activado_at);
+    if ((subs || []).some(s => arranque(s) < corte)) {
+      return { creado: false, motivo: 'cliente de antes del encendido' };
+    }
   }
 
   const { data: abierto } = await supabase.from('onboarding_casos')
