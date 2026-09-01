@@ -585,7 +585,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           const banco2 = bankAccounts.find((x: any) => x.es_default) || bankAccounts[0];
           const items: any[] = [];
           if (min.plan_sugerido) {
-            items.push({ tipo: 'plan', nombre: min.plan_sugerido, periodo: 'anual', sucursales: String(suc), descuento_pct: 0 });
+            // Con el precio ya puesto: ahora el monto sale de `precio_unitario`
+            // y no del catálogo en cada tecla, así que un plan sin él sumaría $0.
+            const pu = PLAN_PRICES[min.plan_sugerido] || 0;
+            items.push({ tipo: 'plan', nombre: min.plan_sugerido, periodo: 'anual', sucursales: String(suc), descuento_pct: 0,
+              precio_unitario: pu, subtotal: Math.round(pu * (parseInt(String(suc)) || 1) * MESES_ANUAL), meses_anual: MESES_ANUAL });
           }
           // Lo que ya viene dentro del plan NO se cobra aparte: entraría dos
           // veces en el total y el prospecto lo nota.
@@ -770,7 +774,32 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           <div><label style={{ ...S.label, marginTop: 0 }}>Sucursales</label><input type="number" value={item.sucursales} onChange={e => updateItem(idx, 'sucursales', e.target.value)} style={S.input} /></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (35% de descuento)</option></select></div>
                           <div><label style={{ ...S.label, marginTop: 0 }}>Desc. %</label><input type="number" value={item.descuento_pct || 0} onChange={e => updateItem(idx, 'descuento_pct', e.target.value)} style={S.input} /></div>
+                          {/* Precio MENSUAL a mano. Se llena del catálogo al
+                              elegir el plan y se puede pisar: es la única forma
+                              de cotizar «personalizada» y la póliza de soporte,
+                              que a propósito valen 0 porque su precio se define
+                              aquí. También sirve para un precio negociado. */}
+                          <div>
+                            <label style={{ ...S.label, marginTop: 0 }}>
+                              Precio mensual
+                              {item.precio_manual && <span style={{ color: '#9B8CFA', fontWeight: 700, marginLeft: 5 }}>· a mano</span>}
+                            </label>
+                            <input type="number" value={item.precio_unitario ?? ''} onChange={e => updateItem(idx, 'precio_unitario', e.target.value)}
+                              placeholder="0" style={{ ...S.input, borderColor: !Number(item.precio_unitario) ? '#EF7A72' : undefined }} />
+                          </div>
+                          <div>
+                            {/* Va tal cual a la cotización del cliente: «Plan
+                                personalizada» no le dice nada a nadie. */}
+                            <label style={{ ...S.label, marginTop: 0 }}>Cómo se llama en la cotización</label>
+                            <input value={item.titulo || ''} onChange={e => updateItem(idx, 'titulo', e.target.value)}
+                              placeholder={`Plan ${item.nombre}`} style={S.input} />
+                          </div>
                         </div>
+                        {!Number(item.precio_unitario) && (
+                          <div style={{ marginTop: 6, fontSize: '0.6875rem', color: '#C0554E' }}>
+                            Este plan se cotiza a la medida: escribe el precio mensual o sumará $0.
+                          </div>
+                        )}
                         <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
                       </div>
                     ) : item.es_promocion ? (
@@ -830,8 +859,18 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       const arr = [...items];
       arr[idx] = { ...arr[idx], [field]: value };
       if (arr[idx].tipo === 'plan') {
-        const p = PLAN_PRICES[arr[idx].nombre] || 0;
-        arr[idx].precio_unitario = p;
+        // El precio del catálogo se re-aplica SOLO al cambiar de plan. Antes se
+        // reescribía en cada tecla, así que capturarlo a mano era imposible: y
+        // «personalizada» y «soporte_premium» valen 0 en el catálogo justo
+        // porque su precio se define al cotizar. El resultado era un plan a la
+        // medida que siempre sumaba cero.
+        if (field === 'nombre') {
+          arr[idx].precio_unitario = PLAN_PRICES[arr[idx].nombre] || 0;
+          arr[idx].precio_manual = false;
+        } else if (field === 'precio_unitario') {
+          arr[idx].precio_manual = true;
+        }
+        const p = Number(arr[idx].precio_unitario) || 0;
         const suc = parseInt(arr[idx].sucursales) || 1;
         const isAnn = arr[idx].periodo === 'anual';
         const sub = Math.round(p * suc * (isAnn ? MESES_ANUAL : 1));
