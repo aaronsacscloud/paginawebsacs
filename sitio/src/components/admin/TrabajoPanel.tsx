@@ -78,14 +78,42 @@ export default function TrabajoPanel() {
   const [hojaFila, setHojaFila] = useState(false);
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
+  const [actualId, setActualId] = useState<string | null>(null);
+  const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);
+  const p1Vistos = useRef<Set<string>>(new Set());
 
   const cargar = () => fetch('/api/crm/ti/plan').then(r => r.json())
-    .then(j => { if (j.error) setError(j.error); else setPlan(j); })
+    .then(j => {
+      if (j.error) { setError(j.error); return; }
+      // El aviso P1: si llegó una urgencia NUEVA mientras trabajas, se anuncia
+      // sin robarte la tarjeta — será la siguiente.
+      const p1s = (j.tareas || []).filter((x: Tarea) => x.prioridad === 1);
+      for (const x of p1s) {
+        if (!p1Vistos.current.has(x.id) && p1Vistos.current.size > 0) {
+          setAvisoP1(`${x.payload?.nombre || 'Un lead'} necesita respuesta — es tu siguiente tarea`);
+          setTimeout(() => setAvisoP1(''), 6000);
+        }
+      }
+      p1Vistos.current = new Set(p1s.map((x: Tarea) => x.id));
+      setPlan(j);
+    })
     .catch(() => setError('No se pudo cargar el plan'));
   useEffect(() => { cargar(); }, []);
+  // El observador del lado del panel: refresco cada 45 s y al volver a la
+  // pestaña — con el panel abierto, un P1 aparece en segundos.
+  useEffect(() => {
+    const int = setInterval(cargar, 45_000);
+    const foco = () => cargar();
+    window.addEventListener('focus', foco);
+    return () => { clearInterval(int); window.removeEventListener('focus', foco); };
+  }, []);
 
-  const t = plan?.tareas?.[0] || null;
+  /* La tarjeta que estás viendo NUNCA se te quita de las manos: el reorden es
+     ENTRE tareas. La actual queda fijada hasta que TÚ la termines. */
+  const tareas = plan?.tareas || [];
+  const t = (actualId && tareas.find(x => x.id === actualId)) || tareas[0] || null;
+  useEffect(() => { if (t && t.id !== actualId) setActualId(t.id); }, [t?.id]);
   // Al cambiar de tarjeta, los campos arrancan con lo suyo.
   useEffect(() => {
     if (!t || tareaRef.current === t.id) return;
@@ -104,6 +132,7 @@ export default function TrabajoPanel() {
     }).then(x => x.json()).catch(() => ({ error: 'No se pudo guardar' }));
     setGuardando(false);
     if (r?.error) { setErrEnvio(r.error); return false; }
+    setActualId(null);
     await cargar();
     return true;
   }
@@ -246,6 +275,9 @@ export default function TrabajoPanel() {
   return (
     <div className="ti-raiz">
       <style>{CSS}</style>
+      {avisoP1 && (
+        <div className="ti-p1aviso" role="status"><i />{avisoP1}. Termina esta con calma.</div>
+      )}
       <div className="ti-barra">
         <div className="ti-barra-fila">
           <span className="ti-tt">Trabajo inteligente</span>
@@ -314,7 +346,8 @@ export default function TrabajoPanel() {
           </div>
         )}
 
-        {t && plan!.tareas[1] && <div className="ti-sigue">Sigue: <b>{plan!.tareas[1].payload?.instruccion}</b></div>}
+        {t && (() => { const sig = tareas.find(x => x.id !== t.id); return sig
+          ? <div className="ti-sigue">Sigue: <b>{sig.payload?.instruccion}</b></div> : null; })()}
       </div>
 
       {/* ── La fila, solo lectura ── */}
@@ -325,11 +358,11 @@ export default function TrabajoPanel() {
           <div className="ti-hoja-tt">La fila de hoy</div>
           <div className="ti-hoja-sub">Solo lectura: el orden lo defiende el sistema — si algo cambia allá afuera, se reacomoda sola.</div>
           <div style={{ marginTop: 12, maxHeight: '52dvh', overflowY: 'auto' }}>
-            {plan?.tareas.map((x, i) => (
-              <div key={x.id} className="ti-fila-item" style={i === 0 ? { fontWeight: 700 } : undefined}>
+            {tareas.map((x) => (
+              <div key={x.id} className="ti-fila-item" style={x.id === t?.id ? { fontWeight: 700 } : undefined}>
                 <span className={`ti-chip chico chip-${P_CHIP[x.prioridad]?.[1] || 'p4'}`}>{x.prioridad === 1 && <i />}P{x.prioridad}</span>
                 <span className="ti-fila-txt">{x.payload?.instruccion}</span>
-                {i === 0 && <span className="ti-ahora">AHORA</span>}
+                {x.id === t?.id && <span className="ti-ahora">AHORA</span>}
               </div>
             ))}
           </div>
@@ -472,6 +505,12 @@ const CSS = `
 .ti-fin { text-align:center; padding:44px 24px 36px; }
 .ti-fin h2 { font-size:1.4rem; font-weight:800; color:var(--tinta); letter-spacing:-.02em; margin:0 0 8px; }
 .ti-fin p { font-size:.87rem; color:var(--suave); line-height:1.6; max-width:400px; margin:0 auto; }
+.ti-p1aviso { position:fixed; left:50%; top:70px; transform:translateX(-50%); z-index:95;
+  background:var(--tinta); color:var(--fondo); border-radius:14px; box-shadow:var(--sombra);
+  padding:12px 18px; display:flex; align-items:center; gap:11px; width:min(560px, calc(100vw - 28px));
+  font-size:.83rem; font-weight:700; line-height:1.4; animation:tientra .3s ease; }
+.ti-p1aviso i { width:9px; height:9px; border-radius:50%; background:var(--morado); flex:none;
+  animation:tilate 1.2s ease-in-out infinite; }
 .ti-velo { position:fixed; inset:0; background:rgba(12,11,18,.5); z-index:90; }
 .ti-hoja { position:fixed; left:0; right:0; bottom:0; z-index:91; background:var(--carta); border-radius:22px 22px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.25); padding:10px 20px 26px; max-width:640px; margin:0 auto; max-height:86dvh; overflow-y:auto; }
 .ti-agarra { width:44px; height:5px; border-radius:99px; background:var(--linea); margin:4px auto 14px; }

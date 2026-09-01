@@ -51,5 +51,30 @@ export const POST: APIRoute = async ({ request }) => {
     hecho_at: ahora, hecho_por: user.id, updated_at: ahora,
   }).eq('id', id);
   const r = await alCompletar(tarea, b.resultado || null, user.id);
+
+  // Los veredictos EJECUTAN la decisión, no solo la registran.
+  if (tarea.tipo === 'veredicto' && b.resultado) {
+    const ahora2 = new Date().toISOString();
+    if (b.resultado === 'descartar') {
+      await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descartado_veredicto', updated_at: ahora2 })
+        .eq('contact_id', tarea.contact_id).neq('estado', 'terminada');
+      await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'veredicto_descartar', updated_at: ahora2 })
+        .eq('contact_id', tarea.contact_id).eq('estado', 'pendiente');
+    }
+    if (b.resultado === 'reciclar') {
+      // Vuelve a la cadencia por el paso del ángulo nuevo (T6) — mañana.
+      await supabase.from('ti_cadencias').upsert({
+        contact_id: tarea.contact_id, paso: 'T6', estado: 'activa', pausa_causa: null,
+        siguiente_at: new Date(Date.now() + 20 * 3600e3).toISOString(), updated_at: ahora2,
+      }, { onConflict: 'contact_id' });
+    }
+    const qid = (tarea.payload as any)?.quote_id;
+    if (qid && b.resultado === 'rechazar') {
+      await supabase.from('quotes').update({ estado: 'rejected', rechazado_fecha: ahora2 }).eq('id', qid).eq('estado', 'sent');
+    }
+    if (qid && b.resultado === 'extender') {
+      await supabase.from('quotes').update({ vigencia: new Date(Date.now() + 14 * 86400e3).toISOString().slice(0, 10) }).eq('id', qid);
+    }
+  }
   return json({ ok: true, ...r });
 };

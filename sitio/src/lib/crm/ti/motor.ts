@@ -175,6 +175,193 @@ export async function generarPlan() {
     if (!error) res.tareas_nuevas++; // el índice único hace idempotente la corrida
   }
 
+  // 4) RELOJES DE ESTANCAMIENTO + VÁLVULA (umbrales aprobados: 3·7·14, 2d, 3d, 30d)
+  try { Object.assign(res, await relojes(cfg, ahora)); } catch (e: any) { res.relojes_error = String(e?.message || e); }
+
+  return res;
+}
+
+/** ¿Ya existe (en cualquier estado) la tarea de este reloj para este sujeto?
+ *  Los relojes disparan UNA vez por etapa — la memoria es la propia tabla. */
+async function yaHayReloj(contactId: string, reloj: string, sujeto?: string) {
+  let q = supabase.from('ti_tareas').select('id').eq('contact_id', contactId)
+    .filter('payload->>reloj', 'eq', reloj).limit(1);
+  if (sujeto) q = q.filter('payload->>sujeto', 'eq', sujeto);
+  const { data } = await q;
+  return !!(data || []).length;
+}
+
+const RES_COTIZACION = { la_firma: 'La firma', pidio_cambios: 'Pidió cambios', la_rechazo: 'La rechazó', no_contesto: 'No contestó', buzon: 'Buzón' };
+
+async function relojes(cfg: TiConfig, ahora: Date) {
+  const res: any = { reloj_cotizacion: 0, reloj_demo: 0, reloj_charla: 0, reloj_dia30: 0, valvula: 0 };
+  const haceD = (d: number) => new Date(ahora.getTime() - d * MS_D).toISOString();
+  const dinero = (n: any) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+  // ── COTIZACIÓN SIN DECISIÓN (3 · 7 · 14) ──
+  const { data: cots } = await supabase.from('quotes')
+    .select('id, numero, total, vistas, created_at, contact_id, contacts!inner(id, nombre, whatsapp, owner_id, company_id, archived_at)')
+    .eq('estado', 'sent').not('contact_id', 'is', null)
+    .lt('created_at', haceD(3)).limit(100);
+  for (const qv of cots || []) {
+    const c = (qv as any).contacts;
+    if (!c || c.archived_at) continue;
+    const dias = Math.floor((ahora.getTime() - Date.parse(qv.created_at)) / MS_D);
+    const nombre = primerNombre(c);
+    const etapa = dias >= 14 ? ['cot_decision', 14] as const : dias >= 7 ? ['cot_llamada', 7] as const : ['cot_feedback', 3] as const;
+    if (await yaHayReloj(qv.contact_id, etapa[0], String(qv.id))) continue;
+    const base = {
+      contact_id: qv.contact_id, company_id: c.company_id, owner_id: c.owner_id,
+      vence_at: ahora.toISOString(), origen: 'reloj',
+    };
+    const hechos = [
+      ['La cotización', `#${qv.numero || 's/n'}`, dinero(qv.total)],
+      ['Sin decisión', `${dias} días`, `la abrió ${qv.vistas || 0} veces`, dias >= 14 ? 'rojo' : 'ambar'],
+      ['Decisión forzada', 'día 14', 'extender con razón o rechazar'],
+    ];
+    if (etapa[0] === 'cot_decision') {
+      await supabase.from('ti_tareas').insert({ ...base, familia: 'decidir', tipo: 'veredicto', prioridad: 4, payload: {
+        instruccion: `La cotización de ${nombre} llegó al día 14 — decide`,
+        porque: 'Una cotización fría a dos semanas ya casi nunca cierra sola: extender con una razón real, o cerrarla como rechazada y que el lead siga su camino.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'cot_decision', sujeto: String(qv.id), quote_id: String(qv.id), hechos,
+        evidencia: [`Enviada hace ${dias} días (#${qv.numero || 's/n'}, ${dinero(qv.total)}).`, `${qv.vistas || 0} vistas y ninguna decisión.`],
+        resultados: { extender: 'Extender 14 días (con razón)', rechazar: 'Marcar rechazada', seguir: 'Yo la sigo trabajando' },
+      } });
+    } else if (etapa[0] === 'cot_llamada') {
+      await supabase.from('ti_tareas').insert({ ...base, familia: 'avanzar', tipo: 'llamada', prioridad: 4, payload: {
+        instruccion: `Llámale a ${nombre} — su cotización lleva ${dias} días sin decisión`,
+        porque: 'El feedback por texto no la movió: la llamada resuelve la duda que la tiene detenida. El ángulo es resolver, no presionar.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'cot_llamada', sujeto: String(qv.id), quote_id: String(qv.id), hechos,
+        tipo_llamada: 'Seguimiento de cotización', resultados: RES_COTIZACION,
+      } });
+    } else {
+      await supabase.from('ti_tareas').insert({ ...base, familia: 'avanzar', tipo: 'wa_libre', prioridad: 4, payload: {
+        instruccion: `Pídele feedback a ${nombre} de su cotización`,
+        porque: `Se la mandaste hace ${dias} días${qv.vistas ? ` y la ha abierto ${qv.vistas} veces` : ' y no hay señal de que la abriera'}. Un empujón suave destraba más que esperar.`,
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'cot_feedback', sujeto: String(qv.id), quote_id: String(qv.id), hechos,
+        mensaje: `Hola ${nombre}, ¿pudiste ver la cotización que te mandé? Si algo no cuadra o quieres ajustar algo, dime y lo movemos — para eso estoy.`,
+      } });
+    }
+    res.reloj_cotizacion++;
+  }
+
+  // ── DEMO HECHA SIN COTIZACIÓN (2 días) ──
+  const { data: demos } = await supabase.from('contacts')
+    .select('id, nombre, whatsapp, owner_id, company_id, estatus_lead_at')
+    .eq('lifecycle_stage', 'lead').eq('estatus_lead', 'demo_hecha')
+    .is('archived_at', null).lt('estatus_lead_at', haceD(2)).limit(50);
+  for (const c of demos || []) {
+    const { data: q1 } = await supabase.from('quotes').select('id').eq('contact_id', c.id)
+      .in('estado', ['sent', 'accepted', 'paid']).limit(1);
+    if ((q1 || []).length) continue;
+    if (await yaHayReloj(c.id, 'demo_cotiza')) continue;
+    const nombre = primerNombre(c);
+    await supabase.from('ti_tareas').insert({
+      contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id,
+      familia: 'avanzar', tipo: 'wa_libre', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj',
+      payload: {
+        instruccion: `Cotízale a ${nombre} — la demo fue hace 2+ días`,
+        porque: 'La demo salió y nadie cotizó: cada día que pasa la emoción se enfría. Mándale la cotización o di por qué no.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'demo_cotiza',
+        hechos: [['La demo', 'hace 2+ días', 'sin cotización después', 'ambar'], ['Qué sigue', 'Cotizar', 'o registrar por qué no']],
+        mensaje: `Hola ${nombre}, te mando la cotización de lo que vimos en la demo — dime si quieres que ajuste algo antes de dejarla formal.`,
+      },
+    });
+    res.reloj_demo++;
+  }
+
+  // ── CONVERSACIÓN VIVA SIN CITA (3 días) ──
+  const { data: charlas } = await supabase.from('ti_cadencias')
+    .select('contact_id, updated_at, contacts!inner(id, nombre, whatsapp, owner_id, company_id, archived_at)')
+    .eq('estado', 'conversacion').lt('updated_at', haceD(3)).limit(50);
+  for (const cad of charlas || []) {
+    const c = (cad as any).contacts;
+    if (!c || c.archived_at || String(c.nombre || '').startsWith('Demo ')) continue;
+    const { data: cita } = await supabase.from('bookings').select('id').eq('contact_id', cad.contact_id)
+      .gte('fecha', ahora.toISOString().slice(0, 10)).limit(1);
+    if ((cita || []).length) continue;
+    // se puede volver a proponer, pero no cada día: una vez por semana
+    const { data: prev } = await supabase.from('ti_tareas').select('id').eq('contact_id', cad.contact_id)
+      .filter('payload->>reloj', 'eq', 'charla_cita').gt('created_at', haceD(7)).limit(1);
+    if ((prev || []).length) continue;
+    const nombre = primerNombre(c);
+    await supabase.from('ti_tareas').insert({
+      contact_id: cad.contact_id, company_id: c.company_id, owner_id: c.owner_id,
+      familia: 'avanzar', tipo: 'wa_libre', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj',
+      payload: {
+        instruccion: `Ciérralo a cita: la charla con ${nombre} no aterriza`,
+        porque: 'Tres días intercambiando mensajes sin cita = la conversación se está enfriando. El agendador hace el resto.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'charla_cita',
+        hechos: [['Conversación viva', '3+ días', 'sin cita agendada', 'ambar'], ['Qué sigue', 'Proponer horario', 'con el agendador listo']],
+        mensaje: `${nombre}, mejor lo vemos en vivo 15 minutos y sales con todo claro — ¿te queda mañana en la mañana o en la tarde?`,
+      },
+    });
+    res.reloj_charla++;
+  }
+
+  // ── DÍA 30: todo lead tiene ciclo de vida claro, sin excepción ──
+  const { data: viejos } = await supabase.from('contacts')
+    .select('id, nombre, whatsapp, owner_id, company_id, created_at, last_contact_at, estatus_lead, ti_backlog(contact_id)')
+    .eq('lifecycle_stage', 'lead').is('archived_at', null)
+    .in('estatus_lead', ['nuevo', 'contactado', 'sin_respuesta', 'respondio'])
+    .lt('created_at', haceD(30)).limit(50);
+  for (const c of viejos || []) {
+    if ((c as any).ti_backlog?.length) continue;           // ya lo resolvió la auditoría del arranque
+    if (String(c.nombre || '').startsWith('Demo ')) continue;
+    if (await yaHayReloj(c.id, 'dia30')) continue;
+    const dias = Math.floor((ahora.getTime() - Date.parse(c.created_at)) / MS_D);
+    const respondio = c.estatus_lead === 'respondio' || c.estatus_lead === 'contactado';
+    const nombre = primerNombre(c);
+    await supabase.from('ti_tareas').insert({
+      contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id,
+      familia: 'decidir', tipo: 'veredicto', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj',
+      payload: {
+        instruccion: `${nombre} llegó al día 30 — decide su destino`,
+        porque: 'La regla madre: a los 30 días todo lead tiene ciclo de vida claro.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'dia30',
+        hechos: [
+          ['En el sistema', `${dias} días`, `estatus: ${c.estatus_lead}`],
+          ['Señal', respondio ? 'Alguna vez' : 'Ninguna', respondio ? 'llegó a responder' : 'ni una respuesta', respondio ? 'ambar' : 'rojo'],
+          ['La IA propone', respondio ? 'Reciclar' : 'Descartar', respondio ? 'ángulo nuevo' : 'a nutrición', 'morado'],
+        ],
+        evidencia: [
+          `${dias} días desde que entró; estatus «${c.estatus_lead}».`,
+          c.last_contact_at ? `Último toque nuestro: ${String(c.last_contact_at).slice(0, 10)}.` : 'Nunca se le tocó.',
+        ],
+        resultados: respondio
+          ? { reciclar: 'Reciclar con ángulo nuevo', descartar: 'Descartar → nutrición', seguir: 'Yo lo sigo trabajando' }
+          : { descartar: 'Descartar → nutrición', reciclar: 'Reciclar con ángulo nuevo', seguir: 'Yo lo sigo trabajando' },
+      },
+    });
+    res.reloj_dia30++;
+  }
+
+  // ── LA VÁLVULA (aprobada): plantilla de cadencia vencida 24 h+ sale SOLA —
+  //    pero SOLO si su plantilla de Meta está configurada (cfg.plantillas_meta).
+  //    Sin config, se desliza como cualquier tarea: nunca texto libre solo. ──
+  const mapa = (cfg as any).plantillas_meta || {};
+  if (Object.keys(mapa).length) {
+    const { data: vencidas } = await supabase.from('ti_tareas')
+      .select('id, paso, contact_id, payload')
+      .eq('estado', 'pendiente').eq('tipo', 'wa_plantilla')
+      .lt('vence_at', new Date(ahora.getTime() - (cfg.valvula_plantilla_horas || 24) * 3600e3).toISOString())
+      .limit(20);
+    for (const v of vencidas || []) {
+      const nombreMeta = mapa[v.paso || ''];
+      const tel = (v.payload as any)?.whatsapp;
+      if (!nombreMeta || !tel) continue;
+      try {
+        const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
+        await enviarPlantilla(tel, nombreMeta, 'es_MX', [String((v.payload as any)?.nombre || '').split(/\s+/)[0] || 'Hola']);
+        await supabase.from('ti_tareas').update({
+          estado: 'hecha', resultado: 'valvula_automatica', hecho_at: ahora.toISOString(), updated_at: ahora.toISOString(),
+        }).eq('id', v.id);
+        await alCompletar({ ...v, tipo: 'wa_plantilla' }, null, null);
+        res.valvula++;
+      } catch { /* si Kapso falla, la tarea se queda para el humano */ }
+    }
+  }
+
   return res;
 }
 

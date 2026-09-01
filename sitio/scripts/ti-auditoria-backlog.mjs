@@ -54,7 +54,7 @@ async function expediente(c) {
 function armarPrompt(c, exp) {
   const attr = c.propiedades?.atribucion?.primer_toque || {};
   const charla = exp.mensajes.map(m =>
-    `[${String(m.created_at).slice(0, 10)}] ${m.direccion === 'in' ? 'LEAD' : 'nosotros'}: ${String(m.cuerpo || '(media)').slice(0, 300)}`).join('\n') || '(sin conversación de WhatsApp)';
+    `[${String(m.created_at).slice(0, 10)}] ${m.direccion === 'entrante' ? 'LEAD' : 'nosotros'}: ${String(m.cuerpo || '(media)').slice(0, 300)}`).join('\n') || '(sin conversación de WhatsApp)';
   const acts = exp.actividades.map(a =>
     `[${String(a.created_at).slice(0, 10)}] ${a.tipo}: ${a.titulo || ''} ${String(a.descripcion || '').slice(0, 150)}`).join('\n') || '(sin actividades)';
   return `Eres el analista comercial de Sacscloud (software de punto de venta e inventario para comercios en México). Audita este lead viejo del CRM y decide su destino para el arranque del nuevo sistema de seguimiento.

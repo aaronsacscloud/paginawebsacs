@@ -37,6 +37,12 @@ if (limpiar) {
     await supabase.from('ti_tareas').delete().in('contact_id', ids);
     await supabase.from('ti_cadencias').delete().in('contact_id', ids);
     await supabase.from('ti_backlog').delete().in('contact_id', ids);
+    // Las conversaciones de WhatsApp sembradas para el QA del observador
+    const { data: convs } = await supabase.from('wa_conversaciones').select('id').in('contact_id', ids);
+    if ((convs || []).length) {
+      await supabase.from('wa_mensajes').delete().in('conversation_id', convs.map(x => x.id));
+      await supabase.from('wa_conversaciones').delete().in('contact_id', ids);
+    }
     await supabase.from('contacts').delete().in('id', ids);
   }
   console.log(`limpio: ${ids.length} contactos demo y todo lo suyo, borrado.`);

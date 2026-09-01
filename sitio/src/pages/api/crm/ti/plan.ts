@@ -7,6 +7,12 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
+import { observar } from '../../../../lib/crm/ti/observador';
+
+/* El observador también corre al PEDIR el plan (además del cron): con el
+   panel abierto, un lead que responde aparece en segundos, no en minutos.
+   Acelerador en memoria para no barrer en cada tecla. */
+let ultimaObservada = 0;
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -14,6 +20,11 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 export const GET: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'Sin sesión' }, 401);
+
+  if (Date.now() - ultimaObservada > 25_000) {
+    ultimaObservada = Date.now();
+    try { await observar(); } catch { /* el plan se sirve aunque el barrido falle */ }
+  }
 
   const finHoy = new Date(); finHoy.setUTCHours(29, 59, 59, 0); // 23:59 CDMX (UTC-6)
   let q = supabase.from('ti_tareas')
