@@ -1286,7 +1286,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     // Paquete escalonado de licencias (modo interno). Vive dentro de tabulador.escalonado.
     escalonado: (editing?.tabulador && (editing.tabulador as any).escalonado) || {
       enabled: false,
-      resale_price: 14000,
+      resale_price: 18900,
       tiers: [
         { price: 10000, licenses: 3 },
         { price: 18000, licenses: 5 },
@@ -1307,7 +1307,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
       embajador: {
         comision_pct: 50, costo_unico: 0, costo_mensual: 0,
         beneficios: [
-          { icon: 'gift',      title: 'Plan Fideliza gratis · sistema SACS completo', detail: 'Te activamos una cuenta SACS en plan Fideliza para usar en tu propio negocio: POS, inventario multi-sucursal, e-commerce, CRM, lealtad, marketing. Costo público: $14,000 MXN/año. Para ti: gratis durante toda tu participación.', value_label: 'Vale $14,000 MXN/año · Gratis' },
+          { icon: 'gift',      title: 'Plan Fideliza gratis · sistema SACS completo', detail: 'Te activamos una cuenta SACS en plan Fideliza para usar en tu propio negocio: POS, inventario multi-sucursal, e-commerce, CRM, lealtad, marketing. Costo público: $18,900 MXN/año. Para ti: gratis durante toda tu participación.', value_label: 'Vale $14,000 MXN/año · Gratis' },
           { icon: 'link',      title: 'Landing personalizada con tu link único',     detail: 'Tu propia página dentro de SACS con tu nombre, foto y link único (sacscloud.com/p/tu-slug). Cada visita y registro queda atribuido automáticamente a ti — sin códigos, sin formularios extra.' },
           { icon: 'dashboard', title: 'Portal de partner con métricas en tiempo real', detail: 'Dashboard personal con visitas a tu landing, registros generados, prospectos calificados, conversiones, comisiones acumuladas y pagos liquidados — todo actualizado al instante.' },
           { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones',     detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador. Te enviamos cada mes 3-5 palabras clave para enfocar el contenido.' },
@@ -1700,7 +1700,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                   type="number"
                   value={form.escalonado.resale_price}
                   onChange={v => setEsc('resale_price', Number(v) || 0)}
-                  hint="A este precio el partner revende cada licencia a sus clientes. Por defecto $14,000/año."
+                  hint="A este precio el partner revende cada licencia a sus clientes. Por defecto $18,900/año."
                 />
                 <div style={{ marginTop: 14, fontSize: '0.75rem', fontWeight: 700, color: '#5b21b6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Niveles · inversión → licencias
@@ -1752,7 +1752,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                   <input
                     value={b.value_label || ''}
                     onChange={e => updateBenefit(i, 'value_label', e.target.value)}
-                    placeholder='Valor (opcional, ej. "Vale $14,000/año · Gratis")'
+                    placeholder='Valor (opcional, ej. "Vale $18,900/año · Gratis")'
                     style={{ ...inputStyle, marginTop: 8, fontSize: '0.8125rem' }}
                   />
                 </div>

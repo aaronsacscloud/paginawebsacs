@@ -2,7 +2,7 @@
 // /regalo/[codigo] · Landing del Regalo Buddy
 //
 // Un cliente Sacs (padrino) regaló a este negocio su primer año del Plan
-// Vende ($6,000 MXN). SSR: valida el código contra la tabla `gifts`.
+// Vende ($8,100 MXN). SSR: valida el código contra la tabla `gifts`.
 // Código inválido / expirado / ya usado → redirect a la home (fallback).
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -33,8 +33,8 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
 ---
 
 <BaseLayout
-  title={`🎁 ${padrinoNombre} te regaló $6,000 — tu primer año del Plan Vende`}
-  description={`${padrinoNombre} te regaló tu primer año completo del Plan Vende de Sacs (valor $6,000 MXN): punto de venta, tienda en línea e inventario. Actívalo sin costo — no se te cobra nada hoy.`}
+  title={`🎁 ${padrinoNombre} te regaló $8,100 — tu primer año del Plan Vende`}
+  description={`${padrinoNombre} te regaló tu primer año completo del Plan Vende de Sacs (valor $8,100 MXN): punto de venta, tienda en línea e inventario. Actívalo sin costo — no se te cobra nada hoy.`}
   image="/og-default.png"
   noindex={true}
 >
@@ -48,7 +48,7 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
         <strong>{padrinoNombre}</strong> te regaló tu primer año del <span class="gift-plan">Plan Vende</span>
       </h1>
       <p class="gift-value">
-        Valor del regalo: <strong>$6,000 MXN</strong> — tu primer año completo, sin costo.
+        Valor del regalo: <strong>$8,100 MXN</strong> — tu primer año completo, sin costo.
       </p>
 
       <a href={`/registro?gift=${gift.code}`} class="gift-cta">Activar mi regalo</a>
@@ -56,7 +56,7 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
       <p class="gift-fineprint">
         Sin costo el primer año. Te pedimos una tarjeta solo para guardar la renovación —
         no se te cobra nada hasta el segundo año, cuando renueva automáticamente a precio
-        normal ($6,000 MXN/año) y puedes cancelar antes sin costo. Este regalo vence el {expiraFecha}.
+        normal ($8,100 MXN/año) y puedes cancelar antes sin costo. Este regalo vence el {expiraFecha}.
       </p>
     </div>
 
