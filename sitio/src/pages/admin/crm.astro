@@ -12,6 +12,16 @@ if (gate) return gate;
 
 <BaseLayout title="CRM — Sacs" description="CRM interno de Sacs" noindex={true}>
 <script is:inline>
+// ── Los parámetros de llegada, guardados ANTES de que corra nada ──
+// El CRM reescribe la barra de direcciones al resolver la pestaña, y para
+// cuando monta la pantalla que los necesita ya no están. Pasó con "Cotizar" de
+// una ficha: mandaba `?nueva=1&empresa=…&email=…`, la URL quedaba en
+// `?tab=cotizaciones` a los pocos milisegundos y la cotización nunca se abría
+// con los datos — había que recapturar el correo, y sin correo se rebotaba.
+// Esto corre antes que React, así que llega siempre.
+try { window.__crmParams = window.location.search || ''; } catch (e) { /* sin window */ }
+</script>
+<script is:inline>
 // viewport-fit=cover SOLO en el CRM: habilita env(safe-area-inset-*) en iPhone
 // con notch (los toasts/bottom-nav lo usan). BaseLayout queda intacto.
 (function () {

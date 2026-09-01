@@ -566,8 +566,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // la cotización con el concepto y el monto ya puestos.
     useEffect(() => {
       if (typeof window === 'undefined') return;
-      const p = new URLSearchParams(window.location.search);
+      // La FOTO de la URL de llegada (la toma crm.astro antes que React) y, si
+      // no existe, la barra actual. Este componente carga en diferido: para
+      // cuando monta, el shell ya dejó la URL en `?tab=cotizaciones` y los
+      // datos del lead se habían perdido en el camino.
+      const p = new URLSearchParams((window as any).__crmParams || window.location.search);
       if (p.get('nueva') !== '1') return;
+      // Se consume una sola vez: si no, volver a esta pestaña reabriría una
+      // cotización nueva encima de la que se está capturando.
+      try { (window as any).__crmParams = ''; } catch { /* nada */ }
       // Llegar desde la MINUTA DE UN LEAD: los conceptos ya se decidieron en la
       // junta, así que se traen de la reunión en vez de recapturarlos. La
       // cotización no se crea sola —el precio y el descuento los pone una
