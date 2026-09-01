@@ -2667,8 +2667,8 @@ function QuotePreviewLive({ form, ivaMode }: { form: any; ivaMode: 'sin' | 'suma
                     <strong style={{ color: '#1a1a1a' }}>{isP ? planDisplayName(item) : (item.nombre || '—')}</strong>
                     {isP && (
                       <div style={{ fontSize: 10, color: '#aaa' }}>
-                        {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '10 meses' : '1 mes'}
-                        {isAnn && <span style={{ color: C.greenDark }}> · ahorra {fmt((item.precio_unitario || 0) * suc * 2)}</span>}
+                        {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '12 meses con 35% off' : '1 mes'}
+                        {isAnn && <span style={{ color: C.greenDark }}> · ahorra {fmt(Math.round((item.precio_unitario || 0) * suc * 12 * 0.35))}</span>}
                       </div>
                     )}
                     {item.descripcion && <div style={{ fontSize: 10, color: '#aaa' }}>{item.descripcion}</div>}

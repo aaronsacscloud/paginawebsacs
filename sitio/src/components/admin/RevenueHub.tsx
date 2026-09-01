@@ -3509,7 +3509,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           <td style={{ padding: '10px 12px', fontSize: '0.75rem' }}>
                             {isPromo && <span style={{ display: 'inline-block', fontSize: '0.4375rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase' as const, marginBottom: 2, marginRight: 4 }}>Promo</span>}
                             <strong style={{ color: '#1a1a1a' }}>{isP ? (item.titulo || `Plan ${item.nombre}`) : (item.nombre || '—')}</strong>
-                            {isP && <div style={{ fontSize: '0.5625rem', color: '#bbb' }}>{fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '10 meses' : '1 mes'}</div>}
+                            {isP && <div style={{ fontSize: '0.5625rem', color: '#bbb' }}>{fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '12 meses con 35% off' : '1 mes'}</div>}
                             {item.descripcion && <div style={{ fontSize: '0.5625rem', color: '#bbb' }}>{item.descripcion}</div>}
                             {item.nota && <div style={{ fontSize: '0.5625rem', color: '#4B7BE5', fontStyle: 'italic' as const }}>{item.nota}</div>}
                           </td>
