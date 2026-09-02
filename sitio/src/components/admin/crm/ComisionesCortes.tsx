@@ -169,6 +169,37 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
     await cargar(); await cargarDetalle(id);
   }
 
+  /**
+   * Borra un corte. La advertencia cambia con el estado porque las
+   * consecuencias también: soltar las líneas de uno abierto no cuesta nada, y
+   * hacerlo con uno pagado deja como "por pagar" dinero que ya salió del banco.
+   */
+  async function borrarCorte(c: any) {
+    const t = TONO[c.estado]?.label || c.estado;
+    if (!(await confirmar(
+      `¿Borrar el corte de ${c.team_members?.nombre || '—'} (${fecha(c.desde)} — ${fecha(c.hasta)}, ${t})?\n\n` +
+      `Sus ${c.lineas} línea(s) y sus ajustes NO se pierden: quedan libres y el siguiente corte los recoge.`
+    ))) return;
+
+    let cuerpo: any = {};
+    if (c.estado === 'pagado') {
+      if (!(await confirmar(
+        'OJO: este corte ya está PAGADO.\n\nBorrarlo deja sus líneas como NO pagadas, así que volverán a entrar al ' +
+        'siguiente corte y se pagarían otra vez. Solo hazlo si ese pago no ocurrió.\n\n¿Seguro?'
+      ))) return;
+      cuerpo = { confirmar: true };
+    }
+
+    const r = await fetch(`/api/crm/comisiones/cortes?id=${c.id}`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+    });
+    const j = await r.json();
+    if (!r.ok) { setError(j.error || 'Error'); return; }
+    setError(null);
+    if (abierto === c.id) { setAbierto(null); setDet(null); }
+    await cargar();
+  }
+
   if (cargando && !d) return <Cargando texto="Cargando cortes…" />;
 
   const cortes = d?.cortes || [];
@@ -233,7 +264,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
               <th style={{ ...E.th, textAlign: 'right' }}>Líneas</th>
               <th style={{ ...E.th, textAlign: 'right' }}>Ajustes</th>
               <th style={{ ...E.th, textAlign: 'right' }}>Total</th>
-              <th style={E.th}>Estado</th><th style={{ ...E.th, width: 90 }} />
+              <th style={E.th}>Estado</th><th style={{ ...E.th, width: 130 }} />
             </tr></thead>
             <tbody>
               {/* ── Lo que se está juntando ahora ──
@@ -300,9 +331,16 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
                     <td style={{ ...E.td, textAlign: 'right', fontWeight: 800, color: P.violetaTinta }}>{pesos(c.total)}</td>
                     <td style={E.td}><span style={{ ...E.chip, background: t.bg, color: t.fg }}>{t.label}</span></td>
                     <td style={E.td}>
-                      <button onClick={() => verDetalle(c.id)} style={{ ...E.btn3, padding: '3px 9px' }}>
-                        {abierto === c.id ? 'Cerrar' : 'Ver'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        <button onClick={() => verDetalle(c.id)} style={{ ...E.btn3, padding: '3px 9px' }}>
+                          {abierto === c.id ? 'Cerrar' : 'Ver'}
+                        </button>
+                        <button onClick={() => borrarCorte(c)} aria-label="Borrar el corte"
+                          title="Borra el corte. Sus líneas y ajustes quedan libres para el siguiente."
+                          style={{ ...E.btn3, padding: '3px 9px', color: P.rojoTinta, borderColor: '#f0c4bd' }}>
+                          Borrar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

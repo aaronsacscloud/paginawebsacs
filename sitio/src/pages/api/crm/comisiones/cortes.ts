@@ -207,3 +207,59 @@ export const PUT: APIRoute = async ({ request }) => {
     return json({ error: e?.message || String(e) }, 500);
   }
 };
+
+/**
+ * DELETE /api/crm/comisiones/cortes?id=X — borrar un corte.
+ *
+ * Las llaves foráneas son ON DELETE SET NULL, así que borrar el corte NO borra
+ * sus líneas ni sus ajustes: los suelta. Las líneas vuelven a estar disponibles
+ * y los ajustes vuelven a la fila de pendientes, así que el siguiente corte los
+ * recoge y no se pierde dinero.
+ *
+ * PERO hay una trampa que sí paga doble. Las líneas de un corte PAGADO quedan
+ * en estado `pagada`; al soltarlas seguirían diciendo "pagada" mientras que
+ * `generarCortes` solo descarta las canceladas — así que entrarían enteras al
+ * siguiente corte y se cobrarían OTRA VEZ. Por eso al borrar se regresan a
+ * `calculada`: si el registro del pago desaparece, para el sistema ese dinero
+ * no se ha pagado. Es coherente, y es justo lo que lo vuelve peligroso.
+ *
+ * De ahí el candado: un corte pagado exige `confirmar: true` en el cuerpo. Los
+ * abiertos y los enviados se borran con la confirmación normal de la pantalla.
+ */
+export const DELETE: APIRoute = async ({ url, request }) => {
+  try {
+    const id = url.searchParams.get('id');
+    if (!id) return json({ error: 'Falta el corte.' }, 400);
+    const b = await request.json().catch(() => ({}));
+
+    const { data: c } = await supabase.from('comision_cortes')
+      .select('id, estado, desde, hasta, lineas, total').eq('id', id).maybeSingle();
+    if (!c) return json({ error: 'Ese corte ya no existe.' }, 404);
+
+    if (c.estado === 'pagado' && b.confirmar !== true) {
+      return json({
+        error: 'Este corte ya está pagado. Borrarlo deja sus líneas como NO pagadas y volverán a entrar al siguiente corte.',
+        requiere_confirmacion: true, lineas: c.lineas, total: c.total,
+      }, 409);
+    }
+
+    // Primero las líneas, después el corte: si el borrado fallara a medias,
+    // es preferible tener líneas sueltas —que el próximo corte recoge— que un
+    // corte sin líneas mostrando un total que ya no puede justificar.
+    const { error: e1 } = await supabase.from('comision_lineas')
+      .update({ corte_id: null, estado: 'calculada', pagada_at: null, pago_referencia: null })
+      .eq('corte_id', id);
+    if (e1) throw e1;
+
+    const { error: e2 } = await supabase.from('comision_ajustes')
+      .update({ corte_id: null }).eq('corte_id', id);
+    if (e2) throw e2;
+
+    const { error: e3 } = await supabase.from('comision_cortes').delete().eq('id', id);
+    if (e3) throw e3;
+
+    return json({ ok: true, borrado: { desde: c.desde, hasta: c.hasta, estado: c.estado, lineas: c.lineas } });
+  } catch (e: any) {
+    return json({ error: e?.message || String(e) }, 500);
+  }
+};
