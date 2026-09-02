@@ -462,6 +462,24 @@ Estado: `hoy` construido · `parcial` · `nuevo`.
 | L9 | El dueño rechaza una propuesta | memoria de decisiones | A | — | nuevo |
 | L10 | Cierre de mes | conversión recalibra valor de citas y score | propone | aprendiz 6 | nuevo |
 
+## 8b. El reloj de silencio del agente (decidido 2026-09-02)
+
+Cuando un lead deja de responder al agente:
+
+| Momento | Qué pasa | Quién |
+|---|---|---|
+| Último mensaje nuestro sin respuesta | arranca el reloj; leído/abrió landing NO cuentan como respuesta pero acortan el toque y cambian el ángulo | sistema |
+| Toque 1 · ~20 h (antes de cerrar la ventana de 24 h) | pregunta fácil de opciones + caso del giro | agente |
+| Toque 2 · día 3 | ángulo nuevo; fuera de ventana → plantilla marketing → 10 min → utility | agente |
+| Toque 3 · día 7 | último ángulo + «¿lo dejamos aquí?» | agente |
+| Día 8 | llamada humana de rescate (tarea con guion) | consultor |
+| Día 9–10 | tarjeta «¿Seguimos o lo dejamos?» (familia Decidir) con historial, interés, señales y la propuesta del agente | consultor |
+
+Salidas de la tarjeta: **que siga** (ciclo nuevo con ángulos nuevos y espacio creciente ×2: 3/7/14 → 6/14/28…; sin límite de ciclos, la regla de 30 días exige estatus igual) · **descalificar → nutrición** (el agente termina; la nutrición por correo sigue; si el lead responde/abre/visita /planes vuelve al agente) · **no era lead** (motivo: proveedor/vendedor · cliente actual o empleado · no es de moda · spam/número equivocado/candidato · otro + texto → sale del agente y de nutrición, se etiqueta, y el analista nocturno propone reglas cuando el motivo se repite por fuente o patrón) · **pausar hasta fecha**.
+Si el consultor no decide en 48 h, se aplica la propuesta del agente y queda registrado como decisión automática.
+Variantes: «luego / ahora no» → interés bajo: pausa 7 d + un toque + tarjeta · no claro → descalificado directo · Meta rechaza o bloqueó → parar WA, intentar correo, tarjeta anticipada · sin canal válido → tarjeta inmediata.
+Transversal: solo en horario laboral y a la mejor hora del lead, máx. un mensaje frío por día, canal preferido y presión WA, nunca dos toques con el mismo ángulo, cualquier respuesta cancela el reloj.
+
 ## 9. Métricas norte e instrumentación
 
 Diaria (panel del dueño y digest): citas agendadas (por IA / por humano) ·

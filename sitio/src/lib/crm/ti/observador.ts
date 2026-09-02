@@ -150,8 +150,9 @@ export async function observar(): Promise<any> {
   // ── 2b) EL AGENTE SDR (N2): propone respuesta a cada lead que escribió y
   //    despacha lo que ya venció su ventana de veto. Apagado = no hace nada.
   try {
-    const { proponerRespuestas, despacharEnvios } = await import('./agente');
+    const { proponerRespuestas, despacharEnvios, tocarSilencios } = await import('./agente');
     res.agente = await proponerRespuestas();
+    res.agente_silencio = await tocarSilencios();
     res.agente_despacho = await despacharEnvios();
   } catch (e: any) { res.agente_error = String(e?.message || e); }
 

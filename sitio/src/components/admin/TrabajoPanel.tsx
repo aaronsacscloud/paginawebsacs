@@ -81,6 +81,7 @@ export default function TrabajoPanel() {
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios'>('dia');
+  const [motivoLead, setMotivoLead] = useState(''); const [textoLead, setTextoLead] = useState(''); const [fechaPausa, setFechaPausa] = useState('');
   const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);
   const p1Vistos = useRef<Set<string>>(new Set());
@@ -248,10 +249,22 @@ export default function TrabajoPanel() {
         <div className="ti-b-eti">La propuesta de la IA, con su evidencia</div>
         {(p.evidencia || []).map((e: string, i: number) => <div key={i} className="ti-evid">· {e}</div>)}
       </div>
+      {p.reloj === 'silencio_agente' && (
+        <div className="ti-veredicto-extra">
+          <label className="ti-lbl">Si no era lead, ¿por qué? (el agente aprende de esto)</label>
+          <select className="ti-input" value={motivoLead} onChange={e => setMotivoLead(e.target.value)}>
+            <option value="">— motivo —</option>
+            {Object.entries(p.motivos_no_era_lead || {}).map(([k, l]: any) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <input className="ti-input" placeholder="Detalle (opcional): qué lo delató, para que no vuelva a pasar" value={textoLead} onChange={e => setTextoLead(e.target.value)} />
+          <label className="ti-lbl">Si lo pausas, ¿hasta cuándo?</label>
+          <input className="ti-input" type="date" value={fechaPausa} onChange={e => setFechaPausa(e.target.value)} />
+        </div>
+      )}
       <div className="ti-botones" style={{ flexDirection: 'column' }}>
         {Object.entries(RES).map(([k, l], i) => (
-          <button key={k} className={'ti-btn ' + (i === 0 ? 'prim' : 'sec')} disabled={guardando}
-            onClick={() => accion({ accion: 'hecha', resultado: k })}>{l}</button>
+          <button key={k} className={'ti-btn ' + (i === 0 ? 'prim' : 'sec')} disabled={guardando || (k === 'no_era_lead' && !motivoLead) || (k === 'pausar' && !fechaPausa)}
+            onClick={() => accion({ accion: 'hecha', resultado: k, detalle: k === 'no_era_lead' ? { motivo: motivoLead, texto: textoLead } : k === 'pausar' ? { hasta: fechaPausa } : undefined })}>{l}</button>
         ))}
       </div>
       <div className="ti-notita">Decidas lo que decidas, queda con tu firma y alimenta el aprendizaje.</div>
@@ -506,6 +519,9 @@ const CSS = `
 .ti-verfila { border:none; background:none; font-size:.78rem; font-weight:700; color:var(--morado-tinta); cursor:pointer; white-space:nowrap; padding:2px 0; }
 .ti-barra-fila:not(:has(.ti-badge)) .ti-verfila { margin-left:auto; }
 .ti-tabs { display:flex; gap:4px; max-width:760px; margin:9px auto -10px; }
+.ti-veredicto-extra { display:grid; gap:6px; margin:10px 0; }
+.ti-lbl { font-size:.74rem; font-weight:700; color:var(--suave); text-transform:uppercase; letter-spacing:.04em; }
+.ti-input { width:100%; padding:8px 10px; border:1px solid var(--linea, #e5e7eb); border-radius:9px; font:inherit; font-size:.88rem; background:var(--carta, #fff); color:inherit; }
 .ti-tab { border:none; background:none; padding:8px 13px; border-radius:9px 9px 0 0; font-size:.8rem; font-weight:700;
   color:var(--suave); border-bottom:2px solid transparent; cursor:pointer; display:inline-flex; gap:6px; align-items:center; }
 .ti-tab.on { background:var(--morado-agua); color:var(--morado-tinta); font-weight:800; border-bottom-color:var(--morado); }

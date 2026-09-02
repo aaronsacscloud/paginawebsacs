@@ -3,6 +3,7 @@
 //   node scripts/ti-agente.mjs --on            # responde a leads reales (con ventana de veto)
 //   node scripts/ti-agente.mjs --off           # kill-switch: nada nuevo se propone ni se despacha
 //   node scripts/ti-agente.mjs --veto 10       # minutos de ventana antes de que salga solo
+//   node scripts/ti-agente.mjs --modo sombra|vivo   # sombra (default): decide y registra, NO manda ni crea tareas
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
 for (const l of readFileSync(new URL('../.env', import.meta.url), 'utf8').split('\n')) {
@@ -15,10 +16,11 @@ const i = process.argv.indexOf('--veto');
 if (process.argv.includes('--on')) v.agente_activo = true;
 if (process.argv.includes('--off')) v.agente_activo = false;
 if (i > 0) v.agente_veto_min = Math.max(0, Number(process.argv[i + 1]) || 10);
-if (process.argv.includes('--on') || process.argv.includes('--off') || i > 0) await sb.from('ti_config').update({ valor: v }).eq('id', 1);
+const j = process.argv.indexOf('--modo'); if (j > 0 && ['sombra', 'vivo'].includes(process.argv[j + 1])) v.agente_modo = process.argv[j + 1];
+if (process.argv.includes('--on') || process.argv.includes('--off') || i > 0 || j > 0) await sb.from('ti_config').update({ valor: v }).eq('id', 1);
 const [{ count: pend }, { count: env }, { count: vet }] = await Promise.all([
   sb.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente'),
   sb.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'enviado'),
   sb.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'vetado'),
 ]);
-console.log(`agente: ${v.agente_activo ? 'ENCENDIDO' : 'APAGADO'} · ventana de veto: ${v.agente_veto_min ?? 10} min · envíos pendientes ${pend} · enviados ${env} · vetados ${vet}`);
+console.log(`agente: ${v.agente_activo ? 'ENCENDIDO' : 'APAGADO'} · modo ${v.agente_modo || 'sombra'} · ventana de veto: ${v.agente_veto_min ?? 10} min · envíos pendientes ${pend} · enviados ${env} · vetados ${vet}`);

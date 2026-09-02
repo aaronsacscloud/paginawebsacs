@@ -61,6 +61,11 @@ export const POST: APIRoute = async ({ request }) => {
   const r = await alCompletar(tarea, b.resultado || null, user.id);
 
   // Los veredictos EJECUTAN la decisión, no solo la registran.
+  if (tarea.tipo === 'veredicto' && b.resultado && (tarea.payload as any)?.reloj === 'silencio_agente') {
+    const { aplicarVeredictoSilencio } = await import('../../../../lib/crm/ti/agente');
+    await aplicarVeredictoSilencio(tarea, b.resultado, b.detalle || {}, user.id);
+    return json({ ok: true, ...r });
+  }
   if (tarea.tipo === 'veredicto' && b.resultado) {
     const ahora2 = new Date().toISOString();
     if (b.resultado === 'descartar') {

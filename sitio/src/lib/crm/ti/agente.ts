@@ -58,7 +58,7 @@ async function ejemplosAprobados(estado?: string) {
 }
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
-export async function decidirTurno(contactId: string): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
+export async function decidirTurno(contactId: string, nota?: string): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
@@ -68,13 +68,14 @@ export async function decidirTurno(contactId: string): Promise<{ salida: SalidaA
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
   const ultimo = [...msjs].reverse().find(m => m.direccion === 'entrante');
+  const memoria = memoriaConversacion(msjs, c.nombre);
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}», etapa ${c.lifecycle_stage}, giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? 'desconocido'}, fuente ${c.fuente || 'desconocida'}`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
     system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}`,
-    messages: [{ role: 'user', content: `${crm}\n\nCONVERSACIÓN (lo más reciente al final; el último mensaje es del lead y te toca decidir):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${nota ? `\n\n${nota}` : ''}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
@@ -82,6 +83,57 @@ export async function decidirTurno(contactId: string): Promise<{ salida: SalidaA
   try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
   if (salida) salida.ultimo_mensaje = String(ultimo?.cuerpo || ultimo?.transcript || '').slice(0, 300);
   return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+}
+
+/** Lo que un humano recordaría antes de escribir: si ya se presentó, si ya saludó
+ *  hoy, cuántas veces usó el nombre, hace cuánto habló cada quien. Determinista,
+ *  para que el modelo no lo adivine. */
+function memoriaConversacion(msjs: any[], nombre: string | null): string {
+  const ahora = Date.now();
+  const nuestros = msjs.filter(m => m.direccion === 'saliente');
+  const suyos = msjs.filter(m => m.direccion === 'entrante');
+  const horas = (iso?: string) => iso ? Math.round((ahora - Date.parse(iso)) / 36e5) : null;
+  const ultNos = horas(nuestros.at(-1)?.created_at), ultEl = horas(suyos.at(-1)?.created_at);
+  const textoNos = nuestros.map(m => String(m.cuerpo || '')).join(' \n ');
+  const presentado = /equipo de sacs|soy .{0,30}de sacs|asesor(a)? de sacs/i.test(textoNos);
+  const primer = String(nombre || '').trim().split(/\s+/)[0];
+  const recientes = nuestros.slice(-4);
+  const nombreVeces = primer ? recientes.filter(m => new RegExp(`\\b${primer}\\b`, 'i').test(String(m.cuerpo || ''))).length : 0;
+  const saludoHoy = recientes.some(m => /^\s*(¡?hola|buen[oa]s? (d[ií]as|tardes|noches)|qué tal|buen d[ií]a)/i.test(String(m.cuerpo || '')) && (horas(m.created_at) ?? 99) < 14);
+  const audioPedido = recientes.filter(m => /audio/i.test(String(m.cuerpo || ''))).length;
+  const preguntasNuestras = nuestros.slice(-6).map(m => String(m.cuerpo || '')).filter(t => t.includes('?')).slice(-3).map(t => '«' + t.slice(0, 90).replace(/\n/g, ' ') + '»');
+  return `MEMORIA DE ESTA CONVERSACIÓN (úsala, no la adivines):
+- ${presentado ? 'Ya nos presentamos: NO vuelvas a decir «soy del equipo de Sacs».' : 'Todavía no nos presentamos: hazlo una sola vez, corto.'}
+- ${saludoHoy ? 'Ya saludamos hoy: NO empieces con «Hola» ni «Qué tal»; continúa la plática.' : 'No hemos saludado hoy: puedes abrir con un saludo breve.'}
+- Su nombre (${primer || '—'}) va ${nombreVeces} veces en nuestros últimos ${recientes.length} mensajes${nombreVeces >= 1 ? ': NO lo uses en este' : ''}.
+- ${audioPedido ? `Ya le pedimos audio ${audioPedido} vez/veces: no lo repitas.` : 'Aún no le hemos ofrecido contarlo por audio.'}
+- Nuestro último mensaje fue hace ${ultNos ?? '—'} h; el suyo hace ${ultEl ?? '—'} h.${preguntasNuestras.length ? `\n- Preguntas que ya hicimos (no las repitas): ${preguntasNuestras.join(' ')}` : ''}`;
+}
+
+/** ICP + calidad de la conversación: decide cuánto insistir. Determinista. */
+export async function evaluarLead(contactId: string): Promise<{ icp: 'alto' | 'medio' | 'bajo'; conversacion: number; razones: string[] }> {
+  const [{ data: c }, { data: p }, { data: evs }] = await Promise.all([
+    supabase.from('contacts').select('giro, sucursales_interes, fuente, referrer_partner_id, propiedades').eq('id', contactId).maybeSingle(),
+    supabase.from('ti_perfil').select('score_valor, score_probabilidad, etapa_interes, canales, intenciones').eq('contact_id', contactId).maybeSingle(),
+    supabase.from('ti_eventos').select('tipo, payload').eq('contact_id', contactId).in('tipo', ['wa_entrante', 'cotizacion_vista', 'cita_creada']).limit(200),
+  ]);
+  const razones: string[] = [];
+  const { detectarGiro } = await import('./conocimiento/giros.ts');
+  const intenciones: any[] = Array.isArray(p?.intenciones) ? p!.intenciones : [];
+  const giroTxt = [c?.giro, ...intenciones.filter(i => i.campo === 'giro').map(i => i.valor)].filter(Boolean).join(' ');
+  const giro = detectarGiro(giroTxt);
+  const tiendas = Number(c?.sucursales_interes) || Number(intenciones.find(i => i.campo === 'sucursales')?.valor) || 0;
+  let icpPts = 0;
+  if (giro) { icpPts += 2; razones.push(`giro de moda: ${giro.nombre}`); } else if (giroTxt) { icpPts -= 2; razones.push(`giro fuera de moda: ${giroTxt.slice(0, 30)}`); } else razones.push('giro desconocido');
+  if (tiendas >= 3) { icpPts += 2; razones.push(`${tiendas} tiendas`); } else if (tiendas >= 1) { icpPts += 1; razones.push(`${tiendas} tienda(s)`); }
+  if (c?.referrer_partner_id) { icpPts += 1; razones.push('viene de partner'); }
+  const respuestas = (evs || []).filter(e => e.tipo === 'wa_entrante').length;
+  const largas = (evs || []).filter(e => e.tipo === 'wa_entrante' && String((e.payload as any)?.texto || '').length > 40).length;
+  const senal = (evs || []).some(e => e.tipo === 'cotizacion_vista' || e.tipo === 'cita_creada');
+  let conv = Math.min(100, respuestas * 12 + largas * 10 + (intenciones.length ? 15 : 0) + (senal ? 25 : 0) + (p?.etapa_interes === 'decidiendo' ? 20 : p?.etapa_interes === 'evaluando' ? 10 : 0));
+  razones.push(`${respuestas} respuestas, ${largas} con contenido${senal ? ', con señal (cotización/cita)' : ''}`);
+  const icp: 'alto' | 'medio' | 'bajo' = icpPts >= 3 ? 'alto' : icpPts >= 1 ? 'medio' : 'bajo';
+  return { icp, conversacion: conv, razones };
 }
 
 /** Guarda lo que el lead soltó (datos con confianza) en su perfil, sin tocar campos del CRM a ciegas. */
@@ -122,7 +174,7 @@ export async function proponerRespuestas(): Promise<any> {
 
   const [{ data: cs }, { data: perf }, { data: pend }] = await Promise.all([
     supabase.from('contacts').select('id, lifecycle_stage, propiedades, archived_at').in('id', ids),
-    supabase.from('ti_perfil').select('contact_id, silenciar_ia, do_not_contact_hasta').in('contact_id', ids),
+    supabase.from('ti_perfil').select('contact_id, silenciar_ia, do_not_contact_hasta, agente_estado').in('contact_id', ids),
     supabase.from('ti_envios').select('id, contact_id, created_at').in('contact_id', ids).eq('estado', 'pendiente'),
   ]);
   const porC: Record<string, any> = {}; for (const c of cs || []) porC[c.id] = c;
@@ -133,6 +185,8 @@ export async function proponerRespuestas(): Promise<any> {
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti) { res.saltados++; continue; }
     if (!['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltados++; continue; }   // clientes: no es asunto del SDR
     if (p?.silenciar_ia || (p?.do_not_contact_hasta && Date.parse(p.do_not_contact_hasta) > ahora.getTime())) { res.saltados++; continue; }
+    // Un lead que escribe reinicia su reloj de silencio; si venía de nutrición, se reactiva.
+    await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ciclo: 1, toque: 0, reactivado_at: (p?.agente_estado as any)?.cerrado ? ahora.toISOString() : undefined }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
     // ¿Un humano ya contestó después del último mensaje del lead? Entonces el agente calla.
     const { data: sal } = await supabase.from('ti_eventos').select('ocurrio_at, actor').eq('contact_id', cid)
       .in('tipo', ['wa_saliente']).gt('ocurrio_at', ultimoPor[cid]).limit(1);
@@ -198,6 +252,13 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   const res: any = { enviados: 0, fallidos: 0 };
   if (cfg.agente_activo !== true && !opts.forzar) return { agente: 'apagado' };
   const ahora = new Date();
+  // MODO SOMBRA (default): el agente decide y deja rastro, pero NO manda. Se
+  // pasa a vivo con scripts/ti-agente.mjs --modo vivo.
+  if ((cfg.agente_modo || 'sombra') === 'sombra' && !opts.forzar) {
+    const { data: som } = await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() })
+      .eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).select('id');
+    return { agente: 'sombra', sombra: (som || []).length };
+  }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
   if (opts.soloId) q = q.eq('id', opts.soloId);
   const { data: pend } = await q;
@@ -223,4 +284,172 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     }
   }
   return res;
+}
+
+
+/* ══ EL RELOJ DE SILENCIO (decidido 2026-09-02) ══
+   3 toques (≈20 h · día 3 · día 7) con ángulo distinto → llamada humana de
+   rescate (día 8) → tarjeta «¿Seguimos o lo dejamos?» (día 9). «Que siga»
+   abre otro ciclo con el espacio ×2. El estado vive en ti_perfil.agente_estado. */
+const H = 3600e3;
+const OFFSETS_H = [20, 72, 168];            // toques 1..3 desde el último envío nuestro sin respuesta
+const LLAMADA_H = 192, TARJETA_H = 216;     // día 8 y día 9
+export const MOTIVOS_NO_ERA_LEAD: Record<string, string> = {
+  proveedor: 'Proveedor o vendedor (nos quiere vender algo)',
+  cliente: 'Cliente actual o su empleado (va a soporte)',
+  no_moda: 'No es de moda (gym, restaurante, servicio…)',
+  ruido: 'Spam, número equivocado o candidato',
+  otro: 'Otro (explícalo)',
+};
+
+function mult(ciclo: number) { return Math.pow(2, Math.max(0, (ciclo || 1) - 1)); }
+
+export async function tocarSilencios(): Promise<any> {
+  const cfg: any = await leerConfig();
+  if (cfg.agente_activo !== true) return { silencio: 'apagado' };
+  const sombra = (cfg.agente_modo || 'sombra') === 'sombra';
+  const ahora = new Date();
+  const res: any = { toques: 0, sin_ventana: 0, llamadas: 0, tarjetas: 0, revisados: 0 };
+  const { esHorarioLaboral, horaLocal, RESULTADOS_LLAMADA_L } = await import('./reglas');
+  if (!esHorarioLaboral(ahora, cfg)) return { ...res, silencio: 'fuera_de_horario' };
+
+  // Universo: el último envío del agente por lead (enviado), sin respuesta después.
+  const { data: envs } = await supabase.from('ti_envios').select('contact_id, conversation_id, telefono, enviado_at')
+    .eq('estado', 'enviado').gt('enviado_at', new Date(ahora.getTime() - 60 * 86400e3).toISOString()).order('enviado_at', { ascending: false }).limit(500);
+  const ultimo: Record<string, any> = {};
+  for (const e of envs || []) if (e.contact_id && !ultimo[e.contact_id]) ultimo[e.contact_id] = e;
+  const ids = Object.keys(ultimo);
+  if (!ids.length) return res;
+  const [{ data: cs }, { data: perf }] = await Promise.all([
+    supabase.from('contacts').select('id, nombre, whatsapp, owner_id, company_id, lifecycle_stage, propiedades, archived_at').in('id', ids),
+    supabase.from('ti_perfil').select('contact_id, silenciar_ia, mejor_hora_wa, agente_estado, score_probabilidad, etapa_interes').in('contact_id', ids),
+  ]);
+  const porC: Record<string, any> = {}; for (const c of cs || []) porC[c.id] = c;
+  const porP: Record<string, any> = {}; for (const p of perf || []) porP[p.contact_id] = p;
+
+  for (const cid of ids) {
+    const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
+    if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || !['lead', 'oportunidad'].includes(c.lifecycle_stage) || p.silenciar_ia) continue;
+    if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
+    res.revisados++;
+    const base = Date.parse(st.base_at || ultimo[cid].enviado_at);
+    // ¿Respondió después del último envío? Entonces no hay silencio (proponerRespuestas ya lo atiende).
+    const { data: resp } = await supabase.from('ti_eventos').select('id').eq('contact_id', cid).eq('tipo', 'wa_entrante').gt('ocurrio_at', new Date(base).toISOString()).limit(1);
+    if ((resp || []).length) continue;
+    const horas = (ahora.getTime() - base) / H;
+    const m = mult(st.ciclo);
+    // La mejor hora del lead: si hoy todavía no llega, se espera (dentro del horario).
+    if (p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin) continue;
+    // Un solo toque frío por día.
+    if (st.ultimo_toque_at && ahora.getTime() - Date.parse(st.ultimo_toque_at) < 20 * H) continue;
+    const guardar = async (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+
+    // Antes del primer toque (y en cada ciclo) se evalúa: ICP + calidad de la conversación deciden
+    // cuánto insistir: ICP bajo y charla pobre → 1 toque y a la tarjeta; medio → 2; alto → 3 + llamada.
+    if (!st.eval || st.eval.ciclo !== st.ciclo) {
+      const ev = await evaluarLead(cid);
+      st.eval = { ...ev, ciclo: st.ciclo };
+      await guardar({ eval: st.eval });
+    }
+    const maxToques = st.eval.icp === 'bajo' && st.eval.conversacion < 30 ? 1 : st.eval.icp === 'bajo' || st.eval.conversacion < 30 ? 2 : 3;
+    if (st.toque >= maxToques && st.toque < 3) st.toque = 3; // salta al final del ciclo
+    if (st.toque < 3 && horas >= OFFSETS_H[st.toque] * m) {
+      // ¿Ventana de 24 h abierta? (último mensaje del lead hace menos de 24 h)
+      const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
+      const ventana = (ult || []).length && ahora.getTime() - Date.parse(ult![0].ocurrio_at) < 24 * H;
+      if (!ventana) {
+        // Fuera de ventana hacen falta plantillas (paso 4: marketing → 10 min → utility). Hasta entonces se registra y no se cuenta como toque.
+        res.sin_ventana++;
+        await log({ accion: 'silencio_sin_plantilla', contact_id: cid, razon: `toque ${st.toque + 1} del ciclo ${st.ciclo} requiere plantilla`, detalle: { horas: Math.round(horas) } });
+        await guardar({ base_at: new Date(base).toISOString(), ultimo_intento_at: ahora.toISOString() });
+        continue;
+      }
+      const nota = `TOQUE DE SILENCIO ${st.toque + 1} de ${maxToques} (ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}): el lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.`;
+      const d = await decidirTurno(cid, nota);
+      if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
+      const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+      await guardar({ base_at: new Date(base).toISOString(), toque: st.toque + 1, ultimo_toque_at: ahora.toISOString(), angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
+      await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `toque ${st.toque + 1}/3 ciclo ${st.ciclo}`, costo: d.costo });
+      res.toques++;
+      continue;
+    }
+    if (st.toque >= 3 && !st.llamada_at && horas >= LLAMADA_H * m && st.eval?.icp === 'bajo') {
+      // ICP bajo: no se gasta la llamada humana; la tarjeta decide.
+      await guardar({ llamada_at: ahora.toISOString(), llamada_omitida: 'icp_bajo' });
+      continue;
+    }
+    if (st.toque >= 3 && !st.llamada_at && horas >= LLAMADA_H * m) {
+      if (!sombra) {
+        const n = String(c.nombre || 'el lead').split(/\s+/)[0];
+        await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: c.company_id, owner_id: c.owner_id, familia: 'contactar', tipo: 'llamada', prioridad: 3, vence_at: ahora.toISOString(), origen: 'reloj', payload: {
+          instruccion: `Llámale a ${n} — el agente le escribió 3 veces sin respuesta`, porque: 'Tres toques del agente con ángulos distintos y silencio: la voz es lo único que falta antes de decidir si seguimos.',
+          nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'silencio_llamada', sujeto: `c${st.ciclo}`, tipo_llamada: 'Llamada de rescate', resultados: RESULTADOS_LLAMADA_L,
+          hechos: [['Toques del agente', '3', 'sin respuesta', 'ambar'], ['Silencio', `${Math.round(horas / 24)} días`, 'desde el último mensaje nuestro'], ['Interés estimado', p.etapa_interes || '—', `prob. ${Math.round((p.score_probabilidad || 0) * 100)}%`]],
+        } });
+      }
+      await guardar({ llamada_at: ahora.toISOString() });
+      await log({ accion: 'silencio_llamada_humana', contact_id: cid, razon: sombra ? 'sombra: no se creó la tarea' : 'tarea de rescate creada' });
+      res.llamadas++;
+      continue;
+    }
+    if (st.llamada_at && !st.tarjeta_id && horas >= TARJETA_H * m) {
+      const propuesta = st.eval?.icp === 'alto' && (st.eval?.conversacion || 0) >= 30 ? 'seguir' : 'descalificar';
+      if (sombra) { await guardar({ tarjeta_id: 'sombra', tarjeta_at: ahora.toISOString() }); await log({ accion: 'silencio_tarjeta', contact_id: cid, razon: `sombra · propuesta ${propuesta}` }); res.tarjetas++; continue; }
+      const n = String(c.nombre || 'el lead').split(/\s+/)[0];
+      const { data: t } = await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: c.company_id, owner_id: c.owner_id, familia: 'decidir', tipo: 'veredicto', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj', payload: {
+        instruccion: `${n}: ¿seguimos o lo dejamos?`, porque: 'El agente le escribió tres veces con ángulos distintos, tú le llamaste, y sigue en silencio. Si no decides en 48 h, se aplica la propuesta del agente.',
+        nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'silencio_agente', sujeto: `c${st.ciclo}`, ciclo: st.ciclo, propuesta,
+        hechos: [['Toques + llamada', '3 + 1', 'sin respuesta', 'ambar'], ['Silencio', `${Math.round(horas / 24)} días`, `ciclo ${st.ciclo}`], ['El agente propone', propuesta === 'seguir' ? 'Seguir' : 'A nutrición', propuesta === 'seguir' ? 'hubo señal de interés' : 'sin señal de interés', 'morado']],
+        evidencia: [`Ángulos usados: ${(st.angulos || []).join(' · ') || '—'}.`, `ICP ${st.eval?.icp || '—'} · conversación ${st.eval?.conversacion ?? '—'}/100 (${(st.eval?.razones || []).join(', ')}).`, `Interés estimado: ${p.etapa_interes || '—'}.`],
+        resultados: { seguir: 'Que siga (otro ciclo, más espaciado)', descalificar: 'A nutrición (el agente termina)', no_era_lead: 'No era lead (di por qué)', pausar: 'Pausar hasta una fecha' },
+        motivos_no_era_lead: MOTIVOS_NO_ERA_LEAD,
+      } }).select('id').single();
+      await guardar({ tarjeta_id: t?.id || 'creada', tarjeta_at: ahora.toISOString() });
+      await log({ accion: 'silencio_tarjeta', contact_id: cid, razon: `tarjeta creada · propuesta ${propuesta}` });
+      res.tarjetas++;
+    }
+  }
+  // 48 h sin decisión: se aplica la propuesta del agente.
+  const { data: viejas } = await supabase.from('ti_tareas').select('*').eq('estado', 'pendiente').eq('tipo', 'veredicto')
+    .filter('payload->>reloj', 'eq', 'silencio_agente').lt('created_at', new Date(ahora.getTime() - 48 * H).toISOString()).limit(20);
+  for (const t of viejas || []) {
+    const r = (t.payload as any)?.propuesta || 'descalificar';
+    await aplicarVeredictoSilencio(t, r, { automatica: true }, null);
+    await supabase.from('ti_tareas').update({ estado: 'hecha', resultado: r, resultado_detalle: { automatica: true, razon: '48 h sin decisión: se aplicó la propuesta del agente' }, hecho_at: ahora.toISOString(), updated_at: ahora.toISOString() }).eq('id', t.id);
+    res.automaticas = (res.automaticas || 0) + 1;
+  }
+  return res;
+}
+
+/** La decisión de la tarjeta (humana o automática) ejecutada sobre el lead. */
+export async function aplicarVeredictoSilencio(tarea: any, resultado: string, detalle: any, userId: string | null) {
+  const cid = tarea.contact_id; const ahora = new Date().toISOString();
+  const { data: p } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', cid).maybeSingle();
+  const st: any = { ciclo: 1, toque: 0, ...((p?.agente_estado as any) || {}) };
+  const guardar = (cambios: any, extra: any = {}) => supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...st, ...cambios }, updated_at: ahora, ...extra }, { onConflict: 'contact_id' });
+  if (resultado === 'seguir') {
+    await guardar({ ciclo: (st.ciclo || 1) + 1, toque: 0, base_at: ahora, llamada_at: null, tarjeta_id: null, tarjeta_at: null, cerrado: null });
+    await log({ accion: 'silencio_decision', contact_id: cid, razon: `seguir → ciclo ${(st.ciclo || 1) + 1}`, detalle: { ...detalle, por: userId } });
+  } else if (resultado === 'descalificar') {
+    await guardar({ cerrado: 'nutricion', cerrado_at: ahora });
+    await supabase.from('contacts').update({ estatus_lead: 'sin_respuesta', estatus_lead_at: ahora }).eq('id', cid).in('estatus_lead', ['nuevo', 'contactado', 'respondio']);
+    await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descalificado', updated_at: ahora }).eq('contact_id', cid).neq('estado', 'terminada');
+    await log({ accion: 'silencio_decision', contact_id: cid, razon: 'descalificar → nutrición (el agente termina; vuelve si el lead da señal)', detalle: { ...detalle, por: userId } });
+  } else if (resultado === 'no_era_lead') {
+    const motivo = String(detalle?.motivo || 'otro'), texto = String(detalle?.texto || '').slice(0, 300);
+    const { data: c } = await supabase.from('contacts').select('propiedades, fuente, utm_source').eq('id', cid).maybeSingle();
+    await guardar({ cerrado: 'no_era_lead', cerrado_at: ahora, motivo }, { silenciar_ia: true });
+    await supabase.from('contacts').update({ estatus_lead: 'descartado', estatus_lead_at: ahora, descarte_categoria: `no_era_lead:${motivo}`, propiedades: { ...((c?.propiedades as any) || {}), no_era_lead: { motivo, texto, at: ahora, por: userId } } }).eq('id', cid);
+    await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descalificado', updated_at: ahora }).eq('contact_id', cid).neq('estado', 'terminada');
+    await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'no_era_lead' }).eq('contact_id', cid).is('detenida_at', null);
+    await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'no_era_lead', updated_at: ahora }).eq('contact_id', cid).eq('estado', 'pendiente').neq('id', tarea.id);
+    // La lección: motivo + fuente, para que el analista nocturno proponga exclusiones cuando se repita.
+    await log({ accion: 'no_era_lead', contact_id: cid, razon: motivo, contenido: texto || null, detalle: { fuente: c?.fuente, utm_source: c?.utm_source, por: userId, ...detalle } });
+  } else if (resultado === 'pausar') {
+    const hasta = detalle?.hasta ? new Date(detalle.hasta).toISOString() : new Date(Date.now() + 14 * 86400e3).toISOString();
+    await guardar({ pausa_hasta: hasta, tarjeta_id: null, tarjeta_at: null, llamada_at: null, toque: 0, base_at: hasta });
+    await log({ accion: 'silencio_decision', contact_id: cid, razon: `pausar hasta ${hasta.slice(0, 10)}`, detalle: { ...detalle, por: userId } });
+  }
+  return { ok: true };
 }

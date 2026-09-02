@@ -111,7 +111,20 @@ scripts/ti-agente.mjs                    --estado | --on | --off | --veto N   (H
 scripts/ti-curar-ejemplos.mjs            el curador: aprueba/rechaza/dudoso los candidatos contra el guion y el estándar del dueño
 scripts/migration-2026-09-ti-envios.sql  (corrida)
 ```
-Corre dentro del observador (cada 2 min): proponer → despachar. Candados:
+**Modo sombra por default** (`agente_modo: sombra`): aunque esté encendido, decide y
+registra (ti_envios `sombra`, ia_log) pero NO manda ni crea tareas; `--modo vivo`
+lo suelta. **Reloj de silencio** (`tocarSilencios`): evalúa ICP + calidad de la
+conversación (`evaluarLead`) antes del primer toque → ICP bajo y charla pobre = 1
+toque, medio = 2, alto = 3 + llamada humana de rescate (día 8) → tarjeta
+«¿Seguimos o lo dejamos?» (día 9) con seguir / a nutrición / no era lead (motivo)
+/ pausar; 48 h sin decisión aplica la propuesta del agente. Estado por lead en
+`ti_perfil.agente_estado`. Fuera de la ventana de 24 h los toques esperan las
+plantillas (paso 4): se registra `silencio_sin_plantilla` y no cuenta como toque.
+**Memoria conversacional**: `memoriaConversacion()` le dice al modelo si ya se
+presentó, si ya saludó hoy, cuántas veces usó el nombre, si ya pidió audio y qué
+preguntas ya hizo — para que no suene a bot.
+
+Corre dentro del observador (cada 2 min): proponer → silencios → despachar. Candados:
 `agente_activo` (kill-switch), `silenciar_ia` por lead, nunca demo ni clientes
 activos, un pendiente por lead, calla si un humano ya contestó, y un nuevo
 mensaje del lead reemplaza la propuesta anterior. **Para que funcione en
