@@ -38,8 +38,11 @@ export const GET: APIRoute = async ({ request }) => {
   const { data: sinCred } = await supabase.from('ia_log').select('created_at, razon').or('razon.ilike.%credit balance%,razon.ilike.%billing%,razon.ilike.%insufficient_quota%').gte('created_at', new Date(Date.now() - 60 * 60e3).toISOString()).order('created_at', { ascending: false }).limit(1);
   const { data: okDesp } = (sinCred || []).length ? await supabase.from('ia_log').select('created_at').eq('accion', 'agente_propone').gt('created_at', sinCred![0].created_at).limit(1) : { data: [] as any[] };
   const sin_credito_desde = (sinCred || []).length && !(okDesp || []).length ? sinCred![0].created_at : null;
+  const { listarPromos, promoVigente } = await import('../../../../lib/crm/ti/promociones');
+  await promoVigente().catch(() => null);
+  const promociones = await listarPromos().catch(() => []);
   return json({
-    galeria,
+    galeria, promociones,
     pendientes: (pend || []).map(decorar), recientes: (rec || []).map(decorar),
     config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10), modo: cfg.agente_modo || 'sombra', pruebas: cfg.agente_prueba_telefonos || [], sin_credito_desde },
     aprendizaje: { ejemplos_dueno: ejemplosDueno || 0, ejemplos_7d: ejemplos7 || 0, vetos_7d: vetos7 || 0, ediciones_7d: ediciones7 || 0, ultimos: ultimos || [] },
@@ -63,6 +66,17 @@ export const POST: APIRoute = async ({ request }) => {
     if (error) return json({ error: error.message }, 500);
     await supabase.from('ia_log').insert({ accion: 'galeria_imagen', razon: nombre, detalle: { imagen_id: data.id, por: user.id } });
     return json({ ok: true, imagen: data });
+  }
+  if (accion === 'promos_guardar') {
+    const { guardarPromos } = await import('../../../../lib/crm/ti/promociones');
+    const lista = (Array.isArray(b.promociones) ? b.promociones : []).slice(0, 5).map((p: any, i: number) => ({
+      id: String(p.id || `promo-${Date.now()}-${i}`), nombre: String(p.nombre || '').trim().slice(0, 120), texto: String(p.texto || '').trim().slice(0, 400), valor: String(p.valor || '').trim().slice(0, 40) || null,
+      dias_ventana: Math.min(30, Math.max(1, Number(p.dias_ventana) || 10)), vence: String(p.vence || '').slice(0, 10), rotar: p.rotar !== false, activa: p.activa !== false,
+      palabras: Array.isArray(p.palabras) ? p.palabras.slice(0, 8) : undefined,
+    })).filter((p: any) => p.nombre && p.texto);
+    await guardarPromos(lista);
+    await supabase.from('ia_log').insert({ accion: 'promos_guardadas', razon: lista.map((p: any) => `${p.nombre} (vence ${p.vence})`).join(' · ').slice(0, 300), detalle: { por: user.id } });
+    return json({ ok: true, promociones: lista });
   }
   if (accion === 'galeria_quitar') {
     if (!b.imagen_id) return json({ error: 'Falta imagen_id' }, 400);

@@ -111,6 +111,14 @@ contesta todo en un solo mensaje, en orden. En Próximos envíos verás «Prueba
 agente los leyó todos)» con la lista numerada. Prueba: manda «¿tienen físico o es digital?», «¿cuánto cuesta la
 migración?», «¿la implementación la hacen ustedes?» en menos de un minuto.
 
+## Promoción vigente
+
+En Próximos envíos, abajo, «Promociones vigentes»: nombre, cómo la explica el agente, fecha límite y si rota sola.
+Prueba: pide precio desde tu WhatsApp con giro y tiendas ya dados → el agente da el precio de lista y, una sola
+vez, el plus («esta semana y media está el 35 % en el anual y la implementación y migración, que vale $9,500, va
+sin costo, hasta el …»). En el panel del lead aparece «Oferta dicha · vence …» y en su línea de tiempo «Se le
+ofreció…». Si vuelves a pedir precio, no la repite como novedad.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

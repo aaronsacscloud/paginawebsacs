@@ -102,6 +102,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [corr, setCorr] = useState<Record<string, string>>({});
   const [criterio, setCriterio] = useState<Record<string, string>>({});
   const [galeria, setGaleria] = useState<ImagenGal[]>([]);
+  const [promos, setPromos] = useState<any[]>([]);
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
   const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err'; aprendizaje?: boolean } | null>(null);
@@ -112,7 +113,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [fijo, setFijo] = useState<string | null>(null);   // la tarjeta que estás viendo no se te quita de las manos
   const bannerTimer = useRef<any>(null);
 
-  const cargar = () => fetch('/api/crm/ti/envios').then(r => r.json()).then(j => { if (j.error) { setBanner({ texto: j.error, tipo: 'err' }); return; } setGaleria(j.galeria || []); setPend(j.pendientes || []); setRec(j.recientes || []); setCfg(j.config || null); setApr(j.aprendizaje || null); }).catch(() => setBanner({ texto: 'No se pudieron cargar los envíos', tipo: 'err' }));
+  const cargar = () => fetch('/api/crm/ti/envios').then(r => r.json()).then(j => { if (j.error) { setBanner({ texto: j.error, tipo: 'err' }); return; } setGaleria(j.galeria || []); setPromos(j.promociones || []); setPend(j.pendientes || []); setRec(j.recientes || []); setCfg(j.config || null); setApr(j.aprendizaje || null); }).catch(() => setBanner({ texto: 'No se pudieron cargar los envíos', tipo: 'err' }));
   useEffect(() => { cargar(); const a = setInterval(cargar, 15_000); const b = setInterval(() => setAhora(Date.now()), 1000); return () => { clearInterval(a); clearInterval(b); }; }, []);
 
   const actual = (fijo && pend.find(e => e.id === fijo)) || pend[0] || null;
@@ -260,6 +261,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
       </div>
 
       <div className="ti-carta ti-aprendizaje">
+        <Promociones promos={promos} onGuardar={async (lista: any[]) => { const j = await post('/api/crm/ti/envios', { accion: 'promos_guardar', promociones: lista }); if (j?.promociones) setPromos(j.promociones); return !!j; }} />
         <GaleriaRecursos galeria={galeria} onNuevo={r => setGaleria(g => [r, ...g])}
           onQuitar={async (id: string) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_quitar', imagen_id: id }); if (j) setGaleria(g => g.filter(x => x.id !== id)); }}
           onNuevaUrl={async (img) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as Recurso; } return null; }} />
@@ -329,6 +331,55 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
         </div>
       )}
       <style>{ESTILOS_ENVIOS}</style>
+    </div>
+  );
+}
+
+/* ═══ Promociones vigentes ═══
+ * El 35 % + implementación/migración sin costo se maneja como algo especial y por tiempo limitado; la
+ * ventana rota sola al vencer (7 ↔ 10 días). El agente la menciona una vez como plus al dar precio y
+ * guarda por lead qué se le dijo y hasta cuándo. */
+function Promociones({ promos, onGuardar }: { promos: any[]; onGuardar: (lista: any[]) => Promise<boolean> }) {
+  const [abierta, setAbierta] = useState(false);
+  const [lista, setLista] = useState<any[]>(promos);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setLista(promos); }, [promos]);
+  const vigente = lista.find(p => p.activa);
+  const dias = (v: string) => v ? Math.max(0, Math.round((Date.parse(v + 'T23:59:59-06:00') - Date.now()) / 86400e3)) : 0;
+  const upd = (i: number, k: string, v: any) => setLista(l => l.map((p, j) => j === i ? { ...p, [k]: v } : p));
+  return (
+    <div style={{ margin: '18px 0 6px' }}>
+      <button onClick={() => setAbierta(a => !a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <h3 className="ti-h3" style={{ margin: 0 }}>Promociones vigentes</h3>
+        {vigente ? <span className="ti-chip chip-verde">{vigente.nombre} · vence en {dias(vigente.vence)} d</span> : <span className="ti-chip chip-ambar">ninguna activa</span>}
+        <span className="ti-suave" style={{ margin: 0, fontSize: '0.75rem' }}>{abierta ? 'ocultar' : 'ver y editar'}</span>
+      </button>
+      <p className="ti-porque" style={{ marginTop: 4 }}>El agente la menciona <b>una vez</b>, como plus al hablar de precio y sin sonar vendedor, con la fecha límite; guarda en cada lead qué se le ofreció y hasta cuándo. Al vencer, la ventana rota sola (7 ↔ 10 días) si así lo dejas.</p>
+      {abierta && (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {lista.map((p, i) => (
+            <div key={p.id || i} style={{ border: '1px solid #e8e5f0', borderRadius: 12, padding: 12, background: '#fff', display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input className="ti-envio-input" style={{ flex: 1, minWidth: 220 }} placeholder="Nombre corto" value={p.nombre || ''} onChange={e => upd(i, 'nombre', e.target.value)} />
+                <label style={{ fontSize: '0.78rem', display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={p.activa !== false} onChange={e => upd(i, 'activa', e.target.checked)} /> activa</label>
+                <label style={{ fontSize: '0.78rem', display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={p.rotar !== false} onChange={e => upd(i, 'rotar', e.target.checked)} /> rota sola al vencer</label>
+              </div>
+              <textarea className="ti-envio-texto" rows={2} placeholder="Cómo se la explica el agente (qué incluye, valor de referencia)" value={p.texto || ''} onChange={e => upd(i, 'texto', e.target.value)} />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', fontSize: '0.78rem' }}>
+                <span>Vence</span><input className="ti-envio-input" style={{ width: 150 }} type="date" value={p.vence || ''} onChange={e => upd(i, 'vence', e.target.value)} />
+                <span>Ventana</span><input className="ti-envio-input" style={{ width: 70 }} type="number" min={1} max={30} value={p.dias_ventana || 10} onChange={e => upd(i, 'dias_ventana', Number(e.target.value))} /><span>días</span>
+                <span>Valor de referencia</span><input className="ti-envio-input" style={{ width: 110 }} placeholder="$9,500" value={p.valor || ''} onChange={e => upd(i, 'valor', e.target.value)} />
+                <button className="ti-btn" onClick={() => setLista(l => l.filter((_, j) => j !== i))}>Quitar</button>
+              </div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className="ti-btn" onClick={() => setLista(l => [...l, { id: `promo-${Date.now()}`, nombre: '', texto: '', valor: '', dias_ventana: 10, vence: new Date(Date.now() + 10 * 86400e3).toISOString().slice(0, 10), rotar: true, activa: true }])}>+ Nueva promoción</button>
+            <button className="ti-btn primario" onClick={async () => { const ok = await onGuardar(lista); setMsg(ok ? 'Guardado: el agente lo usa desde el siguiente turno.' : 'No se pudo guardar.'); }}>Guardar promociones</button>
+            {msg && <span style={{ fontSize: '0.8rem', fontWeight: 700, color: msg.startsWith('No') ? '#7f1d1d' : '#14532d' }}>{msg}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

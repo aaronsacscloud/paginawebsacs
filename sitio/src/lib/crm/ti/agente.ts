@@ -21,6 +21,7 @@ import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, e
 import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
 import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUso, asegurarFormatoWhatsApp, marcarErrorImagen, TIPO_L } from './imagenes-agente';
+import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './promociones';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -136,19 +137,21 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta TODO lo que preguntó o dijo, en su orden, en UNA sola respuesta; no ignores ninguno:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   const memoria = memoriaConversacion(msjs, c.nombre);
-  const [horarios, cita, pagina, galeria] = await Promise.all([
+  const [horarios, cita, pagina, galeria, promo] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
     proximaCita(contactId).catch(() => null),
     leerPaginaDelLead(contactId, msjs).catch(() => ''),
     galeriaActiva().catch(() => []),
+    promoVigente().catch(() => null),
   ]);
+  const bloquePromo = promoTexto(promo, ultimaOferta(c.propiedades));
   const pend: any = (perfil?.agente_estado as any)?.agenda_pendiente;
   const pendTxt = pend?.fecha && pend?.hora
     ? (pend.motivo === 'sin_correo'
       ? `AGENDA PENDIENTE: el lead YA ELIGIÓ ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] y solo falta su correo. Si en este mensaje lo da (o el CRM ya lo tiene), devuelve accion.tipo="agendar" con ESA fecha/hora y el correo, sin volver a ofrecer horarios. No lo saludes de nuevo.`
       : `AGENDA PENDIENTE: la cita de ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] falló por un error técnico NUESTRO; ya le pediste una disculpa y le ofreciste ese mismo horario u otros, más la liga de la agenda. Si ahora elige uno (incluido el mismo), devuelve accion.tipo="agendar" con esa fecha/hora y su correo. No la des por confirmada mientras no se agende.`)
     : '';
-  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
+  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
@@ -639,6 +642,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
         ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
+      try { const pr = await promoVigente(); if (await registrarOfertaDicha(e.contact_id, e.mensaje, pr)) await log({ accion: 'oferta_dicha', contact_id: e.contact_id, razon: pr?.nombre, detalle: { envio_id: e.id, vence: pr?.vence } }); } catch { /* la oferta no bloquea el envío */ }
       await supabase.from('contacts').update({ last_contact_at: ahora.toISOString() }).eq('id', e.contact_id);
       res.enviados++;
     } catch (err: any) {

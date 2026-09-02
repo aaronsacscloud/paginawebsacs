@@ -386,6 +386,7 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
                contacto: lo que el agente o el consultor le sacó en el chat. */
             ['Marca', empresa?.nombre_comercial || empresa?.nombre || contacto?.propiedades?.datos_lead?.empresa || null],
             ['Giro', empresa?.giro || contacto?.giro || null],
+            ['Oferta dicha', (() => { const l = contacto?.propiedades?.ofertas; const o = Array.isArray(l) && l.length ? l[l.length - 1] : null; return o ? `${o.nombre} · vence ${o.vence}` : null; })()],
             ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : contacto?.sucursales_interes != null ? String(contacto.sucursales_interes) : null],
             ['Registro', contacto?.created_at ? fecha(contacto.created_at) : null],
             ['Interacción', hilo?.mensajes?.length
