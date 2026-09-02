@@ -91,6 +91,8 @@ Responde SOLO un JSON válido con esta forma exacta:
         descripcion: minuta.slice(0, 4000), automatico: true,
       }).select('id').maybeSingle().then(() => {}, () => {});
       if (siguiente) await supabase.from('contacts').update({ proximo_paso: siguiente.slice(0, 300) }).eq('id', conv.contact_id).then(() => {}, () => {});
+      // Lo que el lead dijo en la llamada (tiendas, giro, marca, correo, ciudad…) también actualiza su ficha.
+      try { const { extraerYAplicar } = await import('../crm/ti/datos-lead'); await extraerYAplicar(conv.contact_id, transcript, 'llamada', ll.conversation_id); } catch { /* la minuta ya quedó; los datos no la bloquean */ }
     }
   }
   return { ok: true, minuta, siguiente_paso: siguiente, transcript_len: transcript.length };

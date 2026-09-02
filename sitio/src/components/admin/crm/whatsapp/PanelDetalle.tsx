@@ -345,8 +345,11 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
       {(empresa || contactoBase) && (
         <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px' }}>
           {[
-            ['Marca', empresa?.nombre_comercial || empresa?.nombre || null],
-            ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : null],
+            /* Sin empresa todavía (un lead que apenas conversa) los datos viven en el
+               contacto: lo que el agente o el consultor le sacó en el chat. */
+            ['Marca', empresa?.nombre_comercial || empresa?.nombre || contacto?.propiedades?.datos_lead?.empresa || null],
+            ['Giro', empresa?.giro || contacto?.giro || null],
+            ['Sucursales', empresa?.sucursales != null ? String(empresa.sucursales) : contacto?.sucursales_interes != null ? String(contacto.sucursales_interes) : null],
             ['Registro', contacto?.created_at ? fecha(contacto.created_at) : null],
             ['Interacción', hilo?.mensajes?.length
               ? `${hilo.mensajes.length} mensaje${hilo.mensajes.length === 1 ? '' : 's'}${conv?.ultimo_mensaje_at ? ` · ${haceCuanto(conv.ultimo_mensaje_at)}` : ''}`

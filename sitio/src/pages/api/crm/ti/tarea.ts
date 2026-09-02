@@ -59,6 +59,10 @@ export const POST: APIRoute = async ({ request }) => {
     hecho_at: ahora, hecho_por: user.id, updated_at: ahora,
   }).eq('id', id);
   const r = await alCompletar(tarea, b.resultado || null, user.id);
+  // La nota de una llamada («tiene 4 tiendas, marca X, quiere Instagram») actualiza la ficha del lead.
+  if (tarea.tipo === 'llamada' && tarea.contact_id && String(b.detalle?.nota || '').trim().length >= 8) {
+    try { const { extraerYAplicar } = await import('../../../../lib/crm/ti/datos-lead'); await extraerYAplicar(tarea.contact_id, String(b.detalle.nota), 'llamada_nota'); } catch { /* no bloquea la tarea */ }
+  }
 
   // Los veredictos EJECUTAN la decisión, no solo la registran.
   if (tarea.tipo === 'veredicto' && b.resultado && (tarea.payload as any)?.reloj === 'silencio_agente') {

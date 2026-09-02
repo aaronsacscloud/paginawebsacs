@@ -190,6 +190,16 @@ en cada turno (interes: alto / medio / bajo, con la razón). El sistema usa esa
 lectura para decidir cuánto insistir y cuándo pasarlo a descalificado →
 nutrición; un «por ahora no» después de demo y cotización es un marcador
 claro de poco interés: se respeta, se pregunta qué cambió y se deja ir.
+
+DATOS DEL LEAD (siempre, en cada turno):
+Todo dato que el lead diga sobre sí o su negocio va en "datos", aunque ya lo tenga
+el CRM: nombre, marca o tienda, giro (qué vende), cuántas tiendas, correo, ciudad,
+web/Instagram, puesto, sistema actual, dolor, cuándo decide. Si contradice lo que
+el CRM sabe (dice 4 tiendas y el CRM tiene 3; da otro correo; dice que ya no vende
+zapatos sino ropa), repórtalo con "corrige": true y usa el dato nuevo en tu
+respuesta. Un dato que usaste para una acción (el correo con el que agendas, el
+nombre con el que lo saludas) SIEMPRE va en "datos". La "evidencia" es la cita
+textual corta; sin evidencia no hay dato.
 `;
 
 /** Lo que el agente debe devolver en cada turno — el contrato con el motor. */
@@ -200,7 +210,7 @@ Responde SOLO un JSON con esta forma:
  "objetivo": "qué persigues con ESTE mensaje, en una línea",
  "mensaje": "el texto que se le manda al lead (vacío si no debes responder)",
  "responder": true|false,
- "datos": [{"campo":"giro|sucursales|ciudad|sistema_actual|dolor|mejor_hora|canal_preferido|nombre|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta"}],
+ "datos": [{"campo":"nombre|apellido|email|empresa|giro|sucursales|ciudad|estado|sitio_web|instagram|puesto|plan_interes|sistema_actual|dolor|mejor_hora|canal_preferido|cuando_decide|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":true|false}],
  "escalar": {"si": true|false, "motivo": "por qué lo ve el consultor (si aplica)"},
  "interes": {"nivel": "alto|medio|bajo", "razon": "qué en su mensaje lo dice"},
  "accion": {"tipo": "ninguna|agendar|confirmar_asistencia|liga_reagendar", "fecha": "YYYY-MM-DD (solo agendar)", "hora": "HH:MM (solo agendar)", "email": "correo del lead si lo dio o el CRM lo tiene"},

@@ -19,6 +19,7 @@ import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
 import { notificar } from '../notificaciones';
+import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -77,7 +78,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
-    supabase.from('contacts').select('id, nombre, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id').eq('id', contactId).maybeSingle(),
+    supabase.from('contacts').select('id, nombre, apellido, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id, puesto, companies(nombre, nombre_comercial, ciudad, sitio_web, sucursales, giro)').eq('id', contactId).maybeSingle(),
     supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
   ]);
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
@@ -97,7 +98,8 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     : '';
   const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
-  const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}», etapa ${c.lifecycle_stage}, giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? 'desconocido'}, fuente ${c.fuente || 'desconocida'}`
+  const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
+  const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
@@ -202,11 +204,11 @@ async function registrarDatos(contactId: string, datos: SalidaAgente['datos'], i
   const fila: any = { contact_id: contactId, intenciones: [...prev, ...nuevos].slice(-60), updated_at: new Date().toISOString() };
   if (interes?.nivel) fila.score_probabilidad = interes.nivel === 'alto' ? 0.85 : interes.nivel === 'medio' ? 0.5 : 0.2;
   await supabase.from('ti_perfil').upsert(fila, { onConflict: 'contact_id' });
-  // giro y tiendas: solo si el CRM no los tiene y la confianza es alta.
-  const giro = nuevos.find(d => d.campo === 'giro' && d.confianza >= 0.8);
-  const suc = nuevos.find(d => d.campo === 'sucursales' && d.confianza >= 0.8 && /^\d+$/.test(String(d.valor).trim()));
-  if (giro) await supabase.from('contacts').update({ giro: String(giro.valor).slice(0, 60) }).eq('id', contactId).is('giro', null);
-  if (suc) await supabase.from('contacts').update({ sucursales_interes: Number(suc.valor) }).eq('id', contactId).is('sucursales_interes', null);
+  // Al CRM: giro, tiendas, correo, nombre, marca, ciudad, web… (llena vacíos, corrige con evidencia, deja rastro). Ver datos-lead.ts.
+  if (nuevos.length) {
+    const { cambios } = await aplicarDatos(contactId, nuevos as any, { fuente: 'agente' }).catch(() => ({ cambios: [] as any[] }));
+    if (cambios.length) await log({ accion: 'datos_lead', contact_id: contactId, razon: 'agente', detalle: { cambios: cambios.map((x: any) => ({ campo: x.campo, antes: x.antes, despues: x.despues })) } });
+  }
 }
 
 /**
@@ -247,7 +249,16 @@ export async function proponerRespuestas(): Promise<any> {
     // ¿Un humano ya contestó después del último mensaje del lead? Entonces el agente calla.
     const { data: sal } = await supabase.from('ti_eventos').select('ocurrio_at, actor').eq('contact_id', cid)
       .in('tipo', ['wa_saliente']).gt('ocurrio_at', ultimoPor[cid]).limit(1);
-    if ((sal || []).length) { res.saltados++; continue; }
+    if ((sal || []).length) {
+      // El consultor ya contestó: el agente calla, pero lo que el lead DIJO (giro, tiendas, correo, marca…) se guarda igual.
+      res.saltados++;
+      try {
+        const desdeTxt = new Date(Date.parse(ultimoPor[cid]) - 6 * 3600e3).toISOString();
+        const { texto, conversation_id } = await textoDelLead(cid, desdeTxt);
+        if (texto) await extraerYAplicar(cid, texto, 'humano_respondio', conversation_id);
+      } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `datos (humano contestó): ${err?.message || err}` }); }
+      continue;
+    }
     // Un solo pendiente por lead: el nuevo mensaje del lead reemplaza la propuesta anterior.
     const previos = (pend || []).filter(x => x.contact_id === cid);
     try {

@@ -57,6 +57,29 @@ Para forzar cada caso desde tu WhatsApp: borra tu correo del contacto (`update c
 y elige un horario → caso «sin correo»; da un correo de otro contacto → caso «correo ajeno»;
 pide «hoy en media hora» → caso «< 2 h / ocupado».
 
+## Los datos del lead se aprenden solos (qué se guarda y desde dónde)
+
+| Fuente | Cómo entra | Quién extrae |
+|---|---|---|
+| Mensaje de texto o nota de voz del lead, contestado por el agente | `datos` de la salida del agente | El agente (Opus) |
+| Mensaje del lead que contestó el CONSULTOR antes que el agente | El agente calla, pero lee lo que dijo el lead | Haiku (`extraerYAplicar`) |
+| Llamada con minuta (WhatsApp/Twilio) | Transcripción completa | Haiku |
+| Nota que deja el consultor al cerrar una tarea de llamada | El texto de la nota | Haiku |
+| Formulario de la agenda pública | Ya escribía giro/tiendas/empresa | `/book` |
+
+Campos: nombre, apellido, correo, marca/tienda, giro, sucursales, ciudad, estado, sitio web, Instagram, puesto,
+plan de interés, sistema actual, dolor, mejor hora, canal preferido, cuándo decide.
+
+Reglas: vacío → se llena (confianza ≥ 0.7). Distinto → se corrige solo si el lead lo dijo claro
+(`corrige:true` o confianza ≥ 0.9) y el contacto es lead/oportunidad (a un cliente no se le tocan datos de cuenta
+desde un chat). Marca nueva → se crea/enlaza la empresa. Giro y tiendas se espejan en la empresa. Un correo que
+ya es de otro contacto no se pisa. Todo cambio queda en la ficha: actividad «Datos actualizados desde la
+conversación: Giro, Sucursales» con la cita textual, y `propiedades.historial_datos`.
+
+Para probarlo desde tu WhatsApp: di «ya no son 3 tiendas, abrimos otra, son 4» → la ficha debe pasar a 4 y en la
+línea de tiempo aparece el cambio con tu frase. Di «mi tienda se llama X y estamos en Guadalajara» → aparece la
+empresa enlazada con ciudad. Si contesta el consultor en vez del agente, debe pasar igual.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.
