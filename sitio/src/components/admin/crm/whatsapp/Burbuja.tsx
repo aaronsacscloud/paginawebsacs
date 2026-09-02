@@ -139,11 +139,14 @@ function tragarSiguienteClick() {
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, mismoAutorQueElAnterior }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, mismoAutorQueElAnterior }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
   onLightbox: (m: any) => void;
+  /** Saltar al mensaje citado Y resaltarlo. Lo resuelve el hilo, que es quien
+   *  sabe desplazar y encender el anillo. */
+  onIrACita?: (id: string) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
   onReenviar?: (item: any) => void;
@@ -279,8 +282,14 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     </>);
   } else if (tipo === 'interactive' || tipo === 'button') {
     contenido = (<>
-      <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>{ETIQUETA_INTERACTIVO[item.metadata?.interactivo] || 'Respuesta'}</span>
-      <span style={{ display: 'inline-block', background: fondoSuave, borderRadius: 8, padding: '5px 10px', fontWeight: 700 }}>{item.cuerpo || '—'}</span>
+      {/* Lo que el cliente ELIGIÓ tiene que leerse de un vistazo: es la
+          respuesta más valiosa del hilo —no la escribió, la escogió— y salía
+          igual de chica que cualquier otra línea. */}
+      <span style={{ fontSize: 10, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 4, letterSpacing: '.04em', textTransform: 'uppercase' }}>{ETIQUETA_INTERACTIVO[item.metadata?.interactivo] || 'Respuesta'}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: fondoSuave, borderRadius: 10, padding: '8px 13px', fontWeight: 800, fontSize: 14, lineHeight: 1.3 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: .8 }}><path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        {item.cuerpo || '—'}
+      </span>
     </>);
   } else if (tipo === 'unsupported') {
     contenido = <span style={{ fontStyle: 'italic', opacity: .7 }}>{item.cuerpo || 'Mensaje no compatible'}</span>;
@@ -288,11 +297,24 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
     const botones: any[] = item.metadata?.botones || [];
     const esImg = src && /image/.test(item.mime || '') || (src && /\.(png|jpe?g|webp)(\?|$)/i.test(src));
     contenido = (<>
-      <span style={{ fontSize: 9, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 2 }}>PLANTILLA{item.metadata?.plantilla ? ` · ${item.metadata.plantilla}` : ''}</span>
+      <span style={{ fontSize: 9, fontWeight: 800, display: 'block', opacity: .7, marginBottom: 5, letterSpacing: '.04em' }}>PLANTILLA{item.metadata?.plantilla ? ` · ${item.metadata.plantilla}` : ''}</span>
       {src && esImg && !mediaRota && <img src={src} alt="" onClick={() => onLightbox({ ...item, media_url: src })} onError={() => setMediaRota(true)} style={{ borderRadius: 10, maxHeight: 200, maxWidth: '100%', objectFit: 'cover', cursor: 'pointer', display: 'block', marginBottom: 6 }} />}
       {src && !esImg && <a href={src} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, background: fondoSuave, borderRadius: 8, padding: '8px 10px', textDecoration: 'none', color: tinta, fontSize: 12, fontWeight: 700, marginBottom: 6 }}><IcoDoc />{/video/.test(item.mime || '') ? 'Video' : 'Documento'} del encabezado</a>}
       <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.cuerpo || ''} q={q} claro={claro} /></span>
-      {botones.map((b: any, i: number) => <span key={i} style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontWeight: 700, marginTop: 4 }}>{b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : ''}{b.texto || b.tipo}</span>)}
+      {/* Los botones se pintan como los VE el cliente: separados del cuerpo por
+          una línea y uno debajo del otro, igual que en WhatsApp. Antes eran
+          tres renglones pegados al texto y no se distinguía qué era mensaje y
+          qué era botón. */}
+      {botones.length > 0 && (
+        <span style={{ display: 'block', marginTop: 9, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,.28)' }}>
+          <span style={{ display: 'block', fontSize: 9.5, fontWeight: 800, opacity: .6, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 5 }}>Botones que puede tocar</span>
+          {botones.map((b: any, i: number) => (
+            <span key={i} style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.25)', borderRadius: 9, padding: '8px 10px', fontSize: 12.5, fontWeight: 700, marginTop: i ? 5 : 0 }}>
+              {b.tipo === 'URL' ? '↗ ' : b.tipo === 'PHONE_NUMBER' ? '☎ ' : ''}{b.texto || b.tipo}
+            </span>
+          ))}
+        </span>
+      )}
     </>);
   } else if (item.cuerpo) {
     contenido = (<>
@@ -319,10 +341,17 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
           boxShadow: conRing ? `0 0 0 2px ${C.morado}, 0 0 0 4px #fff` : 'none', transition: 'box-shadow .3s',
           opacity: item.status === 'failed' ? .75 : 1,
         }}>
+          {/* El salto ya existía, pero llegaba sin avisar: la vista se movía
+              y no había forma de saber CUÁL de los mensajes era el citado.
+              Ahora se resalta al llegar. Y si el mensaje no está cargado se
+              dice, en vez de dejar un clic que no hace nada. */}
           {cita !== null && item.metadata?.cita?.wamid && (
-            <span onClick={() => { const el = document.getElementById(`wa-item-mensaje-${cita?.id}`); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
-              style={{ display: 'block', borderLeft: `3px solid ${saliente ? '#A7F3D0' : C.emerald500}`, background: saliente ? 'rgba(0,0,0,.12)' : C.g100, borderRadius: 6, padding: '4px 8px', marginBottom: 6, fontSize: 11, cursor: cita ? 'pointer' : 'default', maxWidth: 280 }}>
-              <b style={{ display: 'block', fontSize: 10, opacity: .85 }}>{cita ? (cita.direccion === 'saliente' ? (cita.autor || 'Equipo SACS') : 'Cliente') : 'Mensaje citado'}</b>
+            <span onClick={() => { if (cita && onIrACita) onIrACita(cita.id); }}
+              role={cita ? 'link' : undefined} tabIndex={cita ? 0 : undefined}
+              onKeyDown={e => { if (cita && onIrACita && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onIrACita(cita.id); } }}
+              title={cita ? 'Ir al mensaje citado' : 'Ese mensaje es anterior a lo que está cargado'}
+              style={{ display: 'block', borderLeft: `3px solid ${saliente ? '#A7F3D0' : C.emerald500}`, background: saliente ? 'rgba(0,0,0,.12)' : C.g100, borderRadius: 6, padding: '6px 10px', marginBottom: 6, fontSize: 11.5, lineHeight: 1.45, cursor: cita ? 'pointer' : 'default', maxWidth: 300 }}>
+              <b style={{ display: 'block', fontSize: 10, opacity: .85, marginBottom: 1 }}>{cita ? (cita.direccion === 'saliente' ? (cita.autor || 'Equipo SACS') : 'Cliente') : 'Mensaje citado'}</b>
               <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: .9 }}>{cita ? resumenMensaje(cita).slice(0, 120) : '(mensaje anterior al historial)'}</span>
             </span>
           )}

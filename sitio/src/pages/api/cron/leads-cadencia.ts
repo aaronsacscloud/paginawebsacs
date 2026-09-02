@@ -75,11 +75,15 @@ function motivoSalida(c: any, objetivo: string, paraClientes = false, ignorar: s
 }
 
 // Nota interna en el hilo del inbox (si el contacto tiene conversación de WA).
-async function notaInbox(contactId: string, texto: string) {
+async function notaInbox(contactId: string, texto: string, meta?: any) {
   const { data: conv } = await supabase.from('wa_conversaciones').select('id')
     .eq('contact_id', contactId).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (!conv) return;
-  await supabase.from('wa_notas').insert({ conversation_id: conv.id, contact_id: contactId, autor: 'Secuencias', texto });
+  /* El id de la secuencia va en el metadata: la nota la lee una persona en el
+     inbox y desde ahí abre el detalle sin salir de la conversación. Buscar por
+     el nombre entre comillas del texto funciona, pero se rompe el día que
+     alguien renombra la secuencia. */
+  await supabase.from('wa_notas').insert({ conversation_id: conv.id, contact_id: contactId, autor: 'Secuencias', texto, metadata: meta || null });
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -247,7 +251,7 @@ export const GET: APIRoute = async ({ url }) => {
         await supabase.from('crm_secuencia_miembros')
           .update({ inicio: ahora.toISOString(), enviados: {}, canales_detenidos: {}, detenida_at: null, motivo: null }).eq('id', ya.id);
         res.enrolados++;
-        await notaInbox(c.id, `Volvió a entrar a la secuencia "${sec.nombre}" (había salido por ${ya.motivo || 'motivo desconocido'}; día 1 hoy).`);
+        await notaInbox(c.id, `Volvió a entrar a la secuencia "${sec.nombre}" (había salido por ${ya.motivo || 'motivo desconocido'}; día 1 hoy).`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
         continue;
       }
       if (dry) { res.enrolados++; res.entrarian = [...(res.entrarian || []), c.id].slice(0, 12); continue; }
@@ -269,7 +273,7 @@ export const GET: APIRoute = async ({ url }) => {
         };
       if (!error) {
         res.enrolados++;
-        await notaInbox(c.id, `Entró a la secuencia "${sec.nombre}" (día 1 hoy).`);
+        await notaInbox(c.id, `Entró a la secuencia "${sec.nombre}" (día 1 hoy).`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
       }
     }
 
@@ -488,7 +492,7 @@ export const GET: APIRoute = async ({ url }) => {
             .update({ detenida_at: ahora.toISOString(), motivo: 'baja' }).eq('id', m.id);
           await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_salida', automatico: true,
             titulo: `Salió de "${sec.nombre}": se dio de baja`, metadata: { secuencia_id: sec.id, motivo: 'baja' } });
-          await notaInbox(c.id, `Se dio de baja del correo — sale de "${sec.nombre}" y no debe recibir más envíos.`);
+          await notaInbox(c.id, `Se dio de baja del correo — sale de "${sec.nombre}" y no debe recibir más envíos.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
         }
         continue;
       }
@@ -499,12 +503,12 @@ export const GET: APIRoute = async ({ url }) => {
       if (!cd.correo && c.email && correoBaja.has(String(c.email).toLowerCase())) { cd.correo = { motivo: 'optout', at: ahora.toISOString() }; cdCambio = true; }
       if (!cd.wa && waEntrante[c.id] && waEntrante[c.id] > m.inicio) {
         cd.wa = { motivo: 'respondio', at: ahora.toISOString() }; cdCambio = true;
-        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por WhatsApp — se detienen los WhatsApps automáticos; los correos siguen.`);
+        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por WhatsApp — se detienen los WhatsApps automáticos; los correos siguen.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
       }
       // Canal correo: respuesta entrante después de entrar.
       if (!cd.correo && correoEntrante[c.id] && correoEntrante[c.id] > m.inicio) {
         cd.correo = { motivo: 'respondio', at: ahora.toISOString() }; cdCambio = true;
-        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por correo — se detienen los correos automáticos; los WhatsApps siguen.`);
+        if (!dry && objetivoSec !== 'respondio') await notaInbox(c.id, `Secuencia "${sec.nombre}": respondió por correo — se detienen los correos automáticos; los WhatsApps siguen.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
       }
       if (cdCambio) {
         res.canales_detenidos++;
@@ -545,7 +549,7 @@ export const GET: APIRoute = async ({ url }) => {
           } catch (e: any) { console.warn('[secuencias] baja in-app', c.id, e?.message || e); }
           await supabase.from('activities').insert({ contact_id: c.id, tipo: 'secuencia_salida', automatico: true,
             titulo: `Salió de la secuencia "${sec.nombre}": ${motivo}`, metadata: { secuencia_id: sec.id, motivo, dia: dias } });
-          await notaInbox(c.id, `Salió de la secuencia "${sec.nombre}" (día ${dias}): ${motivo}.`);
+          await notaInbox(c.id, `Salió de la secuencia "${sec.nombre}" (día ${dias}): ${motivo}.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
           await ejecutarAcciones(sec, c, motivo, dias);
         }
         res.graduados++;
@@ -627,7 +631,7 @@ export const GET: APIRoute = async ({ url }) => {
         if (!m.detenida_at) {
           await supabase.from('crm_secuencia_miembros')
             .update({ detenida_at: ahora.toISOString(), motivo: 'reunion_sin_marcar' }).eq('id', m.id);
-          await notaInbox(c.id, `Secuencia "${sec.nombre}" en pausa: la reunión del ${reunionVencida} ya pasó y no está marcada como asistió o no asistió. Márcala y la secuencia sigue sola.`);
+          await notaInbox(c.id, `Secuencia "${sec.nombre}" en pausa: la reunión del ${reunionVencida} ya pasó y no está marcada como asistió o no asistió. Márcala y la secuencia sigue sola.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
         }
         continue;
       }
@@ -700,7 +704,7 @@ export const GET: APIRoute = async ({ url }) => {
               templateId: tid, variante } as any);
             if (!(r as any)?.enviado) continue;
             correoHecho = true; corridaCorreos++; (envioHoy[c.id] = envioHoy[c.id] || {}).correo = true;
-            await notaInbox(c.id, `Secuencia "${sec.nombre}" · día ${p.dia}: correo "${asunto}" enviado a ${c.email}.`);
+            await notaInbox(c.id, `Secuencia "${sec.nombre}" · día ${p.dia}: correo "${asunto}" enviado a ${c.email}.`, { tipo: 'secuencia', secuencia_id: sec.id, secuencia: sec.nombre });
           } else if (p.canal === 'wa') {
             // ── Dos candados antes de escribirle ──
             // 1. Un WhatsApp por lead por día, contando TODO lo que salió — el

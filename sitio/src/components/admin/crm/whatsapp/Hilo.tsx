@@ -18,6 +18,7 @@ import { BotonLlamar } from './Llamadas';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
 import Sheet from '../ui/Sheet';
+import DrawerSecuencia from './DrawerSecuencia';
 import { useGestoAtras } from '../../../../lib/ui/gestoAtras';
 import { tic, ticListo } from '../../../../lib/ui/tacto';
 
@@ -71,6 +72,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   // El correo que se está mirando. Sus datos ya vinieron con el hilo, así que
   // abrirlo no cuesta un viaje.
   const [correoAbierto, setCorreoAbierto] = useState<any>(null);
+  /* La secuencia que se está mirando desde un comentario interno. Se abre
+     AQUÍ: salir del inbox a buscarla es el paso que hace que no se mire. */
+  const [secuenciaAbierta, setSecuenciaAbierta] = useState<{ id?: string | null; nombre?: string | null } | null>(null);
   /* Con qué acción abre el panel de ventas. El composer lo pide por evento
      —no puede llamar aquí directo— y así los dos iconos nuevos entran al MISMO
      flujo que el menú ⋮, en vez de tener su propia versión a medias. */
@@ -536,33 +540,66 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                 /* «Sin actividad» salió de la lista de pastillas ámbar: es un
                    separador de sistema, no algo que atender, y en ámbar competía
                    con el aviso de ventana cerrada. */
-                <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g500, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6, background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '2px 10px' : 0 }}>
+                <span style={{ alignSelf: 'center', maxWidth: '92%', textAlign: 'center', fontSize: 11, color: item.tipo === 'reunion' ? C.azulTinta : item.tipo === 'llamada' ? C.emerald700 : item.tipo === 'campana' ? C.moradoTinta : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar700 : C.g500, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 8, lineHeight: 1.6, margin: '4px 0', background: item.tipo === 'reunion' ? C.azulAgua : item.tipo === 'llamada' ? C.emerald50 : item.tipo === 'campana' ? C.moradoAgua : ['identidad', 'bloqueo'].includes(item.tipo) ? C.ambar50 : 'transparent', borderRadius: 999, padding: ['reunion', 'llamada', 'campana', 'identidad', 'bloqueo'].includes(item.tipo) ? '5px 14px' : 0 }}>
                   {item.detalle}{item._veces > 1 ? ` · ${item._veces} veces` : ''}{item.autor ? ` · ${item.autor}` : ''}
                   {item.meet && <a href={item.meet} target="_blank" rel="noreferrer" style={{ color: C.azulTinta, fontWeight: 700, fontStyle: 'normal' }}>Meet</a>}
                   {/* «Le mandamos un correo y lo abrió» está bien para enterarse,
                       pero para RETOMAR hace falta saber cuál. Se abre aquí
                       mismo: salir del inbox a buscarlo es el paso que hace que
                       no se mire, y entonces se responde sin el contexto. */}
+                  {/* Enlace, no botón: es una salida discreta dentro de una
+                      línea de sistema, y un botón ahí competía con el mensaje.
+                      Abre el mismo cajón, sin salir de la conversación. */}
                   {item.correo && (
-                    <button onClick={() => setCorreoAbierto(item.correo)}
-                      style={{ border: 'none', background: 'none', padding: '0 0 0 6px', cursor: 'pointer', fontFamily: 'inherit',
-                        fontSize: 11, fontWeight: 700, fontStyle: 'normal', color: C.moradoTinta }}>
+                    <span role="link" tabIndex={0} onClick={() => setCorreoAbierto(item.correo)}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCorreoAbierto(item.correo); } }}
+                      style={{ cursor: 'pointer', fontSize: 11, fontWeight: 700, fontStyle: 'normal',
+                        color: C.moradoTinta, textDecoration: 'underline', textUnderlineOffset: 3, whiteSpace: 'nowrap' }}>
                       ver correo
-                    </button>
+                    </span>
                   )}
                 </span>
               ) : item._clase === 'nota' ? (
-                <span style={{ ...burbuja.nota, boxShadow: conRing ? `0 0 0 2px ${C.morado}` : 'none', transition: 'box-shadow .3s' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: 999, background: C.ambar400, color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                /* DOS clases de nota, y no se ven igual a propósito.
+                   El ámbar es «alguien del equipo escribió algo»: pide leerse.
+                   Lo que anota el SISTEMA —secuencias, agenda— es contexto, no
+                   un recado; en ámbar competía con los recados de verdad y, con
+                   seis seguidas, el hilo entero parecía una alerta. Va en
+                   morado, que es el color del sistema en todo el CRM. */
+                (() => {
+                  const sistema = ['Secuencias', 'Agenda', 'Sistema'].includes(String(item.autor || ''));
+                  const secId = item.metadata?.secuencia_id || null;
+                  /* Las notas viejas no traen metadata: el nombre se saca del
+                     texto entre comillas, que es como se escribieron siempre. */
+                  const secNombre = item.metadata?.secuencia
+                    || (String(item.texto || '').match(/secuencia "([^"]+)"|de "([^"]+)"/) || []).slice(1).find(Boolean) || null;
+                  const tinta = sistema ? C.moradoTinta : C.ambar700;
+                  return (
+                <span style={{ ...burbuja.nota,
+                  ...(sistema ? { background: C.moradoSuave, border: `1.5px solid ${C.moradoAgua}`, color: '#3a3357' } : {}),
+                  boxShadow: conRing ? `0 0 0 2px ${C.morado}` : 'none', transition: 'box-shadow .3s' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+                    <span style={{ width: 20, height: 20, borderRadius: 999, background: sistema ? C.morado : C.ambar400, color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                       {(item.autor || 'E')[0].toUpperCase()}
                     </span>
-                    <b style={{ fontSize: 11, color: C.ambar700 }}>Comentario interno · {item.autor}</b>
-                    <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 7px' }}>Solo equipo</span>
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: C.ambar500 }}>{horaDe(item._t)}</span>
+                    <b style={{ fontSize: 11, color: tinta }}>{sistema ? item.autor : `Comentario interno · ${item.autor}`}</b>
+                    <span style={{ fontSize: 9, fontWeight: 700, background: sistema ? C.moradoAgua : C.ambar100, color: tinta, borderRadius: 999, padding: '1px 7px' }}>Solo equipo</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: sistema ? '#9a93c4' : C.ambar500 }}>{horaDe(item._t)}</span>
                   </span>
                   <span style={{ whiteSpace: 'pre-wrap' }}><Resaltado texto={item.texto} q={q} /></span>
+                  {/* El nombre de una secuencia no le dice nada a nadie: lo que
+                      hace falta es qué manda y qué sigue. Se abre aquí mismo. */}
+                  {(secId || secNombre) && (
+                    <span role="link" tabIndex={0}
+                      onClick={() => setSecuenciaAbierta({ id: secId, nombre: secNombre })}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSecuenciaAbierta({ id: secId, nombre: secNombre }); } }}
+                      style={{ display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 700, color: C.moradoTinta, textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' }}>
+                      Ver qué manda y qué sigue
+                    </span>
+                  )}
                 </span>
+                  );
+                })()
               ) : item._clase === 'correo' ? (
                 <span style={{ ...burbuja.correo(item.direccion === 'saliente'), boxShadow: conRing ? `0 0 0 2px ${C.morado}` : 'none', transition: 'box-shadow .3s' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -584,7 +621,12 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
                   onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined}
-                  onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined} />
+                  onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined}
+                  onIrACita={(id: string) => {
+                    const clave = `mensaje-${id}`;
+                    irAItem(clave);
+                    setResaltada(clave); setTimeout(() => setResaltada(null), 2500);
+                  }} />
               )}
             </span>
           );
@@ -635,6 +677,9 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
 
       {/* ══ EL CORREO, SIN SALIR DEL INBOX ═══════════════════════════════ */}
+      <DrawerSecuencia abierto={!!secuenciaAbierta} onCerrar={() => setSecuenciaAbierta(null)}
+        secuenciaId={secuenciaAbierta?.id} nombre={secuenciaAbierta?.nombre} contactId={conv?.contact_id || null} />
+
       <Sheet open={!!correoAbierto} onClose={() => setCorreoAbierto(null)} title="Correo enviado" width={520}>
         {correoAbierto && (
           <div style={{ padding: '6px 16px 20px' }}>

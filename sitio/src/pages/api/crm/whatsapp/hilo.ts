@@ -100,8 +100,8 @@ export const GET: APIRoute = async ({ request, url }) => {
     before ? qMsj.lt('created_at', before) : qMsj,
     // 19) Las notas son del CONTACTO: se ven desde cualquier hilo suyo.
     (conv.contact_id
-      ? supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id').or(`conversation_id.eq.${conv.id},contact_id.eq.${conv.contact_id}`)
-      : supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id').eq('conversation_id', conv.id)
+      ? supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id, metadata').or(`conversation_id.eq.${conv.id},contact_id.eq.${conv.contact_id}`)
+      : supabase.from('wa_notas').select('id, autor, texto, created_at, conversation_id, metadata').eq('conversation_id', conv.id)
     ).order('created_at', { ascending: false }).limit(200),
     supabase.from('wa_eventos')
       .select('id, tipo, detalle, autor, created_at')
