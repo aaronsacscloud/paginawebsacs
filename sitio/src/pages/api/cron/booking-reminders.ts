@@ -18,6 +18,7 @@ import { notify } from '../../../lib/notify';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { registrarMensaje } from '../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../lib/telefono';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import {
   MX_OFFSET_MS, aMinutos, etiquetaReal, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
@@ -185,7 +186,7 @@ export const GET: APIRoute = async ({ request }) => {
         }
 
         // ── WhatsApp al cliente ──
-        if (r.whatsapp && b.invitee_whatsapp) {
+        if (r.whatsapp && b.invitee_whatsapp && await permitido('agenda_recordatorio')) {
           /* El opt-out MANDA. Quien pidió no recibir WhatsApp no lo recibe:
              no es preferencia, es cumplimiento. */
           if (b.contacts?.wa_optout) out.saltados_optout++;

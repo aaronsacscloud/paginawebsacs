@@ -18,7 +18,8 @@
 // formulario de TikTok, el canal que lo trajo sigue siendo Google — pisarlo le
 // regalaría a TikTok un lead que no pagó.
 import { supabase } from '../supabase';
-import { enviarBienvenidaTikTok, enviarCorreoBienvenidaTikTok } from './bienvenida-lead';
+import { enviarCorreoBienvenidaTikTok } from './bienvenida-lead';
+import { enviarPrimerMensaje } from './primer-mensaje';
 import { atribucionDeLead, type LeadTikTok } from './tiktok-leads';
 import { notificar } from './notificaciones';
 
@@ -243,11 +244,13 @@ export async function importarLeadsTikTok(
       metadata: { origen: 'tiktok-lead-form', ...bloqueTikTok },
     });
 
-    // Bienvenida automática al LEAD (plantilla UTILITY): solo en el goteo del
-    // pipeline vivo — un import masivo de la hoja vieja NO debe disparar
-    // decenas de mensajes.
+    // Primer mensaje automático al LEAD: solo en el goteo del pipeline vivo —
+    // un import masivo de la hoja vieja NO debe disparar decenas de mensajes.
     if (leads.length <= 10) {
-      if (l.whatsapp) enviarBienvenidaTikTok(nuevo.id, l.whatsapp, l.nombre).catch(e => console.warn('[bienvenida-tiktok]', e?.message || e));
+      /* Marketing primero (con foto y preguntas), y si Meta lo bloquea sale la
+         de utilidad diez minutos después. Ver `lib/crm/primer-mensaje.ts`. */
+      if (l.whatsapp) enviarPrimerMensaje({ telefono: l.whatsapp, contactId: nuevo.id, nombre: l.nombre, empresa: (l as any).empresa || null })
+        .catch(e => console.warn('[primer-mensaje]', e?.message || e));
       if (l.email) enviarCorreoBienvenidaTikTok(nuevo.id, l.email, l.nombre, l.campana).catch(e => console.warn('[bienvenida-email]', e?.message || e));
     }
     // La campana: un lead pagado que nadie ve el mismo día es la fuga cara.

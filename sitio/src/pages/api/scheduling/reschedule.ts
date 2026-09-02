@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { supabase } from '../../../lib/supabase';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
@@ -338,7 +339,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (oldBooking.invitee_whatsapp) {
     const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
     try {
-      await enviarPlantilla(oldBooking.invitee_whatsapp, 'sesion_reagendada', 'es_MX', [nombreInv, `${nueva_fecha} a las ${nueva_hora}`]);
+      if (await permitido('agenda_seguimiento')) await enviarPlantilla(oldBooking.invitee_whatsapp, 'sesion_reagendada', 'es_MX', [nombreInv, `${nueva_fecha} a las ${nueva_hora}`]);
     } catch {
       try {
         await sendWhatsApp(

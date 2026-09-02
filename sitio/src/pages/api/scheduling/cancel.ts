@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import { deleteCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
@@ -155,7 +156,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
       const nombreInv = String(booking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
       if (booking.invitee_whatsapp) {
-        try { await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]); } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
+        try { if (await permitido('agenda_seguimiento')) await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]); } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
       }
       try {
         await avisarCancelacion({ id: booking.contact_id, nombre: booking.invitee_nombre, whatsapp: booking.invitee_whatsapp, email: booking.invitee_email }, booking.fecha);

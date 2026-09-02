@@ -15,6 +15,7 @@
 // para que el vendedor sepa qué recibió el lead sin salir de la conversación.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import { resolverTenant } from '../../../lib/email/tenant';
 import { enviarCorreo } from '../../../lib/email/pipeline';
 import { compilar, compilarTexto, interpolar } from '../../../lib/email/plantillas';
@@ -710,6 +711,7 @@ export const GET: APIRoute = async ({ url }) => {
             const presion = await puedeMandarWa(c.whatsapp);
             if (!presion.ok) { res.saltados.push({ lead: c.id, motivo: 'presion_wa', libre_en: presion.libreEn?.toISOString() }); continue; }
             if (await cadenciaPausadaPorPersona(c.whatsapp)) { res.saltados.push({ lead: c.id, motivo: 'la tomo una persona' }); continue; }
+            if (!(await permitido('cadencia_leads'))) { res.saltados.push({ lead: c.id, motivo: 'cadencia pausada' }); continue; }
             await enviarPlantilla(c.whatsapp, p.wa_plantilla, 'es_MX', [primerNombre || '👋']);
             waHecho = true; corridaWas++; (envioHoy[c.id] = envioHoy[c.id] || {}).wa = true;
           } else if (p.canal === 'inapp') {

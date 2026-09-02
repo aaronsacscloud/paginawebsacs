@@ -46,6 +46,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/wa-primer-mensaje",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/onboarding-barrido",
       "schedule": "0 10 * * *"
     },

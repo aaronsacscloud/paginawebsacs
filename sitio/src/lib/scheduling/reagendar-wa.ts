@@ -13,6 +13,8 @@ import { supabase } from '../supabase';
 import { enviarTexto } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { fmtFechaLarga, fmtHora, inicioMs } from './recordatorios';
+import { permitido } from '../whatsapp/permisos';
+import { notificar } from '../crm/notificaciones';
 
 const BASE = 'https://www.sacscloud.com';
 
@@ -44,6 +46,27 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
   const { data: conv } = await supabase.from('wa_conversaciones')
     .select('contact_id').eq('id', conversationId).maybeSingle();
   if (!conv?.contact_id) return { ok: false, motivo: 'la conversación no está ligada a un contacto' };
+
+  /* PAUSADO por decisión del dueño (2-sep): un cambio de horario no se
+     contesta solo. Pero el toque NO puede morirse en silencio —era justo el
+     problema que este módulo vino a resolver—: se levanta aviso para que una
+     persona lo atienda, y el mensaje al cliente lo escribe ella. */
+  if (!(await permitido('agenda_reagendar_auto'))) {
+    await supabase.from('activities').insert({
+      contact_id: conv.contact_id, tipo: 'sistema', automatico: true,
+      titulo: 'Tocó «Reagendar» en el recordatorio — quiere mover su reunión',
+      metadata: { reagendar_pendiente: true, telefono },
+    }).then(() => {}, () => {});
+    await notificar({
+      clave: `reagendar:${conversationId}:${new Date().toISOString().slice(0, 16)}`,
+      tipo: 'agenda_reagendar', nivel: 'alerta',
+      titulo: 'Un cliente pidió reagendar por WhatsApp',
+      detalle: 'Tocó «Reagendar» en el recordatorio. La respuesta automática está pausada: hay que contestarle desde el inbox.',
+      destino: 'whatsapp',
+      metadata: { conversation_id: conversationId, contact_id: conv.contact_id },
+    }).catch(() => {});
+    return { ok: false, motivo: 'pausado: avisado al equipo' };
+  }
 
   /* La reunión VIVA más próxima de ese contacto. Si tiene varias, la que
      sigue: es de la que acaba de recibir el recordatorio. */
@@ -118,6 +141,10 @@ export async function confirmoAsistencia(conversationId: string, telefono: strin
   const { data: conv } = await supabase.from('wa_conversaciones')
     .select('contact_id').eq('id', conversationId).maybeSingle();
   if (!conv?.contact_id) return false;
+
+  /* «Ahí estaré» sí sigue: es seguimiento de una reunión YA establecida, no
+     un cambio de horario. */
+  if (!(await permitido('agenda_seguimiento'))) return false;
 
   const b = await proximaReunion(conv.contact_id, 'id, fecha, hora_inicio, google_meet_link, event_types(nombre)');
   if (!b) return false;

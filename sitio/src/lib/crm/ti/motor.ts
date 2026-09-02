@@ -5,6 +5,7 @@
 // el índice único (contact_id, paso) sobre pendientes hace imposible duplicar
 // un paso — correrlo dos veces no hace nada la segunda.
 import { supabase } from '../../supabase';
+import { permitido } from '../../whatsapp/permisos';
 import {
   PASOS, pasoDef, pasoSiguiente, TEXTOS, TIPO_LLAMADA, RESULTADOS_LLAMADA_L,
   CONFIG_DEFAULT, type TiConfig, programar, arranqueT1, primerNombre,
@@ -347,7 +348,7 @@ async function relojes(cfg: TiConfig, ahora: Date) {
   //    pero SOLO si su plantilla de Meta está configurada (cfg.plantillas_meta).
   //    Sin config, se desliza como cualquier tarea: nunca texto libre solo. ──
   const mapa = (cfg as any).plantillas_meta || {};
-  if (Object.keys(mapa).length) {
+  if (Object.keys(mapa).length && await permitido('valvula_ti')) {
     const { data: vencidas } = await supabase.from('ti_tareas')
       .select('id, paso, contact_id, payload')
       .eq('estado', 'pendiente').eq('tipo', 'wa_plantilla')

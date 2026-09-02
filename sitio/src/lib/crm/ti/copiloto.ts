@@ -15,6 +15,7 @@ import { anthropic, MODELS, calculateCost, hasApiKey } from '../../ai/client';
 import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 import { leerConfig } from './motor';
 import { esHorarioLaboral } from './reglas';
+import { permitido } from '../../whatsapp/permisos';
 
 const MS_MIN = 60e3;
 
@@ -86,6 +87,10 @@ export async function redactarRespuesta(contactId: string, nombre: string): Prom
  */
 export async function cubrirPendientes(): Promise<any> {
   const cfg: any = await leerConfig();
+  /* El candado de arriba: la lista de automatizaciones permitidas. Va ANTES
+     que `copiloto_activo` porque ese campo era fail-OPEN —si la llave no
+     estaba en la config, el copiloto corría—. */
+  if (!(await permitido('copiloto_ia'))) return { copiloto: 'no permitido' };
   if (cfg.copiloto_activo === false) return { copiloto: 'apagado' };
   const ahora = new Date();
   const res: any = { cubiertas: 0, puentes: 0, no_pudo: 0 };

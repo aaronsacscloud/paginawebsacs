@@ -8,6 +8,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import { recordMovement } from '../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
@@ -91,7 +92,11 @@ export const GET: APIRoute = async ({ url, request }) => {
           }
           await marcarAviso(s, 'dunning_email_' + s.proxima_factura, `📧 Dunning día 1 (email): ${empresa} · vencida ${fmtD(s.proxima_factura)} · $${monto.toLocaleString('es-MX')}`);
         }
-        if (vencidaDias >= 3 && !(await yaAvisado(s.id, 'dunning_wa_' + s.proxima_factura))) {
+        /* La cobranza por WhatsApp está PAUSADA (2-sep). El permiso se
+           pregunta ANTES de entrar: si se preguntara adentro, el bloque
+           marcaría el aviso como hecho sin haber enviado nada y, el día que se
+           encienda, esos clientes nunca recibirían el mensaje del día 3. */
+        if (vencidaDias >= 3 && await permitido('cobranza') && !(await yaAvisado(s.id, 'dunning_wa_' + s.proxima_factura))) {
           if (contacto.whatsapp) {
             await sendWhatsApp(contacto.whatsapp,
               `Hola ${contacto.nombre || ''} 👋 Te escribimos de SACS: el pago de tu suscripción ${s.nombre_plan} venció el ${fmtD(s.proxima_factura)} ($${monto.toLocaleString('es-MX')} MXN). ¿Te ayudamos a regularizarlo? Si ya pagaste, mándanos tu comprobante por aquí. 🙌`).catch(() => null);

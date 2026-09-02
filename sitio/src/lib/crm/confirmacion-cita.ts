@@ -13,6 +13,7 @@
 // Aquí se usa el mismo `enviarTexto` + `registrarMensaje` que el inbox, que
 // es el que se sabe vivo porque se usa todo el día.
 import { supabase } from '../supabase';
+import { permitido } from '../whatsapp/permisos';
 import { enviarTexto, enviarPlantilla, usarNumero, KapsoError } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { telefonoWhatsApp } from '../telefono';
@@ -56,6 +57,7 @@ export function textoConfirmacion(o: {
 /** Manda la confirmación al cliente y la deja espejada en su conversación.
  *  No lanza: una cita agendada no se cae porque el aviso falle. */
 export async function confirmarCitaPorWhatsApp(bookingId: string): Promise<{ ok: boolean; motivo?: string }> {
+  if (!(await permitido('agenda_confirmacion'))) return { ok: false, motivo: 'pausado' };
   try {
     const { data: b } = await supabase.from('bookings')
       .select('id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, contact_id, host_id, google_meet_link, token_cancelar, event_type_id')

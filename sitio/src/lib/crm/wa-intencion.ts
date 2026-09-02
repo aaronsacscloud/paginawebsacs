@@ -21,6 +21,7 @@
 import { supabase } from '../supabase';
 import { intencionDe } from '../whatsapp/intencion';
 import { configEntrante } from '../whatsapp/config-entrante';
+import { permitido } from '../whatsapp/permisos';
 import { enviarTexto } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
 import { notificar } from './notificaciones';
@@ -86,7 +87,9 @@ export async function registrarIntencionEntrante(o: {
   // Alguien que ya está usando el producto y pide una sesión no debería esperar
   // a que alguien abra la bandeja. Los horarios son los reales del calendario,
   // así que el que elija queda confirmado sin que nadie intervenga.
-  if (intencion.agenda) {
+  /* Pausado por decisión del dueño (2-sep): un cambio de horario NO se
+     contesta solo. Cuando esté encendido vuelve a salir sin tocar nada. */
+  if (intencion.agenda && await permitido('agenda_horarios_auto')) {
     await mandarHorarios(o.conversationId, quien.split(' ')[0]).catch(e => console.warn('[wa-agenda]', e?.message || e));
   }
 

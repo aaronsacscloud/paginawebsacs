@@ -14,6 +14,7 @@ import { registrarMensaje } from './espejo';
 // El horario y el reloj viven con el resto de la configuración del entrante.
 export { dentroDeHorario } from './config-entrante';
 import { configEntrante, dentroDeHorario } from './config-entrante';
+import { permitido } from './permisos';
 
 async function mandarAuto(convId: string, telefono: string, texto: string, marca: 'auto_bienvenida_at' | 'auto_fuera_at') {
   // Marcar ANTES de enviar: si Kapso tarda y el webhook reintenta, no salen dos.
@@ -65,6 +66,9 @@ export async function alRecibirMensaje(convId: string) {
   // decisión explícita, igual que cualquier otra secuencia.
   const cfgE = await configEntrante();
   if (!cfgE.activa || !cfgE.acuse.activo) return;
+  /* Segundo candado, el de arriba de todos: la lista de automatizaciones
+     permitidas. Ver `lib/whatsapp/permisos.ts`. */
+  if (!(await permitido('acuse_entrante'))) return;
 
   /* ── SILENCIO CUANDO YA HAY UN HUMANO EN LA CONVERSACIÓN ──
      Caso real del 30 de agosto: el asesor le escribió a las 15:58, ella

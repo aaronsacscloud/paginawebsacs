@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { normalizaEstado } from '../../../lib/crm/reuniones';
 import { supabase } from '../../../lib/supabase';
+import { permitido } from '../../../lib/whatsapp/permisos';
 import { marcarDemoHecha } from '../../../lib/crm/estatus-live';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
@@ -196,7 +197,7 @@ export const PUT: APIRoute = async ({ request }) => {
          la tienen abierta, así que el seguimiento del no-show casi nunca
          llegaba — y devolvía {sent:false} que nadie miraba. Justo a quien no
          llegó es a quien hay que alcanzar. */
-      if (current.invitee_whatsapp) {
+      if (current.invitee_whatsapp && await permitido('agenda_seguimiento')) {
         const { enviarPlantilla } = await import('../../../lib/whatsapp/kapso-api');
         const { telefonoWhatsApp } = await import('../../../lib/telefono');
         const { fmtFechaLarga, fmtHora } = await import('../../../lib/scheduling/recordatorios');

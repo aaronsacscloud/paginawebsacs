@@ -10,6 +10,7 @@
 // lista de toques): el lead sigue en "Nuevos sin primer toque" hasta que un
 // humano lo trabaje o él responda — la automatización abre, no vende.
 import { supabase } from '../supabase';
+import { permitido } from '../whatsapp/permisos';
 import { enviarPlantilla } from '../whatsapp/kapso-api';
 import { resolverTenant } from '../email/tenant';
 import { enviarCorreo } from '../email/pipeline';
@@ -124,7 +125,14 @@ export async function enviarCorreoBienvenidaTikTok(contactId: string, email: str
   return { ok: true };
 }
 
+/**
+ * SUPERADA por `lib/crm/primer-mensaje.ts` (2-sep-2026), que manda primero la
+ * de marketing con foto y solo cae a la de utilidad si Meta la bloqueó. Se
+ * conserva porque el envío de una sola plantilla sigue siendo útil, pero pasa
+ * por el mismo permiso: nada escribe fuera de la lista.
+ */
 export async function enviarBienvenidaTikTok(contactId: string, telefono: string, nombre?: string | null) {
+  if (!(await permitido('primer_mensaje'))) return { ok: false, motivo: 'pausada' };
   const { data: cfg } = await supabase.from('wa_config')
     .select('bienvenida_tiktok_activa, bienvenida_tiktok_plantilla').eq('id', 1).maybeSingle();
   if (!cfg?.bienvenida_tiktok_activa || !cfg?.bienvenida_tiktok_plantilla) return { ok: false, motivo: 'apagada' };
