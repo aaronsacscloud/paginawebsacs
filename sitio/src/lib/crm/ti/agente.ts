@@ -704,6 +704,85 @@ async function validarIntentos(intentos: Intento[], ahora: Date): Promise<Intent
   return out;
 }
 
+
+/* ══ ÍNDICE DE VIDA (F4, decisión S2) ══
+   0–100 = ICP + calidad de la conversación + recencia + señales − intentos válidos sin respuesta − llamada sin
+   contestar. Estados: seguir (>60) · bajar_ritmo (35–60) · sugerir_descalificar (<35 y ya se agotaron ≥3 intentos
+   o la llamada) · nutricion (cerrado). La sugerencia sale a la sección «Calificación» con fundamentos; con RAMPA:
+   primero con clic del dueño, y tras 20 coincidencias seguidas entre su veredicto y la propuesta, automático. */
+export type IndiceVida = { indice: number; estado: 'seguir' | 'bajar_ritmo' | 'sugerir_descalificar' | 'nutricion' | 'esperando_reunion'; detalle: any };
+export async function calcularIndiceVida(cid: string): Promise<IndiceVida> {
+  const [ev, { data: p }, cita, { data: ult }] = await Promise.all([
+    evaluarLead(cid),
+    supabase.from('ti_perfil').select('agente_estado, ultima_respuesta_at').eq('contact_id', cid).maybeSingle(),
+    proximaCita(cid).catch(() => null),
+    supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1),
+  ]);
+  const st: any = (p?.agente_estado as any) || {};
+  const intentos: any[] = Array.isArray(st.intentos) ? st.intentos : [];
+  const validos = intentos.filter(i => i.valido === true).length;
+  const noEntregadas = intentos.filter(i => i.valido === false).length;
+  const dias = (ult || []).length ? (Date.now() - Date.parse(ult![0].ocurrio_at)) / 86400e3 : null;
+  const icpPts = ev.icp === 'alto' ? 30 : ev.icp === 'medio' ? 18 : 6;
+  const convPts = Math.round((ev.conversacion / 100) * 35);
+  const recPts = dias == null ? 0 : dias < 2 ? 20 : dias < 7 ? 12 : dias < 14 ? 6 : 0;
+  const senalPts = ev.razones.some(r => /señal/.test(r)) ? 10 : 0;
+  const castigo = validos * 8 + noEntregadas * 2 + (st.llamada_at && !st.llamada_omitida ? 8 : 0);
+  const indice = Math.max(0, Math.min(100, icpPts + convPts + recPts + senalPts - castigo));
+  let estado: IndiceVida['estado'] = 'seguir';
+  if (cita) estado = 'esperando_reunion';
+  else if (st.cerrado) estado = 'nutricion';
+  else if (indice < 35 && (validos >= 3 || st.llamada_at)) estado = 'sugerir_descalificar';
+  else if (indice <= 60) estado = 'bajar_ritmo';
+  const detalle = { icp: ev.icp, conversacion: ev.conversacion, razones: ev.razones, dias_sin_respuesta: dias == null ? null : Math.round(dias * 10) / 10, intentos_validos: validos, intentos_no_entregados: noEntregadas, llamada: !!st.llamada_at, puntos: { icp: icpPts, conversacion: convPts, recencia: recPts, senales: senalPts, castigo }, cita: !!cita };
+  return { indice, estado, detalle };
+}
+
+/** Evaluación MASIVA (todos los leads activos): guarda el índice y abre la sugerencia de descalificar con fundamentos.
+ *  Con rampa: si `rampa_descalificar.automatico`, se aplica sola y queda registrado; si no, tarjeta para el dueño. */
+export async function calificarLeads(opts: { limite?: number } = {}): Promise<any> {
+  const ahora = new Date();
+  const res: any = { evaluados: 0, sugerencias: 0, automaticas: 0, por_estado: {} as Record<string, number> };
+  const { data: cs } = await supabase.from('contacts').select('id, nombre, whatsapp, owner_id, company_id, lifecycle_stage, propiedades').in('lifecycle_stage', ['lead', 'lead_calificado', 'oportunidad']).is('archived_at', null).order('updated_at', { ascending: false }).limit(opts.limite || 300);
+  const cfg: any = await leerConfig();
+  const rampa: any = cfg.rampa_descalificar || { coincidencias: 0, automatico: false };
+  for (const c of cs || []) {
+    if ((c.propiedades as any)?.demo_ti) continue;
+    const { data: pf } = await supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', c.id).maybeSingle();
+    if (pf?.silenciar_ia) continue;
+    const iv = await calcularIndiceVida(c.id);
+    await supabase.from('ti_perfil').upsert({ contact_id: c.id, indice_vida: iv.indice, indice_estado: iv.estado, indice_detalle: iv.detalle, indice_at: ahora.toISOString(), updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    res.evaluados++; res.por_estado[iv.estado] = (res.por_estado[iv.estado] || 0) + 1;
+    if (iv.estado !== 'sugerir_descalificar') continue;
+    const st: any = (pf?.agente_estado as any) || {};
+    const { data: abierta } = await supabase.from('ti_tareas').select('id').eq('contact_id', c.id).eq('estado', 'pendiente').eq('tipo', 'veredicto').limit(1);
+    if ((abierta || []).length || st.cerrado) continue;
+    const intentos: any[] = Array.isArray(st.intentos) ? st.intentos : [];
+    const evidencia = [
+      `Índice de vida ${iv.indice}/100 (ICP ${iv.detalle.icp}, conversación ${iv.detalle.conversacion}/100, ${iv.detalle.dias_sin_respuesta ?? '—'} días sin respuesta).`,
+      `Intentos que sí llegaron: ${iv.detalle.intentos_validos} (${intentos.filter(i => i.valido).map(i => `${i.tipo} ${i.franja} ${String(i.at).slice(5, 10)}`).join(', ') || '—'})${iv.detalle.intentos_no_entregados ? `; ${iv.detalle.intentos_no_entregados} plantilla(s) no entregada(s)` : ''}.`,
+      `Llamada humana: ${st.llamada_at ? (st.llamada_omitida ? 'omitida (ICP bajo)' : 'hecha, sin resultado') : 'no'}. Ángulos usados: ${(st.angulos || []).join(' · ') || '—'}.`,
+    ];
+    if (rampa.automatico) {
+      await aplicarVeredictoSilencio({ contact_id: c.id, id: null, payload: { propuesta: 'descalificar' } }, 'descalificar', { automatica: true, indice: iv.indice, rampa: true }, null);
+      await log({ accion: 'indice_descalifico', contact_id: c.id, razon: `automático (rampa) · índice ${iv.indice}`, detalle: iv.detalle });
+      res.automaticas++;
+      continue;
+    }
+    const n = String(c.nombre || 'el lead').split(/\s+/)[0];
+    await supabase.from('ti_tareas').insert({ contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id, familia: 'decidir', tipo: 'veredicto', prioridad: 4, vence_at: ahora.toISOString(), origen: 'reloj', payload: {
+      instruccion: `${n}: se sugiere descalificar (índice ${iv.indice}/100)`, porque: 'Se agotaron los intentos reales y el índice de vida está bajo. Si no decides en 48 h, se aplica la propuesta.',
+      nombre: c.nombre, whatsapp: c.whatsapp, reloj: 'silencio_agente', sujeto: 'indice', ciclo: st.ciclo || 1, propuesta: 'descalificar', indice: iv.indice,
+      hechos: [['Índice de vida', `${iv.indice}/100`, iv.estado, 'ambar'], ['Intentos que llegaron', String(iv.detalle.intentos_validos), 'sin respuesta'], ['Sin respuesta', `${iv.detalle.dias_sin_respuesta ?? '—'} días`, '']],
+      evidencia, resultados: { seguir: 'Que siga (otro ciclo)', descalificar: 'Descalificar: no respondió (a nutrición mecánica)', no_era_lead: 'No era lead (di por qué)', pausar: 'Pausar hasta una fecha' }, motivos_no_era_lead: MOTIVOS_NO_ERA_LEAD,
+    } });
+    await log({ accion: 'indice_sugerencia', contact_id: c.id, razon: `sugerir descalificar · índice ${iv.indice}`, detalle: iv.detalle });
+    res.sugerencias++;
+  }
+  await supabase.from('ti_config').update({ valor: { ...cfg, calificacion_marca: ahora.toISOString() } }).eq('id', 1);
+  return res;
+}
+
 export async function tocarSilencios(): Promise<any> {
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { silencio: 'apagado' };
@@ -869,6 +948,18 @@ export async function tocarSilencios(): Promise<any> {
 /** La decisión de la tarjeta (humana o automática) ejecutada sobre el lead. */
 export async function aplicarVeredictoSilencio(tarea: any, resultado: string, detalle: any, userId: string | null) {
   const cid = tarea.contact_id; const ahora = new Date().toISOString();
+  // RAMPA de descalificación (S2.2): cada veredicto humano se compara con la propuesta; 20 coincidencias seguidas → automático.
+  if (userId && ['seguir', 'descalificar'].includes(resultado)) {
+    try {
+      const cfgR: any = await leerConfig();
+      const r: any = cfgR.rampa_descalificar || { coincidencias: 0, automatico: false };
+      const coincide = String((tarea.payload as any)?.propuesta || '') === resultado;
+      r.coincidencias = coincide ? (Number(r.coincidencias) || 0) + 1 : 0;
+      r.ultimo_at = ahora;
+      if (!r.automatico && r.coincidencias >= 20) { r.automatico = true; r.automatico_desde = ahora; await avisoSistema({ tipo: 'sistema_rampa_descalificar', nivel: 'info', clave: `rampa_descalificar_auto:${ahora.slice(0, 10)}`, titulo: 'Descalificar ya es automático', detalle: 'Tus últimos 20 veredictos coincidieron con la propuesta del agente: desde ahora las sugerencias de descalificar se aplican solas y quedan registradas en Calificación.', que_hacer: 'Nada. Si quieres volver al clic, apágalo en Calificación.' }); }
+      await supabase.from('ti_config').update({ valor: { ...cfgR, rampa_descalificar: r } }).eq('id', 1);
+    } catch { /* la rampa no bloquea el veredicto */ }
+  }
   const { data: p } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', cid).maybeSingle();
   const st: any = { ciclo: 1, toque: 0, ...((p?.agente_estado as any) || {}) };
   const guardar = (cambios: any, extra: any = {}) => supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...st, ...cambios }, updated_at: ahora, ...extra }, { onConflict: 'contact_id' });
@@ -888,7 +979,7 @@ export async function aplicarVeredictoSilencio(tarea: any, resultado: string, de
     await supabase.from('contacts').update({ estatus_lead: 'descartado', estatus_lead_at: ahora, descarte_categoria: `no_era_lead:${motivo}`, propiedades: { ...((c?.propiedades as any) || {}), no_era_lead: { motivo, texto, at: ahora, por: userId } } }).eq('id', cid);
     await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'descalificado', updated_at: ahora }).eq('contact_id', cid).neq('estado', 'terminada');
     await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'no_era_lead' }).eq('contact_id', cid).is('detenida_at', null);
-    await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'no_era_lead', updated_at: ahora }).eq('contact_id', cid).eq('estado', 'pendiente').neq('id', tarea.id);
+    await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'no_era_lead', updated_at: ahora }).eq('contact_id', cid).eq('estado', 'pendiente').neq('id', tarea.id || '00000000-0000-0000-0000-000000000000');
     // La lección: motivo + fuente, para que el analista nocturno proponga exclusiones cuando se repita.
     await log({ accion: 'no_era_lead', contact_id: cid, razon: motivo, contenido: texto || null, detalle: { fuente: c?.fuente, utm_source: c?.utm_source, por: userId, ...detalle } });
   } else if (resultado === 'pausar') {

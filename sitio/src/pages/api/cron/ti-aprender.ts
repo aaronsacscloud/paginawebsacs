@@ -164,6 +164,9 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
+  // ── 4e) CALIFICACIÓN MASIVA: índice de vida de todos los leads activos + sugerencias de descalificar (F4) ──
+  try { const { calificarLeads } = await import('../../../lib/crm/ti/agente'); res.calificacion = await calificarLeads(); } catch (e: any) { res.calificacion_error = String(e?.message || e); }
+
   // ── 5) MÉTRICA NORTE: citas agendadas ayer, por quién ──
   const { data: citas } = await supabase.from('bookings').select('utm_source, estado').gte('created_at', hace(1)).limit(500);
   res.citas_ayer = { agente: (citas || []).filter(b => b.utm_source === 'agente_ia').length, humanas: (citas || []).filter(b => b.utm_source !== 'agente_ia').length };

@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import TrabajoEnvios from './TrabajoEnvios';
 import TrabajoAprendizaje from './TrabajoAprendizaje';
+import TrabajoCalificacion from './TrabajoCalificacion';
 
 type Tarea = {
   id: string; contact_id: string; familia: string; tipo: string; paso: string | null;
@@ -81,7 +82,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
-  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje'>('dia');
+  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje' | 'calificacion'>('dia');
   /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
      (el dueño lo vivió: editó, adjuntó, aprobó… y nada). Si un chunk falla, la página se recarga sola. */
   useEffect(() => {
@@ -336,11 +337,13 @@ export default function TrabajoPanel() {
           </button>
           <button className={'ti-tab' + (vistaTab === 'envios' ? ' on' : '')} onClick={() => setVistaTab('envios')}>Próximos envíos</button>
           <button className={'ti-tab' + (vistaTab === 'aprendizaje' ? ' on' : '')} onClick={() => setVistaTab('aprendizaje')}>Aprendizaje</button>
+          <button className={'ti-tab' + (vistaTab === 'calificacion' ? ' on' : '')} onClick={() => setVistaTab('calificacion')}>Calificación</button>
         </div>
       </div>
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}
       {vistaTab === 'aprendizaje' && <TrabajoAprendizaje />}
+      {vistaTab === 'calificacion' && <TrabajoCalificacion />}
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo">
