@@ -1,10 +1,15 @@
-// Wiki de procesos de ventas — el LECTOR.
+// Wiki — el LECTOR.
 //
 // Todo el contenido vive en src/lib/crm/wiki-contenido.ts: agregar una página
-// es agregar un objeto ahí, nunca tocar este archivo. Aquí solo está el índice
-// lateral, la selección y el estilo de lectura.
+// es agregar un objeto ahí, nunca tocar este archivo. Aquí solo está el
+// conmutador de sección, el índice lateral y el estilo de lectura.
+//
+// DOS SECCIONES DE PRIMER NIVEL, no una lista larga: «Procesos de venta» y
+// «Consultores» son dos manuales distintos. Cuando el acuerdo de colaboración
+// vivía como un grupo más al final del índice de ventas, quedaba con el peso
+// de una nota al pie — y es el documento que rige cuánto cobra cada quien.
 import { useState, useMemo } from 'react';
-import { WIKI, GRUPOS_WIKI, type PaginaWiki } from '../../../lib/crm/wiki-contenido';
+import { WIKI, GRUPOS_WIKI, SECCIONES_WIKI, type PaginaWiki, type SeccionWiki } from '../../../lib/crm/wiki-contenido';
 
 const TONO: Record<string, { bg: string; fg: string }> = {
   ok:   { bg: '#EAF8F2', fg: '#1E8A63' },
@@ -12,6 +17,9 @@ const TONO: Record<string, { bg: string; fg: string }> = {
   bad:  { bg: '#FEF0EF', fg: '#C0554E' },
   mut:  { bg: '#EFEFF3', fg: '#7A7A88' },
 };
+
+/** La sección a la que pertenece una página. Sin declarar, es 'ventas'. */
+const seccionDe = (p: PaginaWiki): SeccionWiki => p.seccion || 'ventas';
 
 export default function Wiki() {
   const [activa, setActiva] = useState<string>(() => {
@@ -21,6 +29,10 @@ export default function Wiki() {
   const pagina: PaginaWiki = useMemo(
     () => WIKI.find(p => p.id === activa) || WIKI[0], [activa]);
 
+  // La sección se deriva de la página abierta y no es estado aparte: así una
+  // liga vieja a ?pagina=c-tasas abre Consultores sin que nadie la mande.
+  const seccion = seccionDe(pagina);
+
   const abrir = (id: string) => {
     setActiva(id);
     const u = new URL(location.href);
@@ -29,12 +41,28 @@ export default function Wiki() {
     document.getElementById('wiki-cuerpo')?.scrollTo({ top: 0 });
   };
 
+  /** Cambiar de sección abre su PRIMERA página: nunca deja el índice vacío. */
+  const irASeccion = (s: SeccionWiki) => {
+    const primera = WIKI.find(p => seccionDe(p) === s);
+    if (primera) abrir(primera.id);
+  };
+
   return (
     <div className="wiki-wrap">
       <style>{`
         .wiki-wrap{display:grid;grid-template-columns:236px 1fr;gap:0;height:calc(100vh - 90px);
           border:1px solid #E4E4EA;border-radius:12px;overflow:hidden;background:#fff}
-        .wiki-idx{border-right:1px solid #EFEFF3;overflow-y:auto;padding:14px 0 30px;background:#FCFCFD}
+        .wiki-idx{border-right:1px solid #EFEFF3;overflow-y:auto;padding:0 0 30px;background:#FCFCFD}
+        .wiki-sec{position:sticky;top:0;z-index:2;background:#FCFCFD;padding:12px 12px 10px;
+          border-bottom:1px solid #EFEFF3;display:flex;flex-direction:column;gap:4px}
+        .wiki-sb{display:block;width:100%;text-align:left;border:1px solid transparent;cursor:pointer;
+          padding:8px 11px;border-radius:8px;font-size:13px;font-weight:650;line-height:1.25;
+          background:#fff;color:#4A4A57;border-color:#E4E4EA}
+        .wiki-sb:hover{border-color:#C9C9D4;color:#1B1B22}
+        /* El elegido va en morado SÓLIDO y el otro queda neutro: si los dos
+           llevaran borde morado, ninguno se vería activo. */
+        .wiki-sb.on{background:#9B8CFA;border-color:#9B8CFA;color:#fff}
+        .wiki-sb small{display:block;font-weight:500;font-size:11px;opacity:.72;margin-top:2px;line-height:1.3}
         .wiki-g{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#9A9AA8;
           font-weight:600;padding:15px 18px 5px}
         .wiki-i{display:block;width:100%;text-align:left;border:0;background:none;cursor:pointer;
@@ -69,7 +97,11 @@ export default function Wiki() {
         @media(max-width:820px){
           .wiki-wrap{grid-template-columns:1fr;height:auto;border:0;border-radius:0}
           .wiki-idx{border-right:0;border-bottom:1px solid #E4E4EA;display:flex;flex-wrap:wrap;
-            gap:4px;padding:10px 12px}
+            gap:4px;padding:0 12px 10px}
+          .wiki-sec{position:static;width:100%;flex-direction:row;gap:6px;padding:10px 0;margin:0 -12px;
+            padding-left:12px;padding-right:12px}
+          .wiki-sb{flex:1;font-size:12.5px}
+          .wiki-sb small{display:none}
           .wiki-g{width:100%;padding:8px 4px 2px}
           /* 10px es ilegible en un teléfono. El CRM ya fijó su piso en 12
              (0.75rem) para móvil; estas cuatro se lo saltaban por venir de
@@ -90,8 +122,18 @@ export default function Wiki() {
       `}</style>
 
       <nav className="wiki-idx">
-        {GRUPOS_WIKI.map(g => {
-          const items = WIKI.filter(p => p.grupo === g);
+        <div className="wiki-sec">
+          {SECCIONES_WIKI.map(sec => (
+            <button key={sec.id} className={'wiki-sb' + (sec.id === seccion ? ' on' : '')}
+              aria-current={sec.id === seccion ? 'page' : undefined}
+              onClick={() => irASeccion(sec.id)}>
+              {sec.label}
+              <small>{sec.bajada}</small>
+            </button>
+          ))}
+        </div>
+        {GRUPOS_WIKI[seccion].map(g => {
+          const items = WIKI.filter(p => seccionDe(p) === seccion && p.grupo === g);
           if (!items.length) return null;
           return (
             <div key={g}>

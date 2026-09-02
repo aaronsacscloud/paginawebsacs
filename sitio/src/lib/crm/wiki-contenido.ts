@@ -7,8 +7,12 @@
 // Regla de contenido: cada página responde UNA pregunta y se lee sola. Si algo
 // necesita dos pantallas de scroll, probablemente son dos páginas.
 
+export type SeccionWiki = 'ventas' | 'consultores';
+
 export type PaginaWiki = {
   id: string;
+  /** Sección de primer nivel. Omitirla equivale a 'ventas'. */
+  seccion?: SeccionWiki;
   grupo: string;
   titulo: string;
   /** Aparece bajo el título, en gris. Una línea. */
@@ -19,11 +23,24 @@ export type PaginaWiki = {
   cuerpo: string;
 };
 
+/* DOS SECCIONES DE PRIMER NIVEL, no una lista con un grupo más al final.
+   Son dos manuales distintos que le hablan a dos preguntas distintas: cómo se
+   trabaja un lead, y bajo qué acuerdo trabaja un consultor. Mezclarlos dejaba
+   el acuerdo como el séptimo grupo de una lista de ocho, que es exactamente el
+   peso que NO tiene que tener. */
+export const SECCIONES_WIKI: { id: SeccionWiki; label: string; bajada: string }[] = [
+  { id: 'ventas', label: 'Procesos de venta', bajada: 'Cómo se trabaja un lead, desde que entra hasta que firma.' },
+  { id: 'consultores', label: 'Consultores', bajada: 'El acuerdo de colaboración: qué se cobra, qué se debe y cómo se mide.' },
+];
+
 /* El índice lateral es UN RECORRIDO, no un cajón de temas: quien entra a
    vender por primera vez lo lee de arriba abajo y en ese orden aprende el
    trabajo. Los títulos van sin emoji — treinta y tres iconos distintos en una
    columna se leen como ruido, no como jerarquía. */
-export const GRUPOS_WIKI = ['Empezar aquí', 'El proceso de venta', 'Los relevos', 'Las etapas', 'Hablar con el cliente', 'Después de la venta', 'Referencia'] as const;
+export const GRUPOS_WIKI: Record<SeccionWiki, readonly string[]> = {
+  ventas: ['Empezar aquí', 'El proceso de venta', 'Los relevos', 'Las etapas', 'Hablar con el cliente', 'Después de la venta', 'Referencia'],
+  consultores: ['El acuerdo', 'Compensación', 'Responsabilidades', 'Medición y reuniones'],
+};
 
 export const WIKI: PaginaWiki[] = [
   {
@@ -902,6 +919,309 @@ export const WIKI: PaginaWiki[] = [
 
 <h3>Todo queda escrito</h3>
 <p>Cada revocación y cada reapertura deja una actividad en la ficha con tu nombre — y como el inbox pinta esa misma línea de tiempo, quien atienda la conversación después ve por qué está apagada sin preguntar. Del lado de SACS queda además en su bitácora.</p>`,
+  },
+  /* ══════════════════════ SECCIÓN CONSULTORES ══════════════════════
+     El marco de colaboración puesto en operación. Una página por pregunta: si
+     alguien tiene que hacer scroll dos pantallas para saber cuándo le pagan,
+     la página está mal partida. El documento firmado vive en
+     code.sacscloud.com/colaboracion/ y ante cualquier diferencia, manda él. */
+  {
+    id: 'c-acuerdo', seccion: 'consultores', grupo: 'El acuerdo', titulo: 'Cómo funciona el acuerdo',
+    bajada: 'El mapa completo en dos minutos, antes de entrar al detalle.',
+    cuerpo: `
+<p>El acuerdo se apoya en <b>una idea</b>: se paga por sostener y hacer crecer clientes, no por haberlos cerrado una vez. Todo lo demás sale de ahí.</p>
+<div class="w-caja"><span class="w-k">La regla que gobierna todo</span>
+<p><b>La tasa es del CLIENTE, no del primer año.</b> Cada cuenta entra con un porcentaje según de dónde salió, y lo conserva en todas sus renovaciones mientras se cumplan las tres condiciones.</p></div>
+<h3>Las tres partes</h3>
+<table class="w-tab"><thead><tr><th>Parte</th><th>De qué trata</th><th>Dónde leerlo</th></tr></thead><tbody>
+<tr><td><b>Compensación</b></td><td>Qué paga cada concepto, sobre qué base se calcula y cuándo cae el dinero.</td><td>Las 5 páginas de <i>Compensación</i></td></tr>
+<tr><td><b>Responsabilidades</b></td><td>Qué le toca al consultor y qué le toca a Sacs, separado por tipo de actividad.</td><td>Las 3 páginas de <i>Responsabilidades</i></td></tr>
+<tr><td><b>Medición y reuniones</b></td><td>Con qué número se comprueba cada compromiso, y en qué junta se revisa.</td><td>Las 2 páginas de <i>Medición y reuniones</i></td></tr>
+</tbody></table>
+<h3>Las dos actividades</h3>
+<p>El acuerdo no trata igual todo el trabajo. Se divide en dos actividades con obligaciones propias de los dos lados:</p>
+<ul>
+<li><b>Cuentas activas asignadas</b> — sostener y expandir clientes que ya existen. Es lo que produce el ingreso recurrente.</li>
+<li><b>Leads de campañas</b> — atender los prospectos que Sacs compra con publicidad. Es donde el tiempo de respuesta lo decide todo.</li>
+</ul>
+<div class="w-caja w-ok"><span class="w-k">Los tres principios que resuelven las dudas</span>
+<p><b>1. Se comisiona dinero cobrado</b>, no facturado ni prometido.</p>
+<p><b>2. Lo pagado no se recalcula.</b> Cambiar el modelo no reescribe la historia.</p>
+<p><b>3. Ante un dato que falta, no se castiga.</b> Si nadie evaluó una cuenta, esa cuenta paga completo.</p></div>`,
+  },
+  {
+    id: 'c-tasas', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tasas',
+    bajada: 'Qué porcentaje paga cada concepto, según de dónde salió el cliente.',
+    cuerpo: `
+<table class="w-tab"><thead><tr><th>Concepto</th><th>Lead de Sacs</th><th>Referido</th><th>Recuperada</th><th>Ya era cliente</th></tr></thead><tbody>
+<tr><td><b>Licencia</b><br><span class="w-mut">primer año y renovaciones</span></td><td>35%</td><td>55%</td><td>70%</td><td>30%</td></tr>
+<tr><td><b>Plugins</b></td><td>30%</td><td>55%</td><td>70%</td><td>30%</td></tr>
+<tr><td><b>Personalización</b></td><td colspan="4">20% · igual para todo origen</td></tr>
+<tr><td><b>Servicios de arranque</b><br><span class="w-mut">implementación, capacitación, migración</span></td><td colspan="4">35% · igual para todo origen</td></tr>
+</tbody></table>
+<h3>Qué significa cada origen</h3>
+<table class="w-tab"><thead><tr><th>Origen</th><th>Cuándo aplica</th></tr></thead><tbody>
+<tr><td><b>Lead de Sacs</b></td><td>Llegó por los canales de marketing de la empresa y el consultor lo trabajó y cerró.</td></tr>
+<tr><td><b>Referido</b></td><td>Llegó FUERA de esos canales: lo refirió otro cliente o vino por prospección propia. Se hicieron las dos mitades del trabajo.</td></tr>
+<tr><td><b>Recuperada</b></td><td>Había dejado de usar el sistema y se logró reactivar. Es el trabajo más difícil que existe en ventas.</td></tr>
+<tr><td><b>Ya era cliente</b></td><td>Cuenta preexistente de Sacs que el consultor empieza a atender. No hubo captación, pero sí trabajo de sostenerla.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Por qué la personalización paga menos</span>
+<p>El grueso de ese monto se va en horas del equipo de desarrollo, no en captación. Se paga el trabajo de vender, no el de construir. Por eso su tasa no depende del origen.</p></div>
+<h3>Conceptos extraordinarios</h3>
+<table class="w-tab"><thead><tr><th>Concepto</th><th>Tasa</th><th>Detalle</th></tr></thead><tbody>
+<tr><td>Suscripción al canal de partners</td><td><b>35%</b></td><td>Alta y renovaciones de lo que paga cada partner por pertenecer al canal.</td></tr>
+<tr><td>Ventas de un partner reclutado</td><td><b>10%</b></td><td>Adicional, a cargo de Sacs. <b>No</b> se le descuenta al partner.</td></tr>
+<tr><td>Venta del CRM</td><td><b>90%</b></td><td>El 10% restante va a mantenimiento y servidores del portal.</td></tr>
+<tr><td>Consultoría propia</td><td><b>100%</b></td><td>Sacs no retiene nada. Los viáticos corren por cuenta del consultor.</td></tr>
+</tbody></table>
+<div class="w-caja w-warn"><span class="w-k">De quién es cada cuenta</span>
+<p>El origen se fija <b>una sola vez</b>, al registrar al cliente, y <b>el CRM es la única fuente de verdad</b>. Un prospecto sin registrar previo se clasifica como lead de Sacs (35%), y eso no admite corrección después.</p>
+<p>Entre 35% y 55% hay veinte puntos: registrar toma un minuto y vale esa diferencia.</p></div>`,
+  },
+  {
+    id: 'c-calculo', seccion: 'consultores', grupo: 'Compensación', titulo: 'Cómo se calcula un pago',
+    bajada: 'La cadena completa, en el orden en que se explica ante un reclamo.',
+    cuerpo: `
+<p>Siempre el mismo orden, y <b>nunca sobre el monto bruto</b>:</p>
+<div class="w-caja"><span class="w-k">Los cuatro pasos</span>
+<p><b>1.</b> Se parte del monto <b>cobrado</b> al cliente. No lo facturado ni lo prometido: lo que entró.</p>
+<p><b>2.</b> Se descuenta según la cuenta donde cayó: <b>16%</b> si fue la corporativa (IVA que se entera al SAT) o <b>6%</b> si fue la pagadora (costo de dispersión).</p>
+<p><b>3.</b> Sobre <b>esa base</b> se aplica el porcentaje del cliente.</p>
+<p><b>4.</b> Si la venta se cerró con más de 35% de descuento, el excedente se resta de la comisión.</p></div>
+<div class="w-caja w-ok"><span class="w-k">Ejemplo</span>
+<p>Licencia de <b>$50,000</b> en un cliente referido (55%), cobrada en la cuenta corporativa:</p>
+<p>$50,000 − 16% = <b>$42,000</b> de base · × 55% = <b>$23,100</b> de comisión.</p></div>
+<h3>Dónde se ve el desglose</h3>
+<p>En <b>Comisiones → Periodo</b>, cada línea escribe su propia aritmética debajo del concepto. Cuando alguien reclama, la respuesta está en la fila y no hay que reconstruirla.</p>
+<div class="w-caja"><span class="w-k">Qué dice una línea</span>
+<p><code>$65,000 cobrado · −16% IVA = $54,600 · × 55% = $30,030</code></p></div>
+<h3>Cuando algo no cuadra</h3>
+<ul>
+<li><b>Comisión en cero con distintivo ámbar</b> — el SKU vendido no tiene tarifa configurada en el modelo. No es un error del cálculo: es un hueco de configuración, y por eso se ve en vez de esconderse.</li>
+<li><b>«Sin SKU»</b> — la suscripción no tiene producto asignado, así que no hay a qué colgarle un porcentaje. Se asigna a mano en la suscripción.</li>
+<li><b>Distintivo «Tasa reducida»</b> — esa renovación no cumplió una de las tres condiciones. La línea dice cuál.</li>
+</ul>`,
+  },
+  {
+    id: 'c-cobro', seccion: 'consultores', grupo: 'Compensación', titulo: 'Cuándo y cómo se paga',
+    bajada: 'Los tiempos, los cortes y qué pasa si el dinero se va para atrás.',
+    cuerpo: `
+<h3>Los tiempos</h3>
+<ul>
+<li><b>1 o 2 días hábiles</b> desde que el cliente paga. El reloj no arranca al firmar ni al facturar: arranca cuando el dinero entra.</li>
+<li>Si el cliente paga en parcialidades, se comisiona <b>cada parcialidad</b> conforme se cobra.</li>
+<li>Los clientes con pago mensual generan comisión <b>cada mes que pagan</b>.</li>
+<li>Los pagos chicos —bugs, mejoras, reseñas— se acumulan y se liquidan en <b>corte quincenal</b>.</li>
+</ul>
+<h3>El estado de cuenta</h3>
+<p>Cada quincena llega el detalle: qué se cobró, de qué cliente, a qué tasa, con qué descuentos y qué ajustes. Es el documento con el que se revisa un pago, y sale de <b>Comisiones → Periodo</b>.</p>
+<h3>Si el dinero se va para atrás</h3>
+<div class="w-caja w-warn"><span class="w-k">Cancelación, reembolso o pago rebotado</span>
+<p>La comisión correspondiente <b>se descuenta del siguiente corte</b>. <b>Nunca</b> se pide devolver efectivo.</p>
+<p>Es la contraparte de que se pague en dos días sin esperar a ver si el cliente se queda: el pago es rápido porque el ajuste es posible.</p></div>
+<div class="w-caja"><span class="w-k">Si ya se había pagado</span>
+<p>Una comisión ya liquidada <b>no se borra</b> —el dinero ya salió—: aparece como <i>ajuste pendiente</i> y se resta del corte siguiente. El sistema lo reporta solo en el recálculo de cada madrugada.</p></div>
+<h3>Los estados de una línea</h3>
+<table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
+<tr><td><b>Calculada</b></td><td>El sistema la generó. Se recalcula cada noche si algo cambia.</td></tr>
+<tr><td><b>Aprobada</b></td><td>Revisada y lista para pagar. Todavía se recalcula.</td></tr>
+<tr><td><b>Pagada</b></td><td>Liquidada. <b>Nunca se vuelve a recalcular</b>: la historia no se reescribe.</td></tr>
+<tr><td><b>Cancelada</b></td><td>Anulada a mano. No suma y el recálculo no la revive.</td></tr>
+</tbody></table>`,
+  },
+  {
+    id: 'c-descuentos', seccion: 'consultores', grupo: 'Compensación', titulo: 'Descuentos y su tope',
+    bajada: 'Hasta dónde se puede negociar sin costo, y qué pasa después.',
+    cuerpo: `
+<ul>
+<li>Hasta <b>35%</b> sobre el precio de lista, <b>sin pedir permiso</b>. Es margen propio para cerrar.</li>
+<li>Arriba de 35% se puede dar, pero el excedente <b>sale de la comisión de esa venta</b>.</li>
+<li>Solo aplica a <b>licencia anual y personalización</b>. Plugins y servicios de arranque van a precio de lista.</li>
+<li>El precio de lista es el <b>publicado en el sitio web</b> al momento de la venta.</li>
+</ul>
+<div class="w-caja w-ok"><span class="w-k">Cómo se calcula el excedente</span>
+<p>Lista <b>$100,000</b> cerrada al <b>40%</b>: el cliente paga $60,000 y los <b>$5,000</b> del 5% extra salen de la comisión.</p>
+<p>La fórmula es <code>cobrado × (descuento − 35) ÷ (100 − descuento)</code>, expresada contra lo cobrado y no contra el precio de lista, para que funcione igual si el cliente paga en parcialidades.</p></div>
+<div class="w-caja w-warn"><span class="w-k">El tiempo gratis va aparte</span>
+<p>Los meses de uso gratuito que se ofrecen para rescatar una cuenta <b>no cuentan</b> contra este 35%: se negocian caso por caso y los autoriza Sacs. Es la puerta trasera del descuento, y por eso está dicho.</p></div>
+<div class="w-caja"><span class="w-k">La decisión es del consultor, y es legítima</span>
+<p>A veces vale la pena ceder cinco mil para no perder un cliente de sesenta. El acuerdo no lo prohíbe: solo dice quién lo paga.</p></div>`,
+  },
+  {
+    id: 'c-condiciones', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tres condiciones de la renovación',
+    bajada: 'Lo que hay que cumplir para que una renovación pague la tasa completa.',
+    cuerpo: `
+<p>La tasa de un cliente es <b>de por vida</b>, pero no es automática: se revalida en cada renovación. Hay que cumplir <b>las tres</b>.</p>
+<table class="w-tab"><thead><tr><th></th><th>Condición</th><th>La vara</th></tr></thead><tbody>
+<tr><td><b>A</b></td><td><b>Seguimiento real</b></td><td>Contacto y acompañamiento durante el año, reflejados en el CRM. No basta con aparecer al momento de renovar.</td></tr>
+<tr><td><b>B</b></td><td><b>Expansión del 30%</b></td><td>Venderle al año al menos el <b>30% de su plan anual vigente</b> en vitalicias, plugins o servicios. La renovación de la licencia <b>no cuenta</b>.</td></tr>
+<tr><td><b>C</b></td><td><b>Cobranza puntual</b></td><td>La anualidad se cobra <b>antes del vencimiento, el mismo día, o máximo 5 días naturales después</b>.</td></tr>
+</tbody></table>
+<div class="w-caja w-ok"><span class="w-k">Ejemplo de la condición B</span>
+<p>Cliente con plan anual de <b>$60,000</b>: hay que venderle al menos <b>$18,000</b> en vitalicias, plugins o servicios durante el año.</p>
+<p>Se mide contra el plan <b>vigente</b> y no contra el histórico acumulado: una cuenta vieja no se vuelve imposible de cumplir solo por llevar años comprando.</p></div>
+<div class="w-caja w-ok"><span class="w-k">Ejemplo de la condición C</span>
+<p>Anualidad que vence el <b>25 de julio</b>. Cobrada el 20 o el 25: a tiempo. Cobrada el 30: dentro del margen. Cobrada el 10 de agosto: fuera de tiempo.</p>
+<p>Se mide <b>por anualidad</b>, no por año: una cuenta puede ir bien y aun así haber cobrado tarde una renovación concreta. Solo esa se ve afectada.</p></div>
+<h3>Si no se cumplen</h3>
+<ul>
+<li>Esa renovación se comisiona al <b>15%</b>, cualquiera que sea la tasa del cliente.</li>
+<li><b>La cuenta no se pierde.</b> La tasa completa vuelve en la siguiente renovación que sí cumpla.</li>
+<li>Aplica a toda renovación, sin excepción por tasa.</li>
+</ul>
+<div class="w-caja w-bad"><span class="w-k">Sin evaluar no se castiga</span>
+<p>La condición B se calcula sola y la C sale de la fecha del pago, pero <b>la A la marca una persona</b>. Si nadie la marcó, la cuenta <b>paga completo</b>.</p>
+<p>Bajar una comisión por un dato que nadie capturó es peor que no tener la regla: cobra de menos por un descuido administrativo y nadie se entera hasta el reclamo.</p></div>
+<p class="w-mut">Se revisa en <b>Comisiones → Renovaciones</b>.</p>`,
+  },
+  {
+    id: 'c-act1', seccion: 'consultores', grupo: 'Responsabilidades', titulo: 'Actividad 1 · Cuentas asignadas',
+    bajada: 'Sostener y expandir un cliente que ya existe. Es lo que produce el ingreso recurrente.',
+    cuerpo: `
+<h3>Lo que pone Sacs</h3>
+<ul>
+<li><b>La cuenta asignada y registrada</b> en el CRM, con su consultor y su origen.</li>
+<li><b>El contexto completo</b>: qué plan tiene, qué módulos usa, su historial de pagos, sus tickets y su situación de cobranza. <b>No se debe reconstruir preguntando.</b></li>
+<li><b>El sistema de seguimiento</b>: dónde registrar cada sesión, cada acuerdo y cada oportunidad.</li>
+<li><b>La medición trimestral</b> de uso y de ventas, tomada del propio sistema.</li>
+</ul>
+<h3>Lo que le toca al consultor</h3>
+<table class="w-tab"><thead><tr><th>Compromiso</th><th>Qué significa en concreto</th></tr></thead><tbody>
+<tr><td><b>Presentarse antes de la renovación</b></td><td>No el mes del vencimiento: con tiempo para trabajar la cuenta. Al cliente le tiene que quedar claro que el consultor es su <b>punto de contacto</b> para cualquier tema de flujo de trabajo.</td></tr>
+<tr><td><b>Conocer la cuenta antes de sentarse</b></td><td>Qué uso le da al sistema, qué plan tiene, qué módulos toca y cuáles no. Llegar a preguntar lo que el CRM ya dice es tiempo del cliente.</td></tr>
+<tr><td><b>Una sesión cada dos semanas</b></td><td>Mínimo, por WhatsApp o videollamada, por cada cuenta asignada. Queda registrada.</td></tr>
+<tr><td><b>Que el uso crezca</b></td><td>Y que se pueda comprobar: se compara el trimestre contra el anterior. Que el cliente use más el sistema es <b>la evidencia de que el trabajo ocurrió</b>.</td></tr>
+<tr><td><b>Expandir la cuenta un 30%</b></td><td>Del plan anual vigente, en vitalicias, plugins o servicios.</td></tr>
+<tr><td><b>Que lo vendido se use</b></td><td>Un plugin contratado y nunca abierto no expandió nada: es una baja esperando su fecha.</td></tr>
+<tr><td><b>Cobrar la anualidad</b></td><td>O empujar activamente a que el cliente pague, dentro del margen de 5 días.</td></tr>
+</tbody></table>
+<div class="w-caja w-warn"><span class="w-k">La revisión trimestral, y cómo se pierde una cuenta</span>
+<p>Cada <b>3 meses</b> se revisa contra dos preguntas: <b>¿creció en uso? ¿creció en ventas?</b></p>
+<p><b>Dos revisiones seguidas sin cumplir y la cuenta se retira.</b> Desde ese momento deja de generar comisión; se liquidan los pagos ya cobrados y la cuenta se reasigna.</p>
+<p>Una sola revisión floja <b>no</b> cuesta la cuenta. Es a propósito: da margen para corregir el trimestre siguiente.</p></div>`,
+  },
+  {
+    id: 'c-act2', seccion: 'consultores', grupo: 'Responsabilidades', titulo: 'Actividad 2 · Leads de campañas',
+    bajada: 'Sacs compra el prospecto. Lo que pasa en las horas siguientes decide si se convierte o se tira.',
+    cuerpo: `
+<h3>Qué cuenta como lead comprometido</h3>
+<div class="w-caja"><span class="w-k">Las tres condiciones, juntas</span>
+<p>Pertenece al <b>nicho de Sacscloud</b> · <b>manifiesta querer contratar</b> · opera <b>entre 1 y 50 sucursales</b>.</p>
+<p>Un contacto que no las cumple <b>no cuenta</b> contra el compromiso mensual de Sacs, y tampoco cuenta en contra del consultor si no prospera.</p></div>
+<h3>Lo que pone Sacs</h3>
+<ul>
+<li><b>Las campañas y su presupuesto.</b></li>
+<li><b>30 leads calificados al mes</b> del perfil de arriba, entregados en el CRM con su origen y su campaña.</li>
+<li><b>La atención inicial por IA</b>, que responde las dudas de entrada y ordena al prospecto. <b>Filtra y agenda; no vende.</b></li>
+<li><b>Ajustar la estrategia</b> con lo que salga de las reuniones de campañas.</li>
+</ul>
+<h3>Lo que le toca al consultor</h3>
+<table class="w-tab"><thead><tr><th>Compromiso</th><th>Qué significa en concreto</th></tr></thead><tbody>
+<tr><td><b>Una llamada en 24 horas</b></td><td>Horas <b>naturales</b>, no hábiles: un lead que entra el viernes se llama el sábado. Hasta <b>3 intentos registrados</b> en canales distintos. <b>No es «contactar»: es llamar.</b></td></tr>
+<tr><td><b>Calificar según interés real</b></td><td>No según lo que convenga al embudo. Un lead marcado como caliente sin serlo desvía la campaña siguiente hacia el público equivocado.</td></tr>
+<tr><td><b>Calificar los descartados</b></td><td>Con su motivo. Un descarte razonado le sirve a la campaña; uno abandonado sin calificar no le sirve a nadie y se paga igual.</td></tr>
+<tr><td><b>Entrar donde la IA no llega</b></td><td>Cuando el prospecto pregunta algo de fondo que la automatización no resuelve, la explicación la da el consultor. <b>Ahí es donde un lead deja de ser un formulario.</b></td></tr>
+<tr><td><b>Atender las reuniones</b></td><td>En tiempo y forma. Una reunión a la que no se llega quema un lead pagado y no se recupera.</td></tr>
+</tbody></table>
+<h3>El compromiso de volumen</h3>
+<div class="w-caja"><span class="w-k">30 al mes, mientras vendan</span>
+<p>Los 30 se sostienen mientras cada camada produzca al menos <b>$100,000 en ventas</b>, medidos <b>a los 90 días</b> de entregada.</p>
+<p>Los 30 de enero se evalúan al <b>30 de abril</b>. Se mide por camada y no por mes calendario porque una venta B2B rara vez cierra en el mes en que entró el prospecto: medirlo así haría fallar el compromiso siempre, aunque todo estuviera bien.</p></div>
+<div class="w-caja w-ok"><span class="w-k">Si una camada no llega</span>
+<p><b>El envío se mantiene.</b> Se analiza en la revisión: si el problema estuvo en la campaña lo corrige Sacs, si estuvo en el seguimiento lo corrige el consultor. El compromiso no se corta al primer tropiezo.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Si los leads se apilan sin trabajar</span>
+<p>Sacs <b>deja de asignar leads</b> hasta ponerse al corriente. No es una sanción: es dejar de gastar en prospectos que no se están atendiendo.</p></div>
+<p class="w-mut">El volumen <b>crece</b> cuando los números lo justifican, y se acuerda en el corte de cada 4 meses. La condición para subir de 30 es sencilla: <b>comprobar que se vende</b>.</p>`,
+  },
+  {
+    id: 'c-sacs', seccion: 'consultores', grupo: 'Responsabilidades', titulo: 'Lo que Sacs debe cumplir',
+    bajada: 'La contraparte. Cada obligación del consultor solo funciona si esto se cumple.',
+    cuerpo: `
+<p>Cada cláusula del acuerdo le exige algo al consultor. Estas son las obligaciones que Sacs asume para que eso sea posible.</p>
+<table class="w-tab"><thead><tr><th>Obligación</th><th>Plazo</th><th>Detalle</th></tr></thead><tbody>
+<tr><td><b>El CRM y los accesos</b></td><td>Continuo</td><td>Operando, con lo necesario para trabajar y registrar.</td></tr>
+<tr><td><b>El proceso, por escrito</b></td><td>Antes de exigir</td><td>Venta, renovación y cada concepto que se comisiona. <b>Si algo no tiene proceso claro, Sacs lo documenta antes de exigir resultados sobre él.</b></td></tr>
+<tr><td><b>Que la tecnología cumpla</b></td><td>Continuo</td><td>El sistema hace aquello por lo que se vendió. Cuando no, corregirlo es de Sacs y <b>no consume tiempo ni comisión</b> del consultor.</td></tr>
+<tr><td><b>Entregar en fecha</b></td><td>El día estipulado <b>o antes</b></td><td>Nunca después. Si una fecha va a moverse, se avisa <b>antes</b> de que llegue, no el mismo día.</td></tr>
+<tr><td><b>Video de cada entrega</b></td><td>Con la entrega</td><td>Mostrándolo funcionando y abierto a retroalimentación. <b>Nada se da por entregado solo porque esté liberado.</b></td></tr>
+<tr><td><b>Cuatro reuniones al mes</b></td><td>Mensual</td><td>Capacitación, dudas, revisión de cuentas. Las convoca Sacs.</td></tr>
+<tr><td><b>Precios vigentes</b></td><td>Aviso previo</td><td>Por escrito <b>antes</b> de cualquier cambio de lista: el margen de descuento se mide contra ese precio.</td></tr>
+<tr><td><b>Confirmar lo que no se puede prometer solo</b></td><td><b>2 días hábiles</b></td><td>Fechas de desarrollo, funciones que no existen, alcances de personalización. Sin esa respuesta el consultor no puede cerrar.</td></tr>
+<tr><td><b>Dictaminar fallas y mejoras</b></td><td><b>5 días hábiles</b></td><td>Un reporte sin dictamen no se paga nunca, así que el plazo es parte del programa.</td></tr>
+<tr><td><b>El soporte técnico</b></td><td>Continuo</td><td>Atendido <b>por el chat</b>, y el cliente tiene que sentirlo así. Ver la caja de abajo.</td></tr>
+<tr><td><b>Visibilidad de vencimientos</b></td><td>Continuo</td><td>Qué anualidades vencen y cuáles están impagas, con anticipación para gestionarlas.</td></tr>
+<tr><td><b>Respetar la atribución</b></td><td>Continuo</td><td>Una cuenta asignada no se reasigna ni se trabaja por fuera sin avisar primero.</td></tr>
+<tr><td><b>Pagar y rendir cuentas</b></td><td>1-2 días · quincenal</td><td>El pago en 1 o 2 días hábiles y el estado de cuenta cada quincena.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">El soporte, y por qué importa tanto</span>
+<p>Sacs se encarga de que cada cliente <b>conozca el canal, se sienta cómodo usándolo y reciba respuesta clara</b>. El propósito es que lo que el consultor trabaja junto al cliente sea <b>consultoría pura</b>, no soporte.</p>
+<p>Si una cuenta empieza a llevarle fallas técnicas al consultor en vez de al chat, <b>eso no es carga de él</b>: es señal de que el canal de soporte no está cumpliendo, y corregirlo es de Sacs.</p></div>`,
+  },
+  {
+    id: 'c-medicion', seccion: 'consultores', grupo: 'Medición y reuniones', titulo: 'Cómo se mide todo',
+    bajada: 'Cada compromiso con su número y el lugar del CRM donde se ve.',
+    cuerpo: `
+<p>Sin una vara, un compromiso es una intención. Cada renglón dice <b>dónde se ve el número</b> que lo comprueba.</p>
+<h3>Cuentas asignadas</h3>
+<table class="w-tab"><thead><tr><th>Compromiso</th><th>De quién</th><th>Cómo se mide</th><th>Dónde se ve</th></tr></thead><tbody>
+<tr><td>Cuenta asignada con su origen</td><td><b>Sacs</b></td><td>% de cuentas con consultor y origen</td><td>Comisiones → Atribución</td></tr>
+<tr><td>Contexto completo de la cuenta</td><td><b>Sacs</b></td><td>Plan, módulos, pagos, tickets y cobranza en la ficha</td><td>Clientes → ficha 360</td></tr>
+<tr><td>Presentarse antes de la renovación</td><td>Consultor</td><td>Primer contacto vs. fecha de vencimiento</td><td>Clientes → actividades</td></tr>
+<tr><td>Sesión cada dos semanas</td><td>Consultor</td><td>Sesiones registradas ÷ semanas del periodo</td><td><span class="w-mut">falta instrumentar</span></td></tr>
+<tr><td>Que el uso crezca</td><td>Consultor</td><td>Uso del trimestre contra el anterior</td><td>Clientes → uso · snapshots</td></tr>
+<tr><td>Expandir 30% del plan anual</td><td>Consultor</td><td>Vitalicias + plugins + servicios ÷ plan anual</td><td>Comisiones → Renovaciones</td></tr>
+<tr><td>Que lo vendido se use</td><td>Consultor</td><td>Módulos contratados que registran actividad</td><td>Clientes → uso</td></tr>
+<tr><td>Cobrar a tiempo</td><td>Consultor</td><td>Días entre vencimiento y cobro, contra el margen de 5</td><td>Comisiones → Periodo</td></tr>
+</tbody></table>
+<h3>Leads de campañas</h3>
+<table class="w-tab"><thead><tr><th>Compromiso</th><th>De quién</th><th>Cómo se mide</th><th>Dónde se ve</th></tr></thead><tbody>
+<tr><td>30 leads al mes del perfil</td><td><b>Sacs</b></td><td>Leads del mes que cumplen las tres condiciones</td><td>Leads → origen campaña</td></tr>
+<tr><td>Atención inicial por IA</td><td><b>Sacs</b></td><td>Leads con primera respuesta automática</td><td>Conversaciones</td></tr>
+<tr><td>Llamada en 24 horas</td><td>Consultor</td><td>Primera llamada vs. alta del lead</td><td><span class="w-mut">falta instrumentar</span></td></tr>
+<tr><td>Calificar según interés real</td><td>Consultor</td><td>% de leads calificados / sin calificar</td><td>Leads → estatus</td></tr>
+<tr><td>Descartados con motivo</td><td>Consultor</td><td>% de descartados que traen motivo</td><td>Leads → motivos</td></tr>
+<tr><td>Atender las reuniones</td><td>Consultor</td><td>Reuniones atendidas ÷ agendadas</td><td>Reuniones</td></tr>
+<tr><td>$100,000 por camada a 90 días</td><td><b>Ambos</b></td><td>Ventas cerradas de esa camada al día 90</td><td>Corte cuatrimestral</td></tr>
+</tbody></table>
+<h3>Obligaciones de Sacs</h3>
+<table class="w-tab"><thead><tr><th>Compromiso</th><th>Cómo se mide</th><th>Dónde se ve</th></tr></thead><tbody>
+<tr><td>Entregar en fecha</td><td>Fecha de entrega vs. fecha de compromiso</td><td>Consultoría → mejoras</td></tr>
+<tr><td>Video con cada entrega</td><td>Entregas que traen video</td><td>Consultoría → mejoras</td></tr>
+<tr><td>Confirmar en 2 días hábiles</td><td>Fecha de la pregunta vs. la respuesta</td><td>Canal del proyecto</td></tr>
+<tr><td>Dictaminar en 5 días hábiles</td><td>Fecha del reporte vs. el dictamen</td><td>Consultoría → mejoras</td></tr>
+<tr><td>Soporte por el chat</td><td>Tickets resueltos sin pasar por el consultor</td><td>Soporte</td></tr>
+<tr><td>Pagar en 1-2 días</td><td>Días entre el cobro y el pago de la comisión</td><td>Comisiones → Periodo</td></tr>
+</tbody></table>
+<div class="w-caja w-ok"><span class="w-k">Cómo va Sacs hoy en entregas</span>
+<p>De <b>22 mejoras entregadas</b> con fecha de compromiso registrada, <b>8 salieron a tiempo</b>. Es el primer número que este acuerdo pone bajo la lupa, y el que la reunión semanal debería mover.</p></div>
+<div class="w-caja w-bad"><span class="w-k">Lo que todavía NO se mide solo</span>
+<p>Dos compromisos no tienen dónde registrarse: <b>la sesión cada dos semanas</b> y <b>la llamada en 24 horas</b>. El CRM guarda actividades de WhatsApp, tickets y cambios de estatus, pero <b>no tiene un tipo de actividad para «llamada» ni para «sesión»</b>.</p>
+<p>Mientras no se instrumente, esos dos se revisan a mano en la reunión. Vale más decirlo que fingir que hay un número detrás.</p></div>`,
+  },
+  {
+    id: 'c-reuniones', seccion: 'consultores', grupo: 'Medición y reuniones', titulo: 'Las reuniones',
+    bajada: 'Tres ritmos distintos. Cada uno asegura una parte del acuerdo.',
+    cuerpo: `
+<p>El acuerdo se sostiene en tres reuniones con propósitos que <b>no se mezclan</b>. Confundirlas es la forma más rápida de que ninguna sirva: la semanal se llena de capacitación, la mensual se vuelve un reporte y el corte de cuatro meses no alcanza a decidir nada.</p>
+<table class="w-tab"><thead><tr><th>Reunión</th><th>Cadencia</th><th>Para qué existe</th><th>Qué se revisa</th></tr></thead><tbody>
+<tr><td><b>De acompañamiento</b></td><td><b>4 al mes</b></td><td>Que el consultor tenga con qué trabajar</td><td>Capacitación, dudas del sistema, revisión de cuentas y cualquier tema relevante. Las convoca Sacs.</td></tr>
+<tr><td><b>Semanal de campañas</b></td><td><b>Semanal</b></td><td>Corregir mientras el dinero de la campaña corre</td><td>Qué leads entraron, cuáles se llamaron a tiempo, dónde se atoran, y <b>qué cambiar ya</b> en la campaña, el mensaje o el seguimiento.</td></tr>
+<tr><td><b>Corte de campañas</b></td><td><b>Cada 4 meses</b></td><td>Decidir la estrategia y el volumen</td><td>Leads recibidos, llamados en 24 h, reuniones, descalificados y por qué, oportunidades y ventas. La <b>tendencia</b>, no el día.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">La diferencia entre la semanal y el corte</span>
+<p>La semanal es <b>operativa</b>: se mira la semana y se cambia algo el lunes. El corte mira <b>la tendencia</b>: qué campaña convierte, si el compromiso de 30 leads se sostiene y si toca subirlo.</p>
+<p>Una no sustituye a la otra. Sin la semanal, un mes malo se descubre cuatro meses tarde; sin el corte, se corrigen detalles sin nunca revisar la estrategia.</p></div>
+<h3>Qué asegura cada una</h3>
+<ul>
+<li><b>Las 4 mensuales</b> aseguran que el consultor no se quede atorado: son la contraparte de exigirle que conozca la cuenta, sepa el proceso y pueda responder al cliente.</li>
+<li><b>La semanal</b> asegura el compromiso de leads de los dos lados: que Sacs mande los 30 del perfil, y que se llamen dentro de las 24 horas.</li>
+<li><b>El corte cuatrimestral</b> asegura que el volumen crezca cuando debe. Es la única reunión donde se decide subir de 30, y la condición es <b>comprobar que se vende</b>.</li>
+</ul>
+<div class="w-caja w-warn"><span class="w-k">La revisión que no es una reunión</span>
+<p>Aparte de las tres, <b>cada 3 meses</b> se revisa cada cuenta asignada contra dos preguntas: ¿creció en uso? ¿creció en ventas? Esa revisión no necesita junta —sale del propio sistema— pero es la que puede costar la cuenta: <b>dos seguidas sin cumplir y se retira</b>.</p></div>
+<div class="w-caja w-ok"><span class="w-k">El documento completo</span>
+<p>Estas páginas son el marco puesto en operación. El documento firmado, con sus 16 cláusulas y su tabla de casos de aplicación, vive en <code>code.sacscloud.com/colaboracion/</code>. Ante cualquier diferencia, <b>manda el documento</b>.</p></div>`,
   },
   {
     id: 'toques', grupo: 'Referencia', titulo: 'Los tres toques',
