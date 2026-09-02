@@ -135,7 +135,20 @@ clic? S9.2 ¿Hora de la revisión (8:00) y ¿te llega resumen por WhatsApp?
 - S7.2 Cada intento del ciclo usa un ÁNGULO DISTINTO (nunca se repite en el mismo ciclo): repreguntar → dato
   de valor → llamada rápida; el medidor nocturno ordena los que más responden.
 
-## Plan por fases (después de tus respuestas)
+## Decisiones tomadas (ronda 4 · 2026-09-02)
+- S8.1 Presupuesto de IA: $300 USD al mes. S8.2 Al 80 % ($240): SOLO AVISO (Sistema + WhatsApp); nada cambia solo.
+- S9.1 Propuestas de la Revisión diaria con RAMPA: al inicio con clic; tras 20 aceptadas seguidas sin cambios,
+  las de bajo riesgo (mensaje extra, cambiar ángulo, adjunto) salen solas con ventana de veto; descalificar y
+  llamada SIEMPRE con clic. S9.2 Corre a las 8:00 CDMX y manda resumen por WhatsApp al dueño con liga a la pestaña.
+
+## Plan por fases (CERRADO con las 4 rondas · orden de construcción)
+F1 Promociones vigentes (S6) + corrección de planes.ts · F2 Toque de cierre de ventana solo con pregunta nuestra
+sin responder (S1) + estado esperando reunión + mensaje de preparación 24 h (S3) · F3 «Llamada discovery»:
+tipo de reunión de 15 min desde las 11:00 y acción del agente para agendarla (S7) · F4 Índice de vida + sección
+Calificación diaria con rampa + pestaña Descalificados con fundamentos (S2, S7) · F5 Consumo con presupuesto
+$300 y aviso al 80 % (S8) · F6 Revisión diaria 8:00 con propuestas y resumen por WhatsApp (S9) · F7 Familias de
+plantillas por momento creadas por el agente + tablero (S4) · F8 Candado explícito de cliente (S5).
+Cada fase entra con su lección en LECCIONES-TI.md y su caso en PRUEBAS-AGENTE.md.
 F1 Índice de vida + sección «Calificación» diaria (S2, S7 pestaña descalificados) · F2 Toque de cierre de
 ventana + estado esperando_reunión (S1, S3) · F3 Promociones vigentes (S6) · F4 Familias de plantillas y
 tablero (S4) · F5 Consumo (S8) · F6 Revisión diaria con propuestas (S9) · F7 Candado cliente explícito (S5).
