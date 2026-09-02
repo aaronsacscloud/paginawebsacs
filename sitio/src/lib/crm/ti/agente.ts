@@ -107,8 +107,10 @@ ${o.evitar ? `LO QUE HAY QUE EVITAR (del dueño): ${o.evitar}` : ''}
 ${o.enDos ? 'FORMATO: en DOS mensajes de WhatsApp (el primero con la respuesta, el segundo con el siguiente paso o la pregunta), separados por una línea que contenga solo ---.' : 'FORMATO: un solo mensaje de WhatsApp.'}
 ${o.adjuntos?.length ? `ADJUNTOS QUE EL DUEÑO ELIGIÓ PARA ESTE MOMENTO: ${o.adjuntos.map(a => `${a.tipo} «${a.nombre}»`).join(', ')} (el texto debe entenderse sin ellos y puede referirlos con naturalidad).` : ''}
 Devuelve SOLO JSON: {"mensaje": "la respuesta final tal como saldría por WhatsApp", "que_cambie": "en UNA línea, qué cambiaste respecto a la original y por qué (así el dueño ve que entendiste su criterio)"}`;
-  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1200, system, messages: [{ role: 'user', content: user }] });
-  const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
+  let r: any;
+  try { r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1200, system, messages: [{ role: 'user', content: user }] }); }
+  catch (e: any) { const m = String(e?.error?.error?.message || e?.message || e); await avisarSiSinCredito(m); throw new Error(m); }
+  const t = (r.content.find((b: any) => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
   let out: any = null;
   try { out = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { out = null; }
@@ -357,7 +359,7 @@ export async function proponerRespuestas(): Promise<any> {
       }
       await log({ accion: 'agente_propone', contact_id: cid, contenido: s.mensaje, costo: d.costo, razon: s.objetivo, detalle: { estado: s.estado, interes: s.interes, ventana_min: ventana } });
       res.propuestos++;
-    } catch (e: any) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: String(e?.message || e) }); }
+    } catch (e: any) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: String(e?.message || e) }); await avisarSiSinCredito(String(e?.message || e)); }
   }
   await guardarMarca(new Date(marcaSegura));
   return res;
@@ -427,6 +429,12 @@ async function callarSilencioPendiente(contactId: string, motivo: string) {
 /** Aviso del SISTEMA en la campana del CRM (pestaña «Sistema»): qué pasó y qué hacer, con clic al hilo. */
 async function avisoSistema(o: { tipo: string; nivel: 'info' | 'alerta' | 'urgente'; clave: string; titulo: string; detalle: string; que_hacer: string; contact_id?: string | null; conversation_id?: string | null; extra?: any }) {
   await notificar({ clave: o.clave, tipo: o.tipo, nivel: o.nivel, titulo: o.titulo, detalle: o.detalle, metadata: { origen: 'agente', que_hacer: o.que_hacer, contact_id: o.contact_id || null, conversation_id: o.conversation_id || null, ...(o.extra || {}) } }).catch(() => false);
+}
+
+/** Si la API de IA rechaza por saldo/facturación, el agente queda mudo: aviso urgente en la pestaña Sistema (uno por día). */
+async function avisarSiSinCredito(msg: string) {
+  if (!/credit balance|billing|insufficient_quota|quota exceeded|payment required|402/i.test(msg)) return;
+  await avisoSistema({ tipo: 'sistema_ia_sin_credito', nivel: 'urgente', clave: `sistema_ia_sin_credito:${new Date().toISOString().slice(0, 10)}`, titulo: 'El agente no puede pensar: la cuenta de Anthropic se quedó sin crédito', detalle: `La API respondió: ${msg.slice(0, 160)}. Mientras tanto NO se proponen respuestas ni se reescriben ejemplos; los leads que escriban quedan sin contestar por el agente.`, que_hacer: 'Entra a console.anthropic.com → Plans & Billing y recarga crédito (o activa auto-recarga). El agente retoma solo en el siguiente tick.' });
 }
 
 /**
