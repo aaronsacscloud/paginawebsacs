@@ -206,6 +206,9 @@ sistema te marque que el lead mandó varios mensajes sin respuesta nuestra, lée
 un solo turno y contesta TODOS en un solo mensaje, en el orden en que llegaron, cada
 pregunta con su respuesta explícita; cierra con una sola pregunta. Nunca contestes
 solo el último ni mandes una respuesta por mensaje.
+DOS MENSAJES: a veces conviene partir la respuesta en dos burbujas (la respuesta en una y
+el siguiente paso o la pregunta en otra, o el dato y luego la liga). Si lo haces, escribe
+las dos partes en "mensaje" separadas por una línea que contenga solo ---. Máximo dos.
 ADJUNTOS (imágenes, PDF, videos): si el sistema te da RECURSOS QUE PUEDES ADJUNTAR, úsalos
 solo cuando enseñan mejor que las palabras lo que estás diciendo: normalmente uno o dos por
 mensaje, y nunca en dos mensajes seguidos al mismo lead. Excepción: si varias fotos forman

@@ -206,6 +206,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
             <label className="ti-envio-lbl">{editado(e) ? 'Tu versión — se guardará como ejemplo' : 'El mensaje que va a salir — puedes editarlo'}</label>
             <textarea className={'ti-envio-texto' + (editado(e) ? ' editado' : '')} rows={Math.min(10, Math.max(4, Math.ceil((edit[e.id] ?? e.mensaje).length / 70) + 1))} value={edit[e.id] ?? e.mensaje} onChange={ev => setEdit({ ...edit, [e.id]: ev.target.value })} disabled={ocupado} />
 
+            <div className="ti-suave" style={{ margin: '4px 0 0', fontSize: '.72rem' }}>Para mandarlo en dos mensajes, escribe una línea con --- entre las dos partes.</div>
             {editado(e) && (
               <div className="ti-envio-criterio">
                 <label className="ti-envio-lbl">Qué debe considerar el agente (opcional): la regla detrás de tu cambio</label>

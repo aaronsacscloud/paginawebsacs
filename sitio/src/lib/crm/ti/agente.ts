@@ -73,7 +73,47 @@ async function ejemplosAprobados(estado?: string) {
   const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
   return '\n\nEJEMPLOS APROBADOS POR EL DUEÑO (así se contesta; imita el criterio, no el texto):\n'
-    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); return `[${e.estado}] Lead: ${e.situacion}\nNosotros: ${e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${Array.isArray(e.adjuntos) && e.adjuntos.length ? `\n(con adjuntos: ${e.adjuntos.map((a: any) => `${TIPO_L[a.tipo as 'image'] || a.tipo} «${a.nombre}» [${a.id}]`).join(', ')})` : e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n');
+    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); const ev = String(e.por_que || '').match(/^EVITAR:\s*([^\n]+)/m); const partes = partirMensaje(e.pulida || ''); return `[${e.estado}] Lead: ${e.situacion}\nNosotros${partes.length > 1 ? ` (${partes.length} mensajes seguidos)` : ''}: ${partes.length > 1 ? partes.map((p, i) => `\n  Mensaje ${i + 1}: ${p}`).join('') : e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${ev ? `\nEvitar: ${ev[1].trim()}` : ''}${Array.isArray(e.adjuntos) && e.adjuntos.length ? `\n(con adjuntos: ${e.adjuntos.map((a: any) => `${TIPO_L[a.tipo as 'image'] || a.tipo} «${a.nombre}» [${a.id}]`).join(', ')})` : e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n');
+}
+
+/** Divisor para partir una respuesta en varios mensajes de WhatsApp: una línea con --- */
+export const DIVISOR_MENSAJES = /\n[ \t]*-{3,}[ \t]*\n/;
+export const partirMensaje = (texto: string) => String(texto || '').split(DIVISOR_MENSAJES).map(t => t.trim()).filter(Boolean);
+
+/**
+ * REESCRIBIR CON EL CRITERIO DEL DUEÑO (pestaña Aprendizaje): el dueño corrige, pone la regla y lo que
+ * hay que evitar, y el agente vuelve a escribir ESE momento para demostrar que lo entendió. Devuelve la
+ * nueva versión y, en una línea, qué cambió. No envía nada.
+ */
+export async function reescribirRespuesta(o: { contactId?: string | null; estado?: string | null; mensajeLead?: string | null; situacion?: string | null; original?: string | null; versionDueno?: string | null; criterio?: string | null; evitar?: string | null; enDos?: boolean; adjuntos?: { nombre: string; tipo: string }[] }): Promise<{ mensaje: string | null; que_cambie: string; costo: number }> {
+  if (!hasApiKey()) return { mensaje: null, que_cambie: 'Sin API key', costo: 0 };
+  let c: any = null, historia = '';
+  if (o.contactId) {
+    const r = await supabase.from('contacts').select('id, nombre, giro, sucursales_interes, lifecycle_stage, email, propiedades, companies(nombre)').eq('id', o.contactId).maybeSingle(); c = r.data;
+    const { msjs } = await charla(o.contactId, 24).catch(() => ({ msjs: [] as any[] }));
+    historia = msjs.slice(-12).map((m: any) => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'}: ${(m.transcript || m.cuerpo || `[${m.tipo}]`).slice(0, 300)}`).join('\n');
+  }
+  const ctx = contextoParaLead({ giroCrm: c?.giro || null, conversacion: historia, ultimoMensaje: o.mensajeLead || '' });
+  const galeria = await galeriaActiva().catch(() => []);
+  const system = `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados(o.estado || undefined)}${galeriaTexto(galeria, c?.giro)}`;
+  const user = `EJERCICIO DE ENTRENAMIENTO CON EL DUEÑO. Vas a REESCRIBIR una respuesta tuya de un momento concreto, aplicando su criterio. No es una conversación en vivo: no saludes, no inventes datos, no agendes.
+${c ? `LEAD: «${c.nombre || '?'}», giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? '?'}, etapa ${c.lifecycle_stage}.` : ''}
+${historia ? `ÚLTIMOS MENSAJES DE LA CONVERSACIÓN (contexto):\n${historia}\n` : ''}
+EL MOMENTO: el lead dijo «${String(o.mensajeLead || o.situacion || '').slice(0, 600)}».${o.situacion ? ` Qué buscabas: ${o.situacion}` : ''}
+TU RESPUESTA ORIGINAL: «${String(o.original || '').slice(0, 1200)}»
+${o.versionDueno && o.versionDueno !== o.original ? `LA VERSIÓN QUE ESCRIBIÓ EL DUEÑO (referencia de tono y contenido; no la copies literal, entiéndela): «${String(o.versionDueno).slice(0, 1200)}»` : ''}
+${o.criterio ? `REGLA QUE DEBES APLICAR (del dueño): ${o.criterio}` : ''}
+${o.evitar ? `LO QUE HAY QUE EVITAR (del dueño): ${o.evitar}` : ''}
+${o.enDos ? 'FORMATO: en DOS mensajes de WhatsApp (el primero con la respuesta, el segundo con el siguiente paso o la pregunta), separados por una línea que contenga solo ---.' : 'FORMATO: un solo mensaje de WhatsApp.'}
+${o.adjuntos?.length ? `ADJUNTOS QUE EL DUEÑO ELIGIÓ PARA ESTE MOMENTO: ${o.adjuntos.map(a => `${a.tipo} «${a.nombre}»`).join(', ')} (el texto debe entenderse sin ellos y puede referirlos con naturalidad).` : ''}
+Devuelve SOLO JSON: {"mensaje": "la respuesta final tal como saldría por WhatsApp", "que_cambie": "en UNA línea, qué cambiaste respecto a la original y por qué (así el dueño ve que entendiste su criterio)"}`;
+  const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1200, system, messages: [{ role: 'user', content: user }] });
+  const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
+  const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
+  let out: any = null;
+  try { out = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { out = null; }
+  await log({ accion: 'agente_reescribe', contact_id: o.contactId || null, contenido: out?.mensaje || null, razon: o.criterio || undefined, costo: Number(costo) || 0, detalle: { evitar: o.evitar || null, en_dos: !!o.enDos, que_cambie: out?.que_cambie || null } });
+  return { mensaje: out?.mensaje ? String(out.mensaje).trim() : null, que_cambie: String(out?.que_cambie || '').trim(), costo: Number(costo) || 0 };
 }
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
@@ -514,9 +554,14 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
           }
         }
         const primero = adjuntos[0];
-        const pieEnPrimero = mensaje.length <= 1024 && (primero.tipo === 'image' || primero.tipo === 'video');
+        const partesTxt = partirMensaje(mensaje);
+        if (partesTxt.length > 1) {
+          for (let k = 0; k < partesTxt.length; k++) { const rk = await enviarTexto(e.telefono, partesTxt[k]); const wk = rk?.messages?.[0]?.id || null; if (wk) await registrarMensaje({ kapsoMessageId: wk, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: partesTxt[k], status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, parte: k + 1, partes: partesTxt.length } }); }
+          mensaje = '';
+        }
+        const pieEnPrimero = !!mensaje && mensaje.length <= 1024 && (primero.tipo === 'image' || primero.tipo === 'video');
         const espejo = async (wm: string | null, a: any, cuerpo: string | null) => { if (wm) await registrarMensaje({ kapsoMessageId: wm, telefono: e.telefono, direccion: 'saliente', tipo: a.tipo === 'document' ? 'document' : a.tipo, cuerpo, mediaUrl: a.url, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null, recurso_id: a.id || null, nombre: a.nombre } }); };
-        if (!pieEnPrimero) {
+        if (!pieEnPrimero && mensaje) {
           r = await enviarTexto(e.telefono, mensaje);
           const w1 = r?.messages?.[0]?.id || null;
           if (w1) await registrarMensaje({ kapsoMessageId: w1, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
@@ -534,11 +579,20 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         if (!pieEnPrimero) mensaje = mensaje; else r = r || ultimo;
         if (!r) r = ultimo;
         if (pieEnPrimero) { /* el espejo del primero ya lleva el texto */ mensaje = ''; }
+      } else if (partirMensaje(mensaje).length > 1) {
+        // Dos (o más) mensajes seguidos, separados por --- : cada uno se manda y se espeja por separado.
+        const partes = partirMensaje(mensaje);
+        for (let k = 0; k < partes.length; k++) {
+          r = await enviarTexto(e.telefono, partes[k]);
+          const wk = r?.messages?.[0]?.id || null;
+          if (wk) await registrarMensaje({ kapsoMessageId: wk, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: partes[k], status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, parte: k + 1, partes: partes.length, estado_agente: (e.salida as any)?.estado || null } });
+        }
+        mensaje = '';
       } else {
         r = await enviarTexto(e.telefono, mensaje);
       }
       const wamid = r?.messages?.[0]?.id || null;
-      const conAdjuntos = ((e as any).adjuntos || []).length || (e as any).imagen_url;
+      const conAdjuntos = ((e as any).adjuntos || []).length || (e as any).imagen_url || !mensaje;
       if (wamid && !conAdjuntos) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
       if (!mensaje) mensaje = e.mensaje;
       await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(),

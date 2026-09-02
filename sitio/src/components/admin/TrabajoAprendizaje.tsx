@@ -7,7 +7,7 @@ import { SelectorAdjuntos, MiniRecurso, type Recurso, type AdjuntoSel } from './
  * respuesta → la regla detrás → adjuntos → tu decisión): el consultor avanza en orden y
  * no se pierde entre 120 tarjetas. APROBADO es una lista compacta que se abre a la misma
  * ficha para editar. Cada cambio vuelve al prompt del agente en el siguiente turno. */
-type Ej = { id: string; estado: string; giro?: string | null; situacion: string; mensaje_lead?: string | null; respuesta?: string | null; pulida?: string | null; por_que?: string | null; fuente: string; imagen_id?: string | null; adjuntos?: AdjuntoSel[]; estado_rev: string; usos?: number; created_at: string; criterio: string; contacto?: { nombre?: string | null; giro?: string | null } | null };
+type Ej = { id: string; estado: string; giro?: string | null; situacion: string; mensaje_lead?: string | null; respuesta?: string | null; pulida?: string | null; por_que?: string | null; fuente: string; imagen_id?: string | null; adjuntos?: AdjuntoSel[]; estado_rev: string; usos?: number; created_at: string; criterio: string; evitar?: string; contacto?: { nombre?: string | null; giro?: string | null } | null };
 type Env = { id: string; contact_id: string | null; origen: string; mensaje: string; mensaje_original?: string | null; salida: any; enviado_at?: string | null; imagen_id?: string | null; imagen_url?: string | null; adjuntos?: AdjuntoSel[]; humano_respuesta?: string | null; humano_at?: string | null; contacto?: { nombre?: string | null } | null };
 type Item = { clave: string; tipo: 'ejemplo' | 'envio' | 'par'; ej?: Ej; env?: Env };
 
@@ -49,6 +49,13 @@ const ESTILOS = `
 .apr-fila .txt { font-size:.86rem; color:#241d43; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .apr-fila .meta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:3px; }
 .apr-vacio { text-align:center; padding:48px 20px; color:#6b6580; }
+.apr-tog { display:inline-flex; align-items:center; gap:6px; font-size:.8rem; font-weight:700; color:#4c1d95; cursor:pointer; margin:0 0 8px; } .apr-tog input { accent-color:#5B4BD6; }
+.apr-dos { display:grid; gap:8px; } .apr-dos label { font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#8e88a8; }
+.apr-chips { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+.apr-ia { margin-top:10px; border:1px solid #d9d4ea; background:#fbfaff; border-radius:12px; padding:12px 14px; }
+.apr-ia h5 { margin:0 0 6px; font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#5B4BD6; }
+.apr-ia pre { white-space:pre-wrap; font:inherit; font-size:.92rem; line-height:1.5; margin:0; background:#fff; border-radius:10px; padding:10px 12px; border:1px solid #eeebf6; }
+.apr-ia .cambio { margin-top:8px; font-size:.82rem; color:#4a4658; } .apr-ia .cambio b { color:#241d43; }
 .apr-par { display:grid; grid-template-columns:1fr 1fr; gap:10px; } @media (max-width:720px) { .apr-par { grid-template-columns:1fr; } .apr-paso { grid-template-columns:34px 1fr; padding:14px 12px; } }
 `;
 
@@ -69,33 +76,82 @@ function LeadDijo({ texto, contexto }: { texto?: string | null; contexto?: strin
 }
 
 /* La ficha de revisión: cinco pasos, mismos para un ejemplo y para un mensaje del agente. */
-function Ficha({ titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, adjuntosInicial, galeria, onNuevo, acciones, onHecho }: {
-  titulo: string; chips: string[]; leadDijo?: string | null; contexto?: string | null; original?: string | null; textoInicial: string; criterioInicial: string; adjuntosInicial: AdjuntoSel[]; galeria: Recurso[]; onNuevo: (r: Recurso) => void;
-  acciones: { label: string; clase?: string; run: (v: { pulida: string; criterio: string; adjuntos: string[] }) => Promise<any> }[]; onHecho?: () => void;
+const DIVISOR = /\n[ \t]*-{3,}[ \t]*\n/;
+const partir = (t: string) => String(t || '').split(DIVISOR).map(x => x.trim()).filter(Boolean);
+const CORREGIR = ['Muy largo', 'Muy corto', 'Tono no es el nuestro', 'No contestó todo', 'Información incorrecta', 'Sin siguiente paso', 'Demasiado vendedor', 'Repite saludo o nombre', 'Prometió algo que no hay'];
+type Valores = { pulida: string; criterio: string; evitar: string; adjuntos: string[]; reescrita_por_agente: boolean };
+
+function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, evitarInicial = '', adjuntosInicial, galeria, onNuevo, acciones, onHecho }: {
+  tipo: 'ejemplo' | 'envio'; id: string; titulo: string; chips: string[]; leadDijo?: string | null; contexto?: string | null; original?: string | null; textoInicial: string; criterioInicial: string; evitarInicial?: string; adjuntosInicial: AdjuntoSel[]; galeria: Recurso[]; onNuevo: (r: Recurso) => void;
+  acciones: { label: string | ((editado: boolean) => string); clase?: string; run: (v: Valores) => Promise<any> }[]; onHecho?: () => void;
 }) {
-  const [texto, setTexto] = useState(textoInicial);
+  const p0 = partir(textoInicial);
+  const [enDos, setEnDos] = useState(p0.length > 1);
+  const [parte1, setParte1] = useState(p0[0] || textoInicial);
+  const [parte2, setParte2] = useState(p0.slice(1).join('\n---\n'));
   const [criterio, setCriterio] = useState(criterioInicial);
+  const [evitar, setEvitar] = useState(evitarInicial);
   const [adjuntos, setAdjuntos] = useState<AdjuntoSel[]>(adjuntosInicial);
   const [ocupado, setOcupado] = useState(false);
   const [msg, setMsg] = useState('');
-  useEffect(() => { setTexto(textoInicial); setCriterio(criterioInicial); setAdjuntos(adjuntosInicial); setMsg(''); }, [textoInicial, criterioInicial, adjuntosInicial.map(a => a.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
-  const editado = texto !== textoInicial;
+  const [ia, setIa] = useState<{ mensaje: string; que_cambie: string } | null>(null);
+  const [iaOcupado, setIaOcupado] = useState(false);
+  const [reescrita, setReescrita] = useState(false);
+  useEffect(() => { const p = partir(textoInicial); setEnDos(p.length > 1); setParte1(p[0] || textoInicial); setParte2(p.slice(1).join('\n---\n')); setCriterio(criterioInicial); setEvitar(evitarInicial); setAdjuntos(adjuntosInicial); setMsg(''); setIa(null); setReescrita(false); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const texto = enDos && parte2.trim() ? `${parte1.trim()}\n---\n${parte2.trim()}` : parte1;
+  const editado = texto.trim() !== textoInicial.trim();
+  const valores = (): Valores => ({ pulida: texto.trim(), criterio: criterio.trim(), evitar: evitar.trim(), adjuntos: adjuntos.map(x => x.id), reescrita_por_agente: reescrita });
+  const toggleChip = (c: string) => setEvitar(v => { const partes = v.split(/\s*;\s*/).filter(Boolean); return (partes.includes(c) ? partes.filter(x => x !== c) : [...partes, c]).join('; '); });
+  const pedirIa = async () => {
+    setIaOcupado(true); setMsg('');
+    const r = await post({ accion: 'reescribir', tipo, id, ...valores(), en_dos: enDos });
+    setIaOcupado(false);
+    if (r?.error) { setMsg('No se pudo: ' + r.error); return; }
+    setIa({ mensaje: r.mensaje, que_cambie: r.que_cambie });
+  };
+  const usarIa = () => { if (!ia) return; const p = partir(ia.mensaje); setEnDos(p.length > 1); setParte1(p[0] || ia.mensaje); setParte2(p.slice(1).join('\n---\n')); setReescrita(true); setIa(null); };
   return (
     <div className="apr-ficha">
       <div className="apr-ficha-cab"><b>{titulo}</b>{chips.map((c, i) => <span key={i} className="ti-chip chip-tipo">{c}</span>)}</div>
       <Paso n={1} titulo="Qué dijo el lead"><LeadDijo texto={leadDijo} contexto={contexto} /></Paso>
-      <Paso n={2} titulo={editado ? 'La respuesta — tu versión' : 'La respuesta'}>
-        <textarea className={'ti-envio-texto' + (editado ? ' editado' : '')} rows={Math.min(12, Math.max(4, Math.ceil(texto.length / 90) + 1))} value={texto} onChange={e => setTexto(e.target.value)} />
-        {original && original !== textoInicial && <details className="apr-orig"><summary>Ver lo que el agente había propuesto</summary><div>{original}</div></details>}
+      <Paso n={2} titulo={reescrita ? 'La respuesta — versión reescrita por el agente con tu criterio' : editado ? 'La respuesta — tu versión (esto es lo que se guardará)' : 'La respuesta'}>
+        <label className="apr-tog"><input type="checkbox" checked={enDos} onChange={e => { setEnDos(e.target.checked); if (!e.target.checked && parte2.trim()) { setParte1(`${parte1.trim()}\n\n${parte2.trim()}`); setParte2(''); } }} /> Mandarla en dos mensajes de WhatsApp</label>
+        {enDos ? (
+          <div className="apr-dos">
+            <label>Mensaje 1</label><textarea className={'ti-envio-texto' + (editado ? ' editado' : '')} rows={Math.min(10, Math.max(3, Math.ceil(parte1.length / 90) + 1))} value={parte1} onChange={e => setParte1(e.target.value)} />
+            <label>Mensaje 2 (el siguiente paso, la pregunta o la liga)</label><textarea className={'ti-envio-texto' + (editado ? ' editado' : '')} rows={Math.min(8, Math.max(2, Math.ceil(parte2.length / 90) + 1))} value={parte2} onChange={e => setParte2(e.target.value)} placeholder="Ej.: ¿Te acomoda que lo veamos el viernes a las 9 con tus propios modelos?" />
+          </div>
+        ) : (
+          <textarea className={'ti-envio-texto' + (editado ? ' editado' : '')} rows={Math.min(12, Math.max(4, Math.ceil(parte1.length / 90) + 1))} value={parte1} onChange={e => setParte1(e.target.value)} />
+        )}
+        {editado && <div className="ti-suave" style={{ margin: '6px 0 0', fontSize: '.76rem', color: '#4c1d95', fontWeight: 700 }}>Cambiaste el texto: al aprobar se guarda TU versión como el ejemplo (la original queda como referencia de lo que no).</div>}
+        {original && original.trim() !== texto.trim() && <details className="apr-orig"><summary>Ver lo que el agente había dicho</summary><div>{original}</div></details>}
       </Paso>
-      <Paso n={3} titulo="La regla detrás (qué debe considerar el agente)">
-        <input className="ti-envio-input" placeholder="Ej.: si hace varias preguntas, contéstalas todas en un solo mensaje y cierra con una sola pregunta" value={criterio} onChange={e => setCriterio(e.target.value)} />
-        <div className="ti-suave" style={{ margin: '5px 0 0', fontSize: '.74rem' }}>Opcional, pero es lo que generaliza: el texto es el ejemplo, la regla es lo que el agente aplica a casos parecidos.</div>
+      <Paso n={3} titulo="Qué debe considerar el agente y qué evitar">
+        <input className="ti-envio-input" placeholder="La regla detrás. Ej.: si hace varias preguntas, contéstalas todas en un solo mensaje y cierra con una sola pregunta" value={criterio} onChange={e => setCriterio(e.target.value)} />
+        <div className="apr-chips">{CORREGIR.map(c => <button key={c} type="button" className={'ti-chip-btn' + (evitar.split(/\s*;\s*/).includes(c) ? ' on' : '')} onClick={() => toggleChip(c)}>{c}</button>)}</div>
+        <input className="ti-envio-input" placeholder="Qué evitar (puedes escribirlo o usar los botones de arriba)" value={evitar} onChange={e => setEvitar(e.target.value)} />
+        <div className="ti-suave" style={{ margin: '5px 0 0', fontSize: '.74rem' }}>El texto es el ejemplo; la regla y lo que hay que evitar es lo que el agente aplica a casos parecidos.</div>
       </Paso>
       <Paso n={4} titulo="Adjuntos (imagen, PDF o video · hasta 5)"><SelectorAdjuntos valor={adjuntos} galeria={galeria} onChange={setAdjuntos} onNuevo={onNuevo} /></Paso>
-      <Paso n={5} titulo="Tu decisión">
+      <Paso n={5} titulo="Que el agente la reescriba con tu criterio (opcional, recomendado)">
+        <div className="ti-suave" style={{ margin: '0 0 8px', fontSize: '.78rem' }}>Con tu versión, la regla, lo que hay que evitar y los adjuntos, el agente vuelve a escribir este momento y te dice qué cambió. Si te convence, esa es la versión final; si no, ajustas y repites.</div>
+        <button className="ti-btn" disabled={iaOcupado} onClick={pedirIa}>{iaOcupado ? 'El agente está reescribiendo…' : ia ? 'Pedir otra versión' : 'Que el agente la reescriba'}</button>
+        {ia && (
+          <div className="apr-ia">
+            <h5>Versión del agente con tu criterio</h5>
+            <pre>{ia.mensaje}</pre>
+            {ia.que_cambie && <div className="cambio"><b>Qué cambió:</b> {ia.que_cambie}</div>}
+            <div className="apr-dec" style={{ marginTop: 10 }}>
+              <button className="ti-btn primario" onClick={usarIa}>Usar esta como versión final</button>
+              <button className="ti-btn" onClick={() => setIa(null)}>Descartar</button>
+            </div>
+          </div>
+        )}
+      </Paso>
+      <Paso n={6} titulo="Tu decisión">
         <div className="apr-dec">
-          {acciones.map(a => <button key={a.label} className={'ti-btn ' + (a.clase || '')} disabled={ocupado} onClick={async () => { setOcupado(true); const r = await a.run({ pulida: texto.trim(), criterio: criterio.trim(), adjuntos: adjuntos.map(x => x.id) }); setOcupado(false); if (r?.error) { setMsg('No se guardó: ' + r.error); return; } setMsg(r?.hecho || 'Guardado.'); setTimeout(() => onHecho?.(), 650); }}>{a.label}</button>)}
+          {acciones.map(a => { const label = typeof a.label === 'function' ? a.label(editado) : a.label; return <button key={label} className={'ti-btn ' + (a.clase || '')} disabled={ocupado} onClick={async () => { setOcupado(true); const r = await a.run(valores()); setOcupado(false); if (r?.error) { setMsg('No se guardó: ' + r.error); return; } setMsg(r?.hecho || 'Guardado.'); setTimeout(() => onHecho?.(), 650); }}>{label}</button>; })}
         </div>
         {msg && <div className={msg.startsWith('No') ? 'apr-err' : 'apr-ok'}>{msg}</div>}
       </Paso>
@@ -137,24 +193,24 @@ export default function TrabajoAprendizaje() {
   const marcar = (clave: string, como: string) => { setHechos(h => ({ ...h, [clave]: como })); };
 
   const fichaEjemplo = (ej: Ej, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={ej.id} titulo={ej.contacto?.nombre || 'Ejemplo'} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
+    <Ficha key={ej.id} tipo="ejemplo" id={ej.id} evitarInicial={ej.evitar || ''} titulo={ej.contacto?.nombre || 'Ejemplo'} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
       leadDijo={ej.mensaje_lead} contexto={ej.situacion} original={ej.respuesta} textoInicial={ej.pulida || ej.respuesta || ''} criterioInicial={ej.criterio || ''} adjuntosInicial={Array.isArray(ej.adjuntos) ? ej.adjuntos : []} galeria={gal} onNuevo={addGal} onHecho={onHecho}
       acciones={aprobado ? [
-        { label: 'Guardar cambios', clase: 'primario', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, ...v }); return r.error ? r : { hecho: 'Guardado: el agente lo usa desde el siguiente turno.' }; } },
+        { label: (ed: boolean) => ed ? 'Guardar mi versión' : 'Guardar cambios', clase: 'primario', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, ...v }); return r.error ? r : { hecho: 'Guardado: el agente lo usa desde el siguiente turno.' }; } },
         { label: 'Retirar este ejemplo', clase: 'peligro', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, decision: 'rechazar', criterio: v.criterio }); if (!r.error) marcar('ej:' + ej.id, 'retirado'); return r.error ? r : { hecho: 'Retirado.' }; } },
       ] : [
-        { label: 'Aprobar', clase: 'primario grande', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, decision: 'aprobar', ...v }); if (!r.error) marcar('ej:' + ej.id, 'aprobado'); return r.error ? r : { hecho: 'Aprobado. Siguiente…' }; } },
+        { label: (ed: boolean) => ed ? 'Guardar mi versión y aprobar' : 'Aprobar', clase: 'primario grande', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, decision: 'aprobar', ...v }); if (!r.error) marcar('ej:' + ej.id, 'aprobado'); return r.error ? r : { hecho: 'Aprobado. Siguiente…' }; } },
         { label: 'Rechazar', clase: 'peligro', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, decision: 'rechazar', criterio: v.criterio }); if (!r.error) marcar('ej:' + ej.id, 'rechazado'); return r.error ? r : { hecho: 'Rechazado. Siguiente…' }; } },
       ]} />
   );
   const fichaEnvio = (e: Env, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={e.id} titulo={e.contacto?.nombre || 'Lead'} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
+    <Ficha key={e.id} tipo="envio" id={e.id} titulo={e.contacto?.nombre || 'Lead'} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
       leadDijo={e.salida?.ultimo_mensaje} contexto={e.salida?.objetivo} original={e.mensaje_original || null} textoInicial={e.mensaje} criterioInicial="" galeria={gal} onNuevo={addGal} onHecho={onHecho}
       adjuntosInicial={Array.isArray(e.adjuntos) && e.adjuntos.length ? e.adjuntos : e.imagen_url ? [{ id: e.imagen_id || '', tipo: 'image', url: e.imagen_url, nombre: 'Imagen' }] : []}
       acciones={aprobado ? [
         { label: 'Guardar como ejemplo con mis cambios', clase: 'primario', run: async v => { const r = await post({ accion: 'envio', id: e.id, decision: 'validar', ...v }); return r.error ? r : { hecho: 'Guardado como ejemplo.' }; } },
       ] : [
-        { label: 'Estuvo bien: aprobar', clase: 'primario grande', run: async v => { const r = await post({ accion: 'envio', id: e.id, decision: 'validar', ...v }); if (!r.error) marcar('env:' + e.id, 'aprobado'); return r.error ? r : { hecho: 'Aprobado como ejemplo. Siguiente…' }; } },
+        { label: (ed: boolean) => ed ? 'Guardar mi versión y aprobar' : 'Estuvo bien: aprobar', clase: 'primario grande', run: async v => { const r = await post({ accion: 'envio', id: e.id, decision: 'validar', ...v }); if (!r.error) marcar('env:' + e.id, 'aprobado'); return r.error ? r : { hecho: 'Aprobado como ejemplo. Siguiente…' }; } },
         { label: 'Descartar (no enseña nada)', run: async () => { const r = await post({ accion: 'envio', id: e.id, decision: 'descartar' }); if (!r.error) marcar('env:' + e.id, 'descartado'); return r.error ? r : { hecho: 'Descartado. Siguiente…' }; } },
       ]} />
   );
@@ -230,7 +286,7 @@ export default function TrabajoAprendizaje() {
           ))}
           {(filtro === 'todo' || filtro === 'ejemplos') && ap.ejemplos.filter((x: Ej) => !hechos['ej:' + x.id]).map((ej: Ej) => abierto === 'ej:' + ej.id ? <div key={ej.id}>{fichaEjemplo(ej, true)}<button className="ti-link" onClick={() => setAbierto(null)}>Cerrar</button></div> : (
             <div key={ej.id} className="apr-fila" onClick={() => setAbierto('ej:' + ej.id)}>
-              <div style={{ minWidth: 0 }}><div className="txt">{ej.pulida || ej.respuesta}</div><div className="meta"><span className="ti-chip chip-tipo">{ESTADO_L[ej.estado] || ej.estado}</span><span className="ti-chip chip-tipo">{FUENTE_L[ej.fuente] || ej.fuente}</span>{(ej.adjuntos || []).map(a => <MiniRecurso key={a.id} r={a} size={22} />)}{ej.criterio && <span className="ti-suave" style={{ margin: 0, fontSize: '.72rem' }}>regla: {ej.criterio.slice(0, 60)}</span>}<span className="ti-suave" style={{ margin: 0, fontSize: '.72rem' }}>{fecha(ej.created_at)}</span></div></div>
+              <div style={{ minWidth: 0 }}><div className="txt">{partir(ej.pulida || ej.respuesta || '').length > 1 ? '[2 mensajes] ' : ''}{ej.pulida || ej.respuesta}</div><div className="meta"><span className="ti-chip chip-tipo">{ESTADO_L[ej.estado] || ej.estado}</span><span className="ti-chip chip-tipo">{FUENTE_L[ej.fuente] || ej.fuente}</span>{(ej.adjuntos || []).map(a => <MiniRecurso key={a.id} r={a} size={22} />)}{ej.criterio && <span className="ti-suave" style={{ margin: 0, fontSize: '.72rem' }}>regla: {ej.criterio.slice(0, 60)}</span>}<span className="ti-suave" style={{ margin: 0, fontSize: '.72rem' }}>{fecha(ej.created_at)}</span></div></div>
               <span className="ti-link" style={{ padding: 0 }}>Editar</span>
             </div>
           ))}
