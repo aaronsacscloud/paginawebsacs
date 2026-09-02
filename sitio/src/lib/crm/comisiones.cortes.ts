@@ -41,19 +41,29 @@ const masDias = (fecha: string, n: number) => {
  * a las 4 am o si alguien aprieta el botón el miércoles: el corte pagable es el
  * de la semana cerrada, no "los últimos siete días".
  */
-export function semanaCerrada(hoy = new Date()): { desde: string; hasta: string; paga_el: string } {
+export function semanaCerrada(
+  hoy = new Date(),
+  ciclo: { dia_cierre: number; dias_a_pago: number } = { dia_cierre: 5, dias_a_pago: 3 },
+): { desde: string; hasta: string; paga_el: string } {
   const base = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate()));
-  const atras = (base.getUTCDay() - 5 + 7) % 7;      // 0=dom … 5=vie
-  const vie = new Date(base); vie.setUTCDate(vie.getUTCDate() - atras);
-  const hasta = iso(vie);
-  return { desde: masDias(hasta, -4), hasta, paga_el: masDias(hasta, 3) };
+  // getUTCDay da 0=domingo; el ciclo se guarda en ISO (1=lunes … 7=domingo).
+  const dowIso = base.getUTCDay() === 0 ? 7 : base.getUTCDay();
+  const atras = (dowIso - ciclo.dia_cierre + 7) % 7;
+  const cierre = new Date(base); cierre.setUTCDate(cierre.getUTCDate() - atras);
+  const hasta = iso(cierre);
+  return { desde: masDias(hasta, -4), hasta, paga_el: masDias(hasta, ciclo.dias_a_pago) };
 }
 
-/** El lunes siguiente a una fecha de cierre (para un corte manual). */
-export function lunesSiguiente(hasta: string): string {
-  const d = new Date(hasta + 'T12:00:00Z');
-  const faltan = (8 - d.getUTCDay()) % 7 || 7;       // siempre el PRÓXIMO lunes
-  return masDias(hasta, faltan);
+/** El ciclo configurado. Ante cualquier problema, el del marco: viernes → lunes. */
+export async function leerCiclo(): Promise<{ dia_cierre: number; dias_a_pago: number }> {
+  const { data } = await supabase.from('comision_ciclo')
+    .select('dia_cierre, dias_a_pago').eq('id', true).maybeSingle();
+  return { dia_cierre: Number(data?.dia_cierre ?? 5), dias_a_pago: Number(data?.dias_a_pago ?? 3) };
+}
+
+/** Cuándo se paga un corte manual: los mismos días del ciclo tras su cierre. */
+export function fechaDePago(hasta: string, dias_a_pago = 3): string {
+  return masDias(hasta, dias_a_pago);
 }
 
 export type ResultadoCortes = {
@@ -74,7 +84,7 @@ export async function generarCortes(
   opts: { automatico?: boolean; paga_el?: string; owner_id?: string } = {},
 ): Promise<ResultadoCortes> {
   const automatico = opts.automatico !== false;
-  const paga_el = opts.paga_el || lunesSiguiente(hasta);
+  const paga_el = opts.paga_el || fechaDePago(hasta);
   const res: ResultadoCortes = {
     desde, hasta, paga_el, automatico, cortes: [], omitidos: [], ajustes_absorbidos: 0, errores: [],
   };

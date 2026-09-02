@@ -6,6 +6,7 @@ import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import PipelinesConfig from './crm/PipelinesConfig';
 import PlanesConfig from './crm/PlanesConfig';
+import { ComisionesModelo, ComisionesAtribucion, ComisionesCiclo } from './crm/ComisionesConfig';
 import { swrGet } from '../../lib/crm/swr';
 import VistaRapida from './crm/ui/VistaRapida';
 // El hub de agenda ya viene lazy: no engorda el bundle de Cotizaciones.
@@ -332,7 +333,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [bankForm, setBankForm] = useState<any>({});
   // Configuración: qué sección del sistema se está viendo y qué ajuste está
   // abierto. Arranca cerrado: la pantalla es un índice, no un formulario.
-  const [cfgMod, setCfgMod] = useState<string>('perfil');
+  // Enlace directo: ?cfg=<modulo> abre Configuración parada en ese módulo. Sin
+  // esto, mandar a alguien "a configurar las comisiones" era decirle en qué
+  // renglón del catálogo buscar.
+  const [cfgMod, setCfgMod] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'perfil';
+    return new URLSearchParams(window.location.search).get('cfg') || 'perfil';
+  });
   const [cfgItem, setCfgItem] = useState<string>('');
   const [cfgQ, setCfgQ] = useState<string>('');
   const [altaBanco, setAltaBanco] = useState<any>(null);
@@ -4219,13 +4226,27 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               ]},
             ]},
             { g: 'Automatización', mods: [
+              /* Comisiones vive aquí y no en Colaboradores porque el catálogo
+                 espeja el menú, y ahí es donde quedó la pantalla. Son los tres
+                 ajustes que se tocan una vez: el plan, a quién le toca cada
+                 cuenta, y de qué día a qué día corre el corte. */
+              { id: 'comisiones', nom: 'Comisiones', sub: 'Cuánto se paga, a quién le toca cada cuenta y cuándo se paga.', items: [
+                { id: 'plan-comision', ico: 'tarjeta', t: 'Plan de comisión', mudado: true,
+                  d: 'El porcentaje que paga cada SKU según el origen del cliente, el tope de descuento, la tasa de una renovación que no cumplió, el margen para cobrar y el override de partners. Aquí también se elige qué plan le aplica a cada persona.',
+                  editor: <ComisionesModelo /> },
+                { id: 'cuentas-comision', ico: 'gente', t: 'Cuentas asignadas', mudado: true,
+                  d: 'De quién es cada cuenta y con qué origen entró. Sin esto un pago no le cuenta a nadie: es el prerrequisito de todo el motor.',
+                  editor: <ComisionesAtribucion /> },
+                { id: 'ciclo-comision', ico: 'agenda', t: 'Ciclo de pago',
+                  d: 'Qué día cierra el corte y cuántos días después se paga. Lo usan el cron de cada lunes y el botón de generar.',
+                  editor: <ComisionesCiclo /> },
+              ]},
               { id: 'email', nom: 'Email marketing', sub: 'Con qué cara salen los correos.', items: [] },
               { id: 'outbound', nom: 'Outbound', sub: 'Los mensajes dentro de SACS3.', items: [] },
               { id: 'agentes', nom: 'Agentes IA', sub: 'Qué corre solo y cada cuánto.', items: [] },
             ]},
             { g: 'Colaboradores', mods: [
               { id: 'partners', nom: 'Partners', sub: 'La red que vende contigo.', items: [] },
-              { id: 'comisiones', nom: 'Comisiones', sub: 'Cuánto se paga y cuándo.', items: [] },
             ]},
           ];
           return (

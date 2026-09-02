@@ -37,6 +37,8 @@ const E = {
   chip: { fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px', borderRadius: 5, letterSpacing: '0.04em', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const, display: 'inline-block' },
 };
 
+const DIA_NOMBRE: Record<number, string> = { 1: 'lunes', 2: 'martes', 3: 'miércoles', 4: 'jueves', 5: 'viernes', 6: 'sábado', 7: 'domingo' };
+
 const TONO: Record<string, { bg: string; fg: string; label: string }> = {
   abierto: { bg: P.violetaAgua, fg: P.violetaTinta, label: 'Abierto' },
   cerrado: { bg: P.azulAgua, fg: P.azulTinta, label: 'Enviado' },
@@ -47,10 +49,9 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   const [d, setD] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [generando, setGenerando] = useState(false);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [det, setDet] = useState<any>(null);
-  const [manual, setManual] = useState({ desde: '', hasta: '' });
+  const [asistente, setAsistente] = useState(false);
 
   async function cargar() {
     setCargando(true);
@@ -59,7 +60,6 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Error');
       setD(j);
-      if (!manual.desde && j.sugerido) setManual({ desde: j.sugerido.desde, hasta: j.sugerido.hasta });
     } catch (e: any) { setError(e.message); } finally { setCargando(false); }
   }
   useEffect(() => { cargar(); /* eslint-disable-next-line */ }, []);
@@ -71,21 +71,6 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
     const j = await r.json();
     if (!r.ok) { setError(j.error || 'Error'); return; }
     setDet(j);
-  }
-
-  async function generar(usarManual: boolean) {
-    setGenerando(true); setError(null);
-    try {
-      const body = usarManual ? { desde: manual.desde, hasta: manual.hasta } : {};
-      const r = await fetch('/api/crm/comisiones/cortes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'Error');
-      if (j.resultado?.errores?.length) setError(j.resultado.errores.join(' · '));
-      await cargar();
-      if (abierto) await verDetalle(abierto);
-    } catch (e: any) { setError(e.message); } finally { setGenerando(false); }
   }
 
   async function accionCorte(id: string, accion: string) {
@@ -117,24 +102,19 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
     <>
       {error && <div style={{ ...E.card, borderLeft: `3px solid ${P.rojo}`, marginBottom: 12, color: P.rojoTinta, fontSize: '0.82rem' }}>{error}</div>}
 
-      <div style={{ ...E.card, marginBottom: 14 }}>
-        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: P.tinta, marginBottom: 3 }}>El ciclo semanal</div>
-        <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: P.suave, maxWidth: '72ch' }}>
-          El corte cierra el <b>viernes</b> y se paga el <b>lunes siguiente</b>. Se arma solo cada lunes a las 5 de la mañana; este botón hace lo mismo a mano si hace falta adelantarlo o rehacerlo.
-        </p>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <button onClick={() => generar(false)} disabled={generando} style={{ ...E.btn, opacity: generando ? 0.6 : 1 }}>
-            {generando ? <><Chispas size={10} color="#fff" /> Generando…</> : `Generar el corte de la semana (${d?.sugerido?.desde} → ${d?.sugerido?.hasta})`}
-          </button>
-        </div>
-        <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${P.lineaSuave}` }}>
-          <div><label style={E.lbl}>O un periodo específico · desde</label>
-            <input type="date" value={manual.desde} onChange={e => setManual({ ...manual, desde: e.target.value })} style={E.input} /></div>
-          <div><label style={E.lbl}>hasta</label>
-            <input type="date" value={manual.hasta} onChange={e => setManual({ ...manual, hasta: e.target.value })} style={E.input} /></div>
-          <button onClick={() => generar(true)} disabled={generando || !manual.desde || !manual.hasta} style={E.btn2}>Generar corte manual</button>
-        </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+        <button onClick={() => setAsistente(true)} style={{ ...E.btn, padding: '10px 18px', fontSize: '0.85rem' }}>Crear nuevo corte</button>
+        <span style={{ fontSize: '0.8rem', color: P.suave }}>
+          El corte cierra el <b>{DIA_NOMBRE[d?.ciclo?.dia_cierre ?? 5]}</b> y se paga {d?.ciclo?.dias_a_pago ?? 3} días después. Se arma solo cada lunes a las 5 am.
+        </span>
+        <div style={{ flex: 1 }} />
+        <a href="/admin/crm?tab=config&cfg=comisiones" style={{ ...E.btn3, textDecoration: 'none' }}>Configurar el ciclo</a>
       </div>
+
+      {asistente && <Asistente sugerido={d?.sugerido} ciclo={d?.ciclo}
+        onCerrar={() => setAsistente(false)}
+        onListo={async () => { setAsistente(false); await cargar(); }}
+        onError={setError} />}
 
       {/* ── Ajustes que todavía no entran a ningún corte ── */}
       {(d?.pendientes || []).length > 0 && (
@@ -211,6 +191,182 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         onCambio={async () => { await cargar(); await verDetalle(abierto); setAbierto(abierto); }}
         onError={setError} />}
     </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ASISTENTE · crear un corte en tres pasos
+   ══════════════════════════════════════════════════════════════════
+   Antes esto eran dos botones y dos campos de fecha sueltos arriba de la
+   pantalla: ocupaban el lugar de lo que se viene a hacer todos los días, que es
+   revisar los cortes que ya existen. Ahora se pide cuando se necesita, y el
+   paso 2 enseña lo que va a pasar ANTES de que pase — que es la diferencia
+   entre generar y adivinar. */
+function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
+  sugerido?: { desde: string; hasta: string; paga_el: string };
+  ciclo?: { dia_cierre: number; dias_a_pago: number };
+  onCerrar: () => void; onListo: () => void; onError: (m: string) => void;
+}) {
+  const [paso, setPaso] = useState(1);
+  const [modo, setModo] = useState<'ciclo' | 'manual'>('ciclo');
+  const [rango, setRango] = useState({ desde: sugerido?.desde || '', hasta: sugerido?.hasta || '' });
+  const [previa, setPrevia] = useState<any>(null);
+  const [trabajando, setTrabajando] = useState(false);
+
+  const esCiclo = modo === 'ciclo';
+  const desde = esCiclo ? (sugerido?.desde || '') : rango.desde;
+  const hasta = esCiclo ? (sugerido?.hasta || '') : rango.hasta;
+  const pagaEl = esCiclo ? sugerido?.paga_el : null;
+
+  // El paso 2 consulta el periodo SIN escribir nada: se ve qué va a entrar
+  // antes de crear el corte.
+  async function verPrevia() {
+    setTrabajando(true);
+    try {
+      const r = await fetch(`/api/crm/comisiones/periodo?desde=${desde}&hasta=${hasta}`);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Error');
+      setPrevia(j); setPaso(2);
+    } catch (e: any) { onError(e.message); } finally { setTrabajando(false); }
+  }
+
+  async function crear() {
+    setTrabajando(true);
+    try {
+      const r = await fetch('/api/crm/comisiones/cortes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(esCiclo ? {} : { desde, hasta }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Error');
+      if (j.resultado?.errores?.length) onError(j.resultado.errores.join(' · '));
+      setPrevia({ ...previa, resultado: j.resultado }); setPaso(3);
+    } catch (e: any) { onError(e.message); } finally { setTrabajando(false); }
+  }
+
+  const PASOS = ['Periodo', 'Qué va a entrar', 'Listo'];
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Crear nuevo corte"
+      onClick={e => { if (e.target === e.currentTarget && paso !== 3) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(36,29,67,.34)', zIndex: 200,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 640,
+        maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px -20px rgba(36,29,67,.4)' }}>
+
+        {/* pasos */}
+        <div style={{ display: 'flex', gap: 6, padding: '16px 20px 12px', borderBottom: `1px solid ${P.linea}` }}>
+          {PASOS.map((t, i) => (
+            <div key={t} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <div style={{ height: 3, borderRadius: 2, background: paso >= i + 1 ? P.violeta : P.linea }} />
+              <span style={{ fontSize: '0.68rem', fontWeight: paso === i + 1 ? 800 : 600,
+                color: paso >= i + 1 ? P.violetaTinta : P.gris }}>{i + 1}. {t}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding: '18px 20px 20px' }}>
+          {paso === 1 && (
+            <>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: P.tinta, marginBottom: 10 }}>¿Qué periodo se corta?</div>
+              <label style={{ display: 'flex', gap: 10, padding: '13px 14px', border: `1.5px solid ${esCiclo ? P.violeta : P.linea}`,
+                background: esCiclo ? P.violetaAgua : '#fff', borderRadius: 10, cursor: 'pointer', marginBottom: 9 }}>
+                <input type="radio" checked={esCiclo} onChange={() => setModo('ciclo')} style={{ marginTop: 3 }} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.87rem', color: P.tinta }}>El ciclo configurado</div>
+                  <div style={{ fontSize: '0.78rem', color: P.suave, marginTop: 2 }}>
+                    {sugerido ? <>Del <b>{sugerido.desde}</b> al <b>{sugerido.hasta}</b>, se paga el <b>{sugerido.paga_el}</b>.</> : 'Calculando…'}
+                    {ciclo && <> Cierra el {DIA_NOMBRE[ciclo.dia_cierre]} y paga {ciclo.dias_a_pago} días después.</>}
+                  </div>
+                </div>
+              </label>
+              <label style={{ display: 'flex', gap: 10, padding: '13px 14px', border: `1.5px solid ${!esCiclo ? P.violeta : P.linea}`,
+                background: !esCiclo ? P.violetaAgua : '#fff', borderRadius: 10, cursor: 'pointer' }}>
+                <input type="radio" checked={!esCiclo} onChange={() => setModo('manual')} style={{ marginTop: 3 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.87rem', color: P.tinta }}>Un periodo específico</div>
+                  <div style={{ fontSize: '0.78rem', color: P.suave, marginTop: 2, marginBottom: !esCiclo ? 9 : 0 }}>
+                    Para un corte fuera del ciclo. No sustituye al automático de esa semana.
+                  </div>
+                  {!esCiclo && (
+                    <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+                      <div><label style={E.lbl}>Desde</label>
+                        <input type="date" value={rango.desde} onChange={e => setRango({ ...rango, desde: e.target.value })} style={E.input} /></div>
+                      <div><label style={E.lbl}>Hasta</label>
+                        <input type="date" value={rango.hasta} onChange={e => setRango({ ...rango, hasta: e.target.value })} style={E.input} /></div>
+                    </div>
+                  )}
+                </div>
+              </label>
+              <div style={{ display: 'flex', gap: 9, justifyContent: 'flex-end', marginTop: 18 }}>
+                <button onClick={onCerrar} style={E.btn3}>Cancelar</button>
+                <button onClick={verPrevia} disabled={trabajando || !desde || !hasta || hasta < desde}
+                  style={{ ...E.btn, opacity: trabajando || !desde || !hasta || hasta < desde ? 0.55 : 1 }}>
+                  {trabajando ? <><Chispas size={10} color="#fff" /> Revisando…</> : 'Ver qué va a entrar'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {paso === 2 && previa && (
+            <>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: P.tinta, marginBottom: 3 }}>Esto es lo que va a entrar</div>
+              <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: P.suave }}>
+                Del {desde} al {hasta}{pagaEl ? <> · se pagaría el <b>{pagaEl}</b></> : null}. Todavía no se ha creado nada.
+              </p>
+              {previa.resumen.length === 0 ? (
+                <div style={{ ...E.card, borderLeft: `3px solid ${P.ambar}`, background: P.ambarAgua, fontSize: '0.83rem', color: P.texto }}>
+                  <b>No hay comisiones en este periodo.</b> El corte nacería vacío. Suele ser porque las cuentas con pagos de esos días todavía no tienen consultor asignado.
+                </div>
+              ) : (
+                <div style={{ border: `1px solid ${P.linea}`, borderRadius: 10, overflow: 'hidden' }}>
+                  <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                    <thead><tr><th style={E.th}>Consultor</th><th style={{ ...E.th, textAlign: 'right' }}>Líneas</th><th style={{ ...E.th, textAlign: 'right' }}>Total</th></tr></thead>
+                    <tbody>
+                      {previa.resumen.map((f: any) => (
+                        <tr key={f.owner_id}>
+                          <td style={{ ...E.td, fontWeight: 700, color: P.tinta }}>{f.nombre}</td>
+                          <td style={{ ...E.td, textAlign: 'right' }}>{f.lineas}</td>
+                          <td style={{ ...E.td, textAlign: 'right', fontWeight: 800, color: P.violetaTinta }}>{pesos(f.monto)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {previa.sin_atribuir?.pagos > 0 && (
+                <div style={{ marginTop: 11, padding: '11px 13px', background: P.ambarAgua, borderRadius: 9, fontSize: '0.8rem', color: P.texto }}>
+                  <b>{previa.sin_atribuir.pagos} pago(s)</b> por {pesos(previa.sin_atribuir.monto)} de este periodo no le cuentan a nadie. Podrás agregarlos como ajuste dentro del corte.
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 9, justifyContent: 'flex-end', marginTop: 18 }}>
+                <button onClick={() => setPaso(1)} style={E.btn3}>Atrás</button>
+                <button onClick={crear} disabled={trabajando} style={{ ...E.btn, opacity: trabajando ? 0.55 : 1 }}>
+                  {trabajando ? <><Chispas size={10} color="#fff" /> Creando…</> : 'Crear el corte'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {paso === 3 && (
+            <>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: P.verdeTinta, marginBottom: 8 }}>Corte creado</div>
+              <ul style={{ margin: '0 0 8px', paddingLeft: 18, fontSize: '0.83rem', color: P.texto, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <li><b>{previa?.resultado?.cortes?.length || 0}</b> corte(s), del {desde} al {hasta}.</li>
+                {previa?.resultado?.ajustes_absorbidos > 0 && <li><b>{previa.resultado.ajustes_absorbidos}</b> ajuste(s) pendientes entraron a este corte.</li>}
+                {previa?.resultado?.omitidos?.length > 0 && <li>{previa.resultado.omitidos.length} se omitieron por tener ya un corte cerrado o pagado.</li>}
+              </ul>
+              <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: P.suave }}>
+                Queda <b>abierto</b>: revísalo, agrega lo que falte y ciérralo cuando esté listo para enviarse.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={onListo} style={E.btn}>Ver los cortes</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

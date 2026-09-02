@@ -15,7 +15,7 @@
 import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { recalcularComisiones } from '../../../lib/crm/comisiones.recalculo';
-import { generarCortes, semanaCerrada, pagosNoReconocidos } from '../../../lib/crm/comisiones.cortes';
+import { generarCortes, semanaCerrada, leerCiclo, pagosNoReconocidos } from '../../../lib/crm/comisiones.cortes';
 import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
@@ -27,7 +27,7 @@ const pesos = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es
 export const GET: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
 
-  const { desde, hasta, paga_el } = semanaCerrada();
+  const { desde, hasta, paga_el } = semanaCerrada(new Date(), await leerCiclo());
 
   try {
     // 1 · La semana ya debió recalcularse en la madrugada, pero se repite sobre

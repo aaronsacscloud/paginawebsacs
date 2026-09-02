@@ -8,7 +8,7 @@
 // PUT  {id, accion}         'cerrar' | 'reabrir' | 'pagar' | 'nota'
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { generarCortes, semanaCerrada, lunesSiguiente, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
+import { generarCortes, semanaCerrada, fechaDePago, leerCiclo, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
 
 export const prerender = false;
 const json = (o: any, s = 200) =>
@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     return json({
       cortes: data || [],
-      sugerido: semanaCerrada(),
+      sugerido: semanaCerrada(new Date(), await leerCiclo()),
       pendientes: (pend || []).map((a: any) => ({
         owner_id: a.owner_id, nombre: a.team_members?.nombre || '—',
         concepto: a.concepto, tipo: a.tipo, monto: Number(a.monto || 0),
@@ -79,14 +79,15 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Sin fechas = el ciclo automático de la semana cerrada.
     const auto = !esFecha(b.desde) || !esFecha(b.hasta);
-    const s = semanaCerrada();
+    const ciclo = await leerCiclo();
+    const s = semanaCerrada(new Date(), ciclo);
     const desde = auto ? s.desde : b.desde;
     const hasta = auto ? s.hasta : b.hasta;
     if (hasta < desde) return json({ error: 'El rango está al revés.' }, 400);
 
     const r = await generarCortes(desde, hasta, {
       automatico: auto,
-      paga_el: auto ? s.paga_el : lunesSiguiente(hasta),
+      paga_el: auto ? s.paga_el : fechaDePago(hasta, ciclo.dias_a_pago),
       owner_id: b.owner_id || undefined,
     });
     return json({ ok: true, resultado: r });

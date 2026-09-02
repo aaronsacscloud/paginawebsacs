@@ -16,11 +16,12 @@ const CUENTAS = ['corporativa', 'pagadora', 'ninguna'];
 
 export const GET: APIRoute = async () => {
   try {
-    const [modelos, reglas, planes, miembros] = await Promise.all([
+    const [modelos, reglas, planes, miembros, ciclo] = await Promise.all([
       supabase.from('comision_modelos').select('*').order('es_default', { ascending: false }).order('nombre'),
       supabase.from('comision_reglas').select('*').order('created_at'),
       supabase.from('plans').select('id, slug, nombre, categoria, activo').order('categoria').order('orden'),
       supabase.from('team_members').select('id, nombre, email, rol, activo, comision_modelo_id, reclutado_por_id').order('nombre'),
+      supabase.from('comision_ciclo').select('dia_cierre, dias_a_pago').eq('id', true).maybeSingle(),
     ]);
     for (const r of [modelos, reglas, planes, miembros]) if (r.error) throw r.error;
 
@@ -35,6 +36,7 @@ export const GET: APIRoute = async () => {
       planes: planes.data || [],
       miembros: miembros.data || [],
       categorias,
+      ciclo: ciclo.data || { dia_cierre: 5, dias_a_pago: 3 },
     });
   } catch (e: any) {
     return json({ error: e?.message || String(e) }, 500);
@@ -110,6 +112,20 @@ export const PUT: APIRoute = async ({ request }) => {
       const { data, error } = await supabase.from('comision_reglas').update(patch).eq('id', b.id).select().single();
       if (error) throw error;
       return json({ regla: data });
+    }
+
+    // El ciclo de pago: de qué día a qué día corre el corte. Es de la empresa,
+    // no de cada persona: cortes con calendarios distintos harían imposible
+    // cuadrar una semana.
+    if (b.tipo === 'ciclo') {
+      const dia = Number(b.dia_cierre), dias = Number(b.dias_a_pago);
+      if (!Number.isInteger(dia) || dia < 1 || dia > 7) return json({ error: 'El día de cierre va de 1 (lunes) a 7 (domingo).' }, 400);
+      if (!Number.isInteger(dias) || dias < 0 || dias > 14) return json({ error: 'Los días hasta el pago van de 0 a 14.' }, 400);
+      const { error } = await supabase.from('comision_ciclo')
+        .update({ dia_cierre: dia, dias_a_pago: dias, actualizado_at: new Date().toISOString() })
+        .eq('id', true);
+      if (error) throw error;
+      return json({ ok: true });
     }
 
     // Asignar el modelo de una persona. Es la pieza que hace que cada
