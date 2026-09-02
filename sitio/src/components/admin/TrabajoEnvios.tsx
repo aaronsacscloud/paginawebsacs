@@ -103,6 +103,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [criterio, setCriterio] = useState<Record<string, string>>({});
   const [galeria, setGaleria] = useState<ImagenGal[]>([]);
   const [promos, setPromos] = useState<any[]>([]);
+  const [plantillas, setPlantillas] = useState<any[]>([]);
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
   const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err'; aprendizaje?: boolean } | null>(null);
@@ -113,7 +114,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [fijo, setFijo] = useState<string | null>(null);   // la tarjeta que estás viendo no se te quita de las manos
   const bannerTimer = useRef<any>(null);
 
-  const cargar = () => fetch('/api/crm/ti/envios').then(r => r.json()).then(j => { if (j.error) { setBanner({ texto: j.error, tipo: 'err' }); return; } setGaleria(j.galeria || []); setPromos(j.promociones || []); setPend(j.pendientes || []); setRec(j.recientes || []); setCfg(j.config || null); setApr(j.aprendizaje || null); }).catch(() => setBanner({ texto: 'No se pudieron cargar los envíos', tipo: 'err' }));
+  const cargar = () => fetch('/api/crm/ti/envios').then(r => r.json()).then(j => { if (j.error) { setBanner({ texto: j.error, tipo: 'err' }); return; } setGaleria(j.galeria || []); setPromos(j.promociones || []); setPlantillas(j.plantillas || []); setPend(j.pendientes || []); setRec(j.recientes || []); setCfg(j.config || null); setApr(j.aprendizaje || null); }).catch(() => setBanner({ texto: 'No se pudieron cargar los envíos', tipo: 'err' }));
   useEffect(() => { cargar(); const a = setInterval(cargar, 15_000); const b = setInterval(() => setAhora(Date.now()), 1000); return () => { clearInterval(a); clearInterval(b); }; }, []);
 
   const actual = (fijo && pend.find(e => e.id === fijo)) || pend[0] || null;
@@ -261,6 +262,16 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
       </div>
 
       <div className="ti-carta ti-aprendizaje">
+        {plantillas.length > 0 && (
+          <div style={{ margin: '18px 0 6px' }}>
+            <h3 className="ti-h3">Plantillas del agente (30 días)</h3>
+            <p className="ti-porque" style={{ marginTop: 4 }}>Las crea el agente por momento (seguimiento, no-show, preparación, promo, cierre); Meta las aprueba. Aquí se ve cuáles llegan y cuáles consiguen respuesta en 48 h.</p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.84rem' }}>
+              <thead><tr style={{ textAlign: 'left', color: '#6b6580', fontSize: '.66rem', letterSpacing: '.08em', textTransform: 'uppercase' }}><th style={{ padding: '4px 6px' }}>Plantilla</th><th>Enviadas</th><th>Entregadas</th><th>Leídas</th><th>Respondieron</th><th>Tasa</th></tr></thead>
+              <tbody>{plantillas.map((p: any) => <tr key={p.nombre} style={{ borderTop: '1px solid #eeebf6' }}><td style={{ padding: '6px' }}>{p.nombre}</td><td>{p.enviadas}</td><td>{p.entregadas}</td><td>{p.leidas}</td><td>{p.respondidas}</td><td style={{ fontWeight: 700, color: p.tasa_respuesta >= 30 ? '#14532d' : p.tasa_respuesta >= 15 ? '#B7791F' : '#b93333' }}>{p.tasa_respuesta} %</td></tr>)}</tbody>
+            </table>
+          </div>
+        )}
         <Promociones promos={promos} onGuardar={async (lista: any[]) => { const j = await post('/api/crm/ti/envios', { accion: 'promos_guardar', promociones: lista }); if (j?.promociones) setPromos(j.promociones); return !!j; }} />
         <GaleriaRecursos galeria={galeria} onNuevo={r => setGaleria(g => [r, ...g])}
           onQuitar={async (id: string) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_quitar', imagen_id: id }); if (j) setGaleria(g => g.filter(x => x.id !== id)); }}

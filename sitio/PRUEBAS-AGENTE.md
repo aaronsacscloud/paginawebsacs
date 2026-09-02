@@ -129,6 +129,13 @@ ofreció…». Si vuelves a pedir precio, no la repite como novedad.
 - **Preparación**: el día antes de la demo te pide, con naturalidad, tu Excel o tres productos con tallas y colores.
   Si mandas un archivo, agradece y lo anota en «Para la reunión».
 
+## Las pestañas nuevas de Trabajo inteligente
+
+- **Calificación**: sugerencias del día con fundamentos (índice de vida, intentos, plática real) y botones; todos los leads con su índice; descalificados con «Revivir». Rampa 20 coincidencias → automático.
+- **Revisión diaria** (8:00): por conversación de ayer, qué pasó y una propuesta con fundamento; aceptar la ejecuta (mensaje programado con veto, tarea, ángulo, descalificar); rechazar pide el porqué.
+- **Consumo**: gasto hoy / 7 d / mes contra el presupuesto de $300, por acción y por lead; costo por cita del agente.
+- En Próximos envíos, abajo: Promociones vigentes, Plantillas del agente (tablero de entrega/respuesta) y Recursos del agente.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

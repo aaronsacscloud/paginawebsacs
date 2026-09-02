@@ -41,8 +41,10 @@ export const GET: APIRoute = async ({ request }) => {
   const { listarPromos, promoVigente } = await import('../../../../lib/crm/ti/promociones');
   await promoVigente().catch(() => null);
   const promociones = await listarPromos().catch(() => []);
+  const { tableroPlantillas } = await import('../../../../lib/crm/ti/plantillas-agente');
+  const plantillas = await tableroPlantillas().catch(() => []);
   return json({
-    galeria, promociones,
+    galeria, promociones, plantillas,
     pendientes: (pend || []).map(decorar), recientes: (rec || []).map(decorar),
     config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10), modo: cfg.agente_modo || 'sombra', pruebas: cfg.agente_prueba_telefonos || [], sin_credito_desde },
     aprendizaje: { ejemplos_dueno: ejemplosDueno || 0, ejemplos_7d: ejemplos7 || 0, vetos_7d: vetos7 || 0, ediciones_7d: ediciones7 || 0, ultimos: ultimos || [] },

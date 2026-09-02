@@ -22,7 +22,7 @@ import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
 import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUso, asegurarFormatoWhatsApp, marcarErrorImagen, TIPO_L } from './imagenes-agente';
 import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './promociones';
-import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
+import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
 
@@ -656,7 +656,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       const conAdjuntos = ((e as any).adjuntos || []).length || (e as any).imagen_url || !mensaje;
       if (wamid && !conAdjuntos) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
       if (!mensaje) mensaje = e.mensaje;
-      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(),
+      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(), ...(plantillaUsada ? { salida: { ...((e.salida as any) || {}), plantilla_usada: plantillaUsada } } : {}),
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
         ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
@@ -886,7 +886,9 @@ export async function tocarSilencios(): Promise<any> {
       let par: { marketing: string | null; utility: string | null } | null = null;
       if (!ventana) {
         // Fuera de ventana solo salen PLANTILLAS: marketing primero, utility a los 10 min si Meta no la entregó.
-        par = await parListo();
+        // Familia por momento: promo vigente y el lead pidió precio → promo; tercer intento → cierre; si no, seguimiento.
+        const familia = validos >= 2 ? 'cierre' : (/precio|costo|cu[aá]nto/i.test(String((st.angulos || []).join(' '))) && await promoVigente().catch(() => null)) ? 'promo' : 'seguimiento';
+        par = await parListoPara(familia as any);
         if (!par) {
           res.sin_ventana++;
           await log({ accion: 'silencio_sin_plantilla', contact_id: cid, razon: `toque ${st.toque + 1} del ciclo ${st.ciclo}: las plantillas del agente aún no están aprobadas en Meta`, detalle: { horas: Math.round(horas) } });
