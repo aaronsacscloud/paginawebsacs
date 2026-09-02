@@ -16,7 +16,7 @@
 //    pantalla los muestra como "sin atribuir", que es el trabajo pendiente.
 import { supabase } from '../supabase';
 import {
-  calcularLinea, calcularOverride, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
+  calcularLinea, calcularOverride, aplicarPctManual, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
   type Modelo, type Regla, type Origen, type LineaCalculada,
 } from './comisiones.lib';
 
@@ -34,6 +34,8 @@ export type ResultadoRecalculo = {
   sin_vencimiento: number;
   /** Pagos con fecha futura: dinero que todavía no entra, no comisiona. */
   futuros: number;
+  /** Líneas cuyo % está puesto a mano y el recálculo respetó. */
+  pct_manual: number;
   ajustes_pendientes: { payment_id: string; monto: number; motivo: string }[];
   monto_escrito: number;
   truncado: boolean;
@@ -66,7 +68,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const res: ResultadoRecalculo = {
     desde, hasta, pagos_leidos: 0, lineas_escritas: 0,
     lineas_canceladas: 0, overrides: 0, sin_atribuir: 0, sin_regla: 0, congeladas: 0,
-    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0, futuros: 0,
+    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0, futuros: 0, pct_manual: 0,
     ajustes_pendientes: [], monto_escrito: 0, truncado: false, errores: [],
   };
 
@@ -129,7 +131,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const existentes = new Map<string, any>();
   for (let i = 0; i < ids.length; i += 300) {
     const { data } = await supabase.from('comision_lineas')
-      .select('id, payment_id, owner_id, tipo, estado, monto, corte_id').in('payment_id', ids.slice(i, i + 300));
+      .select('id, payment_id, owner_id, tipo, estado, monto, corte_id, pct_manual, pct_manual_nota, pct_manual_at').in('payment_id', ids.slice(i, i + 300));
     for (const l of data || []) existentes.set(`${l.payment_id}:${l.owner_id}:${l.tipo}`, l);
   }
 
@@ -247,17 +249,31 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
      * madrugada borraba `corte_id` y devolvía `estado` a 'calculada' — un corte
      * enviado el lunes amanecía el martes sin ninguna línea.
      *
-     * Se arrastran los dos campos que NO son del cálculo sino del proceso.
+     * Se arrastra todo lo que NO es del cálculo sino del proceso: en qué corte
+     * viaja, en qué estado está, y el % que alguien ajustó a mano.
+     *
+     * El ajuste manual es el más frágil de los tres, porque el recálculo SÍ
+     * sabe calcular ese campo —y calcularía otra cosa—. Si no se arrastra, una
+     * excepción acordada por la tarde desaparece de noche y el lunes se paga el
+     * número viejo, sin que nadie vea el cambio.
      */
     const conservando = (l: LineaCalculada, k: string) => {
       const ya = existentes.get(k);
-      return ya ? { ...l, corte_id: ya.corte_id ?? null, estado: ya.estado } : l;
+      if (!ya) return l;
+      const base = { ...l, corte_id: ya.corte_id ?? null, estado: ya.estado };
+      return ya.pct_manual == null ? base
+        : aplicarPctManual(base, Number(ya.pct_manual), ya.pct_manual_nota, ya.pct_manual_at);
     };
 
     const kVenta = `${p.id}:${owner_id}:venta`;
     if (!congelada(kVenta)) {
-      aEscribir.push(conservando(linea, kVenta) as LineaCalculada);
-      res.monto_escrito = r2(res.monto_escrito + linea.monto);
+      // El monto que se REPORTA es el de la fila que se va a escribir: si un
+      // ajuste manual la cambió, el resumen tiene que decir esa cifra y no la
+      // que salió de la tarifa.
+      const fila = conservando(linea, kVenta) as LineaCalculada;
+      aEscribir.push(fila);
+      if (fila.pct_manual != null) res.pct_manual++;
+      res.monto_escrito = r2(res.monto_escrito + fila.monto);
     }
 
     // ── Override de quien reclutó al partner (cláusula 8.3) ──
@@ -267,9 +283,10 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
       const ov = modeloR ? calcularOverride(linea, reclutador, modeloR) : null;
       const kOv = `${p.id}:${reclutador}:override_partner`;
       if (ov && !congelada(kOv)) {
-        aEscribir.push(conservando(ov, kOv) as LineaCalculada);
+        const fila = conservando(ov, kOv) as LineaCalculada;
+        aEscribir.push(fila);
         res.overrides++;
-        res.monto_escrito = r2(res.monto_escrito + ov.monto);
+        res.monto_escrito = r2(res.monto_escrito + fila.monto);
       }
     }
   }

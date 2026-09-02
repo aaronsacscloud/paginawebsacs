@@ -52,6 +52,33 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   const [abierto, setAbierto] = useState<string | null>(null);
   const [det, setDet] = useState<any>(null);
   const [asistente, setAsistente] = useState(false);
+  const [recalculando, setRecalculando] = useState(false);
+
+  /**
+   * Recalcula el mes en curso y el anterior — la misma ventana del cron de la
+   * madrugada. Vive aquí porque era lo único de la vista "Periodo" que hacía
+   * falta a diario: el resto de esa pantalla competía con los cortes en vez de
+   * ayudarlos.
+   */
+  async function recalcular() {
+    const h = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    const ini = new Date(h.getFullYear(), h.getMonth() - 1, 1);
+    const desde = `${ini.getFullYear()}-${p(ini.getMonth() + 1)}-01`;
+    const hasta = `${h.getFullYear()}-${p(h.getMonth() + 1)}-${p(h.getDate())}`;
+    setRecalculando(true);
+    try {
+      const r = await fetch('/api/crm/comisiones/periodo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'recalcular', desde, hasta }),
+      });
+      const j = await r.json();
+      if (!r.ok) { setError(j.error || 'Error'); return; }
+      setError(null);
+      await cargar();
+      if (abierto) await cargarDetalle(abierto);
+    } catch (e: any) { setError(e.message); } finally { setRecalculando(false); }
+  }
 
   async function cargar() {
     setCargando(true);
@@ -64,13 +91,24 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   }
   useEffect(() => { cargar(); /* eslint-disable-next-line */ }, []);
 
-  async function verDetalle(id: string) {
-    if (abierto === id) { setAbierto(null); setDet(null); return; }
-    setAbierto(id); setDet(null);
+  /**
+   * Trae el detalle SIN alternar. Separado de `verDetalle` porque mezclarlos
+   * dejaba el panel cargando para siempre: refrescar tras un cambio llamaba al
+   * mismo botón que cierra, así que se cerraba (det = null) y enseguida se
+   * volvía a marcar como abierto — con el detalle ya vaciado y nadie pidiéndolo
+   * de nuevo. Se veía al agregar un ajuste.
+   */
+  async function cargarDetalle(id: string) {
     const r = await fetch(`/api/crm/comisiones/cortes?id=${id}`);
     const j = await r.json();
     if (!r.ok) { setError(j.error || 'Error'); return; }
-    setDet(j);
+    setDet(j); setAbierto(id);
+  }
+
+  async function verDetalle(id: string) {
+    if (abierto === id) { setAbierto(null); setDet(null); return; }
+    setAbierto(id); setDet(null);
+    await cargarDetalle(id);
   }
 
   async function accionCorte(id: string, accion: string) {
@@ -89,7 +127,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
     const j = await r.json();
     if (!r.ok) { setError(j.error || 'Error'); return; }
     setError(null);
-    await cargar(); await verDetalle(id); setAbierto(id);
+    await cargar(); await cargarDetalle(id);
   }
 
   if (cargando && !d) return <Cargando texto="Cargando cortes…" />;
@@ -104,6 +142,9 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
         <button onClick={() => setAsistente(true)} style={{ ...E.btn, padding: '10px 18px', fontSize: '0.85rem' }}>Crear nuevo corte</button>
+        <button onClick={recalcular} disabled={recalculando} style={{ ...E.btn2, opacity: recalculando ? 0.6 : 1 }}>
+          {recalculando ? <><Chispas size={10} /> Recalculando…</> : 'Recalcular el mes'}
+        </button>
         <span style={{ fontSize: '0.8rem', color: P.suave }}>
           El corte cierra el <b>{DIA_NOMBRE[d?.ciclo?.dia_cierre ?? 5]}</b> y se paga {d?.ciclo?.dias_a_pago ?? 3} días después. Se arma solo cada lunes a las 5 am.
         </span>
@@ -188,7 +229,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
 
       {abierto && <Detalle det={det} movil={movil}
         onAccion={(a) => accionCorte(abierto, a)}
-        onCambio={async () => { await cargar(); await verDetalle(abierto); setAbierto(abierto); }}
+        onCambio={async () => { await cargar(); await cargarDetalle(abierto); }}
         onError={setError} />}
     </>
   );
@@ -373,6 +414,50 @@ function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
 /* ══════════════════════════════════════════════════════════════════
    DETALLE DE UN CORTE
    ══════════════════════════════════════════════════════════════════ */
+/**
+ * El % de una línea, editable en el sitio.
+ *
+ * Se confirma con Enter o al salir del campo, y Escape cancela. El valor
+ * mostrado se resincroniza con el de la línea después de guardar, porque el
+ * servidor puede devolver otro —al vaciarlo, la tarifa configurada— y dejar en
+ * pantalla lo que se tecleó haría creer que se guardó algo distinto.
+ */
+function PctEditable({ linea, onGuardar }: { linea: any; onGuardar: (l: any, pct: string) => Promise<boolean> }) {
+  const actual = linea.sin_regla && linea.pct_manual == null ? '' : String(Number(linea.pct));
+  const [v, setV] = useState(actual);
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(() => { setV(actual); /* eslint-disable-next-line */ }, [linea.pct, linea.pct_manual]);
+
+  async function confirmarValor() {
+    if (v === actual || ocupado) return;
+    setOcupado(true);
+    const ok = await onGuardar(linea, v);
+    if (!ok) setV(actual);
+    setOcupado(false);
+  }
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+      <input type="number" min={0} max={100} value={v} disabled={ocupado}
+        title="Cambia el % solo para esta línea. Vacío lo devuelve a la tarifa configurada."
+        onChange={e => setV(e.target.value)}
+        onBlur={confirmarValor}
+        onKeyDown={e => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          if (e.key === 'Escape') { setV(actual); (e.target as HTMLInputElement).blur(); }
+        }}
+        style={{
+          width: 56, padding: '4px 6px', textAlign: 'right', fontSize: '0.82rem', fontFamily: 'inherit',
+          border: `1px solid ${linea.pct_manual != null ? P.ambar : '#e2e2e2'}`, borderRadius: 6,
+          background: linea.pct_manual != null ? P.ambarAgua : '#fff',
+          color: linea.pct_manual != null ? P.ambarTinta : P.texto,
+          fontWeight: linea.pct_manual != null ? 800 : 400, outline: 'none',
+        }} />
+      <span style={{ color: '#aaa', fontSize: '0.75rem' }}>%</span>
+    </span>
+  );
+}
+
 function Detalle({ det, movil, onAccion, onCambio, onError }: {
   det: any; movil: boolean;
   onAccion: (a: string) => void; onCambio: () => void; onError: (m: string) => void;
@@ -402,6 +487,31 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
       if (!pago) setNuevo({ tipo: 'abono', concepto: '', monto: '', nota: '' });
       onCambio();
     } finally { setGuardando(false); }
+  }
+
+  /**
+   * Guarda el % de una línea. La nota se pide SOLO al poner un ajuste, no al
+   * quitarlo: quitarlo devuelve la línea a la tarifa configurada, que no
+   * necesita explicación.
+   */
+  async function cambiarPct(l: any, pct: string) {
+    let nota = '';
+    if (pct !== '') {
+      const n = window.prompt(
+        `¿Por qué esta línea cobra ${pct}% en vez de ${Number(l.pct)}%?\n` +
+        'Queda escrito en el estado de cuenta que recibe el consultor.');
+      if (n === null) return false;          // Cancelar no cambia nada
+      nota = n.trim();
+      if (!nota) { onError('Escribe el motivo: sin él, en tres meses nadie sabrá por qué esta línea cobró distinto.'); return false; }
+    }
+    const r = await fetch('/api/crm/comisiones/lineas', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: l.id, pct, nota }),
+    });
+    const j = await r.json();
+    if (!r.ok) { onError(j.error || 'Error'); return false; }
+    onCambio();
+    return true;
   }
 
   async function quitar(id: string) {
@@ -444,9 +554,19 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
               <tr key={l.id}>
                 <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(l.fecha)}</td>
                 <td style={{ ...E.td, fontWeight: 600, color: P.tinta }}>{l.companies?.nombre_comercial || l.companies?.nombre || '—'}</td>
-                <td style={E.td}>{l.concepto || 'Sin SKU'}<div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>{explicar(l)}</div></td>
+                <td style={E.td}>
+                  {l.concepto || 'Sin SKU'}
+                  {l.pct_manual != null && (
+                    <span style={{ ...E.chip, background: P.ambarAgua, color: P.ambarTinta, marginLeft: 6 }}>% a mano</span>
+                  )}
+                  <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>{explicar(l)}</div>
+                </td>
                 <td style={{ ...E.td, textAlign: 'right' }}>{pesos(l.base)}</td>
-                <td style={{ ...E.td, textAlign: 'right' }}>{l.sin_regla ? '—' : Number(l.pct) + '%'}</td>
+                <td style={{ ...E.td, textAlign: 'right' }}>
+                  {firme
+                    ? (l.sin_regla && l.pct_manual == null ? '—' : Number(l.pct) + '%')
+                    : <PctEditable linea={l} onGuardar={cambiarPct} />}
+                </td>
                 <td style={{ ...E.td, textAlign: 'right', fontWeight: 800, color: P.violetaTinta }}>{pesos(l.monto)}</td>
               </tr>
             ))}

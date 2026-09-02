@@ -160,6 +160,7 @@ export type LineaCalculada = {
   monto_bruto: number; cuenta: Cuenta; descuento_pct: number;
   base: number; pct: number; monto: number;
   es_renovacion: boolean; tasa_reducida: boolean; tasa_de_renovacion: boolean;
+  pct_manual: number | null; pct_manual_nota: string | null; pct_manual_at: string | null;
   dias_atraso: number | null; fuera_de_tiempo: boolean;
   descuento_venta_pct: number; descuento_exceso: number;
   origen_owner_id: string | null;
@@ -237,6 +238,7 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
     es_renovacion: e.es_renovacion === true,
     tasa_reducida,
     tasa_de_renovacion: tasa_de_renovacion && !tasa_reducida,
+    pct_manual: null, pct_manual_nota: null, pct_manual_at: null,
     dias_atraso,
     fuera_de_tiempo,
     descuento_venta_pct,
@@ -278,6 +280,7 @@ export function calcularOverride(
     monto: r2(venta.base * Number(pct) / 100),
     tasa_reducida: false,
     tasa_de_renovacion: false,
+    pct_manual: null, pct_manual_nota: null, pct_manual_at: null,
     fuera_de_tiempo: false,
     origen_owner_id: venta.owner_id,
     sin_regla: false,
@@ -286,6 +289,39 @@ export function calcularOverride(
 }
 
 /** Frase corta que explica de dónde salió el número, para la pantalla. */
+/**
+ * Aplica un % puesto a mano sobre una línea ya calculada.
+ *
+ * Vive aquí y no en el endpoint porque la usan DOS caminos —guardar el ajuste y
+ * el recálculo de cada madrugada— y si cada uno hiciera su propia cuenta, una
+ * de las dos se quedaría atrás. El exceso de descuento se sigue restando: es un
+ * castigo por cómo se vendió, no por la tarifa, y perdonarlo al mover el % sería
+ * una puerta trasera para saltárselo.
+ */
+type ConTarifa = { base: number | string; pct: number | string; descuento_exceso?: number | string | null };
+
+export function aplicarPctManual<T extends ConTarifa>(
+  l: T, pct: number | null, nota?: string | null, cuando?: string | null,
+): T & { pct: number; monto: number; pct_manual: number | null; pct_manual_nota: string | null; pct_manual_at: string | null } {
+  if (pct == null) {
+    const bruta = r2(Number(l.base || 0) * Number(l.pct || 0) / 100);
+    return {
+      ...l, pct: Number(l.pct || 0),
+      pct_manual: null, pct_manual_nota: null, pct_manual_at: null,
+      monto: r2(Math.max(0, bruta - Number(l.descuento_exceso || 0))),
+    };
+  }
+  const bruta = r2(Number(l.base || 0) * pct / 100);
+  return {
+    ...l,
+    pct_manual: pct,
+    pct_manual_nota: (nota || '').trim() || null,
+    pct_manual_at: cuando || new Date().toISOString(),
+    pct,
+    monto: r2(Math.max(0, bruta - Number(l.descuento_exceso || 0))),
+  };
+}
+
 export function explicar(l: LineaCalculada | any): string {
   const money = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
   const partes: string[] = [];
@@ -303,7 +339,9 @@ export function explicar(l: LineaCalculada | any): string {
 
   const motivo = l.detalle?.motivo_tasa_reducida
     || (l.fuera_de_tiempo ? 'cobro fuera de tiempo' : 'no cumplió renovación');
-  const sello = l.tasa_reducida ? ` (tasa reducida: ${motivo})`
+  const sello = l.pct_manual != null
+      ? ` ajustado a mano${l.pct_manual_nota ? `: ${l.pct_manual_nota}` : ''}`
+    : l.tasa_reducida ? ` (tasa reducida: ${motivo})`
     : l.tasa_de_renovacion ? ' de anualidad' : '';
   partes.push(`× ${Number(l.pct)}%${sello} = ${money(l.detalle?.comision_antes_de_exceso ?? l.monto)}`);
   if (l.dias_atraso != null && Number(l.dias_atraso) > 0 && !l.tasa_reducida) {
