@@ -58,7 +58,10 @@ export type Modelo = {
 export type Regla = {
   id: string; modelo_id: string;
   plan_id: string | null; categoria: string | null; origen: Origen | null;
-  pct: number; nota?: string | null; created_at?: string;
+  pct: number;
+  /** Tasa cuando el pago es renovación (anualidad de ARR). Nulo = usa `pct`. */
+  pct_renovacion?: number | null;
+  nota?: string | null; created_at?: string;
 };
 
 export type ContextoPago = {
@@ -156,7 +159,7 @@ export type LineaCalculada = {
   fecha: string; concepto: string | null; categoria: string | null; origen: Origen | null;
   monto_bruto: number; cuenta: Cuenta; descuento_pct: number;
   base: number; pct: number; monto: number;
-  es_renovacion: boolean; tasa_reducida: boolean;
+  es_renovacion: boolean; tasa_reducida: boolean; tasa_de_renovacion: boolean;
   dias_atraso: number | null; fuera_de_tiempo: boolean;
   descuento_venta_pct: number; descuento_exceso: number;
   origen_owner_id: string | null;
@@ -178,6 +181,14 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
 
   const regla = elegirRegla(e.reglas, { plan_id: e.plan_id, categoria: e.categoria, origen: e.origen });
   let pct = regla ? Number(regla.pct) : 0;
+
+  // La anualidad no se paga como primera venta. Las tasas altas —35% del lead
+  // de Sacs, 55% del referido, 70% de la recuperada— son premio de ADQUISICIÓN
+  // y se cobran una vez; el recurrente de ARR va a su propia tasa. Si la regla
+  // no la define (servicios de arranque, personalización), no hay anualidad que
+  // renovar y se queda con la de siempre.
+  const tasa_de_renovacion = e.es_renovacion === true && regla?.pct_renovacion != null;
+  if (tasa_de_renovacion) pct = Number(regla!.pct_renovacion);
 
   // ── Las tres condiciones de la renovación ──
   // A y B llegan resueltas en `cumple_condiciones` (seguimiento y crecimiento).
@@ -225,6 +236,7 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
     monto,
     es_renovacion: e.es_renovacion === true,
     tasa_reducida,
+    tasa_de_renovacion: tasa_de_renovacion && !tasa_reducida,
     dias_atraso,
     fuera_de_tiempo,
     descuento_venta_pct,
@@ -236,6 +248,7 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
       especificidad: regla ? especificidad(regla) : undefined,
       comision_antes_de_exceso: descuento_exceso > 0 ? bruta : undefined,
       motivo_tasa_reducida: tasa_reducida ? (fuera_de_tiempo ? 'cobro fuera de tiempo' : 'no cumplió seguimiento o crecimiento') : undefined,
+      pct_primera_venta: tasa_de_renovacion && !tasa_reducida ? Number(regla!.pct) : undefined,
     },
   };
 }
@@ -264,6 +277,7 @@ export function calcularOverride(
     descuento_exceso: 0,
     monto: r2(venta.base * Number(pct) / 100),
     tasa_reducida: false,
+    tasa_de_renovacion: false,
     fuera_de_tiempo: false,
     origen_owner_id: venta.owner_id,
     sin_regla: false,
@@ -289,7 +303,9 @@ export function explicar(l: LineaCalculada | any): string {
 
   const motivo = l.detalle?.motivo_tasa_reducida
     || (l.fuera_de_tiempo ? 'cobro fuera de tiempo' : 'no cumplió renovación');
-  partes.push(`× ${Number(l.pct)}%${l.tasa_reducida ? ` (tasa reducida: ${motivo})` : ''} = ${money(l.detalle?.comision_antes_de_exceso ?? l.monto)}`);
+  const sello = l.tasa_reducida ? ` (tasa reducida: ${motivo})`
+    : l.tasa_de_renovacion ? ' de anualidad' : '';
+  partes.push(`× ${Number(l.pct)}%${sello} = ${money(l.detalle?.comision_antes_de_exceso ?? l.monto)}`);
   if (l.dias_atraso != null && Number(l.dias_atraso) > 0 && !l.tasa_reducida) {
     partes.push(`cobrado ${Number(l.dias_atraso)} día(s) tarde, dentro del margen`);
   }

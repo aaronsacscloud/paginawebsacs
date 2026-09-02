@@ -330,6 +330,7 @@ function VistaPeriodo({ movil }: { movil: boolean }) {
                     <td style={E.td}>
                       {l.origen ? ORIGEN_LABEL[l.origen] : '—'}
                       {l.tipo === 'override_partner' && <div style={{ ...E.chip, background: P.azulAgua, color: P.azulTinta, marginTop: 3 }}>Override</div>}
+                      {l.es_renovacion && !l.tasa_reducida && <div style={{ ...E.chip, background: P.violetaAgua, color: P.violetaTinta, marginTop: 3 }}>Renovación{l.tasa_de_renovacion ? ' · tasa de anualidad' : ''}</div>}
                       {l.tasa_reducida && <div style={{ ...E.chip, background: P.ambarAgua, color: P.ambarTinta, marginTop: 3 }}>Tasa reducida</div>}
                       {l.fuera_de_tiempo && <div style={{ ...E.chip, background: P.rojoAgua, color: P.rojoTinta, marginTop: 3 }}>Cobro tardío</div>}
                       {Number(l.descuento_exceso) > 0 && <div style={{ ...E.chip, background: P.rojoAgua, color: P.rojoTinta, marginTop: 3 }}>Descuento sobre tope</div>}

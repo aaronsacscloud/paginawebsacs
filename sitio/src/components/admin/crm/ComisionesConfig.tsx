@@ -134,7 +134,7 @@ function VistaModelo({ movil }: { movil: boolean }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modeloId, setModeloId] = useState('');
-  const [nueva, setNueva] = useState<any>({ plan_id: '', categoria: '', origen: '', pct: '' });
+  const [nueva, setNueva] = useState<any>({ plan_id: '', categoria: '', origen: '', pct: '', pct_renovacion: '' });
 
   async function cargar() {
     setCargando(true);
@@ -171,7 +171,7 @@ function VistaModelo({ movil }: { movil: boolean }) {
     });
     const j = await r.json();
     if (!r.ok) { setError(j.error || 'Error'); return; }
-    setNueva({ plan_id: '', categoria: '', origen: '', pct: '' });
+    setNueva({ plan_id: '', categoria: '', origen: '', pct: '', pct_renovacion: '' });
     await cargar();
   }
 
@@ -289,16 +289,19 @@ function VistaModelo({ movil }: { movil: boolean }) {
             <div style={{ fontWeight: 800, fontSize: '0.85rem', color: P.tinta, marginBottom: 3 }}>Tarifas por SKU y origen</div>
             <p style={{ margin: '0 0 11px', fontSize: '0.78rem', color: P.suave, maxWidth: '68ch' }}>
               Gana siempre la regla <b>más específica</b>: un SKU concreto le gana a su categoría, y la categoría le gana al comodín. Si nada aplica, la comisión sale en cero y la línea queda marcada.
+              {' '}La <b>anualidad</b> es lo que se cobra cuando el cliente renueva: las tasas altas premian traer la cuenta, no conservarla. Vacío significa que esa tarifa no distingue.
             </p>
 
             <div style={{ overflowX: 'auto', marginBottom: 12 }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 620 }}>
                 <thead><tr>
                   <th style={E.th}>Aplica a</th><th style={E.th}>Origen</th>
-                  <th style={{ ...E.th, textAlign: 'right' }}>%</th><th style={E.th}>Nota</th><th style={{ ...E.th, width: 40 }} />
+                  <th style={{ ...E.th, textAlign: 'right' }}>1ª venta</th>
+                  <th style={{ ...E.th, textAlign: 'right' }}>Anualidad</th>
+                  <th style={E.th}>Nota</th><th style={{ ...E.th, width: 40 }} />
                 </tr></thead>
                 <tbody>
-                  {reglas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={5}>Este modelo todavía no tiene tarifas.</td></tr>}
+                  {reglas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={6}>Este modelo todavía no tiene tarifas.</td></tr>}
                   {reglas.map((r: any) => (
                     <tr key={r.id}>
                       <td style={{ ...E.td, fontWeight: 600, color: P.tinta }}>
@@ -312,6 +315,21 @@ function VistaModelo({ movil }: { movil: boolean }) {
                             await fetch('/api/crm/comisiones/config', {
                               method: 'PUT', headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ tipo: 'regla', id: r.id, pct: Number(e.target.value) }),
+                            });
+                            cargar();
+                          }} />
+                      </td>
+                      <td style={{ ...E.td, textAlign: 'right' }}>
+                        <input type="number" defaultValue={r.pct_renovacion ?? ''} placeholder="igual"
+                          title="Tasa cuando el cliente renueva su anualidad. Vacío = cobra la de primera venta."
+                          style={{ ...E.input, width: 70, textAlign: 'right' }}
+                          onBlur={async e => {
+                            const v = e.target.value === '' ? null : Number(e.target.value);
+                            const ya = r.pct_renovacion == null ? null : Number(r.pct_renovacion);
+                            if (v === ya) return;
+                            await fetch('/api/crm/comisiones/config', {
+                              method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ tipo: 'regla', id: r.id, pct_renovacion: e.target.value }),
                             });
                             cargar();
                           }} />
@@ -352,8 +370,13 @@ function VistaModelo({ movil }: { movil: boolean }) {
                 </select>
               </div>
               <div>
-                <label style={E.lbl}>%</label>
-                <input type="number" value={nueva.pct} onChange={e => setNueva({ ...nueva, pct: e.target.value })} style={{ ...E.input, width: 80 }} />
+                <label style={E.lbl}>% 1ª venta</label>
+                <input type="number" value={nueva.pct} onChange={e => setNueva({ ...nueva, pct: e.target.value })} style={{ ...E.input, width: 90 }} />
+              </div>
+              <div>
+                <label style={E.lbl}>% anualidad</label>
+                <input type="number" value={nueva.pct_renovacion} placeholder="igual"
+                  onChange={e => setNueva({ ...nueva, pct_renovacion: e.target.value })} style={{ ...E.input, width: 90 }} />
               </div>
               <button onClick={agregarRegla} style={E.btn}>Agregar tarifa</button>
             </div>

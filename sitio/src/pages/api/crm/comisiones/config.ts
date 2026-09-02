@@ -50,6 +50,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.tipo === 'regla') {
       if (b.pct == null || Number.isNaN(Number(b.pct))) return json({ error: 'Falta el porcentaje.' }, 400);
       if (Number(b.pct) < 0 || Number(b.pct) > 100) return json({ error: 'El porcentaje va de 0 a 100.' }, 400);
+      if (b.pct_renovacion != null && b.pct_renovacion !== '' &&
+          (Number.isNaN(Number(b.pct_renovacion)) || Number(b.pct_renovacion) < 0 || Number(b.pct_renovacion) > 100))
+        return json({ error: 'La tasa de anualidad va de 0 a 100.' }, 400);
       if (b.origen && !ORIGENES.includes(b.origen)) return json({ error: 'Origen no válido.' }, 400);
       if (!b.modelo_id) return json({ error: 'Falta el modelo.' }, 400);
       // La categoría se valida contra el catálogo REAL y no contra una lista
@@ -68,6 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
         categoria: b.plan_id ? null : (b.categoria || null),
         origen: b.origen || null,
         pct: Number(b.pct),
+        pct_renovacion: b.pct_renovacion == null || b.pct_renovacion === '' ? null : Number(b.pct_renovacion),
         nota: (b.nota || '').trim() || null,
       };
       const { data, error } = await supabase.from('comision_reglas').insert(fila).select().single();
@@ -107,6 +111,13 @@ export const PUT: APIRoute = async ({ request }) => {
       if (b.pct != null) {
         if (Number(b.pct) < 0 || Number(b.pct) > 100) return json({ error: 'El porcentaje va de 0 a 100.' }, 400);
         patch.pct = Number(b.pct);
+      }
+      // Vacío = la regla deja de distinguir y su renovación cobra `pct`.
+      if ('pct_renovacion' in b) {
+        const v = b.pct_renovacion === '' || b.pct_renovacion == null ? null : Number(b.pct_renovacion);
+        if (v != null && (Number.isNaN(v) || v < 0 || v > 100))
+          return json({ error: 'La tasa de anualidad va de 0 a 100.' }, 400);
+        patch.pct_renovacion = v;
       }
       if ('nota' in b) patch.nota = (b.nota || '').trim() || null;
       const { data, error } = await supabase.from('comision_reglas').update(patch).eq('id', b.id).select().single();
