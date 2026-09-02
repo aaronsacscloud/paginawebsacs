@@ -406,6 +406,22 @@ export default function InboxPro() {
         else if (p.get('wa_nuevo') === '1') setNuevoChat(tel);
         else setFiltros(f => ({ ...f, search: tel }));
       }
+
+      /* ⚠️ EL PARÁMETRO SE CONSUME Y SE VA DE LA URL.
+         Una liga profunda es una instrucción para LLEGAR, no un estado
+         permanente. `?wa_search=524871106958` se quedaba pegado en la barra
+         del navegador para siempre: la lista mostraba una conversación, el
+         menú decía «Todas 278», y quitar la búsqueda desde la pantalla no
+         servía de nada porque al refrescar la URL la volvía a aplicar. Se
+         sentía como que el filtro no se podía quitar — y no se podía.
+
+         `replaceState` en vez de `pushState`: no es un paso del historial,
+         así que el botón Atrás no debe devolverte a la búsqueda. */
+      if (conv || tel || p.get('wa_nuevo')) {
+        p.delete('wa_conv'); p.delete('wa_search'); p.delete('wa_nuevo');
+        const q = p.toString();
+        window.history.replaceState({}, '', `${window.location.pathname}${q ? `?${q}` : ''}`);
+      }
     } catch { /* SSR o URL rara */ }
   }, [lista]);
 
