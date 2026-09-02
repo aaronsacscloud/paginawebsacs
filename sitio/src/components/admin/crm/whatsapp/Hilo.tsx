@@ -320,7 +320,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             caja pintándose ENCIMA de lo que va a la derecha. Con esto, lo que
             no cabe se recorta dentro de su propio carril en vez de invadir el
             contador de la ventana. */}
-        <span style={{ minWidth: 0, flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <span style={{ minWidth: 100, flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
           <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 200, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {hilo?.web_en_vivo && !mobile && (
@@ -370,7 +370,11 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
         })()}
         {conv.id && !mobile && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
-          style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, flexShrink: 0, cursor: 'pointer' }}>
+          /* Estos dos SÍ se encogen. El orden de quién cede es a propósito:
+             primero los selects, que se leen igual acortados; después el
+             nombre, que ya lleva puntos suspensivos; el contador nunca, porque
+             a medias no sirve de nada. */
+          style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, minWidth: 74, flexShrink: 1, cursor: 'pointer' }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
@@ -378,7 +382,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
-            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, maxWidth: mobile ? 84 : undefined,
+            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 1, minWidth: 78, maxWidth: mobile ? 84 : undefined,
             borderColor: conv.estado_crm === 'resuelta' ? '#A7F3D0' : conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
             background: conv.estado_crm === 'resuelta' ? C.emerald50 : conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
             color: conv.estado_crm === 'resuelta' ? C.emerald700 : conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
