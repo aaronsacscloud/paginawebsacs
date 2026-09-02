@@ -139,7 +139,7 @@ function tragarSiguienteClick() {
 
 const EMOJIS_RAPIDOS = ['👍', '❤️', '😂', '🙏', '😮', '😢', '🎉', '✅'];
 
-export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, mismoAutorQueElAnterior }: {
+export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLightbox, onCitar, onReintentar, onReenviar, onReaccionar, onMantener, onIrACita, onMejorar, mismoAutorQueElAnterior }: {
   item: any; q: string; conRing: boolean; chips?: { emoji: string; dir: string }[] | null;
   porWamid: Map<string, any>;
   mismoAutorQueElAnterior?: boolean;   // para no repetir el nombre en cada burbuja seguida
@@ -149,6 +149,8 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
   onIrACita?: (id: string) => void;
   onCitar?: (item: any) => void;
   onReintentar?: (item: any) => void;
+  /** Mensajes del AGENTE SDR: «Mejorar respuesta» → lección de máxima prioridad. */
+  onMejorar?: (item: any) => void;
   onReenviar?: (item: any) => void;
   onReaccionar?: (item: any, emoji: string) => void;
   /** Táctil: mantener el dedo sobre la burbuja pide las acciones al padre. */
@@ -402,6 +404,9 @@ export default function BurbujaMensaje({ item, q, conRing, chips, porWamid, onLi
           <span className={'wa-err-msg' + (item._cola ? ' wa-err-cola' : '')} style={{ fontSize: 10, color: C.rojo500 }} title={item.error || ''}>
             {(item._cola ? (item.error || 'No se pudo enviar') : errorLegible(item.error)).slice(0, 90)}
           </span>
+          {onMejorar && saliente && item.metadata?.origen === 'agente' && (
+            <button onClick={() => onMejorar(item)} title="Escribe cómo debió responder el agente: queda como ejemplo para los próximos mensajes" style={{ border: `1px solid ${C.g200}`, background: 'transparent', color: C.g500, borderRadius: 999, padding: '1px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Agente · Mejorar</button>
+          )}
           {onReintentar && saliente && (tipo === 'text' || src) && (
             <button onClick={() => onReintentar(item)} style={{ border: `1px solid ${C.rojo200}`, background: C.rojo50, color: C.rojo700, borderRadius: 999, padding: '1px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Reintentar</button>
           )}

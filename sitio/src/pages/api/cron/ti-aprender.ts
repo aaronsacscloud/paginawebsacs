@@ -106,6 +106,41 @@ export const GET: APIRoute = async ({ request }) => {
     }
   }
 
+  // ── 4b) CORRECCIONES IMPLÍCITAS: el humano escribió justo después del agente sin que el lead
+  //       hubiera contestado → probablemente corrigió. Entra como ejemplo DUDOSO (el curador o el dueño deciden).
+  const { data: envs } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, enviado_at, mensaje, salida').eq('estado', 'enviado').gte('enviado_at', hace(2)).limit(300);
+  res.correcciones_implicitas = 0;
+  for (const e of envs || []) {
+    if (!e.contact_id) continue;
+    const { data: yaHay } = await supabase.from('ia_ejemplos').select('id').eq('fuente', 'correccion_implicita').filter('por_que', 'ilike', `%envio:${e.id}%`).limit(1);
+    if ((yaHay || []).length) continue;
+    const { data: sig } = await supabase.from('ti_eventos').select('tipo, actor, payload, ocurrio_at').eq('contact_id', e.contact_id).in('tipo', ['wa_entrante', 'wa_saliente']).gt('ocurrio_at', e.enviado_at).order('ocurrio_at', { ascending: true }).limit(1);
+    const n = sig?.[0];
+    if (!n || n.tipo !== 'wa_saliente' || n.actor !== 'humano') continue;
+    if (Date.parse(n.ocurrio_at) - Date.parse(e.enviado_at) > 45 * 60e3) continue;
+    const texto = String((n.payload as any)?.texto || '').trim();
+    if (texto.length < 12) continue;
+    await supabase.from('ia_ejemplos').insert({
+      estado: (e.salida as any)?.estado || 'descubriendo', situacion: `El humano escribió ${Math.round((Date.parse(n.ocurrio_at) - Date.parse(e.enviado_at)) / 60e3)} min después del agente, sin respuesta del lead en medio (corrección implícita)`,
+      mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: texto, pulida: texto,
+      por_que: `Corrección implícita · envio:${e.id} · el agente había dicho: ${String(e.mensaje).slice(0, 200)}`,
+      fuente: 'correccion_implicita', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'dudoso',
+    });
+    res.correcciones_implicitas++;
+  }
+  if (res.correcciones_implicitas) { await notificar({ clave: `impl:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `${res.correcciones_implicitas} correcciones implícitas al agente`, detalle: 'Escribiste después del agente sin que el lead contestara. Quedaron como ejemplos dudosos para que confirmes cuáles enseñar.', destino: 'trabajo' }); res.avisos++; }
+
+  // ── 4c) PATRÓN → REGLA: si un mismo tipo de corrección se repite 3 veces en 14 días, se propone como regla del guion, no solo como ejemplos. ──
+  const { data: corr14 } = await supabase.from('ia_ejemplos').select('estado, por_que, pulida').in('fuente', ['correccion_dueno', 'correccion_implicita']).gte('created_at', hace(14)).limit(200);
+  const porEstado: Record<string, number> = {};
+  for (const c of corr14 || []) porEstado[c.estado] = (porEstado[c.estado] || 0) + 1;
+  for (const [est, n] of Object.entries(porEstado)) {
+    if (n >= 3 && await proponer('regla_guion', { id: `estado:${est}:${ahora.toISOString().slice(0, 7)}`, estado: est, correcciones: n, muestras: (corr14 || []).filter(c => c.estado === est).slice(0, 3).map(c => c.pulida) }, { n }, 30)) {
+      await notificar({ clave: `regla:${est}:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `${n} correcciones en «${est}» en 14 días: hay una regla que el guion no tiene`, detalle: 'Claude las lee y te propone la redacción de la regla en la próxima sesión; mientras, ya entran como ejemplos.', destino: 'trabajo' });
+      res.propuestas.push(`regla_guion:${est}`); res.avisos++;
+    }
+  }
+
   // ── 5) MÉTRICA NORTE: citas agendadas ayer, por quién ──
   const { data: citas } = await supabase.from('bookings').select('utm_source, estado').gte('created_at', hace(1)).limit(500);
   res.citas_ayer = { agente: (citas || []).filter(b => b.utm_source === 'agente_ia').length, humanas: (citas || []).filter(b => b.utm_source !== 'agente_ia').length };

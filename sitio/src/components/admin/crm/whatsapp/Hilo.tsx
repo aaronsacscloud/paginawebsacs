@@ -66,6 +66,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
   const etapasCat = useLifecycle();
   const sugerenciasDe = (stage?: string | null) => (etapasCat.find(e => e.id === stage) as any)?.sugerencias || [];
   const [reenviar, setReenviar] = useState<any>(null);       // 12) mensaje a reenviar
+  const [mejorar, setMejorar] = useState<any>(null);         // mensaje del agente SDR que se va a corregir (lección)
   // Mensaje sobre el que se mantuvo el dedo. Una sola hoja para todo el hilo:
   // montar una por burbuja multiplicaría el árbol por cada mensaje en pantalla.
   const [accionesMsg, setAccionesMsg] = useState<any>(null);
@@ -237,6 +238,10 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {onBack && <button onClick={onBack} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, minWidth: 36 }}>←</button>}
           <Avatar nombre={filaActiva.contacto?.nombre} telefono={String(filaActiva.telefono || '?')} size={28} canal="crm" />
           <b style={{ fontSize: 13 }}>{filaActiva.contacto?.nombre || filaActiva.telefono}</b>
+          {filaActiva.contacto?.de_perfil && (
+            <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
+              style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px' }}>de WhatsApp</span>
+          )}
           <span style={{ fontSize: 9, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '2px 8px' }}>Sin conversación</span>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -620,6 +625,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
                   mismoAutorQueElAnterior={mismoAutor}
                   onLightbox={setLightbox} onCitar={conv.id ? setCita : undefined} onReenviar={conv.id ? setReenviar : undefined}
                   onReintentar={api.reintentar ? (m: any) => api.reintentar(m) : undefined}
+                  onMejorar={conv.id ? setMejorar : undefined}
                   onReaccionar={conv.id && api.reaccionar ? (m: any, emoji: string) => api.reaccionar(m.kapso_message_id, emoji) : undefined}
                   onMantener={mobile && !item.borrado_at ? setAccionesMsg : undefined}
                   onIrACita={(id: string) => {
@@ -675,6 +681,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
       {/* ── Lightbox ── */}
       {reenviar && <ModalReenviar mensaje={reenviar} api={api} actualId={conv.id} onCerrar={() => setReenviar(null)} />}
+      {mejorar && <PanelMejorar mensaje={mejorar} api={api} onCerrar={() => setMejorar(null)} />}
 
       {/* ══ EL CORREO, SIN SALIR DEL INBOX ═══════════════════════════════ */}
       <DrawerSecuencia abierto={!!secuenciaAbierta} onCerrar={() => setSecuenciaAbierta(null)}
@@ -1058,6 +1065,43 @@ function MinutaCard({ item }: { item: any }) {
             <b>Siguiente paso:</b> {item.siguiente_paso}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+/** «Mejorar respuesta» sobre un mensaje del agente SDR ya enviado. Lo que
+ *  escribes queda como ejemplo aprobado del estado de ese mensaje (lección de
+ *  máxima prioridad) y, si quieres, sale ahora como continuación natural. */
+function PanelMejorar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCerrar: () => void }) {
+  const [texto, setTexto] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [listo, setListo] = useState('');
+  const envioId = mensaje?.metadata?.envio_id || null;
+  const guardar = async (enviar: boolean) => {
+    if (texto.trim().length < 2 || ocupado) return;
+    setOcupado(true);
+    const r = await fetch('/api/crm/ti/correccion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ envio_id: envioId, respuesta: texto.trim(), situacion: 'Corrección desde el inbox sobre un mensaje ya enviado del agente' }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    if (r?.error) { setListo('No se guardó: ' + r.error); setOcupado(false); return; }
+    if (enviar && api?.enviarTexto) await api.enviarTexto(texto.trim());
+    setListo(enviar ? 'Guardado como ejemplo y enviado.' : 'Guardado como ejemplo: el agente lo usa desde el siguiente mensaje de ese estado.');
+    setOcupado(false);
+    setTimeout(onCerrar, 1800);
+  };
+  return (
+    <div role="dialog" aria-label="Mejorar respuesta del agente" style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 16 }} onClick={onCerrar}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 'min(560px, 100%)', padding: 18, boxShadow: '0 20px 60px rgba(0,0,0,.25)', fontFamily: 'inherit' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#6b7280' }}>Mejorar respuesta del agente</div>
+        <div style={{ fontSize: 13, color: '#374151', margin: '6px 0 10px', background: '#f3f4f6', borderRadius: 10, padding: '8px 12px', whiteSpace: 'pre-wrap' }}>{String(mensaje?.cuerpo || '').slice(0, 600)}</div>
+        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>Escribe cómo debió responder. Queda como ejemplo del agente para este tipo de momento{envioId ? '' : ' (mensaje sin envío ligado: se guarda igual como ejemplo)'}.</div>
+        <textarea autoFocus value={texto} onChange={e => setTexto(e.target.value)} rows={4} placeholder="Tu versión…" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 12px', font: 'inherit', fontSize: 14, lineHeight: 1.45, resize: 'vertical' }} />
+        {listo && <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: listo.startsWith('No') ? '#7f1d1d' : '#14532d' }}>{listo}</div>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          <button disabled={ocupado || texto.trim().length < 2} onClick={() => guardar(false)} style={{ border: 'none', background: '#4c1d95', color: '#fff', borderRadius: 10, padding: '9px 14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Solo aprender</button>
+          <button disabled={ocupado || texto.trim().length < 2 || !api?.enviarTexto} onClick={() => guardar(true)} style={{ border: '1px solid #4c1d95', background: '#fff', color: '#4c1d95', borderRadius: 10, padding: '9px 14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Aprender y mandarla ahora</button>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'transparent', color: '#6b7280', padding: '9px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+        </div>
       </div>
     </div>
   );
