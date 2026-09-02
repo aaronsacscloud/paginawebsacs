@@ -312,13 +312,27 @@ export default function InboxPro() {
     return () => window.removeEventListener('pointerdown', pedir);
   }, []);
 
-  // Atajos globales: j/k navegan la lista, Escape cierra el hilo (en móvil, vuelve).
+  // Atajos globales: j/k navegan la lista, n salta a la siguiente sin responder,
+  // Escape cierra el hilo (en móvil, vuelve).
+  //
+  // CANDADO (2-sep): las letras sueltas solo valen cuando lo último que el
+  // usuario tocó fue LA LISTA. Antes bastaba con que el foco no estuviera en un
+  // input: después de dar clic en «Enviar», en un chip o al cerrar un modal, el
+  // foco quedaba en un botón y las letras del siguiente mensaje («no…», «ok…»)
+  // cambiaban de conversación en silencio — y el texto se iba a otra persona.
   const listaRef = useRef<any[] | null>(null); listaRef.current = lista;
+  const ultimoToqueEnLista = useRef(false);
+  useEffect(() => {
+    const p = (e: PointerEvent) => { ultimoToqueEnLista.current = !!(e.target as HTMLElement | null)?.closest?.('[data-lista-wa]'); };
+    window.addEventListener('pointerdown', p, true);
+    return () => window.removeEventListener('pointerdown', p, true);
+  }, []);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.key === 'n' || e.key === 'j' || e.key === 'k') && !ultimoToqueEnLista.current) return;
       const l = listaRef.current || [];
       if (e.key === 'n' && activaRef.current) {
         e.preventDefault();
@@ -1182,7 +1196,7 @@ export default function InboxPro() {
         </Suspense>
         <SidebarInbox counts={counts} filtros={filtros} setFiltros={setFiltros} yo={yo} tick={tick}
           vistaActiva={vistaActiva} onVista={setVistaActiva} equipo={equipo} onGuardarVistaExterna={fn => { guardarVistaRef.current = fn; }} />
-        <Suspense fallback={<EsqueletoLista filas={9} alInstante />}><ListaConversaciones {...propsLista} /></Suspense>
+        <div data-lista-wa style={{ display: 'contents' }}><Suspense fallback={<EsqueletoLista filas={9} alInstante />}><ListaConversaciones {...propsLista} /></Suspense></div>
         {activa ? (
           <Suspense fallback={<EsqueletoChat />}><Hilo hilo={hiloConCola} nuevosAlAbrir={nuevosAlAbrir} filaActiva={filaActiva} equipo={equipo} api={api}
             onVerDetalle={isCompact ? () => setDetalleMobile(true) : undefined} /></Suspense>
