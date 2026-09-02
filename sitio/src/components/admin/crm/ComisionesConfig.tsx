@@ -52,17 +52,17 @@ const DIAS = [
  * calendarios distintos volverían imposible cuadrar una semana.
  */
 export function ComisionesCiclo() {
-  const [c, setC] = useState<{ dia_cierre: number; dias_a_pago: number } | null>(null);
+  const [c, setC] = useState<{ dia_cierre: number; dias_a_pago: number; arrastrar_desde: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
     fetch('/api/crm/comisiones/config').then(r => r.json())
-      .then(j => setC(j.ciclo || { dia_cierre: 5, dias_a_pago: 3 }))
+      .then(j => setC(j.ciclo || { dia_cierre: 5, dias_a_pago: 3, arrastrar_desde: null }))
       .catch(e => setError(String(e)));
   }, []);
 
-  async function guardar(patch: Partial<{ dia_cierre: number; dias_a_pago: number }>) {
+  async function guardar(patch: Partial<{ dia_cierre: number; dias_a_pago: number; arrastrar_desde: string | null }>) {
     const nuevo = { ...(c as any), ...patch };
     setC(nuevo); setOk(false);
     const r = await fetch('/api/crm/comisiones/config', {
@@ -98,7 +98,19 @@ export function ComisionesCiclo() {
             <input type="number" min={0} max={14} defaultValue={c.dias_a_pago} style={{ ...E.input, width: '100%' }}
               onBlur={e => Number(e.target.value) !== c.dias_a_pago && guardar({ dias_a_pago: Number(e.target.value) })} />
           </div>
+          <div>
+            <label style={E.lbl}>Recoge rezagadas desde</label>
+            <input type="date" defaultValue={c.arrastrar_desde || ''} style={{ ...E.input, width: '100%' }}
+              onBlur={e => (e.target.value || null) !== c.arrastrar_desde && guardar({ arrastrar_desde: e.target.value || null })} />
+          </div>
         </div>
+        <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: P.suave, maxWidth: '68ch' }}>
+          Un pago capturado tarde lleva la fecha en que entró el dinero, así que
+          su semana ya cerró y su comisión se quedaría sin corte. El corte
+          automático recoge esas líneas rezagadas, siempre que sean posteriores a
+          esta fecha. Moverla hacia atrás hace que el siguiente corte se lleve la
+          comisión histórica que todavía no está en ninguno.
+        </p>
         <div style={{ marginTop: 14, padding: '11px 13px', background: P.violetaAgua, borderRadius: 9, fontSize: '0.85rem', color: P.violetaTinta, fontWeight: 600 }}>
           Queda así: el corte cierra el <b>{cierre}</b> y se paga el <b>{pago}</b> siguiente.
           {ok && <span style={{ marginLeft: 10, color: P.verdeTinta }}>✓ guardado</span>}

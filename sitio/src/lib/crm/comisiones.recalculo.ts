@@ -32,6 +32,8 @@ export type ResultadoRecalculo = {
   tasa_reducida: number;
   fuera_de_tiempo: number;
   sin_vencimiento: number;
+  /** Pagos con fecha futura: dinero que todavía no entra, no comisiona. */
+  futuros: number;
   ajustes_pendientes: { payment_id: string; monto: number; motivo: string }[];
   monto_escrito: number;
   truncado: boolean;
@@ -64,7 +66,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const res: ResultadoRecalculo = {
     desde, hasta, pagos_leidos: 0, lineas_escritas: 0,
     lineas_canceladas: 0, overrides: 0, sin_atribuir: 0, sin_regla: 0, congeladas: 0,
-    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0,
+    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0, futuros: 0,
     ajustes_pendientes: [], monto_escrito: 0, truncado: false, errores: [],
   };
 
@@ -134,9 +136,28 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const aEscribir: LineaCalculada[] = [];
   const aCancelar: string[] = [];
 
+  // El día de hoy en UTC. `payments.fecha` es un `date` sin hora, así que la
+  // comparación es de calendario y no arrastra husos.
+  const hoy = new Date().toISOString().slice(0, 10);
+
   for (const p of pagos) {
     const anulado = ESTADOS_ANULADOS.includes(String(p.estado || '').toLowerCase());
     const devuelto = p.reembolsado === true;
+
+    // Un pago con fecha futura es un cobro PROGRAMADO, no cobrado: comisionarlo
+    // sería pagar por dinero que todavía no entró. El cron diario nunca lo veía
+    // porque su ventana termina hoy, pero un recálculo manual con rango abierto
+    // sí, y ya había una línea de 2027 en la base por esta vía.
+    // Si ya existía una línea por un pago que luego se movió al futuro, se
+    // cancela: dejarla viva la seguiría sumando al corte.
+    if (p.fecha > hoy) {
+      res.futuros++;
+      for (const [k, l] of existentes) {
+        if (!k.startsWith(p.id + ':')) continue;
+        if (l.estado !== 'pagada' && l.estado !== 'cancelada') aCancelar.push(l.id);
+      }
+      continue;
+    }
 
     // Un pago que se fue para atrás: la comisión se va con él. Si ya se pagó,
     // NO se borra —el dinero ya salió— y se reporta como ajuste del siguiente

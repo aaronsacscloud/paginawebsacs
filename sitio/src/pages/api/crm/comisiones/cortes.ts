@@ -89,6 +89,10 @@ export const POST: APIRoute = async ({ request }) => {
       automatico: auto,
       paga_el: auto ? s.paga_el : fechaDePago(hasta, ciclo.dias_a_pago),
       owner_id: b.owner_id || undefined,
+      // Solo el corte automático recoge rezagadas. Un corte MANUAL se pide con
+      // un rango explícito —"lo de agosto"— y arrastrarle lo de julio daría un
+      // documento que no corresponde con el periodo que dice arriba.
+      arrastrar_desde: auto ? ciclo.arrastrar_desde : null,
     });
     return json({ ok: true, resultado: r });
   } catch (e: any) {

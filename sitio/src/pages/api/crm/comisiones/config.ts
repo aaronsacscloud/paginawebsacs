@@ -21,7 +21,7 @@ export const GET: APIRoute = async () => {
       supabase.from('comision_reglas').select('*').order('created_at'),
       supabase.from('plans').select('id, slug, nombre, categoria, activo').order('categoria').order('orden'),
       supabase.from('team_members').select('id, nombre, email, rol, activo, comision_modelo_id, reclutado_por_id').order('nombre'),
-      supabase.from('comision_ciclo').select('dia_cierre, dias_a_pago').eq('id', true).maybeSingle(),
+      supabase.from('comision_ciclo').select('dia_cierre, dias_a_pago, arrastrar_desde').eq('id', true).maybeSingle(),
     ]);
     for (const r of [modelos, reglas, planes, miembros]) if (r.error) throw r.error;
 
@@ -36,7 +36,7 @@ export const GET: APIRoute = async () => {
       planes: planes.data || [],
       miembros: miembros.data || [],
       categorias,
-      ciclo: ciclo.data || { dia_cierre: 5, dias_a_pago: 3 },
+      ciclo: ciclo.data || { dia_cierre: 5, dias_a_pago: 3, arrastrar_desde: null },
     });
   } catch (e: any) {
     return json({ error: e?.message || String(e) }, 500);
@@ -121,8 +121,14 @@ export const PUT: APIRoute = async ({ request }) => {
       const dia = Number(b.dia_cierre), dias = Number(b.dias_a_pago);
       if (!Number.isInteger(dia) || dia < 1 || dia > 7) return json({ error: 'El día de cierre va de 1 (lunes) a 7 (domingo).' }, 400);
       if (!Number.isInteger(dias) || dias < 0 || dias > 14) return json({ error: 'Los días hasta el pago van de 0 a 14.' }, 400);
+      // El piso del arrastre. Mover esta fecha hacia atrás hace que el
+      // siguiente corte automático recoja las líneas viejas que nunca entraron
+      // a ninguno: es la palanca con la que se decide si la historia se paga.
+      const piso = b.arrastrar_desde === null ? null : String(b.arrastrar_desde || '');
+      if (piso !== null && !/^\d{4}-\d{2}-\d{2}$/.test(piso))
+        return json({ error: 'La fecha desde la que se arrastra no es válida.' }, 400);
       const { error } = await supabase.from('comision_ciclo')
-        .update({ dia_cierre: dia, dias_a_pago: dias, actualizado_at: new Date().toISOString() })
+        .update({ dia_cierre: dia, dias_a_pago: dias, arrastrar_desde: piso, actualizado_at: new Date().toISOString() })
         .eq('id', true);
       if (error) throw error;
       return json({ ok: true });

@@ -6,7 +6,7 @@
 //
 // Qué hace, en orden:
 //   1. recalcula la semana que acaba de cerrar, por si entró un pago tarde;
-//   2. arma el corte de cada consultor con lo de lunes a viernes;
+//   2. arma el corte de cada consultor con los siete días de esa semana;
 //   3. absorbe los ajustes que quedaron pendientes de semanas anteriores;
 //   4. avisa por la campana con el total a pagar y lo que quedó sin resolver.
 //
@@ -27,7 +27,8 @@ const pesos = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es
 export const GET: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
 
-  const { desde, hasta, paga_el } = semanaCerrada(new Date(), await leerCiclo());
+  const ciclo = await leerCiclo();
+  const { desde, hasta, paga_el } = semanaCerrada(new Date(), ciclo);
 
   try {
     // 1 · La semana ya debió recalcularse en la madrugada, pero se repite sobre
@@ -36,7 +37,12 @@ export const GET: APIRoute = async ({ request }) => {
     const recalc = await recalcularComisiones(desde, hasta);
 
     // 2 y 3 · Los cortes, con sus ajustes pendientes.
-    const r = await generarCortes(desde, hasta, { automatico: true, paga_el });
+    const r = await generarCortes(desde, hasta, {
+      automatico: true, paga_el,
+      // Recoge las líneas de semanas pasadas que nunca entraron a un corte
+      // porque su pago se capturó tarde. Sin esto se quedaban sin cobrar.
+      arrastrar_desde: ciclo.arrastrar_desde,
+    });
 
     // 4 · El aviso. Una sola notificación por semana, con clave única.
     const total = r.cortes.reduce((a, c) => a + Number(c.total || 0), 0);
@@ -45,6 +51,7 @@ export const GET: APIRoute = async ({ request }) => {
     const partes: string[] = [];
     partes.push(`${r.cortes.length} corte(s) por ${pesos(total)}, a pagar el ${paga_el}`);
     if (r.ajustes_absorbidos) partes.push(`${r.ajustes_absorbidos} ajuste(s) pendientes absorbidos`);
+    if (r.rezagadas) partes.push(`${r.rezagadas} línea(s) rezagada(s) por ${pesos(r.monto_rezagado)} de semanas anteriores`);
     if (sueltos.length) partes.push(`${sueltos.length} pago(s) sin comisionar por revisar`);
     if (r.omitidos.length) partes.push(`${r.omitidos.length} omitido(s) por corte ya firme`);
     if (r.errores.length) partes.push(`${r.errores.length} error(es)`);

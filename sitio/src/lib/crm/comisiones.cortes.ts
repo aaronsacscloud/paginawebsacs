@@ -34,12 +34,21 @@ const masDias = (fecha: string, n: number) => {
 };
 
 /**
- * La semana que ya cerró: lunes a viernes.
+ * La semana que ya cerró: los SIETE días que terminan en el día de cierre.
  *
  * Se ancla al viernes más reciente que YA PASÓ —hoy mismo si hoy es viernes— y
- * retrocede cuatro días. Así el resultado es el mismo si el cron corre el lunes
+ * retrocede seis días. Así el resultado es el mismo si el cron corre el lunes
  * a las 4 am o si alguien aprieta el botón el miércoles: el corte pagable es el
  * de la semana cerrada, no "los últimos siete días".
+ *
+ * Son SIETE y no cinco por una razón de dinero. El ciclo del marco se enuncia
+ * "lunes a viernes", pero eso describe cuándo se TRABAJA, no qué días entra
+ * dinero: un cargo automático o una transferencia caen en sábado igual que en
+ * martes. Con la ventana de cinco días, sábado y domingo no pertenecían a
+ * ninguna semana y sus líneas no entraban a ningún corte — al medirlo eran 31
+ * líneas por $184,182 de comisión. La regla que lo evita: las ventanas de dos
+ * semanas consecutivas tienen que EMBALDOSAR el calendario, sin huecos y sin
+ * traslapes. El día de cierre y el de pago no cambian.
  */
 export function semanaCerrada(
   hoy = new Date(),
@@ -51,14 +60,18 @@ export function semanaCerrada(
   const atras = (dowIso - ciclo.dia_cierre + 7) % 7;
   const cierre = new Date(base); cierre.setUTCDate(cierre.getUTCDate() - atras);
   const hasta = iso(cierre);
-  return { desde: masDias(hasta, -4), hasta, paga_el: masDias(hasta, ciclo.dias_a_pago) };
+  return { desde: masDias(hasta, -6), hasta, paga_el: masDias(hasta, ciclo.dias_a_pago) };
 }
 
 /** El ciclo configurado. Ante cualquier problema, el del marco: viernes → lunes. */
-export async function leerCiclo(): Promise<{ dia_cierre: number; dias_a_pago: number }> {
+export async function leerCiclo(): Promise<{ dia_cierre: number; dias_a_pago: number; arrastrar_desde: string | null }> {
   const { data } = await supabase.from('comision_ciclo')
-    .select('dia_cierre, dias_a_pago').eq('id', true).maybeSingle();
-  return { dia_cierre: Number(data?.dia_cierre ?? 5), dias_a_pago: Number(data?.dias_a_pago ?? 3) };
+    .select('dia_cierre, dias_a_pago, arrastrar_desde').eq('id', true).maybeSingle();
+  return {
+    dia_cierre: Number(data?.dia_cierre ?? 5),
+    dias_a_pago: Number(data?.dias_a_pago ?? 3),
+    arrastrar_desde: data?.arrastrar_desde ?? null,
+  };
 }
 
 /** Cuándo se paga un corte manual: los mismos días del ciclo tras su cierre. */
@@ -72,6 +85,9 @@ export type ResultadoCortes = {
   cortes: { id: string; owner_id: string; nombre: string; lineas: number; total: number; estado: EstadoCorte; nuevo: boolean }[];
   omitidos: { owner_id: string; nombre: string; motivo: string }[];
   ajustes_absorbidos: number;
+  /** Líneas de semanas anteriores que este corte recogió (captura tardía). */
+  rezagadas: number;
+  monto_rezagado: number;
   errores: string[];
 };
 
@@ -81,25 +97,51 @@ export type ResultadoCortes = {
  */
 export async function generarCortes(
   desde: string, hasta: string,
-  opts: { automatico?: boolean; paga_el?: string; owner_id?: string } = {},
+  opts: { automatico?: boolean; paga_el?: string; owner_id?: string; arrastrar_desde?: string | null } = {},
 ): Promise<ResultadoCortes> {
   const automatico = opts.automatico !== false;
   const paga_el = opts.paga_el || fechaDePago(hasta);
   const res: ResultadoCortes = {
-    desde, hasta, paga_el, automatico, cortes: [], omitidos: [], ajustes_absorbidos: 0, errores: [],
+    desde, hasta, paga_el, automatico, cortes: [], omitidos: [],
+    ajustes_absorbidos: 0, rezagadas: 0, monto_rezagado: 0, errores: [],
   };
 
   // ── Líneas del rango que todavía pueden entrar a un corte ──
   // Se excluyen las canceladas (no son dinero) y las que ya viajan en un corte
   // firme: una linea no puede pagarse dos veces.
+  const COLS = 'id, owner_id, monto, estado, corte_id, fecha, team_members!comision_lineas_owner_id_fkey(nombre)';
   let q = supabase.from('comision_lineas')
-    .select('id, owner_id, monto, estado, corte_id, team_members!comision_lineas_owner_id_fkey(nombre)')
+    .select(COLS)
     .gte('fecha', desde).lte('fecha', hasta)
     .neq('estado', 'cancelada')
     .limit(20000);
   if (opts.owner_id) q = q.eq('owner_id', opts.owner_id);
   const { data: lineas, error } = await q;
   if (error) { res.errores.push(error.message); return res; }
+
+  // ── Rezagadas: líneas de semanas ANTERIORES que nunca entraron a un corte ──
+  //
+  // Un pago capturado tarde nace con la fecha en que entró el dinero, no en la
+  // que se tecleó — que es lo correcto — pero para entonces el corte de esa
+  // semana ya se cerró, y sin esto la línea se quedaba sin corte para siempre.
+  // No es un caso de borde: 133 de los 183 pagos se capturaron más de una
+  // semana después de su fecha. Se piden con `corte_id` vacío a propósito: una
+  // línea que ya cuelga de un corte abierto es de ESE corte y no se le quita.
+  const rezagadas: any[] = [];
+  if (opts.arrastrar_desde) {
+    let qr = supabase.from('comision_lineas')
+      .select(COLS)
+      .gte('fecha', opts.arrastrar_desde).lt('fecha', desde)
+      .is('corte_id', null)
+      .neq('estado', 'cancelada')
+      .limit(20000);
+    if (opts.owner_id) qr = qr.eq('owner_id', opts.owner_id);
+    const { data, error: er } = await qr;
+    if (er) res.errores.push(er.message);
+    else rezagadas.push(...(data || []));
+    res.rezagadas = rezagadas.length;
+    res.monto_rezagado = r2(rezagadas.reduce((a, l) => a + Number(l.monto || 0), 0));
+  }
 
   // Cortes firmes ya existentes, para saber qué líneas están comprometidas.
   const idsCorte = [...new Set((lineas || []).map((l: any) => l.corte_id).filter(Boolean))] as string[];
@@ -111,7 +153,7 @@ export async function generarCortes(
   }
 
   const porDueno = new Map<string, { nombre: string; ids: string[]; monto: number }>();
-  for (const l of (lineas || []) as any[]) {
+  for (const l of [...((lineas || []) as any[]), ...rezagadas]) {
     if (l.corte_id && firmes.has(l.corte_id)) continue;   // ya se pagó o se envió
     if (!porDueno.has(l.owner_id))
       porDueno.set(l.owner_id, { nombre: l.team_members?.nombre || '—', ids: [], monto: 0 });
