@@ -8,7 +8,7 @@
 // PUT  {id, accion}         'cerrar' | 'reabrir' | 'pagar' | 'nota'
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { generarCortes, semanaCerrada, fechaDePago, leerCiclo, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
+import { generarCortes, semanaCerrada, semanaEnCurso, proyeccionCorte, ARMADO, fechaDePago, leerCiclo, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
 
 export const prerender = false;
 const json = (o: any, s = 200) =>
@@ -41,6 +41,46 @@ export const GET: APIRoute = async ({ url }) => {
       return json({ corte, lineas: lineas || [], ajustes: ajustes || [], no_reconocidos: noReconocidos });
     }
 
+    // ── Previa: qué de este rango YA está en otro corte ──
+    //
+    // El asistente la pide antes de crear nada. Sin esto, el paso 2 prometía
+    // todas las líneas del periodo y el corte salía con menos, sin explicación
+    // — y un total menor sin motivo es lo que hace desconfiar del sistema.
+    const pDesde = url.searchParams.get('previa_desde');
+    const pHasta = url.searchParams.get('previa_hasta');
+    if (pDesde && pHasta) {
+      const { data: lin } = await supabase.from('comision_lineas')
+        .select('id, fecha, monto, corte_id, owner_id, companies(nombre, nombre_comercial), team_members!comision_lineas_owner_id_fkey(nombre)')
+        .gte('fecha', pDesde).lte('fecha', pHasta)
+        .not('corte_id', 'is', null)
+        .neq('estado', 'cancelada')
+        .limit(5000);
+
+      const ids = [...new Set((lin || []).map((l: any) => l.corte_id))] as string[];
+      const cortes = new Map<string, any>();
+      if (ids.length) {
+        const { data } = await supabase.from('comision_cortes').select('id, estado, desde, hasta').in('id', ids);
+        for (const c of data || []) cortes.set(c.id, c);
+      }
+      const detalle = (lin || []).map((l: any) => {
+        const c = cortes.get(l.corte_id);
+        return {
+          cliente: l.companies?.nombre_comercial || l.companies?.nombre || '—',
+          consultor: l.team_members?.nombre || '—',
+          fecha: l.fecha, monto: Number(l.monto || 0),
+          corte_id: l.corte_id, estado: c?.estado || 'desconocido',
+          periodo: c ? `${c.desde} → ${c.hasta}` : '—',
+        };
+      });
+      return json({
+        ya_cortadas: {
+          total: detalle.length,
+          monto: Math.round(detalle.reduce((a, d) => a + d.monto, 0) * 100) / 100,
+          detalle,
+        },
+      });
+    }
+
     // ── Listado ──
     let q = supabase.from('comision_cortes')
       .select('*, team_members(id, nombre)')
@@ -59,9 +99,18 @@ export const GET: APIRoute = async ({ url }) => {
       .select('owner_id, tipo, monto, concepto, team_members!comision_ajustes_owner_id_fkey(nombre)')
       .is('corte_id', null);
 
+    // ── El corte que se está juntando ──
+    // Va con la lista porque es una fila más del tablero, no una pantalla
+    // aparte: la pregunta "¿cuánto llevo?" se hace mirando los cortes.
+    const ciclo = await leerCiclo();
+    const enCurso = semanaEnCurso(new Date(), ciclo);
+    const proyeccion = await proyeccionCorte(enCurso.desde, enCurso.hasta, ciclo.arrastrar_desde);
+
     return json({
       cortes: data || [],
-      sugerido: semanaCerrada(new Date(), await leerCiclo()),
+      en_formacion: { ...enCurso, hora: ARMADO.hora, consultores: proyeccion },
+      ciclo,
+      sugerido: semanaCerrada(new Date(), ciclo),
       pendientes: (pend || []).map((a: any) => ({
         owner_id: a.owner_id, nombre: a.team_members?.nombre || '—',
         concepto: a.concepto, tipo: a.tipo, monto: Number(a.monto || 0),

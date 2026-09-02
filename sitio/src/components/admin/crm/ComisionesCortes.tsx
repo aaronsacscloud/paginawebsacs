@@ -21,6 +21,10 @@ const pesos = (n: number) => {
   const v = Math.round(Number(n || 0));
   return (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('es-MX');
 };
+const fechaLarga = (d?: string | null) => d
+  ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+  : '—';
+
 const fecha = (d?: string | null) => d
   ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace('.', '')
   : '—';
@@ -58,6 +62,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   const [det, setDet] = useState<any>(null);
   const [asistente, setAsistente] = useState(false);
   const [recalculando, setRecalculando] = useState(false);
+  const [creandoYa, setCreandoYa] = useState(false);
 
   /**
    * Recalcula el mes en curso y el anterior — la misma ventana del cron de la
@@ -83,6 +88,26 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
       await cargar();
       if (abierto) await cargarDetalle(abierto);
     } catch (e: any) { setError(e.message); } finally { setRecalculando(false); }
+  }
+
+  /**
+   * Adelanta el corte que se está juntando. Usa el MISMO camino que el cron
+   * —sin fechas = el ciclo— para que adelantarlo y esperarlo den lo mismo.
+   */
+  async function crearYa() {
+    if (!(await confirmar('¿Crear ya el corte de este periodo con lo que lleva? Queda abierto: podrás seguir ajustándolo hasta que lo cierres.'))) return;
+    setCreandoYa(true);
+    try {
+      const r = await fetch('/api/crm/comisiones/cortes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      });
+      const j = await r.json();
+      if (!r.ok) { setError(j.error || 'Error'); return; }
+      setError(null);
+      await cargar();
+      const nuevo = j.resultado?.cortes?.[0]?.id;
+      if (nuevo) await cargarDetalle(nuevo);
+    } catch (e: any) { setError(e.message); } finally { setCreandoYa(false); }
   }
 
   async function cargar() {
@@ -150,9 +175,11 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         <button onClick={recalcular} disabled={recalculando} style={{ ...E.btn2, opacity: recalculando ? 0.6 : 1 }}>
           {recalculando ? <><Chispas size={10} /> Recalculando…</> : 'Recalcular el mes'}
         </button>
-        <span style={{ fontSize: '0.8rem', color: P.suave }}>
-          El corte cierra el <b>{DIA_NOMBRE[d?.ciclo?.dia_cierre ?? 5]}</b> y se paga {d?.ciclo?.dias_a_pago ?? 3} días después. Se arma solo cada lunes a las 5 am.
-        </span>
+        {d?.en_formacion && (
+          <span style={{ fontSize: '0.82rem', color: P.texto }}>
+            Próximo corte: <b>{fechaLarga(d.en_formacion.se_arma_el)}</b> a las {d.en_formacion.hora}
+          </span>
+        )}
         <div style={{ flex: 1 }} />
         <a href="/admin/crm?tab=config&cfg=comisiones" style={{ ...E.btn3, textDecoration: 'none' }}>Configurar el ciclo</a>
       </div>
@@ -188,9 +215,9 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
         </div>
       </div>
 
-      {cortes.length === 0 ? (
+      {cortes.length === 0 && !(d?.en_formacion?.consultores || []).length ? (
         <div style={{ ...E.card, color: P.suave, fontSize: '0.85rem' }}>
-          Todavía no hay cortes. Aprieta <b>Generar el corte de la semana</b>: si no aparece nada, es que ninguna cuenta con pagos de esa semana tiene consultor asignado.
+          Todavía no hay cortes ni comisiones juntándose. Si esperabas ver algo, revisa que las cuentas con pagos tengan consultor asignado en <b>Configuración › Comisiones</b>.
         </div>
       ) : (
         <div style={{ ...E.card, padding: 0, overflowX: 'auto' }}>
@@ -203,6 +230,46 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
               <th style={E.th}>Estado</th><th style={{ ...E.th, width: 90 }} />
             </tr></thead>
             <tbody>
+              {/* ── Lo que se está juntando ahora ──
+                  Va ARRIBA y con la fila punteada porque todavía no existe: es
+                  una proyección con las mismas reglas del cron, no un registro.
+                  Sin esto había que esperar al lunes para saber cuánto se va a
+                  pagar, que es la pregunta de todos los días. */}
+              {(d?.en_formacion?.consultores || []).map((f: any) => (
+                <tr key={'form-' + f.owner_id} style={{ background: '#fbfaff' }}>
+                  <td style={{ ...E.td, fontWeight: 700, color: P.tinta, borderLeft: `3px dashed ${P.violeta}` }}>
+                    {f.nombre}
+                    <span style={{ ...E.chip, background: P.violetaAgua, color: P.violetaTinta, marginLeft: 6 }}>en formación</span>
+                  </td>
+                  <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(d.en_formacion.desde)} — {fecha(d.en_formacion.hasta)}</td>
+                  <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(d.en_formacion.paga_el)}</td>
+                  <td style={{ ...E.td, textAlign: 'right' }}>
+                    {f.lineas}
+                    {f.rezagadas > 0 && <div style={{ fontSize: '0.68rem', color: '#999' }}>{f.rezagadas} rezagada(s)</div>}
+                  </td>
+                  <td style={{ ...E.td, textAlign: 'right', color: f.monto_ajustes < 0 ? P.rojoTinta : P.texto }}>
+                    {f.monto_ajustes === 0 ? '—' : (f.monto_ajustes > 0 ? '+' : '') + pesos(f.monto_ajustes)}
+                  </td>
+                  <td style={{ ...E.td, textAlign: 'right', fontWeight: 800, color: P.violetaTinta }}>
+                    {pesos(f.total)}
+                    <div style={{ fontSize: '0.68rem', color: '#999', fontWeight: 500 }}>hasta ahora</div>
+                  </td>
+                  <td style={E.td}>
+                    <span style={{ fontSize: '0.72rem', color: P.suave }}>
+                      Se arma el <b>{fechaLarga(d.en_formacion.se_arma_el)}</b><br />a las {d.en_formacion.hora}
+                    </span>
+                  </td>
+                  <td style={E.td}>
+                    {/* Adelantarlo lo vuelve un corte de verdad, y desde ahí ya
+                        se edita como cualquiera: cambiar %, cuenta o ajustes. */}
+                    <button onClick={crearYa} disabled={creandoYa}
+                      title="Créalo ahora con lo que lleva, en vez de esperar al lunes. Queda abierto y editable."
+                      style={{ ...E.btn3, padding: '3px 9px', opacity: creandoYa ? 0.6 : 1 }}>
+                      {creandoYa ? '…' : 'Crear ya'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
               {cortes.map((c: any) => {
                 const t = TONO[c.estado] || TONO.abierto;
                 return (
@@ -269,10 +336,16 @@ function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
   async function verPrevia() {
     setTrabajando(true);
     try {
-      const r = await fetch(`/api/crm/comisiones/periodo?desde=${desde}&hasta=${hasta}`);
+      // Dos preguntas al mismo tiempo: qué hay en el periodo, y qué de eso YA
+      // está cobrado en otro corte. La segunda es la que evita pagar dos veces.
+      const [r, r2] = await Promise.all([
+        fetch(`/api/crm/comisiones/periodo?desde=${desde}&hasta=${hasta}`),
+        fetch(`/api/crm/comisiones/cortes?previa_desde=${desde}&previa_hasta=${hasta}`),
+      ]);
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Error');
-      setPrevia(j); setPaso(2);
+      const j2 = r2.ok ? await r2.json() : { ya_cortadas: null };
+      setPrevia({ ...j, ya_cortadas: j2.ya_cortadas }); setPaso(2);
     } catch (e: any) { onError(e.message); } finally { setTrabajando(false); }
   }
 
@@ -380,6 +453,24 @@ function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
                   </table>
                 </div>
               )}
+              {previa.ya_cortadas?.total > 0 && (
+                <div style={{ marginTop: 11, padding: '11px 13px', background: P.azulAgua, borderRadius: 9, fontSize: '0.8rem', color: P.texto }}>
+                  <b>{previa.ya_cortadas.total} línea(s)</b> por {pesos(previa.ya_cortadas.monto)} de este periodo
+                  {' '}<b>ya están en otro corte</b> y no se van a volver a cobrar. El corte nuevo se queda solo con lo que falta.
+                  <details style={{ marginTop: 6 }}>
+                    <summary style={{ cursor: 'pointer', color: P.azulTinta, fontWeight: 700, fontSize: '0.76rem' }}>Ver cuáles</summary>
+                    <div style={{ maxHeight: 190, overflowY: 'auto', marginTop: 6 }}>
+                      {previa.ya_cortadas.detalle.map((d: any, i: number) => (
+                        <div key={i} style={{ fontSize: '0.76rem', padding: '3px 0', borderBottom: `1px solid ${P.lineaSuave}` }}>
+                          <b>{d.cliente}</b> · {fecha(d.fecha)} · {pesos(d.monto)}
+                          <span style={{ color: '#999' }}> — corte {d.periodo} ({TONO[d.estado]?.label || d.estado})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+              )}
+
               {previa.sin_atribuir?.pagos > 0 && (
                 <div style={{ marginTop: 11, padding: '11px 13px', background: P.ambarAgua, borderRadius: 9, fontSize: '0.8rem', color: P.texto }}>
                   <b>{previa.sin_atribuir.pagos} pago(s)</b> por {pesos(previa.sin_atribuir.monto)} de este periodo no le cuentan a nadie. Podrás agregarlos como ajuste dentro del corte.
@@ -400,7 +491,14 @@ function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
               <ul style={{ margin: '0 0 8px', paddingLeft: 18, fontSize: '0.83rem', color: P.texto, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <li><b>{previa?.resultado?.cortes?.length || 0}</b> corte(s), del {desde} al {hasta}.</li>
                 {previa?.resultado?.ajustes_absorbidos > 0 && <li><b>{previa.resultado.ajustes_absorbidos}</b> ajuste(s) pendientes entraron a este corte.</li>}
-                {previa?.resultado?.omitidos?.length > 0 && <li>{previa.resultado.omitidos.length} se omitieron por tener ya un corte cerrado o pagado.</li>}
+                {previa?.resultado?.rezagadas > 0 && <li><b>{previa.resultado.rezagadas}</b> línea(s) rezagada(s) de semanas anteriores, por {pesos(previa.resultado.monto_rezagado)}.</li>}
+                {previa?.resultado?.ya_cortadas?.total > 0 && (
+                  <li><b>{previa.resultado.ya_cortadas.total}</b> línea(s) por {pesos(previa.resultado.ya_cortadas.monto)} se
+                  {' '}<b>dejaron fuera</b>: ya estaban en otro corte y no se cobran dos veces.</li>
+                )}
+                {previa?.resultado?.omitidos?.length > 0 && (
+                  <li>{previa.resultado.omitidos.length} consultor(es) omitidos: {previa.resultado.omitidos.map((o: any) => o.motivo).join(' · ')}.</li>
+                )}
               </ul>
               <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: P.suave }}>
                 Queda <b>abierto</b>: revísalo, agrega lo que falte y ciérralo cuando esté listo para enviarse.

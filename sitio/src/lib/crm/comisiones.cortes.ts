@@ -63,6 +63,58 @@ export function semanaCerrada(
   return { desde: masDias(hasta, -6), hasta, paga_el: masDias(hasta, ciclo.dias_a_pago) };
 }
 
+/**
+ * El día y la hora en que el cron arma los cortes.
+ *
+ * Está en `vercel.json` como `0 11 * * 1` — lunes a las 11:00 UTC, que son las
+ * 5:00 am de CDMX. Se repite aquí porque la pantalla tiene que poder decir
+ * CUÁNDO se arma el corte que se está juntando, y leer el crontab desde el
+ * navegador no es posible. Si se cambia allá, se cambia aquí.
+ */
+export const ARMADO = { dia_iso: 1, hora_utc: 11, hora: '5:00 am' };
+
+const dowIso = (f: string) => { const d = new Date(f + 'T12:00:00Z').getUTCDay(); return d === 0 ? 7 : d; };
+
+/**
+ * Cuándo vuelve a correr el cron que arma los cortes.
+ *
+ * Si hoy es el día de armado pero la hora ya pasó, el de hoy YA corrió y toca
+ * el de la semana entrante. Sin esa comprobación, el lunes por la tarde la
+ * pantalla prometía un corte "para hoy" que ya se había hecho por la mañana.
+ */
+export function proximoArmado(hoy = new Date()): string {
+  const h = iso(new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate())));
+  const yaCorrioHoy = dowIso(h) === ARMADO.dia_iso && hoy.getUTCHours() >= ARMADO.hora_utc;
+  if (dowIso(h) === ARMADO.dia_iso && !yaCorrioHoy) return h;
+  for (let i = 1; i <= 7; i++) {
+    const d = masDias(h, i);
+    if (dowIso(d) === ARMADO.dia_iso) return d;
+  }
+  return masDias(h, 1);
+}
+
+/**
+ * El corte que se está juntando: exactamente lo que armará el PRÓXIMO cron.
+ *
+ * Se define así —y no como "la semana siguiente a la cerrada"— porque entre el
+ * viernes y el domingo esas dos cosas no son la misma: la semana que acaba de
+ * cerrar todavía no se ha armado, y con la otra definición desaparecía de la
+ * pantalla durante tres días, justo cuando ya está completa y es lo que se va a
+ * pagar.
+ *
+ * Existe para poder ver el corte ANTES de que exista. Un tablero que solo
+ * enseña lo ya generado obliga a esperar al lunes para saber cuánto se va a
+ * pagar, y esa es la pregunta de todos los días.
+ */
+export function semanaEnCurso(
+  hoy = new Date(),
+  ciclo: { dia_cierre: number; dias_a_pago: number } = { dia_cierre: 5, dias_a_pago: 3 },
+): { desde: string; hasta: string; paga_el: string; se_arma_el: string } {
+  const se_arma_el = proximoArmado(hoy);
+  const w = semanaCerrada(new Date(se_arma_el + 'T12:00:00Z'), ciclo);
+  return { desde: w.desde, hasta: w.hasta, paga_el: w.paga_el, se_arma_el };
+}
+
 /** El ciclo configurado. Ante cualquier problema, el del marco: viernes → lunes. */
 export async function leerCiclo(): Promise<{ dia_cierre: number; dias_a_pago: number; arrastrar_desde: string | null }> {
   const { data } = await supabase.from('comision_ciclo')
@@ -79,6 +131,56 @@ export function fechaDePago(hasta: string, dias_a_pago = 3): string {
   return masDias(hasta, dias_a_pago);
 }
 
+/**
+ * Cuánto lleva el corte que todavía no existe.
+ *
+ * Aplica LAS MISMAS reglas que `generarCortes` —líneas del rango sin corte, las
+ * rezagadas de semanas anteriores y los ajustes pendientes— porque si la
+ * proyección y el corte real usaran criterios distintos, el lunes aparecería
+ * otro número y la pantalla dejaría de servir para lo único que sirve: saber
+ * cuánto se va a pagar antes de que se pague.
+ *
+ * No escribe nada.
+ */
+export async function proyeccionCorte(
+  desde: string, hasta: string, arrastrar_desde?: string | null,
+): Promise<{ owner_id: string; nombre: string; lineas: number; rezagadas: number; monto_lineas: number; monto_ajustes: number; total: number }[]> {
+  const COLS = 'owner_id, monto, fecha, team_members!comision_lineas_owner_id_fkey(nombre)';
+  const [{ data: dentro }, { data: rez }, { data: aj }] = await Promise.all([
+    supabase.from('comision_lineas').select(COLS)
+      .gte('fecha', desde).lte('fecha', hasta)
+      .is('corte_id', null).neq('estado', 'cancelada').limit(20000),
+    arrastrar_desde
+      ? supabase.from('comision_lineas').select(COLS)
+          .gte('fecha', arrastrar_desde).lt('fecha', desde)
+          .is('corte_id', null).neq('estado', 'cancelada').limit(20000)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase.from('comision_ajustes')
+      .select('owner_id, tipo, monto, team_members!comision_ajustes_owner_id_fkey(nombre)')
+      .is('corte_id', null),
+  ]);
+
+  const m = new Map<string, any>();
+  const dame = (id: string, nombre: string) => {
+    if (!m.has(id)) m.set(id, { owner_id: id, nombre, lineas: 0, rezagadas: 0, monto_lineas: 0, monto_ajustes: 0, total: 0 });
+    return m.get(id);
+  };
+  for (const l of (dentro || []) as any[]) {
+    const g = dame(l.owner_id, l.team_members?.nombre || '—');
+    g.lineas++; g.monto_lineas = r2(g.monto_lineas + Number(l.monto || 0));
+  }
+  for (const l of (rez || []) as any[]) {
+    const g = dame(l.owner_id, l.team_members?.nombre || '—');
+    g.lineas++; g.rezagadas++; g.monto_lineas = r2(g.monto_lineas + Number(l.monto || 0));
+  }
+  for (const a of (aj || []) as any[]) {
+    const g = dame(a.owner_id, (a as any).team_members?.nombre || '—');
+    g.monto_ajustes = r2(g.monto_ajustes + (a.tipo === 'cargo' ? -1 : 1) * Number(a.monto || 0));
+  }
+  for (const g of m.values()) g.total = r2(g.monto_lineas + g.monto_ajustes);
+  return [...m.values()].sort((a, b) => b.total - a.total);
+}
+
 export type ResultadoCortes = {
   desde: string; hasta: string; paga_el: string;
   automatico: boolean;
@@ -88,6 +190,11 @@ export type ResultadoCortes = {
   /** Líneas de semanas anteriores que este corte recogió (captura tardía). */
   rezagadas: number;
   monto_rezagado: number;
+  /** Líneas del rango que NO entraron porque ya viajan en otro corte. */
+  ya_cortadas: {
+    total: number; monto: number;
+    detalle: { cliente: string; fecha: string; monto: number; corte_id: string; estado: string; periodo: string }[];
+  };
   errores: string[];
 };
 
@@ -103,13 +210,14 @@ export async function generarCortes(
   const paga_el = opts.paga_el || fechaDePago(hasta);
   const res: ResultadoCortes = {
     desde, hasta, paga_el, automatico, cortes: [], omitidos: [],
-    ajustes_absorbidos: 0, rezagadas: 0, monto_rezagado: 0, errores: [],
+    ajustes_absorbidos: 0, rezagadas: 0, monto_rezagado: 0,
+    ya_cortadas: { total: 0, monto: 0, detalle: [] }, errores: [],
   };
 
   // ── Líneas del rango que todavía pueden entrar a un corte ──
   // Se excluyen las canceladas (no son dinero) y las que ya viajan en un corte
   // firme: una linea no puede pagarse dos veces.
-  const COLS = 'id, owner_id, monto, estado, corte_id, fecha, team_members!comision_lineas_owner_id_fkey(nombre)';
+  const COLS = 'id, owner_id, monto, estado, corte_id, fecha, team_members!comision_lineas_owner_id_fkey(nombre), companies(nombre, nombre_comercial)';
   let q = supabase.from('comision_lineas')
     .select(COLS)
     .gte('fecha', desde).lte('fecha', hasta)
@@ -143,23 +251,31 @@ export async function generarCortes(
     res.monto_rezagado = r2(rezagadas.reduce((a, l) => a + Number(l.monto || 0), 0));
   }
 
-  // Cortes firmes ya existentes, para saber qué líneas están comprometidas.
+  // ── Cortes a los que ya pertenece alguna de estas líneas ──
+  //
+  // Se leen TODOS, no solo los firmes. Antes solo protegían los cerrados y
+  // pagados, así que un corte nuevo con periodo traslapado se LLEVABA las
+  // líneas de un corte abierto: el corte viejo amanecía vacío y su total ya no
+  // cuadraba con su propio detalle. Pasó de verdad.
+  //
+  // La regla es sencilla: una línea es de SU corte. El único que puede
+  // conservarla es ese mismo —para que regenerar sea idempotente—; cualquier
+  // otro la deja donde está y lo reporta.
   const idsCorte = [...new Set((lineas || []).map((l: any) => l.corte_id).filter(Boolean))] as string[];
-  const firmes = new Set<string>();
+  const corteDe = new Map<string, any>();
   if (idsCorte.length) {
     const { data } = await supabase.from('comision_cortes')
-      .select('id, estado').in('id', idsCorte);
-    for (const c of data || []) if (CORTES_FIRMES.includes(c.estado)) firmes.add(c.id);
+      .select('id, estado, desde, hasta').in('id', idsCorte);
+    for (const c of data || []) corteDe.set(c.id, c);
   }
 
-  const porDueno = new Map<string, { nombre: string; ids: string[]; monto: number }>();
+  // Se guardan enteras: el filtro por "ya está en otro corte" necesita saber
+  // CUÁL es el corte de esta persona, y eso solo se resuelve más abajo.
+  const porDueno = new Map<string, { nombre: string; filas: any[] }>();
   for (const l of [...((lineas || []) as any[]), ...rezagadas]) {
-    if (l.corte_id && firmes.has(l.corte_id)) continue;   // ya se pagó o se envió
     if (!porDueno.has(l.owner_id))
-      porDueno.set(l.owner_id, { nombre: l.team_members?.nombre || '—', ids: [], monto: 0 });
-    const g = porDueno.get(l.owner_id)!;
-    g.ids.push(l.id);
-    g.monto = r2(g.monto + Number(l.monto || 0));
+      porDueno.set(l.owner_id, { nombre: l.team_members?.nombre || '—', filas: [] });
+    porDueno.get(l.owner_id)!.filas.push(l);
   }
 
   // ── Ajustes pendientes: entran aunque esa persona no tenga líneas ──
@@ -175,7 +291,7 @@ export async function generarCortes(
     g.ids.push(a.id);
     g.monto = r2(g.monto + (a.tipo === 'cargo' ? -1 : 1) * Number(a.monto || 0));
     if (!porDueno.has(a.owner_id))
-      porDueno.set(a.owner_id, { nombre: (a as any).team_members?.nombre || '—', ids: [], monto: 0 });
+      porDueno.set(a.owner_id, { nombre: (a as any).team_members?.nombre || '—', filas: [] });
   }
 
   // ── Un corte por persona ──
@@ -192,11 +308,41 @@ export async function generarCortes(
       continue;
     }
 
+    // Aquí se separa lo que de verdad entra de lo que YA está cobrado en otro
+    // corte. Se reporta con nombre y monto: un total menor sin explicación es
+    // justo lo que hace desconfiar del sistema.
+    const ids: string[] = [];
+    let monto = 0;
+    for (const l of g.filas) {
+      if (l.corte_id && l.corte_id !== ya?.id) {
+        const c = corteDe.get(l.corte_id);
+        res.ya_cortadas.total++;
+        res.ya_cortadas.monto = r2(res.ya_cortadas.monto + Number(l.monto || 0));
+        res.ya_cortadas.detalle.push({
+          cliente: l.companies?.nombre_comercial || l.companies?.nombre || '—',
+          fecha: l.fecha, monto: Number(l.monto || 0),
+          corte_id: l.corte_id,
+          estado: c?.estado || 'desconocido',
+          periodo: c ? `${c.desde} → ${c.hasta}` : '—',
+        });
+        continue;
+      }
+      ids.push(l.id);
+      monto = r2(monto + Number(l.monto || 0));
+    }
+
+    // Sin líneas nuevas ni ajustes, no se crea un corte vacío solo porque el
+    // periodo se traslapó con otro.
+    if (!ids.length && !aj.ids.length) {
+      if (g.filas.length) res.omitidos.push({ owner_id, nombre: g.nombre, motivo: 'todo su periodo ya está en otro corte' });
+      continue;
+    }
+
     const totales = {
-      lineas: g.ids.length,
-      monto_lineas: r2(g.monto),
+      lineas: ids.length,
+      monto_lineas: r2(monto),
       monto_ajustes: r2(aj.monto),
-      total: r2(g.monto + aj.monto),
+      total: r2(monto + aj.monto),
       paga_el, generado_at: new Date().toISOString(),
     };
 
@@ -213,8 +359,8 @@ export async function generarCortes(
     }
 
     // Enganchar líneas y absorber ajustes pendientes.
-    for (let i = 0; i < g.ids.length; i += 300) {
-      await supabase.from('comision_lineas').update({ corte_id }).in('id', g.ids.slice(i, i + 300));
+    for (let i = 0; i < ids.length; i += 300) {
+      await supabase.from('comision_lineas').update({ corte_id }).in('id', ids.slice(i, i + 300));
     }
     if (aj.ids.length) {
       await supabase.from('comision_ajustes').update({ corte_id }).in('id', aj.ids);
