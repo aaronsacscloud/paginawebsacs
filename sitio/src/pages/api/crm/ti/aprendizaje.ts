@@ -26,7 +26,7 @@ export const GET: APIRoute = async ({ request }) => {
     supabase.from('ti_envios').select('id, contact_id, origen, mensaje, salida, enviado_at, imagen_id, imagen_url, adjuntos').eq('estado', 'enviado').is('aprobado_por', null).is('revisado_at', null).is('editado_por', null).order('enviado_at', { ascending: false }).limit(60),
     supabase.from('ti_envios').select('id, contact_id, origen, mensaje, salida, humano_respuesta, humano_at, estado, created_at').not('humano_respuesta', 'is', null).is('veredicto_par', null).order('created_at', { ascending: false }).limit(40),
     supabase.from('ti_envios').select('id, contact_id, origen, mensaje, mensaje_original, salida, enviado_at, imagen_id, imagen_url, adjuntos, editado_por').eq('estado', 'enviado').not('aprobado_por', 'is', null).order('enviado_at', { ascending: false }).limit(120),
-    supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, tipo, mime, bytes, usos').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(60),
+    supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, tipo, mime, bytes, usos, grupo').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(60),
   ]);
   const ids = [...new Set([...(enviosSolos || []), ...(pares || []), ...(enviosAprobados || []), ...(porRevisar || []), ...(aprobados || [])].map((x: any) => x.contact_id).filter(Boolean))];
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, giro').in('id', ids) : { data: [] as any[] };
@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
   const ahora = new Date().toISOString();
   const criterio = String(b.criterio || '').trim().slice(0, 600);
   // Adjuntos (ids de la galería, máx. 2) → objetos {id,tipo,url,nombre}; `imagen_id` viejo se acepta como un adjunto.
-  const ids: string[] = (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : b.imagen_id ? [String(b.imagen_id)] : []).slice(0, 2);
+  const ids: string[] = (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : b.imagen_id ? [String(b.imagen_id)] : []).slice(0, 5);
   const { data: recs } = ids.length ? await supabase.from('ia_imagenes').select('id, url, nombre, tipo').in('id', ids).eq('activa', true) : { data: [] as any[] };
   const adjuntos = ids.map(i => (recs || []).find((r: any) => r.id === i)).filter(Boolean).map((r: any) => ({ id: r.id, tipo: r.tipo || 'image', url: r.url, nombre: r.nombre }));
   if (adjuntos.length !== ids.length) return json({ error: 'Alguno de esos recursos ya no está en la galería' }, 404);

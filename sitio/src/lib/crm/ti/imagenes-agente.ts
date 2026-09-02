@@ -8,7 +8,8 @@
 import { supabase } from '../../supabase';
 
 export type TipoRecurso = 'image' | 'document' | 'video';
-export type ImagenAgente = { id: string; nombre: string; url: string; descripcion: string | null; cuando: string | null; giros: string[]; temas: string[]; usos: number; tipo: TipoRecurso; mime?: string | null; bytes?: number | null };
+export type ImagenAgente = { id: string; nombre: string; url: string; descripcion: string | null; cuando: string | null; giros: string[]; temas: string[]; usos: number; tipo: TipoRecurso; mime?: string | null; bytes?: number | null; grupo?: string | null };
+export const MAX_ADJUNTOS = 5;
 export type Adjunto = { id: string; tipo: TipoRecurso; url: string; nombre: string; por_que?: string };
 export const TIPO_L: Record<TipoRecurso, string> = { image: 'imagen', document: 'PDF/documento', video: 'video' };
 
@@ -34,21 +35,21 @@ export function validarRecurso(o: { mime?: string | null; bytes?: number | null;
   return { ok: true, tipo, convertir };
 }
 
-/** Los adjuntos que el agente eligió, validados contra la galería (máximo 2). */
-export function resolverAdjuntos(ids: any, galeria: ImagenAgente[]): Adjunto[] {
+/** Los adjuntos que el agente eligió, validados contra la galería (el guion le pide máximo 2; el dueño puede poner hasta MAX_ADJUNTOS). */
+export function resolverAdjuntos(ids: any, galeria: ImagenAgente[], max = MAX_ADJUNTOS): Adjunto[] {
   const lista: any[] = Array.isArray(ids) ? ids : [];
   const out: Adjunto[] = [];
   for (const x of lista) {
     const id = typeof x === 'string' ? x : x?.id;
     const g = galeria.find(i => i.id === id);
     if (g && !out.some(a => a.id === g.id)) out.push({ id: g.id, tipo: g.tipo || 'image', url: g.url, nombre: g.nombre, por_que: String(x?.por_que || '').slice(0, 160) || undefined });
-    if (out.length >= 2) break;
+    if (out.length >= max) break;
   }
   return out;
 }
 
 export async function galeriaActiva(): Promise<ImagenAgente[]> {
-  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos, tipo, mime, bytes').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(60);
+  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos, tipo, mime, bytes, grupo').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(80);
   return (data || []) as ImagenAgente[];
 }
 
@@ -58,8 +59,8 @@ export function galeriaTexto(lista: ImagenAgente[], giro?: string | null): strin
   const g = String(giro || '').toLowerCase();
   const filtradas = lista.filter(i => !i.giros?.length || !g || i.giros.some(x => g.includes(String(x).toLowerCase())));
   if (!filtradas.length) return '';
-  return '\n\nRECURSOS QUE PUEDES ADJUNTAR (imágenes, PDF, videos; máximo DOS por mensaje y solo si aportan de verdad; pon sus ids en "adjuntos", si no, []):\n'
-    + filtradas.map(i => `[${i.id}] (${TIPO_L[i.tipo || 'image']}) ${i.nombre} — muestra: ${i.descripcion || 's/d'}${i.cuando ? ` · úsala cuando: ${i.cuando}` : ''}`).join('\n');
+  return '\n\nRECURSOS QUE PUEDES ADJUNTAR (imágenes, PDF, videos; normalmente UNO o DOS por mensaje y solo si aportan; si un grupo de fotos va junto —mismo «grupo»— puedes mandar el grupo completo, hasta 5; pon sus ids en "adjuntos", si no, []):\n'
+    + filtradas.map(i => `[${i.id}] (${TIPO_L[i.tipo || 'image']}${i.grupo ? `, grupo «${i.grupo}»` : ''}) ${i.nombre} — muestra: ${i.descripcion || 's/d'}${i.cuando ? ` · úsala cuando: ${i.cuando}` : ''}`).join('\n');
 }
 
 export async function resolverImagen(id?: string | null): Promise<ImagenAgente | null> {

@@ -197,7 +197,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
             )}
 
             <div style={{ margin: '8px 0 10px' }}>
-              <label className="ti-envio-lbl">Adjuntos (imagen, PDF o video · máximo 2)</label>
+              <label className="ti-envio-lbl">Adjuntos (imagen, PDF o video · hasta 5)</label>
               <SelectorAdjuntos valor={e.adjuntos || (e.imagen_url ? [{ id: e.imagen_id || '', tipo: 'image', url: e.imagen_url, nombre: 'Imagen' }] : [])} galeria={galeria} disabled={ocupado}
                 porQue={Object.fromEntries(((s.adjuntos || []) as any[]).filter((a: any) => a.por_que).map((a: any) => [a.id, a.por_que]))}
                 onNuevo={r => setGaleria(g => [r, ...g])}

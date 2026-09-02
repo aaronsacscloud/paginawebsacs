@@ -92,7 +92,7 @@ function Ficha({ titulo, chips, leadDijo, contexto, original, textoInicial, crit
         <input className="ti-envio-input" placeholder="Ej.: si hace varias preguntas, contéstalas todas en un solo mensaje y cierra con una sola pregunta" value={criterio} onChange={e => setCriterio(e.target.value)} />
         <div className="ti-suave" style={{ margin: '5px 0 0', fontSize: '.74rem' }}>Opcional, pero es lo que generaliza: el texto es el ejemplo, la regla es lo que el agente aplica a casos parecidos.</div>
       </Paso>
-      <Paso n={4} titulo="Adjuntos (imagen, PDF o video · máximo 2)"><SelectorAdjuntos valor={adjuntos} galeria={galeria} onChange={setAdjuntos} onNuevo={onNuevo} /></Paso>
+      <Paso n={4} titulo="Adjuntos (imagen, PDF o video · hasta 5)"><SelectorAdjuntos valor={adjuntos} galeria={galeria} onChange={setAdjuntos} onNuevo={onNuevo} /></Paso>
       <Paso n={5} titulo="Tu decisión">
         <div className="apr-dec">
           {acciones.map(a => <button key={a.label} className={'ti-btn ' + (a.clase || '')} disabled={ocupado} onClick={async () => { setOcupado(true); const r = await a.run({ pulida: texto.trim(), criterio: criterio.trim(), adjuntos: adjuntos.map(x => x.id) }); setOcupado(false); if (r?.error) { setMsg('No se guardó: ' + r.error); return; } setMsg(r?.hecho || 'Guardado.'); setTimeout(() => onHecho?.(), 650); }}>{a.label}</button>)}

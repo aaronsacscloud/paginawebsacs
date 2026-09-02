@@ -85,8 +85,8 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (e.estado !== 'pendiente') return json({ error: `El envío ya está ${e.estado}` }, 409);
   if (accion === 'imagen' || accion === 'adjuntos') {
-    // Adjuntar/quitar recursos (imágenes, PDF, video; máx. 2) del envío pendiente. Es una corrección: queda como ejemplo.
-    const ids: string[] = accion === 'imagen' ? (b.imagen_id ? [String(b.imagen_id)] : []) : (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : []).slice(0, 2);
+    // Adjuntar/quitar recursos (imágenes, PDF, video; máx. 5) del envío pendiente. Es una corrección: queda como ejemplo.
+    const ids: string[] = accion === 'imagen' ? (b.imagen_id ? [String(b.imagen_id)] : []) : (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : []).slice(0, 5);
     const { data: recs } = ids.length ? await supabase.from('ia_imagenes').select('id, url, nombre, tipo').in('id', ids).eq('activa', true) : { data: [] as any[] };
     const adjuntos = ids.map(i => (recs || []).find((r: any) => r.id === i)).filter(Boolean).map((r: any) => ({ id: r.id, tipo: r.tipo || 'image', url: r.url, nombre: r.nombre }));
     if (adjuntos.length !== ids.length) return json({ error: 'Alguno de esos recursos ya no está en la galería' }, 404);

@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data, error } = await supabase.from('ia_imagenes').insert({
       nombre, url, tipo: v.tipo, mime, bytes: Number(b.bytes) || null, archivo: path,
       descripcion: String(b.descripcion || '').trim().slice(0, 300) || null, cuando: String(b.cuando || '').trim().slice(0, 300) || null,
-      giros: [], temas: [], created_by: user.id,
+      giros: [], temas: [], created_by: user.id, grupo: String(b.grupo || '').trim().slice(0, 80) || null,
     }).select('*').single();
     if (error) return json({ error: error.message }, 500);
     await supabase.from('ia_log').insert({ accion: 'galeria_recurso', razon: `${v.tipo} · ${nombre}`, detalle: { recurso_id: data.id, por: user.id, mime, bytes: b.bytes } });

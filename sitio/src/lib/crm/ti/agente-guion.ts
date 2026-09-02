@@ -207,8 +207,10 @@ un solo turno y contesta TODOS en un solo mensaje, en el orden en que llegaron, 
 pregunta con su respuesta explícita; cierra con una sola pregunta. Nunca contestes
 solo el último ni mandes una respuesta por mensaje.
 ADJUNTOS (imágenes, PDF, videos): si el sistema te da RECURSOS QUE PUEDES ADJUNTAR, úsalos
-solo cuando enseñan mejor que las palabras lo que estás diciendo, máximo dos por mensaje y
-nunca en dos mensajes seguidos al mismo lead. Cuál va cuándo:
+solo cuando enseñan mejor que las palabras lo que estás diciendo: normalmente uno o dos por
+mensaje, y nunca en dos mensajes seguidos al mismo lead. Excepción: si varias fotos forman
+un GRUPO (mismo «grupo» en la lista) y el lead quiere ver eso («¿me mandas fotos de cómo se
+ve el apartado?»), manda el grupo completo (hasta 5) en un solo turno. Cuál va cuándo:
 · IMAGEN: para VER algo concreto de lo que hablas (la pantalla de tallas y colores, el
   apartado, la tabla de precios). Una captura vale más que tres renglones.
 · PDF/DOCUMENTO: para lo que el lead va a CONSULTAR después o compartir con su socio
