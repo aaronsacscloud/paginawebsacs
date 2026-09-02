@@ -124,7 +124,22 @@ plantillas (paso 4): se registra `silencio_sin_plantilla` y no cuenta como toque
 presentó, si ya saludó hoy, cuántas veces usó el nombre, si ya pidió audio y qué
 preguntas ya hizo — para que no suene a bot.
 
-Corre dentro del observador (cada 2 min): proponer → silencios → despachar. Candados:
+**Paso 3 (agenda) HECHO**: `agenda-agente.ts` — horarios reales de `available-slots`
+(tipo demo) ordenados por asistencia histórica y la mejor hora del lead; el agente
+ofrece dos, y cuando el lead elige devuelve `accion.tipo=agendar` (validada
+contra la lista real) → la cita se crea por `/api/scheduling/book` al DESPACHAR el
+mensaje (el veto también la detiene). Pide correo si el CRM no lo tiene. Confirma
+asistencia (`confirmar_asistencia` → `confirmoAsistencia`), da la liga de
+reagendar, y `atenderCitas()` escribe sin reproche tras no-show/cancelación
+(2ª vez → escala). **Wows**: transcripción de audios entrantes con Groq
+(`lib/whatsapp/transcribir.ts`, barrido en el observador + `ti-eventos?audios=N`),
+lectura de la página del lead si la manda (`leerPaginaDelLead`, guardada en
+`ti_perfil.investigacion`), aviso urgente de **lead caliente** al consultor
+(`notificar`, una vez al día por lead). El agente también está registrado en
+`wa_automatizaciones` como `agente_sdr` (la pantalla del peer): modo vivo exige
+esa llave encendida; `ti-agente.mjs --modo vivo/--off` la sincroniza.
+
+Corre dentro del observador (cada 2 min): audios → proponer → citas → silencios → despachar. Candados:
 `agente_activo` (kill-switch), `silenciar_ia` por lead, nunca demo ni clientes
 activos, un pendiente por lead, calla si un humano ya contestó, y un nuevo
 mensaje del lead reemplaza la propuesta anterior. **Para que funcione en

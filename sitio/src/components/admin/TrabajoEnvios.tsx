@@ -69,6 +69,9 @@ export default function TrabajoEnvios() {
             </div>
             {e.salida?.ultimo_mensaje && <div className="ti-envio-lead"><span>{primerNombre(e) || 'Lead'} dijo:</span> {e.salida.ultimo_mensaje}</div>}
             {e.salida?.objetivo && <div className="ti-envio-obj">{e.salida.objetivo}</div>}
+            {e.salida?.accion?.tipo && e.salida.accion.tipo !== 'ninguna' && (
+              <div className="ti-envio-acc-tag">Al salir, el agente {e.salida.accion.tipo === 'agendar' ? `agenda la demo: ${e.salida.accion.fecha} ${e.salida.accion.hora}${e.salida.accion.email ? ` (invitación a ${e.salida.accion.email})` : ''}` : e.salida.accion.tipo === 'confirmar_asistencia' ? 'confirma la asistencia a su cita' : 'le manda la liga para reagendar'}.</div>
+            )}
             <textarea className="ti-texto" rows={4} value={edit[e.id] ?? e.mensaje} onChange={ev => setEdit({ ...edit, [e.id]: ev.target.value })} />
             <div className="ti-envio-acc">
               {(edit[e.id] ?? e.mensaje) !== e.mensaje && <button className="ti-btn primario" onClick={() => post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id] })}>Guardar mi versión</button>}
@@ -117,6 +120,7 @@ export default function TrabajoEnvios() {
 .ti-envio-cab { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; font-size:.9rem; }
 .ti-envio-reloj { margin-left:auto; font-variant-numeric:tabular-nums; font-size:.8rem; color:var(--suave, #6b7280); }
 .ti-envio-lead { margin:8px 0 4px; font-size:.86rem; color:var(--tinta, #111827); } .ti-envio-lead span { color:var(--suave,#6b7280); }
+.ti-envio-acc-tag { font-size:.8rem; color:var(--morado-tinta, #4c1d95); background:var(--morado-agua, #ede9fe); border-radius:8px; padding:6px 10px; margin-bottom:6px; }
 .ti-envio-obj { font-size:.8rem; color:var(--suave,#6b7280); font-style:italic; margin-bottom:6px; }
 .ti-envio-msg { white-space:pre-wrap; font-size:.92rem; margin:6px 0; }
 .ti-envio-acc { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }

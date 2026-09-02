@@ -17,6 +17,7 @@ import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
+import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto } from './agenda-agente';
 
 const MS_MIN = 60e3;
 
@@ -62,27 +63,63 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   if (!hasApiKey()) return { salida: null, costo: 0, conversationId: null, telefono: null, motivo: 'sin_api_key' };
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
-    supabase.from('contacts').select('id, nombre, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp').eq('id', contactId).maybeSingle(),
+    supabase.from('contacts').select('id, nombre, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id').eq('id', contactId).maybeSingle(),
     supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia').eq('contact_id', contactId).maybeSingle(),
   ]);
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
   const ultimo = [...msjs].reverse().find(m => m.direccion === 'entrante');
   const memoria = memoriaConversacion(msjs, c.nombre);
+  const [horarios, cita, pagina] = await Promise.all([
+    horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
+    proximaCita(contactId).catch(() => null),
+    leerPaginaDelLead(contactId, msjs).catch(() => ''),
+  ]);
+  const agenda = `${citaTexto(cita)}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}», etapa ${c.lifecycle_stage}, giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? 'desconocido'}, fuente ${c.fuente || 'desconocida'}`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
     system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}`,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}${nota ? `\n\n${nota}` : ''}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
   let salida: any = null;
   try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
-  if (salida) salida.ultimo_mensaje = String(ultimo?.cuerpo || ultimo?.transcript || '').slice(0, 300);
+  if (salida) {
+    salida.ultimo_mensaje = String(ultimo?.cuerpo || ultimo?.transcript || '').slice(0, 300);
+    // La acción de agendar solo vale si el horario existe de verdad en la lista ofrecida.
+    if (salida.accion?.tipo === 'agendar') {
+      const ok = horarios.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));
+      if (!ok) { salida.accion = { tipo: 'ninguna', rechazada: 'horario fuera de la lista real' }; }
+      else salida.accion.email = salida.accion.email || c.email || null;
+    }
+  }
   return { salida, costo: Number(costo) || 0, conversationId, telefono: telefono || c.whatsapp || null, motivo: salida ? undefined : 'json_invalido' };
+}
+
+/** Si el lead mandó su página o sus redes, el agente la LEE (una vez, se
+ *  guarda en el perfil) y le habla de su negocio, no de «tu tienda». */
+async function leerPaginaDelLead(contactId: string, msjs: any[]): Promise<string> {
+  const urls = msjs.filter(m => m.direccion === 'entrante').flatMap(m => String(m.cuerpo || '').match(/https?:\/\/[^\s)]+|(?:www\.)?[a-z0-9-]+\.(?:com|mx|com\.mx|shop|store|net)(?:\/[^\s)]*)?/gi) || [])
+    .map(u => u.startsWith('http') ? u : 'https://' + u).filter(u => !/sacscloud|wa\.me|whatsapp|instagram\.com\/p\/|meet\.google/i.test(u));
+  if (!urls.length) return '';
+  const url = urls[urls.length - 1];
+  const { data: p } = await supabase.from('ti_perfil').select('investigacion').eq('contact_id', contactId).maybeSingle();
+  const prev: any = p?.investigacion || null;
+  if (prev?.url === url && prev?.resumen) return `LO QUE DICE SU PÁGINA (${url}): ${prev.resumen}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SacsBot/1.0)' } });
+    const html = await r.text();
+    const title = (html.match(/<title[^>]*>([^<]{3,120})<\/title>/i) || [])[1] || '';
+    const desc = (html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']{10,300})["']/i) || [])[1] || '';
+    const cuerpo = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500);
+    const resumen = [title && `Título: ${title}`, desc && `Descripción: ${desc}`, `Texto: ${cuerpo.slice(0, 700)}`].filter(Boolean).join(' · ');
+    await supabase.from('ti_perfil').upsert({ contact_id: contactId, investigacion: { url, resumen, at: new Date().toISOString() }, updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
+    return `LO QUE DICE SU PÁGINA (${url}) — úsalo para hablar de SU negocio con sus palabras: ${resumen}`;
+  } catch { return ''; }
 }
 
 /** Lo que un humano recordaría antes de escribir: si ya se presentó, si ya saludó
@@ -209,6 +246,8 @@ export async function proponerRespuestas(): Promise<any> {
         continue;
       }
       if (!d.telefono) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: 'sin teléfono' }); continue; }
+      // LEAD CALIENTE: interés alto en una conversación madura → el consultor se entera ahora, no en el digest.
+      if (s.interes?.nivel === 'alto' && ['proponiendo', 'agendada'].includes(s.estado)) await avisarLeadCaliente(cid, s);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       await supabase.from('ti_envios').insert({
         contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'pendiente',
@@ -225,6 +264,16 @@ export async function proponerRespuestas(): Promise<any> {
 async function guardarMarca(ahora: Date) {
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
   await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_marca: ahora.toISOString() } }).eq('id', 1);
+}
+
+/** Lead caliente: aviso urgente al consultor (una vez por día por lead). */
+async function avisarLeadCaliente(contactId: string, s: SalidaAgente) {
+  const { data: ya } = await supabase.from('ia_log').select('id').eq('contact_id', contactId).eq('accion', 'lead_caliente').gt('created_at', new Date(Date.now() - 86400e3).toISOString()).limit(1);
+  if ((ya || []).length) return;
+  const { data: c } = await supabase.from('contacts').select('nombre, company_id').eq('id', contactId).maybeSingle();
+  const { notificar } = await import('../notificaciones');
+  await notificar({ clave: `lead_caliente:${contactId}:${new Date().toISOString().slice(0, 10)}`, tipo: 'lead_caliente', nivel: 'urgente', titulo: `${String(c?.nombre || 'Un lead').split(/\s+/)[0]} está caliente: ${s.interes?.razon || 'interés alto'}`, detalle: `Estado ${s.estado}. Último mensaje: «${s.ultimo_mensaje || ''}». El agente ya le contestó; si puedes, llámale hoy.`, company_id: c?.company_id || null, destino: 'trabajo', metadata: { contact_id: contactId, estado: s.estado } });
+  await log({ accion: 'lead_caliente', contact_id: contactId, razon: s.interes?.razon || 'interés alto' });
 }
 
 /** El caso que el agente no debe resolver: P1 al humano con el motivo. */
@@ -254,7 +303,9 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   const ahora = new Date();
   // MODO SOMBRA (default): el agente decide y deja rastro, pero NO manda. Se
   // pasa a vivo con scripts/ti-agente.mjs --modo vivo.
-  if ((cfg.agente_modo || 'sombra') === 'sombra' && !opts.forzar) {
+  const { permitido } = await import('../../whatsapp/permisos');
+  const vivoPermitido = await permitido('agente_sdr');
+  if (((cfg.agente_modo || 'sombra') === 'sombra' || !vivoPermitido) && !opts.forzar) {
     const { data: som } = await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() })
       .eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).select('id');
     return { agente: 'sombra', sombra: (som || []).length };
@@ -270,11 +321,36 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     const { data: nuevo } = await supabase.from('ti_eventos').select('id').eq('contact_id', e.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', e.created_at).limit(1);
     if ((nuevo || []).length && !opts.soloId) { await supabase.from('ti_envios').update({ estado: 'reemplazado', updated_at: ahora.toISOString() }).eq('id', e.id); continue; }
     try {
-      const r: any = await enviarTexto(e.telefono, e.mensaje);
+      // La ACCIÓN viaja con el mensaje y se ejecuta al salir (así el veto también la detiene).
+      let mensaje = e.mensaje;
+      const acc: any = (e.salida as any)?.accion;
+      if (acc?.tipo === 'agendar' && acc.fecha && acc.hora) {
+        const { data: c } = await supabase.from('contacts').select('nombre, email, giro, sucursales_interes, referrer_partner_id, companies(nombre)').eq('id', e.contact_id).maybeSingle();
+        const email = acc.email || c?.email;
+        if (!email) { mensaje = mensaje; await log({ accion: 'agente_error', contact_id: e.contact_id, razon: 'agendar sin correo: se mandó el mensaje sin crear la cita' }); }
+        else {
+          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `Agendada por el agente SDR. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
+          if (!r.ok) {
+            const otros = await horariosParaDemo({ max: 2 }).catch(() => []);
+            mensaje = r.ocupado
+              ? `Ese horario se acaba de ocupar, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`
+              : 'No pude dejar apartado ese horario ahora mismo; ya le avisé al consultor para que te lo confirme hoy.';
+            await log({ accion: 'agente_agenda_fallo', contact_id: e.contact_id, razon: r.error, detalle: acc });
+            if (!r.ocupado) await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `no se pudo agendar: ${r.error}` } });
+          } else {
+            await log({ accion: 'agente_agendo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { booking_id: r.booking?.id || null } });
+            await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ciclo: 1, toque: 0, agendada_at: ahora.toISOString() }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+          }
+        }
+      } else if (acc?.tipo === 'confirmar_asistencia' && e.conversation_id) {
+        const { confirmoAsistencia } = await import('../../scheduling/reagendar-wa');
+        await confirmoAsistencia(e.conversation_id, e.telefono).catch(() => false);
+      }
+      const r: any = await enviarTexto(e.telefono, mensaje);
       const wamid = r?.messages?.[0]?.id || null;
-      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: e.mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
-      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, updated_at: ahora.toISOString() }).eq('id', e.id);
-      await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: e.mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
+      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString() }).eq('id', e.id);
+      await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
       await supabase.from('contacts').update({ last_contact_at: ahora.toISOString() }).eq('id', e.contact_id);
       res.enviados++;
     } catch (err: any) {
@@ -452,4 +528,45 @@ export async function aplicarVeredictoSilencio(tarea: any, resultado: string, de
     await log({ accion: 'silencio_decision', contact_id: cid, razon: `pausar hasta ${hasta.slice(0, 10)}`, detalle: { ...detalle, por: userId } });
   }
   return { ok: true };
+}
+
+
+/* ══ CITAS: no-show y cancelación (paso 3) ══
+   El evento cae en ti_eventos (cita_no_asistio / cita_cancelada); el agente
+   escribe sin reproche y ofrece horarios nuevos o la liga. Segunda vez
+   seguida → lo pasa al consultor. */
+export async function atenderCitas(): Promise<any> {
+  const cfg: any = await leerConfig();
+  if (cfg.agente_activo !== true || !hasApiKey()) return { citas: 'apagado' };
+  const ahora = new Date();
+  const desde = new Date(Math.max(Date.parse(cfg.agente_citas_marca || 0) || 0, ahora.getTime() - 6 * 3600e3)).toISOString();
+  const res: any = { atendidas: 0, saltadas: 0 };
+  const { data: evs } = await supabase.from('ti_eventos').select('contact_id, tipo, ocurrio_at, payload').in('tipo', ['cita_no_asistio', 'cita_cancelada']).gt('ocurrio_at', desde).not('contact_id', 'is', null).limit(30);
+  for (const e of evs || []) {
+    const cid = e.contact_id;
+    const [{ data: c }, { data: p }, { data: previos }] = await Promise.all([
+      supabase.from('contacts').select('lifecycle_stage, propiedades, archived_at').eq('id', cid).maybeSingle(),
+      supabase.from('ti_perfil').select('silenciar_ia').eq('contact_id', cid).maybeSingle(),
+      supabase.from('ti_eventos').select('id').eq('contact_id', cid).in('tipo', ['cita_no_asistio', 'cita_cancelada']).lt('ocurrio_at', e.ocurrio_at).gt('ocurrio_at', new Date(ahora.getTime() - 45 * 86400e3).toISOString()).limit(2),
+    ]);
+    if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || p?.silenciar_ia || !['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltadas++; continue; }
+    const { data: ya } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'cita').gt('created_at', e.ocurrio_at).limit(1);
+    if ((ya || []).length) { res.saltadas++; continue; }
+    const segunda = (previos || []).length >= 1;
+    const nota = e.tipo === 'cita_no_asistio'
+      ? `EL LEAD NO LLEGÓ a su cita (${(e.payload as any)?.fecha || ''}). ${segunda ? 'Es la SEGUNDA vez seguida: escribe con calidez, pregunta si sigue interesado y qué día le acomoda a él, y devuelve escalar.si=true para que el consultor lo tome.' : 'Escribe sin reproche (se cruzan cosas), y ofrece DOS horarios de la lista real o la liga de reagendar.'}`
+      : `EL LEAD CANCELÓ su cita (${(e.payload as any)?.fecha || ''}). Escribe con calidez, sin presión: ofrece dos horarios nuevos o pregunta qué día le acomoda; si dice que ya no, respeta y pregunta qué cambió.`;
+    try {
+      const d = await decidirTurno(cid, nota);
+      if (!d.salida?.mensaje || !d.telefono) { res.saltadas++; continue; }
+      if (d.salida.escalar?.si) await escalarAlHumano(cid, d.salida);
+      const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cita', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, evento: e.tipo }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+      await log({ accion: 'agente_cita', contact_id: cid, razon: e.tipo, contenido: d.salida.mensaje, costo: d.costo });
+      res.atendidas++;
+    } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `cita: ${err?.message || err}` }); }
+  }
+  const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
+  await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_citas_marca: ahora.toISOString() } }).eq('id', 1);
+  return res;
 }

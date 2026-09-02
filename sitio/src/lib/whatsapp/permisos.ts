@@ -22,7 +22,7 @@ export type ClaveWA =
   | 'agenda_confirmacion' | 'agenda_recordatorio' | 'agenda_seguimiento'
   | 'primer_mensaje' | 'acuse_entrante' | 'agenda_horarios_auto'
   | 'agenda_reagendar_auto' | 'cadencia_leads' | 'cobranza'
-  | 'copiloto_ia' | 'valvula_ti';
+  | 'copiloto_ia' | 'valvula_ti' | 'agente_sdr';
 
 let cache: { v: Record<string, boolean>; hasta: number } | null = null;
 let cacheCfg: { v: Record<string, any>; hasta: number } | null = null;

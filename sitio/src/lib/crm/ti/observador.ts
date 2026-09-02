@@ -150,8 +150,11 @@ export async function observar(): Promise<any> {
   // ── 2b) EL AGENTE SDR (N2): propone respuesta a cada lead que escribió y
   //    despacha lo que ya venció su ventana de veto. Apagado = no hace nada.
   try {
-    const { proponerRespuestas, despacharEnvios, tocarSilencios } = await import('./agente');
+    const { proponerRespuestas, despacharEnvios, tocarSilencios, atenderCitas } = await import('./agente');
+    // Los audios primero: el agente debe leer lo que el lead DIJO, no «[audio]».
+    try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
     res.agente = await proponerRespuestas();
+    res.agente_citas = await atenderCitas();
     res.agente_silencio = await tocarSilencios();
     res.agente_despacho = await despacharEnvios();
   } catch (e: any) { res.agente_error = String(e?.message || e); }

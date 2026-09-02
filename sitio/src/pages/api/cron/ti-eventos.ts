@@ -17,6 +17,12 @@ export const GET: APIRoute = async ({ request }) => {
   const u = new URL(request.url);
   const dias = Number(u.searchParams.get('dias')) || 0;
   const fuentes = (u.searchParams.get('fuentes') || '').split(',').map(s => s.trim()).filter(Boolean);
+  // ?audios=N → solo transcribe notas de voz de los últimos N días (backfill de audios).
+  const audios = Number(u.searchParams.get('audios')) || 0;
+  if (audios) {
+    const { transcribirPendientes } = await import('../../../lib/whatsapp/transcribir');
+    return json({ ok: true, ...(await transcribirPendientes({ dias: audios, max: Number(u.searchParams.get('max')) || 10 })) });
+  }
   try {
     const t0 = Date.now();
     const res = await sincronizarEventos({ desde: dias ? desdeDias(dias) : undefined, fuentes });

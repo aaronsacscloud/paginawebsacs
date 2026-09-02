@@ -18,6 +18,8 @@ if (process.argv.includes('--off')) v.agente_activo = false;
 if (i > 0) v.agente_veto_min = Math.max(0, Number(process.argv[i + 1]) || 10);
 const j = process.argv.indexOf('--modo'); if (j > 0 && ['sombra', 'vivo'].includes(process.argv[j + 1])) v.agente_modo = process.argv[j + 1];
 if (process.argv.includes('--on') || process.argv.includes('--off') || i > 0 || j > 0) await sb.from('ti_config').update({ valor: v }).eq('id', 1);
+// El interruptor de la pantalla de automatizaciones (wa_automatizaciones.agente_sdr) va sincronizado: activa = encendido Y modo vivo.
+if (process.argv.includes('--on') || process.argv.includes('--off') || j > 0) await sb.from('wa_automatizaciones').upsert({ clave: 'agente_sdr', nombre: 'Agente SDR (Trabajo Inteligente)', categoria: 'leads', activa: v.agente_activo === true && v.agente_modo === 'vivo' }, { onConflict: 'clave' });
 const [{ count: pend }, { count: env }, { count: vet }] = await Promise.all([
   sb.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente'),
   sb.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'enviado'),
