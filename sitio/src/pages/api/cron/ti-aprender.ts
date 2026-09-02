@@ -1,0 +1,114 @@
+// TRABAJO INTELIGENTE · EL CICLO NOCTURNO (versión Vercel).
+//
+// El dueño decidió correrlo en Supabase Edge + pg_cron; mientras esas
+// extensiones no estén instaladas, corre aquí (la llave ya vive en Vercel) con
+// los mismos aprendices y la misma salida: PROPUESTAS con evidencia en
+// ti_reglas (estado «propuesta») y avisos al dueño. Nada se automodifica en
+// silencio, salvo la BAJADA de autonomía, que es automática por diseño.
+//
+//   1. Rampa: ¿el agente se ganó menos veto? ¿o se lo tiene que devolver?
+//   2. «No era lead»: motivos que se repiten por fuente → exclusión propuesta.
+//   3. Ángulos del reloj de silencio: cuál consigue respuesta.
+//   4. Huecos de la wiki: lo que el agente no supo → adenda propuesta.
+//   5. Métrica norte del día: citas agendadas por el agente vs. por humanos.
+// Cron: 08:00 UTC diario (02:00 CDMX). También a mano con el secreto.
+import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
+import { supabase } from '../../../lib/supabase';
+import { notificar } from '../../../lib/crm/notificaciones';
+import { leerConfig } from '../../../lib/crm/ti/motor';
+
+export const prerender = false;
+const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+const D = 86400e3;
+
+async function proponer(clave: string, valor: any, evidencia: any, dedupeDias = 14) {
+  // La memoria de decisiones: lo rechazado no se vuelve a proponer sin evidencia nueva; lo ya propuesto no se duplica.
+  const { data: prev } = await supabase.from('ti_reglas').select('id, estado, created_at').eq('clave', clave).filter('valor->>id', 'eq', String(valor.id || '')).order('created_at', { ascending: false }).limit(1);
+  const p = prev?.[0];
+  if (p && (p.estado === 'propuesta' || p.estado === 'activa')) return false;
+  if (p && p.estado === 'retirada' && Date.now() - Date.parse(p.created_at) < dedupeDias * D) return false;
+  await supabase.from('ti_reglas').insert({ clave, valor, evidencia, estado: 'propuesta' });
+  return true;
+}
+
+export const GET: APIRoute = async ({ request }) => {
+  if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
+  const cfg: any = await leerConfig();
+  const ahora = new Date();
+  const hace = (d: number) => new Date(ahora.getTime() - d * D).toISOString();
+  const res: any = { propuestas: [] as string[], avisos: 0 };
+
+  // ── 1) RAMPA ──
+  const { data: env14 } = await supabase.from('ti_envios').select('estado, editado_por, created_at').gte('created_at', hace(14)).in('estado', ['enviado', 'vetado']).limit(2000);
+  const enviados = (env14 || []).filter(e => e.estado === 'enviado').length;
+  const vetados = (env14 || []).filter(e => e.estado === 'vetado').length;
+  const editados = (env14 || []).filter(e => e.editado_por).length;
+  // Solo cuentan las correcciones a envíos REALES del agente (edición o «esto hubiera contestado yo» sobre un envío), no la calibración inicial.
+  const { count: correcciones7 } = await supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').gte('created_at', hace(7)).or('por_que.ilike.El dueño corrigió al agente%,por_que.ilike.El humano corrigió al agente%');
+  const { count: vetos7 } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'vetado').gte('updated_at', hace(7));
+  const errores7 = (correcciones7 || 0) + (vetos7 || 0);
+  const veto = Number(cfg.agente_veto_min ?? 10);
+  res.rampa = { enviados14: enviados, vetados14: vetados, editados14: editados, errores7, veto_min: veto, modo: cfg.agente_modo || 'sombra' };
+  if (veto === 0 && errores7 >= 2) {
+    // BAJADA AUTOMÁTICA: dos correcciones en 7 días → vuelve la ventana de veto.
+    const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
+    await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_veto_min: 10 } }).eq('id', 1);
+    await notificar({ clave: `rampa_baja:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_rampa', nivel: 'alerta', titulo: 'El agente vuelve a la ventana de veto de 10 min', detalle: `${errores7} correcciones en 7 días (vetos o «esto hubiera contestado yo»). Baja automática de N3 a N2.`, destino: 'trabajo' });
+    res.rampa.bajada = true; res.avisos++;
+  } else if (veto > 0 && (cfg.agente_modo === 'vivo') && enviados >= 30 && (vetados + editados) / Math.max(1, enviados + vetados) <= 0.10) {
+    if (await proponer('rampa_subir', { id: 'agente_veto_0', accion: 'agente_veto_min', de: veto, a: 0 }, { enviados14: enviados, vetados14: vetados, editados14: editados, tasa: ((vetados + editados) / (enviados + vetados)).toFixed(3) })) {
+      await notificar({ clave: `rampa_sube:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_rampa', nivel: 'info', titulo: 'Propuesta: el agente se ganó salir sin ventana de veto', detalle: `${enviados} envíos en 14 días con ${vetados} vetos y ${editados} ediciones (≤10 %). Apruébalo con: node scripts/ti-agente.mjs --veto 0`, destino: 'trabajo' });
+      res.propuestas.push('rampa_subir'); res.avisos++;
+    }
+  }
+
+  // ── 2) «NO ERA LEAD» por fuente ──
+  const { data: nel } = await supabase.from('ia_log').select('razon, detalle, contact_id').eq('accion', 'no_era_lead').gte('created_at', hace(30)).limit(500);
+  const porFuente: Record<string, { n: number; motivos: Record<string, number> }> = {};
+  for (const r of nel || []) {
+    const f = String((r.detalle as any)?.utm_source || (r.detalle as any)?.fuente || 'sin_fuente');
+    porFuente[f] = porFuente[f] || { n: 0, motivos: {} };
+    porFuente[f].n++; porFuente[f].motivos[r.razon || 'otro'] = (porFuente[f].motivos[r.razon || 'otro'] || 0) + 1;
+  }
+  res.no_era_lead = porFuente;
+  for (const [f, v] of Object.entries(porFuente)) {
+    if (v.n < 3) continue;
+    const { count: total } = await supabase.from('contacts').select('id', { count: 'exact', head: true }).or(`utm_source.eq.${f},fuente.eq.${f}`).gte('created_at', hace(30));
+    const tasa = v.n / Math.max(1, total || 0);
+    if (tasa >= 0.3 && await proponer('exclusion_fuente', { id: `fuente:${f}`, fuente: f, motivos: v.motivos }, { no_era_lead: v.n, leads_30d: total, tasa: tasa.toFixed(2) })) {
+      await notificar({ clave: `exclusion:${f}:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `La fuente «${f}» trae ${Math.round(tasa * 100)} % de «no era lead»`, detalle: `${v.n} de ${total} en 30 días (${Object.entries(v.motivos).map(([k, n]) => `${k}: ${n}`).join(', ')}). Propuesta: filtrarla o cambiar el primer mensaje. Queda en ti_reglas como propuesta.`, destino: 'trabajo' });
+      res.propuestas.push(`exclusion_fuente:${f}`); res.avisos++;
+    }
+  }
+
+  // ── 3) ÁNGULOS del reloj de silencio: ¿cuál consigue respuesta en 48 h? ──
+  const { data: toques } = await supabase.from('ti_envios').select('contact_id, enviado_at, salida').eq('origen', 'silencio').eq('estado', 'enviado').gte('enviado_at', hace(30)).limit(1000);
+  const porToque: Record<string, { n: number; resp: number }> = {};
+  for (const t of toques || []) {
+    const k = `toque${(t.salida as any)?.toque || '?'}`;
+    porToque[k] = porToque[k] || { n: 0, resp: 0 }; porToque[k].n++;
+    const { data: r } = await supabase.from('ti_eventos').select('id').eq('contact_id', t.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', t.enviado_at).lt('ocurrio_at', new Date(Date.parse(t.enviado_at) + 2 * D).toISOString()).limit(1);
+    if ((r || []).length) porToque[k].resp++;
+  }
+  res.angulos = porToque;
+  { const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
+    await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), metricas_silencio: { at: ahora.toISOString(), porToque } } }).eq('id', 1); }
+
+  // ── 4) HUECOS DE LA WIKI: lo que el agente escaló por no saber ──
+  const { data: huecos } = await supabase.from('ia_log').select('razon, contact_id').eq('accion', 'agente_calla').ilike('razon', '%wiki%').gte('created_at', hace(7)).limit(200);
+  res.huecos_wiki = (huecos || []).length;
+  if ((huecos || []).length >= 2) {
+    const ejemplos = (huecos || []).slice(0, 8).map(h => h.razon);
+    if (await proponer('adenda_wiki', { id: `semana:${ahora.toISOString().slice(0, 10)}`, ejemplos }, { veces: (huecos || []).length }, 7)) {
+      await notificar({ clave: `adenda:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `${(huecos || []).length} preguntas que la wiki no cubrió esta semana`, detalle: ejemplos.join(' · ').slice(0, 900), destino: 'trabajo' });
+      res.propuestas.push('adenda_wiki'); res.avisos++;
+    }
+  }
+
+  // ── 5) MÉTRICA NORTE: citas agendadas ayer, por quién ──
+  const { data: citas } = await supabase.from('bookings').select('utm_source, estado').gte('created_at', hace(1)).limit(500);
+  res.citas_ayer = { agente: (citas || []).filter(b => b.utm_source === 'agente_ia').length, humanas: (citas || []).filter(b => b.utm_source !== 'agente_ia').length };
+
+  return json({ ok: true, ...res });
+};

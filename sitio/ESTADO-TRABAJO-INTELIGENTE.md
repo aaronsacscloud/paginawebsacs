@@ -139,7 +139,25 @@ lectura de la página del lead si la manda (`leerPaginaDelLead`, guardada en
 `wa_automatizaciones` como `agente_sdr` (la pantalla del peer): modo vivo exige
 esa llave encendida; `ti-agente.mjs --modo vivo/--off` la sincroniza.
 
-Corre dentro del observador (cada 2 min): audios → proponer → citas → silencios → despachar. Candados:
+**Paso 4 (plantillas) HECHO**: `plantillas-agente.ts` crea solo el par base
+`ti_seguimiento_marketing_v1` / `ti_seguimiento_utility_v1` en Meta (máx. 3/día,
+se apaga con 3 rechazos), refresca su estado cada 10 min y, fuera de la ventana
+de 24 h, el toque sale como plantilla: **marketing primero → 10 min → utility si
+Meta no la entregó** (`revisarFallbacks`, mira `wa_mensajes.status`). El ángulo
+del agente viaja en `{{2}}` (una oración, sin saludo).
+**Paso 5 HECHO**: con el agente en modo vivo, `generarPlan` termina las cadencias
+humanas en T3–T8 (`terminada_motivo = agente`): el humano se queda con T1, T2,
+la llamada de rescate y la tarjeta.
+**Paso 6 HECHO**: `/api/cron/ti-aprender` (08:00 UTC diario): rampa (≥30 envíos
+con ≤10 % de vetos+ediciones en modo vivo → propone veto 0; 2 correcciones en 7 d
+con veto 0 → BAJA automática a 10 min), «no era lead» por fuente (≥3 y ≥30 % →
+propuesta de exclusión en `ti_reglas`), efectividad por toque del reloj de
+silencio (`ti_config.metricas_silencio`), huecos de la wiki → adenda propuesta,
+citas de ayer agente vs. humanas. Corre en Vercel mientras Supabase Edge no
+tenga pg_cron (decisión pendiente de migrar).
+Botón **«Silenciar IA»** en la tarjeta del día (`/api/crm/ti/silenciar`).
+
+Corre dentro del observador (cada 2 min): audios → proponer → citas → plantillas → silencios → despachar → fallbacks. Candados:
 `agente_activo` (kill-switch), `silenciar_ia` por lead, nunca demo ni clientes
 activos, un pendiente por lead, calla si un humano ya contestó, y un nuevo
 mensaje del lead reemplaza la propuesta anterior. **Para que funcione en
@@ -163,6 +181,19 @@ mano nunca lo pisa el compilador nocturno.
 Pagos/config necesarios: `ANTHROPIC_API_KEY` y `GROQ_API_KEY` en Vercel
 (agente en vivo + transcribir audios: 105 de 106 audios de leads sin
 transcripción); plantillas en Meta las crea el agente.
+
+## Los 10 «wow» (pedido del dueño 2026-09-02) — estado
+1. Lee la página del lead si la manda y le habla de SU negocio — hecho.
+2. Transcribe las notas de voz (Groq) y las entiende — hecho (105 pendientes se recogen solas, 6 por tick).
+3. Agenda la demo sobre horarios reales, ordenados por asistencia histórica y la mejor hora del lead — hecho.
+4. Aviso urgente de lead caliente al consultor — hecho.
+5. Memoria conversacional: no re-saluda, no se re-presenta, dosifica el nombre — hecho.
+6. Evalúa ICP + calidad de conversación antes de insistir — hecho.
+7. Crea sus propias plantillas en Meta y aplica marketing → utility — hecho.
+8. Rampa que sube con evidencia y baja sola con errores — hecho (cron nocturno).
+9. Aprende del «no era lead»: exclusiones por fuente propuestas — hecho.
+10. Digest diario + métricas por toque/ángulo — hecho.
+Siguientes wow (no hoy): investigación del lead en IG/Maps al entrar; ángulos A/B por plantilla; voz entrante (A8).
 
 ## PENDIENTES (dependen de algo externo)
 

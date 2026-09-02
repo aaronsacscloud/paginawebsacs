@@ -159,10 +159,21 @@ export async function generarPlan() {
   const { data: cads } = await supabase.from('ti_cadencias')
     .select('*, contacts(id, nombre, whatsapp, email, owner_id, company_id, archived_at)')
     .eq('estado', 'activa').lte('siguiente_at', finHoy.toISOString()).limit(500);
+  // Con el AGENTE EN VIVO (decisión del dueño 2026-09-02): los toques de texto
+  // (T3, T5, T6, T8) y las llamadas a ciegas 3ª y 4ª (T4, T7) son del agente y
+  // su reloj de silencio; el humano se queda con T1 y T2 (las llamadas con
+  // mayor tasa de contacto), la llamada de rescate y la tarjeta de decisión.
+  const agenteVivo = (cfg as any).agente_activo === true && (cfg as any).agente_modo === 'vivo';
+  const PASOS_DEL_AGENTE = new Set(['T3', 'T4', 'T5', 'T6', 'T7', 'T8']);
   for (const cad of cads || []) {
     const c = (cad as any).contacts;
     if (!c || c.archived_at || cad.do_not_contact) {
       await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: c ? 'do_not_contact' : 'contacto_borrado', updated_at: ahora.toISOString() }).eq('contact_id', cad.contact_id);
+      continue;
+    }
+    if (agenteVivo && PASOS_DEL_AGENTE.has(cad.paso) && c.whatsapp) {
+      await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'agente', updated_at: ahora.toISOString() }).eq('contact_id', cad.contact_id);
+      res.al_agente = (res.al_agente || 0) + 1;
       continue;
     }
     // >35 días desde el inicio: un lead frío de 5 semanas ya no se rescata a

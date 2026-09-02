@@ -18,6 +18,7 @@ import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto } from './agenda-agente';
+import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
 
@@ -346,10 +347,21 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         const { confirmoAsistencia } = await import('../../scheduling/reagendar-wa');
         await confirmoAsistencia(e.conversation_id, e.telefono).catch(() => false);
       }
-      const r: any = await enviarTexto(e.telefono, mensaje);
+      let r: any, plantillaUsada: string | null = null;
+      if (e.plantilla) {
+        const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
+        const pl = e.plantilla as any;
+        plantillaUsada = pl.marketing || pl.utility;
+        r = await enviarPlantilla(e.telefono, plantillaUsada!, 'es_MX', pl.params || []);
+        mensaje = `[plantilla ${plantillaUsada}] ${pl.params?.[1] || mensaje}`;
+      } else {
+        r = await enviarTexto(e.telefono, mensaje);
+      }
       const wamid = r?.messages?.[0]?.id || null;
       if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
-      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString() }).eq('id', e.id);
+      await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(),
+        // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
+        ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
       await supabase.from('contacts').update({ last_contact_at: ahora.toISOString() }).eq('id', e.contact_id);
       res.enviados++;
@@ -433,18 +445,25 @@ export async function tocarSilencios(): Promise<any> {
       // ¿Ventana de 24 h abierta? (último mensaje del lead hace menos de 24 h)
       const { data: ult } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
       const ventana = (ult || []).length && ahora.getTime() - Date.parse(ult![0].ocurrio_at) < 24 * H;
+      let par: { marketing: string | null; utility: string | null } | null = null;
       if (!ventana) {
-        // Fuera de ventana hacen falta plantillas (paso 4: marketing → 10 min → utility). Hasta entonces se registra y no se cuenta como toque.
-        res.sin_ventana++;
-        await log({ accion: 'silencio_sin_plantilla', contact_id: cid, razon: `toque ${st.toque + 1} del ciclo ${st.ciclo} requiere plantilla`, detalle: { horas: Math.round(horas) } });
-        await guardar({ base_at: new Date(base).toISOString(), ultimo_intento_at: ahora.toISOString() });
-        continue;
+        // Fuera de ventana solo salen PLANTILLAS: marketing primero, utility a los 10 min si Meta no la entregó.
+        par = await parListo();
+        if (!par) {
+          res.sin_ventana++;
+          await log({ accion: 'silencio_sin_plantilla', contact_id: cid, razon: `toque ${st.toque + 1} del ciclo ${st.ciclo}: las plantillas del agente aún no están aprobadas en Meta`, detalle: { horas: Math.round(horas) } });
+          await guardar({ base_at: new Date(base).toISOString(), ultimo_intento_at: ahora.toISOString() });
+          continue;
+        }
       }
-      const nota = `TOQUE DE SILENCIO ${st.toque + 1} de ${maxToques} (ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}): el lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.`;
+      const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: el mensaje debe ser UNA sola oración corta (máx. 200 caracteres), sin saludo ni nombre (la plantilla ya dice «Hola {nombre}»), que continúe la frase «Hola Ana, …»: el ángulo concreto para su giro.' : '';
+      const nota = `TOQUE DE SILENCIO ${st.toque + 1} de ${maxToques} (ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}): el lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.${notaPlantilla}`;
       const d = await decidirTurno(cid, nota);
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
-      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+      const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+        plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null });
       await guardar({ base_at: new Date(base).toISOString(), toque: st.toque + 1, ultimo_toque_at: ahora.toISOString(), angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
       await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `toque ${st.toque + 1}/3 ciclo ${st.ciclo}`, costo: d.costo });
       res.toques++;
@@ -568,5 +587,39 @@ export async function atenderCitas(): Promise<any> {
   }
   const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
   await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_citas_marca: ahora.toISOString() } }).eq('id', 1);
+  return res;
+}
+
+
+/** Marketing → 10 min → utility: si Meta no entregó la plantilla de marketing (131049/130472, pausada…), sale la utility. */
+export async function revisarFallbacks(): Promise<any> {
+  const ahora = new Date();
+  const res: any = { entregadas: 0, utility: 0, sin_utility: 0 };
+  const { data: pend } = await supabase.from('ti_envios').select('id, contact_id, telefono, kapso_message_id, plantilla, enviado_at').eq('fallback_estado', 'pendiente').lte('fallback_at', ahora.toISOString()).limit(20);
+  if (!(pend || []).length) return res;
+  const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
+  const { registrarMensaje } = await import('../../whatsapp/espejo');
+  for (const e of pend || []) {
+    const { data: m } = e.kapso_message_id ? await supabase.from('wa_mensajes').select('status, error').eq('kapso_message_id', e.kapso_message_id).maybeSingle() : { data: null as any };
+    const fallo = m?.status === 'failed';
+    const entregada = m && ['delivered', 'read'].includes(m.status);
+    // Sin noticia en 30 min se da por entregada (Meta a veces no reporta delivered).
+    const sinNoticia = !m || (!fallo && !entregada && ahora.getTime() - Date.parse(e.enviado_at) > 30 * MS_MIN);
+    if (entregada || sinNoticia) { await supabase.from('ti_envios').update({ fallback_estado: 'entregada', updated_at: ahora.toISOString() }).eq('id', e.id); res.entregadas++; continue; }
+    if (!fallo) continue; // todavía sin estado: se revisa en el siguiente tick
+    const pl = e.plantilla as any;
+    if (!pl?.utility) { await supabase.from('ti_envios').update({ fallback_estado: 'sin_utility', updated_at: ahora.toISOString() }).eq('id', e.id); res.sin_utility++; continue; }
+    try {
+      const r: any = await enviarPlantilla(e.telefono, pl.utility, 'es_MX', pl.params || []);
+      const wamid = r?.messages?.[0]?.id || null;
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'template', cuerpo: `[plantilla ${pl.utility}] ${pl.params?.[1] || ''}`, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, plantilla: pl.utility, fallback_de: pl.marketing } });
+      await supabase.from('ti_envios').update({ fallback_estado: 'utility_enviada', updated_at: ahora.toISOString() }).eq('id', e.id);
+      await log({ accion: 'plantilla_fallback', contact_id: e.contact_id, razon: `marketing falló (${String(m?.error || '').slice(0, 60)}) → utility ${pl.utility}` });
+      res.utility++;
+    } catch (err: any) {
+      await supabase.from('ti_envios').update({ fallback_estado: 'error', updated_at: ahora.toISOString() }).eq('id', e.id);
+      await log({ accion: 'agente_error', contact_id: e.contact_id, razon: `fallback utility: ${err?.message || err}` });
+    }
+  }
   return res;
 }

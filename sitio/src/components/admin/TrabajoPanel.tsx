@@ -318,6 +318,7 @@ export default function TrabajoPanel() {
           {!!plan?.resumen?.hechas_hoy && <span className="ti-badge verde">{plan.resumen.hechas_hoy} hechas hoy</span>}
           {!!plan?.resumen?.atrasadas && <span className="ti-badge ambar">{plan.resumen.atrasadas} atrasadas</span>}
           <button className="ti-verfila" onClick={() => setHojaFila(true)}>Ver fila</button>
+          {t?.contact_id && <button className="ti-verfila" title="El agente deja de escribirle a este lead; lo que iba a salir se detiene" onClick={async () => { if (!confirm('¿Silenciar la IA con este lead? Lo que iba a salir se detiene y el agente ya no le escribe.')) return; await fetch('/api/crm/ti/silenciar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: t.contact_id, silenciar: true }) }); setAvisoP1('IA silenciada para este lead'); setTimeout(() => setAvisoP1(''), 4000); }}>Silenciar IA</button>}
         </div>
         <div className="ti-prog"><div style={{ width: plan && (plan.resumen.hechas_hoy + tareas.length) > 0 ? `${Math.round(100 * plan.resumen.hechas_hoy / (plan.resumen.hechas_hoy + tareas.length))}%` : '2%' }} /></div>
         <div className="ti-tabs">
