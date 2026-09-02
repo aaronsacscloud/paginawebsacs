@@ -188,9 +188,33 @@ export const POST: APIRoute = async ({ request, url }) => {
         if (!telefono) return ok();
         const conv = await upsertConversacion({ kapsoConversationId: conv_id(), telefono });
         if (!conv) return ok();
-        const { data: c } = await supabase.from('wa_conversaciones').select('ultima_direccion, estado_crm, asignado_a, contacts(nombre, apellido)').eq('id', conv.id).maybeSingle();
+        const { data: c } = await supabase.from('wa_conversaciones').select('ultima_direccion, estado_crm, asignado_a, ultimo_mensaje_at, contacts(nombre, apellido)').eq('id', conv.id).maybeSingle();
         const mins = payload?.inactivity_minutes || payload?.conversation?.inactivity_minutes || null;
-        await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'inactiva', autor: null, detalle: `Sin actividad${mins ? ` ${mins} min` : ''}${c?.ultima_direccion === 'entrante' ? ' · el cliente sigue sin respuesta' : ''}` });
+
+        /* «Sin actividad», a secas, era el evento MÁS FRECUENTE del inbox —149
+           en 30 días— y no decía nada: ni cuánto silencio hubo ni de quién era
+           el turno. Kapso manda `inactivity_minutes` solo a veces (124 de 149
+           llegaron sin él), así que el hueco se mide aquí, contra la hora del
+           último mensaje, que siempre está.
+
+           Se escribe en pasado y con el número: es un hecho de ese momento y
+           así sigue siendo verdad cuando alguien lo lea tres días después. */
+        const huecoMin = (() => {
+          if (mins) return Number(mins);
+          const t = (c as any)?.ultimo_mensaje_at ? Date.parse((c as any).ultimo_mensaje_at) : 0;
+          return t ? Math.max(1, Math.round((Date.now() - t) / 60000)) : 0;
+        })();
+        const cuanto = !huecoMin ? ''
+          : huecoMin < 60 ? `${huecoMin} min`
+          : huecoMin < 1440 ? `${Math.round(huecoMin / 60)} h`
+          : `${Math.round(huecoMin / 1440)} d`;
+        const deQuien = c?.ultima_direccion === 'entrante'
+          ? 'y el cliente sigue esperando respuesta'
+          : c?.ultima_direccion === 'saliente' ? 'y el cliente no ha contestado' : '';
+        const detalle = cuanto
+          ? `Pasaron ${cuanto} sin que nadie escribiera${deQuien ? ` ${deQuien}` : ''}`
+          : `Sin actividad${deQuien ? ` — ${deQuien}` : ''}`;
+        await supabase.from('wa_eventos').insert({ conversation_id: conv.id, tipo: 'inactiva', autor: null, detalle });
         if (c?.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta') {
           const nombre = (c as any).contacts ? `${(c as any).contacts.nombre || ''} ${(c as any).contacts.apellido || ''}`.trim() : telefonoLegible(telefono);
           await notificar({ clave: `wa_inactiva_${conv.id}_${new Date().toISOString().slice(0, 13)}`, tipo: 'wa_snooze', destino: 'whatsapp', titulo: `${nombre} lleva${mins ? ` ${mins} min` : ' rato'} esperando respuesta`, metadata: { conversation_id: conv.id, para: c.asignado_a || null } });

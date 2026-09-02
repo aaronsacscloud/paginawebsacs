@@ -104,7 +104,13 @@ cambio as (
 bitacora as (
   insert into activities (contact_id, tipo, titulo, automatico, metadata)
   select id, 'estatus_cambio',
-    'Estatus del lead: ' || antes || ' → ' || despues || ' (recálculo por hechos)',
+    /* En español y explicando QUIÉN lo movió. «(recálculo por hechos)» es
+       jerga nuestra: quien lo lee es un consultor abriendo la ficha, y lo que
+       necesita saber es que no lo movió una persona sino el sistema al mirar
+       lo que ya pasó. 462 de estos en 30 días — el segundo evento más
+       frecuente de toda la actividad. */
+    'El lead pasó de ' || initcap(replace(antes, '_', ' ')) || ' a ' || initcap(replace(despues, '_', ' '))
+      || ' — lo movió el sistema al revisar lo que ya pasó (reuniones, cotizaciones, respuestas)',
     true, jsonb_build_object('antes', antes, 'despues', despues, 'actor', 'sistema')
   from cambio where antes is distinct from despues
   returning 1

@@ -24,7 +24,16 @@ export const POST: APIRoute = async ({ request }) => {
       contact_id: null,
       deal_id: null,
       tipo,
-      titulo: `Scheduling: ${event} — ${slug}`,
+      /* En español y sin jerga: «Scheduling: page_view — consultoria» lo lee
+         un consultor en la ficha del cliente, no un programador. 535 en 30
+         días, o sea el evento más repetido de toda la actividad. */
+      titulo: ({
+        page_view: `Abrió la página para agendar${slug ? ` (${slug})` : ''}`,
+        date_selected: 'Eligió un día en el calendario',
+        time_selected: 'Eligió una hora',
+        form_started: 'Empezó a llenar sus datos',
+        form_submitted: 'Terminó de agendar',
+      } as Record<string, string>)[event] || `Agenda: ${event}${slug ? ` — ${slug}` : ''}`,
       metadata: {
         scheduling_event: event,
         slug,
