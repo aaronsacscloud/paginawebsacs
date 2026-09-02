@@ -114,14 +114,14 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'edición en Próximos envíos', detalle: { envio_id: id, ejemplo_id: ej?.id, estado: estadoGuion, original: e.mensaje, criterio: criterio || null } });
     if (b.enviar) {
       const { despacharEnvios } = await import('../../../../lib/crm/ti/agente');
-      await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora }).eq('id', id);
+      await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora, aprobado_por: user.id, revisado_at: ahora }).eq('id', id);
       const r = await despacharEnvios({ forzar: true, soloId: id });
       return json({ ok: true, aprendido: { ejemplo_id: ej?.id, estado: estadoGuion }, enviado: r?.enviados === 1 });
     }
     return json({ ok: true, aprendido: { ejemplo_id: ej?.id, estado: estadoGuion } });
   }
-  // enviar_ya
-  await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora }).eq('id', id);
+  // enviar_ya — aprobado explícito: cuenta como ejemplo validado en la pestaña Aprendizaje.
+  await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora, aprobado_por: user.id, revisado_at: ahora }).eq('id', id);
   try {
     const { despacharEnvios } = await import('../../../../lib/crm/ti/agente');
     const r = await despacharEnvios({ forzar: true, soloId: id });

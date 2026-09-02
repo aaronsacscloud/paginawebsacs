@@ -30,6 +30,59 @@ function faltan(iso: string, ahora: number) {
 }
 const hora = (iso?: string | null) => iso ? new Date(iso).toLocaleString('es-MX', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : '';
 
+/* Los estilos de las tarjetas se comparten con la pestaña Aprendizaje. */
+export const ESTILOS_ENVIOS = `
+.ti-banner { position:sticky; top:8px; z-index:5; border-radius:12px; padding:14px 18px; margin:0 0 12px; display:flex; flex-direction:column; gap:2px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+.ti-banner.ok { background:var(--verde-agua, #dcfce7); color:var(--verde-tinta, #14532d); } .ti-banner.err { background:#fee2e2; color:#7f1d1d; }
+.ti-banner b { font-size:1.05rem; } .ti-banner span { font-size:.86rem; opacity:.9; }
+.ti-envio { border:1px solid var(--linea, #e5e7eb); border-radius:12px; padding:14px 16px; margin:12px 0; background:var(--carta, #fff); }
+.ti-envio.actual { border-color:var(--morado,#6d28d9); box-shadow:0 0 0 3px var(--morado-agua,#ede9fe); }
+.ti-envio.hecho { opacity:.95; } .ti-envio.par { border-color:var(--ambar, #f59e0b); }
+.ti-envio-cab { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; font-size:.9rem; }
+.ti-envio-nombre { font-size:1rem; }
+.ti-envio-reloj { margin-left:auto; font-variant-numeric:tabular-nums; font-size:.82rem; font-weight:700; color:var(--morado, #6d28d9); }
+.ti-envio-reloj.apagado { color:var(--suave,#6b7280); font-weight:600; }
+.ti-envio-lead, .ti-envio-obj, .ti-envio-orig { margin:10px 0 0; font-size:.88rem; line-height:1.45; }
+.ti-envio-lead span, .ti-envio-obj span, .ti-envio-orig span, .ti-envio-lbl { display:block; font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--suave,#6b7280); margin-bottom:2px; }
+.ti-envio-lbl { margin:12px 0 4px; }
+.ti-envio-lead { background:var(--neutro, #f3f4f6); border-radius:10px; padding:8px 12px; }
+.ti-envio-obj { color:var(--suave,#6b7280); font-style:italic; }
+.ti-envio-acc-tag { font-size:.82rem; color:var(--morado-tinta, #4c1d95); background:var(--morado-agua, #ede9fe); border-radius:8px; padding:7px 10px; margin-top:8px; }
+.ti-envio-texto { display:block; width:100%; box-sizing:border-box; border:1px solid var(--linea,#e5e7eb); border-radius:10px; padding:10px 12px; font:inherit; font-size:.95rem; line-height:1.45; background:var(--carta,#fff); color:inherit; resize:vertical; }
+.ti-envio-texto.editado { border-color:var(--morado,#6d28d9); box-shadow:0 0 0 3px var(--morado-agua,#ede9fe); }
+.ti-envio-input { display:block; width:100%; box-sizing:border-box; border:1px solid var(--linea,#e5e7eb); border-radius:9px; padding:8px 10px; font:inherit; font-size:.88rem; margin-top:6px; }
+.ti-envio-acc { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center; }
+.ti-btn.grande { padding:12px 18px; font-size:.95rem; }
+.ti-envio-pista { font-size:.78rem; color:var(--suave,#6b7280); }
+.ti-envio-veto { margin-top:10px; padding:10px 12px; border:1px dashed var(--linea,#e5e7eb); border-radius:10px; }
+.ti-envio-motivos { display:flex; flex-wrap:wrap; gap:6px; }
+.ti-chip-btn { border:1px solid var(--linea,#e5e7eb); background:var(--carta,#fff); border-radius:20px; padding:4px 10px; font:inherit; font-size:.78rem; cursor:pointer; }
+.ti-chip-btn.on { background:var(--morado-agua,#ede9fe); border-color:var(--morado,#6d28d9); color:var(--morado-tinta,#4c1d95); font-weight:700; }
+.ti-envio-aviso { margin-top:10px; padding:9px 12px; border-radius:9px; font-size:.86rem; font-weight:600; }
+.ti-envio-aviso.ok { background:var(--verde-agua, #dcfce7); color:var(--verde-tinta, #14532d); } .ti-envio-aviso.err { background:#fee2e2; color:#7f1d1d; }
+.ti-envio-msg { white-space:pre-wrap; font-size:.92rem; margin:6px 0 0; line-height:1.45; }
+.ti-envio-msg.humano { background:var(--neutro,#f3f4f6); border-radius:10px; padding:8px 12px; }
+.ti-par { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px; } @media (max-width:720px) { .ti-par { grid-template-columns:1fr; } }
+.ti-envio-datos { font-size:.82rem; margin-top:10px; color:var(--suave,#6b7280); } .ti-envio-datos ul { margin:6px 0 0; padding-left:18px; }
+.ti-envio-corr { margin-top:8px; display:grid; gap:8px; }
+.ti-link { background:none; border:none; padding:8px 0 0; color:var(--morado, #6d28d9); font-weight:700; font-size:.84rem; cursor:pointer; }
+.ti-cola { margin-top:14px; border-top:1px solid var(--linea,#e5e7eb); padding-top:6px; }
+.ti-cola-fila { display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; width:100%; text-align:left; border:none; background:none; padding:8px 4px; border-bottom:1px solid var(--linea,#e5e7eb); font:inherit; cursor:pointer; color:inherit; }
+.ti-cola-fila:hover { background:var(--neutro,#f3f4f6); }
+.ti-cola-msg { font-size:.84rem; color:var(--suave,#6b7280); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.ti-cola-reloj { font-size:.76rem; color:var(--morado,#6d28d9); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ti-h3 { font-size:1rem; margin:0 0 8px; }
+.ti-suave { font-size:.8rem; color:var(--suave,#6b7280); margin-top:6px; }
+.ti-sombra-nota { color:var(--suave,#6b7280); font-size:.82rem; }
+.ti-aprendizaje { margin-top:12px; }
+.ti-apr-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:8px 0; }
+.ti-apr-grid div { background:var(--neutro,#f3f4f6); border-radius:10px; padding:10px 12px; }
+.ti-apr-grid b { display:block; font-size:1.4rem; line-height:1.1; font-variant-numeric:tabular-nums; }
+.ti-apr-grid span { font-size:.74rem; color:var(--suave,#6b7280); }
+.ti-apr-ultimos { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:8px; }
+.ti-apr-ultimos li { font-size:.86rem; border-left:3px solid var(--morado,#6d28d9); padding:2px 0 2px 10px; } .ti-apr-ultimos li div { margin-top:3px; white-space:pre-wrap; }
+      `;
+
 export default function TrabajoEnvios() {
   const [pend, setPend] = useState<Envio[]>([]);
   const [rec, setRec] = useState<Envio[]>([]);
@@ -250,57 +303,7 @@ export default function TrabajoEnvios() {
           })}
         </div>
       )}
-      <style>{`
-.ti-banner { position:sticky; top:8px; z-index:5; border-radius:12px; padding:14px 18px; margin:0 0 12px; display:flex; flex-direction:column; gap:2px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
-.ti-banner.ok { background:var(--verde-agua, #dcfce7); color:var(--verde-tinta, #14532d); } .ti-banner.err { background:#fee2e2; color:#7f1d1d; }
-.ti-banner b { font-size:1.05rem; } .ti-banner span { font-size:.86rem; opacity:.9; }
-.ti-envio { border:1px solid var(--linea, #e5e7eb); border-radius:12px; padding:14px 16px; margin:12px 0; background:var(--carta, #fff); }
-.ti-envio.actual { border-color:var(--morado,#6d28d9); box-shadow:0 0 0 3px var(--morado-agua,#ede9fe); }
-.ti-envio.hecho { opacity:.95; } .ti-envio.par { border-color:var(--ambar, #f59e0b); }
-.ti-envio-cab { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; font-size:.9rem; }
-.ti-envio-nombre { font-size:1rem; }
-.ti-envio-reloj { margin-left:auto; font-variant-numeric:tabular-nums; font-size:.82rem; font-weight:700; color:var(--morado, #6d28d9); }
-.ti-envio-reloj.apagado { color:var(--suave,#6b7280); font-weight:600; }
-.ti-envio-lead, .ti-envio-obj, .ti-envio-orig { margin:10px 0 0; font-size:.88rem; line-height:1.45; }
-.ti-envio-lead span, .ti-envio-obj span, .ti-envio-orig span, .ti-envio-lbl { display:block; font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--suave,#6b7280); margin-bottom:2px; }
-.ti-envio-lbl { margin:12px 0 4px; }
-.ti-envio-lead { background:var(--neutro, #f3f4f6); border-radius:10px; padding:8px 12px; }
-.ti-envio-obj { color:var(--suave,#6b7280); font-style:italic; }
-.ti-envio-acc-tag { font-size:.82rem; color:var(--morado-tinta, #4c1d95); background:var(--morado-agua, #ede9fe); border-radius:8px; padding:7px 10px; margin-top:8px; }
-.ti-envio-texto { display:block; width:100%; box-sizing:border-box; border:1px solid var(--linea,#e5e7eb); border-radius:10px; padding:10px 12px; font:inherit; font-size:.95rem; line-height:1.45; background:var(--carta,#fff); color:inherit; resize:vertical; }
-.ti-envio-texto.editado { border-color:var(--morado,#6d28d9); box-shadow:0 0 0 3px var(--morado-agua,#ede9fe); }
-.ti-envio-input { display:block; width:100%; box-sizing:border-box; border:1px solid var(--linea,#e5e7eb); border-radius:9px; padding:8px 10px; font:inherit; font-size:.88rem; margin-top:6px; }
-.ti-envio-acc { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center; }
-.ti-btn.grande { padding:12px 18px; font-size:.95rem; }
-.ti-envio-pista { font-size:.78rem; color:var(--suave,#6b7280); }
-.ti-envio-veto { margin-top:10px; padding:10px 12px; border:1px dashed var(--linea,#e5e7eb); border-radius:10px; }
-.ti-envio-motivos { display:flex; flex-wrap:wrap; gap:6px; }
-.ti-chip-btn { border:1px solid var(--linea,#e5e7eb); background:var(--carta,#fff); border-radius:20px; padding:4px 10px; font:inherit; font-size:.78rem; cursor:pointer; }
-.ti-chip-btn.on { background:var(--morado-agua,#ede9fe); border-color:var(--morado,#6d28d9); color:var(--morado-tinta,#4c1d95); font-weight:700; }
-.ti-envio-aviso { margin-top:10px; padding:9px 12px; border-radius:9px; font-size:.86rem; font-weight:600; }
-.ti-envio-aviso.ok { background:var(--verde-agua, #dcfce7); color:var(--verde-tinta, #14532d); } .ti-envio-aviso.err { background:#fee2e2; color:#7f1d1d; }
-.ti-envio-msg { white-space:pre-wrap; font-size:.92rem; margin:6px 0 0; line-height:1.45; }
-.ti-envio-msg.humano { background:var(--neutro,#f3f4f6); border-radius:10px; padding:8px 12px; }
-.ti-par { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px; } @media (max-width:720px) { .ti-par { grid-template-columns:1fr; } }
-.ti-envio-datos { font-size:.82rem; margin-top:10px; color:var(--suave,#6b7280); } .ti-envio-datos ul { margin:6px 0 0; padding-left:18px; }
-.ti-envio-corr { margin-top:8px; display:grid; gap:8px; }
-.ti-link { background:none; border:none; padding:8px 0 0; color:var(--morado, #6d28d9); font-weight:700; font-size:.84rem; cursor:pointer; }
-.ti-cola { margin-top:14px; border-top:1px solid var(--linea,#e5e7eb); padding-top:6px; }
-.ti-cola-fila { display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; width:100%; text-align:left; border:none; background:none; padding:8px 4px; border-bottom:1px solid var(--linea,#e5e7eb); font:inherit; cursor:pointer; color:inherit; }
-.ti-cola-fila:hover { background:var(--neutro,#f3f4f6); }
-.ti-cola-msg { font-size:.84rem; color:var(--suave,#6b7280); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-.ti-cola-reloj { font-size:.76rem; color:var(--morado,#6d28d9); font-variant-numeric:tabular-nums; white-space:nowrap; }
-.ti-h3 { font-size:1rem; margin:0 0 8px; }
-.ti-suave { font-size:.8rem; color:var(--suave,#6b7280); margin-top:6px; }
-.ti-sombra-nota { color:var(--suave,#6b7280); font-size:.82rem; }
-.ti-aprendizaje { margin-top:12px; }
-.ti-apr-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:8px 0; }
-.ti-apr-grid div { background:var(--neutro,#f3f4f6); border-radius:10px; padding:10px 12px; }
-.ti-apr-grid b { display:block; font-size:1.4rem; line-height:1.1; font-variant-numeric:tabular-nums; }
-.ti-apr-grid span { font-size:.74rem; color:var(--suave,#6b7280); }
-.ti-apr-ultimos { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:8px; }
-.ti-apr-ultimos li { font-size:.86rem; border-left:3px solid var(--morado,#6d28d9); padding:2px 0 2px 10px; } .ti-apr-ultimos li div { margin-top:3px; white-space:pre-wrap; }
-      `}</style>
+      <style>{ESTILOS_ENVIOS}</style>
     </div>
   );
 }

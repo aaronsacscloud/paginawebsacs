@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import TrabajoEnvios from './TrabajoEnvios';
+import TrabajoAprendizaje from './TrabajoAprendizaje';
 
 type Tarea = {
   id: string; contact_id: string; familia: string; tipo: string; paso: string | null;
@@ -80,7 +81,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
-  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios'>('dia');
+  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje'>('dia');
   const [motivoLead, setMotivoLead] = useState(''); const [textoLead, setTextoLead] = useState(''); const [fechaPausa, setFechaPausa] = useState('');
   const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);
@@ -327,10 +328,12 @@ export default function TrabajoPanel() {
             Datos {datos.length > 0 && <span className="ti-tab-n">{datos.length}</span>}
           </button>
           <button className={'ti-tab' + (vistaTab === 'envios' ? ' on' : '')} onClick={() => setVistaTab('envios')}>Próximos envíos</button>
+          <button className={'ti-tab' + (vistaTab === 'aprendizaje' ? ' on' : '')} onClick={() => setVistaTab('aprendizaje')}>Aprendizaje</button>
         </div>
       </div>
 
       {vistaTab === 'envios' && <TrabajoEnvios />}
+      {vistaTab === 'aprendizaje' && <TrabajoAprendizaje />}
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo">
