@@ -127,7 +127,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const existentes = new Map<string, any>();
   for (let i = 0; i < ids.length; i += 300) {
     const { data } = await supabase.from('comision_lineas')
-      .select('id, payment_id, owner_id, tipo, estado, monto').in('payment_id', ids.slice(i, i + 300));
+      .select('id, payment_id, owner_id, tipo, estado, monto, corte_id').in('payment_id', ids.slice(i, i + 300));
     for (const l of data || []) existentes.set(`${l.payment_id}:${l.owner_id}:${l.tipo}`, l);
   }
 
@@ -220,8 +220,22 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
       return false;
     };
 
-    if (!congelada(`${p.id}:${owner_id}:venta`)) {
-      aEscribir.push(linea);
+    /**
+     * Un upsert de PostgREST REEMPLAZA la fila: toda columna ausente del
+     * payload vuelve a su valor por defecto. Sin esto, el recálculo de cada
+     * madrugada borraba `corte_id` y devolvía `estado` a 'calculada' — un corte
+     * enviado el lunes amanecía el martes sin ninguna línea.
+     *
+     * Se arrastran los dos campos que NO son del cálculo sino del proceso.
+     */
+    const conservando = (l: LineaCalculada, k: string) => {
+      const ya = existentes.get(k);
+      return ya ? { ...l, corte_id: ya.corte_id ?? null, estado: ya.estado } : l;
+    };
+
+    const kVenta = `${p.id}:${owner_id}:venta`;
+    if (!congelada(kVenta)) {
+      aEscribir.push(conservando(linea, kVenta) as LineaCalculada);
       res.monto_escrito = r2(res.monto_escrito + linea.monto);
     }
 
@@ -230,8 +244,9 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
     if (reclutador && reclutador !== owner_id) {
       const modeloR = modeloDe(reclutador);
       const ov = modeloR ? calcularOverride(linea, reclutador, modeloR) : null;
-      if (ov && !congelada(`${p.id}:${reclutador}:override_partner`)) {
-        aEscribir.push(ov);
+      const kOv = `${p.id}:${reclutador}:override_partner`;
+      if (ov && !congelada(kOv)) {
+        aEscribir.push(conservando(ov, kOv) as LineaCalculada);
         res.overrides++;
         res.monto_escrito = r2(res.monto_escrito + ov.monto);
       }

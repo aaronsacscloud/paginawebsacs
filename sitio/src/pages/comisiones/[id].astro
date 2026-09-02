@@ -1,15 +1,18 @@
 ---
-// Estado de cuenta del corte — la página que se le manda al consultor.
+// Estado de cuenta del corte — el documento que recibe el consultor.
 //
 // Llave = el UUID del corte, no adivinable, mismo patrón que la cotización y el
-// estado de cuenta del cliente. Solo expone lo de ESE corte: ni otras personas,
-// ni tasas de terceros, ni nada interno del CRM.
+// estado de cuenta del cliente. Solo expone lo de ESE corte.
 //
-// Es la pieza que faltaba para que el ciclo cierre: sin algo concreto que
-// enviar, "el corte" se quedaba en una pantalla del admin y el consultor tenía
-// que creerle a un número suelto por WhatsApp.
+// Tiene que aguantar tres momentos distintos y verse bien en los tres:
+//   · enviado    hay un total y falta firmar de recibido;
+//   · firmado    consta quién acusó y cuándo;
+//   · pagado     el sello, la fecha y la referencia.
+//
+// Y tiene que salir en PDF sin trabajo extra: el PDF es esta misma página
+// impresa, con los colores forzados. Por eso no hay nada que dependa de JS
+// para leerse — el guion solo agrega la firma.
 import { supabase } from '../../lib/supabase';
-import { CINTA, BLOQUE_LILA } from '../../lib/crm/paleta';
 import { explicar, ORIGEN_LABEL } from '../../lib/crm/comisiones.lib';
 
 export const prerender = false;
@@ -21,18 +24,61 @@ if (!corte) return Astro.redirect('/404');
 
 const [{ data: lineas }, { data: ajustes }] = await Promise.all([
   supabase.from('comision_lineas')
-    .select('fecha, concepto, origen, monto_bruto, base, pct, monto, estado, tipo, sin_regla, tasa_reducida, descuento_exceso, cuenta, descuento_pct, detalle, dias_atraso, fuera_de_tiempo, companies(nombre, nombre_comercial)')
+    .select('fecha, concepto, categoria, origen, monto_bruto, base, pct, monto, estado, tipo, sin_regla, tasa_reducida, descuento_exceso, descuento_venta_pct, cuenta, descuento_pct, detalle, dias_atraso, fuera_de_tiempo, es_renovacion, companies(nombre, nombre_comercial)')
     .eq('corte_id', id).neq('estado', 'cancelada').order('fecha'),
   supabase.from('comision_ajustes').select('tipo, concepto, monto, nota').eq('corte_id', id).order('created_at'),
 ]);
 
+const L = lineas || [], A = ajustes || [];
+const pagado = corte.estado === 'pagado';
+const firmable = corte.estado !== 'abierto' && !corte.recibido_at;
+
 const pesos = (n: number) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fLarga = (d: string | null) => d
-  ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+const fLarga = (d?: string | null) => d
+  ? new Date(String(d).length === 10 ? d + 'T12:00:00' : d).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
   : '—';
 const fCorta = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace('.', '');
 
-const ESTADO: Record<string, string> = { abierto: 'En revisión', cerrado: 'Enviado', pagado: 'Pagado' };
+// Cuánto se le descontó al monto cobrado antes de aplicar el porcentaje. Se
+// muestra en su propia columna porque es la pregunta número uno de cualquiera
+// que revisa su comisión: "¿por qué la base no es lo que pagó el cliente?".
+const totalCobrado = L.filter((l: any) => l.tipo !== 'override_partner').reduce((a: number, l: any) => a + Number(l.monto_bruto || 0), 0);
+const totalBase = L.filter((l: any) => l.tipo !== 'override_partner').reduce((a: number, l: any) => a + Number(l.base || 0), 0);
+const totalExceso = L.reduce((a: number, l: any) => a + Number(l.descuento_exceso || 0), 0);
+
+const ESTADO: Record<string, { t: string; bg: string; fg: string }> = {
+  abierto: { t: 'En revisión', bg: '#EEECFE', fg: '#5B4BD6' },
+  cerrado: { t: 'Enviado', bg: '#E3EDFD', fg: '#2C5FC4' },
+  pagado: { t: 'Pagado', bg: '#EAF8F2', fg: '#1E8A63' },
+};
+const est = ESTADO[corte.estado] || ESTADO.abierto;
+const chipEstado = `background:${est.bg};color:${est.fg}`;
+const subtituloConceptos = `${L.length} línea(s)` + (A.length > 0 ? ` · ${A.length} ajuste(s)` : '');
+
+/* Las filas se resuelven AQUÍ y no en la plantilla. El compilador de Astro lee
+   un `<` dentro de una expresión del template como el inicio de una etiqueta,
+   así que una comparación tan inocente como `desc <= 0` rompe la página entera
+   con un error de sintaxis que apunta a otra línea. Con las filas ya calculadas
+   la plantilla solo pinta cadenas. */
+const filas = L.map((l: any) => {
+  const desc = Number(l.monto_bruto || 0) - Number(l.base || 0);
+  const ov = l.tipo === 'override_partner';
+  return {
+    fecha: fCorta(l.fecha),
+    cliente: l.companies?.nombre_comercial || l.companies?.nombre || '—',
+    concepto: l.concepto || 'Sin SKU',
+    override: ov,
+    renovacion: l.es_renovacion === true,
+    reducida: l.tasa_reducida === true,
+    exceso: Number(l.descuento_exceso || 0) > 0,
+    explicacion: explicar(l) + (l.origen ? ' · ' + ORIGEN_LABEL[l.origen] : ''),
+    cobrado: ov ? '—' : pesos(l.monto_bruto),
+    descuento: (ov || desc <= 0) ? '—' : '−' + pesos(desc),
+    base: pesos(l.base),
+    pct: l.sin_regla ? '—' : Number(l.pct) + '%',
+    comision: pesos(l.monto),
+  };
+});
 ---
 <html lang="es">
 <head>
@@ -43,119 +89,191 @@ const ESTADO: Record<string, string> = { abierto: 'En revisión', cerrado: 'Envi
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <style define:vars={{ cinta: CINTA, lila: BLOQUE_LILA }}>
+  <style>
     *{box-sizing:border-box}
     body{margin:0;background:#F5F6F8;color:#241d43;font-family:Inter,system-ui,-apple-system,sans-serif;
-      font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-    .hoja{max-width:820px;margin:28px auto;background:#fff;border-radius:14px;overflow:hidden;
-      box-shadow:0 1px 2px rgba(36,29,67,.05),0 18px 44px -26px rgba(36,29,67,.32)}
-    .cinta{height:5px;background:var(--cinta)}
-    .cab{padding:26px 30px 22px;border-bottom:1px solid #ececec}
-    .marca{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8a8590}
-    h1{font-size:1.45rem;font-weight:800;margin:8px 0 2px;letter-spacing:-.02em}
-    .sub{color:#6b7280;font-size:.9rem;margin:0}
-    .chip{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
-      padding:3px 9px;border-radius:99px;margin-left:9px;vertical-align:middle}
-    .datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;
-      padding:18px 30px;border-bottom:1px solid #ececec}
-    .datos dt{font-size:.625rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#a5a2af;margin:0 0 3px}
+      font-size:14.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    .hoja{max-width:860px;margin:26px auto;background:#fff;border-radius:16px;overflow:hidden;position:relative;
+      box-shadow:0 1px 2px rgba(36,29,67,.05),0 20px 50px -28px rgba(36,29,67,.34)}
+    .cinta{height:5px;background:linear-gradient(90deg,#9B8CFA 0%,#7DA6F5 55%,rgba(244,168,205,.9) 100%)}
+
+    .cab{padding:26px 32px 20px;border-bottom:1px solid #ececec;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .marca{font-size:10.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8590}
+    h1{font-size:1.5rem;font-weight:800;margin:7px 0 2px;letter-spacing:-.022em}
+    .sub{color:#6b7280;font-size:.88rem;margin:0}
+    .chip{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+      padding:3px 10px;border-radius:99px;margin-left:9px;vertical-align:middle}
+
+    /* El sello va en el hueco derecho del encabezado, no sobre la fila de
+       datos: ahí tapaba la referencia del pago, que es justo el dato que
+       alguien busca cuando quiere conciliar contra su banco. */
+    .sello{position:absolute;top:38px;right:34px;transform:rotate(-13deg);border:3px solid #1E8A63;
+      color:#1E8A63;border-radius:12px;padding:7px 18px;font-weight:800;letter-spacing:.14em;
+      font-size:1.4rem;text-transform:uppercase;opacity:.9;background:rgba(234,248,242,.55);
+      -webkit-print-color-adjust:exact;print-color-adjust:exact;z-index:3;text-align:center;line-height:1.1}
+    .sello small{display:block;font-size:.5rem;letter-spacing:.1em;font-weight:700;opacity:.85;margin-top:3px}
+
+    .datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:15px;
+      padding:18px 32px;border-bottom:1px solid #ececec}
+    .datos dt{font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5a2af;margin:0 0 3px}
     .datos dd{margin:0;font-weight:600;font-size:.9rem}
-    .total{background:var(--lila);padding:20px 30px;display:flex;justify-content:space-between;
-      align-items:baseline;flex-wrap:wrap;gap:8px}
-    .total .k{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#5B4BD6}
-    .total .v{font-size:2rem;font-weight:800;color:#4536BE;letter-spacing:-.02em}
-    h2{font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8a8590;
-      margin:24px 30px 8px}
-    .tw{overflow-x:auto;padding:0 30px}
-    table{border-collapse:collapse;width:100%;min-width:560px;font-size:.84rem}
-    th{text-align:left;font-size:.6rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
-      color:#a5a2af;padding:8px 10px;border-bottom:1px solid #ececec;white-space:nowrap}
-    td{padding:10px;border-bottom:1px solid #f5f4f8;vertical-align:top;color:#4a4a52}
-    td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+    .total{background:linear-gradient(135deg,#EEECFE,rgba(244,168,205,.22));padding:22px 32px;
+      display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .total .k{font-size:.68rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#5B4BD6}
+    .total .v{font-size:2.15rem;font-weight:800;color:#4536BE;letter-spacing:-.025em}
+
+    h2{font-size:.68rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#8a8590;margin:26px 32px 9px}
+    .tw{overflow-x:auto;padding:0 32px}
+    table{border-collapse:collapse;width:100%;min-width:660px;font-size:.82rem}
+    th{text-align:left;font-size:.58rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+      color:#a5a2af;padding:8px 9px;border-bottom:1px solid #ececec;white-space:nowrap}
+    td{padding:11px 9px;border-bottom:1px solid #f5f4f8;vertical-align:top;color:#4a4a52}
+    td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    tr.tot td{border-top:2px solid #ececec;border-bottom:0;font-weight:800;color:#241d43;padding-top:12px}
     .cli{font-weight:700;color:#241d43}
-    .exp{font-size:.7rem;color:#a5a2af;margin-top:2px}
-    .mini{font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:5px;text-transform:uppercase;
-      letter-spacing:.04em;margin-left:5px;white-space:nowrap}
-    .sumas{padding:18px 30px 4px}
-    .sumas div{display:flex;justify-content:space-between;padding:6px 0;font-size:.9rem}
-    .sumas .gran{border-top:1px solid #ececec;margin-top:6px;padding-top:12px;font-weight:800;font-size:1.05rem;color:#241d43}
-    .pie{padding:20px 30px 28px;color:#8a8590;font-size:.78rem}
+    .exp{font-size:.69rem;color:#a5a2af;margin-top:3px;line-height:1.45}
+    .mini{font-size:.57rem;font-weight:800;padding:1px 6px;border-radius:5px;text-transform:uppercase;
+      letter-spacing:.05em;margin-left:5px;white-space:nowrap;display:inline-block}
+
+    .sumas{padding:20px 32px 6px}
+    .sumas div{display:flex;justify-content:space-between;padding:6px 0;font-size:.9rem;color:#4a4a52}
+    .sumas .gran{border-top:1px solid #ececec;margin-top:7px;padding-top:13px;font-weight:800;font-size:1.12rem;color:#241d43}
+
+    .firma{margin:24px 32px 0;border:1px solid #ececec;border-radius:12px;padding:19px 21px;background:#FCFCFD}
+    .firma .k{font-size:.6rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#8a8590;display:block;margin-bottom:7px}
+    .firma p{margin:0 0 12px;font-size:.85rem;color:#4a4a52;max-width:64ch}
+    .campo{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
+    input,textarea{padding:9px 11px;border:1px solid #ddd;border-radius:9px;font-size:.88rem;
+      font-family:inherit;outline:none;background:#fff}
+    input:focus,textarea:focus{border-color:#9B8CFA}
+    .btn{padding:10px 18px;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;
+      background:#9B8CFA;color:#fff;font-family:inherit}
+    .btn:hover{background:#7C6BF0}
+    .btn.sec{background:#fff;border:1.5px solid #9B8CFA;color:#5B4BD6}
+    .btn:disabled{opacity:.55;cursor:default}
+    .rubrica{border-top:1px solid #241d43;padding-top:8px;margin-top:26px;max-width:320px}
+    .rubrica b{display:block;font-weight:700;font-size:.92rem}
+    .rubrica span{display:block;font-size:.76rem;color:#8a8590}
+    .aviso{margin-top:10px;font-size:.8rem;padding:9px 12px;border-radius:8px}
+
+    .pie{padding:22px 32px 30px;color:#8a8590;font-size:.77rem}
     .pie b{color:#4a4a52}
-    .vacio{padding:0 30px 8px;color:#8a8590;font-size:.86rem}
-    @media print{body{background:#fff}.hoja{box-shadow:none;margin:0;max-width:none}
-      .cinta,.total{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-    @media(max-width:640px){.hoja{margin:0;border-radius:0}.cab,.datos,.total,.tw,.sumas,.pie{padding-left:18px;padding-right:18px}h2{margin-left:18px;margin-right:18px}}
+    .pie .firmaMarca{font-weight:800;letter-spacing:.05em;
+      background:linear-gradient(100deg,#7C6BF0,#8E7DEF 35%,#D9538E);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .vacio{padding:0 32px 8px;color:#8a8590;font-size:.86rem}
+    .acciones{max-width:860px;margin:0 auto 18px;display:flex;gap:9px;justify-content:flex-end;padding:0 6px}
+
+    @media print{
+      body{background:#fff}
+      .hoja{box-shadow:none;margin:0;max-width:none;border-radius:0}
+      .no-print{display:none!important}
+      .cinta,.total,.sello{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      table{min-width:0;font-size:9.5pt}
+      tr,.firma,.sumas{break-inside:avoid;page-break-inside:avoid}
+      @page{margin:12mm}
+    }
+    @media(max-width:640px){
+      .hoja{margin:0;border-radius:0}
+      .cab,.datos,.total,.tw,.sumas,.pie{padding-left:18px;padding-right:18px}
+      h2{margin-left:18px;margin-right:18px} .firma{margin-left:18px;margin-right:18px}
+      .sello{top:auto;bottom:auto;position:static;display:inline-block;margin:10px 0 0 18px;font-size:1.05rem;padding:5px 13px;transform:rotate(-6deg)}
+      .acciones{padding:12px 18px 0}
+    }
   </style>
 </head>
 <body>
+  <div class="acciones no-print">
+    <button class="btn sec" onclick="window.print()">Descargar PDF</button>
+  </div>
+
   <div class="hoja">
     <div class="cinta"></div>
+    {pagado && (
+      <div class="sello">Pagado<small>{fLarga(corte.pagado_at)}</small></div>
+    )}
 
     <div class="cab">
-      <div class="marca">Sacscloud · Estado de cuenta</div>
-      <h1>
-        {corte.team_members?.nombre}
-        <span class="chip" style={corte.estado === 'pagado'
-          ? 'background:#EAF8F2;color:#1E8A63' : corte.estado === 'cerrado'
-          ? 'background:#E3EDFD;color:#2C5FC4' : 'background:#EEECFE;color:#5B4BD6'}>
-          {ESTADO[corte.estado]}
-        </span>
-      </h1>
-      <p class="sub">Corte del {fLarga(corte.desde)} al {fLarga(corte.hasta)}</p>
+      <div>
+        <div class="marca">Sacscloud · Estado de cuenta de comisiones</div>
+        <h1>{corte.team_members?.nombre}<span class="chip" style={chipEstado}>{est.t}</span></h1>
+        <p class="sub">Corte del {fLarga(corte.desde)} al {fLarga(corte.hasta)}</p>
+      </div>
     </div>
 
     <dl class="datos">
       <div><dt>Periodo</dt><dd>{fCorta(corte.desde)} — {fCorta(corte.hasta)}</dd></div>
-      <div><dt>Se paga el</dt><dd>{fLarga(corte.paga_el)}</dd></div>
-      <div><dt>Conceptos</dt><dd>{(lineas || []).length} línea(s)</dd></div>
+      <div><dt>{pagado ? 'Pagado el' : 'Se paga el'}</dt><dd>{fLarga(pagado ? corte.pagado_at : corte.paga_el)}</dd></div>
+      <div><dt>Conceptos</dt><dd>{subtituloConceptos}</dd></div>
       {corte.pago_referencia && <div><dt>Referencia</dt><dd>{corte.pago_referencia}</dd></div>}
     </dl>
 
     <div class="total">
-      <span class="k">Total del corte</span>
+      <span class="k">{pagado ? 'Total pagado' : 'Total a pagar'}</span>
       <span class="v">{pesos(corte.total)}</span>
     </div>
 
     <h2>Comisiones del periodo</h2>
-    {(lineas || []).length === 0 ? (
+    {L.length === 0 ? (
       <p class="vacio">Este corte no tiene comisiones de venta; su total sale de los ajustes.</p>
     ) : (
       <div class="tw">
         <table>
           <thead><tr>
             <th>Fecha</th><th>Cliente</th><th>Concepto</th>
-            <th class="n">Cobrado</th><th class="n">Base</th><th class="n">%</th><th class="n">Comisión</th>
+            <th class="n">Cobrado</th><th class="n">Descuento</th><th class="n">Base</th>
+            <th class="n">%</th><th class="n">Comisión</th>
           </tr></thead>
           <tbody>
-            {(lineas || []).map((l: any) => (
+            {filas.map((f) => (
               <tr>
-                <td>{fCorta(l.fecha)}</td>
-                <td class="cli">{l.companies?.nombre_comercial || l.companies?.nombre || '—'}</td>
+                <td>{f.fecha}</td>
+                <td class="cli">{f.cliente}</td>
                 <td>
-                  {l.concepto || 'Sin SKU'}
-                  {l.tipo === 'override_partner' && <span class="mini" style="background:#E3EDFD;color:#2C5FC4">Override</span>}
-                  {l.tasa_reducida && <span class="mini" style="background:#FFF4E5;color:#9a6a10">Tasa reducida</span>}
-                  <div class="exp">{explicar(l)}{l.origen ? ' · ' + ORIGEN_LABEL[l.origen] : ''}</div>
+                  {f.concepto}
+                  {f.override && <span class="mini" style="background:#E3EDFD;color:#2C5FC4">Override</span>}
+                  {f.renovacion && <span class="mini" style="background:#EEECFE;color:#5B4BD6">Renovación</span>}
+                  {f.reducida && <span class="mini" style="background:#FFF4E5;color:#9a6a10">Tasa reducida</span>}
+                  {f.exceso && <span class="mini" style="background:#FEF0EF;color:#C0554E">Descuento sobre tope</span>}
+                  <div class="exp">{f.explicacion}</div>
                 </td>
-                <td class="n">{pesos(l.monto_bruto)}</td>
-                <td class="n">{pesos(l.base)}</td>
-                <td class="n">{l.sin_regla ? '—' : Number(l.pct) + '%'}</td>
-                <td class="n" style="font-weight:800;color:#5B4BD6">{pesos(l.monto)}</td>
+                <td class="n">{f.cobrado}</td>
+                <td class="n">{f.descuento}</td>
+                <td class="n">{f.base}</td>
+                <td class="n">{f.pct}</td>
+                <td class="n" style="font-weight:800;color:#5B4BD6">{f.comision}</td>
               </tr>
             ))}
+            <tr class="tot">
+              <td colspan="3">Suma de comisiones</td>
+              <td class="n">{pesos(totalCobrado)}</td>
+              <td class="n">−{pesos(totalCobrado - totalBase)}</td>
+              <td class="n">{pesos(totalBase)}</td>
+              <td></td>
+              <td class="n" style="color:#4536BE">{pesos(corte.monto_lineas)}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     )}
 
-    {(ajustes || []).length > 0 && (
+    {totalExceso > 0 && (
+      <p class="vacio" style="padding-top:6px">
+        Incluye <b>−{pesos(totalExceso)}</b> por descuentos otorgados por encima del tope, que se restan de la comisión de esas ventas.
+      </p>
+    )}
+
+    {A.length > 0 && (
       <>
         <h2>Ajustes</h2>
         <div class="tw">
-          <table>
+          <table style="min-width:420px">
             <thead><tr><th>Concepto</th><th>Nota</th><th class="n">Monto</th></tr></thead>
             <tbody>
-              {(ajustes || []).map((a: any) => (
+              {A.map((a: any) => (
                 <tr>
                   <td class="cli">{a.concepto}</td>
                   <td>{a.nota || '—'}</td>
@@ -171,18 +289,90 @@ const ESTADO: Record<string, string> = { abierto: 'En revisión', cerrado: 'Envi
     )}
 
     <div class="sumas">
-      <div><span>Comisiones</span><span>{pesos(corte.monto_lineas)}</span></div>
+      <div><span>Comisiones del periodo</span><span>{pesos(corte.monto_lineas)}</span></div>
       {Number(corte.monto_ajustes) !== 0 && (
         <div><span>Ajustes</span><span>{Number(corte.monto_ajustes) < 0 ? '−' : '+'}{pesos(Math.abs(Number(corte.monto_ajustes)))}</span></div>
       )}
-      <div class="gran"><span>Total a pagar</span><span>{pesos(corte.total)}</span></div>
+      <div class="gran"><span>{pagado ? 'Total pagado' : 'Total a pagar'}</span><span>{pesos(corte.total)}</span></div>
+    </div>
+
+    {/* ── Firma de recibido ── */}
+    <div class="firma">
+      <span class="k">Acuse de recibido</span>
+      {corte.recibido_at ? (
+        <>
+          <p>Este estado de cuenta fue revisado y aceptado.</p>
+          <div class="rubrica">
+            <b>{corte.recibido_nombre}</b>
+            <span>Firmado de recibido el {fLarga(corte.recibido_at)}</span>
+          </div>
+          {corte.recibido_nota && <p style="margin-top:12px"><b>Comentario:</b> {corte.recibido_nota}</p>}
+        </>
+      ) : corte.estado === 'abierto' ? (
+        <p>Este corte todavía se está revisando. Cuando quede listo se te enviará para firmarlo.</p>
+      ) : (
+        <div id="zonaFirma">
+          <p>Revisa el detalle y firma de recibido. Si algo no cuadra, <b>dilo antes de firmar</b>: una vez pagado, la corrección va como ajuste del corte siguiente.</p>
+          <div class="campo no-print">
+            <div>
+              <label for="nom" style="display:block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5a2af;margin-bottom:4px">Tu nombre completo</label>
+              <input id="nom" type="text" placeholder="Como aparece en tu identificación" style="min-width:260px" value={corte.team_members?.nombre || ''} />
+            </div>
+            <button class="btn" id="btnFirmar" type="button">Firmar de recibido</button>
+          </div>
+          <div class="campo no-print" style="margin-top:9px">
+            <div style="flex:1;min-width:260px">
+              <label for="nota" style="display:block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5a2af;margin-bottom:4px">Comentario (opcional)</label>
+              <input id="nota" type="text" placeholder="Si quieres dejar constancia de algo" style="width:100%" />
+            </div>
+          </div>
+          <div id="msg" class="aviso" style="display:none"></div>
+          <div class="rubrica" style="margin-top:22px">
+            <b>&nbsp;</b><span>Firma del consultor</span>
+          </div>
+        </div>
+      )}
     </div>
 
     <div class="pie">
-      {corte.nota && <p><b>Nota:</b> {corte.nota}</p>}
-      <p>El corte cierra el viernes y se paga el lunes siguiente. Las comisiones se calculan sobre el monto <b>cobrado</b> al cliente, menos el descuento de la cuenta receptora, y sobre esa base se aplica el porcentaje.</p>
-      <p>Si algo aquí no cuadra, se revisa <b>antes</b> del pago: una vez liquidado, la corrección va como ajuste del corte siguiente.</p>
+      {corte.nota && <p><b>Nota del corte:</b> {corte.nota}</p>}
+      <p><b>Cómo se calculó.</b> La comisión sale del monto <b>cobrado</b> al cliente. Se le descuenta el porcentaje de la cuenta donde cayó el dinero —IVA en la corporativa, costo de dispersión en la pagadora— y sobre esa base se aplica el porcentaje que le corresponde a cada concepto según el origen del cliente.</p>
+      <p><b>El ciclo.</b> El corte cierra el viernes y se paga el lunes siguiente. Si un cliente cancela o pide reembolso después, esa comisión se descuenta del corte siguiente; nunca se pide devolver efectivo.</p>
+      <p style="margin-top:14px"><span class="firmaMarca">Sacscloud</span> · Documento generado el {fLarga(new Date().toISOString().slice(0, 10))}</p>
     </div>
   </div>
+
+  <script is:inline define:vars={{ corteId: corte.id }}>
+    // El guion SOLO agrega la firma: todo lo demás se lee sin JavaScript, que es
+    // lo que hace que el PDF salga igual con o sin scripts.
+    const btn = document.getElementById('btnFirmar');
+    if (btn) {
+      const msg = document.getElementById('msg');
+      const aviso = (texto, ok) => {
+        msg.textContent = texto;
+        msg.style.display = 'block';
+        msg.style.background = ok ? '#EAF8F2' : '#FEF0EF';
+        msg.style.color = ok ? '#1E8A63' : '#C0554E';
+      };
+      btn.addEventListener('click', async () => {
+        const nombre = (document.getElementById('nom').value || '').trim();
+        if (nombre.length < 3) return aviso('Escribe tu nombre completo para firmar.', false);
+        btn.disabled = true; btn.textContent = 'Firmando…';
+        try {
+          const r = await fetch('/api/comisiones/recibir', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: corteId, nombre, nota: (document.getElementById('nota').value || '').trim() }),
+          });
+          const j = await r.json();
+          if (!r.ok) { aviso(j.error || 'No se pudo firmar.', false); btn.disabled = false; btn.textContent = 'Firmar de recibido'; return; }
+          aviso('Listo, quedó firmado de recibido. Recargando…', true);
+          setTimeout(() => location.reload(), 900);
+        } catch {
+          aviso('No se pudo conectar. Revisa tu internet e inténtalo otra vez.', false);
+          btn.disabled = false; btn.textContent = 'Firmar de recibido';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
