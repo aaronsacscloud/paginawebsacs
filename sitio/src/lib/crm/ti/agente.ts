@@ -312,7 +312,22 @@ export async function proponerRespuestas(): Promise<any> {
   for (const cid of ids) {
     const c = porC[cid]; const p = porP[cid];
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti) { res.saltados++; continue; }
-    if (!['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltados++; continue; }   // clientes: no es asunto del SDR
+    if (!['lead', 'oportunidad'].includes(c.lifecycle_stage)) {
+      // CANDADO DE CLIENTE (S5.1): el agente no propone, no toca ni manda plantillas. Si un cliente escribe, va a soporte como tarea (una por cliente abierta).
+      res.saltados++;
+      if (c.lifecycle_stage === 'cliente') {
+        try {
+          const { data: abierta } = await supabase.from('ti_tareas').select('id').eq('contact_id', cid).eq('estado', 'pendiente').eq('familia', 'soporte').limit(1);
+          if (!(abierta || []).length) {
+            const { data: cc } = await supabase.from('contacts').select('nombre, whatsapp, owner_id, company_id').eq('id', cid).maybeSingle();
+            const { texto } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 3600e3).toISOString(), 3);
+            await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: cc?.company_id || null, owner_id: cc?.owner_id || null, familia: 'soporte', tipo: 'responder', prioridad: 2, vence_at: ahora.toISOString(), origen: 'evento', payload: { instruccion: `${String(cc?.nombre || 'Un cliente').split(/\s+/)[0]} (cliente) escribió por WhatsApp: atiéndelo`, porque: 'Es cliente: el agente SDR no le contesta (candado). Lo atiende soporte o su consultor.', nombre: cc?.nombre, whatsapp: cc?.whatsapp, entrante: String(texto || '').slice(0, 300), candado_cliente: true } });
+            await log({ accion: 'candado_cliente', contact_id: cid, razon: 'cliente escribió: tarea de soporte, el agente no contesta' });
+          }
+        } catch { /* el candado no rompe el tick */ }
+      }
+      continue;
+    }
     if (p?.silenciar_ia || (p?.do_not_contact_hasta && Date.parse(p.do_not_contact_hasta) > ahora.getTime())) { res.saltados++; continue; }
     // Un lead que escribe reinicia su reloj de silencio; si venía de nutrición, se reactiva.
     const stPrev: any = (p?.agente_estado as any) || {};
