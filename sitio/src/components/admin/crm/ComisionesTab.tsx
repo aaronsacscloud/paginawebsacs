@@ -48,6 +48,23 @@ const ESTADO_TONO: Record<string, { bg: string; fg: string; label: string }> = {
   cancelada: { bg: P.rojoAgua,    fg: P.rojoTinta,    label: 'Cancelada' },
 };
 
+/**
+ * El último corte cerrado: de lunes a viernes.
+ *
+ * El corte cierra el viernes y se paga el lunes siguiente, así que lo que
+ * interesa casi siempre es «la semana que ya cerró». Se ancla al viernes más
+ * reciente que ya pasó —hoy mismo si hoy es viernes— y se retrocede cuatro
+ * días: así el botón dice lo mismo un lunes que un miércoles.
+ */
+function corteSemanal() {
+  const h = new Date();
+  const atras = (h.getDay() - 5 + 7) % 7;   // 0=dom … 5=vie
+  const vie = new Date(h.getFullYear(), h.getMonth(), h.getDate() - atras);
+  const lun = new Date(vie.getFullYear(), vie.getMonth(), vie.getDate() - 4);
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { desde: iso(lun), hasta: iso(vie) };
+}
+
 /** Primer día del mes en curso, en local. */
 function mesActual() {
   const h = new Date();
@@ -66,8 +83,8 @@ export default function ComisionesTab() {
     <div style={WRAP}>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ margin: 0, fontSize: movil ? '1.15rem' : '1.4rem', fontWeight: 800, color: P.tinta }}>Comisiones</h1>
-        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: P.suave, maxWidth: '68ch' }}>
-          Se calculan sobre los pagos <b>cobrados</b>, con el porcentaje que le toca a cada SKU según el origen del cliente. Se recalculan solas cada madrugada.
+        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: P.suave, maxWidth: '72ch' }}>
+          Se calculan sobre los pagos <b>cobrados</b>, con el porcentaje que le toca a cada SKU según el origen del cliente. Se recalculan solas cada madrugada y el corte cierra el <b>viernes</b>: lo acumulado se paga el <b>lunes siguiente</b>.
         </p>
       </div>
 
@@ -96,7 +113,8 @@ export default function ComisionesTab() {
    PERIODO
    ══════════════════════════════════════════════════════════════════ */
 function VistaPeriodo({ movil, irAtribucion, irModelo }: { movil: boolean; irAtribucion: () => void; irModelo: () => void }) {
-  const inicial = mesActual();
+  // Se abre en el corte que toca pagar, que es la pregunta de todos los lunes.
+  const inicial = corteSemanal();
   const [desde, setDesde] = useState(inicial.desde);
   const [hasta, setHasta] = useState(inicial.hasta);
   const [data, setData] = useState<any>(null);
@@ -176,6 +194,7 @@ function VistaPeriodo({ movil, irAtribucion, irModelo }: { movil: boolean; irAtr
         <button onClick={recalcular} disabled={recalculando} style={{ ...E.btn2, opacity: recalculando ? 0.6 : 1 }}>
           {recalculando ? <><Chispas size={10} /> Recalculando…</> : 'Recalcular'}
         </button>
+        <button onClick={() => { const c = corteSemanal(); setDesde(c.desde); setHasta(c.hasta); }} style={E.btn3}>Corte de la semana</button>
         <button onClick={() => { const m = mesActual(); setDesde(m.desde); setHasta(m.hasta); }} style={E.btn3}>Mes actual</button>
       </div>
 

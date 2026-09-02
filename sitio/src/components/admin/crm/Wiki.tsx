@@ -75,6 +75,11 @@ export default function Wiki() {
         .wiki-cp h3{font-size:15px;font-weight:680;margin:26px 0 8px;color:#1B1B22}
         .wiki-cp p{margin:0 0 12px;max-width:72ch;line-height:1.62;font-size:14.5px;color:#33333D}
         .wiki-cp ul{margin:0 0 14px;padding-left:19px;max-width:72ch}
+        /* Ninguna página usaba listas numeradas hasta que llegó un
+           procedimiento de tres pasos. Sin esta regla el <ol> heredaba el
+           padding del navegador y los números quedaban fuera de la columna. */
+        .wiki-cp ol{margin:0 0 14px;padding-left:21px;max-width:72ch}
+        .wiki-cp ol li{padding-left:3px}
         .wiki-cp li{margin-bottom:6px;font-size:14.5px;line-height:1.6;color:#33333D}
         .wiki-cp code{font-family:ui-monospace,Menlo,monospace;font-size:.87em;background:#EFEFF3;
           padding:1.5px 5px;border-radius:4px}
