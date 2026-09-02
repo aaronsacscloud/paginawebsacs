@@ -69,7 +69,7 @@ export async function redactarRespuesta(contactId: string, nombre: string): Prom
     }],
   });
   const t = r.content.find(b => b.type === 'text') as any;
-  const costo = calculateCost(MODELS.opus, r.usage as any);
+  const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
   let v: any = {};
   try { const s = t?.text || '{}'; v = JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1)); } catch { v = {}; }
   const puede = v.puede === true && typeof v.mensaje === 'string' && v.mensaje.trim().length > 10;

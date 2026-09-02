@@ -25,3 +25,5 @@ conocimiento; aquí queda el rastro de POR QUÉ.
 - 2026-09-02 · calificación #24 · el agente SÍ gestiona la prueba gratis (correo + tienda → activar con funciones del giro → avisar); ofrecer arrancarla con consultor → guion + acción nueva en la rampa «activar prueba».
 - 2026-09-02 · calificación clientes activos (#39–45) · redirigir a soporte dentro de Sacs con calidez; el agente se queda solo con ventas → guion SI YA ES CLIENTE.
 - 2026-09-02 · calificación #19 · «ya estoy en la sala» → confirmar + alerta urgente al consultor → guion EL DÍA DE LA DEMO.
+- 2026-09-02 · lote 3 sombra (guion calificado) · #4/#29 piden giro + qué resolver antes de agendar, #14 da el marco de precio y vuelve a entender, #32 honesto con ángulo, #37 prueba con consultor: el guion ya responde como eligió el dueño. Quedan: 1 precio sin giro, 16/45 invitan al audio (bajó de 21).
+- 2026-09-02 · construcción · agente en vivo N2 (agente.ts + Próximos envíos + correcciones) apagado hasta tener ANTHROPIC_API_KEY en Vercel.

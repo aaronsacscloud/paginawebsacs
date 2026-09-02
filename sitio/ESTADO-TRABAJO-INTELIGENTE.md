@@ -99,9 +99,28 @@ Los scripts nuevos importan TS directo: correr con el Node 22 portátil y
 `--experimental-strip-types` (los imports internos llevan extensión `.ts`;
 `allowImportingTsExtensions` ya está en el tsconfig de Astro).
 
+### El agente en vivo (paso 2) — CONSTRUIDO, APAGADO
+```
+src/lib/crm/ti/agente.ts                 decidirTurno (lee charla + CRM + perfil + conocimiento + ejemplos aprobados) ·
+                                         proponerRespuestas (por cada wa_entrante de un lead sin respuesta humana → ti_envios pendiente con ventana de veto) ·
+                                         despacharEnvios (manda lo vencido vía Kapso, escribe el espejo en el inbox, ia_log)
+src/pages/api/crm/ti/envios.ts           GET pendientes/recientes · POST vetar | editar (= lección) | enviar_ya
+src/pages/api/crm/ti/correccion.ts       «Esto hubiera contestado yo» → ia_ejemplos correccion_dueno aprobado (+ reemplaza el envío si sigue pendiente)
+src/components/admin/TrabajoEnvios.tsx   pestaña «Próximos envíos» del panel (cuenta regresiva, editar, detener, enviar ya, corrección)
+scripts/ti-agente.mjs                    --estado | --on | --off | --veto N   (HOY: APAGADO)
+scripts/ti-curar-ejemplos.mjs            el curador: aprueba/rechaza/dudoso los candidatos contra el guion y el estándar del dueño
+scripts/migration-2026-09-ti-envios.sql  (corrida)
+```
+Corre dentro del observador (cada 2 min): proponer → despachar. Candados:
+`agente_activo` (kill-switch), `silenciar_ia` por lead, nunca demo ni clientes
+activos, un pendiente por lead, calla si un humano ya contestó, y un nuevo
+mensaje del lead reemplaza la propuesta anterior. **Para que funcione en
+producción falta `ANTHROPIC_API_KEY` en Vercel** (el dueño no la autorizó
+todavía; sin ella `hasApiKey()` es false y el agente no hace nada).
+
 Plan del agente (cada paso lo prueba el dueño antes del siguiente): 1 sombra
-(hecho) → 2 en vivo N2 con veto + botón «esto hubiera contestado yo» en el
-inbox → 3 agenda directo + confirmaciones conversacionales + no-show → 4 reloj
+(hecho, 3 lotes) → 2 en vivo N2 con veto (construido; encender con
+`ti-agente.mjs --on` cuando esté la llave) → 3 agenda directo + confirmaciones conversacionales + no-show → 4 reloj
 de silencio con plantillas (marketing primero, 10 min, utility; el agente crea
 los pares de plantillas solo, máx. 3/día) → 5 llamadas humanas con propósito
 → 6 medición y rampa a N3. Después: A8 voz entrante (ElevenLabs + Claude +

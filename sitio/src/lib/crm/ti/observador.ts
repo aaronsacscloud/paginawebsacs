@@ -147,6 +147,14 @@ export async function observar(): Promise<any> {
     res.vistas_cotizacion++;
   }
 
+  // ── 2b) EL AGENTE SDR (N2): propone respuesta a cada lead que escribió y
+  //    despacha lo que ya venció su ventana de veto. Apagado = no hace nada.
+  try {
+    const { proponerRespuestas, despacharEnvios } = await import('./agente');
+    res.agente = await proponerRespuestas();
+    res.agente_despacho = await despacharEnvios();
+  } catch (e: any) { res.agente_error = String(e?.message || e); }
+
   // ── 3) EL COPILOTO: cubre los P1 que el humano no alcanzó (F5) ──
   try {
     const { cubrirPendientes } = await import('./copiloto');

@@ -115,11 +115,11 @@ puede verificar nada de verdad: se compila, se despliega y se descubre el error
 en producción. Las credenciales viven en **`.crm-login`** en la raíz del repo
 (perms 600, **ignorado por git**), con el formato `CRM_EMAIL` / `CRM_PASSWORD`.
 
-Se entra por POST a `/api/admin/login` y se guarda la cookie:
+Se entra por POST a `/api/auth/login` y se guarda la cookie:
 
 ```bash
 set -a; . ./.crm-login; set +a
-curl -s -c /tmp/crm.jar -X POST http://localhost:4321/api/admin/login \
+curl -s -c /tmp/crm.jar -X POST http://localhost:4321/api/auth/login \
   -H 'Content-Type: application/json' \
   -d "{\"email\":\"$CRM_EMAIL\",\"password\":\"$CRM_PASSWORD\"}"
 # y luego, con la sesión puesta:

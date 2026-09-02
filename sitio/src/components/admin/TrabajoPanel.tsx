@@ -10,6 +10,7 @@
  * otra sesión) no se toca. El enlace desde el CRM llega después.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import TrabajoEnvios from './TrabajoEnvios';
 
 type Tarea = {
   id: string; contact_id: string; familia: string; tipo: string; paso: string | null;
@@ -79,7 +80,7 @@ export default function TrabajoPanel() {
   const [motivoSel, setMotivoSel] = useState('');
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
-  const [vistaTab, setVistaTab] = useState<'dia' | 'datos'>('dia');
+  const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios'>('dia');
   const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);
   const p1Vistos = useRef<Set<string>>(new Set());
@@ -311,8 +312,11 @@ export default function TrabajoPanel() {
           <button className={'ti-tab' + (vistaTab === 'datos' ? ' on' : '')} onClick={() => setVistaTab('datos')}>
             Datos {datos.length > 0 && <span className="ti-tab-n">{datos.length}</span>}
           </button>
+          <button className={'ti-tab' + (vistaTab === 'envios' ? ' on' : '')} onClick={() => setVistaTab('envios')}>Próximos envíos</button>
         </div>
       </div>
+
+      {vistaTab === 'envios' && <TrabajoEnvios />}
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo">
@@ -360,7 +364,7 @@ export default function TrabajoPanel() {
         </div>
       )}
 
-      <div className="ti-lienzo" style={vistaTab === 'datos' ? { display: 'none' } : undefined}>
+      <div className="ti-lienzo" style={vistaTab !== 'dia' ? { display: 'none' } : undefined}>
         {error && <div className="ti-error">{error}</div>}
         {!plan && !error && <div className="ti-cargando">Cargando tu plan…</div>}
 
