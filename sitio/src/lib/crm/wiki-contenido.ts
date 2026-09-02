@@ -997,11 +997,18 @@ export const WIKI: PaginaWiki[] = [
 <p>El de <b>10 minutos</b> antes no pide nada: solo recuerda y da la liga. Pedirle a alguien que te cuente su operación diez minutos antes llega tarde para él y para ti.</p>
 <div class="w-caja"><span class="w-k">El corte</span><p>Una hora. De ahí para arriba pide contexto; de ahí para abajo, no. Si configuras un recordatorio a 45 minutos, ese sale corto.</p></div>
 
+<h3>Los recordatorios solo salen en horario laboral</h3>
+<p>De <b>8:00 a 18:00</b>, hora del centro de México. Un aviso a las 6 de la mañana o a las 11 de la noche no lo lee nadie — y sí quema la conversación.</p>
+<p>Lo que <b>cae antes de abrir</b> se recorre a las 8:00: el recordatorio de «3 horas» de una reunión de las 9:00 caería a las 6 de la mañana, así que sale a las 8:00. Y entonces <b>dice la verdad</b>: el cliente lee «es en 1 hora», no «es en 3 horas».</p>
+<p>Lo que <b>cae después de cerrar</b> no se manda. Eso tiene un costo que conviene tener claro: una reunión de las 7 de la noche <b>pierde</b> su recordatorio de un día antes, porque caería a las 7 de la noche del día anterior. Si prefieres que en vez de perderse se adelante a las 6, se cambia en la misma pantalla.</p>
+<div class="w-caja"><span class="w-k">Dónde se cambia</span><p><b>Reuniones ▸ Editar un tipo ▸ Avisos al cliente ▸ «A qué horas se pueden mandar»</b>. La ventana es <b>global</b>: aplica a todos los tipos de reunión, aunque se edite desde uno.</p></div>
+
 <h3>Un cambio de horario ya no se contesta solo</h3>
 <p>Si alguien pide mover su reunión —toca «Reagendar» o lo escribe— el sistema <b>no le contesta</b>. Queda anotado en su ficha y te levanta aviso para que lo atiendas desde el inbox. Antes le mandaba una liga y una lista de horarios, y el cliente terminaba sin saber si su reunión seguía en pie.</p>
 
 <h3>Lo que está pausado</h3>
 <p>El acuse automático del inbox («Te leo 👋»), la respuesta con horarios, el botón de reagendar, las secuencias de seguimiento, la cobranza de suscripciones vencidas y el copiloto de IA. <b>Encender cualquiera es una decisión tuya</b>, y se hace sin desplegar nada.</p>
+<div class="w-caja"><span class="w-k">Dónde se prende y se apaga</span><p><b>WhatsApp ▸ el engrane del inbox ▸ «Qué escribe solo por WhatsApp»</b>. Cada renglón dice por qué está como está. Lo que apagues ahí deja de poder enviar en menos de un minuto.</p></div>
 <p>Fuera de esta lista quedan, a propósito, los mensajes que manda una <b>persona</b>: el inbox, las campañas y lo que dejas programado. Esto gobierna lo que sale solo.</p>`,
   },
   {
