@@ -40,7 +40,7 @@ type Resultado = { ok: boolean; via?: 'marketing' | 'utility'; motivo?: string }
 async function plantillaViva(nombre: string) {
   if (!nombre) return null;
   const { data } = await supabase.from('wa_plantillas')
-    .select('nombre, status, variables, header_tipo, header_media_url')
+    .select('nombre, status, variables, header_tipo, header_media_url, cuerpo, footer')
     .eq('nombre', nombre).eq('idioma', 'es_MX').maybeSingle();
   return data?.status === 'APPROVED' ? data : null;
 }
@@ -51,15 +51,30 @@ function params(pl: any, primerNombre: string, empresa?: string | null): string[
   return todos.slice(0, Math.max(0, Number(pl?.variables) || 0));
 }
 
+/**
+ * El texto de la plantilla YA RESUELTO, para espejarlo en el inbox.
+ *
+ * El espejo tiene que guardar lo que el cliente VIO, no un rótulo. Cuando
+ * guardaba «Recordatorio de reunión (3 horas antes)» en vez del mensaje, quien
+ * abría el chat no podía saber qué le había llegado — que es justo para lo que
+ * existe el espejo.
+ */
+function textoResuelto(pl: any, params: string[]): string {
+  let t = String(pl?.cuerpo || '');
+  params.forEach((v, i) => { t = t.split(`{{${i + 1}}}`).join(v); });
+  const partes = [pl?.header_tipo === 'IMAGE' ? '[Foto]' : '', t, pl?.footer || ''];
+  return partes.filter(Boolean).join('\n\n').trim();
+}
+
 async function mandar(pl: any, telefono: string, primerNombre: string, empresa?: string | null) {
   /* La foto del encabezado viaja en cada envío: Meta guarda el ejemplo con el
      que se aprobó la plantilla, no la imagen definitiva. */
   const media = pl.header_tipo === 'IMAGE' && pl.header_media_url
     ? { tipo: 'image' as const, link: String(pl.header_media_url) }
     : null;
-  const r = await enviarPlantilla(telefono, pl.nombre, 'es_MX', params(pl, primerNombre, empresa),
-    media ? { headerMedia: media } : undefined);
-  return r?.messages?.[0]?.id || null;
+  const ps = params(pl, primerNombre, empresa);
+  const r = await enviarPlantilla(telefono, pl.nombre, 'es_MX', ps, media ? { headerMedia: media } : undefined);
+  return { wamid: r?.messages?.[0]?.id || null, texto: textoResuelto(pl, ps) };
 }
 
 /**
@@ -126,17 +141,18 @@ export async function enviarPrimerMensaje(o: {
     }).catch(() => {});
   }
 
-  let wamid: string | null = null;
+  let salida: { wamid: string | null; texto: string };
   try {
-    wamid = await mandar(usa, tel, primerNombre, o.empresa);
+    salida = await mandar(usa, tel, primerNombre, o.empresa);
   } catch (e: any) {
     return { ok: false, motivo: String(e?.message || e).slice(0, 200) };
   }
+  const wamid = salida.wamid;
 
   if (wamid) {
     await registrarMensaje({
       kapsoMessageId: wamid, telefono: tel, direccion: 'saliente', tipo: 'template',
-      cuerpo: `[${usa.nombre}] ${primerNombre}`, status: 'sent', autor: 'Agenda',
+      cuerpo: salida.texto, status: 'sent', autor: 'Agenda',
     }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
   }
 
@@ -224,14 +240,14 @@ export async function revisarPrimerosMensajes(): Promise<any> {
     const primerNombre = String(c?.nombre || '').trim().split(/\s+/)[0] || 'hola';
 
     try {
-      const wamid = await mandar(util, f.telefono, primerNombre, null);
-      if (wamid) {
+      const r2 = await mandar(util, f.telefono, primerNombre, null);
+      if (r2.wamid) {
         await registrarMensaje({
-          kapsoMessageId: wamid, telefono: f.telefono, direccion: 'saliente', tipo: 'template',
-          cuerpo: `[${util.nombre}] ${primerNombre}`, status: 'sent', autor: 'Agenda',
+          kapsoMessageId: r2.wamid, telefono: f.telefono, direccion: 'saliente', tipo: 'template',
+          cuerpo: r2.texto, status: 'sent', autor: 'Agenda',
         }).catch(() => {});
       }
-      await marca('respaldo_enviado', { respaldo: util.nombre, respaldo_wamid: wamid });
+      await marca('respaldo_enviado', { respaldo: util.nombre, respaldo_wamid: r2.wamid });
       res.respaldos++;
       await supabase.from('activities').insert({
         contact_id: f.contact_id || null, tipo: 'bienvenida_wa', automatico: true,

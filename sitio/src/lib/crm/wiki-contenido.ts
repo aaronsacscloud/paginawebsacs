@@ -975,6 +975,30 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja w-bad"><span class="w-k">Una regla de Meta que cuesta encontrar</span><p>El cuerpo <b>no puede empezar ni terminar con una variable</b>. Si empieza con <code>{{1}}</code>, Meta devuelve un error 100 genérico —«Petición inválida»— que no dice nada hasta que se abre el detalle. Ya costó cuatro rechazos: se le antepone el saludo y listo.</p></div>`,
   },
   {
+    id: 'wa-permitidos', grupo: 'Referencia', titulo: 'Qué escribe solo por WhatsApp',
+    bajada: 'La lista corta. Lo que no está aquí, no sale.',
+    cuerpo: `
+<p>Desde el 2 de septiembre solo <b>cuatro cosas</b> le escriben al cliente por WhatsApp sin que una persona lo pida. Todo lo demás está pausado, y no es una promesa: el sistema pregunta por una lista de permitidos antes de cada envío. Lo que no esté en la lista —incluso algo que alguien programe mañana— <b>no puede enviar</b>.</p>
+
+<table><tr><th>Sale solo</th><th>Cuándo</th></tr>
+<tr><td><b>Confirmación de la reunión</b></td><td>Cuando el cliente reserva. Una vez.</td></tr>
+<tr><td><b>Recordatorios</b></td><td>1 día, 3 horas y 10 minutos antes. Se configuran por tipo de reunión.</td></tr>
+<tr><td><b>Seguimiento de la reunión</b></td><td>No llegó, se canceló, se reagendó, y el «Ahí estaré» del recordatorio.</td></tr>
+<tr><td><b>Primer mensaje al contacto</b></td><td>Cuando entra un lead nuevo. Ver abajo.</td></tr></table>
+
+<h3>El primer mensaje va en dos pasos</h3>
+<p>Sale primero una plantilla de <b>marketing</b>: con foto, con preguntas concretas y con un texto más suelto, que es lo que de verdad abre conversación. A los <b>10 minutos</b> el sistema revisa si llegó. Si Meta la bloqueó —hay gente que apagó los mensajes de marketing, y hay un tope semanal por persona— entonces, y solo entonces, sale la de <b>utilidad</b>: dice menos, pero pasa por donde el marketing no pasa.</p>
+<div class="w-caja"><span class="w-k">Por qué no se revisa al enviar</span><p>Meta <b>acepta</b> el mensaje y recién después reporta que el usuario lo tiene bloqueado. Al momento de mandarlo todavía no se sabe; por eso hay que volver a mirar más tarde.</p></div>
+<p>Es el <b>primer</b> mensaje: uno por número, una vez en la vida. Si ese número ya tiene conversación con nosotros, no sale nada — no es un primer contacto, es meterse en un hilo que ya existe.</p>
+
+<h3>Un cambio de horario ya no se contesta solo</h3>
+<p>Si alguien pide mover su reunión —toca «Reagendar» o lo escribe— el sistema <b>no le contesta</b>. Queda anotado en su ficha y te levanta aviso para que lo atiendas desde el inbox. Antes le mandaba una liga y una lista de horarios, y el cliente terminaba sin saber si su reunión seguía en pie.</p>
+
+<h3>Lo que está pausado</h3>
+<p>El acuse automático del inbox («Te leo 👋»), la respuesta con horarios, el botón de reagendar, las secuencias de seguimiento, la cobranza de suscripciones vencidas y el copiloto de IA. <b>Encender cualquiera es una decisión tuya</b>, y se hace sin desplegar nada.</p>
+<p>Fuera de esta lista quedan, a propósito, los mensajes que manda una <b>persona</b>: el inbox, las campañas y lo que dejas programado. Esto gobierna lo que sale solo.</p>`,
+  },
+  {
     id: 'wa-candados', grupo: 'Referencia', titulo: 'Los candados de WhatsApp',
     bajada: 'Por qué a veces el sistema te frena.',
     cuerpo: `
