@@ -43,7 +43,10 @@ if (limpiar) {
       await supabase.from('wa_mensajes').delete().in('conversation_id', convs.map(x => x.id));
       await supabase.from('wa_conversaciones').delete().in('contact_id', ids);
     }
-    await supabase.from('contacts').delete().in('id', ids);
+    // Todo lo que referencia al contacto (si no, el delete falla en silencio y los demos siguen ahí).
+    for (const t of ['activities', 'ti_eventos', 'ti_envios', 'ti_sombra', 'ia_ejemplos', 'ia_log', 'ti_perfil']) await supabase.from(t).delete().in('contact_id', ids);
+    const { error } = await supabase.from('contacts').delete().in('id', ids);
+    if (error) { console.error('NO se borraron los contactos:', error.message); process.exit(1); }
   }
   console.log(`limpio: ${ids.length} contactos demo y todo lo suyo, borrado.`);
   process.exit(0);

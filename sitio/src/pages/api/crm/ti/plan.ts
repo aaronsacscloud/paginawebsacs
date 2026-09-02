@@ -49,7 +49,8 @@ export const GET: APIRoute = async ({ request }) => {
     resumen: {
       pendientes: (tareas || []).length,
       hechas_hoy: hechasHoy || 0,
-      atrasadas: (tareas || []).filter((t: any) => t.atrasada).length,
+      // El lote de higiene (P5) vive en su pestaña y no es urgencia: no infla el contador de atrasadas.
+      atrasadas: (tareas || []).filter((t: any) => t.atrasada && !(t.familia === 'higiene' && t.prioridad >= 5)).length,
     },
   });
 };
