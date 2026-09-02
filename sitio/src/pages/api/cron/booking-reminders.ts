@@ -15,10 +15,9 @@ import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
-import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
-import { registrarMensaje } from '../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../lib/telefono';
 import { permitido, configDe } from '../../../lib/whatsapp/permisos';
+import { mandarPlantilla } from '../../../lib/whatsapp/plantilla-espejo';
 import {
   MX_OFFSET_MS, aMinutos, etiquetaReal, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
@@ -238,7 +237,15 @@ export const GET: APIRoute = async ({ request }) => {
                 const plantilla = eligePlantilla(faltaMin);
                 if (!plantilla) throw new Error('ninguna plantilla de recordatorio está aprobada');
                 const params = paramsCliente(b, cuanto);
-                const rp = await enviarPlantilla(tel, plantilla, IDIOMA_PLANTILLA, params);
+                /* Por el camino común: así el inbox enseña los botones como
+                   BOTONES en vez de la línea «[Botones: …]», y el cuerpo sale
+                   del texto aprobado por Meta en vez de una copia a mano que
+                   se desincroniza el día que alguien crea una versión nueva. */
+                const rp = await mandarPlantilla({
+                  telefono: tel, plantilla, idioma: IDIOMA_PLANTILLA, params,
+                  textoRespaldo: textoPlantillaCliente(params, plantilla),
+                  metadata: { booking_recordatorio: r.id, booking_id: b.id },
+                });
                 const marcado = await marcarAvisado(b, r.id, 'whatsapp', cuanto);
                 out.whatsapps++; disparo = true;
                 if (!marcado) {
@@ -247,15 +254,7 @@ export const GET: APIRoute = async ({ request }) => {
                     `El WhatsApp de ${cuanto} antes salió, pero no se pudo dejar la marca que impide repetirlo.`,
                     'agenda_marca_falla');
                 }
-                /* Espejado en el inbox: quien abra el chat ve lo que el cliente
-                   recibió, no tiene que confiar en que salió. */
-                await registrarMensaje({
-                  kapsoMessageId: rp?.messages?.[0]?.id || null, telefono: tel, direccion: 'saliente',
-                  /* El cuerpo REAL, no un rótulo: el espejo existe para que
-                     quien abra el chat vea lo que el cliente recibió. */
-                  tipo: 'template', cuerpo: textoPlantillaCliente(params, plantilla), status: 'sent', autor: 'Agenda',
-                  metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla },
-                }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
+
               } catch (e: any) {
                 out.fallas++; out.errores.push(`${b.id} ${r.id} wa: ${e?.message || e}`);
                 await avisarFalla(b, `No salió el WhatsApp de ${b.invitee_nombre}`,
@@ -275,15 +274,14 @@ export const GET: APIRoute = async ({ request }) => {
           if (telH) {
             try {
               const ph = paramsHost(b, cuanto);
-              const rh = await enviarPlantilla(telH, PLANTILLA_HOST, IDIOMA_PLANTILLA, ph);
+              /* También por el camino común, para que el chat del host se vea
+                 igual que el del cliente. */
+              await mandarPlantilla({
+                telefono: telH, plantilla: PLANTILLA_HOST, idioma: IDIOMA_PLANTILLA, params: ph,
+                textoRespaldo: textoPlantillaHost(ph),
+                metadata: { booking_recordatorio: r.id, booking_id: b.id },
+              });
               await marcarAvisado(b, r.id, 'host', cuanto); out.host_whatsapps++; disparo = true;
-              /* El aviso al host TAMPOCO se espejaba: su chat quedaba sin
-                 rastro de que el sistema le escribió. */
-              await registrarMensaje({
-                kapsoMessageId: rh?.messages?.[0]?.id || null, telefono: telH, direccion: 'saliente',
-                tipo: 'template', cuerpo: textoPlantillaHost(ph), status: 'sent', autor: 'Agenda',
-                metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla: PLANTILLA_HOST },
-              }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
             } catch (e: any) {
               out.fallas++; out.errores.push(`${b.id} ${r.id} host: ${e?.message || e}`);
             }

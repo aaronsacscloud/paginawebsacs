@@ -23,8 +23,7 @@
  *   dejar a un lead sin ningún mensaje.
  */
 import { supabase } from '../supabase';
-import { enviarPlantilla } from '../whatsapp/kapso-api';
-import { registrarMensaje } from '../whatsapp/espejo';
+import { mandarPlantilla, plantillaAprobada } from '../whatsapp/plantilla-espejo';
 import { telefonoWhatsApp } from '../telefono';
 import { permitido, configDe } from '../whatsapp/permisos';
 import { notificar } from './notificaciones';
@@ -37,13 +36,7 @@ const POR_DEFECTO = {
 
 type Resultado = { ok: boolean; via?: 'marketing' | 'utility'; motivo?: string };
 
-async function plantillaViva(nombre: string) {
-  if (!nombre) return null;
-  const { data } = await supabase.from('wa_plantillas')
-    .select('nombre, status, variables, header_tipo, header_media_url, cuerpo, footer')
-    .eq('nombre', nombre).eq('idioma', 'es_MX').maybeSingle();
-  return data?.status === 'APPROVED' ? data : null;
-}
+const plantillaViva = (nombre: string) => plantillaAprobada(nombre);
 
 /** Los parámetros del cuerpo, recortados a las que la plantilla declara. */
 function params(pl: any, primerNombre: string, empresa?: string | null): string[] {
@@ -52,29 +45,19 @@ function params(pl: any, primerNombre: string, empresa?: string | null): string[
 }
 
 /**
- * El texto de la plantilla YA RESUELTO, para espejarlo en el inbox.
- *
- * El espejo tiene que guardar lo que el cliente VIO, no un rótulo. Cuando
- * guardaba «Recordatorio de reunión (3 horas antes)» en vez del mensaje, quien
- * abría el chat no podía saber qué le había llegado — que es justo para lo que
- * existe el espejo.
+ * Manda por el camino COMÚN de plantillas, que ya espeja la foto como foto y
+ * los botones como botones. Antes aquí se armaba el texto a mano y el inbox
+ * enseñaba «[Foto]» en vez de la imagen: quien abría el chat no podía saber
+ * qué foto se le había mandado al cliente.
  */
-function textoResuelto(pl: any, params: string[]): string {
-  let t = String(pl?.cuerpo || '');
-  params.forEach((v, i) => { t = t.split(`{{${i + 1}}}`).join(v); });
-  const partes = [pl?.header_tipo === 'IMAGE' ? '[Foto]' : '', t, pl?.footer || ''];
-  return partes.filter(Boolean).join('\n\n').trim();
-}
-
 async function mandar(pl: any, telefono: string, primerNombre: string, empresa?: string | null) {
-  /* La foto del encabezado viaja en cada envío: Meta guarda el ejemplo con el
-     que se aprobó la plantilla, no la imagen definitiva. */
-  const media = pl.header_tipo === 'IMAGE' && pl.header_media_url
-    ? { tipo: 'image' as const, link: String(pl.header_media_url) }
-    : null;
   const ps = params(pl, primerNombre, empresa);
-  const r = await enviarPlantilla(telefono, pl.nombre, 'es_MX', ps, media ? { headerMedia: media } : undefined);
-  return { wamid: r?.messages?.[0]?.id || null, texto: textoResuelto(pl, ps) };
+  const r = await mandarPlantilla({
+    telefono, plantilla: pl.nombre, params: ps, pl,
+    metadata: { motivo: 'primer_mensaje' },
+  });
+  if (!r.enviado) throw new Error(r.motivo || 'plantilla no disponible');
+  return { wamid: r.wamid, texto: r.texto };
 }
 
 /**
@@ -148,13 +131,6 @@ export async function enviarPrimerMensaje(o: {
     return { ok: false, motivo: String(e?.message || e).slice(0, 200) };
   }
   const wamid = salida.wamid;
-
-  if (wamid) {
-    await registrarMensaje({
-      kapsoMessageId: wamid, telefono: tel, direccion: 'saliente', tipo: 'template',
-      cuerpo: salida.texto, status: 'sent', autor: 'Agenda',
-    }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
-  }
 
   await supabase.from('wa_primer_mensaje').insert({
     telefono: tel, contact_id: o.contactId || null,
@@ -241,12 +217,6 @@ export async function revisarPrimerosMensajes(): Promise<any> {
 
     try {
       const r2 = await mandar(util, f.telefono, primerNombre, null);
-      if (r2.wamid) {
-        await registrarMensaje({
-          kapsoMessageId: r2.wamid, telefono: f.telefono, direccion: 'saliente', tipo: 'template',
-          cuerpo: r2.texto, status: 'sent', autor: 'Agenda',
-        }).catch(() => {});
-      }
       await marca('respaldo_enviado', { respaldo: util.nombre, respaldo_wamid: r2.wamid });
       res.respaldos++;
       await supabase.from('activities').insert({

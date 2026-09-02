@@ -198,19 +198,25 @@ export const PUT: APIRoute = async ({ request }) => {
          llegaba — y devolvía {sent:false} que nadie miraba. Justo a quien no
          llegó es a quien hay que alcanzar. */
       if (current.invitee_whatsapp && await permitido('agenda_seguimiento')) {
-        const { enviarPlantilla } = await import('../../../lib/whatsapp/kapso-api');
+        
         const { telefonoWhatsApp } = await import('../../../lib/telefono');
         const { fmtFechaLarga, fmtHora } = await import('../../../lib/scheduling/recordatorios');
         const tel = telefonoWhatsApp(current.invitee_whatsapp);
-        const { data: pl } = await supabase.from('wa_plantillas')
-          .select('status').eq('nombre', 'reunion_no_llegaste').eq('idioma', 'es_MX').maybeSingle();
-        if (tel && pl?.status === 'APPROVED') {
-          await enviarPlantilla(tel, 'reunion_no_llegaste', 'es_MX', [
-            String(current.invitee_nombre || '').split(' ')[0] || 'hola',
-            evento,
-            `${fmtFechaLarga(current.fecha)} a las ${fmtHora(String(current.hora_inicio))}`,
-            reagendarUrl,
-          ]);
+        const { mandarPlantilla, plantillaAprobada } = await import('../../../lib/whatsapp/plantilla-espejo');
+        const pl = tel ? await plantillaAprobada('reunion_no_llegaste') : null;
+        if (tel && pl) {
+          /* Por `mandarPlantilla` para que QUEDE EN EL INBOX: antes salía y
+             quien abría el chat no veía nada de que se le había escrito. */
+          await mandarPlantilla({
+            telefono: tel, plantilla: 'reunion_no_llegaste', pl,
+            params: [
+              String(current.invitee_nombre || '').split(' ')[0] || 'hola',
+              evento,
+              `${fmtFechaLarga(current.fecha)} a las ${fmtHora(String(current.hora_inicio))}`,
+              reagendarUrl,
+            ],
+            metadata: { booking_id: current.id, motivo: 'no_llego' },
+          });
         } else {
           /* Si la plantilla no está aprobada, se DICE. Antes esto fallaba en
              silencio y el no-show se quedaba sin seguimiento sin que nadie

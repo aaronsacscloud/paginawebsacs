@@ -7,7 +7,6 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 import { sendWhatsApp } from '../../../lib/kapso';
-import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 
 export const prerender = false;
 
@@ -339,7 +338,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (oldBooking.invitee_whatsapp) {
     const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
     try {
-      if (await permitido('agenda_seguimiento')) await enviarPlantilla(oldBooking.invitee_whatsapp, 'sesion_reagendada', 'es_MX', [nombreInv, `${nueva_fecha} a las ${nueva_hora}`]);
+      if (await permitido('agenda_seguimiento')) {
+        const { mandarPlantilla } = await import('../../../lib/whatsapp/plantilla-espejo');
+        /* Espejada: era de las cuatro que salían sin quedar en el inbox. */
+        const r = await mandarPlantilla({
+          telefono: oldBooking.invitee_whatsapp, plantilla: 'sesion_reagendada',
+          params: [nombreInv, `${nueva_fecha} a las ${nueva_hora}`],
+          metadata: { booking_id: newBooking?.id || null, motivo: 'reagendo' },
+        });
+        if (!r.enviado) throw new Error(r.motivo || 'plantilla no disponible');
+      }
     } catch {
       try {
         await sendWhatsApp(

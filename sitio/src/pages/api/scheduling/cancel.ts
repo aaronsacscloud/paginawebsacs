@@ -6,7 +6,6 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 import { sendWhatsApp } from '../../../lib/kapso';
-import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { avisarCancelacion } from '../../../lib/crm/aviso-lead';
 
 export const prerender = false;
@@ -165,8 +164,14 @@ export const POST: APIRoute = async ({ request }) => {
       if (booking.invitee_whatsapp) {
         try {
           if (await permitido('agenda_seguimiento')) {
-            await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]);
-            waCancelacionEnviado = true;
+            const { mandarPlantilla } = await import('../../../lib/whatsapp/plantilla-espejo');
+            /* Espejado: antes esta plantilla salía y no quedaba rastro en el
+               inbox — el cliente sabía que le habíamos escrito y nosotros no. */
+            const r = await mandarPlantilla({
+              telefono: booking.invitee_whatsapp, plantilla: 'sesion_cancelada_rescate',
+              params: [nombreInv], metadata: { booking_id: booking.id, motivo: 'cancelo' },
+            });
+            waCancelacionEnviado = r.enviado;
           }
         } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
       }
