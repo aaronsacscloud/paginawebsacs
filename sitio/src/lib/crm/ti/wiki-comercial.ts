@@ -27,12 +27,14 @@ LO QUE HACE (los módulos que más venden)
   (joyerías) — módulos por giro.
 - Reportes: ventas, utilidades, sell-through, lo que se mueve y lo que no.
 
-PRECIOS DE LISTA (mensual, POR SUCURSAL — página pública /planes)
-- Controla: $1,215 MXN/mes — el punto de partida: POS + inventario + reportes.
-- Fideliza: $1,890 MXN/mes — agrega clientes, lealtad, promociones.
-- Automatiza: $3,780 MXN/mes — agrega e-commerce y canales conectados.
-El plan anual sale más barato que el mensual. La migración desde otro sistema
-o desde Excel la hacemos nosotros (productos, clientes, historial).
+PRECIOS DE LICENCIA (mensual, POR SUCURSAL — página pública /planes; el anual sale ~35 % más barato)
+- Vende: $810 MXN/mes — tu primera tienda: POS con y sin internet, tallas y colores, apartados, tienda en línea y redes, 20 folios de factura. 1 sucursal.
+- Controla: $1,215 MXN/mes — varias tiendas: qué talla hay en cada una, traspasos, CEDIS, conteo, compras de temporada, 50+ reportes.
+- Fideliza y Multiplica: $1,890 MXN/mes — el más popular: ficha de clienta, monedero y puntos, portal, tarjetas de regalo, correo y WhatsApp a tus clientas, membresías.
+- Automatiza: $3,780 MXN/mes — especialista IA dedicado, AXO copiloto, reglas automáticas, avisos, pronóstico de temporada, integraciones.
+En anual: $527 · $790 · $1,229 · $2,457 al mes por sucursal. Cada plan incluye todo lo del anterior. Sin permanencia.
+La migración desde otro sistema o desde Excel la hacemos nosotros (productos, clientes, historial).
+Las suites por giro (consignación, joyería fina, torre de control del evento, taller/órdenes de servicio) NO se venden aparte: se instalan según el giro y van con su plan. Los extras (probador virtual, foto y video con IA, lookbooks, RFID, etc.) solo se mencionan; el consultor los ve en la reunión. Nunca des precios que no sean de licencia.
 
 CÓMO SE VENDE (el camino)
 1. Demo en línea de 15 minutos, sin costo, con LOS PRODUCTOS del prospecto.
@@ -68,8 +70,9 @@ PREGUNTAS FRECUENTES
 - «¿Sirve para mi negocio?» → Sí para comercio con inventario (ropa, calzado,
   papelería, joyería, regalos, abarrotes…). Si es puro servicio sin
   inventario, mejor decir honestamente que no es lo suyo.
-- «¿Cuánto cuesta?» → dar el precio de lista del plan que aplique, y SIEMPRE
-  ofrecer la demo de 15 min para ver cuál conviene.
+- «¿Cuánto cuesta?» → PRIMERO saber qué vende y cuántas tiendas tiene; luego el precio de
+  lista del plan que le queda (una tienda → Vende $810; varias → Controla $1,215;
+  clientas que vuelven → Fideliza $1,890), y SIEMPRE ofrecer la demo para aterrizarlo.
 - «¿Factura?» → Sí, CFDI 4.0 desde la venta, timbres incluidos según plan.
 - «¿Funciona sin internet?» → El punto de venta sí; sincroniza al volver.
 - «¿Me ayudan a migrar?» → Sí, la migración la hacemos nosotros.

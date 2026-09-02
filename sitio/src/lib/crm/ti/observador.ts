@@ -29,6 +29,18 @@ export async function observar(): Promise<any> {
   )).toISOString();
   const res: any = { respuestas: 0, retiradas: 0, vistas_cotizacion: 0 };
 
+  // ── 0) LA BITÁCORA (A0): los adaptadores proyectan lo nuevo a ti_eventos y
+  //    el perfil de los contactos tocados se recalcula. Si falla, el resto del
+  //    observador sigue: la bitácora es memoria, no el camino crítico del P1.
+  try {
+    const { sincronizarEventos } = await import('./eventos');
+    const { recalcularPerfiles } = await import('./perfil');
+    const ev = await sincronizarEventos();
+    const per = await recalcularPerfiles(ev.tocados || []);
+    res.eventos = ev.nuevos; res.perfiles = per.perfiles;
+    if (Object.keys(ev.errores || {}).length) res.eventos_errores = ev.errores;
+  } catch (e: any) { res.eventos_error = String(e?.message || e); }
+
   // ── 1) RESPUESTAS: mensajes ENTRANTES nuevos de contactos del universo TI ──
   const { data: msjs } = await supabase.from('wa_mensajes')
     .select('cuerpo, created_at, conversation_id, wa_conversaciones!inner(contact_id)')
