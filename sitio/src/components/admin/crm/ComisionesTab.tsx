@@ -22,8 +22,9 @@ import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando, { Chispas } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
 import { ORIGENES, ORIGEN_LABEL, CUENTAS, explicar } from '../../../lib/crm/comisiones.lib';
+import ComisionesCortes from './ComisionesCortes';
 
-type Vista = 'periodo' | 'modelo' | 'atribucion' | 'renovaciones';
+type Vista = 'cortes' | 'periodo' | 'modelo' | 'atribucion' | 'renovaciones';
 
 const pesos = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fecha = (d?: string | null) =>
@@ -77,19 +78,19 @@ function mesActual() {
 
 export default function ComisionesTab() {
   const movil = useIsMobile();
-  const [vista, setVista] = useState<Vista>('periodo');
+  const [vista, setVista] = useState<Vista>('cortes');
 
   return (
     <div style={WRAP}>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ margin: 0, fontSize: movil ? '1.15rem' : '1.4rem', fontWeight: 800, color: P.tinta }}>Comisiones</h1>
         <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: P.suave, maxWidth: '72ch' }}>
-          Se calculan sobre los pagos <b>cobrados</b>, con el porcentaje que le toca a cada SKU según el origen del cliente. Se recalculan solas cada madrugada y el corte cierra el <b>viernes</b>: lo acumulado se paga el <b>lunes siguiente</b>.
+          Se calculan sobre los pagos <b>cobrados</b>, con el porcentaje que le toca a cada SKU según el origen del cliente. Se recalculan solas cada madrugada. <b>Cortes</b> es lo que hay que pagar cada lunes; <b>Periodo</b> es para mirar cualquier rango.
         </p>
       </div>
 
       <div role="tablist" style={{ display: 'flex', gap: 2, borderBottom: `1px solid ${P.linea}`, marginBottom: 16, overflowX: 'auto' }}>
-        {([['periodo', 'Periodo'], ['modelo', 'Modelo'], ['atribucion', 'Atribución'], ['renovaciones', 'Renovaciones']] as [Vista, string][]).map(([v, l]) => (
+        {([['cortes', 'Cortes'], ['periodo', 'Periodo'], ['modelo', 'Modelo'], ['atribucion', 'Atribución'], ['renovaciones', 'Renovaciones']] as [Vista, string][]).map(([v, l]) => (
           <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} style={{
             padding: '9px 15px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             background: vista === v ? P.violetaAgua : 'transparent',
@@ -101,6 +102,7 @@ export default function ComisionesTab() {
         ))}
       </div>
 
+      {vista === 'cortes' && <ComisionesCortes movil={movil} />}
       {vista === 'periodo' && <VistaPeriodo movil={movil} irAtribucion={() => setVista('atribucion')} irModelo={() => setVista('modelo')} />}
       {vista === 'modelo' && <VistaModelo movil={movil} />}
       {vista === 'atribucion' && <VistaAtribucion movil={movil} />}

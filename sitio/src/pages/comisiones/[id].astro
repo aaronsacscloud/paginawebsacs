@@ -1,0 +1,188 @@
+---
+// Estado de cuenta del corte — la página que se le manda al consultor.
+//
+// Llave = el UUID del corte, no adivinable, mismo patrón que la cotización y el
+// estado de cuenta del cliente. Solo expone lo de ESE corte: ni otras personas,
+// ni tasas de terceros, ni nada interno del CRM.
+//
+// Es la pieza que faltaba para que el ciclo cierre: sin algo concreto que
+// enviar, "el corte" se quedaba en una pantalla del admin y el consultor tenía
+// que creerle a un número suelto por WhatsApp.
+import { supabase } from '../../lib/supabase';
+import { CINTA, BLOQUE_LILA } from '../../lib/crm/paleta';
+import { explicar, ORIGEN_LABEL } from '../../lib/crm/comisiones.lib';
+
+export const prerender = false;
+const { id } = Astro.params;
+
+const { data: corte } = await supabase.from('comision_cortes')
+  .select('*, team_members(nombre, email)').eq('id', id).maybeSingle();
+if (!corte) return Astro.redirect('/404');
+
+const [{ data: lineas }, { data: ajustes }] = await Promise.all([
+  supabase.from('comision_lineas')
+    .select('fecha, concepto, origen, monto_bruto, base, pct, monto, estado, tipo, sin_regla, tasa_reducida, descuento_exceso, cuenta, descuento_pct, detalle, dias_atraso, fuera_de_tiempo, companies(nombre, nombre_comercial)')
+    .eq('corte_id', id).neq('estado', 'cancelada').order('fecha'),
+  supabase.from('comision_ajustes').select('tipo, concepto, monto, nota').eq('corte_id', id).order('created_at'),
+]);
+
+const pesos = (n: number) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fLarga = (d: string | null) => d
+  ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+  : '—';
+const fCorta = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace('.', '');
+
+const ESTADO: Record<string, string> = { abierto: 'En revisión', cerrado: 'Enviado', pagado: 'Pagado' };
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estado de cuenta · {corte.team_members?.nombre} · {corte.desde}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style define:vars={{ cinta: CINTA, lila: BLOQUE_LILA }}>
+    *{box-sizing:border-box}
+    body{margin:0;background:#F5F6F8;color:#241d43;font-family:Inter,system-ui,-apple-system,sans-serif;
+      font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    .hoja{max-width:820px;margin:28px auto;background:#fff;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 2px rgba(36,29,67,.05),0 18px 44px -26px rgba(36,29,67,.32)}
+    .cinta{height:5px;background:var(--cinta)}
+    .cab{padding:26px 30px 22px;border-bottom:1px solid #ececec}
+    .marca{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8a8590}
+    h1{font-size:1.45rem;font-weight:800;margin:8px 0 2px;letter-spacing:-.02em}
+    .sub{color:#6b7280;font-size:.9rem;margin:0}
+    .chip{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+      padding:3px 9px;border-radius:99px;margin-left:9px;vertical-align:middle}
+    .datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;
+      padding:18px 30px;border-bottom:1px solid #ececec}
+    .datos dt{font-size:.625rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#a5a2af;margin:0 0 3px}
+    .datos dd{margin:0;font-weight:600;font-size:.9rem}
+    .total{background:var(--lila);padding:20px 30px;display:flex;justify-content:space-between;
+      align-items:baseline;flex-wrap:wrap;gap:8px}
+    .total .k{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#5B4BD6}
+    .total .v{font-size:2rem;font-weight:800;color:#4536BE;letter-spacing:-.02em}
+    h2{font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8a8590;
+      margin:24px 30px 8px}
+    .tw{overflow-x:auto;padding:0 30px}
+    table{border-collapse:collapse;width:100%;min-width:560px;font-size:.84rem}
+    th{text-align:left;font-size:.6rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+      color:#a5a2af;padding:8px 10px;border-bottom:1px solid #ececec;white-space:nowrap}
+    td{padding:10px;border-bottom:1px solid #f5f4f8;vertical-align:top;color:#4a4a52}
+    td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .cli{font-weight:700;color:#241d43}
+    .exp{font-size:.7rem;color:#a5a2af;margin-top:2px}
+    .mini{font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:5px;text-transform:uppercase;
+      letter-spacing:.04em;margin-left:5px;white-space:nowrap}
+    .sumas{padding:18px 30px 4px}
+    .sumas div{display:flex;justify-content:space-between;padding:6px 0;font-size:.9rem}
+    .sumas .gran{border-top:1px solid #ececec;margin-top:6px;padding-top:12px;font-weight:800;font-size:1.05rem;color:#241d43}
+    .pie{padding:20px 30px 28px;color:#8a8590;font-size:.78rem}
+    .pie b{color:#4a4a52}
+    .vacio{padding:0 30px 8px;color:#8a8590;font-size:.86rem}
+    @media print{body{background:#fff}.hoja{box-shadow:none;margin:0;max-width:none}
+      .cinta,.total{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    @media(max-width:640px){.hoja{margin:0;border-radius:0}.cab,.datos,.total,.tw,.sumas,.pie{padding-left:18px;padding-right:18px}h2{margin-left:18px;margin-right:18px}}
+  </style>
+</head>
+<body>
+  <div class="hoja">
+    <div class="cinta"></div>
+
+    <div class="cab">
+      <div class="marca">Sacscloud · Estado de cuenta</div>
+      <h1>
+        {corte.team_members?.nombre}
+        <span class="chip" style={corte.estado === 'pagado'
+          ? 'background:#EAF8F2;color:#1E8A63' : corte.estado === 'cerrado'
+          ? 'background:#E3EDFD;color:#2C5FC4' : 'background:#EEECFE;color:#5B4BD6'}>
+          {ESTADO[corte.estado]}
+        </span>
+      </h1>
+      <p class="sub">Corte del {fLarga(corte.desde)} al {fLarga(corte.hasta)}</p>
+    </div>
+
+    <dl class="datos">
+      <div><dt>Periodo</dt><dd>{fCorta(corte.desde)} — {fCorta(corte.hasta)}</dd></div>
+      <div><dt>Se paga el</dt><dd>{fLarga(corte.paga_el)}</dd></div>
+      <div><dt>Conceptos</dt><dd>{(lineas || []).length} línea(s)</dd></div>
+      {corte.pago_referencia && <div><dt>Referencia</dt><dd>{corte.pago_referencia}</dd></div>}
+    </dl>
+
+    <div class="total">
+      <span class="k">Total del corte</span>
+      <span class="v">{pesos(corte.total)}</span>
+    </div>
+
+    <h2>Comisiones del periodo</h2>
+    {(lineas || []).length === 0 ? (
+      <p class="vacio">Este corte no tiene comisiones de venta; su total sale de los ajustes.</p>
+    ) : (
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Cliente</th><th>Concepto</th>
+            <th class="n">Cobrado</th><th class="n">Base</th><th class="n">%</th><th class="n">Comisión</th>
+          </tr></thead>
+          <tbody>
+            {(lineas || []).map((l: any) => (
+              <tr>
+                <td>{fCorta(l.fecha)}</td>
+                <td class="cli">{l.companies?.nombre_comercial || l.companies?.nombre || '—'}</td>
+                <td>
+                  {l.concepto || 'Sin SKU'}
+                  {l.tipo === 'override_partner' && <span class="mini" style="background:#E3EDFD;color:#2C5FC4">Override</span>}
+                  {l.tasa_reducida && <span class="mini" style="background:#FFF4E5;color:#9a6a10">Tasa reducida</span>}
+                  <div class="exp">{explicar(l)}{l.origen ? ' · ' + ORIGEN_LABEL[l.origen] : ''}</div>
+                </td>
+                <td class="n">{pesos(l.monto_bruto)}</td>
+                <td class="n">{pesos(l.base)}</td>
+                <td class="n">{l.sin_regla ? '—' : Number(l.pct) + '%'}</td>
+                <td class="n" style="font-weight:800;color:#5B4BD6">{pesos(l.monto)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    {(ajustes || []).length > 0 && (
+      <>
+        <h2>Ajustes</h2>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Concepto</th><th>Nota</th><th class="n">Monto</th></tr></thead>
+            <tbody>
+              {(ajustes || []).map((a: any) => (
+                <tr>
+                  <td class="cli">{a.concepto}</td>
+                  <td>{a.nota || '—'}</td>
+                  <td class="n" style={a.tipo === 'cargo' ? 'font-weight:800;color:#C0554E' : 'font-weight:800;color:#1E8A63'}>
+                    {a.tipo === 'cargo' ? '−' : '+'}{pesos(a.monto)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+
+    <div class="sumas">
+      <div><span>Comisiones</span><span>{pesos(corte.monto_lineas)}</span></div>
+      {Number(corte.monto_ajustes) !== 0 && (
+        <div><span>Ajustes</span><span>{Number(corte.monto_ajustes) < 0 ? '−' : '+'}{pesos(Math.abs(Number(corte.monto_ajustes)))}</span></div>
+      )}
+      <div class="gran"><span>Total a pagar</span><span>{pesos(corte.total)}</span></div>
+    </div>
+
+    <div class="pie">
+      {corte.nota && <p><b>Nota:</b> {corte.nota}</p>}
+      <p>El corte cierra el viernes y se paga el lunes siguiente. Las comisiones se calculan sobre el monto <b>cobrado</b> al cliente, menos el descuento de la cuenta receptora, y sobre esa base se aplica el porcentaje.</p>
+      <p>Si algo aquí no cuadra, se revisa <b>antes</b> del pago: una vez liquidado, la corrección va como ajuste del corte siguiente.</p>
+    </div>
+  </div>
+</body>
+</html>

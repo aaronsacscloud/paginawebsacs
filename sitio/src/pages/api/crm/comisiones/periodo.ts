@@ -43,7 +43,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     const construirLineas = () => {
       let q = supabase.from('comision_lineas')
-        .select('*, team_members(id, nombre, email), companies(id, nombre, nombre_comercial), payments(id, referencia, metodo)')
+        .select('*, team_members!comision_lineas_owner_id_fkey(id, nombre, email), companies(id, nombre, nombre_comercial), payments(id, referencia, metodo)')
         .gte('fecha', desde).lte('fecha', hasta)
         .order('fecha', { ascending: false }).order('id');
       if (owner_id) q = q.eq('owner_id', owner_id);
