@@ -55,7 +55,7 @@ export const GIROS: FichaGiro[] = [
   {
     id: 'ropa',
     nombre: 'Tiendas y marcas de ropa',
-    alias: ['boutique', 'tienda de ropa', 'marca de ropa', 'apparel', 'ropa de dama', 'ropa de caballero', 'ropa infantil', 'moda', 'bisutería', 'accesorios', 'bolsas'],
+    alias: ['boutique', 'tienda de ropa', 'marca de ropa', 'ropa', 'mayoreo de ropa', 'venta a mayoreo', 'apparel', 'ropa de dama', 'ropa de caballero', 'ropa infantil', 'moda', 'bisutería', 'accesorios', 'bolsas'],
     landing: 'https://www.sacscloud.com/giros/marcas-de-ropa',
     queVenden: 'Prendas por talla y color: una blusa en seis tallas y cuatro colores son 24 existencias distintas que comprar, contar y reponer.',
     comoOperan: 'Una boutique o varias tiendas (a veces con bodega/CEDIS), compran por temporada (PV/OI) o por colección/drop, venden en piso, en línea, por WhatsApp e Instagram; el cambio de talla es el pan de cada día.',

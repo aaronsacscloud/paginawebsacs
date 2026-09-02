@@ -159,6 +159,7 @@ export async function observar(): Promise<any> {
     try { const { asegurarPlantillas } = await import('./plantillas-agente'); const pl: any = await asegurarPlantillas(); res.plantillas = { marketing: pl.marketing?.estado || null, utility: pl.utility?.estado || null }; } catch (e: any) { res.plantillas_error = String(e?.message || e); }
     res.agente_silencio = await tocarSilencios();
     res.agente_despacho = await despacharEnvios();
+    try { const { reintentarAgendas } = await import('./agente'); res.agente_reintentos = await reintentarAgendas(); } catch (e: any) { res.reintentos_error = String(e?.message || e); }
     try { const { revisarFallbacks } = await import('./agente'); res.agente_fallbacks = await revisarFallbacks(); } catch (e: any) { res.fallbacks_error = String(e?.message || e); }
   } catch (e: any) { res.agente_error = String(e?.message || e); }
 

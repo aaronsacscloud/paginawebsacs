@@ -22,6 +22,10 @@ const fmt = (fecha: string, hora: string) => {
   return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} a las ${h12}${m ? ':' + String(m).padStart(2, '0') : ''} ${ampm}`;
 };
 
+/** «jueves 3 de sep a las 10 am» — la misma etiqueta que usa el prompt. */
+export const etiquetaHorario = (fecha: string, hora: string) => fmt(fecha, hora);
+export const LIGA_AGENDA = `${BASE}/agendar/demo`;
+
 /** Los mejores horarios libres para una demo en los próximos días (hora CDMX). */
 export async function horariosParaDemo(opts: { slug?: string; dias?: number; mejorHora?: number | null; max?: number } = {}): Promise<Horario[]> {
   const slug = opts.slug || 'demo', dias = opts.dias || 6, max = opts.max || 4;
@@ -64,25 +68,47 @@ export const horariosTexto = (hs: Horario[]) => hs.length
   ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
   : 'No hay horarios de demo disponibles en los próximos días: si el lead quiere agendar, dile que el consultor le confirma un horario hoy mismo y escala.';
 
-/** Crea la demo por el agendador real. Devuelve la reunión o el error legible. */
-export async function agendarDemo(o: { nombre: string; email: string; whatsapp: string; fecha: string; hora: string; empresa?: string | null; giro?: string | null; sucursales?: number | null; notas?: string; slug?: string; partnerId?: string | null }): Promise<{ ok: boolean; booking?: any; error?: string; ocupado?: boolean }> {
-  try {
-    const r = await fetch(`${BASE}/api/scheduling/book`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(25000),
-      body: JSON.stringify({
-        event_type_slug: o.slug || 'demo', fecha: o.fecha, hora_inicio: o.hora,
-        nombre: o.nombre, email: o.email, whatsapp: o.whatsapp, empresa: o.empresa || undefined, giro: o.giro || undefined, sucursales: o.sucursales || undefined,
-        notas: o.notas || 'Agendada por el agente SDR desde WhatsApp', timezone: 'America/Mexico_City',
-        utm_source: 'agente_ia', utm_medium: 'whatsapp', utm_campaign: 'sdr', ref_partner_id: o.partnerId || undefined,
-      }),
-    });
-    const j: any = await r.json().catch(() => ({}));
-    if (!r.ok || j?.error) {
-      const msg = String(j?.error || r.status);
-      return { ok: false, error: msg, ocupado: /disponible|available|ocupad|taken|slot/i.test(msg) };
+/** Crea la demo por el agendador real. Devuelve la reunión o el error legible.
+ *  Condiciones cubiertas (caso Prueba Aaron, 2026-09-01): el contacto del CRM sin correo
+ *  se completa ANTES de llamar a /book (así /book lo encuentra por correo y no crea un
+ *  duplicado ni tropieza con sus columnas); un 5xx/timeout se reintenta una vez; y el
+ *  resultado dice si el horario estaba ocupado, si la cita quedó sin liga de Meet, o si falló. */
+export async function agendarDemo(o: { nombre: string; email: string; whatsapp: string; fecha: string; hora: string; contactId?: string | null; empresa?: string | null; giro?: string | null; sucursales?: number | null; notas?: string; slug?: string; partnerId?: string | null }): Promise<{ ok: boolean; booking?: any; error?: string; ocupado?: boolean; sinMeet?: boolean; intentos?: number }> {
+  const email = String(o.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'correo inválido: ' + o.email };
+  // 0) Que /book encuentre a ESTE contacto (busca por correo). Si el correo ya es de otro contacto, no lo pisamos.
+  if (o.contactId) {
+    const { data: c } = await supabase.from('contacts').select('id, email').eq('id', o.contactId).maybeSingle();
+    if (c && !c.email) {
+      const { data: otro } = await supabase.from('contacts').select('id').eq('email', email).neq('id', o.contactId).limit(1).maybeSingle();
+      if (!otro) await supabase.from('contacts').update({ email, updated_at: new Date().toISOString() }).eq('id', o.contactId);
     }
-    return { ok: true, booking: j?.booking || j };
-  } catch (e: any) { return { ok: false, error: String(e?.message || e) }; }
+  }
+  let ultimo = '';
+  for (let intento = 1; intento <= 2; intento++) {
+    try {
+      const r = await fetch(`${BASE}/api/scheduling/book`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(25000),
+        body: JSON.stringify({
+          event_type_slug: o.slug || 'demo', fecha: o.fecha, hora_inicio: o.hora,
+          nombre: o.nombre, email, whatsapp: o.whatsapp, empresa: o.empresa || undefined, giro: o.giro || undefined, sucursales: o.sucursales ? Number(o.sucursales) : undefined,
+          notas: o.notas || 'Agendada por el agente SDR desde WhatsApp', timezone: 'America/Mexico_City',
+          utm_source: 'agente_ia', utm_medium: 'whatsapp', utm_campaign: 'sdr', ref_partner_id: o.partnerId || undefined,
+        }),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (r.ok && !j?.error) {
+        const booking = j?.booking || j;
+        return { ok: true, booking, sinMeet: !booking?.google_meet_link, intentos: intento };
+      }
+      ultimo = String(j?.error || r.status);
+      const ocupado = /disponible|available|ocupad|taken|slot|anticipaci|pasad/i.test(ultimo);
+      // 4xx = dato o regla (horario ocupado, correo, anticipación): no se reintenta. 5xx = se reintenta una vez.
+      if (ocupado || (r.status >= 400 && r.status < 500)) return { ok: false, error: ultimo, ocupado, intentos: intento };
+    } catch (e: any) { ultimo = String(e?.message || e); }
+    if (intento === 1) await new Promise(res => setTimeout(res, 1500));
+  }
+  return { ok: false, error: ultimo, ocupado: false, intentos: 2 };
 }
 
 /** La próxima reunión futura del contacto (para confirmar, reagendar, no-show). */

@@ -36,6 +36,27 @@ mandarla ya.
 | 13 | «Tengo un gimnasio, control de accesos» | Honesto: no es lo nuestro; busca el ángulo (¿venden ropa o suplementos?) |
 | 14 | Escribe en inglés | Responde en inglés |
 
+## Cuando el agente agenda: las condiciones y qué debe pasar en cada una
+
+La cita se crea por el mismo camino que la página pública (`/api/scheduling/book`),
+así que hereda sus reglas. Esto es lo que el agente hace en cada caso (código en
+`agente.ts` bloque `accion.agendar` + `agenda-agente.ts` + `reintentarAgendas`):
+
+| Condición | Qué hace el agente | Qué ves tú |
+|---|---|---|
+| Eliges un horario de los que ofreció y el CRM ya tiene tu correo | Agenda; el mensaje confirma día/hora; llega invitación por correo y WhatsApp | `ia_log agente_agendo`, booking con `google_meet_link` |
+| Eliges horario pero NO hay correo | No inventa: pide el correo y **recuerda** el horario; cuando lo das, agenda ese mismo sin re-ofrecer | `agente_agenda_sin_correo`; `ti_perfil.agente_estado.agenda_pendiente.motivo=sin_correo` |
+| El correo que das ya es de OTRO contacto del CRM | No pisa el correo del otro; /book enlaza la cita al contacto dueño de ese correo | tarea normal; revisar duplicado a mano |
+| El horario se ocupó entre que lo ofreció y elegiste (o pediste uno con < 2 h) | «Se acaba de ocupar» + dos horarios reales nuevos | `agente_agenda_ocupado` |
+| Error nuestro (500, timeout, columna rota) | Reintenta 1 vez al momento; si sigue: «problema técnico, no es cosa tuya» + liga de la agenda; tarea P1 con el error crudo; reintento automático a los 3 / 15 / 60 min; si queda te confirma solo y cierra la tarea | `agente_agenda_fallo` (con `intentos`), luego `agente_agendo … (reintento N)` |
+| La cita se creó pero Google Calendar no dio liga de Meet | Confirma la cita sin prometer liga («te la mando en un momento») y escala | `agente_agendo` con `sin_meet:true` + tarea P1 |
+| Ya tienes una cita vigente y pides otra | El prompt le muestra la cita vigente: ofrece moverla (liga de reagendar) en vez de duplicar | `citaTexto` en el contexto |
+| Modo sombra y tu número NO es de prueba | No manda nada ni agenda (solo se registra la propuesta) | `ti_sombra` |
+
+Para forzar cada caso desde tu WhatsApp: borra tu correo del contacto (`update contacts set email=null`)
+y elige un horario → caso «sin correo»; da un correo de otro contacto → caso «correo ajeno»;
+pide «hoy en media hora» → caso «< 2 h / ocupado».
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

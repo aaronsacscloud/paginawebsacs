@@ -17,7 +17,7 @@ import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
-import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto } from './agenda-agente';
+import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -77,7 +77,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const [{ msjs, conversationId, telefono }, { data: c }, { data: perfil }] = await Promise.all([
     charla(contactId),
     supabase.from('contacts').select('id, nombre, giro, sucursales_interes, lifecycle_stage, fuente, propiedades, whatsapp, email, company_id').eq('id', contactId).maybeSingle(),
-    supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia').eq('contact_id', contactId).maybeSingle(),
+    supabase.from('ti_perfil').select('etapa_interes, canales, mejor_hora_wa, ultima_respuesta_at, senales, silenciar_ia, agente_estado').eq('contact_id', contactId).maybeSingle(),
   ]);
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
@@ -88,7 +88,13 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     proximaCita(contactId).catch(() => null),
     leerPaginaDelLead(contactId, msjs).catch(() => ''),
   ]);
-  const agenda = `${citaTexto(cita)}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
+  const pend: any = (perfil?.agente_estado as any)?.agenda_pendiente;
+  const pendTxt = pend?.fecha && pend?.hora
+    ? (pend.motivo === 'sin_correo'
+      ? `AGENDA PENDIENTE: el lead YA ELIGIÓ ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] y solo falta su correo. Si en este mensaje lo da (o el CRM ya lo tiene), devuelve accion.tipo="agendar" con ESA fecha/hora y el correo, sin volver a ofrecer horarios. No lo saludes de nuevo.`
+      : `AGENDA PENDIENTE: la cita de ${etiquetaHorario(pend.fecha, pend.hora)} falló por un error técnico nuestro y el sistema la está reintentando; si el lead pregunta, dile que ya casi queda y que el consultor está enterado. No la des por confirmada.`)
+    : '';
+  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}», etapa ${c.lifecycle_stage}, giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? 'desconocido'}, fuente ${c.fuente || 'desconocida'}`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
@@ -376,20 +382,37 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       const acc: any = (e.salida as any)?.accion;
       if (acc?.tipo === 'agendar' && acc.fecha && acc.hora) {
         const { data: c } = await supabase.from('contacts').select('nombre, email, giro, sucursales_interes, referrer_partner_id, companies(nombre)').eq('id', e.contact_id).maybeSingle();
-        const email = acc.email || c?.email;
-        if (!email) { mensaje = mensaje; await log({ accion: 'agente_error', contact_id: e.contact_id, razon: 'agendar sin correo: se mandó el mensaje sin crear la cita' }); }
-        else {
-          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `Agendada por el agente SDR. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
-          if (!r.ok) {
+        const email = String(acc.email || c?.email || '').trim().toLowerCase();
+        const etiqueta = etiquetaHorario(acc.fecha, acc.hora);
+        const { data: pf } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
+        const st: any = { ciclo: 1, toque: 0, ...((pf?.agente_estado as any) || {}) };
+        const guardarSt = (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          // Sin correo NO hay cita (la invitación y el Meet viajan por correo). Se pide, y el horario elegido se recuerda.
+          mensaje = `Para mandarte la invitación con la liga de la videollamada necesito tu correo, ¿me lo pasas? En cuanto lo tenga te dejo apartado el ${etiqueta}.`;
+          await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, motivo: 'sin_correo', desde: ahora.toISOString() } });
+          await log({ accion: 'agente_agenda_sin_correo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { email_dado: acc.email || null } });
+        } else {
+          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `Agendada por el agente SDR. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
+          if (!r.ok && r.ocupado) {
             const otros = await horariosParaDemo({ max: 2 }).catch(() => []);
-            mensaje = r.ocupado
-              ? `Ese horario se acaba de ocupar, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`
-              : 'No pude dejar apartado ese horario ahora mismo; ya le avisé al consultor para que te lo confirme hoy.';
-            await log({ accion: 'agente_agenda_fallo', contact_id: e.contact_id, razon: r.error, detalle: acc });
-            if (!r.ocupado) await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `no se pudo agendar: ${r.error}` } });
+            mensaje = `Ese horario se acaba de ocupar, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`;
+            await guardarSt({ agenda_pendiente: null });
+            await log({ accion: 'agente_agenda_ocupado', contact_id: e.contact_id, razon: r.error, detalle: acc });
+          } else if (!r.ok) {
+            // Error NUESTRO (5xx, timeout): se dice la verdad, se reintenta solo (reintentarAgendas) y el consultor queda avisado con el error crudo.
+            mensaje = `Tuve un problema técnico al apartar el ${etiqueta} (no es cosa tuya). Lo vuelvo a intentar en unos minutos y te confirmo por aquí; si prefieres dejarlo tú, aquí está la agenda: ${LIGA_AGENDA}`;
+            await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, email, motivo: 'error', intentos: 1, error: String(r.error || '').slice(0, 200), desde: ahora.toISOString() } });
+            await log({ accion: 'agente_agenda_fallo', contact_id: e.contact_id, razon: r.error, detalle: { ...acc, intentos: r.intentos } });
+            await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `no se pudo agendar ${etiqueta}: ${r.error}` } });
           } else {
-            await log({ accion: 'agente_agendo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { booking_id: r.booking?.id || null } });
+            await log({ accion: 'agente_agendo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { booking_id: r.booking?.id || null, sin_meet: !!r.sinMeet, intentos: r.intentos } });
             await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ciclo: 1, toque: 0, agendada_at: ahora.toISOString() }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+            if (r.sinMeet) {
+              // La cita existe pero Google Calendar no dio liga: no se promete lo que no hay.
+              mensaje = `${mensaje}\n\nLa liga de la videollamada te la mando por aquí en un momento.`;
+              await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `cita ${etiqueta} creada SIN liga de Meet (Google Calendar falló): mándale la liga` } });
+            }
           }
         }
       } else if (acc?.tipo === 'confirmar_asistencia' && e.conversation_id) {
@@ -607,6 +630,66 @@ export async function aplicarVeredictoSilencio(tarea: any, resultado: string, de
    El evento cae en ti_eventos (cita_no_asistio / cita_cancelada); el agente
    escribe sin reproche y ofrece horarios nuevos o la liga. Segunda vez
    seguida → lo pasa al consultor. */
+/** REINTENTAR AGENDAS: una cita que falló por error nuestro se vuelve a intentar sola (3 min, 15 min, 60 min).
+ *  Si queda, el lead recibe la confirmación por WhatsApp y la tarea del consultor se cierra; si el horario ya
+ *  se ocupó, se le ofrecen otros; a la tercera falla se deja en manos del consultor (la tarea P1 ya existe). */
+export async function reintentarAgendas(): Promise<any> {
+  const cfg: any = await leerConfig();
+  if (cfg.agente_activo !== true) return { reintentos: 'apagado' };
+  const ahora = new Date();
+  const res: any = { revisadas: 0, agendadas: 0, ocupadas: 0, fallidas: 0 };
+  const { data: perfiles } = await supabase.from('ti_perfil').select('contact_id, agente_estado').filter('agente_estado->agenda_pendiente->>motivo', 'eq', 'error').limit(20);
+  const ESPERA_MIN = [3, 15, 60];
+  const { enviarTexto } = await import('../../whatsapp/kapso-api');
+  const { registrarMensaje } = await import('../../whatsapp/espejo');
+  for (const p of perfiles || []) {
+    const st: any = { ciclo: 1, toque: 0, ...((p.agente_estado as any) || {}) };
+    const pend = st.agenda_pendiente; if (!pend?.fecha || !pend?.hora) continue;
+    const intentos = Number(pend.intentos) || 1;
+    const espera = ESPERA_MIN[Math.min(intentos - 1, ESPERA_MIN.length - 1)] * MS_MIN;
+    if (intentos > ESPERA_MIN.length || ahora.getTime() - Date.parse(pend.ultimo_at || pend.desde || 0) < espera) continue;
+    res.revisadas++;
+    const cid = p.contact_id;
+    const { data: c } = await supabase.from('contacts').select('nombre, email, whatsapp, giro, sucursales_interes, referrer_partner_id, companies(nombre)').eq('id', cid).maybeSingle();
+    const email = String(pend.email || c?.email || '').trim().toLowerCase();
+    const telefono = String(c?.whatsapp || '').replace(/\D/g, '');
+    const guardarSt = (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    if (!c || !email || !telefono) { await guardarSt({ agenda_pendiente: null }); continue; }
+    // En sombra solo se actúa con los números de prueba (misma regla que despacharEnvios).
+    if ((cfg.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) continue;
+    const etiqueta = etiquetaHorario(pend.fecha, pend.hora);
+    const r = await agendarDemo({ nombre: c.nombre || 'Lead', email, whatsapp: telefono, fecha: pend.fecha, hora: pend.hora, contactId: cid, empresa: (c as any)?.companies?.nombre || null, giro: c.giro || null, sucursales: c.sucursales_interes || null, partnerId: c.referrer_partner_id || null, notas: 'Agendada por el agente SDR (reintento automático tras un error técnico)' });
+    let texto: string | null = null;
+    if (r.ok) {
+      texto = `Listo, ya quedó apartado el ${etiqueta}. Te llega la invitación a ${email}${r.sinMeet ? ' y la liga de la videollamada te la mando por aquí en un momento' : ' con la liga de la videollamada'}. Si algo se te cruza, avísame por aquí y lo movemos.`;
+      await guardarSt({ agenda_pendiente: null, agendada_at: ahora.toISOString() });
+      await log({ accion: 'agente_agendo', contact_id: cid, razon: `${pend.fecha} ${pend.hora} (reintento ${intentos + 1})`, detalle: { booking_id: r.booking?.id || null, sin_meet: !!r.sinMeet, reintento: true } });
+      // La tarea P1 que abrió el fallo ya no hace falta (salvo que falte la liga de Meet).
+      if (!r.sinMeet) await supabase.from('ti_tareas').update({ estado: 'hecha', resultado: 'agendo_el_agente', resultado_detalle: { automatica: true, razon: `El reintento automático dejó la cita del ${etiqueta}` }, hecho_at: ahora.toISOString(), updated_at: ahora.toISOString() }).eq('contact_id', cid).eq('estado', 'pendiente').eq('tipo', 'responder').filter('payload->>escalado_por_agente', 'eq', 'true');
+      res.agendadas++;
+    } else if (r.ocupado) {
+      const otros = await horariosParaDemo({ max: 2 }).catch(() => []);
+      texto = `Ya pude revisar la agenda y el ${etiqueta} se ocupó mientras lo intentaba, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`;
+      await guardarSt({ agenda_pendiente: null });
+      await log({ accion: 'agente_agenda_ocupado', contact_id: cid, razon: r.error, detalle: { ...pend, reintento: true } });
+      res.ocupadas++;
+    } else {
+      await guardarSt({ agenda_pendiente: { ...pend, intentos: intentos + 1, ultimo_at: ahora.toISOString(), error: String(r.error || '').slice(0, 200) } });
+      await log({ accion: 'agente_agenda_fallo', contact_id: cid, razon: r.error, detalle: { ...pend, intentos: intentos + 1, reintento: true } });
+      res.fallidas++;
+    }
+    if (texto) {
+      try {
+        const env = await enviarTexto(telefono, texto);
+        const wamid = env?.messages?.[0]?.id || env?.id || env?.message_id || null;
+        if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', reintento_agenda: true } });
+        await supabase.from('ti_envios').insert({ contact_id: cid, telefono, origen: 'agenda', estado: 'enviado', mensaje: texto, salida: { estado: 'agendando', accion: { tipo: 'agendar', ...pend }, reintento: true }, sale_at: ahora.toISOString(), enviado_at: ahora.toISOString(), kapso_message_id: wamid });
+      } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `reintento agenda, no salió el aviso: ${err?.message || err}` }); }
+    }
+  }
+  return res;
+}
+
 export async function atenderCitas(): Promise<any> {
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true || !hasApiKey()) return { citas: 'apagado' };

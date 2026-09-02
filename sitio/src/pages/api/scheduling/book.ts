@@ -419,7 +419,8 @@ export const POST: APIRoute = async ({ request }) => {
         sucursales_interes: parseInt(String(sucursales)) || null,
         referrer_partner_id: referrerPartnerId,
         visitor_id: atribucion?.vid || null,
-        page_count: atribucion?.n || null,
+        // NOT NULL con default 0: mandar null aquí tiraba TODA cita sin cookie de atribución (agente SDR, cookies bloqueadas).
+        page_count: Number(atribucion?.n) || 0,
         lead_score: puntaje,
         propiedades: { atribucion: bloqueAttr },
       })
