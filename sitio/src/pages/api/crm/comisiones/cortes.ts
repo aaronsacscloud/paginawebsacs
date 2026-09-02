@@ -8,7 +8,7 @@
 // PUT  {id, accion}         'cerrar' | 'reabrir' | 'pagar' | 'nota'
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { generarCortes, semanaCerrada, semanaEnCurso, proyeccionCorte, ARMADO, fechaDePago, leerCiclo, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
+import { generarCortes, semanaEnCurso, proyeccionCorte, ARMADO, fechaDePago, leerCiclo, pagosNoReconocidos, CORTES_FIRMES } from '../../../../lib/crm/comisiones.cortes';
 
 export const prerender = false;
 const json = (o: any, s = 200) =>
@@ -110,7 +110,7 @@ export const GET: APIRoute = async ({ url }) => {
       cortes: data || [],
       en_formacion: { ...enCurso, hora: ARMADO.hora, consultores: proyeccion },
       ciclo,
-      sugerido: semanaCerrada(new Date(), ciclo),
+      sugerido: { ...enCurso, hora: ARMADO.hora },
       pendientes: (pend || []).map((a: any) => ({
         owner_id: a.owner_id, nombre: a.team_members?.nombre || '—',
         concepto: a.concepto, tipo: a.tipo, monto: Number(a.monto || 0),
@@ -126,10 +126,16 @@ export const POST: APIRoute = async ({ request }) => {
     const b = await request.json().catch(() => ({}));
     if (b.accion && b.accion !== 'generar') return json({ error: 'Acción no reconocida.' }, 400);
 
-    // Sin fechas = el ciclo automático de la semana cerrada.
+    // Sin fechas = el corte QUE SE ESTÁ JUNTANDO, no el ya cerrado.
+    //
+    // Antes usaba `semanaCerrada`, que en miércoles devuelve la semana ANTERIOR
+    // —la que el cron ya armó el lunes—. Desde la pantalla eso no tiene sentido:
+    // el asistente proponía un periodo pasado y el botón de adelantar el corte
+    // creaba el equivocado. `semanaEnCurso` es justo lo que armará el próximo
+    // cron, así que adelantarlo y esperarlo dan el mismo corte.
     const auto = !esFecha(b.desde) || !esFecha(b.hasta);
     const ciclo = await leerCiclo();
-    const s = semanaCerrada(new Date(), ciclo);
+    const s = semanaEnCurso(new Date(), ciclo);
     const desde = auto ? s.desde : b.desde;
     const hasta = auto ? s.hasta : b.hasta;
     if (hasta < desde) return json({ error: 'El rango está al revés.' }, 400);

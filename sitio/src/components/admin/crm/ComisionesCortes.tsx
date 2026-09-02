@@ -21,6 +21,10 @@ const pesos = (n: number) => {
   const v = Math.round(Number(n || 0));
   return (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('es-MX');
 };
+const conDia = (d?: string | null) => d
+  ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: '2-digit', month: 'short' }).replace(/\./g, '')
+  : '—';
+
 const fechaLarga = (d?: string | null) => d
   ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
   : '—';
@@ -65,17 +69,22 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
   const [creandoYa, setCreandoYa] = useState(false);
 
   /**
-   * Recalcula el mes en curso y el anterior — la misma ventana del cron de la
-   * madrugada. Vive aquí porque era lo único de la vista "Periodo" que hacía
-   * falta a diario: el resto de esa pantalla competía con los cortes en vez de
-   * ayudarlos.
+   * Vuelve a calcular EXACTAMENTE lo que mirará el próximo corte: su periodo más
+   * la ventana de rezagadas.
+   *
+   * Antes decía "recalcular el mes" y recalculaba mes en curso más el anterior.
+   * Era el botón heredado de la vista Periodo y no tenía nada que ver con el
+   * ciclo: en una pantalla que habla de semanas, un botón que habla de meses
+   * obliga a preguntarse qué acaba de pasar. Ahora se llama actualizar y su
+   * alcance es el del corte que se está juntando, que es lo que se está mirando.
    */
   async function recalcular() {
-    const h = new Date();
-    const p = (n: number) => String(n).padStart(2, '0');
-    const ini = new Date(h.getFullYear(), h.getMonth() - 1, 1);
-    const desde = `${ini.getFullYear()}-${p(ini.getMonth() + 1)}-01`;
-    const hasta = `${h.getFullYear()}-${p(h.getMonth() + 1)}-${p(h.getDate())}`;
+    const f = d?.en_formacion;
+    if (!f) return;
+    const desde = d?.ciclo?.arrastrar_desde && d.ciclo.arrastrar_desde < f.desde
+      ? d.ciclo.arrastrar_desde : f.desde;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const hasta = f.hasta > hoy ? hoy : f.hasta;
     setRecalculando(true);
     try {
       const r = await fetch('/api/crm/comisiones/periodo', {
@@ -172,9 +181,6 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
         <button onClick={() => setAsistente(true)} style={{ ...E.btn, padding: '10px 18px', fontSize: '0.85rem' }}>Crear nuevo corte</button>
-        <button onClick={recalcular} disabled={recalculando} style={{ ...E.btn2, opacity: recalculando ? 0.6 : 1 }}>
-          {recalculando ? <><Chispas size={10} /> Recalculando…</> : 'Recalcular el mes'}
-        </button>
         {d?.en_formacion && (
           <span style={{ fontSize: '0.82rem', color: P.texto }}>
             Próximo corte: <b>{fechaLarga(d.en_formacion.se_arma_el)}</b> a las {d.en_formacion.hora}
@@ -241,7 +247,7 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
                     {f.nombre}
                     <span style={{ ...E.chip, background: P.violetaAgua, color: P.violetaTinta, marginLeft: 6 }}>en formación</span>
                   </td>
-                  <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(d.en_formacion.desde)} — {fecha(d.en_formacion.hasta)}</td>
+                  <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{conDia(d.en_formacion.desde)} — {conDia(d.en_formacion.hasta)}</td>
                   <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(d.en_formacion.paga_el)}</td>
                   <td style={{ ...E.td, textAlign: 'right' }}>
                     {f.lineas}
@@ -262,11 +268,18 @@ export default function ComisionesCortes({ movil }: { movil: boolean }) {
                   <td style={E.td}>
                     {/* Adelantarlo lo vuelve un corte de verdad, y desde ahí ya
                         se edita como cualquiera: cambiar %, cuenta o ajustes. */}
-                    <button onClick={crearYa} disabled={creandoYa}
-                      title="Créalo ahora con lo que lleva, en vez de esperar al lunes. Queda abierto y editable."
-                      style={{ ...E.btn3, padding: '3px 9px', opacity: creandoYa ? 0.6 : 1 }}>
-                      {creandoYa ? '…' : 'Crear ya'}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <button onClick={crearYa} disabled={creandoYa}
+                        title="Créalo ahora con lo que lleva, en vez de esperar al lunes. Queda abierto y editable."
+                        style={{ ...E.btn3, padding: '3px 9px', opacity: creandoYa ? 0.6 : 1 }}>
+                        {creandoYa ? '…' : 'Crear ya'}
+                      </button>
+                      <button onClick={recalcular} disabled={recalculando}
+                        title="Vuelve a calcular este periodo con los pagos que hayan entrado desde la última madrugada."
+                        style={{ ...E.btn3, padding: '3px 9px', opacity: recalculando ? 0.6 : 1 }}>
+                        {recalculando ? <><Chispas size={9} /> …</> : 'Actualizar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -392,10 +405,14 @@ function Asistente({ sugerido, ciclo, onCerrar, onListo, onError }: {
                 background: esCiclo ? P.violetaAgua : '#fff', borderRadius: 10, cursor: 'pointer', marginBottom: 9 }}>
                 <input type="radio" checked={esCiclo} onChange={() => setModo('ciclo')} style={{ marginTop: 3 }} />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.87rem', color: P.tinta }}>El ciclo configurado</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.87rem', color: P.tinta }}>El corte que se está juntando</div>
                   <div style={{ fontSize: '0.78rem', color: P.suave, marginTop: 2 }}>
-                    {sugerido ? <>Del <b>{sugerido.desde}</b> al <b>{sugerido.hasta}</b>, se paga el <b>{sugerido.paga_el}</b>.</> : 'Calculando…'}
-                    {ciclo && <> Cierra el {DIA_NOMBRE[ciclo.dia_cierre]} y paga {ciclo.dias_a_pago} días después.</>}
+                    {sugerido
+                      ? <>De <b>{conDia(sugerido.desde)}</b> a <b>{conDia(sugerido.hasta)}</b>, se paga el <b>{fechaLarga(sugerido.paga_el)}</b>.
+                          {' '}Es el mismo que se armaría solo el {fechaLarga((sugerido as any).se_arma_el)}: adelantarlo no cambia el resultado.</>
+                      : 'Calculando…'}
+                    {ciclo && <><br />La semana son 7 días y cierra el <b>{DIA_NOMBRE[ciclo.dia_cierre]}</b>, así que empieza el día siguiente
+                      al cierre anterior. Se cambia en Configuración › Comisiones.</>}
                   </div>
                 </div>
               </label>
