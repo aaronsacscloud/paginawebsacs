@@ -177,7 +177,14 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
           <span style={{ transform: popover ? 'rotate(180deg)' : 'none', transition: 'transform .15s', display: 'inline-flex' }}><IcoChevronAbajo size={12} /></span>
         </button>
         <span style={{ flex: 1 }} />
-        <button onClick={() => setBuscando(b => !b)} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: buscando || q ? C.moradoTinta : C.g400 }}><IcoBuscar size={15} /></button>
+        {/* Cerrar la lupa LIMPIA la búsqueda. Antes solo escondía la caja y el
+            término seguía aplicado: la lista se quedaba en una conversación,
+            sin nada en pantalla que dijera por qué, y ni actualizando se
+            quitaba. Si cierras el buscador es que ya terminaste de buscar.
+            (Escape ya lo hacía; el icono no.) */}
+        <button onClick={() => { if (buscando || q) { buscar(''); setBuscando(false); } else setBuscando(true); }}
+          title={buscando || q ? 'Cerrar la búsqueda' : 'Buscar en la lista'}
+          style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: buscando || q ? C.moradoTinta : C.g400 }}><IcoBuscar size={15} /></button>
         <button onClick={() => setModalFiltros(true)}
           style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, color: nCond ? C.moradoTinta : C.g500, padding: 0 }}>
           Filtros{nCond ? ` (${nCond})` : ''}
@@ -194,10 +201,16 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
         )}
         {buscando && (
           <div style={{ position: 'absolute', top: '100%', right: 8, zIndex: 945, width: 256 }}>
-            <input autoFocus value={q} onChange={e => buscar(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Escape') { buscar(''); setBuscando(false); } }}
-              placeholder="Buscar nombre, teléfono o texto…"
-              style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '8px 12px', fontSize: 12, fontFamily: 'inherit', background: '#fff', boxShadow: '0 12px 30px rgba(0,0,0,.12)' }} />
+            <span style={{ position: 'relative', display: 'block' }}>
+              <input autoFocus value={q} onChange={e => buscar(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') { buscar(''); setBuscando(false); } }}
+                placeholder="Buscar nombre, teléfono o texto…"
+                style={{ width: '100%', boxSizing: 'border-box', border: `1px solid ${C.g200}`, borderRadius: 10, padding: '8px 30px 8px 12px', fontSize: 12, fontFamily: 'inherit', background: '#fff', boxShadow: '0 12px 30px rgba(0,0,0,.12)' }} />
+              {q && (
+                <button onClick={() => { buscar(''); setBuscando(false); }} aria-label="Limpiar la búsqueda" title="Limpiar la búsqueda"
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: C.g400, fontSize: 15, lineHeight: 1, padding: '2px 5px', fontFamily: 'inherit' }}>×</button>
+              )}
+            </span>
           </div>
         )}
       </div>

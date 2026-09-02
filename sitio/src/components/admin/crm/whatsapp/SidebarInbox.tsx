@@ -1,7 +1,7 @@
 // WHATSAPP · El sidebar del inbox (portado de sacs_inbox/InboxSidebar):
 // bandejas fijas con border-l activo, ciclo de vida, GRUPOS de vistas custom
 // con acciones que se revelan en hover, colapso a 64px y footer discreto.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { C, L, label } from './estilo';
 import { IcoRayo, IcoInbox, IcoUsuario, IcoUsuarioMas, IcoBurbuja, IcoChevronIzq, IcoChevronDer, IcoOjo, IcoCalendario } from './Iconos';
 import EtapasModal from './EtapasModal';
@@ -92,6 +92,31 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   onGuardarVistaExterna?: (abrir: (cfg: any) => void) => void;
 }) {
   const [subio, setSubio] = useState<Record<string, boolean>>({});
+  /* Lo que llegó MIENTRAS mirabas. Los contadores de las bandejas ya estaban,
+     pero en gris chiquito al final del renglón: un lead escribía y el número
+     pasaba de 2 a 3 sin que nada lo dijera. Aquí se recuerda el valor anterior
+     para poder marcar el que subió. */
+  const previos = useRef<Record<string, number>>({});
+  const [nuevos, setNuevos] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const sig: Record<string, boolean> = {};
+    for (const b of BANDEJAS) {
+      const n = Number((counts as any)[b.id] ?? 0);
+      const antes = previos.current[b.id];
+      if (antes != null && n > antes) sig[b.id] = true;
+      previos.current[b.id] = n;
+    }
+    if (Object.keys(sig).length) {
+      setNuevos(v => ({ ...v, ...sig }));
+      /* Se apaga solo a los 12 s. No al abrir la bandeja: el aviso es «llegó
+         algo», y eso sigue siendo cierto aunque no entres. Lo que sí lo baja
+         es el propio contador, que llega a cero cuando ya contestaste. */
+      const t = setTimeout(() => setNuevos(v => {
+        const q = { ...v }; for (const k of Object.keys(sig)) delete q[k]; return q;
+      }), 12000);
+      return () => clearTimeout(t);
+    }
+  }, [counts]);
   /* Las tres secciones arrancan recogidas: la primera pantalla enseña lo que
      se usa, no todo lo que existe. */
   const [masBandejas, setMasBandejas] = useState(false);
@@ -208,13 +233,25 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         /* La bandeja ACTIVA se enseña siempre, aunque esté en las escondidas:
            si no, eliges «Pospuestas» y el renglón que estás usando desaparece. */
         .filter(b => masBandejas || BANDEJAS_SIEMPRE.includes(b.id) || (!vistaActiva && filtros.filtro === b.id))
-        .map(b => (
+        .map(b => {
+        const n = Number((counts as any)[b.id] ?? 0);
+        /* Estas dos son trabajo SIN ATENDER: alguien escribió y nadie
+           contestó. Su número va en pastilla morada, como una notificación, no
+           en el gris de un dato más. Las otras bandejas son formas de mirar la
+           misma lista y su cuenta no pide nada. */
+        const pendiente = ['no_leidas', 'accion'].includes(b.id) && n > 0;
+        return (
         <button key={b.id} style={fila(!vistaActiva && filtros.filtro === b.id && !filtros.etapa)} onClick={() => bandeja(b.id)}>
           <b.Ico size={16} style={{ color: 'currentColor' }} />
           {b.label}
-          <span style={num}>{(counts as any)[b.id === 'no_leidas' ? 'no_leidas' : b.id] ?? ''}</span>
+          {/* El punto que late: acaba de llegar algo, ahora, mientras mirabas. */}
+          {nuevos[b.id] && <span className="wa-pulso" style={{ width: 7, height: 7, borderRadius: 999, background: C.morado, flexShrink: 0 }} />}
+          <span style={pendiente
+            ? { ...num, background: C.morado, color: '#fff', fontWeight: 800, borderRadius: 999, padding: '1px 8px', fontSize: 10.5 }
+            : num}>{(counts as any)[b.id] ?? ''}</span>
         </button>
-      ))}
+        );
+      })}
       <VerMas abierto={masBandejas} n={BANDEJAS.filter(b => !BANDEJAS_SIEMPRE.includes(b.id)).length}
         onClick={() => setMasBandejas(v => !v)} />
 
