@@ -16,7 +16,7 @@ export const GET: APIRoute = async ({ request }) => {
   const [{ data: pend }, { data: rec }] = await Promise.all([
     supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, created_at')
       .eq('estado', 'pendiente').order('sale_at', { ascending: true }).limit(50),
-    supabase.from('ti_envios').select('id, contact_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, enviado_at, motivo_veto, error, created_at')
+    supabase.from('ti_envios').select('id, contact_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, enviado_at, motivo_veto, error, created_at, editado_por, humano_respuesta, humano_at, veredicto_par')
       .neq('estado', 'pendiente').order('updated_at', { ascending: false }).limit(30),
   ]);
   const ids = [...new Set([...(pend || []), ...(rec || [])].map((x: any) => x.contact_id).filter(Boolean))];
@@ -44,11 +44,25 @@ export const POST: APIRoute = async ({ request }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
   const b = await request.json().catch(() => ({}));
   const { id, accion } = b || {};
-  if (!id || !['vetar', 'editar', 'enviar_ya'].includes(accion)) return json({ error: 'Falta id o la acción no existe' }, 400);
+  if (!id || !['vetar', 'editar', 'enviar_ya', 'par'].includes(accion)) return json({ error: 'Falta id o la acción no existe' }, 400);
   const { data: e } = await supabase.from('ti_envios').select('*').eq('id', id).maybeSingle();
   if (!e) return json({ error: 'No existe ese envío' }, 404);
-  if (e.estado !== 'pendiente') return json({ error: `El envío ya está ${e.estado}` }, 409);
   const ahora = new Date().toISOString();
+  if (accion === 'par') {
+    // El dueño juzga el par agente/humano: cuál debe aprender el agente.
+    const v = String(b.veredicto || '');
+    if (!['humano_mejor', 'agente_mejor', 'empate'].includes(v)) return json({ error: 'Veredicto inválido' }, 400);
+    await supabase.from('ti_envios').update({ veredicto_par: v, updated_at: ahora }).eq('id', id);
+    const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
+    // Los ejemplos dudosos del par se resuelven según el veredicto.
+    await supabase.from('ia_ejemplos').update({ estado_rev: v === 'humano_mejor' ? 'aprobado' : 'rechazado', revisado_at: ahora }).eq('fuente', 'humano_antes').ilike('por_que', `%envio:${id}%`);
+    if (v === 'agente_mejor') {
+      await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: 'El dueño prefirió la respuesta del agente sobre la del consultor', mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: e.mensaje, pulida: e.mensaje, por_que: `Validado por el dueño (par agente/humano · envio:${id}). El consultor había escrito: ${String(e.humano_respuesta || '').slice(0, 200)}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora });
+    }
+    await supabase.from('ia_log').insert({ accion: 'par_veredicto', contact_id: e.contact_id, razon: v, detalle: { envio_id: id, por: user.id } });
+    return json({ ok: true, veredicto: v });
+  }
+  if (e.estado !== 'pendiente') return json({ error: `El envío ya está ${e.estado}` }, 409);
 
   if (accion === 'vetar') {
     await supabase.from('ti_envios').update({ estado: 'vetado', vetado_por: user.id, motivo_veto: String(b.motivo || '').slice(0, 300) || null, updated_at: ahora }).eq('id', id);

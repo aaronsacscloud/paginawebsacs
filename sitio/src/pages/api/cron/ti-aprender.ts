@@ -17,6 +17,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notificar } from '../../../lib/crm/notificaciones';
 import { leerConfig } from '../../../lib/crm/ti/motor';
+import { anthropic, MODELS, hasApiKey } from '../../../lib/ai/client';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -138,6 +139,28 @@ export const GET: APIRoute = async ({ request }) => {
     if (n >= 3 && await proponer('regla_guion', { id: `estado:${est}:${ahora.toISOString().slice(0, 7)}`, estado: est, correcciones: n, muestras: (corr14 || []).filter(c => c.estado === est).slice(0, 3).map(c => c.pulida) }, { n }, 30)) {
       await notificar({ clave: `regla:${est}:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_regla', nivel: 'info', titulo: `${n} correcciones en «${est}» en 14 días: hay una regla que el guion no tiene`, detalle: 'Claude las lee y te propone la redacción de la regla en la próxima sesión; mientras, ya entran como ejemplos.', destino: 'trabajo' });
       res.propuestas.push(`regla_guion:${est}`); res.avisos++;
+    }
+  }
+
+  // ── 4d) PARES AGENTE/HUMANO sin veredicto del dueño: el curador decide cuál enseñar (máx. 20 por noche).
+  //       Si el dueño ya dio veredicto en el panel, se respeta; esto solo cubre los que nadie revisó en 24 h.
+  res.pares = { revisados: 0, humano_mejor: 0, agente_mejor: 0 };
+  if (hasApiKey()) {
+    const { data: pares } = await supabase.from('ti_envios').select('id, contact_id, mensaje, humano_respuesta, salida, created_at')
+      .not('humano_respuesta', 'is', null).is('veredicto_par', null).lt('created_at', hace(1)).order('created_at', { ascending: false }).limit(20);
+    for (const p of pares || []) {
+      try {
+        const r = await anthropic.messages.create({
+          model: MODELS.opus, max_tokens: 300,
+          messages: [{ role: 'user', content: `Eres el curador del agente SDR de Sacscloud (retail de moda). Mismo turno, dos respuestas al lead. Lead dijo: «${String((p.salida as any)?.ultimo_mensaje || '').slice(0, 300)}». Estado del guion: ${(p.salida as any)?.estado || '?'}.\n\nA (agente): ${String(p.mensaje).slice(0, 600)}\n\nB (consultor humano): ${String(p.humano_respuesta).slice(0, 600)}\n\nCriterio: entender antes de vender, reflejar lo que dijo el lead, lenguaje del giro, corto y cálido, sin precios antes de conocer giro/tiendas, sin descuentos ni promesas, no solo un link, avanza hacia llamada o demo cuando toca. Responde SOLO JSON: {"mejor":"A|B|empate","razon":"una línea"}` }],
+        });
+        const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
+        const j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+        const v = j.mejor === 'B' ? 'humano_mejor' : j.mejor === 'A' ? 'agente_mejor' : 'empate';
+        await supabase.from('ti_envios').update({ veredicto_par: `curador:${v}` }).eq('id', p.id);
+        await supabase.from('ia_ejemplos').update({ estado_rev: v === 'humano_mejor' ? 'aprobado' : 'rechazado', revisado_at: ahora.toISOString(), por_que: `Par agente/humano · envio:${p.id} · Curador: ${j.razon || ''}` }).eq('fuente', 'humano_antes').ilike('por_que', `%envio:${p.id}%`);
+        res.pares.revisados++; if (v === 'humano_mejor') res.pares.humano_mejor++; if (v === 'agente_mejor') res.pares.agente_mejor++;
+      } catch { /* siguiente par */ }
     }
   }
 

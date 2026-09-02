@@ -279,6 +279,32 @@ async function guardarMarca(ahora: Date) {
   await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_marca: ahora.toISOString() } }).eq('id', 1);
 }
 
+/** ¿Un HUMANO (no el agente) le escribió al lead después de que nació esta propuesta?
+ *  Si sí, la propuesta no sale (nunca dos voces) y el par agente/humano se guarda
+ *  como material de aprendizaje y de revisión. */
+async function humanoContestoDespues(e: { conversation_id: string | null; contact_id: string | null; created_at: string }): Promise<{ texto: string; at: string } | null> {
+  if (!e.conversation_id) return null;
+  const { data } = await supabase.from('wa_mensajes').select('cuerpo, created_at, metadata, autor')
+    .eq('conversation_id', e.conversation_id).eq('direccion', 'saliente').gt('created_at', e.created_at).is('borrado_at', null)
+    .order('created_at', { ascending: true }).limit(5);
+  const h = (data || []).find(m => (m.metadata as any)?.origen !== 'agente' && m.autor !== 'Agenda');
+  return h ? { texto: String(h.cuerpo || '').trim(), at: h.created_at } : null;
+}
+
+async function guardarParHumano(e: any, h: { texto: string; at: string }, motivo: 'humano_respondio' | 'sombra') {
+  await supabase.from('ti_envios').update({ estado: motivo, humano_respuesta: h.texto, humano_at: h.at, updated_at: new Date().toISOString() }).eq('id', e.id);
+  if (h.texto.length >= 8) {
+    await supabase.from('ia_ejemplos').insert({
+      estado: (e.salida as any)?.estado || 'descubriendo',
+      situacion: motivo === 'humano_respondio' ? 'El consultor contestó antes de que saliera la sugerencia del agente' : 'En sombra: el consultor contestó este turno; el agente había propuesto otra cosa',
+      mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: h.texto, pulida: h.texto,
+      por_que: `Par agente/humano · envio:${e.id} · el agente había propuesto: ${String(e.mensaje).slice(0, 300)}`,
+      fuente: 'humano_antes', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'dudoso',
+    });
+  }
+  await log({ accion: 'agente_superado_por_humano', contact_id: e.contact_id, razon: motivo, contenido: h.texto, detalle: { envio_id: e.id, propuesta: e.mensaje } });
+}
+
 /** Lead caliente: aviso urgente al consultor (una vez por día por lead). */
 async function avisarLeadCaliente(contactId: string, s: SalidaAgente) {
   const { data: ya } = await supabase.from('ia_log').select('id').eq('contact_id', contactId).eq('accion', 'lead_caliente').gt('created_at', new Date(Date.now() - 86400e3).toISOString()).limit(1);
@@ -321,9 +347,14 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   const enSombra = ((cfg.agente_modo || 'sombra') === 'sombra' || !vivoPermitido) && !opts.forzar;
   if (enSombra) {
     // Los teléfonos de PRUEBA sí salen; el resto se marca sombra.
-    const { data: due } = await supabase.from('ti_envios').select('id, telefono').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
+    const { data: due } = await supabase.from('ti_envios').select('id, telefono, conversation_id, contact_id, created_at, mensaje, salida').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
+    for (const e of (due || []).filter(x => !esPrueba(cfg, x.telefono))) {
+      // En sombra la comparación es gratis: si el humano contestó este turno, el par se guarda.
+      const h = await humanoContestoDespues(e);
+      if (h) await guardarParHumano(e, h, 'sombra');
+      else await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() }).eq('id', e.id);
+    }
     const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono)).map(e => e.id);
-    if (noPrueba.length) await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() }).in('id', noPrueba);
     if (!(due || []).some(e => esPrueba(cfg, e.telefono))) return { agente: 'sombra', sombra: noPrueba.length };
   }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
@@ -336,6 +367,9 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     // Si el lead volvió a escribir después de que se propuso, esta respuesta ya no aplica.
     const { data: nuevo } = await supabase.from('ti_eventos').select('id').eq('contact_id', e.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', e.created_at).limit(1);
     if ((nuevo || []).length && !opts.soloId) { await supabase.from('ti_envios').update({ estado: 'reemplazado', updated_at: ahora.toISOString() }).eq('id', e.id); continue; }
+    // Si un HUMANO ya le contestó, el agente calla: nunca dos voces. Y el par se guarda para aprender.
+    const h = await humanoContestoDespues(e);
+    if (h && !opts.soloId) { await guardarParHumano(e, h, 'humano_respondio'); continue; }
     try {
       // La ACCIÓN viaja con el mensaje y se ejecuta al salir (así el veto también la detiene).
       let mensaje = e.mensaje;
