@@ -49,6 +49,8 @@ export async function revisionDiaria(opts: { horas?: number; limite?: number } =
       supabase.from('bookings').select('id').eq('contact_id', cv.contact_id).gte('fecha', dia).in('estado', ['agendada', 'confirmada']).limit(1),
     ]);
     if (pf?.silenciar_ia) continue;
+    const { fueraDelAlcanceSDR } = await import('./agente');
+    if (await fueraDelAlcanceSDR(cv.contact_id)) continue;   // ya tuvo reunión o tiene cotización: es del consultor
     const mensajes = (ms || []).reverse();
     if (!mensajes.some(m => m.direccion === 'entrante' && m.created_at >= desde)) continue;   // sin mensaje del lead ayer no hay qué revisar
     try {

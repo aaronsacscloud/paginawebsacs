@@ -8,7 +8,7 @@ import { ESTILOS_ENVIOS } from './TrabajoEnvios';
  * La RAMPA: 20 veredictos seguidos coincidiendo con la propuesta → descalificar pasa a automático. */
 const ESTADO_L: Record<string, { l: string; c: string }> = {
   seguir: { l: 'Seguir', c: '#14532d' }, bajar_ritmo: { l: 'Bajar ritmo', c: '#B7791F' }, sugerir_descalificar: { l: 'Sugerir descalificar', c: '#b93333' },
-  nutricion: { l: 'Nutrición', c: '#6b6580' }, esperando_reunion: { l: 'Esperando reunión', c: '#5B4BD6' },
+  nutricion: { l: 'Nutrición', c: '#6b6580' }, esperando_reunion: { l: 'Esperando reunión', c: '#5B4BD6' }, con_consultor: { l: 'Con el consultor', c: '#241d43' },
 };
 const fecha = (iso?: string | null) => iso ? new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 const postJ = (url: string, body: any) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(e => ({ error: String(e) }));

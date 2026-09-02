@@ -333,6 +333,13 @@ export async function proponerRespuestas(): Promise<any> {
     const stPrev: any = (p?.agente_estado as any) || {};
     const reconecto = (stPrev.intentos || []).length > 0 || stPrev.fase === 'reconectar';
     await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...stPrev, ciclo: 1, toque: 0, intentos: [], llamada_at: undefined, tarjeta_id: undefined, tarjeta_at: undefined, cerrado: undefined, pausa_hasta: undefined, fase: 'agendar', mensajes_agendar: reconecto ? 0 : (stPrev.mensajes_agendar || 0), reactivado_at: stPrev.cerrado ? ahora.toISOString() : stPrev.reactivado_at }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    // Fuera del alcance del SDR (ya tuvo reunión o tiene cotización): el consultor lleva el hilo; el agente solo avisa.
+    const alcance = await fueraDelAlcanceSDR(cid);
+    if (alcance) {
+      res.saltados++;
+      try { const { texto } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 3600e3).toISOString(), 3); await tareaParaConsultor(cid, alcance, texto); await log({ accion: 'agente_calla', contact_id: cid, razon: `fuera de alcance: ${alcance}` }); } catch { /* nada */ }
+      continue;
+    }
     // ¿Un humano ya contestó después del último mensaje del lead? Entonces el agente calla.
     const { data: sal } = await supabase.from('ti_eventos').select('ocurrio_at, actor').eq('contact_id', cid)
       .in('tipo', ['wa_saliente']).gt('ocurrio_at', ultimoPor[cid]).limit(1);
@@ -725,7 +732,7 @@ async function validarIntentos(intentos: Intento[], ahora: Date): Promise<Intent
    contestar. Estados: seguir (>60) · bajar_ritmo (35–60) · sugerir_descalificar (<35 y ya se agotaron ≥3 intentos
    o la llamada) · nutricion (cerrado). La sugerencia sale a la sección «Calificación» con fundamentos; con RAMPA:
    primero con clic del dueño, y tras 20 coincidencias seguidas entre su veredicto y la propuesta, automático. */
-export type IndiceVida = { indice: number; estado: 'seguir' | 'bajar_ritmo' | 'sugerir_descalificar' | 'nutricion' | 'esperando_reunion'; detalle: any };
+export type IndiceVida = { indice: number; estado: 'seguir' | 'bajar_ritmo' | 'sugerir_descalificar' | 'nutricion' | 'esperando_reunion' | 'con_consultor'; detalle: any };
 export async function calcularIndiceVida(cid: string): Promise<IndiceVida> {
   const [ev, { data: p }, cita, { data: ult }] = await Promise.all([
     evaluarLead(cid),
@@ -745,11 +752,13 @@ export async function calcularIndiceVida(cid: string): Promise<IndiceVida> {
   const castigo = validos * 8 + noEntregadas * 2 + (st.llamada_at && !st.llamada_omitida ? 8 : 0);
   const indice = Math.max(0, Math.min(100, icpPts + convPts + recPts + senalPts - castigo));
   let estado: IndiceVida['estado'] = 'seguir';
-  if (cita) estado = 'esperando_reunion';
+  const alcance = await fueraDelAlcanceSDR(cid);
+  if (alcance) estado = 'con_consultor';
+  else if (cita) estado = 'esperando_reunion';
   else if (st.cerrado) estado = 'nutricion';
   else if (indice < 35 && (validos >= 3 || st.llamada_at)) estado = 'sugerir_descalificar';
   else if (indice <= 60) estado = 'bajar_ritmo';
-  const detalle = { icp: ev.icp, conversacion: ev.conversacion, razones: ev.razones, dias_sin_respuesta: dias == null ? null : Math.round(dias * 10) / 10, intentos_validos: validos, intentos_no_entregados: noEntregadas, llamada: !!st.llamada_at, puntos: { icp: icpPts, conversacion: convPts, recencia: recPts, senales: senalPts, castigo }, cita: !!cita };
+  const detalle = { alcance, icp: ev.icp, conversacion: ev.conversacion, razones: ev.razones, dias_sin_respuesta: dias == null ? null : Math.round(dias * 10) / 10, intentos_validos: validos, intentos_no_entregados: noEntregadas, llamada: !!st.llamada_at, puntos: { icp: icpPts, conversacion: convPts, recencia: recPts, senales: senalPts, castigo }, cita: !!cita };
   return { indice, estado, detalle };
 }
 
@@ -798,6 +807,25 @@ export async function calificarLeads(opts: { limite?: number } = {}): Promise<an
   return res;
 }
 
+/** ALCANCE DEL SDR (decisión del dueño, 2026-09-02): el agente acompaña HASTA agendar la demo o la llamada discovery.
+ *  Cuando el lead ya TUVO su reunión (asistió) o ya tiene una COTIZACIÓN, el seguimiento es del consultor:
+ *  el agente no propone, no toca ni prepara nada; si el lead escribe, abre tarea para el consultor. */
+export async function fueraDelAlcanceSDR(contactId: string): Promise<null | 'reunion_hecha' | 'cotizacion'> {
+  const [{ data: reu }, { data: cot }] = await Promise.all([
+    supabase.from('bookings').select('id').eq('contact_id', contactId).eq('estado', 'asistio').limit(1),
+    supabase.from('quotes').select('id').eq('contact_id', contactId).not('estado', 'in', '("deleted","plantilla")').limit(1),
+  ]);
+  if ((reu || []).length) return 'reunion_hecha';
+  if ((cot || []).length) return 'cotizacion';
+  return null;
+}
+async function tareaParaConsultor(cid: string, motivo: string, ultimoTexto: string) {
+  const { data: abierta } = await supabase.from('ti_tareas').select('id').eq('contact_id', cid).eq('estado', 'pendiente').eq('tipo', 'responder').limit(1);
+  if ((abierta || []).length) return;
+  const { data: cc } = await supabase.from('contacts').select('nombre, whatsapp, owner_id, company_id').eq('id', cid).maybeSingle();
+  await supabase.from('ti_tareas').insert({ contact_id: cid, company_id: cc?.company_id || null, owner_id: cc?.owner_id || null, familia: 'responder', tipo: 'responder', prioridad: 2, vence_at: new Date().toISOString(), origen: 'evento', payload: { instruccion: `${String(cc?.nombre || 'El lead').split(/\s+/)[0]} escribió — ${motivo === 'reunion_hecha' ? 'ya tuvo su reunión' : 'ya tiene cotización'}: te toca a ti`, porque: 'Fuera del alcance del agente SDR: después de la reunión o con cotización, el seguimiento es del consultor.', nombre: cc?.nombre, whatsapp: cc?.whatsapp, entrante: String(ultimoTexto || '').slice(0, 300), alcance: motivo } });
+}
+
 export async function tocarSilencios(): Promise<any> {
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { silencio: 'apagado' };
@@ -829,6 +857,7 @@ export async function tocarSilencios(): Promise<any> {
     if (st.agenda_pendiente?.motivo === 'error') continue;
     // Con cita vigente NO hay toques de silencio (decisión S3): lo llevan los recordatorios; si el lead pregunta, se le contesta normal.
     if (await proximaCita(cid).catch(() => null)) { res.con_cita = (res.con_cita || 0) + 1; continue; }
+    if (await fueraDelAlcanceSDR(cid)) { res.con_consultor = (res.con_consultor || 0) + 1; continue; }
     const prueba = esPrueba(cfg, ultimo[cid].telefono);
     const sombra = sombraGlobal && !prueba;          // los de prueba viven el flujo completo
     if (!laboral && !prueba) continue;                // fuera de horario solo se mueven las pruebas
@@ -1099,6 +1128,7 @@ export async function prepararDemos(): Promise<any> {
       supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'preparacion').filter('salida->>booking_id', 'eq', b.id).limit(1),
     ]);
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || p?.silenciar_ia || !['lead', 'oportunidad', 'lead_calificado'].includes(c.lifecycle_stage) || (ya || []).length) continue;
+    if (await fueraDelAlcanceSDR(cid)) continue;
     res.revisadas++;
     const temas: any[] = Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion : [];
     const nota = `MENSAJE DE PREPARACIÓN: mañana es su demo (${etiquetaHorario(String(b.fecha), String(b.hora_inicio).slice(0, 5))}). Escribe UN mensaje corto y natural: desde el interés por conocer su catálogo para que la demo sea muy específica con lo suyo, pídele —si lo tiene— su Excel de inventario, o tres productos con sus tallas y colores. Sin presión ni tono de tarea; si no lo tiene, no pasa nada. ${temas.length ? `Ya está anotado que quiere ver: ${temas.map(t => t.tema).join(', ')}; puedes mencionarlo en una línea.` : ''} No saludes como si fuera la primera vez. No devuelvas accion.`;
@@ -1130,6 +1160,7 @@ export async function atenderCitas(): Promise<any> {
       supabase.from('ti_eventos').select('id').eq('contact_id', cid).in('tipo', ['cita_no_asistio', 'cita_cancelada']).lt('ocurrio_at', e.ocurrio_at).gt('ocurrio_at', new Date(ahora.getTime() - 45 * 86400e3).toISOString()).limit(2),
     ]);
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || p?.silenciar_ia || !['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltadas++; continue; }
+    if (await fueraDelAlcanceSDR(cid)) { res.saltadas++; continue; }
     // Si el lead MOVIÓ la cita él mismo (liga de reagendar), la vieja queda «cancelada» pero hay una nueva vigente: no es una cancelación.
     if (e.tipo === 'cita_cancelada' && await proximaCita(cid).catch(() => null)) { res.saltadas++; continue; }
     const { data: ya } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'cita').gt('created_at', e.ocurrio_at).limit(1);

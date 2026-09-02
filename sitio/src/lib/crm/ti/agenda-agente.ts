@@ -70,11 +70,25 @@ export const horariosTexto = (hs: Horario[]) => hs.length
 
 /** Horarios reales para la LLAMADA DISCOVERY (15 min): desde las 11:00, próximos 4 días, dos opciones distintas. */
 export async function horariosParaLlamada(opts: { mejorHora?: number | null } = {}): Promise<Horario[]> {
-  const todos = await horariosParaDemo({ slug: 'llamada-discovery', dias: 4, max: 8, mejorHora: opts.mejorHora ?? null });
-  return todos.filter(h => Number(h.hora.slice(0, 2)) >= 11).slice(0, 2);
+  // Regla del dueño: siempre con ≥ 2 h de anticipación y a partir de las 11:00 de HOY o de MAÑANA (no más lejos).
+  const todos = await horariosParaDemo({ slug: 'llamada-discovery', dias: 1, max: 12, mejorHora: opts.mejorHora ?? null });
+  const ahoraCdmx = Date.now() - 6 * 3600e3;
+  const hoy = new Date(ahoraCdmx).toISOString().slice(0, 10);
+  const minutosAhora = (ahoraCdmx % 86400e3) / 60000;
+  const ok = todos.filter(h => {
+    const [hh, mm] = h.hora.split(':').map(Number);
+    if (hh < 11) return false;
+    if (h.fecha === hoy && hh * 60 + mm < minutosAhora + 120) return false;   // ≥ 2 h de anticipación
+    return true;
+  });
+  // Primero lo de hoy, luego lo de mañana; dos opciones distintas.
+  ok.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  const out: Horario[] = [];
+  for (const h of ok) { if (out.length >= 2) break; if (!out.some(o => o.fecha === h.fecha && o.hora === h.hora)) out.push(h); }
+  return out;
 }
 export const llamadaTexto = (hs: Horario[]) => hs.length
-  ? `LLAMADA RÁPIDA (15 min, la hace el consultor): horarios reales ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Ofrécela cuando el lead no responde sobre el horario de la demo, cuando pide hablar con alguien, o como tercer ángulo del seguimiento. Si acepta uno, devuelve accion.tipo="agendar_llamada" con esa fecha y hora (necesita correo, igual que la demo).`
+  ? `LLAMADA RÁPIDA (15 min, la hace el consultor; solo hoy o mañana, desde las 11:00 y con al menos 2 h de anticipación): horarios reales ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Ofrécela cuando el lead no responde sobre el horario de la demo, cuando pide hablar con alguien, o como tercer ángulo del seguimiento. Si acepta uno, devuelve accion.tipo="agendar_llamada" con esa fecha y hora (necesita correo, igual que la demo).`
   : '';
 
 /** Crea la demo por el agendador real. Devuelve la reunión o el error legible.
