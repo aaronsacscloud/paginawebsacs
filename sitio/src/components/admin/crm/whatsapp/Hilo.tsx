@@ -830,28 +830,12 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
             )}
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           </>)}
-          {/* Agendar, a un toque y en los dos anchos: en el teléfono abre la
-              hoja de acciones y en escritorio el panel lateral, que escuchan
-              el mismo evento. Antes había que pasar por «Cotizar o agendar» y
-              elegir otra vez. */}
-          <button onClick={() => { setAbierto(false); document.dispatchEvent(new CustomEvent('wa-acciones', { detail: 'agendar' })); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '9px 14px', fontSize: movil ? 15 : 12, color: C.g700 }}>Agendar reunión</button>
-          {/* E9 · Cerrar el ciclo sin salir del hilo. */}
-          <button onClick={() => setRecordar(v => !v)}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '12px 20px' : '9px 14px', fontSize: movil ? 15 : 12, color: C.g700 }}>
-            Recuérdame si no contesta
-          </button>
-          {recordar && (
-            <span className="menu-sub" style={{ display: 'block', background: C.g50 }}>
-              {[{ l: 'Mañana', d: () => aLas9(1) }, { l: 'En 2 días', d: () => aLas9(2) }, { l: 'La próxima semana', d: elLunes }].map(o => (
-                <button key={o.l} onClick={() => recordarme(o.d(), o.l.toLowerCase())}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '12px 20px 12px 34px' : '8px 14px 8px 26px', fontSize: movil ? 14.5 : 12, color: C.moradoTinta, fontWeight: 600 }}>
-                  {o.l}
-                </button>
-              ))}
-              {avisoRec && <span style={{ display: 'block', padding: movil ? '4px 20px 10px' : '2px 14px 8px', fontSize: 11.5, color: C.g500 }}>{avisoRec}</span>}
-            </span>
-          )}
+          {/* «Agendar reunión» salió de aquí: es el mismo botón que ya está en
+              la barra del composer, y también estaba en la columna derecha.
+              Tres caminos al mismo sitio no dan más opciones, dan la duda de si
+              hacen lo mismo. «Recuérdame si no contesta» salió por lo mismo que
+              lo demás: el menú tenía nueve cosas y solo tres se usan.
+              Decisión del dueño (2-sep-2026). */}
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
           {!movil && !!notas && (
             <button onClick={() => { setAbierto(false); onVerNotas?.(); }}
@@ -895,33 +879,11 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
           <a href={`/api/crm/whatsapp/exportar?id=${conv.id}`} download onClick={() => setAbierto(false)}
             style={{ display: 'block', padding: movil ? '13px 20px' : '9px 12px', fontSize: movil ? 15 : 12, color: C.g700, fontWeight: movil ? 500 : 600, textDecoration: 'none' }}>Exportar conversación (.txt)</a>
           <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
-          {/* SACAR DEL INBOX. Nació para los números propios —el del CRM y el
-              de pruebas encabezaban «Sin respuesta», porque nadie le contesta a
-              un robot— pero sirve igual para lo que no es un lead: el cliente
-              de un cliente preguntando de facturación. Se llamaba «Marcar como
-              interna», que no es lo que busca quien quiere quitarse un chat de
-              encima. No borra ni bloquea: la conversación queda en la bandeja
-              «Fuera del inbox» y vuelve con un clic. */}
-          <button onClick={async () => {
-            setAbierto(false);
-            const r = await api.accionKapso?.({ accion: 'interna', valor: !conv.interna });
-            if (r?.error) alert(r.error); else api.refrescar?.();
-          }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>
-            {conv.interna ? 'Regresar al inbox' : 'Sacar del inbox (no es trabajo)'}
-          </button>
-          <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />
-          <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'resincronizar' }); if (r?.error) alert(r.error); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.g700 }}>Enviar datos del CRM a Kapso</button>
-          {/bloqueado/i.test(conv.alerta || '') ? (
-            <button onClick={async () => { setAbierto(false); const r = await api.accionKapso?.({ accion: 'desbloquear' }); if (r?.error) alert(r.error); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.emerald700, fontWeight: 700 }}>Desbloquear número</button>
-          ) : (
-            <button onClick={async () => { setAbierto(false); if (!await confirmar('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
+          {/* Se quedaron solo tres: posponer, exportar y bloquear.
+              Fuera: «Sacar del inbox», «Enviar datos del CRM a Kapso» y
+              «Eliminar chat y todo su historial». */}
+          <button onClick={async () => { setAbierto(false); if (!await confirmar('¿Bloquear este número en WhatsApp? Dejará de poder escribirte y la conversación se marca como spam.')) return; const r = await api.accionKapso?.({ accion: 'bloquear' }); if (r?.error) alert(r.error); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Bloquear número (spam)</button>
-          )}
-          <button onClick={async () => { setAbierto(false); if (!await confirmar('Se eliminan en Kapso y en el CRM todos los mensajes, media, notas y llamadas de este número (borrado GDPR). NO se puede deshacer.\n\nSi solo quieres quitártelo de encima, usa «Sacar del inbox», que sí se revierte.\n\n¿Eliminar de todos modos?')) return; const r = await api.accionKapso?.({ accion: 'gdpr' }); if (r?.error) alert(r.error); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: movil ? '13px 20px' : '7px 12px', fontSize: movil ? 15 : 12, color: C.rojo700 }}>Eliminar chat y todo su historial</button>
         </span>
       )}
     </span>
@@ -1045,13 +1007,14 @@ function MinutaCard({ item }: { item: any }) {
  *  máxima prioridad) y, si quieres, sale ahora como continuación natural. */
 function PanelMejorar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCerrar: () => void }) {
   const [texto, setTexto] = useState('');
+  const [criterio, setCriterio] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [listo, setListo] = useState('');
   const envioId = mensaje?.metadata?.envio_id || null;
   const guardar = async (enviar: boolean) => {
     if (texto.trim().length < 2 || ocupado) return;
     setOcupado(true);
-    const r = await fetch('/api/crm/ti/correccion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ envio_id: envioId, respuesta: texto.trim(), situacion: 'Corrección desde el inbox sobre un mensaje ya enviado del agente' }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
+    const r = await fetch('/api/crm/ti/correccion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ envio_id: envioId, respuesta: texto.trim(), criterio: criterio.trim() || undefined, situacion: 'Corrección desde el inbox sobre un mensaje ya enviado del agente' }) }).then(x => x.json()).catch(e => ({ error: String(e) }));
     if (r?.error) { setListo('No se guardó: ' + r.error); setOcupado(false); return; }
     if (enviar && api?.enviarTexto) await api.enviarTexto(texto.trim());
     setListo(enviar ? 'Guardado como ejemplo y enviado.' : 'Guardado como ejemplo: el agente lo usa desde el siguiente mensaje de ese estado.');
@@ -1065,6 +1028,8 @@ function PanelMejorar({ mensaje, api, onCerrar }: { mensaje: any; api: any; onCe
         <div style={{ fontSize: 13, color: '#374151', margin: '6px 0 10px', background: '#f3f4f6', borderRadius: 10, padding: '8px 12px', whiteSpace: 'pre-wrap' }}>{String(mensaje?.cuerpo || '').slice(0, 600)}</div>
         <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>Escribe cómo debió responder. Queda como ejemplo del agente para este tipo de momento{envioId ? '' : ' (mensaje sin envío ligado: se guarda igual como ejemplo)'}.</div>
         <textarea autoFocus value={texto} onChange={e => setTexto(e.target.value)} rows={4} placeholder="Tu versión…" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 12px', font: 'inherit', fontSize: 14, lineHeight: 1.45, resize: 'vertical' }} />
+        <div style={{ fontSize: 12, color: '#6b7280', margin: '8px 0 4px' }}>Qué debe considerar el agente (opcional): la regla detrás de tu cambio, para que aprenda el criterio y no solo el texto.</div>
+        <textarea value={criterio} onChange={e => setCriterio(e.target.value)} rows={2} placeholder="Ej.: si hace varias preguntas, contéstalas todas en un solo mensaje y cierra con una sola pregunta" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: 10, padding: '8px 10px', fontFamily: 'inherit', fontSize: 13 }} />
         {listo && <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: listo.startsWith('No') ? '#7f1d1d' : '#14532d' }}>{listo}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
           <button disabled={ocupado || texto.trim().length < 2} onClick={() => guardar(false)} style={{ border: 'none', background: '#4c1d95', color: '#fff', borderRadius: 10, padding: '9px 14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Solo aprender</button>

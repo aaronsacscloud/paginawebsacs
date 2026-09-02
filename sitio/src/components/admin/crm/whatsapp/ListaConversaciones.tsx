@@ -202,6 +202,27 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
         )}
       </div>
 
+      {/* ══ LO QUE ESTÁ FILTRANDO, A LA VISTA ═══════════════════════════
+          Un filtro suelto o una búsqueda dejaban la lista en una o dos
+          conversaciones mientras el menú de la izquierda seguía diciendo
+          «Todas 278». La única pista era un «Filtros (2)» en letra chica y una
+          lupa un poco más morada — y desde ahí se lee como que la pantalla se
+          trabó, no como que hay un filtro puesto. Ahora se dice, y se quita de
+          un clic. */}
+      {(q || nCond > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 12px 8px', padding: '7px 11px', borderRadius: 9, background: C.moradoSuave, border: `1px solid ${C.moradoAgua}` }}>
+          <span style={{ fontSize: 11.5, color: C.moradoTinta, fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {q ? <>Buscando «{q}»</> : null}
+            {q && nCond > 0 ? ' · ' : null}
+            {nCond > 0 ? <>{nCond} filtro{nCond > 1 ? 's' : ''} puesto{nCond > 1 ? 's' : ''}</> : null}
+          </span>
+          <button onClick={() => { buscar(''); setBuscando(false); setFiltrosAdHoc(null); }}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta, textDecoration: 'underline', textUnderlineOffset: 3, padding: 0, flexShrink: 0 }}>
+            Ver todas
+          </button>
+        </div>
+      )}
+
       {/* Chips de estado: activo NEGRO */}
       <div style={{ display: 'flex', gap: 6, padding: '2px 12px 8px' }}>
         {chips.map(c => (

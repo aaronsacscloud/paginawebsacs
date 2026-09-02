@@ -182,6 +182,17 @@ export default function InboxPro() {
   const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
   useEffect(() => { paginasRef.current = 1; filtroCambio.current = true; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 
+  /* Elegir una bandeja o una vista es decir «enséñame esto». Los filtros
+     sueltos del panel se quedaban puestos por encima y la lista seguía
+     mostrando una conversación mientras el menú decía 278: se leía como que la
+     pantalla se trabó. La búsqueda NO se toca aquí — esa sí se ve en su barra
+     y a veces se busca dentro de una bandeja a propósito. */
+  const primerRender = useRef(true);
+  useEffect(() => {
+    if (primerRender.current) { primerRender.current = false; return; }
+    setFiltrosAdHoc(null);
+  }, [filtros.filtro, filtros.etapa, vistaActiva?.id]);
+
   const activaRef = useRef(activa); activaRef.current = activa;
   // Última marca de tiempo conocida por conversación (E2.2). Empieza vacío a
   // propósito: en la primera carga no se avisa de nada, solo se toma la foto.
