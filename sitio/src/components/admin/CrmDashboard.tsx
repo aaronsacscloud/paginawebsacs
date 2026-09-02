@@ -509,14 +509,14 @@ export default function CrmDashboard() {
     history.replaceState(null, '', url.toString());
   };
 
-  // El inbox de WhatsApp quiere TODA la pantalla: al entrar, el menú se
+  // El inbox de WhatsApp y Trabajo inteligente quieren TODA la pantalla: al entrar, el menú se
   // pliega solo y al salir vuelve como estaba. Solo escritorio (en móvil ya
   // se pliega con cada cambio de tab). Si el usuario lo expande a mano dentro
   // del inbox, se respeta: esto solo actúa en la TRANSICIÓN de tab.
   const colapsoPrevio = useRef<boolean | null>(null);
   useEffect(() => {
     if (isMobile) return;
-    if (tab === 'whatsapp') {
+    if (tab === 'whatsapp' || tab === 'trabajo') {
       if (colapsoPrevio.current === null) {
         colapsoPrevio.current = sidebarCollapsed;
         setSidebarCollapsed(true);
