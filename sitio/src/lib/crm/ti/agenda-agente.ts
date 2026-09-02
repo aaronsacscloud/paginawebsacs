@@ -27,7 +27,7 @@ export const etiquetaHorario = (fecha: string, hora: string) => fmt(fecha, hora)
 export const LIGA_AGENDA = `${BASE}/agendar/demo`;
 
 /** Los mejores horarios libres para una demo en los próximos días (hora CDMX). */
-export async function horariosParaDemo(opts: { slug?: string; dias?: number; mejorHora?: number | null; max?: number } = {}): Promise<Horario[]> {
+export async function horariosParaDemo(opts: { slug?: string; dias?: number; mejorHora?: number | null; max?: number; horaMin?: number } = {}): Promise<Horario[]> {
   const slug = opts.slug || 'demo', dias = opts.dias || 6, max = opts.max || 4;
   const hoy = new Date(Date.now() - 6 * 3600e3); // fecha CDMX
   const from = hoy.toISOString().slice(0, 10);
@@ -46,7 +46,7 @@ export async function horariosParaDemo(opts: { slug?: string; dias?: number; mej
       const [h, m] = hora.split(':').map(Number);
       // Hoy: solo lo que empieza en más de 2 horas. Horario comercial: 9–18.
       if (fecha === from && h * 60 + m < ahoraLocalMin + 120) continue;
-      if (h < 9 || h >= 18) continue;
+      if (h < (opts.horaMin ?? 9) || h >= 18) continue;
       let puntaje = pts ? puntuar(pts, fecha, hora) : 0.5;
       if (opts.mejorHora != null && Math.abs(h - opts.mejorHora) <= 1) puntaje += 0.25;   // la hora en que ESE lead contesta
       if (fecha === from) puntaje -= 0.1;                                                  // hoy mismo suele fallar
@@ -71,7 +71,7 @@ export const horariosTexto = (hs: Horario[]) => hs.length
 /** Horarios reales para la LLAMADA DISCOVERY (15 min): desde las 11:00, próximos 4 días, dos opciones distintas. */
 export async function horariosParaLlamada(opts: { mejorHora?: number | null } = {}): Promise<Horario[]> {
   // Regla del dueño: siempre con ≥ 2 h de anticipación y a partir de las 11:00 de HOY o de MAÑANA (no más lejos).
-  const todos = await horariosParaDemo({ slug: 'llamada-discovery', dias: 1, max: 12, mejorHora: opts.mejorHora ?? null });
+  const todos = await horariosParaDemo({ slug: 'llamada-discovery', dias: 1, max: 12, mejorHora: opts.mejorHora ?? null, horaMin: 11 });
   const ahoraCdmx = Date.now() - 6 * 3600e3;
   const hoy = new Date(ahoraCdmx).toISOString().slice(0, 10);
   const minutosAhora = (ahoraCdmx % 86400e3) / 60000;
