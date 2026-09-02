@@ -94,6 +94,14 @@ Cada cosa que el lead dice que quiere ver en la demo la anota el agente (con la 
 en la descripción del evento de Google Calendar de la próxima cita, así el consultor la ve al abrir la reunión.
 Prueba: di «también quiero ver cómo manejan el e-commerce» → aparece el tema en el panel y en el evento.
 
+## Imágenes: la galería del agente
+
+En Próximos envíos, abajo, está **Galería del agente**: sube una imagen (o pega su URL) y dile *qué muestra* y
+*cuándo conviene mandarla*. El agente la ve en su prompt y la manda solo cuando aporta (máximo una por mensaje,
+nunca dos seguidas). En cada envío pendiente ves si sale con imagen y por qué la eligió; puedes cambiarla,
+quitarla o adjuntar otra, y eso queda como ejemplo. Prueba: sube la tabla de precios con «cuándo: pide precio»
+y pide precio desde tu WhatsApp.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

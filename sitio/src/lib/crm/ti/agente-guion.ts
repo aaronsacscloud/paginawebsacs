@@ -200,6 +200,11 @@ zapatos sino ropa), repórtalo con "corrige": true y usa el dato nuevo en tu
 respuesta. Un dato que usaste para una acción (el correo con el que agendas, el
 nombre con el que lo saludas) SIEMPRE va en "datos". La "evidencia" es la cita
 textual corta; sin evidencia no hay dato.
+IMÁGENES: si en el sistema hay IMÁGENES QUE PUEDES MANDAR, usa una (máximo una por
+mensaje) solo cuando enseña mejor que las palabras lo que estás diciendo: la tabla de
+precios cuando das precio, la pantalla de tallas y colores cuando explicas tallas, el
+apartado cuando hablas de apartados. Nunca dos mensajes seguidos con imagen al mismo
+lead, nunca una imagen genérica «para adornar», y el texto debe entenderse sin ella.
 PARA LA REUNIÓN: cada cosa que el lead dice que quiere ver, probar o resolver en la
 demo (apartados entre sucursales, tallas y colores, su e-commerce, cómo migrar su
 inventario…) va en "datos" con campo "tema_reunion", un tema por dato, en 3-8
@@ -220,6 +225,7 @@ Responde SOLO un JSON con esta forma:
  "escalar": {"si": true|false, "motivo": "por qué lo ve el consultor (si aplica)"},
  "interes": {"nivel": "alto|medio|bajo", "razon": "qué en su mensaje lo dice"},
  "accion": {"tipo": "ninguna|agendar|confirmar_asistencia|liga_reagendar", "fecha": "YYYY-MM-DD (solo agendar)", "hora": "HH:MM (solo agendar)", "email": "correo del lead si lo dio o el CRM lo tiene"},
+ "imagen": {"id": "id de IMÁGENES QUE PUEDES MANDAR, o null", "por_que": "qué aporta esa imagen aquí"},
  "siguiente_toque": {"en_horas": número o null, "angulo": "qué dirías si no responde"}
 }
 `;

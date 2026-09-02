@@ -20,6 +20,7 @@ import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
 import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
+import { galeriaActiva, galeriaTexto, resolverImagen, contarUso } from './imagenes-agente';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -37,6 +38,7 @@ export const esPrueba = (cfg: any, telefono?: string | null) => {
 export const factorPrueba = (cfg: any) => Math.max(1, Number(cfg?.agente_prueba_factor) || 60);
 
 export type SalidaAgente = {
+  imagen?: { id: string; url?: string; nombre?: string; por_que?: string } | null;
   estado: string; objetivo: string; mensaje: string; responder: boolean;
   datos?: { campo: string; valor: string; confianza: number; evidencia?: string }[];
   escalar?: { si: boolean; motivo?: string };
@@ -63,14 +65,14 @@ async function charla(contactId: string, limite = 30) {
 }
 
 async function ejemplosAprobados(estado?: string) {
-  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que').eq('estado_rev', 'aprobado').order('created_at', { ascending: false }).limit(60);
+  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id').eq('estado_rev', 'aprobado').order('created_at', { ascending: false }).limit(60);
   const { data } = await q;
   if (!(data || []).length) return '';
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
   const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
   return '\n\nEJEMPLOS APROBADOS POR EL DUEÑO (así se contesta; imita el criterio, no el texto):\n'
-    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); return `[${e.estado}] Lead: ${e.situacion}\nNosotros: ${e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}`; }).join('\n---\n');
+    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); return `[${e.estado}] Lead: ${e.situacion}\nNosotros: ${e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}${e.imagen_id ? `\n(con imagen de la galería: ${e.imagen_id})` : ''}`; }).join('\n---\n');
 }
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
@@ -85,10 +87,11 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
   const ultimo = [...msjs].reverse().find(m => m.direccion === 'entrante');
   const memoria = memoriaConversacion(msjs, c.nombre);
-  const [horarios, cita, pagina] = await Promise.all([
+  const [horarios, cita, pagina, galeria] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
     proximaCita(contactId).catch(() => null),
     leerPaginaDelLead(contactId, msjs).catch(() => ''),
+    galeriaActiva().catch(() => []),
   ]);
   const pend: any = (perfil?.agente_estado as any)?.agenda_pendiente;
   const pendTxt = pend?.fecha && pend?.hora
@@ -103,7 +106,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
-    system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}`,
+    system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}${galeriaTexto(galeria, c.giro)}`,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
@@ -112,6 +115,9 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
   if (salida) {
     salida.ultimo_mensaje = String(ultimo?.cuerpo || ultimo?.transcript || '').slice(0, 300);
+    // La imagen solo vale si existe en la galería (y una por mensaje).
+    const img = galeria.find(i => i.id === salida.imagen?.id);
+    salida.imagen = img ? { id: img.id, url: img.url, nombre: img.nombre, por_que: String(salida.imagen?.por_que || '').slice(0, 160) } : null;
     // La acción de agendar solo vale si el horario existe de verdad en la lista ofrecida.
     if (salida.accion?.tipo === 'agendar') {
       const ok = horarios.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));
@@ -282,7 +288,7 @@ export async function proponerRespuestas(): Promise<any> {
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       await supabase.from('ti_envios').insert({
         contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'pendiente',
-        mensaje: s.mensaje.trim(), salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+        mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
       });
       await log({ accion: 'agente_propone', contact_id: cid, contenido: s.mensaje, costo: d.costo, razon: s.objetivo, detalle: { estado: s.estado, interes: s.interes, ventana_min: ventana } });
       res.propuestos++;
@@ -408,7 +414,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         try {
           const d = await decidirTurno(e.contact_id, 'LA AGENDA CAMBIÓ después de tu propuesta anterior: el lead movió, creó o canceló la cita por su cuenta. Mira la CITA VIGENTE de arriba y responde a su último mensaje de acuerdo con eso; si ya la movió él, confírmasela con día y hora, sin ofrecer horarios ni pedirle nada más. No lo saludes de nuevo.');
           if (d.salida?.mensaje && d.salida.responder && d.telefono) {
-            await supabase.from('ti_envios').insert({ contact_id: e.contact_id, conversation_id: d.conversationId, telefono: d.telefono, origen: e.origen, estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, reconsiderado: true }, sale_at: new Date(ahora.getTime() + Math.max(0, Number(cfg.agente_veto_min ?? 10)) * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+            await supabase.from('ti_envios').insert({ contact_id: e.contact_id, conversation_id: d.conversationId, telefono: d.telefono, origen: e.origen, estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, salida: { ...d.salida, reconsiderado: true }, sale_at: new Date(ahora.getTime() + Math.max(0, Number(cfg.agente_veto_min ?? 10)) * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
           }
         } catch (err: any) { await log({ accion: 'agente_error', contact_id: e.contact_id, razon: `reconsiderar: ${err?.message || err}` }); }
         continue;
@@ -470,11 +476,25 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         plantillaUsada = pl.marketing || pl.utility;
         r = await enviarPlantilla(e.telefono, plantillaUsada!, 'es_MX', pl.params || []);
         mensaje = `[plantilla ${plantillaUsada}] ${pl.params?.[1] || mensaje}`;
+      } else if ((e as any).imagen_url) {
+        // Con imagen: si el texto cabe como pie (≤1024), va junto; si no, primero el texto y luego la imagen.
+        const { enviarMediaLink } = await import('../../whatsapp/kapso-api');
+        if (mensaje.length <= 1024) {
+          r = await enviarMediaLink(e.telefono, 'image', (e as any).imagen_url, undefined, mensaje);
+        } else {
+          r = await enviarTexto(e.telefono, mensaje);
+          const w1 = r?.messages?.[0]?.id || null;
+          if (w1) await registrarMensaje({ kapsoMessageId: w1, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
+          r = await enviarMediaLink(e.telefono, 'image', (e as any).imagen_url);
+          mensaje = '';
+        }
+        await contarUso((e as any).imagen_id);
       } else {
         r = await enviarTexto(e.telefono, mensaje);
       }
       const wamid = r?.messages?.[0]?.id || null;
-      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
+      if (wamid) await registrarMensaje({ kapsoMessageId: wamid, telefono: e.telefono, direccion: 'saliente', tipo: (e as any).imagen_url ? 'image' : 'text', cuerpo: mensaje || null, mediaUrl: (e as any).imagen_url || null, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null, imagen_id: (e as any).imagen_id || null } });
+      if (!mensaje) mensaje = e.mensaje;
       await supabase.from('ti_envios').update({ estado: 'enviado', enviado_at: ahora.toISOString(), kapso_message_id: wamid, mensaje, updated_at: ahora.toISOString(),
         // Marketing primero: a los 10 min se revisa si Meta la entregó; si no, sale la utility.
         ...(e.plantilla && (e.plantilla as any).marketing && plantillaUsada === (e.plantilla as any).marketing ? { fallback_at: new Date(ahora.getTime() + 10 * MS_MIN).toISOString(), fallback_estado: 'pendiente' } : {}) }).eq('id', e.id);
@@ -589,7 +609,7 @@ export async function tocarSilencios(): Promise<any> {
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
       const primer = String(c.nombre || 'Hola').trim().split(/\s+/)[0];
-      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null });
       await guardar({ base_at: new Date(base).toISOString(), toque: st.toque + 1, ultimo_toque_at: ahora.toISOString(), angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
       await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `toque ${st.toque + 1}/3 ciclo ${st.ciclo}`, costo: d.costo });
@@ -779,7 +799,7 @@ export async function atenderCitas(): Promise<any> {
       if (!d.salida?.mensaje || !d.telefono) { res.saltadas++; continue; }
       if (d.salida.escalar?.si) await escalarAlHumano(cid, d.salida);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
-      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cita', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, evento: e.tipo }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'cita', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, salida: { ...d.salida, evento: e.tipo }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
       await log({ accion: 'agente_cita', contact_id: cid, razon: e.tipo, contenido: d.salida.mensaje, costo: d.costo });
       res.atendidas++;
     } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `cita: ${err?.message || err}` }); }
