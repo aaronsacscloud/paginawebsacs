@@ -50,7 +50,20 @@ export default function DrawerSecuencia({ abierto, onCerrar, secuenciaId, nombre
 
   return (
     <Sheet open={abierto} onClose={onCerrar} title="La secuencia" width={520}>
-      {error && <div style={{ padding: 18, fontSize: 13, color: C.g500 }}>{error}</div>}
+      {/* Que «ya no existe» no se lea como una falla del sistema: pasa de
+          verdad —una secuencia se borra y sus notas se quedan— y la nota sigue
+          sirviendo como registro de lo que se le mandó al cliente. */}
+      {error && (
+        <div style={{ padding: '18px 2px', fontSize: 13.5, color: '#3a3357', lineHeight: 1.6 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>{error}</div>
+          {/no existe/i.test(error) && (
+            <div style={{ color: C.g500, fontSize: 12.5 }}>
+              La borraron después de que este contacto pasó por ella. El comentario del hilo se queda a propósito:
+              es el registro de lo que se le mandó en su momento{nombre ? <> —la secuencia se llamaba <b>{nombre}</b>—</> : null}.
+            </div>
+          )}
+        </div>
+      )}
       {!d && !error && <div style={{ padding: 18, fontSize: 13, color: C.g400 }}>Cargando…</div>}
       {d && s && (
         <div style={{ padding: '4px 2px 24px' }}>
