@@ -310,7 +310,7 @@ export async function proponerRespuestas(): Promise<any> {
     if (!['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltados++; continue; }   // clientes: no es asunto del SDR
     if (p?.silenciar_ia || (p?.do_not_contact_hasta && Date.parse(p.do_not_contact_hasta) > ahora.getTime())) { res.saltados++; continue; }
     // Un lead que escribe reinicia su reloj de silencio; si venía de nutrición, se reactiva.
-    await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ciclo: 1, toque: 0, reactivado_at: (p?.agente_estado as any)?.cerrado ? ahora.toISOString() : undefined }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+    await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...((p?.agente_estado as any) || {}), ciclo: 1, toque: 0, cerrado: undefined, pausa_hasta: undefined, reactivado_at: (p?.agente_estado as any)?.cerrado ? ahora.toISOString() : (p?.agente_estado as any)?.reactivado_at }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
     // ¿Un humano ya contestó después del último mensaje del lead? Entonces el agente calla.
     const { data: sal } = await supabase.from('ti_eventos').select('ocurrio_at, actor').eq('contact_id', cid)
       .in('tipo', ['wa_saliente']).gt('ocurrio_at', ultimoPor[cid]).limit(1);
@@ -665,7 +665,8 @@ export async function tocarSilencios(): Promise<any> {
     if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
     // Una cita atorada por error nuestro la lleva reintentarAgendas; un lead CON cita vigente lo llevan los recordatorios. Aquí no se le insiste.
     if (st.agenda_pendiente?.motivo === 'error') continue;
-    if (st.agendada_at && await proximaCita(cid).catch(() => null)) continue;
+    // Con cita vigente NO hay toques de silencio (decisión S3): lo llevan los recordatorios; si el lead pregunta, se le contesta normal.
+    if (await proximaCita(cid).catch(() => null)) { res.con_cita = (res.con_cita || 0) + 1; continue; }
     const prueba = esPrueba(cfg, ultimo[cid].telefono);
     const sombra = sombraGlobal && !prueba;          // los de prueba viven el flujo completo
     if (!laboral && !prueba) continue;                // fuera de horario solo se mueven las pruebas

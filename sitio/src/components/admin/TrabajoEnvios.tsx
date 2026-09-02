@@ -96,7 +96,7 @@ export const ESTILOS_ENVIOS = `
 export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: () => void } = {}) {
   const [pend, setPend] = useState<Envio[]>([]);
   const [rec, setRec] = useState<Envio[]>([]);
-  const [cfg, setCfg] = useState<{ agente_activo: boolean; veto_min: number; modo?: string; pruebas?: string[] } | null>(null);
+  const [cfg, setCfg] = useState<{ agente_activo: boolean; veto_min: number; modo?: string; pruebas?: string[]; sin_credito_desde?: string | null } | null>(null);
   const [apr, setApr] = useState<Aprendizaje | null>(null);
   const [edit, setEdit] = useState<Record<string, string>>({});
   const [corr, setCorr] = useState<Record<string, string>>({});
@@ -172,6 +172,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
           </div>
           <h2 className="ti-h">Próximos envíos del agente</h2>
           <p className="ti-porque"><b>Aprobar</b> lo manda ya y pasa al siguiente. Si lo <b>editas</b>, tu versión sale y queda como ejemplo para ese estado. <b>Detener</b> lo cancela y el motivo también enseña. Si no lo tocas, sale solo al vencer la ventana.</p>
+          {cfg?.sin_credito_desde && <div className="ti-banner err" style={{ position: 'static', marginTop: 10 }}><b>Se acabaron los tokens de IA</b><span>La cuenta de Anthropic rechazó las llamadas desde {new Date(cfg.sin_credito_desde).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}. El agente no propone respuestas hasta que se recargue crédito (console.anthropic.com → Plans &amp; Billing).</span></div>}
           {cfg?.modo !== 'vivo' && cfg?.agente_activo && <p className="ti-porque ti-sombra-nota">Modo sombra: solo se mandan los envíos a los números de prueba; el resto queda registrado como «habría salido así».</p>}
         </div>
 

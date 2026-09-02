@@ -34,10 +34,14 @@ export const GET: APIRoute = async ({ request }) => {
   ]);
   const { galeriaActiva } = await import('../../../../lib/crm/ti/imagenes-agente');
   const galeria = await galeriaActiva().catch(() => []);
+  // Si la API de IA rechazó por crédito en la última hora, la pantalla lo dice tal cual (no un mensaje genérico).
+  const { data: sinCred } = await supabase.from('ia_log').select('created_at, razon').or('razon.ilike.%credit balance%,razon.ilike.%billing%,razon.ilike.%insufficient_quota%').gte('created_at', new Date(Date.now() - 60 * 60e3).toISOString()).order('created_at', { ascending: false }).limit(1);
+  const { data: okDesp } = (sinCred || []).length ? await supabase.from('ia_log').select('created_at').eq('accion', 'agente_propone').gt('created_at', sinCred![0].created_at).limit(1) : { data: [] as any[] };
+  const sin_credito_desde = (sinCred || []).length && !(okDesp || []).length ? sinCred![0].created_at : null;
   return json({
     galeria,
     pendientes: (pend || []).map(decorar), recientes: (rec || []).map(decorar),
-    config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10), modo: cfg.agente_modo || 'sombra', pruebas: cfg.agente_prueba_telefonos || [] },
+    config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10), modo: cfg.agente_modo || 'sombra', pruebas: cfg.agente_prueba_telefonos || [], sin_credito_desde },
     aprendizaje: { ejemplos_dueno: ejemplosDueno || 0, ejemplos_7d: ejemplos7 || 0, vetos_7d: vetos7 || 0, ediciones_7d: ediciones7 || 0, ultimos: ultimos || [] },
   });
 };
