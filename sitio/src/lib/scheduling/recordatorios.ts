@@ -155,8 +155,14 @@ export function textoWhatsApp(b: DatosReunion, anticipacion?: string): string {
 }
 
 /** Los datos que necesita la plantilla de correo. Mismos campos, mismo orden. */
-export function datosEmail(b: DatosReunion, anticipacion?: string) {
+export function datosEmail(b: DatosReunion, anticipacion?: string, faltaMin?: number) {
+  /* ¿Este correo es de los que PREPARAN la sesión? Misma regla que el
+     WhatsApp: con una hora o más todavía da tiempo de contestar y de que
+     nosotros preparemos algo; diez minutos antes, pedirle a alguien que te
+     cuente su operación llega tarde para los dos. */
+  const prepara = Number.isFinite(Number(faltaMin)) ? Number(faltaMin) >= CORTE_PREP_MIN : false;
   return {
+    prepara,
     nombre: b.invitee_nombre || '',
     /* `fecha` a secas es lo que LEE la plantilla booking_reminder (asunto,
        HTML y texto plano). Pasar solo `fecha_larga` dejaba el correo sin

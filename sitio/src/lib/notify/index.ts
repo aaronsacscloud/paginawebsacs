@@ -649,10 +649,18 @@ Agenda tu sesión de configuración: ${d.agendar_url || ''}`,
         </div>
         ${d.confirmar_url ? `<a href="${d.confirmar_url}" style="display:inline-block;background:#1A8F7A;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem;margin-right:8px">✓ Confirmo mi asistencia</a>` : ''}
         ${d.reagendar_url ? `<a href="${d.reagendar_url}" style="display:inline-block;background:#fff;color:#555;border:1px solid #ddd;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Reagendar</a>` : ''}
+        ${d.prepara ? `
+        <div style="background:#f7f5ff;border:1px solid #e6e2f3;padding:16px;border-radius:8px;margin:20px 0 0;font-size:0.875rem;color:#3f3b4d;line-height:1.55">
+          <div style="font-weight:700;margin-bottom:6px">Para que te sirva de verdad</div>
+          <div style="color:#555">Antes de vernos, cuéntanos cómo trabajas hoy: cuántas tiendas manejas, con qué vendes y qué es lo que más te complica del día.</div>
+          <div style="color:#555;margin-top:8px">Puedes <strong>responder este correo</strong> o, si se te hace más fácil, mandarnos una <strong>nota de voz por WhatsApp</strong> al mismo número por el que te escribimos.</div>
+          <div style="color:#555;margin-top:8px">Con eso preparamos la sesión sobre tu operación y te enseñamos justo lo que te resuelve, en vez de una demo genérica.</div>
+        </div>` : ''}
         <p style="color:#999;font-size:0.75rem;margin-top:24px">Si no puedes asistir, reagenda con el botón de arriba — nos ayuda mucho más que un no-show 🙂</p>
       </div>
     `,
-    text: `Recordatorio: ${d.evento || 'reunión'} con SACS el ${d.fecha} a las ${d.hora} (CDMX).${d.meet_link ? ' Meet: ' + d.meet_link : ''}${d.reagendar_url ? ' Reagendar: ' + d.reagendar_url : ''}`,
+    text: `Recordatorio: ${d.evento || 'reunión'} con SACS el ${d.fecha} a las ${d.hora} (CDMX).${d.meet_link ? ' Meet: ' + d.meet_link : ''}${d.reagendar_url ? ' Reagendar: ' + d.reagendar_url : ''}`
+      + (d.prepara ? `\n\nPara que te sirva de verdad, cuéntanos antes cómo trabajas hoy: cuántas tiendas manejas, con qué vendes y qué es lo que más te complica del día. Puedes responder este correo o mandarnos una nota de voz por WhatsApp.` : ''),
   }),
   booking_noshow: (d) => ({
     subject: `Te esperamos y no llegaste 😢 — reagendemos tu ${d.evento || 'demo'} de SACS`,

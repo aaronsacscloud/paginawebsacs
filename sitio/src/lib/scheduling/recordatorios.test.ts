@@ -280,6 +280,20 @@ es(leerHorarioEnvio({ desde: '09:30', hasta: '17:00', tarde: 'mover' }),
 es(cuandoMandar(NaN, 60), null, 'sin inicio, no se manda');
 es(cuandoMandar(R('2026-09-10', '15:00'), NaN), null, 'sin anticipación, no se manda');
 
+
+// ── El correo lleva el MISMO trato que el WhatsApp ───────────────────────
+// Los dos canales tienen que decir lo mismo: si el WhatsApp de un día antes
+// pide contexto, el correo de ese mismo recordatorio también.
+const bReu: any = { fecha: '2026-09-10', hora_inicio: '15:00', invitee_nombre: 'Natalia',
+  event_types: { nombre: 'Reunión de consultoría', duracion_minutos: 60 } };
+cierto(datosEmail(bReu, '1 día', 1440).prepara, 'un día antes: el correo pide contexto');
+cierto(datosEmail(bReu, '3 horas', 180).prepara, 'tres horas antes: también');
+cierto(!datosEmail(bReu, '10 minutos', 10).prepara, 'diez minutos antes: el correo NO pide nada');
+cierto(!datosEmail(bReu, '1 día').prepara, 'sin faltante no se pide: en la duda, no se estorba');
+// El mismo corte que la plantilla de WhatsApp, para que no se contradigan.
+es(datosEmail(bReu, 'x', 60).prepara, plantillaCliente(60) === PLANTILLA_CLIENTE_PREP, 'correo y WhatsApp usan el mismo corte');
+es(datosEmail(bReu, 'x', 59).prepara, plantillaCliente(59) === PLANTILLA_CLIENTE_PREP, 'y también del otro lado del corte');
+
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }
 console.log('  todo bien\n');

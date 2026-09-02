@@ -995,12 +995,14 @@ export const WIKI: PaginaWiki[] = [
 <p>Son <b>dos mensajes distintos</b>, según cuánto falte.</p>
 <p>Los que van con tiempo —<b>1 día</b> y <b>3 horas</b> antes— además de recordar le piden contexto: cuántas tiendas maneja, con qué vende y qué es lo que más le complica. Y le ofrecen mandarlo en <b>nota de voz</b>, que es como la gente lo cuenta de verdad. Con eso llegas a la sesión con algo hecho a su medida en vez de una demo genérica.</p>
 <p>El de <b>10 minutos</b> antes no pide nada: solo recuerda y da la liga. Pedirle a alguien que te cuente su operación diez minutos antes llega tarde para él y para ti.</p>
+<p>El <b>correo</b> de ese mismo recordatorio lleva el mismo trato: los de con tiempo traen el bloque que pide contexto —ahí el cliente puede responder el correo directo o mandar la nota de voz por WhatsApp— y el de encima no.</p>
 <div class="w-caja"><span class="w-k">El corte</span><p>Una hora. De ahí para arriba pide contexto; de ahí para abajo, no. Si configuras un recordatorio a 45 minutos, ese sale corto.</p></div>
 
 <h3>Los recordatorios solo salen en horario laboral</h3>
 <p>De <b>8:00 a 18:00</b>, hora del centro de México. Un aviso a las 6 de la mañana o a las 11 de la noche no lo lee nadie — y sí quema la conversación.</p>
 <p>Lo que <b>cae antes de abrir</b> se recorre a las 8:00: el recordatorio de «3 horas» de una reunión de las 9:00 caería a las 6 de la mañana, así que sale a las 8:00. Y entonces <b>dice la verdad</b>: el cliente lee «es en 1 hora», no «es en 3 horas».</p>
 <p>Lo que <b>cae después de cerrar</b> no se manda. Eso tiene un costo que conviene tener claro: una reunión de las 7 de la noche <b>pierde</b> su recordatorio de un día antes, porque caería a las 7 de la noche del día anterior. Si prefieres que en vez de perderse se adelante a las 6, se cambia en la misma pantalla.</p>
+<p>La ventana rige <b>los dos canales</b>, no solo WhatsApp: si a esa hora no tiene sentido mandar, tampoco sale el correo.</p>
 <div class="w-caja"><span class="w-k">Dónde se cambia</span><p><b>Reuniones ▸ Editar un tipo ▸ Avisos al cliente ▸ «A qué horas se pueden mandar»</b>. La ventana es <b>global</b>: aplica a todos los tipos de reunión, aunque se edite desde uno.</p></div>
 
 <h3>Un cambio de horario ya no se contesta solo</h3>
@@ -1010,6 +1012,33 @@ export const WIKI: PaginaWiki[] = [
 <p>El acuse automático del inbox («Te leo 👋»), la respuesta con horarios, el botón de reagendar, las secuencias de seguimiento, la cobranza de suscripciones vencidas y el copiloto de IA. <b>Encender cualquiera es una decisión tuya</b>, y se hace sin desplegar nada.</p>
 <div class="w-caja"><span class="w-k">Dónde se prende y se apaga</span><p><b>WhatsApp ▸ el engrane del inbox ▸ «Qué escribe solo por WhatsApp»</b>. Cada renglón dice por qué está como está. Lo que apagues ahí deja de poder enviar en menos de un minuto.</p></div>
 <p>Fuera de esta lista quedan, a propósito, los mensajes que manda una <b>persona</b>: el inbox, las campañas y lo que dejas programado. Esto gobierna lo que sale solo.</p>`,
+  },
+  {
+    id: 'wa-manejo', grupo: 'Referencia', titulo: 'Cómo se maneja esto',
+    bajada: 'Dónde se toca cada cosa y qué haces cuando pasa algo.',
+    cuerpo: `
+<p>Todo lo de la página anterior se maneja desde <b>dos pantallas</b>. Ninguna pide desplegar nada: lo que cambies ahí cambia el comportamiento en menos de un minuto.</p>
+
+<table><tr><th>Qué quieres cambiar</th><th>Dónde</th></tr>
+<tr><td>Prender o apagar una automatización</td><td>WhatsApp ▸ el <b>engrane</b> del inbox ▸ «Qué escribe solo por WhatsApp»</td></tr>
+<tr><td>Cuánto antes salen los recordatorios y por qué canal</td><td>Reuniones ▸ <b>Editar</b> un tipo ▸ Avisos al cliente</td></tr>
+<tr><td>El horario en que se pueden mandar</td><td>Ahí mismo ▸ «A qué horas se pueden mandar» — es <b>global</b></td></tr>
+<tr><td>Qué plantilla usa el primer mensaje</td><td>Se guarda con la automatización «Primer mensaje al contacto»</td></tr></table>
+
+<h3>Lo que tienes que atender tú</h3>
+<div class="w-caja"><span class="w-k">«Un cliente pidió reagendar»</span><p>Llega como alerta porque la respuesta automática está pausada a propósito. <b>Ábrelo en el inbox y contéstale.</b> Nadie más lo va a hacer: el sistema ya no le manda liga ni horarios.</p></div>
+<div class="w-caja"><span class="w-k">Una nota de voz</span><p>Los recordatorios que salen con tiempo le piden al cliente que cuente cómo trabaja, y muchos van a contestar con audio. <b>Escúchalo antes de la sesión</b> — es lo que hace que llegues con algo preparado en vez de una demo genérica. El inbox transcribe los audios.</p></div>
+<div class="w-caja"><span class="w-k">«Los leads nuevos no están recibiendo WhatsApp»</span><p>Significa que la plantilla que usa el primer mensaje dejó de estar aprobada en Meta. Da de alta una nueva y apúntala en la configuración. <b>Meta no deja editar</b> el texto de una plantilla ya aprobada: se crea otra —por ejemplo <code>nombre_v2</code>— y se cambia cuál se usa.</p></div>
+
+<h3>Cuando algo no salió</h3>
+<p>El sistema <b>avisa</b> cuando un mensaje no sale; no hay que estarlo revisando. Si aun así falta un aviso, revísalo en este orden:</p>
+<p>1. ¿La automatización está <b>encendida</b> en la lista de permitidos?<br />
+2. ¿La hora en que tocaba caía <b>fuera de 8:00–18:00</b>? Ese recordatorio no se manda a propósito.<br />
+3. ¿La <b>plantilla</b> sigue aprobada en Meta? Una plantilla rechazada tumba el WhatsApp, no el correo.<br />
+4. ¿El cliente pidió <b>no recibir</b> WhatsApp? El opt-out manda sobre todo lo demás.</p>
+
+<h3>Los dos canales dicen lo mismo</h3>
+<p>El correo y el WhatsApp de un mismo recordatorio salen <b>juntos y con el mismo trato</b>: si el WhatsApp de un día antes pide contexto, el correo de ese recordatorio también lo pide —con la diferencia de que ahí puedes responder el correo directo—. Y el horario de 8:00 a 18:00 aplica a los dos: el candado está antes de que se separen los canales.</p>`,
   },
   {
     id: 'wa-candados', grupo: 'Referencia', titulo: 'Los candados de WhatsApp',

@@ -197,7 +197,10 @@ export const GET: APIRoute = async ({ request }) => {
         if (r.email && b.invitee_email && !(await yaAvisado(b.id, r.id, 'email'))) {
           const res = await notify({
             channel: 'email', to: b.invitee_email, template: 'booking_reminder',
-            data: { ...datosEmail(b, cuanto), serie: etiquetaSerie(b) },
+            /* `faltaMin` decide si el correo lleva el bloque que PREPARA la
+               sesión: la misma regla que el WhatsApp, para que los dos canales
+               digan lo mismo. */
+            data: { ...datosEmail(b, cuanto, faltaMin), serie: etiquetaSerie(b) },
           });
           if (res.ok) {
             const marcado = await marcarAvisado(b, r.id, 'email', cuanto);
