@@ -13,6 +13,14 @@ import AjustesWA from './AjustesWA';
 import type { Filtros } from './InboxPro';
 import { confirmar } from '../../../../lib/ui/confirmar';
 
+/* Al abrir el inbox se ven TRES bandejas, no ocho.
+   Con las ocho —más diez etapas y dieciocho vistas— la primera pantalla eran
+   treinta y seis renglones apretados, y treinta y seis opciones no son treinta
+   y seis caminos: son ninguno. Estas tres son las que se usan a diario; el
+   resto sigue a un clic de «Ver más», no escondido.
+   Decisión del dueño (2-sep-2026). */
+const BANDEJAS_SIEMPRE = ['todas', 'no_leidas', 'sin_respuesta'];
+
 const BANDEJAS = [
   { id: 'accion', label: 'Requiere mi acción', Ico: IcoRayo },
   { id: 'todas', label: 'Todas', Ico: IcoInbox },
@@ -32,12 +40,27 @@ const BANDEJAS = [
 const fila = (activo: boolean): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  padding: '6px 12px', fontSize: 13, fontWeight: activo ? 700 : 500,
+  /* Más aire: 6px hacía que doce renglones se leyeran como un bloque gris.
+     Con 9px cada uno se distingue y la lista deja de parecer una tabla. */
+  padding: '9px 12px', fontSize: 13.5, fontWeight: activo ? 700 : 500,
   background: activo ? C.moradoSuave : 'transparent',
   color: activo ? C.moradoTinta : C.g700,
   borderLeft: activo ? `2px solid ${C.morado}` : '2px solid transparent',
 });
 const num: React.CSSProperties = { marginLeft: 'auto', fontSize: 11, color: C.g400, fontVariantNumeric: 'tabular-nums' };
+
+/** «Ver más (4)» / «Ver menos» — el mismo en las tres secciones. */
+function VerMas({ abierto, n, onClick }: { abierto: boolean; n: number; onClick: () => void }) {
+  if (!n) return null;
+  return (
+    <button onClick={onClick}
+      style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', border: 'none', background: 'none',
+        cursor: 'pointer', fontFamily: 'inherit', padding: '6px 12px 8px', fontSize: 11.5, fontWeight: 700, color: C.g400, textAlign: 'left' }}>
+      <span style={{ display: 'inline-block', transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>›</span>
+      {abierto ? 'Ver menos' : `Ver ${n} más`}
+    </button>
+  );
+}
 
 export function useCamposFiltro(equipo: any[]): CampoFiltro[] {
   const { cat } = useCatalogoEtiquetas();
@@ -69,6 +92,10 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
   onGuardarVistaExterna?: (abrir: (cfg: any) => void) => void;
 }) {
   const [subio, setSubio] = useState<Record<string, boolean>>({});
+  /* Las tres secciones arrancan recogidas: la primera pantalla enseña lo que
+     se usa, no todo lo que existe. */
+  const [masBandejas, setMasBandejas] = useState(false);
+  const [masEtapas, setMasEtapas] = useState(false);
   const [colapsado, setColapsado] = useState(false);
   const [secciones, setSecciones] = useState<any[]>([]);
   const [vistas, setVistas] = useState<any[]>([]);
@@ -177,13 +204,19 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
         <button onClick={() => setColapsado(true)} title="Colapsar" style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.g400, padding: 4 }}><IcoChevronIzq size={15} /></button>
       </div>
 
-      {BANDEJAS.map(b => (
+      {BANDEJAS
+        /* La bandeja ACTIVA se enseña siempre, aunque esté en las escondidas:
+           si no, eliges «Pospuestas» y el renglón que estás usando desaparece. */
+        .filter(b => masBandejas || BANDEJAS_SIEMPRE.includes(b.id) || (!vistaActiva && filtros.filtro === b.id))
+        .map(b => (
         <button key={b.id} style={fila(!vistaActiva && filtros.filtro === b.id && !filtros.etapa)} onClick={() => bandeja(b.id)}>
           <b.Ico size={16} style={{ color: 'currentColor' }} />
           {b.label}
           <span style={num}>{(counts as any)[b.id === 'no_leidas' ? 'no_leidas' : b.id] ?? ''}</span>
         </button>
       ))}
+      <VerMas abierto={masBandejas} n={BANDEJAS.filter(b => !BANDEJAS_SIEMPRE.includes(b.id)).length}
+        onClick={() => setMasBandejas(v => !v)} />
 
       <div className="wa-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 5px' }}>
@@ -194,7 +227,14 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
           </button>
         </div>
-        {etapas.map(e => {
+        {(() => {
+          /* Hasta «Cliente» y ya: de ahí para abajo son etapas de salida
+             —perdido, descalificado, rezagado— que se consultan, no se
+             vigilan. La activa se enseña siempre aunque esté abajo. */
+          const corte = etapas.findIndex(e => e.id === 'cliente');
+          const visiblesN = corte >= 0 ? corte + 1 : etapas.length;
+          return etapas.filter((e, i) => masEtapas || i < visiblesN || vistaActiva?.id === `etapa:${e.id}`);
+        })().map(e => {
           const activaEtapa = vistaActiva?.id === `etapa:${e.id}`;
           return (
             <button key={e.id} style={fila(activaEtapa)}
@@ -206,6 +246,12 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
             </button>
           );
         })}
+
+        {(() => {
+          const corte = etapas.findIndex(e => e.id === 'cliente');
+          const ocultas = corte >= 0 ? etapas.length - (corte + 1) : 0;
+          return <VerMas abierto={masEtapas} n={ocultas} onClick={() => setMasEtapas(v => !v)} />;
+        })()}
 
         {/* ── VISTAS: header fijo con acciones visibles + tabs Todas/Mías/Equipo ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '16px 12px 4px' }}>
@@ -221,6 +267,11 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
               style={{ border: 'none', background: tabVistas === v ? C.g900 : 'transparent', color: tabVistas === v ? '#fff' : C.g400, borderRadius: 999, padding: '2px 9px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
           ))}
         </div>
+        {/* Las vistas viven en su PROPIA caja con scroll: son dieciocho y, en
+            fila con las bandejas y las etapas, empujaban todo lo demás fuera de
+            la pantalla. Se ven tres —y un pedazo de la cuarta, para que se note
+            que hay más— y el resto se alcanza rodando aquí dentro. */}
+        <div className="wa-scroll" style={{ maxHeight: 152, overflowY: 'auto' }}>
         {[{ id: null, emoji: null, nombre: null } as any, ...secciones].map(sec => {
           const base = vistasDe(sec.id).filter(v =>
             tabVistas === 'todas' ? true : tabVistas === 'mias' ? (!v.owner_id || v.owner_id === yo?.id) : (v.owner_id && v.owner_id !== yo?.id));
@@ -254,6 +305,7 @@ export default function SidebarInbox({ counts, filtros, setFiltros, vistaActiva,
             </div>
           );
         })}
+        </div>
       </div>
 
       <div style={{ borderTop: `1px solid ${C.g100}`, padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>

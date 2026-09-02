@@ -256,16 +256,28 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
               style={{
                 display: 'flex', gap: 10, width: '100%', textAlign: 'left', border: 'none',
                 borderBottom: `1px solid ${C.g50}`, cursor: 'pointer', fontFamily: 'inherit',
-                padding: '11px 12px', alignItems: 'flex-start',
+                /* Más aire por renglón: con 11px cabían trece conversaciones en
+                   pantalla y entrar al inbox era encontrarse un muro. Con 17px
+                   caben la mitad, cada una se distingue y el resto sigue a un
+                   scroll. Decisión del dueño (2-sep-2026). */
+                padding: '17px 14px', alignItems: 'flex-start',
                 background: activa ? 'rgba(238,236,254,.6)' : resuelta ? 'rgba(249,250,251,.4)' : '#fff',
                 borderLeft: activa ? `3px solid ${C.morado}` : '3px solid transparent',
               }}>
               <Avatar nombre={c.contacto?.nombre} telefono={String(c.telefono || '?')} canal={canal as any} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <b style={{ fontSize: 13, color: resuelta ? C.g400 : C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+                  <b style={{ fontSize: 13.5, color: resuelta ? C.g400 : C.g900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
                     {c.contacto?.nombre || c.telefono}
                   </b>
+                  {/* El nombre viene del perfil de WhatsApp, no del CRM: se
+                      enseña —es mejor que un número pelón— pero se dice de
+                      dónde salió. No es lo mismo un nombre que alguien capturó
+                      que el que el cliente puso en su teléfono. */}
+                  {c.contacto?.de_perfil && (
+                    <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
+                      style={{ fontSize: 9, fontWeight: 700, background: C.emerald50, color: C.emerald700, borderRadius: 999, padding: '1px 6px', flexShrink: 0 }}>de WhatsApp</span>
+                  )}
                   {c.estado_crm === 'pendiente' && <span style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '1px 6px' }}>Pendiente</span>}
                   {/* E8.1 · Nota interna del equipo: se sabe antes de abrir. */}
                   {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
@@ -295,9 +307,11 @@ export default function ListaConversaciones({ lista, filtros, setFiltros, activa
                 )}
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                   <span style={{
-                    flex: 1, minWidth: 0, fontSize: 12, color: c.no_leidos ? C.g700 : C.g500,
+                    /* El preview es para saber si vale la pena abrir: en 12px y
+                       cortado a 180px no se alcanzaba a leer de qué iba. */
+                    flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 1.45, color: c.no_leidos ? C.g700 : C.g500,
                     fontWeight: c.no_leidos ? 600 : 400, fontStyle: c.virtual ? 'italic' : 'normal',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 230,
                   }}>
                     {/* Un borrador a medias es trabajo empezado: si la lista no
                         lo dice, se olvida. Igual que en el teléfono. */}

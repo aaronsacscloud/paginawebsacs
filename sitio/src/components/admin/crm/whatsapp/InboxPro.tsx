@@ -162,9 +162,23 @@ export default function InboxPro() {
       const act = activaRef.current;
       const paginaLlena = (j.conversaciones || []).length >= 50;
       if (porLink.current) porLink.current = false;
-      else if (act && !paginaLlena && !(j.conversaciones || []).some((c: any) => c.id === act.id)) setActiva(null);
+      else if (act && !paginaLlena && !(j.conversaciones || []).some((c: any) => c.id === act.id)) {
+        /* La conversación abierta no está en la vista que acaban de elegir.
+           Antes se dejaba el panel EN BLANCO: dabas clic en una vista y la
+           pantalla se vaciaba, como si no hubiera cargado nada. Ahora se abre
+           la primera de la vista, que es lo que uno espera al elegirla.
+
+           En el teléfono NO: ahí la lista ES la pantalla, y abrir sola una
+           conversación te mete a un chat que no pediste. */
+        const primera: any = (j.conversaciones || [])[0];
+        if (primera && !isMobile) setActiva({ id: primera.id, wa: primera.wa_id ?? null, email: primera.email_id ?? null });
+        else setActiva(null);
+      }
     }
-  }, [armarQS]);
+    /* `isMobile` entra en las dependencias: sin él, el callback se quedaría con
+       el valor del primer render y en un cambio de tamaño decidiría con el
+       dato viejo. */
+  }, [armarQS, isMobile]);
   const cargarMasLista = async () => { paginasRef.current += 1; await cargarLista(filtrosRef.current, paginasRef.current); };
   useEffect(() => { paginasRef.current = 1; filtroCambio.current = true; }, [armarQS, filtros.filtro, filtros.etapa, filtros.search]);
 

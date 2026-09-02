@@ -132,7 +132,13 @@ const _GET: APIRoute = async ({ request, url }) => {
     id: c.contacts.id,
     nombre: `${c.contacts.nombre || ''} ${c.contacts.apellido || ''}`.trim() || null,
     email: c.contacts.email, lifecycle_stage: c.contacts.lifecycle_stage, tipo: c.contacts.tipo,
-  } : null;
+  /* Sin contacto en el CRM se devuelve el nombre del PERFIL de WhatsApp, que
+     Meta manda en cada entrante. Enseñar un número pelón cuando el propio
+     WhatsApp nos está diciendo cómo se llama es tirar el dato. Va marcado
+     como `de_perfil` para que la pantalla pueda decir de dónde salió: no es
+     lo mismo un nombre que alguien capturó que uno que puso el cliente en su
+     teléfono. */
+  } : (c.nombre_perfil ? { id: null, nombre: String(c.nombre_perfil), de_perfil: true, email: null, lifecycle_stage: null, tipo: null } : null);
   const empresaDe = (c: any) => c.companies ? {
     id: c.companies.id, nombre: c.companies.nombre_comercial || c.companies.nombre,
     plan: c.companies.plan, mrr: c.companies.mrr,

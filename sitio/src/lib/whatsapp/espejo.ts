@@ -155,9 +155,22 @@ export async function registrarMensaje(o: {
   if (o.tipo === 'reaction') return { inserted: true, conversationId: conv.id };   // ni preview, ni no-leídos, ni activity
 
   // Solo avanza el "último mensaje" si este es más nuevo que el que ya hay.
-  const { data: prev } = await supabase.from('wa_conversaciones').select('ultimo_mensaje_at, ultimo_entrante_at, ultimo_saliente_at').eq('id', conv.id).maybeSingle();
+  const { data: prev } = await supabase.from('wa_conversaciones').select('ultimo_mensaje_at, ultimo_entrante_at, ultimo_saliente_at, ultimo_mensaje_texto').eq('id', conv.id).maybeSingle();
   const cuando = enviadoAt || new Date().toISOString();
-  const esViejo = !!(prev?.ultimo_mensaje_at && new Date(prev.ultimo_mensaje_at) > new Date(cuando));
+  /* ⚠️ `ultimo_mensaje_at` tiene DEFAULT now() en la base: al crear la
+     conversación Postgres la estampa con el instante del INSERT, que cae
+     ~1 segundo DESPUÉS de la marca de tiempo que manda Meta (que viene en
+     segundos enteros). Resultado: el primer mensaje de toda conversación
+     nueva se veía «más viejo» que la conversación recién creada, la guarda de
+     abajo lo descartaba y el resumen quedaba en null — la lista enseñaba «—»
+     justo en el momento más importante, cuando un lead escribe por primera
+     vez. Medido: 3 conversaciones, las 3 con `ultimo_mensaje_at` idéntico a su
+     `created_at`.
+
+     Una conversación que todavía no tiene resumen NO puede ser más nueva que
+     el mensaje que la estrena. */
+  const estrena = !prev?.ultimo_mensaje_texto;
+  const esViejo = !estrena && !!(prev?.ultimo_mensaje_at && new Date(prev.ultimo_mensaje_at) > new Date(cuando));
   // Los relojes por dirección avanzan SIEMPRE que este mensaje sea más nuevo
   // que el último de su dirección (aunque no sea el último del hilo).
   const campoDir = o.direccion === 'entrante' ? 'ultimo_entrante_at' : 'ultimo_saliente_at';
@@ -195,6 +208,12 @@ export async function registrarMensaje(o: {
     }
   }
   if (!esViejo) await supabase.from('wa_conversaciones').update({
+    /* El nombre del perfil de WhatsApp, que Meta manda en CADA entrante.
+       Sin esto, un número que nos escribe y todavía no es contacto del CRM
+       se veía como «+52 95 8103 7485» y no había forma de saber quién es —
+       aunque WhatsApp nos estaba diciendo su nombre en cada mensaje.
+       Solo de los ENTRANTES: en un saliente el «perfil» sería el nuestro. */
+    ...(o.direccion === 'entrante' && o.nombrePerfil ? { nombre_perfil: String(o.nombrePerfil).slice(0, 120) } : {}),
     ultimo_mensaje_at: cuando,
     ultimo_mensaje_texto: texto.slice(0, 200) || null,
     ultima_direccion: o.direccion,
