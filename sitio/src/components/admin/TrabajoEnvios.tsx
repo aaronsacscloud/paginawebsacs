@@ -37,6 +37,14 @@ export const ESTILOS_ENVIOS = `
 .ti-banner b { font-size:1.05rem; } .ti-banner span { font-size:.86rem; opacity:.9; }
 .ti-envio { border:1px solid var(--linea, #e5e7eb); border-radius:12px; padding:14px 16px; margin:12px 0; background:var(--carta, #fff); }
 .ti-envio.actual { border-color:var(--morado,#6d28d9); box-shadow:0 0 0 3px var(--morado-agua,#ede9fe); }
+.ti-envio.actual { position:relative; transition:transform .5s cubic-bezier(.4,0,.2,1), opacity .5s ease, box-shadow .3s ease; }
+.ti-envio.saliendo { transform:translateX(56px) scale(.985); opacity:0; box-shadow:0 0 0 3px var(--verde-agua,#dcfce7); border-color:var(--verde-tinta,#14532d); }
+.ti-sello { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:12px; background:rgba(220,252,231,.92); color:var(--verde-tinta,#14532d); z-index:2; animation:ti-sello-entra .28s ease; }
+.ti-sello b { font-size:1.25rem; letter-spacing:-.01em; } .ti-sello span { font-size:.84rem; opacity:.85; }
+.ti-sello-check { width:44px; height:44px; border-radius:50%; background:var(--verde-tinta,#14532d); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; margin-bottom:6px; }
+@keyframes ti-sello-entra { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:none; } }
+.ti-banner-link { align-self:flex-start; margin-top:6px; background:var(--verde-tinta,#14532d); color:#fff; border:none; border-radius:9px; padding:7px 12px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; }
+@media (prefers-reduced-motion: reduce) { .ti-envio.actual, .ti-sello { transition:none; animation:none; } }
 .ti-envio.hecho { opacity:.95; } .ti-envio.par { border-color:var(--ambar, #f59e0b); }
 .ti-envio-cab { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; font-size:.9rem; }
 .ti-envio-nombre { font-size:1rem; }
@@ -83,7 +91,7 @@ export const ESTILOS_ENVIOS = `
 .ti-apr-ultimos li { font-size:.86rem; border-left:3px solid var(--morado,#6d28d9); padding:2px 0 2px 10px; } .ti-apr-ultimos li div { margin-top:3px; white-space:pre-wrap; }
       `;
 
-export default function TrabajoEnvios() {
+export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: () => void } = {}) {
   const [pend, setPend] = useState<Envio[]>([]);
   const [rec, setRec] = useState<Envio[]>([]);
   const [cfg, setCfg] = useState<{ agente_activo: boolean; veto_min: number; modo?: string; pruebas?: string[] } | null>(null);
@@ -95,7 +103,8 @@ export default function TrabajoEnvios() {
   const [picker, setPicker] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
-  const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err' } | null>(null);
+  const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err'; aprendizaje?: boolean } | null>(null);
+  const [saliendo, setSaliendo] = useState<{ id: string; sello: string } | null>(null);
   const [avisoRec, setAvisoRec] = useState<{ id: string; texto: string; tipo: 'ok' | 'err' } | null>(null);
   const [ahora, setAhora] = useState(Date.now());
   const [ocupado, setOcupado] = useState(false);
@@ -109,8 +118,8 @@ export default function TrabajoEnvios() {
   useEffect(() => { if (actual && actual.id !== fijo) setFijo(actual.id); }, [actual?.id]);
   const resto = pend.filter(e => e.id !== actual?.id);
 
-  function mostrar(texto: string, sub: string | undefined, tipo: 'ok' | 'err' = 'ok') {
-    setBanner({ texto, sub, tipo });
+  function mostrar(texto: string, sub: string | undefined, tipo: 'ok' | 'err' = 'ok', aprendizaje = false) {
+    setBanner({ texto, sub, tipo, aprendizaje });
     clearTimeout(bannerTimer.current);
     bannerTimer.current = setTimeout(() => setBanner(null), tipo === 'ok' ? 6000 : 12000);
   }
@@ -123,12 +132,19 @@ export default function TrabajoEnvios() {
     return j;
   }
   /** Tras actuar sobre la tarjeta actual: confirmación grande y pasa la siguiente. */
-  async function terminar(texto: string, sub?: string) {
+  async function terminar(texto: string, sub?: string, aprendizaje = false) {
     const siguiente = resto[0];
     setFijo(siguiente?.id || null); setVeto(null);
     setEdit(x => { const y = { ...x }; if (actual) delete y[actual.id]; return y; });
-    mostrar(texto, siguiente ? `${sub ? sub + ' · ' : ''}Sigue: ${nombre(siguiente)} (${ESTADO_L[siguiente.salida?.estado] || '—'})` : `${sub ? sub + ' · ' : ''}No hay más por salir.`);
+    mostrar(texto, siguiente ? `${sub ? sub + ' · ' : ''}Sigue: ${nombre(siguiente)} (${ESTADO_L[siguiente.salida?.estado] || '—'})` : `${sub ? sub + ' · ' : ''}No hay más por salir.`, 'ok', aprendizaje);
     await cargar();
+  }
+  /* La tarjeta se despide con elegancia: sello «Aprobada y enviada», se desliza y hasta entonces entra la siguiente. */
+  async function despedir(id: string, sello: string, accion: () => Promise<any>) {
+    setSaliendo({ id, sello });
+    const [j] = await Promise.all([accion(), new Promise(r => setTimeout(r, 520))]);
+    setSaliendo(null);
+    return j;
   }
   const nombre = (e: Envio) => (e.contacto?.nombre || e.telefono || 'Lead').split(' ')[0];
   const editado = (e: Envio) => (edit[e.id] ?? e.mensaje) !== e.mensaje;
@@ -140,7 +156,8 @@ export default function TrabajoEnvios() {
     <div className="ti-lienzo">
       {banner && (
         <div className={'ti-banner ' + banner.tipo} role="status">
-          <b>{banner.texto}</b>{banner.sub && <span>{banner.sub}</span>}
+          <b>{banner.tipo === 'ok' ? '✓ ' : ''}{banner.texto}</b>{banner.sub && <span>{banner.sub}</span>}
+          {banner.aprendizaje && onIrAprendizaje && <button className="ti-banner-link" onClick={() => { setBanner(null); onIrAprendizaje(); }}>Ver en Aprendizaje →</button>}
         </div>
       )}
 
@@ -160,7 +177,8 @@ export default function TrabajoEnvios() {
         {!actual && <div className="ti-fin"><h2>Nada por salir</h2><p>{cfg?.agente_activo ? 'Cuando un lead escriba, la respuesta del agente aparece aquí con su cuenta regresiva.' : 'El agente está apagado: no propone ni manda nada.'}</p></div>}
 
         {actual && (() => { const e = actual; const s = e.salida || {}; const prueba = esPrueba(e); const saldra = cfg?.modo === 'vivo' || prueba; return (
-          <div className="ti-envio actual" key={e.id}>
+          <div className={'ti-envio actual' + (saliendo?.id === e.id ? ' saliendo' : '')} key={e.id}>
+            {saliendo?.id === e.id && <div className="ti-sello" aria-live="polite"><span className="ti-sello-check">✓</span><b>{saliendo.sello}</b><span>va a Aprendizaje</span></div>}
             <div className="ti-envio-cab">
               <b className="ti-envio-nombre">{nombre(e)}</b>
               {e.contacto?.giro && <span className="ti-chip chip-tipo">{e.contacto.giro}</span>}
@@ -192,11 +210,11 @@ export default function TrabajoEnvios() {
             {!veto && (
               <div className="ti-envio-acc">
                 {editado(e) ? (<>
-                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], criterio: criterio[e.id] || undefined, enviar: true }); if (j) terminar(`Enviado a ${nombre(e)} con tu versión.`, `Guardada como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}»`); }}>Guardar mi versión y enviar</button>
+                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await despedir(e.id, 'Tu versión salió', () => post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], criterio: criterio[e.id] || undefined, enviar: true })); if (j) terminar(`Tu versión salió a ${nombre(e)}.`, `Quedó en Aprendizaje como ejemplo aprobado de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}»`, true); }}>Guardar mi versión y enviar</button>
                   <button className="ti-btn" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], criterio: criterio[e.id] || undefined }); if (j) { setEdit(x => { const y = { ...x }; delete y[e.id]; return y; }); mostrar(`Guardado como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}».`, 'Saldrá solo cuando venza la ventana.'); await cargar(); } }}>Guardar y dejar que salga</button>
                   <button className="ti-btn" onClick={() => setEdit(x => { const y = { ...x }; delete y[e.id]; return y; })}>Descartar cambios</button>
                 </>) : (<>
-                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'enviar_ya' }); if (j) terminar(`Enviado a ${nombre(e)}.`, 'Aprobado: cuenta a favor del agente'); }}>{ocupado ? 'Enviando…' : 'Aprobar y enviar ya'}</button>
+                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await despedir(e.id, 'Aprobada y enviada', () => post('/api/crm/ti/envios', { id: e.id, accion: 'enviar_ya' })); if (j) terminar(`Aprobada y enviada a ${nombre(e)}.`, 'Quedó en Aprendizaje como respuesta aprobada del agente', true); }}>{ocupado ? 'Enviando…' : 'Aprobar y enviar ya'}</button>
                   <button className="ti-btn peligro" disabled={ocupado} onClick={() => setVeto({ motivo: '', texto: '' })}>Detener…</button>
                   <span className="ti-envio-pista">o no hagas nada: {saldra ? faltan(e.sale_at, ahora) : 'en sombra no sale'}</span>
                 </>)}

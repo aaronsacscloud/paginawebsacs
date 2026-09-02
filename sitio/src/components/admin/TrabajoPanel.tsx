@@ -332,7 +332,7 @@ export default function TrabajoPanel() {
         </div>
       </div>
 
-      {vistaTab === 'envios' && <TrabajoEnvios />}
+      {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}
       {vistaTab === 'aprendizaje' && <TrabajoAprendizaje />}
 
       {vistaTab === 'datos' && (
