@@ -14,6 +14,7 @@
 //    cliente ya hizo su parte y no puede quedarse esperando.
 import { supabase } from '../supabase';
 import { sendWhatsApp } from '../kapso';
+import { permitido } from './permisos';
 
 const RE_ID = /^ag:([0-9a-f]{8}):(\d{1,2})$/i;
 
@@ -24,6 +25,11 @@ export function esRespuestaDeAgenda(id?: string | null): boolean {
 export async function agendarDesdeRespuesta(o: {
   idRespuesta: string; telefono: string; conversationId?: string | null; base: string;
 }): Promise<{ agendada: boolean; motivo?: string }> {
+  /* La lista de horarios automática está pausada, así que ya no se generan
+     ofertas nuevas — pero una lista VIEJA sigue en el chat del cliente, y
+     tocarla dispararía todo esto: reserva y tres mensajes posibles. Pasa por
+     el mismo permiso que la generó. */
+  if (!(await permitido('agenda_horarios_auto'))) return { agendada: false, motivo: 'la agenda automática está pausada' };
   const m = RE_ID.exec(String(o.idRespuesta));
   if (!m) return { agendada: false, motivo: 'No es una respuesta de agenda' };
   const [, corto, nStr] = m;

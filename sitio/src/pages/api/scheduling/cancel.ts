@@ -58,6 +58,13 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 export const POST: APIRoute = async ({ request }) => {
+  /* ¿Ya se le mandó UN WhatsApp por esta cancelación?
+     Había DOS bloques mandando por la misma cancelación sin saber uno del
+     otro: el rescate por plantilla («vi que cancelaste, cuando quieras
+     retomamos») y, más abajo, uno de texto libre con horarios sugeridos. Al
+     cliente le llegaban los dos seguidos diciendo casi lo mismo — y la nota
+     interna aseguraba que se le había mandado UNO. */
+  let waCancelacionEnviado = false;
   const body = await request.json();
   const { booking_id, token, motivo, cancelado_por } = body;
 
@@ -156,7 +163,12 @@ export const POST: APIRoute = async ({ request }) => {
       }
       const nombreInv = String(booking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
       if (booking.invitee_whatsapp) {
-        try { if (await permitido('agenda_seguimiento')) await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]); } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
+        try {
+          if (await permitido('agenda_seguimiento')) {
+            await enviarPlantilla(booking.invitee_whatsapp, 'sesion_cancelada_rescate', 'es_MX', [nombreInv]);
+            waCancelacionEnviado = true;
+          }
+        } catch { /* plantilla en revisión: el correo de cancelación ya salió */ }
       }
       try {
         await avisarCancelacion({ id: booking.contact_id, nombre: booking.invitee_nombre, whatsapp: booking.invitee_whatsapp, email: booking.invitee_email }, booking.fecha);
@@ -233,8 +245,12 @@ export const POST: APIRoute = async ({ request }) => {
     // Suggestions are non-critical
   }
 
-  // Include suggestions in SMS/WhatsApp notification if available
-  if (suggestions.length > 0 && booking.invitee_whatsapp) {
+  /* Los horarios sugeridos solo si NO salió ya el rescate: si el cliente
+     acaba de recibir «cuando quieras retomamos», este segundo mensaje no
+     agrega nada y sí lo satura. Y pasa por el mismo permiso que todo lo demás
+     de la agenda: se colaba por fuera de la lista. */
+  if (suggestions.length > 0 && booking.invitee_whatsapp && !waCancelacionEnviado
+      && await permitido('agenda_seguimiento')) {
     try {
       const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
       const suggestionsText = suggestions

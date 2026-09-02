@@ -1011,7 +1011,12 @@ export const WIKI: PaginaWiki[] = [
 <h3>Lo que está pausado</h3>
 <p>El acuse automático del inbox («Te leo 👋»), la respuesta con horarios, el botón de reagendar, las secuencias de seguimiento, la cobranza de suscripciones vencidas y el copiloto de IA. <b>Encender cualquiera es una decisión tuya</b>, y se hace sin desplegar nada.</p>
 <div class="w-caja"><span class="w-k">Dónde se prende y se apaga</span><p><b>WhatsApp ▸ el engrane del inbox ▸ «Qué escribe solo por WhatsApp»</b>. Cada renglón dice por qué está como está. Lo que apagues ahí deja de poder enviar en menos de un minuto.</p></div>
-<p>Fuera de esta lista quedan, a propósito, los mensajes que manda una <b>persona</b>: el inbox, las campañas y lo que dejas programado. Esto gobierna lo que sale solo.</p>`,
+<h3>Lo que NO pasa por esta lista, y por qué</h3>
+<p>Tres grupos, todos a propósito:</p>
+<p>· <b>Lo que mandas tú</b> — el inbox, las campañas, los mensajes que dejas programados y el envío de prueba de una plantilla. Ahí hay una persona decidiendo; esta lista gobierna lo que sale <i>solo</i>.<br />
+· <b>Los avisos al equipo</b> — «nuevo lead», el resumen semanal del ARR, las alertas del sistema. Van a números del equipo, no a clientes.<br />
+· <b>Los avisos de una compra</b> — cuando alguien paga un regalo o un referido cobra, se le avisa por WhatsApp. Es el acuse de algo que la persona acaba de hacer, no una automatización de venta.</p>
+<div class="w-caja"><span class="w-k">Cómo se sabe que la lista está completa</span><p>Se revisa al revés: se listan <b>todos</b> los lugares del código que pueden mandar un WhatsApp y se comprueba que cada uno, o pregunta la lista, o cae en uno de esos tres grupos. Así se encontró que la cancelación mandaba <b>dos</b> mensajes —el rescate por plantilla y otro con horarios sugeridos— sin que uno supiera del otro.</p></div>`,
   },
   {
     id: 'wa-manejo', grupo: 'Referencia', titulo: 'Cómo se maneja esto',
