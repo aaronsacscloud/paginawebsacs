@@ -346,15 +346,37 @@ export const POST: APIRoute = async ({ request }) => {
   let company_id: string | null = null;
   let isNewContact = false;
 
-  const { data: existingContact } = await supabase
+  const COLS_EXISTENTE = 'id, email, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, propiedades, lead_score, visitor_id, fuente_detalle';
+  let { data: existingContact } = await supabase
     .from('contacts')
-    .select('id, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, propiedades, lead_score, visitor_id, fuente_detalle')
+    .select(COLS_EXISTENTE)
     .eq('email', email)
     .limit(1)
     .single();
 
+  // Segundo intento por WHATSAPP: el lead que ya conversa con nosotros (el agente SDR, un
+  // formulario previo) muchas veces no tiene correo en el CRM o da otro distinto. Sin esto se
+  // creaba un contacto duplicado y la cita quedaba huérfana de su conversación. Se busca por
+  // los últimos 10 dígitos para no depender de +52 / 521 / espacios.
+  if (!existingContact && whatsapp) {
+    const dig = String(whatsapp).replace(/\D/g, '').slice(-10);
+    if (dig.length === 10) {
+      const { data: porWa } = await supabase
+        .from('contacts')
+        .select(COLS_EXISTENTE)
+        .ilike('whatsapp', `%${dig}`)
+        .is('archived_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (porWa) existingContact = porWa as any;
+    }
+  }
+
   if (existingContact) {
     contact_id = existingContact.id;
+    // Encontrado por WhatsApp y sin correo: el correo con el que agenda es el suyo.
+    if (!(existingContact as any).email && email) (existingContact as any).__setEmail = email;
 
     // Update lifecycle if currently lower, y atribuir partner si aún no tiene
     const currentIdx = LIFECYCLE_ORDER.indexOf(existingContact.lifecycle_stage || 'lead');
@@ -370,6 +392,7 @@ export const POST: APIRoute = async ({ request }) => {
     // volver con menos datos (el formulario recuerda poco), y pisar el giro o
     // el whatsapp buenos con un campo en blanco es peor que no actualizar.
     if (!existingContact.whatsapp && whatsapp) updates.whatsapp = whatsapp;
+    if ((existingContact as any).__setEmail) updates.email = (existingContact as any).__setEmail;
     if (!existingContact.giro && giro) updates.giro = giro;
     if (!existingContact.sucursales_interes && sucursales) {
       const n = parseInt(String(sucursales));

@@ -18,6 +18,7 @@ import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
+import { notificar } from '../notificaciones';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -92,7 +93,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const pendTxt = pend?.fecha && pend?.hora
     ? (pend.motivo === 'sin_correo'
       ? `AGENDA PENDIENTE: el lead YA ELIGIÓ ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] y solo falta su correo. Si en este mensaje lo da (o el CRM ya lo tiene), devuelve accion.tipo="agendar" con ESA fecha/hora y el correo, sin volver a ofrecer horarios. No lo saludes de nuevo.`
-      : `AGENDA PENDIENTE: la cita de ${etiquetaHorario(pend.fecha, pend.hora)} falló por un error técnico nuestro y el sistema la está reintentando; si el lead pregunta, dile que ya casi queda y que el consultor está enterado. No la des por confirmada.`)
+      : `AGENDA PENDIENTE: la cita de ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] falló por un error técnico NUESTRO; ya le pediste una disculpa y le ofreciste ese mismo horario u otros, más la liga de la agenda. Si ahora elige uno (incluido el mismo), devuelve accion.tipo="agendar" con esa fecha/hora y su correo. No la des por confirmada mientras no se agende.`)
     : '';
   const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
@@ -336,6 +337,16 @@ async function escalarAlHumano(contactId: string, s: SalidaAgente) {
   else await supabase.from('ti_tareas').insert({ contact_id: contactId, company_id: c?.company_id || null, owner_id: c?.owner_id || null, familia: 'responder', tipo: 'responder', prioridad: 1, vence_at: new Date().toISOString(), origen: 'evento', payload });
 }
 
+/** Cuando la cita queda, lo que el reloj de silencio tenía en cola para ese lead ya no aplica. */
+async function callarSilencioPendiente(contactId: string, motivo: string) {
+  await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: motivo, updated_at: new Date().toISOString() }).eq('contact_id', contactId).eq('estado', 'pendiente').eq('origen', 'silencio');
+}
+
+/** Aviso del SISTEMA en la campana del CRM (pestaña «Sistema»): qué pasó y qué hacer, con clic al hilo. */
+async function avisoSistema(o: { tipo: string; nivel: 'info' | 'alerta' | 'urgente'; clave: string; titulo: string; detalle: string; que_hacer: string; contact_id?: string | null; conversation_id?: string | null; extra?: any }) {
+  await notificar({ clave: o.clave, tipo: o.tipo, nivel: o.nivel, titulo: o.titulo, detalle: o.detalle, metadata: { origen: 'agente', que_hacer: o.que_hacer, contact_id: o.contact_id || null, conversation_id: o.conversation_id || null, ...(o.extra || {}) } }).catch(() => false);
+}
+
 /**
  * DESPACHAR: manda lo pendiente cuya ventana de veto ya venció. Corre con el
  * observador (cada 2 min) y con «enviar ya». Escribe el espejo en el inbox
@@ -400,18 +411,24 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
             await guardarSt({ agenda_pendiente: null });
             await log({ accion: 'agente_agenda_ocupado', contact_id: e.contact_id, razon: r.error, detalle: acc });
           } else if (!r.ok) {
-            // Error NUESTRO (5xx, timeout): se dice la verdad, se reintenta solo (reintentarAgendas) y el consultor queda avisado con el error crudo.
-            mensaje = `Tuve un problema técnico al apartar el ${etiqueta} (no es cosa tuya). Lo vuelvo a intentar en unos minutos y te confirmo por aquí; si prefieres dejarlo tú, aquí está la agenda: ${LIGA_AGENDA}`;
+            // Error NUESTRO (5xx, timeout). Decisión del dueño: se rectifica con naturalidad (los humanos también se equivocan),
+            // se le dan horarios para que ÉL elija —el mismo u otros— y la liga de la agenda. Por detrás: tarea P1 con el
+            // error crudo, aviso en la pestaña Sistema de la campana, y reintentarAgendas() por si no contesta.
+            const otros = (await horariosParaDemo({ max: 3 }).catch(() => [])).filter(h => !(h.fecha === acc.fecha && h.hora === acc.hora)).slice(0, 2);
+            mensaje = `Perdón, se me trabó el sistema al apartar el ${etiqueta}, cosas que pasan. ¿Lo dejamos en ese mismo horario${otros.length ? `, o te acomoda mejor ${otros.map(h => h.etiqueta).join(' o ')}` : ''}? Y si prefieres apartarlo tú directo, aquí está la agenda: ${LIGA_AGENDA}`;
             await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, email, motivo: 'error', intentos: 1, error: String(r.error || '').slice(0, 200), desde: ahora.toISOString() } });
             await log({ accion: 'agente_agenda_fallo', contact_id: e.contact_id, razon: r.error, detalle: { ...acc, intentos: r.intentos } });
             await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `no se pudo agendar ${etiqueta}: ${r.error}` } });
+            await avisoSistema({ tipo: 'sistema_agenda_fallo', nivel: 'urgente', clave: `sistema_agenda_fallo:${e.contact_id}:${acc.fecha}T${acc.hora}`, titulo: `El agente no pudo agendar a ${c?.nombre || 'un lead'} (${etiqueta})`, detalle: `Error: ${String(r.error || '').slice(0, 140)}. Ya le pidió disculpas, le ofreció horarios y la liga; el sistema reintenta a los 3, 15 y 60 min si no contesta.`, que_hacer: 'Abre el hilo. Si en 1 h el lead no eligió horario ni el reintento lo logró, confírmale tú la cita.', contact_id: e.contact_id, conversation_id: e.conversation_id, extra: { error: r.error, fecha: acc.fecha, hora: acc.hora } });
           } else {
             await log({ accion: 'agente_agendo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { booking_id: r.booking?.id || null, sin_meet: !!r.sinMeet, intentos: r.intentos } });
             await supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ciclo: 1, toque: 0, agendada_at: ahora.toISOString() }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
+            await callarSilencioPendiente(e.contact_id, 'la cita ya quedó agendada');
             if (r.sinMeet) {
               // La cita existe pero Google Calendar no dio liga: no se promete lo que no hay.
               mensaje = `${mensaje}\n\nLa liga de la videollamada te la mando por aquí en un momento.`;
               await escalarAlHumano(e.contact_id, { ...(e.salida as any), escalar: { si: true, motivo: `cita ${etiqueta} creada SIN liga de Meet (Google Calendar falló): mándale la liga` } });
+              await avisoSistema({ tipo: 'sistema_agenda_sin_meet', nivel: 'urgente', clave: `sistema_agenda_sin_meet:${r.booking?.id || e.contact_id}`, titulo: `Cita de ${c?.nombre || 'un lead'} sin liga de Meet (${etiqueta})`, detalle: 'La cita se creó, pero Google Calendar no devolvió la liga de la videollamada. El agente le dijo al lead que se la manda en un momento.', que_hacer: 'Crea el evento en tu calendario y mándale la liga de Meet por el hilo.', contact_id: e.contact_id, conversation_id: e.conversation_id, extra: { booking_id: r.booking?.id || null } });
             }
           }
         }
@@ -491,6 +508,9 @@ export async function tocarSilencios(): Promise<any> {
     const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || !['lead', 'oportunidad'].includes(c.lifecycle_stage) || p.silenciar_ia) continue;
     if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
+    // Una cita atorada por error nuestro la lleva reintentarAgendas; un lead CON cita vigente lo llevan los recordatorios. Aquí no se le insiste.
+    if (st.agenda_pendiente?.motivo === 'error') continue;
+    if (st.agendada_at && await proximaCita(cid).catch(() => null)) continue;
     const prueba = esPrueba(cfg, ultimo[cid].telefono);
     const sombra = sombraGlobal && !prueba;          // los de prueba viven el flujo completo
     if (!laboral && !prueba) continue;                // fuera de horario solo se mueven las pruebas
@@ -534,6 +554,10 @@ export async function tocarSilencios(): Promise<any> {
       }
       const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: el mensaje debe ser UNA sola oración corta (máx. 200 caracteres), sin saludo ni nombre (la plantilla ya dice «Hola {nombre}»), que continúe la frase «Hola Ana, …»: el ángulo concreto para su giro.' : '';
       const nota = `TOQUE DE SILENCIO ${st.toque + 1} de ${maxToques} (ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}): el lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.${notaPlantilla}`;
+      // Dos ticks del observador se pueden traslapar (cron + «enviar ya»/manual): si ya hay un toque de silencio
+      // creado hace poco para este lead, este tick no mete otro (pasó: dos toques con 22 s de diferencia).
+      const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
+      if ((reciente || []).length) continue;
       const d = await decidirTurno(cid, nota);
       if (!d.salida || !d.salida.mensaje) { await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'silencio sin mensaje' }); continue; }
       const ventanaMin = Math.max(0, Number(cfg.agente_veto_min ?? 10));
@@ -657,12 +681,20 @@ export async function reintentarAgendas(): Promise<any> {
     if (!c || !email || !telefono) { await guardarSt({ agenda_pendiente: null }); continue; }
     // En sombra solo se actúa con los números de prueba (misma regla que despacharEnvios).
     if ((cfg.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) continue;
+    // Si el lead ya contestó (eligió otro horario, o lo que sea) la conversación manda: el reintento se retira.
+    const [{ data: hablo }, cita] = await Promise.all([
+      supabase.from('ti_eventos').select('id').eq('contact_id', cid).eq('tipo', 'wa_entrante').gt('ocurrio_at', pend.desde || ahora.toISOString()).limit(1),
+      proximaCita(cid).catch(() => null),
+    ]);
+    if ((hablo || []).length || cita) { await guardarSt({ agenda_pendiente: null }); continue; }
     const etiqueta = etiquetaHorario(pend.fecha, pend.hora);
     const r = await agendarDemo({ nombre: c.nombre || 'Lead', email, whatsapp: telefono, fecha: pend.fecha, hora: pend.hora, contactId: cid, empresa: (c as any)?.companies?.nombre || null, giro: c.giro || null, sucursales: c.sucursales_interes || null, partnerId: c.referrer_partner_id || null, notas: 'Agendada por el agente SDR (reintento automático tras un error técnico)' });
     let texto: string | null = null;
     if (r.ok) {
-      texto = `Listo, ya quedó apartado el ${etiqueta}. Te llega la invitación a ${email}${r.sinMeet ? ' y la liga de la videollamada te la mando por aquí en un momento' : ' con la liga de la videollamada'}. Si algo se te cruza, avísame por aquí y lo movemos.`;
+      texto = `Ya se destrabó: te dejé apartado el ${etiqueta} que habías elegido. Te llega la invitación a ${email}${r.sinMeet ? ' y la liga de la videollamada te la mando por aquí en un momento' : ' con la liga de la videollamada'}. Si prefieres otro horario, dime y lo muevo.`;
       await guardarSt({ agenda_pendiente: null, agendada_at: ahora.toISOString() });
+      await callarSilencioPendiente(cid, 'la cita ya quedó agendada (reintento)');
+      await avisoSistema({ tipo: r.sinMeet ? 'sistema_agenda_sin_meet' : 'sistema_agenda_recuperada', nivel: r.sinMeet ? 'urgente' : 'info', clave: `sistema_agenda_recuperada:${r.booking?.id || cid}`, titulo: `Cita de ${c.nombre || 'un lead'} recuperada sola (${etiqueta})`, detalle: `El reintento ${intentos + 1} la dejó agendada y el lead ya recibió la confirmación por WhatsApp.${r.sinMeet ? ' Falta la liga de Meet.' : ''}`, que_hacer: r.sinMeet ? 'Mándale la liga de Meet por el hilo.' : 'Nada: la tarea que abrió el fallo ya se cerró.', contact_id: cid, extra: { booking_id: r.booking?.id || null } });
       await log({ accion: 'agente_agendo', contact_id: cid, razon: `${pend.fecha} ${pend.hora} (reintento ${intentos + 1})`, detalle: { booking_id: r.booking?.id || null, sin_meet: !!r.sinMeet, reintento: true } });
       // La tarea P1 que abrió el fallo ya no hace falta (salvo que falte la liga de Meet).
       if (!r.sinMeet) await supabase.from('ti_tareas').update({ estado: 'hecha', resultado: 'agendo_el_agente', resultado_detalle: { automatica: true, razon: `El reintento automático dejó la cita del ${etiqueta}` }, hecho_at: ahora.toISOString(), updated_at: ahora.toISOString() }).eq('contact_id', cid).eq('estado', 'pendiente').eq('tipo', 'responder').filter('payload->>escalado_por_agente', 'eq', 'true');
@@ -676,6 +708,7 @@ export async function reintentarAgendas(): Promise<any> {
     } else {
       await guardarSt({ agenda_pendiente: { ...pend, intentos: intentos + 1, ultimo_at: ahora.toISOString(), error: String(r.error || '').slice(0, 200) } });
       await log({ accion: 'agente_agenda_fallo', contact_id: cid, razon: r.error, detalle: { ...pend, intentos: intentos + 1, reintento: true } });
+      if (intentos + 1 >= ESPERA_MIN.length) await avisoSistema({ tipo: 'sistema_agenda_agotada', nivel: 'urgente', clave: `sistema_agenda_agotada:${cid}:${pend.fecha}T${pend.hora}`, titulo: `Sigue sin poder agendarse la cita de ${c.nombre || 'un lead'} (${etiqueta})`, detalle: `Tres reintentos y el mismo error: ${String(r.error || '').slice(0, 140)}.`, que_hacer: 'Confírmale tú la cita desde la agenda y revisa el error con soporte técnico.', contact_id: cid, extra: { error: r.error } });
       res.fallidas++;
     }
     if (texto) {

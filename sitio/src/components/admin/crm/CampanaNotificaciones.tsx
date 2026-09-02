@@ -38,6 +38,10 @@ export const FAMILIAS = [
      escondería el aviso más caro del CRM entre los leads del día. */
   { id: 'churn', l: 'Churn', casa: (t: string) => /^churn_/.test(t), color: '#C0554E' },
 ];
+/* SISTEMA es otra cosa: no es un hecho del negocio (un lead, un cobro) sino algo que
+   la automatización NO pudo resolver sola —o resolvió y avisa— y que pide una acción
+   concreta de una persona. Va en su propia pestaña, con un «qué hacer» explícito. */
+export const esSistema = (t?: string | null) => /^sistema_/.test(String(t || ''));
 const familiaDe = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.id || 'otras';
 const colorFamilia = (t?: string | null) => FAMILIAS.find(f => f.casa(String(t || '')))?.color || '#7d7a8a';
 
@@ -181,9 +185,18 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
   /* El filtro por familia y lo no leído. `filtro` vacío = todas. */
   const [filtro, setFiltro] = useState<string>('');
   const [soloNuevas, setSoloNuevas] = useState(false);
-  const visibles = data.filter((n: any) =>
-    (!filtro || familiaDe(n.tipo) === filtro) && (!soloNuevas || !n.leida_at));
-  const cuantas = (id: string) => data.filter((n: any) => familiaDe(n.tipo) === id).length;
+  /* Dos pestañas arriba de todo: ACTIVIDAD (lo que pasa en el negocio) y SISTEMA (lo que la
+     automatización necesita de una persona). Si hay algo del sistema sin leer, se abre ahí. */
+  const [vista, setVista] = useState<'actividad' | 'sistema'>('actividad');
+  const sistema = data.filter((n: any) => esSistema(n.tipo));
+  const actividad = data.filter((n: any) => !esSistema(n.tipo));
+  const sistemaNuevas = sistema.filter((n: any) => !n.leida_at).length;
+  const actividadNuevas = actividad.filter((n: any) => !n.leida_at).length;
+  useEffect(() => { if (abierto && sistemaNuevas > 0 && actividadNuevas === 0) setVista('sistema'); }, [abierto]); // eslint-disable-line react-hooks/exhaustive-deps
+  const base = vista === 'sistema' ? sistema : actividad;
+  const visibles = base.filter((n: any) =>
+    (vista === 'sistema' || !filtro || familiaDe(n.tipo) === filtro) && (!soloNuevas || !n.leida_at));
+  const cuantas = (id: string) => actividad.filter((n: any) => familiaDe(n.tipo) === id).length;
   /* Agrupadas por cuándo, en el orden en que ya vienen (la consulta las trae de
      la más nueva a la más vieja), así que basta recorrer y cortar. */
   const bloques: { t: string; items: any[] }[] = [];
@@ -267,18 +280,40 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
               </button>
             </div>
 
+            {/* Actividad | Sistema */}
+            <div role="tablist" aria-label="Tipo de avisos" style={{ display: 'flex', borderBottom: '1px solid #f3f1f8', padding: '0 16px' }}>
+              {([['actividad', 'Actividad del CRM', actividadNuevas], ['sistema', 'Sistema', sistemaNuevas]] as const).map(([id, l, n]) => {
+                const on = vista === id;
+                return (
+                  <button key={id} role="tab" aria-selected={on} onClick={() => setVista(id)} style={{
+                    background: 'none', border: 'none', borderBottom: `2px solid ${on ? (id === 'sistema' ? '#B7791F' : '#5B4BD6') : 'transparent'}`,
+                    padding: '10px 12px 9px', marginBottom: -1, cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: '0.78rem', fontWeight: on ? 800 : 600, color: on ? '#241d43' : '#7d7a8a', display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    {l}
+                    {n > 0 && <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', background: id === 'sistema' ? '#B7791F' : '#9B8CFA', borderRadius: 20, padding: '1px 7px' }}>{n}</span>}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Los filtros: cada familia con su cuenta, y solo si tiene algo.
                 Una pestaña vacía es una promesa rota — se ve, se toca y no hay
                 nada; mejor que no esté. */}
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '10px 16px', borderBottom: '1px solid #f3f1f8' }}>
+              {vista === 'sistema' && (
+                <span style={{ fontSize: '0.72rem', color: '#7d7a8a', lineHeight: 1.45, paddingRight: 8 }}>
+                  Lo que la automatización no pudo resolver sola. Cada aviso dice qué hacer; el clic abre el hilo o el lead.
+                </span>
+              )}
               <button onClick={() => setSoloNuevas(v => !v)} style={{
                 flexShrink: 0, border: '1px solid', borderColor: soloNuevas ? '#5B4BD6' : '#e8e5f0',
                 background: soloNuevas ? '#EEECFE' : '#fff', color: soloNuevas ? '#5B4BD6' : '#5a5a63',
                 borderRadius: 20, padding: '5px 11px', fontSize: '0.72rem', fontWeight: soloNuevas ? 800 : 600,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>Sin leer</button>
-              <span style={{ width: 1, background: '#eeebf6', flexShrink: 0, margin: '2px 2px' }} />
-              {[{ id: '', l: 'Todas', n: data.length, color: '#5a5a63' },
+              {vista === 'actividad' && <span style={{ width: 1, background: '#eeebf6', flexShrink: 0, margin: '2px 2px' }} />}
+              {vista === 'actividad' && [{ id: '', l: 'Todas', n: actividad.length, color: '#5a5a63' },
                 ...FAMILIAS.map(f => ({ id: f.id, l: f.l, n: cuantas(f.id), color: f.color })),
                 { id: 'otras', l: 'Otras', n: cuantas('otras'), color: '#7d7a8a' }]
                 .filter(f => f.id === '' || f.n > 0)
@@ -303,6 +338,7 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
                 <div style={{ padding: '40px 26px', textAlign: 'center', color: '#8e88a8', fontSize: '0.83rem', lineHeight: 1.6 }}>
                   {cargando ? 'Cargando…'
                     : filtro || soloNuevas ? 'Nada con este filtro.'
+                    : vista === 'sistema' ? 'Todo en orden. Aquí aparece lo que el agente o los procesos automáticos no pudieron resolver solos: una cita que no se pudo agendar, una liga de Meet que faltó, un reintento que se agotó.'
                     : 'Nada nuevo. Aquí van a caer los leads que entran, los mensajes de WhatsApp, los tickets de soporte y los cobros.'}
                 </div>
               ) : bloques.map(b => (
@@ -335,6 +371,15 @@ export default function CampanaNotificaciones({ onIrA, abiertoDesdeFuera, onCerr
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '0.83rem', fontWeight: n.leida_at ? 500 : 700, color: '#1a1a1a', lineHeight: 1.35 }}>{sinEmoji(n.titulo)}</div>
                             {n.detalle && <div style={{ fontSize: '0.74rem', color: '#71707C', lineHeight: 1.45, marginTop: 2 }}>{n.detalle}</div>}
+                            {esSistema(n.tipo) && n.metadata?.que_hacer && (
+                              <div style={{ marginTop: 7, padding: '7px 9px', borderRadius: 7, background: n.leida_at ? '#FAF8F2' : '#FFF7E6', border: '1px solid #F1E3C2', fontSize: '0.74rem', color: '#4a3d1c', lineHeight: 1.45 }}>
+                                <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: '#B7791F', display: 'block', marginBottom: 2 }}>Qué hacer</span>
+                                {n.metadata.que_hacer}
+                                <span style={{ display: 'block', marginTop: 5, fontWeight: 700, color: '#5B4BD6' }}>
+                                  {n.metadata?.conversation_id ? 'Abrir la conversación' : n.metadata?.contact_id ? 'Ver el lead' : 'Abrir'} →
+                                </span>
+                              </div>
+                            )}
                             <div style={{ fontSize: '0.68rem', color: '#8e88a8', marginTop: 4 }}>
                               {empresa?.nombre ? empresa.nombre + ' · ' : ''}{hace(n.created_at)}
                             </div>

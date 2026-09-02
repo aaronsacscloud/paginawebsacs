@@ -68,7 +68,7 @@ export async function asegurarPlantillas(): Promise<Registro> {
   if (n !== creadasHoy) { reg.creadas_hoy = { dia: hoy, n }; cambios = true; }
   if ((reg.rechazos || 0) >= 3) { reg.apagado = true; cambios = true; }
   // 2) Refrescar estados (APPROVED / REJECTED / PAUSED…) cada 10 min como máximo.
-  const ultima = Math.max(Date.parse(reg.marketing?.revisada_at || 0) || 0, Date.parse(reg.utility?.revisada_at || 0) || 0);
+  const ultima = Math.max(Date.parse(reg.marketing?.revisada_at || '') || 0, Date.parse(reg.utility?.revisada_at || '') || 0);
   if (Date.now() - ultima > 10 * 60e3 && (reg.marketing || reg.utility)) {
     try {
       const lista: any[] = await listarPlantillasMeta();
