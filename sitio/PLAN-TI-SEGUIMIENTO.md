@@ -113,6 +113,16 @@ clic? S9.2 ¿Hora de la revisión (8:00) y ¿te llega resumen por WhatsApp?
 - Derivado de la prueba (22:25): con CITA VIGENTE no hay toques de silencio; lo llevan los recordatorios y si
   el lead pregunta se le contesta normal (adelanta S3). El reinicio del reloj ya no borra el resto del estado.
 
+## Decisiones tomadas (ronda 2 · 2026-09-02)
+- S3.1 Sí hay mensaje de preparación 24 h antes: pedir su Excel (si lo tiene) de forma NATURAL, desde el
+  interés por conocer su catálogo para hacer una demo muy específica; lo que mande se anota en «Para la reunión».
+- S3.2 Después de la reunión el seguimiento es del CONSULTOR (el agente no interviene post-demo; solo deja la tarea).
+- S6.1 El 35 % se maneja SIEMPRE como algo especial y por tiempo limitado (7 a 10 días, la ventana va rotando),
+  junto con la implementación/migración gratis que normalmente cuesta $9,500; se dice sin sonar vendedor, como
+  algo que de verdad conviene aprovechar. Se guarda por lead qué se le ofreció y hasta cuándo.
+- S6.2 La migración NO es gratis siempre: vale (referencia $9,000–9,500 según el dueño; unificar en $9,500 como
+  «implementación y migración») y va gratis solo dentro de la promo vigente. Corregir planes.ts.
+
 ## Plan por fases (después de tus respuestas)
 F1 Índice de vida + sección «Calificación» diaria (S2, S7 pestaña descalificados) · F2 Toque de cierre de
 ventana + estado esperando_reunión (S1, S3) · F3 Promociones vigentes (S6) · F4 Familias de plantillas y
