@@ -590,16 +590,17 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
 
       {/* ── Líneas ── */}
       <div style={{ overflowX: 'auto', marginBottom: 14 }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 700 }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 840 }}>
           <thead><tr>
             <th style={E.th}>Fecha</th><th style={E.th}>Cliente</th><th style={E.th}>Concepto</th>
+            <th style={{ ...E.th, textAlign: 'right' }}>Pagó el cliente</th>
             <th style={E.th}>Entró a</th>
             <th style={{ ...E.th, textAlign: 'right' }}>Base</th>
             <th style={{ ...E.th, textAlign: 'right' }}>%</th>
             <th style={{ ...E.th, textAlign: 'right' }}>Comisión</th>
           </tr></thead>
           <tbody>
-            {det.lineas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={7}>Sin comisiones de venta: el total sale de los ajustes.</td></tr>}
+            {det.lineas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={8}>Sin comisiones de venta: el total sale de los ajustes.</td></tr>}
             {det.lineas.map((l: any) => (
               <tr key={l.id}>
                 <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(l.fecha)}</td>
@@ -611,6 +612,11 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
                   )}
                   <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>{explicar(l)}</div>
                 </td>
+                {/* Lo que de verdad salió de la cuenta del cliente, impuestos
+                    incluidos: el numero que se teclea al registrar el pago. Es
+                    el ancla para cuadrar contra el banco, y estaba solo dentro
+                    del renglon de explicacion. */}
+                <td style={{ ...E.td, textAlign: 'right', whiteSpace: 'nowrap' }}>{pesos(l.monto_bruto)}</td>
                 <td style={E.td}>
                   {firme
                     ? <span style={{ fontSize: '0.78rem' }}>{ETIQUETA_CUENTA[l.cuenta] || l.cuenta} · −{Number(l.descuento_pct)}%</span>
