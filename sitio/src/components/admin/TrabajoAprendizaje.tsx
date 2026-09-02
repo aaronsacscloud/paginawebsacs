@@ -81,8 +81,8 @@ const partir = (t: string) => String(t || '').split(DIVISOR).map(x => x.trim()).
 const CORREGIR = ['Muy largo', 'Muy corto', 'Tono no es el nuestro', 'No contestó todo', 'Información incorrecta', 'Sin siguiente paso', 'Demasiado vendedor', 'Repite saludo o nombre', 'Prometió algo que no hay'];
 type Valores = { pulida: string; criterio: string; evitar: string; adjuntos: string[]; reescrita_por_agente: boolean };
 
-function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, evitarInicial = '', adjuntosInicial, galeria, onNuevo, acciones, onHecho }: {
-  tipo: 'ejemplo' | 'envio'; id: string; titulo: string; chips: string[]; leadDijo?: string | null; contexto?: string | null; original?: string | null; textoInicial: string; criterioInicial: string; evitarInicial?: string; adjuntosInicial: AdjuntoSel[]; galeria: Recurso[]; onNuevo: (r: Recurso) => void;
+function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoInicial, criterioInicial, evitarInicial = '', adjuntosInicial, galeria, onNuevo, acciones, onHecho, guia, tituloRespuesta, tituloOriginal }: {
+  tipo: 'ejemplo' | 'envio'; id: string; titulo: string; chips: string[]; leadDijo?: string | null; contexto?: string | null; original?: string | null; guia?: string | null; tituloRespuesta?: string; tituloOriginal?: string; textoInicial: string; criterioInicial: string; evitarInicial?: string; adjuntosInicial: AdjuntoSel[]; galeria: Recurso[]; onNuevo: (r: Recurso) => void;
   acciones: { label: string | ((editado: boolean) => string); clase?: string; run: (v: Valores) => Promise<any> }[]; onHecho?: () => void;
 }) {
   const p0 = partir(textoInicial);
@@ -113,8 +113,9 @@ function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoIni
   return (
     <div className="apr-ficha">
       <div className="apr-ficha-cab"><b>{titulo}</b>{chips.map((c, i) => <span key={i} className="ti-chip chip-tipo">{c}</span>)}</div>
+      {guia && <div style={{ padding: '10px 18px', background: '#FFF7E6', borderBottom: '1px solid #F1E3C2', fontSize: '.82rem', color: '#4a3d1c', lineHeight: 1.45 }}><b style={{ color: '#B7791F' }}>Qué evalúas aquí:</b> {guia}</div>}
       <Paso n={1} titulo="Qué dijo el lead"><LeadDijo texto={leadDijo} contexto={contexto} /></Paso>
-      <Paso n={2} titulo={reescrita ? 'La respuesta — versión reescrita por el agente con tu criterio' : editado ? 'La respuesta — tu versión (esto es lo que se guardará)' : 'La respuesta'}>
+      <Paso n={2} titulo={reescrita ? 'La respuesta — versión reescrita por el agente con tu criterio' : editado ? 'La respuesta — tu versión (esto es lo que se guardará)' : (tituloRespuesta || 'La respuesta')}>
         <label className="apr-tog"><input type="checkbox" checked={enDos} onChange={e => { setEnDos(e.target.checked); if (!e.target.checked && parte2.trim()) { setParte1(`${parte1.trim()}\n\n${parte2.trim()}`); setParte2(''); } }} /> Mandarla en dos mensajes de WhatsApp</label>
         {enDos ? (
           <div className="apr-dos">
@@ -125,7 +126,7 @@ function Ficha({ tipo, id, titulo, chips, leadDijo, contexto, original, textoIni
           <textarea className={'ti-envio-texto' + (editado ? ' editado' : '')} rows={Math.min(12, Math.max(4, Math.ceil(parte1.length / 90) + 1))} value={parte1} onChange={e => setParte1(e.target.value)} />
         )}
         {editado && <div className="ti-suave" style={{ margin: '6px 0 0', fontSize: '.76rem', color: '#4c1d95', fontWeight: 700 }}>Cambiaste el texto: al aprobar se guarda TU versión como el ejemplo (la original queda como referencia de lo que no).</div>}
-        {original && original.trim() !== texto.trim() && <details className="apr-orig"><summary>Ver lo que el agente había dicho</summary><div>{original}</div></details>}
+        {original && original.trim() !== texto.trim() && <details className="apr-orig"><summary>{tituloOriginal || 'Ver lo que el agente había dicho'}</summary><div>{original}</div></details>}
       </Paso>
       <Paso n={3} titulo="Qué debe considerar el agente y qué evitar">
         <input className="ti-envio-input" placeholder="La regla detrás. Ej.: si hace varias preguntas, contéstalas todas en un solo mensaje y cierra con una sola pregunta" value={criterio} onChange={e => setCriterio(e.target.value)} />
@@ -192,8 +193,14 @@ export default function TrabajoAprendizaje() {
   const avanzar = () => setIdx(i => Math.min(i + 1, Math.max(0, cola.length - 1)));
   const marcar = (clave: string, como: string) => { setHechos(h => ({ ...h, [clave]: como })); };
 
+  const GUIA: Record<string, { guia: string; resp: string; orig: string }> = {
+    convirtio: { guia: 'Esta respuesta la propuso el sistema a partir de una conversación real que terminó en venta. Arriba está la versión PULIDA que el agente aprendería a imitar; abajo, lo que dijo el consultor humano en esa conversación. Apruébala si el agente debería contestar así en ese momento; edítala si le falta algo; recházala si no es un buen ejemplo.', resp: 'La respuesta que aprendería el agente (versión pulida)', orig: 'Ver lo que dijo el consultor en la conversación real' },
+    humano_antes: { guia: 'Aquí el consultor contestó antes de que saliera la propuesta del agente. Arriba está la respuesta del consultor, que se propone como ejemplo; abajo, lo que el agente iba a decir.', resp: 'La respuesta del consultor (se propone como ejemplo)', orig: 'Ver lo que el agente iba a decir' },
+    correccion_implicita: { guia: 'El agente dijo una cosa y el consultor, justo después, dijo otra distinta: el sistema lo lee como corrección. Arriba, la versión del consultor; abajo, la del agente.', resp: 'La respuesta corregida (lo que dijo el consultor)', orig: 'Ver lo que el agente había dicho' },
+    correccion_dueno: { guia: 'Tu corrección. Puedes afinarla, ponerle regla o adjuntos.', resp: 'Tu versión aprobada', orig: 'Ver lo que el agente había propuesto' },
+  };
   const fichaEjemplo = (ej: Ej, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={ej.id} tipo="ejemplo" id={ej.id} evitarInicial={ej.evitar || ''} titulo={ej.contacto?.nombre || 'Ejemplo'} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
+    <Ficha key={ej.id} tipo="ejemplo" id={ej.id} evitarInicial={ej.evitar || ''} titulo={ej.contacto?.nombre || 'Ejemplo'} guia={!aprobado ? GUIA[ej.fuente]?.guia : null} tituloRespuesta={GUIA[ej.fuente]?.resp} tituloOriginal={GUIA[ej.fuente]?.orig} chips={[ESTADO_L[ej.estado] || ej.estado, FUENTE_L[ej.fuente] || ej.fuente, ej.estado_rev === 'dudoso' ? 'dudoso' : '', fecha(ej.created_at)].filter(Boolean)}
       leadDijo={ej.mensaje_lead} contexto={ej.situacion} original={ej.respuesta} textoInicial={ej.pulida || ej.respuesta || ''} criterioInicial={ej.criterio || ''} adjuntosInicial={Array.isArray(ej.adjuntos) ? ej.adjuntos : []} galeria={gal} onNuevo={addGal} onHecho={onHecho}
       acciones={aprobado ? [
         { label: (ed: boolean) => ed ? 'Guardar mi versión' : 'Guardar cambios', clase: 'primario', run: async v => { const r = await post({ accion: 'ejemplo', id: ej.id, ...v }); return r.error ? r : { hecho: 'Guardado: el agente lo usa desde el siguiente turno.' }; } },
@@ -204,7 +211,7 @@ export default function TrabajoAprendizaje() {
       ]} />
   );
   const fichaEnvio = (e: Env, aprobado: boolean, onHecho?: () => void) => (
-    <Ficha key={e.id} tipo="envio" id={e.id} titulo={e.contacto?.nombre || 'Lead'} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
+    <Ficha key={e.id} tipo="envio" id={e.id} titulo={e.contacto?.nombre || 'Lead'} guia={!aprobado ? 'Este mensaje del agente salió solo al vencer la ventana, sin tu aprobación. Si estuvo bien, apruébalo para que cuente como ejemplo; si no, corrígelo aquí; si no enseña nada, descártalo.' : null} chips={[ESTADO_L[e.salida?.estado] || e.salida?.estado || '', aprobado ? 'aprobado y enviado' : 'salió solo al vencer la ventana', fecha(e.enviado_at)].filter(Boolean)}
       leadDijo={e.salida?.ultimo_mensaje} contexto={e.salida?.objetivo} original={e.mensaje_original || null} textoInicial={e.mensaje} criterioInicial="" galeria={gal} onNuevo={addGal} onHecho={onHecho}
       adjuntosInicial={Array.isArray(e.adjuntos) && e.adjuntos.length ? e.adjuntos : e.imagen_url ? [{ id: e.imagen_id || '', tipo: 'image', url: e.imagen_url, nombre: 'Imagen' }] : []}
       acciones={aprobado ? [
