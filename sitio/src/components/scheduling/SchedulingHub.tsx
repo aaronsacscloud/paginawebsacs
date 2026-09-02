@@ -864,6 +864,36 @@ function EventTypeModal({
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [errorFoto, setErrorFoto] = useState('');
 
+  /* ══ EL HORARIO EN QUE SE PUEDEN MANDAR LOS RECORDATORIOS ══
+     Es GLOBAL, no de este tipo de reunión —por eso se guarda aparte, en
+     cuanto se toca—, pero se edita aquí: quien acaba de escribir «3 horas
+     antes» es exactamente quien se va a preguntar si eso puede caer a las 6
+     de la mañana. */
+  const [horario, setHorario] = useState<any>(null);
+  const [horarioGuardando, setHorarioGuardando] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/crm/whatsapp/automatizaciones')
+      .then(r => r.json())
+      .then(j => {
+        if (!vivo) return;
+        const fila = (j?.data || []).find((x: any) => x.clave === 'agenda_recordatorio');
+        setHorario(fila?.config?.horario || { desde: '08:00', hasta: '18:00', temprano: 'mover', tarde: 'cancelar' });
+      })
+      .catch(() => { /* sin config se enseña el default; el cron ya lo sanea */ });
+    return () => { vivo = false; };
+  }, []);
+
+  const guardarHorario = (parte: any) => {
+    const nuevo = { ...(horario || {}), ...parte };
+    setHorario(nuevo);
+    setHorarioGuardando(true);
+    fetch('/api/crm/whatsapp/automatizaciones', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clave: 'agenda_recordatorio', config: { horario: nuevo } }),
+    }).finally(() => setHorarioGuardando(false));
+  };
+
   // `unknown[]` además de los escalares: la lista de recordatorios es un
   // arreglo y antes aquí solo cabían valores sueltos.
   const updateForm = (field: string, value: string | number | boolean | unknown[]) => {
@@ -1134,6 +1164,51 @@ function EventTypeModal({
           <div style={{ fontSize: '0.68rem', color: '#8a8590', marginTop: 8, lineHeight: 1.5 }}>
             Todos los avisos dicen la fecha, la hora y que es hora del centro de México, y traen la liga de Meet cuando ya existe. Un recordatorio de menos de 5 minutos no alcanza a salir: el reloj revisa cada 5.
           </div>
+
+          {/* ══ A QUÉ HORAS SE PUEDEN MANDAR ══ */}
+          {horario && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e6e2f3' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#3f3b4d', marginBottom: 2 }}>
+                A qué horas se pueden mandar {horarioGuardando && <span style={{ fontWeight: 500, color: '#8a8590', fontSize: '0.72rem' }}>· guardando…</span>}
+              </div>
+              <div style={{ fontSize: '0.68rem', color: '#8a8590', marginBottom: 8, lineHeight: 1.5 }}>
+                Aplica a <b>todos</b> los tipos de reunión. Un aviso a las 6 de la mañana o a las 11 de la noche no lo lee nadie.
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', fontSize: '0.75rem', marginBottom: 8 }}>
+                <span style={{ color: '#6b6a76' }}>De</span>
+                <input type="time" value={horario.desde || '08:00'} onChange={e => guardarHorario({ desde: e.target.value })}
+                  style={{ ...selectStyle, width: 112 }} aria-label="Desde qué hora" />
+                <span style={{ color: '#6b6a76' }}>a</span>
+                <input type="time" value={horario.hasta || '18:00'} onChange={e => guardarHorario({ hasta: e.target.value })}
+                  style={{ ...selectStyle, width: 112 }} aria-label="Hasta qué hora" />
+                <span style={{ color: '#8a8590', fontSize: '0.7rem' }}>hora del centro de México</span>
+              </div>
+              <div style={{ display: 'grid', gap: 6, fontSize: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#6b6a76', minWidth: 148 }}>Si cae <b>antes</b> de abrir:</span>
+                  <select value={horario.temprano || 'mover'} onChange={e => guardarHorario({ temprano: e.target.value })}
+                    style={{ ...selectStyle, width: 240 }} aria-label="Si cae antes de abrir">
+                    <option value="mover">mandarlo al abrir</option>
+                    <option value="cancelar">no mandar ese recordatorio</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#6b6a76', minWidth: 148 }}>Si cae <b>después</b> de cerrar:</span>
+                  <select value={horario.tarde || 'cancelar'} onChange={e => guardarHorario({ tarde: e.target.value })}
+                    style={{ ...selectStyle, width: 240 }} aria-label="Si cae después de cerrar">
+                    <option value="cancelar">no mandar ese recordatorio</option>
+                    <option value="mover">adelantarlo a la hora de cierre</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ fontSize: '0.68rem', color: '#8a8590', marginTop: 8, lineHeight: 1.5 }}>
+                Un recordatorio movido dice el tiempo <b>real</b> que falta, no el que configuraste: si el de «3 horas» sale a las 8:00 para una reunión de las 9:00, el cliente lee «es en 1 hora».
+                {horario.tarde === 'cancelar' && (
+                  <> Con <b>no mandar</b>, una reunión de las 7 de la noche pierde su recordatorio de un día antes, porque caería a las 7 de la noche del día anterior.</>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>

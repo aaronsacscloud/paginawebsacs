@@ -207,6 +207,87 @@ export const PLANTILLA_CLIENTE_CERCA = 'reunion_recordatorio_ya';    // < 1 hora
 /** El corte. Con una hora todavía da tiempo de oír la nota y preparar algo. */
 export const CORTE_PREP_MIN = 60;
 
+/* ══ EL HORARIO EN QUE SE PUEDE MANDAR UN RECORDATORIO ═══════════════════
+   Decisión del dueño (2-sep-2026): los recordatorios solo salen en horario
+   laboral, 8:00 a 18:00. Un aviso a las 6 de la mañana o a las 11 de la noche
+   no lo lee nadie —y sí quema la conversación—, así que la hora ideal no
+   manda por sí sola: hay que preguntarse si a esa hora tiene sentido.
+
+   Vive en el CRM (Reuniones ▸ Avisos al cliente), no aquí: cambiar la
+   ventana no puede pedir un despliegue. */
+export type HorarioEnvio = {
+  desde: string; hasta: string;
+  /** Cae ANTES de abrir: 'mover' lo recorre a la hora de apertura. */
+  temprano: 'mover' | 'cancelar';
+  /** Cae DESPUÉS de cerrar: por omisión ese recordatorio no sale. */
+  tarde: 'mover' | 'cancelar';
+};
+
+export const HORARIO_ENVIO: HorarioEnvio = {
+  desde: '08:00', hasta: '18:00', temprano: 'mover', tarde: 'cancelar',
+};
+
+const aMin = (hhmm: string): number | null => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]), mm = Number(m[2]);
+  if (h < 0 || h > 23 || mm < 0 || mm > 59) return null;
+  return h * 60 + mm;
+};
+
+/** Lee la configuración sin confiar en su forma. Lo que no entienda, default. */
+export function leerHorarioEnvio(raw: any): HorarioEnvio {
+  const r = raw || {};
+  const desde = aMin(r.desde) != null ? String(r.desde) : HORARIO_ENVIO.desde;
+  const hasta = aMin(r.hasta) != null ? String(r.hasta) : HORARIO_ENVIO.hasta;
+  /* Una ventana invertida (cierra antes de abrir) no se "interpreta": se
+     descarta entera. Adivinar qué quiso decir es cómo se acaba mandando a las
+     3 de la mañana. */
+  if ((aMin(desde) as number) >= (aMin(hasta) as number)) return HORARIO_ENVIO;
+  const modo = (x: any, d: 'mover' | 'cancelar') => (x === 'mover' || x === 'cancelar' ? x : d);
+  return {
+    desde, hasta,
+    temprano: modo(r.temprano, HORARIO_ENVIO.temprano),
+    tarde: modo(r.tarde, HORARIO_ENVIO.tarde),
+  };
+}
+
+/**
+ * A qué hora se manda DE VERDAD este recordatorio. `null` = no se manda.
+ *
+ * Se razona en hora del centro de México, que es la del negocio y la que
+ * anuncian todos los mensajes.
+ */
+export function cuandoMandar(inicioReunion: number, anticipacionMin: number, h: HorarioEnvio = HORARIO_ENVIO): number | null {
+  const inicio = Number(inicioReunion);
+  const antes = Number(anticipacionMin);
+  if (!Number.isFinite(inicio) || !Number.isFinite(antes)) return null;
+  const ideal = inicio - antes * 60000;
+
+  const desdeMin = aMin(h.desde) as number;
+  const hastaMin = aMin(h.hasta) as number;
+
+  /* La hora de pared en CDMX: `inicioMs` arma los instantes con -06:00, así
+     que restarle el desfase y leerlo en UTC devuelve la hora local. */
+  const local = new Date(ideal - MX_OFFSET_MS);
+  const minutoDelDia = local.getUTCHours() * 60 + local.getUTCMinutes();
+  const medianoche = ideal - minutoDelDia * 60000;
+
+  if (minutoDelDia < desdeMin) {
+    if (h.temprano === 'cancelar') return null;
+    const movido = medianoche + desdeMin * 60000;
+    /* Recorrerlo solo sirve si sigue siendo ANTES de la reunión: un
+       "recordatorio" que llega cuando ya empezó no recuerda nada. */
+    return movido < inicio ? movido : null;
+  }
+  if (minutoDelDia > hastaMin) {
+    if (h.tarde === 'cancelar') return null;
+    const movido = medianoche + hastaMin * 60000;
+    return movido < inicio ? movido : null;
+  }
+  return ideal;
+}
+
 /** Cuál de las dos toca, según lo que falte de verdad. */
 export function plantillaCliente(faltaMin: number): string {
   const f = Number(faltaMin);

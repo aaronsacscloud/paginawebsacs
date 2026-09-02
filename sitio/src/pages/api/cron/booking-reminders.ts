@@ -18,11 +18,12 @@ import { notify } from '../../../lib/notify';
 import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { registrarMensaje } from '../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../lib/telefono';
-import { permitido } from '../../../lib/whatsapp/permisos';
+import { permitido, configDe } from '../../../lib/whatsapp/permisos';
 import {
   MX_OFFSET_MS, aMinutos, etiquetaReal, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
   PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA, plantillaCliente,
+  cuandoMandar, leerHorarioEnvio,
   cuandoLargo, etiquetaSerie, textoPlantillaCliente, textoPlantillaHost,
 } from '../../../lib/scheduling/recordatorios';
 
@@ -98,7 +99,15 @@ export const GET: APIRoute = async ({ request }) => {
      configuraba, se guardaba y no salía nada. */
   const { data: tipos } = await supabase.from('event_types').select('recordatorios').is('archived_at', null);
   const maxMin = Math.max(1440, ...(tipos || []).flatMap((t: any) => leerRecordatorios(t.recordatorios).map(aMinutos)));
-  const hastaMx = new Date(now - MX_OFFSET_MS + (maxMin + VENTANA_MIN) * 60000).toISOString().slice(0, 10);
+  /* Un día EXTRA de holgura. Un recordatorio que cae fuera del horario se
+     recorre dentro de la ventana, y recorrerlo hacia atrás lo adelanta: el de
+     «1 día antes» de una reunión de las 19:00 sale a las 18:00 del día
+     anterior, o sea 25 horas antes. Sin esta holgura la consulta todavía no
+     traería esa reunión y el recordatorio se perdería en silencio. */
+  const hastaMx = new Date(now - MX_OFFSET_MS + (maxMin + 1440 + VENTANA_MIN) * 60000).toISOString().slice(0, 10);
+
+  /* El horario en que SÍ tiene sentido mandar. Vive en el CRM. */
+  const horario = leerHorarioEnvio((await configDe('agenda_recordatorio')).horario);
 
   const { data: bookings, error } = await supabase.from('bookings')
     .select(`id, fecha, hora_inicio, estado, invitee_nombre, invitee_email, invitee_whatsapp, invitee_empresa,
@@ -144,6 +153,10 @@ export const GET: APIRoute = async ({ request }) => {
 
   const out = {
     horizonte_dias: Math.ceil(maxMin / 1440),
+    /* Cuántos NO salieron por caer fuera del horario laboral. Se cuenta: un
+       recordatorio que no sale tiene que poder verse, no adivinarse. */
+    fuera_de_horario: 0,
+    horario_envio: `${horario.desde}–${horario.hasta} · temprano: ${horario.temprano} · tarde: ${horario.tarde}`,
     truncado: (bookings || []).length >= TOPE,
     plantilla_cliente: okCliente ? 'APPROVED' : 'no disponible',
     plantilla_host: okHost ? 'APPROVED' : 'no disponible',
@@ -155,14 +168,20 @@ export const GET: APIRoute = async ({ request }) => {
   for (const b of (bookings || []) as any[]) {
     try {
       if (!b.fecha || !b.hora_inicio) continue;
-      const faltaMin = (inicioMs(b.fecha, b.hora_inicio) - now) / 60000;
+      const inicio = inicioMs(b.fecha, b.hora_inicio);
+      const faltaMin = (inicio - now) / 60000;
       if (faltaMin <= 0) continue;   // ya empezó: recordar no sirve de nada
 
       for (const r of leerRecordatorios(b.event_types?.recordatorios)) {
         const en = aMinutos(r);
-        /* Entre `en` y `en + ventana`. Nunca después: un «1 día antes» que
-           llega a las 20 horas dice una hora que ya no es. */
-        if (!(faltaMin >= en && faltaMin < en + VENTANA_MIN)) continue;
+        /* La hora en que se manda de VERDAD: la ideal, corrida al horario
+           laboral, o ninguna si a esa hora no tiene sentido. Ver
+           `cuandoMandar`. */
+        const programado = cuandoMandar(inicio, en, horario);
+        if (programado == null) { out.fuera_de_horario++; continue; }
+        /* Entre la hora programada y `+ ventana`. Nunca después: un «1 día
+           antes» que llega a las 20 horas dice una hora que ya no es. */
+        if (!(now >= programado && now < programado + VENTANA_MIN * 60000)) continue;
         /* El rótulo sale del RELOJ, no de la configuración: la ventana
            dispara hasta 6 minutos antes de la marca y el «10 minutos» llegaba
            cuando faltaban 15. Ver `etiquetaReal`. */

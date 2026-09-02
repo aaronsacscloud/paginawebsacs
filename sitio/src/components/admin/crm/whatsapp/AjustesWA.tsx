@@ -19,6 +19,64 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   );
 }
 
+
+/**
+ * QUÉ ESCRIBE SOLO POR WHATSAPP.
+ *
+ * La lista de permitidos, en pantalla. Es la regla real del sistema —el
+ * servidor la pregunta antes de cada envío— y por eso tiene que poder tocarse
+ * aquí: una regla que solo vive en el código no es una que el dueño pueda
+ * ejecutar, es una que tiene que pedir.
+ *
+ * Es FAIL-CLOSED: lo que está apagado no envía, y lo que no está en la lista
+ * tampoco. Los mensajes que manda una PERSONA —el inbox, las campañas, lo
+ * programado— no pasan por aquí; esto gobierna lo que sale solo.
+ */
+function Automatizaciones() {
+  const [filas, setFilas] = useState<any[] | null>(null);
+  const [tocando, setTocando] = useState('');
+
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/automatizaciones').then(r => r.json())
+      .then(j => setFilas(j?.data || []))
+      .catch(() => setFilas([]));
+  }, []);
+
+  const cambiar = (clave: string, activa: boolean) => {
+    setTocando(clave);
+    setFilas(f => (f || []).map(x => x.clave === clave ? { ...x, activa } : x));
+    fetch('/api/crm/whatsapp/automatizaciones', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clave, activa }),
+    })
+      /* Si el guardado falla se REGRESA el interruptor. Dejarlo puesto haría
+         creer que algo está apagado cuando sigue mandando. */
+      .then(r => { if (!r.ok) setFilas(f => (f || []).map(x => x.clave === clave ? { ...x, activa: !activa } : x)); })
+      .catch(() => setFilas(f => (f || []).map(x => x.clave === clave ? { ...x, activa: !activa } : x)))
+      .finally(() => setTocando(''));
+  };
+
+  if (!filas) return null;
+  const prendidas = filas.filter(f => f.activa).length;
+
+  return (
+    <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid #efecf8' }}>
+      <b style={{ fontSize: '0.86rem' }}>Qué escribe solo por WhatsApp</b>
+      <p style={{ margin: '4px 0 10px', fontSize: '0.7rem', color: '#8a8a92', lineHeight: 1.5 }}>
+        {prendidas} de {filas.length} encendidas. Lo que está apagado <b>no puede enviar</b>: el servidor pregunta esta lista antes de cada mensaje. Lo que mandas tú desde el inbox no pasa por aquí.
+      </p>
+      {filas.map(f => (
+        <div key={f.clave} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #f5f3fb', opacity: tocando === f.clave ? 0.55 : 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Toggle on={!!f.activa} onChange={v => cambiar(f.clave, v)} label={f.nombre} />
+            {f.nota && <p style={{ margin: '3px 0 0 43px', fontSize: '0.68rem', color: '#8a8a92', lineHeight: 1.45 }}>{f.nota}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AjustesWA({ onClose, inline = false }: { onClose?: () => void; inline?: boolean }) {
   const [a, setA] = useState<any>(null);
   const [guardando, setGuardando] = useState(false);
@@ -63,6 +121,7 @@ export default function AjustesWA({ onClose, inline = false }: { onClose?: () =>
         ? { background: '#fff', borderRadius: 12, padding: '20px 22px', width: '100%', maxWidth: 560, border: '1px solid #ececec' }
         : { background: '#fff', borderRadius: 14, padding: '20px 22px', width: 'min(500px, 94vw)', maxHeight: '86dvh', overflowY: 'auto' }}>
         <b style={{ fontSize: '0.95rem' }}>Automatización del inbox</b>
+        <Automatizaciones />
         <ImportarHistorial />
         <AjustesLlamadas />
         <AjustesInactividad />

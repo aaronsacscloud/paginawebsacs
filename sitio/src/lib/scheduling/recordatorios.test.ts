@@ -10,6 +10,7 @@
 import {
   aMinutos, etiqueta, etiquetaReal, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
   inicioMs, textoWhatsApp, TZ_ETIQUETA, plantillaCliente,
+  cuandoMandar, leerHorarioEnvio, HORARIO_ENVIO,
   PLANTILLA_CLIENTE, PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA, CORTE_PREP_MIN,
   paramsCliente, paramsHost, etiquetaSerie, horaLocalInvitado,
 } from './recordatorios.ts';
@@ -232,6 +233,52 @@ es(horaLocalInvitado({ fecha: '2026-09-01', hora_inicio: '15:00', timezone_invit
    '5:00 p.m. en tu zona (New York)', 'el guion bajo se vuelve espacio');
 es(horaLocalInvitado({ fecha: '2026-09-01', hora_inicio: '15:00', timezone_invitado: 'America/Mexico_City' } as any),
    '', 'misma zona que la nuestra, no se repite');
+
+
+// ── Los recordatorios solo salen en horario laboral (8:00 a 18:00) ───────
+// Un aviso a las 6 de la mañana o a las 11 de la noche no lo lee nadie, y sí
+// quema la conversación. La hora ideal no manda por sí sola.
+const R = (f: string, h: string) => inicioMs(f, h);
+const hhmm = (ms: number | null) => ms == null ? null
+  : new Date(ms - 6 * 3600000).toISOString().slice(11, 16);
+const dia = (ms: number | null) => ms == null ? null
+  : new Date(ms - 6 * 3600000).toISOString().slice(0, 10);
+
+// Dentro de la ventana: sale a su hora exacta.
+es(hhmm(cuandoMandar(R('2026-09-10', '15:00'), 180)), '12:00', '3 h antes de las 3 pm: mediodía');
+es(hhmm(cuandoMandar(R('2026-09-10', '15:00'), 1440)), '15:00', 'un día antes, misma hora');
+
+// Cae ANTES de abrir: se recorre a las 8:00 del mismo día.
+es(hhmm(cuandoMandar(R('2026-09-10', '09:00'), 180)), '08:00', '3 h antes de las 9 am caería a las 6: se mueve a las 8');
+es(dia(cuandoMandar(R('2026-09-10', '09:00'), 180)), '2026-09-10', 'y se queda en el día de la reunión');
+// Salvo que moverlo lo ponga DESPUÉS del inicio: entonces no se manda.
+es(cuandoMandar(R('2026-09-10', '07:30'), 60), null, 'reunión a las 7:30: moverlo a las 8 sería tarde');
+
+// Cae DESPUÉS de cerrar: por omisión ese recordatorio NO sale.
+es(cuandoMandar(R('2026-09-10', '20:00'), 10), null, '10 min antes de las 8 pm: no sale');
+es(cuandoMandar(R('2026-09-11', '19:00'), 1440), null, 'un día antes de las 7 pm cae a las 7 pm: no sale');
+// Pero si se configura 'mover', se adelanta al cierre.
+const tardeMueve = { ...HORARIO_ENVIO, tarde: 'mover' as const };
+es(hhmm(cuandoMandar(R('2026-09-10', '20:00'), 10, tardeMueve)), '18:00', 'con mover, se adelanta a las 6 pm');
+
+// Los bordes son inclusivos: 8:00 en punto y 18:00 en punto sí salen.
+es(hhmm(cuandoMandar(R('2026-09-10', '11:00'), 180)), '08:00', 'justo a las 8:00 sale');
+es(hhmm(cuandoMandar(R('2026-09-10', '21:00'), 180)), '18:00', 'justo a las 18:00 sale');
+
+// La ventana se puede cambiar desde el CRM.
+es(hhmm(cuandoMandar(R('2026-09-10', '09:00'), 180, leerHorarioEnvio({ desde: '06:00', hasta: '22:00' }))),
+   '06:00', 'con ventana de 6 a 22, las 6 am ya es válida');
+
+// Configuración basura → la de siempre. Una ventana invertida NO se
+// interpreta: adivinar qué quiso decir es cómo se acaba mandando a las 3 am.
+es(leerHorarioEnvio({ desde: '19:00', hasta: '08:00' }), HORARIO_ENVIO, 'ventana invertida se descarta entera');
+es(leerHorarioEnvio({ desde: '25:00' }).desde, '08:00', 'hora imposible, la de siempre');
+es(leerHorarioEnvio(null), HORARIO_ENVIO, 'sin configuración, la de siempre');
+es(leerHorarioEnvio({ desde: '09:30', hasta: '17:00', tarde: 'mover' }),
+   { desde: '09:30', hasta: '17:00', temprano: 'mover', tarde: 'mover' }, 'configuración válida se respeta');
+// Sin datos utilizables no se inventa una hora de envío.
+es(cuandoMandar(NaN, 60), null, 'sin inicio, no se manda');
+es(cuandoMandar(R('2026-09-10', '15:00'), NaN), null, 'sin anticipación, no se manda');
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }
