@@ -32,6 +32,112 @@ const ESTADO_REUNION: Record<string, { bg: string; fg: string; t: string }> = {
   confirmada: { bg: P.azulAgua,    fg: P.azulTinta,    t: 'Confirmada' },
 };
 
+/**
+ * La minuta NO es texto: `bookings.minuta` es jsonb, y viene en dos formas.
+ *
+ *   · consultoría (20 de 24) — acuerdos, lo que le toca a Sacs, lo que le toca
+ *     al cliente, qué se revisó y qué sigue;
+ *   · demostración (4)       — ficha del prospecto, qué le duele, qué le
+ *     mostramos, qué le interesó, objeciones, requerimientos cotizables.
+ *
+ * Las dos traen `raw`, la transcripción completa.
+ *
+ * Pintarla con `{r.minuta}` reventaba la pantalla entera con el React #31
+ * ("objects are not valid as a React child") en CUALQUIER cuenta que tuviera
+ * reuniones — es decir, justo las que importan. No se vio antes porque la
+ * cuenta con la que se probó no tenía ninguna.
+ *
+ * Por eso este render es a prueba de formas: muestra lo conocido con su
+ * etiqueta, y de lo desconocido solo lo que sea texto de verdad. Un valor que
+ * no se sabe pintar se omite, nunca se pinta crudo.
+ */
+const ETIQUETAS_MINUTA: [string, string][] = [
+  ['acuerdos', 'Acuerdos'],
+  ['sacs', 'Le toca a Sacs'],
+  ['cliente', 'Le toca al cliente'],
+  ['siguiente', 'Qué sigue'],
+  ['reviso', 'Qué se revisó'],
+  ['duele', 'Qué le duele'],
+  ['opera', 'Cómo opera'],
+  ['mostramos', 'Qué le mostramos'],
+  ['intereso', 'Qué le interesó'],
+  ['objeciones', 'Objeciones'],
+  ['decide', 'Quién decide'],
+];
+
+/** Devuelve texto pintable, o null si el valor no lo es. */
+function comoTexto(v: any): string | null {
+  if (typeof v === 'string') return v.trim() || null;
+  if (typeof v === 'number') return String(v);
+  if (Array.isArray(v) && v.every(x => typeof x === 'string')) return v.join('\n') || null;
+  return null;
+}
+
+function Minuta({ m }: { m: any }) {
+  // Defensa por si algún día llega como texto plano.
+  if (typeof m === 'string') return <Parrafo>{m}</Parrafo>;
+  if (!m || typeof m !== 'object') return null;
+
+  const campos = ETIQUETAS_MINUTA
+    .map(([k, label]) => [label, comoTexto(m[k])] as const)
+    .filter(([, v]) => v);
+
+  const ficha = m.ficha && typeof m.ficha === 'object' && !Array.isArray(m.ficha)
+    ? Object.entries(m.ficha).map(([k, v]) => [k.replace(/_/g, ' '), comoTexto(v)] as const).filter(([, v]) => v)
+    : [];
+
+  const reqs = Array.isArray(m.requerimientos)
+    ? m.requerimientos.filter((r: any) => r && typeof r === 'object' && typeof r.titulo === 'string')
+    : [];
+
+  return (
+    <div style={{ fontSize: '0.75rem', color: '#555', lineHeight: 1.5 }}>
+      {campos.map(([label, v]) => (
+        <div key={label} style={{ marginBottom: 7 }}>
+          <span style={E.lbl}>{label}</span>
+          <Parrafo>{v!}</Parrafo>
+        </div>
+      ))}
+
+      {ficha.length > 0 && (
+        <div style={{ marginBottom: 7 }}>
+          <span style={E.lbl}>Ficha</span>
+          {ficha.map(([k, v]) => (
+            <div key={k}><b style={{ textTransform: 'capitalize' }}>{k}:</b> {v}</div>
+          ))}
+        </div>
+      )}
+
+      {reqs.length > 0 && (
+        <div style={{ marginBottom: 7 }}>
+          <span style={E.lbl}>Lo que pidió</span>
+          {reqs.map((r: any, i: number) => (
+            <div key={i}>
+              · {r.titulo}
+              {Number(r.valor) > 0 && <b> · ${Math.round(Number(r.valor)).toLocaleString('es-MX')}</b>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {typeof m.raw === 'string' && m.raw.trim() && (
+        <details style={{ marginTop: 6 }}>
+          <summary style={{ cursor: 'pointer', color: P.violetaTinta, fontWeight: 700 }}>La transcripción completa</summary>
+          <Parrafo alto>{m.raw}</Parrafo>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function Parrafo({ children, alto }: { children: string; alto?: boolean }) {
+  return (
+    <div style={{ whiteSpace: 'pre-wrap', maxHeight: alto ? 340 : 200, overflowY: 'auto', marginTop: 2 }}>
+      {children}
+    </div>
+  );
+}
+
 function Bloque({ titulo, nota, children }: { titulo: string; nota?: string; children: any }) {
   return (
     <div style={E.caja}>
@@ -159,7 +265,7 @@ export default function SeguimientoCuenta({ companyId, nombre }: { companyId: st
               {r.minuta && (
                 <details style={{ marginTop: 4 }}>
                   <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: P.violetaTinta, fontWeight: 700 }}>Ver la minuta</summary>
-                  <div style={{ fontSize: '0.75rem', color: '#555', marginTop: 5, whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 260, overflowY: 'auto' }}>{r.minuta}</div>
+                  <div style={{ marginTop: 5 }}><Minuta m={r.minuta} /></div>
                 </details>
               )}
             </div>
