@@ -53,6 +53,7 @@ const DashboardTab = lazySeguro(() => import('./crm/DashboardTab'));
 const TrabajoPanel = lazySeguro(() => import('./TrabajoPanel'));
 const PartnersTab = lazySeguro(() => import('./crm/PartnersTab'));
 const CommissionsTab = lazySeguro(() => import('./crm/CommissionsTab'));
+const ComisionesTab = lazySeguro(() => import('./crm/ComisionesTab'));
 const ContentReviewTab = lazySeguro(() => import('./crm/ContentReviewTab'));
 const RevenueHub = lazySeguro(() => import('./RevenueHub'));
 const ClientesTab = lazySeguro(() => import('./crm/ClientesTab'));
@@ -83,7 +84,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
+type Tab = 'onboarding' | 'churn' | 'dashboard' | 'hoy' | 'pipeline' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'comisiones' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca' | 'email' | 'whatsapp' | 'wa-masivos' | 'wa-plantillas' | 'wa-metricas' | 'wa-numero' | 'wa-config' | 'outbound' | 'secuencias' | 'soporte' | 'wiki';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -196,6 +197,9 @@ const NAV_SECTIONS = [
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
+      // Comisiones vive en Facturación y no en Partners: es dinero que SALE,
+      // se calcula de los pagos que entraron y lo revisa quien cuadra el mes.
+      { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
     ],
   },
   {
@@ -243,7 +247,7 @@ const NAV_SECTIONS = [
     label: 'Partners', sec: 'colaboradores', icon: 'partners',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
-      { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
+      { id: 'commissions' as Tab, label: 'Comisiones de partners', icon: 'pagos' },
       { id: 'content-review' as Tab, label: 'Revisar contenido', icon: 'automations' },
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
     ],
@@ -253,7 +257,7 @@ const NAV_SECTIONS = [
     // Por eso va sola al final y no colgada de otro grupo.
     label: 'Documentación', sec: 'documentacion', icon: 'automations',
     items: [
-      { id: 'wiki' as Tab, label: 'Wiki de ventas', icon: 'automations' },
+      { id: 'wiki' as Tab, label: 'Wiki', icon: 'automations' },
     ],
   },
 ];
@@ -1024,6 +1028,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><AutomationsTab /></ErrorBoundary>
         ) : tab === 'partners' ? (
           <ErrorBoundary><PartnersTab /></ErrorBoundary>
+        ) : tab === 'comisiones' ? (
+          <ErrorBoundary><ComisionesTab /></ErrorBoundary>
         ) : tab === 'commissions' ? (
           <ErrorBoundary><CommissionsTab /></ErrorBoundary>
         ) : tab === 'content-review' ? (
