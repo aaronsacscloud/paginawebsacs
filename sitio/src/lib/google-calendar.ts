@@ -182,6 +182,33 @@ export async function createCalendarEvent(
 /**
  * Delete a Google Calendar event.
  */
+
+/**
+ * Escribe (o reemplaza) el bloque «Para la reunión» en la descripción del evento:
+ * lo que el lead dijo que quiere ver en la demo, para que el consultor lo tenga en
+ * el calendario sin abrir el CRM. Idempotente: el bloque va entre marcadores.
+ */
+export async function escribirBloqueEnEvento(teamMemberId: string, eventId: string, titulo: string, lineas: string[]): Promise<boolean> {
+  const auth = await getAuthenticatedClient(teamMemberId);
+  if (!auth) return false;
+  try {
+    const calendar = google.calendar({ version: 'v3', auth: auth.client });
+    const ev = await calendar.events.get({ calendarId: auth.calendarId, eventId });
+    const INI = `— ${titulo} —`, FIN = `— fin ${titulo.toLowerCase()} —`;
+    const bloque = lineas.length ? `${INI}\n${lineas.map(l => `• ${l}`).join('\n')}\n${FIN}` : '';
+    const actual = String(ev.data.description || '');
+    const re = new RegExp(`\\n?${INI.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${FIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    const sinBloque = actual.replace(re, '').trimEnd();
+    const description = bloque ? `${sinBloque}\n\n${bloque}` : sinBloque;
+    if (description === actual) return true;
+    await calendar.events.patch({ calendarId: auth.calendarId, eventId, requestBody: { description } });
+    return true;
+  } catch (err: any) {
+    console.error('[calendar] no se pudo escribir el bloque en el evento:', err?.message || err);
+    return false;
+  }
+}
+
 export async function deleteCalendarEvent(teamMemberId: string, eventId: string): Promise<boolean> {
   const auth = await getAuthenticatedClient(teamMemberId);
   if (!auth) return false;

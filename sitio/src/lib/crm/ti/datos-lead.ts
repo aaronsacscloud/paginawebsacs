@@ -22,9 +22,9 @@ import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 export type DatoLead = { campo: string; valor: string; confianza?: number; evidencia?: string; corrige?: boolean };
 export type FuenteDato = 'agente' | 'humano_respondio' | 'llamada' | 'llamada_nota' | 'accion' | 'formulario';
 
-export const CAMPOS_LEAD = ['nombre', 'apellido', 'email', 'empresa', 'giro', 'sucursales', 'ciudad', 'estado', 'sitio_web', 'instagram', 'puesto', 'plan_interes', 'sistema_actual', 'dolor', 'mejor_hora', 'canal_preferido', 'cuando_decide', 'otro'] as const;
+export const CAMPOS_LEAD = ['nombre', 'apellido', 'email', 'empresa', 'giro', 'sucursales', 'ciudad', 'estado', 'sitio_web', 'instagram', 'puesto', 'plan_interes', 'sistema_actual', 'dolor', 'mejor_hora', 'canal_preferido', 'cuando_decide', 'tema_reunion', 'otro'] as const;
 
-const ETIQUETA: Record<string, string> = { nombre: 'Nombre', apellido: 'Apellido', email: 'Correo', empresa: 'Marca / tienda', giro: 'Giro', sucursales: 'Sucursales', ciudad: 'Ciudad', estado: 'Estado', sitio_web: 'Sitio web', instagram: 'Instagram', puesto: 'Puesto', plan_interes: 'Plan de interés', sistema_actual: 'Sistema actual', dolor: 'Dolor', mejor_hora: 'Mejor hora', canal_preferido: 'Canal preferido', cuando_decide: 'Cuándo decide' };
+const ETIQUETA: Record<string, string> = { nombre: 'Nombre', apellido: 'Apellido', email: 'Correo', empresa: 'Marca / tienda', giro: 'Giro', sucursales: 'Sucursales', ciudad: 'Ciudad', estado: 'Estado', sitio_web: 'Sitio web', instagram: 'Instagram', puesto: 'Puesto', plan_interes: 'Plan de interés', sistema_actual: 'Sistema actual', dolor: 'Dolor', mejor_hora: 'Mejor hora', canal_preferido: 'Canal preferido', cuando_decide: 'Cuándo decide', tema_reunion: 'Para la reunión' };
 
 const limpio = (v: any, max = 120) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const esPlaceholderNombre = (n?: string | null) => { const s = limpio(n).toLowerCase(); return !s || s === 'lead' || /^\+?\d[\d\s-]{6,}$/.test(s) || s === 'desconocido' || s === 'sin nombre'; };
@@ -74,6 +74,7 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
   }
 
   const upCo: Record<string, any> = {};
+  let temasCambiaron = false;
   let co: any = null;
   if (companyId) { const r = await supabase.from('companies').select('giro, sucursales, sitio_web, ciudad, estado_geo, propiedades').eq('id', companyId).maybeSingle(); co = r.data; }
 
@@ -121,6 +122,16 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
         else { const pp = { ...((co.propiedades as any) || {}) }; if (!pp.instagram) { pp.instagram = v.slice(0, 80); upCo.propiedades = pp; cambios.push({ campo: 'instagram', antes: null, despues: v, evidencia: d.evidencia, tabla: 'companies' }); } }
         break;
       }
+      case 'tema_reunion': {
+        // Lo que quiere VER en la demo. Lista viva en propiedades.temas_reunion; el consultor la ve en el inbox y en el evento del calendario.
+        const tema = v.slice(0, 140); if (tema.length < 3) break;
+        const lista: any[] = Array.isArray(props.temas_reunion) ? [...props.temas_reunion] : [];
+        if (lista.some(t => limpio(t.tema).toLowerCase() === tema.toLowerCase())) break;
+        lista.push({ tema, fuente: ctx.fuente === 'agente' || ctx.fuente === 'humano_respondio' ? 'lead' : ctx.fuente, evidencia: (d.evidencia || '').slice(0, 160) || null, cuando: new Date().toISOString() });
+        props.temas_reunion = lista.slice(-30); temasCambiaron = true;
+        cambios.push({ campo: 'tema_reunion', antes: null, despues: tema, evidencia: d.evidencia, tabla: 'contacts' });
+        break;
+      }
       default: {
         // sistema_actual, dolor, mejor_hora, canal_preferido, cuando_decide, otro: contexto de venta; se guarda en propiedades.datos_lead.
         if (d.campo !== 'otro' && (datosLead[d.campo] !== v) && (datosLead[d.campo] ? puedePisar(d) : puedeLlenar(d))) { cambios.push({ campo: d.campo, antes: datosLead[d.campo] || null, despues: v, evidencia: d.evidencia, tabla: 'perfil' }); datosLead[d.campo] = v; }
@@ -132,6 +143,7 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
   const ahora = new Date().toISOString();
   const historial = [...(Array.isArray(props.historial_datos) ? props.historial_datos : []), ...cambios.map(x => ({ campo: x.campo, antes: x.antes ?? null, despues: x.despues, fuente: ctx.fuente, evidencia: (x.evidencia || '').slice(0, 160) || null, cuando: ahora }))].slice(-40);
   upC.propiedades = { ...props, datos_lead: datosLead, historial_datos: historial };
+  if (temasCambiaron) setTimeout(() => { sincronizarTemasReunion(contactId).catch(() => {}); }, 0);
   upC.updated_at = ahora;
   const { error } = await supabase.from('contacts').update(upC).eq('id', contactId);
   if (error) {
@@ -141,9 +153,13 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
   }
   if (companyId && Object.keys(upCo).length) await supabase.from('companies').update({ ...upCo, updated_at: ahora }).eq('id', companyId);
   const visibles = cambios.filter(x => x.tabla !== 'perfil' || ['sistema_actual', 'dolor'].includes(x.campo));
+  const temas = visibles.filter(x => x.campo === 'tema_reunion');
+  if (temas.length) await supabase.from('activities').insert({ contact_id: contactId, company_id: companyId, tipo: 'tema_reunion', titulo: `Quiere ver en la reunión: ${temas.map(t => t.despues).join(' · ')}`, descripcion: temas.map(t => `${t.despues}${t.evidencia ? ` · dijo: «${limpio(t.evidencia, 120)}»` : ''}`).join('\n'), automatico: true, metadata: { fuente: ctx.fuente, conversation_id: ctx.conversation_id || null } }).then(() => {}, () => {});
   if (visibles.length) {
-    const titulo = `Datos actualizados desde la conversación: ${[...new Set(visibles.map(x => ETIQUETA[x.campo] || x.campo))].join(', ')}`;
-    const descripcion = visibles.map(x => `${ETIQUETA[x.campo] || x.campo}: ${x.antes == null || x.antes === '' ? '(vacío)' : x.antes} → ${x.despues}${x.evidencia ? ` · dijo: «${limpio(x.evidencia, 120)}»` : ''}`).join('\n');
+    const otros = visibles.filter(x => x.campo !== 'tema_reunion');
+    if (!otros.length) return { cambios };
+    const titulo = `Datos actualizados desde la conversación: ${[...new Set(otros.map(x => ETIQUETA[x.campo] || x.campo))].join(', ')}`;
+    const descripcion = otros.map(x => `${ETIQUETA[x.campo] || x.campo}: ${x.antes == null || x.antes === '' ? '(vacío)' : x.antes} → ${x.despues}${x.evidencia ? ` · dijo: «${limpio(x.evidencia, 120)}»` : ''}`).join('\n');
     await supabase.from('activities').insert({ contact_id: contactId, company_id: companyId, tipo: 'datos_actualizados', titulo, descripcion, automatico: true, metadata: { fuente: ctx.fuente, conversation_id: ctx.conversation_id || null, cambios: visibles.map(({ campo, antes, despues }) => ({ campo, antes, despues })) } }).then(() => {}, () => {});
   }
   return { cambios };
@@ -194,4 +210,15 @@ export async function extraerYAplicar(contactId: string, texto: string, fuente: 
   await supabase.from('ti_perfil').upsert({ contact_id: contactId, intenciones: [...prev, ...datos.map(d => ({ ...d, cuando: new Date().toISOString(), fuente }))].slice(-60), updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
   if (cambios.length) await supabase.from('ia_log').insert({ accion: 'datos_lead', contact_id: contactId, razon: fuente, costo_usd: costo, detalle: { cambios: cambios.map(({ campo, antes, despues }) => ({ campo, antes, despues })) } }).then(() => {}, () => {});
   return { cambios, datos, costo };
+}
+
+/** Los temas de la reunión, escritos en el evento del calendario de la próxima cita (si la hay). Idempotente. */
+export async function sincronizarTemasReunion(contactId: string): Promise<boolean> {
+  const { data: c } = await supabase.from('contacts').select('propiedades').eq('id', contactId).maybeSingle();
+  const temas: any[] = Array.isArray((c?.propiedades as any)?.temas_reunion) ? (c!.propiedades as any).temas_reunion : [];
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const { data: b } = await supabase.from('bookings').select('id, host_id, google_event_id').eq('contact_id', contactId).gte('fecha', hoy).in('estado', ['agendada', 'confirmada']).not('google_event_id', 'is', null).order('fecha').order('hora_inicio').limit(1).maybeSingle();
+  if (!b?.google_event_id || !b.host_id) return false;
+  const { escribirBloqueEnEvento } = await import('../../google-calendar');
+  return escribirBloqueEnEvento(b.host_id, b.google_event_id, 'Para la reunión', temas.filter(t => !t.hecho).map(t => `${t.tema}${t.fuente === 'consultor' ? ' (consultor)' : ''}`));
 }

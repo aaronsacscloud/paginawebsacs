@@ -200,6 +200,12 @@ zapatos sino ropa), repórtalo con "corrige": true y usa el dato nuevo en tu
 respuesta. Un dato que usaste para una acción (el correo con el que agendas, el
 nombre con el que lo saludas) SIEMPRE va en "datos". La "evidencia" es la cita
 textual corta; sin evidencia no hay dato.
+PARA LA REUNIÓN: cada cosa que el lead dice que quiere ver, probar o resolver en la
+demo (apartados entre sucursales, tallas y colores, su e-commerce, cómo migrar su
+inventario…) va en "datos" con campo "tema_reunion", un tema por dato, en 3-8
+palabras. Se anota en su ficha y en el evento del calendario del consultor, así que
+puedes decirle con verdad «lo dejo anotado para que te lo enseñen el jueves». Si
+pregunta qué van a ver, se lo enumeras (lo tienes en LO QUE EL CRM SABE).
 `;
 
 /** Lo que el agente debe devolver en cada turno — el contrato con el motor. */
@@ -210,7 +216,7 @@ Responde SOLO un JSON con esta forma:
  "objetivo": "qué persigues con ESTE mensaje, en una línea",
  "mensaje": "el texto que se le manda al lead (vacío si no debes responder)",
  "responder": true|false,
- "datos": [{"campo":"nombre|apellido|email|empresa|giro|sucursales|ciudad|estado|sitio_web|instagram|puesto|plan_interes|sistema_actual|dolor|mejor_hora|canal_preferido|cuando_decide|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":true|false}],
+ "datos": [{"campo":"nombre|apellido|email|empresa|giro|sucursales|ciudad|estado|sitio_web|instagram|puesto|plan_interes|sistema_actual|dolor|mejor_hora|canal_preferido|cuando_decide|tema_reunion|otro","valor":"…","confianza":0.0-1.0,"evidencia":"cita textual corta","corrige":true|false}],
  "escalar": {"si": true|false, "motivo": "por qué lo ve el consultor (si aplica)"},
  "interes": {"nivel": "alto|medio|bajo", "razon": "qué en su mensaje lo dice"},
  "accion": {"tipo": "ninguna|agendar|confirmar_asistencia|liga_reagendar", "fecha": "YYYY-MM-DD (solo agendar)", "hora": "HH:MM (solo agendar)", "email": "correo del lead si lo dio o el CRM lo tiene"},

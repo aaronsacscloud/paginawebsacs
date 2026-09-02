@@ -16,6 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
   const respuesta = String(b.respuesta || '').trim();
   if (respuesta.length < 2) return json({ error: 'Escribe la respuesta que tú hubieras dado' }, 400);
   const ahora = new Date().toISOString();
+  const criterio = String(b.criterio || '').trim().slice(0, 600);
   let envio: any = null;
   if (b.envio_id) {
     const { data } = await supabase.from('ti_envios').select('*').eq('id', b.envio_id).maybeSingle();
@@ -25,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
   const { data: ej, error } = await supabase.from('ia_ejemplos').insert({
     estado, situacion: b.situacion || envio?.salida?.objetivo || 'Corrección del dueño desde el panel',
     mensaje_lead: b.mensaje_lead || envio?.salida?.ultimo_mensaje || null, respuesta, pulida: respuesta,
-    por_que: envio ? `El dueño corrigió al agente. El agente había propuesto: ${envio.mensaje}` : 'El dueño escribió la respuesta ideal para este caso',
+    por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}${envio ? `El dueño corrigió al agente. El agente había propuesto: ${envio.mensaje}` : 'El dueño escribió la respuesta ideal para este caso'}`,
     fuente: 'correccion_dueno', contact_id: b.contact_id || envio?.contact_id || null, conversation_id: envio?.conversation_id || null,
     estado_rev: 'aprobado', revisado_at: ahora,
   }).select('id').single();

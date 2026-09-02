@@ -63,14 +63,14 @@ async function charla(contactId: string, limite = 30) {
 }
 
 async function ejemplosAprobados(estado?: string) {
-  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente').eq('estado_rev', 'aprobado').order('created_at', { ascending: false }).limit(60);
+  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que').eq('estado_rev', 'aprobado').order('created_at', { ascending: false }).limit(60);
   const { data } = await q;
   if (!(data || []).length) return '';
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
   const orden = (e: any) => (e.fuente === 'correccion_dueno' ? 0 : 1) + (estado && e.estado === estado ? 0 : 2);
   const lista = (data || []).sort((a, b) => orden(a) - orden(b)).slice(0, 24);
   return '\n\nEJEMPLOS APROBADOS POR EL DUEÑO (así se contesta; imita el criterio, no el texto):\n'
-    + lista.map(e => `[${e.estado}] Lead: ${e.situacion}\nNosotros: ${e.pulida}`).join('\n---\n');
+    + lista.map(e => { const m = String(e.por_que || '').match(/^CRITERIO:\s*([^\n]+)/); return `[${e.estado}] Lead: ${e.situacion}\nNosotros: ${e.pulida}${m ? `\nCriterio del dueño: ${m[1].trim()}` : ''}`; }).join('\n---\n');
 }
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
@@ -99,7 +99,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
-  const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
+  const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,

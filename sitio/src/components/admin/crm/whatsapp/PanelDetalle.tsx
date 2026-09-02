@@ -163,6 +163,43 @@ const ESTADO_SUB: Record<string, [string, string]> = { activa: [C.emerald50, C.e
 
 
 // ── Secuencias del contacto: qué recibe en automático y el freno de mano ──
+
+/* «PARA LA REUNIÓN»: lo que el lead fue diciendo que quiere ver en la demo (lo anota
+   el agente solo, con la frase del lead como evidencia) más lo que el consultor
+   agrega a mano. Es la agenda de la demo: se lee en 5 segundos antes de entrar y
+   también viaja al evento del calendario. */
+function TemasReunion({ contactId, temas, onCambio }: { contactId: string; temas?: any[]; onCambio: (t: any[]) => void }) {
+  const [nuevo, setNuevo] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const lista: any[] = Array.isArray(temas) ? temas : [];
+  const llamar = async (body: any) => {
+    if (ocupado) return; setOcupado(true);
+    try { const r = await fetch('/api/crm/ti/temas-reunion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, ...body }) }).then(x => x.json()); if (r?.temas) onCambio(r.temas); }
+    finally { setOcupado(false); }
+  };
+  return (
+    <Seccion id="g-temas" titulo="Para la reunión" n={lista.filter(t => !t.hecho).length || null} abiertaDefault>
+      <div style={{ margin: '0 16px 10px', borderRadius: 10, border: `1px solid ${C.g100}`, background: 'rgba(250,250,252,.7)', padding: '9px 12px' }}>
+        {lista.length === 0 && <div style={{ fontSize: 12, color: C.g400, lineHeight: 1.5 }}>Aquí se van juntando los temas que el lead pide ver en la demo. El agente los anota solo; tú puedes agregar más.</div>}
+        {lista.map((t: any, i: number) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', borderTop: i ? `1px solid ${C.g50}` : 'none', opacity: t.hecho ? .5 : 1 }}>
+            <input type="checkbox" checked={!!t.hecho} onChange={e => llamar({ hecho: { tema: t.tema, valor: e.target.checked } })} title="Visto en la reunión" style={{ marginTop: 3 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, color: C.g900, fontWeight: 600, textDecoration: t.hecho ? 'line-through' : 'none' }}>{t.tema}</div>
+              <div style={{ fontSize: 10.5, color: C.g400, marginTop: 1 }}>{t.fuente === 'consultor' ? 'Lo agregó el consultor' : t.evidencia ? `Dijo: «${String(t.evidencia).slice(0, 90)}»` : 'Lo pidió el lead'}</div>
+            </div>
+            <button onClick={() => llamar({ quitar: t.tema })} title="Quitar" style={{ border: 'none', background: 'none', color: C.g400, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
+          </div>
+        ))}
+        <form onSubmit={e => { e.preventDefault(); if (nuevo.trim().length >= 3) { llamar({ agregar: nuevo.trim() }); setNuevo(''); } }} style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <input value={nuevo} onChange={e => setNuevo(e.target.value)} placeholder="Agregar tema para la demo…" style={{ flex: 1, minWidth: 0, border: `1px solid ${C.g100}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, fontFamily: 'inherit' }} />
+          <button type="submit" disabled={ocupado || nuevo.trim().length < 3} style={{ border: 'none', background: C.azulTinta, color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Agregar</button>
+        </form>
+      </div>
+    </Seccion>
+  );
+}
+
 function SeccionSecuencias({ contactId }: { contactId: string }) {
   const [datos, setDatos] = useState<any[] | null>(null);
   const [ocupado, setOcupado] = useState('');
@@ -539,6 +576,9 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
         <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta).length} abiertaDefault>
           {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
         </Seccion>
+      )}
+      {contactoBase && (
+        <TemasReunion contactId={contactoBase.id} temas={contacto?.propiedades?.temas_reunion} onCambio={(t: any[]) => setDCon((prev: any) => prev ? { ...prev, contact: prev.contact ? { ...prev.contact, propiedades: { ...(prev.contact.propiedades || {}), temas_reunion: t } } : prev.contact, propiedades: { ...(prev.propiedades || {}), temas_reunion: t } } : prev)} />
       )}
       {contactoBase && (
         <Seccion id="g-seguimiento" titulo="Seguimiento" abiertaDefault>

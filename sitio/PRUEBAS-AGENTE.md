@@ -80,6 +80,20 @@ Para probarlo desde tu WhatsApp: di «ya no son 3 tiendas, abrimos otra, son 4»
 línea de tiempo aparece el cambio con tu frase. Di «mi tienda se llama X y estamos en Guadalajara» → aparece la
 empresa enlazada con ciudad. Si contesta el consultor en vez del agente, debe pasar igual.
 
+## Enseñarle el criterio, no solo el texto
+
+Al editar un mensaje (Próximos envíos o «Agente · Mejorar» en el hilo) hay un segundo campo: **Qué debe
+considerar el agente**. Ahí va la regla detrás de tu cambio («si hace varias preguntas, contéstalas todas en un
+solo mensaje y cierra con una sola pregunta»). El texto corregido es el ejemplo; el criterio es lo que
+generaliza: el agente lo lee junto al ejemplo y el ciclo nocturno lo convierte en propuesta de regla cuando se repite.
+
+## «Para la reunión»: la agenda de la demo se arma sola
+
+Cada cosa que el lead dice que quiere ver en la demo la anota el agente (con la frase textual) en la sección
+**Para la reunión** del panel del inbox; tú puedes agregar, quitar o palomear temas. La lista se escribe también
+en la descripción del evento de Google Calendar de la próxima cita, así el consultor la ve al abrir la reunión.
+Prueba: di «también quiero ver cómo manejan el e-commerce» → aparece el tema en el panel y en el evento.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

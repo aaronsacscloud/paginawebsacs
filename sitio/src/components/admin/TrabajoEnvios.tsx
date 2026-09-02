@@ -35,6 +35,7 @@ export default function TrabajoEnvios() {
   const [apr, setApr] = useState<Aprendizaje | null>(null);
   const [edit, setEdit] = useState<Record<string, string>>({});
   const [corr, setCorr] = useState<Record<string, string>>({});
+  const [criterio, setCriterio] = useState<Record<string, string>>({});
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
   const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err' } | null>(null);
@@ -122,11 +123,17 @@ export default function TrabajoEnvios() {
             <label className="ti-envio-lbl">{editado(e) ? 'Tu versión — se guardará como ejemplo' : 'El mensaje que va a salir — puedes editarlo'}</label>
             <textarea className={'ti-envio-texto' + (editado(e) ? ' editado' : '')} rows={Math.min(10, Math.max(4, Math.ceil((edit[e.id] ?? e.mensaje).length / 70) + 1))} value={edit[e.id] ?? e.mensaje} onChange={ev => setEdit({ ...edit, [e.id]: ev.target.value })} disabled={ocupado} />
 
+            {editado(e) && (
+              <div className="ti-envio-criterio">
+                <label className="ti-envio-lbl">Qué debe considerar el agente (opcional): la regla detrás de tu cambio</label>
+                <textarea className="ti-envio-texto criterio" rows={2} placeholder="Ej.: si el lead hace varias preguntas seguidas, contéstalas todas en un solo mensaje y cierra con una sola pregunta; no prometas lo que no está en el sistema…" value={criterio[e.id] ?? ''} onChange={ev => setCriterio({ ...criterio, [e.id]: ev.target.value })} />
+              </div>
+            )}
             {!veto && (
               <div className="ti-envio-acc">
                 {editado(e) ? (<>
-                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], enviar: true }); if (j) terminar(`Enviado a ${nombre(e)} con tu versión.`, `Guardada como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}»`); }}>Guardar mi versión y enviar</button>
-                  <button className="ti-btn" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id] }); if (j) { setEdit(x => { const y = { ...x }; delete y[e.id]; return y; }); mostrar(`Guardado como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}».`, 'Saldrá solo cuando venza la ventana.'); await cargar(); } }}>Guardar y dejar que salga</button>
+                  <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], criterio: criterio[e.id] || undefined, enviar: true }); if (j) terminar(`Enviado a ${nombre(e)} con tu versión.`, `Guardada como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}»`); }}>Guardar mi versión y enviar</button>
+                  <button className="ti-btn" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'editar', mensaje: edit[e.id], criterio: criterio[e.id] || undefined }); if (j) { setEdit(x => { const y = { ...x }; delete y[e.id]; return y; }); mostrar(`Guardado como ejemplo de «${ESTADO_L[j.aprendido?.estado] || j.aprendido?.estado}».`, 'Saldrá solo cuando venza la ventana.'); await cargar(); } }}>Guardar y dejar que salga</button>
                   <button className="ti-btn" onClick={() => setEdit(x => { const y = { ...x }; delete y[e.id]; return y; })}>Descartar cambios</button>
                 </>) : (<>
                   <button className="ti-btn primario grande" disabled={ocupado} onClick={async () => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'enviar_ya' }); if (j) terminar(`Enviado a ${nombre(e)}.`, 'Aprobado: cuenta a favor del agente'); }}>{ocupado ? 'Enviando…' : 'Aprobar y enviar ya'}</button>

@@ -73,16 +73,18 @@ export const POST: APIRoute = async ({ request }) => {
   if (accion === 'editar') {
     const mensaje = String(b.mensaje || '').trim();
     if (mensaje.length < 2) return json({ error: 'El mensaje está vacío' }, 400);
+    // «Qué debe considerar el agente»: la REGLA detrás del cambio, no solo el texto. Va al ejemplo (por_que) y de ahí a las reglas del ciclo nocturno.
+    const criterio = String(b.criterio || '').trim().slice(0, 600);
     await supabase.from('ti_envios').update({ mensaje, mensaje_original: e.mensaje_original || e.mensaje, editado_por: user.id, updated_at: ahora }).eq('id', id);
     // La edición es una lección: lo que el humano hubiera dicho, con el contexto.
     const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
     const { data: ej } = await supabase.from('ia_ejemplos').insert({
       estado: estadoGuion, situacion: `Edición del humano sobre una respuesta del agente (${e.origen})`,
       mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje,
-      por_que: `El humano corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id,
+      por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}El humano corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id,
       estado_rev: 'aprobado', revisado_at: ahora,
     }).select('id').single();
-    await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'edición en Próximos envíos', detalle: { envio_id: id, ejemplo_id: ej?.id, estado: estadoGuion, original: e.mensaje } });
+    await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'edición en Próximos envíos', detalle: { envio_id: id, ejemplo_id: ej?.id, estado: estadoGuion, original: e.mensaje, criterio: criterio || null } });
     if (b.enviar) {
       const { despacharEnvios } = await import('../../../../lib/crm/ti/agente');
       await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora }).eq('id', id);
