@@ -867,7 +867,7 @@ export async function tocarSilencios(): Promise<any> {
       }
     }
     const ANGULOS = ['repreguntar CORTO lo que quedó abierto (una línea, sin presión, sin repetir lo ya dicho)', 'un DATO DE VALOR concreto para su giro: una imagen o un caso real de una tienda parecida, y una sola pregunta', 'ofrecer la LLAMADA RÁPIDA de 15 min con dos horarios reales de la lista (si acepta, accion agendar_llamada)'];
-    const anguloObligatorio = ANGULOS[Math.min(validos, ANGULOS.length - 1)];
+    const anguloObligatorio = st.angulo_sugerido ? `${st.angulo_sugerido} (sugerido por la revisión diaria)` : ANGULOS[Math.min(validos, ANGULOS.length - 1)];
     // La mejor hora del lead: si hoy todavía no llega, se espera (dentro del horario).
     if (!prueba && p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin && !ultimoIntento) continue;
 
@@ -907,7 +907,7 @@ export async function tocarSilencios(): Promise<any> {
       const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       const intento: Intento = { at: ahora.toISOString(), tipo: par ? 'plantilla' : 'texto', franja: franjaAhora, envio_id: envIns?.id || null, valido: null };
-      await guardar({ base_at: new Date(base).toISOString(), intentos: [...intentos, intento], ultimo_toque_at: ahora.toISOString(), fase: 'reconectar', cierre_ventana_at: cierreVentana ? ahora.toISOString() : st.cierre_ventana_at, angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
+      await guardar({ base_at: new Date(base).toISOString(), intentos: [...intentos, intento], ultimo_toque_at: ahora.toISOString(), fase: 'reconectar', cierre_ventana_at: cierreVentana ? ahora.toISOString() : st.cierre_ventana_at, angulo_sugerido: undefined, angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
       await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `intento ${intentos.length + 1} (${par ? 'plantilla' : 'texto'}, ${franjaAhora}) · válidos ${validos}/3 · ciclo ${st.ciclo}`, costo: d.costo });
       res.toques++;
       continue;
