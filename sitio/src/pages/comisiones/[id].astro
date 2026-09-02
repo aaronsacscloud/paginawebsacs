@@ -24,7 +24,7 @@ if (!corte) return Astro.redirect('/404');
 
 const [{ data: lineas }, { data: ajustes }] = await Promise.all([
   supabase.from('comision_lineas')
-    .select('fecha, concepto, categoria, origen, monto_bruto, base, pct, monto, estado, tipo, sin_regla, tasa_reducida, tasa_de_renovacion, pct_manual, pct_manual_nota, descuento_exceso, descuento_venta_pct, cuenta, descuento_pct, detalle, dias_atraso, fuera_de_tiempo, es_renovacion, companies(nombre, nombre_comercial)')
+    .select('fecha, concepto, categoria, origen, monto_bruto, base, pct, monto, estado, tipo, sin_regla, tasa_reducida, tasa_de_renovacion, pct_manual, pct_manual_nota, cuenta_manual, descuento_exceso, descuento_venta_pct, cuenta, descuento_pct, detalle, dias_atraso, fuera_de_tiempo, es_renovacion, companies(nombre, nombre_comercial)')
     .eq('corte_id', id).neq('estado', 'cancelada').order('fecha'),
   supabase.from('comision_ajustes').select('tipo, concepto, monto, nota').eq('corte_id', id).order('created_at'),
 ]);
@@ -72,6 +72,7 @@ const filas = L.map((l: any) => {
     reducida: l.tasa_reducida === true,
     anualidad: l.tasa_de_renovacion === true,
     ajustada: l.pct_manual != null,
+    cuenta_corregida: !!l.cuenta_manual,
     exceso: Number(l.descuento_exceso || 0) > 0,
     explicacion: explicar(l) + (l.origen ? ' · ' + ORIGEN_LABEL[l.origen] : ''),
     cobrado: ov ? '—' : pesos(l.monto_bruto),
@@ -239,6 +240,7 @@ const filas = L.map((l: any) => {
                   {f.override && <span class="mini" style="background:#E3EDFD;color:#2C5FC4">Override</span>}
                   {f.renovacion && <span class="mini" style="background:#EEECFE;color:#5B4BD6">Renovación</span>}
                   {f.ajustada && <span class="mini" style="background:#FFF4E5;color:#9a6a10">Tasa ajustada</span>}
+                  {f.cuenta_corregida && <span class="mini" style="background:#E3EDFD;color:#2C5FC4">Cuenta corregida</span>}
                   {f.anualidad && <span class="mini" style="background:#EAF8F2;color:#1E8A63">Tasa de anualidad</span>}
                   {f.reducida && <span class="mini" style="background:#FFF4E5;color:#9a6a10">Tasa reducida</span>}
                   {f.exceso && <span class="mini" style="background:#FEF0EF;color:#C0554E">Descuento sobre tope</span>}

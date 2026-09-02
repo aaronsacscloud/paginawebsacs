@@ -161,6 +161,7 @@ export type LineaCalculada = {
   base: number; pct: number; monto: number;
   es_renovacion: boolean; tasa_reducida: boolean; tasa_de_renovacion: boolean;
   pct_manual: number | null; pct_manual_nota: string | null; pct_manual_at: string | null;
+  cuenta_manual: Cuenta | null;
   dias_atraso: number | null; fuera_de_tiempo: boolean;
   descuento_venta_pct: number; descuento_exceso: number;
   origen_owner_id: string | null;
@@ -238,7 +239,7 @@ export function calcularLinea(e: EntradaCalculo): LineaCalculada {
     es_renovacion: e.es_renovacion === true,
     tasa_reducida,
     tasa_de_renovacion: tasa_de_renovacion && !tasa_reducida,
-    pct_manual: null, pct_manual_nota: null, pct_manual_at: null,
+    pct_manual: null, pct_manual_nota: null, pct_manual_at: null, cuenta_manual: null,
     dias_atraso,
     fuera_de_tiempo,
     descuento_venta_pct,
@@ -280,7 +281,7 @@ export function calcularOverride(
     monto: r2(venta.base * Number(pct) / 100),
     tasa_reducida: false,
     tasa_de_renovacion: false,
-    pct_manual: null, pct_manual_nota: null, pct_manual_at: null,
+    pct_manual: null, pct_manual_nota: null, pct_manual_at: null, cuenta_manual: null,
     fuera_de_tiempo: false,
     origen_owner_id: venta.owner_id,
     sin_regla: false,
@@ -299,6 +300,36 @@ export function calcularOverride(
  * una puerta trasera para saltárselo.
  */
 type ConTarifa = { base: number | string; pct: number | string; descuento_exceso?: number | string | null };
+
+/**
+ * Cambia la CUENTA a la que entró el pago y rehace lo que cuelga de ella.
+ *
+ * La cuenta decide el descuento (16% de IVA en la corporativa, 6% de dispersión
+ * en la pagadora), el descuento decide la base, y la base decide la comisión.
+ * Por eso no basta con guardar la cuenta: hay que rehacer la cadena completa, o
+ * el renglón diría una cuenta y cobraría por otra.
+ *
+ * El `pct` que recibe es el que ya tiene la línea —incluido uno puesto a mano—,
+ * así que corregir la cuenta NO pisa un ajuste de porcentaje. Son dos
+ * correcciones distintas y se pueden usar juntas.
+ */
+export function aplicarCuenta<T extends { monto_bruto: number | string; pct: number | string; descuento_exceso?: number | string | null }>(
+  l: T, cuenta: Cuenta | null, modelo: Modelo,
+): T & { cuenta: Cuenta; cuenta_manual: Cuenta | null; descuento_pct: number; base: number; monto: number } {
+  const efectiva: Cuenta = cuenta || (modelo.cuenta_default as Cuenta) || 'corporativa';
+  const descuento_pct = descuentoDe(modelo, efectiva);
+  const bruto = Number(l.monto_bruto || 0);
+  const base = r2(bruto * (1 - descuento_pct / 100));
+  const bruta = r2(base * Number(l.pct || 0) / 100);
+  return {
+    ...l,
+    cuenta: efectiva,
+    cuenta_manual: cuenta,
+    descuento_pct,
+    base,
+    monto: r2(Math.max(0, bruta - Number(l.descuento_exceso || 0))),
+  };
+}
 
 export function aplicarPctManual<T extends ConTarifa>(
   l: T, pct: number | null, nota?: string | null, cuando?: string | null,

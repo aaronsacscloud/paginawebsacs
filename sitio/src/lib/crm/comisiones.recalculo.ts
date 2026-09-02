@@ -16,7 +16,7 @@
 //    pantalla los muestra como "sin atribuir", que es el trabajo pendiente.
 import { supabase } from '../supabase';
 import {
-  calcularLinea, calcularOverride, aplicarPctManual, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
+  calcularLinea, calcularOverride, aplicarPctManual, aplicarCuenta, ESTADOS_ANULADOS, ESTADOS_CONGELADOS,
   type Modelo, type Regla, type Origen, type LineaCalculada,
 } from './comisiones.lib';
 
@@ -36,6 +36,8 @@ export type ResultadoRecalculo = {
   futuros: number;
   /** Líneas cuyo % está puesto a mano y el recálculo respetó. */
   pct_manual: number;
+  /** Líneas con la cuenta corregida a mano. */
+  cuenta_manual: number;
   ajustes_pendientes: { payment_id: string; monto: number; motivo: string }[];
   monto_escrito: number;
   truncado: boolean;
@@ -68,7 +70,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const res: ResultadoRecalculo = {
     desde, hasta, pagos_leidos: 0, lineas_escritas: 0,
     lineas_canceladas: 0, overrides: 0, sin_atribuir: 0, sin_regla: 0, congeladas: 0,
-    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0, futuros: 0, pct_manual: 0,
+    tasa_reducida: 0, fuera_de_tiempo: 0, sin_vencimiento: 0, futuros: 0, pct_manual: 0, cuenta_manual: 0,
     ajustes_pendientes: [], monto_escrito: 0, truncado: false, errores: [],
   };
 
@@ -131,7 +133,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
   const existentes = new Map<string, any>();
   for (let i = 0; i < ids.length; i += 300) {
     const { data } = await supabase.from('comision_lineas')
-      .select('id, payment_id, owner_id, tipo, estado, monto, corte_id, pct_manual, pct_manual_nota, pct_manual_at').in('payment_id', ids.slice(i, i + 300));
+      .select('id, payment_id, owner_id, tipo, estado, monto, corte_id, pct_manual, pct_manual_nota, pct_manual_at, cuenta_manual').in('payment_id', ids.slice(i, i + 300));
     for (const l of data || []) existentes.set(`${l.payment_id}:${l.owner_id}:${l.tipo}`, l);
   }
 
@@ -260,9 +262,13 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
     const conservando = (l: LineaCalculada, k: string) => {
       const ya = existentes.get(k);
       if (!ya) return l;
-      const base = { ...l, corte_id: ya.corte_id ?? null, estado: ya.estado };
-      return ya.pct_manual == null ? base
-        : aplicarPctManual(base, Number(ya.pct_manual), ya.pct_manual_nota, ya.pct_manual_at);
+      let f: any = { ...l, corte_id: ya.corte_id ?? null, estado: ya.estado };
+      // EL ORDEN IMPORTA: la cuenta rehace la base, y el % se aplica sobre la
+      // base. Al revés, un renglón con las dos correcciones cobraría el
+      // porcentaje correcto sobre la base equivocada.
+      if (ya.cuenta_manual) f = aplicarCuenta(f, ya.cuenta_manual, modelo);
+      if (ya.pct_manual != null) f = aplicarPctManual(f, Number(ya.pct_manual), ya.pct_manual_nota, ya.pct_manual_at);
+      return f as LineaCalculada;
     };
 
     const kVenta = `${p.id}:${owner_id}:venta`;
@@ -273,6 +279,7 @@ export async function recalcularComisiones(desde: string, hasta: string): Promis
       const fila = conservando(linea, kVenta) as LineaCalculada;
       aEscribir.push(fila);
       if (fila.pct_manual != null) res.pct_manual++;
+      if ((fila as any).cuenta_manual) res.cuenta_manual++;
       res.monto_escrito = r2(res.monto_escrito + fila.monto);
     }
 

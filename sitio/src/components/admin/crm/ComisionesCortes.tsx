@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 import Cargando, { Chispas } from './ui/Cargando';
 import { confirmar } from '../../../lib/ui/confirmar';
-import { explicar } from '../../../lib/crm/comisiones.lib';
+import { explicar, CUENTAS } from '../../../lib/crm/comisiones.lib';
 
 // El signo va ANTES del peso: "−$800", no "$-800". Es dinero y se lee de reojo.
 const pesos = (n: number) => {
@@ -35,6 +35,11 @@ const E = {
   th: { textAlign: 'left' as const, fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: '#999', padding: '9px 10px', borderBottom: `1px solid ${P.linea}`, whiteSpace: 'nowrap' as const },
   td: { padding: '10px', borderBottom: `1px solid ${P.lineaSuave}`, fontSize: '0.82rem', color: P.texto, verticalAlign: 'top' as const },
   chip: { fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px', borderRadius: 5, letterSpacing: '0.04em', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const, display: 'inline-block' },
+};
+
+/** Nombres cortos: en una celda de tabla, "Cuenta corporativa" no cabe. */
+const ETIQUETA_CUENTA: Record<string, string> = {
+  corporativa: 'Corporativa', pagadora: 'Pagadora', ninguna: 'Sin descuento',
 };
 
 const DIA_NOMBRE: Record<number, string> = { 1: 'lunes', 2: 'martes', 3: 'miércoles', 4: 'jueves', 5: 'viernes', 6: 'sábado', 7: 'domingo' };
@@ -458,6 +463,38 @@ function PctEditable({ linea, onGuardar }: { linea: any; onGuardar: (l: any, pct
   );
 }
 
+/**
+ * A qué cuenta entró el pago, corregible en el sitio.
+ *
+ * Cambiarlo rehace la base y la comisión, así que el renglón entero se mueve al
+ * guardar. Se muestra el descuento junto al nombre porque el nombre solo no dice
+ * nada: lo que importa es que son 16 puntos contra 6.
+ */
+function CuentaEditable({ linea, onGuardar }: { linea: any; onGuardar: (l: any, cuenta: string) => Promise<boolean> }) {
+  const [ocupado, setOcupado] = useState(false);
+  const corregida = !!linea.cuenta_manual;
+
+  return (
+    <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 2 }}>
+      <select value={linea.cuenta || 'corporativa'} disabled={ocupado}
+        title="A qué cuenta entró el pago. Decide cuánto se descuenta antes de comisionar."
+        onChange={async e => { setOcupado(true); await onGuardar(linea, e.target.value); setOcupado(false); }}
+        style={{
+          padding: '4px 6px', fontSize: '0.78rem', fontFamily: 'inherit', borderRadius: 6, outline: 'none',
+          border: `1px solid ${corregida ? P.ambar : '#e2e2e2'}`,
+          background: corregida ? P.ambarAgua : '#fff',
+          color: corregida ? P.ambarTinta : P.texto,
+          fontWeight: corregida ? 800 : 400,
+        }}>
+        {CUENTAS.map(c => <option key={c.v} value={c.v}>{ETIQUETA_CUENTA[c.v]}</option>)}
+      </select>
+      <span style={{ fontSize: '0.68rem', color: '#999' }}>
+        −{Number(linea.descuento_pct)}%{corregida ? ' · corregida' : ''}
+      </span>
+    </span>
+  );
+}
+
 function Detalle({ det, movil, onAccion, onCambio, onError }: {
   det: any; movil: boolean;
   onAccion: (a: string) => void; onCambio: () => void; onError: (m: string) => void;
@@ -514,6 +551,18 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
     return true;
   }
 
+  /** Corrige a qué cuenta entró el pago. No pide motivo: es un dato, no un trato. */
+  async function cambiarCuenta(l: any, cuenta: string) {
+    const r = await fetch('/api/crm/comisiones/lineas', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: l.id, cuenta }),
+    });
+    const j = await r.json();
+    if (!r.ok) { onError(j.error || 'Error'); return false; }
+    onCambio();
+    return true;
+  }
+
   async function quitar(id: string) {
     if (!(await confirmar('¿Quitar este ajuste del corte?'))) return;
     const r = await fetch(`/api/crm/comisiones/ajustes?id=${id}`, { method: 'DELETE' });
@@ -544,12 +593,13 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 700 }}>
           <thead><tr>
             <th style={E.th}>Fecha</th><th style={E.th}>Cliente</th><th style={E.th}>Concepto</th>
+            <th style={E.th}>Entró a</th>
             <th style={{ ...E.th, textAlign: 'right' }}>Base</th>
             <th style={{ ...E.th, textAlign: 'right' }}>%</th>
             <th style={{ ...E.th, textAlign: 'right' }}>Comisión</th>
           </tr></thead>
           <tbody>
-            {det.lineas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={6}>Sin comisiones de venta: el total sale de los ajustes.</td></tr>}
+            {det.lineas.length === 0 && <tr><td style={{ ...E.td, color: P.suave }} colSpan={7}>Sin comisiones de venta: el total sale de los ajustes.</td></tr>}
             {det.lineas.map((l: any) => (
               <tr key={l.id}>
                 <td style={{ ...E.td, whiteSpace: 'nowrap' }}>{fecha(l.fecha)}</td>
@@ -560,6 +610,11 @@ function Detalle({ det, movil, onAccion, onCambio, onError }: {
                     <span style={{ ...E.chip, background: P.ambarAgua, color: P.ambarTinta, marginLeft: 6 }}>% a mano</span>
                   )}
                   <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>{explicar(l)}</div>
+                </td>
+                <td style={E.td}>
+                  {firme
+                    ? <span style={{ fontSize: '0.78rem' }}>{ETIQUETA_CUENTA[l.cuenta] || l.cuenta} · −{Number(l.descuento_pct)}%</span>
+                    : <CuentaEditable linea={l} onGuardar={cambiarCuenta} />}
                 </td>
                 <td style={{ ...E.td, textAlign: 'right' }}>{pesos(l.base)}</td>
                 <td style={{ ...E.td, textAlign: 'right' }}>
