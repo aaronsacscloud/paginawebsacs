@@ -117,8 +117,11 @@ export default function DrawerCorreo({ correo, onCerrar, onVerSecuencia }: {
               {/* En un iframe AISLADO: el HTML de un correo trae sus propios
                   estilos y, suelto, se los impone al CRM. `sandbox` sin
                   allow-scripts porque aquí solo se mira. */}
+              {/* Alto por viewport, no fijo: en el teléfono la hoja es de pantalla
+                  completa y 420 px dejaban el correo asomándose por una ranura,
+                  con casi toda la hoja vacía debajo. */}
               <iframe title="Vista previa del correo" srcDoc={d.html} sandbox=""
-                style={{ width: '100%', height: 420, border: `1px solid ${C.g200}`, borderRadius: 10, background: '#fff' }} />
+                style={{ width: '100%', height: 'min(60dvh, 480px)', minHeight: 300, border: `1px solid ${C.g200}`, borderRadius: 10, background: '#fff' }} />
               {/* Es la plantilla con los datos de este contacto, no una copia
                   byte a byte de lo que salió: eso no se guarda. Decirlo es más
                   barato que perder la confianza en el espejo. */}

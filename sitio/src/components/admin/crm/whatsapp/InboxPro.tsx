@@ -46,6 +46,13 @@ export default function InboxPro() {
   const [orden, setOrden] = useState('recientes');
   const [mostrar, setMostrar] = useState('conversaciones');
   const [filtrosMobile, setFiltrosMobile] = useState(false);
+  /* Lo que llegó MIENTRAS mirabas, en el teléfono. Es donde más falta hace:
+     en escritorio la lista entera está a la vista, aquí caben cuatro filas.
+     Mismo trato que en el menú de escritorio — un punto que late 12 s junto al
+     chip que subió— para no inventar dos lenguajes para lo mismo. */
+  const previosM = useRef<Record<string, number>>({});
+  const [nuevosM, setNuevosM] = useState<Record<string, boolean>>({});
+
   const [buscarAbierto, setBuscarAbierto] = useState(false);   // móvil: buscador de la cabecera
   // ══ Móvil v5 (mockup Inbox): chips Abiertas/Mías/Resueltas y lista seccionada ══
   // «No contestadas» = el cliente escribió y nadie respondió: es la cola de
@@ -369,6 +376,30 @@ export default function InboxPro() {
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, []);
+
+  /* En un EFECTO, no dentro del render: contar es mirar la lista, pero
+     encender el punto es cambiar estado, y hacerlo mientras React pinta es
+     justo lo que rompe el render. */
+  useEffect(() => {
+    if (!isMobile || !lista) return;
+    const vivas = lista.filter((c: any) => !c.virtual && c.estado_crm !== 'resuelta');
+    const vals: Record<string, number> = {
+      nocontestadas: vivas.filter((c: any) => c.ultima_direccion === 'entrante').length,
+      sinrespuesta: vivas.filter((c: any) => c.ultima_direccion === 'saliente').length,
+    };
+    const sig: Record<string, boolean> = {};
+    for (const k of Object.keys(vals)) {
+      const antes = previosM.current[k];
+      if (antes != null && vals[k] > antes) sig[k] = true;
+      previosM.current[k] = vals[k];
+    }
+    if (!Object.keys(sig).length) return;
+    setNuevosM(v => ({ ...v, ...sig }));
+    const t = setTimeout(() => setNuevosM(v => {
+      const q = { ...v }; for (const k of Object.keys(sig)) delete q[k]; return q;
+    }), 12000);
+    return () => clearTimeout(t);
+  }, [lista, isMobile]);
 
   // Deep-links: ?wa_conv=<id> | ?wa_search=<tel> (una sola vez).
   const deepLink = useRef(false);
@@ -958,6 +989,13 @@ export default function InboxPro() {
                           Hay que saberlo ANTES de abrir, no después de leer
                           toda la conversación. */}
                       {c.tiene_notas && <span className="m-nota" title="Tiene notas internas del equipo">nota</span>}
+                      {/* El nombre viene del perfil de WhatsApp, no del CRM:
+                          se enseña —es mejor que un número pelón— pero se dice
+                          de dónde salió, igual que en escritorio. */}
+                      {c.contacto?.de_perfil && (
+                        <span title="Nombre de su perfil de WhatsApp — todavía no es contacto del CRM"
+                          style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, background: '#ECFDF5', color: '#047857', borderRadius: 999, padding: '1px 6px', verticalAlign: 'middle', flexShrink: 0 }}>de WhatsApp</span>
+                      )}
                     </div>
                     {/* La hora sube a la línea del nombre. Estaba en su propia
                         columna a la derecha, tan arriba que no se leía junto a
@@ -1066,6 +1104,22 @@ export default function InboxPro() {
                       style={{ width: '100%', minHeight: 44, padding: '0 14px', borderRadius: 12, border: '1px solid #dddce3', background: '#fff', color: '#1a1a1a', fontSize: '0.92rem', fontFamily: 'inherit', outline: 'none' }} />
                   </div>
                 )}
+                {/* Lo que está filtrando, dicho. Aquí el buscador ya se limpia
+                    al cerrarlo, pero una búsqueda puede llegar de otra pantalla
+                    o quedarse con la caja recogida: sin esto, la lista aparece
+                    con dos filas y no hay forma de saber por qué. */}
+                {!!filtros.search && !buscarAbierto && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 24px 8px', padding: '9px 12px', borderRadius: 10, background: '#f7f4ff', border: '1px solid #EEECFE' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: '0.8rem', fontWeight: 700, color: '#5B4BD6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      Buscando «{filtros.search}»
+                    </span>
+                    <button onClick={() => setFiltros(f => ({ ...f, search: '' }))}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.8rem', fontWeight: 800, color: '#5B4BD6', textDecoration: 'underline', minHeight: 44, padding: '0 2px', flexShrink: 0 }}>
+                      Ver todas
+                    </button>
+                  </div>
+                )}
+
                 {/* Tres pestañas, no cinco. Con cinco no cabían y había que
                     deslizar para descubrir que existían; estas tres son las de
                     trabajo diario y el resto vive detrás de «Más», que abre la
@@ -1079,6 +1133,7 @@ export default function InboxPro() {
                     const n = v === 'nocontestadas' ? nPendientes : v === 'sinrespuesta' ? nSinResp : on && lista ? convs.length : null;
                     return (
                       <button key={v} className={'m-chip' + (on ? ' on' : '') + (v === 'nocontestadas' && nPendientes > 0 && !on ? ' urge' : '')} onClick={() => setChipWa(v)}>
+                        {nuevosM[v] && <span className="wa-pulso" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: '#5B4BD6', marginRight: 5, verticalAlign: 'middle' }} />}
                         {l}{n ? ' ' + n : ''}
                       </button>
                     );
