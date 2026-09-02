@@ -17,8 +17,8 @@ import BurbujaMensaje, { horaDe, Resaltado, resumenMensaje } from './Burbuja';
 import { BotonLlamar } from './Llamadas';
 import { confirmar } from '../../../../lib/ui/confirmar';
 import ActionSheet from '../ui/ActionSheet';
-import Sheet from '../ui/Sheet';
 import DrawerSecuencia from './DrawerSecuencia';
+import DrawerCorreo from './DrawerCorreo';
 import { useGestoAtras } from '../../../../lib/ui/gestoAtras';
 import { tic, ticListo } from '../../../../lib/ui/tacto';
 
@@ -687,55 +687,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       <DrawerSecuencia abierto={!!secuenciaAbierta} onCerrar={() => setSecuenciaAbierta(null)}
         secuenciaId={secuenciaAbierta?.id} nombre={secuenciaAbierta?.nombre} contactId={conv?.contact_id || null} />
 
-      <Sheet open={!!correoAbierto} onClose={() => setCorreoAbierto(null)} title="Correo enviado" width={520}>
-        {correoAbierto && (
-          <div style={{ padding: '6px 16px 20px' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#241d43', lineHeight: 1.35 }}>
-              {correoAbierto.asunto || 'Sin asunto registrado'}
-            </div>
-            <div style={{ fontSize: 12, color: '#8b8896', marginTop: 4 }}>
-              Enviado {new Date(correoAbierto.enviado_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
-            </div>
-
-            {/* LO ABRIÓ O NO, arriba y en una frase. Es lo que se viene a ver. */}
-            <div style={{ marginTop: 12, borderRadius: 10, padding: '10px 12px',
-              background: correoAbierto.abierto_at ? '#EAF8F2' : '#F6F6F9',
-              border: `1px solid ${correoAbierto.abierto_at ? '#BFE7D6' : '#e9e8ef'}` }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: correoAbierto.abierto_at ? '#0F766E' : '#6b6875' }}>
-                {correoAbierto.abierto_at
-                  ? `Lo abrió${correoAbierto.aperturas > 1 ? ` ${correoAbierto.aperturas} veces` : ''}`
-                  : correoAbierto.estado === 'bounced' ? 'Rebotó: no llegó a su bandeja' : 'Todavía no lo abre'}
-              </div>
-              {correoAbierto.abierto_at && (
-                <div style={{ fontSize: 12, color: '#4b4956', marginTop: 3 }}>
-                  La primera vez, {new Date(correoAbierto.abierto_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
-                </div>
-              )}
-              {correoAbierto.clics > 0 && (
-                <div style={{ fontSize: 12, color: '#4b4956', marginTop: 3 }}>
-                  Dio clic {correoAbierto.clics === 1 ? 'una vez' : `${correoAbierto.clics} veces`}
-                  {Array.isArray(correoAbierto.links) && correoAbierto.links.length
-                    ? `: ${correoAbierto.links.slice(0, 3).join(', ')}` : ''}
-                </div>
-              )}
-            </div>
-
-            {correoAbierto.extracto ? (
-              <>
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#a5a2af', margin: '16px 0 6px' }}>Cómo empieza</div>
-                <div style={{ fontSize: 13, color: '#4b4956', lineHeight: 1.6 }}>{correoAbierto.extracto}…</div>
-              </>
-            ) : (
-              /* Se dice POR QUÉ no está, en vez de dejar un hueco: los correos
-                 de antes de este cambio no guardaron su contenido, y eso no se
-                 puede recuperar hacia atrás. */
-              <div style={{ fontSize: 12.5, color: '#8b8896', marginTop: 16, lineHeight: 1.55 }}>
-                De este envío no se guardó el contenido — es anterior al cambio que empezó a registrarlo. Los que salgan de ahora en adelante sí lo traen.
-              </div>
-            )}
-          </div>
-        )}
-      </Sheet>
+      <DrawerCorreo correo={correoAbierto} onCerrar={() => setCorreoAbierto(null)}
+        onVerSecuencia={o => { setCorreoAbierto(null); setSecuenciaAbierta(o); }} />
 
       {/* ══ ACCIONES DEL MENSAJE (táctil) ══════════════════════════════════
           Lo que en escritorio son tres iconos al pasar el ratón. El orden no
