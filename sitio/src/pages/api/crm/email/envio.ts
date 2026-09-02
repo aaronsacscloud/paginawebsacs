@@ -66,21 +66,38 @@ export const GET: APIRoute = async ({ request, url }) => {
      hace que después nadie le crea al espejo. */
   let plantilla: any = null;
   let html: string | null = null;
-  let exacto = false;
+  const exacto = false;
   if (en.template_id) {
     const { data: t } = await supabase.from('email_templates')
-      .select('id, nombre, asunto, preview_text, categoria, html_compilado, texto_plano').eq('id', en.template_id).maybeSingle();
+      .select('id, nombre, asunto, preview_text, categoria, bloques, html_compilado').eq('id', en.template_id).maybeSingle();
     if (t) {
       plantilla = { id: t.id, nombre: t.nombre, categoria: t.categoria, preview_text: t.preview_text || null };
+
       const { data: ct } = en.contact_id
-        ? await supabase.from('contacts').select('nombre, apellido, companies(nombre, nombre_comercial)').eq('id', en.contact_id).maybeSingle()
+        ? await supabase.from('contacts').select('nombre, apellido, companies(nombre, nombre_comercial, plan)').eq('id', en.contact_id).maybeSingle()
         : { data: null as any };
       const emp = (ct as any)?.companies;
-      html = rellenar(String(t.html_compilado || ''), {
+      const ctx = {
         nombre: String((ct as any)?.nombre || '').trim(),
         apellido: String((ct as any)?.apellido || '').trim(),
         empresa: String(emp?.nombre_comercial || emp?.nombre || '').trim(),
-      }) || null;
+        plan: String(emp?.plan || '').trim(),
+      };
+
+      /* Se COMPILA desde `bloques`, que es la fuente: solo 6 de las 100
+         plantillas tienen `html_compilado` guardado —la columna llegó después—
+         y usarla dejaría el 94% del inbox sin vista previa. Si compilar falla
+         se cae al HTML guardado, y si tampoco hay, a null: la pantalla ya sabe
+         decir que no hay cuerpo. */
+      try {
+        const { compilar } = await import('../../../../lib/email/plantillas');
+        const { resolverTenant } = await import('../../../../lib/email/tenant');
+        const tenant = await resolverTenant().catch(() => null);
+        if (Array.isArray((t as any).bloques) && (t as any).bloques.length && tenant) {
+          html = compilar((t as any).bloques, ctx as any, tenant as any, t.preview_text || null);
+        }
+      } catch { /* abajo está el respaldo */ }
+      if (!html) html = rellenar(String((t as any).html_compilado || ''), ctx) || null;
     }
   }
 
