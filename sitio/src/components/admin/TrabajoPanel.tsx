@@ -82,6 +82,13 @@ export default function TrabajoPanel() {
   const [motivoTexto, setMotivoTexto] = useState('');
   const [actualId, setActualId] = useState<string | null>(null);
   const [vistaTab, setVistaTab] = useState<'dia' | 'datos' | 'envios' | 'aprendizaje'>('dia');
+  /* Tras un deploy, la página vieja pide chunks con hash nuevo y los botones dejan de responder en silencio
+     (el dueño lo vivió: editó, adjuntó, aprobó… y nada). Si un chunk falla, la página se recarga sola. */
+  useEffect(() => {
+    const onErr = () => { try { location.reload(); } catch { /* nada */ } };
+    window.addEventListener('vite:preloadError', onErr);
+    return () => window.removeEventListener('vite:preloadError', onErr);
+  }, []);
   const [motivoLead, setMotivoLead] = useState(''); const [textoLead, setTextoLead] = useState(''); const [fechaPausa, setFechaPausa] = useState('');
   const [avisoP1, setAvisoP1] = useState('');
   const tareaRef = useRef<string | null>(null);

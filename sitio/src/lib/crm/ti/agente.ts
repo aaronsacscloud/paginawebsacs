@@ -306,10 +306,15 @@ export async function proponerRespuestas(): Promise<any> {
       // LEAD CALIENTE: interés alto en una conversación madura → el consultor se entera ahora, no en el digest.
       if (s.interes?.nivel === 'alto' && ['proponiendo', 'agendada'].includes(s.estado)) await avisarLeadCaliente(cid, s);
       const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
-      await supabase.from('ti_envios').insert({
+      const { error: eIns } = await supabase.from('ti_envios').insert({
         contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'respuesta', estado: 'pendiente',
         mensaje: s.mensaje.trim(), imagen_id: s.imagen?.id || null, imagen_url: s.imagen?.url || null, adjuntos: s.adjuntos || [], salida: s, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
       });
+      if (eIns) {
+        // Índice único «un pendiente por lead»: otro tick se adelantó. No es error: se descarta esta copia.
+        if (/23505|duplicate key/i.test(eIns.message)) { res.saltados++; await log({ accion: 'agente_duplicado_evitado', contact_id: cid, razon: 'otro tick ya dejó un pendiente para este lead' }); continue; }
+        throw new Error(eIns.message);
+      }
       await log({ accion: 'agente_propone', contact_id: cid, contenido: s.mensaje, costo: d.costo, razon: s.objetivo, detalle: { estado: s.estado, interes: s.interes, ventana_min: ventana } });
       res.propuestos++;
     } catch (e: any) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: String(e?.message || e) }); }
