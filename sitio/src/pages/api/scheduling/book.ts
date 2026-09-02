@@ -5,6 +5,9 @@ import { capturarEnServidor } from '../../../lib/posthog';
 import { supabase } from '../../../lib/supabase';
 import { marcarAgendado } from '../../../lib/crm/estatus-live';
 import { createCalendarEvent } from '../../../lib/google-calendar';
+
+/** La agenda vive en la zona del anfitrión; `timezone_host` se guarda igual. */
+const TZ_HOST = 'America/Mexico_City';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
 import { ligarVisitasPrevias } from '../../../lib/email/senales';
@@ -622,7 +625,13 @@ export const POST: APIRoute = async ({ request }) => {
   let google_event_id: string | null = null;
   let google_meet_link: string | null = null;
   try {
-    const tz = timezone || 'America/Mexico_City';
+    /* La zona es la del ANFITRIÓN, no la del invitado. `hora_inicio` sale de
+       `available-slots`, que arma los horarios en la agenda del host (ver
+       `hostTz` ahí): mandarla a Google etiquetada con la zona del navegador
+       del cliente MUEVE la reunión el tanto de la diferencia. Pasó de verdad:
+       una invitada en America/Chicago eligió las 4:00 p.m., el evento nació
+       una hora antes y su calendario y el nuestro acabaron diciendo 3:00. */
+    const tz = TZ_HOST;
     const startDT = `${fecha}T${hora_inicio}:00`;
     const endDT = `${fecha}T${hora_fin}:00`;
 
@@ -1087,7 +1096,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Create Google Calendar event for recurring booking
         try {
-          const tz = timezone || 'America/Mexico_City';
+          const tz = TZ_HOST;   // misma razón que arriba: la agenda es del host
           const startDT = `${nextDateStr}T${hora_inicio}:00`;
           const endDT = `${nextDateStr}T${hora_fin}:00`;
           const { data: hostMember } = await supabase

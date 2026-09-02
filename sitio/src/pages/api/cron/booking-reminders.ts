@@ -19,7 +19,7 @@ import { enviarPlantilla } from '../../../lib/whatsapp/kapso-api';
 import { registrarMensaje } from '../../../lib/whatsapp/espejo';
 import { telefonoWhatsApp } from '../../../lib/telefono';
 import {
-  MX_OFFSET_MS, aMinutos, etiqueta, leerRecordatorios, inicioMs, datosEmail,
+  MX_OFFSET_MS, aMinutos, etiquetaReal, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
   cuandoLargo, etiquetaSerie, textoPlantillaCliente, textoPlantillaHost,
 } from '../../../lib/scheduling/recordatorios';
@@ -150,7 +150,10 @@ export const GET: APIRoute = async ({ request }) => {
         /* Entre `en` y `en + ventana`. Nunca después: un «1 día antes» que
            llega a las 20 horas dice una hora que ya no es. */
         if (!(faltaMin >= en && faltaMin < en + VENTANA_MIN)) continue;
-        const cuanto = etiqueta(r);
+        /* El rótulo sale del RELOJ, no de la configuración: la ventana
+           dispara hasta 6 minutos antes de la marca y el «10 minutos» llegaba
+           cuando faltaban 15. Ver `etiquetaReal`. */
+        const cuanto = etiquetaReal(r, faltaMin);
         /* UNO por corrida, y como la lista viene de mayor a menor
            anticipación, es el más lejano. Sin este corte, dos recordatorios a
            menos de 6 minutos entre sí —«1 hora» y «55 minutos», o un «3

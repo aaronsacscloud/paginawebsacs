@@ -12,9 +12,33 @@
 import { supabase } from '../supabase';
 import { enviarTexto } from '../whatsapp/kapso-api';
 import { registrarMensaje } from '../whatsapp/espejo';
-import { fmtFechaLarga, fmtHora } from './recordatorios';
+import { fmtFechaLarga, fmtHora, inicioMs } from './recordatorios';
 
 const BASE = 'https://www.sacscloud.com';
+
+/**
+ * La próxima reunión viva del contacto — la que TODAVÍA no empieza.
+ *
+ * Antes se pedía `fecha >= hoy` y se tomaba la primera: el día entero contaba,
+ * la hora no. Natalia tocó «Reagendar» a las 21:13 sobre una reunión de las
+ * 21:00 y el sistema le contestó «tu reunión sigue en pie» a una hora que ya
+ * había pasado. Se traen unas cuantas y se escoge la primera que de verdad
+ * esté por delante; si ninguna lo está, se devuelve la última con
+ * `paso: true` para poder decirlo en vez de fingir que sigue en pie.
+ */
+async function proximaReunion(contactId: string, campos: string) {
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  const { data } = await supabase.from('bookings')
+    .select(campos)
+    .eq('contact_id', contactId).in('estado', ['confirmada', 'agendada'])
+    .gte('fecha', hoy).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
+    .limit(5);
+  const lista = (data || []) as any[];
+  if (!lista.length) return null;
+  const ahora = Date.now();
+  const viva = lista.find(x => inicioMs(String(x.fecha), String(x.hora_inicio)) > ahora);
+  return viva ? { ...viva, paso: false } : { ...lista[lista.length - 1], paso: true };
+}
 
 export async function ligaParaReagendar(conversationId: string, telefono: string): Promise<{ ok: boolean; motivo?: string }> {
   const { data: conv } = await supabase.from('wa_conversaciones')
@@ -23,12 +47,7 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
 
   /* La reunión VIVA más próxima de ese contacto. Si tiene varias, la que
      sigue: es de la que acaba de recibir el recordatorio. */
-  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
-  const { data: b } = await supabase.from('bookings')
-    .select('id, fecha, hora_inicio, token_reagendar, event_types(nombre)')
-    .eq('contact_id', conv.contact_id).in('estado', ['confirmada', 'agendada'])
-    .gte('fecha', hoy).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
-    .limit(1).maybeSingle();
+  const b = await proximaReunion(conv.contact_id, 'id, fecha, hora_inicio, token_reagendar, event_types(nombre)');
 
   /* Sin reunión viva NO se inventa una liga: se le pasa la página de agenda,
      que es lo honesto — pudo tocar el botón de un recordatorio de una reunión
@@ -38,7 +57,17 @@ export async function ligaParaReagendar(conversationId: string, telefono: string
      anterior decía «Claro, movemos tu Reunión del lunes 31 a las 8:00 p.m.»
      y se leía como si esa fuera la hora NUEVA y el cambio ya estuviera hecho
      — el cliente creía tener cita nueva y nadie había escogido horario. */
-  const texto = b
+  /* Si la reunión YA PASÓ no se dice «sigue en pie»: se reconoce y se ofrece
+     una nueva. Prometerle al cliente una hora que ya se fue es peor que no
+     contestarle. */
+  const texto = b?.paso
+    ? [
+        `Claro que sí. Tu ${(b as any).event_types?.nombre || 'reunión'} estaba para el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México) y esa hora ya pasó.`,
+        ``,
+        `Escoge aquí el horario que te acomode y la dejamos agendada:`,
+        liga,
+      ].join('\n')
+    : b
     ? [
         `Claro que sí. Tu ${(b as any).event_types?.nombre || 'reunión'} está ahora mismo para el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México).`,
         ``,
@@ -90,13 +119,27 @@ export async function confirmoAsistencia(conversationId: string, telefono: strin
     .select('contact_id').eq('id', conversationId).maybeSingle();
   if (!conv?.contact_id) return false;
 
-  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
-  const { data: b } = await supabase.from('bookings')
-    .select('id, fecha, hora_inicio, google_meet_link, event_types(nombre)')
-    .eq('contact_id', conv.contact_id).in('estado', ['confirmada', 'agendada'])
-    .gte('fecha', hoy).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true })
-    .limit(1).maybeSingle();
+  const b = await proximaReunion(conv.contact_id, 'id, fecha, hora_inicio, google_meet_link, event_types(nombre)');
   if (!b) return false;
+
+  /* Confirmar asistencia a algo que ya empezó no es «te esperamos»: es «ya
+     estamos ahí, éntrale». */
+  if (b.paso) {
+    const yaTexto = [
+      `¡Perfecto! Tu ${(b as any).event_types?.nombre || 'reunión'} era el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} y ya empezó.`,
+      b.google_meet_link ? `` : '',
+      b.google_meet_link ? `Éntrale aquí: ${b.google_meet_link}` : `Respóndenos por aquí y la movemos.`,
+    ].filter(l => l !== undefined).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    try {
+      const r = await enviarTexto(telefono, yaTexto);
+      await registrarMensaje({
+        kapsoMessageId: r?.messages?.[0]?.id || null, telefono, direccion: 'saliente',
+        tipo: 'text', cuerpo: yaTexto, status: 'sent', autor: 'Agenda',
+        metadata: { confirmo_asistencia: b.id },
+      }).catch(() => {});
+      return true;
+    } catch { return false; }
+  }
 
   const texto = [
     `¡Perfecto! Te esperamos el ${fmtFechaLarga(b.fecha as string)} a las ${fmtHora(String(b.hora_inicio))} (hora del centro de México).`,

@@ -8,7 +8,7 @@
  * Correr:  node --experimental-strip-types src/lib/scheduling/recordatorios.test.ts
  */
 import {
-  aMinutos, etiqueta, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
+  aMinutos, etiqueta, etiquetaReal, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
   inicioMs, textoWhatsApp, TZ_ETIQUETA,
   paramsCliente, paramsHost, etiquetaSerie, horaLocalInvitado,
 } from './recordatorios.ts';
@@ -32,6 +32,22 @@ es(etiqueta({ cantidad: 1, unidad: 'dias' }), '1 día', 'singular en días');
 es(etiqueta({ cantidad: 3, unidad: 'horas' }), '3 horas', 'plural en horas');
 es(etiqueta({ cantidad: 1, unidad: 'horas' }), '1 hora', 'singular en horas');
 es(etiqueta({ cantidad: 10, unidad: 'minutos' }), '10 minutos', 'plural en minutos');
+
+// ── El rótulo dice el tiempo REAL, no el configurado ─────────────────────
+// El cron dispara en cuanto el faltante entra a la ventana (hasta 6 minutos
+// antes), y el rótulo salía de la configuración: el recordatorio de «10
+// minutos» llegó cuando faltaban 15 y aun así dijo «10 minutos».
+es(etiquetaReal({ cantidad: 10, unidad: 'minutos' }, 15), '15 minutos', 'el de 10 min que sale a los 15 lo dice');
+es(etiquetaReal({ cantidad: 10, unidad: 'minutos' }, 10), '10 minutos', 'justo en la marca, el de siempre');
+es(etiquetaReal({ cantidad: 3, unidad: 'horas' }, 185), '3 horas', '3h05 se redondea a 3 horas');
+es(etiquetaReal({ cantidad: 3, unidad: 'horas' }, 210), '4 horas', '3h30 ya son 4, y se dice');
+es(etiquetaReal({ cantidad: 1, unidad: 'dias' }, 1445), '1 día', 'un día y 5 minutos sigue siendo 1 día');
+es(etiquetaReal({ cantidad: 1, unidad: 'horas' }, 61), '1 hora', 'singular se conserva');
+// Sin reloj utilizable NO se inventa un número: rige lo configurado.
+es(etiquetaReal({ cantidad: 3, unidad: 'horas' }, NaN), '3 horas', 'sin faltante, el configurado');
+es(etiquetaReal({ cantidad: 3, unidad: 'horas' }, -5), '3 horas', 'faltante negativo, el configurado');
+// Nunca «0 minutos»: si ya casi empieza, lo mínimo es 1.
+es(etiquetaReal({ cantidad: 10, unidad: 'minutos' }, 0.4), '1 minuto', 'nunca cero');
 
 // ── Leer la configuración sin confiar en su forma ────────────────────────
 es(leerRecordatorios(null).length, 0, 'null no truena');

@@ -40,6 +40,27 @@ export function etiqueta(r: { cantidad: number; unidad: Unidad }): string {
   return `${n} ${n === 1 ? u.l1 : u.l}`;
 }
 
+/**
+ * La MISMA etiqueta, pero dicha sobre el tiempo que falta de verdad.
+ *
+ * El cron corre cada 5 minutos y dispara en cuanto el faltante entra a la
+ * ventana, nunca después —un «1 día antes» que llega tarde anuncia una hora
+ * que ya no es—. El precio es que sale algo antes de la marca, y el rótulo
+ * salía de la configuración, no del reloj: el recordatorio de «10 minutos»
+ * llegó cuando faltaban 15 y aun así dijo «es en 10 minutos». En un día de
+ * anticipación cinco minutos no se notan; en diez, es la mitad.
+ *
+ * Se redondea en la unidad del recordatorio para que siga sonando a persona:
+ * 15 → «15 minutos», 185 → «3 horas», 1500 → «1 día».
+ */
+export function etiquetaReal(r: { cantidad: number; unidad: Unidad }, faltaMin: number): string {
+  const u = UNIDADES.find(x => x.v === r.unidad) || UNIDADES[0];
+  const falta = Number(faltaMin);
+  if (!Number.isFinite(falta) || falta <= 0) return etiqueta(r);
+  const n = Math.max(1, Math.round(falta / u.min));
+  return `${n} ${n === 1 ? u.l1 : u.l}`;
+}
+
 /** Lee la configuración de un tipo de reunión sin confiar en su forma. */
 export function leerRecordatorios(raw: any): Recordatorio[] {
   if (!Array.isArray(raw)) return [];

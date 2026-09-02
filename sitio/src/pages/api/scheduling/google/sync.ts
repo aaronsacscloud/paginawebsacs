@@ -101,15 +101,40 @@ export const GET: APIRoute = async ({ request }) => {
             const newStartDT = new Date(event.start.dateTime);
             const newEndDT = new Date(event.end.dateTime);
 
-            const newFecha = newStartDT.toISOString().slice(0, 10);
-            const newHoraInicio = `${String(newStartDT.getHours()).padStart(2, '0')}:${String(newStartDT.getMinutes()).padStart(2, '0')}`;
-            const newHoraFin = `${String(newEndDT.getHours()).padStart(2, '0')}:${String(newEndDT.getMinutes()).padStart(2, '0')}`;
+            /* La hora que guarda el CRM es SIEMPRE hora del centro de México:
+               `inicioMs` le pega el -06:00 y los recordatorios la anuncian tal
+               cual. `getHours()` devuelve la hora del SERVIDOR, y en Vercel el
+               servidor es UTC — así que este bloque le sumaba 6 horas a cada
+               reunión que tocaba, 24 segundos después de agendarla, y lo
+               anotaba como si el cliente la hubiera movido.
 
-            // Check if time actually changed
+               Medido antes del arreglo: 14 saltos desde mayo, TODOS de +6:00
+               exactas. El caso que lo destapó: Natalia agendó a las 4:00 p.m.,
+               el registro quedó en 21:00, y los tres recordatorios le
+               anunciaron «9:00 p.m.» y salieron seis horas después de que su
+               reunión ya había pasado. */
+            const enMx = (d: Date) => {
+              const p = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Mexico_City', hourCycle: 'h23',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+              }).formatToParts(d).reduce((a: any, x) => { a[x.type] = x.value; return a; }, {});
+              return { fecha: `${p.year}-${p.month}-${p.day}`, hora: `${p.hour}:${p.minute}` };
+            };
+            const inicioMx = enMx(newStartDT);
+            const newFecha = inicioMx.fecha;
+            const newHoraInicio = inicioMx.hora;
+            const newHoraFin = enMx(newEndDT).hora;
+
+            /* Postgres guarda `time` con segundos («21:00:00») y aquí se arma
+               sin ellos («21:00»): comparados en crudo NUNCA son iguales, así
+               que todo evento que pasara por aquí se reescribía y dejaba una
+               «Demo reagendada» falsa en la bitácora del cliente. */
+            const hhmm = (x: any) => String(x || '').slice(0, 5);
             if (
               newFecha !== booking.fecha ||
-              newHoraInicio !== booking.hora_inicio ||
-              newHoraFin !== booking.hora_fin
+              newHoraInicio !== hhmm(booking.hora_inicio) ||
+              newHoraFin !== hhmm(booking.hora_fin)
             ) {
               const { error: upErr } = await supabase
                 .from('bookings')
