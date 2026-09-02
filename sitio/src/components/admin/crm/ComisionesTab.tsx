@@ -1,9 +1,12 @@
 // Comisiones · el motor configurable.
 //
-// Dos vistas, porque el trabajo real son dos:
+// Tres vistas, cada una para una pregunta distinta:
 //
 //   Cortes       — lo que hay que pagar, y el lugar donde se corrige antes de
 //                  enviarlo. Es la pantalla que se abre todos los días.
+//   Reporte      — mes a mes: de dónde salió el dinero y qué falta cobrar.
+//                  Cortes contesta "¿cuánto se paga esta semana?"; Reporte
+//                  contesta "¿cuánto llevo, y de qué".
 //   Renovaciones — las dos condiciones anuales. La del 50% se calcula sola;
 //                  la de seguimiento la marca una persona.
 //
@@ -27,8 +30,9 @@ import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando, { Chispas } from './ui/Cargando';
 import ComisionesCortes from './ComisionesCortes';
 import SeguimientoCuenta from './SeguimientoCuenta';
+import ComisionesReporte from './ComisionesReporte';
 
-type Vista = 'cortes' | 'renovaciones';
+type Vista = 'cortes' | 'reporte' | 'renovaciones';
 
 const pesos = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fecha = (d?: string | null) =>
@@ -60,7 +64,7 @@ export default function ComisionesTab() {
       </div>
 
       <div role="tablist" style={{ display: 'flex', gap: 2, borderBottom: `1px solid ${P.linea}`, marginBottom: 16, overflowX: 'auto' }}>
-        {([['cortes', 'Cortes'], ['renovaciones', 'Renovaciones']] as [Vista, string][]).map(([v, l]) => (
+        {([['cortes', 'Cortes'], ['reporte', 'Reporte'], ['renovaciones', 'Renovaciones']] as [Vista, string][]).map(([v, l]) => (
           <button key={v} role="tab" aria-selected={vista === v} onClick={() => setVista(v)} style={{
             padding: '9px 15px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             background: vista === v ? P.violetaAgua : 'transparent',
@@ -73,6 +77,7 @@ export default function ComisionesTab() {
       </div>
 
       {vista === 'cortes' && <ComisionesCortes movil={movil} />}
+      {vista === 'reporte' && <ComisionesReporte movil={movil} />}
       {vista === 'renovaciones' && <VistaRenovaciones movil={movil} />}
     </div>
   );
