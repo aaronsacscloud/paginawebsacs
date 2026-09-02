@@ -123,6 +123,18 @@ clic? S9.2 ¿Hora de la revisión (8:00) y ¿te llega resumen por WhatsApp?
 - S6.2 La migración NO es gratis siempre: vale (referencia $9,000–9,500 según el dueño; unificar en $9,500 como
   «implementación y migración») y va gratis solo dentro de la promo vigente. Corregir planes.ts.
 
+## Decisiones tomadas (ronda 3 · 2026-09-02)
+- S4.1 El agente CREA las plantillas por momento él solo (solo Meta aprueba); candados actuales (3 por día,
+  prefijo ti_, sin precios, apagado a los 3 rechazos) + tablero de entrega/respuesta.
+- S5.1 CLIENTES: candado total. El agente no propone, no toca ni manda plantillas; si un cliente escribe → tarea
+  de soporte y registro del dato.
+- S7.1 La llamada rápida la OFRECE EL AGENTE y se AGENDA de verdad en una agenda especial del consultor:
+  tipo de reunión «Llamada discovery» (crear si no existe), bloques de 15 minutos, horarios disponibles a
+  partir de las 11:00 AM, en el calendario del consultor. Aplica cuando el lead no responde sobre el horario
+  de la demo o cuando conviene una llamada corta antes de la demo.
+- S7.2 Cada intento del ciclo usa un ÁNGULO DISTINTO (nunca se repite en el mismo ciclo): repreguntar → dato
+  de valor → llamada rápida; el medidor nocturno ordena los que más responden.
+
 ## Plan por fases (después de tus respuestas)
 F1 Índice de vida + sección «Calificación» diaria (S2, S7 pestaña descalificados) · F2 Toque de cierre de
 ventana + estado esperando_reunión (S1, S3) · F3 Promociones vigentes (S6) · F4 Familias de plantillas y
