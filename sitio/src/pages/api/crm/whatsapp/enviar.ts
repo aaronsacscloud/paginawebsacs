@@ -282,16 +282,26 @@ export const POST: APIRoute = async ({ request }) => {
     // espejo con esa marca, se contesta que ya está y no se manda otra vez.
     const idem = b.idem ? String(b.idem).slice(0, 64) : null;
     if (idem) {
-      const { data: ya } = await supabase.from('wa_mensajes')
-        .select('kapso_message_id').eq('conversation_id', destino.convId)
-        .eq('metadata->>idem', idem).limit(1).maybeSingle();
-      if (ya) return json({ ok: true, duplicado: true, message_id: (ya as any).kapso_message_id || null, conversation_id: destino.convId });
+      // Leer-y-luego-mandar dejaba una carrera: el reintento del cliente entraba mientras la primera petición
+      // seguía en vuelo y salían DOS mensajes. La reserva atómica (clave primaria) cierra la carrera: quien
+      // no logra insertar, espera a que el primero termine y devuelve su wamid.
+      const { error: eRes } = await supabase.from('wa_envios_idem').insert({ idem, conversation_id: destino.convId });
+      if (eRes) {
+        let wamidPrev: string | null = null;
+        for (let i = 0; i < 6 && !wamidPrev; i++) {
+          const { data: r1 } = await supabase.from('wa_envios_idem').select('wamid').eq('idem', idem).maybeSingle();
+          wamidPrev = (r1 as any)?.wamid || null;
+          if (!wamidPrev) await new Promise(res => setTimeout(res, 500));
+        }
+        return json({ ok: true, duplicado: true, message_id: wamidPrev, conversation_id: destino.convId });
+      }
     }
     // Los links a NUESTRO sitio se marcan con el `sv` del contacto: así, cuando
     // entre, el CRM sabe que fue él y qué recorrió. Los links ajenos no se tocan.
     const textoEnviado = textoConSv(texto, destino.contactId);
     const r = await enviarTexto(destino.telefono, textoEnviado, cita);
     const wamid = r?.messages?.[0]?.id;
+    if (idem) await supabase.from('wa_envios_idem').update({ wamid: wamid || null }).eq('idem', idem);
     if (wamid) await registrarMensaje({
       kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
       tipo: 'text', cuerpo: textoEnviado, status: 'sent',
