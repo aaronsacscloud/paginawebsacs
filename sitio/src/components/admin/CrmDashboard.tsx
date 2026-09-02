@@ -197,9 +197,6 @@ const NAV_SECTIONS = [
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
-      // Comisiones vive en Facturación y no en Partners: es dinero que SALE,
-      // se calcula de los pagos que entraron y lo revisa quien cuadra el mes.
-      { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
     ],
   },
   {
@@ -229,6 +226,10 @@ const NAV_SECTIONS = [
     // WhatsApp, que es un canal que se atiende a mano.
     label: 'Automatización', sec: 'automatizacion', icon: 'automations',
     items: [
+      /* Comisiones abre el grupo porque es lo único aquí con FECHA LÍMITE: el
+         corte se arma solo cada lunes a las 5 am y hay que revisarlo y pagarlo
+         ese mismo día. Lo demás corre solo y se mira cuando toca. */
+      { id: 'comisiones' as Tab, label: 'Comisiones', icon: 'pagos' },
       // Email vive junto a las automatizaciones porque es la misma pregunta
       // ("qué le llega solo al cliente"), vista desde el canal.
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
