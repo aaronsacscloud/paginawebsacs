@@ -22,6 +22,18 @@ import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
 
+/** CARRIL DE PRUEBAS (2-sep): teléfonos en cfg.agente_prueba_telefonos reciben el
+ *  flujo COMPLETO en vivo aunque el agente esté en sombra, y su reloj de silencio
+ *  corre acelerado (cfg.agente_prueba_factor: 60 = las horas se vuelven minutos).
+ *  Así el dueño prueba cada flujo desde su propio WhatsApp sin tocar leads reales. */
+const soloDigitos = (t: any) => String(t || '').replace(/\D/g, '');
+export const esPrueba = (cfg: any, telefono?: string | null) => {
+  const lista: string[] = Array.isArray(cfg?.agente_prueba_telefonos) ? cfg.agente_prueba_telefonos : [];
+  const t = soloDigitos(telefono); if (!t) return false;
+  return lista.some(x => { const d = soloDigitos(x); return d && (t.endsWith(d.slice(-10)) || d.endsWith(t.slice(-10))); });
+};
+export const factorPrueba = (cfg: any) => Math.max(1, Number(cfg?.agente_prueba_factor) || 60);
+
 export type SalidaAgente = {
   estado: string; objetivo: string; mensaje: string; responder: boolean;
   datos?: { campo: string; valor: string; confianza: number; evidencia?: string }[];
@@ -306,10 +318,13 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
   // pasa a vivo con scripts/ti-agente.mjs --modo vivo.
   const { permitido } = await import('../../whatsapp/permisos');
   const vivoPermitido = await permitido('agente_sdr');
-  if (((cfg.agente_modo || 'sombra') === 'sombra' || !vivoPermitido) && !opts.forzar) {
-    const { data: som } = await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() })
-      .eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).select('id');
-    return { agente: 'sombra', sombra: (som || []).length };
+  const enSombra = ((cfg.agente_modo || 'sombra') === 'sombra' || !vivoPermitido) && !opts.forzar;
+  if (enSombra) {
+    // Los teléfonos de PRUEBA sí salen; el resto se marca sombra.
+    const { data: due } = await supabase.from('ti_envios').select('id, telefono').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).limit(50);
+    const noPrueba = (due || []).filter(e => !esPrueba(cfg, e.telefono)).map(e => e.id);
+    if (noPrueba.length) await supabase.from('ti_envios').update({ estado: 'sombra', updated_at: ahora.toISOString() }).in('id', noPrueba);
+    if (!(due || []).some(e => esPrueba(cfg, e.telefono))) return { agente: 'sombra', sombra: noPrueba.length };
   }
   let q = supabase.from('ti_envios').select('*').eq('estado', 'pendiente').lte('sale_at', ahora.toISOString()).order('sale_at', { ascending: true }).limit(20);
   if (opts.soloId) q = q.eq('id', opts.soloId);
@@ -395,11 +410,11 @@ function mult(ciclo: number) { return Math.pow(2, Math.max(0, (ciclo || 1) - 1))
 export async function tocarSilencios(): Promise<any> {
   const cfg: any = await leerConfig();
   if (cfg.agente_activo !== true) return { silencio: 'apagado' };
-  const sombra = (cfg.agente_modo || 'sombra') === 'sombra';
+  const sombraGlobal = (cfg.agente_modo || 'sombra') === 'sombra';
   const ahora = new Date();
   const res: any = { toques: 0, sin_ventana: 0, llamadas: 0, tarjetas: 0, revisados: 0 };
   const { esHorarioLaboral, horaLocal, RESULTADOS_LLAMADA_L } = await import('./reglas');
-  if (!esHorarioLaboral(ahora, cfg)) return { ...res, silencio: 'fuera_de_horario' };
+  const laboral = esHorarioLaboral(ahora, cfg);
 
   // Universo: el último envío del agente por lead (enviado), sin respuesta después.
   const { data: envs } = await supabase.from('ti_envios').select('contact_id, conversation_id, telefono, enviado_at')
@@ -419,17 +434,21 @@ export async function tocarSilencios(): Promise<any> {
     const c = porC[cid], p = porP[cid] || {}, st: any = { ciclo: 1, toque: 0, ...(p.agente_estado || {}) };
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || !['lead', 'oportunidad'].includes(c.lifecycle_stage) || p.silenciar_ia) continue;
     if (st.cerrado || (st.pausa_hasta && Date.parse(st.pausa_hasta) > ahora.getTime())) continue;
+    const prueba = esPrueba(cfg, ultimo[cid].telefono);
+    const sombra = sombraGlobal && !prueba;          // los de prueba viven el flujo completo
+    if (!laboral && !prueba) continue;                // fuera de horario solo se mueven las pruebas
+    const acel = prueba ? factorPrueba(cfg) : 1;      // reloj acelerado: horas → minutos
     res.revisados++;
     const base = Date.parse(st.base_at || ultimo[cid].enviado_at);
     // ¿Respondió después del último envío? Entonces no hay silencio (proponerRespuestas ya lo atiende).
     const { data: resp } = await supabase.from('ti_eventos').select('id').eq('contact_id', cid).eq('tipo', 'wa_entrante').gt('ocurrio_at', new Date(base).toISOString()).limit(1);
     if ((resp || []).length) continue;
-    const horas = (ahora.getTime() - base) / H;
+    const horas = (ahora.getTime() - base) / H * acel;
     const m = mult(st.ciclo);
     // La mejor hora del lead: si hoy todavía no llega, se espera (dentro del horario).
-    if (p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin) continue;
+    if (!prueba && p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin) continue;
     // Un solo toque frío por día.
-    if (st.ultimo_toque_at && ahora.getTime() - Date.parse(st.ultimo_toque_at) < 20 * H) continue;
+    if (st.ultimo_toque_at && (ahora.getTime() - Date.parse(st.ultimo_toque_at)) * acel < 20 * H) continue;
     const guardar = async (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
 
     // Antes del primer toque (y en cada ciclo) se evalúa: ICP + calidad de la conversación deciden
@@ -560,6 +579,7 @@ export async function atenderCitas(): Promise<any> {
   const ahora = new Date();
   const desde = new Date(Math.max(Date.parse(cfg.agente_citas_marca || 0) || 0, ahora.getTime() - 6 * 3600e3)).toISOString();
   const res: any = { atendidas: 0, saltadas: 0 };
+  const sombraGlobal = (cfg.agente_modo || 'sombra') === 'sombra';
   const { data: evs } = await supabase.from('ti_eventos').select('contact_id, tipo, ocurrio_at, payload').in('tipo', ['cita_no_asistio', 'cita_cancelada']).gt('ocurrio_at', desde).not('contact_id', 'is', null).limit(30);
   for (const e of evs || []) {
     const cid = e.contact_id;
