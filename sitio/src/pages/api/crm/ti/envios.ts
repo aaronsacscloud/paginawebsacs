@@ -23,9 +23,19 @@ export const GET: APIRoute = async ({ request }) => {
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, giro, lifecycle_stage').in('id', ids) : { data: [] as any[] };
   const por: Record<string, any> = {}; for (const c of cs || []) por[c.id] = c;
   const decorar = (x: any) => ({ ...x, contacto: por[x.contact_id] || null });
+  // Lo que el agente ha aprendido de ti: para que se vea que las correcciones cuentan.
+  const hace7 = new Date(Date.now() - 7 * 86400e3).toISOString();
+  const [{ count: ejemplosDueno }, { count: ejemplos7 }, { count: vetos7 }, { count: ediciones7 }, { data: ultimos }] = await Promise.all([
+    supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').eq('estado_rev', 'aprobado'),
+    supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').gte('created_at', hace7),
+    supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'vetado').gte('updated_at', hace7),
+    supabase.from('ti_envios').select('id', { count: 'exact', head: true }).not('editado_por', 'is', null).gte('updated_at', hace7),
+    supabase.from('ia_ejemplos').select('estado, situacion, pulida, created_at').eq('fuente', 'correccion_dueno').order('created_at', { ascending: false }).limit(3),
+  ]);
   return json({
     pendientes: (pend || []).map(decorar), recientes: (rec || []).map(decorar),
-    config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10) },
+    config: { agente_activo: cfg.agente_activo === true, veto_min: Number(cfg.agente_veto_min ?? 10), modo: cfg.agente_modo || 'sombra', pruebas: cfg.agente_prueba_telefonos || [] },
+    aprendizaje: { ejemplos_dueno: ejemplosDueno || 0, ejemplos_7d: ejemplos7 || 0, vetos_7d: vetos7 || 0, ediciones_7d: ediciones7 || 0, ultimos: ultimos || [] },
   });
 };
 
@@ -51,13 +61,21 @@ export const POST: APIRoute = async ({ request }) => {
     if (mensaje.length < 2) return json({ error: 'El mensaje está vacío' }, 400);
     await supabase.from('ti_envios').update({ mensaje, mensaje_original: e.mensaje_original || e.mensaje, editado_por: user.id, updated_at: ahora }).eq('id', id);
     // La edición es una lección: lo que el humano hubiera dicho, con el contexto.
-    await supabase.from('ia_ejemplos').insert({
-      estado: (e.salida as any)?.estado || 'descubriendo', situacion: `Edición del humano sobre una respuesta del agente (${e.origen})`,
+    const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
+    const { data: ej } = await supabase.from('ia_ejemplos').insert({
+      estado: estadoGuion, situacion: `Edición del humano sobre una respuesta del agente (${e.origen})`,
       mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje,
       por_que: `El humano corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id,
       estado_rev: 'aprobado', revisado_at: ahora,
-    });
-    return json({ ok: true });
+    }).select('id').single();
+    await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, contenido: mensaje, razon: 'edición en Próximos envíos', detalle: { envio_id: id, ejemplo_id: ej?.id, estado: estadoGuion, original: e.mensaje } });
+    if (b.enviar) {
+      const { despacharEnvios } = await import('../../../../lib/crm/ti/agente');
+      await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora }).eq('id', id);
+      const r = await despacharEnvios({ forzar: true, soloId: id });
+      return json({ ok: true, aprendido: { ejemplo_id: ej?.id, estado: estadoGuion }, enviado: r?.enviados === 1 });
+    }
+    return json({ ok: true, aprendido: { ejemplo_id: ej?.id, estado: estadoGuion } });
   }
   // enviar_ya
   await supabase.from('ti_envios').update({ sale_at: ahora, updated_at: ahora }).eq('id', id);
