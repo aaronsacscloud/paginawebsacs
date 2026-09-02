@@ -398,6 +398,22 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
     // Si un HUMANO ya le contestó, el agente calla: nunca dos voces. Y el par se guarda para aprender.
     const h = await humanoContestoDespues(e);
     if (h && !opts.soloId) { await guardarParHumano(e, h, 'humano_respondio'); continue; }
+    // ¿La AGENDA cambió después de que nació esta propuesta (el lead movió, creó o canceló la cita él mismo)?
+    // Entonces la propuesta ya no habla de la realidad: se retira y el agente vuelve a decidir con la cita vigente.
+    if (e.contact_id && (e.salida as any)?.estado && !(e.salida as any)?.reconsiderado) {
+      const { data: bk } = await supabase.from('bookings').select('id').eq('contact_id', e.contact_id).or(`created_at.gt.${e.created_at},updated_at.gt.${e.created_at}`).limit(1);
+      if ((bk || []).length) {
+        await supabase.from('ti_envios').update({ estado: 'reemplazado', motivo_veto: 'la agenda cambió después de la propuesta', updated_at: ahora.toISOString() }).eq('id', e.id);
+        await log({ accion: 'agente_reconsidera', contact_id: e.contact_id, razon: 'la cita cambió después de la propuesta', detalle: { envio_id: e.id } });
+        try {
+          const d = await decidirTurno(e.contact_id, 'LA AGENDA CAMBIÓ después de tu propuesta anterior: el lead movió, creó o canceló la cita por su cuenta. Mira la CITA VIGENTE de arriba y responde a su último mensaje de acuerdo con eso; si ya la movió él, confírmasela con día y hora, sin ofrecer horarios ni pedirle nada más. No lo saludes de nuevo.');
+          if (d.salida?.mensaje && d.salida.responder && d.telefono) {
+            await supabase.from('ti_envios').insert({ contact_id: e.contact_id, conversation_id: d.conversationId, telefono: d.telefono, origen: e.origen, estado: 'pendiente', mensaje: d.salida.mensaje.trim(), salida: { ...d.salida, reconsiderado: true }, sale_at: new Date(ahora.getTime() + Math.max(0, Number(cfg.agente_veto_min ?? 10)) * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+          }
+        } catch (err: any) { await log({ accion: 'agente_error', contact_id: e.contact_id, razon: `reconsiderar: ${err?.message || err}` }); }
+        continue;
+      }
+    }
     try {
       // La ACCIÓN viaja con el mensaje y se ejecuta al salir (así el veto también la detiene).
       let mensaje = e.mensaje;
@@ -750,6 +766,8 @@ export async function atenderCitas(): Promise<any> {
       supabase.from('ti_eventos').select('id').eq('contact_id', cid).in('tipo', ['cita_no_asistio', 'cita_cancelada']).lt('ocurrio_at', e.ocurrio_at).gt('ocurrio_at', new Date(ahora.getTime() - 45 * 86400e3).toISOString()).limit(2),
     ]);
     if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || p?.silenciar_ia || !['lead', 'oportunidad'].includes(c.lifecycle_stage)) { res.saltadas++; continue; }
+    // Si el lead MOVIÓ la cita él mismo (liga de reagendar), la vieja queda «cancelada» pero hay una nueva vigente: no es una cancelación.
+    if (e.tipo === 'cita_cancelada' && await proximaCita(cid).catch(() => null)) { res.saltadas++; continue; }
     const { data: ya } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'cita').gt('created_at', e.ocurrio_at).limit(1);
     if ((ya || []).length) { res.saltadas++; continue; }
     const segunda = (previos || []).length >= 1;

@@ -337,8 +337,37 @@ export const POST: APIRoute = async ({ request }) => {
   // la ventana de 24 h se "acepta" pero WhatsApp lo tira en silencio.
   if (oldBooking.invitee_whatsapp) {
     const nombreInv = String(oldBooking.invitee_nombre || '').trim().split(/\s+/)[0] || 'Hola';
+    // Decisión del dueño (2026-09-02): si el lead está en conversación (ventana de 24 h abierta), el aviso es
+    // NATURAL y COMPLETO —«vi que moviste la reunión, cancelé la anterior» + día, hora, liga de Meet, correo y
+    // que los recordatorios ya son de la nueva fecha— con la voz del agente y espejado en el inbox. La plantilla
+    // (sin liga de Meet) queda solo para cuando la ventana está cerrada; el correo lleva todo siempre.
+    let avisado = false;
     try {
-      if (await permitido('agenda_seguimiento')) {
+      const dig = String(oldBooking.invitee_whatsapp).replace(/\D/g, '').slice(-10);
+      const { data: convs } = await supabase.from('wa_conversaciones').select('id').ilike('telefono', `%${dig}`).order('ultimo_mensaje_at', { ascending: false }).limit(1);
+      const convId = convs?.[0]?.id || null;
+      const { data: ult } = convId ? await supabase.from('wa_mensajes').select('created_at').eq('conversation_id', convId).eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(1) : { data: [] as any[] };
+      const ventanaAbierta = (ult || []).length > 0 && Date.now() - Date.parse(ult![0].created_at) < 24 * 3600e3;
+      if (ventanaAbierta && await permitido('agenda_seguimiento')) {
+        const { etiquetaHorario } = await import('../../../lib/crm/ti/agenda-agente');
+        const { enviarTexto } = await import('../../../lib/whatsapp/kapso-api');
+        const { registrarMensaje } = await import('../../../lib/whatsapp/espejo');
+        const vieja = etiquetaHorario(String(oldBooking.fecha), String(oldBooking.hora_inicio).slice(0, 5));
+        const nueva = etiquetaHorario(String(nueva_fecha), String(nueva_hora).slice(0, 5));
+        const texto = [
+          `Listo, ${nombreInv}: vi que moviste la reunión. Cancelé la del ${vieja} y quedó la nueva:`,
+          `📅 ${nueva} (hora CDMX)`,
+          newBooking.google_meet_link ? `📹 ${newBooking.google_meet_link}` : '',
+          `${oldBooking.invitee_email ? `Te llegó la invitación actualizada a ${oldBooking.invitee_email}. ` : ''}Los recordatorios ahora te llegan para esta fecha, los de la anterior ya no. Si algo vuelve a cambiar, respóndeme por aquí y lo movemos.`,
+        ].filter(Boolean).join('\n');
+        const r: any = await enviarTexto(oldBooking.invitee_whatsapp, texto);
+        const wamid = r?.messages?.[0]?.id || null;
+        if (wamid) { await registrarMensaje({ kapsoMessageId: wamid, telefono: oldBooking.invitee_whatsapp, direccion: 'saliente', tipo: 'text', cuerpo: texto, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', booking_id: newBooking?.id || null, motivo: 'reagendo' } }); avisado = true; }
+      }
+    } catch (err: any) { console.error('[reschedule] aviso natural falló, se usa plantilla:', err?.message || err); }
+    try {
+      if (avisado) { /* ya se avisó con la voz del agente */ }
+      else if (await permitido('agenda_seguimiento')) {
         const { mandarPlantilla } = await import('../../../lib/whatsapp/plantilla-espejo');
         /* Espejada: era de las cuatro que salían sin quedar en el inbox. */
         const r = await mandarPlantilla({
