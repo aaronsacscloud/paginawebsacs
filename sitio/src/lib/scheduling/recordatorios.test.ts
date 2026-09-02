@@ -9,7 +9,8 @@
  */
 import {
   aMinutos, etiqueta, etiquetaReal, leerRecordatorios, fmtFechaLarga, fmtHora, fmtRango,
-  inicioMs, textoWhatsApp, TZ_ETIQUETA,
+  inicioMs, textoWhatsApp, TZ_ETIQUETA, plantillaCliente,
+  PLANTILLA_CLIENTE, PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA, CORTE_PREP_MIN,
   paramsCliente, paramsHost, etiquetaSerie, horaLocalInvitado,
 } from './recordatorios.ts';
 
@@ -192,6 +193,45 @@ cierto(espejo.includes('Reagendar'), 'el espejo dice qué botones vio el cliente
 cierto(!espejo.startsWith('Recordatorio de reunión ('), 'el espejo NO es el rótulo viejo');
 const espejoH = textoPlantillaHost(paramsHost({ ...b, invitee_empresa: 'Boutique Mila' } as any, '10 minutos'));
 cierto(espejoH.includes('Boutique Mila'), 'el espejo del host dice con quién es');
+
+
+
+// ── Dos recordatorios distintos, según cuánto falte ──────────────────────
+// Pedirle a alguien que te cuente su operación diez minutos antes llega tarde
+// para él y para nosotros: el que va lejos pide contexto, el que va encima
+// solo recuerda y da la liga.
+es(plantillaCliente(1440), PLANTILLA_CLIENTE_PREP, 'un día antes pide contexto');
+es(plantillaCliente(180), PLANTILLA_CLIENTE_PREP, 'tres horas antes todavía pide contexto');
+es(plantillaCliente(CORTE_PREP_MIN), PLANTILLA_CLIENTE_PREP, 'justo en el corte, todavía da tiempo');
+es(plantillaCliente(59), PLANTILLA_CLIENTE_CERCA, 'a 59 minutos ya no se pide nada');
+es(plantillaCliente(10), PLANTILLA_CLIENTE_CERCA, 'diez minutos antes, solo la liga');
+// Sin reloj utilizable gana la corta: pedir contexto sin saber cuánto falta
+// puede caer encima de la reunión.
+es(plantillaCliente(NaN), PLANTILLA_CLIENTE_CERCA, 'sin faltante, la prudente');
+
+// El espejo tiene que decir lo que el cliente VIO, y son textos distintos.
+const P = ['Natalia', 'Reunión de consultoría', '1 día', 'martes 1 de septiembre, 9:00 p.m.', 'https://meet.google.com/x'];
+cierto(textoPlantillaCliente(P, PLANTILLA_CLIENTE_PREP).includes('nota de voz'), 'la de preparación ofrece la nota de voz');
+cierto(textoPlantillaCliente(P, PLANTILLA_CLIENTE_PREP).includes('cuántas tiendas manejas'), 'la de preparación pregunta lo concreto');
+cierto(!textoPlantillaCliente(P, PLANTILLA_CLIENTE_CERCA).includes('nota de voz'), 'la de encima NO pide nada');
+cierto(textoPlantillaCliente(P, PLANTILLA_CLIENTE_CERCA).includes('Entra por aquí'), 'la de encima da la liga');
+// Las tres nombran al cliente, la reunión, cuándo y dónde: nada se pierde.
+for (const pl of [PLANTILLA_CLIENTE, PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA]) {
+  const t = textoPlantillaCliente(P, pl);
+  cierto(t.includes('Natalia') && t.includes('Reunión de consultoría'), `${pl}: nombre y reunión`);
+  cierto(t.includes('martes 1 de septiembre, 9:00 p.m.') && t.includes('https://meet.google.com/x'), `${pl}: cuándo y dónde`);
+  cierto(t.includes('CDMX'), `${pl}: el huso, siempre`);
+}
+// Sin plantilla se espeja la de respaldo, no un texto vacío.
+es(textoPlantillaCliente(P), textoPlantillaCliente(P, PLANTILLA_CLIENTE), 'por omisión, la de respaldo');
+
+// ── La zona del invitado se dice como ciudad, no como jerga ──────────────
+es(horaLocalInvitado({ fecha: '2026-09-01', hora_inicio: '15:00', timezone_invitado: 'America/Chicago' } as any),
+   '4:00 p.m. en tu zona (Chicago)', 'Chicago, no America/Chicago');
+es(horaLocalInvitado({ fecha: '2026-09-01', hora_inicio: '15:00', timezone_invitado: 'America/New_York' } as any),
+   '5:00 p.m. en tu zona (New York)', 'el guion bajo se vuelve espacio');
+es(horaLocalInvitado({ fecha: '2026-09-01', hora_inicio: '15:00', timezone_invitado: 'America/Mexico_City' } as any),
+   '', 'misma zona que la nuestra, no se repite');
 
 console.log(`\n  ${ok} casos pasaron`);
 if (fallas.length) { console.log(`  ${fallas.length} FALLARON:\n  - ${fallas.join('\n  - ')}\n`); process.exit(1); }

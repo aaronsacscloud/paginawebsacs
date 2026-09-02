@@ -991,6 +991,12 @@ export const WIKI: PaginaWiki[] = [
 <div class="w-caja"><span class="w-k">Por qué no se revisa al enviar</span><p>Meta <b>acepta</b> el mensaje y recién después reporta que el usuario lo tiene bloqueado. Al momento de mandarlo todavía no se sabe; por eso hay que volver a mirar más tarde.</p></div>
 <p>Es el <b>primer</b> mensaje: uno por número, una vez en la vida. Si ese número ya tiene conversación con nosotros, no sale nada — no es un primer contacto, es meterse en un hilo que ya existe.</p>
 
+<h3>El recordatorio también prepara la sesión</h3>
+<p>Son <b>dos mensajes distintos</b>, según cuánto falte.</p>
+<p>Los que van con tiempo —<b>1 día</b> y <b>3 horas</b> antes— además de recordar le piden contexto: cuántas tiendas maneja, con qué vende y qué es lo que más le complica. Y le ofrecen mandarlo en <b>nota de voz</b>, que es como la gente lo cuenta de verdad. Con eso llegas a la sesión con algo hecho a su medida en vez de una demo genérica.</p>
+<p>El de <b>10 minutos</b> antes no pide nada: solo recuerda y da la liga. Pedirle a alguien que te cuente su operación diez minutos antes llega tarde para él y para ti.</p>
+<div class="w-caja"><span class="w-k">El corte</span><p>Una hora. De ahí para arriba pide contexto; de ahí para abajo, no. Si configuras un recordatorio a 45 minutos, ese sale corto.</p></div>
+
 <h3>Un cambio de horario ya no se contesta solo</h3>
 <p>Si alguien pide mover su reunión —toca «Reagendar» o lo escribe— el sistema <b>no le contesta</b>. Queda anotado en su ficha y te levanta aviso para que lo atiendas desde el inbox. Antes le mandaba una liga y una lista de horarios, y el cliente terminaba sin saber si su reunión seguía en pie.</p>
 

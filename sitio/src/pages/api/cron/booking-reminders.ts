@@ -22,6 +22,7 @@ import { permitido } from '../../../lib/whatsapp/permisos';
 import {
   MX_OFFSET_MS, aMinutos, etiquetaReal, leerRecordatorios, inicioMs, datosEmail,
   PLANTILLA_CLIENTE, PLANTILLA_HOST, IDIOMA_PLANTILLA, paramsCliente, paramsHost,
+  PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA, plantillaCliente,
   cuandoLargo, etiquetaSerie, textoPlantillaCliente, textoPlantillaHost,
 } from '../../../lib/scheduling/recordatorios';
 
@@ -125,10 +126,21 @@ export const GET: APIRoute = async ({ request }) => {
        existiera `reunion_recordatorio` en 'es' aprobada y la de 'es_MX'
        pendiente, la puerta abría y Meta tronaba con un 132001 — justo el
        error que este candado quería evitar. */
-    .select('nombre, status').eq('idioma', IDIOMA_PLANTILLA).in('nombre', [PLANTILLA_CLIENTE, PLANTILLA_HOST]);
+    .select('nombre, status').eq('idioma', IDIOMA_PLANTILLA)
+    .in('nombre', [PLANTILLA_CLIENTE, PLANTILLA_CLIENTE_PREP, PLANTILLA_CLIENTE_CERCA, PLANTILLA_HOST]);
   const aprobada = (n: string) => (plts || []).some((p: any) => p.nombre === n && p.status === 'APPROVED');
-  const okCliente = aprobada(PLANTILLA_CLIENTE);
   const okHost = aprobada(PLANTILLA_HOST);
+
+  /* Cuál se usa para ESTE recordatorio: la que pide contexto si falta una
+     hora o más, la corta si ya está encima. Si la que toca todavía no pasó la
+     revisión de Meta se cae a la vieja, que sí está aprobada: un recordatorio
+     con el texto anterior sirve; ninguno, no. */
+  const eligePlantilla = (faltaMin: number) => {
+    const quiere = plantillaCliente(faltaMin);
+    if (aprobada(quiere)) return quiere;
+    return aprobada(PLANTILLA_CLIENTE) ? PLANTILLA_CLIENTE : null;
+  };
+  const okCliente = aprobada(PLANTILLA_CLIENTE) || aprobada(PLANTILLA_CLIENTE_PREP) || aprobada(PLANTILLA_CLIENTE_CERCA);
 
   const out = {
     horizonte_dias: Math.ceil(maxMin / 1440),
@@ -193,7 +205,7 @@ export const GET: APIRoute = async ({ request }) => {
           else if (!okCliente) {
             out.fallas++;
             await avisarFalla(b, 'La plantilla del recordatorio no está aprobada',
-              `«${PLANTILLA_CLIENTE}» sigue en revisión de Meta, así que los recordatorios por WhatsApp no están saliendo. El correo sí.`,
+              `Ninguna de las plantillas de recordatorio está aprobada en Meta, así que los recordatorios por WhatsApp no están saliendo. El correo sí.`,
               'agenda_plantilla_pendiente');
           }
           else if (!(await yaAvisado(b.id, r.id, 'whatsapp'))) {
@@ -201,8 +213,10 @@ export const GET: APIRoute = async ({ request }) => {
             if (!tel) { out.fallas++; out.errores.push(`${b.id}: teléfono no utilizable`); }
             else {
               try {
+                const plantilla = eligePlantilla(faltaMin);
+                if (!plantilla) throw new Error('ninguna plantilla de recordatorio está aprobada');
                 const params = paramsCliente(b, cuanto);
-                const rp = await enviarPlantilla(tel, PLANTILLA_CLIENTE, IDIOMA_PLANTILLA, params);
+                const rp = await enviarPlantilla(tel, plantilla, IDIOMA_PLANTILLA, params);
                 const marcado = await marcarAvisado(b, r.id, 'whatsapp', cuanto);
                 out.whatsapps++; disparo = true;
                 if (!marcado) {
@@ -217,8 +231,8 @@ export const GET: APIRoute = async ({ request }) => {
                   kapsoMessageId: rp?.messages?.[0]?.id || null, telefono: tel, direccion: 'saliente',
                   /* El cuerpo REAL, no un rótulo: el espejo existe para que
                      quien abra el chat vea lo que el cliente recibió. */
-                  tipo: 'template', cuerpo: textoPlantillaCliente(params), status: 'sent', autor: 'Agenda',
-                  metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla: PLANTILLA_CLIENTE },
+                  tipo: 'template', cuerpo: textoPlantillaCliente(params, plantilla), status: 'sent', autor: 'Agenda',
+                  metadata: { booking_recordatorio: r.id, booking_id: b.id, plantilla },
                 }).catch(() => { /* el espejo no tumba un envío que ya salió */ });
               } catch (e: any) {
                 out.fallas++; out.errores.push(`${b.id} ${r.id} wa: ${e?.message || e}`);

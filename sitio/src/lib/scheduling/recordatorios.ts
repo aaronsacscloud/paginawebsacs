@@ -184,7 +184,35 @@ export function datosEmail(b: DatosReunion, anticipacion?: string) {
 // libre habría fallado en el 97% de los casos — y en silencio, porque el
 // error moría en la respuesta del cron. La plantilla llega siempre.
 
+/* La que ya estaba aprobada. Se queda como RESPALDO: mientras Meta revisa las
+   nuevas, los recordatorios siguen saliendo. Un flujo que funciona no se
+   apaga esperando un trámite. */
 export const PLANTILLA_CLIENTE = 'reunion_recordatorio';
+
+/**
+ * DOS mensajes, no uno.
+ *
+ * Decisión del dueño (2-sep-2026): el recordatorio también tiene que servir
+ * para PREPARAR la sesión — que el cliente cuente cómo trabaja, por escrito o
+ * en nota de voz, para llegar con algo hecho a su medida en vez de una demo
+ * genérica.
+ *
+ * Pero eso no cabe en los tres recordatorios por igual: pedirle a alguien que
+ * te cuente su operación **diez minutos antes** llega tarde para él y para
+ * nosotros. Así que el que va lejos pide contexto y el que va encima solo
+ * recuerda y da la liga.
+ */
+export const PLANTILLA_CLIENTE_PREP = 'reunion_recordatorio_prep';   // ≥ 1 hora
+export const PLANTILLA_CLIENTE_CERCA = 'reunion_recordatorio_ya';    // < 1 hora
+/** El corte. Con una hora todavía da tiempo de oír la nota y preparar algo. */
+export const CORTE_PREP_MIN = 60;
+
+/** Cuál de las dos toca, según lo que falte de verdad. */
+export function plantillaCliente(faltaMin: number): string {
+  const f = Number(faltaMin);
+  if (!Number.isFinite(f)) return PLANTILLA_CLIENTE_CERCA;
+  return f >= CORTE_PREP_MIN ? PLANTILLA_CLIENTE_PREP : PLANTILLA_CLIENTE_CERCA;
+}
 export const PLANTILLA_HOST = 'reunion_recordatorio_host';
 export const IDIOMA_PLANTILLA = 'es_MX';
 
@@ -215,7 +243,10 @@ export function horaLocalInvitado(b: DatosReunion & { timezone_invitado?: string
     const diaCdmx = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(d);
     const diaAlla = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
     const dia = diaAlla !== diaCdmx ? `${fmtFechaLarga(diaAlla)}, ` : '';
-    return `${dia}${hora} en tu zona (${tz})`;
+    /* La ciudad, no el identificador: «America/Chicago» es jerga de sistemas
+       y el cliente no tiene por qué leerla. */
+    const ciudad = tz.split('/').pop()!.replace(/_/g, ' ');
+    return `${dia}${hora} en tu zona (${ciudad})`;
   } catch { return ''; }
 }
 
@@ -233,16 +264,52 @@ export function etiquetaSerie(b: { serie_indice?: number | null; serie_total?: n
  * de verdad al cliente, que es justo para lo que existe el espejo. Este texto
  * es el cuerpo aprobado de `reunion_recordatorio` con sus 5 variables puestas.
  */
-export function textoPlantillaCliente(p: string[]): string {
+export function textoPlantillaCliente(p: string[], plantilla: string = PLANTILLA_CLIENTE): string {
+  const botones = `[Botones: «Ahí estaré» · «Reagendar»]`;
+  const cuando = `Cuándo: ${p[3]} — hora del centro de México (CDMX).`;
+
+  if (plantilla === PLANTILLA_CLIENTE_PREP) {
+    return [
+      `Hola ${p[0]} 👋 Te recuerdo tu ${p[1]}: es en ${p[2]}.`,
+      ``,
+      cuando,
+      `Dónde: ${p[4]}`,
+      ``,
+      `Para que te sirva de verdad, cuéntame antes cómo trabajas hoy: cuántas tiendas manejas, con qué vendes y qué es lo que más te complica del día.`,
+      ``,
+      `Si se te hace más fácil, mándame una nota de voz 🎙️ — así me lo cuentas rápido y yo entiendo todo.`,
+      ``,
+      `Con eso preparo la sesión sobre tu operación y te enseño justo lo que te resuelve, en vez de una demo genérica.`,
+      ``,
+      `¿Te queda bien el horario? Si no, dímelo por aquí y la movemos.`,
+      ``,
+      botones,
+    ].join('\n');
+  }
+
+  if (plantilla === PLANTILLA_CLIENTE_CERCA) {
+    return [
+      `Hola ${p[0]} 👋 Tu ${p[1]} es en ${p[2]}.`,
+      ``,
+      cuando,
+      `Entra por aquí: ${p[4]}`,
+      ``,
+      `Si algo se te atravesó, dímelo por aquí y la movemos sin problema.`,
+      ``,
+      botones,
+    ].join('\n');
+  }
+
+  // La de respaldo, la que ya estaba aprobada.
   return [
     `Hola ${p[0]}, te recordamos tu ${p[1]} con Sacs: es en ${p[2]}.`,
     ``,
-    `Cuándo: ${p[3]} — hora del centro de México (CDMX).`,
+    cuando,
     `Dónde: ${p[4]}`,
     ``,
     `Si no te queda, respóndenos por aquí y la movemos.`,
     ``,
-    `[Botones: «Ahí estaré» · «Reagendar»]`,
+    botones,
   ].join('\n');
 }
 
