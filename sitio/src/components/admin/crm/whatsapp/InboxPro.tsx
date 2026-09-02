@@ -312,39 +312,34 @@ export default function InboxPro() {
     return () => window.removeEventListener('pointerdown', pedir);
   }, []);
 
-  // Atajos globales: j/k navegan la lista, n salta a la siguiente sin responder,
-  // Escape cierra el hilo (en móvil, vuelve).
-  //
-  // CANDADO (2-sep): las letras sueltas solo valen cuando lo último que el
-  // usuario tocó fue LA LISTA. Antes bastaba con que el foco no estuviera en un
-  // input: después de dar clic en «Enviar», en un chip o al cerrar un modal, el
-  // foco quedaba en un botón y las letras del siguiente mensaje («no…», «ok…»)
-  // cambiaban de conversación en silencio — y el texto se iba a otra persona.
+  // Atajos globales — SIEMPRE con ⌘ (Ctrl en Windows), decisión del dueño 2-sep:
+  // una letra suelta se disparaba con el foco en un botón y cambiaba de chat
+  // mientras la gente escribía. ⌘J = siguiente sin responder · ⌘↓ / ⌘↑ =
+  // bajar / subir en la lista · Escape cierra el hilo (en móvil, vuelve).
+  // No se usan ⌘N ni ⌘K: ⌘N lo reserva el navegador (ventana nueva) y ⌘K ya
+  // es el buscador del CRM.
   const listaRef = useRef<any[] | null>(null); listaRef.current = lista;
-  const ultimoToqueEnLista = useRef(false);
-  useEffect(() => {
-    const p = (e: PointerEvent) => { ultimoToqueEnLista.current = !!(e.target as HTMLElement | null)?.closest?.('[data-lista-wa]'); };
-    window.addEventListener('pointerdown', p, true);
-    return () => window.removeEventListener('pointerdown', p, true);
-  }, []);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if ((e.key === 'n' || e.key === 'j' || e.key === 'k') && !ultimoToqueEnLista.current) return;
+      if (e.key === 'Escape') {
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        if (activaRef.current && !document.querySelector('[role="dialog"]')) setActiva(null);
+        return;
+      }
+      const cmd = e.metaKey || e.ctrlKey;
+      if (!cmd || e.altKey || e.shiftKey) return;
       const l = listaRef.current || [];
-      if (e.key === 'n' && activaRef.current) {
+      if (e.key === 'j' || e.key === 'J') {
+        if (!activaRef.current) return;
         e.preventDefault();
         const sig = l.filter((c: any) => c.ultima_direccion === 'entrante' && c.estado_crm !== 'resuelta' && c.id !== activaRef.current?.id)[0];
         if (sig) abrir(sig);
-      } else if (e.key === 'j' || e.key === 'k') {
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const i = l.findIndex((c: any) => c.id === activaRef.current?.id);
-        const n = e.key === 'j' ? Math.min(l.length - 1, i + 1) : Math.max(0, i - 1);
+        const n = e.key === 'ArrowDown' ? Math.min(l.length - 1, i + 1) : Math.max(0, i - 1);
         if (l[n]) abrir(l[n]);
-      } else if (e.key === 'Escape' && activaRef.current && !document.querySelector('[role="dialog"]')) {
-        setActiva(null);
       }
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
@@ -1269,8 +1264,10 @@ function VacioHilo({ onNuevo, total = -1, conFiltro = false, onLimpiar }: { onNu
           </p>
         </>
       )}
-      <p style={{ display: 'flex', gap: 14, fontSize: 11, color: C.g500, marginTop: 4 }}>
-        <span><span style={kbd}>N</span>&nbsp; Nuevo chat</span>
+      <p style={{ display: 'flex', gap: 14, fontSize: 11, color: C.g500, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <span><span style={kbd}>⌘J</span>&nbsp; Siguiente sin responder</span>
+        <span><span style={kbd}>⌘↓</span> <span style={kbd}>⌘↑</span>&nbsp; Moverse en la lista</span>
+        <span><span style={kbd}>Esc</span>&nbsp; Cerrar el chat</span>
       </p>
     </div>
   );
