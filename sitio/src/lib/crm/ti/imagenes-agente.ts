@@ -7,10 +7,48 @@
 // quitar la imagen al aprobar o corregir, y eso también queda como ejemplo.
 import { supabase } from '../../supabase';
 
-export type ImagenAgente = { id: string; nombre: string; url: string; descripcion: string | null; cuando: string | null; giros: string[]; temas: string[]; usos: number };
+export type TipoRecurso = 'image' | 'document' | 'video';
+export type ImagenAgente = { id: string; nombre: string; url: string; descripcion: string | null; cuando: string | null; giros: string[]; temas: string[]; usos: number; tipo: TipoRecurso; mime?: string | null; bytes?: number | null };
+export type Adjunto = { id: string; tipo: TipoRecurso; url: string; nombre: string; por_que?: string };
+export const TIPO_L: Record<TipoRecurso, string> = { image: 'imagen', document: 'PDF/documento', video: 'video' };
+
+/* Lo que WhatsApp (Cloud API vía Kapso) acepta. Fuera de esto, el envío falla en silencio horas después. */
+export const REGLAS_WA: Record<TipoRecurso, { mimes: string[]; maxBytes: number; nota: string }> = {
+  image: { mimes: ['image/jpeg', 'image/png'], maxBytes: 5 * 1024 * 1024, nota: 'JPG o PNG, máximo 5 MB (WebP/GIF/SVG se convierten a JPG)' },
+  video: { mimes: ['video/mp4', 'video/3gpp'], maxBytes: 16 * 1024 * 1024, nota: 'MP4 (H.264 + AAC) o 3GP, máximo 16 MB' },
+  document: { mimes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'], maxBytes: 100 * 1024 * 1024, nota: 'PDF (o Word/Excel/PowerPoint), máximo 100 MB' },
+};
+const CONVERTIBLES = ['image/webp', 'image/gif', 'image/svg+xml', 'image/avif', 'image/heic', 'image/heif', 'image/bmp', 'image/tiff'];
+
+/** Clasifica y valida un archivo antes de subirlo. */
+export function validarRecurso(o: { mime?: string | null; bytes?: number | null; nombre?: string | null }): { ok: true; tipo: TipoRecurso; convertir: boolean } | { ok: false; error: string } {
+  const mime = String(o.mime || '').split(';')[0].toLowerCase();
+  const bytes = Number(o.bytes) || 0;
+  const tipo: TipoRecurso | null = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : REGLAS_WA.document.mimes.includes(mime) ? 'document' : null;
+  if (!tipo) return { ok: false, error: `Formato no admitido por WhatsApp (${mime || 'desconocido'}). Imagen JPG/PNG, video MP4 o documento PDF.` };
+  const r = REGLAS_WA[tipo];
+  const convertir = tipo === 'image' && !r.mimes.includes(mime);
+  if (tipo === 'image' && !r.mimes.includes(mime) && !CONVERTIBLES.includes(mime)) return { ok: false, error: `Imagen en ${mime}: usa JPG o PNG.` };
+  if (tipo !== 'image' && !r.mimes.includes(mime)) return { ok: false, error: `${tipo === 'video' ? 'Video' : 'Documento'} en ${mime}: ${r.nota}.` };
+  if (bytes > r.maxBytes) return { ok: false, error: `Pesa ${(bytes / 1048576).toFixed(1)} MB; WhatsApp admite ${r.nota}.` };
+  return { ok: true, tipo, convertir };
+}
+
+/** Los adjuntos que el agente eligió, validados contra la galería (máximo 2). */
+export function resolverAdjuntos(ids: any, galeria: ImagenAgente[]): Adjunto[] {
+  const lista: any[] = Array.isArray(ids) ? ids : [];
+  const out: Adjunto[] = [];
+  for (const x of lista) {
+    const id = typeof x === 'string' ? x : x?.id;
+    const g = galeria.find(i => i.id === id);
+    if (g && !out.some(a => a.id === g.id)) out.push({ id: g.id, tipo: g.tipo || 'image', url: g.url, nombre: g.nombre, por_que: String(x?.por_que || '').slice(0, 160) || undefined });
+    if (out.length >= 2) break;
+  }
+  return out;
+}
 
 export async function galeriaActiva(): Promise<ImagenAgente[]> {
-  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(40);
+  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos, tipo, mime, bytes').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(60);
   return (data || []) as ImagenAgente[];
 }
 
@@ -20,13 +58,13 @@ export function galeriaTexto(lista: ImagenAgente[], giro?: string | null): strin
   const g = String(giro || '').toLowerCase();
   const filtradas = lista.filter(i => !i.giros?.length || !g || i.giros.some(x => g.includes(String(x).toLowerCase())));
   if (!filtradas.length) return '';
-  return '\n\nIMÁGENES QUE PUEDES MANDAR (máximo UNA por mensaje y solo si aporta de verdad; pon su id en "imagen.id", si no, null):\n'
-    + filtradas.map(i => `[${i.id}] ${i.nombre} — muestra: ${i.descripcion || 's/d'}${i.cuando ? ` · úsala cuando: ${i.cuando}` : ''}`).join('\n');
+  return '\n\nRECURSOS QUE PUEDES ADJUNTAR (imágenes, PDF, videos; máximo DOS por mensaje y solo si aportan de verdad; pon sus ids en "adjuntos", si no, []):\n'
+    + filtradas.map(i => `[${i.id}] (${TIPO_L[i.tipo || 'image']}) ${i.nombre} — muestra: ${i.descripcion || 's/d'}${i.cuando ? ` · úsala cuando: ${i.cuando}` : ''}`).join('\n');
 }
 
 export async function resolverImagen(id?: string | null): Promise<ImagenAgente | null> {
   if (!id || !/^[0-9a-f-]{36}$/i.test(String(id))) return null;
-  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos').eq('id', id).eq('activa', true).maybeSingle();
+  const { data } = await supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, giros, temas, usos, tipo, mime, bytes').eq('id', id).eq('activa', true).maybeSingle();
   return (data as ImagenAgente) || null;
 }
 

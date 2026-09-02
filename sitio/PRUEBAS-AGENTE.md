@@ -94,13 +94,15 @@ Cada cosa que el lead dice que quiere ver en la demo la anota el agente (con la 
 en la descripción del evento de Google Calendar de la próxima cita, así el consultor la ve al abrir la reunión.
 Prueba: di «también quiero ver cómo manejan el e-commerce» → aparece el tema en el panel y en el evento.
 
-## Imágenes: la galería del agente
+## Imágenes, PDF y video: los recursos del agente
 
-En Próximos envíos, abajo, está **Galería del agente**: sube una imagen (o pega su URL) y dile *qué muestra* y
-*cuándo conviene mandarla*. El agente la ve en su prompt y la manda solo cuando aporta (máximo una por mensaje,
-nunca dos seguidas). En cada envío pendiente ves si sale con imagen y por qué la eligió; puedes cambiarla,
-quitarla o adjuntar otra, y eso queda como ejemplo. Prueba: sube la tabla de precios con «cuándo: pide precio»
-y pide precio desde tu WhatsApp.
+En Próximos envíos, abajo, está **Recursos del agente**: sube imagen (JPG/PNG ≤5 MB; WebP se convierte), PDF
+(≤100 MB) o video (MP4 ≤16 MB) y dile *qué muestra* y *cuándo conviene mandarlo*. El agente los ve en su prompt y
+adjunta hasta dos por mensaje solo cuando aportan: imagen para ver algo concreto, PDF para lo que se consulta
+después, video solo si lo pide o si el flujo se entiende mejor viéndolo. En cada envío pendiente y en cada tarjeta
+de Aprendizaje puedes agregar/quitar adjuntos (de la galería o subiendo ahí mismo) y eso queda como ejemplo.
+Prueba: sube la ficha de precios en PDF con «cuándo: pide precio detallado o lo va a compartir con su socio» y
+pide «¿me pasas los precios para enseñárselos a mi socia?» desde tu WhatsApp.
 
 ## Varios mensajes seguidos (ráfaga)
 

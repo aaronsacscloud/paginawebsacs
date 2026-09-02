@@ -14,9 +14,9 @@ export const GET: APIRoute = async ({ request }) => {
   if (!user) return json({ error: 'Sin sesión' }, 401);
   const cfg: any = await leerConfig();
   const [{ data: pend }, { data: rec }] = await Promise.all([
-    supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, created_at, imagen_id, imagen_url')
+    supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, created_at, imagen_id, imagen_url, adjuntos')
       .eq('estado', 'pendiente').order('sale_at', { ascending: true }).limit(50),
-    supabase.from('ti_envios').select('id, contact_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, enviado_at, motivo_veto, error, created_at, editado_por, humano_respuesta, humano_at, veredicto_par, imagen_id, imagen_url')
+    supabase.from('ti_envios').select('id, contact_id, telefono, origen, estado, mensaje, mensaje_original, salida, sale_at, enviado_at, motivo_veto, error, created_at, editado_por, humano_respuesta, humano_at, veredicto_par, imagen_id, imagen_url, adjuntos')
       .neq('estado', 'pendiente').order('updated_at', { ascending: false }).limit(30),
   ]);
   const ids = [...new Set([...(pend || []), ...(rec || [])].map((x: any) => x.contact_id).filter(Boolean))];
@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase.from('ia_imagenes').update({ activa: false }).eq('id', b.imagen_id);
     return json({ ok: true });
   }
-  if (!id || !['vetar', 'editar', 'enviar_ya', 'par', 'imagen'].includes(accion)) return json({ error: 'Falta id o la acción no existe' }, 400);
+  if (!id || !['vetar', 'editar', 'enviar_ya', 'par', 'imagen', 'adjuntos'].includes(accion)) return json({ error: 'Falta id o la acción no existe' }, 400);
   const { data: e } = await supabase.from('ti_envios').select('*').eq('id', id).maybeSingle();
   if (!e) return json({ error: 'No existe ese envío' }, 404);
   const ahora = new Date().toISOString();
@@ -84,15 +84,19 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true, veredicto: v });
   }
   if (e.estado !== 'pendiente') return json({ error: `El envío ya está ${e.estado}` }, 409);
-  if (accion === 'imagen') {
-    // Adjuntar o quitar la imagen del envío pendiente. Es una corrección: queda como ejemplo (con o sin imagen).
-    let img: any = null;
-    if (b.imagen_id) { const { data } = await supabase.from('ia_imagenes').select('id, url, nombre').eq('id', b.imagen_id).eq('activa', true).maybeSingle(); img = data; if (!img) return json({ error: 'Esa imagen no está en la galería' }, 404); }
-    await supabase.from('ti_envios').update({ imagen_id: img?.id || null, imagen_url: img?.url || null, editado_por: user.id, updated_at: ahora }).eq('id', id);
+  if (accion === 'imagen' || accion === 'adjuntos') {
+    // Adjuntar/quitar recursos (imágenes, PDF, video; máx. 2) del envío pendiente. Es una corrección: queda como ejemplo.
+    const ids: string[] = accion === 'imagen' ? (b.imagen_id ? [String(b.imagen_id)] : []) : (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : []).slice(0, 2);
+    const { data: recs } = ids.length ? await supabase.from('ia_imagenes').select('id, url, nombre, tipo').in('id', ids).eq('activa', true) : { data: [] as any[] };
+    const adjuntos = ids.map(i => (recs || []).find((r: any) => r.id === i)).filter(Boolean).map((r: any) => ({ id: r.id, tipo: r.tipo || 'image', url: r.url, nombre: r.nombre }));
+    if (adjuntos.length !== ids.length) return json({ error: 'Alguno de esos recursos ya no está en la galería' }, 404);
+    const img = adjuntos.find(a => a.tipo === 'image') || null;
+    await supabase.from('ti_envios').update({ adjuntos, imagen_id: img?.id || null, imagen_url: img?.url || null, editado_por: user.id, updated_at: ahora }).eq('id', id);
     const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
-    await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El dueño ${img ? 'adjuntó la imagen «' + img.nombre + '»' : 'quitó la imagen'} a una respuesta del agente (${e.origen})`, mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: e.mensaje, pulida: e.mensaje, imagen_id: img?.id || null, por_que: `CRITERIO: ${img ? 'en este momento conviene mandar la imagen «' + img.nombre + '»' : 'aquí no hacía falta imagen'}\nEl dueño ajustó la imagen del envío ${id}.`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora });
-    await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, razon: img ? `imagen adjunta: ${img.nombre}` : 'imagen quitada', detalle: { envio_id: id, imagen_id: img?.id || null } });
-    return json({ ok: true, imagen_id: img?.id || null, imagen_url: img?.url || null });
+    const nombres = adjuntos.map(a => `«${a.nombre}»`).join(', ');
+    await supabase.from('ia_ejemplos').insert({ estado: estadoGuion, situacion: `El dueño ${adjuntos.length ? 'adjuntó ' + nombres : 'quitó los adjuntos'} a una respuesta del agente (${e.origen})`, mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: e.mensaje, pulida: e.mensaje, imagen_id: img?.id || null, adjuntos, por_que: `CRITERIO: ${adjuntos.length ? 'en este momento conviene adjuntar ' + nombres : 'aquí no hacía falta adjunto'}\nEl dueño ajustó los adjuntos del envío ${id}.`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora });
+    await supabase.from('ia_log').insert({ accion: 'correccion_dueno', contact_id: e.contact_id, razon: adjuntos.length ? `adjuntos: ${nombres}` : 'adjuntos quitados', detalle: { envio_id: id, adjuntos: ids } });
+    return json({ ok: true, adjuntos, imagen_id: img?.id || null, imagen_url: img?.url || null });
   }
 
   if (accion === 'vetar') {
@@ -111,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
     const estadoGuion = (e.salida as any)?.estado || 'descubriendo';
     const { data: ej } = await supabase.from('ia_ejemplos').insert({
       estado: estadoGuion, situacion: `Edición del humano sobre una respuesta del agente (${e.origen})`,
-      mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje, imagen_id: e.imagen_id || null,
+      mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: mensaje, pulida: mensaje, imagen_id: e.imagen_id || null, adjuntos: e.adjuntos || [],
       por_que: `${criterio ? `CRITERIO: ${criterio}\n` : ''}El humano corrigió al agente. Original: ${e.mensaje}`, fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id,
       estado_rev: 'aprobado', revisado_at: ahora,
     }).select('id').single();

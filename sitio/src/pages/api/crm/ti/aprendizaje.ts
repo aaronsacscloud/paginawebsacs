@@ -9,7 +9,7 @@ import { getCurrentUser } from '../../../../lib/auth/scope';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
-const COLS = 'id, estado, giro, situacion, mensaje_lead, respuesta, pulida, por_que, fuente, imagen_id, contact_id, estado_rev, usos, created_at, revisado_at';
+const COLS = 'id, estado, giro, situacion, mensaje_lead, respuesta, pulida, por_que, fuente, imagen_id, adjuntos, contact_id, estado_rev, usos, created_at, revisado_at';
 const criterioDe = (por_que?: string | null) => (String(por_que || '').match(/^CRITERIO:\s*([^\n]+)/) || [])[1]?.trim() || '';
 const conCriterio = (por_que: string | null | undefined, criterio: string) => {
   const resto = String(por_que || '').replace(/^CRITERIO:[^\n]*\n?/, '');
@@ -23,10 +23,10 @@ export const GET: APIRoute = async ({ request }) => {
     supabase.from('ia_ejemplos').select(COLS).in('estado_rev', ['propuesta', 'dudoso']).order('created_at', { ascending: false }).limit(120),
     supabase.from('ia_ejemplos').select(COLS).eq('estado_rev', 'aprobado').order('revisado_at', { ascending: false, nullsFirst: false }).limit(200),
     supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('estado_rev', 'rechazado'),
-    supabase.from('ti_envios').select('id, contact_id, origen, mensaje, salida, enviado_at, imagen_id, imagen_url').eq('estado', 'enviado').is('aprobado_por', null).is('revisado_at', null).is('editado_por', null).order('enviado_at', { ascending: false }).limit(60),
+    supabase.from('ti_envios').select('id, contact_id, origen, mensaje, salida, enviado_at, imagen_id, imagen_url, adjuntos').eq('estado', 'enviado').is('aprobado_por', null).is('revisado_at', null).is('editado_por', null).order('enviado_at', { ascending: false }).limit(60),
     supabase.from('ti_envios').select('id, contact_id, origen, mensaje, salida, humano_respuesta, humano_at, estado, created_at').not('humano_respuesta', 'is', null).is('veredicto_par', null).order('created_at', { ascending: false }).limit(40),
-    supabase.from('ti_envios').select('id, contact_id, origen, mensaje, mensaje_original, salida, enviado_at, imagen_id, imagen_url, editado_por').eq('estado', 'enviado').not('aprobado_por', 'is', null).order('enviado_at', { ascending: false }).limit(120),
-    supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando').eq('activa', true).order('usos', { ascending: false }).limit(40),
+    supabase.from('ti_envios').select('id, contact_id, origen, mensaje, mensaje_original, salida, enviado_at, imagen_id, imagen_url, adjuntos, editado_por').eq('estado', 'enviado').not('aprobado_por', 'is', null).order('enviado_at', { ascending: false }).limit(120),
+    supabase.from('ia_imagenes').select('id, nombre, url, descripcion, cuando, tipo, mime, bytes, usos').eq('activa', true).is('error', null).order('usos', { ascending: false }).limit(60),
   ]);
   const ids = [...new Set([...(enviosSolos || []), ...(pares || []), ...(enviosAprobados || []), ...(porRevisar || []), ...(aprobados || [])].map((x: any) => x.contact_id).filter(Boolean))];
   const { data: cs } = ids.length ? await supabase.from('contacts').select('id, nombre, giro').in('id', ids) : { data: [] as any[] };
@@ -46,8 +46,13 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const ahora = new Date().toISOString();
   const criterio = String(b.criterio || '').trim().slice(0, 600);
-  const imagen_id = b.imagen_id ? String(b.imagen_id) : null;
-  if (imagen_id) { const { data } = await supabase.from('ia_imagenes').select('id').eq('id', imagen_id).eq('activa', true).maybeSingle(); if (!data) return json({ error: 'Esa imagen no está en la galería' }, 404); }
+  // Adjuntos (ids de la galería, máx. 2) → objetos {id,tipo,url,nombre}; `imagen_id` viejo se acepta como un adjunto.
+  const ids: string[] = (Array.isArray(b.adjuntos) ? b.adjuntos.map(String) : b.imagen_id ? [String(b.imagen_id)] : []).slice(0, 2);
+  const { data: recs } = ids.length ? await supabase.from('ia_imagenes').select('id, url, nombre, tipo').in('id', ids).eq('activa', true) : { data: [] as any[] };
+  const adjuntos = ids.map(i => (recs || []).find((r: any) => r.id === i)).filter(Boolean).map((r: any) => ({ id: r.id, tipo: r.tipo || 'image', url: r.url, nombre: r.nombre }));
+  if (adjuntos.length !== ids.length) return json({ error: 'Alguno de esos recursos ya no está en la galería' }, 404);
+  const imagen_id = (adjuntos.find(a => a.tipo === 'image') || null)?.id || null;
+  const tocaAdjuntos = 'adjuntos' in b || 'imagen_id' in b;
 
   // Un ejemplo (propuesto, dudoso o ya aprobado): aprobar / rechazar / editar.
   if (b.accion === 'ejemplo') {
@@ -61,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     if (pulida.length < 2) return json({ error: 'La respuesta está vacía' }, 400);
     const cambios: any = { pulida, por_que: conCriterio(ej.por_que, criterio), revisado_at: ahora };
-    if ('imagen_id' in b) cambios.imagen_id = imagen_id;
+    if (tocaAdjuntos) { cambios.imagen_id = imagen_id; cambios.adjuntos = adjuntos; }
     if (b.decision === 'aprobar' || ej.estado_rev === 'aprobado') cambios.estado_rev = 'aprobado';
     if (b.decision === 'aprobar' && ej.fuente !== 'correccion_dueno' && pulida !== String(ej.pulida || ej.respuesta || '').trim()) cambios.fuente = 'correccion_dueno'; // lo reescribió: es su criterio
     const { error } = await supabase.from('ia_ejemplos').update(cambios).eq('id', ej.id);
@@ -85,7 +90,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: ej, error } = await supabase.from('ia_ejemplos').insert({
       estado: estadoGuion, situacion: (e.salida as any)?.objetivo || `Respuesta del agente (${e.origen})`,
       mensaje_lead: (e.salida as any)?.ultimo_mensaje || null, respuesta: e.mensaje, pulida,
-      imagen_id: 'imagen_id' in b ? imagen_id : (e.imagen_id || null),
+      imagen_id: tocaAdjuntos ? imagen_id : (e.imagen_id || null), adjuntos: tocaAdjuntos ? adjuntos : (e.adjuntos || []),
       por_que: conCriterio(corrigio ? `El dueño corrigió al agente desde Aprendizaje. Original: ${e.mensaje}` : 'El dueño validó esta respuesta del agente tal cual desde Aprendizaje.', criterio),
       fuente: 'correccion_dueno', contact_id: e.contact_id, conversation_id: e.conversation_id, estado_rev: 'aprobado', revisado_at: ahora,
     }).select('id').single();

@@ -5,6 +5,7 @@
 // «lo que propuso el agente / lo que contestó el consultor», con tu veredicto.
 // Sobrio, sin emoji, estándar enterprise.
 import { useEffect, useRef, useState } from 'react';
+import { SelectorAdjuntos, GaleriaRecursos, type Recurso, type AdjuntoSel } from './RecursosAgente';
 
 type Envio = {
   id: string; contact_id: string | null; telefono: string; origen: string; estado: string;
@@ -12,9 +13,9 @@ type Envio = {
   motivo_veto?: string | null; error?: string | null; created_at: string; editado_por?: string | null;
   humano_respuesta?: string | null; humano_at?: string | null; veredicto_par?: string | null;
   contacto?: { nombre?: string | null; giro?: string | null; lifecycle_stage?: string | null } | null;
-  imagen_id?: string | null; imagen_url?: string | null;
+  imagen_id?: string | null; imagen_url?: string | null; adjuntos?: AdjuntoSel[];
 };
-type ImagenGal = { id: string; nombre: string; url: string; descripcion?: string | null; cuando?: string | null; usos?: number };
+type ImagenGal = Recurso;
 type Aprendizaje = { ejemplos_dueno: number; ejemplos_7d: number; vetos_7d: number; ediciones_7d: number; ultimos: { estado: string; situacion: string; pulida: string; created_at: string }[] };
 
 const ESTADO_L: Record<string, string> = { nuevo: 'Nuevo', descubriendo: 'Descubriendo', proponiendo: 'Proponiendo', agendada: 'Agendada', confirmando: 'Confirmando', no_show: 'No-show', reunion_hecha: 'Reunión hecha', silencio: 'Silencio', descalificado: 'Descalificado', humano: 'Humano' };
@@ -101,7 +102,6 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
   const [corr, setCorr] = useState<Record<string, string>>({});
   const [criterio, setCriterio] = useState<Record<string, string>>({});
   const [galeria, setGaleria] = useState<ImagenGal[]>([]);
-  const [picker, setPicker] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   const [veto, setVeto] = useState<{ motivo: string; texto: string } | null>(null);
   const [banner, setBanner] = useState<{ texto: string; sub?: string; tipo: 'ok' | 'err'; aprendizaje?: boolean } | null>(null);
@@ -196,9 +196,13 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
               <div className="ti-envio-acc-tag">Al salir, el agente {s.accion.tipo === 'agendar' ? `agenda la demo: ${s.accion.fecha} ${s.accion.hora}${s.accion.email ? ` (invitación a ${s.accion.email})` : ''}` : s.accion.tipo === 'confirmar_asistencia' ? 'confirma la asistencia a su cita' : 'le manda la liga para reagendar'}.</div>
             )}
 
-            <FilaImagen e={e} s={s} galeria={galeria} abierto={picker === e.id} onAbrir={() => setPicker(picker === e.id ? null : e.id)} ocupado={ocupado}
-              onCambiar={async (imagen_id: string | null) => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'imagen', imagen_id }); if (j) { setPend(prev => prev.map(x => x.id === e.id ? { ...x, imagen_id: j.imagen_id, imagen_url: j.imagen_url } : x)); setPicker(null); } }}
-              onNueva={async (img: { nombre: string; url: string; descripcion: string; cuando: string }) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as ImagenGal; } return null; }} />
+            <div style={{ margin: '8px 0 10px' }}>
+              <label className="ti-envio-lbl">Adjuntos (imagen, PDF o video · máximo 2)</label>
+              <SelectorAdjuntos valor={e.adjuntos || (e.imagen_url ? [{ id: e.imagen_id || '', tipo: 'image', url: e.imagen_url, nombre: 'Imagen' }] : [])} galeria={galeria} disabled={ocupado}
+                porQue={Object.fromEntries(((s.adjuntos || []) as any[]).filter((a: any) => a.por_que).map((a: any) => [a.id, a.por_que]))}
+                onNuevo={r => setGaleria(g => [r, ...g])}
+                onChange={async adj => { const j = await post('/api/crm/ti/envios', { id: e.id, accion: 'adjuntos', adjuntos: adj.map(a => a.id) }); if (j) setPend(prev => prev.map(x => x.id === e.id ? { ...x, adjuntos: j.adjuntos, imagen_id: j.imagen_id, imagen_url: j.imagen_url } : x)); }} />
+            </div>
             <label className="ti-envio-lbl">{editado(e) ? 'Tu versión — se guardará como ejemplo' : 'El mensaje que va a salir — puedes editarlo'}</label>
             <textarea className={'ti-envio-texto' + (editado(e) ? ' editado' : '')} rows={Math.min(10, Math.max(4, Math.ceil((edit[e.id] ?? e.mensaje).length / 70) + 1))} value={edit[e.id] ?? e.mensaje} onChange={ev => setEdit({ ...edit, [e.id]: ev.target.value })} disabled={ocupado} />
 
@@ -254,9 +258,9 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
       </div>
 
       <div className="ti-carta ti-aprendizaje">
-        <Galeria galeria={galeria}
+        <GaleriaRecursos galeria={galeria} onNuevo={r => setGaleria(g => [r, ...g])}
           onQuitar={async (id: string) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_quitar', imagen_id: id }); if (j) setGaleria(g => g.filter(x => x.id !== id)); }}
-          onNueva={async (img: { nombre: string; url: string; descripcion: string; cuando: string }) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as ImagenGal; } return null; }} />
+          onNuevaUrl={async (img) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as Recurso; } return null; }} />
         <h3 className="ti-h3">Lo que el agente ha aprendido de ti</h3>
         {apr ? (<>
           <div className="ti-apr-grid">
@@ -323,120 +327,6 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
         </div>
       )}
       <style>{ESTILOS_ENVIOS}</style>
-    </div>
-  );
-}
-
-/* ═══ Imágenes del agente ═══
- * Hay respuestas que valen más con imagen (la tabla de precios, la matriz talla × color).
- * La galería la llena el dueño con QUÉ muestra cada imagen y CUÁNDO usarla; el agente
- * la ve en su prompt y elige una cuando aporta; aquí el dueño la confirma, la cambia o
- * la quita —y cada ajuste queda como ejemplo. */
-const estiloThumb: any = { width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #e8e5f0', background: '#f6f5fa', flexShrink: 0 };
-
-function FormImagen({ onNueva, onListo }: { onNueva: (img: { nombre: string; url: string; descripcion: string; cuando: string }) => Promise<ImagenGal | null>; onListo?: (img: ImagenGal) => void }) {
-  const [f, setF] = useState({ nombre: '', descripcion: '', cuando: '', url: '' });
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [ocupado, setOcupado] = useState(false);
-  const [error, setError] = useState('');
-  const listo = f.nombre.trim().length >= 2 && (!!archivo || /^https?:\/\//.test(f.url));
-  const guardar = async () => {
-    if (ocupado || !listo) return;
-    setOcupado(true); setError('');
-    try {
-      let url = f.url.trim();
-      if (archivo) {
-        const fd = new FormData(); fd.append('file', archivo); fd.append('nombre', f.nombre); fd.append('categoria', 'agente');
-        const r = await fetch('/api/crm/whatsapp/media', { method: 'POST', body: fd }).then(x => x.json());
-        if (!r?.archivo?.url) throw new Error(r?.error || 'No se pudo subir la imagen');
-        url = r.archivo.url;
-      }
-      const img = await onNueva({ nombre: f.nombre.trim(), url, descripcion: f.descripcion.trim(), cuando: f.cuando.trim() });
-      if (!img) throw new Error('No se guardó en la galería');
-      setF({ nombre: '', descripcion: '', cuando: '', url: '' }); setArchivo(null);
-      onListo?.(img);
-    } catch (e: any) { setError(String(e?.message || e)); }
-    setOcupado(false);
-  };
-  return (
-    <div style={{ display: 'grid', gap: 6, padding: '10px 12px', border: '1px dashed #d9d4ea', borderRadius: 10, background: '#fbfaff' }}>
-      <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', color: '#6b6580' }}>Subir imagen nueva</div>
-      <input type="file" accept="image/*" onChange={ev => setArchivo(ev.target.files?.[0] || null)} style={{ fontSize: '0.78rem' }} />
-      <input className="ti-envio-input" placeholder="o pega la URL pública de la imagen" value={f.url} onChange={ev => setF({ ...f, url: ev.target.value })} />
-      <input className="ti-envio-input" placeholder="Nombre corto (ej. Tabla de precios 2026)" value={f.nombre} onChange={ev => setF({ ...f, nombre: ev.target.value })} />
-      <input className="ti-envio-input" placeholder="Qué muestra (para que el agente decida)" value={f.descripcion} onChange={ev => setF({ ...f, descripcion: ev.target.value })} />
-      <input className="ti-envio-input" placeholder="Cuándo conviene mandarla (ej. cuando pide precio con 2+ tiendas)" value={f.cuando} onChange={ev => setF({ ...f, cuando: ev.target.value })} />
-      {error && <div style={{ fontSize: '0.75rem', color: '#7f1d1d' }}>{error}</div>}
-      <div><button className="ti-btn" disabled={ocupado || !listo} onClick={guardar}>{ocupado ? 'Guardando…' : 'Guardar en la galería'}</button></div>
-    </div>
-  );
-}
-
-function FilaImagen({ e, s, galeria, abierto, onAbrir, onCambiar, onNueva, ocupado }: { e: Envio; s: any; galeria: ImagenGal[]; abierto: boolean; onAbrir: () => void; onCambiar: (id: string | null) => Promise<void>; onNueva: (img: any) => Promise<ImagenGal | null>; ocupado: boolean }) {
-  const actual = e.imagen_url ? (galeria.find(g => g.id === e.imagen_id) || { id: e.imagen_id || '', nombre: 'Imagen', url: e.imagen_url }) : null;
-  const eligioAgente = !!(s?.imagen?.id && s.imagen.id === e.imagen_id);
-  return (
-    <div style={{ margin: '8px 0 10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {actual ? (<>
-          <img src={actual.url} alt={actual.nombre} style={estiloThumb} />
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Sale con imagen: {actual.nombre}</div>
-            <div className="ti-suave" style={{ fontSize: '0.74rem' }}>{eligioAgente ? `El agente la eligió${s.imagen?.por_que ? `: ${s.imagen.por_que}` : ''}` : 'La adjuntaste tú'}</div>
-          </div>
-          <button className="ti-btn" disabled={ocupado} onClick={onAbrir}>Cambiar…</button>
-          <button className="ti-btn" disabled={ocupado} onClick={() => onCambiar(null)}>Quitar imagen</button>
-        </>) : (<>
-          <span className="ti-suave" style={{ fontSize: '0.78rem' }}>Sin imagen.</span>
-          <button className="ti-btn" disabled={ocupado} onClick={onAbrir}>Adjuntar imagen…</button>
-        </>)}
-      </div>
-      {abierto && (
-        <div style={{ marginTop: 8, display: 'grid', gap: 10 }}>
-          {galeria.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-              {galeria.map(g => (
-                <button key={g.id} disabled={ocupado} onClick={() => onCambiar(g.id)} title={g.cuando || ''} style={{ textAlign: 'left', border: `1px solid ${g.id === e.imagen_id ? '#5B4BD6' : '#e8e5f0'}`, background: '#fff', borderRadius: 10, padding: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <img src={g.url} alt={g.nombre} style={{ width: '100%', height: 84, objectFit: 'cover', borderRadius: 6, background: '#f6f5fa' }} />
-                  <div style={{ fontSize: '0.76rem', fontWeight: 700, marginTop: 5 }}>{g.nombre}</div>
-                  {g.descripcion && <div className="ti-suave" style={{ fontSize: '0.7rem', lineHeight: 1.35 }}>{g.descripcion.slice(0, 70)}</div>}
-                </button>
-              ))}
-            </div>
-          )}
-          <FormImagen onNueva={onNueva} onListo={img => onCambiar(img.id)} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Galeria({ galeria, onQuitar, onNueva }: { galeria: ImagenGal[]; onQuitar: (id: string) => Promise<void>; onNueva: (img: any) => Promise<ImagenGal | null> }) {
-  const [abierta, setAbierta] = useState(false);
-  return (
-    <div style={{ margin: '18px 0 6px' }}>
-      <button onClick={() => setAbierta(a => !a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <h3 className="ti-h3" style={{ margin: 0 }}>Galería del agente</h3>
-        <span className="ti-chip chip-tipo">{galeria.length} {galeria.length === 1 ? 'imagen' : 'imágenes'}</span>
-        <span className="ti-suave" style={{ fontSize: '0.75rem' }}>{abierta ? 'ocultar' : 'ver y agregar'}</span>
-      </button>
-      <p className="ti-porque" style={{ marginTop: 4 }}>Las imágenes que el agente puede mandar solo. Dile qué muestra cada una y cuándo conviene: la tabla de precios cuando pide precio, la pantalla de tallas y colores cuando pregunta por tallas.</p>
-      {abierta && (
-        <div style={{ display: 'grid', gap: 10 }}>
-          {galeria.map(g => (
-            <div key={g.id} style={{ display: 'flex', gap: 10, alignItems: 'center', border: '1px solid #e8e5f0', borderRadius: 10, padding: 8, background: '#fff' }}>
-              <img src={g.url} alt={g.nombre} style={estiloThumb} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{g.nombre} <span className="ti-suave" style={{ fontWeight: 500 }}>· usada {g.usos || 0} {g.usos === 1 ? 'vez' : 'veces'}</span></div>
-                {g.descripcion && <div style={{ fontSize: '0.76rem', color: '#4a4658' }}>Muestra: {g.descripcion}</div>}
-                {g.cuando && <div className="ti-suave" style={{ fontSize: '0.74rem' }}>Cuándo: {g.cuando}</div>}
-              </div>
-              <button className="ti-btn" onClick={() => onQuitar(g.id)}>Quitar</button>
-            </div>
-          ))}
-          <FormImagen onNueva={onNueva} />
-        </div>
-      )}
     </div>
   );
 }
