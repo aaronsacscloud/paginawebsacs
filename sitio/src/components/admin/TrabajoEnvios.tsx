@@ -73,6 +73,7 @@ export const ESTILOS_ENVIOS = `
 .ti-par { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px; } @media (max-width:720px) { .ti-par { grid-template-columns:1fr; } }
 .ti-envio-datos { font-size:.82rem; margin-top:10px; color:var(--suave,#6b7280); } .ti-envio-datos ul { margin:6px 0 0; padding-left:18px; }
 .ti-envio-corr { margin-top:8px; display:grid; gap:8px; }
+.ti-rafaga { margin:4px 0 0; padding-left:20px; display:grid; gap:5px; } .ti-rafaga li { padding-left:2px; }
 .ti-link { background:none; border:none; padding:8px 0 0; color:var(--morado, #6d28d9); font-weight:700; font-size:.84rem; cursor:pointer; }
 .ti-cola { margin-top:14px; border-top:1px solid var(--linea,#e5e7eb); padding-top:6px; }
 .ti-cola-fila { display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; width:100%; text-align:left; border:none; background:none; padding:8px 4px; border-bottom:1px solid var(--linea,#e5e7eb); font:inherit; cursor:pointer; color:inherit; }
@@ -189,7 +190,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
               <span className={'ti-envio-reloj' + (saldra ? '' : ' apagado')}>{saldra ? faltan(e.sale_at, ahora) : 'no saldrá (sombra)'}</span>
             </div>
 
-            {s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
+            {(s.ultimos_mensajes?.length > 1) ? <div className="ti-envio-lead"><span>{nombre(e)} dijo · {s.ultimos_mensajes.length} mensajes seguidos (el agente los leyó todos)</span><ol className="ti-rafaga">{s.ultimos_mensajes.map((t: string, i: number) => <li key={i}>{t}</li>)}</ol></div> : s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
             {s.objetivo && <div className="ti-envio-obj"><span>Qué busca el agente</span>{s.objetivo}</div>}
             {s.accion?.tipo && s.accion.tipo !== 'ninguna' && (
               <div className="ti-envio-acc-tag">Al salir, el agente {s.accion.tipo === 'agendar' ? `agenda la demo: ${s.accion.fecha} ${s.accion.hora}${s.accion.email ? ` (invitación a ${s.accion.email})` : ''}` : s.accion.tipo === 'confirmar_asistencia' ? 'confirma la asistencia a su cita' : 'le manda la liga para reagendar'}.</div>
@@ -286,7 +287,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
                   {aprendio && <span className="ti-chip chip-verde">aprendido</span>}
                   <span className="ti-envio-reloj">{hora(e.enviado_at || e.humano_at || e.created_at)}</span>
                 </div>
-                {s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
+                {(s.ultimos_mensajes?.length > 1) ? <div className="ti-envio-lead"><span>{nombre(e)} dijo · {s.ultimos_mensajes.length} mensajes seguidos (el agente los leyó todos)</span><ol className="ti-rafaga">{s.ultimos_mensajes.map((t: string, i: number) => <li key={i}>{t}</li>)}</ol></div> : s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
                 {par ? (
                   <div className="ti-par">
                     <div><span className="ti-envio-lbl">El agente propuso</span><div className="ti-envio-msg">{e.mensaje}</div></div>

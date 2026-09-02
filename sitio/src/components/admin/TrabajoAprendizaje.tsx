@@ -48,7 +48,7 @@ function Tarjeta({ titulo, chips, leadDijo, original, textoInicial, criterioInic
   return (
     <div className="ti-envio" style={{ marginBottom: 12 }}>
       <div className="ti-envio-cab"><b className="ti-envio-nombre">{titulo}</b>{chips.map((c, i) => <span key={i} className="ti-chip chip-tipo">{c}</span>)}</div>
-      {leadDijo && <div className="ti-envio-lead"><span>Lead dijo</span>{leadDijo}</div>}
+      {leadDijo && (leadDijo.includes(' ⏎ ') ? <div className="ti-envio-lead"><span>Lead dijo · {leadDijo.split(' ⏎ ').length} mensajes seguidos</span><ol className="ti-rafaga">{leadDijo.split(' ⏎ ').map((t, i) => <li key={i}>{t}</li>)}</ol></div> : <div className="ti-envio-lead"><span>Lead dijo</span>{leadDijo}</div>)}
       {nota && <div className="ti-envio-obj"><span>Contexto</span>{nota}</div>}
       {original && original !== textoInicial && <details className="ti-envio-datos"><summary>Lo que el agente había dicho</summary><div style={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>{original}</div></details>}
       <label className="ti-envio-lbl">La respuesta {editado ? '— editada' : ''}</label>

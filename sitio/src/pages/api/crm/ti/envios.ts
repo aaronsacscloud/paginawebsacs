@@ -51,7 +51,11 @@ export const POST: APIRoute = async ({ request }) => {
   if (accion === 'galeria_agregar') {
     const nombre = String(b.nombre || '').trim().slice(0, 120), url = String(b.url || '').trim();
     if (nombre.length < 2 || !/^https?:\/\//.test(url)) return json({ error: 'Falta el nombre o la URL de la imagen' }, 400);
-    const { data, error } = await supabase.from('ia_imagenes').insert({ nombre, url, descripcion: String(b.descripcion || '').trim().slice(0, 300) || null, cuando: String(b.cuando || '').trim().slice(0, 300) || null, giros: Array.isArray(b.giros) ? b.giros.slice(0, 10) : [], temas: Array.isArray(b.temas) ? b.temas.slice(0, 10) : [], created_by: user.id }).select('*').single();
+    // WhatsApp solo acepta JPG/PNG: lo demás (WebP, GIF, SVG…) se convierte aquí, antes de guardarla.
+    const { asegurarFormatoWhatsApp } = await import('../../../../lib/crm/ti/imagenes-agente');
+    const f = await asegurarFormatoWhatsApp(url);
+    if (f.error) return json({ error: `No pude dejar la imagen en JPG para WhatsApp: ${f.error}` }, 400);
+    const { data, error } = await supabase.from('ia_imagenes').insert({ nombre, url: f.url, descripcion: String(b.descripcion || '').trim().slice(0, 300) || null, cuando: String(b.cuando || '').trim().slice(0, 300) || null, giros: Array.isArray(b.giros) ? b.giros.slice(0, 10) : [], temas: Array.isArray(b.temas) ? b.temas.slice(0, 10) : [], created_by: user.id }).select('*').single();
     if (error) return json({ error: error.message }, 500);
     await supabase.from('ia_log').insert({ accion: 'galeria_imagen', razon: nombre, detalle: { imagen_id: data.id, por: user.id } });
     return json({ ok: true, imagen: data });

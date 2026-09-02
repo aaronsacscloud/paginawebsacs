@@ -102,6 +102,13 @@ nunca dos seguidas). En cada envío pendiente ves si sale con imagen y por qué 
 quitarla o adjuntar otra, y eso queda como ejemplo. Prueba: sube la tabla de precios con «cuándo: pide precio»
 y pide precio desde tu WhatsApp.
 
+## Varios mensajes seguidos (ráfaga)
+
+Si mandas 3 o 4 mensajes uno tras otro, el agente espera ~75 s a que termines, los lee como un solo turno y
+contesta todo en un solo mensaje, en orden. En Próximos envíos verás «Prueba dijo · 4 mensajes seguidos (el
+agente los leyó todos)» con la lista numerada. Prueba: manda «¿tienen físico o es digital?», «¿cuánto cuesta la
+migración?», «¿la implementación la hacen ustedes?» en menos de un minuto.
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

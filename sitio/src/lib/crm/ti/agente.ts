@@ -20,7 +20,7 @@ import { leerConfig } from './motor';
 import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
 import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
-import { galeriaActiva, galeriaTexto, resolverImagen, contarUso } from './imagenes-agente';
+import { galeriaActiva, galeriaTexto, resolverImagen, contarUso, asegurarFormatoWhatsApp, marcarErrorImagen } from './imagenes-agente';
 import { asegurarPlantillas, parListo, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -86,6 +86,12 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   if (!c || !msjs.length) return { salida: null, costo: 0, conversationId, telefono, motivo: 'sin_conversacion' };
   const texto = msjs.map(m => `${m.direccion === 'entrante' ? 'LEAD' : 'NOSOTROS'} (${String(m.created_at).slice(0, 16).replace('T', ' ')}): ${m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`).slice(0, 500)}`).join('\n');
   const ultimo = [...msjs].reverse().find(m => m.direccion === 'entrante');
+  // LA RÁFAGA: todo lo que el lead mandó desde nuestra última respuesta. Varios mensajes seguidos son UN turno:
+  // se leen juntos y se contestan todos (regla del dueño, 2026-09-02).
+  const textoDe = (m: any) => m.tipo === 'audio' ? (m.transcript ? '[audio] ' + m.transcript : '[audio sin transcripción]') : String(m.cuerpo || `[${m.tipo}]`);
+  const idxUltSal = msjs.map(m => m.direccion).lastIndexOf('saliente');
+  const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
+  const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta TODO lo que preguntó o dijo, en su orden, en UNA sola respuesta; no ignores ninguno:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   const memoria = memoriaConversacion(msjs, c.nombre);
   const [horarios, cita, pagina, galeria] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
@@ -107,14 +113,15 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
     system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}${galeriaTexto(galeria, c.giro)}`,
-    messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
+    messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.opus, r.usage as any).cost_usd;
   let salida: any = null;
   try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }
   if (salida) {
-    salida.ultimo_mensaje = String(ultimo?.cuerpo || ultimo?.transcript || '').slice(0, 300);
+    salida.ultimo_mensaje = (rafaga.length ? rafaga.map(textoDe).join(' ⏎ ') : String(ultimo?.cuerpo || ultimo?.transcript || '')).slice(0, 600);
+    salida.ultimos_mensajes = rafaga.map(m => textoDe(m).slice(0, 300));
     // La imagen solo vale si existe en la galería (y una por mensaje).
     const img = galeria.find(i => i.id === salida.imagen?.id);
     salida.imagen = img ? { id: img.id, url: img.url, nombre: img.nombre, por_que: String(salida.imagen?.por_que || '').slice(0, 160) } : null;
@@ -234,8 +241,16 @@ export async function proponerRespuestas(): Promise<any> {
     .eq('tipo', 'wa_entrante').gt('ocurrio_at', desde).not('contact_id', 'is', null).order('ocurrio_at', { ascending: true }).limit(100);
   const ultimoPor: Record<string, string> = {};
   for (const e of evs || []) ultimoPor[e.contact_id] = e.ocurrio_at;
+  // Si el lead sigue escribiendo (último mensaje hace < 75 s), se espera al siguiente tick para leer la ráfaga
+  // completa. La marca no avanza más allá de esos mensajes, para no perderlos.
+  const ESPERA_RAFAGA_MS = 75e3;
+  let marcaSegura = ahora.getTime();
+  for (const cid of Object.keys(ultimoPor)) {
+    const t = Date.parse(ultimoPor[cid]);
+    if (ahora.getTime() - t < ESPERA_RAFAGA_MS) { res.esperando = (res.esperando || 0) + 1; marcaSegura = Math.min(marcaSegura, t - 1000); delete ultimoPor[cid]; }
+  }
   const ids = Object.keys(ultimoPor);
-  if (!ids.length) { await guardarMarca(ahora); return res; }
+  if (!ids.length) { await guardarMarca(new Date(marcaSegura)); return res; }
 
   const [{ data: cs }, { data: perf }, { data: pend }] = await Promise.all([
     supabase.from('contacts').select('id, lifecycle_stage, propiedades, archived_at').in('id', ids),
@@ -267,6 +282,9 @@ export async function proponerRespuestas(): Promise<any> {
     }
     // Un solo pendiente por lead: el nuevo mensaje del lead reemplaza la propuesta anterior.
     const previos = (pend || []).filter(x => x.contact_id === cid);
+    // Si ya hay un envío (pendiente o salido) posterior a su último mensaje, este mensaje ya se atendió (la marca puede volver atrás por una ráfaga).
+    const { data: yaAtendido } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).gt('created_at', ultimoPor[cid]).neq('estado', 'vetado').limit(1);
+    if ((yaAtendido || []).length) { res.saltados++; continue; }
     try {
       const d = await decidirTurno(cid);
       if (!d.salida) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: d.motivo || 'sin salida' }); continue; }
@@ -294,7 +312,7 @@ export async function proponerRespuestas(): Promise<any> {
       res.propuestos++;
     } catch (e: any) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: String(e?.message || e) }); }
   }
-  await guardarMarca(ahora);
+  await guardarMarca(new Date(marcaSegura));
   return res;
 }
 
@@ -479,13 +497,19 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       } else if ((e as any).imagen_url) {
         // Con imagen: si el texto cabe como pie (≤1024), va junto; si no, primero el texto y luego la imagen.
         const { enviarMediaLink } = await import('../../whatsapp/kapso-api');
+        // WhatsApp solo acepta JPG/PNG: si la URL no lo es, se convierte y la galería se corrige.
+        let urlImg = String((e as any).imagen_url);
+        if (!/\.(jpe?g|png)(\?|$)/i.test(urlImg)) {
+          const f = await asegurarFormatoWhatsApp(urlImg);
+          if (!f.error) { urlImg = f.url; if ((e as any).imagen_id && f.convertida) await supabase.from('ia_imagenes').update({ url: f.url }).eq('id', (e as any).imagen_id); }
+        }
         if (mensaje.length <= 1024) {
-          r = await enviarMediaLink(e.telefono, 'image', (e as any).imagen_url, undefined, mensaje);
+          r = await enviarMediaLink(e.telefono, 'image', urlImg, undefined, mensaje);
         } else {
           r = await enviarTexto(e.telefono, mensaje);
           const w1 = r?.messages?.[0]?.id || null;
           if (w1) await registrarMensaje({ kapsoMessageId: w1, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, estado_agente: (e.salida as any)?.estado || null } });
-          r = await enviarMediaLink(e.telefono, 'image', (e as any).imagen_url);
+          r = await enviarMediaLink(e.telefono, 'image', urlImg);
           mensaje = '';
         }
         await contarUso((e as any).imagen_id);
@@ -815,6 +839,26 @@ export async function revisarFallbacks(): Promise<any> {
   const ahora = new Date();
   const res: any = { entregadas: 0, utility: 0, sin_utility: 0 };
   const { data: pend } = await supabase.from('ti_envios').select('id, contact_id, telefono, kapso_message_id, plantilla, enviado_at').eq('fallback_estado', 'pendiente').lte('fallback_at', ahora.toISOString()).limit(20);
+  // IMAGEN RECHAZADA por WhatsApp después de aceptarla (p. ej. 131053 WebP): el lead se quedó sin el mensaje.
+  // Sale el texto solo, la imagen deja de ofrecerse y el dueño lo ve en la pestaña Sistema.
+  try {
+    const { data: conImg } = await supabase.from('ti_envios').select('id, contact_id, conversation_id, telefono, kapso_message_id, mensaje, imagen_id, salida').eq('estado', 'enviado').not('imagen_url', 'is', null).gte('enviado_at', new Date(ahora.getTime() - 90 * MS_MIN).toISOString()).limit(30);
+    for (const e of conImg || []) {
+      if (!e.kapso_message_id || (e.salida as any)?.imagen_reintento) continue;
+      const { data: m } = await supabase.from('wa_mensajes').select('status, error').eq('kapso_message_id', e.kapso_message_id).maybeSingle();
+      if (m?.status !== 'failed') continue;
+      const { enviarTexto } = await import('../../whatsapp/kapso-api');
+      const { registrarMensaje } = await import('../../whatsapp/espejo');
+      const r2: any = await enviarTexto(e.telefono, e.mensaje).catch(() => null);
+      const w2 = r2?.messages?.[0]?.id || null;
+      if (w2) await registrarMensaje({ kapsoMessageId: w2, telefono: e.telefono, direccion: 'saliente', tipo: 'text', cuerpo: e.mensaje, status: 'sent', autor: 'Agente Sacs', metadata: { origen: 'agente', envio_id: e.id, reenvio_sin_imagen: true } });
+      await supabase.from('ti_envios').update({ salida: { ...((e.salida as any) || {}), imagen_reintento: true, imagen_error: m.error || null }, updated_at: ahora.toISOString() }).eq('id', e.id);
+      await marcarErrorImagen(e.imagen_id, m.error || 'rechazada por WhatsApp');
+      await log({ accion: 'imagen_fallo', contact_id: e.contact_id, razon: m.error || 'failed', detalle: { envio_id: e.id, imagen_id: e.imagen_id, reenviado: !!w2 } });
+      await avisoSistema({ tipo: 'sistema_imagen_rechazada', nivel: 'alerta', clave: `sistema_imagen_rechazada:${e.id}`, titulo: 'WhatsApp rechazó una imagen del agente', detalle: `${String(m.error || '').slice(0, 160)}. El texto ya salió solo${w2 ? '' : ' (no se pudo reenviar)'}; la imagen dejó de ofrecerse al agente.`, que_hacer: 'Sube la imagen en JPG o PNG desde la Galería del agente (Próximos envíos) y quita la que falló.', contact_id: e.contact_id, conversation_id: e.conversation_id, extra: { imagen_id: e.imagen_id } });
+      res.imagen_reenviada = (res.imagen_reenviada || 0) + 1;
+    }
+  } catch (err: any) { res.imagen_error = String(err?.message || err); }
   if (!(pend || []).length) return res;
   const { enviarPlantilla } = await import('../../whatsapp/kapso-api');
   const { registrarMensaje } = await import('../../whatsapp/espejo');
