@@ -19,7 +19,7 @@ type ImagenGal = Recurso;
 type Aprendizaje = { ejemplos_dueno: number; ejemplos_7d: number; vetos_7d: number; ediciones_7d: number; ultimos: { estado: string; situacion: string; pulida: string; created_at: string }[] };
 
 const ESTADO_L: Record<string, string> = { nuevo: 'Nuevo', descubriendo: 'Descubriendo', proponiendo: 'Proponiendo', agendada: 'Agendada', confirmando: 'Confirmando', no_show: 'No-show', reunion_hecha: 'Reunión hecha', silencio: 'Silencio', descalificado: 'Descalificado', humano: 'Humano' };
-const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta', silencio: 'Toque de silencio', cita: 'Cita', confirmacion: 'Confirmación' };
+const ORIGEN_L: Record<string, string> = { respuesta: 'Respuesta', silencio: 'Toque de silencio', cita: 'Cita', confirmacion: 'Confirmación', preparacion: 'Preparación de demo', agenda: 'Agenda' };
 const RESULTADO_L: Record<string, string> = { enviado: 'enviado', vetado: 'detenido', sombra: 'habría salido así', humano_respondio: 'el consultor contestó antes', reemplazado: 'el lead volvió a escribir', fallido: 'falló el envío', expirado: 'expiró' };
 const MOTIVOS_VETO = ['No era el momento', 'El tono no es el nuestro', 'Información incorrecta', 'Este lead lo llevo yo', 'No era lead', 'Otro'];
 
@@ -195,7 +195,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
             {(s.ultimos_mensajes?.length > 1) ? <div className="ti-envio-lead"><span>{nombre(e)} dijo · {s.ultimos_mensajes.length} mensajes seguidos (el agente los leyó todos)</span><ol className="ti-rafaga">{s.ultimos_mensajes.map((t: string, i: number) => <li key={i}>{t}</li>)}</ol></div> : s.ultimo_mensaje && <div className="ti-envio-lead"><span>{nombre(e)} dijo</span>{s.ultimo_mensaje}</div>}
             {s.objetivo && <div className="ti-envio-obj"><span>Qué busca el agente</span>{s.objetivo}</div>}
             {s.accion?.tipo && s.accion.tipo !== 'ninguna' && (
-              <div className="ti-envio-acc-tag">Al salir, el agente {s.accion.tipo === 'agendar' ? `agenda la demo: ${s.accion.fecha} ${s.accion.hora}${s.accion.email ? ` (invitación a ${s.accion.email})` : ''}` : s.accion.tipo === 'confirmar_asistencia' ? 'confirma la asistencia a su cita' : 'le manda la liga para reagendar'}.</div>
+              <div className="ti-envio-acc-tag">Al salir, el agente {s.accion.tipo === 'agendar' ? `agenda la demo: ${s.accion.fecha} ${s.accion.hora}${s.accion.email ? ` (invitación a ${s.accion.email})` : ''}` : s.accion.tipo === 'agendar_llamada' ? `agenda la llamada discovery de 15 min: ${s.accion.fecha} ${s.accion.hora}` : s.accion.tipo === 'confirmar_asistencia' ? 'confirma la asistencia a su cita' : 'le manda la liga para reagendar'}.</div>
             )}
 
             <div style={{ margin: '8px 0 10px' }}>

@@ -68,6 +68,15 @@ export const horariosTexto = (hs: Horario[]) => hs.length
   ? `HORARIOS REALES DISPONIBLES PARA LA DEMO (hora de CDMX; ofrece máximo dos, distintos entre sí): ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Si el lead elige uno, devuelve accion.tipo="agendar" con esa fecha y hora exactas; si prefiere otro, pide día y bloque y en el siguiente turno se le ofrecen.`
   : 'No hay horarios de demo disponibles en los próximos días: si el lead quiere agendar, dile que el consultor le confirma un horario hoy mismo y escala.';
 
+/** Horarios reales para la LLAMADA DISCOVERY (15 min): desde las 11:00, próximos 4 días, dos opciones distintas. */
+export async function horariosParaLlamada(opts: { mejorHora?: number | null } = {}): Promise<Horario[]> {
+  const todos = await horariosParaDemo({ slug: 'llamada-discovery', dias: 4, max: 8, mejorHora: opts.mejorHora ?? null });
+  return todos.filter(h => Number(h.hora.slice(0, 2)) >= 11).slice(0, 2);
+}
+export const llamadaTexto = (hs: Horario[]) => hs.length
+  ? `LLAMADA RÁPIDA (15 min, la hace el consultor): horarios reales ${hs.map(h => `${h.etiqueta} [${h.fecha} ${h.hora}]`).join(' · ')}. Ofrécela cuando el lead no responde sobre el horario de la demo, cuando pide hablar con alguien, o como tercer ángulo del seguimiento. Si acepta uno, devuelve accion.tipo="agendar_llamada" con esa fecha y hora (necesita correo, igual que la demo).`
+  : '';
+
 /** Crea la demo por el agendador real. Devuelve la reunión o el error legible.
  *  Condiciones cubiertas (caso Prueba Aaron, 2026-09-01): el contacto del CRM sin correo
  *  se completa ANTES de llamar a /book (así /book lo encuentra por correo y no crea un

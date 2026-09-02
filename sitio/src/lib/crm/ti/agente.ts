@@ -17,7 +17,7 @@ import { WIKI_COMERCIAL, LIMITES_COPILOTO } from './wiki-comercial';
 import { GUION_AGENTE, SALIDA_AGENTE } from './agente-guion';
 import { contextoParaLead } from './conocimiento/index.ts';
 import { leerConfig } from './motor';
-import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA } from './agenda-agente';
+import { horariosParaDemo, horariosTexto, agendarDemo, proximaCita, citaTexto, etiquetaHorario, LIGA_AGENDA, horariosParaLlamada, llamadaTexto } from './agenda-agente';
 import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
 import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUso, asegurarFormatoWhatsApp, marcarErrorImagen, TIPO_L } from './imagenes-agente';
@@ -137,12 +137,13 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
   const rafaga = msjs.slice(idxUltSal + 1).filter(m => m.direccion === 'entrante');
   const rafagaTxt = rafaga.length > 1 ? `\n\nEL LEAD MANDÓ ${rafaga.length} MENSAJES SEGUIDOS SIN RESPUESTA NUESTRA. Léelos como un solo turno y contesta TODO lo que preguntó o dijo, en su orden, en UNA sola respuesta; no ignores ninguno:\n${rafaga.map((m, i) => `${i + 1}. ${textoDe(m).slice(0, 300)}`).join('\n')}` : '';
   const memoria = memoriaConversacion(msjs, c.nombre);
-  const [horarios, cita, pagina, galeria, promo] = await Promise.all([
+  const [horarios, cita, pagina, galeria, promo, horariosLlamada] = await Promise.all([
     horariosParaDemo({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
     proximaCita(contactId).catch(() => null),
     leerPaginaDelLead(contactId, msjs).catch(() => ''),
     galeriaActiva().catch(() => []),
     promoVigente().catch(() => null),
+    horariosParaLlamada({ mejorHora: perfil?.mejor_hora_wa ?? null }).catch(() => []),
   ]);
   const bloquePromo = promoTexto(promo, ultimaOferta(c.propiedades));
   const pend: any = (perfil?.agente_estado as any)?.agenda_pendiente;
@@ -151,7 +152,7 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
       ? `AGENDA PENDIENTE: el lead YA ELIGIÓ ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] y solo falta su correo. Si en este mensaje lo da (o el CRM ya lo tiene), devuelve accion.tipo="agendar" con ESA fecha/hora y el correo, sin volver a ofrecer horarios. No lo saludes de nuevo.`
       : `AGENDA PENDIENTE: la cita de ${etiquetaHorario(pend.fecha, pend.hora)} [${pend.fecha} ${pend.hora}] falló por un error técnico NUESTRO; ya le pediste una disculpa y le ofreciste ese mismo horario u otros, más la liga de la agenda. Si ahora elige uno (incluido el mismo), devuelve accion.tipo="agendar" con esa fecha/hora y su correo. No la des por confirmada mientras no se agende.`)
     : '';
-  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
+  const agenda = `${citaTexto(cita)}\n${pendTxt}\n${horariosTexto(horarios)}\n${llamadaTexto(horariosLlamada)}\nCORREO EN EL CRM: ${c.email || 'ninguno (pídelo antes de agendar)'}${bloquePromo ? `\n\n${bloquePromo}` : ''}`.trim();
   const ctx = contextoParaLead({ giroCrm: c.giro || null, conversacion: texto, ultimoMensaje: ultimo?.cuerpo || ultimo?.transcript || '' });
   const co: any = (c as any).companies || null; const dl: any = (c.propiedades as any)?.datos_lead || {};
   const crm = `LO QUE EL CRM SABE: nombre «${c.nombre || '?'}${c.apellido ? ' ' + c.apellido : ''}», etapa ${c.lifecycle_stage}, giro ${c.giro || co?.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? co?.sucursales ?? 'desconocido'}, marca/tienda ${co?.nombre_comercial || co?.nombre || dl.empresa || 'desconocida'}, ciudad ${co?.ciudad || dl.ciudad || 'desconocida'}, web ${co?.sitio_web || dl.sitio_web || 'desconocida'}, correo ${c.email || 'ninguno'}, puesto ${c.puesto || 'desconocido'}, sistema actual ${dl.sistema_actual || 'desconocido'}, fuente ${c.fuente || 'desconocida'}. TEMAS YA ANOTADOS PARA LA REUNIÓN: ${(Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion.map((t: any) => t.tema).join(' · ') : '') || 'ninguno'}. Si el lead dice o corrige cualquiera de estos datos, repórtalo en "datos" (con corrige:true si cambia lo que el CRM tenía).`
@@ -173,8 +174,9 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     const img = salida.adjuntos.find((a: any) => a.tipo === 'image');
     salida.imagen = img ? { id: img.id, url: img.url, nombre: img.nombre, por_que: img.por_que || '' } : null;
     // La acción de agendar solo vale si el horario existe de verdad en la lista ofrecida.
-    if (salida.accion?.tipo === 'agendar') {
-      const ok = horarios.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));
+    if (salida.accion?.tipo === 'agendar' || salida.accion?.tipo === 'agendar_llamada') {
+      const lista = salida.accion.tipo === 'agendar_llamada' ? horariosLlamada : horarios;
+      const ok = lista.some(h => h.fecha === salida.accion.fecha && h.hora === String(salida.accion.hora || '').slice(0, 5));
       if (!ok) { salida.accion = { tipo: 'ninguna', rechazada: 'horario fuera de la lista real' }; }
       else salida.accion.email = salida.accion.email || c.email || null;
     }
@@ -532,7 +534,8 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       // La ACCIÓN viaja con el mensaje y se ejecuta al salir (así el veto también la detiene).
       let mensaje = e.mensaje;
       const acc: any = (e.salida as any)?.accion;
-      if (acc?.tipo === 'agendar' && acc.fecha && acc.hora) {
+      const esLlamada = acc?.tipo === 'agendar_llamada';
+      if ((acc?.tipo === 'agendar' || esLlamada) && acc.fecha && acc.hora) {
         const { data: c } = await supabase.from('contacts').select('nombre, email, giro, sucursales_interes, referrer_partner_id, companies(nombre)').eq('id', e.contact_id).maybeSingle();
         const email = String(acc.email || c?.email || '').trim().toLowerCase();
         const etiqueta = etiquetaHorario(acc.fecha, acc.hora);
@@ -545,9 +548,9 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
           await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, motivo: 'sin_correo', desde: ahora.toISOString() } });
           await log({ accion: 'agente_agenda_sin_correo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { email_dado: acc.email || null } });
         } else {
-          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `Agendada por el agente SDR. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
+          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, slug: esLlamada ? 'llamada-discovery' : 'demo', empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `${esLlamada ? 'Llamada discovery (15 min) agendada por el agente SDR' : 'Agendada por el agente SDR'}. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
           if (!r.ok && r.ocupado) {
-            const otros = await horariosParaDemo({ max: 2 }).catch(() => []);
+            const otros = await (esLlamada ? horariosParaLlamada() : horariosParaDemo({ max: 2 })).catch(() => []);
             mensaje = `Ese horario se acaba de ocupar, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : 'Dime qué día y si prefieres mañana o tarde, y te confirmo.'}`;
             await guardarSt({ agenda_pendiente: null });
             await log({ accion: 'agente_agenda_ocupado', contact_id: e.contact_id, razon: r.error, detalle: acc });
@@ -755,8 +758,22 @@ export async function tocarSilencios(): Promise<any> {
     // Reglas de espaciado: primer intento a las 20 h de nuestro último mensaje; los siguientes con ≥ 1 día
     // y en franja DISTINTA a la del anterior (en pruebas no se exige la franja). Nunca con una plantilla aún sin entregar.
     const franjaAhora = franjaDe(ahora);
-    const puedeIntentar = intentos.length < 6 && pendientesDeEntrega === 0
+    let puedeIntentar = intentos.length < 6 && pendientesDeEntrega === 0
       && (ultimoIntento ? desdeUltimoH >= 24 && (prueba || ultimoIntento.franja !== franjaAhora) : horas >= 20 * m);
+    // CIERRE DE VENTANA (S1.1): si nuestro último mensaje dejó una pregunta u horarios sin responder y la ventana
+    // de 24 h del lead está por cerrarse (≥ 21.5 h desde SU último mensaje), va un texto gratis ahora, una sola vez.
+    let cierreVentana = false;
+    if (!st.cierre_ventana_at && validos < 3 && pendientesDeEntrega === 0) {
+      const { data: ultLead } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_entrante').order('ocurrio_at', { ascending: false }).limit(1);
+      const hLead = (ultLead || []).length ? (ahora.getTime() - Date.parse(ultLead![0].ocurrio_at)) / H * acel : null;
+      if (hLead != null && hLead >= 21.5 && hLead < 24) {
+        const { data: ultSal } = ultimo[cid].conversation_id ? await supabase.from('wa_mensajes').select('cuerpo').eq('conversation_id', ultimo[cid].conversation_id).eq('direccion', 'saliente').is('borrado_at', null).order('created_at', { ascending: false }).limit(1) : { data: [] as any[] };
+        const preguntaAbierta = /\?|horario|te queda|te acomoda|¿/.test(String((ultSal || [])[0]?.cuerpo || ''));
+        if (preguntaAbierta) { cierreVentana = true; puedeIntentar = true; }
+      }
+    }
+    const ANGULOS = ['repreguntar CORTO lo que quedó abierto (una línea, sin presión, sin repetir lo ya dicho)', 'un DATO DE VALOR concreto para su giro: una imagen o un caso real de una tienda parecida, y una sola pregunta', 'ofrecer la LLAMADA RÁPIDA de 15 min con dos horarios reales de la lista (si acepta, accion agendar_llamada)'];
+    const anguloObligatorio = ANGULOS[Math.min(validos, ANGULOS.length - 1)];
     // La mejor hora del lead: si hoy todavía no llega, se espera (dentro del horario).
     if (!prueba && p.mejor_hora_wa != null && horaLocal(ahora) < p.mejor_hora_wa && p.mejor_hora_wa < cfg.horario.fin && !ultimoIntento) continue;
 
@@ -784,7 +801,7 @@ export async function tocarSilencios(): Promise<any> {
         }
       }
       const notaPlantilla = par ? ' ESTE TOQUE SALE COMO PLANTILLA: el mensaje debe ser UNA sola oración corta (máx. 200 caracteres), sin saludo ni nombre (la plantilla ya dice «Hola {nombre}»), que continúe la frase «Hola Ana, …»: el ángulo concreto para su giro.' : '';
-      const nota = `TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (intento ${intentos.length + 1}; franja ${franjaAhora}; ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}): el lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.${notaPlantilla}`;
+      const nota = `${cierreVentana ? 'CIERRE DE VENTANA: la ventana de 24 h del lead está por cerrarse y tu último mensaje dejó una pregunta u horarios sin respuesta. ' : ''}TOQUE DE SILENCIO ${validos + 1} de ${maxToques} (intento ${intentos.length + 1}; franja ${franjaAhora}; ciclo ${st.ciclo}; ICP ${st.eval.icp}, conversación ${st.eval.conversacion}/100: ${st.eval.razones.join(', ')}). ÁNGULO OBLIGATORIO de este intento: ${anguloObligatorio}. Ángulos ya usados en este ciclo (no repetir): ${(st.angulos || []).join(' · ') || 'ninguno'}. El lead NO ha respondido desde hace ${Math.round(horas)} h a tu último mensaje. Escribe un toque corto con un ÁNGULO DISTINTO a los ya usados: ${(st.angulos || []).join(' · ') || 'ninguno'}. Toque 1 = pregunta fácil de opciones + caso del giro; toque 2 = un valor concreto para su giro; toque 3 = último ángulo + «¿lo dejamos aquí?» honesto. responder=true salvo que haya razón para callar.${notaPlantilla}`;
       // Dos ticks del observador se pueden traslapar (cron + «enviar ya»/manual): si ya hay un toque de silencio
       // creado hace poco para este lead, este tick no mete otro (pasó: dos toques con 22 s de diferencia).
       const { data: reciente } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'silencio').gt('created_at', new Date(ahora.getTime() - 30 * MS_MIN).toISOString()).limit(1);
@@ -796,7 +813,7 @@ export async function tocarSilencios(): Promise<any> {
       const { data: envIns } = await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: ultimo[cid].conversation_id, telefono: ultimo[cid].telefono, origen: 'silencio', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), imagen_id: d.salida.imagen?.id || null, imagen_url: d.salida.imagen?.url || null, adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, toque: st.toque + 1, ciclo: st.ciclo }, sale_at: new Date(ahora.getTime() + ventanaMin * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo,
         plantilla: par ? { marketing: par.marketing, utility: par.utility, params: [primer, paramAngulo(d.salida.mensaje)] } : null }).select('id').maybeSingle();
       const intento: Intento = { at: ahora.toISOString(), tipo: par ? 'plantilla' : 'texto', franja: franjaAhora, envio_id: envIns?.id || null, valido: null };
-      await guardar({ base_at: new Date(base).toISOString(), intentos: [...intentos, intento], ultimo_toque_at: ahora.toISOString(), fase: 'reconectar', angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
+      await guardar({ base_at: new Date(base).toISOString(), intentos: [...intentos, intento], ultimo_toque_at: ahora.toISOString(), fase: 'reconectar', cierre_ventana_at: cierreVentana ? ahora.toISOString() : st.cierre_ventana_at, angulos: [...(st.angulos || []), d.salida.objetivo].slice(-9) });
       await log({ accion: 'agente_toque_silencio', contact_id: cid, contenido: d.salida.mensaje, razon: `intento ${intentos.length + 1} (${par ? 'plantilla' : 'texto'}, ${franjaAhora}) · válidos ${validos}/3 · ciclo ${st.ciclo}`, costo: d.costo });
       res.toques++;
       continue;
@@ -952,6 +969,39 @@ export async function reintentarAgendas(): Promise<any> {
         await supabase.from('ti_envios').insert({ contact_id: cid, telefono, origen: 'agenda', estado: 'enviado', mensaje: texto, salida: { estado: 'agendando', accion: { tipo: 'agendar', ...pend }, reintento: true }, sale_at: ahora.toISOString(), enviado_at: ahora.toISOString(), kapso_message_id: wamid });
       } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `reintento agenda, no salió el aviso: ${err?.message || err}` }); }
     }
+  }
+  return res;
+}
+
+
+/** PREPARACIÓN (S3.1): un día antes de la demo, el agente pide con naturalidad su Excel (si lo tiene) o tres
+ *  productos con tallas y colores, desde el interés por conocer su catálogo para una demo muy específica. Una vez. */
+export async function prepararDemos(): Promise<any> {
+  const cfg: any = await leerConfig();
+  if (cfg.agente_activo !== true || !hasApiKey()) return { preparacion: 'apagado' };
+  const ahora = new Date();
+  const manana = new Date(ahora.getTime() - 6 * 3600e3 + 86400e3).toISOString().slice(0, 10);
+  const res: any = { revisadas: 0, enviadas: 0 };
+  const { data: bs } = await supabase.from('bookings').select('id, contact_id, fecha, hora_inicio, event_types!inner(slug)').eq('fecha', manana).in('estado', ['agendada', 'confirmada']).eq('event_types.slug', 'demo').not('contact_id', 'is', null).limit(30);
+  for (const b of bs || []) {
+    const cid = b.contact_id as string;
+    const [{ data: c }, { data: p }, { data: ya }] = await Promise.all([
+      supabase.from('contacts').select('lifecycle_stage, archived_at, propiedades, nombre').eq('id', cid).maybeSingle(),
+      supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', cid).maybeSingle(),
+      supabase.from('ti_envios').select('id').eq('contact_id', cid).eq('origen', 'preparacion').filter('salida->>booking_id', 'eq', b.id).limit(1),
+    ]);
+    if (!c || c.archived_at || (c.propiedades as any)?.demo_ti || p?.silenciar_ia || !['lead', 'oportunidad', 'lead_calificado'].includes(c.lifecycle_stage) || (ya || []).length) continue;
+    res.revisadas++;
+    const temas: any[] = Array.isArray((c.propiedades as any)?.temas_reunion) ? (c.propiedades as any).temas_reunion : [];
+    const nota = `MENSAJE DE PREPARACIÓN: mañana es su demo (${etiquetaHorario(String(b.fecha), String(b.hora_inicio).slice(0, 5))}). Escribe UN mensaje corto y natural: desde el interés por conocer su catálogo para que la demo sea muy específica con lo suyo, pídele —si lo tiene— su Excel de inventario, o tres productos con sus tallas y colores. Sin presión ni tono de tarea; si no lo tiene, no pasa nada. ${temas.length ? `Ya está anotado que quiere ver: ${temas.map(t => t.tema).join(', ')}; puedes mencionarlo en una línea.` : ''} No saludes como si fuera la primera vez. No devuelvas accion.`;
+    try {
+      const d = await decidirTurno(cid, nota);
+      if (!d.salida?.mensaje || !d.telefono) continue;
+      const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
+      await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: d.conversationId, telefono: d.telefono, origen: 'preparacion', estado: 'pendiente', mensaje: d.salida.mensaje.trim(), adjuntos: d.salida.adjuntos || [], salida: { ...d.salida, booking_id: b.id }, sale_at: new Date(ahora.getTime() + ventana * MS_MIN).toISOString(), modelo: MODELS.opus, costo_usd: d.costo });
+      await log({ accion: 'agente_preparacion', contact_id: cid, contenido: d.salida.mensaje, razon: `demo ${b.fecha} ${String(b.hora_inicio).slice(0, 5)}`, costo: d.costo });
+      res.enviadas++;
+    } catch (err: any) { await log({ accion: 'agente_error', contact_id: cid, razon: `preparación: ${err?.message || err}` }); }
   }
   return res;
 }

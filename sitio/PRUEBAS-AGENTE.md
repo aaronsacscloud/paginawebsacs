@@ -119,6 +119,16 @@ vez, el plus («esta semana y media está el 35 % en el anual y la implementaci�
 sin costo, hasta el …»). En el panel del lead aparece «Oferta dicha · vence …» y en su línea de tiempo «Se le
 ofreció…». Si vuelves a pedir precio, no la repite como novedad.
 
+## Llamada discovery, cierre de ventana y preparación
+
+- **Llamada rápida**: no contestes cuando te ofrezca horarios de demo; al tercer intento (o si dices «¿me pueden llamar?»)
+  debe ofrecerte dos horarios de 15 min a partir de las 11:00. Acepta uno → se agenda «Llamada discovery» en el
+  calendario del consultor (necesita tu correo) y te llega la invitación.
+- **Cierre de ventana**: si te hizo una pregunta y no contestas, a las ~22 h de tu último mensaje (acelerado en el
+  carril de pruebas) manda un texto corto repreguntando; solo una vez y solo si había pregunta abierta.
+- **Preparación**: el día antes de la demo te pide, con naturalidad, tu Excel o tres productos con tallas y colores.
+  Si mandas un archivo, agradece y lo anota en «Para la reunión».
+
 ## Cómo entrenarlo mientras pruebas
 - **Próximos envíos**: editar = lección; detener = veto (cuenta para la rampa); «esto hubiera contestado yo» = ejemplo de máxima prioridad.
 - **Silenciar IA** en la tarjeta del lead si no debe tocarlo.

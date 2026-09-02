@@ -155,6 +155,7 @@ export async function observar(): Promise<any> {
     try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
     res.agente = await proponerRespuestas();
     res.agente_citas = await atenderCitas();
+    try { const { prepararDemos } = await import('./agente'); res.agente_preparacion = await prepararDemos(); } catch (e: any) { res.preparacion_error = String(e?.message || e); }
     // Las plantillas del agente (par marketing+utility) se crean/refrescan solas; se usan fuera de la ventana de 24 h.
     try { const { asegurarPlantillas } = await import('./plantillas-agente'); const pl: any = await asegurarPlantillas(); res.plantillas = { marketing: pl.marketing?.estado || null, utility: pl.utility?.estado || null }; } catch (e: any) { res.plantillas_error = String(e?.message || e); }
     res.agente_silencio = await tocarSilencios();

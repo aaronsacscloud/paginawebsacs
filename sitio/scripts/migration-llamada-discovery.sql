@@ -1,0 +1,6 @@
+-- Tipo de reunión «Llamada discovery» (decisión S7.1): 15 minutos, la ofrece y agenda el agente cuando el lead
+-- no responde sobre el horario de la demo o conviene una llamada corta. Copia la configuración de la demo
+-- (recordatorios, confirmaciones, anfitriona) y cambia lo propio. Horarios desde las 11:00 los aplica el agente.
+insert into event_types (nombre, slug, descripcion, duracion_minutos, buffer_antes_minutos, buffer_despues_minutos, aviso_minimo_horas, max_reservas_dia, max_dias_adelanto, tipo_reunion, ubicacion_tipo, ubicacion_detalles, color, owner_id, host_ids, routing_rules, activo, categoria, alerta_inasistencias, requiere_minuta, recordatorios, confirmacion_email, confirmacion_whatsapp, anfitrion_nombre)
+select 'Llamada discovery', 'llamada-discovery', 'Llamada de 15 minutos para entender tu operación y ver si Sacs te sirve antes de la demo.', 15, 0, 5, 1, max_reservas_dia, 14, tipo_reunion, ubicacion_tipo, ubicacion_detalles, '#B7791F', owner_id, host_ids, routing_rules, true, 'discovery', alerta_inasistencias, false, recordatorios, confirmacion_email, confirmacion_whatsapp, anfitrion_nombre
+from event_types where slug='demo' and not exists (select 1 from event_types where slug='llamada-discovery');
