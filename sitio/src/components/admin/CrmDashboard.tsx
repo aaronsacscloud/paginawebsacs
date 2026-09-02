@@ -516,7 +516,7 @@ export default function CrmDashboard() {
   const colapsoPrevio = useRef<boolean | null>(null);
   useEffect(() => {
     if (isMobile) return;
-    if (tab === 'whatsapp' || tab === 'trabajo') {
+    if (tab === 'whatsapp' || (tab as any) === 'trabajo') {
       if (colapsoPrevio.current === null) {
         colapsoPrevio.current = sidebarCollapsed;
         setSidebarCollapsed(true);
