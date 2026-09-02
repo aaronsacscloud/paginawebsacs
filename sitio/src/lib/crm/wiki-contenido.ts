@@ -975,6 +975,10 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Venta del CRM</td><td><b>90%</b></td><td>El 10% restante va a mantenimiento y servidores del portal.</td></tr>
 <tr><td>Consultoría propia</td><td><b>100%</b></td><td>Sacs no retiene nada. Los viáticos corren por cuenta del consultor.</td></tr>
 </tbody></table>
+<h3>Lo que no se paga por porcentaje</h3>
+<p>Además de las comisiones hay <b>dos programas de monto fijo</b>: se paga por encontrar fallas del sistema y por conseguir reseñas de clientes. No dependen de una venta ni de un origen, así que no viven en esta tabla.</p>
+<p class="w-mut">Están en la página <b>Bugs, mejoras y reseñas</b>, aquí mismo en Compensación.</p>
+
 <div class="w-caja w-warn"><span class="w-k">De quién es cada cuenta</span>
 <p>El origen se fija <b>una sola vez</b>, al registrar al cliente, y <b>el CRM es la única fuente de verdad</b>. Un prospecto sin registrar previo se clasifica como lead de Sacs (35%), y eso no admite corrección después.</p>
 <p>Entre 35% y 55% hay veinte puntos: registrar toma un minuto y vale esa diferencia.</p></div>`,
@@ -1007,21 +1011,26 @@ export const WIKI: PaginaWiki[] = [
     id: 'c-cobro', seccion: 'consultores', grupo: 'Compensación', titulo: 'Cuándo y cómo se paga',
     bajada: 'Los tiempos, los cortes y qué pasa si el dinero se va para atrás.',
     cuerpo: `
-<h3>Los tiempos</h3>
+<h3>El ciclo semanal</h3>
+<div class="w-caja"><span class="w-k">La regla, en una línea</span>
+<p><b>El corte cierra el viernes y se paga el lunes siguiente.</b> Todo lo cobrado y aún no liquidado hasta ese viernes entra en ese pago. Si el lunes es inhábil, el siguiente día hábil.</p></div>
+<p><b>Un solo ritmo para todo.</b> Comisiones de venta, reportes de fallas, mejoras y reseñas caen en el mismo corte: no hay dos velocidades ni cortes distintos según el concepto.</p>
 <ul>
-<li><b>1 o 2 días hábiles</b> desde que el cliente paga. El reloj no arranca al firmar ni al facturar: arranca cuando el dinero entra.</li>
-<li>Si el cliente paga en parcialidades, se comisiona <b>cada parcialidad</b> conforme se cobra.</li>
+<li>La comisión se genera cuando el cliente paga. El reloj no arranca al firmar ni al facturar: arranca cuando el dinero entra.</li>
+<li>Si el cliente paga en parcialidades, se comisiona <b>cada parcialidad</b> conforme se cobra, y cada una entra al corte de su semana.</li>
 <li>Los clientes con pago mensual generan comisión <b>cada mes que pagan</b>.</li>
-<li>Los pagos chicos —bugs, mejoras, reseñas— se acumulan y se liquidan en <b>corte quincenal</b>.</li>
+<li>Lo que se cobre en fin de semana entra al corte de esa semana y se paga el lunes de la siguiente.</li>
 </ul>
+<div class="w-caja w-ok"><span class="w-k">Ejemplo</span>
+<p>Un cliente paga el <b>martes</b> y otro el <b>viernes</b>: las dos comisiones entran al mismo corte y se liquidan el <b>lunes</b>.</p></div>
 <h3>El estado de cuenta</h3>
-<p>Cada quincena llega el detalle: qué se cobró, de qué cliente, a qué tasa, con qué descuentos y qué ajustes. Es el documento con el que se revisa un pago, y sale de <b>Comisiones → Periodo</b>.</p>
+<p>Llega <b>con el pago de cada lunes</b>: qué se cobró, de qué cliente, a qué tasa, con qué descuentos y qué ajustes. Es el documento con el que se revisa un pago, y sale de <b>Comisiones → Periodo</b>.</p>
 <h3>Si el dinero se va para atrás</h3>
 <div class="w-caja w-warn"><span class="w-k">Cancelación, reembolso o pago rebotado</span>
-<p>La comisión correspondiente <b>se descuenta del siguiente corte</b>. <b>Nunca</b> se pide devolver efectivo.</p>
-<p>Es la contraparte de que se pague en dos días sin esperar a ver si el cliente se queda: el pago es rápido porque el ajuste es posible.</p></div>
+<p>La comisión correspondiente <b>se descuenta del siguiente corte semanal</b>. <b>Nunca</b> se pide devolver efectivo.</p>
+<p>Es la contraparte de que se pague cada semana sin esperar a ver si el cliente se queda: el pago es puntual porque el ajuste es posible.</p></div>
 <div class="w-caja"><span class="w-k">Si ya se había pagado</span>
-<p>Una comisión ya liquidada <b>no se borra</b> —el dinero ya salió—: aparece como <i>ajuste pendiente</i> y se resta del corte siguiente. El sistema lo reporta solo en el recálculo de cada madrugada.</p></div>
+<p>Una comisión ya liquidada <b>no se borra</b> —el dinero ya salió—: aparece como <i>ajuste pendiente</i> y se resta del corte del lunes siguiente. El sistema lo reporta solo en el recálculo de cada madrugada.</p></div>
 <h3>Los estados de una línea</h3>
 <table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
 <tr><td><b>Calculada</b></td><td>El sistema la generó. Se recalcula cada noche si algo cambia.</td></tr>
@@ -1047,6 +1056,47 @@ export const WIKI: PaginaWiki[] = [
 <p>Los meses de uso gratuito que se ofrecen para rescatar una cuenta <b>no cuentan</b> contra este 35%: se negocian caso por caso y los autoriza Sacs. Es la puerta trasera del descuento, y por eso está dicho.</p></div>
 <div class="w-caja"><span class="w-k">La decisión es del consultor, y es legítima</span>
 <p>A veces vale la pena ceder cinco mil para no perder un cliente de sesenta. El acuerdo no lo prohíbe: solo dice quién lo paga.</p></div>`,
+  },
+  {
+    id: 'c-programas', seccion: 'consultores', grupo: 'Compensación', titulo: 'Bugs, mejoras y reseñas',
+    bajada: 'Los pagos de monto fijo: por encontrar fallas del sistema y por conseguir reseñas.',
+    cuerpo: `
+<p>Dos programas que <b>no dependen de una venta</b>. Se cobran por hacer algo que mejora el producto o su reputación, y entran al mismo corte semanal que todo lo demás.</p>
+
+<h3>Programa Centinela · fallas y mejoras</h3>
+<p>Quien está frente al cliente ve cosas que desde adentro no se ven. Un bug que nadie reporta se convierte, meses después, en un cliente que no renueva.</p>
+<table class="w-tab"><thead><tr><th>Pago</th><th>Por qué se paga</th></tr></thead><tbody>
+<tr><td><b>$100</b></td><td><b>Por cada falla encontrada.</b> Una falla real del sistema, reportada por el consultor.</td></tr>
+<tr><td><b>$200</b></td><td><b>Por cada mejora detectada y aceptada.</b> Cuando un cliente pide algo que el sistema <b>debería</b> hacer y no hace, y Sacs acepta construirlo. Se paga <b>al liberarse</b> la mejora.</td></tr>
+</tbody></table>
+<h3>Cómo se reporta</h3>
+<ol>
+<li><b>Documentar.</b> Qué se esperaba que pasara y qué pasó en realidad, con la cuenta y el módulo donde ocurre.</li>
+<li><b>Grabar.</b> Un video corto reproduciendo el caso. <b>Sin video no se puede validar ni pagar</b>: es lo que permite a Desarrollo reproducirlo sin adivinar.</li>
+<li><b>Esperar el dictamen.</b> Desarrollo decide si es falla, mejora aceptada, o comportamiento previsto del sistema. El dictamen es final y viene con su razón.</li>
+</ol>
+<div class="w-caja"><span class="w-k">Las cuatro reglas del programa</span>
+<p><b>Sin tope mensual.</b> No hay límite de reportes ni de monto: se paga todo lo válido, sean tres o sean cuarenta.</p>
+<p><b>Solo cobra quien reporta primero.</b> Si la falla ya estaba registrada o ya estaba en la lista de trabajo, se avisa y no se paga.</p>
+<p><b>Las fallas de una personalización sí cuentan.</b> El consultor la vendió, no la construyó: encontrar el defecto antes que el cliente vale lo mismo.</p>
+<p><b>Desconocimiento del sistema no es falla.</b> Si el sistema ya resuelve el caso de otra forma, el dictamen lo explica y no genera pago, pero deja algo aprendido.</p></div>
+<div class="w-caja w-warn"><span class="w-k">El plazo es de los dos lados</span>
+<p>Sacs tiene <b>5 días hábiles</b> para dictaminar. Un reporte sin dictamen no se paga nunca, así que el plazo es parte del programa y no una cortesía.</p></div>
+
+<h3>Reseñas y testimoniales</h3>
+<p>Un prospecto que duda entre dos sistemas casi siempre termina leyendo reseñas. Lo que un cliente real diga en público vale más que cualquier campaña, y conseguirlo es trabajo.</p>
+<table class="w-tab"><thead><tr><th>Pago</th><th>Qué debe entregarse</th></tr></thead><tbody>
+<tr><td><b>$300</b></td><td><b>Reseña simple en Google.</b> Publicada por el cliente, con calificación y un comentario breve.</td></tr>
+<tr><td><b>$500</b></td><td><b>Reseña extensa en Google.</b> Detallada, del tipo que dejó Jorge Dávalos. <b>Debe incluir fotografías del uso real del sistema</b>; sin fotos se paga como reseña simple.</td></tr>
+<tr><td><b>$1,500</b></td><td><b>Video testimonial del cliente.</b> El cliente graba un video sobre su experiencia, <b>además</b> de dejar su reseña en Google. Se paga por las dos cosas juntas.</td></tr>
+</tbody></table>
+<div class="w-caja"><span class="w-k">Las condiciones</span>
+<p><b>Solo Google</b> por ahora. Otras plataformas se pueden sumar más adelante, por escrito.</p>
+<p><b>La publica el propio cliente.</b> Se paga una vez por cliente y por tipo de entrega.</p>
+<p><b>Si el cliente la quita después, no se descuenta nada.</b> El pago es por conseguirla; lo que el cliente haga después no está en manos del consultor.</p></div>
+
+<div class="w-caja w-ok"><span class="w-k">Cuándo se cobran</span>
+<p>Los dos programas entran al <b>mismo corte semanal</b> que las comisiones: lo validado hasta el viernes se paga el lunes. No hay un corte aparte para los montos chicos.</p></div>`,
   },
   {
     id: 'c-condiciones', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tres condiciones de la renovación',
@@ -1152,7 +1202,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>El soporte técnico</b></td><td>Continuo</td><td>Atendido <b>por el chat</b>, y el cliente tiene que sentirlo así. Ver la caja de abajo.</td></tr>
 <tr><td><b>Visibilidad de vencimientos</b></td><td>Continuo</td><td>Qué anualidades vencen y cuáles están impagas, con anticipación para gestionarlas.</td></tr>
 <tr><td><b>Respetar la atribución</b></td><td>Continuo</td><td>Una cuenta asignada no se reasigna ni se trabaja por fuera sin avisar primero.</td></tr>
-<tr><td><b>Pagar y rendir cuentas</b></td><td>1-2 días · quincenal</td><td>El pago en 1 o 2 días hábiles y el estado de cuenta cada quincena.</td></tr>
+<tr><td><b>Pagar y rendir cuentas</b></td><td>Cada lunes</td><td>Lo cobrado hasta el viernes se paga el lunes, con el estado de cuenta de la semana.</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">El soporte, y por qué importa tanto</span>
 <p>Sacs se encarga de que cada cliente <b>conozca el canal, se sienta cómodo usándolo y reciba respuesta clara</b>. El propósito es que lo que el consultor trabaja junto al cliente sea <b>consultoría pura</b>, no soporte.</p>
@@ -1191,7 +1241,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Confirmar en 2 días hábiles</td><td>Fecha de la pregunta vs. la respuesta</td><td>Canal del proyecto</td></tr>
 <tr><td>Dictaminar en 5 días hábiles</td><td>Fecha del reporte vs. el dictamen</td><td>Consultoría → mejoras</td></tr>
 <tr><td>Soporte por el chat</td><td>Tickets resueltos sin pasar por el consultor</td><td>Soporte</td></tr>
-<tr><td>Pagar en 1-2 días</td><td>Días entre el cobro y el pago de la comisión</td><td>Comisiones → Periodo</td></tr>
+<tr><td>Pagar el lunes lo de la semana</td><td>Que el corte del viernes quede liquidado el lunes</td><td>Comisiones → Periodo</td></tr>
 </tbody></table>
 <div class="w-caja w-ok"><span class="w-k">Cómo va Sacs hoy en entregas</span>
 <p>De <b>22 mejoras entregadas</b> con fecha de compromiso registrada, <b>8 salieron a tiempo</b>. Es el primer número que este acuerdo pone bajo la lupa, y el que la reunión semanal debería mover.</p></div>
@@ -1361,6 +1411,11 @@ export const WIKI: PaginaWiki[] = [
 2. ¿La hora en que tocaba caía <b>fuera de 8:00–18:00</b>? Ese recordatorio no se manda a propósito.<br />
 3. ¿La <b>plantilla</b> sigue aprobada en Meta? Una plantilla rechazada tumba el WhatsApp, no el correo.<br />
 4. ¿El cliente pidió <b>no recibir</b> WhatsApp? El opt-out manda sobre todo lo demás.</p>
+
+<h3>Todo se ve en el inbox</h3>
+<p>Cualquier mensaje que el sistema le manda al cliente <b>queda en su conversación</b>, y se ve como él lo vio: la foto del encabezado como foto, los botones como botones y el texto que Meta tiene aprobado —no un resumen—. El rótulo de la burbuja dice además <b>qué plantilla</b> salió.</p>
+<p>No hace falta ir a ningún lado a comprobarlo: si no está en el chat, no salió.</p>
+<div class="w-caja w-bad"><span class="w-k">Lo que pasaba antes</span><p>Cuatro mensajes salían <b>sin dejar rastro</b>: la cancelación, la reagendada, el «no llegaste» y la bienvenida. El cliente sabía que le habíamos escrito y nosotros no. Y los que sí quedaban guardaban un remedo: la palabra «[Foto]» donde iba la foto.</p></div>
 
 <h3>Los dos canales dicen lo mismo</h3>
 <p>El correo y el WhatsApp de un mismo recordatorio salen <b>juntos y con el mismo trato</b>: si el WhatsApp de un día antes pide contexto, el correo de ese recordatorio también lo pide —con la diferencia de que ahí puedes responder el correo directo—. Y el horario de 8:00 a 18:00 aplica a los dos: el candado está antes de que se separen los canales.</p>`,
