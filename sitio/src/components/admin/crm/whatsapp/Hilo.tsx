@@ -316,7 +316,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
       <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={volver} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
         <span style={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'center', gap: 9 }}>
-          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 230, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
+          <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 200, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {hilo?.web_en_vivo && !mobile && (
             <span title={`Está viendo ${hilo.web_en_vivo} en este momento: es EL mejor momento para escribirle`}
@@ -328,25 +328,6 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           {/* El teléfono solo se repite si arriba va un NOMBRE; si el título ya
               es el número, mostrarlo dos veces solo quitaba aire al header. */}
           {!mobile && nombre && <span style={{ fontSize: 10, color: C.g400, flexShrink: 0 }}>{telefonoLegible(conv.telefono)}</span>}
-          {conv.id && !hilo.ventana?.expira_at && (
-            <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>
-          )}
-          {conv.id && hilo.ventana?.expira_at && (() => {
-            const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
-            if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>;
-            const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
-            const urgente = ms < 4 * 3600e3;
-            return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
-              /* Con horas de sobra, la píldora era lo más brillante del header y
-                 pesaba más que el nombre del contacto. Queda de contorno; se
-                 rellena en ámbar solo cuando la ventana está por cerrarse. */
-              style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : 'transparent', border: urgente ? '1px solid transparent' : `1px solid ${C.emerald300}`, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 10px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
-              {mobile
-                ? (h > 0 ? `${h} h` : `${m} min`)
-                : <>{urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min</>}
-            </span>;
-          })()}
           {hilo.marketing?.stopped && <span title="El cliente pidió no recibir mensajes de marketing (Meta lo registra). Solo plantillas de utilidad o responder cuando él escriba." style={{ fontSize: 9, fontWeight: 700, background: C.ambar100, color: C.ambar700, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>Sin marketing</span>}
           {(hilo.presencia || []).map((p: any) => (
             <span key={p.user_id} title={p.escribiendo ? `${p.nombre} está escribiendo…` : `${p.nombre} también tiene abierto este chat`}
@@ -356,6 +337,32 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
             </span>
           ))}
         </span>
+        {/* ══ LA VENTANA DE 24 H, FUERA DEL BLOQUE QUE SE ENCOGE ══
+            Vivía junto al nombre, dentro del `flex:1` que absorbe el sobrante.
+            Con un nombre largo el contador se comía el espacio y se recortaba a
+            media palabra: «quedan 13 h 5». Y es el dato que decide si puedes
+            escribir libremente o necesitas plantilla — el que menos puede
+            quedar a medias. Aquí es hermano de los selects, con su lugar
+            propio, y lo que se acorta es el nombre. */}
+          {conv.id && !hilo.ventana?.expira_at && (
+          <span title="Sin ventana abierta: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>
+        )}
+        {conv.id && hilo.ventana?.expira_at && (() => {
+          const ms = new Date(hilo.ventana.expira_at).getTime() - Date.now();
+          if (ms <= 0) return <span title="Ventana de 24 h cerrada: solo plantilla" style={{ fontSize: 10, fontWeight: 700, background: C.g100, color: C.g500, borderRadius: 999, padding: '4px 11px', flexShrink: 0, whiteSpace: 'nowrap' }}>{mobile ? 'Cerrada' : 'Ventana cerrada'}</span>;
+          const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60000);
+          const urgente = ms < 4 * 3600e3;
+          return <span title={`Puedes escribir libremente hasta ${new Date(hilo.ventana.expira_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
+            /* Con horas de sobra, la píldora era lo más brillante del header y
+               pesaba más que el nombre del contacto. Queda de contorno; se
+               rellena en ámbar solo cuando la ventana está por cerrarse. */
+            style={{ fontSize: 10, fontWeight: 700, background: urgente ? C.ambar100 : 'transparent', border: urgente ? '1px solid transparent' : `1px solid ${C.emerald300}`, color: urgente ? C.ambar700 : C.emerald700, borderRadius: 999, padding: '4px 10px', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" /><path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+            {mobile
+              ? (h > 0 ? `${h} h` : `${m} min`)
+              : <>{urgente ? 'cierra en ' : 'quedan '}{h > 0 ? `${h} h ` : ''}{m} min</>}
+          </span>;
+        })()}
         {conv.id && !mobile && <select value={conv.asignado_a || ''} onChange={e => api.patchConversacion({ asignado_a: e.target.value || null })}
           aria-label="Asignar a"
           style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, flexShrink: 0, cursor: 'pointer' }}>

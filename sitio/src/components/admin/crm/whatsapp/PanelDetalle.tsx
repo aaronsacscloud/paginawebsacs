@@ -527,15 +527,11 @@ export default function PanelDetalle({ hilo, api, filaActiva }: { hilo: any; api
           </Seccion>
         ) : null;
       })()}
-      {contactoBase && (
-        <div style={{ margin: '0 16px 10px', display: 'flex', gap: 6 }}>
-          <EstiloAccv />
-          <button onClick={() => { setAccionInicial('cotizar'); setSubInfo('acciones'); }}
-            className="accv-tap" style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📄 Cotizar aquí</button>
-          <button onClick={() => { setAccionInicial('agendar'); setSubInfo('acciones'); }}
-            className="accv-tap" style={{ flex: 1, minHeight: 44, border: '1px solid #c9bcf7', background: 'rgba(238,236,254,.35)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 800, color: C.moradoTinta }}>📅 Agendar aquí</button>
-        </div>
-      )}
+      {/* «Cotizar aquí» y «Agendar aquí» vivían también AQUÍ, y son los mismos
+          dos botones que ya están en la barra del composer. Dos caminos al
+          mismo sitio no dan más opciones: dan la duda de si hacen lo mismo. Se
+          quedan donde se usan —abajo, mientras escribes— y esta columna se
+          libera para lo que sí es de aquí: los datos del cliente. */}
       {(ctx?.llamadas || []).some((l: any) => l.minuta) && (
         <Seccion id="g-llamadas" titulo="Llamadas y minutas" n={(ctx.llamadas || []).filter((l: any) => l.minuta).length} abiertaDefault>
           {(ctx.llamadas || []).filter((l: any) => l.minuta).map((l: any) => <MinutaPanel key={l.call_id} l={l} />)}
