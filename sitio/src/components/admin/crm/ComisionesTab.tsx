@@ -20,12 +20,13 @@
 // La regla que gobierna la pantalla: nada se esconde. Un pago sin dueño, un SKU
 // sin tarifa y una comisión revertida después de pagada SE VEN, porque son
 // justo los tres casos en los que alguien cobra de menos sin enterarse.
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { P, tarjetaKpi } from '../../../lib/crm/paleta';
 import { WRAP } from '../../../lib/crm/layout';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Cargando, { Chispas } from './ui/Cargando';
 import ComisionesCortes from './ComisionesCortes';
+import SeguimientoCuenta from './SeguimientoCuenta';
 
 type Vista = 'cortes' | 'renovaciones';
 
@@ -85,6 +86,9 @@ function VistaRenovaciones({ movil }: { movil: boolean }) {
   const [d, setD] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [calculando, setCalculando] = useState(false);
+  // Qué cuenta tiene el expediente abierto. Uno a la vez, a propósito: son
+  // cinco consultas por cuenta y el punto es mirar UNA con calma.
+  const [expediente, setExpediente] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function cargar() {
@@ -181,7 +185,8 @@ function VistaRenovaciones({ movil }: { movil: boolean }) {
               <tr><td style={{ ...E.td, color: P.suave }} colSpan={7}>Sin evaluaciones de {anio}. Aprieta «Recalcular el 30%».</td></tr>
             )}
             {(d?.evaluaciones || []).map((e: any) => (
-              <tr key={e.id} style={e.cumple === false ? { background: P.rojoAgua } : undefined}>
+              <Fragment key={e.id}>
+              <tr style={e.cumple === false ? { background: P.rojoAgua } : undefined}>
                 <td style={{ ...E.td, fontWeight: 600, color: P.tinta }}>
                   {e.companies?.nombre_comercial || e.companies?.nombre || '—'}
                 </td>
@@ -201,6 +206,14 @@ function VistaRenovaciones({ movil }: { movil: boolean }) {
                     <option value="true">Sí hubo</option>
                     <option value="false">No hubo</option>
                   </select>
+                  {/* La evidencia no se abre sola: son cinco consultas por
+                      cuenta, y setenta y un expedientes que nadie pidió harían
+                      la pantalla inservible. */}
+                  <button onClick={() => setExpediente(x => x === e.company_id ? null : e.company_id)}
+                    style={{ display: 'block', marginTop: 5, background: 'none', border: 'none', padding: 0,
+                             cursor: 'pointer', fontSize: '0.72rem', color: P.violetaTinta, fontWeight: 700 }}>
+                    {expediente === e.company_id ? 'Ocultar evidencia' : 'Ver evidencia'}
+                  </button>
                 </td>
                 <td style={E.td}>
                   {e.cumple == null
@@ -210,6 +223,15 @@ function VistaRenovaciones({ movil }: { movil: boolean }) {
                       : <span style={{ ...E.chip, background: P.rojoAgua, color: P.rojoTinta }}>Tasa reducida</span>}
                 </td>
               </tr>
+              {expediente === e.company_id && (
+                <tr>
+                  <td colSpan={7} style={{ padding: '4px 10px 16px', background: '#fafafa', borderBottom: `1px solid ${P.linea}` }}>
+                    <SeguimientoCuenta companyId={e.company_id}
+                      nombre={e.companies?.nombre_comercial || e.companies?.nombre || 'la cuenta'} />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>
