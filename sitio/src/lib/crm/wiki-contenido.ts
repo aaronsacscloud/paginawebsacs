@@ -951,14 +951,29 @@ export const WIKI: PaginaWiki[] = [
   },
   {
     id: 'c-tasas', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tasas',
-    bajada: 'Qué porcentaje paga cada concepto, según de dónde salió el cliente.',
+    bajada: 'Cuánto paga cada concepto: la primera venta según de dónde salió el cliente, y la anualidad.',
     cuerpo: `
+<div class="w-caja"><span class="w-k">La idea en una línea</span>
+<p><b>Traer la cuenta se paga una vez y caro. Conservarla se paga siempre y parejo.</b></p>
+<p>Por eso hay dos tasas por concepto: la de la <b>primera venta</b>, que cambia según de dónde salió el cliente, y la de la <b>anualidad</b>, que es la misma para todos.</p></div>
+
+<h3>1 · La primera venta</h3>
+<p>Es lo que se cobra cuando la cuenta entra. La tasa depende del origen porque el trabajo de traerla no es el mismo en los cuatro casos.</p>
 <table class="w-tab"><thead><tr><th>Concepto</th><th>Lead de Sacs</th><th>Referido</th><th>Recuperada</th><th>Ya era cliente</th></tr></thead><tbody>
-<tr><td><b>Licencia</b><br><span class="w-mut">primer año y renovaciones</span></td><td>35%</td><td>55%</td><td>70%</td><td>30%</td></tr>
+<tr><td><b>Licencia</b></td><td>35%</td><td>55%</td><td>70%</td><td>30%</td></tr>
 <tr><td><b>Plugins</b></td><td>30%</td><td>55%</td><td>70%</td><td>30%</td></tr>
 <tr><td><b>Personalización</b></td><td colspan="4">20% · igual para todo origen</td></tr>
 <tr><td><b>Servicios de arranque</b><br><span class="w-mut">implementación, capacitación, migración</span></td><td colspan="4">35% · igual para todo origen</td></tr>
 </tbody></table>
+
+<h3>2 · La anualidad</h3>
+<div class="w-caja w-ok"><span class="w-k">30% fijo, venga de donde venga la cuenta</span>
+<p>Cuando el cliente <b>renueva</b>, su licencia y sus plugins pagan <b>30%</b>. No importa si en su día fue lead de Sacs (35%), referido (55%) o recuperada (70%): esas tasas premiaban traerla, y ya se cobraron.</p>
+<p>Personalización y servicios de arranque no tienen anualidad: se venden una vez y no se renuevan.</p></div>
+<p><b>Qué cuenta como renovación:</b> que el pago caiga en un año posterior al del arranque de la suscripción. Es la definición más simple de verificar mirando el expediente, y por eso es la que aguanta un reclamo.</p>
+<div class="w-caja w-warn"><span class="w-k">La anualidad puede bajar a 15%</span>
+<p>Si esa renovación no cumple las tres condiciones —seguimiento real, expandir la cuenta un 30% y cobrarla a tiempo—, paga <b>tasa reducida</b> en vez del 30%. Está explicado en <b>Las tres condiciones de la renovación</b>.</p></div>
+
 <h3>Qué significa cada origen</h3>
 <table class="w-tab"><thead><tr><th>Origen</th><th>Cuándo aplica</th></tr></thead><tbody>
 <tr><td><b>Lead de Sacs</b></td><td>Llegó por los canales de marketing de la empresa y el consultor lo trabajó y cerró.</td></tr>
@@ -968,6 +983,7 @@ export const WIKI: PaginaWiki[] = [
 </tbody></table>
 <div class="w-caja"><span class="w-k">Por qué la personalización paga menos</span>
 <p>El grueso de ese monto se va en horas del equipo de desarrollo, no en captación. Se paga el trabajo de vender, no el de construir. Por eso su tasa no depende del origen.</p></div>
+
 <h3>Conceptos extraordinarios</h3>
 <table class="w-tab"><thead><tr><th>Concepto</th><th>Tasa</th><th>Detalle</th></tr></thead><tbody>
 <tr><td>Suscripción al canal de partners</td><td><b>35%</b></td><td>Alta y renovaciones de lo que paga cada partner por pertenecer al canal.</td></tr>
@@ -975,6 +991,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Venta del CRM</td><td><b>90%</b></td><td>El 10% restante va a mantenimiento y servidores del portal.</td></tr>
 <tr><td>Consultoría propia</td><td><b>100%</b></td><td>Sacs no retiene nada. Los viáticos corren por cuenta del consultor.</td></tr>
 </tbody></table>
+
 <h3>Lo que no se paga por porcentaje</h3>
 <p>Además de las comisiones hay <b>dos programas de monto fijo</b>: se paga por encontrar fallas del sistema y por conseguir reseñas de clientes. No dependen de una venta ni de un origen, así que no viven en esta tabla.</p>
 <p class="w-mut">Están en la página <b>Bugs, mejoras y reseñas</b>, aquí mismo en Compensación.</p>
@@ -989,54 +1006,91 @@ export const WIKI: PaginaWiki[] = [
     cuerpo: `
 <p>Siempre el mismo orden, y <b>nunca sobre el monto bruto</b>:</p>
 <div class="w-caja"><span class="w-k">Los cuatro pasos</span>
-<p><b>1.</b> Se parte del monto <b>cobrado</b> al cliente. No lo facturado ni lo prometido: lo que entró.</p>
-<p><b>2.</b> Se descuenta según la cuenta donde cayó: <b>16%</b> si fue la corporativa (IVA que se entera al SAT) o <b>6%</b> si fue la pagadora (costo de dispersión).</p>
-<p><b>3.</b> Sobre <b>esa base</b> se aplica el porcentaje del cliente.</p>
-<p><b>4.</b> Si la venta se cerró con más de 35% de descuento, el excedente se resta de la comisión.</p></div>
-<div class="w-caja w-ok"><span class="w-k">Ejemplo</span>
-<p>Licencia de <b>$50,000</b> en un cliente referido (55%), cobrada en la cuenta corporativa:</p>
+<p><b>1 · Lo cobrado.</b> Se parte de lo que <b>entró</b>, con impuestos incluidos. No lo facturado ni lo prometido.</p>
+<p><b>2 · El costo de recibirlo.</b> Se descuenta según la cuenta donde cayó: <b>16%</b> si fue la corporativa (IVA que se entera al SAT) o <b>6%</b> si fue la pagadora (costo de dispersión). Eso da la <b>base</b>.</p>
+<p><b>3 · La tasa.</b> Sobre esa base se aplica el porcentaje: el de <b>primera venta</b> según el origen, o el de <b>anualidad</b> (30%) si es una renovación.</p>
+<p><b>4 · El exceso de descuento.</b> Si la venta se cerró con más de 35% de descuento, el excedente se resta de la comisión.</p></div>
+
+<div class="w-caja w-ok"><span class="w-k">Ejemplo · primera venta</span>
+<p>Licencia de <b>$50,000</b> a un cliente <b>referido</b> (55%), cobrada en la cuenta corporativa:</p>
 <p>$50,000 − 16% = <b>$42,000</b> de base · × 55% = <b>$23,100</b> de comisión.</p></div>
+<div class="w-caja w-ok"><span class="w-k">Ejemplo · anualidad</span>
+<p>El mismo cliente <b>renueva</b> al año siguiente por <b>$50,000</b>:</p>
+<p>$50,000 − 16% = <b>$42,000</b> de base · × <b>30% de anualidad</b> = <b>$12,600</b>.</p>
+<p class="w-mut">No es el 55%: ese premió traer la cuenta y ya se cobró.</p></div>
+
 <h3>Dónde se ve el desglose</h3>
-<p>En <b>Comisiones → Periodo</b>, cada línea escribe su propia aritmética debajo del concepto. Cuando alguien reclama, la respuesta está en la fila y no hay que reconstruirla.</p>
-<div class="w-caja"><span class="w-k">Qué dice una línea</span>
-<p><code>$65,000 cobrado · −16% IVA = $54,600 · × 55% = $30,030</code></p></div>
+<p>En <b>Comisiones → Cortes</b>, al abrir un corte. Cada renglón se lee de izquierda a derecha como la propia operación:</p>
+<div class="w-caja"><span class="w-k">Un renglón</span>
+<p><code>Pagó el cliente $7,000 · Entró a: Pagadora −6% · Base $6,580 · 30% · Comisión $1,974</code></p>
+<p>Y debajo, la aritmética escrita: <code>$7,000 cobrado · −6% dispersión = $6,580 · × 30% de anualidad = $1,974</code></p>
+<p class="w-mut">Cuando alguien reclama, la respuesta está en la fila y no hay que reconstruirla.</p></div>
+
+<h3>Lo que se puede corregir antes de enviar</h3>
+<p>Mientras el corte está <b>abierto</b>, cada renglón admite tres correcciones, y las tres quedan visibles en el estado de cuenta:</p>
+<table class="w-tab"><thead><tr><th>Qué</th><th>Cuándo se usa</th><th>¿Pide motivo?</th></tr></thead><tbody>
+<tr><td><b>La cuenta</b> (16% / 6%)</td><td>El pago se capturó en la cuenta equivocada.</td><td>No — es un dato que estaba mal.</td></tr>
+<tr><td><b>El porcentaje</b></td><td>Se acordó algo distinto para ese cobro concreto.</td><td><b>Sí</b> — es un trato y hay que poder explicarlo después.</td></tr>
+<tr><td><b>Un ajuste</b> (+ o −)</td><td>Sumar o restar dinero suelto que no cuelga de un renglón.</td><td>Concepto y nota.</td></tr>
+</tbody></table>
+<p class="w-mut">Un corte ya <b>enviado o pagado</b> no se toca: hay que reabrirlo. Ese documento ya salió.</p>
+
 <h3>Cuando algo no cuadra</h3>
 <ul>
-<li><b>Comisión en cero con distintivo ámbar</b> — el SKU vendido no tiene tarifa configurada en el modelo. No es un error del cálculo: es un hueco de configuración, y por eso se ve en vez de esconderse.</li>
+<li><b>Comisión en cero</b> — el SKU vendido no tiene tarifa configurada. No es un error del cálculo: es un hueco de configuración, y por eso el renglón se ve en cero en vez de desaparecer.</li>
 <li><b>«Sin SKU»</b> — la suscripción no tiene producto asignado, así que no hay a qué colgarle un porcentaje. Se asigna a mano en la suscripción.</li>
 <li><b>Distintivo «Tasa reducida»</b> — esa renovación no cumplió una de las tres condiciones. La línea dice cuál.</li>
+<li><b>Distintivo «Tasa de anualidad»</b> — cobró 30% por ser renovación. No es un error.</li>
 </ul>`,
   },
   {
-    id: 'c-cobro', seccion: 'consultores', grupo: 'Compensación', titulo: 'Cuándo y cómo se paga',
-    bajada: 'Los tiempos, los cortes y qué pasa si el dinero se va para atrás.',
+    id: 'c-cobro', seccion: 'consultores', grupo: 'Compensación', titulo: 'El ciclo: cuándo y cómo se paga',
+    bajada: 'La semana, el lunes de revisión, el martes de pago, y qué pasa si el dinero se va para atrás.',
     cuerpo: `
-<h3>El ciclo semanal</h3>
-<div class="w-caja"><span class="w-k">La regla, en una línea</span>
-<p><b>El corte cierra el viernes y se paga el lunes siguiente.</b> Todo lo cobrado y aún no liquidado hasta ese viernes entra en ese pago. Si el lunes es inhábil, el siguiente día hábil.</p></div>
-<p><b>Un solo ritmo para todo.</b> Comisiones de venta, reportes de fallas, mejoras y reseñas caen en el mismo corte: no hay dos velocidades ni cortes distintos según el concepto.</p>
+<h3>El ciclo, en tres días</h3>
+<div class="w-caja w-ok"><span class="w-k">Lunes a domingo · revisión el lunes · pago el martes</span>
+<table class="w-tab"><thead><tr><th>Cuándo</th><th>Qué pasa</th></tr></thead><tbody>
+<tr><td><b>Lunes a domingo</b></td><td>Se va juntando todo lo que el cliente pague en esos siete días. La semana cierra el <b>domingo a la última hora</b>.</td></tr>
+<tr><td><b>Lunes, 5:00 am</b></td><td>El sistema arma el corte solo y lo deja <b>listo para revisión</b>. Ese día se revisa, se corrige lo que haga falta y se envía.</td></tr>
+<tr><td><b>Martes</b></td><td><b>Se paga el total</b> del corte.</td></tr>
+</tbody></table></div>
+<p><b>Son siete días y no cinco a propósito.</b> El dinero no sabe de días hábiles: un cargo automático o una transferencia entran en sábado igual que en martes. Con una semana de lunes a viernes, los fines de semana no caían en ningún corte y esa comisión no se pagaba nunca.</p>
+
+<h3>Un solo ritmo para todo</h3>
+<p>Comisiones de venta, reportes de fallas, mejoras y reseñas caen en el <b>mismo corte</b>: no hay dos velocidades ni cortes distintos según el concepto.</p>
 <ul>
-<li>La comisión se genera cuando el cliente paga. El reloj no arranca al firmar ni al facturar: arranca cuando el dinero entra.</li>
+<li>La comisión se genera <b>cuando el cliente paga</b>. El reloj no arranca al firmar ni al facturar: arranca cuando el dinero entra.</li>
 <li>Si el cliente paga en parcialidades, se comisiona <b>cada parcialidad</b> conforme se cobra, y cada una entra al corte de su semana.</li>
 <li>Los clientes con pago mensual generan comisión <b>cada mes que pagan</b>.</li>
-<li>Lo que se cobre en fin de semana entra al corte de esa semana y se paga el lunes de la siguiente.</li>
 </ul>
 <div class="w-caja w-ok"><span class="w-k">Ejemplo</span>
-<p>Un cliente paga el <b>martes</b> y otro el <b>viernes</b>: las dos comisiones entran al mismo corte y se liquidan el <b>lunes</b>.</p></div>
+<p>Un cliente paga el <b>martes</b> y otro el <b>domingo</b>: las dos comisiones entran al mismo corte, se revisa el <b>lunes</b> y se liquidan el <b>martes</b>.</p></div>
+
+<h3>Verlo antes de que exista</h3>
+<p>En <b>Comisiones → Cortes</b>, la primera fila es el corte que <b>se está juntando ahora</b>: su periodo, cuánto lleva hasta el momento y cuándo se arma. No hay que esperar al lunes para saber cuánto va a salir.</p>
+<p>Se calcula con las mismas reglas que usará el corte real, así que la cifra que se ve entre semana es la que va a llegar.</p>
+
+<h3>Si un pago se captura tarde</h3>
+<div class="w-caja"><span class="w-k">No se pierde</span>
+<p>Un pago que se registra días después lleva la fecha en que <b>entró el dinero</b>, no la de captura. Para entonces su semana ya cerró, así que el siguiente corte lo <b>recoge como rezagado</b> y lo paga ahí.</p>
+<p>En el corte aparece contado aparte, para que se entienda por qué ese pago viene de una semana anterior.</p></div>
+
 <h3>El estado de cuenta</h3>
-<p>Llega <b>con el pago de cada lunes</b>: qué se cobró, de qué cliente, a qué tasa, con qué descuentos y qué ajustes. Es el documento con el que se revisa un pago, y sale de <b>Comisiones → Periodo</b>.</p>
+<p>Llega <b>por enlace</b> cuando el corte se envía, y trae todo: qué se cobró, de qué cliente, a qué tasa, con qué descuentos y qué ajustes, con la aritmética escrita renglón por renglón. Se puede <b>firmar de recibido</b> ahí mismo, y cuando el pago sale queda con el sello de <b>pagado</b> y su referencia bancaria.</p>
+
 <h3>Si el dinero se va para atrás</h3>
 <div class="w-caja w-warn"><span class="w-k">Cancelación, reembolso o pago rebotado</span>
-<p>La comisión correspondiente <b>se descuenta del siguiente corte semanal</b>. <b>Nunca</b> se pide devolver efectivo.</p>
+<p>La comisión correspondiente <b>se descuenta del siguiente corte</b>. <b>Nunca</b> se pide devolver efectivo.</p>
 <p>Es la contraparte de que se pague cada semana sin esperar a ver si el cliente se queda: el pago es puntual porque el ajuste es posible.</p></div>
 <div class="w-caja"><span class="w-k">Si ya se había pagado</span>
-<p>Una comisión ya liquidada <b>no se borra</b> —el dinero ya salió—: aparece como <i>ajuste pendiente</i> y se resta del corte del lunes siguiente. El sistema lo reporta solo en el recálculo de cada madrugada.</p></div>
-<h3>Los estados de una línea</h3>
+<p>Una comisión ya liquidada <b>no se borra</b> —el dinero ya salió—: aparece como <i>ajuste pendiente</i> y se resta del corte siguiente. El sistema lo detecta solo en el recálculo de cada madrugada.</p></div>
+
+<h3>Los estados de un corte</h3>
 <table class="w-tab"><thead><tr><th>Estado</th><th>Qué significa</th></tr></thead><tbody>
-<tr><td><b>Calculada</b></td><td>El sistema la generó. Se recalcula cada noche si algo cambia.</td></tr>
-<tr><td><b>Aprobada</b></td><td>Revisada y lista para pagar. Todavía se recalcula.</td></tr>
-<tr><td><b>Pagada</b></td><td>Liquidada. <b>Nunca se vuelve a recalcular</b>: la historia no se reescribe.</td></tr>
-<tr><td><b>Cancelada</b></td><td>Anulada a mano. No suma y el recálculo no la revive.</td></tr>
+<tr><td><b>En formación</b></td><td>Todavía no existe: es lo que se está juntando esta semana. Cambia solo.</td></tr>
+<tr><td><b>Abierto</b></td><td>Ya se armó. Es el momento de revisarlo y corregirlo: admite líneas, ajustes y cambios de tasa.</td></tr>
+<tr><td><b>Enviado</b></td><td>Se le mandó al consultor. Ya no absorbe nada nuevo; lo que llegue después entra al siguiente.</td></tr>
+<tr><td><b>Pagado</b></td><td>Liquidado. Sus líneas quedan congeladas y <b>el recálculo no las vuelve a tocar</b>: la historia no se reescribe.</td></tr>
 </tbody></table>`,
   },
   {
@@ -1096,7 +1150,7 @@ export const WIKI: PaginaWiki[] = [
 <p><b>Si el cliente la quita después, no se descuenta nada.</b> El pago es por conseguirla; lo que el cliente haga después no está en manos del consultor.</p></div>
 
 <div class="w-caja w-ok"><span class="w-k">Cuándo se cobran</span>
-<p>Los dos programas entran al <b>mismo corte semanal</b> que las comisiones: lo validado hasta el viernes se paga el lunes. No hay un corte aparte para los montos chicos.</p></div>`,
+<p>Los dos programas entran al <b>mismo corte semanal</b> que las comisiones: lo validado hasta el domingo se revisa el lunes y se paga el martes. No hay un corte aparte para los montos chicos.</p></div>`,
   },
   {
     id: 'c-condiciones', seccion: 'consultores', grupo: 'Compensación', titulo: 'Las tres condiciones de la renovación',
@@ -1168,7 +1222,7 @@ export const WIKI: PaginaWiki[] = [
 </ul>
 <h3>Lo que le toca al consultor</h3>
 <table class="w-tab"><thead><tr><th>Compromiso</th><th>Qué significa en concreto</th></tr></thead><tbody>
-<tr><td><b>Una llamada en 24 horas</b></td><td>Horas <b>naturales</b>, no hábiles: un lead que entra el viernes se llama el sábado. Hasta <b>3 intentos registrados</b> en canales distintos. <b>No es «contactar»: es llamar.</b></td></tr>
+<tr><td><b>Una llamada en 24 horas</b></td><td>Horas <b>naturales</b>, no hábiles: un lead que entra el sábado se llama el domingo. Hasta <b>3 intentos registrados</b> en canales distintos. <b>No es «contactar»: es llamar.</b></td></tr>
 <tr><td><b>Calificar según interés real</b></td><td>No según lo que convenga al embudo. Un lead marcado como caliente sin serlo desvía la campaña siguiente hacia el público equivocado.</td></tr>
 <tr><td><b>Calificar los descartados</b></td><td>Con su motivo. Un descarte razonado le sirve a la campaña; uno abandonado sin calificar no le sirve a nadie y se paga igual.</td></tr>
 <tr><td><b>Entrar donde la IA no llega</b></td><td>Cuando el prospecto pregunta algo de fondo que la automatización no resuelve, la explicación la da el consultor. <b>Ahí es donde un lead deja de ser un formulario.</b></td></tr>
@@ -1202,7 +1256,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td><b>El soporte técnico</b></td><td>Continuo</td><td>Atendido <b>por el chat</b>, y el cliente tiene que sentirlo así. Ver la caja de abajo.</td></tr>
 <tr><td><b>Visibilidad de vencimientos</b></td><td>Continuo</td><td>Qué anualidades vencen y cuáles están impagas, con anticipación para gestionarlas.</td></tr>
 <tr><td><b>Respetar la atribución</b></td><td>Continuo</td><td>Una cuenta asignada no se reasigna ni se trabaja por fuera sin avisar primero.</td></tr>
-<tr><td><b>Pagar y rendir cuentas</b></td><td>Cada lunes</td><td>Lo cobrado hasta el viernes se paga el lunes, con el estado de cuenta de la semana.</td></tr>
+<tr><td><b>Pagar y rendir cuentas</b></td><td>Cada semana</td><td>Lo cobrado de lunes a domingo se revisa el lunes y se paga el <b>martes</b>, con su estado de cuenta.</td></tr>
 </tbody></table>
 <div class="w-caja"><span class="w-k">El soporte, y por qué importa tanto</span>
 <p>Sacs se encarga de que cada cliente <b>conozca el canal, se sienta cómodo usándolo y reciba respuesta clara</b>. El propósito es que lo que el consultor trabaja junto al cliente sea <b>consultoría pura</b>, no soporte.</p>
@@ -1222,7 +1276,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Que el uso crezca</td><td>Consultor</td><td>Uso del trimestre contra el anterior</td><td>Clientes → uso · snapshots</td></tr>
 <tr><td>Expandir 30% del plan anual</td><td>Consultor</td><td>Vitalicias + plugins + servicios ÷ plan anual</td><td>Comisiones → Renovaciones</td></tr>
 <tr><td>Que lo vendido se use</td><td>Consultor</td><td>Módulos contratados que registran actividad</td><td>Clientes → uso</td></tr>
-<tr><td>Cobrar a tiempo</td><td>Consultor</td><td>Días entre vencimiento y cobro, contra el margen de 5</td><td>Comisiones → Periodo</td></tr>
+<tr><td>Cobrar a tiempo</td><td>Consultor</td><td>Días entre vencimiento y cobro, contra el margen de 5</td><td>Comisiones → Cortes</td></tr>
 </tbody></table>
 <h3>Leads de campañas</h3>
 <table class="w-tab"><thead><tr><th>Compromiso</th><th>De quién</th><th>Cómo se mide</th><th>Dónde se ve</th></tr></thead><tbody>
@@ -1241,7 +1295,7 @@ export const WIKI: PaginaWiki[] = [
 <tr><td>Confirmar en 2 días hábiles</td><td>Fecha de la pregunta vs. la respuesta</td><td>Canal del proyecto</td></tr>
 <tr><td>Dictaminar en 5 días hábiles</td><td>Fecha del reporte vs. el dictamen</td><td>Consultoría → mejoras</td></tr>
 <tr><td>Soporte por el chat</td><td>Tickets resueltos sin pasar por el consultor</td><td>Soporte</td></tr>
-<tr><td>Pagar el lunes lo de la semana</td><td>Que el corte del viernes quede liquidado el lunes</td><td>Comisiones → Periodo</td></tr>
+<tr><td>Pagar cada semana</td><td>Que el corte de la semana quede revisado el lunes y liquidado el martes</td><td>Comisiones → Cortes</td></tr>
 </tbody></table>
 <div class="w-caja w-ok"><span class="w-k">Cómo va Sacs hoy en entregas</span>
 <p>De <b>22 mejoras entregadas</b> con fecha de compromiso registrada, <b>8 salieron a tiempo</b>. Es el primer número que este acuerdo pone bajo la lupa, y el que la reunión semanal debería mover.</p></div>
