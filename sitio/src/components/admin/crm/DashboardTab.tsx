@@ -23,9 +23,6 @@
 import { useEffect, useState, Suspense } from 'react';
 import { lazySeguro } from '../../../lib/ui/lazySeguro';
 const LeadsDashboard = lazySeguro(() => import('./LeadsDashboard'));
-/* En diferido como el de leads: son dos tableros pesados y quien entra al
-   Dashboard casi siempre se queda en «Negocio». */
-const EmbudoTab = lazySeguro(() => import('./EmbudoTab'));
 import { WRAP } from '../../../lib/crm/layout';
 import ClienteDrawer360 from './ClienteDrawer360';
 import Cargando from './ui/Cargando';
@@ -89,12 +86,12 @@ export default function DashboardTab() {
      propia subsección, y no es una cuenta — es la misma pregunta que responde
      este tablero, «cómo voy», vista por etapas. Junto a Leads, que es de donde
      salen sus números. */
-  const [sub, setSub] = useState<'negocio' | 'leads' | 'embudo'>(() => {
+  const [sub, setSub] = useState<'negocio' | 'leads'>(() => {
     if (typeof window === 'undefined') return 'negocio';
     const v = new URLSearchParams(window.location.search).get('sub');
-    return v === 'leads' || v === 'embudo' ? v : 'negocio';
+    return v === 'leads' ? 'leads' : 'negocio';
   });
-  const irA = (v: 'negocio' | 'leads' | 'embudo') => {
+  const irA = (v: 'negocio' | 'leads') => {
     setSub(v);
     try {
       const u = new URL(window.location.href);
@@ -127,7 +124,7 @@ export default function DashboardTab() {
      usuario en una pantalla roja sin salida. */
   const tira = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #eeeef1', marginBottom: 16 }}>
-      {([['negocio', 'Negocio'], ['leads', 'Leads'], ['embudo', 'Embudo']] as const).map(([v, l]) => {
+      {([['negocio', 'Negocio'], ['leads', 'Leads']] as const).map(([v, l]) => {
         const on = sub === v;
         return (
           <button key={v} onClick={() => irA(v)} style={{
@@ -148,12 +145,10 @@ export default function DashboardTab() {
     </div>
   );
 
-  if (sub === 'embudo') return (
-    <div style={S.wrap}>
-      {tira}
-      <Suspense fallback={<Cargando texto="Cargando el embudo…" alto={280} />}><EmbudoTab /></Suspense>
-    </div>
-  );
+  /* La pestaña del Embudo se retiró: volvió al menú como «Campañas», dentro
+     del proceso de Cuentas. Dos puertas al mismo sitio no dan más opciones,
+     dan la duda de si hacen lo mismo. Un ?sub=embudo viejo cae en «Negocio»,
+     que es la vista de esta pantalla. */
 
   if (err) return <div style={S.wrap}>{tira}<div style={{ color: ROJO, fontSize: '0.85rem' }}>{err}</div></div>;
   if (!d) return <div style={S.wrap}>{tira}<Cargando texto="Cargando tablero…" /></div>;

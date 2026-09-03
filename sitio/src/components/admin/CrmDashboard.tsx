@@ -194,19 +194,27 @@ const NAV_SECTIONS = [
   {
     /* Abre la zona de los GRUPOS: de aquí para abajo todo tiene submenú. */
     label: 'Cuentas', sec: 'cuentas', icon: 'clientes', separar: true,
+    /* EN EL ORDEN DEL PROCESO, no por tamaño ni por antigüedad (decisión del
+       dueño, 3-sep-2026): así se lee de arriba abajo como se trabaja de verdad.
+
+         Reuniones  → de dónde salen los prospectos
+         Campañas   → lo que se invierte para traerlos
+         Leads      → los que llegaron
+         Clientes   → los que compraron
+         Onboarding → sus primeros días
+         Churn      → los que se fueron
+
+       «Embudo» pasa a llamarse CAMPAÑAS: el embudo es el dibujo; lo que se
+       mira ahí es qué campaña trajo qué. Y vuelve al menú —había pasado a ser
+       pestaña del Dashboard— porque su sitio es este proceso; la pestaña se
+       retira para no dejar dos puertas al mismo sitio. */
     items: [
-      { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
-      /* El Embudo se fue al Dashboard, como pestaña junto a Leads: no es una
-         cuenta, es «cómo voy» visto por etapas. La pantalla sigue existiendo
-         para las ligas viejas (?tab=embudo). */
-      { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
-      /* Churn va DEBAJO de Clientes porque es lo que le sigue a un cliente
-         cuando se va: mismo grupo, siguiente renglón. */
-      { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
-      { id: 'onboarding' as Tab, label: 'Onboarding', icon: 'mejoras' },
-      // Reuniones se junta con las cuentas: es con quien te sientas. Antes
-      // vivía en Ventas y su gemela "Agenda" en Sistema, en grupos distintos.
       { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
+      { id: 'embudo' as Tab, label: 'Campañas', icon: 'dashboard' },
+      { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
+      { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
+      { id: 'onboarding' as Tab, label: 'Onboarding', icon: 'mejoras' },
+      { id: 'churn' as Tab, label: 'Churn', icon: 'churn' },
     ],
   },
   {
@@ -227,8 +235,14 @@ const NAV_SECTIONS = [
       // dos momentos, y "Por cobrar" salía duplicado en las dos pantallas.
       // Ahora Cobranza es la vista "Recuperación" de adentro de Pagos.
       { id: 'pagos' as Tab, label: 'Pagos y cobranza', icon: 'pagos' },
-      { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
-      { id: 'whatsapp' as Tab, label: 'WhatsApp', icon: 'whatsapp' },
+      /* «Suscripciones», sin el «· ARR»: la sigla es cómo se llama la MÉTRICA
+         de adentro, no la pantalla, y colgada del nombre obliga a saber qué
+         significa antes de saber a dónde lleva. */
+      { id: 'suscripciones' as Tab, label: 'Suscripciones', icon: 'suscripciones' },
+      /* «Inbox», no «WhatsApp»: la pantalla ya no es de un solo canal —dentro
+         viven también los correos del hilo— y el nombre del canal prometía
+         menos de lo que hay. */
+      { id: 'whatsapp' as Tab, label: 'Inbox', icon: 'whatsapp' },
       { id: 'wa-masivos' as Tab, label: 'Masivos', icon: 'wa-masivos' },
       { id: 'email' as Tab, label: 'Email marketing', icon: 'automations' },
       { id: 'secuencias' as Tab, label: 'Secuencias', icon: 'automations' },

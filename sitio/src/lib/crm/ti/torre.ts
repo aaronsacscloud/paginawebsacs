@@ -21,8 +21,8 @@ function nivelDe(it: { tipo: string; datos: any }): number {
   if (it.tipo === 'aprendizaje') return 6;
   if (d.tipo === 'responder') return 1;
   if (p.campo_clave === 'cotizacion_cobro') return 2;
-  if (p.campo_clave === 'rfc' && d.prioridad <= 3) return 2;
-  if (p.campo_clave === 'razon_social' && d.prioridad <= 3) return 2;
+  // Facturación tras un pago: es «dinero en la mesa» solo la primera semana; después baja a datos para no tapar la cola.
+  if ((p.campo_clave === 'rfc' || p.campo_clave === 'razon_social') && d.prioridad <= 3) return Date.now() - Date.parse(d.created_at) < 7 * 86400e3 ? 2 : 7;
   if (String(p.campo_clave || '').startsWith('reunion_') || p.reloj === 'segunda_reunion' || p.reloj === 'demo_cotiza' || d.tipo === 'cotizar') return 4;
   if (d.tipo === 'llamada') return p.reloj === 'silencio_llamada' || p.agendar_discovery ? 5 : (p.reloj === 'cot_llamada' ? 2 : 5);
   if (d.tipo === 'veredicto' || p.campo_clave === 'cotizacion_estado' || d.tipo === 'aprendizaje') return 6;
@@ -52,8 +52,10 @@ export async function colaTorre() {
     items.push({ nivel: 0, key: `revision:${r.id}`, tipo: 'revision', id: r.id, contact_id: r.contact_id, lead: lead((r as any).contacts), urgencia: 'hoy', cuando: r.created_at, titulo: `Revisión diaria: ${p.tipo === 'mensaje_extra' ? 'mensaje extra' : p.tipo === 'plantilla' ? 'plantilla' : p.tipo === 'llamada' ? 'llamada' : p.tipo === 'descalificar' ? 'descalificar' : p.tipo || 'propuesta'}`, chip: 'Revisión diaria', resumen: r.resumen || '', datos: { ...r, contacts: undefined } });
   }
   for (const x of reacts || []) items.push({ nivel: 0, key: `reactivacion:${x.id}`, tipo: 'reactivacion', id: x.id, contact_id: x.contact_id, lead: lead((x as any).contacts, x.telefono), urgencia: 'semana', cuando: x.created_at, titulo: `Reactivación: ${x.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'} hace ${x.meses_sin_hablar} meses`, chip: 'Reactivación', resumen: x.resumen_lead || '', datos: { ...x, contacts: undefined } });
+  const conEnvioPendiente = new Set((envios || []).map(e => e.contact_id));
   for (const t of tareas || []) {
     const p: any = t.payload || {};
+    if (t.tipo === 'responder' && t.contact_id && conEnvioPendiente.has(t.contact_id)) continue;   // el agente ya propuso la respuesta: la tarea humana sobra
     const urg: Urgencia = (t.tipo === 'dato' && t.prioridad >= 5) ? 'semana' : t.prioridad <= 1 || t.atrasada ? 'ahora' : t.prioridad <= 3 ? 'hoy' : 'semana';   // el lote de higiene nunca es «ahora»
     const chip = t.tipo === 'llamada' ? 'Llamar' : t.tipo === 'veredicto' ? 'Decidir' : t.tipo === 'dato' ? (p.campo_clave?.startsWith('reunion_') ? 'Reunión' : p.campo_clave?.startsWith('cotizacion_') ? 'Cotización' : 'Dato') : t.tipo === 'responder' ? 'Responder' : t.tipo === 'wa_plantilla' ? 'Plantilla' : t.tipo === 'compromiso' ? 'Compromiso' : t.tipo;
     const ld = lead((t as any).contacts); if (!(t as any).contacts?.nombre && p.instruccion) ld.nombre = String(p.instruccion).split(' — ')[0].replace(/^¿/, '').slice(0, 60);   // tareas de empresa (Cuenta SACS, RFC): el nombre viene en la instrucción

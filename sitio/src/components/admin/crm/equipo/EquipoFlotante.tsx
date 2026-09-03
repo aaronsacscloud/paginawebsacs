@@ -26,7 +26,8 @@ const Equipo = lazySeguro(() => import('./Equipo'));
 type Burbuja = { id: string; canal: C; msg: M; importante: boolean; mencion: boolean };
 
 const CSS = `
-.eqf{position:fixed;right:22px;bottom:22px;z-index:899;display:flex;flex-direction:column;align-items:flex-end;gap:10px;font-family:inherit}
+.eqf{position:fixed;right:22px;bottom:22px;z-index:899;display:flex;flex-direction:column;align-items:flex-end;gap:10px;font-family:inherit;
+  --eq-tinta:#1e1a33;--eq-gris:#6f6a86;--eq-linea:#ebe8f5;--eq-panel:#fff;--eq-lila:${P.violetaAgua};--eq-morado:${P.violeta};--eq-morado-tinta:${P.violetaTinta}}
 .eqf *{box-sizing:border-box}
 .eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 14px)}
 .eqf-fila{display:flex;align-items:flex-end;gap:10px}
@@ -82,6 +83,7 @@ const CSS = `
   box-shadow:0 30px 90px rgba(20,14,44,.45),0 0 0 1px rgba(255,255,255,.4);animation:eqf-sube .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes eqf-sube{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 .eqf-panel .eq{height:calc(100dvh - 24px);min-height:0;border:0;border-radius:0}
+.eqf-panel:not(.movil) .eq-canal>.eq-cab:first-child{padding-right:52px}
 .eqf-x{position:fixed;top:2px;right:2px;z-index:962;width:40px;height:40px;border-radius:50%;border:2px solid #fff;cursor:pointer;color:#fff;
   background:linear-gradient(135deg,#7C6BF0,${P.rosa});box-shadow:0 6px 18px rgba(60,30,140,.35);display:inline-flex;align-items:center;justify-content:center;transition:transform .15s}
 .eqf-x:hover{transform:scale(1.08) rotate(90deg)}
@@ -253,7 +255,7 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
                   onClick={() => abrir(b.canal.id, b.msg.id, b.msg.hilo_de)} onKeyDown={e => { if (e.key === 'Enter') abrir(b.canal.id, b.msg.id, b.msg.hilo_de); }}>
                   <Avatar p={b.msg.autor} size={34} />
                   <div className="cuerpo">
-                    <div className="q"><b>{b.msg.autor.nombre}</b><span>· {b.canal.tipo === 'directo' ? 'directo' : `#${b.canal.nombre}`}</span><span>· {hace(b.msg.created_at)}</span>{b.importante && <span className="imp">Importante</span>}{!b.importante && b.mencion && <span className="men">Te mencionó</span>}</div>
+                    <div className="q"><b>{b.msg.autor.nombre}</b><span>· {b.canal.tipo === 'directo' ? 'directo' : `#${b.canal.nombre}`}</span><span>· {hace(b.msg.created_at)}</span>{b.importante && <span className="imp">Importante</span>}{!b.importante && b.mencion && <span className="men">Mención</span>}</div>
                     <div className="t">{resumen(b.msg)}</div>
                   </div>
                   <button className="x" aria-label="Descartar" onClick={e => { e.stopPropagation(); setBurbujas(x => x.filter(y => y.id !== b.id)); }}>

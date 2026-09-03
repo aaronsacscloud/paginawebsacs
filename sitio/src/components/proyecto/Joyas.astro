@@ -54,7 +54,7 @@ const FRASES = [
 <!-- Capa ambiental: vive detrás de TODO el documento -->
 <div class="jo-film" aria-hidden="true">
   {PIEZAS.map((n, i) => (
-    <div class="jo-film-p" data-i={i} style={`background-image:url(/images/joyas/joya-${n}.webp)`}></div>
+    <div class="jo-film-p" data-i={i} style={`background-image:url(/images/joyas/fondo-${n}.webp)`}></div>
   ))}
   <div class="jo-film-velo"></div>
 </div>
@@ -67,16 +67,18 @@ const FRASES = [
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   overflow: hidden; background: #F3F0EC;
 }
+.jo-film[data-dormida] { visibility: hidden; }
 .jo-film-p {
   position: absolute; inset: -12%;
   background-size: cover; background-position: center;
   opacity: 0;
-  /* El desenfoque vive AQUÍ, no en el papel: se resuelve una vez en el
-     compositor. Un backdrop-filter sobre un documento de 4,600px se recalcula
-     en cada cuadro del scroll y en un teléfono eso se siente. */
-  filter: blur(16px) saturate(.82) brightness(1.06);
-  transform: scale(1.08);
+  /* SIN `filter`. El desenfoque viene horneado en el archivo (fondo-*.webp).
+     Un blur de CSS sobre una capa FIJA de viewport completo se recompone en
+     cada cuadro del scroll: medido, dejaba el documento en 9 fps en escritorio.
+     Horneado cuesta cero y además las imágenes bajaron de 240 KB a 19. */
+  transform: scale(1.08) translateZ(0);
   will-change: opacity, transform;
+  backface-visibility: hidden;
   transition: opacity 2.6s ease;
 }
 .jo-film-p[data-viva] {
@@ -87,6 +89,8 @@ const FRASES = [
   from { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
   to   { transform: scale(1.14) translate3d(1.5%, 1.5%, 0); }
 }
+/* Ya no hace falta esconderla en la banda: sin filtro no cuesta nada. */
+.jo-film[data-dormida] { visibility: hidden; }
 /* Un velo cálido que empuja la foto al fondo y evita que compita con el texto. */
 .jo-film-velo {
   position: absolute; inset: 0;
@@ -107,7 +111,6 @@ const FRASES = [
      esto no la toca. */
   .pb-hoja { background: rgba(255,255,255,.955) !important; }
   .jo-film-p[data-viva] { opacity: .72; }
-  .jo-film-p { filter: blur(22px) saturate(.82) brightness(1.05); }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -130,11 +133,12 @@ const FRASES = [
 .jo-pieza {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
-  opacity: 0; transform: scale(1.16);
+  opacity: 0; transform: scale(1.16) translateZ(0);
   will-change: opacity, transform;
+  backface-visibility: hidden;
 }
-.jo-pieza::after {
-  content: ''; position: absolute; inset: 0;
+.jo-velo {
+  position: absolute; inset: 0; pointer-events: none;
   background:
     radial-gradient(72% 58% at 50% 46%, rgba(13,11,12,.14), rgba(13,11,12,.78) 82%),
     linear-gradient(180deg, rgba(13,11,12,.46), rgba(13,11,12,.16) 42%, rgba(13,11,12,.86));
@@ -240,7 +244,12 @@ const FRASES = [
     const ctx = lienzo.getContext('2d');
     let W = 0, H = 0, dpr = 1;
     const medir = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Los destellos son suaves: a DPR 1.5 no se nota y se pintan la mitad
+      // de píxeles. En un teléfono a DPR 3 el lienzo era de 1170×2532.
+      // El lienzo se pinta a 0.55× y el CSS lo estira. Son manchas de luz
+      // suaves: el detalle no está en el pixel, y la tasa de relleno baja a un
+      // tercio. Es lo que hace que la banda corra en un teléfono.
+      dpr = 0.55;
       W = lienzo.clientWidth; H = lienzo.clientHeight;
       lienzo.width = Math.round(W * dpr);
       lienzo.height = Math.round(H * dpr);
@@ -251,7 +260,24 @@ const FRASES = [
 
     // En el teléfono son menos: el mismo número que en escritorio se ve
     // apelmazado en 390px y cuesta batería para nada.
-    const CHISPAS = window.matchMedia('(max-width: 720px)').matches ? 34 : 58;
+    // Un destello se dibuja UNA vez en un lienzo aparte y después solo se
+    // estampa. Crear un createRadialGradient por chispa y por cuadro costaba
+    // 22 fps en el teléfono: el degradado se reconstruye entero cada vez.
+    const SPRITE = 64;
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = SPRITE;
+    {
+      const sc = sprite.getContext('2d');
+      const g = sc.createRadialGradient(SPRITE/2, SPRITE/2, 0, SPRITE/2, SPRITE/2, SPRITE/2);
+      g.addColorStop(0, 'rgba(255,250,238,1)');
+      g.addColorStop(0.18, 'rgba(255,238,200,.58)');
+      g.addColorStop(0.5, 'rgba(214,184,122,.17)');
+      g.addColorStop(1, 'rgba(214,184,122,0)');
+      sc.fillStyle = g;
+      sc.fillRect(0, 0, SPRITE, SPRITE);
+    }
+
+    const CHISPAS = window.matchMedia('(max-width: 720px)').matches ? 30 : 42;
     const chispas = Array.from({ length: CHISPAS }, (_, i) => ({
       x: Math.random(), y: Math.random(),
       r: 0.35 + Math.random() * 0.95,
@@ -273,17 +299,11 @@ const FRASES = [
         c.x += c.vx; c.y += c.vy;
         if (c.y < -0.05) { c.y = 1.05; c.x = Math.random(); }
         const a = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(s * c.f * 3.1 + c.d));
-        const x = c.x * W, y = c.y * H, r = c.r * (0.85 + a * 0.6);
-        // Un núcleo duro y un halo corto: eso se lee como destello de piedra.
-        // Con un halo de siete radios se leía como bokeh de fondo desenfocado.
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4.2);
-        g.addColorStop(0, `rgba(255,250,238,${0.95 * a})`);
-        g.addColorStop(0.18, `rgba(255,238,200,${0.55 * a})`);
-        g.addColorStop(0.5, `rgba(214,184,122,${0.16 * a})`);
-        g.addColorStop(1, 'rgba(214,184,122,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(x, y, r * 4.2, 0, Math.PI * 2); ctx.fill();
+        const x = c.x * W, y = c.y * H, d = c.r * (0.85 + a * 0.6) * 8.4;
+        ctx.globalAlpha = a;
+        ctx.drawImage(sprite, x - d / 2, y - d / 2, d, d);
       }
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       raf = requestAnimationFrame(cuadro);
     }
@@ -293,6 +313,9 @@ const FRASES = [
     // quemando batería para nadie.
     new IntersectionObserver((ents) => {
       visible = ents[0].isIntersecting;
+      // Con la banda en pantalla, la película de fondo no se ve — y su blur de
+      // viewport completo sigue costando compositor en cada cuadro.
+      document.querySelector('.jo-film')?.toggleAttribute('data-dormida', visible);
       if (visible && !raf) { t0 = performance.now(); raf = requestAnimationFrame(cuadro); }
       if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; ctx.clearRect(0, 0, W, H); }
     }, { threshold: 0 }).observe(banda);
