@@ -59,6 +59,10 @@ export const PUT: APIRoute = async ({ request }) => {
   if (!canActOnSchedulingOwner(user, current.host_id)) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
+  if (['cancelada', 'reagendada'].includes(String(updates.estado || '')) && !String(updates.cancelacion_motivo || updates.motivo || '').trim()) {
+    return new Response(JSON.stringify({ error: 'Di el motivo: ¿quién la movió y por qué?' }), { status: 400 });
+  }
+  if (updates.motivo && !updates.cancelacion_motivo) { updates.cancelacion_motivo = updates.motivo; } delete updates.motivo; if (updates.quien) { updates.cancelado_por = updates.quien === 'lead' ? 'lead' : 'sacs'; delete updates.quien; }
 
   const { data, error } = await supabase
     .from('bookings')

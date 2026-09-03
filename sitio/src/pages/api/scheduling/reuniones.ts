@@ -176,6 +176,7 @@ export const POST: APIRoute = async ({ request }) => {
   const fila: any = {
     event_type_id: eventTypeId,
     host_id: b?.host_id || user.id,
+    consultor_id: b?.consultor_id || user.id,   // dueño de la reunión: a quien le nacen las tareas de la cadena
     fecha, hora_inicio: hora.slice(0, 5), hora_fin: hhmm(fin),
     timezone_host: 'America/Mexico_City', timezone_invitado: 'America/Mexico_City',
     invitee_nombre: b?.invitee_nombre || null,
@@ -297,6 +298,8 @@ export const PATCH: APIRoute = async ({ request }) => {
 
   if (b?.estado && b.estado !== actual.estado) {
     if (!ESTADOS[b.estado]) return json({ error: 'Estado desconocido.' }, 400);
+    // Cancelar o reagendar necesita causa (decisión 2026-09-03): quién la movió y por qué, si no el no-show del embudo sale mal.
+    if (['cancelada', 'reagendada'].includes(b.estado) && !String(b?.motivo || '').trim()) return json({ error: 'Di el motivo: ¿quién la movió y por qué?' }, 400);
     patch.estado = b.estado;
     // Se APILA, no se pisa: la alerta de inasistencias sale de aquí y tiene que
     // poder mostrarse quién marcó qué y cuándo.
@@ -305,9 +308,9 @@ export const PATCH: APIRoute = async ({ request }) => {
       estado: b.estado, at: new Date().toISOString(),
       por: user.nombre || user.email || 'CRM', motivo: b?.motivo || null,
     }];
-    if (b.estado === 'cancelada') {
+    if (b.estado === 'cancelada' || b.estado === 'reagendada') {
       patch.cancelacion_motivo = b?.motivo || null;
-      patch.cancelado_por = 'sacs';
+      patch.cancelado_por = b?.quien === 'lead' ? 'lead' : 'sacs';
     }
   }
   if (!Object.keys(patch).length) return json({ ok: true, sin_cambios: true });
@@ -316,6 +319,7 @@ export const PATCH: APIRoute = async ({ request }) => {
   const { data, error } = await supabase.from('bookings').update(patch).eq('id', id)
     .select('*, event_types(id, nombre, slug, color, duracion_minutos, categoria, alerta_inasistencias)').single();
   if (error) return json({ error: error.message }, 500);
+  if (patch.minuta?.decision?.tipo) { try { const { aplicarDecisionMinuta } = await import('../../../lib/crm/reuniones-decision'); await aplicarDecisionMinuta(id, patch.minuta.decision, user.nombre || user.email || null); } catch (e: any) { console.error('[reuniones] decision', e?.message || e); } }
   return json({ ok: true, data });
 };
 

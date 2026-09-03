@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import MinutaLead from './crm/MinutaLead';
 
 /* ═══ Datos faltantes, agrupados ═══ Antes salía UN dato a la vez (98 tarjetas seguidas). Ahora:
    subpestañas por tipo de dato (Facturación, Negocio, Cuenta Sacs, Reunión, Contacto) y, dentro, la ficha de
@@ -14,11 +15,12 @@ const GRUPOS: { k: string; l: string; desc: string; claves: string[] }[] = [
 const grupoDe = (p: any) => { const c = String(p?.campo_clave || p?.campo || '').toLowerCase(); return GRUPOS.find(g => g.claves.some(k => c === k || c.includes(k)))?.k || 'otros'; };
 const nombreDe = (p: any) => String(p?.instruccion || '').split(' — ')[0] || 'Sin nombre';
 
-export default function TrabajoDatos({ datos, onGuardar, onPosponer, guardando, error }: { datos: Tarea[]; onGuardar: (x: Tarea, valor: any) => Promise<boolean>; onPosponer: (x: Tarea) => Promise<void>; guardando: boolean; error: string }) {
+export default function TrabajoDatos({ datos, onGuardar, onPosponer, onRecargar, guardando, error }: { datos: Tarea[]; onGuardar: (x: Tarea, valor: any) => Promise<boolean>; onPosponer: (x: Tarea) => Promise<void>; onRecargar?: () => void; guardando: boolean; error: string }) {
   const [grupo, setGrupo] = useState<string>('todos');
   const [sel, setSel] = useState<string | null>(null);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [ok, setOk] = useState('');
+  const [minutaDe, setMinutaDe] = useState<any>(null);   // tarea de minuta abierta en el modal con IA
   const conGrupo = useMemo(() => datos.map(x => ({ ...x, _g: grupoDe(x.payload), _n: nombreDe(x.payload), _k: x.payload?.sujeto || x.contact_id })), [datos]);
   const conteo: Record<string, number> = {}; for (const x of conGrupo) conteo[x._g] = (conteo[x._g] || 0) + 1;
   const visibles = grupo === 'todos' ? conGrupo : conGrupo.filter(x => x._g === grupo);
@@ -63,7 +65,9 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, guardando, 
                   </div>
                   {p.porque && <div style={{ fontSize: 12.5, color: '#6b6580', margin: '4px 0 8px' }}>{p.porque}</div>}
                   {p.fuente && <div className="ti-burbuja sug" style={{ marginBottom: 6 }}><div className="ti-b-eti">Sugerencia · {p.fuente}</div>{p.valor}</div>}
-                  {Array.isArray(p.opciones)
+                  {p.minuta_ia ? (
+                    <button className="ti-btn prim" onClick={() => setMinutaDe(x)} style={{ width: '100%' }}>Abrir la minuta con IA: pega la transcripción o tus notas</button>
+                  ) : Array.isArray(p.opciones)
                     ? <div className="ti-res-chips">{p.opciones.map((o: string) => <button key={o} className={'ti-res-chip' + (v === o ? ' on' : '')} onClick={() => setVals(s => ({ ...s, [x.id]: o }))}>{(p.opciones_l || {})[o] || o}</button>)}</div>
                     : p.multilinea
                       ? <textarea className="ti-campo" rows={5} style={{ margin: 0, fontSize: 14 }} placeholder={p.input || p.campo} value={v} onChange={e => setVals(s => ({ ...s, [x.id]: e.target.value }))} />
@@ -79,6 +83,11 @@ export default function TrabajoDatos({ datos, onGuardar, onPosponer, guardando, 
           </div>
         )}
       </div>
+      {minutaDe && (
+        <MinutaLead reunion={{ id: minutaDe.payload?.reunion?.id || minutaDe.payload?.sujeto, fecha: minutaDe.payload?.reunion?.fecha, event_types: { nombre: 'Demo' } }} lead={minutaDe.payload?.lead || {}}
+          onClose={() => setMinutaDe(null)}
+          onGuardado={async () => { const x = minutaDe; setMinutaDe(null); await fetch('/api/crm/ti/tarea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: x.id, accion: 'hecha', detalle: { campo: 'minuta', ya_escrito: true } }) }); setOk('Minuta guardada y aplicada.'); onRecargar?.(); }} />
+      )}
       <style>{`@media (max-width: 760px) { .ti-datos-grid { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   );

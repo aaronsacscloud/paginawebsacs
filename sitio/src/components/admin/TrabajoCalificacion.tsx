@@ -35,7 +35,7 @@ function Indice({ n }: { n: number | null }) {
 
 export default function TrabajoCalificacion() {
   const [d, setD] = useState<any>(null);
-  const [sub, setSub] = useState<'sugerencias' | 'leads' | 'descalificados'>('sugerencias');
+  const [sub, setSub] = useState<'sugerencias' | 'leads' | 'descalificados' | 'consultores'>('sugerencias');
   const [ocupado, setOcupado] = useState(false);
   const [msg, setMsg] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -72,10 +72,30 @@ export default function TrabajoCalificacion() {
         <button className={'ti-chip-btn' + (sub === 'sugerencias' ? ' on' : '')} onClick={() => setSub('sugerencias')}>Sugerencias de hoy · {(d.sugerencias || []).length}</button>
         <button className={'ti-chip-btn' + (sub === 'leads' ? ' on' : '')} onClick={() => setSub('leads')}>Todos los leads · {(d.leads || []).length}</button>
         <button className={'ti-chip-btn' + (sub === 'descalificados' ? ' on' : '')} onClick={() => setSub('descalificados')}>Descalificados · {(d.descalificados || []).length}</button>
+        <button className={'ti-chip-btn' + (sub === 'consultores' ? ' on' : '')} onClick={() => setSub('consultores')}>Consultores · puntualidad</button>
         <span className="ti-suave" style={{ margin: '0 0 0 auto', fontSize: '.74rem' }}>{Object.entries(resumen).map(([k, v]: any) => `${ESTADO_L[k]?.l || k}: ${v}`).join(' · ')}{d.marca ? ` · última evaluación ${fecha(d.marca)}` : ''}</span>
       </div>
       {msg && <div className={'ti-envio-aviso ' + (msg.startsWith('No') ? 'err' : 'ok')} style={{ marginBottom: 10 }}>{msg}</div>}
 
+      {sub === 'consultores' && (
+        <div className="ti-carta" style={{ padding: 16 }}>
+          <b style={{ fontSize: 15 }}>Puntualidad de la cadena (últimos 60 días)</b>
+          <p className="ti-porque" style={{ margin: '4px 0 10px' }}>Resultado el mismo día (24 h), minuta 24 h, interés/cotización 48 h, cotizaciones dormidas 7 días. Lo que tarda cada consultor en capturar lo que le pide el sistema.</p>
+          {!(d.consultores || []).length && <div className="ti-fin"><p>Todavía no hay tareas de la cadena resueltas: aparecerán conforme se capturen resultados, minutas y decisiones.</p></div>}
+          {(d.consultores || []).length > 0 && (
+            <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 640 }}>
+              <thead><tr style={{ color: '#8e88a8', fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>Consultor</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Pedidas</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Hechas</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>A tiempo</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Horas prom.</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Vencidas abiertas</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Por eslabón</th></tr></thead>
+              <tbody>{(d.consultores || []).map((c: any) => <tr key={c.consultor} style={{ borderTop: '1px solid #f0eef6' }}>
+                <td style={{ padding: '8px' }}><b>{c.consultor}</b></td><td style={{ padding: '8px', textAlign: 'right' }}>{c.total}</td><td style={{ padding: '8px', textAlign: 'right' }}>{c.hechas}</td>
+                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 800, color: c.pct_a_tiempo == null ? '#8e88a8' : c.pct_a_tiempo >= 80 ? '#14532d' : c.pct_a_tiempo >= 50 ? '#78350f' : '#7f1d1d' }}>{c.pct_a_tiempo == null ? '—' : `${c.pct_a_tiempo}%`}</td>
+                <td style={{ padding: '8px', textAlign: 'right' }}>{c.horas_promedio == null ? '—' : `${c.horas_promedio} h`}</td>
+                <td style={{ padding: '8px', textAlign: 'right', color: c.vencidas_abiertas ? '#7f1d1d' : undefined, fontWeight: c.vencidas_abiertas ? 800 : undefined }}>{c.vencidas_abiertas}</td>
+                <td style={{ padding: '8px', fontSize: 12, color: '#6b6580' }}>{Object.entries(c.por_campo || {}).map(([k, v]: any) => `${({ reunion_resultado: 'resultado', reunion_minuta: 'minuta', reunion_interes: 'interés', cotizacion_estado: 'cot. dormida', cotizacion_cobro: 'cobro' } as any)[k] || k} ${v.n}${v.horas != null ? ` (${v.horas} h)` : ''}`).join(' · ')}</td>
+              </tr>)}</tbody>
+            </table></div>
+          )}
+        </div>
+      )}
       {sub === 'sugerencias' && (
         (d.sugerencias || []).length === 0 ? <div className="ti-fin"><h2>Sin sugerencias pendientes</h2><p>Cuando un lead agote los intentos reales y su índice baje de 35, aparece aquí con sus fundamentos.</p></div> :
         (d.sugerencias || []).map((t: any) => {

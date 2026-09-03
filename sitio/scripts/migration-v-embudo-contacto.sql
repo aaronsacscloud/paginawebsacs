@@ -16,7 +16,7 @@ ll as (
   from wa_llamadas l join wa_conversaciones c on c.id = l.conversation_id where c.contact_id is not null group by c.contact_id),
 bk as (
   select contact_id, count(*) citas_total, count(*) filter (where estado = 'asistio') citas_asistio,
-         count(*) filter (where estado = 'no_asistio') citas_no_asistio, count(*) filter (where estado in ('agendada','confirmada','reagendada') and fecha >= (now() at time zone 'America/Mexico_City')::date) citas_vigentes,
+         count(*) filter (where estado = 'no_asistio') citas_no_asistio, count(*) filter (where estado = 'cancelada' and coalesce(cancelado_por,'') <> 'sacs') citas_cancelo_lead, count(*) filter (where estado in ('agendada','confirmada','reagendada') and fecha >= (now() at time zone 'America/Mexico_City')::date) citas_vigentes,
          count(*) filter (where estado in ('agendada','confirmada','reagendada') and fecha < (now() at time zone 'America/Mexico_City')::date) citas_sin_resultado,
          min(fecha) primera_cita_at
   from bookings where contact_id is not null group by contact_id),
@@ -33,7 +33,7 @@ select k.id contact_id, k.nombre, k.apellido, k.fuente, k.utm_source, k.utm_camp
        k.giro, k.company_id, coalesce(co.nombre_comercial, co.nombre) empresa, k.whatsapp, k.telefono, k.owner_id,
        coalesce(wa.msgs_in, 0) msgs_in, coalesce(wa.msgs_out, 0) msgs_out, wa.primer_entrante_at, wa.ultimo_entrante_at, wa.ultimo_mensaje_at, wa.conversation_id,
        coalesce(ll.llamada_max_seg, 0) llamada_max_seg, coalesce(ll.llamadas_2min, 0) llamadas_2min,
-       coalesce(bk.citas_total, 0) citas_total, coalesce(bk.citas_asistio, 0) citas_asistio, coalesce(bk.citas_no_asistio, 0) citas_no_asistio, coalesce(bk.citas_vigentes, 0) citas_vigentes, coalesce(bk.citas_sin_resultado, 0) citas_sin_resultado, bk.primera_cita_at,
+       coalesce(bk.citas_total, 0) citas_total, coalesce(bk.citas_asistio, 0) citas_asistio, coalesce(bk.citas_no_asistio, 0) citas_no_asistio, coalesce(bk.citas_cancelo_lead, 0) citas_cancelo_lead, coalesce(bk.citas_vigentes, 0) citas_vigentes, coalesce(bk.citas_sin_resultado, 0) citas_sin_resultado, bk.primera_cita_at,
        coalesce(qt.cot_total, 0) cot_total, coalesce(qt.cot_pagadas, 0) cot_pagadas, coalesce(qt.cot_abierto_monto, 0) cot_abierto_monto,
        coalesce(py.pagado, 0) pagado, coalesce(py.pagos, 0) pagos, coalesce(sb.suscripciones, 0) suscripciones, coalesce(sb.mrr_activo, 0) mrr_activo,
        ((coalesce(wa.msgs_in, 0) >= 2 and coalesce(wa.msgs_out, 0) >= 2) or coalesce(ll.llamadas_2min, 0) > 0) conversacion_real,

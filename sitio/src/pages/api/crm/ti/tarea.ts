@@ -51,7 +51,8 @@ export const POST: APIRoute = async ({ request }) => {
   // de campos. Si la escritura falla, la tarea NO se marca hecha.
   if (tarea.tipo === 'dato' && (tarea.payload as any)?.campo_clave) {
     const { escribirDato } = await import('../../../../lib/crm/ti/campos');
-    const w: any = await escribirDato((tarea.payload as any).campo_clave, (tarea.payload as any).sujeto, b.detalle?.valor);
+    // ya_escrito: la minuta con IA guarda directo en la reunión (estructurada); aquí solo se cierra la tarea.
+    const w: any = b.detalle?.ya_escrito ? { ok: true } : await escribirDato((tarea.payload as any).campo_clave, (tarea.payload as any).sujeto, b.detalle?.valor);
     if (w?.error) return json({ error: `No se guardó el dato: ${w.error}` }, 400);
   }
   await supabase.from('ti_tareas').update({

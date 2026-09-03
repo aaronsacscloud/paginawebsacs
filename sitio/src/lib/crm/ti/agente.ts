@@ -946,6 +946,16 @@ export async function fueraDelAlcanceSDR(contactId: string): Promise<null | 'reu
     // Una cita que ya pasó y nadie marcó (agendada/confirmada con fecha anterior): se asume hecha hasta que alguien diga «no llegó».
     supabase.from('bookings').select('id').eq('contact_id', contactId).in('estado', ['agendada', 'confirmada']).lt('fecha', hoyCd).limit(1),
   ]);
+  // La minuta dijo «retomar»: cuando llega la fecha, el agente vuelve a ser dueño del lead (si no apareció cotización ni reunión nueva después).
+  const { data: pf } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', contactId).maybeSingle();
+  const st: any = (pf as any)?.agente_estado || {};
+  if (st.retomar?.desde && (!st.pausa_hasta || Date.parse(st.pausa_hasta) <= Date.now())) {
+    const [{ data: cotDesp }, { data: reuDesp }] = await Promise.all([
+      supabase.from('quotes').select('id').eq('contact_id', contactId).not('estado', 'in', '("deleted","plantilla")').gt('created_at', st.retomar.desde).limit(1),
+      supabase.from('bookings').select('id').eq('contact_id', contactId).gt('created_at', st.retomar.desde).limit(1),
+    ]);
+    if (!(cotDesp || []).length && !(reuDesp || []).length) return null;
+  }
   if ((pasada || []).length) return 'reunion_hecha';
   if ((reu || []).length) return 'reunion_hecha';
   if ((cot || []).length) return 'cotizacion';

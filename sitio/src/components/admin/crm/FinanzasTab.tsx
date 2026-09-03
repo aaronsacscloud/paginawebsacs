@@ -11,7 +11,7 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 const nombreMes = (m: string) => `${MESES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 const mover = (m: string, d: number) => { const y = Number(m.slice(0, 4)), mm = Number(m.slice(5, 7)) - 1 + d; const dt = new Date(Date.UTC(y, mm, 1)); return dt.toISOString().slice(0, 7); };
 const postJ = (body: any) => fetch('/api/crm/finanzas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
-const vacio = { id: '', nombre: '', categoria: 'suscripcion', monto: '', periodicidad: 'mensual', dia_cobro: '', inicio: '', fin: '', proveedor: '', notas: '' };
+const vacio = { id: '', nombre: '', categoria: 'suscripcion', monto: '', periodicidad: 'mensual', dia_cobro: '', inicio: '', fin: '', proveedor: '', notas: '', probable: false };
 const inp = { display: 'block', width: '100%', marginTop: 3, padding: 8, borderRadius: 8, border: '1px solid #e8e5f0', fontFamily: 'inherit', boxSizing: 'border-box' as const, fontSize: 13 };
 const lbl = { fontSize: 11, color: '#8e88a8', fontWeight: 800 as const };
 
@@ -52,6 +52,7 @@ export default function FinanzasTab() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 16 }}>
           <KpiCard label="Cobrado este mes" valor={pesos(d.ingresos.cobrado)} color="#14532d" sub={`${d.ingresos.pagos.length} pagos confirmados`} onClick={() => setVista('ingresos')} activo={vista === 'ingresos'} />
           <KpiCard label="Por cobrar (renovaciones)" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={`${d.ingresos.por_cobrar_lista.length} suscripciones vencen este mes`} onClick={() => setVista('ingresos')} activo={false} />
+          <KpiCard label="Por cobrar de venta nueva" valor={pesos(d.ingresos.ventas_aceptadas || 0)} color="#1e3a8a" sub={`${(d.ingresos.ventas_aceptadas_lista || []).length} cotizaciones aceptadas sin pago`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} ya pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
           <KpiCard label="Pipeline ponderado" valor={pesos(d.pipeline.ponderado)} color="#78350f" sub={`${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos`} onClick={() => setVista('pipeline')} activo={vista === 'pipeline'} />
           <KpiCard label="Utilidad estimada" valor={pesos(d.utilidad.estimada)} color={d.utilidad.estimada >= 0 ? '#14532d' : '#7f1d1d'} sub={`${pesos(d.utilidad.si_cobra_todo)} si cobras todo lo del mes`} onClick={() => setVista('cierre')} activo={vista === 'cierre'} />
@@ -65,7 +66,9 @@ export default function FinanzasTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {Object.entries(d.gastos.por_categoria).map(([c, v]: any) => <span key={c} style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>{CATS[c] || c}</b> {pesos(v.previsto)} <span style={{ color: '#8e88a8' }}>· {pesos(v.pagado)} pagado</span></span>)}
-                {!d.gastos.por_categoria.comision && d.comisiones.total > 0 && <span style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>Comisiones (calculadas)</b> {pesos(d.comisiones.total)}</span>}
+                {!d.gastos.por_categoria.comision && d.comisiones.total > 0 && <span style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>Comisiones</b> {pesos(d.comisiones.total)}{d.comisiones.por_pagar ? <span style={{ color: '#8e88a8' }}> · {pesos(d.comisiones.por_pagar)} por pagar</span> : null}</span>}
+                {d.variables?.probables > 0 && <span style={{ fontSize: 12, background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 999, padding: '4px 10px' }}><b>Variables estimadas</b> {pesos(d.variables.probables)}</span>}
+                {d.variables?.marketing_real > 0 && <span style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>Publicidad real (Embudo)</b> {pesos(d.variables.marketing_real)}</span>}
               </div>
               <button onClick={() => { setForm({ ...vacio, inicio: mes }); setAbierto(true); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>+ Agregar gasto</button>
             </div>
@@ -82,6 +85,7 @@ export default function FinanzasTab() {
                   <label style={lbl}>Hasta (opcional)<input style={inp} type="month" value={form.fin} onChange={e => setForm({ ...form, fin: e.target.value })} /></label>
                   <label style={lbl}>Proveedor<input style={inp} value={form.proveedor} onChange={e => setForm({ ...form, proveedor: e.target.value })} /></label>
                   <label style={{ ...lbl, gridColumn: '1 / -1' }}>Notas<input style={inp} value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} /></label>
+                  <label style={{ ...lbl, gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" checked={!!form.probable} onChange={e => setForm({ ...form, probable: e.target.checked })} style={{ width: 16, height: 16, accentColor: '#5B4BD6' }} />Variable probable: no es fijo, es un estimado (publicidad, viáticos…). Si capturas la inversión real en Embudo, sustituye al estimado.</label>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={guardar} disabled={!form.nombre || form.monto === ''} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Guardar</button>
@@ -98,17 +102,21 @@ export default function FinanzasTab() {
                   {d.gastos.lista.map((g: any) => (
                     <tr key={g.id} style={{ opacity: g.pago ? .75 : 1 }}>
                       <td style={td}><input type="checkbox" checked={!!g.pago} onChange={e => pagar(g, e.target.checked)} title={g.pago ? `Pagado ${new Date(g.pago.pagado_at).toLocaleDateString('es-MX')}` : 'Marcar como pagado este mes'} style={{ width: 18, height: 18, accentColor: '#5B4BD6', cursor: 'pointer' }} /></td>
-                      <td style={td}><b>{g.nombre}</b>{g.proveedor ? <span style={{ color: '#6b6580' }}> · {g.proveedor}</span> : null}{g.notas ? <div style={{ color: '#8e88a8', fontSize: 11 }}>{g.notas}</div> : null}</td>
+                      <td style={td}><b>{g.nombre}</b>{g.proveedor ? <span style={{ color: '#6b6580' }}> · {g.proveedor}</span> : null}{g.probable ? <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, background: '#fef3c7', color: '#78350f', borderRadius: 999, padding: '1px 7px' }}>variable</span> : null}{g.notas ? <div style={{ color: '#8e88a8', fontSize: 11 }}>{g.notas}</div> : null}</td>
                       <td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>{CATS[g.categoria] || g.categoria}</span></td>
                       <td style={td}>{PER[g.periodicidad] || g.periodicidad}</td>
                       <td style={td}>{g.dia_cobro ? `día ${g.dia_cobro}` : '—'}</td>
                       <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(g.monto)}</td>
-                      <td style={{ ...td, textAlign: 'right' }}><button onClick={() => { setForm({ id: g.id, nombre: g.nombre, categoria: g.categoria, monto: g.monto, periodicidad: g.periodicidad, dia_cobro: g.dia_cobro || '', inicio: String(g.inicio).slice(0, 7), fin: g.fin ? String(g.fin).slice(0, 7) : '', proveedor: g.proveedor || '', notas: g.notas || '' }); setAbierto(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button></td>
+                      <td style={{ ...td, textAlign: 'right' }}><button onClick={() => { setForm({ id: g.id, nombre: g.nombre, categoria: g.categoria, monto: g.monto, periodicidad: g.periodicidad, dia_cobro: g.dia_cobro || '', inicio: String(g.inicio).slice(0, 7), fin: g.fin ? String(g.fin).slice(0, 7) : '', proveedor: g.proveedor || '', notas: g.notas || '', probable: !!g.probable }); setAbierto(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button></td>
                     </tr>
                   ))}
                   {!d.gastos.lista.length && <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#8e88a8', padding: 20 }}>Todavía no capturas gastos. Empieza por las suscripciones que pagas cada mes.</td></tr>}
-                  {Object.keys(d.comisiones.por_vendedor).length > 0 && !d.gastos.por_categoria.comision && (<>
-                    <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones calculadas por el sistema (pagos del mes)</td></tr>
+                  {(d.comisiones.cortes || []).length > 0 && !d.gastos.por_categoria.comision && (<>
+                    <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones: cortes que se pagan los lunes ({pesos(d.comisiones.por_pagar)} por pagar)</td></tr>
+                    {d.comisiones.cortes.map((c: any) => <tr key={c.id} style={{ opacity: c.pagado ? .7 : 1 }}><td style={td}><input type="checkbox" checked={c.pagado} readOnly title="Se marca pagado desde Comisiones" style={{ width: 18, height: 18, accentColor: '#5B4BD6' }} /></td><td style={td}><b>{c.vendedor}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>corte {c.desde} → {c.hasta} · {c.aceptado ? 'aceptado por la vendedora' : c.estado}</div></td><td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>Comisiones</span></td><td style={td}>Lunes</td><td style={td}>{c.paga_el}</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(c.monto)}</td><td style={td}></td></tr>)}
+                  </>)}
+                  {!(d.comisiones.cortes || []).length && Object.keys(d.comisiones.por_vendedor).length > 0 && !d.gastos.por_categoria.comision && (<>
+                    <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones calculadas por el sistema (pagos del mes, aún sin corte)</td></tr>
                     {Object.entries(d.comisiones.por_vendedor).map(([n, m]: any) => <tr key={n}><td style={td}></td><td style={td}><b>{n}</b></td><td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>Comisiones</span></td><td style={td}>Mensual</td><td style={td}>—</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(m)}</td><td style={td}></td></tr>)}
                   </>)}
                 </tbody>
@@ -124,6 +132,13 @@ export default function FinanzasTab() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
                 {d.ingresos.por_cobrar_lista.map((s: any) => <tr key={s.id}><td style={td}><b>{s.companies?.nombre_comercial || s.companies?.nombre || 'Cuenta'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{s.nombre_plan} · {s.ciclo} · vence {s.proxima_factura}{s.cobranza_estado ? ` · ${s.cobranza_estado}` : ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(s.monto)}</td></tr>)}
                 {!d.ingresos.por_cobrar_lista.length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Nada pendiente de cobrar este mes.</td></tr>}
+              </tbody></table>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Venta nueva aceptada sin pago</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.ventas_aceptadas || 0)}</span></div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
+                {(d.ingresos.ventas_aceptadas_lista || []).map((q: any) => <tr key={q.id}><td style={td}><b>{q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Cotización'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>#{q.numero || 's/n'} · aceptada {String(q.updated_at).slice(0, 10)}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(q.monto)}</td></tr>)}
+                {!(d.ingresos.ventas_aceptadas_lista || []).length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Ninguna cotización aceptada pendiente de pago.</td></tr>}
               </tbody></table>
             </div>
             <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>

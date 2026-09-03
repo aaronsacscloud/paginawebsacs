@@ -26,9 +26,24 @@ export async function resumenMes(m: Mes) {
     supabase.from('fin_gastos').select('*').order('categoria').order('nombre'),
     supabase.from('fin_gastos_pagos').select('*').eq('mes', m),
     supabase.from('comision_lineas').select('id, owner_id, monto, fecha, estado, concepto, team_members:owner_id(nombre)').gte('fecha', ini(m)).lt('fecha', finExcl(m)),
-    supabase.from('deals').select('id, nombre, stage, valor_total, valor_mensual, mrr, probabilidad, fecha_cierre_esperada, owner_id, companies(nombre_comercial, nombre), contacts(nombre), team_members:owner_id(nombre)').is('archived_at', null).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")').order('valor_total', { ascending: false }),
+    supabase.from('deals').select('id, nombre, stage, quote_id, valor_total, valor_mensual, mrr, probabilidad, fecha_cierre_esperada, owner_id, companies(nombre_comercial, nombre), contacts(nombre), team_members:owner_id(nombre)').is('archived_at', null).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")').order('valor_total', { ascending: false }),
     supabase.from('fin_cierres').select('*').eq('mes', m).maybeSingle(),
   ]);
+  // Cotizaciones ACEPTADAS sin pago: por cobrar de venta nueva (no pipeline): salen de deals y entran aquí.
+  const { data: acept } = await supabase.from('quotes').select('id, numero, total, updated_at, contact_id, company_id, companies(nombre_comercial, nombre), contacts(nombre)').eq('estado', 'accepted').order('updated_at', { ascending: false }).limit(100);
+  const aceptadas = (acept || []).map(q => ({ ...q, monto: Number(q.total || 0) }));
+  const aceptadasIds = new Set(aceptadas.map(q => q.id));
+  const aceptadasMonto = aceptadas.reduce((s, q) => s + q.monto, 0);
+  // COMISIONES POR PAGAR (decisión 2026-09-03): cada lunes se pagan los cortes de comisión; un corte generado y aceptado por
+  // la vendedora es un gasto a contemplar aunque todavía no se pague. Lo del mes = cortes con paga_el en el mes.
+  const { data: cortes } = await supabase.from('comision_cortes').select('id, owner_id, desde, hasta, paga_el, estado, total, pagado_at, recibido_at, team_members:owner_id(nombre)').gte('paga_el', ini(m)).lt('paga_el', finExcl(m)).order('paga_el');
+  const cortesMes = (cortes || []).map(c => ({ ...c, vendedor: (c as any).team_members?.nombre || 'Vendedor', aceptado: !!c.recibido_at, pagado: !!c.pagado_at, monto: Number(c.total || 0) }));
+  const cortesTotal = cortesMes.reduce((s, c) => s + c.monto, 0);
+  const cortesPorPagar = cortesMes.filter(c => !c.pagado).reduce((s, c) => s + c.monto, 0);
+  // Publicidad REAL del mes: lo capturado en Embudo (marketing_gastos), prorrateado al mes.
+  const { data: mk } = await supabase.from('marketing_gastos').select('canal, monto, periodo_inicio, periodo_fin').lte('periodo_inicio', finExcl(m)).gte('periodo_fin', ini(m));
+  const d0 = Date.parse(ini(m)), d1 = Date.parse(finExcl(m));
+  const marketingReal = (mk || []).reduce((s, g) => { const a = Math.max(d0, Date.parse(g.periodo_inicio)), b = Math.min(d1, Date.parse(g.periodo_fin) + 86400e3); const tot = Date.parse(g.periodo_fin) + 86400e3 - Date.parse(g.periodo_inicio); return s + (b > a && tot > 0 ? Number(g.monto) * (b - a) / tot : 0); }, 0);
   const pagadoPor = new Map((pagosG || []).map(p => [p.gasto_id, p]));
   const aplicables = (gastos || []).filter(g => aplicaMes(g, m)).map(g => ({ ...g, pago: pagadoPor.get(g.id) || null }));
   const porCat: Record<string, { previsto: number; pagado: number; n: number }> = {};
@@ -41,15 +56,22 @@ export async function resumenMes(m: Mes) {
   const cobradoSubs = new Set((pagos || []).map(p => p.subscription_id).filter(Boolean));
   const porCobrar = (subs || []).filter(s => !cobradoSubs.has(s.id)).map(s => ({ ...s, monto: Number(s.monto_proximo ?? s.precio ?? 0) }));
   const porCobrarMonto = porCobrar.reduce((s, x) => s + x.monto, 0);
-  const abiertos = (deals || []).map(d => ({ ...d, valor: Number(d.valor_total || 0) || Number(d.valor_mensual || 0) * 12, prob: Number(d.probabilidad ?? 30) }));
+  const abiertos = (deals || []).filter(d => !aceptadasIds.has((d as any).quote_id)).map(d => ({ ...d, valor: Number(d.valor_total || 0) || Number(d.valor_mensual || 0) * 12, prob: Number(d.probabilidad ?? 30) }));
   const pipelineTotal = abiertos.reduce((s, d) => s + d.valor, 0);
   const pipelinePond = abiertos.reduce((s, d) => s + d.valor * d.prob / 100, 0);
-  const totalGastos = gastosPrevisto + (porCat.comision ? 0 : comisiones);   // si capturaste comisiones a mano, no se suman dos veces
+  const probables = aplicables.filter(g => g.probable).reduce((s, g) => s + Number(g.monto), 0);
+  // Comisiones del mes: si hay cortes programados en el mes, mandan ellos (es lo que de verdad se paga los lunes); si no, las líneas.
+  const comisionesMes = cortesMes.length ? cortesTotal : comisiones;
+  // Publicidad: si hay inversión real capturada en Embudo, sustituye al estimado «probable» de marketing.
+  const marketingEstimado = aplicables.filter(g => g.probable && g.categoria === 'marketing').reduce((s, g) => s + Number(g.monto), 0);
+  const ajusteMarketing = marketingReal > 0 ? marketingReal - marketingEstimado : 0;
+  const totalGastos = gastosPrevisto + ajusteMarketing + (porCat.comision ? 0 : comisionesMes);   // comisiones a mano → no se suman dos veces
   return {
     mes: m, cierre: cierre || null,
-    ingresos: { cobrado, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto },
-    gastos: { lista: aplicables, previsto: gastosPrevisto, pagado: gastosPagado, por_categoria: porCat, catalogo: gastos || [] },
-    comisiones: { total: comisiones, por_vendedor: porVendedor, lineas: (coms || []).length },
+    ingresos: { cobrado, pagos: pagos || [], por_cobrar: porCobrarMonto, por_cobrar_lista: porCobrar, esperado: cobrado + porCobrarMonto + aceptadasMonto, ventas_aceptadas: aceptadasMonto, ventas_aceptadas_lista: aceptadas },
+    gastos: { lista: aplicables, previsto: gastosPrevisto + ajusteMarketing, pagado: gastosPagado, por_categoria: porCat, catalogo: gastos || [] },
+    comisiones: { total: comisionesMes, lineas_total: comisiones, por_vendedor: porVendedor, lineas: (coms || []).length, cortes: cortesMes, por_pagar: cortesPorPagar },
+    variables: { probables, marketing_real: Math.round(marketingReal), marketing_estimado: marketingEstimado },
     pipeline: { abiertos, total: pipelineTotal, ponderado: pipelinePond },
     utilidad: { estimada: cobrado - totalGastos, si_cobra_todo: cobrado + porCobrarMonto - totalGastos, total_gastos: totalGastos },
   };
@@ -57,6 +79,7 @@ export async function resumenMes(m: Mes) {
 
 /** Reporte por meses de un año: cierres guardados + meses vivos calculados al vuelo (solo dinero agregado). */
 export async function reporteAnual(anio: number) {
+  const { data: cortesAnio } = await supabase.from('comision_cortes').select('paga_el, total').gte('paga_el', `${anio}-01-01`).lt('paga_el', `${anio + 1}-01-01`);
   const [{ data: cierres }, { data: pagos }, { data: gastos }, { data: coms }, { data: pagosG }] = await Promise.all([
     supabase.from('fin_cierres').select('*').gte('mes', `${anio}-01`).lte('mes', `${anio}-12`),
     supabase.from('payments').select('fecha, monto').eq('estado', 'confirmado').gte('fecha', `${anio}-01-01`).lt('fecha', `${anio + 1}-01-01`),
@@ -75,7 +98,9 @@ export async function reporteAnual(anio: number) {
     const ing = (pagos || []).filter(p => String(p.fecha).slice(0, 7) === m).reduce((s, p) => s + Number(p.monto), 0);
     const apl = (gastos || []).filter(g => aplicaMes(g, m));
     const gas = apl.reduce((s, g) => s + Number(g.monto), 0);
-    const com = (coms || []).filter(x => String(x.fecha).slice(0, 7) === m).reduce((s, x) => s + Number(x.monto || 0), 0);
+    const comLineas = (coms || []).filter(x => String(x.fecha).slice(0, 7) === m).reduce((s, x) => s + Number(x.monto || 0), 0);
+    const cortesM = (cortesAnio || []).filter(c => String(c.paga_el).slice(0, 7) === m);
+    const com = cortesM.length ? cortesM.reduce((s, c) => s + Number(c.total || 0), 0) : comLineas;
     const tieneComManual = apl.some(g => g.categoria === 'comision');
     const total = gas + (tieneComManual ? 0 : com);
     meses.push({ mes: m, ingresos: ing, gastos: gas, comisiones: com, utilidad: ing - total, cerrado: false, pagado: (pagosG || []).filter(p => p.mes === m).length });

@@ -36,7 +36,22 @@ export const GET: APIRoute = async ({ request }) => {
     descalificados.push({ ...c, indice: pf?.indice_vida ?? null, detalle: pf?.indice_detalle || null, intentos: Array.isArray(st.intentos) ? st.intentos : [], angulos: st.angulos || [], cerrado: st.cerrado || null, cerrado_at: st.cerrado_at || null, motivo: st.motivo || (c.propiedades as any)?.no_era_lead?.motivo || c.descarte_categoria || null, mensajes: await ultimosMensajes(c.id, 6) });
   }
   const leads = (perfiles || []).filter((p: any) => por[p.contact_id] && ['lead', 'lead_calificado', 'oportunidad'].includes(por[p.contact_id].lifecycle_stage)).map((p: any) => ({ contact_id: p.contact_id, contacto: por[p.contact_id], indice: p.indice_vida, estado: p.indice_estado, detalle: p.indice_detalle, at: p.indice_at, intentos: Array.isArray(p.agente_estado?.intentos) ? p.agente_estado.intentos.filter((i: any) => i.valido).length : 0 }));
-  return json({ sugerencias, leads, descalificados, rampa: cfg.rampa_descalificar || { coincidencias: 0, automatico: false }, marca: cfg.calificacion_marca || null });
+  // PUNTUALIDAD DEL CONSULTOR (decisión 2026-09-03): cuánto tarda en capturar resultado, minuta e interés/cotización.
+  // Es el dato que permite exigir la fecha de liberación; sale de las mismas tareas de la cadena.
+  const PLAZO_H: Record<string, number> = { reunion_resultado: 24, reunion_minuta: 24, reunion_interes: 48, cotizacion_estado: 168, cotizacion_cobro: 168 };
+  const { data: tareasC } = await supabase.from('ti_tareas').select('owner_id, estado, created_at, hecho_at, payload, team_members:owner_id(nombre)').eq('tipo', 'dato').eq('lote_tipo', 'comercial').gte('created_at', new Date(Date.now() - 60 * 86400e3).toISOString()).limit(1000);
+  const porC: Record<string, any> = {};
+  for (const t of tareasC || []) {
+    const clave = (t.payload as any)?.campo_clave; if (!PLAZO_H[clave]) continue;
+    const k = (t as any).team_members?.nombre || 'Sin dueño';
+    const c = porC[k] || (porC[k] = { consultor: k, total: 0, hechas: 0, a_tiempo: 0, vencidas_abiertas: 0, horas: [] as number[], por_campo: {} as Record<string, { n: number; horas: number[] }> });
+    c.total++;
+    const pc = c.por_campo[clave] || (c.por_campo[clave] = { n: 0, horas: [] }); pc.n++;
+    if (t.estado === 'hecha' && t.hecho_at) { const h = (Date.parse(t.hecho_at) - Date.parse(t.created_at)) / 3600e3; c.hechas++; c.horas.push(h); pc.horas.push(h); if (h <= PLAZO_H[clave]) c.a_tiempo++; }
+    else if (t.estado === 'pendiente' && Date.now() - Date.parse(t.created_at) > PLAZO_H[clave] * 3600e3) c.vencidas_abiertas++;
+  }
+  const consultores = Object.values(porC).map((c: any) => ({ consultor: c.consultor, total: c.total, hechas: c.hechas, pct_a_tiempo: c.hechas ? Math.round(c.a_tiempo / c.hechas * 100) : null, horas_promedio: c.horas.length ? Math.round(c.horas.reduce((a: number, b: number) => a + b, 0) / c.horas.length) : null, vencidas_abiertas: c.vencidas_abiertas, por_campo: Object.fromEntries(Object.entries(c.por_campo).map(([k, v]: any) => [k, { n: v.n, horas: v.horas.length ? Math.round(v.horas.reduce((a: number, b: number) => a + b, 0) / v.horas.length) : null }])) })).sort((a, b) => b.total - a.total);
+  return json({ sugerencias, leads, descalificados, consultores, rampa: cfg.rampa_descalificar || { coincidencias: 0, automatico: false }, marca: cfg.calificacion_marca || null });
 };
 
 export const POST: APIRoute = async ({ request }) => {

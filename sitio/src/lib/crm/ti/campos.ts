@@ -61,6 +61,17 @@ export const CAMPOS: Record<string, CampoDef> = {
       else await supabase.from('contacts').update({ estatus_lead_at: ahora }).eq('id', id);
     },
   },
+  cotizacion_cobro: {
+    etiqueta: 'Cotización aceptada sin pago', clase: 'comercial', prioridad: 3, reintentoDias: 7,
+    tabla: 'quotes', columna: 'estado',
+    captura: { tipo: 'opciones', opciones: { accepted: 'Sigue en proceso de pago: le doy seguimiento', rejected: 'Se cayó: sin interés' } },
+    nota: 'La aceptó hace más de 7 días y no hay pago. Si ya pagó, registra el pago en Pagos y esto desaparece; si no, decide.',
+    despues: async (id, v) => {
+      const ahora = new Date().toISOString();
+      if (v === 'rejected') await supabase.from('deals').update({ stage: 'cerrada_perdida', motivo_perdida: 'aceptó y no pagó', closed_at: ahora, stage_changed_at: ahora }).eq('quote_id', id).not('stage', 'in', '("cerrada_ganada","cerrada_perdida")');
+      else await supabase.from('quotes').update({ updated_at: ahora }).eq('id', id);
+    },
+  },
   cotizacion_estado: {
     etiqueta: 'Cotización sin movimiento: ¿sigue viva?', clase: 'comercial', prioridad: 4, reintentoDias: 7,
     tabla: 'quotes', columna: 'estado',
@@ -151,13 +162,13 @@ const P_CLASE = { bloqueante: 3, comercial: 4, higiene: 5 } as const;
 
 async function crearDeuda(clave: string, sujeto: string, extra: {
   contact_id?: string | null; company_id?: string | null; owner_id?: string | null;
-  quien: string; instruccion?: string; porque?: string; valor_sugerido?: string; fuente?: string;
+  quien: string; instruccion?: string; porque?: string; valor_sugerido?: string; fuente?: string; prioridad?: number; extra_payload?: any;
 }) {
   const def = CAMPOS[clave];
   const cap: any = def.captura;
   await supabase.from('ti_tareas').insert({
     contact_id: extra.contact_id || null, company_id: extra.company_id || null, owner_id: extra.owner_id || null,
-    familia: 'higiene', tipo: 'dato', prioridad: def.prioridad ?? P_CLASE[def.clase],
+    familia: 'higiene', tipo: 'dato', prioridad: extra.prioridad ?? def.prioridad ?? P_CLASE[def.clase],
     vence_at: new Date().toISOString(), origen: 'deuda', lote_tipo: def.clase,
     payload: {
       campo_clave: clave, sujeto,
@@ -167,6 +178,7 @@ async function crearDeuda(clave: string, sujeto: string, extra: {
       // la forma que el panel ya pinta:
       ...(cap.tipo === 'opciones' ? { opciones: Object.keys(cap.opciones), opciones_l: cap.opciones } : { input: cap.placeholder, ...(cap.multilinea ? { multilinea: true } : {}) }),
       ...(extra.valor_sugerido ? { valor: extra.valor_sugerido, fuente: extra.fuente || 'sugerido' } : {}),
+      ...(extra.extra_payload || {}),
     },
   });
 }
@@ -208,17 +220,18 @@ export async function detectarDeudas() {
   for (const r of sinMinuta || []) {
     if (await yaPedido('reunion_minuta', String(r.id))) continue;
     const c: any = (r as any).contacts || {}; const n = (c.nombre || r.invitee_nombre || '').split(/\s+/)[0] || 'el lead';
-    await crearDeuda('reunion_minuta', String(r.id), { contact_id: r.contact_id, company_id: c.company_id, owner_id: duenoDe(r, c), quien: c.nombre || r.invitee_nombre || 'la reunión', instruccion: `Minuta de la reunión con ${n} (${r.fecha})`, porque: 'Se hizo hace más de 24 h y no hay minuta. Escríbela aquí mismo: qué vimos, qué le dolió, qué prometimos y qué sigue.' });
+    await crearDeuda('reunion_minuta', String(r.id), { contact_id: r.contact_id, company_id: c.company_id, owner_id: duenoDe(r, c), quien: c.nombre || r.invitee_nombre || 'la reunión', instruccion: `Minuta de la reunión con ${n} (${r.fecha})`, porque: 'Se hizo hace más de 24 h y no hay minuta. Pega la transcripción o tus notas y la IA la estructura, saca los requerimientos y te pregunta qué sigue.', extra_payload: { minuta_ia: true, reunion: { id: r.id, fecha: r.fecha }, lead: { id: c.id, nombre: c.nombre || r.invitee_nombre, company_id: c.company_id } } });
     res.deuda_minutas = (res.deuda_minutas || 0) + 1;
   }
   // 1c. Con minuta desde hace 48 h, sin cotización posterior y sin decisión → ¿LE INTERESÓ?
   const { data: conMinuta } = await supabase.from('bookings')
-    .select('id, fecha, updated_at, consultor_id, invitee_nombre, contact_id, contacts(id, nombre, owner_id, company_id, estatus_lead, lifecycle_stage)')
+    .select('id, fecha, updated_at, consultor_id, invitee_nombre, contact_id, minuta, contacts(id, nombre, owner_id, company_id, estatus_lead, lifecycle_stage)')
     .eq('estado', 'asistio').not('minuta', 'is', null).not('contact_id', 'is', null)
     .gte('fecha', new Date(Date.now() - 45 * 86400e3).toISOString().slice(0, 10)).lt('updated_at', new Date(Date.now() - 48 * 3600e3).toISOString()).limit(40);
   for (const r of conMinuta || []) {
     const c: any = (r as any).contacts || {};
     if (!c.id || ['cotizado', 'descartado'].includes(c.estatus_lead) || ['cliente', 'descalificado'].includes(c.lifecycle_stage)) continue;
+    const dec = (r as any).minuta?.decision?.tipo; if (dec && dec !== 'cotizar') continue;   // segunda reunión / retomar / sin interés: no se exige cotización
     const { data: q } = await supabase.from('quotes').select('id').eq('contact_id', c.id).not('estado', 'in', '("deleted","plantilla")').gte('created_at', `${r.fecha}T00:00:00`).limit(1);
     if ((q || []).length) continue;
     if (await yaPedido('reunion_interes', String(c.id))) continue;
@@ -239,6 +252,26 @@ export async function detectarDeudas() {
     await crearDeuda('cotizacion_estado', String(q.id), { contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id || consultorDefault, quien: c.nombre || 'el lead', instruccion: `Cotización #${q.numero || 's/n'} de ${n}: ${dias} días sin movimiento`, porque: `$${Math.round(Number(q.total) || 0).toLocaleString('es-MX')} en estado «${q.estado}» desde hace ${dias} días. Decide: sigue viva, suspendida o sin interés. Se vuelve a pedir cada semana hasta que cambies el estatus.` });
     res.deuda_cotizaciones = (res.deuda_cotizaciones || 0) + 1;
   }
+  // 1f. COTIZACIÓN ACEPTADA SIN PAGO (7 días): cuarto estado con reloj propio; en Finanzas es «por cobrar de venta nueva».
+  const { data: aceptadas } = await supabase.from('quotes')
+    .select('id, numero, total, updated_at, contact_id, contacts(id, nombre, owner_id, company_id)')
+    .eq('estado', 'accepted').not('contact_id', 'is', null).lt('updated_at', new Date(Date.now() - 7 * 86400e3).toISOString()).limit(40);
+  for (const q of aceptadas || []) {
+    const c: any = (q as any).contacts || {}; if (!c.id) continue;
+    if (await yaPedido('cotizacion_cobro', String(q.id))) continue;
+    const dias = Math.floor((Date.now() - Date.parse(q.updated_at)) / 86400e3);
+    await crearDeuda('cotizacion_cobro', String(q.id), { contact_id: c.id, company_id: c.company_id, owner_id: c.owner_id || consultorDefault, quien: c.nombre || 'el lead', instruccion: `${(c.nombre || '').split(/\s+/)[0] || 'El lead'} aceptó la cotización #${q.numero || 's/n'} hace ${dias} días y no ha pagado`, porque: `$${Math.round(Number(q.total) || 0).toLocaleString('es-MX')} aceptados sin pago. Cóbrala o marca que se cayó.` });
+    res.deuda_cobro = (res.deuda_cobro || 0) + 1;
+  }
+  // 1g. DEMO PRÓXIMA SIN CONSULTOR (el lead agendó con el agente y nadie la tiene): se asigna el consultor por default y se avisa ANTES.
+  const { data: proximas } = await supabase.from('bookings').select('id, fecha, hora_inicio, invitee_nombre, contact_id, contacts(nombre, owner_id)')
+    .in('estado', ['agendada', 'confirmada', 'reagendada']).is('consultor_id', null).gte('fecha', hoy).lte('fecha', new Date(Date.now() + 2 * 86400e3 - 6 * 3600e3).toISOString().slice(0, 10)).limit(20);
+  for (const r of proximas || []) {
+    const c: any = (r as any).contacts || {}; const dueno = c.owner_id || consultorDefault; if (!dueno) continue;
+    await supabase.from('bookings').update({ consultor_id: dueno }).eq('id', r.id);
+    try { const { avisoSistema } = await import('./agente'); await avisoSistema({ tipo: 'sistema_demo_sin_consultor', nivel: 'alerta', clave: `demo_sin_consultor:${r.id}`, titulo: `Demo de ${c.nombre || r.invitee_nombre || 'un lead'} el ${r.fecha} ${String(r.hora_inicio || '').slice(0, 5)} no tenía consultor`, detalle: 'La agendó el agente y nadie la tenía asignada. Quedó asignada al consultor por default.', que_hacer: 'Confirma quién la da en Reuniones; si no eres tú, reasígnala.', contact_id: r.contact_id } as any); } catch {}
+    res.demos_asignadas = (res.demos_asignadas || 0) + 1;
+  }
   // 1e. ESCALAMIENTO: deuda comercial pendiente > 24 h → aviso al consultor; > 48 h (segundo aviso) → también al dueño.
   try { res.escaladas = await escalarDeudas(); } catch (e: any) { console.error('[campos] escalar', e?.message || e); }
 
@@ -247,11 +280,21 @@ export async function detectarDeudas() {
     .select('id, nombre, nombre_comercial, rfc, razon_social, sacs_account, subscriptions!inner(id, estado)')
     .eq('subscriptions.estado', 'activa').limit(200);
   let cupoFact = 15;
+  // RFC OBLIGATORIO AL CERRAR LA VENTA (decisión 2026-09-03): con pago en los últimos 30 días, RFC y razón social suben a
+  // bloqueante y se piden juntos, con prioridad; el resto sigue siendo higiene de a poquitos.
+  const { data: pagosRec } = await supabase.from('payments').select('company_id').eq('estado', 'confirmado').gte('fecha', new Date(Date.now() - 30 * 86400e3).toISOString().slice(0, 10)).not('company_id', 'is', null).limit(500);
+  const conPago = new Set((pagosRec || []).map(p => p.company_id));
   for (const e of emps || []) {
     const quien = e.nombre_comercial || e.nombre || 'Cliente';
     if (!e.sacs_account && !(await yaPedido('sacs_account', String(e.id)))) {
       await crearDeuda('sacs_account', String(e.id), { company_id: e.id, quien });
       res.deuda_sacs++;
+    }
+    const reciente = conPago.has(e.id);
+    if (reciente) {
+      if (!e.rfc && !(await yaPedido('rfc', String(e.id)))) { await crearDeuda('rfc', String(e.id), { company_id: e.id, quien, prioridad: 3, porque: 'Acaba de pagar: sin RFC no se puede facturar la venta.' }); res.deuda_facturacion++; }
+      if (!e.razon_social && !(await yaPedido('razon_social', String(e.id)))) { await crearDeuda('razon_social', String(e.id), { company_id: e.id, quien, prioridad: 3, porque: 'Acaba de pagar: va con el RFC para la factura.' }); res.deuda_facturacion++; }
+      continue;
     }
     if (cupoFact > 0 && !e.rfc && !(await yaPedido('rfc', String(e.id)))) {
       await crearDeuda('rfc', String(e.id), { company_id: e.id, quien });

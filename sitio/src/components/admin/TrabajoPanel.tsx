@@ -359,7 +359,7 @@ export default function TrabajoPanel() {
 
       {vistaTab === 'datos' && (
         <div className="ti-lienzo" style={{ maxWidth: 980 }}>
-          <TrabajoDatos datos={datos} guardando={guardando} error={errEnvio}
+          <TrabajoDatos datos={datos} guardando={guardando} error={errEnvio} onRecargar={cargar}
             onGuardar={async (x, valor) => { await datoListo(x as any, valor); return true; }}
             onPosponer={async (x) => { await fetch('/api/crm/ti/tarea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: x.id, accion: 'posponer', horas: 24 }) }); cargar(); }} />
         </div>

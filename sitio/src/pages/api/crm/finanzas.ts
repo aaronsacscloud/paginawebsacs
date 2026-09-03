@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (b.accion === 'gasto_guardar') {
     const g = b.gasto || {};
     if (!g.nombre || !(Number(g.monto) >= 0)) return json({ error: 'Falta nombre o monto' }, 400);
-    const fila: any = { nombre: String(g.nombre).trim(), categoria: g.categoria || 'suscripcion', monto: Number(g.monto), moneda: g.moneda || 'MXN', periodicidad: g.periodicidad || 'mensual', dia_cobro: g.dia_cobro ? Number(g.dia_cobro) : null, inicio: g.inicio ? `${String(g.inicio).slice(0, 7)}-01` : `${mesDe()}-01`, fin: g.fin ? `${String(g.fin).slice(0, 7)}-01` : null, proveedor: g.proveedor || null, notas: g.notas || null, activo: g.activo !== false, updated_at: ahora };
+    const fila: any = { nombre: String(g.nombre).trim(), categoria: g.categoria || 'suscripcion', monto: Number(g.monto), moneda: g.moneda || 'MXN', periodicidad: g.periodicidad || 'mensual', dia_cobro: g.dia_cobro ? Number(g.dia_cobro) : null, inicio: g.inicio ? `${String(g.inicio).slice(0, 7)}-01` : `${mesDe()}-01`, fin: g.fin ? `${String(g.fin).slice(0, 7)}-01` : null, proveedor: g.proveedor || null, notas: g.notas || null, activo: g.activo !== false, probable: !!g.probable, updated_at: ahora };
     const q = g.id ? supabase.from('fin_gastos').update(fila).eq('id', g.id) : supabase.from('fin_gastos').insert(fila);
     const { error } = await q; return error ? json({ error: error.message }, 500) : json({ ok: true });
   }

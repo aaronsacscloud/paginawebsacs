@@ -102,12 +102,17 @@ Extraes tres cosas:
 
 Y plan_sugerido: el plan mínimo que cubre lo que pidió, o null si no alcanza para decidirlo.
 
+4) LA DECISIÓN (qué sigue, en una de cuatro): "cotizar" si mostró interés y toca mandar propuesta; "segunda_reunion" si
+   quedó pendiente otra junta (con fecha si se dijo); "retomar" si dijo que no es el momento y dio o se infiere un plazo
+   (fecha = cuándo retomar); "sin_interes" si quedó claro que no. Si dudas entre cotizar y segunda_reunion, elige cotizar.
+
 Responde ÚNICAMENTE con este JSON:
 {
   "minuta": { "opera":"", "duele":"", "intereso":"", "mostramos":"", "objeciones":"", "decide":"", "siguiente":"" },
   "requerimientos": [ { "titulo":"", "cita":"", "plan":null, "categoria":"plan", "incluido":false, "deducido":false, "valor":0 } ],
   "ficha": { "sucursales":"", "giro":"", "sistema_actual":"", "urgencia":"", "presupuesto":"", "usuarios":"" },
-  "plan_sugerido": null
+  "plan_sugerido": null,
+  "decision": { "tipo": "cotizar", "fecha": null, "motivo": "" }
 }`;
 const CATS_LEAD = ['plan', 'plugin', 'servicio', 'personalizacion', 'capacitacion'];
 const FICHA_K = ['sucursales', 'giro', 'sistema_actual', 'urgencia', 'presupuesto', 'usuarios'];
@@ -149,7 +154,9 @@ export const POST: APIRoute = async ({ request }) => {
       const f = out?.ficha || {};
       const ficha = Object.fromEntries(FICHA_K.map(k => [k, typeof f[k] === 'string' ? f[k].trim().slice(0, 120) : '']));
       const plan_sugerido = PLANES.includes(out?.plan_sugerido) ? out.plan_sugerido : null;
-      return json({ minuta, requerimientos, ficha, plan_sugerido, modelo: modeloEnUso() });
+      const d = out?.decision || {};
+      const decision = { tipo: ['cotizar', 'segunda_reunion', 'retomar', 'sin_interes'].includes(d.tipo) ? d.tipo : 'cotizar', fecha: /^\d{4}-\d{2}-\d{2}$/.test(String(d.fecha || '')) ? d.fecha : null, motivo: typeof d.motivo === 'string' ? d.motivo.trim().slice(0, 200) : '' };
+      return json({ minuta, requerimientos, ficha, plan_sugerido, decision, modelo: modeloEnUso() });
     }
 
     // Se recorta a 60k caracteres: más que eso es una transcripción de horas y

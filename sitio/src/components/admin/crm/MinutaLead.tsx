@@ -51,6 +51,8 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
   const [ficha, setFicha] = useState<Record<string, string>>(() => guardada?.ficha || {});
   const [planSug, setPlanSug] = useState<string | null>(guardada?.plan_sugerido || null);
   const [crudo, setCrudo] = useState<string>(guardada?.raw || '');
+  // QUÉ SIGUE (decisión del dueño 2026-09-03): la minuta le dice al sistema y al agente qué pasa después.
+  const [decision, setDecision] = useState<{ tipo: string; fecha: string; motivo: string }>(() => ({ tipo: guardada?.decision?.tipo || '', fecha: guardada?.decision?.fecha || '', motivo: guardada?.decision?.motivo || '' }));
   const [pegando, setPegando] = useState(!soloLectura && !minutaLlena(guardada));
   const [ia, setIa] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -78,19 +80,22 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
       setReqs(r.requerimientos || []);
       setFicha(r.ficha || {});
       setPlanSug(r.plan_sugerido || null);
+      if (r.decision?.tipo) setDecision({ tipo: r.decision.tipo, fecha: r.decision.fecha || '', motivo: r.decision.motivo || '' });
       setPegando(false);
     } catch { setError('No se pudo acomodar la conversación.'); }
     finally { setIa(false); }
   }
 
   async function guardar(irACotizar: boolean) {
+    if (!soloLectura && !decision.tipo) { setError('Di qué sigue: cotizar, segunda reunión, retomar después o sin interés.'); return; }
+    if (!soloLectura && ['segunda_reunion', 'retomar'].includes(decision.tipo) && !decision.fecha) { setError(decision.tipo === 'retomar' ? '¿Cuándo retomamos? Pon la fecha: el agente la va a respetar.' : '¿Para cuándo es la siguiente reunión? Pon la fecha.'); return; }
     // La pestaña se abre AQUÍ, mientras todavía hay gesto del usuario. Si se
     // abre después del await, el navegador la bloquea sin avisar y parece que
     // el botón no hizo nada.
     const pestana = irACotizar ? window.open('', '_blank') : null;
     setGuardando(true); setError('');
     try {
-      const minuta = { ...m, tipo: 'lead', raw: crudo || undefined, requerimientos: reqs, ficha, plan_sugerido: planSug };
+      const minuta = { ...m, tipo: 'lead', raw: crudo || undefined, requerimientos: reqs, ficha, plan_sugerido: planSug, decision: { ...decision, at: new Date().toISOString() } };
       const r = await fetch('/api/scheduling/reuniones', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: reunion.id, minuta }),
@@ -217,6 +222,19 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
         </div>
 
         <div style={{ borderTop: '1px solid #f4f3f7', padding: '15px 22px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#fcfcfe', position: 'sticky', bottom: 0 }}>
+          {!soloLectura && (
+            <div style={{ width: '100%', marginBottom: 12 }}>
+              <div style={S.h3}>Qué sigue <span style={S.der}>lo lee el sistema y el agente</span></div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[['cotizar', 'Cotizar'], ['segunda_reunion', 'Segunda reunión'], ['retomar', 'Retomar después'], ['sin_interes', 'Sin interés']].map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setDecision(d => ({ ...d, tipo: k }))} style={{ border: `1px solid ${decision.tipo === k ? '#5B4BD6' : '#e8e5f0'}`, background: decision.tipo === k ? '#EEECFE' : '#fff', color: decision.tipo === k ? '#4c1d95' : '#4a4658', borderRadius: 999, padding: '6px 12px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+                ))}
+                {['segunda_reunion', 'retomar'].includes(decision.tipo) && <input type="date" value={decision.fecha} onChange={e => setDecision(d => ({ ...d, fecha: e.target.value }))} style={{ border: '1px solid #e8e5f0', borderRadius: 8, padding: '5px 8px', fontFamily: 'inherit', fontSize: 12.5 }} />}
+                {['retomar', 'sin_interes', 'segunda_reunion'].includes(decision.tipo) && <input value={decision.motivo} onChange={e => setDecision(d => ({ ...d, motivo: e.target.value }))} placeholder={decision.tipo === 'sin_interes' ? 'Por qué no (una línea)' : decision.tipo === 'retomar' ? 'Qué dijo: «después de temporada», «cuando abra la 2ª tienda»…' : 'Qué falta ver en la siguiente'} style={{ flex: 1, minWidth: 220, border: '1px solid #e8e5f0', borderRadius: 8, padding: '5px 8px', fontFamily: 'inherit', fontSize: 12.5 }} />}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#8a8590', marginTop: 6 }}>{decision.tipo === 'cotizar' ? 'El agente se retira; en 48 h se espera la cotización.' : decision.tipo === 'segunda_reunion' ? 'No se exige cotización todavía; queda la tarea de agendar la siguiente.' : decision.tipo === 'retomar' ? 'El agente se pausa y retoma solo en esa fecha con lo que dijo.' : decision.tipo === 'sin_interes' ? 'El lead pasa a descalificado con este motivo y el agente no vuelve a escribirle.' : 'Elige una para poder guardar.'}</div>
+            </div>
+          )}
           {/* Descargar: la misma página que usan las minutas de cliente, con la
               marca y el folio. Solo aparece cuando ya hay algo guardado — una
               minuta a medias descargada es peor que no tenerla. */}
@@ -225,12 +243,16 @@ export default function MinutaLead({ reunion, lead, soloLectura, onClose, onGuar
               Descargar
             </button>
           )}
-          {soloLectura ? <button style={S.btnSec} onClick={onClose}>Cerrar</button> : (<>
+          {soloLectura ? <button style={S.btnSec} onClick={onClose}>Cerrar</button> : decision.tipo === 'cotizar' || !decision.tipo ? (<>
             <button style={{ ...S.btn, opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => guardar(true)}>
               {guardando ? 'Guardando…' : activos.length ? `Crear cotización con ${activos.length} concepto${activos.length === 1 ? '' : 's'}` : 'Guardar y cotizar'}
             </button>
             <button style={S.btnSec} disabled={guardando} onClick={() => guardar(false)}>Guardar minuta y cotizar después</button>
-          </>)}
+          </>) : (
+            <button style={{ ...S.btn, opacity: guardando ? .6 : 1 }} disabled={guardando} onClick={() => guardar(false)}>
+              {guardando ? 'Guardando…' : decision.tipo === 'segunda_reunion' ? 'Guardar: queda pendiente la siguiente reunión' : decision.tipo === 'retomar' ? `Guardar: el agente retoma el ${decision.fecha}` : 'Guardar y cerrar el lead sin interés'}
+            </button>
+          )}
           {(planCobrado > 0 || unicos > 0) && (
             <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
               <b style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a1a1a' }}>
