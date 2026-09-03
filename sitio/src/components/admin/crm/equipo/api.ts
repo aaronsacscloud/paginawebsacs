@@ -28,7 +28,12 @@ export type Mensaje = {
   // solo en el navegador
   pendiente?: boolean; fallo?: string;
 };
-export type Arbol = { yo: Persona & { role: string }; secciones: Seccion[]; canales: Canal[]; personas: Persona[] };
+export type CanalArchivado = { id: string; seccion_id: string | null; nombre: string; tipo: 'charla' | 'sala' | 'sistema'; archivado_at: string };
+export type SeccionArchivada = { id: string; nombre: string; archivada_at: string };
+export type Arbol = {
+  yo: Persona & { role: string }; secciones: Seccion[]; canales: Canal[]; personas: Persona[];
+  archivados: CanalArchivado[]; secciones_archivadas: SeccionArchivada[];
+};
 
 const BASE = '/api/crm/espacio';
 
@@ -65,9 +70,12 @@ export const api = {
   realtime: () => pedir<{ url: string | null; key: string | null }>('GET', '/realtime'),
   crearSeccion: (nombre: string) => pedir<{ seccion: Seccion }>('POST', '/secciones', { nombre }),
   editarSeccion: (b: { id: string; nombre?: string; orden?: number; archivar?: boolean }) => pedir('PUT', '/secciones', b),
+  borrarSeccion: (id: string) => pedir('DELETE', `/secciones?id=${id}`),
   crearCanal: (b: { seccion_id: string; nombre: string; descripcion?: string; tipo?: 'charla' | 'sala'; importante?: boolean; regla_reunion?: any }) => pedir<{ canal: Canal }>('POST', '/canales', b),
   abrirDirecto: (con: string) => pedir<{ canal: Canal; existia?: boolean }>('POST', '/canales', { tipo: 'directo', con }),
-  editarCanal: (b: { id: string; nombre?: string; descripcion?: string; importante?: boolean; regla_reunion?: any; seccion_id?: string; orden?: number; archivar?: boolean }) => pedir('PUT', '/canales', b),
+  editarCanal: (b: { id: string; nombre?: string; descripcion?: string; tipo?: 'charla' | 'sala'; importante?: boolean; regla_reunion?: any; seccion_id?: string; orden?: number; archivar?: boolean }) => pedir('PUT', '/canales', b),
+  /** Borra el canal DE VERDAD con todo lo que tiene adentro. */
+  borrarCanal: (id: string) => pedir<{ mensajes: number; archivos: number }>('DELETE', `/canales?id=${id}`),
   // Adjuntos
   subir: (b: { tipo: 'imagen' | 'audio' | 'thumb'; mime: string; bytes: number; nombre?: string }) => pedir<{ path: string; url: string; token: string }>('POST', '/subir', b),
   transcribir: (path: string) => pedir<{ texto: string | null; error?: string }>('POST', '/transcribir', { path }),

@@ -13,13 +13,16 @@ export const GET: APIRoute = async ({ request }) => {
   if (!yo) return json({ error: 'Sin sesión' }, 401);
   await anotarDespliegue();   // #commits: el despliegue que atiende, una vez
 
-  const [{ data: secciones }, { data: canales }, personas, { data: noLeidos }, { data: presencia }, { data: lecturas }] = await Promise.all([
+  const [{ data: secciones }, { data: canales }, personas, { data: noLeidos }, { data: presencia }, { data: lecturas }, { data: archivados }, { data: seccionesArchivadas }] = await Promise.all([
     supabase.from('espacio_secciones').select('id, nombre, orden').is('archivada_at', null).order('orden'),
     supabase.from('espacio_canales').select('*').is('archivado_at', null).order('orden'),
     equipo(),
     supabase.rpc('espacio_no_leidos', { p_usuario: yo.id }),
     supabase.from('espacio_presencia').select('usuario_id, visto_at, estado, dispositivo'),
     supabase.from('espacio_lecturas').select('canal_id, silenciado, ultimo_leido_at').eq('usuario_id', yo.id),
+    // Lo archivado viaja aparte: el árbol no lo pinta, pero desde ahí se restaura o se borra.
+    supabase.from('espacio_canales').select('id, seccion_id, nombre, tipo, archivado_at').not('archivado_at', 'is', null).neq('tipo', 'directo').order('archivado_at', { ascending: false }),
+    supabase.from('espacio_secciones').select('id, nombre, archivada_at').not('archivada_at', 'is', null).order('archivada_at', { ascending: false }),
   ]);
 
   const nl: Record<string, any> = {};
@@ -43,6 +46,8 @@ export const GET: APIRoute = async ({ request }) => {
     yo: { id: yo.id, nombre: yo.nombre, foto_url: yo.foto_url, role: yo.role },
     secciones: secciones || [],
     canales: visibles,
+    archivados: archivados || [],
+    secciones_archivadas: seccionesArchivadas || [],
     personas: personas.map(p => ({
       id: p.id, nombre: p.nombre, foto_url: p.foto_url, rol: p.rol,
       visto_at: pres[p.id]?.visto_at || null, estado: pres[p.id]?.estado || 'fuera',

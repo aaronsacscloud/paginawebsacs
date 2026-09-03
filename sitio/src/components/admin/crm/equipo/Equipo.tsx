@@ -7,6 +7,7 @@ import { api, type Arbol as A, hace } from './api';
 import { useRealtime, type Senal } from './useRealtime';
 import { useCss, Avatar, Ic, useToast, textoPlano } from './ui';
 import Arbol from './Arbol';
+import { ModalCanal } from './Gestion';
 import Canal from './Canal';
 import Sala from './Sala';
 import Cargando from '../ui/Cargando';
@@ -16,6 +17,12 @@ const ULTIMO_KEY = 'eq_ultimo_canal';
 
 /** `onCerrar` llega cuando el chat vive en el widget flotante: en móvil pinta
  *  la X en la cabecera del árbol (en escritorio la pone el propio widget). */
+/** Quita canal/msg/hilo de la URL (al salir del canal en móvil o cuando se archiva/borra). */
+function sinCanalEnUrl() {
+  const u = new URL(window.location.href); u.searchParams.delete('canal'); u.searchParams.delete('msg'); u.searchParams.delete('hilo');
+  history.replaceState(null, '', u.toString());
+}
+
 export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   useCss();
   const movil = useIsMobile();
@@ -28,6 +35,7 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const [lado, setLado] = useState<'hilo' | 'buscar' | 'sala' | 'fijados' | null>(null);
   const [nFijados, setNFijados] = useState(0);
   const [luz, setLuz] = useState<string | null>(null);
+  const [ajustes, setAjustes] = useState(false);          // el engrane de la cabecera: editar el canal abierto
   const [leidoAl, setLeidoAl] = useState<Record<string, string>>({});   // ultimo_leido por canal al abrirlo (para la línea "Nuevo")
   const senalCanal = useRef<((s: Senal) => void) | null>(null);
   const senalHilo = useRef<((s: Senal) => void) | null>(null);
@@ -56,17 +64,21 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   useEffect(() => {
     const f = () => {
       const q = new URLSearchParams(window.location.search);
-      const c = q.get('canal'); if (c && arbol) abrir(c, q.get('msg'), q.get('hilo'), arbol);
+      const c = q.get('canal');
+      // Un menú (ActionSheet) al cerrarse hace history.back() y dispara popstate: si el canal ya está abierto no hay nada que hacer.
+      if (c && arbol && (c !== canalId || q.get('msg') || q.get('hilo'))) abrir(c, q.get('msg'), q.get('hilo'), arbol);
     };
     window.addEventListener('popstate', f); window.addEventListener('crm:destino', f as any);
     return () => { window.removeEventListener('popstate', f); window.removeEventListener('crm:destino', f as any); };
-  }, [arbol]);
+  }, [arbol, canalId]);
 
   const canal: C | null = useMemo(() => arbol?.canales.find(c => c.id === canalId) || null, [arbol, canalId]);
 
   function abrir(id: string, msg?: string | null, hiloId?: string | null, a?: A | null) {
     const arb = a || arbol; if (!arb) return;
-    const c = arb.canales.find(x => x.id === id); if (!c) return;
+    const c = arb.canales.find(x => x.id === id);
+    // Recién creado: el árbol en memoria todavía no lo trae; se recarga y se vuelve a intentar una vez.
+    if (!c) { if (!a) cargarArbol().then(n => { if (n?.canales.some(x => x.id === id)) abrir(id, msg, hiloId, n); }); return; }
     setLeidoAl(l => l[id] ? l : { ...l, [id]: c.ultimo_leido_at || '' });
     setCanalId(id); setIrA(hiloId ? null : (msg || null));
     try { localStorage.setItem(ULTIMO_KEY, id); } catch { /* nada */ }
@@ -110,6 +122,14 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
     try { const r = await api.abrirDirecto(personaId); const a = await cargarArbol(); abrir(r.canal.id, null, null, a); } catch (e: any) { toast(e.message); }
   };
   const abrirHilo = (m: M) => { setHilo(m); setLado('hilo'); };
+  // El canal abierto se archivó o se borró (aquí o en el otro navegador): se sale de él sin dejar la URL apuntando a la nada.
+  const cerrado = useCallback((id: string) => {
+    if (id !== canalId) return;
+    setCanalId(null); setLado(null); setHilo(null); setAjustes(false);
+    try { if (localStorage.getItem(ULTIMO_KEY) === id) localStorage.removeItem(ULTIMO_KEY); } catch { /* nada */ }
+    sinCanalEnUrl();
+  }, [canalId]);
+  useEffect(() => { if (arbol && canalId && !arbol.canales.some(c => c.id === canalId)) cerrado(canalId); }, [arbol, canalId, cerrado]);
   const silenciar = async () => { if (!canal) return; try { await api.silenciar(canal.id, !canal.silenciado); toast(canal.silenciado ? 'Avisos activados' : 'Canal silenciado'); cargarArbol(); } catch (e: any) { toast(e.message); } };
 
   if (error && !arbol) return <div className="eq"><div className="eq-vacio"><b>No se pudo abrir Equipo</b>{error}<button className="eq-btn" onClick={cargarArbol}>Reintentar</button></div></div>;
@@ -118,7 +138,7 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
   const otro = canal?.tipo === 'directo' ? arbol.personas.find(x => canal.participantes.includes(x.id) && x.id !== yo.id) : null;
   const cabecera = canal ? (
     <div className="eq-cab">
-      {movil && <button className="eq-ib" onClick={() => { setCanalId(null); setLado(null); }} aria-label="Volver">{Ic.atras}</button>}
+      {movil && <button className="eq-ib" onClick={() => { setCanalId(null); setLado(null); sinCanalEnUrl(); }} aria-label="Volver">{Ic.atras}</button>}
       {otro ? <Avatar p={otro} size={28} estado={enLinea.includes(otro.id) ? 'activo' : 'fuera'} /> : null}
       <h2>{otro ? otro.nombre : <><span className="n" style={{ display: 'inline-flex' }}>{canal.tipo === 'sala' ? Ic.sala : canal.tipo === 'sistema' ? Ic.sistema : Ic.hash}</span>{canal.nombre}</>}{canal.importante && <span className="eq-imp" title="Importante" />}</h2>
       <span className="desc">{otro ? (enLinea.includes(otro.id) ? 'En línea' : otro.visto_at ? `Visto ${hace(otro.visto_at)}` : '') : canal.descripcion}</span>
@@ -128,13 +148,14 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
       <button className={'eq-ib' + (lado === 'buscar' ? ' on' : '')} title="Buscar en este canal" onClick={() => setLado(lado === 'buscar' ? null : 'buscar')}>{Ic.lupa}</button>
       {canal.tipo !== 'directo' && <button className="eq-ib" title={canal.silenciado ? 'Silenciado: activar avisos' : 'Silenciar canal'} onClick={silenciar}>{canal.silenciado ? Ic.campanaOff : Ic.campana}</button>}
       {arbol.yo.role === 'founder' && !movil && <a className="eq-ib" title="Exportar el canal a Markdown" href={`/api/crm/espacio/exportar?canal_id=${canal.id}`} download>{Ic.descargar}</a>}
+      {canal.tipo !== 'directo' && <button className={'eq-ib' + (ajustes ? ' on' : '')} title="Ajustes del canal: nombre, descripción, tipo, archivar o eliminar" aria-label="Ajustes del canal" onClick={() => setAjustes(true)}>{Ic.engrane}</button>}
     </div>
   ) : null;
 
   return (
     <div className={'eq' + (canalId ? ' en-canal' : '')}>
       <Arbol arbol={arbol} canalId={canalId} enLinea={enLinea} conectado={conectado} cerrar={movil ? onCerrar : undefined}
-        onAbrir={id => abrir(id)} onDirecto={abrirDirecto} onCambio={cargarArbol} onAviso={toast} onBuscar={() => { setLado('buscar'); if (movil && !canalId) { const g = arbol.canales.find(c => c.nombre === 'general'); if (g) abrir(g.id); } }} />
+        onAbrir={id => abrir(id)} onDirecto={abrirDirecto} onCambio={cargarArbol} onAviso={toast} onCerrado={cerrado} onBuscar={() => { setLado('buscar'); if (movil && !canalId) { const g = arbol.canales.find(c => c.nombre === 'general'); if (g) abrir(g.id); } }} />
       <section className="eq-canal">
         {canal ? (
           <Canal key={canal.id} canal={canal} yo={yo} personas={arbol.personas} movil={movil}
@@ -174,6 +195,12 @@ export default function Equipo({ onCerrar }: { onCerrar?: () => void } = {}) {
         </aside>
       )}
       {luz && <div className="eq-luz" onClick={() => setLuz(null)}><img src={luz} alt="" /></div>}
+      {ajustes && canal && canal.tipo !== 'directo' && (
+        <ModalCanal canal={canal} secciones={arbol.secciones} founder={arbol.yo.role === 'founder'} onClose={() => setAjustes(false)} onAviso={toast}
+          onHecho={() => { setAjustes(false); cargarArbol(); }}
+          onArchivado={id => { setAjustes(false); cargarArbol(); cerrado(id); }}
+          onBorrado={id => { setAjustes(false); cargarArbol(); cerrado(id); }} />
+      )}
       {toastNodo}
     </div>
   );

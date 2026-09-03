@@ -15,8 +15,20 @@ export const CSS = `
 .eq-sec-t{font-size:.6875rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--eq-gris);display:flex;align-items:center;gap:6px;background:none;border:0;padding:0}
 .eq-sec-t svg{transition:transform .15s}
 .eq-sec-t.cerrada svg{transform:rotate(-90deg)}
-.eq-sec-mas{opacity:0;background:none;border:0;color:var(--eq-gris);padding:2px 4px;border-radius:6px;line-height:1}
-.eq-sec:hover .eq-sec-mas{opacity:1}
+.eq-sec-mas{opacity:0;background:none;border:0;color:var(--eq-gris);padding:2px 4px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px}
+.eq-sec-mas:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-sec:hover .eq-sec-mas,.eq-sec:focus-within .eq-sec-mas{opacity:1}
+.eq-sec-acc{display:inline-flex;gap:2px}
+/* El ⋯ de cada canal: aparece al pasar el puntero (siempre en móvil) y abre el menú de administrar. */
+.eq-can-fila{position:relative;display:flex;align-items:center}
+.eq-can-fila .eq-can{flex:1}
+.eq-can-mas{position:absolute;right:10px;top:50%;transform:translateY(-50%);opacity:0;width:24px;height:24px;border:0;border-radius:6px;background:none;color:var(--eq-gris);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.eq-can-fila:hover .eq-can-mas,.eq-can-fila:focus-within .eq-can-mas,.eq-can-fila.activo .eq-can-mas{opacity:1}
+.eq-can-mas:hover{background:var(--eq-lila);color:var(--eq-morado-tinta)}
+.eq-can-fila:hover .eq-can .eq-badge,.eq-can-fila:hover .eq-can .eq-imp{visibility:hidden}
+.eq-arch .eq-can{color:var(--eq-gris);font-style:italic}
+.eq-peligro{display:flex;gap:8px;justify-content:flex-end;padding-top:10px;margin-top:2px;border-top:1px dashed var(--eq-linea)}
+.eq-peligro .eq-btn{display:inline-flex;align-items:center;gap:6px;font-size:.8125rem;padding:6px 10px}
 .eq-can{display:flex;align-items:center;gap:8px;width:calc(100% - 12px);margin:1px 6px;padding:6px 8px 6px 10px;border-radius:8px;border:0;background:none;color:var(--eq-gris);text-align:left;min-height:32px}
 .eq-can:hover{background:rgba(155,140,250,.10);color:var(--eq-tinta)}
 .eq-can.activo{background:#fff;color:var(--eq-morado-tinta);font-weight:700;box-shadow:0 1px 6px rgba(60,30,140,.08)}
@@ -233,6 +245,9 @@ button.eq-punto-chip{cursor:pointer}
   .eq-msg .hora-h{display:none}
   .eq-acc{display:none!important}
   .eq-sec-mas{opacity:1}
+  .eq-can-mas{opacity:1;width:34px;height:34px;right:8px}
+  .eq-can-fila .eq-can{padding-right:44px}
+  .eq-can-fila .eq-can .eq-badge,.eq-can-fila .eq-can .eq-imp{visibility:visible}
   .eq-can{min-height:40px}
   .eq-cab{padding:8px 10px}
   .eq-img img{max-height:240px}
@@ -356,4 +371,9 @@ export const Ic = {
   stop: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>,
   pin: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z" /></svg>,
   info: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>,
+  engrane: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>,
+  caja: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18v3H3zM5 10v10h14V10M10 14h4" /></svg>,
+  restaurar: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg>,
+  arriba: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M6 11l6-6 6 6" /></svg>,
+  abajo: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M6 13l6 6 6-6" /></svg>,
 };

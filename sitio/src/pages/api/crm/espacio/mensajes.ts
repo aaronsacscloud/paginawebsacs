@@ -246,7 +246,8 @@ export const PUT: APIRoute = async ({ request }) => {
   const { data: m } = await supabase.from('espacio_mensajes').select(SELECT_MENSAJE).eq('id', b.id).maybeSingle();
   if (!m || m.borrado_at) return json({ error: 'Mensaje no encontrado' }, 404);
   if (m.autor_id !== yo.id) return json({ error: 'Solo el autor edita' }, 403);
-  if (Date.now() - new Date(m.created_at).getTime() > LIMITES.editar_minutos * 60_000) return json({ error: `Solo se edita en los primeros ${LIMITES.editar_minutos} minutos` }, 400);
+  // editar_minutos = 0 → sin ventana: el autor corrige su texto cuando quiera (queda "(editado)").
+  if (LIMITES.editar_minutos > 0 && Date.now() - new Date(m.created_at).getTime() > LIMITES.editar_minutos * 60_000) return json({ error: `Solo se edita en los primeros ${LIMITES.editar_minutos} minutos` }, 400);
   const menciones = extraerMenciones(texto, await equipo());
   const { data, error } = await supabase.from('espacio_mensajes').update({ texto, menciones, editado_at: new Date().toISOString() }).eq('id', m.id).select(SELECT_MENSAJE).single();
   if (error) return json({ error: error.message }, 500);

@@ -21,8 +21,10 @@ export type Acciones = {
   menuMovil: (m: M) => void;
 };
 
-export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil }: {
+export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil, admin }: {
   m: M; yo: string; seguido: boolean; enHilo?: boolean; resaltado?: boolean; acc: Acciones; movil: boolean;
+  /** Un founder puede eliminar mensajes de otros (editar, solo el autor). */
+  admin?: boolean;
 }) {
   const [emojis, setEmojis] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export default function Mensaje({ m, yo, seguido, enHilo, resaltado, acc, movil 
           <button onClick={() => acc.responder(m)} title="Responder">{Ic.responder}</button>
           {!enHilo && <button onClick={() => acc.abrirHilo(m)} title="Abrir hilo">{Ic.hilo}</button>}
           {m.mio && <button onClick={() => acc.editar(m)} title="Editar">{Ic.editar}</button>}
-          {m.mio && <button onClick={() => acc.borrar(m)} title="Eliminar">{Ic.basura}</button>}
+          {(m.mio || admin) && <button onClick={() => acc.borrar(m)} title={m.mio ? 'Eliminar' : 'Eliminar (como founder)'}>{Ic.basura}</button>}
           <button onClick={() => acc.copiarLiga(m)} title="Copiar liga">{Ic.liga}</button>
           <button onClick={() => acc.fijar(m)} title={m.fijado ? 'Desfijar' : 'Fijar en el canal'} className={m.fijado ? 'on' : ''}>{Ic.pin}</button>
           <button onClick={() => acc.agendar(m)} title="Llevar a la agenda de una sala">{Ic.sala}</button>

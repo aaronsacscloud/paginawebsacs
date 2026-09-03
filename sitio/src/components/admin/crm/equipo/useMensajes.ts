@@ -132,6 +132,7 @@ export function useMensajes(canalId: string | null, hiloDe: string | null, yo: {
   const borrar = useCallback(async (id: string) => {
     await api.borrar(id);
     setLista(v => v.map(m => m.id === id ? { ...m, borrado: true, texto: '', adjuntos: [], reacciones: [] } : m));
+    setRaiz(x => x && x.id === id ? { ...x, borrado: true, texto: '', adjuntos: [], reacciones: [] } : x);
   }, []);
 
   const reaccionar = useCallback(async (m: Mensaje, emoji: string) => {

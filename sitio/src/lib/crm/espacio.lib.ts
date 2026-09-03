@@ -32,7 +32,7 @@ export const LIMITES = {
   audio_segundos: 300,
   mensajes_por_minuto: 20,
   reacciones_por_minuto: 60,
-  editar_minutos: 15,
+  editar_minutos: 0,          // 0 = sin ventana; el autor edita cuando quiera (el dueño lo pidió, 3-sep-2026)
   fijados_por_canal: 15,
   pagina: 50,
 };

@@ -11,10 +11,11 @@ import Caja from './Caja';
 import Cargando from '../ui/Cargando';
 import ActionSheet from '../ui/ActionSheet';
 import { Ic, RAPIDOS, textoPlano } from './ui';
+import { ModalConfirmar } from './Gestion';
 
 export type CanalProps = {
   canal: C;
-  yo: { id: string; nombre: string; foto_url: string | null };
+  yo: { id: string; nombre: string; foto_url: string | null; role?: string };
   personas: Persona[];
   movil: boolean;
   hiloDe?: string | null;              // si viene, esta vista ES un hilo
@@ -39,6 +40,8 @@ export default function Canal(p: CanalProps) {
   const [editando, setEditando] = useState<M | null>(null);
   const [menu, setMenu] = useState<M | null>(null);
   const [agendar, setAgendar] = useState<M | null>(null);
+  const [porBorrar, setPorBorrar] = useState<M | null>(null);
+  const founder = p.yo.role === 'founder';
   const [resaltado, setResaltado] = useState<string | null>(null);
   const lista = useRef<HTMLDivElement>(null);
   const alFondo = useRef(true);
@@ -103,7 +106,7 @@ export default function Canal(p: CanalProps) {
     responder: m => { setEditando(null); setRespondeA(m); },
     abrirHilo: m => p.onAbrirHilo?.(m),
     editar: m => { setRespondeA(null); setEditando(m); },
-    borrar: async m => { if (!confirm('¿Eliminar este mensaje?')) return; try { await st.borrar(m.id); } catch (e: any) { p.onAviso(e.message); } },
+    borrar: m => setPorBorrar(m),
     copiarLiga: m => {
       const u = new URL(window.location.href); u.searchParams.set('tab', 'equipo'); u.searchParams.set('canal', p.canal.id); u.searchParams.set('msg', m.id);
       if (m.hilo_de) u.searchParams.set('hilo', m.hilo_de); else u.searchParams.delete('hilo');
@@ -135,6 +138,8 @@ export default function Canal(p: CanalProps) {
     await st.enviar(texto, adjuntos, r, p.extraEnvio);
   };
 
+  // Un mensaje borrado desaparece; solo se queda como "Mensaje eliminado" si ancla un hilo con respuestas.
+  const visibles = st.lista.filter(m => !m.borrado || (m.hilo && m.hilo.n > 0));
   const titulo = p.canal.tipo === 'directo' ? (p.personas.find(x => p.canal.participantes.includes(x.id) && x.id !== p.yo.id)?.nombre || 'Directo') : p.canal.nombre;
   const marcaNuevo = p.ultimoLeidoAt || null;
   let nuevoPuesto = false;
@@ -145,17 +150,17 @@ export default function Canal(p: CanalProps) {
       <div className="eq-lista" ref={lista} onScroll={alScroll}>
         {st.cargando && !st.lista.length ? <Cargando texto={hilo ? 'Abriendo el hilo…' : `Cargando #${titulo}…`} /> : null}
         {st.error && <div className="eq-vacio"><b>No se pudo cargar</b>{st.error}<button className="eq-btn" onClick={() => st.cargar()}>Reintentar</button></div>}
-        {!st.cargando && !st.error && !st.lista.length && !hilo && (
+        {!st.cargando && !st.error && !visibles.length && !hilo && (
           <div className="eq-vacio"><b>{p.canal.tipo === 'directo' ? `Aquí empieza tu conversación con ${titulo}` : `Aquí empieza #${titulo}`}</b>{p.canal.descripcion || 'Todavía no hay mensajes. Escribe el primero.'}</div>
         )}
         {hilo && st.raiz && (
           <>
-            <Mensaje m={st.raiz} yo={p.yo.id} seguido={false} enHilo acc={acc} movil={p.movil} />
+            <Mensaje m={st.raiz} yo={p.yo.id} seguido={false} enHilo acc={acc} movil={p.movil} admin={founder} />
             <div className="eq-dia">{st.lista.length ? `${st.lista.length} ${st.lista.length === 1 ? 'respuesta' : 'respuestas'}` : 'Sin respuestas todavía'}</div>
           </>
         )}
-        {st.lista.map((m, i) => {
-          const prev = st.lista[i - 1];
+        {visibles.map((m, i) => {
+          const prev = visibles[i - 1];
           const cambioDia = !prev || !mismoDia(prev.created_at, m.created_at);
           const seguido = !!prev && !cambioDia && prev.autor.id === m.autor.id && !m.responde_a && !prev.borrado
             && (new Date(m.created_at).getTime() - new Date(prev.created_at).getTime()) < 5 * 60_000;
@@ -165,7 +170,7 @@ export default function Canal(p: CanalProps) {
             <div key={m.id}>
               {cambioDia && !hilo && <div className="eq-dia">{diaEtiqueta(m.created_at)}</div>}
               {nuevo && <div className="eq-nuevo">Nuevo</div>}
-              <Mensaje m={m} yo={p.yo.id} seguido={seguido && !nuevo} enHilo={!!hilo} resaltado={resaltado === m.id} acc={acc} movil={p.movil} />
+              <Mensaje m={m} yo={p.yo.id} seguido={seguido && !nuevo} enHilo={!!hilo} resaltado={resaltado === m.id} acc={acc} movil={p.movil} admin={founder} />
             </div>
           );
         })}
@@ -195,11 +200,19 @@ export default function Canal(p: CanalProps) {
         { label: 'Copiar liga', icon: Ic.liga, onClick: () => { acc.copiarLiga(menu); setMenu(null); } },
         { label: menu.fijado ? 'Desfijar' : 'Fijar en el canal', icon: Ic.pin, onClick: () => { acc.fijar(menu); setMenu(null); } },
         { label: 'Llevar a la agenda de…', icon: Ic.sala, onClick: () => { setMenu(null); acc.agendar(menu); } },
-        ...(menu.mio ? [
-          { label: 'Editar', icon: Ic.editar, onClick: () => { acc.editar(menu); setMenu(null); } },
-          { label: 'Eliminar', icon: Ic.basura, danger: true, onClick: () => { acc.borrar(menu); setMenu(null); } },
-        ] : []),
+        ...(menu.mio ? [{ label: 'Editar', icon: Ic.editar, onClick: () => { acc.editar(menu); setMenu(null); } }] : []),
+        ...(menu.mio || founder ? [{ label: 'Eliminar', icon: Ic.basura, danger: true, onClick: () => { acc.borrar(menu); setMenu(null); } }] : []),
       ] : []} />
+      {porBorrar && (
+        <ModalConfirmar titulo="Eliminar mensaje" boton="Eliminar" onClose={() => setPorBorrar(null)}
+          cuerpo={<>
+            {!porBorrar.mio && <div style={{ marginBottom: 6 }}>Es de <b>{porBorrar.autor.nombre}</b>; lo borras como founder.</div>}
+            {porBorrar.hilo && porBorrar.hilo.n > 0 ? <div style={{ marginBottom: 6 }}>Tiene un hilo con {porBorrar.hilo.n} {porBorrar.hilo.n === 1 ? 'respuesta' : 'respuestas'}: el hilo se queda, el mensaje se ve como eliminado.</div> : null}
+            <div style={{ padding: '8px 10px', borderLeft: '3px solid var(--eq-linea)', color: 'var(--eq-gris)', fontSize: '.8125rem', whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'hidden' }}>{textoPlano(porBorrar.texto).slice(0, 300) || (porBorrar.adjuntos.length ? `${porBorrar.adjuntos.length} ${porBorrar.adjuntos.length === 1 ? 'archivo' : 'archivos'}` : '')}</div>
+            {porBorrar.adjuntos.length > 0 && <div style={{ marginTop: 6, color: 'var(--eq-gris)', fontSize: '.8125rem' }}>Sus archivos también se borran.</div>}
+          </>}
+          onConfirmar={async () => { await st.borrar(porBorrar.id); setPorBorrar(null); }} />
+      )}
       <ActionSheet open={!!agendar} onClose={() => setAgendar(null)} title="Llevar a la agenda de…" items={agendar ? (p.salas || []).map(s => ({ label: `#${s.nombre}`, icon: Ic.sala, onClick: () => llevarA(agendar, s) })) : []} />
     </>
   );
