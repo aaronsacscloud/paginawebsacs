@@ -27,7 +27,9 @@ export async function enrolarReenganche(opts: { limite?: number; minHoras?: numb
     const { data: cita } = await supabase.from('bookings').select('id').eq('contact_id', k.id).in('estado', ['agendada', 'confirmada', 'reagendada']).gte('fecha', new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10)).limit(1);
     if ((cita || []).length) { res.saltadas.cita++; continue; }
     const base = c.ultimo_saliente_at || new Date(Date.now() - minH * 3600e3).toISOString();
-    await supabase.from('ti_perfil').upsert({ contact_id: k.id, agente_estado: { ...st, ciclo: st.ciclo || 1, toque: 0, intentos: [], base_at: base, fase: 'reconectar', cerrado: undefined, pausa_hasta: undefined, reenganche: { desde: new Date().toISOString(), conversation_id: c.id, telefono: c.telefono, ultimo_saliente_at: base, ultimo_texto: String(c.ultimo_mensaje_texto || '').slice(0, 300) } }, updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
+    // ¿Alguna vez escribió? Un lead que nunca contestó no es «retomar»: es el primer acercamiento real, y el agente lo debe saber.
+    const { count: nIn } = await supabase.from('wa_mensajes').select('id', { count: 'exact', head: true }).eq('conversation_id', c.id).eq('direccion', 'entrante');
+    await supabase.from('ti_perfil').upsert({ contact_id: k.id, agente_estado: { ...st, ciclo: st.ciclo || 1, toque: 0, intentos: [], base_at: base, fase: 'reconectar', cerrado: undefined, pausa_hasta: undefined, reenganche: { desde: new Date().toISOString(), conversation_id: c.id, telefono: c.telefono, ultimo_saliente_at: base, ultimo_texto: String(c.ultimo_mensaje_texto || '').slice(0, 300), respondio_alguna_vez: (nIn || 0) > 0 } }, updated_at: new Date().toISOString() }, { onConflict: 'contact_id' });
     await supabase.from('ia_log').insert({ accion: 'reenganche_enrolado', contact_id: k.id, razon: `último mensaje nuestro ${base}`, detalle: { conversation_id: c.id } });
     res.enroladas++;
   }

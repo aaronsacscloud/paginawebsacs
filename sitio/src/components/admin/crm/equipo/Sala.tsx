@@ -203,7 +203,7 @@ function FilaAcuerdo({ a, onToggle }: { a: Acuerdo; onToggle: () => void }) {
   const vencido = !a.hecho_at && !!a.vence_at && a.vence_at < hoyYmd();
   return (
     <div className={'eq-acuerdo' + (a.hecho_at ? ' hecho' : '')}>
-      <button className="chk" onClick={onToggle} title={a.hecho_at ? 'Marcar pendiente' : 'Marcar hecho'}>{a.hecho_at ? Ic.check : null}</button>
+      <button className="chk" style={{ minHeight: 18 }} onClick={onToggle} title={a.hecho_at ? 'Marcar pendiente' : 'Marcar hecho'}>{a.hecho_at ? Ic.check : null}</button>
       <div className="tt">
         <b>{a.texto}</b>
         <small className={vencido ? 'vencido' : ''}>{a.responsable ? primero(a.responsable.nombre) : 'Sin responsable'}{a.vence_at ? ` · para el ${fFecha(a.vence_at)}` : ''}{vencido ? ' · vencido' : ''}{a.hecho_at ? ` · hecho ${hace(a.hecho_at)}` : ''}</small>

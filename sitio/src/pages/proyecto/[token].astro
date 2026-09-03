@@ -488,10 +488,19 @@ const fechaFirma = brief.firmado_at
 .pb-oculto { display: none; }
 
 /* El sello de guardado */
+.pb-autoguarda {
+  margin: 14px 0 4px; padding: 11px 14px; border-radius: 9px;
+  background: var(--papel-2); border: 1px dashed var(--linea-fuerte);
+  font-size: .87rem; color: var(--tinta-suave); line-height: 1.45;
+}
+
 .pb-sello {
   margin-top: 9px; font-size: .8rem; color: var(--tenue);
   display: flex; align-items: center; gap: 7px;
 }
+/* `display: flex` le gana al `[hidden] { display: none }` del navegador: sin
+   esta línea el sello vacío dejaba un punto gris suelto bajo cada campo. */
+.pb-sello[hidden] { display: none; }
 .pb-sello::before {
   content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--linea-fuerte); flex: none;
 }
@@ -852,21 +861,25 @@ const fechaFirma = brief.firmado_at
      etiqueta suya, y la bajada a todo lo ancho. */
   .pb-et-cab {
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr);
-    grid-template-areas: 'n tit' 'x bajada';
-    align-items: center;
-    gap: 4px 12px;
+    grid-template-columns: 30px minmax(0, 1fr) 14px;
+    grid-template-areas: 'n tit chev' 'x chip chip';
+    align-items: start;
+    gap: 6px 12px;
     padding: 16px;
   }
-  .pb-et-n { grid-area: n; }
-  .pb-et-tit { grid-area: tit; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  /* El número se alinea con el título, no con el centro de un bloque de tres
+     renglones: centrado se veía descuadrado. */
+  .pb-et-n { grid-area: n; margin-top: 1px; }
+  .pb-et-tit { grid-area: tit; min-width: 0; }
+  .pb-et-cab .pb-chev { margin-top: 11px; }
   .pb-et-tit strong { font-size: 1.08rem; line-height: 1.25; }
-  .pb-et-tit span { grid-area: bajada; display: none; }
-  .pb-et-cab .pb-chip { grid-area: bajada; justify-self: start; margin-left: 42px; }
+  .pb-et-tit span { display: none; }
+  .pb-et-cab .pb-chip { grid-area: chip; justify-self: start; }
+  .pb-et-cab .pb-chev { grid-area: chev; margin: 0; }
 
   /* La bajada solo estorba en la lista: se lee al abrir la etapa, donde ya
      está el mismo texto en "Al aprobarse". */
-  .pb-et[data-abierta] .pb-et-tit span { display: block; width: 100%; font-size: .85rem; margin-top: 3px; }
+  .pb-et[data-abierta] .pb-et-tit span { display: block; font-size: .85rem; margin-top: 4px; }
 
   /* El estado, legible. Antes: 9px, mayúsculas, espaciado y gris — la peor
      combinación posible para ojos de 55 años, y justo ahí vivía toda la
@@ -982,7 +995,7 @@ const fechaFirma = brief.firmado_at
 }
 
 /* Al saltar a una pregunta, la cabecera pegada se comía el título. */
-.pb-campo, .pb-et, .pb-res { scroll-margin-top: 76px; }
+.pb-campo, .pb-et, .pb-res, .pb-sec, .pb-firma-sec, .pb-hilo { scroll-margin-top: 76px; }
 
 .pb-guardado {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -1403,7 +1416,11 @@ const fechaFirma = brief.firmado_at
 
       if (fila.estado === 'bloqueada') return h + vistaPrevia(def, fila) + '</div>';
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
-      if (puede) h += barra(def, borrador[fila.clave] || {});
+      if (puede) {
+        h += barra(def, borrador[fila.clave] || {});
+        h += '<div class="pb-autoguarda">No hay botón de guardar. Lo que escribas se guarda solo — ' +
+          'puedes cerrar y volver cuando quieras.</div>';
+      }
 
       // Lo que falta contestar, arriba y en una lista: el cliente no debería
       // tener que recorrer 16 preguntas buscando cuál tiene un comentario.
@@ -1471,7 +1488,7 @@ const fechaFirma = brief.firmado_at
       }
 
       h += '<div class="pb-et-pie">' +
-        '<span class="pb-et-pie-nota">Se guarda solo. Puedes cerrar y volver después.</span>' +
+        '<span class="pb-et-pie-nota">Al enviarla la revisamos y te contestamos por correo.</span>' +
         '<button type="button" class="pb-btn" data-enviar="' + fila.clave + '">Enviar etapa a revisión</button>' +
       '</div>';
       h += '<div class="pb-error" data-err="' + fila.clave + '" hidden></div>';
@@ -1598,9 +1615,15 @@ const fechaFirma = brief.firmado_at
 
       } else if (c.tipo === 'archivos') {
         const arr = Array.isArray(v) ? v : [];
+        const enTelefono = window.matchMedia('(max-width: 720px)').matches;
         h += '<div class="pb-zona" data-zona="' + c.id + '">' +
-          '<div class="pb-zona-t"><b>Elige tus archivos</b> o arrástralos aquí</div>' +
-          '<div class="pb-zona-s">Puedes subir varios a la vez. Hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.</div></div>' +
+          '<div class="pb-zona-t"><b>Elige tus archivos</b>' +
+            (enTelefono ? '' : ' o arrástralos aquí') + '</div>' +
+          '<div class="pb-zona-s">' +
+            (enTelefono
+              ? 'Desde el teléfono puedes tomar la foto ahí mismo o sacarla de tus fotos. Varios a la vez, hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.'
+              : 'Puedes subir varios a la vez. Hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.') +
+          '</div></div>' +
           '<input type="file" multiple hidden data-file="' + c.id + '" />' +
           '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
       }
@@ -1611,7 +1634,7 @@ const fechaFirma = brief.firmado_at
       // línea escribe párrafos de dos renglones por miedo a perderlo, o llama
       // a preguntar si se guardó.
       if (clave && c.tipo !== 'archivos') {
-        h += '<div class="pb-sello" data-sello="' + c.id + '">Se guarda solo</div>';
+        h += '<div class="pb-sello" data-sello="' + c.id + '" hidden></div>';
       }
       return h + '</div>';
     }
@@ -1648,6 +1671,7 @@ const fechaFirma = brief.firmado_at
     function sello(id, texto, estado) {
       const el = cajaEtapas?.querySelector('[data-sello="' + id + '"]');
       if (!el) return;
+      el.hidden = false;
       el.textContent = texto;
       el.setAttribute('data-e', estado);
     }

@@ -665,6 +665,20 @@ export default function CrmDashboard() {
               transition: 'background .16s ease',
             }}>
               {si > 0 && sidebarCollapsed && <div style={{ height: 1, background: '#e7e0f7', margin: '7px auto', width: 26 }} />}
+              {/* UNA línea, no una por sección.
+                  El menú tiene dos naturalezas distintas y ahora se ven: arriba
+                  las pantallas SUELTAS —Equipo, Trabajo inteligente, Dashboard,
+                  las que se abren de un clic— y abajo las que son GRUPOS con
+                  submenú. Sin nada que las separe, un grupo cerrado se lee
+                  igual que una pantalla y uno hace clic esperando llegar a
+                  algún lado.
+
+                  Una sola raya, entre los dos bloques. Una debajo de cada
+                  sección devolvería el menú a la tabla de renglones iguales que
+                  ya se había quitado: separar todo es no agrupar nada. */}
+              {si === 1 && !sidebarCollapsed && (
+                <div style={{ height: 1, background: '#e7e0f7', margin: '8px 14px 10px' }} />
+              )}
               {/* El título del grupo deja de ser un rótulo muerto y se vuelve
                   el botón que lo abre. Cerrado, un punto morado dice cuál
                   contiene la pantalla en la que estás — sin eso uno se pierde
