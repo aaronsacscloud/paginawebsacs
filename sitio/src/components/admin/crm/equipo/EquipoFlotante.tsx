@@ -31,20 +31,26 @@ const CSS = `
 .eqf *{box-sizing:border-box}
 .eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 14px)}
 .eqf-fila{display:flex;align-items:flex-end;gap:10px}
-.eqf-orbe{position:relative;width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;color:#fff;padding:0;
-  background:linear-gradient(135deg,#7C6BF0 0%,${P.violeta} 48%,${P.rosa} 120%);
-  box-shadow:0 10px 30px rgba(124,107,240,.42),0 2px 6px rgba(60,30,140,.18),inset 0 1px 0 rgba(255,255,255,.35);
+.eqf-orbe{position:relative;width:58px;height:58px;border-radius:50%;border:0;cursor:pointer;padding:0;overflow:visible;
+  background:radial-gradient(circle at 50% 38%,#F6F3FF 0%,#E4DEFC 55%,#CFC6F7 100%);
+  box-shadow:0 10px 30px rgba(124,107,240,.38),0 2px 6px rgba(60,30,140,.16),inset 0 1px 0 rgba(255,255,255,.7);
   display:inline-flex;align-items:center;justify-content:center;transition:transform .18s cubic-bezier(.2,.8,.2,1.2),box-shadow .18s}
-.eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.5),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.35)}
+.eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.48),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.7)}
 .eqf-orbe:active{transform:scale(.96)}
-.eqf-orbe:focus-visible{outline:3px solid ${P.violetaAgua};outline-offset:2px}
-.eqf-ojos{position:relative;display:flex;gap:7px;align-items:center;justify-content:center;transform:translate(var(--ox,0px),var(--oy,0px));transition:transform .16s cubic-bezier(.2,.8,.2,1.1);pointer-events:none}
-.eqf-ojo{display:block;width:9px;height:17px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(255,255,255,.4),0 1px 3px rgba(40,20,100,.35);transform-origin:50% 50%;transition:transform .12s ease,height .08s ease}
-.eqf-ojo{transform:rotate(16deg)}   /* las dos inclinadas igual, como el bot de Grok */
-.eqf-orbe:hover .eqf-ojo{height:19px}
-.eqf-orbe.atento .eqf-ojo{height:20px;width:10px}
-.eqf-orbe.parpadea .eqf-ojo{height:2px;border-radius:2px}
-.eqf-orbe .brillo{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.38),transparent 55%);pointer-events:none}
+.eqf-orbe:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
+/* Axo: la cabeza en SVG (unos 2 KB, nítida en cualquier pantalla). Los iris se
+   mueven con --ox/--oy; el parpadeo y el "atento" son transforms sobre cada ojo. */
+.eqf-axo{width:74px;height:74px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 2px 3px rgba(90,60,160,.22))}
+.eqf-axo .iris{transform:translate(calc(var(--ox,0px)*.42),calc(var(--oy,0px)*.42));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
+.eqf-axo .ojo{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease}
+.eqf-orbe:hover .eqf-axo .ojo{transform:scale(1.06)}
+.eqf-orbe.atento .eqf-axo .ojo{transform:scale(1.14)}
+.eqf-orbe.parpadea .eqf-axo .ojo{transform:scaleY(.06)}
+.eqf-axo .branquia{transform-box:fill-box;transform-origin:100% 50%;animation:eqf-branquia 3.2s ease-in-out infinite}
+.eqf-axo .branquia.der{transform-origin:0% 50%;animation-delay:-1.6s}
+@keyframes eqf-branquia{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
+.eqf-axo .branquia.der{animation-name:eqf-branquia-der}
+@keyframes eqf-branquia-der{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
 .eqf-orbe .anillo{position:absolute;inset:-3px;border-radius:50%;border:2.5px solid ${P.violeta};opacity:0;pointer-events:none;background:transparent}
 .eqf-orbe.pulsa .anillo{animation:eqf-pulso 1.4s ease-out 3}
 @keyframes eqf-pulso{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.55);opacity:0}}
@@ -154,7 +160,53 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
     const t = window.setTimeout(() => { el.style.setProperty('--ox', '0px'); el.style.setProperty('--oy', '0px'); }, 2600);
     return () => clearTimeout(t);
   }, [orbe, atento]);
-  return <span className="eqf-ojos" aria-hidden="true"><span className="eqf-ojo" /><span className="eqf-ojo" /></span>;
+  return (
+    <svg className="eqf-axo" viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <radialGradient id="eqf-piel" cx="45%" cy="35%" r="70%"><stop offset="0" stopColor="#FFF7F9" /><stop offset=".7" stopColor="#FBE3EA" /><stop offset="1" stopColor="#F2C6D6" /></radialGradient>
+        <linearGradient id="eqf-bra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFB3D0" /><stop offset="1" stopColor="#EE6FA5" /></linearGradient>
+        <radialGradient id="eqf-iris" cx="40%" cy="35%" r="70%"><stop offset="0" stopColor="#A997FF" /><stop offset=".55" stopColor="#7A66EE" /><stop offset="1" stopColor="#4B3AB8" /></radialGradient>
+      </defs>
+      {/* branquias */}
+      <g className="branquia" fill="url(#eqf-bra)">
+        <ellipse cx="9" cy="22" rx="3.1" ry="7.5" transform="rotate(-38 9 22)" />
+        <ellipse cx="6.5" cy="31" rx="3.1" ry="7.5" transform="rotate(-82 6.5 31)" />
+        <ellipse cx="9" cy="40" rx="2.8" ry="6.5" transform="rotate(-124 9 40)" />
+      </g>
+      <g className="branquia der" fill="url(#eqf-bra)">
+        <ellipse cx="55" cy="22" rx="3.1" ry="7.5" transform="rotate(38 55 22)" />
+        <ellipse cx="57.5" cy="31" rx="3.1" ry="7.5" transform="rotate(82 57.5 31)" />
+        <ellipse cx="55" cy="40" rx="2.8" ry="6.5" transform="rotate(124 55 40)" />
+      </g>
+      {/* cabeza */}
+      <path d="M32 11c13.5 0 22.5 8.5 22.5 20.5 0 11.5-9 21-22.5 21S9.5 43 9.5 31.5C9.5 19.5 18.5 11 32 11z" fill="url(#eqf-piel)" stroke="#EBB9CB" strokeWidth=".8" />
+      <ellipse cx="25" cy="17.5" rx="6.5" ry="2.4" fill="#fff" opacity=".45" />
+      {/* cachetes */}
+      <ellipse cx="17.5" cy="39" rx="4" ry="2.3" fill="#F7A3C0" opacity=".75" />
+      <ellipse cx="46.5" cy="39" rx="4" ry="2.3" fill="#F7A3C0" opacity=".75" />
+      {/* ojos */}
+      <g className="ojo">
+        <ellipse cx="23" cy="31" rx="6.4" ry="7" fill="#fff" stroke="#E4C6D2" strokeWidth=".6" />
+        <g className="iris">
+          <circle cx="23" cy="31.6" r="5" fill="url(#eqf-iris)" />
+          <circle cx="23" cy="31.8" r="2.7" fill="#231B4D" />
+          <circle cx="21.2" cy="29.6" r="1.7" fill="#fff" />
+          <circle cx="25" cy="33.6" r=".8" fill="#fff" opacity=".85" />
+        </g>
+      </g>
+      <g className="ojo">
+        <ellipse cx="41" cy="31" rx="6.4" ry="7" fill="#fff" stroke="#E4C6D2" strokeWidth=".6" />
+        <g className="iris">
+          <circle cx="41" cy="31.6" r="5" fill="url(#eqf-iris)" />
+          <circle cx="41" cy="31.8" r="2.7" fill="#231B4D" />
+          <circle cx="39.2" cy="29.6" r="1.7" fill="#fff" />
+          <circle cx="43" cy="33.6" r=".8" fill="#fff" opacity=".85" />
+        </g>
+      </g>
+      {/* sonrisa */}
+      <path d="M28.2 42.2q3.8 3.6 7.6 0" fill="none" stroke="#C9587F" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 /** Qué dice un mensaje en una línea, para la burbuja. */
@@ -332,7 +384,7 @@ export default function EquipoFlotante({ tabActual }: { tabActual: string }) {
               </div>
             ) : null)}
             <button key={pulsa} ref={orbeRef} className={'eqf-orbe' + (pulsa ? ' pulsa latido' : '') + (burbujas.length ? ' atento' : '')} onClick={() => abrir()} aria-label={`Abrir Equipo${noLeidos ? `, ${noLeidos} sin leer` : ''}`} title="Equipo">
-              <span className="brillo" /><span className="anillo" />
+              <span className="anillo" />
               <Ojos orbe={orbeRef} atento={pulsa} />
               {noLeidos > 0 && <span className={'eqf-n' + (menciones > 0 ? ' men' : '')}>{noLeidos > 99 ? '99+' : noLeidos}</span>}
             </button>
