@@ -18,7 +18,7 @@ function Preview({ cuerpo, nombre, texto }: { cuerpo?: string | null; nombre: st
   return <div className="rx-prev">{partes.map((p, i) => p === '{{1}}' ? <b key={i}>{nombre}</b> : p === '{{2}}' ? <span key={i} className="rx-var">{texto || '…'}</span> : <span key={i} className="rx-fijo">{p}</span>)}</div>;
 }
 
-export default function TrabajoReactivacion() {
+export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boolean } = {}) {
   const [d, setD] = useState<any>(null);
   const [filtro, setFiltro] = useState<'pendientes' | 'intencion' | 'conversacion' | 'programadas' | 'historial'>('pendientes');
   const [idx, setIdx] = useState(0);
@@ -85,24 +85,7 @@ export default function TrabajoReactivacion() {
   const chip = (k: typeof filtro, l: string, n?: number) => <button key={k} className={'rx-chip' + (filtro === k ? ' on' : '')} onClick={() => { setFiltro(k); setIdx(0); }}>{l}{typeof n === 'number' ? <span>{n}</span> : null}</button>;
   const cuerpoDe = (fam?: string) => { const p = (panel.plantillas || []).find((x: any) => x.familia === (fam || panel.familia_usada)); return p ? { m: p.cuerpo_marketing, u: p.cuerpo_utility, aprobada: p.aprobada } : { m: panel.cuerpo_usado?.marketing, u: panel.cuerpo_usado?.utility, aprobada: true }; };
 
-  return (
-    <div className="rx">
-      {/* HEADER fijo: progreso, filtros, aprendizaje, ajustes. Sin tarjeta. */}
-      <div className="rx-head">
-        <div className="rx-head-fila">
-          <div className="rx-prog"><div className="rx-prog-l"><b>{hechosHoy}</b> de {totalHoy} decididos hoy{redactando ? <span className="rx-red"> · redactando {redactando.hechas} de {redactando.total}…</span> : Number(d.candidatos_total) > 0 ? <span className="rx-red"> · {d.candidatos_total} por redactar</span> : null}</div><div className="rx-bar"><i style={{ width: `${pct}%` }} /></div></div>
-          <div className="rx-stats">
-            <span title="Aprobadas seguidas sin editar; a las 20 salen solas con veto de 10 min">Rampa <b>{Math.min(20, Number(rampa.sin_editar) || 0)}/20</b>{rampa.automatico ? ' · automática' : ''}</span>
-            <span title="Ejemplos tuyos (aprobados o corregidos) que el redactor lee en cada propuesta nueva">Aprende de <b>{panel.aprendizaje?.ejemplos || 0}</b> ejemplos tuyos</span>
-            <span title="Respondieron / enviadas">Responden <b>{panel.aprendizaje?.tasa == null ? '—' : `${panel.aprendizaje.tasa}%`}</b>{panel.aprendizaje?.enviadas ? ` de ${panel.aprendizaje.enviadas}` : ''}</span>
-            <button className="rx-link" onClick={() => setAjustes(a => !a)}>{ajustes ? 'Cerrar ajustes' : 'Plantilla y horario'}</button>
-          </div>
-        </div>
-        <div className="rx-head-fila">
-          <div className="rx-chips">{chip('pendientes', 'Por aprobar', pend.length)}{chip('intencion', seg.intencion?.corto || 'Pidió precio/demo', pend.filter(f => f.segmento === 'intencion').length)}{chip('conversacion', seg.conversacion?.corto || 'Preguntó', pend.filter(f => f.segmento === 'conversacion').length)}{chip('programadas', 'Programados', filas.filter(f => f.estado === 'programada').length)}{chip('historial', 'Historial')}</div>
-          {lista.length > 1 && <span className="rx-pos">{Math.min(idx + 1, lista.length)} de {lista.length} · <button className="rx-link" onClick={siguiente}>saltar ›</button></span>}
-        </div>
-        {ajustes && (
+  const PanelAjustes = () => (
           <div className="rx-ajustes">
             <div>
               <div className="rx-lbl">Plantilla con la que sale (marketing primero; si Meta no la entrega en 10 min, sale la de utilidad como puente: una línea neutra, y cuando conteste el agente manda el mensaje completo con todo el contexto)</div>
@@ -116,7 +99,24 @@ export default function TrabajoReactivacion() {
               <div className="rx-lbl" style={{ marginTop: 6 }}>Tope diario: <input type="number" min={1} max={60} defaultValue={panel.max_dia} onBlur={e => Number(e.target.value) !== panel.max_dia && guardarConfig({ max_dia: e.target.value })} style={{ width: 60, border: '1px solid #e8e5f0', borderRadius: 6, padding: '2px 6px', fontFamily: 'inherit' }} /> · Próximo hueco: <b>{fecha(panel.proximo_hueco) || '—'}</b></div>
             </div>
           </div>
-        )}
+  );
+  if (soloAjustes) return <div className="rx" style={{ padding: 0 }}><PanelAjustes /><style>{`.rx-ajustes{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#fff;border:1px solid #e8e5f0;border-radius:12px;padding:12px 14px}.rx-lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8e88a8;margin-bottom:6px}.rx-fams{display:flex;gap:6px;flex-wrap:wrap}.rx-chip{border:1px solid #e8e5f0;background:#fff;color:#4a4658;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.rx-chip.on{border-color:#5B4BD6;background:#EEECFE;color:#4c1d95}.rx-chip:disabled{opacity:.5}.rx-cuerpos{display:grid;gap:6px;margin-top:8px;font-size:12px;color:#4a4658}.rx-cuerpos span{display:block;font-size:10px;font-weight:800;color:#8e88a8;text-transform:uppercase;letter-spacing:.05em}.rx-msg{margin-top:8px;font-size:12.5px;font-weight:700}@media(max-width:820px){.rx-ajustes{grid-template-columns:1fr}}`}</style>{msg && <div className={'rx-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}</div>;
+  return (
+    <div className="rx">
+      {/* HEADER fijo: progreso, filtros, aprendizaje, ajustes. Sin tarjeta. */}
+      <div className="rx-head">
+        <div className="rx-head-fila">
+          <div className="rx-prog"><div className="rx-prog-l"><b>{hechosHoy}</b> de {totalHoy} decididos hoy{redactando ? <span className="rx-red"> · redactando {redactando.hechas} de {redactando.total}…</span> : Number(d.candidatos_total) > 0 ? <span className="rx-red"> · {d.candidatos_total} por redactar</span> : null}</div><div className="rx-bar"><i style={{ width: `${pct}%` }} /></div></div>
+          <div className="rx-stats">
+            <span title="Aprobadas seguidas sin editar; a las 20 salen solas con veto de 10 min">Rampa <b>{Math.min(20, Number(rampa.sin_editar) || 0)}/20</b>{rampa.automatico ? ' · automática' : ''}</span>
+            <span title="Ejemplos tuyos (aprobados o corregidos) que el redactor lee en cada propuesta nueva">Aprende de <b>{panel.aprendizaje?.ejemplos || 0}</b> ejemplos tuyos</span>
+            <span title="Respondieron / enviadas">Responden <b>{panel.aprendizaje?.tasa == null ? '—' : `${panel.aprendizaje.tasa}%`}</b>{panel.aprendizaje?.enviadas ? ` de ${panel.aprendizaje.enviadas}` : ''}</span>
+          </div>
+        </div>
+        <div className="rx-head-fila" style={{ marginTop: 6 }}>
+          <span className="rx-suave">{filtro === 'pendientes' ? `${pend.length} por aprobar` : filtro === 'programadas' ? 'Programados' : 'Historial'}{lista.length > 1 ? ` · ${Math.min(idx + 1, lista.length)} de ${lista.length}` : ''}</span>
+          <span className="rx-pos">{filtro !== 'pendientes' && <button className="rx-link" onClick={() => { setFiltro('pendientes'); setIdx(0); }}>por aprobar</button>}{filtro !== 'programadas' && <> · <button className="rx-link" onClick={() => { setFiltro('programadas'); setIdx(0); }}>programados ({filas.filter(f => f.estado === 'programada').length})</button></>}{filtro !== 'historial' && <> · <button className="rx-link" onClick={() => { setFiltro('historial'); setIdx(0); }}>historial</button></>}{lista.length > 1 && <> · <button className="rx-link" onClick={siguiente}>saltar ›</button></>}</span>
+        </div>
         {msg && <div className={'rx-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
 
