@@ -95,7 +95,7 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 5. Sin emojis, sin «espero que estés bien», sin «quería darle seguimiento», sin mayúsculas de énfasis. Máximo 300 caracteres: va dentro de una plantilla que ya trae «Hola {nombre},» al inicio y una salida amable al final, así que NO saludes ni te despidas ni ofrezcas la demo: eso ya lo dice la plantilla.
 6. Habla como habla la gente de tiendas en México, de tú.${fewShot}
 
-Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que no es una tienda o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
+Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que NO es una tienda (restaurante, cafetería, comida, servicios, escuela, consultorio) o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
 Responde SOLO con JSON: {"nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
   const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
@@ -186,6 +186,11 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
 export async function rechazarReactivacion(id: string, motivo: string, userId?: string) {
   const { data: r } = await supabase.from('ti_reactivacion').select('*').eq('id', id).maybeSingle();
   if (!r) return { error: 'No existe' };
+  // «No debió estar aquí» (no es tienda, otro giro, ya es cliente): el contacto sale de futuras búsquedas de reactivación y reenganche.
+  if (/no debi[oó] estar|no es tienda|otro giro|ya es cliente|no es lead/i.test(motivo)) {
+    const { data: k } = await supabase.from('contacts').select('propiedades').eq('id', r.contact_id).maybeSingle();
+    await supabase.from('contacts').update({ propiedades: { ...((k?.propiedades as any) || {}), reactivacion_excluir: true, reactivacion_excluir_motivo: motivo, reactivacion_excluir_at: new Date().toISOString() } }).eq('id', r.contact_id);
+  }
   if (r.estado === 'programada' && r.envio_id) await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: motivo || 'reactivación rechazada', vetado_por: userId || null }).eq('id', r.envio_id).eq('estado', 'pendiente');
   await supabase.from('ti_reactivacion').update({ estado: 'rechazada', error: motivo || null, decidido_por: userId || null, decidido_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
   const cfg: any = await leerConfig(); const rampa: any = cfg.rampa_reactivacion || {};

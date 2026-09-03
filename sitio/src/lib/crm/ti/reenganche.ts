@@ -16,7 +16,7 @@ export async function enrolarReenganche(opts: { limite?: number; minHoras?: numb
   for (const c of convs || []) {
     const k: any = (c as any).contacts; if (!k || vistos.has(k.id)) continue; vistos.add(k.id);
     res.candidatas++;
-    if (k.archived_at || k.wa_optout) { res.saltadas.optout++; continue; }
+    if (k.archived_at || k.wa_optout || (k.propiedades as any)?.reactivacion_excluir) { res.saltadas.optout++; continue; }
     if (k.lifecycle_stage === 'cliente') { res.saltadas.cliente++; continue; }
     if (!ETAPAS_SDR.includes(k.lifecycle_stage)) { res.saltadas.etapa++; continue; }
     const { data: pf } = await supabase.from('ti_perfil').select('silenciar_ia, agente_estado').eq('contact_id', k.id).maybeSingle();

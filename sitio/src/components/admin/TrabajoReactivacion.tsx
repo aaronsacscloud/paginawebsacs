@@ -7,7 +7,7 @@ import ContextoLead, { BotonContexto, MiniHilo } from './crm/ti/ContextoLead';
    al entrar: si faltan por redactar, se redactan solos en lotes mientras trabajas. Cada decisión tuya es un ejemplo que
    el redactor lee la próxima vez: eso es lo que «aprende». */
 const postJ = (body: any) => fetch('/api/crm/ti/reactivacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
-const MOTIVOS = ['No es el lead correcto', 'El ángulo no le pega', 'Muy vendedor', 'Todavía no: esperar', 'Otro'];
+const MOTIVOS = ['No debió estar aquí: no es tienda u otro giro', 'Ya es cliente o es soporte', 'El ángulo no le pega', 'Muy vendedor', 'Le falta contexto real', 'Todavía no: esperar'];
 const fecha = (iso?: string | null) => iso ? new Date(iso).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
 const FAM_L: Record<string, string> = { seguimiento: 'Seguimiento', reactivacion: 'Reactivación', promo: 'Promoción', cierre: 'Cierre', no_show: 'No-show', preparacion: 'Preparación' };
 const primerNombre = (n: any) => { const s = String(n || '').trim(); return !s || /^contacto\s*\d*$/i.test(s) ? 'qué tal' : s.split(/\s+/)[0]; };
@@ -27,6 +27,8 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
   const [familia, setFamilia] = useState<Record<string, string>>({});
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [rechazando, setRechazando] = useState(false);
+  const [motivoSel, setMotivoSel] = useState('');
+  const [motivoTxt, setMotivoTxt] = useState('');
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [ctx, setCtx] = useState<any>(null);
   const [ajustes, setAjustes] = useState(false);
@@ -65,14 +67,14 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
   const decidir = async (f: any, accion: 'aprobar' | 'rechazar', motivo?: string) => {
     setOcupado(f.id);
     const r = await postJ(accion === 'aprobar' ? { accion, id: f.id, mensaje: texto[f.id] ?? f.mensaje, familia: familia[f.id] || undefined, criterio: criterio[f.id] || undefined } : { accion, id: f.id, motivo });
-    setOcupado(null); setRechazando(false);
+    setOcupado(null); setRechazando(false); setMotivoSel(''); setMotivoTxt('');
     if (r?.error) { aviso('No se pudo: ' + r.error, false); return; }
     setSaliendo(f.id); setDecididos(n => n + 1);
     aviso(accion === 'aprobar' ? `Programado: sale ${fecha(r.sale_at)}.` : 'Rechazado. El redactor lo toma como lección.');
     setTimeout(async () => { setSaliendo(null); await cargar(); }, 420);
   };
   useEffect(() => {
-    const h = (ev: KeyboardEvent) => { const tag = (ev.target as HTMLElement)?.tagName; if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || !actual || ocupado) return; if (ev.key === 'a') decidir(actual, 'aprobar'); if (ev.key === 'r') setRechazando(true); if (ev.key === 'j' || ev.key === 'ArrowRight') siguiente(); };
+    const h = (ev: KeyboardEvent) => { const tag = (ev.target as HTMLElement)?.tagName; if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || !actual || ocupado) return; if (ev.key === 'a') decidir(actual, 'aprobar'); if (ev.key === 'r') setRechazando(true); };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }); // eslint-disable-line react-hooks/exhaustive-deps
   const guardarConfig = async (c: any) => { const r = await postJ({ accion: 'config', ...c }); if (r.error) aviso(r.error, false); else { aviso('Ajuste guardado.'); cargar(); } };
@@ -156,11 +158,10 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
                   <div className="rx-acciones">
                     <button className="rx-btn p" disabled={!!ocupado} onClick={() => decidir(f, 'aprobar')}>{ocupado === f.id ? 'Programando…' : cambiado ? 'Aprobar mi versión y programar' : 'Aprobar y programar'}<small>A</small></button>
                     <button className="rx-btn" disabled={!!ocupado} onClick={() => setRechazando(true)}>Rechazar<small>R</small></button>
-                    <button className="rx-btn ghost" onClick={siguiente}>Saltar<small>J</small></button>
                   </div>
                 )}
                 {editable && rechazando && (
-                  <div className="rx-acciones col"><div className="rx-lbl">Por qué no (el redactor lo aprende)</div><div className="rx-fams">{MOTIVOS.map(m => <button key={m} className="rx-chip" disabled={!!ocupado} onClick={() => decidir(f, 'rechazar', m)}>{m}</button>)}<button className="rx-chip" onClick={() => setRechazando(false)}>Cancelar</button></div></div>
+                  <div className="rx-acciones col"><div className="rx-lbl">Por qué no: todo lo que digas lo aprende el redactor, incluso si este lead ni debió aparecer</div><div className="rx-fams">{MOTIVOS.map(m => <button key={m} className={'rx-chip' + (motivoSel === m ? ' on' : '')} disabled={!!ocupado} onClick={() => setMotivoSel(m)}>{m}</button>)}</div><input className="ti-campo" style={{ margin: '8px 0 0' }} placeholder="Detalle (opcional pero vale oro): qué viste, qué faltó, qué haría falta para que sí" value={motivoTxt} onChange={e => setMotivoTxt(e.target.value)} /><div className="rx-fams" style={{ marginTop: 8 }}><button className="rx-btn" disabled={!!ocupado || !motivoSel} onClick={() => decidir(f, 'rechazar', [motivoSel, motivoTxt].filter(Boolean).join(': '))}>Rechazar y que aprenda</button><button className="rx-chip" onClick={() => { setRechazando(false); setMotivoSel(''); setMotivoTxt(''); }}>Cancelar</button></div></div>
                 )}
                 {f.estado === 'programada' && <div className="rx-acciones"><button className="rx-btn" disabled={!!ocupado} onClick={() => decidir(f, 'rechazar', 'cancelado antes de salir')}>Cancelar envío</button></div>}
               </div>

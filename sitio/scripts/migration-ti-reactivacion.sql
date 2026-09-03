@@ -36,9 +36,15 @@ from ult u
 join contacts k on k.id = u.contact_id
 left join companies co on co.id = k.company_id
 where k.archived_at is null
-  and k.lifecycle_stage in ('lead','lead_calificado','oportunidad','rezagado','descalificado')
+  -- Sin descalificados (decisión 2026-09-04): el que ya se descartó no se reactiva desde aquí.
+  and k.lifecycle_stage in ('lead','lead_calificado','oportunidad','rezagado')
   and coalesce(k.wa_optout, false) = false
   and coalesce(k.descarte_categoria, '') not like 'no_era_lead%'
+  and coalesce((k.propiedades->>'reactivacion_excluir')::boolean, false) = false
+  -- Giros que no son tienda (restaurantes, cafeterías, comida): no van aquí.
+  and coalesce(k.giro, '') !~* '(restaur|caf[eé]|taquer|comida|food|pizz|sushi|burger|hamburg|cocina|antojit|fonda|cantina|panader|pasteler|helad|jug[ou]|bebida|bar\b|cerve|mariscos|tacos)'
+  and coalesce(co.giro, '') !~* '(restaur|caf[eé]|taquer|comida|food|pizz|sushi|burger|hamburg|cocina|antojit|fonda|cantina|panader|pasteler|helad|jug[ou]|bebida|bar\b|cerve|mariscos|tacos)'
+  and coalesce(co.nombre_comercial, co.nombre, '') !~* '(restaur|caf[eé]|taquer|pizz|sushi|burger|hamburg|antojit|fonda|cantina|panader|pasteler|helader|mariscos|tacos)'
   and u.ult_in is not null and u.ult_in < now() - interval '60 days' and u.ult_in > now() - interval '365 days'
   and not exists (select 1 from quotes q where q.contact_id = k.id and q.estado not in ('deleted','plantilla'))
   and not exists (select 1 from bookings b where b.contact_id = k.id and b.estado in ('asistio','confirmada','agendada'))
