@@ -123,6 +123,17 @@ const FRASES = [
   margin: clamp(56px, 9vw, 96px) calc(50% - 50vw) 0;
   width: 100vw; max-width: 100vw;
 }
+/* Sin esto, el documento termina en blanco y el negro arranca en una línea
+   recta. Medio segundo de intención cuesta un degradado. */
+.jo-banda::before {
+  content: ''; position: absolute; left: 0; right: 0; top: -90px; height: 90px;
+  background: linear-gradient(180deg, rgba(13,11,12,0), rgba(13,11,12,.92));
+  pointer-events: none;
+}
+
+/* La barra de utilería no tiene por qué estar encima del cierre. */
+.pb-top { transition: opacity .45s ease, transform .45s ease; }
+.pb-top[data-fuera] { opacity: 0; transform: translateY(-100%); pointer-events: none; }
 .jo-riel { height: 420vh; }
 .jo-pegado {
   position: sticky; top: 0; height: 100svh;
@@ -161,7 +172,8 @@ const FRASES = [
   line-height: 1.16; letter-spacing: -.015em; text-wrap: balance;
   opacity: 0; pointer-events: none;
 }
-.jo-frase span {
+.jo-frase .jo-linea { display: block; }
+.jo-frase .jo-linea span {
   display: inline-block;
   opacity: 0;
   /* Cada palabra nace del punto de luz de la joya: sale de ahí, chica y
@@ -173,7 +185,7 @@ const FRASES = [
   text-shadow: 0 0 26px rgba(214,184,122,.4);
 }
 .jo-frase[data-viva] { opacity: 1; }
-.jo-frase[data-viva] span {
+.jo-frase[data-viva] .jo-linea span {
   opacity: 1; transform: none; filter: none;
   transition: opacity .5s ease, transform .62s cubic-bezier(.16,.84,.3,1), filter .5s ease;
   transition-delay: calc(var(--w) * 52ms);
@@ -316,6 +328,7 @@ const FRASES = [
       // Con la banda en pantalla, la película de fondo no se ve — y su blur de
       // viewport completo sigue costando compositor en cada cuadro.
       document.querySelector('.jo-film')?.toggleAttribute('data-dormida', visible);
+      document.querySelector('.pb-top')?.toggleAttribute('data-fuera', visible);
       if (visible && !raf) { t0 = performance.now(); raf = requestAnimationFrame(cuadro); }
       if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; ctx.clearRect(0, 0, W, H); }
     }, { threshold: 0 }).observe(banda);

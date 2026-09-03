@@ -9,7 +9,7 @@ const FRASES = [
     origen: '68% 34%',
   },
   {
-    texto: 'Nadie compra alta joyería a un desconocido. Por eso preguntamos tanto.',
+    texto: 'Nadie compra alta joyería a un desconocido.\nPor eso preguntamos tanto.',
     joya: 4,
     origen: '38% 52%',
   },
@@ -19,12 +19,12 @@ const FRASES = [
     origen: '55% 44%',
   },
   {
-    texto: 'Su cliente no va a leer este brief. Va a ver el resultado.',
+    texto: 'La novia nunca va a ver este documento. Va a ver lo que salió de él.',
     joya: 6,
     origen: '46% 58%',
   },
   {
-    texto: 'Lo que aquí se define, en 45 días está en línea.',
+    texto: 'Cuando esté completo, empezamos a construir.',
     joya: 5,
     origen: '60% 40%',
   },
@@ -44,8 +44,12 @@ const FRASES = [
       <div class="jo-frases">
         {FRASES.map((f, i) => (
           <p class="jo-frase" data-i={i} style={`--origen:${f.origen}`}>
-            {f.texto.split(' ').map((w, j) => (
-              <span style={`--w:${j}`}>{w}&nbsp;</span>
+            {f.texto.split('\n').map((linea, li) => (
+              <span class="jo-linea">
+                {linea.split(' ').map((w, j) => (
+                  <span style={`--w:${li * 8 + j}`}>{w}&nbsp;</span>
+                ))}
+              </span>
             ))}
           </p>
         ))}
