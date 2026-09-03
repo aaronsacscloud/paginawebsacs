@@ -264,14 +264,10 @@ const NAV_SECTIONS = [
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
     ],
   },
-  {
-    // La Wiki no es de un sujeto (cuentas, dinero, canal): es CÓMO se trabaja.
-    // Por eso va sola al final y no colgada de otro grupo.
-    label: 'Documentación', sec: 'documentacion', icon: 'automations',
-    items: [
-      { id: 'wiki' as Tab, label: 'Wiki', icon: 'automations' },
-    ],
-  },
+  /* La Wiki salió del menú de navegación (3-sep-2026): ocupaba una cabecera
+     de sección entera para un solo renglón. Ahora es una liga chica en el pie,
+     junto a notificaciones y configuración, y al entrar ocupa la PANTALLA
+     COMPLETA — leer un manual y navegar el CRM no se hacen a la vez. */
 ];
 
 function getInitialTab(): Tab {
@@ -542,7 +538,12 @@ export default function CrmDashboard() {
   // En mobile no hay pie de menú donde vivir: las notificaciones entran como
   // un renglón de la hoja "Más" y esta bandera abre su panel.
   const [notifOpen, setNotifOpen] = useState(false);
-  const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 64) : 220;
+  /* La Wiki se lee a PANTALLA COMPLETA: es un manual, y tener el menú al lado
+     invita a irse a otra cosa a media lectura. El menú no se «esconde» con un
+     truco visual — se le da ancho cero, así que tampoco se puede tabular hacia
+     él sin querer. Se sale con el botón de volver que pinta la propia Wiki. */
+  const modoLectura = tab === 'wiki' && !isMobile;
+  const sidebarWidth = modoLectura ? 0 : sidebarCollapsed ? (isMobile ? 0 : 64) : 220;
   const mainMarginLeft = isMobile ? 0 : sidebarWidth;
 
   return (
@@ -596,7 +597,9 @@ export default function CrmDashboard() {
         background: 'linear-gradient(180deg,#FBFAFF 0%,#F6F3FE 55%,#F4EFFC 100%)', color: '#4b4560',
         display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease, transform 0.2s ease',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 110, overflow: 'hidden',
-        borderRight: '1px solid #eae4f8',
+        /* Sin borde cuando el menú mide cero: una raya de 1 px pegada al filo
+           izquierdo, sin nada detrás, se lee como un defecto de pintado. */
+        borderRight: modoLectura ? 'none' : '1px solid #eae4f8',
         transform: (isMobile && sidebarCollapsed) ? 'translateX(-100%)' : 'translateX(0)',
         boxShadow: mobileExpanded ? '4px 0 24px rgba(60,30,140,0.18)' : 'none',
       }}>
@@ -684,8 +687,14 @@ export default function CrmDashboard() {
                          la vez —es más grande, más negra y más oscura—; con una
                          sola (antes, medio punto de peso) cabecera y contenido
                          se leían como lo mismo. */
-                      fontSize: '0.84rem',
-                      fontWeight: tieneActivo || abierto ? 800 : 700,
+                      /* Menos peso. Los títulos de sección iban a 0.84 rem y
+                         800 de grosor: pesaban más que el contenido de la
+                         pantalla que estás mirando, y el menú competía con el
+                         trabajo en vez de acompañarlo. La jerarquía la sostiene
+                         el ESPACIO —secciones sueltas, subsecciones apretadas—
+                         que no le quita atención a nada. */
+                      fontSize: '0.78rem',
+                      fontWeight: tieneActivo || abierto ? 750 : 650,
                       color: tieneActivo ? '#4C3BD0' : abierto ? '#2e2748' : '#3f3856',
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.62)'; }}
@@ -782,8 +791,8 @@ export default function CrmDashboard() {
                       /* Nivel 2: más chico y más claro que su cabecera. Fuera
                        del grupo (Dashboard, que no cuelga de nada) conserva el
                        tamaño de siempre. */
-                    fontSize: enGrupo ? '0.75rem' : '0.84rem',
-                    fontWeight: esTrabajo ? 800 : isActive ? 800 : enGrupo ? 500 : 600,
+                    fontSize: enGrupo ? '0.735rem' : '0.78rem',
+                    fontWeight: esTrabajo ? 750 : isActive ? 750 : enGrupo ? 500 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
                       // desalineado del resto del menú.
@@ -837,6 +846,13 @@ export default function CrmDashboard() {
 
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
                 <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+              </button>
+
+              {/* La Wiki baja aquí: es consulta, no navegación de trabajo, y
+                  arriba se comía una cabecera de sección entera para un solo
+                  renglón. Al entrar ocupa la pantalla completa. */}
+              <button onClick={() => switchTab('wiki' as Tab)} style={{ ...pieFila, background: tab === 'wiki' ? '#fff' : 'none', boxShadow: tab === 'wiki' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'wiki' ? '#4C3BD0' : '#4b4560' }}>
+                <span style={{ ...pieIcono, color: '#a49dbd' }} dangerouslySetInnerHTML={{ __html: ICONS.automations }} />Documentación
               </button>
 
             {/* Salir va aquí, DESPUÉS de configuración y como un renglón más:
@@ -1049,7 +1065,23 @@ export default function CrmDashboard() {
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
         ) : tab === 'wiki' ? (
-          <Wiki />
+          <>
+            {/* LA SALIDA. Sin menú al lado, la Wiki sería un callejón: se entra
+                y no hay por dónde volver salvo el botón del navegador. Una
+                pantalla completa sin puerta no es foco, es una trampa.
+                Va pegada arriba porque es lo primero que se busca cuando uno
+                ya terminó de leer. */}
+            {modoLectura && (
+              <div style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(6px)', borderBottom: '1px solid #ece6f8', padding: '8px 22px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button onClick={() => switchTab('dashboard' as Tab)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #e7e0f7', background: '#fff', borderRadius: 999, padding: '6px 13px', fontSize: '0.75rem', fontWeight: 700, color: '#4b4560', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  ← Volver al CRM
+                </button>
+                <span style={{ fontSize: '0.72rem', color: '#8078a0' }}>Documentación · pantalla completa para leer sin distracciones</span>
+              </div>
+            )}
+            <Wiki />
+          </>
         ) : tab === 'soporte' ? (
           <ErrorBoundary><SoporteTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
