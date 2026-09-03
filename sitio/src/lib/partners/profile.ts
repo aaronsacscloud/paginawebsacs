@@ -50,12 +50,16 @@ export async function getPartnerProfile(partnerId: string | null | undefined): P
   if ((tm as any).email) {
     const { data: inv } = await supabase
       .from('partner_invitations')
-      .select('empresa, ciudad, pais, whatsapp, slug_landing, tipo, estado, signed_at, created_at')
+      /* `signed_at` no existe: la fecha de la firma es `aceptado_fecha`. Con el
+         nombre viejo el select moría entero y el perfil del partner se quedaba
+         SIN sus datos comerciales —empresa, ciudad, país, WhatsApp, landing—
+         como si nunca hubiera firmado. */
+      .select('empresa, ciudad, pais, whatsapp, slug_landing, tipo, estado, aceptado_fecha, created_at')
       .eq('email', (tm as any).email)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    invitation = inv;
+    invitation = inv ? { ...inv, signed_at: (inv as any).aceptado_fecha } : null;   // el resto del código lo llama signed_at
   }
 
   return {

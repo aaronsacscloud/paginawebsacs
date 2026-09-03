@@ -36,7 +36,11 @@ export const GET: APIRoute = async () => {
   try {
     // ─── Fetch base tables ───
     const [companiesRes, paymentsRes, invoicesRes, quotesRes, churnRes, dealsRes, clientsRes] = await Promise.all([
-      supabase.from('companies').select('id, nombre, plan, mrr, arr, sucursales, fecha_renovacion, estado_cuenta, contact_id, created_at, stripe_subscription_id, precio_por_sucursal'),
+      /* Sin `contact_id`: esa columna no existe en companies y su presencia
+         mataba la consulta ENTERA. Medido el 3-sep-2026: este tablero
+         contestaba MRR 0, ARR 0 y 0 clientes — ceros que se leían como dato.
+         El campo no se usaba en ningún cálculo. */
+      supabase.from('companies').select('id, nombre, plan, mrr, arr, sucursales, fecha_renovacion, estado_cuenta, created_at, stripe_subscription_id, precio_por_sucursal'),
       supabase.from('payments').select('id, fecha, monto, metodo, company_id, stripe_payment_id'),
       supabase.from('invoices').select('id, total, moneda, tipo, estado, emitida_at, pagada_at, company_id, quote_id, created_at'),
       supabase.from('quotes').select('id, estado, total, moneda, created_at, aceptado_fecha'),

@@ -26,8 +26,16 @@ export async function abrirOnboardingSiAplica(companyId: string, o?: { quien?: s
   const cfg = await configOnboarding();
   if (!cfg.activo) return { creado: false, motivo: 'onboarding pausado' };
 
-  const { data: co } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, uso_sacs, owner_id').eq('id', companyId).maybeSingle();
+  /* El consultor NO sale de `companies.owner_id`: esa columna NUNCA existió.
+     PostgREST contestaba 400, el select entero moría y `co` quedaba en null, así
+     que las DOS puertas del onboarding —la automática y el botón «Abrir»—
+     contestaban «no existe la empresa» sobre empresas que sí existen. Medido el
+     3-sep-2026: 0 casos de onboarding en 345 empresas. El módulo nunca pudo
+     abrir uno. El dueño de la cuenta vive en `contacts.owner_id`. */
+  const { data: co, error: eCo } = await supabase.from('companies')
+    .select('id, nombre, sacs_account, uso_sacs, contacts(owner_id)').eq('id', companyId).maybeSingle();
+  if (eCo) console.error('[onboarding] empresa:', eCo.message);
+  const consultorDeLaCuenta = ((co as any)?.contacts || []).map((c: any) => c.owner_id).find(Boolean) || null;
   if (!co) return { creado: false, motivo: 'no existe la empresa' };
 
   const { data: liga } = await supabase.from('company_sacs_accounts').select('cuenta').eq('company_id', companyId).limit(1);
@@ -57,7 +65,7 @@ export async function abrirOnboardingSiAplica(companyId: string, o?: { quien?: s
 
   const { error } = await supabase.from('onboarding_casos').insert({
     company_id: companyId,
-    consultor_id: co.owner_id || null,
+    consultor_id: consultorDeLaCuenta,
     uso_al_abrir: co.uso_sacs || null,
   });
   if (error) return { creado: false, motivo: error.message };

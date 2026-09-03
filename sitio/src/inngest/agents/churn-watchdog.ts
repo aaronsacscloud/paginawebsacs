@@ -45,7 +45,8 @@ export const churnWatchdogAgent = inngest.createFunction(
     const in30d = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
     const { data: companies } = await supabase
       .from('companies')
-      .select('id, nombre, plan, mrr, health_score, health_factors, health_computed_at, estado_cuenta, fecha_renovacion, contact_id, giro, sucursales')
+      // Sin `contact_id` (no existe en companies): viene por el embed.
+      .select('id, nombre, plan, mrr, health_score, health_factors, health_computed_at, estado_cuenta, fecha_renovacion, giro, sucursales, contacts(id)')
       .in('estado_cuenta', ['activo', 'vencido'])
       .or(`health_score.lt.60,estado_cuenta.eq.vencido,fecha_renovacion.lte.${in30d}`);
 
@@ -84,7 +85,7 @@ export const churnWatchdogAgent = inngest.createFunction(
             agent_name: 'churn_watchdog',
             trigger_type: 'cron',
             company_id: company.id,
-            contact_id: company.contact_id || null,
+            contact_id: ((company as any).contacts || []).map((c: any) => c.id).find(Boolean) || null,
             input: {
               company: company.nombre,
               health_score: company.health_score,
@@ -151,7 +152,7 @@ export const churnWatchdogAgent = inngest.createFunction(
         // Create CSM task if risk yellow or red
         if (['yellow', 'red'].includes(analysis.risk_level)) {
           await supabase.from('activities').insert({
-            contact_id: company.contact_id,
+            contact_id: ((company as any).contacts || []).map((c: any) => c.id).find(Boolean) || null,
             company_id: company.id,
             tipo: 'tarea',
             titulo: `${analysis.risk_level.toUpperCase()} — ${company.nombre}: ${analysis.next_action_48h}`,

@@ -31,11 +31,17 @@ export const POST: APIRoute = async ({ request }) => {
     if (!company_id) return new Response(JSON.stringify({ error: 'company_id requerido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     if (!reason || !REASONS[reason]) return new Response(JSON.stringify({ error: 'reason inválido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
+    /* `companies.contact_id` NUNCA existió: la relación va al revés
+       (`contacts.company_id`). PostgREST contestaba 400 y el select entero moría,
+       así que esta consulta devolvía null y todo lo que colgaba de ella quedaba en
+       cero o sin hacer. Se resuelve con el embed y se toma el contacto principal. */
     const { data: company, error: cErr } = await supabase
       .from('companies')
-      .select('id, nombre, contact_id, stripe_customer_id, stripe_subscription_id, mrr, moneda')
+      // `moneda` tampoco existe en companies; se quita por lo mismo.
+      .select('id, nombre, stripe_customer_id, stripe_subscription_id, mrr, contacts(id)')
       .eq('id', company_id)
       .single();
+    const contactoPrincipal = ((company as any)?.contacts || []).map((c: any) => c.id).find(Boolean) || null;
 
     if (cErr || !company) return new Response(JSON.stringify({ error: 'empresa no encontrada' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 
@@ -65,7 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         await supabase.from('activities').insert({
-          contact_id: company.contact_id,
+          contact_id: contactoPrincipal,
           company_id: company.id,
           tipo: 'sistema',
           titulo: 'Retención aceptada — 20% off 3 meses',
@@ -97,17 +103,17 @@ export const POST: APIRoute = async ({ request }) => {
     }).eq('id', company.id);
 
     // Update contact lifecycle
-    if (company.contact_id) {
+    if (contactoPrincipal) {
       await supabase.from('contacts')
         .update({ lifecycle_stage: 'churned', tipo: 'churned' })
-        .eq('id', company.contact_id);
+        .eq('id', contactoPrincipal);
     }
 
     // Insert churn event (table may not exist yet)
     try {
       await supabase.from('churn_events').insert({
         company_id: company.id,
-        contact_id: company.contact_id || null,
+        contact_id: contactoPrincipal || null,
         reason,
         reason_detail: reason_detail || null,
         mrr_lost: company.mrr || 0,
@@ -120,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Create cerrada_perdida deal
     const { data: deal } = await supabase.from('deals').insert({
       nombre: `Churn — ${company.nombre}`,
-      contact_id: company.contact_id,
+      contact_id: contactoPrincipal,
       company_id: company.id,
       stage: 'cerrada_perdida',
       probabilidad: 0,
@@ -131,7 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
     }).select().maybeSingle();
 
     await supabase.from('activities').insert({
-      contact_id: company.contact_id,
+      contact_id: contactoPrincipal,
       company_id: company.id,
       deal_id: (deal as any)?.id || null,
       tipo: 'sistema',

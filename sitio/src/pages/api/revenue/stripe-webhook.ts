@@ -1013,11 +1013,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as Stripe.Subscription;
       const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
-      const { data: c } = await supabase.from('companies').select('id, contact_id, mrr').eq('stripe_customer_id', customerId).maybeSingle();
+      // Sin `contact_id` (no existe en companies): se toma del embed. Antes el
+      // select moría y NADIE se marcaba como churned al cancelar en Stripe.
+      const { data: c } = await supabase.from('companies').select('id, mrr, contacts(id)').eq('stripe_customer_id', customerId).maybeSingle();
+      const contactoDeLaCuenta = ((c as any)?.contacts || []).map((x: any) => x.id).find(Boolean) || null;
       if (c?.id) {
         await supabase.from('companies').update({ estado_cuenta: 'cancelado' }).eq('id', c.id);
-        if ((c as any)?.contact_id) {
-          await supabase.from('contacts').update({ lifecycle_stage: 'churned', tipo: 'churned' }).eq('id', (c as any).contact_id);
+        if (contactoDeLaCuenta) {
+          await supabase.from('contacts').update({ lifecycle_stage: 'churned', tipo: 'churned' }).eq('id', contactoDeLaCuenta);
         }
         // Insert churn event (if table exists)
         try {

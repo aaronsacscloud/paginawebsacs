@@ -55,13 +55,17 @@ export const GET: APIRoute = async ({ request, url }) => {
   const [visitsRes, contactsRes, bookingsRes, dealsRes, commissionsRes] = await Promise.all([
     supabase
       .from('partner_link_visits')
-      .select('id, created_at, slug, visitor_id, referer')
+      // `referer` con una R: la columna es `referrer`. Con el typo el select
+      // moría y el partner NO veía ninguna visita a su liga.
+      .select('id, created_at, slug, visitor_id, referrer')
       .eq('partner_id', partnerId)
       .order('created_at', { ascending: false })
       .limit(50),
     supabase
       .from('contacts')
-      .select('id, nombre, email, empresa, fuente, lifecycle_stage, created_at, plan_interes')
+      // `empresa` no existe en contacts (la relación es `company_id`). Con ella
+      // el select moría y el partner no veía NINGUNO de sus referidos.
+      .select('id, nombre, email, fuente, lifecycle_stage, created_at, plan_interes, companies(nombre_comercial, nombre)')
       .eq('referrer_partner_id', partnerId)
       .order('created_at', { ascending: false })
       .limit(200),
@@ -114,7 +118,8 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // 3. Leads registrados (contact_created)
   for (const c of contactsRes.data || []) {
-    const empresaTxt = c.empresa ? ` (${c.empresa})` : '';
+    const emp = (c as any).companies?.nombre_comercial || (c as any).companies?.nombre || null;
+    const empresaTxt = emp ? ` (${emp})` : '';
     out.push({
       id: `contact-${c.id}`,
       type: 'lead_registrado',
