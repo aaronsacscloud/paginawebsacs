@@ -497,7 +497,7 @@ const CSS = `
 .ti-cab2-tab { border:none; background:transparent; border-radius:9px; padding:7px 11px; font-weight:700; font-size:.86rem; color:var(--texto); cursor:pointer; }
 .ti-cab2-tab.on { background:#EEECFE; color:#4c1d95; }
 .ti-cab2-tab.chico { font-size:.8rem; padding:5px 9px; }
-.tc-full { max-width:none !important; padding:12px 16px 40px !important; }
+.tc-full { max-width:none !important; padding:12px 16px 12px !important; }
 @media (max-width:700px){ .ti-cab2 { padding:8px 10px; gap:8px; } .ti-cab2-tt { display:none; } .ti-cab2-sub { margin-left:0; width:100%; overflow-x:auto; } }
 .ti-barra { position:sticky; top:0; z-index:50; background:var(--carta); border-bottom:1px solid var(--linea); padding:12px 18px 10px; }
 .ti-barra-fila { display:flex; align-items:baseline; gap:9px; max-width:760px; margin:0 auto; }

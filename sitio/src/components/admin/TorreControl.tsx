@@ -55,6 +55,9 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const [vistaMovil, setVistaMovil] = useState<'cola' | 'accion'>('cola');
   const [verSenales, setVerSenales] = useState(false);   // el feed de señales sustituye al contexto mientras esté abierto
   const ancho = useAncho(); const movil = ancho < 960;
+  const raizRef = useRef<HTMLDivElement>(null);
+  const [alto, setAlto] = useState<number | null>(null);
+  useEffect(() => { const medir = () => { const el = raizRef.current; if (!el) return; const top = el.getBoundingClientRect().top + window.scrollY; setAlto(Math.max(520, window.innerHeight - (el.getBoundingClientRect().top) - 12)); void top; }; medir(); const t = setTimeout(medir, 300); window.addEventListener('resize', medir); return () => { clearTimeout(t); window.removeEventListener('resize', medir); }; }, [d, movil]);
   const cargar = () => fetch('/api/crm/ti/torre').then(r => r.json()).then(j => { setD(j); }).catch(() => setD({ error: 'No se pudo cargar la torre' }));
   useEffect(() => { cargar(); const t = setInterval(cargar, 20000); return () => clearInterval(t); }, []);
   const TIPOS: [string, string, (x: Item) => boolean][] = [
@@ -214,7 +217,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   if (!d) return <div className="tc-cargando">Cargando la torre…</div>;
   if (d.error) return <div className="tc-cargando">{d.error}</div>;
   return (
-    <div className={'tc' + (movil ? ' movil' : '')}>
+    <div ref={raizRef} className={'tc' + (movil ? ' movil' : '')} style={!movil && alto ? { height: alto, display: 'flex', flexDirection: 'column' } : undefined}>
       <div className="tc-pulsos">
         <button className={'tc-pulso' + (verSenales ? ' on' : '')} onClick={() => setVerSenales(v => !v)}><b>{p.senales || 0}</b><span>Señales hoy</span></button>
         {pulso('aprobar', 'Por aprobar', p.por_aprobar || 0)}{pulso('llamar', 'Llamadas', p.llamadas || 0)}{pulso('reunion', 'Reunión sin resultado', p.reunion || 0)}{pulso('cotizacion', 'Cotizaciones', p.cotizaciones || 0)}{pulso('datos', 'Datos faltantes', p.datos || 0)}{pulso('aprendizaje', 'Aprendizaje', p.aprendizaje || 0)}
@@ -259,7 +262,8 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         .tc-pulso{flex-shrink:0;min-width:118px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;cursor:pointer;font-family:inherit;color:var(--ink)}
         .tc-pulso b{display:block;font-size:20px;line-height:1.1}.tc-pulso span{display:block;font-size:10.5px;color:var(--mute);font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
         .tc-pulso.on{border-color:var(--acc);background:var(--accs)}.tc-pulso.agente.ok b{color:#14532d}.tc-pulso.agente.warn b{color:#b45309}.tc-pulso.agente.off b{color:#7f1d1d}
-        .tc-cols{display:grid;grid-template-columns:280px minmax(0,1fr) 360px;gap:12px;height:calc(100vh - 230px);min-height:520px}
+        .tc-cols{display:grid;grid-template-columns:280px minmax(0,1fr) 360px;gap:12px;flex:1;min-height:0}
+        .tc-pulsos{flex-shrink:0}.tc-msg{flex-shrink:0}
         .tc-col{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
         .tc-col-h{padding:10px 14px;border-bottom:1px solid #f0eef6;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
         .tc-selects{display:flex;gap:6px;padding:10px 10px 0}.tc-selects.sub{padding:6px 10px 4px;align-items:center;justify-content:space-between}.tc-selects select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:7px 8px;font-family:inherit;font-size:12px;font-weight:700;color:var(--ink);background:#fff}.tc-cuenta{font-size:11px;color:var(--mute);font-weight:800;margin-left:auto}
