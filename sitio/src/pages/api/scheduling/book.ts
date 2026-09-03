@@ -228,9 +228,10 @@ export const POST: APIRoute = async ({ request }) => {
   const bloqueAttr = bloqueAtribucion(atribucion, request);
   const puntaje = puntajeDeDemo({ whatsapp, empresa, giro, sucursales });
 
-  if (!event_type_slug || !fecha || !hora_inicio || !nombre || !email) {
+  // Correo OPCIONAL cuando hay WhatsApp (decisión del dueño 2026-09-03): la confirmación y la liga de Meet viajan por WhatsApp.
+  if (!event_type_slug || !fecha || !hora_inicio || !nombre || (!email && !whatsapp)) {
     return new Response(
-      JSON.stringify({ error: 'event_type_slug, fecha, hora_inicio, nombre, and email are required' }),
+      JSON.stringify({ error: 'event_type_slug, fecha, hora_inicio, nombre y (email o whatsapp) son obligatorios' }),
       { status: 400 },
     );
   }
@@ -241,7 +242,7 @@ export const POST: APIRoute = async ({ request }) => {
   // a nadie. Sin tope de longitud, además, cabía un texto arbitrariamente largo
   // en el correo al vendedor y en la ficha del CRM.
   // `email` ya es texto normalizado (línea de arriba), así que basta el formato.
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return new Response(JSON.stringify({ error: 'El correo no tiene un formato válido.' }), { status: 400 });
   }
   if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 200) {
@@ -347,12 +348,12 @@ export const POST: APIRoute = async ({ request }) => {
   let isNewContact = false;
 
   const COLS_EXISTENTE = 'id, email, lifecycle_stage, referrer_partner_id, whatsapp, giro, sucursales_interes, utm_source, utm_medium, utm_campaign, propiedades, lead_score, visitor_id, fuente_detalle';
-  let { data: existingContact } = await supabase
+  let { data: existingContact } = email ? await supabase
     .from('contacts')
     .select(COLS_EXISTENTE)
     .eq('email', email)
     .limit(1)
-    .single();
+    .single() : { data: null as any };
 
   // Segundo intento por WHATSAPP: el lead que ya conversa con nosotros (el agente SDR, un
   // formulario previo) muchas veces no tiene correo en el CRM o da otro distinto. Sin esto se
@@ -429,7 +430,7 @@ export const POST: APIRoute = async ({ request }) => {
       .from('contacts')
       .insert({
         nombre,
-        email,
+        email: email || null,
         whatsapp: whatsapp || null,
         tipo: 'lead',
         lifecycle_stage: 'lead_calificado',
@@ -565,7 +566,7 @@ export const POST: APIRoute = async ({ request }) => {
       timezone_invitado: timezone || 'America/Mexico_City',
       timezone_host: 'America/Mexico_City',
       invitee_nombre: nombre,
-      invitee_email: email,
+      invitee_email: email || null,
       invitee_whatsapp: whatsapp || null,
       invitee_empresa: empresa || null,
       invitee_giro: giro || null,
@@ -628,7 +629,7 @@ export const POST: APIRoute = async ({ request }) => {
   // persona y se puede ver por donde entro y que leyo antes de agendar.
   // El agendador vive en un iframe, asi que desde el navegador no hay forma de
   // saber que la cita quedo: tiene que medirse aqui.
-  void capturarEnServidor('demo_agendada', email, {
+  void capturarEnServidor('demo_agendada', email || whatsapp, {
     booking_id: booking.id,
     tipo_evento: event_type_slug,
     fecha,
@@ -681,7 +682,7 @@ export const POST: APIRoute = async ({ request }) => {
       startDateTime: startDT,
       endDateTime: endDT,
       timezone: tz,
-      attendeeEmail: email,
+      attendeeEmail: email || undefined,
       hostEmail: hostMember?.email,
     });
 
@@ -882,7 +883,7 @@ export const POST: APIRoute = async ({ request }) => {
        sería un control que se puede apagar y no apaga nada — la peor clase de
        control, porque uno cree que ya lo resolvió. */
     if ((eventType as any).confirmacion_email !== false) {
-      await sendEmail(email, emailSubject, inviteeEmailHtml);
+      if (email) await sendEmail(email, emailSubject, inviteeEmailHtml);
     }
   } catch (inviteeEmailErr) {
     console.error('Invitee email notification failed:', inviteeEmailErr);

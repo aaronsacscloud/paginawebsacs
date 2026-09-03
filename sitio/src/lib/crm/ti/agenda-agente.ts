@@ -42,6 +42,8 @@ export async function horariosParaDemo(opts: { slug?: string; dias?: number; mej
   const ahoraLocalMin = (Date.now() - 6 * 3600e3) % 86400e3 / 60000;
   const todos: Horario[] = [];
   for (const [fecha, horas] of Object.entries(dates)) {
+    const dow = new Date(fecha + 'T12:00:00').getDay();
+    if (dow === 0 || dow === 6) continue;   // citas solo de lunes a viernes (decisión del dueño)
     for (const hora of horas || []) {
       const [h, m] = hora.split(':').map(Number);
       // Hoy: solo lo que empieza en más de 2 horas. Horario comercial: 9–18.
@@ -98,9 +100,9 @@ export const llamadaTexto = (hs: Horario[]) => hs.length
  *  resultado dice si el horario estaba ocupado, si la cita quedó sin liga de Meet, o si falló. */
 export async function agendarDemo(o: { nombre: string; email: string; whatsapp: string; fecha: string; hora: string; contactId?: string | null; empresa?: string | null; giro?: string | null; sucursales?: number | null; notas?: string; slug?: string; partnerId?: string | null }): Promise<{ ok: boolean; booking?: any; error?: string; ocupado?: boolean; sinMeet?: boolean; intentos?: number }> {
   const email = String(o.email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'correo inválido: ' + o.email };
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'correo inválido: ' + o.email };   // sin correo se agenda igual (la confirmación va por WhatsApp)
   // 0) Que /book encuentre a ESTE contacto (busca por correo). Si el correo ya es de otro contacto, no lo pisamos.
-  if (o.contactId) {
+  if (o.contactId && email) {
     const { data: c } = await supabase.from('contacts').select('id, email').eq('id', o.contactId).maybeSingle();
     if (c && !c.email) {
       const { data: otro } = await supabase.from('contacts').select('id').eq('email', email).neq('id', o.contactId).limit(1).maybeSingle();
@@ -114,7 +116,7 @@ export async function agendarDemo(o: { nombre: string; email: string; whatsapp: 
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(25000),
         body: JSON.stringify({
           event_type_slug: o.slug || 'demo', fecha: o.fecha, hora_inicio: o.hora,
-          nombre: o.nombre, email, whatsapp: o.whatsapp, empresa: o.empresa || undefined, giro: o.giro || undefined, sucursales: o.sucursales ? Number(o.sucursales) : undefined,
+          nombre: o.nombre, email: email || undefined, whatsapp: o.whatsapp, empresa: o.empresa || undefined, giro: o.giro || undefined, sucursales: o.sucursales ? Number(o.sucursales) : undefined,
           notas: o.notas || 'Agendada por el agente SDR desde WhatsApp', timezone: 'America/Mexico_City',
           utm_source: 'agente_ia', utm_medium: 'whatsapp', utm_campaign: 'sdr', ref_partner_id: o.partnerId || undefined,
         }),

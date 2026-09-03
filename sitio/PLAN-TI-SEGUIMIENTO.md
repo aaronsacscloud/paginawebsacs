@@ -141,6 +141,12 @@ clic? S9.2 ¿Hora de la revisión (8:00) y ¿te llega resumen por WhatsApp?
   las de bajo riesgo (mensaje extra, cambiar ángulo, adjunto) salen solas con ventana de veto; descalificar y
   llamada SIEMPRE con clic. S9.2 Corre a las 8:00 CDMX y manda resumen por WhatsApp al dueño con liga a la pestaña.
 
+## Decisiones tras el bug review (2026-09-03)
+- Casos de éxito: solo los de sacscloud.com/casos-de-exito. Correo opcional para agendar (WhatsApp basta).
+- Opt-out explícito (acción del agente + frases). Agente 24/7 respondiendo; toques en horario laboral; citas L–V.
+- Latido del sistema (cron cada 15 min) y caché de prompt activados. Resultado de la demo como dato faltante a las 24 h.
+- Pendientes de tu decisión: ficha propia de mayoreo de ropa (hoy nota dentro de ropa).
+
 ## Plan por fases (CERRADO con las 4 rondas · orden de construcción)
 F1 Promociones vigentes (S6) + corrección de planes.ts · F2 Toque de cierre de ventana solo con pregunta nuestra
 sin responder (S1) + estado esperando reunión + mensaje de preparación 24 h (S3) · F3 «Llamada discovery»:

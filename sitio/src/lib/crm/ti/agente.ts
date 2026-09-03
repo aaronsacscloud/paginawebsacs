@@ -100,7 +100,11 @@ export async function reescribirRespuesta(o: { contactId?: string | null; estado
   }
   const ctx = contextoParaLead({ giroCrm: c?.giro || null, conversacion: historia, ultimoMensaje: o.mensajeLead || '' });
   const galeria = await galeriaActiva().catch(() => []);
-  const system = `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados(o.estado || undefined)}${galeriaTexto(galeria, c?.giro)}`;
+  const system: any = [
+    { type: 'text', text: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLÍMITES:\n${LIMITES_COPILOTO}`, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: (await ejemplosAprobados(o.estado || undefined)) || ' ', cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c?.giro)}` },
+  ];
   const user = `EJERCICIO DE ENTRENAMIENTO CON EL DUEÑO. Vas a REESCRIBIR una respuesta tuya de un momento concreto, aplicando su criterio. No es una conversación en vivo: no saludes, no inventes datos, no agendes.
 ${c ? `LEAD: «${c.nombre || '?'}», giro ${c.giro || 'desconocido'}, tiendas ${c.sucursales_interes ?? '?'}, etapa ${c.lifecycle_stage}.` : ''}
 ${historia ? `ÚLTIMOS MENSAJES DE LA CONVERSACIÓN (contexto):\n${historia}\n` : ''}
@@ -122,6 +126,21 @@ Devuelve SOLO JSON: {"mensaje": "la respuesta final tal como saldría por WhatsA
   await log({ accion: 'agente_reescribe', contact_id: o.contactId || null, contenido: out?.mensaje || null, razon: o.criterio || undefined, costo: Number(costo) || 0, detalle: { evitar: o.evitar || null, en_dos: !!o.enDos, que_cambie: out?.que_cambie || null } });
   return { mensaje: out?.mensaje ? String(out.mensaje).trim() : null, que_cambie: String(out?.que_cambie || '').trim(), costo: Number(costo) || 0 };
 }
+
+/** OPT-OUT (decisión 2026-09-03): «no me escribas» se respeta al instante: sin toques, sin plantillas, sin secuencias; el agente calla para siempre en ese lead. */
+export async function aplicarOptOut(contactId: string, motivo: string) {
+  const ahora = new Date().toISOString();
+  await supabase.from('contacts').update({ wa_optout: true, updated_at: ahora }).eq('id', contactId);
+  const { data: pf } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', contactId).maybeSingle();
+  await supabase.from('ti_perfil').upsert({ contact_id: contactId, silenciar_ia: true, agente_estado: { ...((pf?.agente_estado as any) || {}), cerrado: 'opt_out', cerrado_at: ahora }, updated_at: ahora }, { onConflict: 'contact_id' });
+  await supabase.from('ti_envios').update({ estado: 'vetado', motivo_veto: 'opt-out del lead', updated_at: ahora }).eq('contact_id', contactId).eq('estado', 'pendiente');
+  await supabase.from('ti_cadencias').update({ estado: 'terminada', terminada_motivo: 'opt_out', updated_at: ahora }).eq('contact_id', contactId).neq('estado', 'terminada').then(() => {}, () => {});
+  await supabase.from('crm_secuencia_miembros').update({ detenida_at: ahora, motivo: 'opt_out' }).eq('contact_id', contactId).is('detenida_at', null).then(() => {}, () => {});
+  await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'opt_out', updated_at: ahora }).eq('contact_id', contactId).eq('estado', 'pendiente').then(() => {}, () => {});
+  await supabase.from('activities').insert({ contact_id: contactId, tipo: 'opt_out', titulo: 'Pidió que no le escribamos más por WhatsApp', descripcion: motivo, automatico: true }).then(() => {}, () => {});
+  await log({ accion: 'opt_out', contact_id: contactId, razon: motivo });
+}
+const OPT_OUT_RE = /\b(no me (escribas|escriban|manden|contacten|molesten)( m[aá]s)?|ya no me (escribas|escriban|manden)|deja(n)? de (escribir|mandar|molestar)|borra(me)? (mi|el) n[uú]mero|dar(me)? de baja|baja(me)? de (la|su) lista|no quiero (m[aá]s )?(mensajes|informaci[oó]n)|stop)\b/i;
 
 /** Un turno del agente para un contacto: lee, decide, no envía. */
 export async function decidirTurno(contactId: string, nota?: string): Promise<{ salida: SalidaAgente | null; costo: number; conversationId: string | null; telefono: string | null; motivo?: string }> {
@@ -163,7 +182,12 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     + (perfil ? `; interés estimado ${perfil.etapa_interes || '?'}; última respuesta ${perfil.ultima_respuesta_at ? String(perfil.ultima_respuesta_at).slice(0, 10) : 'n/a'}.` : '.');
   const r = await anthropic.messages.create({
     model: MODELS.opus, max_tokens: 1800,
-    system: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}\n\nLÍMITES:\n${LIMITES_COPILOTO}${await ejemplosAprobados()}${galeriaTexto(galeria, c.giro)}`,
+    // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
+    system: [
+      { type: 'text', text: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLÍMITES:\n${LIMITES_COPILOTO}`, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: (await ejemplosAprobados()) || ' ', cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
+    ] as any,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
   });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
@@ -391,6 +415,14 @@ export async function proponerRespuestas(): Promise<any> {
     const { data: yaAtendido } = await supabase.from('ti_envios').select('id').eq('contact_id', cid).gt('created_at', ultimoPor[cid]).neq('estado', 'vetado').limit(1);
     if ((yaAtendido || []).length) { res.saltados++; continue; }
     try {
+      // Baja explícita en su propio mensaje: se respeta sin pasar por el modelo (y se confirma en una línea).
+      const { texto: txtBaja } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 60e3).toISOString(), 2);
+      if (OPT_OUT_RE.test(txtBaja || '')) {
+        await aplicarOptOut(cid, `escribió: «${String(txtBaja).slice(0, 120)}»`);
+        const { data: cv0 } = await supabase.from('wa_conversaciones').select('id, telefono').eq('contact_id', cid).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
+        if (cv0?.telefono) await supabase.from('ti_envios').insert({ contact_id: cid, conversation_id: cv0.id, telefono: String(cv0.telefono).replace(/\D/g, ''), origen: 'respuesta', estado: 'pendiente', mensaje: 'Entendido, no te vuelvo a escribir. Si un día quieres retomarlo, aquí estoy.', salida: { estado: 'descalificado', objetivo: 'Confirmar la baja', responder: true, accion: { tipo: 'opt_out' }, reconsiderado: true }, sale_at: ahora.toISOString(), modelo: 'regla' }).then(() => {}, () => {});
+        res.saltados++; continue;
+      }
       const nAg = Number((p?.agente_estado as any)?.mensajes_agendar) || 0;
       const notaAg = nAg >= 2 && !(await proximaCita(cid).catch(() => null)) ? `TERCER MENSAJE desde que el lead reconectó y todavía no hay cita ni llamada. Contesta primero lo que preguntó, en corto. Luego, en UNA oración y como consecuencia de lo que ya platicaron (cita algo que él dijo), ofrece la demo o la llamada con DOS horarios reales de la lista. Sin «aprovecho para», sin justificar la propuesta, sin adjetivos de venta. Una sola pregunta al final: la de los horarios.` : undefined;
       const d = await decidirTurno(cid, notaAg);
@@ -594,6 +626,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       let mensaje = e.mensaje;
       const acc: any = (e.salida as any)?.accion;
       const esLlamada = acc?.tipo === 'agendar_llamada';
+      if (acc?.tipo === 'opt_out' && e.contact_id) { await aplicarOptOut(e.contact_id, 'el lead pidió que no le escribamos (agente)'); }
       if ((acc?.tipo === 'agendar' || esLlamada) && acc.fecha && acc.hora) {
         const { data: c } = await supabase.from('contacts').select('nombre, email, giro, sucursales_interes, referrer_partner_id, companies(nombre)').eq('id', e.contact_id).maybeSingle();
         const email = String(acc.email || c?.email || '').trim().toLowerCase();
@@ -601,13 +634,11 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
         const { data: pf } = await supabase.from('ti_perfil').select('agente_estado').eq('contact_id', e.contact_id).maybeSingle();
         const st: any = { ciclo: 1, toque: 0, ...((pf?.agente_estado as any) || {}) };
         const guardarSt = (cambios: any) => supabase.from('ti_perfil').upsert({ contact_id: e.contact_id, agente_estado: { ...st, ...cambios }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          // Sin correo NO hay cita (la invitación y el Meet viajan por correo). Se pide, y el horario elegido se recuerda.
-          mensaje = `Te aparto el ${etiqueta}. Solo me falta tu correo para mandarte la invitación con la liga, ¿cuál uso?`;
-          await guardarSt({ agenda_pendiente: { fecha: acc.fecha, hora: acc.hora, slug: esLlamada ? 'llamada-discovery' : 'demo', motivo: 'sin_correo', desde: ahora.toISOString() } });
-          await log({ accion: 'agente_agenda_sin_correo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora}`, detalle: { email_dado: acc.email || null } });
-        } else {
-          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, slug: esLlamada ? 'llamada-discovery' : 'demo', empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `${esLlamada ? 'Llamada discovery (15 min) agendada por el agente SDR' : 'Agendada por el agente SDR'}. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
+        {
+          // Sin correo se agenda IGUAL (decisión 2026-09-03): la confirmación, los recordatorios y la liga viajan por WhatsApp. El correo se pide una vez, no bloquea.
+          const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+          if (!emailValido) await log({ accion: 'agente_agenda_sin_correo', contact_id: e.contact_id, razon: `${acc.fecha} ${acc.hora} · se agenda solo con WhatsApp`, detalle: { email_dado: acc.email || null } });
+          const r = await agendarDemo({ nombre: c?.nombre || 'Lead', email: emailValido, whatsapp: e.telefono, fecha: acc.fecha, hora: acc.hora, contactId: e.contact_id, slug: esLlamada ? 'llamada-discovery' : 'demo', empresa: (c as any)?.companies?.nombre || null, giro: c?.giro || null, sucursales: c?.sucursales_interes || null, partnerId: c?.referrer_partner_id || null, notas: `${esLlamada ? 'Llamada discovery (15 min) agendada por el agente SDR' : 'Agendada por el agente SDR'}. Objetivo: ${(e.salida as any)?.objetivo || ''}` });
           if (!r.ok && r.ocupado) {
             const otros = await (esLlamada ? horariosParaLlamada() : horariosParaDemo({ max: 2 })).catch(() => []);
             mensaje = `Justo se ocupó el ${etiqueta}, una disculpa. ${otros.length ? `¿Te queda ${otros.map(h => h.etiqueta).join(' o ')}?` : '¿Qué otro día te acomoda? Dime si mañana o tarde y te paso opciones.'}`;
