@@ -316,15 +316,24 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 
   return (
     <div className={mobile ? 'wa-hilo-m' : undefined} style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderLeft: mobile ? 'none' : `1px solid ${C.g200}`, background: mobile ? '#fff' : C.g50, height: mobile ? 'calc(100dvh - 64px)' : undefined }}>
-      {/* ── Header h-44 ── */}
-      <div style={{ height: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
+      {/* ── Header ──
+          DOS RENGLONES en escritorio, no uno. En 44 px de alto cabían el
+          nombre, la etapa, el teléfono, el contador de la ventana, el estado
+          del Agente IA, dos selectores y tres iconos: todo salía recortado
+          —«Sin asig», «● I», el contador partido— y había que adivinar por el
+          tooltip. Más alto no cuesta nada; no poder leer el estado del agente
+          ni a quién está asignada, sí.
+
+          Se deja que envuelva: en una pantalla ancha caben en una línea, y en
+          una angosta los controles bajan solos en vez de aplastarse. */}
+      <div style={{ minHeight: L.header, flexShrink: 0, display: 'flex', alignItems: 'center', flexWrap: mobile ? 'nowrap' : 'wrap', rowGap: 6, gap: 10, padding: mobile ? '0 16px' : '7px 16px', background: '#fff', borderBottom: `1px solid ${C.g100}` }}>
         {onBack && <button onClick={volver} aria-label="Atrás" style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, minWidth: 44, height: 44, marginLeft: -10, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>←</button>}
         {/* `overflow:hidden` no es cosmético: este bloque toma el espacio que
             sobra, pero sus pastillas llevan `flex-shrink:0` y se salían de su
             caja pintándose ENCIMA de lo que va a la derecha. Con esto, lo que
             no cabe se recorta dentro de su propio carril en vez de invadir el
             contador de la ventana. */}
-        <span style={{ minWidth: 100, flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <span style={{ minWidth: 100, flex: '1 1 240px', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 9 }}>
           <b style={{ fontSize: mobile ? 17 : 13, letterSpacing: mobile ? '-0.015em' : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, maxWidth: mobile ? undefined : 200, flex: mobile ? 1 : '0 1 auto' }}>{nombre || telefonoLegible(conv.telefono)}</b>
           {etapa && !mobile && <span style={{ fontSize: 9, fontWeight: 700, background: etapa.bg, color: etapa.fg, borderRadius: 999, padding: '2px 7px', flexShrink: 0 }}>{etapa.label}</span>}
           {hilo?.web_en_vivo && !mobile && (
@@ -387,7 +396,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
           aria-label="Estado" title="Estado de la conversación"
           style={{
             border: '1px solid', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700,
-            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 1, minWidth: 78, maxWidth: mobile ? 84 : undefined,
+            fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0, minWidth: 96, maxWidth: mobile ? 84 : undefined,
             borderColor: conv.estado_crm === 'resuelta' ? '#A7F3D0' : conv.estado_crm === 'pendiente' ? C.ambar200 : C.g200,
             background: conv.estado_crm === 'resuelta' ? C.emerald50 : conv.estado_crm === 'pendiente' ? C.ambar50 : '#fff',
             color: conv.estado_crm === 'resuelta' ? C.emerald700 : conv.estado_crm === 'pendiente' ? C.ambar700 : C.g500,
@@ -1070,9 +1079,13 @@ function PildoraAgente({ contactId, conversationId, mobile, onEstado }: { contac
   const label = e.estado === 'activo' ? 'Agente IA activo' : e.estado === 'observando' ? (e.modo_sugerencia ? 'Agente IA sugiere' : 'Agente IA observando') : 'Agente IA apagado aquí';
   const accion = async (a: string) => { setAbierto(false); const r = await fetch('/api/crm/ti/agente-hilo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: contactId, conversation_id: conversationId, accion: a }) }).then(x => x.json()).catch(() => null); if (r && !r.error) { setE(r); onEstado(r); } };
   return (
-    <span style={{ position: 'relative', flexShrink: 1, minWidth: 30, maxWidth: 110 }}>
-      {/* Cede espacio como los selects: el texto se recorta con puntos, el punto de color nunca desaparece. */}
-      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '4px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+    {/* YA NO se encoge. Antes cedía espacio como los selects y acababa en
+        «● I» con el texto cortado: había que pasar el ratón para saber si el
+        agente estaba contestando solo, sugiriendo o apagado — y eso es lo
+        primero que necesitas saber antes de escribirle a este lead. El header
+        ahora envuelve, así que hay dónde ponerlo entero. */}
+    <span style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setAbierto(a => !a)} title={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${col.bd}`, background: col.bg, color: col.fg, borderRadius: 999, padding: mobile ? '3px 8px' : '5px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
         <span style={{ width: 7, height: 7, borderRadius: 99, background: col.fg, opacity: .9, flexShrink: 0 }} />{e.estado === 'activo' ? 'IA activa' : e.estado === 'observando' ? (e.modo_sugerencia ? 'IA sugiere' : 'IA observa') : 'IA apagada'}
       </button>
       {abierto && (
