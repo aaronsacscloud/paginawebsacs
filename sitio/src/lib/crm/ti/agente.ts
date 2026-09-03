@@ -71,7 +71,7 @@ async function charla(contactId: string, limite = 30) {
 }
 
 async function ejemplosAprobados(estado?: string) {
-  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').order('created_at', { ascending: false }).limit(60);
+  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').order('created_at', { ascending: false }).limit(60);   // los de reactivación los lee su propio redactor
   const { data } = await q;
   if (!(data || []).length) return '';
   // Las correcciones del dueño primero (máxima prioridad), luego el resto del estado actual, luego lo demás.
