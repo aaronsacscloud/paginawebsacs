@@ -328,21 +328,20 @@ export default function TrabajoPanel() {
 
   return (
     <div className="ti-raiz">
-      <style>{CSS}</style>
+      <style>{TI_CSS}</style>
       {avisoP1 && (
         <div className="ti-p1aviso" role="status"><i />{avisoP1}. Termina esta con calma.</div>
       )}
       <div className="ti-cab2">
         <span className="ti-cab2-tt">Trabajo inteligente</span>
         <nav className="ti-cab2-tabs">
-          {([['torre', 'Torre'], ['informes', 'Informes'], ['ajustes', 'Ajustes del agente']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
+          {([['torre', 'Torre'], ['informes', 'Informes']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
+          <a className="ti-cab2-tab" href="/admin/crm?tab=config#agente" style={{ marginLeft: 'auto', textDecoration: 'none', color: '#8e88a8' }}>Ajustes del agente → Configuración</a>
         </nav>
         {seccion === 'informes' && <nav className="ti-cab2-sub">{([['leads', 'Leads'], ['revision', 'Revisión diaria'], ['biblioteca', 'Biblioteca'], ['consumo', 'Consumo']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (infTab === k ? ' on' : '')} onClick={() => setInfTab(k)}>{l}</button>)}</nav>}
-        {seccion === 'ajustes' && <nav className="ti-cab2-sub">{([['herramientas', 'Herramientas'], ['reactivacion', 'Reactivación']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (ajTab === k ? ' on' : '')} onClick={() => setAjTab(k)}>{l}</button>)}</nav>}
       </div>
       {seccion === 'torre' && <div className="ti-lienzo tc-full"><TorreControl irA={(t) => { if (t === 'aprendizaje') { setSeccion('informes'); setInfTab('biblioteca'); } }} /></div>}
       {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
-      {seccion === 'ajustes' && (ajTab === 'herramientas' ? <TrabajoEnvios soloHerramientas /> : <TrabajoReactivacion />)}
 
       {vistaTab === 'envios' && <TrabajoEnvios onIrAprendizaje={() => setVistaTab('aprendizaje')} />}
       {vistaTab === 'aprendizaje' && <TrabajoAprendizaje />}
@@ -474,7 +473,7 @@ const icoEnviar = <svg width="17" height="17" viewBox="0 0 24 24" fill="none" st
 const icoFlecha = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>;
 
 /* ── El CSS de la maqueta v5, con tokens y ambos temas ── */
-const CSS = `
+export const TI_CSS = `
 .ti-raiz { --fondo:#f6f5f9; --carta:#fff; --tinta:#241d43; --texto:#4a4756; --suave:#71707C;
   --tenue:#a5a2af; --linea:#ececec; --linea2:#f0eef7; --morado:#9B8CFA; --morado-tinta:#5B4BD6;
   --morado-hondo:#4536BE; --morado-agua:#EEECFE; --verde-t:#1E8A63; --verde-a:#EAF8F2;

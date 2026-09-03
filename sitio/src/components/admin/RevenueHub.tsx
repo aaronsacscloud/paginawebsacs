@@ -84,6 +84,9 @@ function detalleVistas(meta: any): string {
 import { calcQuoteTotals } from '../../lib/quotes/totals';
 import Cargando, { Corazones } from './crm/ui/Cargando';
 import { SeccionWA } from './crm/whatsapp/ConfigWhatsApp';
+import TrabajoEnvios from './TrabajoEnvios';
+import TrabajoReactivacion from './TrabajoReactivacion';
+import { TI_CSS } from './TrabajoPanel';
 
 interface Client {
   id: string; empresa: string; contacto: string; email: string; whatsapp: string;
@@ -3973,6 +3976,17 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'google-calendar', ico: 'agenda', t: 'Google Calendar',
                   d: 'Con qué cuenta de Google se crean los eventos y las ligas de Meet. Ojo: la conexión es por persona del equipo, así que la que valga es la que conectes desde tu propia sesión.',
                   editor: <GoogleCalendarPanel /> },
+              ]},
+            ]},
+            { g: 'Trabajo inteligente', mods: [
+              // Los ajustes del agente viven aquí, con el resto de la configuración (decisión 2026-09-04): Trabajo inteligente es para trabajar.
+              { id: 'agente', nom: 'Agente IA', sub: 'Lo que el agente tiene a la mano y cómo reactiva leads viejos.', items: [
+                { id: 'herramientas', ico: 'catalogo', t: 'Herramientas del agente', v: 'Promociones · recursos · plantillas',
+                  d: 'Promociones vigentes (las menciona una vez y con fecha límite), recursos que puede adjuntar (imagen, PDF, video) y las plantillas de Meta que crea por momento.',
+                  editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><TrabajoEnvios soloHerramientas /></div> },
+                { id: 'reactivacion', ico: 'gente', t: 'Reactivación de leads viejos', v: 'Rampa y lote diario',
+                  d: 'Segmentos, «redactar ahora» y la rampa: 20 aprobadas seguidas sin editar y salen solas con veto de 10 minutos. Las propuestas se aprueban en la Torre.',
+                  editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><TrabajoReactivacion /></div> },
               ]},
             ]},
             { g: 'Facturación', mods: [
