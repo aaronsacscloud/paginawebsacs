@@ -55,7 +55,12 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
   const th = { textAlign: 'left' as const, padding: '8px 12px', fontWeight: 800, fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#8e88a8', background: '#faf9fc' };
   const td = { padding: '8px 12px', borderTop: '1px solid #f0eef6', fontSize: 12.5 };
   const cerrado = !!d?.cierre;
-  const filasGasto = (() => { if (!d) return []; const xs = d.gastos.lista.map((g: any) => ({ ...g, vence: venceEn(g, mes), dias: diasPara(venceEn(g, mes)) })); const dir = orden.asc ? 1 : -1; return xs.sort((a: any, b: any) => { if (orden.k === 'monto') return (Number(a.monto) - Number(b.monto)) * dir; if (orden.k === 'dias') { if (!!a.pago !== !!b.pago) return a.pago ? 1 : -1; return (a.dias - b.dias) * dir; } return String(a[orden.k] || '').localeCompare(String(b[orden.k] || ''), 'es') * dir; }); })();
+  /* La categoría que se está mirando en la tabla de gastos. Las pastillas eran
+     solo informativas: decían cuánto suma cada rubro y no se podía hacer nada
+     con ellas. Como pestañas, el mismo dato SIRVE: dices «nómina» y ves la
+     nómina. */
+  const [catTab, setCatTab] = useState<string>('todos');
+  const filasGasto = (() => { if (!d) return []; const xs = d.gastos.lista.filter((g: any) => catTab === 'todos' || g.categoria === catTab).map((g: any) => ({ ...g, vence: venceEn(g, mes), dias: diasPara(venceEn(g, mes)) })); const dir = orden.asc ? 1 : -1; return xs.sort((a: any, b: any) => { if (orden.k === 'monto') return (Number(a.monto) - Number(b.monto)) * dir; if (orden.k === 'dias') { if (!!a.pago !== !!b.pago) return a.pago ? 1 : -1; return (a.dias - b.dias) * dir; } return String(a[orden.k] || '').localeCompare(String(b[orden.k] || ''), 'es') * dir; }); })();
   const thSort = (k: typeof orden.k, l: string, right?: boolean) => <th style={{ ...th, textAlign: right ? 'right' : 'left', cursor: 'pointer', userSelect: 'none', color: orden.k === k ? '#4c1d95' : th.color }} onClick={() => setOrden(o => ({ k, asc: o.k === k ? !o.asc : k !== 'monto' }))} title="Ordenar">{l}{orden.k === k ? (orden.asc ? ' ↑' : ' ↓') : ''}</th>;
   return (
     <div style={{ padding: '18px 22px 60px', maxWidth: 1180, margin: '0 auto', color: '#241d43' }}>
@@ -69,6 +74,13 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           <button style={chip(false)} onClick={() => setMes(mover(mes, -1))}>‹ {MESES[Number(mover(mes, -1).slice(5, 7)) - 1]}</button>
           <button style={chip(true)} onClick={() => setMes(new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 7))}>Hoy</button>
           <button style={chip(false)} onClick={() => setMes(mover(mes, 1))}>{MESES[Number(mover(mes, 1).slice(5, 7)) - 1]} ›</button>
+          {/* La acción principal vive ARRIBA, con los controles del mes. Estaba
+              enterrada entre las pastillas y la tabla, a media pantalla: es lo
+              que más se hace en esta vista y había que ir a buscarla. */}
+          {vista === 'gastos' && d && !d.error && (
+            <button onClick={() => { setForm({ ...vacio, inicio: mes }); setAbierto(true); }}
+              style={{ marginLeft: 6, border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 999, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>+ Agregar gasto</button>
+          )}
         </div>
       </div>
       {!d && <p style={{ color: '#8e88a8', marginTop: 20 }}>Calculando…</p>}
@@ -88,15 +100,16 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
 
         {vista === 'gastos' && (
           <div style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {Object.entries(d.gastos.por_categoria).map(([c, v]: any) => <span key={c} style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>{CATS[c] || c}</b> {pesos(v.previsto)} <span style={{ color: '#8e88a8' }}>· {pesos(v.pagado)} pagado</span></span>)}
-                {!d.gastos.por_categoria.comision && d.comisiones.total > 0 && <span style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>Comisiones</b> {pesos(d.comisiones.total)}{d.comisiones.por_pagar ? <span style={{ color: '#8e88a8' }}> · {pesos(d.comisiones.por_pagar)} por pagar</span> : null}</span>}
-                {d.variables?.probables > 0 && <span style={{ fontSize: 12, background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 999, padding: '4px 10px' }}><b>Variables estimadas</b> {pesos(d.variables.probables)}</span>}
-                {d.variables?.marketing_real > 0 && <span style={{ fontSize: 12, background: '#faf9fc', border: '1px solid #ecebf2', borderRadius: 999, padding: '4px 10px' }}><b>Publicidad real (Embudo)</b> {pesos(d.variables.marketing_real)}</span>}
+            {/* Lo que NO es una categoría de la tabla se queda como dato al
+                margen: las variables estimadas y la publicidad del embudo no
+                tienen renglones que filtrar, y ponerlas de pestaña prometería
+                una lista que no existe. */}
+            {(d.variables?.probables > 0 || d.variables?.marketing_real > 0) && (
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12, fontSize: 12, color: '#6b6580' }}>
+                {d.variables?.probables > 0 && <span><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#fbbf24', marginRight: 6 }} />Variables estimadas <b style={{ color: '#241d43' }}>{pesos(d.variables.probables)}</b></span>}
+                {d.variables?.marketing_real > 0 && <span>Publicidad real (Embudo) <b style={{ color: '#241d43' }}>{pesos(d.variables.marketing_real)}</b></span>}
               </div>
-              <button onClick={() => { setForm({ ...vacio, inicio: mes }); setAbierto(true); }} style={{ border: 'none', background: '#5B4BD6', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>+ Agregar gasto</button>
-            </div>
+            )}
             {abierto && (
               <div style={{ marginTop: 12, background: '#fff', border: '1px solid #d9d4ea', borderRadius: 14, padding: 16 }}>
                 <b>{form.id ? 'Editar gasto' : 'Nuevo gasto'}</b>
@@ -121,6 +134,41 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
               </div>
             )}
             <div style={{ marginTop: 12, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+              {/* ══ PESTAÑAS DE CATEGORÍA, PEGADAS A LA TABLA ══
+                  Eran pastillas sueltas flotando entre los KPIs y la tabla:
+                  decían cuánto suma cada rubro y no se podía hacer nada con
+                  ellas, y de paso separaban la tabla de su propio resumen.
+                  Como pestañas el mismo número SIRVE —tocas «Nómina» y ves la
+                  nómina— y se lee como lo que es: el índice de esta tabla.
+                  Ordenadas de mayor a menor: lo que más pesa, primero. */}
+              {(() => {
+                const cats = Object.entries(d.gastos.por_categoria as Record<string, any>)
+                  .sort((a: any, b: any) => Number(b[1].previsto) - Number(a[1].previsto));
+                const total = cats.reduce((s: number, [, v]: any) => s + Number(v.previsto || 0), 0);
+                const pagadoTotal = cats.reduce((s: number, [, v]: any) => s + Number(v.pagado || 0), 0);
+                const tabs: [string, string, number, number][] = [
+                  ['todos', 'Todos', total, pagadoTotal],
+                  ...cats.map(([c, v]: any) => [c, CATS[c] || c, Number(v.previsto || 0), Number(v.pagado || 0)] as [string, string, number, number]),
+                ];
+                return (
+                  <div style={{ display: 'flex', gap: 2, overflowX: 'auto', borderBottom: '1px solid #ecebf2', padding: '0 6px' }}>
+                    {tabs.map(([k, l, prev, pag]) => {
+                      const on = catTab === k;
+                      return (
+                        <button key={k} onClick={() => setCatTab(k)}
+                          style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                            padding: '11px 14px 9px', borderBottom: `2px solid ${on ? '#5B4BD6' : 'transparent'}`,
+                            color: on ? '#241d43' : '#6b6580', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 800 : 600 }}>{l}</span>
+                          <span style={{ display: 'block', fontSize: 11, color: on ? '#5B4BD6' : '#a5a0b8', fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>
+                            {pesos(prev)}{pag > 0 ? ` · ${pesos(pag)} pagado` : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                 <thead><tr><th style={th}>Pagado</th>{thSort('nombre', 'Gasto')}{thSort('categoria', 'Categoría')}<th style={th}>Periodicidad</th>{thSort('dias', 'Vence')}{thSort('monto', 'Monto', true)}<th style={th}></th></tr></thead>
                 <tbody>
@@ -135,7 +183,15 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                       <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}><button onClick={() => { setForm({ id: g.id, nombre: g.nombre, categoria: g.categoria, monto: g.monto, periodicidad: g.periodicidad, dia_cobro: g.dia_cobro || '', inicio: String(g.inicio).slice(0, 7), fin: g.fin ? String(g.fin).slice(0, 7) : '', proveedor: g.proveedor || '', notas: g.notas || '', probable: !!g.probable }); setAbierto(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ border: 'none', background: 'transparent', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}>Editar</button></td>
                     </tr>
                   ))}
-                  {!d.gastos.lista.length && <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#8e88a8', padding: 20 }}>Todavía no capturas gastos. Empieza por las suscripciones que pagas cada mes.</td></tr>}
+                  {/* Con un filtro puesto, «todavía no capturas gastos» sería
+                      mentira: los hay, pero en otra pestaña. */}
+                  {!filasGasto.length && (
+                    <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#8e88a8', padding: 20 }}>
+                      {catTab !== 'todos'
+                        ? <>Sin gastos de <b>{CATS[catTab] || catTab}</b> este mes. <button onClick={() => setCatTab('todos')} style={{ border: 'none', background: 'none', color: '#5B4BD6', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5 }}>Ver todos</button></>
+                        : 'Todavía no capturas gastos. Empieza por las suscripciones que pagas cada mes.'}
+                    </td></tr>
+                  )}
                   {(d.comisiones.cortes || []).length > 0 && !d.gastos.por_categoria.comision && (<>
                     <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones: cortes que se pagan los lunes ({pesos(d.comisiones.por_pagar)} por pagar)</td></tr>
                     {d.comisiones.cortes.map((c: any) => <tr key={c.id} style={{ opacity: c.pagado ? .7 : 1 }}><td style={td}><input type="checkbox" checked={c.pagado} readOnly title="Se marca pagado desde Comisiones" style={{ width: 18, height: 18, accentColor: '#5B4BD6' }} /></td><td style={td}><b>{c.vendedor}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>corte {c.desde} → {c.hasta} · {c.aceptado ? 'aceptado por la vendedora' : c.estado}</div></td><td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>Comisiones</span></td><td style={td}>Lunes</td><td style={td}>{c.paga_el}</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(c.monto)}</td><td style={td}></td></tr>)}
