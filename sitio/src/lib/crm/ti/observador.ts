@@ -153,13 +153,13 @@ export async function observar(): Promise<any> {
     const { proponerRespuestas, despacharEnvios, tocarSilencios, atenderCitas } = await import('./agente');
     // Los audios primero: el agente debe leer lo que el lead DIJO, no «[audio]».
     try { const { transcribirPendientes } = await import('../../whatsapp/transcribir'); res.audios = await transcribirPendientes({ dias: 3, max: 6 }); } catch (e: any) { res.audios_error = String(e?.message || e); }
-    res.agente = await proponerRespuestas();
-    res.agente_citas = await atenderCitas();
+    try { res.agente = await proponerRespuestas(); } catch (e: any) { res.agente_error = String(e?.message || e); }
+    try { res.agente_citas = await atenderCitas(); } catch (e: any) { res.citas_error = String(e?.message || e); }
     try { const { prepararDemos } = await import('./agente'); res.agente_preparacion = await prepararDemos(); } catch (e: any) { res.preparacion_error = String(e?.message || e); }
     // Las plantillas del agente (par marketing+utility) se crean/refrescan solas; se usan fuera de la ventana de 24 h.
     try { const { asegurarPlantillas } = await import('./plantillas-agente'); const pl: any = await asegurarPlantillas(); res.plantillas = { marketing: pl.marketing?.estado || null, utility: pl.utility?.estado || null }; } catch (e: any) { res.plantillas_error = String(e?.message || e); }
-    res.agente_silencio = await tocarSilencios();
-    res.agente_despacho = await despacharEnvios();
+    try { res.agente_silencio = await tocarSilencios(); } catch (e: any) { res.silencio_error = String(e?.message || e); }
+    try { res.agente_despacho = await despacharEnvios(); } catch (e: any) { res.despacho_error = String(e?.message || e); }
     try { const { reintentarAgendas } = await import('./agente'); res.agente_reintentos = await reintentarAgendas(); } catch (e: any) { res.reintentos_error = String(e?.message || e); }
     try { const { revisarFallbacks } = await import('./agente'); res.agente_fallbacks = await revisarFallbacks(); } catch (e: any) { res.fallbacks_error = String(e?.message || e); }
   } catch (e: any) { res.agente_error = String(e?.message || e); }

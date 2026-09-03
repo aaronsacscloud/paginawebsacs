@@ -66,15 +66,15 @@ async function guardar(reg: Registro) {
 /** Crea el par base si no existe y refresca su estado en Meta. Idempotente; corre con el observador. */
 export async function asegurarPlantillas(): Promise<Registro> {
   const reg = await leer();
-  if (reg.apagado) return reg;
   const hoy = new Date().toISOString().slice(0, 10);
+  const apagadoCreacion = !!reg.apagado;   // con 3 rechazos se deja de CREAR, pero los estados se siguen refrescando
   const creadasHoy = reg.creadas_hoy?.dia === hoy ? reg.creadas_hoy.n : 0;
   let cambios = false;
   const { crearPlantillaMeta, listarPlantillasMeta } = await import('../../whatsapp/kapso-api');
   // 1) Crear lo que falte (máx. 3 al día).
   let n = creadasHoy;
   for (const k of ['marketing', 'utility'] as const) {
-    if (reg[k] || n >= 3) continue;
+    if (apagadoCreacion || reg[k] || n >= 3) continue;
     const def = PAR_BASE[k];
     try {
       await crearPlantillaMeta({ nombre: def.nombre, idioma: 'es_MX', categoria: def.categoria, cuerpo: def.cuerpo, ejemplos: def.ejemplos, botones: def.botones as any });
@@ -97,7 +97,7 @@ export async function asegurarPlantillas(): Promise<Registro> {
   for (const fam of ['no_show', 'preparacion', 'promo', 'cierre'] as Familia[]) {
     reg.familias[fam] = reg.familias[fam] || {};
     for (const k of ['marketing', 'utility'] as const) {
-      if (reg.familias[fam][k] || n >= 3) continue;
+      if (apagadoCreacion || reg.familias[fam][k] || n >= 3) continue;
       const def = FAMILIAS[fam][k];
       try {
         await crearPlantillaMeta({ nombre: def.nombre, idioma: 'es_MX', categoria: k === 'marketing' ? 'MARKETING' : 'UTILITY', cuerpo: def.cuerpo, ejemplos: def.ejemplos, botones: def.botones as any });
@@ -158,18 +158,23 @@ export async function tableroPlantillas() {
   const desde = new Date(Date.now() - 30 * 86400e3).toISOString();
   const { data: envs } = await supabase.from('ti_envios').select('id, contact_id, kapso_message_id, enviado_at, plantilla, salida').eq('estado', 'enviado').not('plantilla', 'is', null).gte('enviado_at', desde).limit(500);
   const filas: Record<string, { enviadas: number; entregadas: number; leidas: number; respondidas: number }> = {};
+  // Tres consultas en lote (antes eran dos por envío: ~1,000 por carga de la pestaña).
+  const wamids = (envs || []).map(e => e.kapso_message_id).filter(Boolean) as string[];
+  const cids = [...new Set((envs || []).map(e => e.contact_id).filter(Boolean))] as string[];
+  const { data: ms } = wamids.length ? await supabase.from('wa_mensajes').select('kapso_message_id, status').in('kapso_message_id', wamids) : { data: [] as any[] };
+  const status: Record<string, string> = {}; for (const m of ms || []) status[m.kapso_message_id] = m.status;
+  const { data: evs } = cids.length ? await supabase.from('ti_eventos').select('contact_id, ocurrio_at').eq('tipo', 'wa_entrante').in('contact_id', cids).gte('ocurrio_at', desde) : { data: [] as any[] };
+  const entradas: Record<string, number[]> = {}; for (const ev of evs || []) (entradas[ev.contact_id] ||= []).push(Date.parse(ev.ocurrio_at));
   for (const e of envs || []) {
     const nombre = String((e.salida as any)?.plantilla_usada || (e.plantilla as any)?.marketing || (e.plantilla as any)?.utility || '—');
     filas[nombre] = filas[nombre] || { enviadas: 0, entregadas: 0, leidas: 0, respondidas: 0 };
     filas[nombre].enviadas++;
-    if (e.kapso_message_id) {
-      const { data: m } = await supabase.from('wa_mensajes').select('status').eq('kapso_message_id', e.kapso_message_id).maybeSingle();
-      if (m?.status === 'delivered' || m?.status === 'read') filas[nombre].entregadas++;
-      if (m?.status === 'read') filas[nombre].leidas++;
-    }
+    const st = e.kapso_message_id ? status[e.kapso_message_id] : undefined;
+    if (st === 'delivered' || st === 'read') filas[nombre].entregadas++;
+    if (st === 'read') filas[nombre].leidas++;
     if (e.contact_id && e.enviado_at) {
-      const { data: r } = await supabase.from('ti_eventos').select('id').eq('contact_id', e.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', e.enviado_at).lt('ocurrio_at', new Date(Date.parse(e.enviado_at) + 48 * 3600e3).toISOString()).limit(1);
-      if ((r || []).length) filas[nombre].respondidas++;
+      const t0 = Date.parse(e.enviado_at), t1 = t0 + 48 * 3600e3;
+      if ((entradas[e.contact_id] || []).some(t => t > t0 && t < t1)) filas[nombre].respondidas++;
     }
   }
   return Object.entries(filas).map(([nombre, v]) => ({ nombre, ...v, tasa_respuesta: v.entregadas ? Math.round((v.respondidas / v.entregadas) * 100) : 0 })).sort((a, b) => b.enviadas - a.enviadas);

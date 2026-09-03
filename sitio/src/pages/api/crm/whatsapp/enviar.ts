@@ -280,7 +280,7 @@ export const POST: APIRoute = async ({ request }) => {
     // DESPUÉS de que el envío original sí salió (respuesta perdida, no envío
     // perdido). Cada mensaje de la cola trae su marca única: si ya hay un
     // espejo con esa marca, se contesta que ya está y no se manda otra vez.
-    const idem = b.idem ? String(b.idem).slice(0, 64) : null;
+    const idem = b.idem ? `${destino.convId}:${String(b.idem).slice(0, 64)}` : null;   // por conversación: dos usuarios no se pisan
     if (idem) {
       // Leer-y-luego-mandar dejaba una carrera: el reintento del cliente entraba mientras la primera petición
       // seguía en vuelo y salían DOS mensajes. La reserva atómica (clave primaria) cierra la carrera: quien
@@ -293,15 +293,18 @@ export const POST: APIRoute = async ({ request }) => {
           wamidPrev = (r1 as any)?.wamid || null;
           if (!wamidPrev) await new Promise(res => setTimeout(res, 500));
         }
+        if (!wamidPrev) return json({ error: 'El envío anterior con esta marca no terminó; vuelve a intentar.' }, 409);
         return json({ ok: true, duplicado: true, message_id: wamidPrev, conversation_id: destino.convId });
       }
     }
     // Los links a NUESTRO sitio se marcan con el `sv` del contacto: así, cuando
     // entre, el CRM sabe que fue él y qué recorrió. Los links ajenos no se tocan.
     const textoEnviado = textoConSv(texto, destino.contactId);
-    const r = await enviarTexto(destino.telefono, textoEnviado, cita);
+    let r: any;
+    try { r = await enviarTexto(destino.telefono, textoEnviado, cita); }
+    catch (err) { if (idem) await supabase.from('wa_envios_idem').delete().eq('idem', idem); throw err; }   // libera la marca: el reintento sí debe mandar
     const wamid = r?.messages?.[0]?.id;
-    if (idem) await supabase.from('wa_envios_idem').update({ wamid: wamid || null }).eq('idem', idem);
+    if (idem) { if (wamid) await supabase.from('wa_envios_idem').update({ wamid }).eq('idem', idem); else await supabase.from('wa_envios_idem').delete().eq('idem', idem); }
     if (wamid) await registrarMensaje({
       kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
       tipo: 'text', cuerpo: textoEnviado, status: 'sent',

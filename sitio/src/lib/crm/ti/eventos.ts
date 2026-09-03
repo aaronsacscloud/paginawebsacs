@@ -103,7 +103,7 @@ async function adWhatsapp(desde: string): Promise<Evento[]> {
     const actor: Evento['actor'] = m.autor === 'Agenda' ? 'agenda'
       : md.origen === 'secuencia' ? 'secuencia'
       : md.origen === 'valvula' ? 'valvula'
-      : md.origen === 'copiloto' ? 'ia'
+      : md.origen === 'copiloto' || md.origen === 'agente' ? 'ia'
       : (m.autor_id || m.autor) ? 'humano'
       : 'sistema';
     const payload: any = { texto: corto(m.cuerpo, 160), tipo: m.tipo, autor: m.autor || null, conversation_id: m.conversation_id };

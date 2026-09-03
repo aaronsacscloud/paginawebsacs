@@ -96,6 +96,11 @@ export async function ejecutarPropuesta(id: string, userId: string | null, decis
     return { ok: true, hecho: 'Rechazada. Queda como lección.' };
   }
   const p: any = r.propuesta || {}; const tipo: TipoPropuesta = p.tipo;
+  // FRESCURA: si desde que se propuso hubo mensajes (del lead o nuestros), la propuesta ya no describe la realidad.
+  if (userId && !p.forzar) {
+    const { data: nuevos } = await supabase.from('ti_eventos').select('id').eq('contact_id', r.contact_id).in('tipo', ['wa_entrante', 'wa_saliente']).gt('ocurrio_at', r.created_at).limit(1);
+    if ((nuevos || []).length && ['mensaje_extra', 'plantilla', 'adjunto'].includes(tipo)) return { ok: false, error: 'Ya hubo mensajes en esa conversación después de esta propuesta; revísala en el hilo antes de mandar algo.' };
+  }
   const texto = String(textoEditado || p.texto || '').trim();
   const editada = !!textoEditado && textoEditado.trim() !== String(p.texto || '').trim();
   const { data: c } = await supabase.from('contacts').select('nombre, whatsapp, owner_id, company_id').eq('id', r.contact_id).maybeSingle();
@@ -104,7 +109,8 @@ export async function ejecutarPropuesta(id: string, userId: string | null, decis
   if (tipo === 'mensaje_extra' || tipo === 'adjunto') {
     if (texto.length < 2 || !tel) return { ok: false, error: 'Falta el texto o el teléfono' };
     const ventana = Math.max(0, Number(cfg.agente_veto_min ?? 10));
-    await supabase.from('ti_envios').insert({ contact_id: r.contact_id, conversation_id: r.conversation_id, telefono: tel, origen: 'revision', estado: 'pendiente', mensaje: texto, adjuntos: Array.isArray(p.adjuntos) ? p.adjuntos : [], salida: { estado: 'revision', objetivo: p.fundamento || 'Propuesta de la revisión diaria', revision_id: id, reconsiderado: true }, sale_at: new Date(Date.now() + ventana * 60e3).toISOString(), modelo: 'revision', aprobado_por: userId });
+    const { error: eIns } = await supabase.from('ti_envios').insert({ contact_id: r.contact_id, conversation_id: r.conversation_id, telefono: tel, origen: 'revision', estado: 'pendiente', mensaje: texto, adjuntos: Array.isArray(p.adjuntos) ? p.adjuntos : [], salida: { estado: 'revision', objetivo: p.fundamento || 'Propuesta de la revisión diaria', revision_id: id, reconsiderado: true }, sale_at: new Date(Date.now() + ventana * 60e3).toISOString(), modelo: 'revision', aprobado_por: userId });
+    if (eIns) return { ok: false, error: /23505|duplicate/i.test(eIns.message) ? 'Ese lead ya tiene un envío pendiente en Próximos envíos; revísalo ahí.' : eIns.message };
     hecho = `Programado: sale en ${ventana} min salvo que lo detengas en Próximos envíos.`;
   } else if (tipo === 'llamada') {
     await supabase.from('ti_tareas').insert({ contact_id: r.contact_id, company_id: c?.company_id || null, owner_id: c?.owner_id || null, familia: 'contactar', tipo: 'llamada', prioridad: 2, vence_at: ahora, origen: 'reloj', payload: { instruccion: `Llámale a ${String(c?.nombre || 'el lead').split(/\s+/)[0]} — propuesta de la revisión diaria`, porque: p.fundamento || '', nombre: c?.nombre, whatsapp: c?.whatsapp, reloj: 'revision', tipo_llamada: 'Llamada de rescate' } });
@@ -122,7 +128,7 @@ export async function ejecutarPropuesta(id: string, userId: string | null, decis
   } else if (tipo === 'descalificar') {
     if (!userId) return { ok: false, error: 'Descalificar siempre requiere tu clic' };
     const { aplicarVeredictoSilencio } = await import('./agente');
-    await aplicarVeredictoSilencio({ contact_id: r.contact_id, id: null, payload: { propuesta: 'descalificar' } }, 'descalificar', { revision_id: id }, userId);
+    await aplicarVeredictoSilencio({ contact_id: r.contact_id, id: null, payload: { propuesta: 'descalificar', origen: 'revision' } }, 'descalificar', { revision_id: id }, userId);
     hecho = 'Descalificado: no respondió (a nutrición mecánica).';
   } else { hecho = 'Nada que ejecutar.'; }
   await supabase.from('ti_revision').update({ estado: userId ? 'aceptada' : 'automatica', decidido_por: userId, decidido_at: ahora, motivo: editada ? 'texto editado por el dueño' : null, propuesta: editada ? { ...p, texto_original: p.texto, texto } : p }).eq('id', id);

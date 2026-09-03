@@ -48,11 +48,16 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
 
   // Empresa: se resuelve primero porque giro/sucursales/web/ciudad viven ahí también.
   let companyId: string | null = c.company_id || null;
+  let enlazadaExistente = false;   // si se acaba de enlazar a una empresa que ya existía, NO se le pisan campos
   const dEmpresa = lista.find(d => d.campo === 'empresa');
   if (dEmpresa && puedeLlenar(dEmpresa) && dEmpresa.valor.length >= 2) {
     if (!companyId) {
-      const { data: ex } = await supabase.from('companies').select('id, nombre').is('archived_at', null).or(`nombre.ilike.${dEmpresa.valor.replace(/[,.()]/g, ' ').trim()},nombre_comercial.ilike.${dEmpresa.valor.replace(/[,.()]/g, ' ').trim()}`).limit(1).maybeSingle();
-      if (ex) companyId = ex.id;
+      // Coincidencia EXACTA normalizada (sin comodines ni texto crudo en el filtro): un nombre genérico no debe enganchar la empresa de otro.
+      const norm = (t: string) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      const buscado = norm(dEmpresa.valor);
+      const { data: cands } = buscado.length >= 4 ? await supabase.from('companies').select('id, nombre, nombre_comercial').is('archived_at', null).ilike('nombre', `%${buscado.split(' ')[0].replace(/[%_]/g, '')}%`).limit(20) : { data: [] as any[] };
+      const ex = (cands || []).find((k: any) => norm(k.nombre) === buscado || norm(k.nombre_comercial) === buscado);
+      if (ex) { companyId = ex.id; enlazadaExistente = true; }
       else {
         const dG = lista.find(d => d.campo === 'giro'), dS = lista.find(d => d.campo === 'sucursales');
         const { data: nueva } = await supabase.from('companies').insert({ nombre: dEmpresa.valor.slice(0, 80), giro: dG ? dG.valor.slice(0, 60) : (c.giro || null), sucursales: dS && /^\d+$/.test(dS.valor) ? Number(dS.valor) : (c.sucursales_interes || null), tipo_cuenta: 'prospecto' }).select('id').maybeSingle();
@@ -151,7 +156,7 @@ export async function aplicarDatos(contactId: string, datos: DatoLead[], ctx: { 
     delete upC.nombre_confianza;
     await supabase.from('contacts').update(upC).eq('id', contactId);
   }
-  if (companyId && Object.keys(upCo).length) await supabase.from('companies').update({ ...upCo, updated_at: ahora }).eq('id', companyId);
+  if (companyId && Object.keys(upCo).length && !enlazadaExistente) await supabase.from('companies').update({ ...upCo, updated_at: ahora }).eq('id', companyId);
   const visibles = cambios.filter(x => x.tabla !== 'perfil' || ['sistema_actual', 'dolor'].includes(x.campo));
   const temas = visibles.filter(x => x.campo === 'tema_reunion');
   if (temas.length) await supabase.from('activities').insert({ contact_id: contactId, company_id: companyId, tipo: 'tema_reunion', titulo: `Quiere ver en la reunión: ${temas.map(t => t.despues).join(' · ')}`, descripcion: temas.map(t => `${t.despues}${t.evidencia ? ` · dijo: «${limpio(t.evidencia, 120)}»` : ''}`).join('\n'), automatico: true, metadata: { fuente: ctx.fuente, conversation_id: ctx.conversation_id || null } }).then(() => {}, () => {});

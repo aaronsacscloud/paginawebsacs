@@ -23,7 +23,7 @@ export async function promoVigente(): Promise<Promo | null> {
   let lista: Promo[] = Array.isArray(v.promociones) ? v.promociones : [];
   if (!lista.length) { lista = [{ ...DEFAULT, vence: new Date(Date.now() + 10 * 86400e3).toISOString().slice(0, 10) }]; await guardarCfg({ promociones: lista }); }
   let cambio = false;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);   // hoy en CDMX
   for (const p of lista) {
     if (!p.activa) continue;
     if (!p.vence || p.vence < hoy) {
@@ -48,7 +48,11 @@ const diasHasta = (iso: string) => Math.max(0, Math.round((Date.parse(iso + 'T23
 export function promoTexto(p: Promo | null, dicha?: OfertaDicha | null): string {
   if (!p) return dicha ? `OFERTA YA DICHA A ESTE LEAD: «${dicha.texto}» (vencía el ${fechaLarga(dicha.vence)}, ya NO está vigente: no la repitas ni la prometas).` : '';
   const base = `PROMOCIÓN VIGENTE: ${p.texto}. Vigente hasta el ${fechaLarga(p.vence)} (${diasHasta(p.vence)} días). Se dice UNA vez, como plus al hablar de precio, con naturalidad y sin sonar vendedor.`;
-  if (dicha && dicha.promo_id === p.id) return `${base}\nOFERTA YA DICHA A ESTE LEAD el ${new Date(dicha.dicho_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}, con vencimiento ${fechaLarga(dicha.vence)}: no la repitas como novedad; úsala solo para dar contexto de tiempo si él decide.`;
+  if (dicha && dicha.promo_id === p.id) {
+    const hoy = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+    if (dicha.vence < hoy) return `OFERTA YA DICHA A ESTE LEAD: «${dicha.texto}», con vencimiento ${fechaLarga(dicha.vence)}, y ESA FECHA YA PASÓ. Aunque hoy haya una ventana nueva, a él NO le anuncies otra fecha ni digas que se extendió: si la trae a cuento, dile que esa condición venció y que el consultor puede ver si se la respeta; devuelve escalar.si=true con motivo «promo vencida, ver si se respeta». Nunca la ofrezcas como novedad.`;
+    return `${base}\nOFERTA YA DICHA A ESTE LEAD el ${new Date(dicha.dicho_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}, con vencimiento ${fechaLarga(dicha.vence)}: la fecha que manda para él es ESA; no la repitas como novedad ni le des otra fecha; úsala solo para dar contexto de tiempo si él decide y solo si él la trae a cuento.`;
+  }
   return base;
 }
 
@@ -62,7 +66,7 @@ export async function registrarOfertaDicha(contactId: string | null | undefined,
   const { data: c } = await supabase.from('contacts').select('propiedades').eq('id', contactId).maybeSingle();
   const props: any = (c?.propiedades && typeof c.propiedades === 'object') ? { ...(c.propiedades as any) } : {};
   const ofertas: OfertaDicha[] = Array.isArray(props.ofertas) ? props.ofertas : [];
-  if (ofertas.some(o => o.promo_id === p.id && o.vence === p.vence)) return false;
+  if (ofertas.some(o => o.promo_id === p.id)) return false;   // a un lead se le dice UNA ventana de una promo; nunca se le registra una segunda
   ofertas.push({ promo_id: p.id, nombre: p.nombre, texto: p.texto, dicho_at: new Date().toISOString(), vence: p.vence });
   props.ofertas = ofertas.slice(-10);
   await supabase.from('contacts').update({ propiedades: props, updated_at: new Date().toISOString() }).eq('id', contactId);

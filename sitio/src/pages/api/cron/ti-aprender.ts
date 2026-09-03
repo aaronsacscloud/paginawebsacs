@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ request }) => {
   const vetados = (env14 || []).filter(e => e.estado === 'vetado').length;
   const editados = (env14 || []).filter(e => e.editado_por).length;
   // Solo cuentan las correcciones a envíos REALES del agente (edición o «esto hubiera contestado yo» sobre un envío), no la calibración inicial.
-  const { count: correcciones7 } = await supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').gte('created_at', hace(7)).or('por_que.ilike.El dueño corrigió al agente%,por_que.ilike.El humano corrigió al agente%');
+  const { count: correcciones7 } = await supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').gte('created_at', hace(7)).or('por_que.ilike.%corrigió al agente%,por_que.ilike.El humano corrigió al agente%');
   const { count: vetos7 } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'vetado').gte('updated_at', hace(7));
   const errores7 = (correcciones7 || 0) + (vetos7 || 0);
   const veto = Number(cfg.agente_veto_min ?? 10);
