@@ -1,0 +1,206 @@
+---
+// La celebración de los logros del brief.
+//
+// Cada vez que el cliente consigue algo —firma, manda una etapa, se la
+// aprueban, o cierra el brief entero— caen hojuelas de oro y piedras. No es
+// confeti de fiesta: son laminillas metálicas que voltean y atrapan la luz, y
+// gemas con su destello. En un documento de alta joyería, un confeti de colores
+// primarios se vería barato.
+//
+// Expone `window.__celebrar(nivel, titulo, texto)` con tres niveles:
+//   'chico'   — mandó una etapa
+//   'medio'   — le aprobaron una etapa, o firmó
+//   'grande'  — cerró las doce
+//
+// Se dibuja en un lienzo propio por encima de todo, se apaga solo y se limpia.
+// Con `prefers-reduced-motion` no cae nada: solo aparece el mensaje.
+---
+
+<div class="ce" aria-live="polite">
+  <canvas class="ce-lienzo" aria-hidden="true"></canvas>
+  <div class="ce-msg" role="status" hidden>
+    <div class="ce-msg-caja">
+      <span class="ce-msg-t"></span>
+      <span class="ce-msg-p"></span>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+.ce { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.ce-lienzo { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.ce-msg {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, calc(-50% + 14px)) scale(.96);
+  opacity: 0; transition: opacity .35s ease, transform .5s cubic-bezier(.16,.84,.3,1);
+  width: min(440px, 88vw);
+}
+.ce-msg[data-viva] { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.ce-msg-caja {
+  background: #14181D; color: #fff; border-radius: 16px;
+  padding: 22px 26px; text-align: center;
+  box-shadow: 0 12px 44px rgba(20,24,29,.34), 0 0 0 1px rgba(214,184,122,.30);
+}
+.ce-msg-t {
+  display: block; font-family: 'Iowan Old Style', Georgia, serif;
+  font-size: 1.45rem; font-weight: 600; line-height: 1.15; margin-bottom: 6px;
+}
+.ce-msg-p { display: block; font-size: .93rem; color: rgba(255,255,255,.72); line-height: 1.5; }
+
+@media (max-width: 720px) {
+  .ce-msg-caja { padding: 18px 20px; border-radius: 14px; }
+  .ce-msg-t { font-size: 1.28rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ce-lienzo { display: none; }
+  .ce-msg { transition: opacity .2s ease; transform: translate(-50%, -50%); }
+}
+</style>
+
+<script>
+  (() => {
+    const raiz = document.querySelector('.ce');
+    if (!raiz) return;
+    const lienzo = raiz.querySelector('.ce-lienzo');
+    const msg = raiz.querySelector('.ce-msg');
+    const msgT = raiz.querySelector('.ce-msg-t');
+    const msgP = raiz.querySelector('.ce-msg-p');
+    const ctx = lienzo.getContext('2d');
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Oro de tres temperaturas + el blanco de la piedra. Nada de colores
+    // primarios: esto celebra una joyería, no un cumpleaños.
+    const OROS = ['#D6B87A', '#C6A15B', '#EBD9A8', '#A9854F'];
+    const PIEDRA = '#F4F7FF';
+
+    let W = 0, H = 0, dpr = 1;
+    function medir() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = window.innerWidth; H = window.innerHeight;
+      lienzo.width = Math.round(W * dpr);
+      lienzo.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    medir();
+    window.addEventListener('resize', medir);
+
+    // El destello se dibuja UNA vez y después solo se estampa — misma razón que
+    // en la banda de joyas: crear un degradado por partícula y por cuadro es lo
+    // que tira los cuadros por segundo.
+    const S = 48;
+    const brillo = document.createElement('canvas');
+    brillo.width = brillo.height = S;
+    {
+      const bc = brillo.getContext('2d');
+      const g = bc.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+      g.addColorStop(0, 'rgba(255,252,242,1)');
+      g.addColorStop(0.22, 'rgba(255,238,198,.6)');
+      g.addColorStop(1, 'rgba(214,184,122,0)');
+      bc.fillStyle = g; bc.fillRect(0, 0, S, S);
+    }
+
+    let piezas = [];
+    let raf = 0, ultimo = 0;
+
+    function nacer(n, desdeY) {
+      const salida = [];
+      for (let i = 0; i < n; i++) {
+        const gema = Math.random() < 0.22;
+        salida.push({
+          x: W * (0.12 + Math.random() * 0.76),
+          y: desdeY + (Math.random() - 0.5) * 60,
+          vx: (Math.random() - 0.5) * 5.2,
+          vy: -(7 + Math.random() * 10),
+          g: 0.16 + Math.random() * 0.09,        // gravedad
+          rot: Math.random() * Math.PI * 2,
+          vr: (Math.random() - 0.5) * 0.26,
+          giro: Math.random() * Math.PI * 2,     // el volteo de la laminilla
+          vg: 0.09 + Math.random() * 0.14,
+          l: gema ? 6 + Math.random() * 5 : 8 + Math.random() * 10,
+          a: gema ? 6 + Math.random() * 5 : 3 + Math.random() * 4,
+          c: gema ? PIEDRA : OROS[(Math.random() * OROS.length) | 0],
+          gema,
+          vida: 1,
+          mv: 0.0052 + Math.random() * 0.0042,   // por cuadro: ~3.5 s de vida
+        });
+      }
+      return salida;
+    }
+
+    function cuadro(t) {
+      const dt = Math.min(2.4, (t - ultimo) / 16.67 || 1);
+      ultimo = t;
+      ctx.clearRect(0, 0, W, H);
+
+      let vivas = 0;
+      for (const p of piezas) {
+        if (p.vida <= 0) continue;
+        vivas++;
+        p.vy += p.g * dt;
+        p.vx *= 0.995;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+        p.giro += p.vg * dt;
+        p.vida -= p.mv * dt;
+
+        // El volteo: la laminilla se ve ancha de frente y una línea de canto,
+        // y en el canto casi no refleja. Eso es lo que la hace parecer metal.
+        const cara = Math.abs(Math.cos(p.giro));
+        const alfa = Math.max(0, Math.min(1, p.vida)) * (0.35 + cara * 0.65);
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = alfa;
+
+        if (p.gema) {
+          // Un rombo con su punto de luz.
+          ctx.fillStyle = p.c;
+          ctx.beginPath();
+          ctx.moveTo(0, -p.l); ctx.lineTo(p.a, 0); ctx.lineTo(0, p.l); ctx.lineTo(-p.a, 0);
+          ctx.closePath(); ctx.fill();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = alfa * cara;
+          ctx.drawImage(brillo, -p.l * 1.6, -p.l * 1.6, p.l * 3.2, p.l * 3.2);
+          ctx.globalCompositeOperation = 'source-over';
+        } else {
+          ctx.fillStyle = p.c;
+          ctx.fillRect(-p.l / 2, -p.a / 2 * cara, p.l, Math.max(0.7, p.a * cara));
+        }
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+
+      if (vivas > 0) { raf = requestAnimationFrame(cuadro); }
+      else { raf = 0; piezas = []; ctx.clearRect(0, 0, W, H); }
+    }
+
+    let tMsg = 0;
+    window.__celebrar = function (nivel, titulo, texto) {
+      if (titulo) {
+        msgT.textContent = titulo;
+        msgP.textContent = texto || '';
+        msg.hidden = false;
+        requestAnimationFrame(() => msg.setAttribute('data-viva', ''));
+        clearTimeout(tMsg);
+        tMsg = setTimeout(() => {
+          msg.removeAttribute('data-viva');
+          setTimeout(() => { msg.hidden = true; }, 500);
+        }, nivel === 'grande' ? 5200 : 3400);
+      }
+      if (quieto) return;
+
+      const cuantas = nivel === 'grande' ? 210 : nivel === 'medio' ? 130 : 80;
+      // Nacen desde abajo y suben: cae oro sobre el documento, no le explota
+      // en la cara. Para el cierre, dos oleadas.
+      piezas = piezas.concat(nacer(cuantas, H * 0.94));
+      if (nivel === 'grande') {
+        setTimeout(() => { piezas = piezas.concat(nacer(120, H * 0.94)); if (!raf) { ultimo = performance.now(); raf = requestAnimationFrame(cuadro); } }, 420);
+      }
+      if (!raf) { ultimo = performance.now(); raf = requestAnimationFrame(cuadro); }
+    };
+  })();
+</script>

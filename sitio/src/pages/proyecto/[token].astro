@@ -11,6 +11,7 @@ import { briefPorToken, etapasDe } from '../../lib/proyecto/store';
 import { getSessionFromRequest } from '../../lib/auth/session';
 import Joyas from '../../components/proyecto/Joyas.astro';
 import JoyasBanda from '../../components/proyecto/JoyasBanda.astro';
+import Celebracion from '../../components/proyecto/Celebracion.astro';
 
 export const prerender = false;
 
@@ -38,6 +39,7 @@ const fechaFirma = brief.firmado_at
   bareLayout={true}
 >
   <Joyas />
+  <Celebracion />
   <div class="pb" data-token={brief.token} data-firmado={firmado ? '1' : ''} data-sacs={esSacs ? '1' : ''}>
 
     <!-- ─────────────────────────── Encabezado ─────────────────────────── -->
@@ -1180,6 +1182,9 @@ const fechaFirma = brief.firmado_at
           });
           const d = await res.json();
           if (!res.ok) throw new Error(d.error || 'No se pudo firmar');
+          // La página se recarga: la celebración se deja apuntada y sale del
+          // otro lado, ya con la primera etapa abierta.
+          try { sessionStorage.setItem('pb-festejo-' + TOKEN, 'firma'); } catch {}
           location.reload();
         } catch (e) {
           btn.disabled = false;
@@ -1223,6 +1228,63 @@ const fechaFirma = brief.firmado_at
       temporizador = setTimeout(() => { aviso.hidden = true; }, 1600);
     };
 
+    /**
+     * Los logros del cliente, celebrados.
+     *
+     * Las aprobaciones no las hace él: llegan mientras no está. Por eso se
+     * guarda qué etapas estaban aprobadas la última vez y, al volver, se
+     * festeja lo que cambió — si no, se enteraría por un renglón gris.
+     */
+    function celebrar(nivel, titulo, texto, intento = 0) {
+      if (typeof window.__celebrar === 'function') return window.__celebrar(nivel, titulo, texto);
+      if (intento < 12) setTimeout(() => celebrar(nivel, titulo, texto, intento + 1), 120);
+    }
+
+    const LLAVE = 'pb-aprobadas-' + TOKEN;
+
+    function festejar(etapas) {
+      const aprobadas = etapas.filter((e) => e.estado === 'aprobada').map((e) => e.clave);
+
+      const crudo = (() => { try { return localStorage.getItem(LLAVE); } catch { return null; } })();
+      // La PRIMERA vez que este navegador ve el brief no hay con qué comparar:
+      // se apunta lo que hay y no se festeja nada viejo. Si no, alguien que
+      // abre el link con cinco etapas ya cerradas recibiría cinco felicitaciones
+      // por cosas que pasaron hace semanas.
+      const primeraVez = crudo === null;
+      let antes = [];
+      if (!primeraVez) { try { antes = JSON.parse(crudo) || []; } catch {} }
+      const nuevas = aprobadas.filter((c) => !antes.includes(c));
+      try { localStorage.setItem(LLAVE, JSON.stringify(aprobadas)); } catch {}
+
+      // La firma se apunta antes de recargar y se cobra de este lado.
+      let firmoRecien = false;
+      try {
+        firmoRecien = sessionStorage.getItem('pb-festejo-' + TOKEN) === 'firma';
+        if (firmoRecien) sessionStorage.removeItem('pb-festejo-' + TOKEN);
+      } catch {}
+
+      // El brief completo gana sobre todo lo demás.
+      if (etapas.length && aprobadas.length === etapas.length && (!primeraVez || firmoRecien || nuevas.length)) {
+        celebrar('grande', '¡El brief está completo!',
+          'Las ' + etapas.length + ' etapas quedaron aprobadas. Con esto arrancamos.');
+        return;
+      }
+      if (firmoRecien) {
+        celebrar('medio', '¡Brief firmado!',
+          'Ya se abrió la primera etapa. Se contesta una a la vez, y se guarda solo.');
+        return;
+      }
+      // Las aprobaciones llegan mientras el cliente no está: sin esto se
+      // enteraría por un renglón gris que dice "Aprobada".
+      if (nuevas.length && !primeraVez) {
+        const def = DEF.find((d) => d.clave === nuevas[0]);
+        celebrar('medio',
+          nuevas.length === 1 ? '¡Etapa aprobada!' : '¡' + nuevas.length + ' etapas aprobadas!',
+          (def ? '“' + def.titulo + '” quedó cerrada. ' : '') +
+          'Llevas ' + aprobadas.length + ' de ' + etapas.length + '.');
+      }
+    }
+
     async function cargar() {
       const res = await fetch('/api/proyecto/estado?token=' + encodeURIComponent(TOKEN));
       if (!res.ok) { if (cajaEtapas) cajaEtapas.innerHTML = '<div class="pb-cargando">No se pudo cargar.</div>'; return; }
@@ -1242,6 +1304,7 @@ const fechaFirma = brief.firmado_at
       }
       pintar();
       pintarLog(d.bitacora || []);
+      festejar(ETAPAS);
     }
 
     function pintarLog(log) {
@@ -2073,6 +2136,9 @@ const fechaFirma = brief.firmado_at
         err.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
+      const def2 = DEF.find((d) => d.clave === clave);
+      celebrar('chico', '¡Etapa enviada!',
+        (def2 ? '“' + def2.titulo + '” ya está con nosotros. ' : '') + 'Te contestamos por correo.');
       abierta = null;
       await cargar();
     }
