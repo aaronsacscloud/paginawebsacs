@@ -39,11 +39,15 @@ export const GET: APIRoute = async ({ request }) => {
   // PUNTUALIDAD DEL CONSULTOR (decisión 2026-09-03): cuánto tarda en capturar resultado, minuta e interés/cotización.
   // Es el dato que permite exigir la fecha de liberación; sale de las mismas tareas de la cadena.
   const PLAZO_H: Record<string, number> = { reunion_resultado: 24, reunion_minuta: 24, reunion_interes: 48, cotizacion_estado: 168, cotizacion_cobro: 168 };
-  const { data: tareasC } = await supabase.from('ti_tareas').select('owner_id, estado, created_at, hecho_at, payload, team_members:owner_id(nombre)').eq('tipo', 'dato').eq('lote_tipo', 'comercial').gte('created_at', new Date(Date.now() - 60 * 86400e3).toISOString()).limit(1000);
+  const [{ data: tareasC }, { data: tms }] = await Promise.all([
+    supabase.from('ti_tareas').select('owner_id, estado, created_at, hecho_at, payload').eq('tipo', 'dato').eq('lote_tipo', 'comercial').gte('created_at', new Date(Date.now() - 60 * 86400e3).toISOString()).limit(1000),
+    supabase.from('team_members').select('id, nombre'),
+  ]);
+  const nombreTm = new Map((tms || []).map(t => [t.id, t.nombre]));
   const porC: Record<string, any> = {};
   for (const t of tareasC || []) {
     const clave = (t.payload as any)?.campo_clave; if (!PLAZO_H[clave]) continue;
-    const k = (t as any).team_members?.nombre || 'Sin dueño';
+    const k = (t.owner_id && nombreTm.get(t.owner_id)) || 'Sin dueño';
     const c = porC[k] || (porC[k] = { consultor: k, total: 0, hechas: 0, a_tiempo: 0, vencidas_abiertas: 0, horas: [] as number[], por_campo: {} as Record<string, { n: number; horas: number[] }> });
     c.total++;
     const pc = c.por_campo[clave] || (c.por_campo[clave] = { n: 0, horas: [] }); pc.n++;
