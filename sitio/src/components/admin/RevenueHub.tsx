@@ -87,6 +87,7 @@ import { SeccionWA } from './crm/whatsapp/ConfigWhatsApp';
 import TrabajoEnvios from './TrabajoEnvios';
 import TrabajoReactivacion from './TrabajoReactivacion';
 import TrabajoSeguimiento from './TrabajoSeguimiento';
+import ReglasAgente from './ReglasAgente';
 import { TI_CSS } from './TrabajoPanel';
 
 interface Client {
@@ -3991,6 +3992,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 { id: 'seguimiento', ico: 'gente', t: 'Seguimiento: paridad y modo del agente', v: 'Meta 9/10 en 300 · entrenamiento o autónomo',
                   d: 'Qué promedio y en cuántas respuestas debe sostener el agente para responder solo; si hoy está en entrenamiento (todo pasa por un consultor) o autónomo; y los teléfonos de prueba que reciben el flujo en vivo.',
                   editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><TrabajoSeguimiento soloAjustes /></div> },
+                { id: 'guion', ico: 'catalogo', t: 'Guion, wiki y límites del agente (versiones)', v: 'Texto completo · historial · restaurar',
+                  d: 'Lo que el agente lee antes de cada respuesta, como datos y con versiones: ya no exige deploy. Las reglas puntuales van en Trabajo inteligente → Seguimiento → Reglas, donde se prueban antes de activarse.',
+                  editor: <div className="ti-raiz" style={{ background: 'transparent' }}><style>{TI_CSS}</style><ReglasAgente soloGuion /></div> },
               ]},
             ]},
             { g: 'Facturación', mods: [

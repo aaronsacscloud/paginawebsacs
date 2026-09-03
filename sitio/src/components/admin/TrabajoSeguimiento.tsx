@@ -10,13 +10,14 @@
 import { useEffect, useState } from 'react';
 import DecisionSugerencia from './crm/ti/DecisionSugerencia';
 import ContextoLead, { MiniHilo } from './crm/ti/ContextoLead';
+import ReglasAgente from './ReglasAgente';
 
 const fecha = (s?: string | null) => s ? new Date(s).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' }) : '—';
 const DEC_L: Record<string, string> = { enviar: 'Tal cual', modificar: 'Modificada', rechazar: 'Rechazada', humano: 'Contestó por su cuenta' };
 
 export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: boolean } = {}) {
   const [d, setD] = useState<any>(null);
-  const [vista, setVista] = useState<'pendientes' | 'historial'>('pendientes');
+  const [vista, setVista] = useState<'pendientes' | 'historial' | 'reglas'>('pendientes');
   const [idx, setIdx] = useState(0);
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [ctx, setCtx] = useState<string | null>(null);
@@ -65,7 +66,8 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
         <div className="sg-fila2">
           <span><b>{p.tal_cual || 0}</b> tal cual</span><span><b>{p.modificadas || 0}</b> modificadas</span><span><b>{p.rechazadas || 0}</b> rechazadas</span><span><b>{p.humano || 0}</b> por su cuenta</span><span><b>{p.hoy || 0}</b> hoy</span>
           {(p.por_usuario || []).slice(0, 4).map((u: any) => <span key={u.id} className="sg-u">{u.nombre}: {u.promedio} en {u.n}</span>)}
-          <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir{pend.length > 1 ? ` · ${Math.min(idx, pend.length - 1) + 1} de ${pend.length}` : ''} · </> : null}<button className="sg-link" onClick={() => { setVista(v => v === 'pendientes' ? 'historial' : 'pendientes'); setIdx(0); }}>{vista === 'pendientes' ? 'historial' : 'por decidir'}</button></span>
+          {d.resultados?.total?.n > 0 && <span className="sg-u" title="Resultado real de lo enviado: contestó en 48 h · agendó en 7 días">responden 48 h <b>{d.resultados.total.responden_48h ?? '—'}%</b>{d.resultados.por_decision?.enviar?.n > 2 && d.resultados.por_decision?.modificar?.n > 2 ? ` (tal cual ${d.resultados.por_decision.enviar.responden_48h}% · modificadas ${d.resultados.por_decision.modificar.responden_48h}%)` : ''} · agendan 7 d <b>{d.resultados.total.agendan_7d ?? '—'}%</b></span>}
+          <span className="sg-pos">{vista === 'pendientes' ? <><b>{pend.length}</b> por decidir{pend.length > 1 ? ` · ${Math.min(idx, pend.length - 1) + 1} de ${pend.length}` : ''} · </> : null}{vista !== 'pendientes' && <><button className="sg-link" onClick={() => { setVista('pendientes'); setIdx(0); }}>por decidir</button> · </>}{vista !== 'historial' && <><button className="sg-link" onClick={() => setVista('historial')}>historial</button> · </>}{vista !== 'reglas' && <button className="sg-link" onClick={() => setVista('reglas')}>reglas</button>}</span>
         </div>
         {msg && <div className={'sg-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
@@ -91,6 +93,7 @@ export default function TrabajoSeguimiento({ soloAjustes }: { soloAjustes?: bool
           </div>
         </div>
       )}
+      {vista === 'reglas' && <ReglasAgente />}
       {vista === 'historial' && (
         <div className="ti-card">
           {(d.historial || []).length === 0 && <div className="ti-suave">Todavía no hay decisiones.</div>}
@@ -128,6 +131,8 @@ function ComoFunciona({ p, onCerrar }: { p: any; onCerrar: () => void }) {
           </ul>
           <h4>Cómo aprende</h4>
           <p><b>Inmediato:</b> cada nueva redacción vuelve a leer los ejemplos aprobados y los rechazos, así que una corrección de hoy ya pesa en la respuesta de dentro de dos minutos. <b>Nocturno (2:00 am):</b> si un mismo tipo de corrección o rechazo se repite 3 veces en 14 días, el agente propone una regla del guion para que la apruebes, y avisa de las preguntas que la wiki no cubrió. Nada se modifica solo: las reglas propuestas se aceptan en la Torre.</p>
+          <h4>Las reglas: dónde viven y cómo se prueban</h4>
+          <p>En <b>Seguimiento → Reglas</b> cualquiera del equipo escribe una regla en español («no ofrezcas la demo hasta conocer el negocio y una o dos necesidades»). <b>Probar</b> hace que el agente conteste hasta 24 casos reales con y sin la regla; un juez califica cada respuesta y cuenta en cuántos casos la respuesta viola la regla. Si mejora, <b>Aprobar y activar</b> la mete al bloque «Reglas vigentes» que el agente lee antes de cada respuesta, con fecha y quién la activó. Si empeora, no se activa sin confirmar. El ciclo nocturno también propone reglas cuando un mismo tipo de corrección se repite 3 veces en 14 días; llegan ya redactadas y probadas a la Torre y a Reglas. El guion completo, la wiki y los límites viven en Configuración → Agente IA con versiones.</p>
           <h4>Cuándo responde solo</h4>
           <p>La meta es promedio <b>{p.meta}</b> en las últimas <b>{p.ventana}</b> decisiones. Cuando se cumple aparece arriba el botón <b>«Activar respuestas automáticas»</b>; nada cambia hasta que el dueño lo oprime. En automático manda directo, respetando el semáforo (horario de 8 a 21, un automático por día por lead, nunca a clientes ni a quien pidió que no le escriban) y sigue aprendiendo de cada veto o edición. Se puede regresar a entrenamiento en Configuración → Agente IA → Seguimiento.</p>
         </div>

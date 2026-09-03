@@ -24,6 +24,7 @@ import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUs
 import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './promociones';
 import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
+import { bloqueSistemaBase } from './guion-datos';
 import { puedeAutomatico, alResponderElLead } from './semaforo';
 
 const MS_MIN = 60e3;
@@ -42,6 +43,7 @@ export const factorPrueba = (cfg: any) => Math.max(1, Number(cfg?.agente_prueba_
 /** SEGUIMIENTO (3-sep): en entrenamiento (agente_modo sombra) todo lo que el agente redacta para un lead real nace como
  *  «sugerencia» —la decide un consultor en el panel Seguimiento o en la compuerta del inbox—; los números de prueba y el
  *  agente en vivo nacen «pendiente» y salen solos. Ver seguimiento.ts (paridad 9/10). */
+async function msjsTurnoAsync(cid: string) { const { count } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('contact_id', cid).in('estado', ['enviado', 'pendiente', 'sugerencia']); return (count || 0) + 1; }
 export const nace = (cfg: any, telefono?: string | null): 'pendiente' | 'sugerencia' => ((cfg?.agente_modo || 'sombra') === 'sombra' && !esPrueba(cfg, telefono)) ? 'sugerencia' : 'pendiente';
 
 export type SalidaAgente = {
@@ -75,9 +77,20 @@ async function charla(contactId: string, limite = 30) {
   return { msjs: msjs.slice(-limite), conversationId: convs?.[0]?.id || null, telefono: convs?.[0]?.telefono || null };
 }
 
-export async function ejemplosAprobados(estado?: string) {
-  let q = supabase.from('ia_ejemplos').select('estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').order('created_at', { ascending: false }).limit(60);   // los de reactivación los lee su propio redactor
-  const { data } = await q;
+export async function ejemplosAprobados(estado?: string, mensaje?: string) {
+  // POR PARECIDO, no por fecha (3-sep): los 8 más parecidos al mensaje del lead (trigramas + empujón por etapa y por ser
+  // corrección de una persona) + las 4 correcciones más recientes siempre. Si no hay mensaje, cae al orden por fecha.
+  let data: any[] = [];
+  if (mensaje && mensaje.trim().length >= 6) {
+    const { data: par } = await supabase.rpc('ti_ejemplos_parecidos', { q: mensaje.slice(0, 600), etapa: estado || null, n: 8 });
+    data = par || [];
+    const { data: rec } = await supabase.from('ia_ejemplos').select('id, estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').in('fuente', ['correccion_dueno', 'correccion_implicita']).order('created_at', { ascending: false }).limit(4);
+    for (const r of rec || []) if (!data.some((x: any) => x.id === r.id)) data.push(r);
+  }
+  if (!data.length) {
+    const { data: viejos } = await supabase.from('ia_ejemplos').select('id, estado, situacion, pulida, fuente, por_que, imagen_id, adjuntos').eq('estado_rev', 'aprobado').neq('estado', 'reactivacion').order('created_at', { ascending: false }).limit(60);   // los de reactivación los lee su propio redactor
+    data = viejos || [];
+  }
   // SEGUIMIENTO: lo que los consultores rechazaron con razón se enseña aparte, como «no así» (no entra al bloque de arriba).
   const { data: rech } = await supabase.from('ia_ejemplos').select('estado, mensaje_lead, pulida, por_que').eq('fuente', 'rechazo_consultor').order('created_at', { ascending: false }).limit(8);
   const bloqueRech = (rech || []).length ? '\n\nLO QUE LOS CONSULTORES RECHAZARON (NO contestes así; corrige la causa):\n' + (rech || []).map(r => `[${r.estado}] Lead: ${String(r.mensaje_lead || '').slice(0, 160)}\nEl agente dijo: ${String(r.pulida || '').slice(0, 260)}\nPor qué no: ${String(r.por_que || '').replace(/^EVITAR:\s*/, '')}`).join('\n---\n') : '';
@@ -109,7 +122,7 @@ export async function reescribirRespuesta(o: { contactId?: string | null; estado
   const ctx = contextoParaLead({ giroCrm: c?.giro || null, conversacion: historia, ultimoMensaje: o.mensajeLead || '' });
   const galeria = await galeriaActiva().catch(() => []);
   const system: any = [
-    { type: 'text', text: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLÍMITES:\n${LIMITES_COPILOTO}`, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
     { type: 'text', text: (await ejemplosAprobados(o.estado || undefined)) || ' ', cache_control: { type: 'ephemeral' } },
     { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c?.giro)}` },
   ];
@@ -195,8 +208,8 @@ export async function decidirTurno(contactId: string, nota?: string): Promise<{ 
     model: MODELS.opus, max_tokens: 1800,
     // CACHÉ DE PROMPT: el guion + wiki + límites y los ejemplos no cambian entre leads → bloques cacheados (Anthropic ephemeral); lo del lead va aparte.
     system: [
-      { type: 'text', text: `${GUION_AGENTE}\n\nLO QUE SABES (general):\n${WIKI_COMERCIAL}\n\nLÍMITES:\n${LIMITES_COPILOTO}`, cache_control: { type: 'ephemeral' } },
-      { type: 'text', text: (await ejemplosAprobados()) || ' ', cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: await bloqueSistemaBase(), cache_control: { type: 'ephemeral' } },   // guion + wiki + límites + REGLAS VIGENTES, desde la base de datos
+      { type: 'text', text: (await ejemplosAprobados((perfil?.agente_estado as any)?.estado_guion || undefined, ultimo ? textoDe(ultimo) : undefined)) || ' ', cache_control: { type: 'ephemeral' } },
       { type: 'text', text: `LO QUE SABES DE ESTE LEAD Y SU GIRO:\n${ctx.texto}${galeriaTexto(galeria, c.giro)}` },
     ] as any,
     messages: [{ role: 'user', content: `${crm}\n\n${memoria}${regreso ? `\n\n${regreso}` : ''}${puenteTxt}\n\nAGENDA:\n${agenda}${pagina ? `\n\n${pagina}` : ''}${nota ? `\n\n${nota}` : ''}${rafagaTxt}\n\nCONVERSACIÓN (lo más reciente al final${nota ? '' : '; el último mensaje es del lead y te toca decidir'}):\n\n${texto}\n\n${SALIDA_AGENTE}` }],
@@ -559,6 +572,13 @@ export async function proponerRespuestas(): Promise<any> {
       // El puente ya cumplió: el mensaje completo va en esta respuesta.
       if ((stPrev as any)?.puente_pendiente) await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...stPrev, puente_pendiente: undefined, puente_usado_at: ahora.toISOString() }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
       await log({ accion: 'agente_propone', contact_id: cid, contenido: s.mensaje, costo: d.costo, razon: s.objetivo, detalle: { estado: s.estado, interes: s.interes, ventana_min: ventana } });
+      // MOMENTO DE LA OFERTA (3-sep): si el mensaje propone demo o llamada, se registra qué se sabía del lead en ese turno
+      // (giro, tiendas, dolor, nº de turno). Con eso se mide después si fue el momento correcto (contestó, agendó).
+      if (/\b(demo|15 minutos|agendar|llamada|te llamo|una llamada)\b/i.test(s.mensaje)) {
+        const turno = await msjsTurnoAsync(cid);
+        const sabia = { giro: !!(c?.giro), tiendas: !!(c?.sucursales_interes || (c as any)?.companies?.sucursales), dolor: (s.datos || []).some((x: any) => x.campo === 'dolor') || /dolor|necesidad/.test(JSON.stringify((p as any)?.agente_estado || {})), interes: s.interes?.nivel || null };
+        await log({ accion: 'oferta_siguiente_paso', contact_id: cid, razon: /llamada|te llamo/i.test(s.mensaje) ? 'llamada' : 'demo', detalle: { estado: s.estado, turno, sabia, datos_completos: sabia.giro && sabia.tiendas && sabia.dolor } });
+      }
       res.propuestos++;
       await contarMensajeAgendar(cid, c, p, s).catch(() => {});
     } catch (e: any) { res.errores++; await log({ accion: 'agente_error', contact_id: cid, razon: String(e?.message || e) }); await avisarSiSinCredito(String(e?.message || e)); marcaSegura = Math.min(marcaSegura, Date.parse(ultimoPor[cid]) - 1000); }

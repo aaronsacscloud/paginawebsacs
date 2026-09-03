@@ -6,12 +6,13 @@
 // ti_reglas (estado «propuesta») y avisos al dueño. Nada se automodifica en
 // silencio, salvo la BAJADA de autonomía, que es automática por diseño.
 //
-//   1. Rampa: ¿el agente se ganó menos veto? ¿o se lo tiene que devolver?
+//   1. Paridad de Seguimiento (la rampa del veto quedó redundante el 3-sep).
 //   2. «No era lead»: motivos que se repiten por fuente → exclusión propuesta.
-//   3. Ángulos del reloj de silencio: cuál consigue respuesta.
+//   3. (retirado 3-sep: los ángulos se miden como RESULTADO real en ti-curador)
 //   4. Huecos de la wiki: lo que el agente no supo → adenda propuesta.
 //   5. Métrica norte del día: citas agendadas por el agente vs. por humanos.
-// Cron: 08:00 UTC diario (02:00 CDMX). También a mano con el secreto.
+// Cron: 08:00 UTC diario (02:00 CDMX). Los pasos pesados (curador, calificación masiva, pruebas de reglas,
+// resultados, higiene) van en ti-curador a las 08:25 UTC. Cada corrida queda en ti_corridas.
 import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
@@ -35,34 +36,19 @@ async function proponer(clave: string, valor: any, evidencia: any, dedupeDias = 
 
 export const GET: APIRoute = async ({ request }) => {
   if (!isAuthorizedCron(request)) return json({ error: 'No autorizado' }, 401);
+  const { correr } = await import('../../../lib/crm/ti/corridas');
+  const corrida = await correr('ti-aprender', { todo: () => cuerpo() });
+  return json({ ok: corrida.ok, duracion_ms: corrida.duracion_ms, ...(corrida.pasos.todo?.res || {}), error: corrida.pasos.todo?.error });
+};
+
+async function cuerpo() {
   const cfg: any = await leerConfig();
   const ahora = new Date();
   const hace = (d: number) => new Date(ahora.getTime() - d * D).toISOString();
   const res: any = { propuestas: [] as string[], avisos: 0 };
 
-  // ── 1) RAMPA ──
-  const { data: env14 } = await supabase.from('ti_envios').select('estado, editado_por, created_at').gte('created_at', hace(14)).in('estado', ['enviado', 'vetado']).limit(2000);
-  const enviados = (env14 || []).filter(e => e.estado === 'enviado').length;
-  const vetados = (env14 || []).filter(e => e.estado === 'vetado').length;
-  const editados = (env14 || []).filter(e => e.editado_por).length;
-  // Solo cuentan las correcciones a envíos REALES del agente (edición o «esto hubiera contestado yo» sobre un envío), no la calibración inicial.
-  const { count: correcciones7 } = await supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('fuente', 'correccion_dueno').gte('created_at', hace(7)).or('por_que.ilike.%corrigió al agente%,por_que.ilike.El humano corrigió al agente%');
-  const { count: vetos7 } = await supabase.from('ti_envios').select('id', { count: 'exact', head: true }).eq('estado', 'vetado').gte('updated_at', hace(7));
-  const errores7 = (correcciones7 || 0) + (vetos7 || 0);
-  const veto = Number(cfg.agente_veto_min ?? 10);
-  res.rampa = { enviados14: enviados, vetados14: vetados, editados14: editados, errores7, veto_min: veto, modo: cfg.agente_modo || 'sombra' };
-  if (veto === 0 && errores7 >= 2) {
-    // BAJADA AUTOMÁTICA: dos correcciones en 7 días → vuelve la ventana de veto.
-    const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-    await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), agente_veto_min: 10 } }).eq('id', 1);
-    await notificar({ clave: `rampa_baja:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_rampa', nivel: 'alerta', titulo: 'El agente vuelve a la ventana de veto de 10 min', detalle: `${errores7} correcciones en 7 días (vetos o «esto hubiera contestado yo»). Baja automática de N3 a N2.`, destino: 'trabajo' });
-    res.rampa.bajada = true; res.avisos++;
-  } else if (veto > 0 && (cfg.agente_modo === 'vivo') && enviados >= 30 && (vetados + editados) / Math.max(1, enviados + vetados) <= 0.10) {
-    if (await proponer('rampa_subir', { id: 'agente_veto_0', accion: 'agente_veto_min', de: veto, a: 0 }, { enviados14: enviados, vetados14: vetados, editados14: editados, tasa: ((vetados + editados) / (enviados + vetados)).toFixed(3) })) {
-      await notificar({ clave: `rampa_sube:${ahora.toISOString().slice(0, 10)}`, tipo: 'ti_rampa', nivel: 'info', titulo: 'Propuesta: el agente se ganó salir sin ventana de veto', detalle: `${enviados} envíos en 14 días con ${vetados} vetos y ${editados} ediciones (≤10 %). Apruébalo con: node scripts/ti-agente.mjs --veto 0`, destino: 'trabajo' });
-      res.propuestas.push('rampa_subir'); res.avisos++;
-    }
-  }
+  // ── 1) PARIDAD (sustituye a la rampa del veto, redundante desde Seguimiento 3-sep) ──
+  try { const { revisarParidad } = await import('../../../lib/crm/ti/seguimiento'); const p = await revisarParidad(); res.paridad = { promedio: p.paridad.promedio, n: p.paridad.n, lista: p.lista, modo: p.paridad.modo }; } catch (e: any) { res.paridad_error = String(e?.message || e); }
 
   // ── 2) «NO ERA LEAD» por fuente ──
   const { data: nel } = await supabase.from('ia_log').select('razon, detalle, contact_id').eq('accion', 'no_era_lead').gte('created_at', hace(30)).limit(500);
@@ -82,19 +68,6 @@ export const GET: APIRoute = async ({ request }) => {
       res.propuestas.push(`exclusion_fuente:${f}`); res.avisos++;
     }
   }
-
-  // ── 3) ÁNGULOS del reloj de silencio: ¿cuál consigue respuesta en 48 h? ──
-  const { data: toques } = await supabase.from('ti_envios').select('contact_id, enviado_at, salida').eq('origen', 'silencio').eq('estado', 'enviado').gte('enviado_at', hace(30)).limit(1000);
-  const porToque: Record<string, { n: number; resp: number }> = {};
-  for (const t of toques || []) {
-    const k = `toque${(t.salida as any)?.toque || '?'}`;
-    porToque[k] = porToque[k] || { n: 0, resp: 0 }; porToque[k].n++;
-    const { data: r } = await supabase.from('ti_eventos').select('id').eq('contact_id', t.contact_id).eq('tipo', 'wa_entrante').gt('ocurrio_at', t.enviado_at).lt('ocurrio_at', new Date(Date.parse(t.enviado_at) + 2 * D).toISOString()).limit(1);
-    if ((r || []).length) porToque[k].resp++;
-  }
-  res.angulos = porToque;
-  { const { data } = await supabase.from('ti_config').select('valor').eq('id', 1).maybeSingle();
-    await supabase.from('ti_config').update({ valor: { ...((data?.valor as any) || {}), metricas_silencio: { at: ahora.toISOString(), porToque } } }).eq('id', 1); }
 
   // ── 4) HUECOS DE LA WIKI: lo que el agente escaló por no saber ──
   const { data: huecos } = await supabase.from('ia_log').select('razon, contact_id').eq('accion', 'agente_calla').ilike('razon', '%wiki%').gte('created_at', hace(7)).limit(200);
@@ -141,38 +114,14 @@ export const GET: APIRoute = async ({ request }) => {
       res.propuestas.push(`regla_guion:${est}`); res.avisos++;
     }
   }
+  // 4c-bis) Las propuestas sin texto se REDACTAN con Opus (1-2 líneas + evidencias) para que aparezcan en la Torre y en Seguimiento → Reglas.
+  try { const { redactarPropuestasPendientes } = await import('../../../lib/crm/ti/guion-datos'); res.reglas_redactadas = await redactarPropuestasPendientes(4); } catch (e: any) { res.reglas_error = String(e?.message || e); }
 
-  // ── 4d) PARES AGENTE/HUMANO sin veredicto del dueño: el curador decide cuál enseñar (máx. 20 por noche).
-  //       Si el dueño ya dio veredicto en el panel, se respeta; esto solo cubre los que nadie revisó en 24 h.
-  res.pares = { revisados: 0, humano_mejor: 0, agente_mejor: 0 };
-  if (hasApiKey()) {
-    const { data: pares } = await supabase.from('ti_envios').select('id, contact_id, mensaje, humano_respuesta, salida, created_at')
-      .not('humano_respuesta', 'is', null).is('veredicto_par', null).lt('created_at', hace(1)).order('created_at', { ascending: false }).limit(20);
-    for (const p of pares || []) {
-      try {
-        const r = await anthropic.messages.create({
-          model: MODELS.opus, max_tokens: 300,
-          messages: [{ role: 'user', content: `Eres el curador del agente SDR de Sacscloud (retail de moda). Mismo turno, dos respuestas al lead. Lead dijo: «${String((p.salida as any)?.ultimo_mensaje || '').slice(0, 300)}». Estado del guion: ${(p.salida as any)?.estado || '?'}.\n\nA (agente): ${String(p.mensaje).slice(0, 600)}\n\nB (consultor humano): ${String(p.humano_respuesta).slice(0, 600)}\n\nCriterio: entender antes de vender, reflejar lo que dijo el lead, lenguaje del giro, corto y cálido, sin precios antes de conocer giro/tiendas, sin descuentos ni promesas, no solo un link, avanza hacia llamada o demo cuando toca. Responde SOLO JSON: {"mejor":"A|B|empate","razon":"una línea"}` }],
-        });
-        const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
-        const j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
-        const v = j.mejor === 'B' ? 'humano_mejor' : j.mejor === 'A' ? 'agente_mejor' : 'empate';
-        await supabase.from('ti_envios').update({ veredicto_par: `curador:${v}` }).eq('id', p.id);
-        await supabase.from('ia_ejemplos').update({ estado_rev: v === 'humano_mejor' ? 'aprobado' : 'rechazado', revisado_at: ahora.toISOString(), por_que: `Par agente/humano · envio:${p.id} · Curador: ${j.razon || ''}` }).eq('fuente', 'humano_antes').ilike('por_que', `%envio:${p.id}%`);
-        res.pares.revisados++; if (v === 'humano_mejor') res.pares.humano_mejor++; if (v === 'agente_mejor') res.pares.agente_mejor++;
-      } catch { /* siguiente par */ }
-    }
-  }
-
-  // ── 4e) CALIFICACIÓN MASIVA: índice de vida de todos los leads activos + sugerencias de descalificar (F4) ──
-  try { const { calificarLeads } = await import('../../../lib/crm/ti/agente'); res.calificacion = await calificarLeads(); } catch (e: any) { res.calificacion_error = String(e?.message || e); }
-
-  // ── 4f) PRESUPUESTO DE IA (F5): aviso al 80 % del mes ──
-  try { const { revisarPresupuesto } = await import('../../../lib/crm/ti/consumo'); res.presupuesto = await revisarPresupuesto(); } catch (e: any) { res.presupuesto_error = String(e?.message || e); }
+  // 4d/4e/4f (curador de pares, calificación masiva, presupuesto) viven en /api/cron/ti-curador desde el 3-sep: son los pasos pesados.
 
   // ── 5) MÉTRICA NORTE: citas agendadas ayer, por quién ──
   const { data: citas } = await supabase.from('bookings').select('utm_source, estado').gte('created_at', hace(1)).limit(500);
   res.citas_ayer = { agente: (citas || []).filter(b => b.utm_source === 'agente_ia').length, humanas: (citas || []).filter(b => b.utm_source !== 'agente_ia').length };
 
-  return json({ ok: true, ...res });
-};
+  return res;
+}

@@ -77,6 +77,15 @@ export const GET: APIRoute = async ({ request }) => {
     const { data: ult } = await supabase.from('wa_mensajes').select('created_at').eq('direccion', 'entrante').order('created_at', { ascending: false }).limit(1);
     const hace = (ult || []).length ? (ahora - Date.parse(ult![0].created_at)) / 3600e3 : null;
     res.ultimo_entrante_h = hace == null ? null : Math.round(hace * 10) / 10;
+    // CORRIDAS NOCTURNAS (3-sep): si ti-aprender o ti-curador llevan >26 h sin corrida buena, se avisa (antes nadie se enteraba).
+    try {
+      const { ultimaCorrida } = await import('../../../lib/crm/ti/corridas');
+      for (const cron of ['ti-aprender', 'ti-curador']) {
+        const u = await ultimaCorrida(cron);
+        const horas = u?.inicio ? (Date.now() - Date.parse(u.inicio)) / 3600e3 : null;
+        if (horas === null || horas > 26 || (u && u.ok === false)) res[`aviso_${cron}`] = await notificar({ clave: `sistema_corrida:${cron}:${hoyKey}`, tipo: 'sistema_latido', nivel: 'alerta', titulo: horas === null ? `El ciclo ${cron} nunca ha corrido` : u?.ok === false ? `El ciclo ${cron} terminó con errores` : `El ciclo ${cron} lleva ${Math.round(horas)} h sin correr`, detalle: u?.error ? String(u.error).slice(0, 600) : 'Sin corrida registrada en ti_corridas en las últimas 26 horas.', metadata: { origen: 'agente', que_hacer: 'Revisa Vercel → Crons y la tabla ti_corridas; se puede correr a mano con el secreto.' } } as any);
+      }
+    } catch { /* el latido no se cae por esto */ }
     if (hace != null && hace > 3) res.aviso_entrantes = await notificar({ clave: `sistema_sin_entrantes:${hoyKey}`, tipo: 'sistema_sin_entrantes', nivel: 'alerta', titulo: `Sin mensajes entrantes desde hace ${Math.round(hace)} h en horario hábil`, detalle: 'Puede ser un día tranquilo, o que el webhook de WhatsApp dejó de entregar. Conviene mandar un mensaje de prueba desde el carril de pruebas.', metadata: { origen: 'agente', que_hacer: 'Escribe desde el número de pruebas al WhatsApp de ventas; si no aparece en el inbox en 1 min, revisa el webhook en Kapso.' } });
   }
   return json(res);

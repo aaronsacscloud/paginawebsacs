@@ -8,7 +8,7 @@ import { leerConfig } from './motor';
 export type Urgencia = 'ahora' | 'hoy' | 'semana';
 export type ItemTorre = {
   nivel: number;   // 1 lead espera persona · 2 dinero en la mesa · 3 aprobaciones · 4 cadena reunión · 5 rescate · 6 cierre · 7 datos
-  key: string; tipo: 'envio' | 'revision' | 'reactivacion' | 'tarea' | 'aprendizaje'; id: string; contact_id: string | null;
+  key: string; tipo: 'envio' | 'revision' | 'reactivacion' | 'tarea' | 'aprendizaje' | 'regla'; id: string; contact_id: string | null;
   lead: { nombre: string; empresa: string | null; giro: string | null; canal: string | null; etapa: string | null; telefono?: string | null };
   urgencia: Urgencia; cuando: string | null; titulo: string; chip: string; resumen: string; datos: any;
 };
@@ -19,6 +19,7 @@ function nivelDe(it: { tipo: string; datos: any }): number {
   const d = it.datos || {}; const p = d.payload || {};
   if (it.tipo === 'envio' || it.tipo === 'revision' || it.tipo === 'reactivacion') return 3;
   if (it.tipo === 'aprendizaje') return 6;
+  if (it.tipo === 'regla') return 3;   // una regla propuesta es una aprobación del agente
   if (d.tipo === 'responder') return 1;
   if (p.campo_clave === 'cotizacion_cobro') return 2;
   // Facturación tras un pago: es «dinero en la mesa» solo la primera semana; después baja a datos para no tapar la cola.
@@ -62,6 +63,9 @@ export async function colaTorre() {
     items.push({ nivel: 0, key: `tarea:${t.id}`, tipo: 'tarea', id: t.id, contact_id: t.contact_id, lead: ld, urgencia: urg, cuando: t.vence_at, titulo: p.instruccion || p.campo || t.tipo, chip, resumen: p.porque || '', datos: { ...t, contacts: undefined } });
   }
   for (const ej of ejemplos || []) items.push({ nivel: 0, key: `aprendizaje:${ej.id}`, tipo: 'aprendizaje', id: ej.id, contact_id: ej.contact_id, lead: lead((ej as any).contacts), urgencia: 'semana', cuando: ej.created_at, titulo: `Revisar ejemplo del agente (${ej.fuente || 'respuesta'})`, chip: 'Aprendizaje', resumen: String(ej.situacion || '').slice(0, 200), datos: { ...ej, contacts: undefined } });
+  // REGLAS PROPUESTAS (ciclo nocturno o una persona): se prueban y se aprueban aquí (decisión 3-sep).
+  const { data: reglas } = await supabase.from('ti_reglas').select('id, texto, etapa, prueba, origen, valor, created_at').eq('clave', 'regla_guion').eq('estado', 'propuesta').not('texto', 'is', null).order('created_at', { ascending: false }).limit(20);
+  for (const r of reglas || []) items.push({ nivel: 0, key: `regla:${r.id}`, tipo: 'regla', id: r.id, contact_id: null, lead: { nombre: 'Regla del agente', empresa: null, giro: null, canal: null, etapa: r.etapa || null }, urgencia: 'semana', cuando: r.created_at, titulo: String(r.texto).slice(0, 140), chip: 'Regla', resumen: r.etapa ? `Etapa ${r.etapa}` : 'Global', datos: { texto: r.texto, etapa: r.etapa, prueba: r.prueba, origen: r.origen, evidencias: (r.valor as any)?.evidencias || [], correcciones: (r.valor as any)?.correcciones || null } });
   for (const it of items) (it as any).nivel = nivelDe(it);
   const orden: Record<Urgencia, number> = { ahora: 0, hoy: 1, semana: 2 };
   // Jerarquía (decisión 2026-09-04): primero el nivel, dentro del nivel la urgencia, y luego la hora.

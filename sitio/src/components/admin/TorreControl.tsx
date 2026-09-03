@@ -63,6 +63,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
   const TIPOS: [string, string, (x: Item) => boolean][] = [
     ['todo', 'Todo', () => true],
     ['aprobar', 'Aprobar mensajes', x => x.tipo === 'envio' || x.tipo === 'revision'],
+    ['reglas', 'Reglas del agente', x => x.tipo === 'regla'],
     ['reenganche', 'Reenganche', x => x.tipo === 'envio' && x.datos?.origen === 'reenganche'],
     ['reactivacion', 'Reactivación', x => x.tipo === 'reactivacion' || (x.tipo === 'envio' && x.datos?.origen === 'reactivacion')],
     ['llamar', 'Llamar', x => x.tipo === 'tarea' && x.datos?.tipo === 'llamada'],
@@ -180,6 +181,25 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         <div className="tc-despues"><b>Después:</b> lo aprobado entra a la biblioteca de ejemplos que el agente lee en cada respuesta; lo rechazado se guarda como lo que evita.</div>
       </div>);
     }
+    if (it.tipo === 'regla') {
+      const txt = edit[x.id] ?? String(x.texto || ''); const pr = x.prueba;
+      const post = async (accion: string, extra: any = {}) => { setOcupado(true); const r = await postJ('/api/crm/ti/reglas', { accion, id: it.id, ...extra }); if (accion === 'probar') { setOcupado(false); if (r?.error) listo('No se pudo probar: ' + r.error, false); else { listo(`Probada en ${r.prueba?.n} casos: ${r.prueba?.con} con la regla vs ${r.prueba?.sin} sin.`); cargar(); } return; } tras(r, accion === 'aprobar' ? 'Regla activa: el agente la lee desde su siguiente respuesta.' : 'Regla descartada: no se vuelve a proponer sin evidencia nueva.'); };
+      return (<div className="tc-tarjeta">{cab}
+        <div className="tc-bloque"><div className="tc-lbl">Qué pasó · {x.origen === 'patron' ? `${x.correcciones || 'varias'} correcciones o rechazos en «${x.etapa}» en 14 días` : x.origen === 'dueno' ? 'Regla escrita por una persona' : 'Regla propuesta'}</div>
+          {Array.isArray(x.evidencias) && x.evidencias.length > 0 && <ul className="tc-lista">{x.evidencias.map((e: string, i: number) => <li key={i}>{e}</li>)}</ul>}</div>
+        <div className="tc-bloque"><div className="tc-lbl">La regla · edítala si hace falta (entra al prompt tal cual)</div><textarea ref={texareaRef} className="tc-ta" rows={3} value={txt} onChange={ev => setEdit({ ...edit, [x.id]: ev.target.value })} /></div>
+        <div className="tc-bloque"><div className="tc-lbl">La prueba · casos reales, con y sin la regla</div>
+          {pr ? <div className="tc-txt"><b>{pr.con}</b> con la regla vs <b>{pr.sin}</b> sin ella, en {pr.n} casos · mejora en {pr.mejora_en}, empeora en {pr.empeora_en} · la respuesta viola la regla en <b>{pr.viola_con}</b> casos con ella (antes {pr.viola_sin}){pr.delta !== null && pr.delta < 0 ? <em style={{ color: '#b3261e' }}> · EMPEORA: no se activa sin confirmar</em> : null}</div>
+            : <div className="tc-txt">Todavía no se prueba. La prueba regenera hasta 24 casos aprobados con y sin la regla y un juez los califica (≈1 min).</div>}
+        </div>
+        <div className="tc-btns">
+          <button className="tc-btn" disabled={ocupado} onClick={() => post('probar', txt !== x.texto ? {} : {})}>{ocupado ? 'Trabajando…' : pr ? 'Volver a probar' : 'Probar'}</button>
+          <button className="tc-btn p" disabled={ocupado || txt.trim().length < 12} onClick={() => post('aprobar', { texto: txt, forzar: pr && pr.delta !== null && pr.delta < 0 ? window.confirm('La prueba dice que empeora. ¿Activarla de todos modos?') : false })}>Aprobar y activar</button>
+          <button className="tc-btn" disabled={ocupado} onClick={() => post('rechazar')}>Rechazar</button>
+        </div>
+        <div className="tc-despues"><b>Después:</b> lo activo entra al bloque «Reglas vigentes» del prompt con fecha y se ve en Seguimiento → Reglas, donde se puede retirar.</div>
+      </div>);
+    }
     // tarea
     const pl = x.payload || {}; const resultados: Record<string, string> = pl.resultados || {};
     const esDato = x.tipo === 'dato'; const opciones: string[] | null = Array.isArray(pl.opciones) ? pl.opciones : null;
@@ -281,6 +301,7 @@ export default function TorreControl({ irA }: { irA?: (tab: string) => void }) {
         .tc-in{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;margin-top:6px}
         .tc-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tc-btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}.tc-btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.tc-btn.peligro{border-color:#fecdd3;color:#b91c1c}.tc-btn:disabled{opacity:.5;cursor:default}.tc-btn.ancho{width:100%;margin-top:12px}
         .tc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.tc-mchip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}.tc-mchip.on{border-color:var(--acc);background:var(--accs);color:#4c1d95}
+        .tc-lista{margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.45}.tc-lista li{margin-bottom:4px}
         .tc-despues{margin-top:14px;font-size:12.5px;color:#6b6580;border-left:3px solid var(--acc);padding-left:10px;line-height:1.5}
         .tc-hechos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.tc-hecho{font-size:11.5px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 8px}.tc-hecho.rojo{border-color:#fecdd3;color:#7f1d1d}.tc-hecho.ambar{border-color:#fde68a;color:#78350f}
         .tc-ev{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:#6b6580}.tc-tel{display:inline-block;margin-top:8px;font-weight:800;color:var(--acc);text-decoration:none}

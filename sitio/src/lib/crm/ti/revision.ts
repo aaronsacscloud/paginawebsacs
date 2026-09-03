@@ -8,7 +8,7 @@ import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
 import { notificar } from '../notificaciones';
-import { GUION_AGENTE } from './agente-guion';
+import { guionActual } from './guion-datos';
 
 export type TipoPropuesta = 'mensaje_extra' | 'plantilla' | 'llamada' | 'adjunto' | 'cambiar_angulo' | 'descalificar' | 'ninguna';
 const BAJO_RIESGO: TipoPropuesta[] = ['mensaje_extra', 'cambiar_angulo', 'adjunto'];
@@ -24,7 +24,8 @@ ${conv}
 
 REGLAS: si tiene cita vigente, la única propuesta válida es «ninguna» o «adjunto» (material previo). Si el lead dejó una pregunta sin responder por nosotros, la propuesta es «mensaje_extra» con el texto listo. Si la ventana de 24 h está por cerrarse y falta un dato clave (giro, tiendas, horario), «mensaje_extra» corto que lo pida. Si ya hubo tres intentos sin respuesta, considera «llamada» (con ICP medio/alto) o «descalificar» (ICP bajo). «cambiar_angulo» cuando se repite lo mismo. «plantilla» solo si la ventana ya cerró. Sé concreto y breve; el texto propuesto debe ir listo para mandarse por WhatsApp, con el tono del guion.
 Devuelve SOLO JSON: {"avance":"avanzo|igual|retrocedio","etapa_antes":"…","etapa_despues":"…","resumen":"2 líneas de qué pasó ayer","que_funciono":"1 línea (o vacío)","preguntas_abiertas":["…"],"propuesta":{"tipo":"mensaje_extra|plantilla|llamada|adjunto|cambiar_angulo|descalificar|ninguna","texto":"el mensaje listo (si aplica)","fundamento":"por qué esta acción y no otra, en 1-2 líneas","riesgo":"bajo|medio|alto"}}`;
-  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 900, system: [{ type: 'text', text: `Guion del agente (para el tono y las reglas):\n${GUION_AGENTE.slice(0, 6000)}`, cache_control: { type: 'ephemeral' } }] as any, messages: [{ role: 'user', content: prompt }] });
+  const guionTxt = (await guionActual()).textos.guion;
+  const r = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 900, system: [{ type: 'text', text: `Guion del agente (para el tono y las reglas):\n${guionTxt.slice(0, 6000)}`, cache_control: { type: 'ephemeral' } }] as any, messages: [{ role: 'user', content: prompt }] });
   const t = (r.content.find(b => b.type === 'text') as any)?.text || '{}';
   const costo = calculateCost(MODELS.sonnet, r.usage as any).cost_usd;
   let salida: any = null; try { salida = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); } catch { salida = null; }

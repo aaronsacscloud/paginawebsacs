@@ -303,3 +303,30 @@ conocimiento; aquí queda el rastro de POR QUÉ.
   prueba y borra). Si vuelve a dudarse «¿sí aprende?», correr eso antes de tocar prompts.
 - Lo que el consultor manda por su cuenta (texto + media_url) se guarda en la calificación y como ejemplo «dudoso»;
   los rechazos entran al patrón→regla del ciclo nocturno (fuente `rechazo_consultor`).
+
+## 2026-09-03 · El ciclo de aprendizaje CERRADO (reglas como datos, prueba antes de aplicar)
+
+- **Guion, wiki y límites viven en `ti_guion_versiones`** (la constante en código es la versión 0 de respaldo). `guionActual()` y
+  `bloqueSistemaBase()` en guion-datos.ts arman el primer bloque del prompt; se cachea 60 s por instancia. Editor en
+  Configuración → Agente IA → «Guion, wiki y límites» (solo founder guarda; cada guardado = versión nueva; «cargar en el editor»
+  restaura).
+- **Reglas** = filas de `ti_reglas` (clave regla_guion) con `texto`. Ciclo: propuesta (nocturna por patrón, redactada por Opus; o
+  escrita por una persona en Seguimiento → Reglas) → **prueba** (`evaluarRegla`: hasta 24 casos aprobados, el agente responde con
+  y sin la regla usando Opus, un juez Sonnet califica 1-10 y marca si la respuesta VIOLA la regla) → activa (bloque «REGLAS
+  VIGENTES» con fecha) o retirada. Si la prueba da delta negativo, aprobar exige `forzar`. Cualquier usuario del CRM propone,
+  prueba y activa (decisión del dueño); queda `decidida_por`.
+- **Ejemplos por parecido:** RPC `ti_ejemplos_parecidos` (pg_trgm+unaccent sobre mensaje_lead+situación, +0.15 misma etapa, +0.10
+  corrección humana) trae 8, más las 4 correcciones más recientes siempre. `ejemplosAprobados(estado, mensaje)`; sin mensaje cae al
+  orden por fecha.
+- **Crons:** `ti-aprender` (08:00 UTC) quedó ligero: paridad (sustituyó a la rampa del veto), no-era-lead, huecos wiki,
+  correcciones implícitas, patrón→regla + redacción Opus, citas. `ti-curador` (08:25 UTC) hace lo pesado: pares, curador de
+  dudosos/propuestos con 7+ días (Sonnet), higiene (duplicados ≥0.92 → «duplicado»; promos vencidas → «caducado»), prueba de hasta 2
+  reglas sin prueba, **resultados** (¿contestó en 48 h? ¿agendó en 7 d? en ti_calificaciones.resultado y ti_envios.resultado),
+  calificación masiva, presupuesto. Cada corrida = fila en `ti_corridas` con ms y error por paso; el latido avisa si >26 h sin
+  corrida o si terminó con error.
+- **Medido el 3-sep en local:** aprender 12 s; curador 92 s (la prueba de 2 reglas = 74 s). La regla nocturna de «agendada» (un
+  solo mensaje corto) pasó de 3.73 a 8.41 y de 21 a 1 violaciones en 22 casos; la de «descubriendo» EMPEORÓ (7.14 → 6.62): la
+  prueba sirve justo para eso.
+- **Momento de la oferta:** cada vez que el agente propone demo o llamada se registra `ia_log oferta_siguiente_paso` con turno y
+  qué sabía del lead (giro, tiendas, dolor, interés). Con eso se cruza después contra respuesta/cita.
+- Métricas de ángulos (`metricas_silencio`) se retiraron: nadie las leía; el resultado real por origen sale de `resumenResultados`.
