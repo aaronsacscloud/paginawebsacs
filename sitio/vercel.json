@@ -160,6 +160,10 @@
     {
       "path": "/api/cron/fin-alertas",
       "schedule": "5 14 * * *"
+    },
+    {
+      "path": "/api/cron/espacio-agenda",
+      "schedule": "0 0 * * *"
     }
   ]
 }
