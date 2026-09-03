@@ -287,8 +287,8 @@ export const PUT: APIRoute = async ({ request }) => {
   if ('asignado_a' in b) {
     cambios.asignado_a = b.asignado_a || null;
     if (b.asignado_a) {
-      const { data: m } = await supabase.from('team_members').select('nombre').eq('id', b.asignado_a).maybeSingle();
-      eventos.push({ tipo: 'asignada', detalle: `Asignada a ${m?.nombre || 'alguien'}` });
+      const { data: m } = await supabase.from('team_members').select('nombre, email').eq('id', b.asignado_a).maybeSingle();
+      eventos.push({ tipo: 'asignada', detalle: m?.email === 'agente-ia@sacscloud.com' ? 'Agente IA activado en esta conversación (piloto automático)' : `Asignada a ${m?.nombre || 'alguien'}` });
     } else eventos.push({ tipo: 'asignada', detalle: 'Sin asignar' });
   }
   if ('estado' in b && ['active', 'ended'].includes(b.estado)) cambios.estado = b.estado;

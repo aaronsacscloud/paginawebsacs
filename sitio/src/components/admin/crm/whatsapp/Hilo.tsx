@@ -36,6 +36,8 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const conv = hilo?.conversacion;
+  /* «Agente IA» asignado = piloto automático: se pinta morado para que el asesor lo vea de un vistazo. */
+  const esAgente = !!(conv?.asignado_a && (equipo || []).some((m: any) => m.id === conv.asignado_a && m.es_agente));
   const [lightbox, setLightbox] = useState<any>(null);   // ahora es el MENSAJE completo, no solo la URL
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState('');
@@ -374,7 +376,7 @@ export default function Hilo({ hilo, filaActiva, equipo, api, mobile, onBack, on
              primero los selects, que se leen igual acortados; después el
              nombre, que ya lleva puntos suspensivos; el contador nunca, porque
              a medias no sirve de nada. */
-          style={{ border: `1px solid ${C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: '#fff', color: C.g500, maxWidth: mobile ? 78 : 110, minWidth: 74, flexShrink: 1, cursor: 'pointer' }}>
+          style={{ border: `1px solid ${esAgente ? C.morado : C.g200}`, borderRadius: 8, padding: '4px 6px', fontSize: 11, fontFamily: 'inherit', background: esAgente ? C.moradoAgua : '#fff', color: esAgente ? C.morado : C.g500, fontWeight: esAgente ? 800 : undefined, maxWidth: mobile ? 78 : 110, minWidth: 74, flexShrink: 1, cursor: 'pointer' }}>
           <option value="">Sin asignar</option>
           {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
         </select>}
@@ -856,7 +858,7 @@ function MenuHilo({ conv, api, abierto, setAbierto, equipo, onResolver, movil, o
               <select value={conv.asignado_a || ''} onChange={e => { setAbierto(false); api.patchConversacion({ asignado_a: e.target.value || null }); }}
                 style={{ width: '100%', border: `1px solid ${C.g200}`, borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'inherit', background: '#fff' }}>
                 <option value="">Sin asignar</option>
-                {equipo.map((m: any) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                {(equipo || []).map((m: any) => <option key={m.id} value={m.id}>{m.es_agente ? '● ' : ''}{m.nombre}</option>)}
               </select>
             </span>
             <span style={{ display: 'block', borderTop: `1px solid ${C.g100}` }} />

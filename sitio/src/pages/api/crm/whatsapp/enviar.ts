@@ -305,6 +305,8 @@ export const POST: APIRoute = async ({ request }) => {
     catch (err) { if (idem) await supabase.from('wa_envios_idem').delete().eq('idem', idem); throw err; }   // libera la marca: el reintento sí debe mandar
     const wamid = r?.messages?.[0]?.id;
     if (idem) { if (wamid) await supabase.from('wa_envios_idem').update({ wamid }).eq('idem', idem); else await supabase.from('wa_envios_idem').delete().eq('idem', idem); }
+    // El asesor escribió: si el hilo era del Agente IA, pasa al asesor y el agente se apaga en esta conversación.
+    try { const { humanoTomaHilo } = await import('../../../../lib/crm/ti/agente-asignacion'); await humanoTomaHilo(destino.convId, autorId, autor); } catch { /* no bloquea el envío */ }
     if (wamid) await registrarMensaje({
       kapsoMessageId: wamid, telefono: destino.telefono, direccion: 'saliente', ...firma,
       tipo: 'text', cuerpo: textoEnviado, status: 'sent',

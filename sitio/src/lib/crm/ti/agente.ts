@@ -22,6 +22,7 @@ import { notificar } from '../notificaciones';
 import { aplicarDatos, extraerYAplicar, textoDelLead } from './datos-lead';
 import { galeriaActiva, galeriaTexto, resolverImagen, resolverAdjuntos, contarUso, asegurarFormatoWhatsApp, marcarErrorImagen, TIPO_L } from './imagenes-agente';
 import { promoVigente, promoTexto, registrarOfertaDicha, ultimaOferta } from './promociones';
+import { agenteTomaHilo, duenoDelHilo } from './agente-asignacion';
 import { asegurarPlantillas, parListo, parListoPara, paramAngulo } from './plantillas-agente';
 
 const MS_MIN = 60e3;
@@ -353,11 +354,14 @@ export async function proponerRespuestas(): Promise<any> {
     await supabase.from('ti_perfil').upsert({ contact_id: cid, agente_estado: { ...stPrev, ciclo: 1, toque: 0, intentos: [], base_at: undefined, cierre_ventana_at: undefined, angulos: [], eval: undefined, llamada_at: undefined, llamada_omitida: undefined, tarjeta_id: undefined, tarjeta_at: undefined, tarjeta_agendar_id: undefined, cerrado: undefined, cerrado_at: undefined, pausa_hasta: undefined, fase: reconecto ? 'agendar' : stPrev.fase, mensajes_agendar: reconecto ? 0 : (stPrev.mensajes_agendar || 0), reactivado_at: stPrev.cerrado ? ahora.toISOString() : stPrev.reactivado_at }, updated_at: ahora.toISOString() }, { onConflict: 'contact_id' });
     // Las tarjetas «¿seguimos o lo dejamos?» abiertas ya no aplican: el lead habló.
     await supabase.from('ti_tareas').update({ estado: 'retirada', retirada_causa: 'respondió', updated_at: ahora.toISOString() }).eq('contact_id', cid).eq('estado', 'pendiente').eq('tipo', 'veredicto');
-    // HILO HUMANO (hueco 13): si un consultor escribió en las últimas 4 h, el hilo es suyo; el agente calla y deja tarea si nadie contesta.
-    const { data: humanoReciente } = await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_saliente').eq('actor', 'humano').gt('ocurrio_at', new Date(ahora.getTime() - 4 * 3600e3).toISOString()).limit(1);
-    if ((humanoReciente || []).length) {
+    // PROPIEDAD DEL HILO: si la conversación está asignada a un humano, es suya (el agente calla y deja tarea);
+    // si está asignada a «Agente IA», el agente sigue aunque un humano haya escrito; si no está asignada, aplica
+    // la regla de 4 h (un consultor escribió hace poco → el hilo es suyo).
+    const hilo = await duenoDelHilo(cid);
+    const { data: humanoReciente } = hilo.quien === 'agente' ? { data: [] as any[] } : await supabase.from('ti_eventos').select('ocurrio_at').eq('contact_id', cid).eq('tipo', 'wa_saliente').eq('actor', 'humano').gt('ocurrio_at', new Date(ahora.getTime() - 4 * 3600e3).toISOString()).limit(1);
+    if (hilo.quien === 'humano' || (humanoReciente || []).length) {
       res.saltados++;
-      await log({ accion: 'agente_calla', contact_id: cid, razon: 'hilo del consultor (escribió hace menos de 4 h)' });
+      await log({ accion: 'agente_calla', contact_id: cid, razon: hilo.quien === 'humano' ? 'hilo asignado a un consultor' : 'hilo del consultor (escribió hace menos de 4 h)' });
       try { const { texto } = await textoDelLead(cid, new Date(Date.parse(ultimoPor[cid]) - 3600e3).toISOString(), 3); await tareaParaConsultor(cid, 'hilo_humano', texto); } catch { /* nada */ }
       continue;
     }
@@ -702,6 +706,7 @@ export async function despacharEnvios(opts: { forzar?: boolean; soloId?: string 
       await log({ accion: 'agente_envio', contact_id: e.contact_id, contenido: mensaje, razon: (e.salida as any)?.objetivo, detalle: { envio_id: e.id, editado: !!e.editado_por, wamid } });
       try { const pr = await promoVigente(); if (await registrarOfertaDicha(e.contact_id, e.mensaje, pr)) await log({ accion: 'oferta_dicha', contact_id: e.contact_id, razon: pr?.nombre, detalle: { envio_id: e.id, vence: pr?.vence } }); } catch { /* la oferta no bloquea el envío */ }
       await supabase.from('contacts').update({ last_contact_at: ahora.toISOString() }).eq('id', e.contact_id);
+      await agenteTomaHilo(e.conversation_id).catch(() => {});
       res.enviados++;
     } catch (err: any) {
       await supabase.from('ti_envios').update({ estado: 'fallido', error: String(err?.message || err).slice(0, 300), updated_at: ahora.toISOString() }).eq('id', e.id);

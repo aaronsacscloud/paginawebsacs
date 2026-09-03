@@ -13,10 +13,12 @@ export const prerender = false;
 export const GET: APIRoute = async () => {
   const { data } = await supabase.from('team_members')
     .select('id, nombre, email, foto_url, rol')
-    .eq('activo', true).in('rol', ['founder', 'cs'])
+    .eq('activo', true).or('rol.in.(founder,cs),email.eq.agente-ia@sacscloud.com')
     .order('nombre');
-  const equipo = (data || []).map(m => ({
-    id: m.id, nombre: m.nombre || m.email?.split('@')[0] || 'Sin nombre', foto_url: m.foto_url || null,
+  // El «Agente IA» (miembro de sistema, identificado por su correo) va al final y marcado: el selector lo pinta distinto.
+  const esAg = (m: any) => m.email === 'agente-ia@sacscloud.com';
+  const equipo = (data || []).sort((a, b) => (esAg(a) ? 1 : 0) - (esAg(b) ? 1 : 0)).map(m => ({
+    id: m.id, nombre: esAg(m) ? 'Agente IA (piloto automático)' : (m.nombre || m.email?.split('@')[0] || 'Sin nombre'), foto_url: m.foto_url || null, es_agente: esAg(m),
   }));
   return new Response(JSON.stringify({ equipo }), {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
