@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { leerConfig } from '../../../../lib/crm/ti/motor';
-import { SEGMENTOS, generarLoteReactivacion, aprobarReactivacion, rechazarReactivacion, sincronizarReactivaciones, panelReactivacion } from '../../../../lib/crm/ti/reactivacion';
+import { SEGMENTOS, generarLoteReactivacion, aprobarReactivacion, rechazarReactivacion, sincronizarReactivaciones, panelReactivacion, completarCorreos, enviarCorreoReactivacion } from '../../../../lib/crm/ti/reactivacion';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -27,7 +27,9 @@ export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({}));
   const uid = (user as any).id;
   if (b.accion === 'generar') return json(await generarLoteReactivacion(Math.min(Number(b.n) || 5, 8)));
-  if (b.accion === 'aprobar') return json(await aprobarReactivacion(String(b.id), { mensaje: b.mensaje, userId: uid, familia: b.familia, criterio: b.criterio }));
+  if (b.accion === 'aprobar') return json(await aprobarReactivacion(String(b.id), { mensaje: b.mensaje, userId: uid, familia: b.familia, criterio: b.criterio, correo: b.correo }));
+  if (b.accion === 'correo_enviar' && b.id) return json(await enviarCorreoReactivacion(String(b.id), { asunto: b.asunto, cuerpo: b.cuerpo }));
+  if (b.accion === 'correos_completar') return json(await completarCorreos(Math.min(Number(b.n) || 10, 12)));
   if (b.accion === 'config') {
     const cfg: any = await leerConfig(); const v: any = { ...cfg };
     if (b.familia) v.reactivacion_familia = String(b.familia);

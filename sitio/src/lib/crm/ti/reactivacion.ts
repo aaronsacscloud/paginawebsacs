@@ -10,6 +10,8 @@ import { parListoPara, paramAngulo, FAMILIAS, type Familia } from './plantillas-
 import { promoVigente, promoTexto } from './promociones';
 import { notificar } from '../notificaciones';
 import { puedeAutomatico } from './semaforo';
+import { sendEmail } from '../../email';
+import { LIGA_AGENDA } from './agenda-agente';
 
 export const SEGMENTOS: Record<string, { l: string; corto: string; desc: string }> = {
   intencion: { l: 'Pidió precio o demo y se enfrió', corto: 'Pidió precio/demo', desc: 'Llegó a preguntar precio, planes, costo o demo. Intención clara que no cerró.' },
@@ -57,7 +59,7 @@ async function contexto(c: any) {
 }
 
 /** Redacta el primer contacto de UN lead. Instrucción implícita: reconocer el tiempo, retomar SU pregunta, una novedad, una pregunta fácil, cero pitch. */
-export async function redactarReactivacion(c: any): Promise<{ mensaje: string; angulo: string; resumen_lead: string; pregunta_original: string; por_que: string; costo: number; descartar?: string } | null> {
+export async function redactarReactivacion(c: any): Promise<{ mensaje: string; angulo: string; resumen_lead: string; pregunta_original: string; por_que: string; costo: number; descartar?: string; correo?: { asunto: string; cuerpo: string } | null } | null> {
   if (!hasApiKey()) { console.error('[reactivacion] sin API key'); return null; }
   const cfg: any = await leerConfig();
   const { hilo, datos, resumen } = await contexto(c);
@@ -97,7 +99,7 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 
 Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que NO es una tienda (restaurante, cafetería, comida, servicios, escuela, consultorio) o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
-Responde SOLO con JSON: {"nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
+Responde SOLO con JSON: {"correo": ${c.email ? '{"asunto": "asunto corto y concreto, sin signos de exclamación", "cuerpo": "tres párrafos cortos en texto plano separados por línea en blanco: 1) en una línea quiénes somos (Sacs: sistema para tiendas de moda y retail en México: ventas, inventario por talla y color, tienda en línea y WhatsApp conectados al mismo inventario), por si ya no se acuerda; 2) lo que sabemos de SU negocio y su pregunta original, con la novedad que le sirve; 3) invitación concreta a contestar por WhatsApp o agendar 15 minutos. Máximo 130 palabras, de tú, sin emojis, sin promesas."}' : 'null'}, "nombre": "el nombre de pila REAL del lead si aparece en la conversación o en los datos; si no, \"\"", "mensaje": "...", "angulo": "en 6 palabras qué palanca usas", "resumen_lead": "una línea para el dueño: quién es y en qué se quedó", "pregunta_original": "su pregunta en una línea", "por_que": "una línea: por qué este mensaje y no otro"}`;
   const r = await anthropic.messages.create({ model: MODELS.opus, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] });
   const txt = (r.content || []).filter((c: any) => c.type === 'text').map((c: any) => c.text).join('') || '';
   if (!txt) console.error('[reactivacion] respuesta sin texto:', JSON.stringify(r).slice(0, 400));
@@ -113,7 +115,8 @@ Responde SOLO con JSON: {"nombre": "el nombre de pila REAL del lead si aparece e
     await supabase.from('contacts').update({ nombre: nombreReal }).eq('id', c.contact_id);
     await supabase.from('activities').insert({ contact_id: c.contact_id, tipo: 'nota', descripcion: `Nombre detectado por el agente al preparar la reactivación: ${nombreReal} (antes «${c.nombre || 'vacío'}»)` }).then(() => {}, () => {});
   }
-  return { mensaje: String(j.mensaje).trim(), angulo: String(j.angulo || ''), resumen_lead: String(j.resumen_lead || ''), pregunta_original: String(j.pregunta_original || ''), por_que: String(j.por_que || ''), costo };
+  const correo = j.correo && typeof j.correo === 'object' && j.correo.cuerpo ? { asunto: String(j.correo.asunto || 'Retomamos lo de tu tienda').slice(0, 120), cuerpo: String(j.correo.cuerpo).trim().slice(0, 1800) } : null;
+  return { mensaje: String(j.mensaje).trim(), angulo: String(j.angulo || ''), resumen_lead: String(j.resumen_lead || ''), pregunta_original: String(j.pregunta_original || ''), por_que: String(j.por_que || ''), costo, correo };
 }
 
 /** Lote del día: redacta hasta `n` propuestas nuevas (primero los de intención). Si la rampa está en automático, las programa con ventana de veto. */
@@ -135,7 +138,7 @@ export async function generarLoteReactivacion(n = MAX_DIA): Promise<any> {
         await supabase.from('ti_reactivacion').insert({ contact_id: c.contact_id, conversation_id: c.conversation_id, telefono: c.telefono, segmento: c.segmento, meses_sin_hablar: c.meses_sin_hablar, mensaje: '', estado: 'descartada', error: d.descartar, modelo: MODELS.opus, costo_usd: d.costo });
         res.descartadas = (res.descartadas || 0) + 1; continue;
       }
-      const { data: fila, error: e2 } = await supabase.from('ti_reactivacion').insert({ contact_id: c.contact_id, conversation_id: c.conversation_id, telefono: c.telefono, segmento: c.segmento, meses_sin_hablar: c.meses_sin_hablar, resumen_lead: d.resumen_lead, pregunta_original: d.pregunta_original, angulo: d.angulo, mensaje: d.mensaje, mensaje_original: d.mensaje, por_que: d.por_que, modelo: MODELS.opus, costo_usd: d.costo, automatica: !!rampa.automatico }).select('id').maybeSingle();
+      const { data: fila, error: e2 } = await supabase.from('ti_reactivacion').insert({ contact_id: c.contact_id, conversation_id: c.conversation_id, telefono: c.telefono, segmento: c.segmento, meses_sin_hablar: c.meses_sin_hablar, resumen_lead: d.resumen_lead, pregunta_original: d.pregunta_original, angulo: d.angulo, mensaje: d.mensaje, mensaje_original: d.mensaje, por_que: d.por_que, modelo: MODELS.opus, costo_usd: d.costo, automatica: !!rampa.automatico, correo_asunto: d.correo?.asunto || null, correo_cuerpo: d.correo?.cuerpo || null, correo_estado: d.correo ? 'propuesto' : null }).select('id').maybeSingle();
       if (e2 || !fila) { res.errores++; continue; }
       res.propuestas++;
       if (rampa.automatico) { await aprobarReactivacion(fila.id, { automatica: true }); res.automaticas++; }
@@ -146,7 +149,7 @@ export async function generarLoteReactivacion(n = MAX_DIA): Promise<any> {
 }
 
 /** Aprobar: programa el envío como plantilla de la familia «reactivación» en el siguiente hueco y arranca el ciclo del agente para ese lead. */
-export async function aprobarReactivacion(id: string, o: { mensaje?: string; userId?: string; automatica?: boolean; familia?: string; criterio?: string } = {}): Promise<any> {
+export async function aprobarReactivacion(id: string, o: { mensaje?: string; userId?: string; automatica?: boolean; familia?: string; criterio?: string; correo?: { enviar: boolean; asunto?: string; cuerpo?: string } } = {}): Promise<any> {
   const { data: r } = await supabase.from('ti_reactivacion').select('*').eq('id', id).maybeSingle();
   if (!r || !['propuesta'].includes(r.estado)) return { error: 'Esta propuesta ya se decidió' };
   const mensaje = String(o.mensaje || r.mensaje).trim();
@@ -180,7 +183,9 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
   if (editado) await supabase.from('ia_log').insert({ accion: 'agente_editado', contact_id: r.contact_id, contenido: mensaje, razon: 'reactivación editada por el dueño', detalle: { original: r.mensaje_original, reactivacion_id: id } });
   // APRENDE: cada aprobación humana es un ejemplo que el redactor lee la próxima vez (las editadas pesan más).
   if (!o.automatica) await supabase.from('ia_ejemplos').insert({ estado: 'reactivacion', situacion: `Reenganchar a un lead que preguntó hace ${r.meses_sin_hablar} meses (${r.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'}). ${r.resumen_lead || ''} Preguntó: «${r.pregunta_original || ''}»`.slice(0, 600), mensaje_lead: r.pregunta_original || null, respuesta: r.mensaje_original || r.mensaje, pulida: mensaje, por_que: editado ? `CRITERIO: ${o.criterio || 'versión del dueño (reactivación)'}` : 'aprobado tal cual por el dueño (reactivación)', lo_humano: editado ? 'reescrito por el dueño' : 'aprobado', fuente: editado ? 'correccion_dueno' : 'reactivacion', contact_id: r.contact_id, estado_rev: 'aprobado', revisado_at: new Date().toISOString() }).then(() => {}, () => {});
-  return { ok: true, envio_id: env.id, sale_at: saleAt.toISOString() };
+  let correo: any = null;
+  if (o.correo?.enviar) correo = await enviarCorreoReactivacion(id, { asunto: o.correo.asunto, cuerpo: o.correo.cuerpo }).catch((e: any) => ({ error: String(e?.message || e) }));
+  return { ok: true, envio_id: env.id, sale_at: saleAt.toISOString(), correo };
 }
 
 export async function rechazarReactivacion(id: string, motivo: string, userId?: string) {
@@ -242,4 +247,69 @@ export async function panelReactivacion() {
     horas: Array.isArray(cfg.reactivacion_horas) && cfg.reactivacion_horas.length ? cfg.reactivacion_horas : HORAS_CDMX, max_dia: Number(cfg.reactivacion_max_dia) || MAX_DIA, proximo_hueco: hueco?.toISOString() || null,
     aprendizaje: { ejemplos: ejemplos || 0, enviadas, respondieron, tasa: enviadas ? Math.round(respondieron / enviadas * 100) : null, decididos_hoy: decididosHoy || 0 },
   };
+}
+
+
+/* ── CORREO DE REACTIVACIÓN (decisión del dueño 2026-09-04) ──
+   Texto, no foto: quiénes somos en una línea, lo que sabemos de su negocio y la invitación, con dos botones:
+   WhatsApp de ventas y agendar demo. Sale junto con el WhatsApp cuando el dueño aprueba con «ambos». */
+const WA_VENTAS = '5215536634392';
+export function htmlCorreoReactivacion(o: { nombre: string; empresa?: string | null; cuerpo: string; contactId: string }) {
+  const parrafos = String(o.cuerpo || '').split(/\n{2,}/).map(p => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#221c3d">${p.replace(/\n/g, '<br>')}</p>`).join('');
+  const wa = `https://wa.me/${WA_VENTAS}?text=${encodeURIComponent(`Hola, soy ${o.nombre}${o.empresa ? ` de ${o.empresa}` : ''}. Vi tu correo y quiero retomar lo de mi tienda.`)}`;
+  const agenda = `${LIGA_AGENDA}?utm_source=reactivacion&utm_medium=email&contact=${encodeURIComponent(o.contactId)}`;
+  return `<!doctype html><html><body style="margin:0;background:#f6f5fb;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f5fb;padding:28px 12px"><tr><td align="center">
+<table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:16px;border:1px solid #e6e3f0">
+<tr><td style="padding:26px 30px 6px"><span style="font-size:22px;font-weight:800;letter-spacing:-.02em;color:#5b4bd6">Sacs</span><span style="font-size:11px;font-weight:800;letter-spacing:.08em;color:#8b86a3;margin-left:8px;text-transform:uppercase">para tiendas de moda</span></td></tr>
+<tr><td style="padding:14px 30px 4px"><p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#221c3d">Hola ${o.nombre},</p>${parrafos}</td></tr>
+<tr><td style="padding:6px 30px 26px">
+<a href="${wa}" style="display:inline-block;background:#5b4bd6;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;margin:0 8px 8px 0">Escríbeme por WhatsApp</a>
+<a href="${agenda}" style="display:inline-block;background:#eeecfe;color:#3d2fb0;text-decoration:none;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;margin:0 0 8px 0">Agendar 15 minutos</a>
+<p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#6b6580">Andrea Gutiérrez · Sacs<br><a href="https://www.sacscloud.com" style="color:#5b4bd6;text-decoration:none">sacscloud.com</a> · WhatsApp +52 1 55 3663 4392</p>
+</td></tr></table>
+<p style="max-width:560px;margin:14px auto 0;font-size:11px;color:#9a95b0;text-align:center">Te escribimos porque en su momento pediste información de Sacs. Si prefieres no recibir correos, responde con «baja» y listo.</p>
+</td></tr></table></body></html>`;
+}
+
+export async function enviarCorreoReactivacion(id: string, o: { asunto?: string; cuerpo?: string } = {}) {
+  const { data: r } = await supabase.from('ti_reactivacion').select('id, contact_id, correo_asunto, correo_cuerpo, correo_estado').eq('id', id).maybeSingle();
+  if (!r) return { error: 'No existe' };
+  const { data: k } = await supabase.from('contacts').select('nombre, email, company_id, companies(nombre_comercial, nombre)').eq('id', r.contact_id).maybeSingle();
+  const email = String(k?.email || '').trim();
+  if (!email || !/@/.test(email)) return { error: 'El lead no tiene correo' };
+  const asunto = String(o.asunto || r.correo_asunto || 'Retomamos lo de tu tienda').trim();
+  const cuerpo = String(o.cuerpo || r.correo_cuerpo || '').trim();
+  if (cuerpo.length < 40) return { error: 'El correo está vacío' };
+  const nombre = String(k?.nombre || '').trim().split(/\s+/)[0] || 'qué tal';
+  const empresa = (k as any)?.companies?.nombre_comercial || (k as any)?.companies?.nombre || null;
+  const html = htmlCorreoReactivacion({ nombre, empresa, cuerpo, contactId: r.contact_id });
+  const res: any = await sendEmail({ to: email, subject: asunto, html, text: `Hola ${nombre},\n\n${cuerpo}\n\nEscríbeme por WhatsApp: https://wa.me/${WA_VENTAS}\nAgendar 15 minutos: ${LIGA_AGENDA}\n\nAndrea Gutiérrez · Sacs`, contactId: r.contact_id, tipo: 'reactivacion' } as any);
+  const ok = res && res.status !== 'failed';
+  await supabase.from('ti_reactivacion').update({ correo_asunto: asunto, correo_cuerpo: cuerpo, correo_estado: ok ? 'enviado' : 'error', correo_enviado_at: ok ? new Date().toISOString() : null, correo_error: ok ? null : String(res?.error || 'error'), updated_at: new Date().toISOString() }).eq('id', id);
+  await supabase.from('activities').insert({ contact_id: r.contact_id, company_id: k?.company_id || null, tipo: ok ? 'email_enviado' : 'nota', titulo: ok ? `Correo de reactivación: ${asunto}` : `Correo de reactivación falló: ${res?.error || ''}`, descripcion: cuerpo.slice(0, 800), automatico: true }).then(() => {}, () => {});
+  return ok ? { ok: true } : { error: String(res?.error || 'No se pudo enviar') };
+}
+
+/** Redacta el correo para propuestas que nacieron sin él (los primeros lotes). */
+export async function completarCorreos(limite = 10) {
+  const { data: filas } = await supabase.from('ti_reactivacion').select('id, contact_id, segmento, meses_sin_hablar, resumen_lead, pregunta_original, mensaje, angulo').eq('estado', 'propuesta').is('correo_cuerpo', null).or('correo_estado.is.null,correo_estado.neq.sin_email').limit(limite);
+  let n = 0;
+  for (const r of filas || []) {
+    const { data: k } = await supabase.from('contacts').select('nombre, email, giro, companies(nombre_comercial, nombre)').eq('id', r.contact_id).maybeSingle();
+    if (!k?.email || !/@/.test(k.email)) { await supabase.from('ti_reactivacion').update({ correo_estado: 'sin_email' }).eq('id', r.id); continue; }
+    const empresa = (k as any)?.companies?.nombre_comercial || (k as any)?.companies?.nombre;
+    const prompt = `Eres Andrea, asesora de Sacs (sistema para tiendas de moda y retail en México: ventas, inventario por talla y color, tienda en línea y WhatsApp conectados al mismo inventario). Escribe el CORREO de reactivación para ${k.nombre || 'un lead'}${empresa ? ` de ${empresa}` : ''}${k.giro ? ` (${k.giro})` : ''}, que preguntó hace ${r.meses_sin_hablar} meses y no siguió.
+Lo que sabemos: ${r.resumen_lead || ''} Preguntó: «${r.pregunta_original || ''}». Palanca: ${r.angulo || ''}. El WhatsApp que le va a llegar dice: «${r.mensaje}».
+Tres párrafos cortos en texto plano separados por línea en blanco: 1) en una línea quiénes somos, por si ya no se acuerda; 2) lo que sabemos de SU negocio y su pregunta, con la novedad que le sirve; 3) invitación concreta a contestar por WhatsApp o agendar 15 minutos. Máximo 130 palabras, de tú, sin emojis, sin promesas, sin saludo inicial (el correo ya dice «Hola nombre»). Responde SOLO JSON: {"asunto": "corto, concreto, sin signos de exclamación", "cuerpo": "..."}`;
+    try {
+      const rr = await anthropic.messages.create({ model: MODELS.sonnet, max_tokens: 600, messages: [{ role: 'user', content: prompt }] });
+      const txt = (rr.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
+      const m = txt.match(/\{[\s\S]*\}/); if (!m) continue; const j = JSON.parse(m[0]);
+      if (!j.cuerpo) continue;
+      await supabase.from('ti_reactivacion').update({ correo_asunto: String(j.asunto || 'Retomamos lo de tu tienda').slice(0, 120), correo_cuerpo: String(j.cuerpo).trim().slice(0, 1800), correo_estado: 'propuesto', updated_at: new Date().toISOString() }).eq('id', r.id);
+      n++;
+    } catch { /* siguiente */ }
+  }
+  return { redactados: n, revisados: (filas || []).length };
 }

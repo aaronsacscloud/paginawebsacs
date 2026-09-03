@@ -54,3 +54,11 @@ where k.archived_at is null
   -- Si ya lo lleva el agente por reenganche (nos escribió al último y calló), no se duplica aquí.
   and not exists (select 1 from ti_perfil p2 where p2.contact_id = k.id and p2.agente_estado ? 'reenganche')
 order by (u.pidio) desc, u.ult_in desc;
+
+-- 2026-09-03 · correo de reactivación por propuesta (sale junto con el WhatsApp al aprobar «ambos»)
+alter table ti_reactivacion
+  add column if not exists correo_asunto text,
+  add column if not exists correo_cuerpo text,
+  add column if not exists correo_estado text,       -- propuesto | enviado | error | sin_email
+  add column if not exists correo_enviado_at timestamptz,
+  add column if not exists correo_error text;

@@ -25,6 +25,8 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
   const [texto, setTexto] = useState<Record<string, string>>({});
   const [criterio, setCriterio] = useState<Record<string, string>>({});
   const [familia, setFamilia] = useState<Record<string, string>>({});
+  const [correo, setCorreo] = useState<Record<string, { enviar: boolean; asunto: string; cuerpo: string }>>({});
+  const [verCorreo, setVerCorreo] = useState(false);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [rechazando, setRechazando] = useState(false);
   const [motivoSel, setMotivoSel] = useState('');
@@ -63,14 +65,15 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
   }, [d?.candidatos_total]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const aviso = (t: string, ok = true) => { setMsg({ t, ok }); setTimeout(() => setMsg(null), 3500); };
-  const siguiente = () => setIdx(i => (lista.length ? (i + 1) % Math.max(1, lista.length) : 0));
   const decidir = async (f: any, accion: 'aprobar' | 'rechazar', motivo?: string) => {
     setOcupado(f.id);
-    const r = await postJ(accion === 'aprobar' ? { accion, id: f.id, mensaje: texto[f.id] ?? f.mensaje, familia: familia[f.id] || undefined, criterio: criterio[f.id] || undefined } : { accion, id: f.id, motivo });
+    const co = correo[f.id];
+    const conCorreo = accion === 'aprobar' && !!f.contacts?.email && !!(co ? co.enviar : f.correo_cuerpo);
+    const r = await postJ(accion === 'aprobar' ? { accion, id: f.id, mensaje: texto[f.id] ?? f.mensaje, familia: familia[f.id] || undefined, criterio: criterio[f.id] || undefined, correo: conCorreo ? { enviar: true, asunto: co?.asunto ?? f.correo_asunto, cuerpo: co?.cuerpo ?? f.correo_cuerpo } : undefined } : { accion, id: f.id, motivo });
     setOcupado(null); setRechazando(false); setMotivoSel(''); setMotivoTxt('');
     if (r?.error) { aviso('No se pudo: ' + r.error, false); return; }
     setSaliendo(f.id); setDecididos(n => n + 1);
-    aviso(accion === 'aprobar' ? `Programado: sale ${fecha(r.sale_at)}.` : 'Rechazado. El redactor lo toma como lección.');
+    aviso(accion === 'aprobar' ? `WhatsApp programado: sale ${fecha(r.sale_at)}.${r.correo?.ok ? ' Correo enviado.' : r.correo?.error ? ` El correo no salió: ${r.correo.error}.` : ''}` : 'Rechazado. El redactor lo toma como lección.', !(r.correo?.error));
     setTimeout(async () => { setSaliendo(null); await cargar(); }, 420);
   };
   useEffect(() => {
@@ -117,7 +120,7 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
         </div>
         <div className="rx-head-fila" style={{ marginTop: 6 }}>
           <span className="rx-suave">{filtro === 'pendientes' ? `${pend.length} por aprobar` : filtro === 'programadas' ? 'Programados' : 'Historial'}{lista.length > 1 ? ` · ${Math.min(idx + 1, lista.length)} de ${lista.length}` : ''}</span>
-          <span className="rx-pos">{filtro !== 'pendientes' && <button className="rx-link" onClick={() => { setFiltro('pendientes'); setIdx(0); }}>por aprobar</button>}{filtro !== 'programadas' && <> · <button className="rx-link" onClick={() => { setFiltro('programadas'); setIdx(0); }}>programados ({filas.filter(f => f.estado === 'programada').length})</button></>}{filtro !== 'historial' && <> · <button className="rx-link" onClick={() => { setFiltro('historial'); setIdx(0); }}>historial</button></>}{lista.length > 1 && <> · <button className="rx-link" onClick={siguiente}>saltar ›</button></>}</span>
+          <span className="rx-pos">{filtro !== 'pendientes' && <button className="rx-link" onClick={() => { setFiltro('pendientes'); setIdx(0); }}>por aprobar</button>}{filtro !== 'programadas' && <> · <button className="rx-link" onClick={() => { setFiltro('programadas'); setIdx(0); }}>programados ({filas.filter(f => f.estado === 'programada').length})</button></>}{filtro !== 'historial' && <> · <button className="rx-link" onClick={() => { setFiltro('historial'); setIdx(0); }}>historial</button></>}</span>
         </div>
         {msg && <div className={'rx-msg ' + (msg.ok ? 'ok' : 'err')}>{msg.t}</div>}
       </div>
@@ -154,9 +157,34 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
                 <div className="rx-suave" style={{ marginTop: 6 }}>Sale como plantilla <b>{FAM_L[fam] || fam}</b>{!cu.aprobada ? ' (pendiente en Meta: mientras, cae a Seguimiento)' : ''} · si Meta no la entrega en 10 min, sale la de utilidad como <b>puente</b> (una línea neutra) y en cuanto conteste el agente le manda este mensaje completo · próximo hueco {fecha(panel.proximo_hueco)}
                   {editable && <> · <select value={fam || ''} onChange={e => setFamilia(x => ({ ...x, [f.id]: e.target.value }))} style={{ border: '1px solid #e8e5f0', borderRadius: 6, padding: '1px 4px', fontFamily: 'inherit', fontSize: 11 }}>{(panel.plantillas || []).filter((p: any) => p.aprobada && ['reactivacion', 'seguimiento', 'promo'].includes(p.familia)).map((p: any) => <option key={p.familia} value={p.familia}>{FAM_L[p.familia] || p.familia}</option>)}</select></>}
                 </div>
+                {k.email && (f.correo_cuerpo || correo[f.id]) && (() => {
+                  const co = correo[f.id] || { enviar: f.correo_estado !== 'enviado', asunto: f.correo_asunto || '', cuerpo: f.correo_cuerpo || '' };
+                  const set = (p: Partial<typeof co>) => setCorreo(x => ({ ...x, [f.id]: { ...co, ...p } }));
+                  const enviado = f.correo_estado === 'enviado';
+                  return (
+                    <div className="rx-mail">
+                      <div className="rx-lbl" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        {enviado ? <>Correo enviado {fecha(f.correo_enviado_at)}</> : editable ? <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={co.enviar} onChange={e => set({ enviar: e.target.checked })} /> También por correo a {k.email}</label> : <>Correo a {k.email}</>}
+                        <button className="rx-link" onClick={() => setVerCorreo(v => !v)}>{verCorreo ? 'ocultar' : 'ver y editar'}</button>
+                      </div>
+                      {verCorreo && (
+                        <div className="rx-mail-cuerpo">
+                          {editable && !enviado ? <input className="ti-campo" value={co.asunto} onChange={e => set({ asunto: e.target.value })} placeholder="Asunto" /> : <div className="rx-mail-asunto">{co.asunto}</div>}
+                          <div className="rx-mail-prev">
+                            <div className="rx-mail-marca">Sacs <span>para tiendas de moda</span></div>
+                            <p>Hola {nombre},</p>
+                            {editable && !enviado ? <textarea className="ti-campo rx-ta" rows={7} value={co.cuerpo} onChange={e => set({ cuerpo: e.target.value })} /> : co.cuerpo.split(/\n{2,}/).map((p: string, i: number) => <p key={i}>{p}</p>)}
+                            <div className="rx-mail-btns"><span className="a">Escríbeme por WhatsApp</span><span className="b">Agendar 15 minutos</span></div>
+                            <div className="rx-suave">Andrea Gutiérrez · Sacs · los dos botones llevan al WhatsApp de ventas y a la agenda de demo</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {editable && !rechazando && (
                   <div className="rx-acciones">
-                    <button className="rx-btn p" disabled={!!ocupado} onClick={() => decidir(f, 'aprobar')}>{ocupado === f.id ? 'Programando…' : cambiado ? 'Aprobar mi versión y programar' : 'Aprobar y programar'}<small>A</small></button>
+                    <button className="rx-btn p" disabled={!!ocupado} onClick={() => decidir(f, 'aprobar')}>{ocupado === f.id ? 'Enviando…' : (k.email && (correo[f.id] ? correo[f.id].enviar : !!f.correo_cuerpo && f.correo_estado !== 'enviado')) ? (cambiado ? 'Aprobar mi versión: WhatsApp + correo' : 'Aprobar y enviar ambos') : cambiado ? 'Aprobar mi versión y programar' : 'Aprobar y programar'}<small>A</small></button>
                     <button className="rx-btn" disabled={!!ocupado} onClick={() => setRechazando(true)}>Rechazar<small>R</small></button>
                   </div>
                 )}
@@ -193,6 +221,9 @@ export default function TrabajoReactivacion({ soloAjustes }: { soloAjustes?: boo
         .rx-acciones{display:flex;gap:8px;margin-top:14px;align-items:stretch}.rx-acciones.col{flex-direction:column;align-items:flex-start}
         .rx-btn{border:1px solid #e8e5f0;background:#fff;color:#241d43;border-radius:12px;padding:14px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:10px}.rx-btn.p{flex:1;justify-content:center;background:#5B4BD6;border-color:#5B4BD6;color:#fff;font-size:15px;box-shadow:0 8px 20px rgba(91,75,214,.25)}.rx-btn.ghost{border-color:transparent;color:#8e88a8}.rx-btn small{font-size:10px;font-weight:800;border:1px solid currentColor;border-radius:5px;padding:0 5px;opacity:.7}.rx-btn:disabled{opacity:.5;cursor:default}
         .rx-vacio{text-align:center;padding:40px 20px}
+        .rx-mail{margin-top:14px;border-top:1px dashed #e8e5f0;padding-top:10px}.rx-mail-cuerpo{margin-top:8px}.rx-mail-asunto{font-weight:800;font-size:14px;margin-bottom:6px}
+        .rx-mail-prev{margin-top:8px;background:#fff;border:1px solid #e6e3f0;border-radius:14px;padding:16px 18px}.rx-mail-prev p{margin:0 0 10px;font-size:14px;line-height:1.55;color:#221c3d}.rx-mail-marca{font-weight:800;font-size:18px;color:#5B4BD6;margin-bottom:10px}.rx-mail-marca span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8e88a8;margin-left:6px}
+        .rx-mail-btns{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}.rx-mail-btns span{display:inline-block;padding:9px 14px;border-radius:10px;font-weight:800;font-size:13px}.rx-mail-btns .a{background:#5B4BD6;color:#fff}.rx-mail-btns .b{background:#eeecfe;color:#3d2fb0}
         @media (max-width:820px){.rx-grid{grid-template-columns:1fr}.rx-ajustes{grid-template-columns:1fr}.rx-acciones{flex-wrap:wrap}.rx-btn.p{flex-basis:100%}}
       `}</style>
     </div>
