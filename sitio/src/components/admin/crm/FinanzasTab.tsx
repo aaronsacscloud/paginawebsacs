@@ -39,6 +39,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
   const [vista, setVistaRaw] = useState<'gastos' | 'adeudos' | 'ingresos' | 'pipeline' | 'cierre'>(pagina || 'gastos');
   const setVista = (v: any) => setVistaRaw(pagina ? (v === 'pipeline' ? 'ingresos' : pagina) : v);
   const [semana, setSemana] = useState<number | null>(null);
+  const [ingTab, setIngTab] = useState<'cobrado' | 'por_cobrar' | 'venta' | 'oportunidades' | 'flujo'>('cobrado');
   const [fOp, setFOp] = useState<{ tipo: 'todos' | 'nuevo' | 'expansion'; vendedor: string; etapa: string; orden: 'ponderado' | 'valor' | 'dias' | 'vistas' | 'cierre' }>({ tipo: 'todos', vendedor: '', etapa: '', orden: 'ponderado' });
   const [opId, setOpId] = useState<string | null>(null);      // oportunidad abierta en el modal
   const [op, setOp] = useState<any>(null);
@@ -159,6 +160,9 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                 const tabs: [string, string, number, number][] = [
                   ['todos', 'Todos', total, pagadoTotal],
                   ...cats.map(([c, v]: any) => [c, CATS[c] || c, Number(v.previsto || 0), Number(v.pagado || 0)] as [string, string, number, number]),
+                  // Adeudos y comisiones son pagos fijos del mes: van como pestañas aquí, no como secciones aparte (decisión 2026-09-04).
+                  ['adeudos', 'Adeudos', Number(d.adeudos?.toca || 0), Number(d.adeudos?.abonado || 0)] as [string, string, number, number],
+                  ['comisiones', 'Comisiones', Number(d.comisiones?.total || 0), (d.comisiones?.cortes || []).filter((c: any) => c.pagado).reduce((a: number, c: any) => a + c.monto, 0)] as [string, string, number, number],
                 ];
                 return (
                   <div style={{ display: 'flex', gap: 2, overflowX: 'auto', borderBottom: '1px solid #ecebf2', padding: '0 6px' }}>
@@ -179,7 +183,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                   </div>
                 );
               })()}
-              <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+              {catTab !== 'adeudos' && catTab !== 'comisiones' && <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                 <thead><tr><th style={th}>Pagado</th>{thSort('nombre', 'Gasto')}{thSort('categoria', 'Categoría')}<th style={th}>Periodicidad</th>{thSort('dias', 'Vence')}{thSort('monto', 'Monto', true)}<th style={th}></th></tr></thead>
                 <tbody>
                   {filasGasto.map((g: any) => (
@@ -202,33 +206,25 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                         : 'Todavía no capturas gastos. Empieza por las suscripciones que pagas cada mes.'}
                     </td></tr>
                   )}
-                  {(d.comisiones.cortes || []).length > 0 && !d.gastos.por_categoria.comision && (<>
+                </tbody>
+              </table></div>}
+              {catTab === 'comisiones' && (
+                <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+                  <thead><tr><th style={th}>Pagado</th><th style={th}>Corte</th><th style={th}>Categoría</th><th style={th}>Se paga</th><th style={th}>Fecha</th><th style={{ ...th, textAlign: 'right' }}>Monto</th><th style={th}></th></tr></thead>
+                  <tbody>
+                  {(d.comisiones.cortes || []).length > 0 && (<>
                     <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones: cortes que se pagan los lunes ({pesos(d.comisiones.por_pagar)} por pagar)</td></tr>
                     {d.comisiones.cortes.map((c: any) => <tr key={c.id} style={{ opacity: c.pagado ? .7 : 1 }}><td style={td}><input type="checkbox" checked={c.pagado} readOnly title="Se marca pagado desde Comisiones" style={{ width: 18, height: 18, accentColor: '#5B4BD6' }} /></td><td style={td}><b>{c.vendedor}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>corte {c.desde} → {c.hasta} · {c.aceptado ? 'aceptado por la vendedora' : c.estado}</div></td><td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>Comisiones</span></td><td style={td}>Lunes</td><td style={td}>{c.paga_el}</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(c.monto)}</td><td style={td}></td></tr>)}
                   </>)}
-                  {!(d.comisiones.cortes || []).length && Object.keys(d.comisiones.por_vendedor).length > 0 && !d.gastos.por_categoria.comision && (<>
+                  {!(d.comisiones.cortes || []).length && Object.keys(d.comisiones.por_vendedor).length > 0 && (<>
                     <tr><td colSpan={7} style={{ ...td, background: '#faf9fc', fontSize: 11, fontWeight: 800, color: '#8e88a8', letterSpacing: '.06em', textTransform: 'uppercase' }}>Comisiones calculadas por el sistema (pagos del mes, aún sin corte)</td></tr>
                     {Object.entries(d.comisiones.por_vendedor).map(([n, m]: any) => <tr key={n}><td style={td}></td><td style={td}><b>{n}</b></td><td style={td}><span style={{ fontSize: 11, fontWeight: 800, background: '#f3f4f6', color: '#4a4658', borderRadius: 999, padding: '2px 8px' }}>Comisiones</span></td><td style={td}>Mensual</td><td style={td}>—</td><td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{pesos(m)}</td><td style={td}></td></tr>)}
                   </>)}
-                </tbody>
-              </table></div>
-            </div>
-
-            {/* ATRASADOS: lo que no se pagó en meses anteriores se junta aquí */}
-            {(d.atrasados?.lista || []).length > 0 && (
-              <div style={{ marginTop: 14, background: '#fff', border: '1px solid #fecdd3', borderRadius: 14, overflow: 'hidden' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><b style={{ color: '#7f1d1d' }}>Atrasado de meses anteriores</b><span style={{ color: '#7f1d1d', fontWeight: 800 }}>{pesos(d.atrasados.total)}</span></div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
-                  {d.atrasados.lista.map((g: any) => <tr key={`${g.id}:${g.mes}`}><td style={td}><b>{g.nombre}</b> <span style={{ color: '#8e88a8', fontSize: 11, textTransform: 'capitalize' }}>· {nombreMes(g.mes)}</span></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(g.monto)}</td><td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}><button onClick={async () => { await postJ({ accion: 'gasto_pagar', gasto_id: g.id, mes: g.mes, pagado: true }); cargar(); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Ya lo pagué</button></td></tr>)}
-                </tbody></table>
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {(vista === 'adeudos' || (vista === 'gastos' && !pagina)) && (
-          <div style={{ marginTop: 14 }}>
+                  {!(d.comisiones.cortes || []).length && !Object.keys(d.comisiones.por_vendedor).length && <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#8e88a8', padding: 20 }}>Sin comisiones este mes.</td></tr>}
+                  </tbody></table></div>
+              )}
+              {catTab === 'adeudos' && (
+                <div style={{ padding: '4px 14px 14px' }}>
             {/* ADEUDOS: total, saldo, cuota del mes, atraso y abonos */}
             <div style={{ marginTop: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -290,17 +286,39 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
                 {!(d.adeudos?.lista || []).length && <div style={{ color: '#8e88a8', fontSize: 12.5 }}>Sin adeudos activos.</div>}
               </div>
             </div>
-            {vista === 'adeudos' && (d.adeudos?.lista || []).length > 0 && (
+            {catTab === 'adeudos' && (d.adeudos?.lista || []).length > 0 && (
               <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, padding: 16 }}>
                 <b style={{ fontSize: 15 }}>Proyección</b>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, fontSize: 13 }}><thead><tr style={{ color: '#8e88a8', fontSize: 10.5, letterSpacing: '.06em', textTransform: 'uppercase' }}><th style={{ textAlign: 'left', padding: '6px 8px' }}>Adeudo</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Saldo</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Cuota</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Meses que faltan</th><th style={{ textAlign: 'left', padding: '6px 8px' }}>Se liquida</th><th style={{ textAlign: 'right', padding: '6px 8px' }}>Atraso</th></tr></thead>
                   <tbody>{d.adeudos.lista.map((a: any) => { const meses = a.cuota_mes ? Math.ceil(a.saldo / a.cuota_mes) : null; const fin = meses ? mover(mes, meses - 1) : null; return <tr key={a.id} style={{ borderTop: '1px solid #f0eef6' }}><td style={{ padding: '8px', fontWeight: 800 }}>{a.nombre}</td><td style={{ padding: '8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pesos(a.saldo)}</td><td style={{ padding: '8px', textAlign: 'right' }}>{a.cuota_mes ? pesos(a.cuota_mes) : <span style={{ color: '#b45309' }}>sin cuota</span>}</td><td style={{ padding: '8px', textAlign: 'right' }}>{meses ?? '—'}</td><td style={{ padding: '8px', textTransform: 'capitalize' }}>{fin ? nombreMes(fin) : '—'}{a.fecha_limite ? <div style={{ fontSize: 11, color: fin && fin > a.fecha_limite.slice(0, 7) ? '#b91c1c' : '#8e88a8' }}>límite {a.fecha_limite}</div> : null}</td><td style={{ padding: '8px', textAlign: 'right', color: a.atraso > 0 ? '#b91c1c' : undefined, fontWeight: a.atraso > 0 ? 800 : undefined }}>{a.atraso > 0 ? pesos(a.atraso) : '—'}</td></tr>; })}</tbody></table>
               </div>
             )}
+                </div>
+              )}
+            </div>
+
+            {/* ATRASADOS: lo que no se pagó en meses anteriores se junta aquí */}
+            {(d.atrasados?.lista || []).length > 0 && (
+              <div style={{ marginTop: 14, background: '#fff', border: '1px solid #fecdd3', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><b style={{ color: '#7f1d1d' }}>Atrasado de meses anteriores</b><span style={{ color: '#7f1d1d', fontWeight: 800 }}>{pesos(d.atrasados.total)}</span></div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
+                  {d.atrasados.lista.map((g: any) => <tr key={`${g.id}:${g.mes}`}><td style={td}><b>{g.nombre}</b> <span style={{ color: '#8e88a8', fontSize: 11, textTransform: 'capitalize' }}>· {nombreMes(g.mes)}</span></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(g.monto)}</td><td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}><button onClick={async () => { await postJ({ accion: 'gasto_pagar', gasto_id: g.id, mes: g.mes, pagado: true }); cargar(); }} style={{ border: '1px solid #e8e5f0', background: '#fff', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Ya lo pagué</button></td></tr>)}
+                </tbody></table>
+              </div>
+            )}
+
           </div>
         )}
 
-        {vista === 'ingresos' && (d.flujo || []).length > 0 && (
+        {vista === 'ingresos' && (
+          <div style={{ display: 'flex', gap: 2, overflowX: 'auto', borderBottom: '1px solid #ecebf2', marginTop: 14 }}>
+            {([['cobrado', 'Cobrado', d.ingresos.cobrado_neto ?? d.ingresos.cobrado], ['por_cobrar', 'Por cobrar', d.ingresos.por_cobrar], ['venta', 'Venta nueva', d.ingresos.ventas_aceptadas || 0], ['oportunidades', 'Oportunidades', d.pipeline.ponderado], ['flujo', 'Flujo semanal', (d.flujo || []).length ? d.flujo[d.flujo.length - 1].acumulado : 0]] as any[]).map(([k, l, v]) => { const on = ingTab === k; return (
+              <button key={k} onClick={() => setIngTab(k)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: '11px 14px 9px', borderBottom: `2px solid ${on ? '#5B4BD6' : 'transparent'}`, color: on ? '#241d43' : '#6b6580', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 800 : 600 }}>{l}</span><span style={{ display: 'block', fontSize: 11, color: on ? '#5B4BD6' : '#a5a0b8', fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>{pesos(v)}</span>
+              </button>); })}
+          </div>
+        )}
+        {vista === 'ingresos' && ingTab === 'flujo' && (d.flujo || []).length > 0 && (
           <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}><b>Flujo de caja por semana</b><span style={{ color: '#6b6580', fontSize: 12.5 }}>Cobrado neto real + renovaciones + venta nueva, contra gastos, adeudos, comisiones y atrasados. Toca una semana para ver el detalle.</span></div>
             <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
@@ -317,33 +335,33 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           </div>
         )}
 
-        {vista === 'ingresos' && (
-          <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
-            <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+        {vista === 'ingresos' && ['cobrado', 'por_cobrar', 'venta'].includes(ingTab) && (
+          <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
+            {ingTab === 'por_cobrar' && <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Por cobrar este mes</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.por_cobrar)} en {d.ingresos.por_cobrar_lista.length} renovaciones</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
                 {d.ingresos.por_cobrar_lista.map((s: any) => <tr key={s.id}><td style={td}><b>{s.companies?.nombre_comercial || s.companies?.nombre || 'Cuenta'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{s.nombre_plan} · {s.ciclo} · vence {s.proxima_factura}{s.cobranza_estado ? ` · ${s.cobranza_estado}` : ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(s.monto)}</td></tr>)}
                 {!d.ingresos.por_cobrar_lista.length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Nada pendiente de cobrar este mes.</td></tr>}
               </tbody></table>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+            </div>}
+            {ingTab === 'venta' && <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Venta nueva aceptada sin pago</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.ventas_aceptadas || 0)}</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
                 {(d.ingresos.ventas_aceptadas_lista || []).map((q: any) => <tr key={q.id}><td style={td}><b>{q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Cotización'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>#{q.numero || 's/n'} · aceptada {String(q.updated_at).slice(0, 10)}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(q.monto)}</td></tr>)}
                 {!(d.ingresos.ventas_aceptadas_lista || []).length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Ninguna cotización aceptada pendiente de pago.</td></tr>}
               </tbody></table>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
+            </div>}
+            {ingTab === 'cobrado' && <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Cobrado</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.cobrado)} en {d.ingresos.pagos.length} pagos</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
                 {d.ingresos.pagos.map((p: any) => <tr key={p.id}><td style={td}><b>{p.companies?.nombre_comercial || p.companies?.nombre || p.contacts?.nombre || 'Pago'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{p.fecha} · {p.metodo || p.pasarela || ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(p.monto)}</td></tr>)}
                 {!d.ingresos.pagos.length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Sin pagos confirmados todavía.</td></tr>}
               </tbody></table>
-            </div>
+            </div>}
           </div>
         )}
 
-        {(vista === 'pipeline' || (vista === 'ingresos' && pagina)) && (() => {
+        {(vista === 'pipeline' || (vista === 'ingresos' && ingTab === 'oportunidades')) && (() => {
           const ETQ: Record<string, string> = { calificacion: 'Calificación', demo_agendada: 'Demo agendada', demo_realizada: 'Demo realizada', cotizacion_enviada: 'Cotización enviada', negociacion: 'Negociación', aceptada: 'Aceptada' };
           const vendedores = [...new Set(d.pipeline.abiertos.map((o: any) => o.team_members?.nombre || 'Sin vendedor'))] as string[];
           const etapas = [...new Set(d.pipeline.abiertos.map((o: any) => o.stage))] as string[];
@@ -353,19 +371,6 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
           const fechaC = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '';
           const ch = (on: boolean) => ({ border: `1px solid ${on ? '#5B4BD6' : '#e8e5f0'}`, background: on ? '#EEECFE' : '#fff', color: on ? '#4c1d95' : '#4a4658', borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' });
           return (<div style={{ marginTop: 14 }}>
-            {/* Forecast por vendedor + conversión por canal */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
-              <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0eef6' }}><b>Forecast por vendedor</b> <span style={{ color: '#8e88a8', fontSize: 12 }}>· comprometido = probabilidad ≥ 60 %</span></div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr><th style={th}>Vendedor</th><th style={{ ...th, textAlign: 'right' }}>Op.</th><th style={{ ...th, textAlign: 'right' }}>Bruto</th><th style={{ ...th, textAlign: 'right' }}>Comprometido</th><th style={{ ...th, textAlign: 'right' }}>Probable</th><th style={{ ...th, textAlign: 'right' }}>Este mes</th></tr></thead>
-                  <tbody>{(d.pipeline.forecast || []).map((fc: any) => <tr key={fc.vendedor} style={{ cursor: 'pointer' }} onClick={() => setFOp({ ...fOp, vendedor: fOp.vendedor === fc.vendedor ? '' : fc.vendedor })}><td style={{ ...td, fontWeight: 800 }}>{fc.vendedor}</td><td style={{ ...td, textAlign: 'right' }}>{fc.n}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.total)}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.comprometido)}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800 }}>{pesos(fc.ponderado)}</td><td style={{ ...td, textAlign: 'right' }}>{pesos(fc.este_mes)}</td></tr>)}</tbody></table>
-              </div>
-              <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
-                <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0eef6' }}><b>Conversión por canal</b> <span style={{ color: '#8e88a8', fontSize: 12 }}>· cerradas en 90 días</span></div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}><thead><tr><th style={th}>Canal</th><th style={{ ...th, textAlign: 'right' }}>Ganadas</th><th style={{ ...th, textAlign: 'right' }}>Perdidas</th><th style={{ ...th, textAlign: 'right' }}>Tasa</th></tr></thead>
-                  <tbody>{(d.pipeline.conversion || []).map((c: any) => <tr key={c.canal}><td style={td}>{c.canal}</td><td style={{ ...td, textAlign: 'right', color: '#14532d' }}>{c.ganadas}</td><td style={{ ...td, textAlign: 'right', color: '#7f1d1d' }}>{c.perdidas}</td><td style={{ ...td, textAlign: 'right', fontWeight: 800 }}>{c.pct == null ? '—' : `${c.pct}%`}</td></tr>)}{!(d.pipeline.conversion || []).length && <tr><td colSpan={4} style={{ ...td, color: '#8e88a8', textAlign: 'center' }}>Sin cierres en 90 días.</td></tr>}</tbody></table>
-              </div>
-            </div>
             {/* Filtros */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 14, alignItems: 'center' }}>
               {(['todos', 'nuevo', 'expansion'] as const).map(t => <button key={t} style={ch(fOp.tipo === t)} onClick={() => setFOp({ ...fOp, tipo: t })}>{t === 'todos' ? 'Todas' : t === 'nuevo' ? 'Cliente nuevo' : 'Expansión (ya es cliente)'}</button>)}

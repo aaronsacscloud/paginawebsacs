@@ -207,7 +207,6 @@ const NAV_SECTIONS = [
     label: 'Finanzas', sec: 'finanzas', icon: 'pagos',
     items: [
       { id: 'fin-gastos' as Tab, label: 'Gastos', icon: 'pagos' },
-      { id: 'fin-adeudos' as Tab, label: 'Adeudos', icon: 'cobros' },
       { id: 'fin-ingresos' as Tab, label: 'Ingresos y flujo', icon: 'suscripciones' },
       { id: 'fin-cierre' as Tab, label: 'Cierre mensual y anual', icon: 'dashboard' },
     ],
