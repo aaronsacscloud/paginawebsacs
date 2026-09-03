@@ -18,7 +18,33 @@ export const GET: APIRoute = async ({ request }) => {
   const horaCd = (new Date(ahora).getUTCHours() - 6 + 24) % 24, dow = new Date(ahora - 6 * 3600e3).getUTCDay();
   const habil = dow >= 1 && dow <= 5 && horaCd >= 9 && horaCd < 18;
   res.ultimo_tick_min = ultimoTick ? Math.round((ahora - ultimoTick) / 60000) : null;
-  if (cfg.agente_activo === true && ultimoTick && ahora - ultimoTick > 10 * 60e3) {
+  /* ── ¿EL HUECO ES UN DESPLIEGUE? ─────────────────────────────────────
+     El 3-sep el agente «se paró» 16 minutos. No se rompió: hubo 18 commits en
+     105 minutos —un despliegue cada seis— y el hueco cae exacto entre el de
+     las 00:32 y el de las 00:48. Cero errores del agente en la bitácora, y
+     reanudó solo. Las invocaciones programadas se pierden mientras Vercel
+     cambia de despliegue, y en una ráfaga de pushes eso se acumula.
+
+     Si el despliegue cambió desde la última revisión, el hueco está explicado:
+     no se grita. Pero solo hasta cierto punto — pasada la media hora, un
+     despliegue ya no justifica nada y el aviso sale igual, diciendo que
+     coincide con despliegues para que se sepa por dónde empezar. */
+  const despliegue = String(process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || '');
+  const despliegueAntes = String(cfg.latido_despliegue || '');
+  const huboDespliegue = !!despliegue && !!despliegueAntes && despliegue !== despliegueAntes;
+  if (despliegue && despliegue !== despliegueAntes) {
+    /* Se escribe con merge sobre lo que hay: `valor` es un solo jsonb y
+       pisarlo entero borraría el horario, la rampa y todo lo demás. */
+    await supabase.from('ti_config').update({ valor: { ...(cfg as any), latido_despliegue: despliegue } }).eq('id', 1).then(() => {}, () => {});
+  }
+  res.despliegue_cambio = huboDespliegue;
+
+  const huecoMin = ultimoTick ? (ahora - ultimoTick) / 60e3 : 0;
+  /* Sin id de despliegue no se supone nada: si no se puede saber, se avisa.
+     Callar por si acaso es cómo se pierde una caída de verdad. */
+  const explicadoPorDeploy = huboDespliegue && huecoMin < 30;
+
+  if (cfg.agente_activo === true && ultimoTick && ahora - ultimoTick > 10 * 60e3 && !explicadoPorDeploy) {
     const nueva = await notificar({ clave: `sistema_latido:${hoyKey}`, tipo: 'sistema_latido', nivel: 'urgente', titulo: `El agente lleva ${res.ultimo_tick_min} min sin correr`, detalle: 'El observador (cron de cada 2 min) no ha marcado un tick. Mientras, nadie contesta a los leads ni salen los envíos aprobados.', metadata: { origen: 'agente', que_hacer: 'Revisa Vercel → Crons y el último deploy; si el cron corre pero falla, mira los logs de /api/cron/ti-observador.' } });
     res.aviso_tick = nueva;
     /* Por `avisoInterno`, que NO deja salir un aviso técnico a un número que no
@@ -30,7 +56,8 @@ export const GET: APIRoute = async ({ request }) => {
       const { avisoInterno } = await import('../../../lib/whatsapp/interno');
       res.aviso_wa = await avisoInterno({
         telefono: cfg.dueno_whatsapp || (cfg.agente_prueba_telefonos || [])[0] || null,
-        texto: `El agente lleva ${res.ultimo_tick_min} min sin correr: mientras tanto nadie contesta a los leads ni salen los envíos aprobados. Revisa Vercel → Crons y el último deploy.`,
+        texto: `El agente lleva ${res.ultimo_tick_min} min sin correr: mientras tanto nadie contesta a los leads ni salen los envíos aprobados.`
+          + (huboDespliegue ? ' Coincide con un despliegue, así que empieza por ahí.' : ' Revisa Vercel → Crons y el último deploy.'),
       });
     }
   }
