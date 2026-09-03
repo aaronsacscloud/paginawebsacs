@@ -177,7 +177,7 @@ const fechaFirma = brief.firmado_at
               </label>
             </div>
             <label class="pb-avisos">
-              <span>¿A qué correos les avisamos?</span>
+              <span class="pb-campo-t">CORREOS PARA AVISOS</span>
               <input type="text" id="f-avisos" value={brief.email || ''}
                 placeholder="correo@ejemplo.com, otro@ejemplo.com" />
               <small>
@@ -185,14 +185,18 @@ const fechaFirma = brief.firmado_at
                 preguntas que hayan quedado. Pueden poner varios, separados por comas.
               </small>
             </label>
+            <span class="pb-campo-t">TU FIRMA</span>
             <div class="pb-firma-lienzo-w">
               <span class="pb-firma-hint">Firma con el dedo o el mouse</span>
+              <!-- "Borrar" va SOBRE el lienzo y visible desde antes de trazar:
+                   nadie firma bien a la primera con el dedo, y si no ve cómo
+                   repetir, o firma fea o cierra la página. -->
+              <button type="button" class="pb-firma-borrar" id="f-limpiar" hidden>Borrar</button>
               <canvas id="f-canvas" class="pb-firma-lienzo"></canvas>
               <div class="pb-firma-linea"></div>
             </div>
             <div class="pb-firma-acc">
-              <button type="button" class="pb-btn-tenue" id="f-limpiar">Borrar firma</button>
-              <button type="button" class="pb-btn" id="f-firmar">Firmar y comenzar</button>
+              <button type="button" class="pb-btn" id="f-firmar" disabled>Firma para comenzar</button>
             </div>
             <div class="pb-error" id="f-error" hidden></div>
           </div>
@@ -226,9 +230,10 @@ const fechaFirma = brief.firmado_at
           no lo compartan fuera del equipo.
         </div>
         <div class="pb-pie-ayuda">
-          ¿Se atoraron con algo? Escríbannos por
-          <a href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-          y lo resolvemos.
+          <span>¿Se atoraron con algo? Nos escriben y lo resolvemos.</span>
+          <a class="pb-btn-wa" href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer">
+            Escríbannos por WhatsApp
+          </a>
         </div>
       </footer>
     </main>
@@ -296,6 +301,10 @@ const fechaFirma = brief.firmado_at
   cursor: pointer; min-height: 34px;
 }
 .pb-top-est:hover { border-color: var(--linea-fuerte); color: var(--tinta); }
+.pb-top-est[data-p]:not([data-p=""])::after {
+  content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ambar); margin-left: 8px; vertical-align: 1px;
+}
 
 /* ── Hoja ── */
 .pb-hoja {
@@ -397,6 +406,13 @@ const fechaFirma = brief.firmado_at
 .pb input:disabled, .pb textarea:disabled { background: #F4F5F7; color: var(--tinta-suave); cursor: default; }
 
 .pb-firma-lienzo-w { position: relative; }
+.pb-firma-borrar {
+  position: absolute; top: 9px; right: 10px; z-index: 2;
+  font: inherit; font-size: .84rem; font-weight: 600; color: var(--tinta-suave);
+  background: rgba(255,255,255,.92); border: 1px solid var(--linea-fuerte);
+  border-radius: 8px; padding: 8px 14px; cursor: pointer; min-height: 40px;
+}
+.pb-firma-borrar:hover { color: var(--tinta); border-color: var(--tenue); }
 .pb-firma-hint {
   position: absolute; top: 10px; left: 14px; font-size: .76rem; color: var(--tenue);
   pointer-events: none;
@@ -451,6 +467,12 @@ const fechaFirma = brief.firmado_at
 .pb-puerta-t { font-family: var(--serif); font-size: 1.42rem; font-weight: 600; margin-bottom: 6px; }
 .pb-puerta p { margin: 0; font-size: .95rem; color: rgba(255,255,255,.76); line-height: 1.5; }
 .pb-puerta p b { color: #fff; font-weight: 600; }
+.pb-puerta-riel {
+  height: 5px; border-radius: 3px; background: rgba(255,255,255,.2);
+  overflow: hidden; margin: 14px 0 8px;
+}
+.pb-puerta-riel span { display: block; height: 100%; background: var(--oro-claro, #D6B87A); border-radius: 3px; }
+.pb-puerta-n { font-size: .88rem; }
 .pb-puerta-btn {
   margin-top: 18px; background: #fff; color: var(--tinta); min-height: 48px;
 }
@@ -481,10 +503,13 @@ const fechaFirma = brief.firmado_at
 }
 .pb-ya p { margin: 0; font-size: .95rem; color: var(--tinta); white-space: pre-wrap; line-height: 1.55; }
 .pb-editar {
-  margin-top: 12px; font: inherit; font-size: .87rem; font-weight: 600; color: var(--azul);
-  background: none; border: 0; padding: 8px 0; cursor: pointer; min-height: 44px;
+  margin-top: 10px; font: inherit; font-size: .87rem; font-weight: 600; color: var(--tinta);
+  background: none; border: 0; padding: 11px 0; cursor: pointer; min-height: 44px;
+  text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px;
+  text-decoration-color: var(--linea-fuerte);
 }
-.pb-editar:hover { text-decoration: underline; }
+.pb-editar:hover { text-decoration-color: var(--tinta); }
+.pb-ya-por { display: block; font-size: .84rem; color: var(--tenue); margin: -2px 0 10px; line-height: 1.45; }
 .pb-oculto { display: none; }
 
 /* El sello de guardado */
@@ -518,8 +543,15 @@ const fechaFirma = brief.firmado_at
 }
 .pb-et[data-abierta] .pb-chev { transform: rotate(-135deg) translate(-3px, -3px); }
 
-.pb-pie-ayuda { margin-top: 10px; font-size: .82rem; color: var(--tinta-suave); }
-.pb-pie-ayuda a { color: var(--azul); }
+.pb-pie-ayuda { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.pb-pie-ayuda span { font-size: .86rem; color: var(--tinta-suave); }
+.pb-btn-wa {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 13px 22px; border-radius: 10px;
+  border: 1px solid var(--linea-fuerte); background: var(--papel);
+  color: var(--tinta); text-decoration: none; font-size: .93rem; font-weight: 600;
+}
+.pb-btn-wa:hover { border-color: var(--tinta); }
 
 .pb-etapas { display: flex; flex-direction: column; gap: 14px; }
 
@@ -590,6 +622,7 @@ const fechaFirma = brief.firmado_at
   width: 5px; height: 5px; border-radius: 50%; background: var(--linea-fuerte);
 }
 .pb-previa li b { font-size: .95rem; font-weight: 600; color: var(--tinta-suave); }
+.pb-previa li .pb-campo-req { color: var(--oro); font-weight: 400; white-space: nowrap; }
 .pb-previa li em {
   font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
   font-style: normal; color: var(--tenue); margin-left: 8px;
@@ -628,7 +661,7 @@ const fechaFirma = brief.firmado_at
   display: block; height: 100%; background: var(--oro); border-radius: 3px;
   transition: width .3s ease;
 }
-.pb-avance-txt { font-size: .8rem; color: var(--tenue); }
+.pb-avance-txt { font-size: .8rem; color: var(--tenue); text-wrap: pretty; }
 .pb-avance-txt b { color: var(--oro); }
 
 .pb-campo { padding: 20px 0; border-top: 1px solid var(--linea); }
@@ -671,7 +704,7 @@ const fechaFirma = brief.firmado_at
 .pb-link-fila { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr) auto; gap: 8px; align-items: center; }
 @media (max-width: 640px) { .pb-link-fila { grid-template-columns: 1fr; } }
 .pb-quitar {
-  width: 34px; height: 34px; flex: none; border: 1px solid var(--linea-fuerte); border-radius: 8px;
+  width: 40px; height: 40px; flex: none; border: 1px solid var(--linea); border-radius: 8px;
   background: var(--papel); color: var(--tenue); cursor: pointer; font-size: 1rem; line-height: 1;
 }
 .pb-quitar:hover { color: var(--rojo); border-color: var(--rojo); }
@@ -682,13 +715,23 @@ const fechaFirma = brief.firmado_at
 .pb-agregar:hover { text-decoration: underline; }
 
 .pb-zona {
-  border: 1.5px dashed var(--linea-fuerte); border-radius: 12px; padding: 24px;
-  text-align: center; cursor: pointer; transition: all .15s; background: var(--papel-2);
+  border: 1.5px dashed var(--linea-fuerte); border-radius: 12px; padding: 20px;
+  cursor: pointer; transition: all .15s; background: var(--papel-2);
 }
 .pb-zona:hover, .pb-zona[data-encima] { border-color: var(--azul); background: var(--azul-suave); }
-.pb-zona-t { font-size: .92rem; color: var(--tinta-suave); }
-.pb-zona-t b { color: var(--azul); }
-.pb-zona-s { font-size: .8rem; color: var(--tenue); margin-top: 4px; }
+.pb-zona-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 13px 22px; border-radius: 10px;
+  background: var(--tinta); color: #fff; font-size: .95rem; font-weight: 600;
+}
+.pb-zona:hover .pb-zona-btn, .pb-zona[data-encima] .pb-zona-btn { background: #000; }
+.pb-zona-s { font-size: .84rem; color: var(--tenue); margin-top: 10px; line-height: 1.45; }
+
+.pb-pegalink { margin-top: 12px; }
+.pb-pegalink > span { display: block; font-size: .84rem; color: var(--tenue); margin-bottom: 8px; line-height: 1.45; }
+.pb-pegalink-fila { display: flex; gap: 8px; align-items: stretch; }
+.pb-pegalink-fila input { flex: 1; min-width: 0; }
+.pb-pegalink-fila .pb-add { flex: none; min-height: 46px; font-weight: 600; }
 
 .pb-archivos { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
 .pb-arch {
@@ -701,8 +744,12 @@ const fechaFirma = brief.firmado_at
 }
 .pb-arch-n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tinta); }
 .pb-arch-p { color: var(--tenue); font-size: .8rem; flex: none; }
-.pb-arch a { color: var(--tenue); text-decoration: none; font-size: .8rem; }
-.pb-arch a:hover { color: var(--azul); }
+.pb-arch a {
+  color: var(--tinta-suave); text-decoration: none; font-size: .84rem; font-weight: 600;
+  padding: 10px 14px; min-height: 40px; display: flex; align-items: center; flex: none;
+  border: 1px solid var(--linea); border-radius: 8px;
+}
+.pb-arch a:hover { color: var(--tinta); border-color: var(--linea-fuerte); }
 
 .pb-et-pie {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -729,12 +776,26 @@ const fechaFirma = brief.firmado_at
   background: var(--papel-2); border: 1px solid var(--linea-fuerte);
 }
 .pb-pendientes .pb-campo-t { color: var(--tinta); margin-bottom: 12px; }
-.pb-pendientes ol { margin: 0; padding-left: 20px; }
-.pb-pendientes li { margin-bottom: 11px; font-size: .92rem; }
-.pb-pendientes li:last-child { margin-bottom: 0; }
-.pb-pendientes a { color: var(--tinta); text-decoration: none; border-bottom: 1px solid var(--tinta-suave); }
-.pb-pendientes a:hover { color: var(--azul); border-bottom-color: var(--azul); }
-.pb-pendientes span { display: block; color: var(--tinta-suave); margin-top: 2px; }
+.pb-pendientes ol { margin: 0; padding: 0; list-style: none; counter-reset: pend; }
+.pb-pendientes li { border-top: 1px solid var(--linea); }
+.pb-pendientes li:first-child { border-top: 0; }
+.pb-pendientes a {
+  display: flex; align-items: center; gap: 12px; padding: 14px 0;
+  color: var(--tinta); text-decoration: none; min-height: 52px;
+}
+.pb-pendientes a::before {
+  counter-increment: pend; content: counter(pend);
+  width: 24px; height: 24px; flex: none; border-radius: 50%;
+  background: var(--ambar); color: #fff; display: grid; place-items: center;
+  font-family: var(--mono); font-size: .72rem; font-weight: 600;
+}
+.pb-pend-t { flex: 1; font-size: .96rem; font-weight: 500; line-height: 1.35; }
+.pb-pend-c {
+  width: 9px; height: 9px; flex: none;
+  border-right: 2px solid var(--tenue); border-bottom: 2px solid var(--tenue);
+  transform: rotate(-45deg);
+}
+.pb-pendientes a:active { opacity: .6; }
 
 /* ── Hilo de conversación ── */
 .pb-hilo {
@@ -927,7 +988,8 @@ const fechaFirma = brief.firmado_at
 
   /* Un encabezado plegable se toca con el pulgar. */
   .pb-sec-plegable[data-plegada] > .pb-sec-h { min-height: 52px; padding: 6px 0; margin-bottom: 0; }
-  .pb-pie-ayuda a, .pb-pendientes a, .pb-aviso-global a { padding: 11px 0; display: inline-block; }
+  .pb-aviso-global a { padding: 11px 0; display: inline-block; }
+  .pb-btn-wa { width: 100%; }
 
   .pb-puerta { padding: 20px 18px; margin-bottom: 26px; }
   .pb-puerta-t { font-size: 1.28rem; }
@@ -955,7 +1017,11 @@ const fechaFirma = brief.firmado_at
   .pb-quitar { width: 44px; height: 44px; }
   .pb-arch .pb-quitar, .pb-link-fila .pb-quitar { width: 44px; height: 44px; }
   .pb-agregar { padding: 10px 0; min-height: 44px; }
-  .pb-zona { padding: 22px 16px; }
+  .pb-zona { padding: 18px 16px; }
+  .pb-zona-btn { width: 100%; min-height: 52px; font-size: 1rem; }
+  .pb-pegalink-fila { flex-direction: column; }
+  .pb-pegalink-fila .pb-add { width: 100%; min-height: 48px; }
+  .pb-firma-borrar { min-height: 44px; }
 
   /* ── El hilo ── */
   .pb-hilo { padding: 14px; }
@@ -963,8 +1029,6 @@ const fechaFirma = brief.firmado_at
   .pb-hilo-caja .pb-btn-chico { width: 100%; min-height: 48px; }
 
   .pb-pendientes { padding: 16px; }
-  .pb-pendientes ol { padding-left: 18px; }
-  .pb-pendientes li { font-size: .95rem; margin-bottom: 14px; }
 
   .pb-aviso-global { padding: 16px; }
   .pb-aviso-global strong { font-size: 1.08rem; }
@@ -972,7 +1036,7 @@ const fechaFirma = brief.firmado_at
   /* ── Acciones a lo ancho ── */
   .pb-et-pie { flex-direction: column; align-items: stretch; gap: 14px; }
   .pb-et-pie .pb-btn { width: 100%; min-height: 50px; font-size: 1rem; }
-  .pb-et-pie-nota { order: 2; text-align: center; font-size: .84rem; }
+  .pb-et-pie-nota { order: 2; font-size: .87rem; line-height: 1.45; }
   .pb-rev-acc { flex-direction: column; }
   .pb-rev-acc .pb-btn, .pb-rev-acc .pb-btn-tenue { width: 100%; min-height: 48px; }
   .pb-firma-acc { flex-direction: column-reverse; align-items: stretch; }
@@ -1048,9 +1112,20 @@ const fechaFirma = brief.firmado_at
         const p = punto(e);
         ctx && (ctx.beginPath(), ctx.moveTo(p.x, p.y));
       };
+      const btnFirmar = document.getElementById('f-firmar');
+      const btnBorrar = document.getElementById('f-limpiar');
+      const encender = (hay) => {
+        // "Borrar" solo existe cuando hay algo que borrar.
+        if (btnBorrar) btnBorrar.hidden = !hay;
+        if (!btnFirmar) return;
+        btnFirmar.disabled = !hay;
+        btnFirmar.textContent = hay ? 'Firmar y comenzar' : 'Firma para comenzar';
+      };
+
       const mueve = (e) => {
         if (!trazando || !ctx) return;
         trazado = true;
+        encender(true);
         const p = punto(e);
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
@@ -1069,6 +1144,7 @@ const fechaFirma = brief.firmado_at
       document.getElementById('f-limpiar')?.addEventListener('click', () => {
         ctx && ctx.clearRect(0, 0, lienzo.width, lienzo.height);
         trazado = false;
+        encender(false);
         const h = document.querySelector('.pb-firma-hint');
         if (h) h.style.display = '';
       });
@@ -1192,8 +1268,9 @@ const fechaFirma = brief.firmado_at
         if (!FIRMADO) avance.textContent = 'Sin firmar';
         else if (defCurso) {
           avance.textContent = corto
-            ? 'Etapa ' + enCurso.orden + '/' + ETAPAS.length + (faltan ? ' · faltan ' + faltan : '')
-            : 'Etapa ' + enCurso.orden + ' de ' + ETAPAS.length + (faltan ? ' · te faltan ' + faltan : '');
+            ? 'Etapa ' + enCurso.orden + '/' + ETAPAS.length
+            : 'Etapa ' + enCurso.orden + ' de ' + ETAPAS.length;
+          avance.setAttribute('data-p', faltan ? String(faltan) : '');
         } else if (aprobadas === ETAPAS.length) avance.textContent = 'Brief completo';
         else avance.textContent = 'En revisión';
         avance.setAttribute('data-a', enCurso ? enCurso.clave : '');
@@ -1203,7 +1280,11 @@ const fechaFirma = brief.firmado_at
       // Un vistazo antes de la lista: en qué va el brief y, si hay preguntas
       // esperando, cuántas y de qué etapas. Sin esto el cliente tiene que abrir
       // las ocho para saber si le toca algo.
+      // Firmado, la puerta de arriba ya cuenta esto — y con botón. Repetirlo
+      // aquí era la cuarta vez que el cliente leía lo mismo antes de llegar a
+      // la primera pregunta.
       let banner = '';
+      const conPuerta = FIRMADO && !!document.getElementById('pb-puerta');
       const conPreg = ETAPAS.map((f) => {
         const def = DEF.find((d) => d.clave === f.clave);
         if (!def) return null;
@@ -1214,7 +1295,9 @@ const fechaFirma = brief.firmado_at
       const enTurno = ETAPAS.find((e) => e.estado === 'abierta' || e.estado === 'cambios');
       const defTurno = enTurno ? DEF.find((d) => d.clave === enTurno.clave) : null;
 
-      if (!FIRMADO) {
+      if (conPuerta) {
+        banner = '';
+      } else if (!FIRMADO) {
         // Sin firma todas las etapas están bloqueadas, y el caso "no hay nada
         // que hacer" se leía como "estamos revisando lo que mandaste" — un
         // mensaje sobre algo que el cliente todavía no manda.
@@ -1244,7 +1327,7 @@ const fechaFirma = brief.firmado_at
           '<span>Te avisamos por correo en cuanto quede aprobada o si nos falta algo.</span></div>';
       }
 
-      cajaEtapas.innerHTML = banner + ETAPAS.map((fila) => {
+      cajaEtapas.innerHTML = (banner || '') + ETAPAS.map((fila) => {
         const def = DEF.find((d) => d.clave === fila.clave);
         if (!def) return '';
         // Una etapa bloqueada también se abre: se puede LEER lo que va a
@@ -1297,17 +1380,18 @@ const fechaFirma = brief.firmado_at
         return;
       }
       const n = contar(defCurso, borrador[enCurso.clave] || {});
+      const pct = Math.round((n.hechas / n.total) * 100);
       caja.hidden = false;
       caja.innerHTML =
         '<div class="pb-puerta-t">' +
           (faltan
-            ? (faltan === 1 ? 'Te falta una respuesta' : 'Te faltan ' + faltan + ' respuestas')
+            ? (faltan === 1 ? 'Sacs te dejó una pregunta' : 'Sacs te dejó ' + faltan + ' preguntas')
             : 'Te toca contestar') +
         '</div>' +
-        '<p><b>Etapa ' + enCurso.orden + ' · ' + esc(defCurso.titulo) + '</b><br>' +
-        n.hechas + ' de ' + n.total + ' contestadas' +
-        (n.faltanReq ? ' · faltan ' + n.faltanReq + ' obligatorias para poder enviarla' : ' · ya puedes enviarla') +
-        '</p>' +
+        '<p><b>Etapa ' + enCurso.orden + ' · ' + esc(defCurso.titulo) + '</b></p>' +
+        '<div class="pb-puerta-riel"><span style="width:' + pct + '%"></span></div>' +
+        '<p class="pb-puerta-n">' + n.hechas + ' de ' + n.total + ' preguntas contestadas' +
+          (n.faltanReq ? ' · ' + n.faltanReq + ' obligatorias sin contestar' : '') + '</p>' +
         '<button type="button" class="pb-btn pb-puerta-btn" data-ver="' + enCurso.clave + '">Continuar ahí</button>';
     }
 
@@ -1387,8 +1471,8 @@ const fechaFirma = brief.firmado_at
       for (const [titulo, campos] of porGrupo(def)) {
         if (titulo) h += '<li class="pb-previa-g">' + esc(titulo) + '</li>';
         for (const c of campos) {
-          h += '<li><b>' + esc(c.etiqueta) + '</b>' +
-            (c.requerido ? '<span class="pb-campo-req">obligatorio</span>' : '') +
+          h += '<li><b>' + esc(c.etiqueta) +
+            (c.requerido ? ' <span class="pb-campo-req">obligatorio</span>' : '') + '</b>' +
             (c.tipo === 'archivos' ? '<em>archivos</em>' : '') +
             (c.ayuda ? '<span>' + esc(c.ayuda) + '</span>' : '') +
             (c.enlace ? '<a class="pb-visitar" href="' + esc(c.enlace.url) + '" target="_blank" rel="noopener noreferrer">Abrir ' + esc(c.enlace.texto) + '<span aria-hidden="true">↗</span></a>' : '') +
@@ -1417,7 +1501,7 @@ const fechaFirma = brief.firmado_at
       if (fila.estado === 'bloqueada') return h + vistaPrevia(def, fila) + '</div>';
       h += '<div class="pb-et-entrega"><b>Al aprobarse:</b> ' + esc(def.entrega) + '</div>';
       if (puede) {
-        h += barra(def, borrador[fila.clave] || {});
+        h += barra(def, borrador[fila.clave] || {}, fila.clave);
         h += '<div class="pb-autoguarda">No hay botón de guardar. Lo que escribas se guarda solo — ' +
           'puedes cerrar y volver cuando quieras.</div>';
       }
@@ -1427,13 +1511,15 @@ const fechaFirma = brief.firmado_at
       const pend = def.campos.filter((c) => esperaCliente(hiloDe(fila.clave, c.id)));
       if (pend.length) {
         h += '<div class="pb-pendientes"><span class="pb-campo-t">' +
-          (pend.length === 1 ? 'Te falta una respuesta' : 'Te faltan ' + pend.length + ' respuestas') +
+          (pend.length === 1 ? 'Sacs te dejó una pregunta' : 'Sacs te dejó ' + pend.length + ' preguntas') +
           '</span><ol>';
+        // Filas tocables de verdad, no texto negro plano. Y sin el recorte de
+        // la pregunta de Sacs: truncada a 130 caracteres se leía como texto
+        // muerto, y el texto completo ya está abajo, en su hilo.
         for (const c of pend) {
-          const hh = hiloDe(fila.clave, c.id);
-          const ultimo = hh.mensajes[hh.mensajes.length - 1];
-          h += '<li><a href="#" data-ir="' + c.id + '"><b>' + esc(c.etiqueta) + '</b></a>' +
-            '<span>' + esc(ultimo.texto.slice(0, 130)) + (ultimo.texto.length > 130 ? '…' : '') + '</span></li>';
+          h += '<li><a href="#" data-ir="' + c.id + '">' +
+            '<span class="pb-pend-t">' + esc(c.etiqueta) + '</span>' +
+            '<span class="pb-pend-c" aria-hidden="true"></span></a></li>';
         }
         h += '</ol></div>';
       }
@@ -1487,9 +1573,24 @@ const fechaFirma = brief.firmado_at
         for (const c of campos) h += campo(c, borrador[fila.clave] || {}, fila.clave);
       }
 
+      const nf = contar(def, borrador[fila.clave] || {});
+      const pregAbiertas = def.campos.filter((c) => esperaCliente(hiloDe(fila.clave, c.id))).length;
+      let nota, rotulo;
+      if (pregAbiertas) {
+        nota = 'Contesta primero lo que preguntó Sacs. Si la envías así, va a regresar igual.';
+        rotulo = pregAbiertas === 1
+          ? 'Ir a la pregunta de Sacs'
+          : 'Ir a las ' + pregAbiertas + ' preguntas de Sacs';
+      } else if (nf.faltanReq) {
+        nota = 'Faltan ' + nf.faltanReq + ' obligatorias para poder enviarla.';
+        rotulo = 'Faltan ' + nf.faltanReq + ' obligatorias';
+      } else {
+        nota = 'Al enviarla la revisamos y te contestamos por correo.';
+        rotulo = 'Ya terminé esta etapa';
+      }
       h += '<div class="pb-et-pie">' +
-        '<span class="pb-et-pie-nota">Al enviarla la revisamos y te contestamos por correo.</span>' +
-        '<button type="button" class="pb-btn" data-enviar="' + fila.clave + '">Enviar etapa a revisión</button>' +
+        '<span class="pb-et-pie-nota">' + nota + '</span>' +
+        '<button type="button" class="pb-btn" data-enviar="' + fila.clave + '">' + rotulo + '</button>' +
       '</div>';
       h += '<div class="pb-error" data-err="' + fila.clave + '" hidden></div>';
       if (SACS) h += revision(fila);
@@ -1529,15 +1630,23 @@ const fechaFirma = brief.firmado_at
       return { total, hechas, faltanReq };
     }
 
-    function barra(def, resp) {
+    function barra(def, resp, clave) {
       const n = contar(def, resp);
       const pct = Math.round((n.hechas / n.total) * 100);
+      const preg = clave
+        ? def.campos.filter((c) => esperaCliente(hiloDe(clave, c.id))).length
+        : 0;
+      let cola;
+      if (preg) {
+        cola = ' · contesta ' + (preg === 1 ? 'la pregunta de Sacs' : 'las ' + preg + ' preguntas de Sacs');
+      } else if (n.faltanReq) {
+        cola = ' · faltan <b>' + n.faltanReq + '</b> obligatoria' + (n.faltanReq === 1 ? '' : 's');
+      } else {
+        cola = ' · ya puedes enviarla';
+      }
       return '<div class="pb-avance">' +
         '<div class="pb-avance-riel"><span style="width:' + pct + '%"></span></div>' +
-        '<span class="pb-avance-txt">' + n.hechas + ' de ' + n.total + ' contestadas' +
-        (n.faltanReq
-          ? ' · faltan <b>' + n.faltanReq + '</b> obligatoria' + (n.faltanReq === 1 ? '' : 's')
-          : ' · ya puedes enviarla') +
+        '<span class="pb-avance-txt">' + n.hechas + ' de ' + n.total + ' contestadas' + cola +
         '</span></div>';
     }
 
@@ -1571,6 +1680,7 @@ const fechaFirma = brief.firmado_at
         const yaHay = !vacioCliente(v);
         h += '<div class="pb-ya">' +
           '<span class="pb-ya-t">Tu respuesta</span>' +
+          '<span class="pb-ya-por">Sacs preguntó algo sobre esta respuesta. Contéstale abajo, en el recuadro amarillo.</span>' +
           '<p>' + (yaHay ? esc(leible(c, v)).replace(/\n/g, '<br>') : '<i class="pb-vacio">Sin contestar</i>') + '</p>' +
           '<button type="button" class="pb-editar" data-editar="' + c.id + '">Editar mi respuesta</button>' +
           '</div><div class="pb-oculto" data-campo-edit="' + c.id + '">';
@@ -1615,27 +1725,39 @@ const fechaFirma = brief.firmado_at
 
       } else if (c.tipo === 'archivos') {
         const arr = Array.isArray(v) ? v : [];
+        // En un teléfono "arrástralos aquí" no significa nada, y el recuadro
+        // punteado se lee decorativo: lo único que parecía tocable era el texto
+        // azul. Aquí el botón ES el objetivo, y nombra la cámara, que es el
+        // camino real para una foto antigua.
         const enTelefono = window.matchMedia('(max-width: 720px)').matches;
         h += '<div class="pb-zona" data-zona="' + c.id + '">' +
-          '<div class="pb-zona-t"><b>Elige tus archivos</b>' +
-            (enTelefono ? '' : ' o arrástralos aquí') + '</div>' +
+          '<span class="pb-zona-btn">' +
+            (enTelefono ? 'Tomar foto o elegir archivo' : 'Elige tus archivos') +
+          '</span>' +
           '<div class="pb-zona-s">' +
             (enTelefono
-              ? 'Desde el teléfono puedes tomar la foto ahí mismo o sacarla de tus fotos. Varios a la vez, hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.'
-              : 'Puedes subir varios a la vez. Hasta 25 MB cada uno; si pesa más, súbelo a Drive y pega el link.') +
+              ? 'Varios a la vez, hasta 25 MB cada uno.'
+              : 'Arrástralos aquí o elígelos. Varios a la vez, hasta 25 MB cada uno.') +
           '</div></div>' +
           '<input type="file" multiple hidden data-file="' + c.id + '" />' +
+          '<div class="pb-pegalink">' +
+            '<span>¿Pesa más de 25 MB? Súbelo a Drive o WeTransfer y pega el link:</span>' +
+            '<div class="pb-pegalink-fila">' +
+              '<input type="url" data-linkext="' + c.id + '" placeholder="https://drive.google.com/…" />' +
+              '<button type="button" class="pb-btn-tenue pb-add" data-addlink="' + c.id + '">Agregar</button>' +
+            '</div>' +
+          '</div>' +
           '<div class="pb-archivos" data-lista="' + c.id + '">' + arr.map(chipArchivo).join('') + '</div>';
       }
 
-      if (esperando) h += '</div>';
-      if (clave) h += hilo(clave, c.id, true);
-      // Se guarda solo, pero el cliente no tiene por qué saberlo. Sin esta
-      // línea escribe párrafos de dos renglones por miedo a perderlo, o llama
-      // a preguntar si se guardó.
+      // El sello va pegado a SU campo. Puesto después del hilo quedaba debajo
+      // del botón "Contestar", y ahí decían cosas opuestas: una caja que exige
+      // apretar un botón y una línea que promete que se guarda solo.
       if (clave && c.tipo !== 'archivos') {
         h += '<div class="pb-sello" data-sello="' + c.id + '" hidden></div>';
       }
+      if (esperando) h += '</div>';
+      if (clave) h += hilo(clave, c.id, true);
       return h + '</div>';
     }
 
@@ -1648,7 +1770,9 @@ const fechaFirma = brief.firmado_at
 
     const chipArchivo = (a) =>
       '<div class="pb-arch">' +
-        '<span class="pb-arch-ext">' + esc((a.nombre || '').split('.').pop().slice(0, 5).toUpperCase() || 'FILE') + '</span>' +
+        '<span class="pb-arch-ext">' +
+          (a.externo ? 'LINK' : esc((a.nombre || '').split('.').pop().slice(0, 5).toUpperCase() || 'FILE')) +
+        '</span>' +
         '<span class="pb-arch-n">' + esc(a.nombre) + '</span>' +
         '<span class="pb-arch-p">' + (a.peso ? kb(a.peso) : '') + '</span>' +
         '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Ver</a>' +
@@ -1683,7 +1807,7 @@ const fechaFirma = brief.firmado_at
       const caja = et?.querySelector('.pb-avance');
       const def = DEF.find((d) => d.clave === clave);
       if (!caja || !def) return;
-      caja.outerHTML = barra(def, borrador[clave] || {});
+      caja.outerHTML = barra(def, borrador[clave] || {}, clave);
     }
 
     async function guardar(clave, enviar) {
@@ -1771,7 +1895,7 @@ const fechaFirma = brief.firmado_at
       });
 
       cont.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder],[data-ver],[data-editar]');
+        const el = e.target.closest('[data-esc],[data-mas],[data-menos],[data-zona],[data-quita-arch],[data-enviar],[data-rev],[data-enviaresp],[data-ir],[data-responder],[data-ver],[data-editar],[data-addlink]');
         if (!el || !cont.contains(el)) return;
         const clave = claveDe(el);
 
@@ -1799,6 +1923,19 @@ const fechaFirma = brief.firmado_at
           return anotar(clave, id, leerLinks(id));
         }
 
+        if (el.hasAttribute('data-addlink')) {
+          const id = el.getAttribute('data-addlink');
+          const inp = cont.querySelector('[data-linkext="' + id + '"]');
+          const url = (inp?.value || '').trim();
+          if (!/^https?:\/\/.+/.test(url)) { inp?.focus(); return; }
+          borrador[clave] = borrador[clave] || {};
+          const arr = (borrador[clave][id] || []).concat([{ url, nombre: url.replace(/^https?:\/\//, '').slice(0, 60), externo: true }]);
+          borrador[clave][id] = arr;
+          cont.querySelector('[data-lista="' + id + '"]').innerHTML = arr.map(chipArchivo).join('');
+          inp.value = '';
+          refrescarBarra(clave);
+          return guardar(clave);
+        }
         if (el.hasAttribute('data-zona')) {
           return cont.querySelector('[data-file="' + el.getAttribute('data-zona') + '"]')?.click();
         }
@@ -1907,6 +2044,15 @@ const fechaFirma = brief.firmado_at
 
     async function enviarEtapa(el) {
       const clave = el.getAttribute('data-enviar');
+      const def = DEF.find((d) => d.clave === clave);
+      // Con preguntas de Sacs abiertas el botón no manda: lleva a la primera.
+      const primera = def?.campos.find((c) => esperaCliente(hiloDe(clave, c.id)));
+      if (primera) {
+        const destino = cajaEtapas.querySelector('.pb-campo[data-campo="' + primera.id + '"]');
+        destino?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => destino?.querySelector('textarea[data-resp]')?.focus(), 500);
+        return;
+      }
       const err = cajaEtapas.querySelector('[data-err="' + clave + '"]');
       err.hidden = true;
       el.disabled = true;
