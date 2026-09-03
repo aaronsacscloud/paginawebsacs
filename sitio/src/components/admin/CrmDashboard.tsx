@@ -146,11 +146,15 @@ const ICONO_FLECHA = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 const ICONO_PLEGAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="11 17 6 12 11 7"/><line x1="18" y1="7" x2="18" y2="17"/></svg>';
 // Los renglones del pie pesan como los del menú: mismo alto y mismo tipo de
 // letra. Antes eran ligas de 11 px que había que buscar.
+/* El pie va COMPACTO a propósito. Notificaciones, configuración y salir no
+   son navegación de trabajo: se usan una vez al día y estaban ocupando el
+   mismo alto que las secciones. Al apretarlas, el menú de arriba —que sí se
+   usa— gana el espacio. */
 const pieFila = {
-  display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38,
-  margin: '1px 8px', padding: '7px 10px', borderRadius: 9,
+  display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 16px)', minHeight: 32,
+  margin: '0 8px', padding: '5px 10px', borderRadius: 8,
   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-  fontSize: '0.79rem', fontWeight: 700, textAlign: 'left' as const,
+  fontSize: '0.75rem', fontWeight: 650, textAlign: 'left' as const,
 } as const;
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
 
@@ -347,7 +351,6 @@ export default function CrmDashboard() {
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
   /* EL DESTELLO DEL MENÚ BLANCO AL ABRIR LA PWA.
      Esto arrancaba en `false` —menú desplegado— y un efecto lo colapsaba al
      detectar que estamos en teléfono. Pero los efectos corren DESPUÉS del
@@ -438,7 +441,6 @@ export default function CrmDashboard() {
     return permisos[k] !== 'no';
   });
   const isMobile = useIsMobile();
-  const searchRef = useRef<HTMLInputElement>(null);
   // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
   const [masOpen, setMasOpen] = useState(false);
   // REGLA DE VELOCIDAD: los chunks de los destinos del pulgar se precargan en
@@ -486,29 +488,26 @@ export default function CrmDashboard() {
   useEffect(() => { if (isMobile) setSidebarCollapsed(true); }, [isMobile]);
   useEffect(() => { if (mobileSearchOpen) setTimeout(() => mobileSearchRef.current?.focus(), 120); }, [mobileSearchOpen]);
 
-  // Cmd/Ctrl+K → enfoca la búsqueda global (abre el sidebar si está colapsado).
+  /* Cmd/Ctrl+K → abre la búsqueda. Antes enfocaba una caja dentro del menú;
+     esa caja se retiró porque ocupaba el mejor sitio del sidebar para algo que
+     se usa de vez en cuando. Ahora abre la MISMA hoja que ya usaba el teléfono
+     —un solo buscador para los dos anchos, no dos que se desincronizan— y de
+     paso queda igual que el resto del CRM, donde todo se abre en hoja. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setSidebarCollapsed(false);
-        setTimeout(() => searchRef.current?.focus(), 60);
+        setMobileSearchOpen(true);
       }
-      if (e.key === 'Escape') setShowSearch(false);
+
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement)?.closest?.('.crm-search-wrapper')) setShowSearch(false);
-    };
-    document.addEventListener('click', close);
-    return () => {
-      document.removeEventListener('click', close);
-    };
-  }, []);
+  /* Se retiró el listener de clic-fuera: cerraba el popover de resultados
+     del buscador del menú, que ya no existe. Un efecto global que no hace nada
+     sigue costando un listener en cada clic de la app. */
 
   // De dónde se venía al abrir Configuración: su X devuelve ahí, no a una
   // pantalla cualquiera.
@@ -644,9 +643,9 @@ export default function CrmDashboard() {
         {/* EL BUSCADOR SALIÓ DE AQUÍ (3-sep-2026).
             Ocupaba el mejor sitio del menú —arriba del todo, ancho completo—
             para algo que se usa de vez en cuando, y empujaba hacia abajo lo
-            que sí se usa a diario. No se pierde: ⌘K lo abre en el centro de la
-            pantalla, que además es donde uno ya lo busca por costumbre. Ver
-            `BuscadorGlobal`. */
+            que sí se usa a diario. No se pierde: ⌘K abre la MISMA hoja de
+            búsqueda que ya usaba el teléfono, así que hay un solo buscador
+            para los dos anchos en vez de dos que se desincronizan. */}
 
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
@@ -677,7 +676,11 @@ export default function CrmDashboard() {
                     aria-expanded={abierto}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 11,
-                      width: 'calc(100% - 16px)', margin: '1px 8px', padding: '8px 10px',
+                      /* Más aire entre secciones: a 1 px de separación las
+                         nueve entradas se leían como un bloque continuo y
+                         había que buscar con el dedo dónde acaba una y empieza
+                         la siguiente. */
+                      width: 'calc(100% - 16px)', margin: '3px 8px', padding: '10px 10px',
                       border: 'none', background: 'transparent', borderRadius: 9, cursor: 'pointer',
                       fontFamily: 'inherit', textAlign: 'left' as const,
                       /* Nivel 1. Contra sus subsecciones cambia en TRES cosas a
@@ -767,9 +770,13 @@ export default function CrmDashboard() {
                       display: 'flex', alignItems: 'center',
                       gap: sidebarCollapsed ? 0 : 11,
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      padding: sidebarCollapsed ? 0 : (enGrupo ? '7px 10px 7px 38px' : '7px 10px'),
-                      margin: sidebarCollapsed ? '2px auto' : '1px 8px',
-                      minHeight: sidebarCollapsed ? 40 : 38,
+                      /* Las subsecciones van APRETADAS y las de primer nivel
+                         sueltas: es lo que las distingue de un vistazo. Antes
+                         medían casi lo mismo (38 px contra 38) y un grupo
+                         abierto duplicaba el alto del menú. */
+                      padding: sidebarCollapsed ? 0 : (enGrupo ? '5px 10px 5px 38px' : '9px 10px'),
+                      margin: sidebarCollapsed ? '2px auto' : (enGrupo ? '0 8px' : '3px 8px'),
+                      minHeight: sidebarCollapsed ? 40 : (enGrupo ? 30 : 40),
                       borderRadius: sidebarCollapsed ? 11 : 9,
                       background: esTrabajo ? 'linear-gradient(92deg,#EEECFE,rgba(244,168,205,.16))' : isActive ? '#fff' : 'transparent',
                       boxShadow: isActive ? '0 2px 10px rgba(60,30,140,.10)' : 'none',
@@ -778,7 +785,7 @@ export default function CrmDashboard() {
                       /* Nivel 2: más chico y más claro que su cabecera. Fuera
                        del grupo (Dashboard, que no cuelga de nada) conserva el
                        tamaño de siempre. */
-                    fontSize: enGrupo ? '0.775rem' : '0.82rem',
+                    fontSize: enGrupo ? '0.75rem' : '0.84rem',
                     fontWeight: esTrabajo ? 800 : isActive ? 800 : enGrupo ? 500 : 600,
                       // Un <button> centra su texto: al partirse en dos
                       // renglones, "Cobro con Mercado Pago" quedaba centrado y
@@ -821,10 +828,14 @@ export default function CrmDashboard() {
         {/* Footer.
             Deja de ser una lista de ligas chiquitas: notificaciones y
             configuración son renglones completos, quién eres vive en su propio
-            panel, y abajo una barra con plegar el menú y salir. */}
+            panel, y abajo una barra con plegar el menú y salir.
+
+            Un solo gris para las líneas del pie (#ece6f8) y un solo gris para
+            sus iconos (#a49dbd): antes cada renglón traía el suyo y el bloque
+            se veía sucio sin que se supiera por qué. */}
         {!sidebarCollapsed ? (
-          <div style={{ borderTop: '1px solid #e7e0f7', background: 'rgba(255,255,255,.5)' }}>
-            <div style={{ padding: '6px 0 2px' }}>
+          <div style={{ borderTop: '1px solid #ece6f8', background: 'rgba(255,255,255,.45)' }}>
+            <div style={{ padding: '5px 0 1px' }}>
               {!isMobile && <CampanaNotificaciones onIrA={irADestino} />}
 
               <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#fff' : 'none', boxShadow: tab === 'config' ? '0 2px 10px rgba(60,30,140,.10)' : 'none', color: tab === 'config' ? '#4C3BD0' : '#4b4560' }}>
@@ -836,7 +847,7 @@ export default function CrmDashboard() {
             <button
               onClick={async () => { limpiarSnaps(); try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
               style={{ ...pieFila, color: '#B24C57' }}>
-              <span style={{ ...pieIcono, color: '#B24C57', opacity: .85 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+              <span style={{ ...pieIcono, color: '#B24C57', opacity: .8 }} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
             </button>
             </div>
 
@@ -846,10 +857,14 @@ export default function CrmDashboard() {
             <button
               onClick={() => switchTab('config' as Tab)}
               title="Ver mi perfil"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, width: 'calc(100% - 20px)', textAlign: 'left', padding: '9px 12px', margin: '6px 10px', borderRadius: 11, background: '#fff', border: 'none', boxShadow: '0 1px 3px rgba(40,20,90,.08)', cursor: 'pointer', fontFamily: 'inherit' }}>
+              /* Sin tarjeta blanca ni sombra: era el elemento más levantado
+                 de todo el menú —más que la pantalla activa— para decir quién
+                 eres, que no es una acción. Ahora es un renglón como los de
+                 arriba, del mismo color. */
+              style={{ display: 'flex', alignItems: 'center', gap: 9, width: 'calc(100% - 16px)', textAlign: 'left', padding: '6px 10px', margin: '2px 8px 4px', borderRadius: 9, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
               {/* Con foto se ve la cara; sin ella, las iniciales de siempre. */}
               <span style={{
-                width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                 background: yo?.foto_url ? `#fff url(${yo.foto_url}) center/cover no-repeat` : 'linear-gradient(135deg,#9B8CFA,#7DA6F5)',
                 color: '#fff', fontSize: '0.73rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -874,7 +889,7 @@ export default function CrmDashboard() {
             <button
               onClick={() => setSidebarCollapsed(true)}
               aria-label="Plegar menú"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 14px', borderTop: '1px solid #e7e0f7', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#4b4560', fontSize: '0.74rem', fontWeight: 700, fontFamily: 'inherit' }}>
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '8px 14px', borderTop: '1px solid #ece6f8', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', color: '#8078a0', fontSize: '0.71rem', fontWeight: 650, fontFamily: 'inherit' }}>
               <span style={{ display: 'flex', opacity: .7 }} dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />Plegar menú
             </button>
           </div>
