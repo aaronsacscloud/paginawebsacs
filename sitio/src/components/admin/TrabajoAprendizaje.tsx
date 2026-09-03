@@ -167,8 +167,9 @@ export default function TrabajoAprendizaje() {
   const [hechos, setHechos] = useState<Record<string, string>>({});
   const [idx, setIdx] = useState(0);
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [apr, setApr] = useState<any>(null);
   const cargar = () => fetch('/api/crm/ti/aprendizaje').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' }));
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); fetch('/api/crm/ti/envios').then(r => r.json()).then(j => setApr(j.aprendizaje || null)).catch(() => {}); }, []);
   const gal: Recurso[] = d?.galeria || [];
   const addGal = (r: Recurso) => setD((x: any) => ({ ...x, galeria: [r, ...(x.galeria || [])] }));
 
@@ -254,6 +255,14 @@ export default function TrabajoAprendizaje() {
           <button role="tab" className={sub === 'aprobado' ? 'on' : ''} onClick={() => setSub('aprobado')}>Aprobado <b>{ap.ejemplos.length + ap.envios.length}</b></button>
         </div>
       </div>
+      {apr && (
+        <div className="ti-apr-grid" style={{ margin: '0 0 10px' }}>
+          <div><b>{apr.ejemplos_dueno}</b><span>ejemplos tuyos activos</span></div>
+          <div><b>{apr.ediciones_7d}</b><span>ediciones esta semana</span></div>
+          <div><b>{apr.vetos_7d}</b><span>detenidos esta semana</span></div>
+          <div><b>{apr.ejemplos_7d}</b><span>lecciones nuevas (7 d)</span></div>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
         {([['todo', 'Todo'], ['ejemplos', 'Ejemplos propuestos'], ['envios', 'Mensajes del agente'], ['pares', 'Pares agente/consultor']] as const).map(([v, l]) => (
           <button key={v} className={'ti-chip-btn' + (filtro === v ? ' on' : '')} onClick={() => { setFiltro(v); setIdx(0); }}>{l}</button>

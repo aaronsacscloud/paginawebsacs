@@ -85,6 +85,9 @@ export const ESTILOS_ENVIOS = `
 .ti-suave { font-size:.8rem; color:var(--suave,#6b7280); margin-top:6px; }
 .ti-sombra-nota { color:var(--suave,#6b7280); font-size:.82rem; }
 .ti-aprendizaje { margin-top:12px; }
+.ti-herr-grid { display:grid; gap:12px; margin-top:12px; }
+.ti-herr { border:1px solid var(--linea,#e5e7eb); border-radius:12px; padding:12px 16px; background:#fff; }
+.ti-herr > div > button h3, .ti-herr h3 { font-size:1rem; }
 .ti-apr-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:8px 0; }
 .ti-apr-grid div { background:var(--neutro,#f3f4f6); border-radius:10px; padding:10px 12px; }
 .ti-apr-grid b { display:block; font-size:1.4rem; line-height:1.1; font-variant-numeric:tabular-nums; }
@@ -261,38 +264,42 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
         )}
       </div>
 
-      <div className="ti-carta ti-aprendizaje">
-        {plantillas.length > 0 && (
-          <div style={{ margin: '18px 0 6px' }}>
-            <h3 className="ti-h3">Plantillas del agente (30 días)</h3>
-            <p className="ti-porque" style={{ marginTop: 4 }}>Las crea el agente por momento (seguimiento, no-show, preparación, promo, cierre); Meta las aprueba. Aquí se ve cuáles llegan y cuáles consiguen respuesta en 48 h.</p>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.84rem' }}>
-              <thead><tr style={{ textAlign: 'left', color: '#6b6580', fontSize: '.66rem', letterSpacing: '.08em', textTransform: 'uppercase' }}><th style={{ padding: '4px 6px' }}>Plantilla</th><th>Enviadas</th><th>Entregadas</th><th>Leídas</th><th>Respondieron</th><th>Tasa</th></tr></thead>
-              <tbody>{plantillas.map((p: any) => <tr key={p.nombre} style={{ borderTop: '1px solid #eeebf6' }}><td style={{ padding: '6px' }}>{p.nombre}</td><td>{p.enviadas}</td><td>{p.entregadas}</td><td>{p.leidas}</td><td>{p.respondidas}</td><td style={{ fontWeight: 700, color: p.tasa_respuesta >= 30 ? '#14532d' : p.tasa_respuesta >= 15 ? '#B7791F' : '#b93333' }}>{p.tasa_respuesta} %</td></tr>)}</tbody>
-            </table>
+      {/* HERRAMIENTAS DEL AGENTE: lo que tiene a la mano para escribir mejor. Cada tarjeta se abre a su editor.
+          Lo que el agente APRENDIÓ vive en la pestaña Aprendizaje, no aquí. */}
+      <div className="ti-carta">
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+          <h3 className="ti-h3" style={{ margin: 0 }}>Herramientas del agente</h3>
+          <span className="ti-suave" style={{ margin: 0 }}>Promociones, recursos y plantillas que usa al escribir. Lo que ha aprendido de ti está en la pestaña Aprendizaje.</span>
+        </div>
+        <div className="ti-herr-grid">
+          <div className="ti-herr">
+            <Promociones promos={promos} onGuardar={async (lista: any[]) => { const j = await post('/api/crm/ti/envios', { accion: 'promos_guardar', promociones: lista }); if (j?.promociones) setPromos(j.promociones); return !!j; }} />
           </div>
-        )}
-        <Promociones promos={promos} onGuardar={async (lista: any[]) => { const j = await post('/api/crm/ti/envios', { accion: 'promos_guardar', promociones: lista }); if (j?.promociones) setPromos(j.promociones); return !!j; }} />
-        <GaleriaRecursos galeria={galeria} onNuevo={r => setGaleria(g => [r, ...g])}
-          onQuitar={async (id: string) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_quitar', imagen_id: id }); if (j) setGaleria(g => g.filter(x => x.id !== id)); }}
-          onNuevaUrl={async (img) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as Recurso; } return null; }} />
-        <h3 className="ti-h3">Lo que el agente ha aprendido de ti</h3>
-        {apr ? (<>
-          <div className="ti-apr-grid">
-            <div><b>{apr.ejemplos_dueno}</b><span>ejemplos tuyos activos</span></div>
-            <div><b>{apr.ediciones_7d}</b><span>ediciones esta semana</span></div>
-            <div><b>{apr.vetos_7d}</b><span>detenidos esta semana</span></div>
-            <div><b>{apr.ejemplos_7d}</b><span>lecciones nuevas (7 d)</span></div>
+          <div className="ti-herr">
+            <GaleriaRecursos galeria={galeria} onNuevo={r => setGaleria(g => [r, ...g])}
+              onQuitar={async (id: string) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_quitar', imagen_id: id }); if (j) setGaleria(g => g.filter(x => x.id !== id)); }}
+              onNuevaUrl={async (img) => { const j = await post('/api/crm/ti/envios', { accion: 'galeria_agregar', ...img }); if (j?.imagen) { setGaleria(g => [j.imagen, ...g]); return j.imagen as Recurso; } return null; }} />
           </div>
-          {!!apr.ultimos.length && <ul className="ti-apr-ultimos">{apr.ultimos.map((u, i) => <li key={i}><span className="ti-chip chip-p2">{ESTADO_L[u.estado] || u.estado}</span> <span className="ti-suave">{hora(u.created_at)}</span><div>{u.pulida}</div></li>)}</ul>}
-          <p className="ti-suave">Cada ejemplo entra al prompt del agente en su estado desde el siguiente mensaje. Vetos y ediciones mueven la rampa: 2 correcciones en 7 días devuelven la ventana de veto; 30 envíos limpios proponen quitarla.</p>
-        </>) : <p className="ti-suave">Cargando…</p>}
+          <div className="ti-herr">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h3 className="ti-h3" style={{ margin: 0 }}>Plantillas del agente</h3>
+              <span className="ti-chip chip-tipo">{plantillas.length ? `${plantillas.length} en uso · 30 días` : 'aún sin envíos'}</span>
+            </div>
+            <p className="ti-porque" style={{ marginTop: 4 }}>Fuera de la ventana de 24 h solo puede salir una plantilla aprobada por Meta. Las crea el agente por momento (seguimiento, no-show, preparación, promo, cierre); aquí ves cuáles llegan y cuáles consiguen respuesta en 48 h.</p>
+            {plantillas.length > 0 && (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.84rem' }}>
+                <thead><tr style={{ textAlign: 'left', color: '#6b6580', fontSize: '.66rem', letterSpacing: '.08em', textTransform: 'uppercase' }}><th style={{ padding: '4px 6px' }}>Plantilla</th><th>Enviadas</th><th>Entregadas</th><th>Leídas</th><th>Respondieron</th><th>Tasa</th></tr></thead>
+                <tbody>{plantillas.map((p: any) => <tr key={p.nombre} style={{ borderTop: '1px solid #eeebf6' }}><td style={{ padding: '6px' }}>{p.nombre}</td><td>{p.enviadas}</td><td>{p.entregadas}</td><td>{p.leidas}</td><td>{p.respondidas}</td><td style={{ fontWeight: 700, color: p.tasa_respuesta >= 30 ? '#14532d' : p.tasa_respuesta >= 15 ? '#B7791F' : '#b93333' }}>{p.tasa_respuesta} %</td></tr>)}</tbody>
+              </table>
+            )}
+          </div>
+        </div>
       </div>
 
       {!!rec.length && (
         <div className="ti-carta">
-          <h3 className="ti-h3">Lo que ya pasó</h3>
-          <p className="ti-suave">Cuando el consultor contestó antes que el agente, el par se muestra lado a lado: dile cuál debe aprender.</p>
+          <h3 className="ti-h3">Salidas recientes</h3>
+          <p className="ti-suave">Lo último que salió, se detuvo o se reemplazó. Si el consultor contestó antes que el agente, el par se muestra lado a lado para que digas cuál debe aprender.</p>
           {rec.map(e => {
             const s = e.salida || {};
             const aprendio = !!(e.editado_por || e.motivo_veto || e.veredicto_par);
@@ -351,6 +358,7 @@ export default function TrabajoEnvios({ onIrAprendizaje }: { onIrAprendizaje?: (
  * ventana rota sola al vencer (7 ↔ 10 días). El agente la menciona una vez como plus al dar precio y
  * guarda por lead qué se le dijo y hasta cuándo. */
 function Promociones({ promos, onGuardar }: { promos: any[]; onGuardar: (lista: any[]) => Promise<boolean> }) {
+  // Vive dentro de una tarjeta de «Herramientas del agente»: sin márgenes externos.
   const [abierta, setAbierta] = useState(false);
   const [lista, setLista] = useState<any[]>(promos);
   const [msg, setMsg] = useState('');
@@ -359,7 +367,7 @@ function Promociones({ promos, onGuardar }: { promos: any[]; onGuardar: (lista: 
   const dias = (v: string) => v ? Math.max(0, Math.round((Date.parse(v + 'T23:59:59-06:00') - Date.now()) / 86400e3)) : 0;
   const upd = (i: number, k: string, v: any) => setLista(l => l.map((p, j) => j === i ? { ...p, [k]: v } : p));
   return (
-    <div style={{ margin: '18px 0 6px' }}>
+    <div>
       <button onClick={() => setAbierta(a => !a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <h3 className="ti-h3" style={{ margin: 0 }}>Promociones vigentes</h3>
         {vigente ? <span className="ti-chip chip-verde">{vigente.nombre} · vence en {dias(vigente.vence)} d</span> : <span className="ti-chip chip-ambar">ninguna activa</span>}

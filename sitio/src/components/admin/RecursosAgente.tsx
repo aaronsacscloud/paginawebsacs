@@ -175,7 +175,7 @@ export function GaleriaRecursos({ galeria, onQuitar, onNuevo, onNuevaUrl }: { ga
   const [msg, setMsg] = useState('');
   const porTipo = (t: Recurso['tipo']) => galeria.filter(g => g.tipo === t).length;
   return (
-    <div style={{ margin: '18px 0 6px' }}>
+    <div>
       <button onClick={() => setAbierta(a => !a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <h3 className="ti-h3" style={{ margin: 0 }}>Recursos del agente</h3>
         <span className="ti-chip chip-tipo">{porTipo('image')} imágenes · {porTipo('document')} PDF · {porTipo('video')} videos</span>
