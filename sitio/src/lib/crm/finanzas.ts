@@ -3,6 +3,7 @@
 // mes), lo que hay que pagar (fin_gastos aplicables al mes + comisiones calculadas por el sistema) y la utilidad.
 // El cierre congela esos números en fin_cierres; el reporte anual mezcla cierres con meses vivos.
 import { supabase } from '../supabase';
+import { planDeCotizacion } from '../quotes/plan';
 
 export type Mes = string; // 'YYYY-MM'
 export const mesDe = (d = new Date()) => new Date(d.getTime() - 6 * 3600e3).toISOString().slice(0, 7);
@@ -36,9 +37,59 @@ export async function resumenMes(m: Mes) {
     supabase.from('fin_cierres').select('*').eq('mes', m).maybeSingle(),
   ]);
   // Cotizaciones ACEPTADAS sin pago: por cobrar de venta nueva (no pipeline): salen de deals y entran aquí.
-  const { data: acept } = await supabase.from('quotes').select('id, numero, total, updated_at, contact_id, company_id, companies(nombre_comercial, nombre), contacts(nombre)').eq('estado', 'accepted').order('updated_at', { ascending: false }).limit(100);
-  const aceptadas = (acept || []).map(q => ({ ...q, monto: Number(q.total || 0) }));
-  const aceptadasIds = new Set(aceptadas.map(q => q.id));
+  //
+  // ⚠️ Pedía `updated_at`, columna que NO existe en quotes. PostgREST devolvía
+  // 400 y el destructuring dejaba `acept` en null: la tarjeta llevaba meses
+  // enseñando $0 no porque no hubiera nada, sino porque la consulta moría en
+  // silencio. Se ordena por `aceptado_fecha`, que es además la fecha correcta:
+  // lo que importa es cuándo la aceptaron, no cuándo se tocó el renglón.
+  const { data: acept, error: errAcept } = await supabase.from('quotes')
+    .select('id, numero, total, aceptado_fecha, created_at, notas, contact_id, company_id, companies(nombre_comercial, nombre), contacts(nombre)')
+    .eq('estado', 'accepted').order('aceptado_fecha', { ascending: false, nullsFirst: false }).limit(100);
+  if (errAcept) console.error('[finanzas] cotizaciones aceptadas:', errAcept.message);
+  // Lo ya abonado a cada cotización: una aceptada con anticipo NO está por
+  // cobrar por su total, y contarla completa infla el mes por el anticipo.
+  const acIds = (acept || []).map(q => q.id);
+  const { data: pagosCot } = acIds.length
+    ? await supabase.from('payments').select('quote_id, monto').in('quote_id', acIds).neq('estado', 'reembolsado')
+    : { data: [] as any[] };
+  const abonadoCot = new Map<string, number>();
+  for (const p of pagosCot || []) abonadoCot.set(p.quote_id, (abonadoCot.get(p.quote_id) || 0) + Number(p.monto || 0));
+
+  const hoyISO = new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10);
+  // PAGOS DIFERIDOS (decisión del dueño, 2026-09-03). Una venta pactada en
+  // exhibiciones es dinero comprometido con FECHA: la parcialidad que vence
+  // este mes es tan «por cobrar» como una renovación. Vivía solo en Cobranza
+  // (`meta.plan_pagos` vía planDeCotizacion) y Finanzas no la veía: el mes de
+  // Ruben's se quedaba $30,000 corto.
+  const parcialidades: any[] = [];
+  const conPlan = new Set<string>();
+  for (const q of acept || []) {
+    const plan = planDeCotizacion(q, abonadoCot.get(q.id) || 0, hoyISO);
+    if (!plan.length) continue;
+    conPlan.add(q.id);
+    for (const x of plan) {
+      // Las de este mes, y las VENCIDAS de meses anteriores: ese dinero sigue
+      // sin entrar y ya debía haber entrado, así que se cobra ahora.
+      if (x.estado !== 'pendiente') continue;
+      const delMes = x.fecha.slice(0, 7) === m;
+      const vencidaPrevia = x.vencida && x.fecha.slice(0, 7) < m;
+      if (!delMes && !vencidaPrevia) continue;
+      parcialidades.push({
+        id: x.id, quote_id: q.id, numero: q.numero, tipo: 'parcialidad',
+        companies: (q as any).companies, contacts: (q as any).contacts,
+        nombre_plan: `${q.numero || 'Cotización'} · ${x.concepto}`,
+        ciclo: `${x.numero} de ${x.total}`, proxima_factura: x.fecha,
+        monto: x.monto, vencida: x.vencida, mes_original: x.fecha.slice(0, 7),
+      });
+    }
+  }
+  // Con plan, la cotización entra parcialidad por parcialidad: dejarla también
+  // completa aquí contaría el mismo dinero dos veces.
+  const aceptadas = (acept || []).filter(q => !conPlan.has(q.id))
+    .map(q => ({ ...q, updated_at: q.aceptado_fecha || q.created_at, abonado: abonadoCot.get(q.id) || 0, monto: Math.max(0, Number(q.total || 0) - (abonadoCot.get(q.id) || 0)) }))
+    .filter(q => q.monto > 0.01);
+  const aceptadasIds = new Set([...(acept || []).map(q => q.id)]);
   const aceptadasMonto = aceptadas.reduce((s, q) => s + q.monto, 0);
   // COMISIONES POR PAGAR (decisión 2026-09-03): cada lunes se pagan los cortes de comisión; un corte generado y aceptado por
   // la vendedora es un gasto a contemplar aunque todavía no se pague. Lo del mes = cortes con paga_el en el mes.
@@ -78,7 +129,10 @@ export async function resumenMes(m: Mes) {
   const cobradoNeto = (pagos || []).reduce((s, p) => s + Number(p.neto ?? (Number(p.monto || 0) - Number(p.comision || 0))), 0);
   const comisionesPasarela = cobrado - cobradoNeto;
   const cobradoSubs = new Set((pagos || []).map(p => p.subscription_id).filter(Boolean));
-  const porCobrar = (subs || []).filter(s => !cobradoSubs.has(s.id)).map(s => ({ ...s, monto: Number(s.monto_proximo ?? s.precio ?? 0) }));
+  const porCobrar = [
+    ...(subs || []).filter(s => !cobradoSubs.has(s.id)).map(s => ({ ...s, tipo: 'renovacion', monto: Number(s.monto_proximo ?? s.precio ?? 0) })),
+    ...parcialidades,
+  ].sort((a, b) => String(a.proxima_factura).localeCompare(String(b.proxima_factura)));
   const porCobrarMonto = porCobrar.reduce((s, x) => s + x.monto, 0);
   // PIPELINE CON CONTEXTO (frente C): probabilidad por etapa (20/40/60/90, decisión del dueño) salvo ajuste manual,
   // vistas de la cotización, última actividad, cliente nuevo vs expansión, días en etapa, duplicados por contacto.
@@ -243,8 +297,10 @@ function flujoSemanal(m: Mes, d: { pagos: any[]; porCobrar: any[]; aceptadas: an
   while (ini <= ult) { const dt = new Date(Date.UTC(y, mm - 1, ini)); const dow = (dt.getUTCDay() + 6) % 7; const fin = Math.min(ult, ini + (6 - dow)); semanas.push({ desde: dia(ini), hasta: dia(fin), entradas: [] as any[], salidas: [] as any[] }); ini = fin + 1; }
   const sem = (fecha: string) => { const f = String(fecha).slice(0, 10); if (f < semanas[0].desde) return semanas[0]; if (f > semanas[semanas.length - 1].hasta) return semanas[semanas.length - 1]; return semanas.find(s => f >= s.desde && f <= s.hasta) || semanas[semanas.length - 1]; };
   for (const p of d.pagos) sem(p.fecha).entradas.push({ tipo: 'cobrado', que: p.companies?.nombre_comercial || p.companies?.nombre || p.contacts?.nombre || 'Pago', monto: Number(p.neto ?? p.monto), fecha: p.fecha, real: true });
-  for (const s of d.porCobrar) sem(s.proxima_factura).entradas.push({ tipo: 'renovacion', que: s.companies?.nombre_comercial || s.companies?.nombre || 'Renovación', monto: s.monto, fecha: s.proxima_factura, real: false });
-  for (const q of d.aceptadas) { const f = new Date(Date.parse(q.updated_at) + 7 * 86400e3).toISOString().slice(0, 10); if (f.slice(0, 7) === m) sem(f).entradas.push({ tipo: 'venta', que: q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Venta', monto: q.monto, fecha: f, real: false }); }
+  // Una parcialidad vencida de un mes anterior cae en la semana 1 (sem() topa
+  // las fechas fuera de rango): se puede cobrar hoy, así que ahí se ve.
+  for (const s of d.porCobrar) sem(s.proxima_factura).entradas.push({ tipo: s.tipo === 'parcialidad' ? 'parcialidad' : 'renovacion', que: s.companies?.nombre_comercial || s.companies?.nombre || s.contacts?.nombre || (s.tipo === 'parcialidad' ? 'Pago diferido' : 'Renovación'), monto: s.monto, fecha: s.proxima_factura, real: false });
+  for (const q of d.aceptadas) { const f = new Date(Date.parse(q.aceptado_fecha || q.created_at) + 7 * 86400e3).toISOString().slice(0, 10); if (f.slice(0, 7) === m) sem(f).entradas.push({ tipo: 'venta', que: q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Venta', monto: q.monto, fecha: f, real: false }); }
   for (const g of d.aplicables) { const f = g.pago ? String(g.pago.pagado_at).slice(0, 10) : dia(Number(g.dia_cobro) || ult); sem(f).salidas.push({ tipo: g.categoria, que: g.nombre, monto: Number(g.pago?.monto ?? g.monto), fecha: f, real: !!g.pago }); }
   for (const a of d.adeudosMes) if (a.toca_este_mes > 0) sem(dia(Number(a.dia_pago) || ult)).salidas.push({ tipo: 'adeudo', que: a.nombre, monto: a.toca_este_mes, fecha: dia(Number(a.dia_pago) || ult), real: a.abonado_mes >= a.toca_este_mes });
   for (const c of d.cortesMes) sem(c.paga_el).salidas.push({ tipo: 'comision', que: `Comisión ${c.vendedor}`, monto: c.monto, fecha: c.paga_el, real: c.pagado });

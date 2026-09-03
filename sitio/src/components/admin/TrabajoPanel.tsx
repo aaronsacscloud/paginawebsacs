@@ -333,13 +333,7 @@ export default function TrabajoPanel({ inicial }: { inicial?: 'torre' | 'informe
       {avisoP1 && (
         <div className="ti-p1aviso" role="status"><i />{avisoP1}. Termina esta con calma.</div>
       )}
-      <div className="ti-cab2">
-        <span className="ti-cab2-tt">Trabajo inteligente</span>
-        <nav className="ti-cab2-tabs">
-          {([['reactivacion', 'Reactivación'], ['torre', 'Torre'], ['informes', 'Informes']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab' + (seccion === k ? ' on' : '')} onClick={() => setSeccion(k)}>{l}</button>)}
-        </nav>
-        {seccion === 'informes' && <nav className="ti-cab2-sub">{([['leads', 'Leads'], ['revision', 'Revisión diaria'], ['biblioteca', 'Biblioteca'], ['consumo', 'Consumo']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (infTab === k ? ' on' : '')} onClick={() => setInfTab(k)}>{l}</button>)}</nav>}
-      </div>
+      {seccion === 'informes' && <div className="ti-subchips">{([['leads', 'Leads'], ['revision', 'Revisión diaria'], ['biblioteca', 'Biblioteca'], ['consumo', 'Consumo']] as const).map(([k, l]) => <button key={k} className={'ti-cab2-tab chico' + (infTab === k ? ' on' : '')} onClick={() => setInfTab(k)}>{l}</button>)}</div>}
       {seccion === 'torre' && <div className="ti-lienzo tc-full"><TorreControl irA={(t) => { if (t === 'aprendizaje') { setSeccion('informes'); setInfTab('biblioteca'); } }} /></div>}
       {seccion === 'reactivacion' && <TrabajoReactivacion />}
       {seccion === 'informes' && (infTab === 'leads' ? <TrabajoCalificacion /> : infTab === 'revision' ? <TrabajoRevision /> : infTab === 'biblioteca' ? <TrabajoAprendizaje inicial="aprobado" /> : <TrabajoConsumo />)}
@@ -490,7 +484,7 @@ export const TI_CSS = `
   --azul-t:#7DA6F5; --azul-a:#1b2740; --neutro:#232329; --burbuja-in:#26262e;
   --sombra:0 1px 3px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); } }
 .ti-raiz button, .ti-raiz input, .ti-raiz textarea { font-family:inherit; }
-.ti-cab2 { position:sticky; top:0; z-index:50; background:var(--carta); border-bottom:1px solid var(--linea); padding:8px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ti-subchips { display:flex; gap:4px; padding:12px 16px 0; flex-wrap:wrap; }
 .ti-cab2-tt { font-weight:800; font-size:1rem; letter-spacing:-.01em; }
 .ti-cab2-tabs, .ti-cab2-sub { display:flex; gap:2px; }
 .ti-cab2-sub { margin-left:auto; }

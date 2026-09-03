@@ -1,0 +1,226 @@
+---
+// La galleta de la fortuna: el premio de cerrar una etapa.
+//
+// Cuando a Ruben's le aprueban una sección aparece una galleta que gira, se
+// parte en dos y de en medio sale el papelito con una frase para el día.
+//
+// Es 3D de verdad —`perspective` + `preserve-3d`, las mitades giran sobre sus
+// propios ejes y se van hacia atrás— pero SIN librería. Un Three.js aquí serían
+// ~700 KB descargados para animar dos formas: todo esto son transformaciones
+// que el compositor resuelve solo, sin repintar nada, y el peso extra es cero.
+//
+// Expone `window.__galleta(indice, titulo, sub)`.
+
+const FORTUNAS = [
+  'Lo que se hace con calma, se hace una sola vez.',
+  'El oficio no se improvisa: se acumula.',
+  'Quien sabe lo que vende, vende sin bajar el precio.',
+  'La pieza más cara que tienes es tu nombre.',
+  'Se avanza por etapas. Hoy avanzaste una.',
+  'Al que trabaja con luz, la luz le responde.',
+  'Nada bueno se apura, y nada bueno se abandona.',
+  'El detalle que nadie ve es el que todos sienten.',
+  'Los años en el oficio no se compran en ningún lado.',
+  'Cada respuesta tuya le quita una duda al que va a comprar.',
+  'Lo bien hecho tarda. Lo mal hecho tarda dos veces.',
+  'El día que arranque, va a parecer que siempre estuvo ahí.',
+];
+---
+
+<div class="gl" aria-hidden="true" hidden>
+  <div class="gl-escena">
+    <div class="gl-galleta">
+      <!-- El papelito vive DETRÁS de las mitades y sale de en medio -->
+      <div class="gl-papel">
+        <span class="gl-papel-t"></span>
+      </div>
+
+      <svg class="gl-mitad gl-izq" viewBox="0 0 200 140" width="230" height="161">
+        <defs>
+          <linearGradient id="glOroA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F0DCA9"></stop>
+            <stop offset=".45" stop-color="#D6B87A"></stop>
+            <stop offset="1" stop-color="#A9854F"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M100,44 C78,16 32,18 20,58 C9,92 44,120 100,122 Z" fill="url(#glOroA)"></path>
+        <path d="M100,44 C80,30 52,32 38,58" fill="none" stroke="#8C6C3C" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M100,60 C74,58 50,72 42,96" fill="none" stroke="#FFF3D6" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"></path>
+      </svg>
+
+      <svg class="gl-mitad gl-der" viewBox="0 0 200 140" width="230" height="161">
+        <defs>
+          <linearGradient id="glOroB" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#EBD5A0"></stop>
+            <stop offset=".45" stop-color="#C6A15B"></stop>
+            <stop offset="1" stop-color="#8F6F41"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M100,44 C122,16 168,18 180,58 C191,92 156,120 100,122 Z" fill="url(#glOroB)"></path>
+        <path d="M100,44 C120,30 148,32 162,58" fill="none" stroke="#8C6C3C" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M100,60 C126,58 150,72 158,96" fill="none" stroke="#FFF3D6" stroke-opacity=".4" stroke-width="4" stroke-linecap="round"></path>
+      </svg>
+
+      <div class="gl-quiebre"></div>
+    </div>
+
+    <div class="gl-pie">
+      <span class="gl-pie-t"></span>
+      <span class="gl-pie-s"></span>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+.gl {
+  position: fixed; inset: 0; z-index: 95; pointer-events: none;
+  display: grid; place-items: center;
+  background: rgba(12,10,11,0);
+  transition: background .5s ease;
+}
+.gl[data-viva] { background: rgba(12,10,11,.72); }
+
+.gl-escena { perspective: 900px; display: grid; place-items: center; gap: 8px; }
+
+.gl-galleta {
+  position: relative; width: 230px; height: 161px;
+  transform-style: preserve-3d;
+  transform: rotateX(14deg) rotateY(-24deg) scale(.4);
+  opacity: 0;
+  transition: transform .72s cubic-bezier(.18,.9,.3,1.05), opacity .4s ease;
+}
+.gl[data-viva] .gl-galleta { transform: rotateX(10deg) rotateY(0deg) scale(1); opacity: 1; }
+.gl[data-fase='mece'] .gl-galleta { animation: gl-mece .5s ease-in-out; }
+@keyframes gl-mece {
+  0%,100% { transform: rotateX(10deg) rotateY(0) scale(1); }
+  30%     { transform: rotateX(8deg) rotateY(-13deg) rotateZ(-4deg) scale(1.03); }
+  65%     { transform: rotateX(12deg) rotateY(11deg) rotateZ(3deg) scale(1.03); }
+}
+
+.gl-mitad {
+  position: absolute; left: 0; top: 0;
+  transform-origin: 50% 60%;
+  transition: transform .95s cubic-bezier(.2,.7,.25,1), opacity .95s ease;
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.45));
+}
+/* Al partirse, cada mitad se va hacia su lado Y hacia atrás en Z: eso es lo
+   que da el volumen. Con solo translate se vería como dos recortes de papel. */
+.gl[data-fase='abierta'] .gl-izq {
+  transform: translate3d(-118px, 34px, -90px) rotateZ(-26deg) rotateY(-46deg);
+  opacity: 0;
+}
+.gl[data-fase='abierta'] .gl-der {
+  transform: translate3d(118px, 34px, -90px) rotateZ(26deg) rotateY(46deg);
+  opacity: 0;
+}
+
+/* El destello del quiebre */
+.gl-quiebre {
+  position: absolute; left: 50%; top: 22%; width: 4px; height: 0;
+  transform: translateX(-50%); border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255,250,235,0), #FFF8E6, rgba(255,250,235,0));
+  box-shadow: 0 0 26px 8px rgba(255,240,200,.75);
+  opacity: 0;
+}
+.gl[data-fase='abierta'] .gl-quiebre { animation: gl-quiebre .5s ease-out; }
+@keyframes gl-quiebre {
+  0%   { height: 0; opacity: 0; }
+  25%  { height: 96px; opacity: 1; }
+  100% { height: 130px; opacity: 0; }
+}
+
+.gl-papel {
+  position: absolute; left: 50%; top: 46%;
+  width: min(330px, 78vw); min-height: 66px;
+  transform: translate3d(-50%, -50%, -30px) rotateX(72deg) scaleY(.12);
+  transform-origin: 50% 100%;
+  background: linear-gradient(180deg, #FFFDF6, #F4EEDF);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 0 0 1px rgba(169,133,79,.22);
+  display: grid; place-items: center; padding: 18px 20px;
+  opacity: 0;
+  transition: transform .85s cubic-bezier(.16,.86,.28,1) .18s, opacity .5s ease .18s;
+}
+.gl[data-fase='abierta'] .gl-papel {
+  transform: translate3d(-50%, -108%, 30px) rotateX(0deg) scaleY(1);
+  opacity: 1;
+}
+.gl-papel-t {
+  font-family: 'Iowan Old Style', Georgia, serif;
+  font-size: 1.12rem; line-height: 1.35; color: #2A2320; text-align: center;
+  text-wrap: balance;
+}
+
+.gl-pie { text-align: center; opacity: 0; transition: opacity .5s ease .9s; }
+.gl[data-fase='abierta'] .gl-pie { opacity: 1; }
+.gl-pie-t {
+  display: block; font-family: 'Iowan Old Style', Georgia, serif;
+  font-size: 1.3rem; color: #fff; margin-bottom: 4px;
+}
+.gl-pie-s { display: block; font-size: .9rem; color: rgba(255,255,255,.68); }
+
+@media (max-width: 720px) {
+  .gl-escena { perspective: 700px; }
+  .gl-galleta { width: 190px; height: 133px; }
+  .gl-mitad { width: 190px; height: 133px; }
+  .gl[data-fase='abierta'] .gl-izq { transform: translate3d(-92px, 28px, -70px) rotateZ(-26deg) rotateY(-46deg); }
+  .gl[data-fase='abierta'] .gl-der { transform: translate3d(92px, 28px, -70px) rotateZ(26deg) rotateY(46deg); }
+  .gl-papel { width: 84vw; padding: 16px 18px; }
+  .gl-papel-t { font-size: 1.04rem; }
+  .gl-pie-t { font-size: 1.14rem; }
+}
+
+/* Sin movimiento: el papelito y su mensaje, quietos. */
+@media (prefers-reduced-motion: reduce) {
+  .gl-galleta, .gl-mitad, .gl-papel, .gl-pie, .gl-quiebre { transition: none !important; animation: none !important; }
+  .gl-galleta { transform: none; opacity: 1; }
+  .gl-mitad { display: none; }
+  .gl-papel { position: static; transform: none; opacity: 1; }
+  .gl-pie { opacity: 1; }
+}
+</style>
+
+<script define:vars={{ FORTUNAS }}>
+  (() => {
+    const gl = document.querySelector('.gl');
+    if (!gl) return;
+    const papel = gl.querySelector('.gl-papel-t');
+    const pieT = gl.querySelector('.gl-pie-t');
+    const pieS = gl.querySelector('.gl-pie-s');
+    let tiempos = [];
+
+    const limpiar = () => { tiempos.forEach(clearTimeout); tiempos = []; };
+    const luego = (ms, fn) => tiempos.push(setTimeout(fn, ms));
+
+    /**
+     * @param indice  qué fortuna toca (por etapa, para que cada una tenga la suya)
+     * @param titulo  el logro
+     * @param sub     el detalle
+     */
+    window.__galleta = function (indice, titulo, sub) {
+      limpiar();
+      papel.textContent = FORTUNAS[((indice | 0) % FORTUNAS.length + FORTUNAS.length) % FORTUNAS.length];
+      pieT.textContent = titulo || '';
+      pieS.textContent = sub || '';
+
+      gl.hidden = false;
+      gl.removeAttribute('data-fase');
+      // Un cuadro de respiro para que el navegador registre el estado inicial:
+      // sin esto la transición de entrada no ocurre, aparece ya puesta.
+      requestAnimationFrame(() => {
+        gl.setAttribute('data-viva', '');
+        luego(760, () => gl.setAttribute('data-fase', 'mece'));
+        luego(1240, () => {
+          gl.setAttribute('data-fase', 'abierta');
+          // El oro cae justo cuando se parte, no antes.
+          window.__celebrar?.('medio');
+        });
+        luego(6600, () => {
+          gl.removeAttribute('data-viva');
+          gl.removeAttribute('data-fase');
+          luego(600, () => { gl.hidden = true; });
+        });
+      });
+    };
+  })();
+</script>

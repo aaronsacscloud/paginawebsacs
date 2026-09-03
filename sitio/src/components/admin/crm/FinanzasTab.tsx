@@ -9,6 +9,19 @@ import LeadDrawer from './LeadDrawer';
 const CATS: Record<string, string> = { suscripcion: 'Suscripciones', nomina: 'Nómina', comision: 'Comisiones', marketing: 'Marketing', impuestos: 'Impuestos', otro: 'Otros' };
 const PER: Record<string, string> = { mensual: 'Mensual', anual: 'Anual', unico: 'Una vez' };
 const pesos = (n: number) => (n < 0 ? '−' : '') + '$' + Math.round(Math.abs(n || 0)).toLocaleString('es-MX');
+
+/** «9 renovaciones · 1 pago diferido» — el rótulo tiene que decir de qué está
+ *  hecho el monto: una parcialidad pactada no es una renovación, y si las dos
+ *  se cuentan bajo la misma palabra nadie sabe qué está mirando. */
+function desglosePorCobrar(lista: any[]) {
+  const par = (lista || []).filter((x: any) => x.tipo === 'parcialidad');
+  const ren = (lista || []).length - par.length;
+  const venc = par.filter((x: any) => x.vencida).length;
+  const partes: string[] = [];
+  if (ren) partes.push(`${ren} ${ren === 1 ? 'renovación' : 'renovaciones'}`);
+  if (par.length) partes.push(`${par.length} ${par.length === 1 ? 'pago diferido' : 'pagos diferidos'}${venc ? ` (${venc} vencida${venc === 1 ? '' : 's'})` : ''}`);
+  return partes.join(' · ') || 'nada pendiente';
+}
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const nombreMes = (m: string) => `${MESES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 const mover = (m: string, d: number) => { const y = Number(m.slice(0, 4)), mm = Number(m.slice(5, 7)) - 1 + d; const dt = new Date(Date.UTC(y, mm, 1)); return dt.toISOString().slice(0, 7); };
@@ -106,7 +119,7 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
       {d && !d.error && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 16 }}>
           <KpiCard label="Cobrado este mes (neto)" valor={pesos(d.ingresos.cobrado_neto ?? d.ingresos.cobrado)} color="#14532d" sub={`${d.ingresos.pagos.length} pagos · bruto ${pesos(d.ingresos.cobrado)}${d.ingresos.comisiones_pasarela ? ` · pasarela −${pesos(d.ingresos.comisiones_pasarela)}` : ''}`} onClick={() => setVista('ingresos')} activo={vista === 'ingresos'} />
-          <KpiCard label="Por cobrar (renovaciones)" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={`${d.ingresos.por_cobrar_lista.length} suscripciones vencen este mes`} onClick={() => setVista('ingresos')} activo={false} />
+          <KpiCard label="Por cobrar este mes" valor={pesos(d.ingresos.por_cobrar)} color="#1e3a8a" sub={desglosePorCobrar(d.ingresos.por_cobrar_lista)} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Por cobrar de venta nueva" valor={pesos(d.ingresos.ventas_aceptadas || 0)} color="#1e3a8a" sub={`${(d.ingresos.ventas_aceptadas_lista || []).length} cotizaciones aceptadas sin pago`} onClick={() => setVista('ingresos')} activo={false} />
           <KpiCard label="Gastos del mes" valor={pesos(d.utilidad.total_gastos)} color="#7f1d1d" sub={`${pesos(d.gastos.pagado)} pagados de ${pesos(d.gastos.previsto)}${d.gastos.por_categoria.comision ? '' : ` + ${pesos(d.comisiones.total)} comisiones`}${d.adeudos?.toca ? ` + ${pesos(d.adeudos.toca)} adeudos` : ''}${d.atrasados?.total ? ` + ${pesos(d.atrasados.total)} atrasados` : ''}`} onClick={() => setVista('gastos')} activo={vista === 'gastos'} />
           <KpiCard label="Pipeline ponderado" valor={pesos(d.pipeline.ponderado)} color="#78350f" sub={`${d.pipeline.abiertos.length} oportunidades · ${pesos(d.pipeline.total)} brutos · ${pesos(d.pipeline.esperado_mes || 0)} con cierre este mes`} onClick={() => setVista('pipeline')} activo={vista === 'pipeline'} />
@@ -380,16 +393,19 @@ export default function FinanzasTab({ pagina }: { pagina?: 'gastos' | 'adeudos' 
         {vista === 'ingresos' && ['cobrado', 'por_cobrar', 'venta'].includes(ingTab) && (
           <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
             {ingTab === 'por_cobrar' && <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Por cobrar este mes</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.por_cobrar)} en {d.ingresos.por_cobrar_lista.length} renovaciones</span></div>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Por cobrar este mes</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.por_cobrar)} · {desglosePorCobrar(d.ingresos.por_cobrar_lista)}</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
-                {d.ingresos.por_cobrar_lista.map((s: any) => <tr key={s.id}><td style={td}><b>{s.companies?.nombre_comercial || s.companies?.nombre || 'Cuenta'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>{s.nombre_plan} · {s.ciclo} · vence {s.proxima_factura}{s.cobranza_estado ? ` · ${s.cobranza_estado}` : ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(s.monto)}</td></tr>)}
+                {d.ingresos.por_cobrar_lista.map((s: any) => <tr key={s.id}><td style={td}><b>{s.companies?.nombre_comercial || s.companies?.nombre || s.contacts?.nombre || 'Cuenta'}</b>
+                  {s.tipo === 'parcialidad' && <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 800, letterSpacing: .3, color: '#5B4BD6', background: '#EEECFE', borderRadius: 5, padding: '2px 6px' }}>PAGO DIFERIDO</span>}
+                  {s.vencida && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, letterSpacing: .3, color: '#b91c1c', background: '#fee2e2', borderRadius: 5, padding: '2px 6px' }}>VENCIDA</span>}
+                  <div style={{ color: '#8e88a8', fontSize: 11 }}>{s.nombre_plan} · {s.ciclo} · vence {s.proxima_factura}{s.mes_original && s.mes_original !== d.mes ? ` (era de ${s.mes_original})` : ''}{s.cobranza_estado ? ` · ${s.cobranza_estado}` : ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(s.monto)}</td></tr>)}
                 {!d.ingresos.por_cobrar_lista.length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Nada pendiente de cobrar este mes.</td></tr>}
               </tbody></table>
             </div>}
             {ingTab === 'venta' && <div style={{ background: '#fff', border: '1px solid #e8e5f0', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0eef6' }}><b>Venta nueva aceptada sin pago</b> <span style={{ color: '#8e88a8', fontSize: 12.5 }}>· {pesos(d.ingresos.ventas_aceptadas || 0)}</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}><tbody>
-                {(d.ingresos.ventas_aceptadas_lista || []).map((q: any) => <tr key={q.id}><td style={td}><b>{q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Cotización'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>#{q.numero || 's/n'} · aceptada {String(q.updated_at).slice(0, 10)}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(q.monto)}</td></tr>)}
+                {(d.ingresos.ventas_aceptadas_lista || []).map((q: any) => <tr key={q.id}><td style={td}><b>{q.companies?.nombre_comercial || q.companies?.nombre || q.contacts?.nombre || 'Cotización'}</b><div style={{ color: '#8e88a8', fontSize: 11 }}>#{q.numero || 's/n'} · aceptada {String(q.aceptado_fecha || q.created_at || '').slice(0, 10)}{q.abonado ? ` · lleva ${pesos(q.abonado)} de ${pesos(q.total)}` : ''}</div></td><td style={{ ...td, textAlign: 'right', fontWeight: 800, whiteSpace: 'nowrap' }}>{pesos(q.monto)}</td></tr>)}
                 {!(d.ingresos.ventas_aceptadas_lista || []).length && <tr><td style={{ ...td, color: '#8e88a8', textAlign: 'center', padding: 18 }}>Ninguna cotización aceptada pendiente de pago.</td></tr>}
               </tbody></table>
             </div>}

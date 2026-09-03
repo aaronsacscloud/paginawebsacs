@@ -6,7 +6,7 @@
 import { supabase } from '../../supabase';
 import { anthropic, MODELS, hasApiKey, calculateCost } from '../../ai/client';
 import { leerConfig } from './motor';
-import { parListoPara, paramAngulo } from './plantillas-agente';
+import { parListoPara, paramAngulo, FAMILIAS, type Familia } from './plantillas-agente';
 import { promoVigente, promoTexto } from './promociones';
 import { notificar } from '../notificaciones';
 
@@ -24,18 +24,21 @@ const esFinDeSemana = (d: Date) => [0, 6].includes(cdmx(d).getUTCDay());
 
 /** Siguiente hueco libre: reparte el día en horas distintas y no pasa de MAX_DIA; fin de semana salta al lunes. */
 export async function siguienteHueco(): Promise<Date> {
+  const cfg0: any = await leerConfig();
+  const HORAS: number[] = Array.isArray(cfg0.reactivacion_horas) && cfg0.reactivacion_horas.length ? cfg0.reactivacion_horas.map(Number) : HORAS_CDMX;
+  const TOPE = Number(cfg0.reactivacion_max_dia) || MAX_DIA;
   let dia = new Date(); const hCdmx = cdmx(dia).getUTCHours();
-  if (hCdmx >= 18) dia = new Date(dia.getTime() + 86400e3);
+  if (hCdmx >= Math.max(...HORAS)) dia = new Date(dia.getTime() + 86400e3);
   for (let i = 0; i < 14; i++, dia = new Date(dia.getTime() + 86400e3)) {
     if (esFinDeSemana(dia)) continue;
     const ymd = cdmx(dia).toISOString().slice(0, 10);
     const ini = `${ymd}T06:00:00.000Z`, fin = `${ymd}T23:59:59.000Z`;   // 00:00–17:59 CDMX del día siguiente en UTC ≈ tope
     const { data } = await supabase.from('ti_envios').select('sale_at').eq('origen', 'reactivacion').in('estado', ['pendiente', 'enviando', 'enviado']).gte('sale_at', ini).lte('sale_at', fin);
     const usados = data || [];
-    if (usados.length >= MAX_DIA) continue;
+    if (usados.length >= TOPE) continue;
     const porHora: Record<number, number> = {}; for (const u of usados) { const h = cdmx(new Date(u.sale_at)).getUTCHours(); porHora[h] = (porHora[h] || 0) + 1; }
     const ahoraH = ymd === cdmx().toISOString().slice(0, 10) ? cdmx().getUTCHours() : -1;
-    const libres = HORAS_CDMX.filter(h => h > ahoraH).sort((a, b) => (porHora[a] || 0) - (porHora[b] || 0) || a - b);
+    const libres = HORAS.filter(h => h > ahoraH).sort((a, b) => (porHora[a] || 0) - (porHora[b] || 0) || a - b);
     if (!libres.length) continue;
     const h = libres[0]; const min = 5 + Math.floor(Math.random() * 46);
     return new Date(Date.parse(`${ymd}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:00-06:00`));
@@ -58,6 +61,10 @@ export async function redactarReactivacion(c: any): Promise<{ mensaje: string; a
   const cfg: any = await leerConfig();
   const { hilo, datos, resumen } = await contexto(c);
   const promo = await promoVigente();
+  const { data: ejs } = await supabase.from('ia_ejemplos').select('situacion, pulida, por_que, fuente').eq('estado', 'reactivacion').in('estado_rev', ['aprobado', 'rechazado']).order('revisado_at', { ascending: false }).limit(12);
+  const buenos = (ejs || []).filter(e => !String(e.por_que || '').startsWith('EVITAR')).slice(0, 6);
+  const malos = (ejs || []).filter(e => String(e.por_que || '').startsWith('EVITAR')).slice(0, 4);
+  const fewShot = buenos.length || malos.length ? `\n\nLO QUE EL DUEÑO YA APROBÓ O CORRIGIÓ EN OTROS REENGANCHES (imita el criterio, no el texto):\n${buenos.map(e => `- «${String(e.pulida).slice(0, 220)}»${/^CRITERIO:/.test(String(e.por_que)) ? ` · criterio: ${String(e.por_que).replace(/^CRITERIO:\s*/, '').slice(0, 120)}` : ''}`).join('\n')}${malos.length ? `\nLO QUE RECHAZÓ (no lo repitas):\n${malos.map(e => `- «${String(e.pulida).slice(0, 160)}» · ${String(e.por_que).replace(/^EVITAR:\s*/, '').slice(0, 100)}`).join('\n')}` : ''}` : '';
   const novedades: string[] = Array.isArray(cfg.novedades) && cfg.novedades.length ? cfg.novedades : [
     'traspasos automáticos entre sucursales por talla y color (nivelación)',
     'AXO, el copiloto que avisa cuando una talla se va a agotar',
@@ -85,7 +92,7 @@ CÓMO SE ESCRIBE ESTE MENSAJE (obligatorio)
 3. Una sola novedad concreta que le sirva a esa pregunta. Cero lista de funciones.
 4. Cierra con UNA pregunta fácil de contestar con sí/no o con un dato («¿sigues con las dos tiendas?»), no con «¿agendamos?».
 5. Sin emojis, sin «espero que estés bien», sin «quería darle seguimiento», sin mayúsculas de énfasis. Máximo 300 caracteres: va dentro de una plantilla que ya trae «Hola {nombre},» al inicio y una salida amable al final, así que NO saludes ni te despidas ni ofrezcas la demo: eso ya lo dice la plantilla.
-6. Habla como habla la gente de tiendas en México, de tú.
+6. Habla como habla la gente de tiendas en México, de tú.${fewShot}
 
 Si la conversación muestra que YA es cliente de Sacs (soporte, impresora, cuenta, factura, «mi sistema»), que no es una tienda o que pidió que no le escribieran, NO redactes: responde {"descartar": "motivo en una línea"}.
 
@@ -138,12 +145,14 @@ export async function generarLoteReactivacion(n = MAX_DIA): Promise<any> {
 }
 
 /** Aprobar: programa el envío como plantilla de la familia «reactivación» en el siguiente hueco y arranca el ciclo del agente para ese lead. */
-export async function aprobarReactivacion(id: string, o: { mensaje?: string; userId?: string; automatica?: boolean } = {}): Promise<any> {
+export async function aprobarReactivacion(id: string, o: { mensaje?: string; userId?: string; automatica?: boolean; familia?: string; criterio?: string } = {}): Promise<any> {
   const { data: r } = await supabase.from('ti_reactivacion').select('*').eq('id', id).maybeSingle();
   if (!r || !['propuesta'].includes(r.estado)) return { error: 'Esta propuesta ya se decidió' };
   const mensaje = String(o.mensaje || r.mensaje).trim();
   const editado = mensaje !== String(r.mensaje_original || r.mensaje).trim();
-  const par = await parListoPara('reactivacion');
+  const cfgP: any = await leerConfig();
+  const familia = (o.familia || cfgP.reactivacion_familia || 'reactivacion') as Familia;
+  const par = await parListoPara(familia);
   if (!par) return { error: 'No hay plantilla aprobada por Meta todavía (ni la de reactivación ni la de seguimiento).' };
   const { data: k } = await supabase.from('contacts').select('nombre').eq('id', r.contact_id).maybeSingle();
   const nombreK = String(k?.nombre || '').trim();
@@ -166,6 +175,8 @@ export async function aprobarReactivacion(id: string, o: { mensaje?: string; use
     await supabase.from('ti_config').update({ valor: { ...cfg, rampa_reactivacion: nueva } }).eq('id', 1);
   }
   if (editado) await supabase.from('ia_log').insert({ accion: 'agente_editado', contact_id: r.contact_id, contenido: mensaje, razon: 'reactivación editada por el dueño', detalle: { original: r.mensaje_original, reactivacion_id: id } });
+  // APRENDE: cada aprobación humana es un ejemplo que el redactor lee la próxima vez (las editadas pesan más).
+  if (!o.automatica) await supabase.from('ia_ejemplos').insert({ estado: 'reactivacion', situacion: `Reenganchar a un lead que preguntó hace ${r.meses_sin_hablar} meses (${r.segmento === 'intencion' ? 'pidió precio o demo' : 'preguntó y no siguió'}). ${r.resumen_lead || ''} Preguntó: «${r.pregunta_original || ''}»`.slice(0, 600), mensaje_lead: r.pregunta_original || null, respuesta: r.mensaje_original || r.mensaje, pulida: mensaje, por_que: editado ? `CRITERIO: ${o.criterio || 'versión del dueño (reactivación)'}` : 'aprobado tal cual por el dueño (reactivación)', lo_humano: editado ? 'reescrito por el dueño' : 'aprobado', fuente: editado ? 'correccion_dueno' : 'reactivacion', contact_id: r.contact_id, estado_rev: 'aprobado', revisado_at: new Date().toISOString() }).then(() => {}, () => {});
   return { ok: true, envio_id: env.id, sale_at: saleAt.toISOString() };
 }
 
@@ -177,6 +188,7 @@ export async function rechazarReactivacion(id: string, motivo: string, userId?: 
   const cfg: any = await leerConfig(); const rampa: any = cfg.rampa_reactivacion || {};
   await supabase.from('ti_config').update({ valor: { ...cfg, rampa_reactivacion: { ...rampa, sin_editar: 0 } } }).eq('id', 1);
   await supabase.from('ia_log').insert({ accion: 'agente_vetado', contact_id: r.contact_id, contenido: r.mensaje, razon: motivo || 'reactivación rechazada', detalle: { reactivacion_id: id, segmento: r.segmento } });
+  await supabase.from('ia_ejemplos').insert({ estado: 'reactivacion', situacion: `Reenganchar a un lead que preguntó hace ${r.meses_sin_hablar} meses. ${r.resumen_lead || ''}`.slice(0, 600), respuesta: r.mensaje, pulida: r.mensaje, por_que: `EVITAR: ${motivo || 'rechazado por el dueño'}`, fuente: 'reactivacion', contact_id: r.contact_id, estado_rev: 'rechazado', revisado_at: new Date().toISOString() }).then(() => {}, () => {});
   return { ok: true };
 }
 
@@ -193,4 +205,33 @@ export async function sincronizarReactivaciones() {
     const { data: c } = await supabase.from('wa_conversaciones').select('ultimo_entrante_at').eq('contact_id', f.contact_id).order('ultimo_mensaje_at', { ascending: false }).limit(1).maybeSingle();
     if (c?.ultimo_entrante_at && f.sale_at && c.ultimo_entrante_at > f.sale_at) await supabase.from('ti_reactivacion').update({ estado: 'respondio', updated_at: new Date().toISOString() }).eq('id', f.id);
   }
+}
+
+
+/** Lo que la pantalla necesita para configurar y explicar: plantillas aprobadas por familia (con su cuerpo), horario, próximo hueco y qué está aprendiendo. */
+export async function panelReactivacion() {
+  const cfg: any = await leerConfig();
+  const fams = Object.keys(FAMILIAS) as Familia[];
+  const plantillas: any[] = [];
+  for (const fam of fams) {
+    const par = await parListoPara(fam).catch(() => null);
+    const propia = par && par.familia === fam;
+    plantillas.push({ familia: fam, aprobada: !!propia, marketing: propia ? par!.marketing : null, utility: propia ? par!.utility : null, cuerpo_marketing: FAMILIAS[fam].marketing.cuerpo, cuerpo_utility: FAMILIAS[fam].utility.cuerpo });
+  }
+  const familia = (cfg.reactivacion_familia || 'reactivacion') as Familia;
+  const parUsado = await parListoPara(familia).catch(() => null);
+  const hueco = await siguienteHueco().catch(() => null);
+  const hoy = cdmx().toISOString().slice(0, 10);
+  const [{ count: decididosHoy }, { count: ejemplos }, { data: env }] = await Promise.all([
+    supabase.from('ti_reactivacion').select('id', { count: 'exact', head: true }).gte('decidido_at', `${hoy}T06:00:00.000Z`),
+    supabase.from('ia_ejemplos').select('id', { count: 'exact', head: true }).eq('estado', 'reactivacion').eq('estado_rev', 'aprobado'),
+    supabase.from('ti_reactivacion').select('estado').in('estado', ['enviada', 'respondio']),
+  ]);
+  const enviadas = (env || []).length; const respondieron = (env || []).filter(x => x.estado === 'respondio').length;
+  return {
+    plantillas, familia_usada: parUsado?.familia || null, par_usado: parUsado,
+    cuerpo_usado: parUsado ? { marketing: FAMILIAS[parUsado.familia as Familia]?.marketing.cuerpo, utility: FAMILIAS[parUsado.familia as Familia]?.utility.cuerpo } : null,
+    horas: Array.isArray(cfg.reactivacion_horas) && cfg.reactivacion_horas.length ? cfg.reactivacion_horas : HORAS_CDMX, max_dia: Number(cfg.reactivacion_max_dia) || MAX_DIA, proximo_hueco: hueco?.toISOString() || null,
+    aprendizaje: { ejemplos: ejemplos || 0, enviadas, respondieron, tasa: enviadas ? Math.round(respondieron / enviadas * 100) : null, decididos_hoy: decididosHoy || 0 },
+  };
 }
