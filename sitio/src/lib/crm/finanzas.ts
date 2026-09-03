@@ -220,7 +220,9 @@ export async function detalleOportunidad(dealId: string) {
     d.company_id ? supabase.from('subscriptions').select('id, nombre_plan, mrr, estado').eq('company_id', d.company_id).eq('estado', 'activa') : Promise.resolve({ data: [] as any[] }),
     d.contact_id ? supabase.from('deals').select('id, nombre, stage, valor_total, created_at').eq('contact_id', d.contact_id).neq('id', dealId).is('archived_at', null) : Promise.resolve({ data: [] as any[] }),
   ]);
-  return { deal: d, cotizacion: q, vistas: vistas || [], actividades: acts || [], suscripciones_activas: subs || [], expansion: (subs || []).length > 0, otras_oportunidades: otras || [], url_cotizacion: d.quote_id ? `https://www.sacscloud.com/cotizacion/${d.quote_id}` : null };
+  const PROB: Record<string, number> = { calificacion: 20, demo_agendada: 40, demo_realizada: 50, cotizacion_enviada: 60, negociacion: 75, aceptada: 90 };
+  const probEfectiva = d.probabilidad != null && Number(d.probabilidad) !== 20 ? Number(d.probabilidad) : (PROB[d.stage] ?? 30);
+  return { deal: d, prob_efectiva: probEfectiva, prob_manual: d.probabilidad != null && Number(d.probabilidad) !== 20, cotizacion: q, vistas: vistas || [], actividades: acts || [], suscripciones_activas: subs || [], expansion: (subs || []).length > 0, otras_oportunidades: otras || [], url_cotizacion: d.quote_id ? `https://www.sacscloud.com/cotizacion/${d.quote_id}` : null };
 }
 
 /** Editar desde el modal: probabilidad, fecha de cierre, etapa (perder exige motivo), siguiente paso. Deja historial en activities. */

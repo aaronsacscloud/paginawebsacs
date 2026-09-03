@@ -954,8 +954,9 @@ const fechaFirma = brief.firmado_at
       // tener que recorrer 16 preguntas buscando cuál tiene un comentario.
       const pend = def.campos.filter((c) => esperaCliente(hiloDe(fila.clave, c.id)));
       if (pend.length) {
-        h += '<div class="pb-pendientes"><span class="pb-campo-t">Te faltan ' + pend.length +
-          (pend.length === 1 ? ' respuesta' : ' respuestas') + '</span><ol>';
+        h += '<div class="pb-pendientes"><span class="pb-campo-t">' +
+          (pend.length === 1 ? 'Te falta una respuesta' : 'Te faltan ' + pend.length + ' respuestas') +
+          '</span><ol>';
         for (const c of pend) {
           const hh = hiloDe(fila.clave, c.id);
           const ultimo = hh.mensajes[hh.mensajes.length - 1];
