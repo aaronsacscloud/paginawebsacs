@@ -32,21 +32,21 @@ const CSS = `
 .eqf.movil{right:14px;bottom:calc(var(--crm-bottomnav-h,64px) + 14px)}
 .eqf-fila{display:flex;align-items:flex-end;gap:10px}
 .eqf-orbe{position:relative;width:58px;height:58px;border-radius:50%;border:0;cursor:pointer;padding:0;overflow:visible;
-  background:radial-gradient(circle at 50% 38%,#F6F3FF 0%,#E4DEFC 55%,#CFC6F7 100%);
-  box-shadow:0 10px 30px rgba(124,107,240,.38),0 2px 6px rgba(60,30,140,.16),inset 0 1px 0 rgba(255,255,255,.7);
+  background:radial-gradient(circle at 50% 36%,#FBE7E2 0%,#F5CFC8 58%,#EBB4AC 100%);
+  box-shadow:0 10px 30px rgba(226,140,140,.40),0 2px 6px rgba(140,60,70,.16),inset 0 1px 0 rgba(255,255,255,.75);
   display:inline-flex;align-items:center;justify-content:center;transition:transform .18s cubic-bezier(.2,.8,.2,1.2),box-shadow .18s}
-.eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(124,107,240,.48),0 3px 8px rgba(60,30,140,.2),inset 0 1px 0 rgba(255,255,255,.7)}
+.eqf-orbe:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 14px 36px rgba(226,140,140,.5),0 3px 8px rgba(140,60,70,.2),inset 0 1px 0 rgba(255,255,255,.7)}
 .eqf-orbe:active{transform:scale(.96)}
 .eqf-orbe:focus-visible{outline:3px solid ${P.violeta};outline-offset:2px}
 /* La cara de Axo con lo mínimo para que sea él (pidió el dueño: los ojos y "los otros
-   rasgos, sin usar todos los elementos"): la esfera hace de cabeza; ojos con iris morado
-   estriado, pupila azul noche y sus dos brillos; tres branquias rosas por lado que asoman
+   rasgos, sin usar todos los elementos"): la esfera hace de cabeza EN SU PIEL ROSITA; ojos con iris ciruela
+   oscuro y aro violeta, pupila azul noche y sus dos brillos; tres branquias durazno por lado, hacia arriba, que asoman
    por FUERA de la esfera (una máscara esconde lo de adentro, así parecen salir de atrás
-   de la cabeza); cachetes rosas y la sonrisa de gato. Sin cuerpo, gota ni hojita.
+   de la cabeza); cachetes rosas y la sonrisa suave de la mascota (no de gato). Sin cuerpo, gota ni hojita.
    La pupila sigue al puntero (--ox/--oy); parpadeo y "atento" son transforms sobre cada
    ojo; las branquias se abren un poco con hover/atento (transform en el grupo interno,
    porque el externo trae rotate en el atributo y CSS lo pisaría). */
-.eqf-axo{width:66px;height:66px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 1px 2px rgba(60,40,140,.25))}
+.eqf-axo{width:66px;height:66px;display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 1px 2px rgba(120,50,60,.22))}
 .eqf-axo .pupila{transform:translate(calc(var(--ox,0px)*.45),calc(var(--oy,0px)*.45));transition:transform .16s cubic-bezier(.2,.8,.2,1.1)}
 .eqf-axo .ojo{transform-box:fill-box;transform-origin:50% 55%;transition:transform .09s ease}
 .eqf-orbe:hover .eqf-axo .ojo{transform:scale(1.06)}
@@ -167,37 +167,37 @@ function Ojos({ orbe, atento }: { orbe: RefObject<HTMLButtonElement | null>; ate
   return (
     <svg className="eqf-axo" viewBox="0 0 64 64" aria-hidden="true">
       <defs>
-      <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".50" stopColor="#3A2A8E"/><stop offset=".72" stopColor="#6C55D6"/><stop offset=".90" stopColor="#A48CF2"/><stop offset="1" stopColor="#7A64DD"/></radialGradient>
-      <radialGradient id="eqf-pup" cx="42%" cy="40%" r="60%"><stop offset="0" stopColor="#1E1840"/><stop offset="1" stopColor="#0C0A20"/></radialGradient>
-      <linearGradient id="eqf-bra" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#F9C1D8"/><stop offset="1" stopColor="#EE86B4"/></linearGradient>
+      <radialGradient id="eqf-iris" cx="50%" cy="50%" r="50%"><stop offset=".55" stopColor="#2B1F4E"/><stop offset=".74" stopColor="#4E3A86"/><stop offset=".90" stopColor="#8B73C4"/><stop offset="1" stopColor="#4A3878"/></radialGradient>
+      <radialGradient id="eqf-pup" cx="42%" cy="40%" r="60%"><stop offset="0" stopColor="#1B1434"/><stop offset="1" stopColor="#090715"/></radialGradient>
+      <linearGradient id="eqf-bra" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#F6C6C0"/><stop offset="1" stopColor="#F0A39E"/></linearGradient>
       <mask id="eqf-fuera"><rect x="-24" y="-24" width="112" height="112" fill="#fff"/><circle cx="32" cy="32" r="27.4" fill="#000"/></mask>
       <filter id="eqf-suave" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".9"/></filter>
       </defs>
-      <g mask="url(#eqf-fuera)"><g transform="translate(9.45 23.79) rotate(-160)"><g className="branquia"><path d="M0,-3.5 C7.700000000000001,-5.04 14,-2.66 14,0 C14,2.66 7.700000000000001,5.04 0,3.5 Z" fill="url(#eqf-bra)"/><path d="M0,-1.75 C6.160000000000001,-2.52 11.200000000000001,-1.33 11.200000000000001,0 C11.200000000000001,1.33 6.160000000000001,2.52 0,1.75 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g><g transform="translate(8.0 32.0) rotate(180)"><g className="branquia"><path d="M0,-3.9 C8.525,-5.616 15.5,-2.964 15.5,0 C15.5,2.964 8.525,5.616 0,3.9 Z" fill="url(#eqf-bra)"/><path d="M0,-1.95 C6.820000000000001,-2.808 12.4,-1.482 12.4,0 C12.4,1.482 6.820000000000001,2.808 0,1.95 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g><g transform="translate(11.22 44.0) rotate(150)"><g className="branquia"><path d="M0,-3.4 C7.425000000000001,-4.896 13.5,-2.584 13.5,0 C13.5,2.584 7.425000000000001,4.896 0,3.4 Z" fill="url(#eqf-bra)"/><path d="M0,-1.7 C5.940000000000001,-2.448 10.8,-1.292 10.8,0 C10.8,1.292 5.940000000000001,2.448 0,1.7 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g><g transform="translate(54.55 23.79) rotate(-20)"><g className="branquia"><path d="M0,-3.5 C7.700000000000001,-5.04 14,-2.66 14,0 C14,2.66 7.700000000000001,5.04 0,3.5 Z" fill="url(#eqf-bra)"/><path d="M0,-1.75 C6.160000000000001,-2.52 11.200000000000001,-1.33 11.200000000000001,0 C11.200000000000001,1.33 6.160000000000001,2.52 0,1.75 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g><g transform="translate(56.0 32.0) rotate(0)"><g className="branquia"><path d="M0,-3.9 C8.525,-5.616 15.5,-2.964 15.5,0 C15.5,2.964 8.525,5.616 0,3.9 Z" fill="url(#eqf-bra)"/><path d="M0,-1.95 C6.820000000000001,-2.808 12.4,-1.482 12.4,0 C12.4,1.482 6.820000000000001,2.808 0,1.95 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g><g transform="translate(52.78 44.0) rotate(30)"><g className="branquia"><path d="M0,-3.4 C7.425000000000001,-4.896 13.5,-2.584 13.5,0 C13.5,2.584 7.425000000000001,4.896 0,3.4 Z" fill="url(#eqf-bra)"/><path d="M0,-1.7 C5.940000000000001,-2.448 10.8,-1.292 10.8,0 C10.8,1.292 5.940000000000001,2.448 0,1.7 Z" fill="#FBD3E4" opacity=".75" transform="translate(1 0)"/></g></g></g>
-      <ellipse cx="12.2" cy="39.6" rx="3.5" ry="2.1" fill="#F4A3C4" opacity=".62" filter="url(#eqf-suave)"/>
-      <ellipse cx="51.8" cy="39.6" rx="3.5" ry="2.1" fill="#F4A3C4" opacity=".62" filter="url(#eqf-suave)"/>
-      <path d="M27.4 41.4 q2.3 2.7 4.6 0 q2.3 2.7 4.6 0" fill="none" stroke="#4A3390" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round" opacity=".85"/>
+      <g mask="url(#eqf-fuera)"><g transform="translate(10 27) rotate(-125)"><g className="branquia"><path d="M0,-3.8 C12.65,-5.4719999999999995 23,-2.888 23,0 C23,2.888 12.65,5.4719999999999995 0,3.8 Z" fill="url(#eqf-bra)"/><path d="M0,-1.9 C10.120000000000003,-2.7359999999999998 18.400000000000002,-1.444 18.400000000000002,0 C18.400000000000002,1.444 10.120000000000003,2.7359999999999998 0,1.9 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g><g transform="translate(10 28) rotate(-153)"><g className="branquia"><path d="M0,-4.0 C13.200000000000001,-5.76 24,-3.04 24,0 C24,3.04 13.200000000000001,5.76 0,4.0 Z" fill="url(#eqf-bra)"/><path d="M0,-2.0 C10.560000000000002,-2.88 19.200000000000003,-1.52 19.200000000000003,0 C19.200000000000003,1.52 10.560000000000002,2.88 0,2.0 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g><g transform="translate(10 29) rotate(-178)"><g className="branquia"><path d="M0,-3.6 C12.100000000000001,-5.184 22,-2.736 22,0 C22,2.736 12.100000000000001,5.184 0,3.6 Z" fill="url(#eqf-bra)"/><path d="M0,-1.8 C9.680000000000001,-2.592 17.6,-1.368 17.6,0 C17.6,1.368 9.680000000000001,2.592 0,1.8 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g><g transform="translate(54 27) rotate(-55)"><g className="branquia"><path d="M0,-3.8 C12.65,-5.4719999999999995 23,-2.888 23,0 C23,2.888 12.65,5.4719999999999995 0,3.8 Z" fill="url(#eqf-bra)"/><path d="M0,-1.9 C10.120000000000003,-2.7359999999999998 18.400000000000002,-1.444 18.400000000000002,0 C18.400000000000002,1.444 10.120000000000003,2.7359999999999998 0,1.9 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g><g transform="translate(54 28) rotate(-27)"><g className="branquia"><path d="M0,-4.0 C13.200000000000001,-5.76 24,-3.04 24,0 C24,3.04 13.200000000000001,5.76 0,4.0 Z" fill="url(#eqf-bra)"/><path d="M0,-2.0 C10.560000000000002,-2.88 19.200000000000003,-1.52 19.200000000000003,0 C19.200000000000003,1.52 10.560000000000002,2.88 0,2.0 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g><g transform="translate(54 29) rotate(-2)"><g className="branquia"><path d="M0,-3.6 C12.100000000000001,-5.184 22,-2.736 22,0 C22,2.736 12.100000000000001,5.184 0,3.6 Z" fill="url(#eqf-bra)"/><path d="M0,-1.8 C9.680000000000001,-2.592 17.6,-1.368 17.6,0 C17.6,1.368 9.680000000000001,2.592 0,1.8 Z" fill="#FBDCD7" opacity=".8" transform="translate(1 0)"/></g></g></g>
+      <ellipse cx="12.2" cy="39.6" rx="3.5" ry="2.1" fill="#F0949E" opacity=".62" filter="url(#eqf-suave)"/>
+      <ellipse cx="51.8" cy="39.6" rx="3.5" ry="2.1" fill="#F0949E" opacity=".62" filter="url(#eqf-suave)"/>
+      <path d="M27.2 41.6 q4.8 3.6 9.6 0" fill="none" stroke="#B4626C" strokeWidth="1.1" strokeLinecap="round" opacity=".9"/>
       <g className="ojo">
-      <circle cx="21" cy="29" r="9.6" fill="#F4F0FF"/>
+      <circle cx="21" cy="29" r="9.6" fill="#FFF6F4"/>
       <circle cx="21" cy="29" r="9" fill="url(#eqf-iris)"/>
-      <g stroke="#D8CDFF" strokeWidth=".55" opacity=".45" strokeLinecap="round"><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(9.0 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(34.71 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(60.43 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(86.14 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(111.86 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(137.57 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(163.29 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(189.0 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(214.71 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(240.43 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(266.14 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(291.86 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(317.57 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(343.29 21 29)"/></g>
+      <g stroke="#B9A6E6" strokeWidth=".55" opacity=".35" strokeLinecap="round"><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(9.0 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(34.71 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(60.43 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(86.14 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(111.86 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(137.57 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(163.29 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(189.0 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(214.71 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(240.43 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(266.14 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(291.86 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(317.57 21 29)"/><line x1="21" y1="23.8" x2="21" y2="20.4" transform="rotate(343.29 21 29)"/></g>
       <g className="pupila">
       <circle cx="21.3" cy="29.3" r="6.3" fill="url(#eqf-pup)"/>
       <circle cx="18.6" cy="26.2" r="2.6" fill="#fff"/>
       <circle cx="24.2" cy="32.4" r="1.15" fill="#fff" opacity=".92"/>
       </g>
-      <circle cx="21" cy="29" r="9.3" fill="none" stroke="#2A1F6E" strokeWidth=".7" opacity=".5"/>
+      <circle cx="21" cy="29" r="9.3" fill="none" stroke="#1E1538" strokeWidth=".8" opacity=".6"/>
       </g>
       <g className="ojo">
-      <circle cx="43" cy="29" r="9.6" fill="#F4F0FF"/>
+      <circle cx="43" cy="29" r="9.6" fill="#FFF6F4"/>
       <circle cx="43" cy="29" r="9" fill="url(#eqf-iris)"/>
-      <g stroke="#D8CDFF" strokeWidth=".55" opacity=".45" strokeLinecap="round"><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(9.0 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(34.71 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(60.43 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(86.14 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(111.86 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(137.57 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(163.29 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(189.0 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(214.71 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(240.43 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(266.14 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(291.86 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(317.57 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(343.29 43 29)"/></g>
+      <g stroke="#B9A6E6" strokeWidth=".55" opacity=".35" strokeLinecap="round"><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(9.0 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(34.71 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(60.43 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(86.14 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(111.86 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(137.57 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(163.29 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(189.0 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(214.71 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(240.43 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(266.14 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(291.86 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(317.57 43 29)"/><line x1="43" y1="23.8" x2="43" y2="20.4" transform="rotate(343.29 43 29)"/></g>
       <g className="pupila">
       <circle cx="42.7" cy="29.3" r="6.3" fill="url(#eqf-pup)"/>
       <circle cx="40.6" cy="26.2" r="2.6" fill="#fff"/>
       <circle cx="46.2" cy="32.4" r="1.15" fill="#fff" opacity=".92"/>
       </g>
-      <circle cx="43" cy="29" r="9.3" fill="none" stroke="#2A1F6E" strokeWidth=".7" opacity=".5"/>
+      <circle cx="43" cy="29" r="9.3" fill="none" stroke="#1E1538" strokeWidth=".8" opacity=".6"/>
       </g>
     </svg>
   );
